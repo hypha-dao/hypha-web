@@ -955,6 +955,24 @@ export const ProposalDetail = ({
       };
     }
 
+    if (label === 'Change Delegate') {
+      const dd = proposalDetails.delegatesData;
+      if (!dd?.member || dd.space === undefined) return undefined;
+
+      const targetWeb3Id = Number(dd.space);
+      if (!Number.isFinite(targetWeb3Id)) return undefined;
+
+      const targetSpaceAddress = dbSpaces.find(
+        (s) => s.web3SpaceId === targetWeb3Id,
+      )?.address;
+      if (!targetSpaceAddress) return undefined;
+
+      return {
+        changeDelegateTargetAddress: targetSpaceAddress,
+        changeDelegateMemberAddress: dd.member,
+      };
+    }
+
     if (label === 'Issue New Token') {
       const tok = proposalDetails.tokens?.[0];
       if (!tok?.name || !tok?.symbol) return undefined;
@@ -1329,6 +1347,7 @@ export const ProposalDetail = ({
         <ProposalDelegatesData
           member={proposalDetails?.delegatesData.member}
           space={proposalDetails?.delegatesData.space}
+          variant={label === 'Change Delegate' ? 'changeDelegate' : 'join'}
         />
       ) : null}
       {proposalDetails?.membershipExitData?.member ? (

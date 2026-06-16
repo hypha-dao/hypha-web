@@ -13,6 +13,8 @@ export interface AuthHook {
   isEmbeddedWallet: boolean;
   user: AuthUser | null;
   login: () => void;
+  /** Opens Privy without marking the nav-button login flow (avoids post-login redirects). */
+  openLoginModal: () => void;
   logout: (redirect?: boolean) => void;
   isLoggingIn: boolean;
   setLoggingIn: (value: boolean) => void;

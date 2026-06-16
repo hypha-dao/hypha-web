@@ -23,6 +23,8 @@
     "by": "par",
     "copyWalletAddress": "Copier l’adresse du portefeuille",
     "walletAddressCopied": "Copié !",
+    "receiveFundsTitle": "Recevoir des fonds",
+    "receiveFundsSubtitle": "Partagez ce QR code ou l’adresse du portefeuille pour recevoir des fonds dans ce portefeuille.",
     "otherMembers": "+ {count} autres membres",
     "exploreSpaces": "Explorer les espaces",
     "findCategory": "Trouver une catégorie",
@@ -34,12 +36,16 @@
     "notFoundDescription": "La page que vous recherchez a peut-être été supprimée, renommée ou est temporairement indisponible.",
     "errorTryAgain": "Réessayer",
     "errorRefreshPage": "Rafraîchir la page",
+    "errorConnectionLostTitle": "Connexion perdue",
+    "errorConnectionLostDescription": "Votre connexion réseau a été interrompue. Vérifiez votre connexion et réessayez.",
+    "errorConnectionLostRetry": "Réessayer",
     "errorMaintenanceTitle": "Nous revenons dans un instant !",
     "errorMaintenanceDescription": "Hypha fait une courte pause pendant le déploiement des mises à jour. Nous revenons bientôt avec de nouvelles améliorations !",
     "errorLoadOverviewTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet aperçu.",
     "errorLoadMembersTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet membres.",
     "errorLoadAgreementsTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet accords.",
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
+    "errorLoadBankingTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet bancaire.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
     "Coherence": "Signaux",
@@ -98,8 +104,83 @@
     "continueAdventure": "Continuer votre aventure"
   },
   "OnboardingAdventure": {
-    "title": "Votre aventure commence ici.",
-    "subtitle": "Choisissez votre prochaine étape.",
+    "heroEyebrow": "L'ORGANISATION INTELLIGENTE",
+    "title": "Vous avez une vision puissante du monde.",
+    "titleLine1": "Vous avez une",
+    "titleLine2": "vision puissante pour le monde.",
+    "continueAdventure": "Bon retour",
+    "subtitle": "Transformez-la en organisation intelligente et audacieuse qui agit.",
+    "returnSubtitle": "Poursuivez — ou demandez à Hypha AI la prochaine étape.",
+    "heroPill": {
+      "build": "Construisez",
+      "together": ", ensemble.",
+      "rotating": {
+        "anything": "Tout",
+        "projects": "Projets",
+        "startUps": "Start-ups",
+        "ventures": "Ventures",
+        "companies": "Entreprises",
+        "studios": "Studios",
+        "games": "Jeux",
+        "clubs": "Clubs",
+        "guilds": "Guildes",
+        "associations": "Associations",
+        "schools": "Écoles",
+        "cooperatives": "Coopératives",
+        "collectives": "Collectifs",
+        "communities": "Communautés",
+        "networks": "Réseaux",
+        "hubs": "Hubs",
+        "coalitions": "Coalitions",
+        "movements": "Mouvements",
+        "ecosystems": "Écosystèmes",
+        "daos": "DAOs",
+        "ngos": "ONG",
+        "funds": "Fonds",
+        "villages": "Villages",
+        "farms": "Fermes",
+        "festivals": "Festivals",
+        "solidarity": "Solidarité",
+        "livelihoods": "Moyens de vie"
+      }
+    },
+    "aiHero": {
+      "title": "Build Anything, Together",
+      "description": "Dites à Hypha AI ce que vous voulez construire — elle guide la mise en place étape par étape.",
+      "placeholder": "Créer un espace, en rejoindre un, explorer le réseau ou financer une trésorerie — décrivez votre objectif, l’AI vous guide.",
+      "rotating": {
+        "launchCooperative": "Demandez à Hypha AI de lancer une coopérative à propriété partagée...",
+        "tokenEconomy": "Demandez à Hypha AI de concevoir une économie de jetons pour votre réseau...",
+        "createSpace": "Demandez à Hypha AI de créer un espace pour votre mission...",
+        "governance": "Demandez à Hypha AI de proposer une gouvernance pour votre communauté...",
+        "joinSpace": "Demandez à Hypha AI de trouver le bon espace...",
+        "treasury": "Demandez à Hypha AI de préparer un espace prêt pour la trésorerie...",
+        "explore": "Demandez à Hypha AI d’identifier des opportunités dans le réseau..."
+      },
+      "cta": "Commencer avec l’AI",
+      "starting": "Démarrage...",
+      "openingAi": "Ouverture du panneau AI...",
+      "sending": "Envoi de votre prompt à l’AI...",
+      "handoffFailed": "Impossible de démarrer la conversation AI. Veuillez réessayer.",
+      "handoffTimeout": "Le transfert AI prend plus de temps que prévu. Veuillez réessayer.",
+      "sendFailed": "Le prompt n’a pas pu être envoyé à l’AI. Veuillez réessayer.",
+      "helper": "L’AI proposera chaque action et demandera une confirmation avant toute création ou modification.",
+      "unavailable": "L’onboarding AI est temporairement indisponible sur ce déploiement.",
+      "ariaLabel": "Invite d’onboarding AI",
+      "flow": {
+        "badge": "Simple. Powerful. By design.",
+        "reviewingTitle": "Analyse de votre demande",
+        "reviewingDescription": "L’AI prépare le meilleur parcours pour votre objectif.",
+        "reviewingDescriptionPersonalized": "{firstName}, l’AI prépare le meilleur parcours pour votre objectif.",
+        "confirmingTitle": "Préparation d’une confirmation claire",
+        "confirmingDescription": "Vous verrez un choix ciblé avant toute action d’écriture.",
+        "executingTitle": "Exécution de l’action choisie",
+        "executingDescription": "L’AI crée, oriente ou rejoint selon votre choix.",
+        "routingTitle": "Navigation vers la bonne destination",
+        "routingDescription": "Finalisation de la navigation vers votre espace ou l’écran ciblé.",
+        "confirmationHint": "Vous gardez le contrôle : l’AI demande une confirmation avant toute création ou mise à jour."
+      }
+    },
     "spacePlaceholder": "Sélectionner un espace",
     "spaceSearchPlaceholder": "Rechercher des espaces...",
     "searchToSeeSpaces": "Commencez à taper pour voir les espaces correspondants.",
@@ -164,7 +245,8 @@
       "browserNotifications": "Notifications du navigateur (anciennement « Notifications pop-up bureau »)",
       "yes": "Oui",
       "no": "Non",
-      "emailNotificationsWithEmail": "Notifications par e-mail ({email})"
+      "emailNotificationsWithEmail": "Notifications par e-mail ({email})",
+      "mentionConsent": "Consentement aux notifications de mention"
     },
     "subscriptions": {
       "title": "Être notifié quand...",
@@ -177,7 +259,11 @@
         "title": "Une proposition est approuvée ou rejetée",
         "description": "Dans n’importe lequel des espaces dont vous êtes membre."
       },
-      "labelWithComingSoon": "{title} ({comingSoon})"
+      "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentionOnChatMessage": {
+        "title": "Vous êtes mentionné dans un message du chat",
+        "description": "Dans tout fil ou chat où les mentions sont activées pour vous."
+      }
     },
     "actions": {
       "retry": "Réessayer",
@@ -321,6 +407,10 @@
         "title": "Adhésion espace-à-espace",
         "description": "Permettez à votre espace de rejoindre un autre espace en tant que membre, avec la possibilité de participer à la gouvernance et de voter sur les propositions."
       },
+      "changeSpaceDelegate": {
+        "title": "Changer de délégué",
+        "description": "Mettez à jour le membre qui vote au nom de votre espace dans un espace que vous avez déjà rejoint."
+      },
       "issueNewToken": {
         "title": "Émettre un nouveau token",
         "description": "Créez un nouveau token pour l'utilité, la propriété, l'impact, les crédits, la voix ou la monnaie communautaire au sein de votre espace."
@@ -398,6 +488,10 @@
       "deployFunds": {
         "title": "Déployer des fonds",
         "description": "Allouez des fonds de trésorerie à des investissements dans d'autres espaces du réseau ou à la distribution de ressources entre les espaces de votre organisation."
+      },
+      "airdrop": {
+        "title": "Distribuer des tokens (Airdrop)",
+        "description": "Distribuez des tokens à un ou plusieurs destinataires en les transférant depuis la trésorerie de votre espace ou en frappant des tokens créés par votre espace."
       },
       "depositFunds": {
         "title": "Déposer des fonds",
@@ -492,9 +586,13 @@
         "selectMember": "Veuillez sélectionner un membre",
         "selectSpace": "Veuillez sélectionner un espace"
       }
-    }
+    },
+    "aiAgents": "Agents IA",
+    "aiAgentsEmptyState": "Aucun agent IA mobilisé pour le moment. Posez des questions stratégiques pour les activer.",
+    "aiAgentsMobilizedCount": "Mobilisé {count, plural, one {# fois} other {# fois}}"
   },
   "TreasuryTab": {
+    "bankAccounts": "Comptes bancaires",
     "balance": "Solde",
     "wallet": "Portefeuille",
     "searchTokens": "Rechercher des tokens",
@@ -967,6 +1065,8 @@
     "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui.",
     "uploadEcosystemLogoLight": "Téléverser le logo de l’écosystème (clair)",
     "uploadEcosystemLogoDark": "Téléverser le logo de l’écosystème (sombre)",
+    "ecosystemLogoPlaceholder": "Téléverser le logo de l’écosystème de {spaceName}",
+    "ecosystemLogoPlaceholderFallback": "cet espace",
     "ecosystemLogoLightDescription": "Téléversez un logo clair pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "ecosystemLogoDarkDescription": "Téléversez un logo sombre pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "search": "Rechercher...",
@@ -979,7 +1079,21 @@
     "exchangeDepositProposalConfirming": "Confirmation...",
     "exchangeDepositProposalTitle": "Déposer {amount} {symbol} – Régler l'escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'échange avec {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'investissement dans {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'investissement dans {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}.",
+    "confirmInvestmentCta": "Confirmer l'investissement",
+    "acceptInvestmentTitle": "Accepter l'investissement",
+    "acceptInvestmentBody": "{sellerLabel} a accepté l'investissement de votre espace de {buyerAmountLabel} et propose {sellerAmountLabel} en retour.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} a accepté votre investissement de {buyerAmountLabel} et propose {sellerAmountLabel} en retour.",
+    "exchangeStakesAndTokensTitle": "Échanger parts et tokens",
+    "exchangeStakesAndTokensBody": "{sellerLabel} a proposé d'échanger {sellerAmountLabel} contre {buyerAmountLabel} depuis votre espace.",
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} a proposé d'échanger {sellerAmountLabel} contre {buyerAmountLabel} avec vous.",
+    "exchangeCounterpartyFallback": "l'autre partie",
+    "escrowDepositRefuse": "Refuser",
+    "escrowDepositRefusing": "Refus en cours...",
+    "escrowConfirmExchange": "Confirmer l'échange",
+    "escrowDepositDepositing": "Dépôt en cours...",
+    "escrowDepositApproving": "Approbation en cours...",
+    "escrowDepositInsufficientWallet": "Le solde de votre portefeuille est inférieur au montant requis."
   },
   "AgreementFlow": {
     "labels": {
@@ -987,7 +1101,9 @@
       "votingMethod": "Méthode de vote",
       "entryMethod": "Méthode d'entrée",
       "membershipExit": "Sortie de membre",
+      "spaceMemory": "Space Memory",
       "spaceToSpace": "Espace-à-espace",
+      "changeDelegate": "Changer de délégué",
       "issueNewToken": "Émettre un nouveau token",
       "treasuryMinting": "Frappe de trésorerie",
       "tokenBurning": "Combustion de tokens",
@@ -1000,6 +1116,7 @@
       "contribution": "Contribution",
       "expenses": "Dépenses",
       "funding": "Financement",
+      "airdrop": "Airdrop",
       "investment": "Investissement",
       "exchange": "Échange",
       "enableEnergyCommunity": "Enable Energy Community",
@@ -1055,10 +1172,13 @@
       "chooseTokenToBurn": "Choisissez un token à brûler",
       "atLeastOneBurnTargetRequired": "Au moins une cible de brûlage est requise",
       "atLeastOnePayoutRequired": "Au moins un paiement est requis",
+      "atLeastOneAirdropRecipient": "Au moins un destinataire de l'airdrop est requis",
+      "tooManyAirdropRecipients": "Trop de destinataires pour une seule proposition d'airdrop.",
       "purchaseAmountRequired": "Veuillez saisir un montant d'achat.",
       "selectSpaceToActivate": "Veuillez sélectionner un espace à activer.",
       "monthsToActivateRequired": "Veuillez saisir le nombre de mois à activer.",
       "selectSpaceToJoin": "Veuillez sélectionner un espace à rejoindre",
+      "selectGovernanceSpace": "Veuillez sélectionner un espace de gouvernance",
       "selectDelegatedVotingMember": "Veuillez sélectionner un membre délégué pour le vote",
       "selectSpaceToExit": "Veuillez sélectionner un espace à quitter.",
       "selectMemberToRemove": "Veuillez sélectionner un membre à retirer",
@@ -1176,6 +1296,18 @@
       "UPLOAD_FILES": "Téléversement des fichiers...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
     },
+    "changeSpaceDelegateProgress": {
+      "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
+      "CREATE_WEB3_AGREEMENT": "Création de l'accord Web3...",
+      "UPLOAD_FILES": "Téléversement des fichiers...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
+    },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
+      "CREATE_WEB3_AGREEMENT": "Création de l'accord Web3...",
+      "UPLOAD_FILES": "Téléversement des fichiers...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
+    },
     "proposalLoader": {
       "processingVote": "Traitement du vote...",
       "savingVote": "Enregistrement du vote...",
@@ -1189,6 +1321,34 @@
       "unknownErrorOccurred": "Une erreur inconnue s’est produite."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribuez des tokens à un ou plusieurs destinataires. Choisissez de transférer des tokens déjà détenus dans la trésorerie de votre espace ou de frapper de nouveaux tokens créés par votre espace.",
+        "recipientsLabel": "Destinataires",
+        "methodLabel": "Méthode",
+        "tokenLabel": "Token",
+        "amountLabel": "Montant",
+        "transfer": "Transférer",
+        "mint": "Frapper",
+        "noMintableTokens": "Votre espace n'a pas encore créé de tokens frappables. Émettez d'abord un token ou utilisez la méthode Transférer.",
+        "add": "Ajouter un destinataire",
+        "remove": "Supprimer",
+        "entryManual": "Manuel",
+        "entryCsv": "Import CSV",
+        "csvFormatDescription": "Téléversez un fichier CSV avec un destinataire par ligne : une adresse de portefeuille et un montant, séparés par une virgule (point-virgule ou tabulation acceptés). La ligne d'en-tête est facultative, les décimales utilisent un point et le fichier peut contenir jusqu'à {max} destinataires.",
+        "csvChooseFile": "Choisir un fichier CSV",
+        "csvDownloadTemplate": "Télécharger le modèle",
+        "csvLoadedSummary": "{count} destinataires chargés depuis {fileName} — montant total : {total}",
+        "csvCurrentRecipients": "{count} destinataires actuellement dans la liste.",
+        "csvClear": "Effacer",
+        "csvErrorRead": "Impossible de lire le fichier. Vérifiez-le et réessayez.",
+        "csvErrorEmpty": "Aucun destinataire trouvé dans le fichier.",
+        "csvErrorTooMany": "Le fichier contient {count} destinataires ; le maximum est de {max}.",
+        "csvErrorColumns": "Ligne {line} : une adresse de portefeuille et un montant étaient attendus.",
+        "csvErrorInvalidAddress": "Ligne {line} : adresse de portefeuille invalide.",
+        "csvErrorInvalidAmount": "Ligne {line} : montant invalide.",
+        "csvErrorMore": "…et {count} autres problèmes.",
+        "csvInvalidRecipients": "Certains destinataires de la liste sont invalides. Téléversez un fichier corrigé ou passez à la saisie manuelle."
+      },
       "activateSpaces": {
         "checkOut": "Récapitulatif",
         "totalContribution": "Contribution totale :",
@@ -1386,6 +1546,20 @@
           "currentSpaceTag": "espace émetteur",
           "addSpacePlaceholder": "Ajouter un espace…",
           "removeSpace": "Retirer l’espace"
+        },
+        "authorizedMinters": {
+          "title": "Émetteurs autorisés",
+          "description": "Accordez à des adresses de portefeuille spécifiques le droit d’émettre, de brûler et de gérer la liste de crédit de ce jeton, en plus de l’exécuteur de l’espace.",
+          "listLabel": "Adresses des émetteurs",
+          "listDescription": "Ces portefeuilles peuvent émettre, brûler et gérer la liste de crédit de ce jeton.",
+          "grantLabel": "Accorder les droits d’émission",
+          "revokeLabel": "Révoquer les droits d’émission",
+          "revokeDescription": "Les droits d’émission de ces portefeuilles seront retirés.",
+          "placeholder": "0x… adresse blockchain",
+          "add": "Ajouter une adresse",
+          "remove": "Retirer l’adresse",
+          "invalid": "Veuillez saisir une adresse blockchain valide",
+          "duplicate": "Cette adresse a déjà été ajoutée"
         }
       },
       "quorumAndUnity": {
@@ -1478,6 +1652,14 @@
         "space": "Espace",
         "delegationRules": "Règles de délégation",
         "delegatedVotingMemberDescription": "Le membre de vote délégué est la personne de votre espace officiellement autorisée à voter au nom de votre espace dans l’espace rejoint."
+      },
+      "changeSpaceDelegate": {
+        "governanceSpace": "Espace de gouvernance",
+        "delegationRules": "Règles de délégation",
+        "delegatedVotingMemberDescription": "Sélectionnez le membre de votre espace qui doit recevoir le pouvoir de vote délégué de votre espace dans l’espace de gouvernance choisi."
+      },
+      "changeSpaceDelegateSelector": {
+        "governanceSpace": "Espace de gouvernance"
       },
       "spaceTransparencySettings": {
         "title": "Transparence de l'espace",
@@ -1723,6 +1905,7 @@
       "usdcAmount": "USDC Montant",
       "hyphaAmount": "HYPHA Montant",
       "joiningSpace": "Rejoindre l'espace",
+      "governanceSpace": "Espace de gouvernance",
       "delegatedVotingMember": "Membre votant délégué",
       "exitingMember": "Membre sortant",
       "exitFrom": "Quitter depuis",
@@ -1904,13 +2087,25 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Parle-moi de cet espace",
-      "memberCount": "Combien de membres compte cet espace ?",
-      "agreements": "Quels accords existent dans cet espace ?",
-      "structure": "Décris la structure de cet espace"
+      "spaceHealth": "Comment va notre espace dans l'ensemble ?",
+      "nextSignal": "Quel signal devrions-nous créer ou partager ensuite ?",
+      "blindSpot": "Quel est notre plus grand angle mort ?",
+      "summarizeDiscussion": "Résume la discussion récente de l'équipe",
+      "spaceMemory": "Que retient notre espace ?",
+      "valueFlows": "Comment la valeur circule-t-elle via nos tokens ?"
     },
-    "welcome": "Bonjour ! Je suis votre assistant AI pour {spaceName}. Je peux rechercher les détails de l'espace comme le nombre de membres, les accords et la structure. Posez-moi n'importe quelle question sur l'espace que vous consultez.",
-    "placeholder": "Demandez à Hypha AI...",
+    "suggestionTags": {
+      "spaceHealth": "Santé de l'espace",
+      "nextSignal": "Prochain signal",
+      "blindSpot": "Angle mort",
+      "summarizeDiscussion": "Résumer la discussion",
+      "spaceMemory": "Mémoire de l'espace",
+      "valueFlows": "Flux de valeur"
+    },
+    "welcome": "Je suis l'IA de votre espace pour apporter de la cohérence à la stratégie, du mouvement aux opérations et du sens à l'impact—des agents spécialistes glissent à l'appel quand vous en avez besoin.",
+    "specialistsResponding": "Spécialistes contributeurs",
+    "specialistsRespondingStreaming": "Spécialistes contributeurs…",
+    "placeholder": "Posez votre question...",
     "sendButton": "Envoyer",
     "stopButton": "Arrêter",
     "newlineHint": "Shift+Entrée pour nouvelle ligne",
@@ -1918,9 +2113,11 @@
     "signInButton": "Se connecter",
     "loading": "Chargement...",
     "openPanel": "Ouvrir Hypha AI",
+    "openAiPanel": "Ouvrir le panneau IA",
     "hidePanel": "Masquer le panneau AI",
     "resetChat": "Réinitialiser le chat",
     "closePanel": "Fermer le panneau",
+    "closeAiPanel": "Fermer le panneau IA",
     "copyButton": "Copier",
     "copiedButton": "Copié !",
     "toolLookingUp": "Recherche de l'espace…",
@@ -1931,7 +2128,15 @@
     "toolTokens": "{count} jeton(s) récupéré(s) pour l'espace \"{slug}\".",
     "toolError": "Erreur : {message}",
     "streamError": "Une erreur est survenue lors de la génération de la réponse.",
-    "attachment": "Pièce jointe"
+    "assistantExpiredSubtitle": "Votre contribution au réseau Hypha a expiré {expiredElapsed}. Réactivez votre espace avant d'utiliser Hypha AI.",
+    "attachment": "Pièce jointe",
+    "pendingAction": "Action en attente",
+    "confirmWith": "Confirmer avec :",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "showMore": "Lire la suite",
+    "showLess": "Afficher moins",
+    "welcomeSpecialistsHint": "Les spécialistes actifs apparaissent aussi sous Membres > Agents IA."
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -1941,6 +2146,16 @@
     "sendButton": "Envoyer",
     "newlineHint": "Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · :emoji:",
     "loading": "Chargement...",
+    "loadOlderMessages": "Charger les messages plus anciens",
+    "loadingOlderMessages": "Chargement des messages plus anciens…",
+    "historyStartReached": "Début du chat",
+    "connectionLostTitle": "Connexion perdue",
+    "connectionLostDescription": "La synchronisation du chat est en pause à cause d'un problème réseau. Réessayez lorsque vous serez de nouveau en ligne.",
+    "connectionReconnectingDescription": "Reconnexion du chat…",
+    "connectionLostRetry": "Réessayer",
+    "connectionFollowerTitle": "Le chat est ouvert dans un autre onglet",
+    "connectionFollowerDescription": "Human Chat se synchronise dans un seul onglet du navigateur à la fois pour rester fiable pendant les appels.",
+    "connectionFollowerUseTab": "Utiliser cet onglet",
     "openPanel": "Ouvrir le panneau de chat",
     "hidePanel": "Masquer le panneau de chat",
     "closePanel": "Fermer le panneau",
@@ -1983,10 +2198,13 @@
     "composerAttachImage": "Photo ou image",
     "composerAttachVideo": "Vidéo",
     "composerAttachFile": "Fichier",
+    "composerAttachGoogleDrive": "Google Drive",
+    "composerAttachGoogleDriveUnavailable": "Google Drive n'est pas disponible",
     "composerDropPrompt": "Déposez des fichiers pour les joindre",
     "mentionNotAvailable": "Mentions (bientôt)",
     "mentionNoMembers": "Membres pas encore chargés — réessayez dans un instant",
     "mentionListLabel": "Mentionner quelqu’un",
+    "mentionListHintIncludesParentSpaceMembers": "Choisissez un membre à mentionner. Cette liste peut aussi inclure des membres de l’espace parent.",
     "mentionInboxTitle": "Mentions",
     "mentionInboxBellCallRingHint": "Cliquez sur la cloche pour couper ou réactiver le son d’appel. Ouvrez l’onglet Mentions pour voir les @mentions.",
     "callJoinCallAlertsMutedShort": "Muet",
@@ -2070,6 +2288,11 @@
     "markAsRead": "Marquer comme lu",
     "callToolbarLabel": "Appel vocal et vidéo",
     "callJoinStripLine": "Appel en cours — {count, plural, one {1 membre} other {# membres}}",
+    "callJoinStripTitle": "Appel en cours",
+    "callJoinStripMemberCount": "{count, plural, one {1 membre} other {# membres}}",
+    "callActiveInAnotherTabTitle": "Appel actif dans un autre onglet",
+    "callFollowerSyncPausedDescription": "Synchronisation en pause — changez d’onglet pour l’appel en direct.",
+    "callActiveInAnotherTabSwitch": "Passer à cet onglet",
     "callJoinInProgressCta": "Rejoindre | En cours",
     "callJoinInProgressCtaTitle": "Rejoindre l’appel de l’espace (en cours)",
     "callJoinCallAlerts": "Alertes d’appel",
@@ -2078,6 +2301,9 @@
     "callJoinCallAlertsAria": "Alertes d’appel : son et notification optionnelle quand un appel est proposé",
     "callJoinCallAlertsMuteAction": "Couper le son des alertes d’appel (pas de son ni de notification pour les nouveaux appels)",
     "callJoinCallAlertsUnmuteAction": "Réactiver les alertes d’appel",
+    "callGalleryPage": "Page {current} sur {total}",
+    "callGalleryPreviousPage": "Page précédente",
+    "callGalleryNextPage": "Page suivante",
     "callJoinWithAudio": "Rejoindre l’appel d’espace (microphone)",
     "callJoinWithVideo": "Rejoindre l’appel d’espace (caméra et micro)",
     "callJoinWithAudioShort": "Rejoindre (audio)",
@@ -2088,6 +2314,11 @@
     "callStartWithVideoShort": "Démarrer la vidéo",
     "callJoinNotificationTitle": "Appel d’espace en cours",
     "callJoinNotificationBody": "{count, plural, one {Quelqu’un dans cet espace a lancé un appel (# appareil dans l’appel).} other {Quelqu’un dans cet espace a lancé un appel (# appareils dans l’appel).}}",
+    "callJoinInviteTitle": "Rejoindre l’appel de l’espace ?",
+    "callJoinInviteDescription": "{count, plural, one {Quelqu’un est en appel dans cet espace (# appareil connecté). Rejoindre maintenant ?} other {Quelqu’un est en appel dans cet espace (# appareils connectés). Rejoindre maintenant ?}}",
+    "callJoinInviteDismiss": "Pas maintenant",
+    "callJoinInviteJoinAudio": "Rejoindre en audio",
+    "callJoinInviteJoinVideo": "Rejoindre en vidéo",
     "callJoinControlsGroup": "Démarrer ou rejoindre l’appel",
     "callBannerInCallSoloLine1": "Dans l’appel — {count, plural, one {1 membre} other {# membres}}",
     "callBannerInCallSoloLine2": "Vous seul",
@@ -2106,6 +2337,20 @@
     "callConnecting": "Connexion…",
     "callRemoteParticipantMediaStalled": "En attente de l’audio/vidéo — vérifiez le réseau ou quittez puis rejoignez.",
     "callRemoteMediaStallHint": "D’autres sont listés dans l’appel mais leur audio/vidéo n’arrive pas — souvent réseau ou navigateur. Quittez puis rejoignez, ou changez de réseau.",
+    "callTurnServerUnavailableHint": "Audio, vidéo et partage d’écran peuvent être instables — le serveur Matrix ne fournit pas de relais TURN. Demandez à l’administrateur de vérifier coturn et la configuration turn de Dendrite.",
+    "callRemoteMediaWarmingHint": "En attente de la connexion audio/vidéo des autres…",
+    "callRemoteMediaStallRetry": "Réessayer la connexion",
+    "callScaleWarningMessage": "Cet appel compte de nombreux participants. La qualité peut être réduite.",
+    "callVoiceBoostWhilePresenting": "Amplification vocale active pendant la présentation",
+    "callSessionRefreshFailedDescription": "Votre session d’appel a expiré. Reconnectez-vous pour rester dans la réunion.",
+    "callSessionRefreshFailedReconnect": "Reconnecter",
+    "callShareTabAudioNotShared": "Audio de l’onglet non partagé — les autres risquent de ne pas entendre le son de l’onglet ou de la fenêtre partagée.",
+    "callShareTabAudioPickerHint": "Activez « Partager l’audio de l’onglet » dans le sélecteur du navigateur.",
+    "callShareTabAudioRetry": "Partager avec l’audio de l’onglet",
+    "callShareTabAudioPromptTitle": "Partager l’audio de l’onglet",
+    "callShareTabAudioPromptDescription": "Lorsque le navigateur demande quoi partager, activez « Partager l’audio de l’onglet » (pour un onglet ou une fenêtre) afin que les autres entendent le son. Hypha ne peut pas ajouter l’audio après le début du partage.",
+    "callShareTabAudioPromptContinue": "Continuer pour partager",
+    "callShareTabAudioPromptCancel": "Annuler",
     "callDisconnecting": "Sortie de l’appel…",
     "callLeave": "Quitter",
     "callMute": "Couper le micro",
@@ -2119,6 +2364,10 @@
     "callControlsScreenshare": "Partage d’écran",
     "callControlsScreenshareActiveAria": "Partage d’écran, actif",
     "callControlsScreenshareInactiveAria": "Partage d’écran, inactif",
+    "callVoiceProcessingLabel": "Traitement vocal",
+    "callVoiceProcessingStandard": "Voix",
+    "callVoiceProcessingIsolation": "Isolation",
+    "callVoiceProcessingMusic": "Musique",
     "callCameraOn": "Allumer la caméra",
     "callCameraOff": "Éteindre la caméra",
     "callErrorPermission": "Accès refusé à la caméra ou au micro. Vérifiez les paramètres du navigateur.",
@@ -2135,12 +2384,29 @@
     "callScreenshareStart": "Partager l’écran",
     "callScreenshareStop": "Arrêter le partage",
     "callScreenshareDismiss": "Fermer",
+    "callShareModeMenuLabel": "Partager votre écran",
+    "callShareModeTab": "Onglet Hypha",
+    "callShareModeWindow": "Fenêtre",
+    "callShareModeScreen": "Écran entier",
+    "callScreenshareBlockedRemoteActive": "Quelqu’un d’autre partage son écran — demandez-lui d’arrêter avant de partager.",
+    "callScreenshareRequestTakeover": "Quelqu’un d’autre partage son écran — cliquez pour demander le partage d’écran.",
+    "callScreenshareTakeoverIncomingTitle": "Autoriser le transfert de partage d’écran ?",
+    "callScreenshareTakeoverIncomingBody": "{name} souhaite partager son écran. Si vous acceptez, votre partage s’arrête et le sien commence.",
+    "callScreenshareTakeoverApprove": "Autoriser",
+    "callScreenshareTakeoverDeny": "Refuser",
+    "callScreenshareTakeoverPendingTitle": "En attente d’approbation",
+    "callScreenshareTakeoverPendingBody": "La personne qui partage actuellement doit approuver avant que vous puissiez partager.",
+    "callScreenshareTakeoverCancelRequest": "Annuler la demande",
+    "callScreenshareTakeoverDeniedTitle": "Partage d’écran non approuvé",
+    "callScreenshareTakeoverDeniedBody": "La personne qui présente a refusé votre demande de partage d’écran.",
     "callParticipantCount": " · {count, plural, one {# en appel} other {# en appel}}",
     "callStageLabel": "Vidéo et partage d’écran pendant l’appel",
     "callYou": "Vous",
     "callRemoteParticipant": "Participant",
     "callScreenShare": "Partage d’écran",
     "callScreenShareActive": "Partage d’écran actif",
+    "callYouAreSharingScreen": "Vous partagez votre écran",
+    "callYouAreSharingScreenHint": "Les autres voient votre écran. Vous ne voyez pas votre propre partage ici.",
     "callFullView": "Plein affichage",
     "callFullViewDescription": "Affichage plus large de l’appel. L’appel dans l’espace reste actif lorsque vous fermez cette fenêtre.",
     "callFullViewClose": "Fermer",
@@ -2149,6 +2415,27 @@
     "callLayoutSideBySide": "Partage et personnes côte à côte",
     "callLayoutSpeakerOnTop": "Intervenant en haut, partage en bas",
     "callLayoutPip": "Vidéo sur le partage",
+    "callReactButton": "Réactions",
+    "callReactButtonAria": "Ouvrir le menu réactions et lever la main",
+    "callReactBackToMenu": "Retour aux réactions",
+    "callReactMoreEmoji": "Choisir un emoji",
+    "callReactSendWithEffect": "Envoyer avec effet",
+    "callReactSendWithEffectHint": "Envoie une réaction animée plus grande sur la vidéo de chacun",
+    "callReactSendEmoji": "Envoyer {emoji}",
+    "callReactMore": "Plus d'emojis",
+    "callReactReactionsSection": "Réactions",
+    "callReactFeedbackSection": "Retour de réunion",
+    "callReactFeedback_yes": "Oui",
+    "callReactFeedback_no": "Non",
+    "callReactFeedback_slower": "Plus lent",
+    "callReactFeedback_faster": "Plus vite",
+    "callReactFeedback_away": "Absent",
+    "callRaiseHand": "Lever la main",
+    "callLowerHand": "Baisser la main",
+    "callReactBeRightBack": "Je reviens",
+    "callRaiseHandBadge": "Main levée",
+    "callRaiseHandBadgeOrder": "Main levée (#{order})",
+    "callRaisedHandsTitle": "Mains levées",
     "callParticipantMuted": "Muet",
     "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
@@ -2158,7 +2445,71 @@
     "callLeftBannerDismiss": "Fermer",
     "callPaneResizeSharePeople": "Redimensionner partage d’écran et personnes",
     "callPaneResizeShareStrip": "Redimensionner partage d’écran et film",
-    "callPaneResizeSpeakerShare": "Redimensionner l’orateur et le partage d’écran"
+    "callPaneResizeSpeakerShare": "Redimensionner l’orateur et le partage d’écran",
+    "callDockTitleWithMembers": "Appel - {count, plural, one {# membre} other {# membres}}",
+    "callDockOpenCallSpace": "Ouvrir l’espace d’appel",
+    "callDockSpaceLabel": "Espace",
+    "callDockMinimize": "Réduire l’appel",
+    "callDockExpand": "Agrandir l’appel",
+    "callDockFullscreen": "Plein écran",
+    "callDockExitFullscreen": "Quitter le plein écran",
+    "callCaptureLabel": "Capture de l’appel",
+    "callCaptureModeNone": "Désactivé",
+    "callCaptureModeTranscriptOnly": "Transcription uniquement",
+    "callCaptureModeRecordingWithTranscript": "Enregistrement + transcription",
+    "callCaptureStatusIdle": "Inactif",
+    "callCaptureStatusCapturing": "Capture en cours",
+    "callCaptureStatusStarting": "Démarrage…",
+    "callCaptureStatusPaused": "En pause",
+    "callCaptureStatusSaving": "Enregistrement",
+    "callCaptureStatusError": "Erreur de capture",
+    "callCaptureLimitDurationWarn": "L’enregistrement approche la limite de 90 minutes ({minutes} min restantes). Envisagez de l’arrêter bientôt pour terminer l’envoi.",
+    "callCaptureLimitDurationCritical": "L’enregistrement est proche de la limite de 90 minutes ({minutes} min restantes). Arrêtez la capture bientôt pour ne pas perdre le fichier.",
+    "callCaptureLimitSizeWarn": "La taille de l’enregistrement approche la limite d’envoi (~{sizeMb} Mo restants).",
+    "callCaptureLimitSizeCritical": "L’enregistrement est proche de la limite de taille d’envoi (~{sizeMb} Mo restants). Arrêtez la capture bientôt.",
+    "callCaptureRetryUpload": "Réessayer l’envoi",
+    "callCaptureStop": "Arrêter l’enregistrement",
+    "callCapturePause": "Mettre l’enregistrement en pause",
+    "callCaptureResume": "Reprendre l’enregistrement",
+    "callCaptureConfirmStopRecordingTitle": "Arrêter l’enregistrement ?",
+    "callCaptureConfirmStopRecording": "La capture s’arrêtera et sera enregistrée dans Space Memory.",
+    "callCaptureConfirmStopRecordingAction": "Arrêter l’enregistrement",
+    "callCaptureConfirmStopTranscriptTitle": "Arrêter la transcription ?",
+    "callCaptureConfirmStopTranscript": "La transcription est encore active. L’arrêter et l’enregistrer maintenant ?",
+    "callCaptureConfirmStopTranscriptAction": "Arrêter la transcription",
+    "callCaptureConfirmCancel": "Annuler",
+    "callCaptureOffHint": "La capture est désactivée. Aucun enregistrement ni transcription ne sera enregistré pour cet appel.",
+    "callCaptureLeaveWarning": "La capture est désactivée. Appuyez à nouveau sur Quitter pour confirmer.",
+    "callCaptureConsentLocal": "Vous capturez cet appel ({mode}). Les autres sont informés.",
+    "callCaptureConsentRemote": "{actor} capture cet appel ({mode}).",
+    "callCaptureConsentJoin": "Cet appel est capturé ({mode}) par {actor}. Rejoindre vaut consentement.",
+    "callCaptureConsentLegalNote": "L'enregistrement et la transcription peuvent être stockés dans la mémoire de l'espace.",
+    "callCaptureConsentActorFallback": "Un participant",
+    "callCaptureConsentPausedSuffix": " La capture est en pause.",
+    "callCaptureVoiceStartedRecordingTranscript": "Cet appel est maintenant enregistré et transcrit.",
+    "callCaptureVoiceStoppedRecordingTranscript": "L'enregistrement et la transcription sont terminés.",
+    "callCaptureVoiceStartedTranscript": "Cet appel est maintenant transcrit.",
+    "callCaptureVoiceStoppedTranscript": "La transcription est terminée.",
+    "composerLockedPlaceholder": "Seuls les membres sélectionnés de l’équipe peuvent interagir dans ce fil.",
+    "signalTeamInteractionRestricted": "Seuls les membres sélectionnés de l’équipe peuvent envoyer des messages et des mentions dans ce fil.",
+    "signalTeamBannerReadOnly": "Ce fil est limité à l’équipe. Vous pouvez lire les mises à jour, mais seuls les membres sélectionnés peuvent interagir.",
+    "signalTeamRequestAccess": "Demander à être inclus",
+    "signalTeamRequestPending": "Demande en attente",
+    "signalTeamManageTitle": "Équipe Signal",
+    "signalTeamManageOpen": "Gérer",
+    "signalTeamManageClose": "Terminé",
+    "signalTeamMemberListHint": "Sélectionnez les membres qui peuvent envoyer des messages, mentionner et rejoindre les appels du fil.",
+    "signalTeamAddMember": "Ajouter",
+    "signalTeamRemoveMember": "Retirer",
+    "signalTeamPendingRequests": "Demandes en attente",
+    "signalTeamApproveRequester": "Ajouter à l’équipe",
+    "signalTeamUpdated": "Équipe Signal mise à jour",
+    "signalTeamAddedMembers": "ajouté {members}",
+    "signalTeamRemovedMembers": "retiré {members}",
+    "signalTeamAccessRequested": "Accès à l’équipe Signal demandé",
+    "signalTeamAccessApproved": "Accès à l’équipe Signal approuvé",
+    "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
+    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant."
   },
   "CoherenceTab": {
     "signals": "Signaux",
@@ -2186,6 +2537,7 @@
     "openConversation": "Ouvrir la conversation",
     "saySomething": "Dites quelque chose...",
     "proposeAgreement": "Proposer un accord",
+    "comingSoon": "Bientôt disponible",
     "errorOhSnap": "Oups ! Une erreur est survenue",
     "reset": "Réinitialiser",
     "creatingNewSignal": "Création d'un nouveau signal",
@@ -2214,30 +2566,44 @@
     "spaceMemoryLoadMoreError": "Impossible de charger d'autres éléments. Veuillez réessayer.",
     "spaceMemoryRetry": "Réessayer",
     "spaceMemoryRefresh": "Actualiser",
-    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
+    "openDocument": "Ouvrir le document",
     "spaceMemoryContext": "Depuis «{title}» · {state}",
+    "spaceMemoryContextMemory": "Mémoire · «{title}»",
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",
     "spaceMemoryContextCallTranscript": "Transcription d'appel (mémoire organisationnelle)",
     "spaceMemoryContextCallRecording": "Enregistrement d'appel (mémoire organisationnelle)",
+    "spaceMemoryContextCallFromSignal": "Appel · «{title}»",
+    "spaceMemoryContextCallRecordingFromSignal": "Enregistrement · «{title}»",
+    "spaceMemoryContextDiscussionSummary": "Résumé de conversation",
     "spaceMemoryCallTranscriptExcerpt": "Transcription",
     "spaceMemoryCallRecordingNoUrl": "L’enregistrement sera disponible lorsqu’une URL média sera ingérée pour cette session.",
     "spaceMemoryCallArtifactNote": "Les souvenirs d’appel apparaissent lorsque l’enregistrement ou la transcription se termine pour cet espace (voir le pipeline d’équipe).",
     "spaceMemoryMatrixPreviewNeedsChat": "L’aperçu nécessite Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Ouvrez Human Chat pour connecter Matrix, puis actualisez la mémoire d’espace pour ouvrir ce fichier.",
     "spaceMemoryMatrixVideoPlayHint": "Appuyez pour lire l’aperçu",
+    "spaceMemoryPlayCallRecording": "Lire l’enregistrement",
+    "spaceMemoryOpenCallRecordingFullscreen": "Ouvrir le lecteur d’enregistrement",
+    "spaceMemoryOpenCallRecordingNewTab": "Ouvrir dans un nouvel onglet",
+    "spaceMemoryPdfPreviewUnavailable": "Aperçu PDF indisponible",
     "spaceMemoryOpenAsset": "Ouvrir {name}",
     "untitledDocument": "Document sans titre",
     "spaceMemoryGeneral": "Général",
     "spaceMemoryProposals": "Propositions",
     "spaceMemoryConversations": "Conversations",
+    "spaceMemoryCalls": "Appels",
     "spaceMemoryAiChat": "Chat IA",
+    "newMemoryUploadDocumentsTitle": "Téléverser des documents",
+    "newMemoryUploadingFiles": "Téléversement des souvenirs de l'espace...",
+    "newMemoryAttachmentsRequired": "Veuillez téléverser au moins un document pour ce souvenir.",
     "newMemory": "Nouvelle mémoire",
     "spaceMemoryEmptyTab": "Aucun élément trouvé dans cette vue.",
     "spaceMemoryAiChatEmpty": "Les mémoires du chat IA ne sont pas encore disponibles.",
+    "spaceMemoryCallsEmpty": "Aucun enregistrement ni transcription d'appel pour l'instant. Ils apparaissent ici après la fin d'un appel de groupe enregistré.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposition",
-      "agreement": "Accord"
+      "agreement": "Accord",
+      "memory": "Mémoire"
     },
     "types": {
       "Opportunity": "Opportunité",
@@ -2343,7 +2709,141 @@
       "needsResources": "Besoins & ressources",
       "valueModel": "Valeur & modèle",
       "evidenceImpact": "Preuves & impact"
-    }
+    },
+    "tagGroup": {
+      "purpose": "Objectif & stratégie",
+      "governance": "Gouvernance",
+      "operations": "Opérations",
+      "community": "Communauté",
+      "finance": "Trésorerie & tokens",
+      "product": "Produit",
+      "risk": "Responsabilité & résilience",
+      "ecosystem": "Écosystème & partenariats",
+      "learning": "Apprentissage & connaissance",
+      "reputation": "Réputation & confiance"
+    },
+    "aiAgentsCatalog": {
+      "purpose": {
+        "role": "Stratège Senior",
+        "focus": "Mission, alignement stratégique et direction long terme",
+        "roleDefinition": [
+          "Relie le travail quotidien à la mission et aux priorités mesurables.",
+          "Fait émerger angles morts et arbitrages avant engagement.",
+          "Traduit la vision en critères de décision et résultats clairs."
+        ]
+      },
+      "governance": {
+        "role": "Architecte de Gouvernance",
+        "focus": "Droits de décision, qualité des propositions et coordination",
+        "roleDefinition": [
+          "Garde les propositions claires, responsables et exécutables.",
+          "Renforce la maturité des votes avec hypothèses et impact parties prenantes.",
+          "Ajoute des garde-fous légers qui réduisent la friction sans étouffer l'autonomie."
+        ]
+      },
+      "operations": {
+        "role": "Responsable Opérations",
+        "focus": "Plans d'exécution, cadence et dépendances",
+        "roleDefinition": [
+          "Transforme la stratégie en responsables, jalons et calendriers.",
+          "Signale tôt les goulots et propose des séquencements concrets.",
+          "Stabilise la livraison avec rythmes opératoires et feedback."
+        ]
+      },
+      "community": {
+        "role": "Bâtisseur de Communauté",
+        "focus": "Engagement, onboarding et santé des contributeurs",
+        "roleDefinition": [
+          "Améliore onboarding et clarté pour une meilleure participation.",
+          "Détecte les baisses d'engagement et propose rétention et activation.",
+          "Équilibre ouverture, confiance et participation durable."
+        ]
+      },
+      "finance": {
+        "role": "Analyste Trésorerie et Token",
+        "focus": "Trésorerie, tokens et arbitrages d'allocation",
+        "roleDefinition": [
+          "Teste choix token/trésorerie sur runway et risque de concentration.",
+          "Relie dépenses aux priorités stratégiques et résultats attendus.",
+          "Cadre les options d'allocation avec upside et downside explicites."
+        ]
+      },
+      "product": {
+        "role": "Stratège Produit",
+        "focus": "Impact utilisateur, priorisation et adoption",
+        "roleDefinition": [
+          "Priorise par valeur utilisateur, alignement stratégique et levier.",
+          "Conçoit des expériences avec apprentissages mesurables.",
+          "Aligne la roadmap aux signaux d'adoption et de rétention."
+        ]
+      },
+      "risk": {
+        "role": "Conseiller·ère responsabilité & résilience",
+        "focus": "Signaux faibles, garde-fous et résilience à long terme",
+        "roleDefinition": [
+          "Repère les tensions et signaux faibles tôt pour que l'espace s'adapte avant que les dommages s'accumulent.",
+          "Propose des garde-fous attentifs avec des responsables clairs—résilience sans bureaucratie.",
+          "Garde les engagements alignés sur vos valeurs et votre responsabilité à mesure que l'espace grandit."
+        ]
+      },
+      "ecosystem": {
+        "role": "Stratège Écosystème et Partenariats",
+        "focus": "Partenariats inter-espaces et levier de coordination",
+        "roleDefinition": [
+          "Cartographie dépendances et partenariats à fort levier.",
+          "Planifie le travail inter-espaces avec responsables et résultats mutuels.",
+          "Route les signaux externes vers les bons espaces rapidement."
+        ]
+      },
+      "learning": {
+        "role": "Architecte Apprentissage et Connaissance",
+        "focus": "Capture de connaissance, preuves et boucles d'amélioration",
+        "roleDefinition": [
+          "Transforme discussions et expériences en connaissance réutilisable.",
+          "Construit des boucles de feedback qui affûtent les décisions.",
+          "Clarifie hypothèses, métriques et leçons apprises."
+        ]
+      },
+      "reputation": {
+        "role": "Référent Réputation et Confiance",
+        "focus": "Confiance, alignement narratif et risque de communication",
+        "roleDefinition": [
+          "Aligne le narratif public sur le fonctionnement réel de l'espace.",
+          "Signale tôt les risques réputationnels avec mitigations pratiques.",
+          "Renforce la communication parties prenantes en changement et conflit."
+        ]
+      }
+    },
+    "createBoard": "Créer un tableau",
+    "createBoardDescription": "Enregistrez un filtre de tableau par catégorie de tag ou tag individuel.",
+    "boardName": "Nom du tableau",
+    "boardNamePlaceholder": "ex. Tableau d'impact",
+    "boardFilterBy": "Filtrer par",
+    "boardFilterCategory": "Catégorie de tag",
+    "boardFilterTag": "Tag individuel",
+    "boardSelectCategory": "Catégorie",
+    "boardSelectTag": "Tag",
+    "boardCreateAction": "Créer un tableau",
+    "boardCancelAction": "Annuler",
+    "boardAll": "Tous les signaux",
+    "boardDelete": "Supprimer le tableau {boardName}",
+    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace"
+  },
+  "GlobalCallDock": {
+    "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
+    "openSpaceLabel": "Ouvrir l'espace d'appel",
+    "spaceButton": "Espace",
+    "minimizeLabel": "Réduire l'appel",
+    "expandLabel": "Agrandir l'appel",
+    "fullscreenLabel": "Plein écran",
+    "exitFullscreenLabel": "Quitter le plein écran",
+    "unknownMember": "Inconnu",
+    "resizeTopLeftLabel": "Redimensionner l'appel depuis le coin supérieur gauche",
+    "resizeTopRightLabel": "Redimensionner l'appel depuis le coin supérieur droit",
+    "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche",
+    "resizeBottomRightLabel": "Redimensionner l'appel depuis le coin inférieur droit",
+    "openFloatingWindowLabel": "Ouvrir la fenêtre d'appel flottante",
+    "closeFloatingWindowLabel": "Fermer la fenêtre d'appel flottante"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",
@@ -2357,5 +2857,402 @@
     "deleteMenu": "Supprimer",
     "deleteConfirmAction": "Supprimer le signal",
     "deleteFailed": "Impossible de supprimer ce signal. Réessayez."
+  },
+  "BankingTab": {
+    "title": "Virements bancaires",
+    "subtitle": "Recevez des virements bancaires dans votre trésorerie et gérez les comptes de dépôt du space.",
+    "loading": "Chargement du statut du compte bancaire…",
+    "returnBanner": "Bon retour — nous vérifions votre statut de vérification.",
+    "returnBannerDismiss": "Fermer",
+    "returnBannerApprovedHint": "La vérification est terminée. Ouvrez un compte space pour ajouter les devises restantes.",
+    "errorLoad": "Impossible de charger le statut du compte bancaire.",
+    "sections": {
+      "transfers": {
+        "title": "Virements bancaires ponctuels",
+        "description": "Virements entrants ponctuels.",
+        "emptyTitle": "Aucun virement ponctuel pour le moment",
+        "emptyDescription": "Créez un virement ponctuel lorsque vous avez besoin d'un seul paiement entrant sans configurer un compte de dépôt complet.",
+        "newTransferCta": "Nouveau virement ponctuel",
+        "loading": "Chargement des virements…"
+      },
+      "accounts": {
+        "title": "Comptes bancaires",
+        "description": "Coordonnées de dépôt permanentes par devise.",
+        "openAccountCta": "Ouvrir un compte space",
+        "addCurrencyCta": "Ajouter un compte bancaire",
+        "emptyTitle": "Aucun compte bancaire pour le moment",
+        "emptyDescription": "Ouvrez un compte space et choisissez les devises dont vous avez besoin. Nous configurerons les coordonnées de dépôt pour chacune.",
+        "pendingTitle": "Vérification en cours",
+        "pendingDescription": "Terminez la vérification dans Bridge pour activer les devises sélectionnées. Vos comptes seront créés automatiquement une fois approuvés.",
+        "continueVerificationCta": "Continuer la vérification",
+        "loadingAccounts": "Chargement des comptes bancaires…",
+        "signInHint": "Connectez-vous pour gérer les comptes bancaires."
+      }
+    },
+    "openAccount": {
+      "title": "Ouvrir un compte space",
+      "titleAddCurrency": "Ajouter un compte bancaire",
+      "description": "Parlez-nous de votre organisation et des devises dont vous avez besoin. Nous vérifierons votre space une seule fois, puis créerons des comptes pour chaque devise.",
+      "descriptionAddCurrency": "Choisissez des devises supplémentaires pour ajouter des comptes de dépôt à votre space.",
+      "descriptionAddCurrencySingle": "Choisissez la devise de dépôt pour ce compte bancaire. Une vérification supplémentaire du fournisseur peut être requise.",
+      "bankAccountDepositLabel": "Devise de dépôt",
+      "bankAccountDepositHint": "Devise que ce compte bancaire recevra.",
+      "legalName": "Nom légal de l'entité",
+      "contactEmail": "E-mail de contact",
+      "currenciesLabel": "Devises",
+      "currenciesHint": "Sélectionnez toutes les devises dans lesquelles vous souhaitez recevoir des virements bancaires.",
+      "currenciesHintSingle": "Sélectionnez une devise dans laquelle vous souhaitez recevoir des virements bancaires.",
+      "submit": "Ouvrir le compte",
+      "submitAddCurrency": "Ajouter un compte bancaire",
+      "submitting": "Traitement en cours…",
+      "noCurrenciesAvailable": "Tous les comptes bancaires pris en charge sont déjà ouverts pour ce space.",
+      "railLabel": "Canal de paiement",
+      "railPlaceholder": "Sélectionner un canal",
+      "requestRail": "Demander",
+      "loadingOptions": "Chargement…",
+      "railsNeedVerificationHint": "Ces canaux nécessitent une vérification du fournisseur avant utilisation.",
+      "provisioningProgress": "Création du compte {currency}…",
+      "redirectPendingTitle": "Continuer dans Bridge",
+      "redirectPendingDescription": "Acceptez les conditions et terminez la vérification pour activer les devises sélectionnées."
+    },
+    "toolbar": {
+      "add": "Ajouter",
+      "addCurrency": "Ajouter un compte bancaire",
+      "openSpaceAccount": "Ouvrir un compte space",
+      "finishVerificationFirst": "Terminez d'abord la vérification en cours",
+      "allCurrenciesCovered": "Toutes les devises prises en charge ont déjà des comptes",
+      "loadingAccounts": "Chargement des comptes bancaires…",
+      "loadingTransfers": "Chargement des virements…"
+    },
+    "operationStatus": {
+      "pendingKyb": "Vérification en attente",
+      "pendingActivation": "Prêt à activer",
+      "pendingKybHint": "Terminez la vérification d'entreprise dans Bridge pour activer cette demande.",
+      "pendingActivationHint": "La vérification est terminée. Activez pour générer les instructions de dépôt.",
+      "continueVerification": "Continuer la vérification",
+      "completeSetup": "Activer",
+      "activating": "Activation…",
+      "activateFailed": "Nous n'avons pas pu terminer la configuration. Veuillez réessayer plus tard. Si le problème persiste, contactez-nous.",
+      "openGearForVerification": "Cliquez pour ouvrir les détails de vérification et les liens Bridge."
+    },
+    "advanced": {
+      "gearLabel": "Paramètres bancaires",
+      "dialogTitle": "Paramètres bancaires",
+      "dialogDescription": "Informations détaillées et configurations techniques.",
+      "dataMinimizationNotice": "Les détails de dépôt et de vérification sont chargés depuis notre partenaire bancaire et ne sont pas enregistrés sur les serveurs Hypha.",
+      "noCustomer": "Aucun enregistrement client bancaire pour ce space pour le moment.",
+      "approvedSummary": "La vérification est approuvée. Gérez vos devises prises en charge dans la section ci-dessous.",
+      "providerValidationsTitle": "Validations du fournisseur",
+      "legalNameLabel": "Nom légal de l'entité",
+      "contactEmailLabel": "E-mail de contact",
+      "stepCompleted": "Terminé",
+      "tosProcedure": "Conditions d'utilisation",
+      "kybProcedure": "Vérification d'entreprise (KYB)",
+      "approvedOnBridgePendingRecord": "Bridge indique que la vérification est approuvée. Activez une demande en attente ci-dessous pour enregistrer l'approbation et terminer la configuration.",
+      "currencyValidationsTitle": "Validations de devise",
+      "currencyStatusesTitle": "Corridors de devise",
+      "currencyStatusesDescription": "Statut d'approbation par devise de Bridge et progression de la configuration du compte.",
+      "currencyStatusesDescriptionAdd": "Ajoutez la prise en charge d'un corridor de devise. Bridge peut exiger une vérification supplémentaire pour certaines régions.",
+      "addCurrencySupport": "Ouvrir un compte {currency}",
+      "currencyStatus": {
+        "active": "Actif",
+        "approved": "Approuvé",
+        "pending": "Vérification en attente",
+        "not_approved": "Non approuvé",
+        "not_requested": "Non demandé",
+        "not_opened": "Non ouvert"
+      },
+      "syncStatus": "Synchroniser le statut",
+      "syncingStatus": "Synchronisation…",
+      "procedureHints": {
+        "fallback": "Aucune action supplémentaire n'est requise pour cette étape dans Bridge pour le moment.",
+        "tos": {
+          "complete": "Les conditions d'utilisation ont été acceptées. Aucune action supplémentaire n'est requise ici.",
+          "pending": "Les conditions sont encore en attente sur Bridge."
+        },
+        "kyb": {
+          "complete": "La vérification d'entreprise est terminée. Aucune action supplémentaire n'est requise ici.",
+          "not_started": "Ouvrez le lien de vérification pour démarrer la vérification de votre organisation.",
+          "incomplete": "Complétez et soumettez le formulaire de vérification dans Bridge pour continuer.",
+          "awaiting_questionnaire": "Bridge nécessite des informations supplémentaires. Consultez votre e-mail ou le portail de vérification pour le questionnaire.",
+          "awaiting_ubo": "En attente que les bénéficiaires effectifs (UBO) indiqués dans le formulaire KYB terminent la vérification envoyée par e-mail.",
+          "under_review": "Votre dossier est en cours d'examen par Bridge. Cela peut prendre de quelques heures à plusieurs jours.",
+          "approved": "La vérification d'entreprise est terminée. Aucune action supplémentaire n'est requise ici.",
+          "rejected": "La vérification a été refusée. Contactez le support si vous pensez qu'il s'agit d'une erreur.",
+          "paused": "La vérification est en pause. Contactez le support.",
+          "offboarded": "La vérification bancaire n'est plus disponible pour ce client. Contactez le support."
+        }
+      },
+      "requestRailDisabledInitialSetup": "Terminez votre vérification en cours avant de demander des corridors de devise supplémentaires",
+      "sofProcedure": "Questionnaire sur la source des fonds",
+      "sofProcedureLink": "Remplir le questionnaire",
+      "sofProcedureHint": "Cette étape nécessite un questionnaire sur la source des fonds. Cliquez sur le lien pour le remplir dans le portail de vérification Bridge.",
+      "uboPendingTitle": "Vérification UBO en attente",
+      "uboPendingDescription": "{count, plural, one {# personne associée doit encore} other {# personnes associées doivent encore}} fournir des informations supplémentaires.",
+      "uboPendingTooltip": "Bridge envoie directement les e-mails de vérification aux personnes associées. Demandez-leur de vérifier leur boîte de réception (et les spams) pour un e-mail de Bridge ou Persona.",
+      "uboPendingEmailsLabel": "En attente :"
+    },
+    "tosStatus": {
+      "pending": {
+        "title": "Conditions non acceptées",
+        "description": "Acceptez les conditions d'utilisation pour continuer."
+      },
+      "approved": {
+        "title": "Conditions acceptées",
+        "description": "Les conditions d'utilisation ont été acceptées."
+      }
+    },
+    "currencies": {
+      "eur": {
+        "code": "EUR",
+        "name": "Euro",
+        "payoutMethod": "IBAN et SWIFT/BIC"
+      },
+      "usd": {
+        "code": "USD",
+        "name": "Dollar américain",
+        "payoutMethod": "Numéro de routage ACH et numéro de compte"
+      },
+      "gbp": {
+        "code": "GBP",
+        "name": "Livre sterling",
+        "payoutMethod": "Sort code et numéro de compte"
+      },
+      "mxn": {
+        "code": "MXN",
+        "name": "Peso mexicain",
+        "payoutMethod": "Virement bancaire CLABE"
+      },
+      "brl": {
+        "code": "BRL",
+        "name": "Real brésilien",
+        "payoutMethod": "PIX"
+      },
+      "cop": {
+        "code": "COP",
+        "name": "Peso colombien",
+        "payoutMethod": "Bre-B"
+      }
+    },
+    "initialSetup": {
+      "organizationLegend": "Informations sur l'organisation",
+      "organizationHint": "Les informations sur l'organisation sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
+      "currenciesTitle": "Devises que vous souhaitez utiliser",
+      "currenciesDescription": "Sélectionnez les devises que ce space acceptera par virement bancaire. Nous vérifions votre organisation une seule fois avec notre partenaire bancaire.",
+      "currenciesHint": "Vous pourrez ajouter d'autres devises plus tard depuis les paramètres bancaires.",
+      "submit": "Continuer"
+    },
+    "notStarted": {
+      "description": "Les services bancaires ne sont pas encore configurés pour ce space.",
+      "enableCta": "Continuer"
+    },
+    "blockers": {
+      "notOnChain": "Ce space doit être déployé on-chain avant qu'un compte bancaire lié puisse être configuré.",
+      "noTreasury": "Ce space doit disposer d'une adresse de trésorerie on-chain avant qu'un compte bancaire lié puisse être configuré."
+    },
+    "verificationInProgress": "La vérification est en cours. Cela prend généralement de quelques heures à quelques jours. Si vous devez agir, utilisez le lien ci-dessous.",
+    "actions": {
+      "openVerificationForm": "Ouvrir le formulaire de vérification",
+      "viewTerms": "Voir les conditions d'utilisation",
+      "refreshStatus": "Actualiser le statut",
+      "refreshingStatus": "Vérification du statut…"
+    },
+    "corridors": {
+      "provisioning": "Configuration…",
+      "allActive": "Toutes les devises prises en charge sont actives.",
+      "addDisabledNotManager": "Seuls les membres du space avec accès à la trésorerie peuvent gérer les comptes bancaires."
+    },
+    "accountCard": {
+      "viewDetails": "Voir les détails"
+    },
+    "transferCard": {
+      "viewDetails": "Voir les détails",
+      "flexibleAmount": "Montant libre",
+      "feeHint": "Frais développeur : 0 % · Des frais du fournisseur peuvent s'appliquer"
+    },
+    "transferDetails": {
+      "title": "Virement ponctuel",
+      "description": "Le payeur doit inclure le message de référence sur son virement bancaire afin que Bridge puisse identifier le dépôt.",
+      "referenceWarning": "L'expéditeur doit inclure la référence de paiement ci-dessous dans le mémo du wire, la description ACH ou la référence SEPA. Sans cela, le fournisseur ne peut pas identifier le dépôt.",
+      "amountLabel": "Montant",
+      "flexibleAmount": "Montant libre",
+      "receiptHeading": "Reçu de paiement",
+      "finalAmount": "Reçu dans la trésorerie",
+      "gasFee": "Frais réseau (gas)",
+      "exchangeFee": "Frais de change",
+      "destinationTx": "Transaction de trésorerie",
+      "viewProviderReceipt": "Voir le reçu du fournisseur",
+      "receiptFields": {
+        "transferId": "ID de virement",
+        "state": "Statut",
+        "amount": "Montant",
+        "developerFee": "Frais développeur",
+        "source": "Source",
+        "createdAt": "Créé",
+        "updatedAt": "Mis à jour",
+        "destinationRail": "Destination",
+        "destinationAddress": "Adresse de trésorerie",
+        "initialAmount": "Montant initial",
+        "subtotalAmount": "Sous-total",
+        "finalAmount": "Montant final",
+        "exchangeFee": "Frais de change",
+        "gasFee": "Frais réseau (gas)",
+        "receiptDeveloperFee": "Frais développeur du reçu",
+        "destinationTx": "Transaction de trésorerie",
+        "receiptUrl": "URL du reçu du fournisseur"
+      }
+    },
+    "transferCorridors": {
+      "usd-ach": {
+        "label": "USD — local (ACH)",
+        "hint": "Virements bancaires nationaux aux États-Unis via ACH"
+      },
+      "usd-wire": {
+        "label": "USD — international (wire)",
+        "hint": "Virements internationaux en dollars américains"
+      },
+      "eur": {
+        "label": "EUR",
+        "hint": "Virements bancaires SEPA en euros"
+      },
+      "gbp": {
+        "label": "GBP",
+        "hint": "Faster Payments en livres sterling"
+      },
+      "mxn": {
+        "label": "MXN",
+        "hint": "Virements SPEI en pesos mexicains"
+      },
+      "brl": {
+        "label": "BRL",
+        "hint": "Virements PIX en reals brésiliens"
+      },
+      "cop": {
+        "label": "COP (bêta)",
+        "hint": "Virements Bre-B en pesos colombiens"
+      }
+    },
+    "createTransfer": {
+      "title": "Nouveau virement ponctuel",
+      "description": "Créez des instructions de dépôt pour un seul virement entrant. Les fonds sont convertis en stablecoin (USDC ou EURC) dans votre trésorerie.",
+      "corridorLabel": "Corridor",
+      "corridorHint": "Sélectionnez comment le payeur enverra les fonds. Cela détermine les instructions de dépôt.",
+      "fixedAmountLabel": "Exiger un montant fixe",
+      "amountPlaceholder": "p. ex. 1000,00",
+      "flexibleAmountHint": "Le payeur peut envoyer n'importe quel montant.",
+      "cancel": "Annuler",
+      "submit": "Créer le virement",
+      "submitting": "Création…",
+      "loadingOptions": "Chargement des corridors…",
+      "noCorridorsAvailable": "Aucun corridor de virement n'est disponible pour ce space."
+    },
+    "transferStatus": {
+      "awaiting_funds": "Paiement en attente",
+      "funds_received": "Reçu",
+      "payment_processed": "Terminé",
+      "canceled": "Annulé",
+      "cancelled": "Annulé",
+      "failed": "Échoué",
+      "returned": "Retourné",
+      "in_review": "En cours d'examen",
+      "undeliverable": "Non livrable"
+    },
+    "accountDetails": {},
+    "depositInstructions": {
+      "iban": "IBAN",
+      "bic": "BIC / SWIFT",
+      "bicInternational": "BIC / SWIFT (pour virements internationaux)",
+      "routingNumber": "Numéro de routage",
+      "accountNumber": "Numéro de compte",
+      "sortCode": "Sort code",
+      "bankName": "Nom de la banque",
+      "accountHolder": "Titulaire du compte",
+      "bankNameAndAddress": "Nom et adresse de la banque",
+      "beneficiaryNameAndAddress": "Nom et adresse du bénéficiaire",
+      "activeBadge": "Actif",
+      "depositMessage": "Message de référence (obligatoire)",
+      "bankInstructionsSection": "Instructions de virement bancaire",
+      "treasurySection": "Destination trésorerie",
+      "destinationCurrency": "Devise de destination",
+      "destinationRail": "Canal de paiement",
+      "destinationAddress": "Adresse de trésorerie",
+      "hyphaFees": "Frais Hypha",
+      "feesUnavailable": "Non précisé par le fournisseur",
+      "providerFeesNote": "*Le fournisseur peut facturer des frais supplémentaires sur les opérations.",
+      "copyInstructions": "Copier les instructions",
+      "copyInstructionsCopied": "Copié",
+      "copy": "Copier",
+      "copied": "Copié",
+      "beneficiaryName": "Nom du bénéficiaire"
+    },
+    "sandboxDemo": {
+      "title": "Sandbox / Dev — Simulation KYB",
+      "description": "KYB est une étape manuelle, elle doit donc être simulée en sandbox. Cela peut aussi contourner entièrement le remplissage du formulaire.",
+      "infoTooltipAria": "À propos de la simulation KYB en sandbox",
+      "simulateFillingKybRequiredData": "Simuler le remplissage des données KYB requises",
+      "cta": "Simuler l'approbation KYB",
+      "simulating": "Simulation…",
+      "refreshing": "Actualisation du statut…"
+    },
+    "endorsements": {
+      "base": "USD (ACH / virement wire)",
+      "cop": "COP (Bre-B, Colombie)",
+      "faster_payments": "GBP (Faster Payments, Royaume-Uni)",
+      "pix": "BRL (PIX, Brésil)",
+      "sepa": "EUR (virement bancaire SEPA)",
+      "spei": "MXN (SPEI, Mexique)"
+    },
+    "onboardingDialog": {
+      "title": "Activer les dépôts bancaires",
+      "description": "Nous utilisons ces informations pour vérifier votre organisation. Une fois approuvée, votre space sera configuré pour recevoir des virements bancaires.",
+      "legalName": "Nom légal de l'entité",
+      "contactEmail": "E-mail de contact",
+      "endorsementsLabel": "Corridors de paiement",
+      "endorsementsHint": "Il s'agit d'approbations KYB Bridge (p. ex. base pour USD, sepa pour EUR). Chaque corridor sélectionné est inclus dans le lien de vérification.",
+      "submit": "Démarrer la vérification",
+      "submitting": "Démarrage…"
+    },
+    "status": {
+      "not_started": {
+        "title": "Vérification non démarrée",
+        "description": "Ouvrez le lien de vérification pour fournir les informations de votre organisation."
+      },
+      "incomplete": {
+        "title": "Vérification incomplète",
+        "description": "Votre formulaire de vérification n'a pas encore été soumis."
+      },
+      "awaiting_questionnaire": {
+        "title": "Informations supplémentaires requises",
+        "description": "Veuillez compléter le questionnaire supplémentaire pour poursuivre la vérification."
+      },
+      "awaiting_ubo": {
+        "title": "Vérification UBO en attente",
+        "description": "En attente que les bénéficiaires effectifs (UBO) indiqués dans le formulaire KYB terminent la vérification envoyée par e-mail."
+      },
+      "under_review": {
+        "title": "En cours d'examen",
+        "description": "Votre vérification a été soumise et est en cours d'examen. Cela peut prendre de quelques heures à plusieurs jours."
+      },
+      "approved": {
+        "title": "Vérification approuvée",
+        "description": "Votre organisation est vérifiée. Ajoutez des devises ci-dessous pour ouvrir des comptes de dépôt."
+      },
+      "rejected": {
+        "title": "Vérification refusée",
+        "description": "Votre organisation n'a pas pu être vérifiée. Contactez le support si vous pensez qu'il s'agit d'une erreur."
+      },
+      "paused": {
+        "title": "Vérification en pause",
+        "description": "La vérification est temporairement en pause. Contactez le support."
+      },
+      "offboarded": {
+        "title": "Compte bancaire lié indisponible",
+        "description": "Les comptes bancaires liés ne sont plus disponibles pour ce space. Contactez le support."
+      },
+      "unknown": {
+        "title": "Statut indisponible",
+        "description": "Impossible de déterminer le statut de vérification actuel. Essayez d'actualiser."
+      }
+    }
   }
 }

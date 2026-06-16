@@ -6,6 +6,7 @@ import {
 } from '../assets/constant';
 import { isBefore } from 'date-fns';
 import {
+  DocumentState,
   EntryMethodType,
   REFERENCE_CURRENCIES,
   TOKEN_PRICE_REFERENCE_CURRENCIES,
@@ -135,6 +136,7 @@ const createAgreementWeb2Props = {
   spaceId: z.number().min(1),
   web3ProposalId: z.number().optional(),
   label: z.string().optional(),
+  state: z.nativeEnum(DocumentState).optional(),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);
@@ -673,6 +675,30 @@ export const baseSchemaIssueNewToken = z.object({
   /** Web3 space ids whose members are eligible for the credit line */
   creditWhitelistedSpaceIds: z.array(z.number().int().nonnegative()).optional(),
   /**
+   * Extra wallet addresses granted minter rights (mint, burnFrom,
+   * batchSetCreditWhitelistAddresses) on the new token, in addition to the
+   * space executor/owner. On creation these become the token's initial
+   * authorized minters; on update they are granted via `batchSetAuthorizedMinters`.
+   */
+  authorizedMinters: z
+    .array(
+      z.string().refine((v) => isAddress(v), {
+        message: 'Please enter a valid blockchain address',
+      }),
+    )
+    .optional(),
+  /**
+   * Update flow only: wallet addresses whose minter rights should be revoked
+   * via `batchSetAuthorizedMinters(accounts, [false, ...])`.
+   */
+  authorizedMintersToRevoke: z
+    .array(
+      z.string().refine((v) => isAddress(v), {
+        message: 'Please enter a valid blockchain address',
+      }),
+    )
+    .optional(),
+  /**
    * Plugin-populated list of selectable spaces, used to resolve `transferWhitelist`
    * space rows → web3 space ids in the orchestrator. Validates the minimal shape
    * the orchestrator actually reads (`address`, `web3SpaceId`) so primitives/null
@@ -928,6 +954,20 @@ export const schemaSpaceToSpaceMembership = z.object({
   member: z
     .string({ message: 'Please select a delegated voting member' })
     .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+export const schemaChangeSpaceDelegate = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Change Delegate'),
+  space: z
+    .string({ message: 'Please select a governance space' })
+    .min(1, { message: 'Please select a governance space' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+  member: z
+    .string({ message: 'Please select a delegated voting member' })
+    .min(1, { message: 'Please select a delegated voting member' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 

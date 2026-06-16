@@ -1,4 +1,8 @@
-import { Coherence, coherences } from '@hypha-platform/storage-postgres';
+import {
+  Coherence,
+  coherences,
+  spaces,
+} from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
 import { and, arrayOverlaps, desc, eq, SQL, sql } from 'drizzle-orm';
 import { CoherenceType } from '../coherence-types';
@@ -108,6 +112,87 @@ export const findCoherenceBySlug = async (
 
 type CheckCoherenceSlugExistsInput = {
   slug: string;
+};
+
+export type CoherenceByRoomIdResult = {
+  id: number;
+  slug: string;
+  title: string;
+  roomId: string;
+  spaceId: number;
+  spaceSlug: string;
+};
+
+/** Resolve a signal thread Matrix room to its coherence slug and host space slug. */
+export const findCoherenceByRoomId = async (
+  { roomId }: { roomId: string },
+  { db }: DbConfig,
+): Promise<CoherenceByRoomIdResult | null> => {
+  const trimmed = roomId.trim();
+  if (!trimmed) return null;
+
+  const [row] = await db
+    .select({
+      id: coherences.id,
+      slug: coherences.slug,
+      title: coherences.title,
+      roomId: coherences.roomId,
+      spaceId: coherences.spaceId,
+      spaceSlug: spaces.slug,
+    })
+    .from(coherences)
+    .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+    .where(and(eq(coherences.roomId, trimmed), eq(coherences.archived, false)))
+    .limit(1);
+
+  if (!row?.slug?.trim() || !row.spaceSlug?.trim() || !row.roomId?.trim()) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    slug: row.slug.trim(),
+    title: row.title,
+    roomId: row.roomId.trim(),
+    spaceId: row.spaceId!,
+    spaceSlug: row.spaceSlug.trim(),
+  };
+};
+
+/** Resolve a signal slug to its Matrix room and host space slug. */
+export const findCoherenceBySlugWithSpace = async (
+  { slug }: FindCoherenceBySlugInput,
+  { db }: DbConfig,
+): Promise<CoherenceByRoomIdResult | null> => {
+  const trimmed = slug.trim();
+  if (!trimmed) return null;
+
+  const [row] = await db
+    .select({
+      id: coherences.id,
+      slug: coherences.slug,
+      title: coherences.title,
+      roomId: coherences.roomId,
+      spaceId: coherences.spaceId,
+      spaceSlug: spaces.slug,
+    })
+    .from(coherences)
+    .innerJoin(spaces, eq(coherences.spaceId, spaces.id))
+    .where(and(eq(coherences.slug, trimmed), eq(coherences.archived, false)))
+    .limit(1);
+
+  if (!row?.slug?.trim() || !row.spaceSlug?.trim() || !row.roomId?.trim()) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    slug: row.slug.trim(),
+    title: row.title,
+    roomId: row.roomId.trim(),
+    spaceId: row.spaceId!,
+    spaceSlug: row.spaceSlug.trim(),
+  };
 };
 
 export const checkCoherenceSlugExists = async (

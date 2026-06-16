@@ -9,6 +9,8 @@ export interface MatrixTokenData {
   userId: string;
   homeserverUrl: string;
   deviceId?: string;
+  /** Seconds until access token expiry when returned by `/api/matrix/token`. */
+  expiresInSec?: number;
   elementConfig: {
     defaultRoomId?: string;
     theme: string;
@@ -20,11 +22,16 @@ export const useMatrixToken = () => {
   const { jwt, isLoadingJwt } = useJwt();
 
   const endpoint = isLoadingJwt ? null : '/api/matrix/token';
+  const swrKey =
+    endpoint && jwt ? ([endpoint, jwt, 'getMatrixToken'] as const) : null;
 
-  const { data: matrixToken, isLoading } = useSWR(
-    [endpoint, !!jwt, 'getMatrixToken'],
-    async ([endpoint]) => {
-      const authToken = jwt;
+  const {
+    data: matrixToken,
+    isLoading,
+    mutate: mutateMatrixToken,
+  } = useSWR(
+    swrKey,
+    async ([endpoint, authToken]) => {
       if (!endpoint || !authToken) {
         return undefined;
       }
@@ -54,10 +61,11 @@ export const useMatrixToken = () => {
           typeof data.homeserverUrl !== 'string' ||
           !data.elementConfig ||
           typeof data.elementConfig !== 'object' ||
-          typeof data.elementConfig.theme !== 'string'
+          typeof data.elementConfig.theme !== 'string' ||
+          (data.expiresInSec != null && typeof data.expiresInSec !== 'number')
         ) {
           throw new Error(
-            'Invalid Matrix token response: missing required fields or elementConfig',
+            'Invalid Matrix token response: missing required fields, invalid elementConfig, or invalid expiresInSec',
           );
         }
         return data as MatrixTokenData;
@@ -81,5 +89,6 @@ export const useMatrixToken = () => {
     isLoading: isLoading || isLoadingJwt,
     matrixToken,
     error,
+    refreshMatrixToken: mutateMatrixToken,
   };
 };

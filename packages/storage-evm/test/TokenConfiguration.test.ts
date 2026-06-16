@@ -3818,6 +3818,92 @@ describe('Token Configuration Tests', function () {
         token.connect(charlie).batchRemoveCreditWhitelistSpaces([spaceId]),
       ).to.be.revertedWith('!executor');
     });
+
+    it('Should grant mutual credit to address-whitelisted accounts without space membership', async function () {
+      const limit = ethers.parseEther('50');
+      const token = await deployRegularWithMutualCredit({
+        defaultCreditLimit: limit,
+        initialCreditWhitelistSpaceIds: [],
+      });
+
+      expect(await token.creditLimitOf(charlie.address)).to.equal(0);
+
+      await expect(
+        token
+          .connect(executorSigner)
+          .batchSetCreditWhitelistAddresses([charlie.address], [true]),
+      )
+        .to.emit(token, 'CreditWhitelistAddressUpdated')
+        .withArgs(charlie.address, true);
+
+      expect(await token.isCreditWhitelistedAddress(charlie.address)).to.be
+        .true;
+      expect(await token.creditLimitOf(charlie.address)).to.equal(limit);
+
+      await expect(
+        token.connect(charlie).transfer(bob.address, ethers.parseEther('10')),
+      )
+        .to.emit(token, 'CreditUsed')
+        .withArgs(
+          charlie.address,
+          ethers.parseEther('10'),
+          ethers.parseEther('10'),
+        );
+
+      await expect(
+        token
+          .connect(executorSigner)
+          .batchSetCreditWhitelistAddresses([charlie.address], [false]),
+      )
+        .to.emit(token, 'CreditWhitelistAddressUpdated')
+        .withArgs(charlie.address, false);
+
+      expect(await token.creditLimitOf(charlie.address)).to.equal(0);
+      await expect(
+        token.connect(charlie).transfer(bob.address, ethers.parseEther('1')),
+      ).to.be.revertedWith('!credit');
+    });
+
+    it('Should reject batchSetCreditWhitelistAddresses from unrelated accounts', async function () {
+      const token = await deployRegularWithMutualCredit({
+        initialCreditWhitelistSpaceIds: [],
+      });
+      await expect(
+        token
+          .connect(alice)
+          .batchSetCreditWhitelistAddresses([bob.address], [true]),
+      ).to.be.revertedWith('!executor/owner');
+    });
+
+    it('Should allow Ownable owner to batchSetCreditWhitelistAddresses', async function () {
+      const TOKEN_OWNER = '0x2687fe290b54d824c136Ceff2d5bD362Bc62019a';
+      const limit = ethers.parseEther('30');
+      const token = await deployRegularWithMutualCredit({
+        defaultCreditLimit: limit,
+        initialCreditWhitelistSpaceIds: [],
+      });
+
+      await ethers.provider.send('hardhat_impersonateAccount', [TOKEN_OWNER]);
+      await ethers.provider.send('hardhat_setBalance', [
+        TOKEN_OWNER,
+        '0x1000000000000000000',
+      ]);
+      const ownerSigner = await ethers.getSigner(TOKEN_OWNER);
+
+      await expect(
+        token
+          .connect(ownerSigner)
+          .batchSetCreditWhitelistAddresses([charlie.address], [true]),
+      )
+        .to.emit(token, 'CreditWhitelistAddressUpdated')
+        .withArgs(charlie.address, true);
+
+      expect(await token.creditLimitOf(charlie.address)).to.equal(limit);
+
+      await ethers.provider.send('hardhat_stopImpersonatingAccount', [
+        TOKEN_OWNER,
+      ]);
+    });
   });
 
   describe('17. Token Purchase', function () {

@@ -17,6 +17,17 @@ import {
   energyCommunities,
   energyCommunitiesRelations,
 } from './energy-community';
+import { bankCustomers } from './bank-customer';
+import {
+  spaceCallRecordings,
+  spaceCallTranscripts,
+  spaceDiscussionSummaries,
+} from './call-artifacts';
+import {
+  signalOrchestratorCooldowns,
+  signalOrchestratorDispatches,
+  signalOrchestratorQueue,
+} from './signal-orchestrator';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -34,6 +45,9 @@ export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
 export * from './energy-community';
+export * from './bank-customer';
+export * from './call-artifacts';
+export * from './signal-orchestrator';
 
 export const schema = {
   documents,
@@ -55,4 +69,11 @@ export const schema = {
   tokenUpdateRelations,
   energyCommunities,
   energyCommunitiesRelations,
+  bankCustomers,
+  spaceCallRecordings,
+  spaceCallTranscripts,
+  spaceDiscussionSummaries,
+  signalOrchestratorQueue,
+  signalOrchestratorCooldowns,
+  signalOrchestratorDispatches,
 };

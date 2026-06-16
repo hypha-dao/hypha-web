@@ -43,7 +43,7 @@ export function InnerSpaceCardList({
   return (
     <>
       {pagination?.totalPages > 0 ? (
-        <div className="flex flex-col justify-around items-center gap-4 mb-4">
+        <div className="flex flex-col justify-around items-center gap-4 mb-4 w-full">
           <div className="w-full space-y-2">
             {showLoadMore ? (
               Array.from({ length: pages }).map((_, index) => {

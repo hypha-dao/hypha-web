@@ -135,6 +135,8 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   enableMutualCredit?: boolean;
   defaultCreditLimit?: number;
   creditWhitelistedSpaceIds?: number[];
+  /** Wallet addresses granted minter rights on the new token (all token types). */
+  authorizedMinters?: string[];
   /**
    * Resolves space rows in `transferWhitelist.from/to` → web3 space ids so the
    * factory `initialTransferWhitelistSpaceIds` / `initialReceiveWhitelistSpaceIds`
@@ -401,6 +403,7 @@ export const useCreateIssueTokenOrchestrator = ({
             initialReceiveWhitelistSpaceIds,
             defaultCreditLimit,
             initialCreditWhitelistSpaceIds: creditWhitelistSpaceIds,
+            authorizedMinters: arg.authorizedMinters,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }

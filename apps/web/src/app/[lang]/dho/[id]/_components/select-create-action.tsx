@@ -14,6 +14,7 @@ import {
   Package,
   PiggyBank,
   Rocket,
+  Send,
   TrendingUp,
   Wallet,
   Workflow,
@@ -135,6 +136,14 @@ export const SelectCreateAction = ({
       description: t('actions.deployFunds.description'),
       href: 'agreements/create/deploy-funds',
       icon: <Workflow className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 7,
+      title: t('actions.airdrop.title'),
+      description: t('actions.airdrop.description'),
+      href: 'agreements/create/airdrop',
+      icon: <Send className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {

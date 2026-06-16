@@ -4,8 +4,8 @@ export type ProposalErrorTranslation = {
 };
 
 const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
-  'Please add a title for your proposal':
-    'issueNewTokenForm.errors.titleRequired',
+  'Please upload at least one document for this memory.':
+    'createAgreementBaseFields.errors.memoryAttachmentsRequired',
   'Please add content to your proposal':
     'issueNewTokenForm.errors.descriptionRequired',
   'Slug must contain only lowercase letters, numbers, and hyphens':
@@ -38,11 +38,16 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Please select a token': 'proposalErrors.tokenRequired',
   'Token is required': 'proposalErrors.tokenRequired',
   'At least one payout is required': 'proposalErrors.atLeastOnePayoutRequired',
+  'At least one airdrop recipient is required':
+    'proposalErrors.atLeastOneAirdropRecipient',
+  'Too many recipients for one airdrop proposal.':
+    'proposalErrors.tooManyAirdropRecipients',
   'Please enter a purchase amount.': 'proposalErrors.purchaseAmountRequired',
   'Please select a space to activate.': 'proposalErrors.selectSpaceToActivate',
   'Please enter the number of months to activate.':
     'proposalErrors.monthsToActivateRequired',
   'Please select a space to join': 'proposalErrors.selectSpaceToJoin',
+  'Please select a governance space': 'proposalErrors.selectGovernanceSpace',
   'Please select a delegated voting member':
     'proposalErrors.selectDelegatedVotingMember',
   'Please select a space to exit.': 'proposalErrors.selectSpaceToExit',
@@ -96,6 +101,14 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'proposalErrors.acceptInvestmentExactReceiveRows',
 };
 
+/**
+ * Maps a raw (English) proposal validation error to a translatable
+ * {@link ProposalErrorTranslation}. Handles parameterized messages (file name,
+ * milestone order) via regex first, then falls back to the static key map.
+ *
+ * @param message - The raw error message to resolve.
+ * @returns A `{ key, values? }` translation descriptor, or `null` when unknown.
+ */
 export const resolveProposalErrorTranslation = (
   message: string,
 ): ProposalErrorTranslation | null => {

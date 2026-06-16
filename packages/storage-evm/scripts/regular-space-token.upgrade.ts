@@ -1,9 +1,22 @@
 import { ethers, upgrades } from 'hardhat';
 
-// Replace this with your actual proxy address when upgrading
-const PROXY_ADDRESS = '0x63D602418D9974Ffa25515A5F95754BABC50D50B'; // TODO: REPLACE WITH YOUR PROXY ADDRESS
+/**
+ * UUPS-upgrade one RegularSpaceToken proxy to the current RegularSpaceToken implementation.
+ *
+ * Usage:
+ *   TOKEN_PROXY_ADDRESS=0x... npx hardhat run scripts/regular-space-token.upgrade.ts --network base-mainnet
+ *
+ * Caller must be the token Ownable owner (same key as other mainnet scripts).
+ */
+const PROXY_ADDRESS = process.env.TOKEN_PROXY_ADDRESS?.trim();
 
 async function main(): Promise<void> {
+  if (!PROXY_ADDRESS || !ethers.isAddress(PROXY_ADDRESS)) {
+    throw new Error(
+      'Set TOKEN_PROXY_ADDRESS to the RegularSpaceToken UUPS proxy (0x...).',
+    );
+  }
+
   // Get the deployer's address
   const [deployer] = await ethers.getSigners();
   const adminAddress = await deployer.getAddress();

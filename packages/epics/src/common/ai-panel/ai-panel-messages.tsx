@@ -3,8 +3,12 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { resolveMobilizedAgentsForAssistantMessage } from '../ai-agent-competencies';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
-import { AiPanelSuggestions } from './ai-panel-suggestions';
+import {
+  AiPanelSuggestions,
+  type AiPanelSuggestionItem,
+} from './ai-panel-suggestions';
 
 type UIMessage = {
   id: string;
@@ -16,20 +20,22 @@ type UIMessage = {
 
 type AiPanelMessagesProps = {
   messages: UIMessage[];
-  suggestions: readonly string[];
-  showSuggestions: boolean;
-  onSuggestionSelect: (text: string) => void;
+  suggestionItems: readonly AiPanelSuggestionItem[];
+  /** Large suggestion cards below welcome — only before the user sends a message. */
+  showInlineSuggestions?: boolean;
+  onSuggestionSelect?: (text: string) => void;
   activeSpaceName?: string;
   isStreaming?: boolean;
+  onActionReplySelect?: (text: string) => void;
 };
 
 export function AiPanelMessages({
   messages,
-  suggestions,
-  showSuggestions,
+  suggestionItems,
+  showInlineSuggestions = false,
   onSuggestionSelect,
-  activeSpaceName,
   isStreaming = false,
+  onActionReplySelect,
 }: AiPanelMessagesProps) {
   const t = useTranslations('AiPanel');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,9 +57,7 @@ export function AiPanelMessages({
             parts: [
               {
                 type: 'text' as const,
-                text: t('welcome', {
-                  spaceName: activeSpaceName?.trim() || 'Hypha',
-                }),
+                text: t('welcome'),
               },
             ],
           },
@@ -69,6 +73,15 @@ export function AiPanelMessages({
           <AiPanelMessageBubble
             key={msg.id}
             message={msg}
+            mobilizedAgents={
+              msg.role === 'assistant' && msg.id !== 'welcome'
+                ? resolveMobilizedAgentsForAssistantMessage(
+                    displayMessages,
+                    index,
+                  )
+                : []
+            }
+            onActionReplySelect={onActionReplySelect}
             isStreaming={
               msg.role === 'assistant' &&
               isStreaming &&
@@ -77,12 +90,18 @@ export function AiPanelMessages({
           />
         ))}
 
-        {showSuggestions && messages.length <= 1 && (
-          <AiPanelSuggestions
-            suggestions={suggestions}
-            onSelect={onSuggestionSelect}
-          />
-        )}
+        {showInlineSuggestions && onSuggestionSelect ? (
+          <div className="flex flex-col gap-2">
+            <AiPanelSuggestions
+              items={suggestionItems}
+              onSelect={onSuggestionSelect}
+              variant="cards"
+            />
+            <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+              {t('welcomeSpecialistsHint')}
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

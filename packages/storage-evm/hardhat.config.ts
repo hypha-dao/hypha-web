@@ -27,6 +27,11 @@ const config: HardhatUserConfig = {
             runs: 1,
           },
           viaIR: true,
+          outputSelection: {
+            '*': {
+              '*': ['storageLayout'],
+            },
+          },
         },
       },
     ],

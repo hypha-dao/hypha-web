@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { gotoApp } from './utils/nav-url';
 
 /**
@@ -48,6 +49,24 @@ test.describe('Panels visible on space pages', () => {
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page.getByRole('button', { name: AI_TRIGGER })).toBeVisible();
+  });
+
+  test('ecosystem logo should link to root space configuration', async ({
+    page,
+  }) => {
+    await gotoApp(page, '/en/dho/hypha/agreements');
+    await page.waitForLoadState('domcontentloaded');
+    const a11y = await new AxeBuilder({ page }).analyze();
+    expect(a11y.violations).toEqual([]);
+
+    const ecosystemLogoLink = page.getByRole('link', {
+      name: 'Ecosystem Logo',
+    });
+    await expect(ecosystemLogoLink).toBeVisible();
+    await expect(ecosystemLogoLink).toHaveAttribute(
+      'href',
+      /\/en\/dho\/[^/]+\/agreements\/space-configuration$/,
+    );
   });
 });
 

@@ -39,8 +39,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Skeleton,
+  useIsMobile,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useAuthentication } from '@hypha-platform/authentication';
+import {
+  useJwt,
+  usePersonBySub,
+  useUserPrivyIdByMatrixId,
+} from '@hypha-platform/core/client';
+import {
+  looksLikeTechnicalMatrixDisplayName,
+  matrixUserIdToCanonicalPrivySub,
+} from './matrix-room-member-display';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import {
@@ -64,6 +76,7 @@ import {
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
+import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -125,7 +138,101 @@ type ReplyPreview = {
   authorLabel: string;
   excerpt: string;
   onDismiss: () => void;
+  /** Matrix sender when replying to another member — resolves Hypha profile reactively. */
+  sourceUserId?: string;
+  isYou?: boolean;
 };
+
+function formatPersonDisplayName(p: {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+}): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return '';
+}
+
+function ReplyPreviewAuthorName({
+  authorLabel,
+  sourceUserId,
+  isYou,
+  youLabel,
+  unknownMemberLabel,
+}: {
+  authorLabel: string;
+  sourceUserId?: string;
+  isYou?: boolean;
+  youLabel: string;
+  unknownMemberLabel: string;
+}) {
+  if (isYou) {
+    return <>{youLabel}</>;
+  }
+
+  const matrixUserId = sourceUserId?.trim() ?? '';
+  const canonicalSub = matrixUserId
+    ? matrixUserIdToCanonicalPrivySub(matrixUserId)
+    : null;
+  const authorLooksTechnical = looksLikeTechnicalMatrixDisplayName(
+    authorLabel,
+    matrixUserId,
+  );
+  const hasFriendlyAuthorLabel =
+    Boolean(authorLabel.trim()) &&
+    authorLabel.trim() !== matrixUserId &&
+    !authorLooksTechnical;
+  const needsLinkLookup =
+    Boolean(matrixUserId) && !canonicalSub && !hasFriendlyAuthorLabel;
+  const needsPersonLookup =
+    !hasFriendlyAuthorLabel && (Boolean(canonicalSub) || needsLinkLookup);
+
+  const { privyUserId: linkedSub, isLoading: loadingLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: needsLinkLookup ? matrixUserId : undefined,
+    });
+  const resolvedSub = linkedSub ?? canonicalSub ?? undefined;
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
+  const { person, isLoading: loadingPerson } = usePersonBySub({
+    sub: resolvedSub,
+  });
+
+  const text = useMemo(() => {
+    const fromPerson = person ? formatPersonDisplayName(person) : '';
+    if (fromPerson.trim()) return fromPerson;
+    const fallback = authorLabel.trim();
+    if (
+      fallback &&
+      !looksLikeTechnicalMatrixDisplayName(fallback, matrixUserId)
+    ) {
+      return fallback;
+    }
+    return unknownMemberLabel;
+  }, [authorLabel, matrixUserId, person, unknownMemberLabel]);
+
+  const jwtBlockingForPerson =
+    Boolean(resolvedSub) &&
+    ((user && isLoadingJwt && !jwt) || (!user && isLoadingJwt));
+  const loading =
+    needsPersonLookup &&
+    ((needsLinkLookup && loadingLink) ||
+      (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
+
+  if (loading) {
+    return (
+      <Skeleton
+        className="inline-block align-baseline"
+        loading
+        width={120}
+        height={14}
+      />
+    );
+  }
+
+  return <>{text}</>;
+}
 
 type EditPreview = {
   excerpt: string;
@@ -195,6 +302,10 @@ type HumanChatPanelChatBarProps = {
     member: ChatMentionCandidate,
     resolvedComposerLabel?: string,
   ) => string;
+  /** Lock composer interactions for read-only participants. */
+  composerLocked?: boolean;
+  /** Placeholder shown while composer is locked. */
+  composerLockedMessage?: string;
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -477,11 +588,19 @@ export function HumanChatPanelChatBar({
   mentionPickerEnabled,
   onMergeMentionDisplayLabel,
   getMentionComposerLabel,
+  composerLocked = false,
+  composerLockedMessage,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
 
-  const atMentionInteractable =
+  const membershipAvailable =
     mentionPickerEnabled ?? mentionCandidates.length > 0;
+  const atMentionInteractable = !composerLocked && membershipAvailable;
+  const mentionButtonTitle = composerLocked
+    ? composerLockedMessage || t('signalTeamInteractionRestricted')
+    : !membershipAvailable
+    ? t('mentionNoMembers')
+    : t('mention');
   const fileInputId = useId();
   const imageInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -506,6 +625,7 @@ export function HumanChatPanelChatBar({
   /** Avoid duplicate finalize if both `onerror` and `onend` run after abort. */
   const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
+  const isMobile = useIsMobile() ?? false;
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -913,6 +1033,7 @@ export function HumanChatPanelChatBar({
   );
 
   const canSend =
+    !composerLocked &&
     (value.trim().length > 0 || draftAttachments.length > 0) &&
     (!editMediaMode || draftAttachments.length > 0);
 
@@ -941,12 +1062,15 @@ export function HumanChatPanelChatBar({
     }
   }, [draftAttachments.length, focusComposerTextarea]);
 
-  const defaultPlaceholder = channelName
+  const defaultPlaceholder = composerLocked
+    ? composerLockedMessage || t('composerLockedPlaceholder')
+    : channelName
     ? t('placeholderChannel', { channel: channelName })
     : t('placeholder');
 
   const pushDrafts = useCallback(
     (files: FileList | File[], kind: 'file' | 'image') => {
+      if (composerLocked) return;
       if (!onDraftAttachmentsChange) return;
       const arr = Array.from(files);
       const next: ChatDraftAttachment[] = [...draftAttachments];
@@ -979,7 +1103,7 @@ export function HumanChatPanelChatBar({
       }
       onDraftAttachmentsChange(next);
     },
-    [draftAttachments, onDraftAttachmentsChange],
+    [composerLocked, draftAttachments, onDraftAttachmentsChange],
   );
 
   const removeDraft = useCallback(
@@ -1256,6 +1380,18 @@ export function HumanChatPanelChatBar({
     }
   }, [isDictating, onChange, stopDictation, focusComposerTextarea, t]);
 
+  useEffect(() => {
+    if (!composerLocked) return;
+    setAttachMenuOpen(false);
+    setEmojiPickerOpen(false);
+    setAtOpen(false);
+    setAtSuggestions([]);
+    setColonOpen(false);
+    setColonSuggestions([]);
+    stopDictation();
+    stopVoiceRecording();
+  }, [composerLocked, stopDictation, stopVoiceRecording]);
+
   const handleAttachMenuContentEnter = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key !== 'Enter' || e.shiftKey) return;
@@ -1473,6 +1609,7 @@ export function HumanChatPanelChatBar({
 
   const iconButtonClass =
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
+  const disabledIconButtonClass = `${iconButtonClass} cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground active:bg-transparent`;
 
   /** Recording / dictation “stop” — calm broadcast UI (no harsh outline-on-grey). */
   const recordingStopButtonClass =
@@ -1530,6 +1667,7 @@ export function HumanChatPanelChatBar({
           e.dataTransfer.dropEffect = 'copy';
         }}
         onDrop={(e) => {
+          if (composerLocked) return;
           if (!e.dataTransfer?.types.includes('Files')) {
             return;
           }
@@ -1749,7 +1887,8 @@ export function HumanChatPanelChatBar({
                         att.kind === 'audio') && (
                         <button
                           type="button"
-                          className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
+                          disabled={composerLocked}
+                          className="relative z-30 rounded p-1 text-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
                           title={
                             att.spoiler
                               ? t('attachmentSpoilerRemove')
@@ -1762,6 +1901,7 @@ export function HumanChatPanelChatBar({
                           }
                           aria-pressed={att.spoiler}
                           onClick={(e) => {
+                            if (composerLocked) return;
                             e.stopPropagation();
                             toggleDraftSpoiler(att.id);
                           }}
@@ -1779,11 +1919,15 @@ export function HumanChatPanelChatBar({
                       )}
                       <button
                         type="button"
-                        disabled={editMediaMode && draftAttachments.length <= 1}
+                        disabled={
+                          composerLocked ||
+                          (editMediaMode && draftAttachments.length <= 1)
+                        }
                         className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-40"
                         title={t('attachmentRemove')}
                         aria-label={t('attachmentRemove')}
                         onClick={(e) => {
+                          if (composerLocked) return;
                           e.stopPropagation();
                           removeDraft(att.id);
                         }}
@@ -1814,7 +1958,13 @@ export function HumanChatPanelChatBar({
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {replyPreview.authorLabel}
+                  <ReplyPreviewAuthorName
+                    authorLabel={replyPreview.authorLabel}
+                    sourceUserId={replyPreview.sourceUserId}
+                    isYou={replyPreview.isYou}
+                    youLabel={t('you')}
+                    unknownMemberLabel={t('unknownMember')}
+                  />
                 </span>
                 <span className="text-muted-foreground"> — </span>
                 <span>{replyPreview.excerpt}</span>
@@ -1822,7 +1972,8 @@ export function HumanChatPanelChatBar({
             </div>
             <button
               type="button"
-              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              disabled={composerLocked}
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               aria-label={t('replyDismiss')}
               title={t('replyDismiss')}
               onClick={replyPreview.onDismiss}
@@ -1847,7 +1998,8 @@ export function HumanChatPanelChatBar({
             </div>
             <button
               type="button"
-              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              disabled={composerLocked}
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               aria-label={t('editDismiss')}
               title={t('editDismiss')}
               onClick={editPreview.onDismiss}
@@ -1922,6 +2074,7 @@ export function HumanChatPanelChatBar({
           <textarea
             ref={textareaRef}
             value={value}
+            disabled={composerLocked}
             onScroll={(e) => {
               const bd = composerBackdropRef.current;
               if (bd) bd.scrollTop = e.currentTarget.scrollTop;
@@ -1969,14 +2122,18 @@ export function HumanChatPanelChatBar({
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
               <DropdownMenu
-                modal={false}
+                modal={isMobile}
                 open={attachMenuOpen}
                 onOpenChange={setAttachMenuOpen}
               >
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className={iconButtonClass}
+                    disabled={composerLocked}
+                    className={cn(
+                      iconButtonClass,
+                      composerLocked && 'cursor-not-allowed opacity-50',
+                    )}
                     aria-label={t('composerAttachMenu')}
                     title={t('composerAttachMenu')}
                     aria-expanded={attachMenuOpen}
@@ -1986,7 +2143,8 @@ export function HumanChatPanelChatBar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="start"
-                  className="min-w-[200px]"
+                  side={isMobile ? 'top' : 'bottom'}
+                  className="z-[100] min-w-[200px]"
                   onKeyDownCapture={handleAttachMenuContentEnter}
                 >
                   <DropdownMenuItem
@@ -2016,6 +2174,11 @@ export function HumanChatPanelChatBar({
                     <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
                     <span>{t('composerAttachFile')}</span>
                   </DropdownMenuItem>
+                  <ComposerAttachGoogleDriveMenuItem
+                    disabled={composerLocked}
+                    onPickerOpen={() => setAttachMenuOpen(false)}
+                    onFilesPicked={(files) => pushDrafts(files, 'file')}
+                  />
                 </DropdownMenuContent>
               </DropdownMenu>
               <HumanChatPanelEmojiPicker
@@ -2028,7 +2191,11 @@ export function HumanChatPanelChatBar({
               >
                 <button
                   type="button"
-                  className={iconButtonClass}
+                  disabled={composerLocked}
+                  className={cn(
+                    iconButtonClass,
+                    composerLocked && 'cursor-not-allowed opacity-50',
+                  )}
                   aria-label={t('emoji')}
                   title={t('emoji')}
                   aria-expanded={emojiPickerOpen}
@@ -2044,9 +2211,7 @@ export function HumanChatPanelChatBar({
                   !atMentionInteractable && 'cursor-not-allowed opacity-50',
                 )}
                 aria-label={t('mention')}
-                title={
-                  !atMentionInteractable ? t('mentionNoMembers') : t('mention')
-                }
+                title={mentionButtonTitle}
                 onClick={() => openMentionPicker()}
               >
                 <AtSign className="h-4 w-4" aria-hidden />
@@ -2055,7 +2220,12 @@ export function HumanChatPanelChatBar({
               {isVoiceRecording ? (
                 <button
                   type="button"
-                  className={recordingStopButtonClass}
+                  disabled={composerLocked}
+                  className={
+                    composerLocked
+                      ? disabledIconButtonClass
+                      : recordingStopButtonClass
+                  }
                   aria-label={t('composerStopRecording')}
                   title={t('composerStopRecording')}
                   onClick={() => stopVoiceRecording()}
@@ -2065,10 +2235,14 @@ export function HumanChatPanelChatBar({
               ) : (
                 <button
                   type="button"
-                  disabled={isDictating || !onDraftAttachmentsChange}
+                  disabled={
+                    composerLocked || isDictating || !onDraftAttachmentsChange
+                  }
                   className={cn(
                     iconButtonClass,
-                    (!onDraftAttachmentsChange || isDictating) &&
+                    (composerLocked ||
+                      !onDraftAttachmentsChange ||
+                      isDictating) &&
                       'cursor-not-allowed opacity-50',
                   )}
                   aria-label={t('composerSendAudioMessage')}
@@ -2085,7 +2259,12 @@ export function HumanChatPanelChatBar({
               {isDictating ? (
                 <button
                   type="button"
-                  className={recordingStopButtonClass}
+                  disabled={composerLocked}
+                  className={
+                    composerLocked
+                      ? disabledIconButtonClass
+                      : recordingStopButtonClass
+                  }
                   aria-label={t('composerStopDictation')}
                   title={t('composerStopDictation')}
                   onClick={() => stopDictation()}
@@ -2095,10 +2274,11 @@ export function HumanChatPanelChatBar({
               ) : (
                 <button
                   type="button"
-                  disabled={isVoiceRecording}
+                  disabled={composerLocked || isVoiceRecording}
                   className={cn(
                     iconButtonClass,
-                    isVoiceRecording && 'cursor-not-allowed opacity-50',
+                    (composerLocked || isVoiceRecording) &&
+                      'cursor-not-allowed opacity-50',
                   )}
                   aria-label={t('composerDictateMessage')}
                   title={t('composerDictateMessage')}

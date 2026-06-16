@@ -76,9 +76,42 @@ export function playCallJoinChime(): Promise<void> {
 }
 
 const NOTIFICATION_TAG = 'hypha-notify-space-call-join';
-/** Deduplicate Strict-Mode remounts + rapid re-renders; ~one chime per join “edge”. */
-const lastChimeAtByRoom = new Map<string, number>();
-const DEDUPE_MS = 4500;
+const CALL_JOIN_NAV_PREFIX = 'hypha-call-join-nav-';
+/** One chime per room while a call episode is active (cleared after join strip hides). */
+const activeChimeEpisodeByRoom = new Map<string, boolean>();
+const STABLE_RISE_MS = 500;
+const EPISODE_CLEAR_MS = 3000;
+
+export type CallJoinNotificationTarget = {
+  lang: string;
+  spaceSlug: string;
+  roomId: string;
+  signalSlug?: string | null;
+};
+
+export function buildCallJoinHref(target: CallJoinNotificationTarget): string {
+  const params = new URLSearchParams();
+  params.set('joinCall', '1');
+  const signalSlug = target.signalSlug?.trim();
+  if (signalSlug) {
+    params.set('signal', signalSlug);
+  }
+  return `/${target.lang}/dho/${target.spaceSlug}?${params.toString()}`;
+}
+
+function persistCallJoinNavigationTarget(
+  target: CallJoinNotificationTarget,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      `${CALL_JOIN_NAV_PREFIX}${target.roomId.trim()}`,
+      JSON.stringify(target),
+    );
+  } catch {
+    /* ignore */
+  }
+}
 
 export type UseCallJoinChimeOptions = {
   callUiEnabled: boolean;
@@ -89,6 +122,10 @@ export type UseCallJoinChimeOptions = {
   roomCallDeviceCount: number;
   /** i18n strings for one-shot `Notification` when the tab is hidden. */
   notification: { title: string; body: string };
+  /** Deep link when the user clicks the browser notification. */
+  notificationTarget?: CallJoinNotificationTarget | null;
+  /** Skip chime while Matrix is reconnecting (prevents loops on M_UNKNOWN_TOKEN). */
+  matrixSessionReady?: boolean;
   /** @default true — respect localStorage in browser */
   readPreferenceOnMount?: boolean;
 };
@@ -103,6 +140,8 @@ export function useCallJoinChime({
   showJoinOpportunity,
   roomCallDeviceCount,
   notification,
+  notificationTarget = null,
+  matrixSessionReady = true,
   readPreferenceOnMount = true,
 }: UseCallJoinChimeOptions): {
   joinAlertSoundEnabled: boolean;
@@ -120,57 +159,76 @@ export function useCallJoinChime({
     persistCallJoinSoundPreference(enabled);
   }, []);
 
-  const prevShowJoinRef = useRef(false);
   const [opportunityEpoch, setOpportunityEpoch] = useState(0);
   const lastChimedEpochRef = useRef(0);
   const notificationTextRef = useRef(notification);
   notificationTextRef.current = notification;
+  const notificationTargetRef = useRef(notificationTarget);
+  notificationTargetRef.current = notificationTarget;
   const roomIdRef = useRef(roomId);
   roomIdRef.current = roomId;
 
   useEffect(() => {
     if (roomIdRef.current !== roomId) {
-      /* New room: allow a fresh join edge + chime; do not zero opportunityEpoch
-         (that would block the chime effect until showJoinOpportunity flips). */
-      prevShowJoinRef.current = false;
       lastChimedEpochRef.current = 0;
     }
   }, [roomId]);
 
   useEffect(() => {
-    const was = prevShowJoinRef.current;
-    prevShowJoinRef.current = showJoinOpportunity;
-    if (showJoinOpportunity && !was) {
-      setOpportunityEpoch((e) => e + 1);
+    const rid = roomId?.trim();
+    if (!showJoinOpportunity) {
+      const clearTimer = window.setTimeout(() => {
+        if (rid) activeChimeEpisodeByRoom.delete(rid);
+      }, EPISODE_CLEAR_MS);
+      return () => window.clearTimeout(clearTimer);
     }
-  }, [showJoinOpportunity]);
+
+    const riseTimer = window.setTimeout(() => {
+      if (!showJoinOpportunity) return;
+      const stableRoomId = roomIdRef.current?.trim();
+      if (!stableRoomId) return;
+      if (activeChimeEpisodeByRoom.get(stableRoomId)) return;
+      activeChimeEpisodeByRoom.set(stableRoomId, true);
+      setOpportunityEpoch((epoch) => epoch + 1);
+    }, STABLE_RISE_MS);
+
+    return () => window.clearTimeout(riseTimer);
+  }, [showJoinOpportunity, roomId]);
 
   useEffect(() => {
-    if (!callUiEnabled || !roomId) return;
+    if (!callUiEnabled || !roomId || !matrixSessionReady) return;
     if (!showJoinOpportunity) return;
     if (opportunityEpoch === 0) return;
     if (opportunityEpoch === lastChimedEpochRef.current) return;
 
-    const rid = roomIdRef.current;
-    if (rid) {
-      const t = lastChimeAtByRoom.get(rid) ?? 0;
-      if (Date.now() - t < DEDUPE_MS) {
-        lastChimedEpochRef.current = opportunityEpoch;
-        return;
-      }
-      lastChimeAtByRoom.set(rid, Date.now());
-    }
     lastChimedEpochRef.current = opportunityEpoch;
+
+    const target = notificationTargetRef.current;
+    if (target?.roomId?.trim() && target.spaceSlug?.trim()) {
+      persistCallJoinNavigationTarget(target);
+    }
 
     const showBrowserNotification = () => {
       if (typeof window === 'undefined' || !('Notification' in window)) return;
       if (Notification.permission !== 'granted') return;
       const n = notificationTextRef.current;
-      new Notification(n.title, {
+      const navTarget = notificationTargetRef.current;
+      const href =
+        navTarget?.spaceSlug?.trim() && navTarget.lang?.trim()
+          ? buildCallJoinHref(navTarget)
+          : null;
+      const instance = new Notification(n.title, {
         body: n.body,
         tag: `${NOTIFICATION_TAG}-${roomIdRef.current ?? 'none'}`,
         silent: true,
       });
+      if (href) {
+        instance.onclick = () => {
+          window.focus();
+          instance.close();
+          window.location.assign(href);
+        };
+      }
     };
 
     const docHidden = document.visibilityState === 'hidden';
@@ -186,6 +244,8 @@ export function useCallJoinChime({
     showJoinOpportunity,
     opportunityEpoch,
     joinAlertSoundEnabled,
+    matrixSessionReady,
+    roomCallDeviceCount,
   ]);
 
   return { joinAlertSoundEnabled, setJoinAlertSoundEnabled };

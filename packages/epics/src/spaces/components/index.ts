@@ -1,4 +1,5 @@
 export * from './activate-proposals-banner';
+export * from './ai-panel-subscription-banner';
 export * from './compact-space-banner';
 export * from './space-accent-from-images';
 export * from './space-accent-portal-context';
@@ -27,6 +28,7 @@ export * from './space-mode-label';
 export * from './space-search';
 export * from './subspace-section';
 export * from './sales-banner';
+export * from './space-call-join-hero-banner';
 export * from './space-escrow-deposit-banner';
 export * from './space-escrow-deposit-banners';
 export * from './subscription-badge';

@@ -19,12 +19,15 @@ export const usePersonByWeb3Address = (
     [address],
   );
 
+  // The endpoint is public, so we fetch regardless of auth state. This ensures
+  // person data (e.g. the delegated voting member) is shown even when the
+  // viewer is logged out. The JWT is forwarded only when it is available.
   const { data: person, isLoading } = useSWR(
-    jwt ? [endpoint, jwt] : null,
+    address ? [endpoint, jwt] : null,
     ([endpoint]) =>
       fetch(endpoint, {
         headers: {
-          Authorization: `Bearer ${jwt}`,
+          ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
           'Content-Type': 'application/json',
         },
       }).then((res) => res.json()),

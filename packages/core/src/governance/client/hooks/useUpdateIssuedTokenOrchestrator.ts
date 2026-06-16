@@ -30,6 +30,7 @@ import {
 import { diffWhitelistSpaceIds } from './whitelist-space-diff';
 import { TokenUpdateData } from '../../types';
 import type { Space } from '../../../space/types';
+import { getAddress, isAddress } from 'viem';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -167,6 +168,10 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   /** On-chain snapshot at form load — used to compute add/remove space deltas */
   creditBaselineDefaultLimit?: number;
   creditBaselineWhitelistedSpaceIds?: number[];
+  /** Wallet addresses to grant minter rights on the token (all token types). */
+  authorizedMinters?: string[];
+  /** Wallet addresses to revoke minter rights from the token. */
+  authorizedMintersToRevoke?: string[];
 };
 
 /**
@@ -425,6 +430,47 @@ function buildPartialUpdateIssuedTokenWeb3Input(
           );
         }
       }
+    }
+  }
+
+  /**
+   * Authorized minters (all token types). The on-chain set is a non-enumerable
+   * mapping, so the update form is action-based: `authorizedMinters` grants and
+   * `authorizedMintersToRevoke` revokes. Both are merged into a single
+   * `batchSetAuthorizedMinters(accounts, allowed)` call. Grant wins on conflicts.
+   *
+   * Gate on the actual submitted values rather than React Hook Form's dirty-key
+   * set: the minter editor writes via bare `setValue` on an unregistered field,
+   * so `dirtyFields.authorizedMinters` is unreliable (especially across the
+   * form's repeated DB/on-chain hydration + `reset`). Relying on `changed` here
+   * silently dropped the minter call, leaving the proposal with an empty tx list
+   * that got padded to a no-op `setTokenName`. Grants are idempotent, so encoding
+   * whenever addresses are present is safe.
+   */
+  const mintersTouched =
+    (arg.authorizedMinters?.length ?? 0) > 0 ||
+    (arg.authorizedMintersToRevoke?.length ?? 0) > 0;
+  if (mintersTouched) {
+    const accounts: `0x${string}`[] = [];
+    const allowed: boolean[] = [];
+    const seen = new Set<string>();
+    const collect = (list: string[] | undefined, flag: boolean) => {
+      for (const raw of list ?? []) {
+        const trimmed = raw.trim();
+        if (!isAddress(trimmed)) continue;
+        const checksummed = getAddress(trimmed);
+        const key = checksummed.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        accounts.push(checksummed);
+        allowed.push(flag);
+      }
+    };
+    collect(arg.authorizedMinters, true);
+    collect(arg.authorizedMintersToRevoke, false);
+    if (accounts.length > 0) {
+      base.batchSetAuthorizedMintersAccounts = accounts;
+      base.batchSetAuthorizedMintersAllowed = allowed;
     }
   }
 

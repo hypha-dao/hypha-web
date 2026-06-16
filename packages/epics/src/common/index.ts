@@ -22,9 +22,20 @@ export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
 export {
+  AI_ONBOARDING_SEED_ACK_EVENT,
+  AI_ONBOARDING_SEED_EVENT,
+  ONBOARDING_SETUP_MODE,
+  clearOnboardingConversationContext,
+  dispatchAiOnboardingSeed,
+  dispatchAiOnboardingSeedAck,
+  readOnboardingConversationContext,
+  saveOnboardingConversationContext,
+} from './ai-onboarding-context';
+export {
   PanelProviders,
   PanelWrapLayout,
   AiSidebarTrigger,
+  AiPanelTrigger,
   HumanSidebarTrigger,
 } from './panel-wrap-layout';
 export { useAiPanel } from './human-chat-panel-context';
@@ -40,5 +51,12 @@ export {
   HumanChatPanelMessageBubble,
   HumanChatPanelChatBar,
   HumanChatPanelMessages,
+  HumanChatPanelCallReactPopover,
 } from './human-chat-panel';
 export { HumanRightPanel } from './human-right-panel';
+export {
+  GlobalCallDockProvider,
+  useGlobalCallDock,
+} from './global-call-dock-context';
+export { GlobalCallDockOverlay } from './global-call-dock-overlay';
+export * from './composer';

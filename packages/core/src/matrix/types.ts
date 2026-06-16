@@ -1,4 +1,5 @@
 import { Environment } from '../coherence/types';
+import type { SignalTeamNotice } from './signal-team-events';
 
 export type MatrixUserLink = {
   id: number;
@@ -12,6 +13,9 @@ export type MatrixUserLink = {
   encryptedRefreshToken: string | null;
   tokenExpiresAt: Date | null;
 };
+
+/** Default Matrix access token lifetime (seconds) when homeserver omits expires_in. */
+export const MATRIX_ACCESS_TOKEN_TTL_SEC = 3600;
 
 export interface CreateMatrixUserLinkInput {
   environment: Environment;
@@ -107,4 +111,6 @@ export interface Message {
    * Matrix MSC3952 intentional mentions (`content.m.mentions.user_ids`).
    */
   mentionedUserIds?: string[];
+  /** Hypha signal-team system notice parsed from structured Matrix content. */
+  signalTeamNotice?: SignalTeamNotice;
 }

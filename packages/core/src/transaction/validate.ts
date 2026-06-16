@@ -26,5 +26,6 @@ export const schemaGetTransfersQuery = z.object({
   toDate: stringifiedDate.optional().catch(undefined),
   fromBlock: blockNumber.optional().catch(undefined),
   toBlock: blockNumber.optional().catch(undefined),
-  limit: z.coerce.number().int().min(1).max(50).catch(10),
+  // No default: when omitted, routes return the full transfer history.
+  limit: z.coerce.number().int().min(1).max(50).optional().catch(undefined),
 });

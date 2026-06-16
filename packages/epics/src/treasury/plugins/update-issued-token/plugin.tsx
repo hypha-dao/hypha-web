@@ -203,6 +203,17 @@ export const UpdateIssuedTokenPlugin = ({
     });
   }, [setValue]);
 
+  const clearAuthorizedMintersFields = useCallback(() => {
+    setValue('authorizedMinters', [], {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('authorizedMintersToRevoke', [], {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
   const clearAdvancedSettingsFields = useCallback(() => {
     clearLimitedSupplyFields();
     setValue('enableProposalAutoMinting', true, {
@@ -220,6 +231,7 @@ export const UpdateIssuedTokenPlugin = ({
     });
     clearTokenPriceFields();
     clearMutualCreditFields();
+    clearAuthorizedMintersFields();
     setEnableLimitedSupply(false);
   }, [
     setValue,
@@ -227,6 +239,7 @@ export const UpdateIssuedTokenPlugin = ({
     clearTransferFields,
     clearTokenPriceFields,
     clearMutualCreditFields,
+    clearAuthorizedMintersFields,
     currentTokenType,
   ]);
 
@@ -625,6 +638,8 @@ export const UpdateIssuedTokenPlugin = ({
           creditWhitelistedSpaceIds: [],
           creditBaselineDefaultLimit: undefined,
           creditBaselineWhitelistedSpaceIds: undefined,
+          authorizedMinters: [],
+          authorizedMintersToRevoke: [],
         },
         { keepDirty: false, keepTouched: false },
       );
@@ -1209,6 +1224,7 @@ export const UpdateIssuedTokenPlugin = ({
               spaceSlug={spaceSlug}
               currentSpaceWeb3Id={currentSpaceWeb3Id}
               maxSupplyTypeReadOnly={onChainData?.fixedMaxSupply === true}
+              authorizedMintersMode="update"
             />
           )}
           {tokenType === 'voice' && areGeneralFieldsFilled && (

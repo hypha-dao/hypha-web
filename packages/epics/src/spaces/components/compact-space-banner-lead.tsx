@@ -20,6 +20,26 @@ function clampParallaxScrollY(scrollY: number): number {
   );
 }
 
+/** UploadThing/CDN hosts that must bypass `/_next/image` downscaling. */
+const UNOPTIMIZED_REMOTE_IMAGE_HOSTS = new Set([
+  'utfs.io',
+  'uploadthing.com',
+  'ufs.sh',
+]);
+
+function shouldUseUnoptimizedRemoteImage(src: string): boolean {
+  if (!src.startsWith('http://') && !src.startsWith('https://')) {
+    return false;
+  }
+  try {
+    const hostname = new URL(src).hostname.toLowerCase();
+    if (UNOPTIMIZED_REMOTE_IMAGE_HOSTS.has(hostname)) return true;
+    return hostname.endsWith('.utfs.io');
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Hero lead image with stable branded placeholder + fade-in.
  * Avoids the grey flash from CSS background-image decoding on first paint.
@@ -76,6 +96,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
   const loadedOverlayOpacity = imageVisible ? 1 : 0;
+  const unoptimized = shouldUseUnoptimizedRemoteImage(src);
   const predecodePlateStyle = {
     backgroundImage:
       'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(14,17,25) 0%, rgb(10,13,20) 42%, rgb(7,9,15) 68%, rgb(4,6,11) 100%)',
@@ -131,7 +152,9 @@ export function CompactSpaceBannerLead({ src }: Props) {
             alt=""
             fill
             priority
-            sizes="(max-width: 1280px) 100vw, min(1280px, 100vw)"
+            unoptimized={unoptimized}
+            quality={92}
+            sizes="100vw"
             className={cn(
               'object-cover object-center transition-opacity duration-320 ease-out',
               imageFailed

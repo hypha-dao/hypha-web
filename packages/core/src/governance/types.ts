@@ -11,6 +11,7 @@ export enum DocumentState {
   DISCUSSION = 'discussion',
   PROPOSAL = 'proposal',
   AGREEMENT = 'agreement',
+  MEMORY = 'memory',
 }
 
 export enum EntryMethodType {

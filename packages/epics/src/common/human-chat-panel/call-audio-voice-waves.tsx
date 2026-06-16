@@ -4,11 +4,18 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+import { resolveCallAudioVoiceWaveBarStyle } from './call-audio-voice-wave-styles';
+
 /** Match {@link ChatVoiceAudioRow} bar count for a consistent “voice” readout. */
 const WAVE_BARS = 12;
 
 const WAVE_BARS_SEED = [
   0.32, 0.72, 0.4, 0.95, 0.5, 0.78, 0.35, 0.62, 0.45, 0.28, 0.85, 0.42,
+] as const;
+
+/** Per-bar gain so the centre reads louder (more satisfying “voice” silhouette). */
+const BAR_GAIN = [
+  0.72, 0.82, 0.92, 0.98, 1.05, 1.12, 1.12, 1.05, 0.98, 0.92, 0.82, 0.72,
 ] as const;
 
 type AnalysisHandle = {
@@ -58,18 +65,17 @@ function sizeBounds(size: 'sm' | 'md' | 'lg'): {
   maxPx: number;
 } {
   if (size === 'sm') {
-    return { minPx: 3, maxPx: 12 };
+    return { minPx: 3, maxPx: 14 };
   }
   if (size === 'lg') {
-    return { minPx: 6, maxPx: 40 };
+    return { minPx: 8, maxPx: 52 };
   }
-  return { minPx: 4, maxPx: 22 };
+  return { minPx: 4, maxPx: 26 };
 }
 
 /**
- * In-call “camera off” / audio-only bars: time-domain energy in 12 equal slices
- * of the analyser window (entire buffer), smoothed in rAF — not an infinite
- * `scaleY` keyframe (which only staggered the left and ignored real levels).
+ * In-call “camera off” / audio-only bars: overall speech energy drives all bars
+ * with per-bar seed + phase wobble — uses `--space-accent`.
  */
 export function CallAudioVoiceWaves({
   mediaStream,
@@ -86,29 +92,20 @@ export function CallAudioVoiceWaves({
   const reduceMotion = usePrefersReducedMotion();
   const analysisRef = useRef<AnalysisHandle | null>(null);
   const rafRef = useRef<number | null>(null);
+  const freqBufRef = useRef<Uint8Array | null>(null);
   const timeBufRef = useRef<Uint8Array | null>(null);
   const smoothRef = useRef(WAVE_BARS_SEED.map(() => 0));
   const lastTRef = useRef(0);
+  const phaseRef = useRef(0);
 
   const gap = size === 'sm' ? 'gap-0.5' : size === 'lg' ? 'gap-1' : 'gap-0.5';
   const barWidth =
     size === 'lg'
       ? 'w-1 min-w-[3px] max-w-[4px]'
       : 'w-0.5 min-w-[2px] max-w-[3px]';
-  const barActive = onDarkScrim
-    ? size === 'lg'
-      ? 'bg-emerald-300/95 shadow-sm shadow-emerald-400/30'
-      : 'bg-emerald-200/90 shadow-sm shadow-white/10'
-    : size === 'lg'
-    ? 'bg-emerald-400/95 shadow-sm shadow-emerald-500/25'
-    : 'bg-primary/80';
-  const barIdle = onDarkScrim ? 'bg-zinc-500/55' : 'bg-muted-foreground/30';
+  const barIdle = onDarkScrim ? '' : 'bg-muted-foreground/30';
   const rowH =
-    size === 'sm'
-      ? 'h-4'
-      : size === 'lg'
-      ? 'h-12 min-h-[2.5rem] sm:h-14'
-      : 'h-7';
+    size === 'sm' ? 'h-4' : size === 'lg' ? 'h-16 min-h-[3rem] sm:h-20' : 'h-7';
 
   const buildAnalysis = useCallback((stream: MediaStream) => {
     if (stream.getAudioTracks().length === 0) {
@@ -128,9 +125,12 @@ export function CallAudioVoiceWaves({
       const ctx = new Ctx();
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.6;
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.35;
+      analyser.minDecibels = -90;
+      analyser.maxDecibels = -10;
       source.connect(analyser);
+      freqBufRef.current = new Uint8Array(analyser.frequencyBinCount);
       timeBufRef.current = new Uint8Array(analyser.fftSize);
       return { ctx, source, analyser } satisfies AnalysisHandle;
     } catch {
@@ -156,8 +156,10 @@ export function CallAudioVoiceWaves({
       void analysisRef.current.ctx.close();
       analysisRef.current = null;
     }
+    freqBufRef.current = null;
     timeBufRef.current = null;
     smoothRef.current = WAVE_BARS_SEED.map(() => 0);
+    phaseRef.current = 0;
   }, [stopLoop]);
 
   useEffect(() => {
@@ -186,40 +188,69 @@ export function CallAudioVoiceWaves({
     }
     analysisRef.current = handle;
     const { analyser } = handle;
-    const data = timeBufRef.current;
-    if (!data || data.length !== analyser.fftSize) {
+    const data = freqBufRef.current;
+    if (!data || data.length !== analyser.frequencyBinCount) {
+      freqBufRef.current = new Uint8Array(analyser.frequencyBinCount);
+    }
+    if (!timeBufRef.current || timeBufRef.current.length !== analyser.fftSize) {
       timeBufRef.current = new Uint8Array(analyser.fftSize);
     }
-    const buf = timeBufRef.current!;
+    const buf = freqBufRef.current!;
+    const timeBuf = timeBufRef.current!;
 
     const run = (now: number) => {
       rafRef.current = requestAnimationFrame(run);
-      if (now - lastTRef.current < 28) {
+      if (now - lastTRef.current < 16) {
         return;
       }
+      const dt = Math.min(48, now - lastTRef.current);
       lastTRef.current = now;
+      phaseRef.current += dt * 0.005;
 
       resumeAudioContextIfNeeded(handle.ctx);
-      analyser.getByteTimeDomainData(buf);
+      analyser.getByteFrequencyData(buf);
+      analyser.getByteTimeDomainData(timeBuf);
 
-      const tMix = 0.42;
+      /** Speech energy lives in low bins — linear slices leave right bars flat. */
+      const speechBins = Math.max(1, Math.floor(buf.length * 0.42));
+      let freqPeak = 0;
+      let freqSum = 0;
+      for (let j = 0; j < speechBins; j += 1) {
+        const v = buf[j]! / 255;
+        freqSum += v;
+        freqPeak = Math.max(freqPeak, v);
+      }
+      const freqAvg = freqSum / speechBins;
+
+      let rms = 0;
+      for (let j = 0; j < timeBuf.length; j += 1) {
+        const sample = (timeBuf[j]! - 128) / 128;
+        rms += sample * sample;
+      }
+      rms = Math.sqrt(rms / timeBuf.length);
+
+      const voiceLevel = Math.min(
+        1,
+        freqPeak * 0.55 + freqAvg * 0.85 + rms * 1.15,
+      );
+
       const out: number[] = [];
       for (let i = 0; i < WAVE_BARS; i += 1) {
-        const from = Math.floor((i / WAVE_BARS) * buf.length);
-        const to = Math.floor(((i + 1) / WAVE_BARS) * buf.length);
-        let sum = 0;
-        let c = 0;
-        for (let j = from; j < to; j += 1) {
-          const v = (buf[j]! - 128) / 128;
-          sum += v * v;
-          c += 1;
-        }
-        const rms = c > 0 ? Math.sqrt(sum / c) : 0;
-        const frame = Math.min(1, rms * 2.8);
+        const seed = WAVE_BARS_SEED[i] ?? 0.5;
+        const gain = BAR_GAIN[i] ?? 1;
+        const wobble =
+          0.18 * Math.sin(phaseRef.current + i * 0.72) +
+          0.1 * Math.sin(phaseRef.current * 1.65 + i * 0.38);
+        const frame = Math.min(
+          1,
+          voiceLevel * seed * gain * (0.68 + wobble) * 1.25,
+        );
         const prev = smoothRef.current[i] ?? 0;
-        const mix = tMix * frame + (1 - tMix) * prev;
+        const attack = frame > prev ? 0.62 : 0.28;
+        const mix = attack * frame + (1 - attack) * prev;
         smoothRef.current[i] = mix;
-        out.push(minPx + mix * (maxPx - minPx));
+        const floor = minPx + 0.12 * (maxPx - minPx);
+        out.push(floor + mix * (maxPx - minPx));
       }
       setLevels(out);
     };
@@ -256,15 +287,24 @@ export function CallAudioVoiceWaves({
     >
       {WAVE_BARS_SEED.map((h, i) => {
         const heightPx = Math.round(levels[i] ?? minPx + h * (maxPx - minPx));
+        const barStyle = resolveCallAudioVoiceWaveBarStyle({
+          active,
+          reduceMotion,
+          onDarkScrim,
+        });
         return (
           <span
             key={`${id}bar${String(i)}`}
             className={cn(
-              'inline-block origin-bottom rounded-full transition-[height,background-color] duration-100 ease-out',
+              'inline-block origin-bottom rounded-full',
               barWidth,
-              active && !reduceMotion ? barActive : barIdle,
+              active && !reduceMotion ? '' : barIdle,
             )}
-            style={{ height: `${heightPx}px` }}
+            style={{
+              height: `${heightPx}px`,
+              ...barStyle,
+              opacity: active && !reduceMotion ? 0.92 + (i % 3) * 0.02 : 1,
+            }}
           />
         );
       })}

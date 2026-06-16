@@ -165,12 +165,12 @@ export const SpacePendingRewardsSection: FC<
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
-      <div className="w-full flex justify-between">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SectionFilter
           label={tTreasury('rewardsSection.title')}
           count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {toolbarActions}
           <Button
             title={
@@ -192,7 +192,7 @@ export const SpacePendingRewardsSection: FC<
       </div>
       <div className="w-full">
         {isLoading || !executor ? (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <AssetCard isLoading />
           </div>
         ) : !isAuthenticated ? (
@@ -200,7 +200,7 @@ export const SpacePendingRewardsSection: FC<
             <p>{tTreasury('rewardsSection.signInToViewSpaceRewards')}</p>
           </Empty>
         ) : (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <AssetCard
               {...(hyphaTokenAsset ?? {
                 ...HYPHA_REWARDS_FALLBACK,

@@ -38,6 +38,13 @@ export interface UpdateIssuedTokenInput {
   defaultCreditLimit?: number;
   batchAddCreditWhitelistSpaceIds?: bigint[];
   batchRemoveCreditWhitelistSpaceIds?: bigint[];
+  /**
+   * Authorized minters (all token types). A single `batchSetAuthorizedMinters`
+   * call grants (allowed=true) or revokes (allowed=false) minter rights. Arrays
+   * must be the same length.
+   */
+  batchSetAuthorizedMintersAccounts?: `0x${string}`[];
+  batchSetAuthorizedMintersAllowed?: boolean[];
 }
 
 type ProposalTx = {
@@ -303,6 +310,24 @@ export function buildUpdateIssuedTokenTxData(
         abi: decayingSpaceTokenAbi,
         functionName: 'batchRemoveCreditWhitelistSpaces',
         args: [arg.batchRemoveCreditWhitelistSpaceIds],
+      }),
+    });
+  }
+  if (
+    arg.batchSetAuthorizedMintersAccounts?.length &&
+    arg.batchSetAuthorizedMintersAllowed?.length ===
+      arg.batchSetAuthorizedMintersAccounts.length
+  ) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchSetAuthorizedMinters',
+        args: [
+          arg.batchSetAuthorizedMintersAccounts,
+          arg.batchSetAuthorizedMintersAllowed,
+        ],
       }),
     });
   }

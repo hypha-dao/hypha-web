@@ -39,7 +39,7 @@ export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
-  'text-2 leading-[1.5] sm:max-w-[50%]',
+  'text-2 leading-[1.5] lg:max-w-[50%]',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
@@ -156,7 +156,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
 
       <div className="relative z-10 flex flex-col gap-5">
         {/* Row 1: avatar + title/links — avatar size matches PR #2165 */}
-        <div className="flex items-start gap-6">
+        <div className="flex flex-wrap items-start gap-4 sm:gap-6">
           <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
               src={safeLogoSrc}
@@ -165,7 +165,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             />
           </Avatar>
 
-          <div className="min-w-0 flex-1 space-y-2">
+          <div className="min-w-0 flex-1 basis-[16rem] space-y-2">
             <h1
               className={cn(
                 COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
@@ -222,36 +222,42 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               className="h-px w-full shrink-0 bg-white/12"
               role="presentation"
             />
-            <div className="flex flex-col gap-3 gap-x-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+            <div className="flex flex-col gap-3 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-5">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-1">
                 {footerLeading ? (
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     {footerLeading}
                   </div>
                 ) : null}
                 {footerLeading && showSpaceStats ? (
-                  <span className="text-white/45" aria-hidden>
+                  <span className="hidden text-white/45 sm:inline" aria-hidden>
                     ·
                   </span>
                 ) : null}
                 {showSpaceStats ? (
                   <>
-                    <span>
+                    <span className="inline-flex items-baseline gap-1.5">
                       <span className="font-bold tabular-nums text-white">
                         {memberCount ?? '—'}
                       </span>{' '}
                       <span className="text-white/92">{membersLabel}</span>
                     </span>
-                    <span className="text-white/45" aria-hidden>
+                    <span
+                      className="hidden text-white/45 sm:inline"
+                      aria-hidden
+                    >
                       ·
                     </span>
-                    <span>
+                    <span className="inline-flex items-baseline gap-1.5">
                       <span className="font-bold tabular-nums text-white">
                         {agreementCount ?? '—'}
                       </span>{' '}
                       <span className="text-white/92">{agreementsLabel}</span>
                     </span>
-                    <span className="text-white/45" aria-hidden>
+                    <span
+                      className="hidden text-white/45 sm:inline"
+                      aria-hidden
+                    >
                       ·
                     </span>
                     <span className="text-white/88">{createdOnText}</span>
@@ -260,7 +266,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               </div>
 
               {footerTrailing ? (
-                <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
+                <div className="flex w-full shrink-0 flex-wrap items-center justify-start gap-2 sm:w-auto [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
                   {footerTrailing}
                 </div>
               ) : null}

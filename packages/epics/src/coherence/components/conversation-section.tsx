@@ -122,7 +122,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
             <div className="flex flex-row gap-2 h-full">
               <Checkbox
                 id="hideArchivedCheckbox"
-                className="self-center"
+                className="self-center border-accent-8/80 data-[state=checked]:border-accent-9 data-[state=checked]:bg-accent-9 data-[state=checked]:text-accent-contrast focus-visible:ring-accent-8"
                 checked={hideArchived}
                 onCheckedChange={(value) => {
                   setHideArchived(value === true);

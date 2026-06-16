@@ -8,6 +8,10 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
+import {
+  UserSpaceState,
+  useUserSpaceState,
+} from '../../spaces/hooks/use-user-space-state';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -30,16 +34,24 @@ export function DocumentsSections({
     spaceSlug,
     order,
   });
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+    spaceId: web3SpaceId,
+    spaceSlug,
+  });
   const onVotingCount = documents.onVoting.length;
   const acceptedCount = documents.accepted.length;
   const rejectedCount = documents.rejected.length;
 
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
   const createProposalPath = `${basePath}/select-create-action`;
-  const createProposalButton = (
+  const canCreateProposal =
+    !isUserStateLoading && userState === UserSpaceState.LOGGED_IN_SPACE;
+  const createProposalButton = canCreateProposal ? (
     <Button asChild>
       <Link href={createProposalPath}>{t('newProposal')}</Link>
     </Button>
+  ) : (
+    <Button disabled>{t('newProposal')}</Button>
   );
 
   return (
@@ -95,7 +107,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
-          firstPageSize={4}
+          firstPageSize={12}
           pageSize={12}
         />
       </TabsContent>
@@ -107,7 +119,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
-          firstPageSize={4}
+          firstPageSize={12}
           pageSize={12}
         />
       </TabsContent>

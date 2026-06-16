@@ -1,7 +1,12 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { LayoutTemplate } from 'lucide-react';
+import {
+  Columns2,
+  GalleryHorizontal,
+  LayoutDashboard,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   Button,
   DropdownMenu,
@@ -25,17 +30,21 @@ const MODES: CallFullViewLayoutMode[] = [
   'filmstrip',
   'sideBySide',
   'speakerTop',
-  'pip',
 ];
 
 const LABEL_BY_MODE: Record<
   CallFullViewLayoutMode,
-  `callLayout${'Filmstrip' | 'SideBySide' | 'SpeakerOnTop' | 'Pip'}`
+  `callLayout${'Filmstrip' | 'SideBySide' | 'SpeakerOnTop'}`
 > = {
   filmstrip: 'callLayoutFilmstrip',
   sideBySide: 'callLayoutSideBySide',
   speakerTop: 'callLayoutSpeakerOnTop',
-  pip: 'callLayoutPip',
+};
+
+const ICON_BY_MODE: Record<CallFullViewLayoutMode, LucideIcon> = {
+  filmstrip: GalleryHorizontal,
+  sideBySide: Columns2,
+  speakerTop: LayoutDashboard,
 };
 
 export function HumanChatPanelCallFullViewLayoutMenu({
@@ -44,6 +53,7 @@ export function HumanChatPanelCallFullViewLayoutMenu({
   className,
 }: HumanChatPanelCallFullViewLayoutMenuProps) {
   const t = useTranslations('HumanChatPanel');
+  const ActiveIcon = ICON_BY_MODE[value];
 
   return (
     <div className={className}>
@@ -51,20 +61,13 @@ export function HumanChatPanelCallFullViewLayoutMenu({
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
-            size="sm"
+            size="icon"
             variant="outline"
-            className="h-8 gap-1.5 border-border/50 bg-zinc-900/80 text-xs text-foreground hover:bg-zinc-800"
+            className="h-7 w-7 shrink-0 border-border/60 bg-background hover:bg-muted"
             title={t('callLayoutMode')}
-            aria-label={t('callLayoutMode')}
+            aria-label={`${t('callLayoutMode')}: ${t(LABEL_BY_MODE[value])}`}
           >
-            <LayoutTemplate
-              className="h-3.5 w-3.5 shrink-0 text-white"
-              strokeWidth={2.25}
-              aria-hidden
-            />
-            <span className="hidden min-w-0 sm:inline sm:max-w-[10rem] sm:truncate">
-              {t(LABEL_BY_MODE[value])}
-            </span>
+            <ActiveIcon className="h-3.5 w-3.5" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[14rem]">
@@ -74,11 +77,17 @@ export function HumanChatPanelCallFullViewLayoutMenu({
               onValueChange(parseCallFullViewLayoutMode(String(v)))
             }
           >
-            {MODES.map((m) => (
-              <DropdownMenuRadioItem key={m} value={m}>
-                {t(LABEL_BY_MODE[m])}
-              </DropdownMenuRadioItem>
-            ))}
+            {MODES.map((mode) => {
+              const ModeIcon = ICON_BY_MODE[mode];
+              return (
+                <DropdownMenuRadioItem key={mode} value={mode}>
+                  <span className="inline-flex items-center gap-2">
+                    <ModeIcon className="h-4 w-4 shrink-0" aria-hidden />
+                    {t(LABEL_BY_MODE[mode])}
+                  </span>
+                </DropdownMenuRadioItem>
+              );
+            })}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>

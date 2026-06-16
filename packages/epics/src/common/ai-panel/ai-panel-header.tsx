@@ -216,7 +216,7 @@ export function AiPanelHeader({
         <div className="mx-auto flex w-full min-w-0 max-w-[22rem] justify-center transition-[max-width] duration-200 ease-out">
           {canOpenSpaceMenu ? (
             <DropdownMenu
-              modal={false}
+              modal={true}
               open={spaceMenuOpen}
               onOpenChange={setSpaceMenuOpen}
             >
@@ -252,7 +252,8 @@ export function AiPanelHeader({
                 side="bottom"
                 align="center"
                 sideOffset={4}
-                className="relative isolate z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
+                collisionPadding={8}
+                className="relative isolate z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="flex max-h-[24.5rem] min-h-0 flex-col">
                   <div className="shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1">

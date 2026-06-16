@@ -2,19 +2,126 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
-import { ClientEvent, RoomStateEvent } from 'matrix-js-sdk';
+import { ClientEvent, RoomEvent, RoomStateEvent } from 'matrix-js-sdk';
+import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
-import { isPermissionLikeGroupCallError } from './space-group-call-utils';
-import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
-import { matrixGroupCallSummaryStatsMsFromEnv } from '../matrix-webrtc-env';
+import { matrixMemberDisplayLabel } from '../../matrix-member-display';
+import {
+  isDocumentPictureInPictureWindowOpen,
+  isPermissionLikeGroupCallError,
+  resolveMatrixSpeakerDisplayName,
+  resolveGroupCallErrorDuringScreenshare,
+  shouldIgnoreGroupCallErrorDuringCapture,
+} from './space-group-call-utils';
+import {
+  logGroupCallSessionEnd,
+  logSpaceGroupCallEvent,
+} from './space-group-call-telemetry';
+import {
+  recordMatrixCallSessionError,
+  resetMatrixCallSessionMetrics,
+} from './matrix-call-session-metrics';
+import {
+  callThumbnailDownscaleFromEnv,
+  isMatrixCallDebugEnabled,
+  isMatrixCallSupportDebugEnabled,
+  matrixGroupCallSummaryStatsMsFromEnv,
+} from '../matrix-webrtc-env';
 import {
   attachGroupCallWebRtcDiagnostics,
   probeMatrixTurnServerReadiness,
 } from './group-call-webrtc-diagnostics';
-import type { SpaceGroupCallState } from './space-group-call-state';
+import {
+  TURN_READINESS_MIN_FETCH_INTERVAL_MS,
+  evaluateMatrixTurnReadiness,
+} from './matrix-turn-readiness';
+import { scheduleMatrixTurnRefresh } from './matrix-turn-refresh';
+import {
+  applyCallThumbnailReceiverDownscale,
+  enumerateGroupCallPeerConnections,
+  parseActiveSpeakerUserId,
+} from './call-thumbnail-receiver-downscale';
+import { installMatrixCameraCaptureConstraints } from './call-video-capture-constraints';
+import { logGroupCallSimulcastCapabilityAudit } from './call-video-simulcast-audit';
+import { ensureCallReactionAnchor } from './call-reactions-client';
+import {
+  createCallRecording,
+  startBrowserCallTranscription,
+  uploadRecordedCallArtifact,
+  uploadRecordedCallArtifactWithRetry,
+} from './call-recording';
+import {
+  evaluateCallRecordingCaptureLimits,
+  type CallRecordingLimitWarningCode,
+} from '../../../assets/call-recording-limits';
+import { downloadCallRecordingBackup } from '../../../assets/client/call-recording-local-backup';
+import { CALL_RECORDING_MIN_FILE_SIZE_BYTES } from '../../../assets/call-recording-constants';
+import type {
+  SpaceGroupCallCaptureMode,
+  SpaceGroupCallRecordingStatus,
+  SpaceGroupCallState,
+} from './space-group-call-state';
+import {
+  CALL_CAPTURE_NOTICE_TYPE,
+  resolveActiveRoomCaptureFromEvents,
+  resolveCaptureConsent,
+  resolveLocalCaptureConsent,
+  type SpaceGroupCallCaptureConsent,
+} from './call-capture-consent';
+import {
+  buildScreenshareTakeoverContent,
+  getRemoteScreenshareOwner,
+  isRemoteScreenshareActive,
+  resolveIncomingScreenshareTakeover,
+  resolveScreenshareTakeoverOutcome,
+  type ScreenshareTakeoverIncoming,
+} from './screenshare-takeover';
+import {
+  bindScreenshareStreamStopHandlers,
+  clearOrphanedMatrixScreenshareStreams,
+  isIOSTouchDevice,
+  resolveMatrixScreenshareCaptureOpts,
+  screenshareStreamHasTabAudio,
+  screenshareStreamIsBrowserTab,
+  withEnhancedScreenshareCapture,
+  type CallScreenshareSurfaceMode,
+} from './screenshare-capture';
+import {
+  isLocalCameraPermissionDenied,
+  requestLocalCameraAccess,
+} from './call-camera-access';
+import { applyOutboundLocalVideoOrientation } from './call-local-video-orientation';
+import {
+  applyScreenShareCaptureRootRestrictionWithRetry,
+  clearScreenShareCaptureRootRestriction,
+} from './screenshare-capture-exclusion';
+import {
+  applyScreenshareTrackContentHints,
+  resolveScreenshareVoicePresetPlan,
+} from './screenshare-voice-boost';
+import {
+  clearPersistedPendingRecordingUpload,
+  persistPendingRecordingUpload,
+  restorePendingRecordingUpload,
+} from './call-recording-upload-persistence';
+import { resolvePlaceOutgoingRetryDelaysMs } from './call-pairwise-retry-env';
+import {
+  CALL_MOBILE_VIEWPORT_MAX_PX,
+  isCallMobileViewport,
+} from './call-mobile-screenshare-policy';
+import {
+  constraintsForVoicePreset,
+  type SpaceGroupCallVoiceProcessingPreset,
+} from './voice-processing-constraints';
 
+const PLACE_OUTGOING_RETRY_MS = resolvePlaceOutgoingRetryDelaysMs();
 export type { SpaceGroupCallState } from './space-group-call-state';
+export type {
+  SpaceGroupCallCaptureMode,
+  SpaceGroupCallRecordingStatus,
+} from './space-group-call-state';
+export type { SpaceGroupCallCaptureConsent } from './call-capture-consent';
 
 export type SpaceGroupCallErrorCode =
   | 'NO_CLIENT'
@@ -28,11 +135,53 @@ export type SpaceGroupCallErrorCode =
 const { GroupCallEvent, GroupCallIntent, GroupCallType, GroupCallState } =
   MatrixSdk;
 
+const CAPTURE_START_STALL_MS = 10_000;
+/** Minimum time capture must run before finalize produces a non-empty blob. */
+const CAPTURE_MIN_DURATION_MS = 2_000;
+const CAPTURE_LIMIT_CHECK_MS = 15_000;
+
+type PendingRecordingUpload = {
+  blob: Blob;
+  mimeType: string;
+  callSessionId: string;
+  spaceSlug: string;
+  roomId: string;
+  authToken: string;
+  transcriptText?: string;
+  startedAt: string;
+  endedAt: string;
+  launchContext?: {
+    signalTitle?: string;
+    signalSlug?: string;
+    threadRootEventId?: string;
+  };
+};
+
+function isCaptureEligibleCallState(state: SpaceGroupCallState): boolean {
+  return state === 'connected' || state === 'awaiting_media';
+}
+
+function abortStaleJoinAttempt(
+  setCallState: (state: SpaceGroupCallState) => void,
+) {
+  setCallState('idle');
+}
+
+function abortInFlightJoin(
+  joinEpochRef: { current: number },
+  isJoiningRef: { current: boolean },
+) {
+  joinEpochRef.current += 1;
+  isJoiningRef.current = false;
+}
+
 /** Abort `gc.enter()` hang (SFU/TURN stuck) — user-recoverable via Retry. */
 const CONNECT_STALL_ABORT_MS = 90_000;
 
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
+const REMOTE_MEDIA_REPAIR_NUDGE_MS = 1500;
+const REMOTE_MEDIA_AUTO_RECOVER_MS = 70_000;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
 const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
@@ -44,7 +193,93 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
  * side with media until reload. Nudge once after enter + optional delayed retry.
  */
 const PLACE_OUTGOING_DELAYED_MS = 600;
-const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
+/** WCUX-SESSION-5: refresh pairwise WebRTC paths during long calls. */
+const PLACE_OUTGOING_PERIODIC_MS = 15 * 60 * 1000;
+/** Re-verify local tracks + nudge pairwise calls while WebRTC settles after join. */
+const LOCAL_MEDIA_BOOTSTRAP_MS = [800, 2000, 5000, 10000] as const;
+const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
+const VOICE_PROCESSING_PRESET_KEY = 'hypha-group-call-voice-processing-v1';
+const CALL_CAPTURE_NOTICE_BODY = 'Hypha call capture notice';
+
+export type SpaceGroupCallLaunchContext = {
+  signalTitle?: string;
+  signalSlug?: string;
+  threadRootEventId?: string;
+  roomTitle?: string;
+};
+
+export type SpaceGroupCallOptions = {
+  authToken?: string | null;
+  spaceSlug?: string | null;
+  /** Fired after call recording/transcript artifacts are persisted successfully. */
+  onCallArtifactsUploaded?: (params: { spaceSlug: string }) => void;
+  /** Optional launch context (signal title, thread root) for Space Memory display. */
+  getCallLaunchContext?: () => SpaceGroupCallLaunchContext | null;
+};
+export type { SpaceGroupCallVoiceProcessingPreset } from './voice-processing-constraints';
+
+function readVoiceProcessingPreset(): SpaceGroupCallVoiceProcessingPreset {
+  if (typeof window === 'undefined') return 'standard';
+  try {
+    const raw = window.localStorage
+      .getItem(VOICE_PROCESSING_PRESET_KEY)
+      ?.trim();
+    if (raw === 'standard' || raw === 'voice_isolation' || raw === 'music') {
+      return raw;
+    }
+  } catch {
+    // ignore persistence read failures
+  }
+  return 'standard';
+}
+
+function persistVoiceProcessingPreset(
+  preset: SpaceGroupCallVoiceProcessingPreset,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(VOICE_PROCESSING_PRESET_KEY, preset);
+  } catch {
+    // ignore persistence write failures
+  }
+}
+
+async function tryRepairRoomCallPermissions(
+  authToken: string | null | undefined,
+  spaceSlug: string | null | undefined,
+  roomId: string,
+): Promise<boolean> {
+  const token = authToken?.trim();
+  const slug = spaceSlug?.trim();
+  if (!token || !slug) return false;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS);
+  try {
+    const response = await fetch('/api/matrix/room-call-permissions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ roomId, spaceSlug: slug }),
+      signal: controller.signal,
+    });
+    if (!response.ok) return false;
+    const data = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+    } | null;
+    return data?.ok === true;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return false;
+    }
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   const fn = (gc as unknown as { placeOutgoingCalls?: () => void })
@@ -57,8 +292,194 @@ function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   }
 }
 
+function countGroupCallParticipantDevices(gc: MatrixSdk.GroupCall): number {
+  let count = 0;
+  for (const [, deviceMap] of gc.participants) {
+    count += deviceMap.size;
+  }
+  return count;
+}
+
+function stopPlaceOutgoingPeriodicNudge(intervalRef: {
+  current: number | null;
+}): void {
+  if (typeof window === 'undefined') return;
+  if (intervalRef.current == null) return;
+  window.clearInterval(intervalRef.current);
+  intervalRef.current = null;
+}
+
+function startPlaceOutgoingPeriodicNudge(
+  gc: MatrixSdk.GroupCall,
+  intervalRef: { current: number | null },
+  activeGroupCallRef: { current: MatrixSdk.GroupCall | null },
+): void {
+  if (typeof window === 'undefined') return;
+  stopPlaceOutgoingPeriodicNudge(intervalRef);
+  intervalRef.current = window.setInterval(() => {
+    if (activeGroupCallRef.current !== gc) return;
+    if (countGroupCallParticipantDevices(gc) <= 1) return;
+    nudgeGroupCallPlaceOutgoing(gc);
+  }, PLACE_OUTGOING_PERIODIC_MS);
+}
+
+function getLocalVideoTrackPresence(
+  gc: MatrixSdk.GroupCall,
+): MediaStreamTrack | null {
+  const track = gc.localCallFeed?.stream.getVideoTracks()[0];
+  return track && track.readyState === 'live' ? track : null;
+}
+
+function getPublishableLocalVideoTrack(
+  gc: MatrixSdk.GroupCall,
+): MediaStreamTrack | null {
+  const track = getLocalVideoTrackPresence(gc);
+  // Browsers mute (black-frame) camera tracks when the tab is backgrounded while
+  // keeping readyState `live`; treat that as unhealthy so recovery can republish.
+  return track && !track.muted ? track : null;
+}
+
+async function waitForPublishableLocalVideoTrack(
+  gc: MatrixSdk.GroupCall,
+  timeoutMs = 400,
+): Promise<boolean> {
+  if (getPublishableLocalVideoTrack(gc)) return true;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    if (getPublishableLocalVideoTrack(gc)) return true;
+  }
+  return false;
+}
+
+/** Matrix SDK can leave a stale or missing track after camera off→on. */
+async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
+  if (gc.isLocalVideoMuted()) return;
+  if (getPublishableLocalVideoTrack(gc)) return;
+  if (getLocalVideoTrackPresence(gc)) {
+    if (await waitForPublishableLocalVideoTrack(gc, 1200)) return;
+  }
+
+  await gc.setLocalVideoMuted(false);
+  if (await waitForPublishableLocalVideoTrack(gc, 220)) return;
+
+  await gc.setLocalVideoMuted(true);
+  await gc.setLocalVideoMuted(false);
+  await waitForPublishableLocalVideoTrack(gc, 400);
+}
+
+async function ensureOutboundLocalVideoOrientationForGroupCall(
+  gc: MatrixSdk.GroupCall,
+  processedSourceTrackIds: Set<string>,
+  flippedTrackDisposers: Array<() => void>,
+): Promise<void> {
+  try {
+    await applyOutboundLocalVideoOrientation(
+      (stream) => gc.updateLocalUsermediaStream(stream),
+      gc.localCallFeed?.stream,
+      {
+        processedSourceTrackIds,
+        onFlippedTrackDispose: (dispose) => {
+          flippedTrackDisposers.push(dispose);
+        },
+      },
+    );
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(
+        '[hypha.group_call] ensureOutboundLocalVideoOrientation failed',
+        error,
+      );
+    }
+  }
+}
+
+/** Stop local A/V publish without leaving the room GroupCall (tab transfer). */
+async function stopGroupCallLocalPublishing(
+  gc: MatrixSdk.GroupCall,
+): Promise<void> {
+  const steps: Array<() => unknown> = [
+    () => gc.setScreensharingEnabled(false),
+    () => gc.setMicrophoneMuted(true),
+    () => gc.setLocalVideoMuted(true),
+    () =>
+      (gc as MatrixSdk.GroupCall & { terminate?: () => void }).terminate?.(),
+  ];
+  for (const step of steps) {
+    try {
+      await Promise.resolve(step());
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(
+          '[hypha.group_call] stopGroupCallLocalPublishing step rejected',
+          err,
+        );
+      }
+    }
+  }
+}
+
+function getLiveLocalAudioTrack(
+  gc: MatrixSdk.GroupCall,
+): MediaStreamTrack | null {
+  const track = gc.localCallFeed?.stream.getAudioTracks()[0];
+  return track && track.readyState === 'live' ? track : null;
+}
+
+async function waitForLiveLocalAudioTrack(
+  gc: MatrixSdk.GroupCall,
+  timeoutMs = 400,
+): Promise<boolean> {
+  if (getLiveLocalAudioTrack(gc)) return true;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    if (getLiveLocalAudioTrack(gc)) return true;
+  }
+  return false;
+}
+
+/** Matrix SDK can leave mic unmuted but without a live audio track after enter(). */
+async function recoverLocalMicrophoneFeed(
+  gc: MatrixSdk.GroupCall,
+): Promise<void> {
+  if (gc.isMicrophoneMuted()) return;
+  if (getLiveLocalAudioTrack(gc)) return;
+
+  await gc.setMicrophoneMuted(true);
+  await gc.setMicrophoneMuted(false);
+  await waitForLiveLocalAudioTrack(gc, 400);
+}
+
+/**
+ * After enter() or participant changes, confirm local tracks are live and retry
+ * pairwise call placement so remote peers receive A/V.
+ */
+async function ensureLocalCallMediaPublished(
+  gc: MatrixSdk.GroupCall,
+  kind: 'audio' | 'video',
+): Promise<void> {
+  try {
+    if (!gc.isMicrophoneMuted()) {
+      await recoverLocalMicrophoneFeed(gc);
+    }
+    if (kind === 'video' && !gc.isLocalVideoMuted()) {
+      await recoverLocalCameraFeed(gc);
+    }
+  } catch {
+    /* keep call connected if device recovery fails */
+  }
+  nudgeGroupCallPlaceOutgoing(gc);
+}
+
 /** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
 const GROUP_WEBRTC_SUMMARY_STATS_MS = matrixGroupCallSummaryStatsMsFromEnv();
+const GROUP_WEBRTC_FRAME_LOG_INTERVAL_MS = 30_000;
+const CALL_THUMBNAIL_DOWNSCALE_ENABLED = callThumbnailDownscaleFromEnv();
 
 /** `callSessionId` for correlation; must not use `Math.random()` (CodeQL / GAS-weak-randomness). */
 function newCallSessionId(): string {
@@ -82,8 +503,27 @@ function newCallSessionId(): string {
   );
 }
 
-export function useSpaceGroupCall(roomId: string | null) {
+export function useSpaceGroupCall(
+  roomId: string | null,
+  options: SpaceGroupCallOptions = {},
+) {
   const { client } = useMatrix();
+  const {
+    authToken = null,
+    spaceSlug = null,
+    onCallArtifactsUploaded,
+    getCallLaunchContext,
+  } = options;
+  const latestAuthTokenRef = useRef<string | null>(authToken?.trim() || null);
+  const latestSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
+  /** Pinned at connect so upload still works if chat panel unbinds mid-call. */
+  const pinnedUploadContextRef = useRef<{
+    authToken: string;
+    spaceSlug: string;
+    roomId: string;
+  } | null>(null);
+  const onCallArtifactsUploadedRef = useRef(onCallArtifactsUploaded);
+  const getCallLaunchContextRef = useRef(getCallLaunchContext);
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -95,8 +535,32 @@ export function useSpaceGroupCall(roomId: string | null) {
   const [callKind, setCallKind] = useState<'audio' | 'video' | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [isScreensharing, setIsScreensharing] = useState(false);
+  const isScreensharingRef = useRef(false);
+  isScreensharingRef.current = isScreensharing;
+  const screenshareMutationRef = useRef<Promise<void>>(Promise.resolve());
+  const screenshareStopHandlersCleanupRef = useRef<(() => void) | null>(null);
+  const screenshareSurfaceModeRef =
+    useRef<CallScreenshareSurfaceMode>('browser');
+  const setScreensharingEnabledRef = useRef<
+    (enabled: boolean) => Promise<void>
+  >(async () => undefined);
+  const [screenshareTakeoverIncoming, setScreenshareTakeoverIncoming] =
+    useState<ScreenshareTakeoverIncoming | null>(null);
+  const [screenshareTakeoverPendingId, setScreenshareTakeoverPendingId] =
+    useState<string | null>(null);
+  const [screenshareTakeoverDenied, setScreenshareTakeoverDenied] =
+    useState(false);
+  const screenshareTakeoverPendingIdRef = useRef<string | null>(null);
   const [localPreviewStream, setLocalPreviewStream] =
     useState<MediaStream | null>(null);
+  const [voiceProcessingPreset, setVoiceProcessingPresetState] =
+    useState<SpaceGroupCallVoiceProcessingPreset>('standard');
+  const voiceProcessingPresetRef =
+    useRef<SpaceGroupCallVoiceProcessingPreset>('standard');
+  const voicePresetRestoreAfterScreenshareRef =
+    useRef<SpaceGroupCallVoiceProcessingPreset | null>(null);
+  const [presenterVoiceBoostActive, setPresenterVoiceBoostActive] =
+    useState(false);
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isLocalVideoMuted, setIsLocalVideoMuted] = useState(true);
   /** Active GroupCall for UI (tiles); cleared on leave. */
@@ -105,10 +569,36 @@ export function useSpaceGroupCall(roomId: string | null) {
   const [feedVersion, setFeedVersion] = useState(0);
   /** `userId::deviceId` for GroupCall.activeSpeaker; Phase 4 optional UI highlight. */
   const [callSessionId, setCallSessionId] = useState<string | null>(null);
+  const [callSessionAnchorEventId, setCallSessionAnchorEventId] = useState<
+    string | null
+  >(null);
   const [activeSpeakerKey, setActiveSpeakerKey] = useState<string | null>(null);
+  /** Latest active speaker for transcript attribution (avoids stale closure in SR). */
+  const activeSpeakerKeyRef = useRef<string | null>(null);
   /** Screenshare-only failure (does not end the call). */
   const [screenshareErrorCode, setScreenshareErrorCode] =
     useState<SpaceGroupCallErrorCode | null>(null);
+  const [screenshareTabAudioMissing, setScreenshareTabAudioMissing] =
+    useState(false);
+  const [cameraAccessBlocked, setCameraAccessBlocked] = useState(false);
+  const [recordingStatus, setRecordingStatus] =
+    useState<SpaceGroupCallRecordingStatus>('idle');
+  const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [recordingWarning, setRecordingWarning] = useState<{
+    code: CallRecordingLimitWarningCode;
+    remainingMinutes: number;
+    remainingSizeMb: number;
+  } | null>(null);
+  const [canRetryRecordingUpload, setCanRetryRecordingUpload] = useState(false);
+  const [capturePreference, setCapturePreference] = useState<
+    Exclude<SpaceGroupCallCaptureMode, 'none'>
+  >('recording_with_transcript');
+  const [capturePreferenceSelected, setCapturePreferenceSelected] =
+    useState(false);
+  const [captureMode, setCaptureMode] =
+    useState<SpaceGroupCallCaptureMode>('none');
+  const [activeRoomCapture, setActiveRoomCapture] =
+    useState<SpaceGroupCallCaptureConsent | null>(null);
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
   /**
@@ -122,15 +612,21 @@ export function useSpaceGroupCall(roomId: string | null) {
   const lastJoinKindRef = useRef<'audio' | 'video' | null>(null);
   const lastThreadRootEventIdRef = useRef<string | undefined>(undefined);
   const joinStartedAtRef = useRef<number | null>(null);
+  const callSessionStartedAtRef = useRef<number | null>(null);
   const lastRoomIdForTelemetryRef = useRef<string | null>(null);
   const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
   const webRtcDiagCleanupRef = useRef<(() => void) | null>(null);
+  const turnRefreshCleanupRef = useRef<(() => void) | null>(null);
+  const cameraCaptureConstraintsCleanupRef = useRef<(() => void) | null>(null);
   const groupCallListenerCleanupRef = useRef<(() => void) | null>(null);
   /** Cleared in runCleanup — delayed second `placeOutgoingCalls` nudge after enter(). */
   const placeOutgoingNudgeTimerRef = useRef<number | null>(null);
   /** Additional pairwise call-placement retries for rejoin/refresh races. */
   const placeOutgoingRetryTimerRefs = useRef<number[]>([]);
+  const placeOutgoingPeriodicIntervalRef = useRef<number | null>(null);
+  const localMediaBootstrapDebounceRef = useRef<number | null>(null);
+  const localMediaBootstrapTimerRefs = useRef<number[]>([]);
   /**
    * Bumped when starting a join and when the stall watchdog fires — stale
    * `await gc.enter()` must not run success paths after forced cleanup.
@@ -148,12 +644,78 @@ export function useSpaceGroupCall(roomId: string | null) {
   const remoteMediaGapSinceRef = useRef<number | null>(null);
   const remoteMediaStallLoggedRef = useRef(false);
   const remoteMediaStallBannerDismissedRef = useRef(false);
+  const remoteMediaRepairNudgeIntervalRef = useRef<ReturnType<
+    typeof setInterval
+  > | null>(null);
+  const remoteMediaRecoverRequestedRef = useRef(false);
+  const remoteMediaRecoverAttemptedRef = useRef(false);
+  const remoteMediaRecoverInFlightRef = useRef(false);
+  /** Throttle TURN probes during remote-media stall (avoids Dendrite 429 on /voip/turnServer). */
+  const lastStallTurnProbeAtRef = useRef(0);
+  const outboundVideoOrientationProcessedRef = useRef<Set<string>>(new Set());
+  const outboundVideoOrientationDisposersRef = useRef<Array<() => void>>([]);
+  const recordingGenerationRef = useRef(0);
+  const recordingFinalizeInFlightRef = useRef(false);
+  const recordingFinalizeGenerationRef = useRef<number | null>(null);
+  const captureBootstrapInFlightRef = useRef(false);
+  const recordingRuntimeRef = useRef<{
+    generation: number;
+    mode: SpaceGroupCallCaptureMode;
+    pauseRecorder?: () => void;
+    resumeRecorder?: () => void;
+    stopRecorder?: () => Promise<Blob>;
+    pauseTranscript?: () => Promise<void> | void;
+    resumeTranscript?: () => void;
+    stopTranscript: () => Promise<string> | string;
+    mimeType?: string;
+    hasVideoRecording: boolean;
+    startedAt: string;
+    recordedRoomId: string;
+  } | null>(null);
+  const pendingRecordingUploadRef = useRef<PendingRecordingUpload | null>(null);
+  const captureModeRef = useRef<SpaceGroupCallCaptureMode>('none');
+  const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
+  const [isCallRecovering, setIsCallRecovering] = useState(false);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
+  const [remoteMediaWarming, setRemoteMediaWarming] = useState(false);
+  const [turnServerUnavailable, setTurnServerUnavailable] = useState(false);
+  const turnServerBannerDismissedRef = useRef(false);
+
+  const retryRemoteMediaConnection = useCallback(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    remoteMediaStallBannerDismissedRef.current = false;
+    remoteMediaStallLoggedRef.current = false;
+    remoteMediaRecoverAttemptedRef.current = false;
+    remoteMediaRecoverRequestedRef.current = true;
+    setRemoteMediaStall(false);
+    setRemoteMediaWarming(false);
+    setRemoteMediaRecoverNonce((value) => value + 1);
+  }, [callState]);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
     remoteMediaStallBannerDismissedRef.current = true;
     setRemoteMediaStall(false);
+    setRemoteMediaWarming(false);
   }, []);
+
+  const dismissTurnServerUnavailableBanner = useCallback(() => {
+    turnServerBannerDismissedRef.current = true;
+    setTurnServerUnavailable(false);
+  }, []);
+
+  const applyTurnReadinessState = useCallback(
+    (unavailable: boolean, expectedJoinEpoch?: number) => {
+      if (
+        expectedJoinEpoch !== undefined &&
+        expectedJoinEpoch !== joinEpochRef.current
+      ) {
+        return;
+      }
+      if (turnServerBannerDismissedRef.current) return;
+      setTurnServerUnavailable(unavailable);
+    },
+    [],
+  );
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
   /**
@@ -164,9 +726,79 @@ export function useSpaceGroupCall(roomId: string | null) {
   const [idleRoomParticipantCount, setIdleRoomParticipantCount] = useState(0);
   const [idleInCallUserIds, setIdleInCallUserIds] = useState<string[]>([]);
 
+  useEffect(() => {
+    latestAuthTokenRef.current = authToken?.trim() || null;
+  }, [authToken]);
+
+  useEffect(() => {
+    latestSpaceSlugRef.current = spaceSlug?.trim() || null;
+  }, [spaceSlug]);
+
+  useEffect(() => {
+    const inSession =
+      callState === 'connected' ||
+      callState === 'awaiting_media' ||
+      callState === 'connecting' ||
+      callState === 'initializing' ||
+      callState === 'disconnecting';
+    if (!inSession) return;
+    const token = latestAuthTokenRef.current;
+    const slug = latestSpaceSlugRef.current;
+    const activeRoom = roomId?.trim();
+    if (!token || !slug || !activeRoom) return;
+    pinnedUploadContextRef.current = {
+      authToken: token,
+      spaceSlug: slug,
+      roomId: activeRoom,
+    };
+  }, [callState, roomId, spaceSlug, authToken]);
+
+  useEffect(() => {
+    onCallArtifactsUploadedRef.current = onCallArtifactsUploaded;
+  }, [onCallArtifactsUploaded]);
+
+  useEffect(() => {
+    getCallLaunchContextRef.current = getCallLaunchContext;
+  }, [getCallLaunchContext]);
+
+  useEffect(() => {
+    captureModeRef.current = captureMode;
+  }, [captureMode]);
+
+  useEffect(() => {
+    const restored = restorePendingRecordingUpload();
+    if (!restored) return;
+    pendingRecordingUploadRef.current = restored;
+    setCanRetryRecordingUpload(true);
+    setRecordingStatus('error');
+    setRecordingError(
+      'Recording upload did not complete. Use Retry upload to send it again.',
+    );
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (callState !== 'connected') return;
+    const mediaQuery = window.matchMedia(
+      `(max-width: ${CALL_MOBILE_VIEWPORT_MAX_PX}px)`,
+    );
+    const stopShareOnMobile = () => {
+      const sharing =
+        isScreensharingRef.current ||
+        groupCallRef.current?.isScreensharing() === true;
+      if (!sharing || !isCallMobileViewport()) return;
+      void setScreensharingEnabledRef.current(false);
+    };
+    stopShareOnMobile();
+    mediaQuery.addEventListener('change', stopShareOnMobile);
+    return () => mediaQuery.removeEventListener('change', stopShareOnMobile);
+  }, [callState]);
+
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
-    setActiveSpeakerKey(f ? `${f.userId}::${f.deviceId ?? ''}` : null);
+    const key = f ? `${f.userId}::${f.deviceId ?? ''}` : null;
+    activeSpeakerKeyRef.current = key;
+    setActiveSpeakerKey(key);
   }, []);
 
   const scheduleFeedBatched = useCallback(() => {
@@ -195,76 +827,647 @@ export function useSpaceGroupCall(roomId: string | null) {
     }
   }, []);
 
-  const runCleanup = useCallback(() => {
-    clearConnectingStallTimer();
-    clearMediaDebugInterval();
-    if (placeOutgoingNudgeTimerRef.current != null) {
-      clearTimeout(placeOutgoingNudgeTimerRef.current);
-      placeOutgoingNudgeTimerRef.current = null;
+  const clearLocalMediaBootstrapTimers = useCallback(() => {
+    if (localMediaBootstrapDebounceRef.current != null) {
+      clearTimeout(localMediaBootstrapDebounceRef.current);
+      localMediaBootstrapDebounceRef.current = null;
     }
-    if (placeOutgoingRetryTimerRefs.current.length > 0) {
-      for (const id of placeOutgoingRetryTimerRefs.current) {
+    if (localMediaBootstrapTimerRefs.current.length > 0) {
+      for (const id of localMediaBootstrapTimerRefs.current) {
         clearTimeout(id);
       }
-      placeOutgoingRetryTimerRefs.current = [];
+      localMediaBootstrapTimerRefs.current = [];
     }
-    webRtcDiagCleanupRef.current?.();
-    webRtcDiagCleanupRef.current = null;
-    groupCallListenerCleanupRef.current?.();
-    groupCallListenerCleanupRef.current = null;
-    remoteMediaGapSinceRef.current = null;
-    remoteMediaStallLoggedRef.current = false;
-    remoteMediaStallBannerDismissedRef.current = false;
-    setRemoteMediaStall(false);
-    if (feedUpdateRafRef.current != null) {
-      cancelAnimationFrame(feedUpdateRafRef.current);
-      feedUpdateRafRef.current = null;
+  }, []);
+
+  const ensurePublishedLocalMediaWithOrientation = useCallback(
+    async (gc: MatrixSdk.GroupCall, kind: 'audio' | 'video') => {
+      await ensureLocalCallMediaPublished(gc, kind);
+      if (kind === 'video' && !gc.isLocalVideoMuted()) {
+        await ensureOutboundLocalVideoOrientationForGroupCall(
+          gc,
+          outboundVideoOrientationProcessedRef.current,
+          outboundVideoOrientationDisposersRef.current,
+        );
+      }
+    },
+    [],
+  );
+
+  const syncLocalScreenshareState = useCallback(
+    (gc: MatrixSdk.GroupCall | null | undefined) => {
+      if (!gc) {
+        setIsScreensharing(false);
+        return;
+      }
+      setIsScreensharing(gc.isScreensharing());
+    },
+    [],
+  );
+
+  const sendScreenshareTakeoverEvent = useCallback(
+    async (
+      action: 'request' | 'approve' | 'deny' | 'cancel',
+      requestId: string,
+      requesterUserId: string,
+      targetUserId?: string,
+    ) => {
+      const activeRoomId = roomId?.trim();
+      if (!client || !activeRoomId) return;
+      try {
+        await client.sendEvent(
+          activeRoomId,
+          MatrixSdk.EventType.RoomMessage,
+          buildScreenshareTakeoverContent(
+            action,
+            requestId,
+            requesterUserId,
+            targetUserId,
+          ),
+        );
+      } catch {
+        // best effort
+      }
+    },
+    [client, roomId],
+  );
+
+  const announceCaptureNotice = useCallback(
+    async (
+      action: 'started' | 'stopped',
+      mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
+    ) => {
+      const activeRoomId = roomId?.trim();
+      if (!client || !activeRoomId) return;
+      const noticeId = `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      try {
+        const noticePayload = {
+          msgtype: MatrixSdk.MsgType.Notice,
+          body: CALL_CAPTURE_NOTICE_BODY,
+          [CALL_CAPTURE_NOTICE_TYPE]: true,
+          notice_id: noticeId,
+          action,
+          mode,
+          sent_at: new Date().toISOString(),
+        } as RoomMessageEventContent;
+        await client.sendEvent(
+          activeRoomId,
+          MatrixSdk.EventType.RoomMessage,
+          noticePayload,
+        );
+      } catch {
+        // best effort; recording can continue without room-wide notice
+      }
+    },
+    [client, roomId],
+  );
+
+  const beginCaptureRuntimeAsync = useCallback(async (): Promise<boolean> => {
+    if (recordingRuntimeRef.current) return true;
+    if (recordingFinalizeInFlightRef.current) return false;
+    if (captureBootstrapInFlightRef.current) return false;
+
+    const mode = captureModeRef.current;
+    if (mode === 'none') return false;
+    if (!isCaptureEligibleCallState(callState)) return false;
+
+    const sessionId = callSessionId?.trim();
+    const activeRoom =
+      roomId?.trim() || pinnedUploadContextRef.current?.roomId?.trim() || '';
+    if (!sessionId || !activeRoom) return false;
+
+    captureBootstrapInFlightRef.current = true;
+    try {
+      const gc = groupCallRef.current ?? groupCall;
+      let recorder: Awaited<ReturnType<typeof createCallRecording>> | null =
+        null;
+      if (mode === 'recording_with_transcript') {
+        recorder = await createCallRecording(
+          () => groupCallRef.current ?? groupCall,
+        );
+        if (!recorder) {
+          setRecordingStatus('error');
+          setRecordingError(
+            'Could not access your microphone for recording. Check browser permissions and try again.',
+          );
+          setCaptureMode('none');
+          return false;
+        }
+      }
+
+      const armedModeAfterRecorder: SpaceGroupCallCaptureMode =
+        captureModeRef.current;
+      if (armedModeAfterRecorder === 'none') {
+        if (recorder) await recorder.stop().catch(() => undefined);
+        return false;
+      }
+
+      const transcript = startBrowserCallTranscription({
+        resolveSpeakerLabel: () =>
+          resolveMatrixSpeakerDisplayName(
+            client,
+            activeRoom,
+            activeSpeakerKeyRef.current,
+          ),
+        onError: () => {
+          // recording continues even if speech recognition fails
+        },
+      });
+      if (mode === 'transcript_only' && transcript.supported === false) {
+        if (recorder) await recorder.stop().catch(() => undefined);
+        setRecordingStatus('error');
+        setRecordingError(
+          'transcript capture is not supported in this browser',
+        );
+        setCaptureMode('none');
+        return false;
+      }
+
+      const armedModeBeforeRuntime: SpaceGroupCallCaptureMode =
+        captureModeRef.current;
+      if (armedModeBeforeRuntime === 'none') {
+        if (recorder) await recorder.stop().catch(() => undefined);
+        return false;
+      }
+
+      const generation = recordingGenerationRef.current + 1;
+      recordingGenerationRef.current = generation;
+      recordingRuntimeRef.current = {
+        generation,
+        mode,
+        pauseRecorder: recorder?.pause,
+        resumeRecorder: recorder?.resume,
+        stopRecorder: recorder?.stop,
+        pauseTranscript: transcript.pause,
+        resumeTranscript: transcript.resume,
+        stopTranscript: transcript.stop,
+        mimeType: recorder?.mimeType,
+        hasVideoRecording: recorder?.mimeType?.startsWith('video/') ?? false,
+        startedAt: new Date().toISOString(),
+        recordedRoomId: activeRoom,
+      };
+      setRecordingStatus('recording');
+      setRecordingError(null);
+      setRecordingWarning(null);
+      void announceCaptureNotice('started', mode);
+      if (roomId) {
+        logSpaceGroupCallEvent({
+          name: 'hypha.group_call.capture_started',
+          roomId,
+          kind: callKind ?? undefined,
+          captureMode: mode,
+          hasRecorder: Boolean(recorder),
+          hasGroupCall: Boolean(gc),
+        });
+      }
+      return true;
+    } finally {
+      captureBootstrapInFlightRef.current = false;
     }
-    const gc = groupCallRef.current;
-    if (gc) {
-      const p = (async () => {
+  }, [
+    announceCaptureNotice,
+    callKind,
+    callSessionId,
+    callState,
+    client,
+    groupCall,
+    roomId,
+  ]);
+
+  const waitForCaptureBootstrap = useCallback(async () => {
+    let waited = 0;
+    while (captureBootstrapInFlightRef.current && waited < 8_000) {
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, 100);
+      });
+      waited += 100;
+    }
+  }, []);
+
+  const finalizeRecording = useCallback(() => {
+    const runtime = recordingRuntimeRef.current;
+    const runtimeGeneration = runtime?.generation ?? null;
+    if (
+      recordingFinalizeInFlightRef.current &&
+      runtimeGeneration != null &&
+      recordingFinalizeGenerationRef.current === runtimeGeneration
+    ) {
+      return;
+    }
+
+    const token =
+      latestAuthTokenRef.current ??
+      pinnedUploadContextRef.current?.authToken ??
+      null;
+    const slug =
+      latestSpaceSlugRef.current ??
+      pinnedUploadContextRef.current?.spaceSlug ??
+      null;
+    const activeRoomId =
+      runtime?.recordedRoomId?.trim() ||
+      roomId?.trim() ||
+      pinnedUploadContextRef.current?.roomId ||
+      null;
+    if (!runtime) {
+      recordingRuntimeRef.current = null;
+      if (!recordingFinalizeInFlightRef.current) {
+        setRecordingStatus('idle');
+      }
+      return;
+    }
+    if (!token || !activeRoomId) {
+      recordingRuntimeRef.current = null;
+      void (async () => {
         try {
-          await Promise.resolve((gc as MatrixSdk.GroupCall).leave());
-        } catch (err) {
-          if (process.env.NODE_ENV === 'development') {
-            console.debug('[hypha.group_call] GroupCall.leave() rejected', err);
+          if (runtime.stopRecorder) {
+            await runtime.stopRecorder();
           }
+        } catch {
+          // ignore recorder stop errors during teardown-only cleanup
         }
         try {
-          await Promise.resolve(
-            (
-              gc as MatrixSdk.GroupCall & { cleanMemberState?: () => void }
-            ).cleanMemberState?.(),
+          await runtime.stopTranscript();
+        } catch {
+          // ignore transcript stop errors during teardown-only cleanup
+        }
+        if (!recordingFinalizeInFlightRef.current) {
+          setRecordingStatus('error');
+          setRecordingError(
+            !token
+              ? 'recording upload skipped: missing auth token'
+              : 'recording upload skipped: missing room context',
           );
-        } catch (err) {
-          if (process.env.NODE_ENV === 'development') {
-            console.debug(
-              '[hypha.group_call] GroupCall.cleanMemberState() rejected',
-              err,
-            );
-          }
         }
       })();
-      leaveInFlightRef.current = p;
-      p.finally(() => {
-        if (leaveInFlightRef.current === p) {
-          leaveInFlightRef.current = null;
-        }
-      });
-      groupCallRef.current = null;
+      return;
     }
-    activeGroupCallRoomIdRef.current = null;
-    isJoiningRef.current = false;
-    setLocalPreviewStream(null);
-    setIsMicrophoneMuted(false);
-    setIsLocalVideoMuted(true);
-    setGroupCall(null);
-    setActiveSpeakerKey(null);
-    setCallSessionId(null);
-    setScreenshareErrorCode(null);
-    loggedStatsForGroupCallIdRef.current = null;
-    lastRoomIdForTelemetryRef.current = null;
-  }, [clearConnectingStallTimer, clearMediaDebugInterval]);
+    if (!slug) {
+      recordingRuntimeRef.current = null;
+      void (async () => {
+        try {
+          if (runtime.stopRecorder) {
+            await runtime.stopRecorder();
+          }
+        } catch {
+          // ignore recorder stop errors during teardown-only cleanup
+        }
+        try {
+          await runtime.stopTranscript();
+        } catch {
+          // ignore transcript stop errors during teardown-only cleanup
+        }
+        if (!recordingFinalizeInFlightRef.current) {
+          setRecordingStatus('error');
+          setRecordingError('recording upload skipped: missing space slug');
+        }
+      })();
+      return;
+    }
+
+    const cleanupGeneration = runtime.generation;
+    recordingFinalizeInFlightRef.current = true;
+    recordingFinalizeGenerationRef.current = cleanupGeneration;
+    recordingRuntimeRef.current = null;
+    setRecordingStatus('uploading');
+    if (
+      runtime.mode === 'recording_with_transcript' ||
+      runtime.mode === 'transcript_only'
+    ) {
+      void announceCaptureNotice('stopped', runtime.mode);
+    }
+    void (async () => {
+      let captureFinalizeOk = true;
+      const failCaptureFinalize = (
+        message: string,
+        options?: { blob?: Blob; pending?: PendingRecordingUpload },
+      ) => {
+        captureFinalizeOk = false;
+        if (options?.blob) {
+          downloadCallRecordingBackup(
+            options.blob,
+            options.pending?.callSessionId ?? callSessionId ?? 'recording',
+            options.pending?.mimeType ?? runtime.mimeType,
+          );
+        }
+        if (options?.pending) {
+          pendingRecordingUploadRef.current = options.pending;
+          persistPendingRecordingUpload(options.pending);
+          setCanRetryRecordingUpload(true);
+        }
+        if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+          setRecordingStatus('error');
+          setRecordingError(message);
+        }
+      };
+
+      try {
+        const startedMs = Date.parse(runtime.startedAt);
+        if (Number.isFinite(startedMs)) {
+          const remaining = CAPTURE_MIN_DURATION_MS - (Date.now() - startedMs);
+          if (remaining > 0) {
+            await new Promise<void>((resolve) => {
+              window.setTimeout(resolve, remaining);
+            });
+          }
+        }
+        const endedAt = new Date().toISOString();
+        const transcriptText = await runtime.stopTranscript();
+        const sessionId = callSessionId ?? newCallSessionId();
+        const normalizedTranscript = transcriptText.trim();
+        const launchContext =
+          getCallLaunchContextRef.current?.() ??
+          (threadContext?.threadRootEventId
+            ? { threadRootEventId: threadContext.threadRootEventId }
+            : null);
+        const uploadTranscriptOnly = async () => {
+          if (!normalizedTranscript) return;
+          await uploadRecordedCallArtifact({
+            authToken: token,
+            spaceSlug: slug,
+            roomId: activeRoomId,
+            callSessionId: sessionId,
+            transcriptText: normalizedTranscript,
+            startedAt: runtime.startedAt,
+            endedAt,
+            launchContext: launchContext ?? undefined,
+          });
+        };
+        const uploadRecordingBlob = async (blob: Blob) => {
+          const pendingPayload: PendingRecordingUpload = {
+            blob,
+            mimeType: runtime.mimeType ?? blob.type ?? 'video/webm',
+            callSessionId: sessionId,
+            spaceSlug: slug,
+            roomId: activeRoomId,
+            authToken: token,
+            transcriptText: normalizedTranscript || undefined,
+            startedAt: runtime.startedAt,
+            endedAt,
+            launchContext: launchContext ?? undefined,
+          };
+          try {
+            const result = await uploadRecordedCallArtifactWithRetry({
+              authToken: token,
+              spaceSlug: slug,
+              roomId: activeRoomId,
+              callSessionId: sessionId,
+              blob,
+              mimeType: runtime.mimeType,
+              transcriptText: normalizedTranscript,
+              startedAt: runtime.startedAt,
+              endedAt,
+              launchContext: launchContext ?? undefined,
+            });
+            if (!result.recording_stored) {
+              failCaptureFinalize(
+                'Recording upload did not persist media. A copy was saved to your downloads folder — use Retry upload.',
+                { blob, pending: pendingPayload },
+              );
+              return;
+            }
+            pendingRecordingUploadRef.current = null;
+            clearPersistedPendingRecordingUpload();
+            setCanRetryRecordingUpload(false);
+          } catch (error) {
+            const baseMessage =
+              error instanceof Error ? error.message : String(error);
+            failCaptureFinalize(
+              `${baseMessage} A copy was saved to your downloads folder — use Retry upload.`,
+              { blob, pending: pendingPayload },
+            );
+          }
+        };
+        if (runtime.mode === 'transcript_only') {
+          if (normalizedTranscript) {
+            await uploadTranscriptOnly();
+          } else if (
+            recordingFinalizeGenerationRef.current === cleanupGeneration
+          ) {
+            captureFinalizeOk = false;
+            setRecordingStatus('error');
+            setRecordingError('No speech was captured during this call.');
+          }
+        } else if (runtime.mode === 'recording_with_transcript') {
+          if (!runtime.stopRecorder || !runtime.mimeType) {
+            await uploadTranscriptOnly();
+          } else {
+            const blob = await runtime.stopRecorder();
+            const recordingTooSmall =
+              blob.size === 0 || blob.size < CALL_RECORDING_MIN_FILE_SIZE_BYTES;
+            if (recordingTooSmall) {
+              if (roomId) {
+                logSpaceGroupCallEvent({
+                  name: 'hypha.group_call.error',
+                  roomId,
+                  errorCode: 'CAPTURE_EMPTY_BLOB',
+                });
+              }
+              if (normalizedTranscript) {
+                await uploadTranscriptOnly();
+                if (
+                  recordingFinalizeGenerationRef.current === cleanupGeneration
+                ) {
+                  captureFinalizeOk = false;
+                  setRecordingStatus('error');
+                  setRecordingError(
+                    'Recording file was empty. Transcript only was saved.',
+                  );
+                }
+              } else if (
+                recordingFinalizeGenerationRef.current === cleanupGeneration
+              ) {
+                captureFinalizeOk = false;
+                setRecordingStatus('error');
+                setRecordingError(
+                  'Recording file was empty and no transcript was captured.',
+                );
+              }
+            } else {
+              await uploadRecordingBlob(blob);
+            }
+          }
+        }
+        if (
+          recordingFinalizeGenerationRef.current === cleanupGeneration &&
+          captureFinalizeOk
+        ) {
+          setRecordingStatus('idle');
+          setRecordingError(null);
+          setRecordingWarning(null);
+          onCallArtifactsUploadedRef.current?.({ spaceSlug: slug });
+        }
+      } catch (error) {
+        if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+          captureFinalizeOk = false;
+          setRecordingStatus('error');
+          setRecordingError(
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      } finally {
+        if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+          recordingFinalizeInFlightRef.current = false;
+          recordingFinalizeGenerationRef.current = null;
+          pinnedUploadContextRef.current = null;
+        }
+      }
+    })();
+  }, [announceCaptureNotice, callSessionId, client, roomId]);
+
+  const runCleanupRef = useRef<() => void>(() => {});
+
+  const emitCallSessionEnd = useCallback(
+    (reason: 'user' | 'error' | 'room' | 'unmount') => {
+      const telemetryRoomId = lastRoomIdForTelemetryRef.current;
+      if (!telemetryRoomId) return;
+      logGroupCallSessionEnd({
+        roomId: telemetryRoomId,
+        kind: lastJoinKindRef.current ?? undefined,
+        reason,
+        startedAtMs: callSessionStartedAtRef.current,
+      });
+      callSessionStartedAtRef.current = null;
+    },
+    [],
+  );
+
+  const runCleanup = useCallback(
+    (options?: { skipGroupCallLeave?: boolean }) => {
+      joinEpochRef.current += 1;
+      const shouldBootstrapCapture =
+        captureModeRef.current !== 'none' &&
+        !recordingRuntimeRef.current &&
+        !recordingFinalizeInFlightRef.current;
+
+      void (async () => {
+        if (shouldBootstrapCapture) {
+          await beginCaptureRuntimeAsync();
+        }
+        finalizeRecording();
+      })();
+      setCaptureMode('none');
+
+      clearConnectingStallTimer();
+      clearMediaDebugInterval();
+      if (placeOutgoingNudgeTimerRef.current != null) {
+        clearTimeout(placeOutgoingNudgeTimerRef.current);
+        placeOutgoingNudgeTimerRef.current = null;
+      }
+      if (placeOutgoingRetryTimerRefs.current.length > 0) {
+        for (const id of placeOutgoingRetryTimerRefs.current) {
+          clearTimeout(id);
+        }
+        placeOutgoingRetryTimerRefs.current = [];
+      }
+      stopPlaceOutgoingPeriodicNudge(placeOutgoingPeriodicIntervalRef);
+      clearLocalMediaBootstrapTimers();
+      webRtcDiagCleanupRef.current?.();
+      webRtcDiagCleanupRef.current = null;
+      turnRefreshCleanupRef.current?.();
+      turnRefreshCleanupRef.current = null;
+      turnServerBannerDismissedRef.current = false;
+      setTurnServerUnavailable(false);
+      cameraCaptureConstraintsCleanupRef.current?.();
+      cameraCaptureConstraintsCleanupRef.current = null;
+      groupCallListenerCleanupRef.current?.();
+      groupCallListenerCleanupRef.current = null;
+      remoteMediaGapSinceRef.current = null;
+      remoteMediaStallLoggedRef.current = false;
+      remoteMediaStallBannerDismissedRef.current = false;
+      if (remoteMediaRepairNudgeIntervalRef.current != null) {
+        clearInterval(remoteMediaRepairNudgeIntervalRef.current);
+        remoteMediaRepairNudgeIntervalRef.current = null;
+      }
+      remoteMediaRecoverRequestedRef.current = false;
+      remoteMediaRecoverAttemptedRef.current = false;
+      remoteMediaRecoverInFlightRef.current = false;
+      lastStallTurnProbeAtRef.current = 0;
+      setIsCallRecovering(false);
+      setRemoteMediaStall(false);
+      setRemoteMediaWarming(false);
+      if (feedUpdateRafRef.current != null) {
+        cancelAnimationFrame(feedUpdateRafRef.current);
+        feedUpdateRafRef.current = null;
+      }
+      screenshareStopHandlersCleanupRef.current?.();
+      screenshareStopHandlersCleanupRef.current = null;
+      const gc = groupCallRef.current;
+      if (gc) {
+        if (!options?.skipGroupCallLeave) {
+          const p = (async () => {
+            try {
+              await Promise.resolve((gc as MatrixSdk.GroupCall).leave());
+            } catch (err) {
+              if (process.env.NODE_ENV === 'development') {
+                console.debug(
+                  '[hypha.group_call] GroupCall.leave() rejected',
+                  err,
+                );
+              }
+            }
+            try {
+              await Promise.resolve(
+                (
+                  gc as MatrixSdk.GroupCall & { cleanMemberState?: () => void }
+                ).cleanMemberState?.(),
+              );
+            } catch (err) {
+              if (process.env.NODE_ENV === 'development') {
+                console.debug(
+                  '[hypha.group_call] GroupCall.cleanMemberState() rejected',
+                  err,
+                );
+              }
+            }
+          })();
+          leaveInFlightRef.current = p;
+          p.finally(() => {
+            if (leaveInFlightRef.current === p) {
+              leaveInFlightRef.current = null;
+            }
+          });
+        } else {
+          void stopGroupCallLocalPublishing(gc);
+        }
+        groupCallRef.current = null;
+      }
+      activeGroupCallRoomIdRef.current = null;
+      isJoiningRef.current = false;
+      setLocalPreviewStream(null);
+      setIsMicrophoneMuted(false);
+      setIsLocalVideoMuted(true);
+      setGroupCall(null);
+      activeSpeakerKeyRef.current = null;
+      setActiveSpeakerKey(null);
+      setCallSessionId(null);
+      setCallSessionAnchorEventId(null);
+      setScreenshareErrorCode(null);
+      setCameraAccessBlocked(false);
+      setCapturePreferenceSelected(false);
+      if (!recordingFinalizeInFlightRef.current) {
+        setRecordingStatus('idle');
+        setRecordingError(null);
+      }
+      loggedStatsForGroupCallIdRef.current = null;
+      lastRoomIdForTelemetryRef.current = null;
+      outboundVideoOrientationProcessedRef.current.clear();
+      for (const dispose of outboundVideoOrientationDisposersRef.current) {
+        dispose();
+      }
+      outboundVideoOrientationDisposersRef.current = [];
+    },
+    [
+      beginCaptureRuntimeAsync,
+      clearConnectingStallTimer,
+      clearLocalMediaBootstrapTimers,
+      clearMediaDebugInterval,
+      finalizeRecording,
+    ],
+  );
+
+  runCleanupRef.current = runCleanup;
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;
@@ -275,6 +1478,259 @@ export function useSpaceGroupCall(roomId: string | null) {
     const feed = gc.localCallFeed;
     setLocalPreviewStream(feed?.stream ?? null);
   }, []);
+
+  const applyVoiceProcessingPresetToGroupCall = useCallback(
+    async (
+      gc: MatrixSdk.GroupCall,
+      preset: SpaceGroupCallVoiceProcessingPreset,
+      isScreensharing = gc.isScreensharing(),
+    ): Promise<boolean> => {
+      if (
+        typeof navigator === 'undefined' ||
+        !navigator.mediaDevices?.getUserMedia
+      ) {
+        return false;
+      }
+      const existingStream = gc.localCallFeed?.stream ?? null;
+      const previousAudioTrack = existingStream?.getAudioTracks()[0] ?? null;
+      const videoTracks =
+        existingStream?.getVideoTracks().filter((track) => {
+          if (!track.enabled) return false;
+          const state = track.readyState as string;
+          /** Camera tracks can still be `new` right after `enter()` — do not drop them. */
+          return state === 'live' || state === 'new';
+        }) ?? [];
+      const audioConstraints = constraintsForVoicePreset(preset, {
+        isScreensharing,
+      });
+      const constraintPayload = {
+        autoGainControl: { ideal: audioConstraints.autoGainControl },
+        echoCancellation: { ideal: audioConstraints.echoCancellation },
+        noiseSuppression: { ideal: audioConstraints.noiseSuppression },
+      };
+      if (
+        previousAudioTrack &&
+        ((previousAudioTrack.readyState as string) === 'live' ||
+          (previousAudioTrack.readyState as string) === 'new')
+      ) {
+        try {
+          await previousAudioTrack.applyConstraints(constraintPayload);
+          previousAudioTrack.enabled = !gc.isMicrophoneMuted();
+          return true;
+        } catch {
+          /* open a new mic stream only when constraints cannot be applied */
+        }
+      }
+      const refreshedAudioStream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: constraintPayload,
+      });
+      const nextAudioTrack = refreshedAudioStream.getAudioTracks()[0];
+      if (!nextAudioTrack) {
+        refreshedAudioStream.getTracks().forEach((track) => track.stop());
+        return false;
+      }
+      nextAudioTrack.enabled = !gc.isMicrophoneMuted();
+      const nextStream = new MediaStream();
+      nextStream.addTrack(nextAudioTrack);
+      for (const videoTrack of videoTracks) {
+        nextStream.addTrack(videoTrack);
+      }
+      try {
+        await gc.updateLocalUsermediaStream(nextStream);
+      } catch (error) {
+        for (const track of refreshedAudioStream.getTracks()) {
+          track.stop();
+        }
+        for (const track of nextStream.getTracks()) {
+          if (track !== nextAudioTrack) continue;
+          if (track.readyState !== 'ended') {
+            track.stop();
+          }
+        }
+        throw error;
+      }
+      for (const track of refreshedAudioStream.getTracks()) {
+        if (track !== nextAudioTrack) {
+          track.stop();
+        }
+      }
+      if (previousAudioTrack && previousAudioTrack !== nextAudioTrack) {
+        previousAudioTrack.stop();
+      }
+      return true;
+    },
+    [],
+  );
+
+  const applyPresenterVoiceBoostForScreenshare = useCallback(
+    async (gc: MatrixSdk.GroupCall) => {
+      const plan = resolveScreenshareVoicePresetPlan(
+        voiceProcessingPresetRef.current,
+      );
+      voicePresetRestoreAfterScreenshareRef.current = plan.restorePreset;
+      setPresenterVoiceBoostActive(plan.restorePreset !== null);
+      if (plan.effectivePreset !== voiceProcessingPresetRef.current) {
+        setVoiceProcessingPresetState(plan.effectivePreset);
+        voiceProcessingPresetRef.current = plan.effectivePreset;
+      }
+      // iOS WebKit: concurrent getUserMedia while display capture starts can drop the call.
+      if (!isIOSTouchDevice()) {
+        try {
+          await applyVoiceProcessingPresetToGroupCall(
+            gc,
+            plan.effectivePreset,
+            true,
+          );
+        } catch {
+          // keep call connected if constraints fail
+        }
+      }
+      applyScreenshareTrackContentHints({
+        micTrack: gc.localCallFeed?.stream?.getAudioTracks()[0],
+        screenshareStream: gc.localScreenshareFeed?.stream,
+      });
+      scheduleFeedBatched();
+      refreshLocalPreview();
+    },
+    [
+      applyVoiceProcessingPresetToGroupCall,
+      refreshLocalPreview,
+      scheduleFeedBatched,
+    ],
+  );
+
+  const enableLocalScreenshareDirect = useCallback(
+    async (gc: MatrixSdk.GroupCall) => {
+      try {
+        const turnEpoch = joinEpochRef.current;
+        if (client) {
+          void evaluateMatrixTurnReadiness(client).then((readiness) => {
+            applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);
+          });
+        }
+        clearOrphanedMatrixScreenshareStreams(client);
+        const ok = await withEnhancedScreenshareCapture(
+          client,
+          () =>
+            gc.setScreensharingEnabled(
+              true,
+              resolveMatrixScreenshareCaptureOpts(),
+            ),
+          screenshareSurfaceModeRef.current,
+        );
+        syncLocalScreenshareState(gc);
+        if (ok === false) {
+          clearOrphanedMatrixScreenshareStreams(client);
+          setScreenshareTabAudioMissing(false);
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        } else {
+          setScreenshareTabAudioMissing(
+            screenshareStreamIsBrowserTab(gc.localScreenshareFeed?.stream) &&
+              !screenshareStreamHasTabAudio(gc.localScreenshareFeed?.stream),
+          );
+          await applyPresenterVoiceBoostForScreenshare(gc);
+          void applyScreenShareCaptureRootRestrictionWithRetry(
+            gc.localScreenshareFeed?.stream,
+          );
+          screenshareStopHandlersCleanupRef.current?.();
+          screenshareStopHandlersCleanupRef.current =
+            bindScreenshareStreamStopHandlers(
+              gc.localScreenshareFeed?.stream,
+              () => {
+                void setScreensharingEnabledRef.current(false);
+              },
+            );
+        }
+      } catch (e) {
+        clearOrphanedMatrixScreenshareStreams(client);
+        syncLocalScreenshareState(gc);
+        setScreenshareTabAudioMissing(false);
+        if (isPermissionLikeGroupCallError(e)) {
+          setScreenshareErrorCode('PERMISSION_DENIED');
+        } else {
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        }
+      }
+      scheduleFeedBatched();
+    },
+    [
+      applyTurnReadinessState,
+      client,
+      scheduleFeedBatched,
+      syncLocalScreenshareState,
+      applyPresenterVoiceBoostForScreenshare,
+    ],
+  );
+
+  const restorePresenterVoiceAfterScreenshare = useCallback(
+    async (gc: MatrixSdk.GroupCall) => {
+      const restore = voicePresetRestoreAfterScreenshareRef.current;
+      voicePresetRestoreAfterScreenshareRef.current = null;
+      setPresenterVoiceBoostActive(false);
+      const targetPreset = restore ?? voiceProcessingPresetRef.current;
+      if (restore) {
+        setVoiceProcessingPresetState(restore);
+        persistVoiceProcessingPreset(restore);
+        voiceProcessingPresetRef.current = restore;
+      }
+      try {
+        await applyVoiceProcessingPresetToGroupCall(gc, targetPreset, false);
+      } catch {
+        // keep call connected if constraints fail
+      }
+      scheduleFeedBatched();
+      refreshLocalPreview();
+    },
+    [
+      applyVoiceProcessingPresetToGroupCall,
+      refreshLocalPreview,
+      scheduleFeedBatched,
+    ],
+  );
+
+  const reconcileLocalScreenshareStop = useCallback(
+    async (
+      gc: MatrixSdk.GroupCall | null | undefined,
+      stream?: MediaStream | null,
+    ) => {
+      screenshareStopHandlersCleanupRef.current?.();
+      screenshareStopHandlersCleanupRef.current = null;
+
+      const streamToClear = stream ?? gc?.localScreenshareFeed?.stream ?? null;
+      try {
+        await clearScreenShareCaptureRootRestriction(streamToClear);
+      } catch {
+        // track may already be stopped
+      }
+
+      if (gc?.isScreensharing()) {
+        try {
+          await gc.setScreensharingEnabled(false);
+        } catch {
+          // user-initiated or browser stop — reconcile UI anyway
+        }
+      }
+
+      clearOrphanedMatrixScreenshareStreams(client);
+
+      if (gc) {
+        syncLocalScreenshareState(gc);
+        await restorePresenterVoiceAfterScreenshare(gc);
+      } else {
+        setIsScreensharing(false);
+      }
+      setScreenshareTabAudioMissing(false);
+      setScreenshareTakeoverIncoming(null);
+      scheduleFeedBatched();
+    },
+    [
+      client,
+      restorePresenterVoiceAfterScreenshare,
+      scheduleFeedBatched,
+      syncLocalScreenshareState,
+    ],
+  );
 
   const updateParticipantCount = useCallback(() => {
     const gc = groupCallRef.current;
@@ -290,9 +1746,9 @@ export function useSpaceGroupCall(roomId: string | null) {
   }, []);
 
   /**
-   * @param excludeUserId — when the local user is **not** in-session (idle path),
-   *   omit their row so a stale `participants` entry after `leave()` does not
-   *   keep "call in progress" / Join UI visible (see Hypha join strip).
+   * @param excludeUserId — omit a user when computing “others” counts; idle
+   *   subscription uses the full participant map so an active room GroupCall
+   *   is detected even when the only devices belong to the local user (e.g. another tab).
    */
   const readParticipantsFromGroupCall = useCallback(
     (gc: MatrixSdk.GroupCall, excludeUserId?: string | null) => {
@@ -321,6 +1777,38 @@ export function useSpaceGroupCall(roomId: string | null) {
     [readParticipantsFromGroupCall],
   );
 
+  const scheduleLocalMediaBootstrap = useCallback(
+    (gc: MatrixSdk.GroupCall) => {
+      if (typeof window === 'undefined') return;
+      if (localMediaBootstrapDebounceRef.current != null) {
+        clearTimeout(localMediaBootstrapDebounceRef.current);
+      }
+      localMediaBootstrapDebounceRef.current = window.setTimeout(() => {
+        localMediaBootstrapDebounceRef.current = null;
+        if (groupCallRef.current !== gc) return;
+        const kind = lastJoinKindRef.current ?? 'audio';
+        void ensurePublishedLocalMediaWithOrientation(gc, kind);
+      }, 350);
+    },
+    [ensurePublishedLocalMediaWithOrientation],
+  );
+
+  const startLocalMediaBootstrapSeries = useCallback(
+    (gc: MatrixSdk.GroupCall) => {
+      if (typeof window === 'undefined') return;
+      clearLocalMediaBootstrapTimers();
+      const kind = lastJoinKindRef.current ?? 'audio';
+      localMediaBootstrapTimerRefs.current = LOCAL_MEDIA_BOOTSTRAP_MS.map(
+        (delayMs) =>
+          window.setTimeout(() => {
+            if (groupCallRef.current !== gc) return;
+            void ensurePublishedLocalMediaWithOrientation(gc, kind);
+          }, delayMs),
+      );
+    },
+    [clearLocalMediaBootstrapTimers, ensurePublishedLocalMediaWithOrientation],
+  );
+
   /** Stall detection: others in participant map but no remote userMedia CallFeed (WebRTC lag). */
   const evalRemoteMediaStall = useCallback(() => {
     const gc = groupCallRef.current;
@@ -339,6 +1827,12 @@ export function useSpaceGroupCall(roomId: string | null) {
 
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
+      if (remoteMediaRepairNudgeIntervalRef.current == null) {
+        remoteMediaRepairNudgeIntervalRef.current = setInterval(() => {
+          if (groupCallRef.current !== gc) return;
+          nudgeGroupCallPlaceOutgoing(gc);
+        }, REMOTE_MEDIA_REPAIR_NUDGE_MS);
+      }
       /**
        * The SDK can know the remote participant from group-call member state
        * while the pairwise `MatrixCall` never finishes selecting an opponent
@@ -346,10 +1840,29 @@ export function useSpaceGroupCall(roomId: string | null) {
        * the stalled side as well as from ParticipantsChanged/room-state bumps.
        */
       nudgeGroupCallPlaceOutgoing(gc);
+      if (
+        client &&
+        now - lastStallTurnProbeAtRef.current >=
+          TURN_READINESS_MIN_FETCH_INTERVAL_MS
+      ) {
+        lastStallTurnProbeAtRef.current = now;
+        const turnEpoch = joinEpochRef.current;
+        void evaluateMatrixTurnReadiness(client).then((readiness) => {
+          applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);
+        });
+      }
       if (remoteMediaGapSinceRef.current == null) {
         remoteMediaGapSinceRef.current = now;
       }
+      scheduleLocalMediaBootstrap(gc);
       const waitedMs = now - remoteMediaGapSinceRef.current;
+      if (
+        !remoteMediaStallBannerDismissedRef.current &&
+        waitedMs < REMOTE_MEDIA_STALL_MS
+      ) {
+        setRemoteMediaWarming(true);
+        setRemoteMediaStall(false);
+      }
       if (
         waitedMs >= REMOTE_MEDIA_STALL_MS &&
         !remoteMediaStallLoggedRef.current
@@ -364,20 +1877,38 @@ export function useSpaceGroupCall(roomId: string | null) {
           waitedMs,
         });
         if (!remoteMediaStallBannerDismissedRef.current) {
+          setRemoteMediaWarming(false);
           setRemoteMediaStall(true);
         }
+      }
+      if (
+        waitedMs >= REMOTE_MEDIA_AUTO_RECOVER_MS &&
+        !remoteMediaRecoverAttemptedRef.current &&
+        !remoteMediaRecoverInFlightRef.current &&
+        typeof document !== 'undefined' &&
+        !document.hidden
+      ) {
+        remoteMediaRecoverAttemptedRef.current = true;
+        remoteMediaRecoverRequestedRef.current = true;
+        setRemoteMediaRecoverNonce((value) => value + 1);
       }
     } else {
       remoteMediaGapSinceRef.current = null;
       remoteMediaStallLoggedRef.current = false;
       remoteMediaStallBannerDismissedRef.current = false;
+      if (remoteMediaRepairNudgeIntervalRef.current != null) {
+        clearInterval(remoteMediaRepairNudgeIntervalRef.current);
+        remoteMediaRepairNudgeIntervalRef.current = null;
+      }
       setRemoteMediaStall(false);
+      setRemoteMediaWarming(false);
     }
   }, [
+    applyTurnReadinessState,
     client,
     roomId,
     inCallUserIdsFromGroupCall,
-    readParticipantsFromGroupCall,
+    scheduleLocalMediaBootstrap,
   ]);
 
   const logDevMediaSnapshot = useCallback(() => {
@@ -418,6 +1949,62 @@ export function useSpaceGroupCall(roomId: string | null) {
       groupCallListenerCleanupRef.current = null;
 
       const onError = (err: unknown) => {
+        const screenshareActive =
+          isScreensharingRef.current ||
+          groupCallRef.current?.isScreensharing() === true;
+        if (screenshareActive) {
+          const action = resolveGroupCallErrorDuringScreenshare(err);
+          if (action === 'ignore') {
+            if (roomId) {
+              logSpaceGroupCallEvent({
+                name: 'hypha.group_call.error_ignored',
+                roomId,
+                kind: lastJoinKindRef.current ?? undefined,
+                errorCode: 'WEBRTC_FAILED',
+              });
+            }
+            return;
+          }
+          setScreenshareErrorCode(
+            isPermissionLikeGroupCallError(err)
+              ? 'PERMISSION_DENIED'
+              : 'WEBRTC_FAILED',
+          );
+          void reconcileLocalScreenshareStop(groupCallRef.current);
+          return;
+        }
+
+        const captureActive =
+          captureModeRef.current !== 'none' ||
+          recordingRuntimeRef.current != null ||
+          recordingFinalizeInFlightRef.current ||
+          isScreensharingRef.current;
+        if (isJoiningRef.current && !isPermissionLikeGroupCallError(err)) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              '[hypha.group_call] Ignoring transient group call error during join',
+              err,
+            );
+          }
+          return;
+        }
+        if (shouldIgnoreGroupCallErrorDuringCapture(err, captureActive)) {
+          if (roomId) {
+            logSpaceGroupCallEvent({
+              name: 'hypha.group_call.error_ignored',
+              roomId,
+              kind: lastJoinKindRef.current ?? undefined,
+              errorCode: 'WEBRTC_FAILED',
+            });
+          }
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              '[hypha.group_call] Ignoring transient group call error during capture',
+              err,
+            );
+          }
+          return;
+        }
         const isPerm = isPermissionLikeGroupCallError(err);
         const code: SpaceGroupCallErrorCode = isPerm
           ? 'PERMISSION_DENIED'
@@ -435,7 +2022,12 @@ export function useSpaceGroupCall(roomId: string | null) {
             errorCode: code,
           });
         }
+        recordMatrixCallSessionError(code);
+        if (callSessionStartedAtRef.current) {
+          emitCallSessionEnd('error');
+        }
         setCallState('error');
+        abortInFlightJoin(joinEpochRef, isJoiningRef);
         runCleanup();
         setCallKind(null);
         setIsScreensharing(false);
@@ -450,8 +2042,17 @@ export function useSpaceGroupCall(roomId: string | null) {
         }
       };
       gc.on(GroupCallEvent.GroupCallStateChanged, onState);
-      const onLocalScreenshareStateChanged = (sharing: boolean) => {
-        setIsScreensharing(sharing);
+      const onLocalScreenshareStateChanged = () => {
+        const gcNow = groupCallRef.current;
+        if (!gcNow) {
+          setIsScreensharing(false);
+          return;
+        }
+        const sdkSharing = gcNow.isScreensharing();
+        setIsScreensharing(sdkSharing);
+        if (!sdkSharing) {
+          void setScreensharingEnabledRef.current(false);
+        }
       };
       gc.on(
         GroupCallEvent.LocalScreenshareStateChanged,
@@ -462,21 +2063,26 @@ export function useSpaceGroupCall(roomId: string | null) {
         evalRemoteMediaStall();
         /** Pairwise VoIP: roster changes can arrive after the internal nudge — retry outbound setup. */
         nudgeGroupCallPlaceOutgoing(gc);
+        scheduleLocalMediaBootstrap(gc);
       };
       gc.on(GroupCallEvent.ParticipantsChanged, onParticipantsChanged);
       const onFeedsMaybeParticipants = () => {
         scheduleFeedBatched();
         updateParticipantCount();
         evalRemoteMediaStall();
+        syncLocalScreenshareState(gc);
+        /** Local/remote feeds can appear after getUserMedia — re-publish and nudge peers. */
+        nudgeGroupCallPlaceOutgoing(gc);
+        scheduleLocalMediaBootstrap(gc);
       };
       gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
       const onActiveSpeaker = (
         feed: { userId: string; deviceId?: string } | undefined,
       ) => {
-        setActiveSpeakerKey(
-          feed ? `${feed.userId}::${feed.deviceId ?? ''}` : null,
-        );
+        const key = feed ? `${feed.userId}::${feed.deviceId ?? ''}` : null;
+        activeSpeakerKeyRef.current = key;
+        setActiveSpeakerKey(key);
       };
       gc.on(GroupCallEvent.ActiveSpeakerChanged, onActiveSpeaker);
       onActiveSpeaker(gc.activeSpeaker);
@@ -520,13 +2126,20 @@ export function useSpaceGroupCall(roomId: string | null) {
       refreshLocalPreview,
       runCleanup,
       scheduleFeedBatched,
+      scheduleLocalMediaBootstrap,
       updateParticipantCount,
       evalRemoteMediaStall,
+      syncLocalScreenshareState,
+      reconcileLocalScreenshareStop,
     ],
   );
 
   const enterWithKind = useCallback(
-    async (kind: 'audio' | 'video', threadRootEventId?: string) => {
+    async (
+      kind: 'audio' | 'video',
+      threadRootEventId?: string,
+      options?: { preserveRemoteMediaRecoverInFlight?: boolean },
+    ) => {
       if (!client || !roomId?.trim()) {
         setErrorCode(!client ? 'NO_CLIENT' : 'NO_ROOM');
         setCallState('error');
@@ -550,6 +2163,11 @@ export function useSpaceGroupCall(roomId: string | null) {
       const joinEpoch = joinEpochRef.current;
 
       isJoiningRef.current = true;
+      remoteMediaRecoverRequestedRef.current = false;
+      remoteMediaRecoverAttemptedRef.current = false;
+      if (!options?.preserveRemoteMediaRecoverInFlight) {
+        remoteMediaRecoverInFlightRef.current = false;
+      }
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
       lastJoinKindRef.current = kind;
@@ -590,9 +2208,8 @@ export function useSpaceGroupCall(roomId: string | null) {
       const type = kind === 'video' ? GroupCallType.Video : GroupCallType.Voice;
       let gc = client.getGroupCallForRoom(roomId);
       if (gc) {
-        const myId = client.getUserId() ?? null;
-        const activeOthers = readParticipantsFromGroupCall(gc, myId).count;
-        if (activeOthers === 0) {
+        const activeDevices = readParticipantsFromGroupCall(gc).count;
+        if (activeDevices === 0) {
           try {
             await Promise.resolve(
               (
@@ -602,8 +2219,11 @@ export function useSpaceGroupCall(roomId: string | null) {
           } catch {
             /* stale local group call cleanup is best-effort */
           }
-          gc = client.getGroupCallForRoom(roomId);
+          // Do not reuse SDK-tracked call after terminate — room state may
+          // still carry a different groupCallId ("multiple calls" warning).
+          gc = null;
         }
+        // activeDevices > 0: always join the room GroupCall (same space, one session).
       }
 
       if (!gc) {
@@ -622,22 +2242,58 @@ export function useSpaceGroupCall(roomId: string | null) {
           ) {
             gc = client.getGroupCallForRoom(roomId);
           } else {
-            isJoiningRef.current = false;
-            setErrorCode('UNKNOWN');
-            setCallSessionId(null);
-            if (roomId) {
-              logSpaceGroupCallEvent({
-                name: 'hypha.group_call.error',
+            let nextErrorCode: SpaceGroupCallErrorCode =
+              isPermissionLikeGroupCallError(e)
+                ? 'PERMISSION_DENIED'
+                : 'UNKNOWN';
+            if (nextErrorCode === 'PERMISSION_DENIED') {
+              const repaired = await tryRepairRoomCallPermissions(
+                authToken,
+                spaceSlug,
                 roomId,
-                kind,
-                errorCode: 'UNKNOWN',
-              });
+              );
+              if (repaired) {
+                try {
+                  gc = await client.createGroupCall(
+                    roomId,
+                    type,
+                    false,
+                    GroupCallIntent.Room,
+                  );
+                } catch (retryError) {
+                  if (
+                    retryError instanceof Error &&
+                    retryError.message.includes(
+                      'already has an existing group call',
+                    )
+                  ) {
+                    gc = client.getGroupCallForRoom(roomId);
+                  } else {
+                    nextErrorCode = isPermissionLikeGroupCallError(retryError)
+                      ? 'PERMISSION_DENIED'
+                      : 'UNKNOWN';
+                  }
+                }
+              }
             }
-            setCallState('error');
-            setCallKind(null);
-            setThreadContext(null);
-            joinStartedAtRef.current = null;
-            return;
+            if (!gc) {
+              isJoiningRef.current = false;
+              setErrorCode(nextErrorCode);
+              setCallSessionId(null);
+              if (roomId) {
+                logSpaceGroupCallEvent({
+                  name: 'hypha.group_call.error',
+                  roomId,
+                  kind,
+                  errorCode: nextErrorCode,
+                });
+              }
+              setCallState('error');
+              setCallKind(null);
+              setThreadContext(null);
+              joinStartedAtRef.current = null;
+              return;
+            }
           }
         }
       }
@@ -689,17 +2345,20 @@ export function useSpaceGroupCall(roomId: string | null) {
               roomGroupCallType: String(GroupCallType.Video),
             });
           }
-        } catch {
+        } catch (e) {
+          const permissionLike = isPermissionLikeGroupCallError(e);
           gcSync.type = prevType;
           isJoiningRef.current = false;
-          setErrorCode('UNKNOWN');
+          setErrorCode(permissionLike ? 'PERMISSION_DENIED' : 'UNKNOWN');
           setCallSessionId(null);
           if (roomId) {
             logSpaceGroupCallEvent({
               name: 'hypha.group_call.error',
               roomId,
               kind,
-              errorCode: 'ROOM_TYPE_SYNC',
+              errorCode: permissionLike
+                ? 'PERMISSION_DENIED'
+                : 'ROOM_TYPE_SYNC',
             });
           }
           setCallState('error');
@@ -717,6 +2376,14 @@ export function useSpaceGroupCall(roomId: string | null) {
       const gci = gc as unknown as GroupCallPreEnterMute;
       gci.initWithVideoMuted = kind === 'audio';
       gci.initWithAudioMuted = false;
+      if (kind === 'video') {
+        if (await isLocalCameraPermissionDenied()) {
+          setCameraAccessBlocked(true);
+          gci.initWithVideoMuted = true;
+        } else {
+          setCameraAccessBlocked(false);
+        }
+      }
       /**
        * Refresh stale local member state after hard reloads. If the prior tab died
        * mid-call, old device entries can survive briefly and cause asymmetric media.
@@ -738,16 +2405,38 @@ export function useSpaceGroupCall(roomId: string | null) {
       updateParticipantCount();
       setCallState('connecting');
 
+      if (client && roomId?.trim() && gc.groupCallId) {
+        void (async () => {
+          try {
+            const anchorEventId = await ensureCallReactionAnchor({
+              client,
+              roomId: roomId.trim(),
+              groupCallId: gc.groupCallId,
+            });
+            if (joinEpoch !== joinEpochRef.current) return;
+            if (anchorEventId) {
+              setCallSessionAnchorEventId(anchorEventId);
+            }
+          } catch {
+            /* reactions unavailable if anchor publish fails */
+          }
+        })();
+      }
+
       /**
        * Probe TURN before `enter()`: missing homeserver TURN config often makes
        * `gc.enter()` stall, so post-enter diagnostics would never be emitted.
        */
-      void probeMatrixTurnServerReadiness({ client, roomId, kind });
+      void (async () => {
+        const readiness = await evaluateMatrixTurnReadiness(client);
+        applyTurnReadinessState(readiness.turnServerUnavailable, joinEpoch);
+        void probeMatrixTurnServerReadiness({ client, roomId, kind });
+      })();
 
       clearConnectingStallTimer();
       connectingStallTimerRef.current = setTimeout(() => {
         clearConnectingStallTimer();
-        joinEpochRef.current += 1;
+        abortInFlightJoin(joinEpochRef, isJoiningRef);
         if (groupCallRef.current !== gc) return;
         if (process.env.NODE_ENV === 'development') {
           console.warn('[hypha.group_call] enter() stalled — forcing cleanup', {
@@ -755,7 +2444,6 @@ export function useSpaceGroupCall(roomId: string | null) {
             ms: CONNECT_STALL_ABORT_MS,
           });
         }
-        isJoiningRef.current = false;
         setErrorCode('CONNECT_STALL');
         if (roomId) {
           logSpaceGroupCallEvent({
@@ -773,11 +2461,15 @@ export function useSpaceGroupCall(roomId: string | null) {
       }, CONNECT_STALL_ABORT_MS);
 
       try {
+        cameraCaptureConstraintsCleanupRef.current?.();
+        cameraCaptureConstraintsCleanupRef.current =
+          installMatrixCameraCaptureConstraints(client);
         await gc.enter();
       } catch (e) {
         clearConnectingStallTimer();
         if (joinEpoch !== joinEpochRef.current || groupCallRef.current !== gc) {
           isJoiningRef.current = false;
+          abortStaleJoinAttempt(setCallState);
           return;
         }
         isJoiningRef.current = false;
@@ -795,7 +2487,12 @@ export function useSpaceGroupCall(roomId: string | null) {
             errorCode: permissionLike ? 'PERMISSION_DENIED' : 'WEBRTC_FAILED',
           });
         }
+        recordMatrixCallSessionError(
+          permissionLike ? 'PERMISSION_DENIED' : 'WEBRTC_FAILED',
+        );
+        emitCallSessionEnd('error');
         setCallState('error');
+        abortInFlightJoin(joinEpochRef, isJoiningRef);
         runCleanup();
         setCallKind(null);
         setThreadContext(null);
@@ -807,23 +2504,25 @@ export function useSpaceGroupCall(roomId: string | null) {
 
       if (joinEpoch !== joinEpochRef.current || groupCallRef.current !== gc) {
         isJoiningRef.current = false;
+        abortStaleJoinAttempt(setCallState);
         return;
       }
 
+      try {
+        await applyVoiceProcessingPresetToGroupCall(gc, voiceProcessingPreset);
+      } catch {
+        // keep the call connected if browser denies advanced audio constraints
+      }
       /**
-       * Voice→video: `enter()` used `initWithVideoMuted` from our audio intent earlier in
-       * this session, or upgraded from voice room state — request camera explicitly so
-       * outbound video negotiates after room `m.type` is video.
+       * Voice preset replaces the local audio stream; confirm mic/camera tracks
+       * are live and retry pairwise call placement so remote peers receive A/V.
        */
-      if (kind === 'video') {
-        try {
-          await gc.setLocalVideoMuted(false);
-        } catch {
-          /* camera permission / hardware — remain in call with video off */
-        }
+      try {
+        await ensurePublishedLocalMediaWithOrientation(gc, kind);
+      } catch {
+        /* best-effort local media bootstrap */
       }
 
-      nudgeGroupCallPlaceOutgoing(gc);
       if (typeof window !== 'undefined') {
         if (placeOutgoingNudgeTimerRef.current != null) {
           clearTimeout(placeOutgoingNudgeTimerRef.current);
@@ -831,7 +2530,7 @@ export function useSpaceGroupCall(roomId: string | null) {
         placeOutgoingNudgeTimerRef.current = window.setTimeout(() => {
           placeOutgoingNudgeTimerRef.current = null;
           if (groupCallRef.current !== gc) return;
-          nudgeGroupCallPlaceOutgoing(gc);
+          void ensurePublishedLocalMediaWithOrientation(gc, kind);
         }, PLACE_OUTGOING_DELAYED_MS);
         placeOutgoingRetryTimerRefs.current = PLACE_OUTGOING_RETRY_MS.map(
           (delayMs) =>
@@ -840,23 +2539,56 @@ export function useSpaceGroupCall(roomId: string | null) {
               nudgeGroupCallPlaceOutgoing(gc);
             }, delayMs),
         );
+        startLocalMediaBootstrapSeries(gc);
+        startPlaceOutgoingPeriodicNudge(
+          gc,
+          placeOutgoingPeriodicIntervalRef,
+          groupCallRef,
+        );
       }
 
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
-      if (GROUP_WEBRTC_SUMMARY_STATS_MS > 0) {
+      const supportDebugEnabled = isMatrixCallSupportDebugEnabled();
+      if (GROUP_WEBRTC_SUMMARY_STATS_MS > 0 || supportDebugEnabled) {
         webRtcDiagCleanupRef.current = attachGroupCallWebRtcDiagnostics({
           gc,
           roomId,
           summaryStatsIntervalMs: GROUP_WEBRTC_SUMMARY_STATS_MS,
+          inboundRtpFrameLogIntervalMs: supportDebugEnabled
+            ? GROUP_WEBRTC_FRAME_LOG_INTERVAL_MS
+            : 0,
+          resolveActiveSpeakerUserId: () =>
+            parseActiveSpeakerUserId(activeSpeakerKeyRef.current),
+          enumeratePeerConnections: enumerateGroupCallPeerConnections,
+        });
+      }
+      turnRefreshCleanupRef.current?.();
+      const turnRefreshEpoch = joinEpochRef.current;
+      turnRefreshCleanupRef.current = scheduleMatrixTurnRefresh({
+        client,
+        onReadiness: (readiness) => {
+          applyTurnReadinessState(
+            readiness.turnServerUnavailable,
+            turnRefreshEpoch,
+          );
+        },
+      });
+      if (roomId) {
+        logGroupCallSimulcastCapabilityAudit({
+          roomId,
+          groupCallId: gc.groupCallId,
         });
       }
 
       setCallState('connected');
+      resetMatrixCallSessionMetrics();
+      callSessionStartedAtRef.current = Date.now();
       refreshLocalPreview();
       updateParticipantCount();
       setIsMicrophoneMuted(gc.isMicrophoneMuted());
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
+      syncLocalScreenshareState(gc);
       setActiveKeyFromGroupCall(gc);
       isJoiningRef.current = false;
       lastRoomIdForTelemetryRef.current = roomId;
@@ -869,7 +2601,9 @@ export function useSpaceGroupCall(roomId: string | null) {
           groupCallId: gc.groupCallId,
         });
       }
-      logDevMediaSnapshot();
+      if (isMatrixCallDebugEnabled()) {
+        logDevMediaSnapshot();
+      }
       evalRemoteMediaStall();
 
       const t1 =
@@ -904,7 +2638,9 @@ export function useSpaceGroupCall(roomId: string | null) {
     },
     [
       attachGroupCallListeners,
+      authToken,
       client,
+      spaceSlug,
       roomId,
       refreshLocalPreview,
       runCleanup,
@@ -913,6 +2649,9 @@ export function useSpaceGroupCall(roomId: string | null) {
       updateParticipantCount,
       logDevMediaSnapshot,
       evalRemoteMediaStall,
+      applyVoiceProcessingPresetToGroupCall,
+      voiceProcessingPreset,
+      startLocalMediaBootstrapSeries,
     ],
   );
 
@@ -930,10 +2669,67 @@ export function useSpaceGroupCall(roomId: string | null) {
     [enterWithKind],
   );
 
+  const resetAfterLeave = useCallback(() => {
+    abortInFlightJoin(joinEpochRef, isJoiningRef);
+    runCleanup();
+    setCallState('idle');
+    setErrorCode(null);
+    setCallKind(null);
+    setIsScreensharing(false);
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
+    setThreadContext(null);
+    setParticipantCount(0);
+    setTabBackgroundWhileInCall(false);
+    setPresenterVoiceBoostActive(false);
+    voicePresetRestoreAfterScreenshareRef.current = null;
+  }, [runCleanup]);
+
+  const restoreVoiceBeforeLeaveIfNeeded = useCallback(
+    async (gc: MatrixSdk.GroupCall) => {
+      if (
+        voicePresetRestoreAfterScreenshareRef.current == null &&
+        !isScreensharingRef.current
+      ) {
+        setPresenterVoiceBoostActive(false);
+        return;
+      }
+      try {
+        await Promise.race([
+          restorePresenterVoiceAfterScreenshare(gc),
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 2_000);
+          }),
+        ]);
+      } catch {
+        // Never block leave on voice preset restore.
+      }
+    },
+    [restorePresenterVoiceAfterScreenshare],
+  );
+
   const leave = useCallback(async () => {
-    if (callState === 'idle' || callState === 'disconnecting') return;
+    if (callState === 'idle') return;
+    if (callState === 'disconnecting') {
+      const gc = groupCallRef.current;
+      if (gc) {
+        void restoreVoiceBeforeLeaveIfNeeded(gc);
+      }
+      resetAfterLeave();
+      return;
+    }
     setCallState('disconnecting');
+    const gcBeforeLeave = groupCallRef.current;
+    if (gcBeforeLeave) {
+      await restoreVoiceBeforeLeaveIfNeeded(gcBeforeLeave);
+    } else {
+      setPresenterVoiceBoostActive(false);
+      voicePresetRestoreAfterScreenshareRef.current = null;
+    }
     if (lastRoomIdForTelemetryRef.current) {
+      emitCallSessionEnd('user');
       logSpaceGroupCallEvent({
         name: 'hypha.group_call.left',
         roomId: lastRoomIdForTelemetryRef.current,
@@ -941,21 +2737,60 @@ export function useSpaceGroupCall(roomId: string | null) {
         reason: 'user',
       });
     }
-    runCleanup();
+    resetAfterLeave();
+  }, [
+    callState,
+    emitCallSessionEnd,
+    resetAfterLeave,
+    restoreVoiceBeforeLeaveIfNeeded,
+  ]);
+
+  /**
+   * Drop local WebRTC/UI when Matrix sync moves to another tab without leaving
+   * the room GroupCall — the new leader tab re-enters via resume snapshot.
+   */
+  const releaseLocalCallForTabTransfer = useCallback(async () => {
+    if (callState === 'idle') return;
+    setCallState('disconnecting');
+    abortInFlightJoin(joinEpochRef, isJoiningRef);
+    const gc = groupCallRef.current;
+    if (gc) {
+      await restoreVoiceBeforeLeaveIfNeeded(gc);
+      await stopGroupCallLocalPublishing(gc);
+    } else {
+      setPresenterVoiceBoostActive(false);
+      voicePresetRestoreAfterScreenshareRef.current = null;
+    }
+    runCleanup({ skipGroupCallLeave: true });
     setCallState('idle');
     setErrorCode(null);
     setCallKind(null);
     setIsScreensharing(false);
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
     setThreadContext(null);
     setParticipantCount(0);
     setTabBackgroundWhileInCall(false);
-  }, [callState, runCleanup]);
+  }, [callState, restoreVoiceBeforeLeaveIfNeeded, runCleanup]);
 
   const setMicrophoneMuted = useCallback(
     async (muted: boolean) => {
       const gc = groupCallRef.current;
       if (!gc) return;
       await gc.setMicrophoneMuted(muted);
+      if (!muted) {
+        nudgeGroupCallPlaceOutgoing(gc);
+        if (!(await waitForLiveLocalAudioTrack(gc))) {
+          try {
+            await recoverLocalMicrophoneFeed(gc);
+          } catch {
+            /* mic permission / hardware — remain in call with mic off */
+          }
+        }
+        nudgeGroupCallPlaceOutgoing(gc);
+      }
       setIsMicrophoneMuted(gc.isMicrophoneMuted());
       scheduleFeedBatched();
       window.setTimeout(scheduleFeedBatched, 350);
@@ -967,6 +2802,24 @@ export function useSpaceGroupCall(roomId: string | null) {
     async (muted: boolean) => {
       const gc = groupCallRef.current;
       if (!gc) return;
+      if (muted) {
+        setCameraAccessBlocked(false);
+      } else {
+        const access = await requestLocalCameraAccess();
+        if (!access.ok) {
+          try {
+            await gc.setLocalVideoMuted(true);
+          } catch {
+            /* keep UI aligned with SDK */
+          }
+          setIsLocalVideoMuted(true);
+          if (access.reason === 'permission_denied') {
+            setCameraAccessBlocked(true);
+          }
+          return;
+        }
+        setCameraAccessBlocked(false);
+      }
       if (!muted && gc.type !== GroupCallType.Video) {
         const prevType = gc.type;
         const gcSync = gc as unknown as {
@@ -986,8 +2839,18 @@ export function useSpaceGroupCall(roomId: string | null) {
               roomGroupCallType: String(GroupCallType.Video),
             });
           }
-        } catch {
+        } catch (e) {
           gcSync.type = prevType;
+          if (isPermissionLikeGroupCallError(e)) {
+            setCameraAccessBlocked(true);
+          }
+          try {
+            await gc.setLocalVideoMuted(true);
+          } catch {
+            /* keep call connected */
+          }
+          setIsLocalVideoMuted(true);
+          return;
         }
       }
       await gc.setLocalVideoMuted(muted);
@@ -995,6 +2858,20 @@ export function useSpaceGroupCall(roomId: string | null) {
         setCallKind('video');
         lastJoinKindRef.current = 'video';
         nudgeGroupCallPlaceOutgoing(gc);
+        if (!(await waitForPublishableLocalVideoTrack(gc))) {
+          try {
+            await recoverLocalCameraFeed(gc);
+          } catch {
+            /* camera permission / hardware — remain in call with video off */
+          }
+        }
+        if (!gc.isLocalVideoMuted()) {
+          await ensureOutboundLocalVideoOrientationForGroupCall(
+            gc,
+            outboundVideoOrientationProcessedRef.current,
+            outboundVideoOrientationDisposersRef.current,
+          );
+        }
       }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
       refreshLocalPreview();
@@ -1011,37 +2888,548 @@ export function useSpaceGroupCall(roomId: string | null) {
   );
 
   const setScreensharingEnabled = useCallback(
-    async (enabled: boolean) => {
-      const gc = groupCallRef.current;
-      if (!gc) return;
-      setScreenshareErrorCode(null);
-      try {
-        const ok = await gc.setScreensharingEnabled(enabled);
-        // Stopping share is user-initiated; the SDK can report `false` without a real failure.
-        if (enabled && ok === false) {
-          setScreenshareErrorCode('WEBRTC_FAILED');
-        }
-      } catch (e) {
-        if (!enabled) {
-          setScreenshareErrorCode(null);
-          scheduleFeedBatched();
+    (
+      enabled: boolean,
+      options?: { surfaceMode?: CallScreenshareSurfaceMode },
+    ) => {
+      if (options?.surfaceMode) {
+        screenshareSurfaceModeRef.current = options.surfaceMode;
+      }
+      const run = async () => {
+        const gc = groupCallRef.current;
+        if (!gc) return;
+        setScreenshareErrorCode(null);
+
+        const sdkSharing = gc.isScreensharing();
+        if (enabled) {
+          if (sdkSharing) {
+            setIsScreensharing(true);
+            return;
+          }
+          const localUserId = client?.getUserId()?.trim() ?? null;
+          const remoteOwner = getRemoteScreenshareOwner(gc);
+          if (
+            remoteOwner &&
+            localUserId &&
+            remoteOwner.userId !== localUserId
+          ) {
+            const requestId = crypto.randomUUID();
+            screenshareTakeoverPendingIdRef.current = requestId;
+            setScreenshareTakeoverPendingId(requestId);
+            setScreenshareTakeoverDenied(false);
+            await sendScreenshareTakeoverEvent(
+              'request',
+              requestId,
+              localUserId,
+              remoteOwner.userId,
+            );
+            return;
+          }
+          await enableLocalScreenshareDirect(gc);
           return;
         }
-        if (isPermissionLikeGroupCallError(e)) {
-          setScreenshareErrorCode('PERMISSION_DENIED');
-        } else {
-          setScreenshareErrorCode('WEBRTC_FAILED');
+
+        if (!sdkSharing && !isScreensharingRef.current) {
+          setIsScreensharing(false);
+          setScreenshareTabAudioMissing(false);
+          return;
         }
-      }
-      scheduleFeedBatched();
+
+        await reconcileLocalScreenshareStop(gc);
+      };
+
+      const next = screenshareMutationRef.current.then(run, run);
+      screenshareMutationRef.current = next;
+      return next;
     },
-    [scheduleFeedBatched],
+    [
+      client,
+      enableLocalScreenshareDirect,
+      reconcileLocalScreenshareStop,
+      sendScreenshareTakeoverEvent,
+    ],
+  );
+
+  setScreensharingEnabledRef.current = setScreensharingEnabled;
+
+  const toggleScreensharing = useCallback(() => {
+    const gc = groupCallRef.current;
+    if (!gc) return;
+    const sdkSharing = gc.isScreensharing();
+    const sharing = sdkSharing || isScreensharingRef.current;
+    void setScreensharingEnabled(!sharing);
+  }, [setScreensharingEnabled]);
+
+  const approveScreenshareTakeover = useCallback(
+    async (request: ScreenshareTakeoverIncoming) => {
+      const gc = groupCallRef.current;
+      const localUserId = client?.getUserId()?.trim();
+      if (!gc || !localUserId || !request.requestId.trim()) return;
+      setScreenshareTakeoverIncoming(null);
+      try {
+        if (gc.isScreensharing()) {
+          await gc.setScreensharingEnabled(false);
+        }
+      } catch {
+        // continue — still notify requester
+      }
+      syncLocalScreenshareState(gc);
+      await restorePresenterVoiceAfterScreenshare(gc);
+      await sendScreenshareTakeoverEvent(
+        'approve',
+        request.requestId.trim(),
+        request.requesterUserId,
+        localUserId,
+      );
+      scheduleFeedBatched();
+      window.setTimeout(scheduleFeedBatched, 350);
+      window.setTimeout(scheduleFeedBatched, 900);
+    },
+    [
+      client,
+      restorePresenterVoiceAfterScreenshare,
+      scheduleFeedBatched,
+      sendScreenshareTakeoverEvent,
+      syncLocalScreenshareState,
+    ],
+  );
+
+  const denyScreenshareTakeover = useCallback(
+    async (request: ScreenshareTakeoverIncoming) => {
+      const localUserId = client?.getUserId()?.trim();
+      if (!localUserId || !request.requestId.trim()) return;
+      setScreenshareTakeoverIncoming(null);
+      await sendScreenshareTakeoverEvent(
+        'deny',
+        request.requestId.trim(),
+        request.requesterUserId,
+        localUserId,
+      );
+    },
+    [client, sendScreenshareTakeoverEvent],
+  );
+
+  const dismissScreenshareTakeoverPrompt = useCallback(() => {
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
+  }, []);
+
+  const cancelScreenshareTakeoverRequest = useCallback(async () => {
+    const localUserId = client?.getUserId()?.trim();
+    const requestId = screenshareTakeoverPendingIdRef.current;
+    if (!localUserId || !requestId) {
+      dismissScreenshareTakeoverPrompt();
+      return;
+    }
+    await sendScreenshareTakeoverEvent('cancel', requestId, localUserId);
+    dismissScreenshareTakeoverPrompt();
+  }, [client, dismissScreenshareTakeoverPrompt, sendScreenshareTakeoverEvent]);
+
+  const setVoiceProcessingPreset = useCallback(
+    async (preset: SpaceGroupCallVoiceProcessingPreset) => {
+      voicePresetRestoreAfterScreenshareRef.current = null;
+      setPresenterVoiceBoostActive(false);
+      setVoiceProcessingPresetState(preset);
+      persistVoiceProcessingPreset(preset);
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      try {
+        const applied = await applyVoiceProcessingPresetToGroupCall(gc, preset);
+        if (applied) {
+          if (!gc.isLocalVideoMuted() && !getPublishableLocalVideoTrack(gc)) {
+            try {
+              await recoverLocalCameraFeed(gc);
+            } catch {
+              /* keep call connected if camera recovery fails */
+            }
+          }
+          scheduleFeedBatched();
+          refreshLocalPreview();
+        }
+      } catch {
+        // keep current call media if constraints fail on this device/browser
+      }
+    },
+    [
+      applyVoiceProcessingPresetToGroupCall,
+      refreshLocalPreview,
+      scheduleFeedBatched,
+    ],
   );
 
   useEffect(() => {
+    setVoiceProcessingPresetState(readVoiceProcessingPreset());
+  }, []);
+
+  useEffect(() => {
+    voiceProcessingPresetRef.current = voiceProcessingPreset;
+  }, [voiceProcessingPreset]);
+
+  useEffect(() => {
+    if (captureMode === 'none') {
+      if (!recordingFinalizeInFlightRef.current) {
+        setRecordingStatus('idle');
+      }
+      return;
+    }
+    void beginCaptureRuntimeAsync();
+  }, [
+    beginCaptureRuntimeAsync,
+    captureMode,
+    callState,
+    callSessionId,
+    feedVersion,
+    groupCall,
+    roomId,
+  ]);
+
+  useEffect(() => {
+    if (captureMode === 'none') return;
+    if (recordingRuntimeRef.current) return;
+    if (recordingFinalizeInFlightRef.current) return;
+    if (recordingStatus !== 'idle') return;
+    if (callState === 'connecting' || callState === 'initializing') return;
+    if (!isCaptureEligibleCallState(callState)) return;
+
+    const sessionId = callSessionId?.trim();
+    const activeRoom = roomId?.trim();
+    if (!sessionId || !activeRoom) return;
+
+    const timer = window.setTimeout(() => {
+      if (captureModeRef.current === 'none') return;
+      if (recordingRuntimeRef.current) return;
+      if (recordingFinalizeInFlightRef.current) return;
+      void beginCaptureRuntimeAsync().then((started) => {
+        if (started) return;
+        if (captureModeRef.current === 'none') return;
+        if (recordingRuntimeRef.current) return;
+        setRecordingStatus('error');
+        setRecordingError(
+          'Call capture could not start. Check microphone permissions, then try again.',
+        );
+        setCaptureMode('none');
+      });
+    }, CAPTURE_START_STALL_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    beginCaptureRuntimeAsync,
+    callState,
+    captureMode,
+    callSessionId,
+    groupCall,
+    recordingStatus,
+    roomId,
+  ]);
+
+  useEffect(() => {
+    if (recordingStatus !== 'recording' && recordingStatus !== 'paused') {
+      setRecordingWarning(null);
+      return;
+    }
+    const evaluateLimits = () => {
+      const runtime = recordingRuntimeRef.current;
+      if (!runtime) return;
+      const startedMs = Date.parse(runtime.startedAt);
+      if (!Number.isFinite(startedMs)) return;
+      const elapsedSeconds = Math.max(
+        0,
+        Math.floor((Date.now() - startedMs) / 1000),
+      );
+      const evaluation = evaluateCallRecordingCaptureLimits({
+        elapsedSeconds,
+        hasVideo: runtime.hasVideoRecording,
+      });
+      setRecordingWarning(
+        evaluation.warningCode
+          ? {
+              code: evaluation.warningCode,
+              remainingMinutes: Math.max(
+                1,
+                Math.ceil(evaluation.remainingDurationSeconds / 60),
+              ),
+              remainingSizeMb: Math.max(
+                1,
+                Math.ceil(evaluation.remainingBytes / (1024 * 1024)),
+              ),
+            }
+          : null,
+      );
+    };
+    evaluateLimits();
+    const timer = window.setInterval(evaluateLimits, CAPTURE_LIMIT_CHECK_MS);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [recordingStatus]);
+
+  const retryRecordingUpload = useCallback(async () => {
+    const pending = pendingRecordingUploadRef.current;
+    if (!pending) return;
+    setRecordingStatus('uploading');
+    setRecordingError(null);
+    try {
+      const result = await uploadRecordedCallArtifactWithRetry({
+        authToken: pending.authToken,
+        spaceSlug: pending.spaceSlug,
+        roomId: pending.roomId,
+        callSessionId: pending.callSessionId,
+        blob: pending.blob,
+        mimeType: pending.mimeType,
+        transcriptText: pending.transcriptText,
+        startedAt: pending.startedAt,
+        endedAt: pending.endedAt,
+        launchContext: pending.launchContext,
+      });
+      if (!result.recording_stored) {
+        throw new Error('Recording upload did not persist media.');
+      }
+      pendingRecordingUploadRef.current = null;
+      clearPersistedPendingRecordingUpload();
+      setCanRetryRecordingUpload(false);
+      setRecordingStatus('idle');
+      setRecordingError(null);
+      onCallArtifactsUploadedRef.current?.({ spaceSlug: pending.spaceSlug });
+    } catch (error) {
+      downloadCallRecordingBackup(
+        pending.blob,
+        pending.callSessionId,
+        pending.mimeType,
+      );
+      setRecordingStatus('error');
+      setRecordingError(
+        `${
+          error instanceof Error ? error.message : String(error)
+        } A copy was saved to your downloads folder — use Retry upload.`,
+      );
+    }
+  }, []);
+
+  const startCapture = useCallback(
+    (mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>) => {
+      if (recordingFinalizeInFlightRef.current) return;
+      const nextMode = mode ?? capturePreference;
+      setCapturePreference(nextMode);
+      setCapturePreferenceSelected(true);
+      setRecordingError(null);
+      if (recordingRuntimeRef.current && captureModeRef.current !== 'none') {
+        return;
+      }
+      captureModeRef.current = nextMode;
+      setCaptureMode(nextMode);
+      const token = latestAuthTokenRef.current;
+      const slug = latestSpaceSlugRef.current;
+      const activeRoom =
+        roomId?.trim() || pinnedUploadContextRef.current?.roomId?.trim() || '';
+      if (token && slug && activeRoom) {
+        pinnedUploadContextRef.current = {
+          authToken: token,
+          spaceSlug: slug,
+          roomId: activeRoom,
+        };
+      }
+      void beginCaptureRuntimeAsync();
+    },
+    [beginCaptureRuntimeAsync, capturePreference, roomId],
+  );
+
+  const stopCapture = useCallback(() => {
+    const pendingMode = captureModeRef.current;
+    void (async () => {
+      await waitForCaptureBootstrap();
+      if (
+        !recordingRuntimeRef.current &&
+        !recordingFinalizeInFlightRef.current
+      ) {
+        if (
+          pendingMode === 'recording_with_transcript' ||
+          pendingMode === 'transcript_only'
+        ) {
+          await beginCaptureRuntimeAsync();
+        }
+      }
+      if (recordingRuntimeRef.current || recordingFinalizeInFlightRef.current) {
+        finalizeRecording();
+      } else if (
+        pendingMode === 'recording_with_transcript' ||
+        pendingMode === 'transcript_only'
+      ) {
+        setRecordingStatus('error');
+        setRecordingError(
+          'Capture did not start. Wait until the record indicator turns red, speak for a few seconds, then stop again.',
+        );
+        void announceCaptureNotice('stopped', pendingMode);
+      } else {
+        setRecordingStatus('idle');
+        setRecordingError(null);
+      }
+      setCaptureMode('none');
+    })();
+  }, [
+    announceCaptureNotice,
+    beginCaptureRuntimeAsync,
+    finalizeRecording,
+    waitForCaptureBootstrap,
+  ]);
+
+  const pauseCapture = useCallback(() => {
+    const runtime = recordingRuntimeRef.current;
+    if (!runtime) return;
+    if (recordingStatus === 'paused' || recordingStatus === 'uploading') return;
+    runtime.pauseRecorder?.();
+    void Promise.resolve(runtime.pauseTranscript?.()).finally(() => {
+      setRecordingStatus('paused');
+    });
+  }, [recordingStatus]);
+
+  const resumeCapture = useCallback(() => {
+    const runtime = recordingRuntimeRef.current;
+    if (!runtime) return;
+    if (recordingStatus !== 'paused') return;
+    runtime.resumeRecorder?.();
+    runtime.resumeTranscript?.();
+    setRecordingStatus('recording');
+  }, [recordingStatus]);
+
+  useEffect(() => {
+    if (!client || !roomId?.trim()) {
+      setActiveRoomCapture(null);
+      return;
+    }
+    const activeRoomId = roomId.trim();
+    const room = client.getRoom(activeRoomId);
+    if (!room) {
+      setActiveRoomCapture(null);
+      return;
+    }
+    const localUserId = client.getUserId() ?? null;
+    const syncFromTimeline = () => {
+      const recent = room.getLiveTimeline()?.getEvents()?.slice().reverse();
+      if (!recent?.length) {
+        setActiveRoomCapture(null);
+        return;
+      }
+      setActiveRoomCapture(
+        resolveActiveRoomCaptureFromEvents(
+          recent,
+          (senderId) => {
+            const member = room.getMember(senderId);
+            return member
+              ? matrixMemberDisplayLabel(member, senderId)
+              : senderId;
+          },
+          localUserId,
+        ),
+      );
+    };
+
+    syncFromTimeline();
+    const onTimeline = () => {
+      syncFromTimeline();
+    };
+    room.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      room.off(RoomEvent.Timeline, onTimeline);
+    };
+  }, [client, roomId]);
+
+  useEffect(() => {
+    screenshareTakeoverPendingIdRef.current = screenshareTakeoverPendingId;
+  }, [screenshareTakeoverPendingId]);
+
+  useEffect(() => {
+    if (!client || !roomId?.trim() || callState !== 'connected') {
+      setScreenshareTakeoverIncoming(null);
+      return;
+    }
+    const activeRoomId = roomId.trim();
+    const room = client.getRoom(activeRoomId);
+    const gc = groupCallRef.current;
+    if (!room || !gc) return;
+
+    const localUserId = client.getUserId() ?? null;
+    const syncTakeoverFromTimeline = () => {
+      const recent = room.getLiveTimeline()?.getEvents()?.slice().reverse();
+      if (!recent?.length) return;
+
+      const incoming = resolveIncomingScreenshareTakeover(
+        recent,
+        localUserId,
+        gc.isScreensharing(),
+        (senderId) => room.getMember(senderId)?.name || senderId,
+      );
+      setScreenshareTakeoverIncoming(incoming);
+
+      const pendingId = screenshareTakeoverPendingIdRef.current;
+      if (pendingId) {
+        const outcome = resolveScreenshareTakeoverOutcome(
+          recent,
+          localUserId,
+          pendingId,
+        );
+        if (outcome === 'approved') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(false);
+          void enableLocalScreenshareDirect(gc);
+          scheduleFeedBatched();
+          window.setTimeout(scheduleFeedBatched, 350);
+          window.setTimeout(scheduleFeedBatched, 900);
+        } else if (outcome === 'denied') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(true);
+        }
+      }
+    };
+
+    syncTakeoverFromTimeline();
+    const onTimeline = () => {
+      syncTakeoverFromTimeline();
+    };
+    room.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      room.off(RoomEvent.Timeline, onTimeline);
+    };
+  }, [
+    callState,
+    client,
+    enableLocalScreenshareDirect,
+    feedVersion,
+    isScreensharing,
+    roomId,
+    scheduleFeedBatched,
+  ]);
+
+  const remoteScreenshareActive = useMemo(() => {
+    if (!groupCall || groupCall.isScreensharing()) return false;
+    return isRemoteScreenshareActive(groupCall);
+  }, [feedVersion, groupCall, isScreensharing]);
+
+  const captureConsent = useMemo(() => {
+    const localCapture = resolveLocalCaptureConsent({
+      captureMode,
+      recordingStatus,
+    });
+    return resolveCaptureConsent(activeRoomCapture, localCapture);
+  }, [activeRoomCapture, captureMode, recordingStatus]);
+
+  useEffect(() => {
     if (!groupCallRef.current) return;
+    const pinnedCallRoomId = activeGroupCallRoomIdRef.current;
+    if (pinnedCallRoomId) {
+      // Never tear down a pinned call when the hook room id changes or clears
+      // (e.g. navigating to another space while the dock keeps the call).
+      if (roomId !== pinnedCallRoomId) return;
+      return;
+    }
     if (activeGroupCallRoomIdRef.current === roomId) return;
     if (lastRoomIdForTelemetryRef.current) {
+      emitCallSessionEnd('room');
       logSpaceGroupCallEvent({
         name: 'hypha.group_call.left',
         roomId: lastRoomIdForTelemetryRef.current,
@@ -1050,16 +3438,21 @@ export function useSpaceGroupCall(roomId: string | null) {
       });
     }
     setCallState('disconnecting');
+    abortInFlightJoin(joinEpochRef, isJoiningRef);
     runCleanup();
     setCallState('idle');
     setErrorCode(null);
     setCallKind(null);
     setIsScreensharing(false);
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
     setThreadContext(null);
     setParticipantCount(0);
     setScreenshareErrorCode(null);
     setTabBackgroundWhileInCall(false);
-  }, [roomId, runCleanup]);
+  }, [emitCallSessionEnd, roomId, runCleanup]);
 
   /**
    * Room member `m.call.*` state is applied asynchronously in the GroupCall. When
@@ -1092,17 +3485,36 @@ export function useSpaceGroupCall(roomId: string | null) {
     };
   }, [client, roomId, callState, updateParticipantCount, evalRemoteMediaStall]);
 
+  /** WCUX-QUALITY-4: downscale thumbnail receivers when N ≥ 5. */
+  useEffect(() => {
+    if (callState !== 'connected') return;
+    const gc = groupCallRef.current;
+    if (!gc) return;
+    void applyCallThumbnailReceiverDownscale({
+      gc,
+      participantCount,
+      activeSpeakerUserId: parseActiveSpeakerUserId(activeSpeakerKey),
+      enabled: CALL_THUMBNAIL_DOWNSCALE_ENABLED,
+    });
+  }, [callState, participantCount, activeSpeakerKey]);
+
   /** Dev: periodic feed vs participant-map snapshots while connected. */
   useEffect(() => {
     if (callState !== 'connected') {
       clearMediaDebugInterval();
       return;
     }
-    logDevMediaSnapshot();
-    mediaDebugIntervalRef.current = setInterval(() => {
-      logDevMediaSnapshot();
+    const tickMediaDebug = () => {
+      if (isMatrixCallDebugEnabled()) {
+        logDevMediaSnapshot();
+      }
       evalRemoteMediaStall();
-    }, MEDIA_SNAPSHOT_INTERVAL_MS);
+    };
+    tickMediaDebug();
+    mediaDebugIntervalRef.current = setInterval(
+      tickMediaDebug,
+      MEDIA_SNAPSHOT_INTERVAL_MS,
+    );
     return () => {
       clearMediaDebugInterval();
     };
@@ -1122,20 +3534,102 @@ export function useSpaceGroupCall(roomId: string | null) {
         callState === 'connected' ||
         callState === 'awaiting_media' ||
         callState === 'initializing';
+      const pipWindowOpen = isDocumentPictureInPictureWindowOpen();
       setTabBackgroundWhileInCall(
-        inCall && typeof document !== 'undefined' && document.hidden,
+        inCall &&
+          typeof document !== 'undefined' &&
+          document.hidden &&
+          !pipWindowOpen,
       );
+      if (document.hidden || !inCall) return;
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      remoteMediaGapSinceRef.current = null;
+      remoteMediaStallLoggedRef.current = false;
+      remoteMediaRecoverAttemptedRef.current = false;
+      nudgeGroupCallPlaceOutgoing(gc);
+      scheduleLocalMediaBootstrap(gc);
+      scheduleFeedBatched();
+      refreshLocalPreview();
+      evalRemoteMediaStall();
     };
     document.addEventListener('visibilitychange', onVis);
     onVis();
     return () => {
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [callState]);
+  }, [
+    callState,
+    evalRemoteMediaStall,
+    refreshLocalPreview,
+    scheduleFeedBatched,
+    scheduleLocalMediaBootstrap,
+  ]);
+
+  /** Republish camera when the browser unmutes the track after tab foreground. */
+  useEffect(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    const gc = groupCallRef.current;
+    if (!gc || gc.isLocalVideoMuted()) return;
+
+    const recoverIfNeeded = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (gc.isLocalVideoMuted() || getPublishableLocalVideoTrack(gc)) return;
+      const kind = lastJoinKindRef.current ?? 'video';
+      void ensurePublishedLocalMediaWithOrientation(gc, kind).then(() => {
+        scheduleFeedBatched();
+        refreshLocalPreview();
+      });
+    };
+
+    const attachToStream = (stream: MediaStream | undefined) => {
+      if (!stream) return () => undefined;
+      const onTrackChange = () => recoverIfNeeded();
+      stream.addEventListener('addtrack', onTrackChange);
+      stream.addEventListener('removetrack', onTrackChange);
+      for (const track of stream.getVideoTracks()) {
+        track.addEventListener('mute', onTrackChange);
+        track.addEventListener('unmute', onTrackChange);
+        track.addEventListener('ended', onTrackChange);
+      }
+      return () => {
+        stream.removeEventListener('addtrack', onTrackChange);
+        stream.removeEventListener('removetrack', onTrackChange);
+        for (const track of stream.getVideoTracks()) {
+          track.removeEventListener('mute', onTrackChange);
+          track.removeEventListener('unmute', onTrackChange);
+          track.removeEventListener('ended', onTrackChange);
+        }
+      };
+    };
+
+    let detachStream = attachToStream(gc.localCallFeed?.stream);
+    const onFeedsChanged = () => {
+      detachStream?.();
+      detachStream = attachToStream(
+        groupCallRef.current?.localCallFeed?.stream,
+      );
+      recoverIfNeeded();
+    };
+    gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsChanged);
+    recoverIfNeeded();
+
+    return () => {
+      detachStream?.();
+      gc.off(GroupCallEvent.UserMediaFeedsChanged, onFeedsChanged);
+    };
+  }, [
+    callState,
+    ensurePublishedLocalMediaWithOrientation,
+    groupCall,
+    refreshLocalPreview,
+    scheduleFeedBatched,
+  ]);
 
   useEffect(() => {
     return () => {
       if (groupCallRef.current && lastRoomIdForTelemetryRef.current) {
+        emitCallSessionEnd('unmount');
         logSpaceGroupCallEvent({
           name: 'hypha.group_call.left',
           roomId: lastRoomIdForTelemetryRef.current,
@@ -1143,9 +3637,52 @@ export function useSpaceGroupCall(roomId: string | null) {
           reason: 'unmount',
         });
       }
-      runCleanup();
+      abortInFlightJoin(joinEpochRef, isJoiningRef);
+      runCleanupRef.current();
     };
-  }, [runCleanup]);
+  }, [emitCallSessionEnd]);
+
+  useEffect(() => {
+    if (!remoteMediaRecoverRequestedRef.current) return;
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    if (isJoiningRef.current || remoteMediaRecoverInFlightRef.current) return;
+    const retryKind = lastJoinKindRef.current;
+    if (!retryKind) return;
+    const retryThreadRootEventId = lastThreadRootEventIdRef.current;
+    remoteMediaRecoverRequestedRef.current = false;
+    if (roomId) {
+      logSpaceGroupCallEvent({
+        name: 'hypha.group_call.remote_media_recover',
+        roomId,
+        kind: retryKind,
+      });
+    }
+    abortInFlightJoin(joinEpochRef, isJoiningRef);
+    runCleanup();
+    remoteMediaRecoverInFlightRef.current = true;
+    setIsCallRecovering(true);
+    setCallState('idle');
+    setErrorCode(null);
+    setCallKind(null);
+    setIsScreensharing(false);
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
+    setThreadContext(null);
+    setParticipantCount(0);
+    setScreenshareErrorCode(null);
+    setTabBackgroundWhileInCall(false);
+    void enterWithKind(retryKind, retryThreadRootEventId, {
+      preserveRemoteMediaRecoverInFlight: true,
+    }).finally(() => {
+      setIsCallRecovering(false);
+      if (!groupCallRef.current) {
+        remoteMediaRecoverAttemptedRef.current = false;
+      }
+      remoteMediaRecoverInFlightRef.current = false;
+    });
+  }, [callState, enterWithKind, remoteMediaRecoverNonce, roomId, runCleanup]);
 
   const idleGroupCallUnsubRef = useRef<(() => void) | null>(null);
 
@@ -1193,7 +3730,7 @@ export function useSpaceGroupCall(roomId: string | null) {
         setIdleInCallUserIds([]);
         return;
       }
-      const p = readParticipantsFromGroupCall(current, myId);
+      const p = readParticipantsFromGroupCall(current);
       if (p.count === 0) {
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);
@@ -1271,6 +3808,40 @@ export function useSpaceGroupCall(roomId: string | null) {
     setScreenshareErrorCode(null);
   }, []);
 
+  const dismissScreenshareTabAudioHint = useCallback(() => {
+    setScreenshareTabAudioMissing(false);
+  }, []);
+
+  const retryScreenshareWithTabAudio = useCallback(() => {
+    const gc = groupCallRef.current;
+    if (!gc?.isScreensharing()) {
+      return Promise.resolve();
+    }
+
+    const run = async () => {
+      screenshareSurfaceModeRef.current = 'browser';
+      setScreenshareTabAudioMissing(false);
+      await reconcileLocalScreenshareStop(gc);
+      await enableLocalScreenshareDirect(gc);
+    };
+
+    const next = screenshareMutationRef.current.then(run, run);
+    screenshareMutationRef.current = next;
+    return next;
+  }, [enableLocalScreenshareDirect, reconcileLocalScreenshareStop]);
+
+  const dismissCameraAccessBlocked = useCallback(() => {
+    setCameraAccessBlocked(false);
+  }, []);
+
+  useEffect(() => {
+    if (!recordingRuntimeRef.current) return;
+    if (callState === 'idle' || callState === 'error') {
+      finalizeRecording();
+      setCaptureMode('none');
+    }
+  }, [callState, finalizeRecording]);
+
   const dismissCallError = useCallback(() => {
     if (callState !== 'error') return;
     setErrorCode(null);
@@ -1279,6 +3850,13 @@ export function useSpaceGroupCall(roomId: string | null) {
     setThreadContext(null);
     isJoiningRef.current = false;
   }, [callState]);
+
+  const updateCapturePreference = useCallback(
+    (mode: Exclude<SpaceGroupCallCaptureMode, 'none'>) => {
+      setCapturePreference(mode);
+    },
+    [],
+  );
 
   const retryFromError = useCallback(() => {
     if (callState !== 'error') return;
@@ -1316,7 +3894,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     ? inCallUserIdsFromGroupCall(groupCall)
     : idleInCallUserIds;
 
-  const showRoomCallInProgress = useMemo(
+  const showRoomCallInProgressRaw = useMemo(
     () =>
       !inOurSession &&
       idleRoomParticipantCount > 0 &&
@@ -1324,28 +3902,90 @@ export function useSpaceGroupCall(roomId: string | null) {
     [callState, inOurSession, idleRoomParticipantCount],
   );
 
+  /**
+   * Hysteresis: show quickly when a call appears, hide only after it stays empty.
+   * Prevents join-strip blink + repeated chimes when Matrix sync/token recovery flickers.
+   */
+  const [showRoomCallInProgress, setShowRoomCallInProgress] = useState(false);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (showRoomCallInProgressRaw) {
+      timer = setTimeout(() => setShowRoomCallInProgress(true), 250);
+    } else {
+      /** Hide immediately when the room is empty — avoid "Call in progress — 0 members". */
+      const hideDelayMs = idleRoomParticipantCount > 0 ? 2000 : 0;
+      timer = setTimeout(() => setShowRoomCallInProgress(false), hideDelayMs);
+    }
+    return () => {
+      if (timer != null) clearTimeout(timer);
+    };
+  }, [showRoomCallInProgressRaw, idleRoomParticipantCount]);
+
   return {
     callState,
     callSessionId,
+    callSessionAnchorEventId,
     errorCode,
     screenshareErrorCode,
+    screenshareTabAudioMissing,
+    recordingStatus,
+    recordingError,
+    recordingWarning,
+    canRetryRecordingUpload,
+    retryRecordingUpload,
+    captureMode,
+    setCaptureMode,
+    capturePreference,
+    capturePreferenceSelected,
+    setCapturePreference: updateCapturePreference,
+    startCapture,
+    pauseCapture,
+    resumeCapture,
+    stopCapture,
+    captureConsent,
     dismissScreenshareError,
+    dismissScreenshareTabAudioHint,
+    retryScreenshareWithTabAudio,
+    cameraAccessBlocked,
+    dismissCameraAccessBlocked,
+    screenshareTakeoverIncoming,
+    screenshareTakeoverPendingId,
+    screenshareTakeoverDenied,
+    approveScreenshareTakeover,
+    denyScreenshareTakeover,
+    cancelScreenshareTakeoverRequest,
+    dismissScreenshareTakeoverPrompt,
     dismissCallError,
     retryFromError,
     /** Matrix lists others in-call but no remote media after threshold — likely WebRTC/signaling. */
     remoteMediaStall,
+    /** Feeds still warming — first ~45s after others appear in the call map. */
+    remoteMediaWarming,
+    /** Homeserver returned no usable TURN relay ICE servers for this session. */
+    turnServerUnavailable,
+    dismissTurnServerUnavailableBanner,
     dismissRemoteMediaStallBanner,
+    retryRemoteMediaConnection,
     tabBackgroundWhileInCall,
+    isCallRecovering,
     activeSpeakerKey,
     threadContext,
     callKind,
     enterAudio,
     enterVideo,
     leave,
+    releaseLocalCallForTabTransfer,
     setMicrophoneMuted,
     setCameraMuted,
     setScreensharingEnabled,
+    toggleScreensharing,
+    voiceProcessingPreset,
+    setVoiceProcessingPreset,
+    /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */
+    presenterVoiceBoostActive,
     isScreensharing,
+    /** Another participant is presenting — local share start is blocked (one at a time). */
+    remoteScreenshareActive,
     localPreviewStream,
     /** Devices in the room’s GroupCall (or 0 if none). */
     roomGroupCallDeviceCount,

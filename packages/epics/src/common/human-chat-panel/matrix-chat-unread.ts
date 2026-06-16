@@ -50,7 +50,7 @@ function effectiveReadCursorEventId(room: Room, userId: string): string | null {
  * Non-redacted `m.replace` events per root id (single timeline pass).
  * Callers must only use a replacement when `cand.getSender() === root.getSender()`.
  */
-function replacementEventsByRootId(
+export function replacementEventsByRootId(
   timeline: MatrixEvent[],
 ): Map<string, MatrixEvent[]> {
   const byRootId = new Map<string, MatrixEvent[]>();
@@ -69,7 +69,7 @@ function replacementEventsByRootId(
 }
 
 /** Latest message content for mention parsing (`m.replace` edits target the root id). */
-function wireContentForMentionParse(
+export function wireContentForMentionParse(
   rootEvent: MatrixEvent,
   replacementsByRootId: Map<string, MatrixEvent[]>,
 ): Record<string, unknown> | undefined {

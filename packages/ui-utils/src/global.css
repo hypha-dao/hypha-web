@@ -390,3 +390,21 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* Document PiP — fixed toolbar footprint (spacing-7 is 40px in this theme). */
+[data-call-pip-toolbar] button {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  flex: none;
+  padding: 0;
+}
+
+/* Call feeds — hide Chrome's native video PiP control (Hypha uses Document PiP). */
+[data-hypha-call-feed-video]::-webkit-media-controls-picture-in-picture-button {
+  display: none !important;
+}

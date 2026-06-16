@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { SidebarInset } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
 import { setMainColumnScrollRoot } from './main-column-scroll';
 
 export type PanelScrollInsetProps = Omit<
@@ -44,6 +45,7 @@ export const PanelScrollInset = React.forwardRef<
 
   return (
     <SidebarInset
+      id={HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID}
       ref={setRefs}
       className={cn(
         /* No scrollbar-gutter — horizontal rules span full column width (may cross overlay scrollbar). */

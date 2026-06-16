@@ -8,10 +8,12 @@ import {
   SidebarResizeHandle,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
 import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
   leftOpen: boolean;
+  leftPanelOpen: boolean;
   leftSidebarWidth: string;
   onLeftOpenChange: (open: boolean) => void;
   rightOpen: boolean;
@@ -30,6 +32,7 @@ type Props = {
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,
+  leftPanelOpen,
   leftSidebarWidth,
   onLeftOpenChange,
   rightOpen,
@@ -59,6 +62,7 @@ export function PanelDualSidebarScrollBridge({
         side="left"
         variant="sidebar"
         collapsible="icon"
+        mobileWidth={leftPanelOpen ? '100vw' : undefined}
         className="z-[50] overflow-visible"
       >
         {leftContent}
@@ -98,6 +102,7 @@ export function PanelDualSidebarScrollBridge({
             scrollport cannot reveal a dead gap beside the fixed rails.
           */}
           <div
+            id={HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID}
             ref={setMainColumnRef}
             className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto narrow-scrollbar"
           >
@@ -107,6 +112,7 @@ export function PanelDualSidebarScrollBridge({
             side="right"
             variant="sidebar"
             collapsible="offcanvas"
+            mobileWidth="100vw"
             className="z-[50]"
           >
             <SidebarResizeHandle />

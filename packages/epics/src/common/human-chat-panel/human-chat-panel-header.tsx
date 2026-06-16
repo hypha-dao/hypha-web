@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import {
   ArrowLeft,
   MessageCircle,
@@ -10,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 type HumanChatPanelHeaderProps = {
   title?: string;
@@ -31,7 +31,8 @@ export function HumanChatPanelHeader({
   trailingStart,
   notificationSettingsHref,
 }: HumanChatPanelHeaderProps) {
-  const { toggleSidebar } = useSidebar();
+  const { setOpen, setOpenMobile } = useSidebar();
+  const router = useRouter();
   const t = useTranslations('HumanChatPanel');
 
   const displayTitle = title ?? t('title');
@@ -52,7 +53,11 @@ export function HumanChatPanelHeader({
         ) : (
           <button
             type="button"
-            onClick={toggleSidebar}
+            onClick={() => {
+              // Keep both desktop/sidebar and mobile/sheet states in sync.
+              setOpen(false);
+              setOpenMobile(false);
+            }}
             className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
@@ -62,14 +67,20 @@ export function HumanChatPanelHeader({
         )}
         {trailingStart}
         {notificationSettingsHref ? (
-          <Link
-            href={notificationSettingsHref}
+          <button
+            type="button"
+            onClick={() => {
+              // Close chat panel first so settings overlay is not hidden behind it.
+              setOpen(false);
+              setOpenMobile(false);
+              router.push(notificationSettingsHref);
+            }}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={t('mentionInboxNotificationSettings')}
             title={t('mentionInboxNotificationSettings')}
           >
             <Settings className="h-4 w-4" aria-hidden />
-          </Link>
+          </button>
         ) : null}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">

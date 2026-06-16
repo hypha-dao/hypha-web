@@ -14,6 +14,7 @@ export const DOCUMENT_LABEL_BADGE_KEYS: Partial<Record<string, string>> = {
   'Buy Hypha Tokens': 'documentBadges.buyHyphaTokens',
   'Activate Spaces': 'labels.activateSpaces',
   'Space To Space': 'labels.spaceToSpace',
+  'Change Delegate': 'labels.changeDelegate',
   'Space Transparency': 'labels.spaceTransparency',
   'Treasury Minting': 'labels.treasuryMinting',
   'Token Burning': 'labels.tokenBurning',
@@ -28,4 +29,5 @@ export const DOCUMENT_LABEL_BADGE_KEYS: Partial<Record<string, string>> = {
   'Energy Sharing': 'labels.energySharing',
   'Register Energy Source': 'labels.registerEnergySource',
   'Add Energy Member': 'labels.addEnergyMember',
+  'Space Memory': 'labels.spaceMemory',
 };

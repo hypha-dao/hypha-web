@@ -2,13 +2,19 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
+  FileIcon,
+  Eye,
+  EyeOff,
+  Loader2,
   ImageIcon,
   Mic,
   Paperclip,
+  Play,
   Plus,
   Send,
   Square,
   Video,
+  X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -17,8 +23,22 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  useIsMobile,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { type ChatDraftAttachment } from '../human-chat-panel/human-chat-panel-chat-bar';
+import {
+  looksLikeAudioMimeOrName,
+  looksLikeVideoMimeOrName,
+} from '../human-chat-panel/chat-panel-media-types';
+import {
+  ChatVoiceAudioRow,
+  useDraftVoiceDuration,
+} from '../human-chat-panel/human-chat-panel-voice-audio-row';
+import {
+  ComposerAttachGoogleDriveMenuItem,
+  filesToFileList,
+} from '../composer';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -38,6 +58,8 @@ type SpeechRecognitionEventLike = {
   resultIndex: number;
   results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
 };
+
+export type AiPanelDraftAttachment = ChatDraftAttachment;
 
 function joinWithSingleSpace(a: string, b: string): string {
   const left = a.trimEnd();
@@ -99,12 +121,160 @@ type AiPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
-  draftAttachments?: File[];
-  onDraftAttachmentsChange?: (files: File[]) => void;
+  draftAttachments?: AiPanelDraftAttachment[];
+  onDraftAttachmentsChange?: (files: AiPanelDraftAttachment[]) => void;
   onStop?: () => void;
   isStreaming?: boolean;
   placeholder?: string;
+  composerDisabled?: boolean;
 };
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '0 B';
+  if (bytes < 1024) return `${Math.round(bytes)} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function newAttachmentDraftId(): string {
+  if (
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function DraftVoicePreview({
+  previewUrl,
+  voiceLabel,
+  unknownDurationLabel,
+  spoiler,
+  spoilerBadgeLabel,
+}: {
+  previewUrl: string;
+  voiceLabel: string;
+  unknownDurationLabel: string;
+  spoiler: boolean;
+  spoilerBadgeLabel: string;
+}) {
+  const durationLabel = useDraftVoiceDuration({
+    objectUrl: previewUrl,
+    fallbackLabel: unknownDurationLabel,
+  });
+  return (
+    <ChatVoiceAudioRow
+      audioSrc={previewUrl}
+      durationLabel={durationLabel}
+      voiceLabel={voiceLabel}
+      variant="draft"
+      spoilerPreview={spoiler}
+      spoilerBadgeLabel={spoilerBadgeLabel}
+    />
+  );
+}
+
+function ChatDraftVideoPreview({
+  url,
+  spoiler,
+  playLabel,
+  spoilerBadge,
+}: {
+  url: string;
+  spoiler: boolean;
+  playLabel: string;
+  spoilerBadge: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [hasFrame, setHasFrame] = useState(false);
+
+  useEffect(() => {
+    if (spoiler) {
+      videoRef.current?.pause();
+    }
+  }, [spoiler]);
+
+  return (
+    <div className="relative h-full w-full bg-muted">
+      <video
+        ref={videoRef}
+        src={url}
+        className={cn(
+          'h-full w-full object-contain',
+          spoiler && 'scale-105 blur-xl',
+        )}
+        muted
+        playsInline
+        preload="auto"
+        onLoadedData={() => {
+          const el = videoRef.current;
+          if (!el || hasFrame) return;
+          try {
+            if (el.readyState >= 2) {
+              el.currentTime = 0.001;
+            }
+          } catch {
+            // ignore seek errors on tiny clips
+          }
+          setHasFrame(true);
+        }}
+        onSeeked={() => setHasFrame(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          const el = videoRef.current;
+          if (!el || spoiler) return;
+          if (playing) {
+            el.pause();
+          } else {
+            void el.play().catch(() => {
+              // ignore — browser may block until user gesture; button retry
+            });
+          }
+        }}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+      {!hasFrame && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-muted">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      {spoiler && (
+        <div
+          className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-muted/90"
+          aria-hidden
+        >
+          <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+            {spoilerBadge}
+          </span>
+        </div>
+      )}
+      {!playing && !spoiler && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/25">
+          <button
+            type="button"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-lg ring-1 ring-white/20 outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:ring-white/15"
+            aria-label={playLabel}
+            title={playLabel}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const el = videoRef.current;
+              if (!el) return;
+              el.muted = true;
+              void el.play().catch(() => {});
+            }}
+          >
+            <Play className="ml-1 h-6 w-6" fill="currentColor" aria-hidden />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AiPanelChatBar({
   value,
@@ -115,6 +285,7 @@ export function AiPanelChatBar({
   onStop,
   isStreaming = false,
   placeholder,
+  composerDisabled = false,
 }: AiPanelChatBarProps) {
   const t = useTranslations('AiPanel');
   const tHuman = useTranslations('HumanChatPanel');
@@ -131,7 +302,10 @@ export function AiPanelChatBar({
   const valueRef = useRef(value);
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
+  const isMobile = useIsMobile() ?? false;
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [composerDragDepth, setComposerDragDepth] = useState(0);
+  const isComposerDropActive = composerDragDepth > 0;
 
   valueRef.current = value;
 
@@ -321,11 +495,34 @@ export function AiPanelChatBar({
   }, []);
 
   const canStop = isStreaming && typeof onStop === 'function';
-  const canAttachDrafts = typeof onDraftAttachmentsChange === 'function';
+  const canAttachDrafts =
+    !composerDisabled && typeof onDraftAttachmentsChange === 'function';
   const pushDrafts = useCallback(
     (files: FileList | null) => {
       if (!files || files.length === 0 || !onDraftAttachmentsChange) return;
-      onDraftAttachmentsChange([...draftAttachments, ...Array.from(files)]);
+      const next = [...draftAttachments];
+      for (const file of Array.from(files)) {
+        const isAudio = looksLikeAudioMimeOrName(file.type, file.name);
+        const isVideo =
+          !isAudio && looksLikeVideoMimeOrName(file.type, file.name);
+        const kind: AiPanelDraftAttachment['kind'] = file.type.startsWith(
+          'image/',
+        )
+          ? 'image'
+          : isVideo
+          ? 'video'
+          : isAudio
+          ? 'audio'
+          : 'file';
+        next.push({
+          id: newAttachmentDraftId(),
+          file,
+          kind,
+          previewUrl: URL.createObjectURL(file),
+          spoiler: false,
+        });
+      }
+      onDraftAttachmentsChange(next);
     },
     [draftAttachments, onDraftAttachmentsChange],
   );
@@ -381,18 +578,195 @@ export function AiPanelChatBar({
     }
   }, [attachMenuOpen, canAttachDrafts]);
 
+  const removeDraftAttachment = useCallback(
+    (index: number) => {
+      if (!onDraftAttachmentsChange) return;
+      const target = draftAttachments[index];
+      if (target?.previewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      onDraftAttachmentsChange(draftAttachments.filter((_, i) => i !== index));
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
+  const toggleDraftSpoiler = useCallback(
+    (id: string) => {
+      if (!onDraftAttachmentsChange) return;
+      onDraftAttachmentsChange(
+        draftAttachments.map((att) =>
+          att.id === id ? { ...att, spoiler: !att.spoiler } : att,
+        ),
+      );
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
   return (
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-3 pt-3">
       <div
         className={cn(
-          'flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
+          'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
+          isComposerDropActive && 'border-primary/50 ring-2 ring-primary/25',
         )}
+        onDragEnter={(e) => {
+          if (!e.dataTransfer?.types.includes('Files')) return;
+          e.preventDefault();
+          if (!canAttachDrafts) return;
+          if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+          setComposerDragDepth((d) => d + 1);
+        }}
+        onDragLeave={(e) => {
+          if (!canAttachDrafts) return;
+          if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+          setComposerDragDepth((d) => Math.max(0, d - 1));
+        }}
+        onDragOver={(e) => {
+          if (!e.dataTransfer?.types.includes('Files')) return;
+          e.preventDefault();
+          if (!canAttachDrafts) return;
+          e.dataTransfer.dropEffect = 'copy';
+        }}
+        onDrop={(e) => {
+          if (!e.dataTransfer?.types.includes('Files')) return;
+          e.preventDefault();
+          setComposerDragDepth(0);
+          if (!canAttachDrafts) return;
+          pushDrafts(e.dataTransfer.files);
+        }}
       >
+        {isComposerDropActive && (
+          <div
+            className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center rounded-lg bg-background/75 backdrop-blur-[2px]"
+            aria-hidden
+          >
+            <p className="rounded-md border border-primary/40 bg-popover/95 px-3 py-2 text-sm font-medium text-foreground shadow-sm">
+              {tHuman('composerDropPrompt')}
+            </p>
+          </div>
+        )}
+        {draftAttachments.length > 0 && (
+          <div className="narrow-scrollbar max-h-[168px] shrink-0 overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2">
+            <div className="flex w-max flex-nowrap items-stretch gap-2 pb-1">
+              {draftAttachments.map((att, index) => (
+                <div
+                  key={att.id}
+                  className={cn(
+                    'relative flex shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5',
+                    att.kind === 'audio' ? 'w-[220px]' : 'w-[168px]',
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'relative w-full shrink-0 overflow-hidden rounded-md bg-background',
+                      att.kind === 'audio' ? 'min-h-[52px]' : 'h-24',
+                    )}
+                  >
+                    {att.kind === 'image' ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+                        <img
+                          src={att.previewUrl}
+                          alt=""
+                          className={cn(
+                            'h-full w-full object-cover',
+                            att.spoiler && 'scale-105 blur-xl',
+                          )}
+                        />
+                        {att.spoiler && (
+                          <div
+                            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-muted/85"
+                            aria-hidden
+                          >
+                            <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+                              {tHuman('draftSpoilerTag')}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : att.kind === 'video' ? (
+                      <ChatDraftVideoPreview
+                        url={att.previewUrl}
+                        spoiler={att.spoiler}
+                        playLabel={tHuman('videoPreviewPlay')}
+                        spoilerBadge={tHuman('draftSpoilerTag')}
+                      />
+                    ) : att.kind === 'audio' ? (
+                      <div className="flex h-full min-h-[52px] items-center px-1 py-1">
+                        <DraftVoicePreview
+                          previewUrl={att.previewUrl}
+                          voiceLabel={tHuman('voiceMessage')}
+                          unknownDurationLabel="0:00"
+                          spoiler={att.spoiler}
+                          spoilerBadgeLabel={tHuman('draftSpoilerTag')}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        <FileIcon className="h-10 w-10" strokeWidth={1.25} />
+                      </div>
+                    )}
+                    <div className="absolute right-1 top-1 z-30 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
+                      {(att.kind === 'image' ||
+                        att.kind === 'video' ||
+                        att.kind === 'audio') && (
+                        <button
+                          type="button"
+                          className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
+                          title={
+                            att.spoiler
+                              ? tHuman('attachmentSpoilerRemove')
+                              : tHuman('attachmentSpoiler')
+                          }
+                          aria-label={
+                            att.spoiler
+                              ? tHuman('attachmentSpoilerRemove')
+                              : tHuman('attachmentSpoiler')
+                          }
+                          aria-pressed={att.spoiler}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDraftSpoiler(att.id);
+                          }}
+                        >
+                          {att.spoiler ? (
+                            <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" aria-hidden />
+                          )}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10"
+                        title={tHuman('attachmentRemove')}
+                        aria-label={tHuman('attachmentRemove')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeDraftAttachment(index);
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="truncate px-0.5 text-xs text-muted-foreground">
+                    {att.file.name}
+                  </p>
+                  <p className="px-0.5 text-[10px] text-muted-foreground/80">
+                    {formatFileSize(att.file.size)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <textarea
           ref={textareaRef}
           value={value}
-          readOnly={isDictating}
+          readOnly={isDictating || composerDisabled}
+          disabled={composerDisabled}
           onChange={(e) => {
             onChange(e.target.value);
             autoResize();
@@ -459,7 +833,7 @@ export function AiPanelChatBar({
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
               {canAttachDrafts ? (
                 <DropdownMenu
-                  modal={false}
+                  modal={isMobile}
                   open={attachMenuOpen}
                   onOpenChange={(open) => {
                     if (!canAttachDrafts) return;
@@ -477,7 +851,12 @@ export function AiPanelChatBar({
                       <Plus className="h-4 w-4" strokeWidth={2} />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[200px]">
+                  <DropdownMenuContent
+                    align="start"
+                    side={isMobile ? 'top' : 'bottom'}
+                    collisionPadding={8}
+                    className="z-[100] min-w-[200px]"
+                  >
                     <DropdownMenuItem
                       className="cursor-pointer gap-2"
                       onSelect={() => {
@@ -508,6 +887,14 @@ export function AiPanelChatBar({
                       <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
                       <span>{tHuman('composerAttachFile')}</span>
                     </DropdownMenuItem>
+                    <ComposerAttachGoogleDriveMenuItem
+                      disabled={!canAttachDrafts}
+                      onPickerOpen={() => setAttachMenuOpen(false)}
+                      onFilesPicked={(files) => {
+                        if (!canAttachDrafts) return;
+                        pushDrafts(filesToFileList(files));
+                      }}
+                    />
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
@@ -528,7 +915,7 @@ export function AiPanelChatBar({
               <button
                 type="button"
                 onClick={startDictation}
-                disabled={isStreaming}
+                disabled={isStreaming || composerDisabled}
                 className={cn(
                   isDictating ? recordingStopButtonClass : iconButtonClass,
                   !isDictating &&
@@ -559,7 +946,10 @@ export function AiPanelChatBar({
             <button
               type="button"
               onClick={isStreaming ? () => onStop?.() : sendMessage}
-              disabled={isStreaming ? !canStop : !canSendWithAttachments}
+              disabled={
+                composerDisabled ||
+                (isStreaming ? !canStop : !canSendWithAttachments)
+              }
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',

@@ -21,6 +21,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   // Track total burned tokens from decay (keep this for informational purposes)
   uint256 public totalBurnedFromDecay;
 
+  // Reserved storage slots for upgrade-safe additions to this contract. Decrement
+  // when appending a new state variable above so any contract inheriting
+  // DecayingSpaceToken keeps a fixed storage layout.
+  uint256[50] private __gap;
+
   event DecayApplied(
     address indexed user,
     uint256 oldBalance,
@@ -61,7 +66,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 _paymentTokenPricePerToken,
     uint256 _tokensForSale,
     uint8 _purchaseEligibilityMode,
-    uint256[] memory _initialPurchaseWhitelistSpaceIds
+    uint256[] memory _initialPurchaseWhitelistSpaceIds,
+    address[] memory _initialAuthorizedMinters
   ) public initializer {
     RegularSpaceToken.initialize(
       name,
@@ -86,7 +92,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _paymentTokenPricePerToken,
       _tokensForSale,
       _purchaseEligibilityMode,
-      _initialPurchaseWhitelistSpaceIds
+      _initialPurchaseWhitelistSpaceIds,
+      _initialAuthorizedMinters
     );
     require(
       _decayPercentage <= 10000,
@@ -128,26 +135,37 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * @return The current voting power after decay calculations
    */
   function balanceOf(address account) public view override returns (uint256) {
-    uint256 currentBalance = super.balanceOf(account);
+    (uint256 newBalance, ) = _pendingDecay(
+      super.balanceOf(account),
+      lastApplied[account]
+    );
+    return newBalance;
+  }
 
-    // If token is archived or decay is not configured, return actual balance without decay
-    if (archived || decayRate == 0) {
-      return currentBalance;
+  /**
+   * @dev Shared decay math used by both balanceOf (view) and applyDecay (state).
+   * @return newBalance The balance after applying whole elapsed decay periods.
+   * @return nextLast The value lastApplied should be set to:
+   *   - `block.timestamp` when decay is inert (archived / disabled / empty /
+   *     uninitialized) so freshly received tokens start with a full period;
+   *   - unchanged (`last`) when an active holder is mid-period — this is the
+   *     fix that prevents frequent interactions from dodging decay forever;
+   *   - `last + wholePeriods * decayRate` otherwise, preserving the remainder.
+   */
+  function _pendingDecay(
+    uint256 currentBalance,
+    uint256 last
+  ) internal view returns (uint256 newBalance, uint256 nextLast) {
+    if (archived || decayRate == 0 || currentBalance == 0 || last == 0) {
+      return (currentBalance, block.timestamp);
     }
 
-    if (currentBalance == 0 || lastApplied[account] == 0) {
-      return currentBalance;
-    }
-
-    // Calculate decay since last update
-    uint256 timeSinceLastDecay = block.timestamp - lastApplied[account];
-    uint256 periodsPassed = timeSinceLastDecay / decayRate;
-
+    uint256 periodsPassed = (block.timestamp - last) / decayRate;
     if (periodsPassed == 0) {
-      return currentBalance;
+      return (currentBalance, last);
     }
 
-    // Apply decay formula: balance * (1 - decayPercentage/10000)^periodsPassed
+    // balance * ((10000 - decayPercentage) / 10000) ^ periodsPassed
     uint256 factor = 10000 - decayPercentage; // e.g. 9900 for 1% decay
     uint256 acc = 10000; // 100%
     uint256 n = periodsPassed;
@@ -159,7 +177,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       n >>= 1;
     }
 
-    return (currentBalance * acc) / 10000;
+    newBalance = (currentBalance * acc) / 10000;
+    nextLast = last + periodsPassed * decayRate;
   }
 
   /**
@@ -167,28 +186,20 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * @param account The address to apply decay to
    */
   function applyDecay(address account) public {
-    // If token is archived or decay is not configured, update lastApplied but don't apply decay
-    if (archived || decayRate == 0) {
-      lastApplied[account] = block.timestamp;
-      return;
-    }
-
     uint256 oldBalance = super.balanceOf(account);
-    uint256 newBalance = balanceOf(account);
+    (uint256 newBalance, uint256 nextLast) = _pendingDecay(
+      oldBalance,
+      lastApplied[account]
+    );
 
     if (newBalance < oldBalance) {
       uint256 decayAmount = oldBalance - newBalance;
-
-      // Burn the tokens, which automatically updates total supply
       _burn(account, decayAmount);
-
-      // Update total burned from decay counter
       totalBurnedFromDecay += decayAmount;
-
       emit DecayApplied(account, oldBalance, newBalance, decayAmount);
     }
 
-    lastApplied[account] = block.timestamp;
+    lastApplied[account] = nextLast;
     _updateTokenHolderStatus(account);
   }
 
@@ -230,7 +241,10 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   }
 
   function mint(address to, uint256 amount) public override {
-    require(msg.sender == executor, '!executor');
+    require(
+      msg.sender == executor || isAuthorizedMinter[msg.sender],
+      '!executor'
+    );
     _applyDecayOrInit(to);
     _addTokenHolder(to);
     _mintWithSupplyChecks(to, amount);
