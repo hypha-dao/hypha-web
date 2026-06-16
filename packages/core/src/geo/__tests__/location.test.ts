@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildLocatedAtPatch,
+  hasSpaceMapLocation,
   isNullIsland,
   mapNominatimResults,
   normalizeGeocodeQuery,
@@ -89,5 +90,15 @@ describe('spaceLocationFieldsSchema', () => {
 describe('geocodeRequestSchema', () => {
   it('rejects very short queries', () => {
     expect(geocodeRequestSchema.safeParse({ query: 'a' }).success).toBe(false);
+  });
+});
+
+describe('hasSpaceMapLocation', () => {
+  it('returns true only for finite coordinate pairs', () => {
+    expect(hasSpaceMapLocation({ latitude: 10, longitude: 20 })).toBe(true);
+    expect(hasSpaceMapLocation({ latitude: null, longitude: null })).toBe(
+      false,
+    );
+    expect(hasSpaceMapLocation({ latitude: 10 })).toBe(false);
   });
 });

@@ -4,9 +4,16 @@ import {
   Category,
   Space,
   SpaceOrder,
+  hasSpaceMapLocation,
   isSpaceArchived,
 } from '@hypha-platform/core/client';
-import { SpaceCardList, SpaceSearch } from '@hypha-platform/epics';
+import {
+  NetworkGlobeMap,
+  NetworkMapView,
+  NetworkMapViewToggle,
+  SpaceCardList,
+  SpaceSearch,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
@@ -34,6 +41,7 @@ interface ExploreSpacesProps {
   categories?: Category[];
   order?: SpaceOrder;
   uniqueCategories: Category[];
+  enableNetworkMap?: boolean;
 }
 
 const categoriesIntersected = (
@@ -92,6 +100,7 @@ export function ExploreSpaces({
   categories,
   order,
   uniqueCategories,
+  enableNetworkMap = false,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
   const tCommon = useTranslations('Common');
@@ -207,6 +216,22 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
+  const view: NetworkMapView =
+    enableNetworkMap && searchParams.get('view') === 'map' ? 'map' : 'list';
+
+  const setView = React.useCallback(
+    (nextView: NetworkMapView) => {
+      const params = new URLSearchParams(searchParams);
+      if (nextView === 'map') {
+        params.set('view', 'map');
+      } else {
+        params.delete('view');
+      }
+      replace(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, replace],
+  );
+
   const multiSelectVariants = cva(
     'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
     {
@@ -253,6 +278,19 @@ export function ExploreSpaces({
       }
     });
   }, [selectedSpaces, order]);
+
+  const mapPins = React.useMemo(
+    () =>
+      sortedSpaces.filter(hasSpaceMapLocation).map((space) => ({
+        id: space.id,
+        slug: space.slug,
+        title: space.title,
+        latitude: space.latitude!,
+        longitude: space.longitude!,
+        locationLabel: space.locationLabel,
+      })),
+    [sortedSpaces],
+  );
 
   const { isAuthenticated } = useAuthentication();
 
@@ -335,6 +373,13 @@ export function ExploreSpaces({
           allLabel={t('all')}
           className="flex grow"
         />
+        {enableNetworkMap ? (
+          <NetworkMapViewToggle
+            value={view}
+            onChange={setView}
+            className="mr-2"
+          />
+        ) : null}
         <div className="flex flex-col grow-0">
           <Combobox
             options={orderOptions}
@@ -357,12 +402,16 @@ export function ExploreSpaces({
         </Link>
       </div>
       <div className="space-y-6 flex mt-4 mb-7">
-        <SpaceCardList
-          lang={lang}
-          spaces={sortedSpaces}
-          pageSize={12}
-          cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-        />
+        {view === 'map' && enableNetworkMap ? (
+          <NetworkGlobeMap lang={lang} pins={mapPins} className="w-full" />
+        ) : (
+          <SpaceCardList
+            lang={lang}
+            spaces={sortedSpaces}
+            pageSize={12}
+            cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+          />
+        )}
       </div>
       <Separator className="mt-1 mb-1" />
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 -mb-15">

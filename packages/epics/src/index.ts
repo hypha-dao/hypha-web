@@ -10,3 +10,4 @@ export * from './notifications';
 export * from './hooks';
 
 export * from './coherence';
+export * from './network-map';

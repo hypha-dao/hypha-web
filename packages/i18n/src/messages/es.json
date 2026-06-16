@@ -2906,7 +2906,17 @@
   },
   "NetworkMap": {
     "mapView": "Mapa",
-    "listView": "Lista"
+    "listView": "Lista",
+    "globeView": "Globo",
+    "flatView": "Mapa plano",
+    "landLayer": "Tierra",
+    "waterLayer": "Agua",
+    "graticuleLayer": "Retícula",
+    "noSpacesWithLocation": "Aún no hay espacios con ubicación",
+    "noSpacesWithLocationHint": "Los espacios aparecen en el mapa cuando un administrador define la ubicación en la configuración.",
+    "loadingMap": "Cargando mapa…",
+    "mapAriaLabel": "Mapa interactivo de la red Hypha",
+    "viewToggleLabel": "Vista de red"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",

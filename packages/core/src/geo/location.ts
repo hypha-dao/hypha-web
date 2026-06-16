@@ -77,3 +77,15 @@ export function isSpaceLocationSource(
 ): value is SpaceLocationSource {
   return typeof value === 'string' && SPACE_LOCATION_SOURCE_SET.has(value);
 }
+
+export function hasSpaceMapLocation(space: {
+  latitude?: number | null;
+  longitude?: number | null;
+}): boolean {
+  return (
+    space.latitude != null &&
+    space.longitude != null &&
+    Number.isFinite(space.latitude) &&
+    Number.isFinite(space.longitude)
+  );
+}

@@ -3438,7 +3438,17 @@
   },
   "NetworkMap": {
     "mapView": "Map",
-    "listView": "List"
+    "listView": "List",
+    "globeView": "Globe",
+    "flatView": "Flat map",
+    "landLayer": "Land",
+    "waterLayer": "Water",
+    "graticuleLayer": "Graticule",
+    "noSpacesWithLocation": "No spaces with a location yet",
+    "noSpacesWithLocationHint": "Spaces appear on the map once an admin sets a location in space configuration.",
+    "loadingMap": "Loading map…",
+    "mapAriaLabel": "Interactive network map of Hypha spaces",
+    "viewToggleLabel": "Network view"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",

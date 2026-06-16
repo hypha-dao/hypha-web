@@ -1,6 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
+import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import {
   CATEGORIES,
   Category,
@@ -15,6 +16,7 @@ type PageProps = {
     query?: string;
     category?: string;
     order?: string;
+    view?: string;
   }>;
 };
 
@@ -48,6 +50,7 @@ export default async function Index(props: PageProps) {
       : SPACE_ORDERS[0];
 
   const { lang } = params;
+  const enableNetworkMap = await getEnableNetworkMapAsync();
 
   const spaces = await getAllSpaces({
     search: query?.trim() || undefined,
@@ -66,6 +69,7 @@ export default async function Index(props: PageProps) {
         categories={categories}
         order={order}
         uniqueCategories={uniqueCategories}
+        enableNetworkMap={enableNetworkMap}
       />
     </Container>
   );
