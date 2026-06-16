@@ -261,6 +261,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     isError: isCreateAgreementWithWalletFlowError,
     errors: createAgreementWithWalletFlowErrors,
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
+
+  useEffect(() => {
+    if (createAgreementWithWalletFlowErrors.length === 0) return;
+    console.error(
+      '[AiLeftPanel] wallet agreement flow errors:',
+      createAgreementWithWalletFlowErrors,
+    );
+  }, [createAgreementWithWalletFlowErrors]);
+
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -1715,12 +1724,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           >
             <div>{t('streamError')}</div>
             {createAgreementWithWalletFlowErrors.length > 0 ? (
-              <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs opacity-90">
-                {createAgreementWithWalletFlowErrors
-                  .map((item) =>
-                    item instanceof Error ? item.message : String(item),
-                  )
-                  .join('\n')}
+              <div className="mt-1 text-xs opacity-90">
+                {t('walletAgreementError')}
               </div>
             ) : null}
           </div>

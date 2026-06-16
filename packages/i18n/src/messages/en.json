@@ -2528,6 +2528,7 @@
     "showMore": "Read more",
     "showLess": "Show less",
     "streamError": "An error occurred while generating the response.",
+    "walletAgreementError": "We couldn't publish the proposal on-chain. Check your wallet connection and try again.",
     "assistantExpiredSubtitle": "Your Hypha Network contribution expired {expiredElapsed}. Please reactivate your space before using Hypha AI.",
     "attachment": "Attachment",
     "welcomeSpecialistsHint": "Active specialists also appear under Members > AI Agents."
