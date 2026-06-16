@@ -602,15 +602,15 @@ export function OnboardingAdventurePage({
         />
         <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
           <header className="flex flex-col items-center gap-6 text-center md:gap-8">
-            <p className="inline-flex items-center rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm dark:border-info-8/30 dark:bg-background/20 dark:text-white dark:shadow-[0_0_32px_-10px_var(--color-info-9)]">
-              <span>{t('heroPill.build')}</span>
+            <p className="inline-block rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm dark:border-info-8/30 dark:bg-background/20 dark:text-white dark:shadow-[0_0_32px_-10px_var(--color-info-9)]">
+              {t('heroPill.build')}{' '}
               <span
                 key={rotatingHeroTitleWords[heroTitleWordIndex]}
-                className="ml-1 inline-block font-semibold text-info-10 transition-opacity duration-300"
+                className="font-semibold text-info-10 transition-opacity duration-300"
               >
                 {rotatingHeroTitleWords[heroTitleWordIndex]}
               </span>
-              <span>{t('heroPill.together')}</span>
+              {t('heroPill.together')}
             </p>
             <p className="text-1 font-medium uppercase tracking-[0.22em] text-accent-11 dark:text-info-11">
               {t('heroEyebrow')}
