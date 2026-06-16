@@ -273,12 +273,16 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
       setFieldErrors({});
       setStep('currency');
     }
-    if (step === 'review') setStep('form');
+    if (step === 'review') {
+      setFieldErrors({});
+      setStep('form');
+    }
   };
 
   // Validates all required fields and the IBAN checksum; advances to review on pass.
-  const handleFormContinue = (event: FormEvent) => {
-    event.preventDefault();
+  // Accepts an optional FormEvent so it can be called from both onSubmit (Enter key) and a button onClick.
+  const handleFormContinue = (event?: FormEvent) => {
+    event?.preventDefault();
     const errs: Record<string, string> = {};
 
     if (!accountName.trim()) errs.accountName = REQUIRED_MSG;
@@ -305,13 +309,13 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
       } else {
         const ibanValue = iban.trim().replace(/\s/g, '');
         if (!isValidIban(ibanValue)) {
-          errs.iban = 'Invalid IBAN â€” check the number and try again';
+          errs.iban = 'Invalid IBAN — check the number and try again';
         }
       }
     } else if (selectedCurrency === 'swift') {
       const ibanValue = iban.trim().replace(/\s/g, '');
       if (ibanValue && !isValidIban(ibanValue)) {
-        errs.iban = 'Invalid IBAN â€” check the number and try again';
+        errs.iban = 'Invalid IBAN — check the number and try again';
       }
       if (!bic.trim()) errs.bic = REQUIRED_MSG;
     }
@@ -973,10 +977,10 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               </Button>
             ) : step === 'form' ? (
               <Button
-                type="submit"
-                form={ADD_PAYOUT_FORM_ID}
+                type="button"
                 colorVariant="accent"
                 disabled={isSubmitting}
+                onClick={() => handleFormContinue()}
               >
                 {t('continue')}
               </Button>
