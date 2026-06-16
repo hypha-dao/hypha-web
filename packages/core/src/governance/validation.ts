@@ -214,6 +214,7 @@ export const schemaCreateAgreementFiles = z.object(createAgreementFiles);
 
 export const schemaCreateAgreement = z.object({
   ...createAgreementWeb2Props,
+  web3SpaceId: z.number().optional(),
 });
 
 /** Single payout row — preprocess `undefined` (RHF defaults) so Zod runs `.min()` instead of generic "Required". */

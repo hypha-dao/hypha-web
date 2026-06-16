@@ -2123,6 +2123,7 @@
     "toolTokens": "{count} jeton(s) récupéré(s) pour l'espace \"{slug}\".",
     "toolError": "Erreur : {message}",
     "streamError": "Une erreur est survenue lors de la génération de la réponse.",
+    "walletAgreementError": "Impossible de publier la proposition on-chain. Vérifiez votre portefeuille et réessayez.",
     "assistantExpiredSubtitle": "Votre contribution au réseau Hypha a expiré {expiredElapsed}. Réactivez votre espace avant d'utiliser Hypha AI.",
     "attachment": "Pièce jointe",
     "pendingAction": "Action en attente",
