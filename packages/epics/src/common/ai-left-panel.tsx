@@ -1225,8 +1225,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           creatorId: payload.creator_id!,
           label: payload.label ?? 'space setup',
           web3SpaceId: payload.web3_space_id!,
-        } as Parameters<typeof createAgreementWithWalletFlow>[0] & {
-          web3SpaceId: number;
         });
       } catch (walletFlowError) {
         console.error(
