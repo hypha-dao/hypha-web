@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  publicClient,
   getSpaceVisibility,
   isMember as isMemberConfig,
   getSpaceDetails,
