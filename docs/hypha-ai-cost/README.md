@@ -72,6 +72,14 @@ Token sizes are read from `packages/chat-server`:
 
 Cost per task = `input_tokens × $3/1M + output_tokens × $15/1M`.
 
+**Hosting is already included.** All rates in this report are **managed / hosted
+inference** (per-token) — the provider runs the model on their GPUs and bills per
+token (Cursor for Composer; OpenRouter / DeepSeek / DeepInfra for the open models).
+There is no separate GPU/infra line to add. Self-hosting the open weights is a
+different, fixed-cost model (e.g. one H100 ≈ $1,400+/month) that is **more** expensive
+at per-Space volumes and only becomes economic when many Spaces share GPUs — so it is
+intentionally out of scope for a per-Space estimate.
+
 ---
 
 ## Per-feature breakdown — Typical Space (Composer 2.5 Fast, full vision)
