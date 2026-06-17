@@ -42,7 +42,6 @@ const REGULAR_SPACE_TOKEN_FQN =
   'contracts/RegularSpaceToken.sol:RegularSpaceToken';
 
 const BASE_MAINNET_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const BASE_MAINNET_RST_IMPL = '0x3612C9555f0fa327c892f5cEAD49c98D84aa2565';
 
 const SOLAR_SOURCE_ID = keccak256(toUtf8Bytes('DEMO_SOLAR_V5'));
 const BATTERY_1_SOURCE_ID = keccak256(toUtf8Bytes('DEMO_BATTERY_1_V5'));

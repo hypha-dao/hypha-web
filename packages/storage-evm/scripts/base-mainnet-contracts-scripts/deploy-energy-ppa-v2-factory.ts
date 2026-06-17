@@ -49,7 +49,6 @@ const REGULAR_SPACE_TOKEN_FQN =
   'contracts/RegularSpaceToken.sol:RegularSpaceToken';
 
 const BASE_MAINNET_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const BASE_MAINNET_RST_IMPL = '0x3612C9555f0fa327c892f5cEAD49c98D84aa2565';
 
 const SOLAR_SOURCE_ID = keccak256(toUtf8Bytes('SOLAR_PARK_1'));
 const BATTERY_SOURCE_ID = keccak256(toUtf8Bytes('BATTERY_1'));
@@ -140,25 +139,49 @@ function deriveActors(): { households: string[]; investors: string[] } {
 
 // ── Step 1+2: Implementations ────────────────────────────────────────────────
 
+/**
+ * `EnergyPPAv2Factory.deployCommunity` calls `RegularSpaceToken.initialize(...)`
+ * with the selector compiled into the factory bytecode. If the implementation
+ * it points to does not expose that exact selector, the proxy initialization
+ * delegatecall reverts with empty data and the whole deploy aborts with
+ * `FailedCall()`. Validating compatibility up-front prevents wiring a factory
+ * to a stale/incompatible implementation (the root cause of the previous
+ * "error executing the transaction" on Enable Energy Community proposals).
+ */
+async function assertRSTCompatible(addr: string): Promise<void> {
+  const RST = await ethers.getContractFactory(REGULAR_SPACE_TOKEN_FQN);
+  const selector = RST.interface.getFunction('initialize')?.selector;
+  if (!selector) {
+    throw new Error('Could not resolve RegularSpaceToken.initialize selector');
+  }
+  const code = await ethers.provider.getCode(addr);
+  if (code === '0x') {
+    throw new Error(`RegularSpaceToken impl has no code on-chain: ${addr}`);
+  }
+  if (!code.toLowerCase().includes(selector.slice(2).toLowerCase())) {
+    throw new Error(
+      `RegularSpaceToken impl ${addr} does not expose initialize ${selector}. ` +
+        'It is incompatible with the current factory ABI and would make ' +
+        'deployCommunity() revert with FailedCall(). Deploy a fresh ' +
+        'implementation (leave REGULAR_SPACE_TOKEN_IMPL unset) or point to a ' +
+        'matching one.',
+    );
+  }
+}
+
 async function resolveRSTImplementation(): Promise<string> {
-  const network = await ethers.provider.getNetwork();
-  const isBaseMainnet = Number(network.chainId) === 8453;
-
+  // Only reuse an implementation when explicitly requested — and only after
+  // verifying it is ABI-compatible. Never silently reuse a hardcoded address.
   const explicit = getEnv('REGULAR_SPACE_TOKEN_IMPL');
-  const candidate =
-    explicit ?? (isBaseMainnet ? BASE_MAINNET_RST_IMPL : undefined);
-
-  if (candidate && ethers.isAddress(candidate)) {
-    const code = await ethers.provider.getCode(candidate);
-    if (code !== '0x') {
-      console.log(`  Reusing RegularSpaceToken impl: ${candidate}`);
-      return candidate;
-    }
-    if (explicit) {
+  if (explicit) {
+    if (!ethers.isAddress(explicit)) {
       throw new Error(
-        `REGULAR_SPACE_TOKEN_IMPL has no code on-chain: ${candidate}`,
+        `REGULAR_SPACE_TOKEN_IMPL is not a valid address: ${explicit}`,
       );
     }
+    await assertRSTCompatible(explicit);
+    console.log(`  Reusing RegularSpaceToken impl: ${explicit}`);
+    return explicit;
   }
 
   console.log('  Deploying RegularSpaceToken implementation...');

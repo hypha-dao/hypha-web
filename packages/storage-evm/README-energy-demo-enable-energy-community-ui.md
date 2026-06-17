@@ -168,11 +168,11 @@ The contract stores each **Source ID** as `bytes32`. The demo script sets them t
 | **Source Type** | `SOLAR` |
 | **Ownership Token Name** | `Demo Solar Park` |
 | **Ownership Token Symbol** | `D-SOLAR` |
-| **Base Price Per kWh** | `10` |
+| **Base Price Per kWh** | `0.10` |
 | **Holder Addresses** | `0x449Fa519B376Ed35CE3Ee91ea549C5b07D5930e9,0xc514f43c5d426C484fAa6aB710F44f7543CD1603,0x20C6cC32ba68Ae7289B7D974dbE942EEAE21575B,0x669Bf1D04C4638ade9273EfcA653AACB552F558F,0xEf3DB1384D914B8F9182CDC45aF6d7665Ae5CB07,0x613b299E64F4b45912105DB31Bc28368EcF1E988,0x2feDe7AcDE81562DD7CF2bE4304463cfEa53064e` |
 | **Holder Amounts** | `1000,1000,1000,1000,1000,2500,2500` |
 
-**Meaning:** Amounts are **shares out of 10,000** minted to each holder for this source (five households at 10% each, two investors at 25% each), matching `holderAmounts` in `energy-ppav2-mainnet-demo.ts`. **Base price** is the demo’s internal PPA reference in **euro-cent–style integer units** per kWh (10 = solar base in the script), not USDC wei.
+**Meaning:** Amounts are **shares out of 10,000** minted to each holder for this source (five households at 10% each, two investors at 25% each), matching `holderAmounts` in `energy-ppav2-mainnet-demo.ts`. **Base price** is the agreed PPA reference price per kWh in the settlement currency. Enter it as a decimal (e.g. `0.10`); the form converts it to the contract's internal units (1 unit = 0.01, so `0.10` → `10`). Both `.` and `,` are accepted as the decimal separator.
 
 ---
 
@@ -184,7 +184,7 @@ The contract stores each **Source ID** as `bytes32`. The demo script sets them t
 | **Source Type** | `BATTERY` |
 | **Ownership Token Name** | `Demo Battery 1` |
 | **Ownership Token Symbol** | `D-BAT1` |
-| **Base Price Per kWh** | `15` |
+| **Base Price Per kWh** | `0.15` |
 | **Holder Addresses** | `0x613b299E64F4b45912105DB31Bc28368EcF1E988,0x2feDe7AcDE81562DD7CF2bE4304463cfEa53064e` |
 | **Holder Amounts** | `5000,5000` |
 
@@ -198,7 +198,7 @@ The contract stores each **Source ID** as `bytes32`. The demo script sets them t
 | **Source Type** | `BATTERY` |
 | **Ownership Token Name** | `Demo Battery 2` |
 | **Ownership Token Symbol** | `D-BAT2` |
-| **Base Price Per kWh** | `12` |
+| **Base Price Per kWh** | `0.12` |
 | **Holder Addresses** | `0x2feDe7AcDE81562DD7CF2bE4304463cfEa53064e` |
 | **Holder Amounts** | `10000` |
 

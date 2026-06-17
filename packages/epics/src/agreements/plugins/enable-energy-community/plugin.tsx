@@ -217,9 +217,9 @@ export const EnableEnergyCommunityPlugin = ({
                     <FormLabel>Base price per kWh</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        min={0}
-                        placeholder="internal units (1 unit = 0.01 USDC)"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="e.g. 0.11"
                         value={field.value ?? ''}
                         onChange={field.onChange}
                       />

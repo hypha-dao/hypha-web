@@ -61,6 +61,29 @@ const optionalUintField = z
   .optional()
   .refine((value) => !value || /^\d+$/.test(value), 'Must be an integer');
 
+/**
+ * Human price → on-chain integer "internal units" (1 unit = 0.01 of the
+ * settlement currency). Accepts both `.` and `,` as the decimal separator and
+ * up to two decimals, so a value like `0,11` or `0.11` becomes `11`.
+ */
+const PRICE_RE = /^\d+(?:[.,]\d{1,2})?$/;
+
+const priceToInternalUnits = (input: string): string => {
+  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(input.trim());
+  if (!match) {
+    throw new Error(`Invalid price: ${input}`);
+  }
+  const whole = BigInt(match[1]);
+  const fraction = (match[2] ?? '').padEnd(2, '0');
+  return (whole * 100n + BigInt(fraction)).toString();
+};
+
+const internalUnitsToPriceDisplay = (units: string): string => {
+  const value = Number(units);
+  if (!Number.isFinite(value)) return units;
+  return (value / 100).toFixed(2);
+};
+
 const memberRowSchema = z.object({
   recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member'),
   meterCount: z
@@ -82,7 +105,10 @@ const sourceSchema = z
       .string()
       .trim()
       .min(1, 'Base price is required')
-      .refine((value) => /^\d+$/.test(value), 'Must be an integer'),
+      .refine(
+        (value) => PRICE_RE.test(value) && Number(value.replace(',', '.')) > 0,
+        'Enter a price greater than 0 (max 2 decimals, e.g. 0.11)',
+      ),
     owners: z.array(ownerRowSchema).min(1, 'Add at least one owner'),
     tokenName: z.string().trim().optional(),
     tokenSymbol: z.string().trim().optional(),
@@ -194,7 +220,7 @@ const formToDeployInput = (
     sourceType: source.sourceType,
     tokenName: source.tokenName?.trim() || source.name.trim(),
     tokenSymbol: source.tokenSymbol?.trim() || deriveSymbol(source.name),
-    basePricePerKwh: source.basePricePerKwh,
+    basePricePerKwh: priceToInternalUnits(source.basePricePerKwh),
     holders: source.owners.map((owner) => owner.recipient),
     holderAmounts: source.owners.map((owner) =>
       percentageStringToBigInt(owner.percentage).toString(),
@@ -352,7 +378,11 @@ export const CreateEnableEnergyCommunityForm = ({
           ),
           sources: deployInput.sources.map(
             (source) =>
-              `${source.tokenName} [${source.sourceType}] @ ${source.basePricePerKwh}/kWh`,
+              `${source.tokenName} [${
+                source.sourceType
+              }] @ ${internalUnitsToPriceDisplay(
+                String(source.basePricePerKwh),
+              )}/kWh`,
           ),
         };
       }}
