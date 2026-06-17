@@ -2129,6 +2129,7 @@
     "toolTokens": "{count} token(s) obtido(s) para o espaço \"{slug}\".",
     "toolError": "Erro: {message}",
     "streamError": "Ocorreu um erro ao gerar a resposta.",
+    "walletAgreementError": "Não foi possível publicar a proposta on-chain. Verifique a sua wallet e tente novamente.",
     "assistantExpiredSubtitle": "A sua contribuição para a rede Hypha expirou há {expiredElapsed}. Reative o seu espaço antes de usar a Hypha AI.",
     "attachment": "Anexo",
     "pendingAction": "Ação pendente",

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   checkSpaceAccessForSpace,
-  createAgreement,
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -12,12 +11,18 @@ import {
   resolveActorPerson,
 } from './onboarding-actor';
 import { logOnboardingToolEvent } from './onboarding-observability';
+import {
+  aiCreatableProposalTypeSchema,
+  resolveAiProposalTypeConfig,
+} from './ai-proposal-types';
 
 const inputSchema = z.object({
   space_slug: z.string().trim().min(1),
   title: z.string().trim().min(3).max(120),
   description: z.string().trim().min(20).max(4000),
-  label: z.string().trim().min(2).max(80).optional(),
+  proposal_type: z
+    .enum(aiCreatableProposalTypeSchema)
+    .default('collective_agreement'),
   onboarding_last_user_text: z.string().optional(),
   require_confirmation_token: z
     .string()
@@ -31,12 +36,15 @@ const inputSchema = z.object({
 export function createCreateSpaceSetupProposalTool(authToken: string) {
   return {
     description:
-      'Write: create a setup proposal document for a space. Requires explicit user confirmation token in latest user message.',
+      'Write: create a governance proposal for a space. Pick proposal_type from the supported Hypha proposal catalog (Collective Agreement, Contribution, etc.). Requires explicit user confirmation before wallet signing or UI handoff.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
       if (!parsed.success) return { ok: false, error: parsed.error.message };
       const data = parsed.data;
+      const proposalTypeConfig = resolveAiProposalTypeConfig(
+        data.proposal_type,
+      );
 
       const safe = sanitizeSlug(data.space_slug);
       if (!safe) return { ok: false, error: 'Invalid space slug format.' };
@@ -68,11 +76,20 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
           confirmation_token: confirmationToken,
           preview: {
             title: data.title,
-            label: data.label ?? 'space setup',
+            proposal_type: proposalTypeConfig.documentLabel,
             description: data.description,
           },
-          next_step:
-            'Please confirm once more and I will create this proposal for you.',
+          next_step: proposalTypeConfig.aiWalletExecutable
+            ? 'I need one more confirmation from you before the signing step. Press Confirm and then sign in your wallet to publish this proposal.'
+            : `After confirmation I will guide you to the ${proposalTypeConfig.documentLabel} form to add the required details.`,
+        };
+      }
+
+      if (host.web3SpaceId == null) {
+        return {
+          ok: false,
+          error:
+            'This space is not linked to an on-chain DAO yet. Complete space activation before creating proposals.',
         };
       }
 
@@ -84,43 +101,37 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
         dedupeKey: `proposal:${safe}:${data.title.toLowerCase()}`,
       });
 
-      const created = await createAgreement(
-        {
-          title: data.title,
-          description: data.description,
-          spaceId: host.id,
-          creatorId: person.id,
-          label: data.label ?? 'space setup',
-        },
-        { db },
-      );
-
-      logOnboardingToolEvent({
-        tool: 'create_space_setup_proposal',
-        status: 'executed',
-        actorSub: privyUserId,
-        spaceSlug: safe,
-        dedupeKey: `proposal:${safe}:${created.id}`,
-        details: { proposalId: created.id, slug: created.slug ?? null },
-      });
+      if (!proposalTypeConfig.aiWalletExecutable) {
+        return {
+          ok: true,
+          requires_ui_completion: true,
+          proposal_type: data.proposal_type,
+          document_label: proposalTypeConfig.documentLabel,
+          create_path: proposalTypeConfig.createPath,
+          next_step: `This ${proposalTypeConfig.documentLabel} proposal needs extra fields in Agreements. Offer to open ${proposalTypeConfig.createPath} for the user.`,
+        };
+      }
 
       return {
         ok: true,
-        proposal: {
-          id: created.id,
-          slug: created.slug,
-          title: created.title,
-          state: created.state,
-          label: created.label,
+        requires_wallet_signature: true,
+        create_payload: {
+          title: data.title,
+          description: data.description,
+          space_id: host.id,
+          web3_space_id: host.web3SpaceId,
+          creator_id: person.id,
+          label: proposalTypeConfig.documentLabel,
+          proposal_type: data.proposal_type,
+          space_slug: safe,
         },
+        next_step:
+          'Ask the user to sign the on-chain proposal transaction. After wallet confirmation, the proposal will appear under Agreements.',
         audit: {
           actor_person_id: person.id,
           actor_sub: privyUserId,
-          action: 'create_space_setup_proposal',
+          action: 'create_space_setup_proposal_handoff',
           confirmed: true,
-          rollback_hint: `Withdraw or archive proposal "${
-            created.slug ?? created.id
-          }".`,
         },
       };
     },

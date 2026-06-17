@@ -188,7 +188,7 @@ export const useCreateAgreementOrchestrator = ({
 
       let web3ProposalResult = undefined;
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
-      const web3SpaceId = (arg as { web3SpaceId?: number }).web3SpaceId;
+      const web3SpaceId = arg.web3SpaceId;
       const extraTransactions = (arg as any).extraTransactions as
         | ReadonlyArray<{
             target: `0x${string}`;

@@ -1136,6 +1136,7 @@ export async function createChatStreamResult(
       onboardingWriteToolsEnabled: onboardingWriteToolsEnabled !== false,
       ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
     },
+    lastUserText,
   );
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,

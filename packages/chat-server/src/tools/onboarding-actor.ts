@@ -67,6 +67,7 @@ export function hasExplicitConfirmation(
     'go ahead',
     'proceed',
     'yes proceed',
+    'yes, proceed',
     'do it',
     'sounds good',
   ]);

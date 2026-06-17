@@ -2526,6 +2526,7 @@
     "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
+    "walletAgreementError": "Der Vorschlag konnte nicht on-chain veröffentlicht werden. Prüfe deine Wallet-Verbindung und versuche es erneut.",
     "assistantExpiredSubtitle": "Ihr Hypha-Netzwerk-Beitrag ist vor {expiredElapsed} abgelaufen. Bitte reaktivieren Sie Ihren Space, bevor Sie Hypha AI nutzen.",
     "attachment": "Anhang",
     "pendingAction": "Ausstehende Aktion",
