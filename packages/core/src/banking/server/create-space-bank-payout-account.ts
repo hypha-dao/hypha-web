@@ -114,6 +114,11 @@ export async function createSpaceBankPayoutAccount(
     bic: input.bic,
     sortCode: input.sortCode,
     destinationCurrency,
+    swiftAccountFormat: input.swiftAccountFormat,
+    swiftBankAddress: input.swiftBankAddress,
+    swiftCategory: input.swiftCategory,
+    swiftPurposeOfFunds: input.swiftPurposeOfFunds,
+    swiftBusinessDescription: input.swiftBusinessDescription,
     address: input.address,
     idempotencyKey: externalAccountIdempotencyKey,
   });

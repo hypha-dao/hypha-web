@@ -97,6 +97,18 @@ export type RegisterExternalAccountInput = {
   bic?: string;
   sortCode?: string;
   destinationCurrency?: string;
+  // SWIFT-specific fields
+  swiftAccountFormat?: 'iban' | 'other';
+  swiftBankAddress?: {
+    street_line_1: string;
+    city: string;
+    postal_code?: string;
+    country: string;
+    state?: string;
+  };
+  swiftCategory?: string;
+  swiftPurposeOfFunds?: string[];
+  swiftBusinessDescription?: string;
   address: {
     street_line_1: string;
     street_line_2?: string;

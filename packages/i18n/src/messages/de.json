@@ -703,7 +703,7 @@
         "sourceCurrencyHint": "Wählen Sie, welchen Token die Treasury an dieses Konto sendet.",
         "bankAccountSection": "Bankkonto",
         "accountHolderSection": "Kontoinhaber",
-        "addressSection": "Bankadresse",
+        "addressSection": "Adresse des Begünstigten",
         "bankName": "Bankname",
         "bankNamePlaceholder": "z.B. Deutsche Bank, Sparkasse",
         "accountName": "Bezeichnung",
@@ -871,7 +871,7 @@
       "eur": {
         "code": "EUR",
         "name": "Euro",
-        "payoutMethod": "IBAN und SWIFT/BIC"
+        "payoutMethod": "IBAN (SEPA)"
       },
       "usd": {
         "code": "USD",

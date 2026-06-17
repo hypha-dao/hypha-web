@@ -151,12 +151,52 @@ function toBridgeExternalAccountBody(
       account_number: input.accountNumber,
     };
   } else if (rail.externalAccountType === 'swift') {
-    // SWIFT requires a nested `swift: { account, address, category, purpose_of_funds, short_business_description }`
-    // body — not yet fully implemented. bic passed top-level as a best-effort placeholder.
-    body.bic = input.bic;
-    if (input.accountNumber) {
-      body.account = { account_number: input.accountNumber };
+    const isIban = input.swiftAccountFormat !== 'other';
+    body.account_type = isIban ? 'iban' : 'unknown';
+
+    let swiftAccount:
+      | { account_number: string; bic?: string; country: string }
+      | { account_number: string; bic: string };
+    if (isIban) {
+      const ibanAlpha2 = input
+        .iban!.replace(/\s/g, '')
+        .toUpperCase()
+        .slice(0, 2);
+      const ibanAlpha3 = IBAN_ALPHA2_TO_ALPHA3[ibanAlpha2];
+      if (!ibanAlpha3) {
+        throw new Error(
+          `Unsupported IBAN country prefix for SWIFT: ${ibanAlpha2}`,
+        );
+      }
+      swiftAccount = {
+        account_number: input.iban!.replace(/\s/g, '').toUpperCase(),
+        ...(input.bic ? { bic: input.bic.toUpperCase() } : {}),
+        country: ibanAlpha3,
+      };
+    } else {
+      swiftAccount = {
+        account_number: input.accountNumber!,
+        bic: input.bic!.toUpperCase(),
+      };
     }
+
+    body.swift = {
+      account: swiftAccount,
+      address: {
+        street_line_1: input.swiftBankAddress!.street_line_1,
+        city: input.swiftBankAddress!.city,
+        country: input.swiftBankAddress!.country,
+        ...(input.swiftBankAddress!.postal_code
+          ? { postal_code: input.swiftBankAddress!.postal_code }
+          : {}),
+        ...(input.swiftBankAddress!.state
+          ? { state: input.swiftBankAddress!.state }
+          : {}),
+      },
+      category: input.swiftCategory!,
+      purpose_of_funds: input.swiftPurposeOfFunds!,
+      short_business_description: input.swiftBusinessDescription!,
+    };
   }
 
   return body;

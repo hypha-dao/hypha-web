@@ -666,8 +666,27 @@
           "done": "Done"
         },
         "swift": {
-          "code": "SWIFT",
-          "hint": "International wire via BIC/SWIFT"
+          "code": "SWIFT (USD)",
+          "hint": "International wire via BIC/SWIFT",
+          "accountFormatLabel": "Account format",
+          "accountFormatIban": "IBAN",
+          "accountFormatOther": "Other account number",
+          "accountNumber": "Account number",
+          "accountNumberPlaceholder": "12345678",
+          "bankAddressSection": "Bank's address",
+          "complianceSection": "Transfer details",
+          "categoryLabel": "Recipient relationship",
+          "categoryPlaceholder": "Select a relationship…",
+          "categoryClient": "Client",
+          "categoryParentCompany": "Parent company",
+          "categorySubsidiary": "Subsidiary",
+          "categorySupplier": "Supplier",
+          "purposeLabel": "Purpose of funds",
+          "purposeIntraGroup": "Intra-group transfer",
+          "purposeInvoice": "Invoice for goods & services",
+          "businessDescription": "Business description",
+          "businessDescriptionPlaceholder": "Describe how these funds will be used",
+          "businessDescriptionHint": "Brief description of the business relationship and purpose of transfer."
         },
         "rails": {
           "usd_ach": "USD — ACH",

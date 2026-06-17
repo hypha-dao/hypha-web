@@ -2893,7 +2893,7 @@
         "sourceCurrencyHint": "Seleccione qué token enviará el tesoro a esta cuenta.",
         "bankAccountSection": "Cuenta bancaria",
         "accountHolderSection": "Titular de la cuenta",
-        "addressSection": "Dirección bancaria",
+        "addressSection": "Dirección del beneficiario",
         "bankName": "Nombre del banco",
         "bankNamePlaceholder": "Ej. Chase, Barclays",
         "accountName": "Alias",
@@ -3061,7 +3061,7 @@
       "eur": {
         "code": "EUR",
         "name": "Euro",
-        "payoutMethod": "IBAN y SWIFT/BIC"
+        "payoutMethod": "IBAN (SEPA)"
       },
       "usd": {
         "code": "USD",

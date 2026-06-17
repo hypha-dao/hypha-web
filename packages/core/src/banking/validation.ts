@@ -153,6 +153,16 @@ const payoutAddressSchema = z
   })
   .strict();
 
+const swiftBankAddressSchema = z
+  .object({
+    street_line_1: z.string().trim().min(1).max(256),
+    city: z.string().trim().min(1).max(128),
+    postal_code: z.string().trim().max(32).optional(),
+    country: z.string().trim().min(2).max(3),
+    state: z.string().trim().max(128).optional(),
+  })
+  .strict();
+
 export const schemaCreatePayoutAccount = z
   .object({
     railKey: z.enum(BANK_PAYOUT_RAIL_KEYS),
@@ -176,6 +186,13 @@ export const schemaCreatePayoutAccount = z
     sortCode: z.string().trim().optional(),
     destinationCurrency: z.string().trim().optional(),
     wireMessage: z.string().trim().max(140).optional(),
+    // SWIFT-specific fields
+    swiftAccountFormat: z.enum(['iban', 'other']).optional(),
+    swiftIbanCountry: z.string().trim().min(2).max(3).optional(),
+    swiftBankAddress: swiftBankAddressSchema.optional(),
+    swiftCategory: z.string().trim().optional(),
+    swiftPurposeOfFunds: z.array(z.string().trim()).optional(),
+    swiftBusinessDescription: z.string().trim().max(1024).optional(),
     address: payoutAddressSchema,
   })
   .strict()
@@ -233,18 +250,64 @@ export const schemaCreatePayoutAccount = z
     }
 
     if (rail.externalAccountType === 'swift') {
-      if (!data.iban?.trim() && !data.accountNumber?.trim()) {
+      const isIban = data.swiftAccountFormat !== 'other';
+      if (isIban) {
+        if (!data.iban?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'iban is required for SWIFT IBAN accounts',
+            path: ['iban'],
+          });
+        }
+        if (!data.swiftIbanCountry?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'swiftIbanCountry is required for SWIFT IBAN accounts',
+            path: ['swiftIbanCountry'],
+          });
+        }
+      } else {
+        if (!data.accountNumber?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'accountNumber is required for SWIFT non-IBAN accounts',
+            path: ['accountNumber'],
+          });
+        }
+        if (!data.bic?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'bic is required for SWIFT non-IBAN accounts',
+            path: ['bic'],
+          });
+        }
+      }
+      if (!data.swiftBankAddress) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'iban or accountNumber is required for SWIFT accounts',
-          path: ['iban'],
+          message: 'swiftBankAddress is required for SWIFT accounts',
+          path: ['swiftBankAddress'],
         });
       }
-      if (!data.bic?.trim()) {
+      if (!data.swiftCategory?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'bic is required for SWIFT accounts',
-          path: ['bic'],
+          message: 'swiftCategory is required for SWIFT accounts',
+          path: ['swiftCategory'],
+        });
+      }
+      if (!data.swiftPurposeOfFunds?.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'swiftPurposeOfFunds is required for SWIFT accounts',
+          path: ['swiftPurposeOfFunds'],
+        });
+      }
+      if (!data.swiftBusinessDescription?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'swiftBusinessDescription is required for SWIFT accounts',
+          path: ['swiftBusinessDescription'],
         });
       }
     }

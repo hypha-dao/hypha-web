@@ -775,6 +775,15 @@ export type BridgeCreateExternalAccountRequest = {
     checking_or_savings?: 'checking' | 'savings';
     sort_code?: string;
   };
+  swift?: {
+    account:
+      | { account_number: string; bic?: string; country: string } // IBAN account
+      | { account_number: string; bic: string }; // non-IBAN (unknown) account
+    address: BridgeExternalAccountAddress;
+    category: string;
+    purpose_of_funds: string[];
+    short_business_description: string;
+  };
   address?: BridgeExternalAccountAddress;
 };
 

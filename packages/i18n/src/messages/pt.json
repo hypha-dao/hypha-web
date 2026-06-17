@@ -2891,7 +2891,7 @@
         "sourceCurrencyHint": "Selecione qual token o tesouro enviará para esta conta.",
         "bankAccountSection": "Conta bancária",
         "accountHolderSection": "Titular da conta",
-        "addressSection": "Endereço bancário",
+        "addressSection": "Endereço do beneficiário",
         "bankName": "Nome do banco",
         "bankNamePlaceholder": "ex. Itaú, Barclays",
         "accountName": "Apelido",
@@ -3059,7 +3059,7 @@
       "eur": {
         "code": "EUR",
         "name": "Euro",
-        "payoutMethod": "IBAN e SWIFT/BIC"
+        "payoutMethod": "IBAN (SEPA)"
       },
       "usd": {
         "code": "USD",

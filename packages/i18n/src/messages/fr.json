@@ -2889,7 +2889,7 @@
         "sourceCurrencyHint": "Sélectionnez le jeton que le trésor enverra à ce compte.",
         "bankAccountSection": "Compte bancaire",
         "accountHolderSection": "Titulaire du compte",
-        "addressSection": "Adresse bancaire",
+        "addressSection": "Adresse du bénéficiaire",
         "bankName": "Nom de la banque",
         "bankNamePlaceholder": "ex. BNP Paribas, Barclays",
         "accountName": "Surnom",
@@ -3057,7 +3057,7 @@
       "eur": {
         "code": "EUR",
         "name": "Euro",
-        "payoutMethod": "IBAN et SWIFT/BIC"
+        "payoutMethod": "IBAN (SEPA)"
       },
       "usd": {
         "code": "USD",
