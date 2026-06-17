@@ -149,7 +149,7 @@ const schemaCreateEnableEnergyCommunityForm = schemaCreateAgreementForm
             });
           });
         });
-      });
+      }),
   });
 
 type FormValues = z.infer<typeof schemaCreateEnableEnergyCommunityForm>;

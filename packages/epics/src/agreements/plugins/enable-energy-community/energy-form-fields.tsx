@@ -92,7 +92,7 @@ export const completeRanking = (
   primary: EnergyBasePurpose,
 ): EnergyPurposeRanking => {
   const rest = ENERGY_BASE_PURPOSES.filter((purpose) => purpose !== primary);
-  return [primary, rest[0], rest[1]];
+  return [primary, rest[0]!, rest[1]!];
 };
 
 // ─────────────────────────────────────────────────────────────────────────
