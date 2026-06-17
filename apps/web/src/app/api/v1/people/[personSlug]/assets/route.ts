@@ -19,6 +19,7 @@ import {
   getTokenDecimals,
   getEnergyBalances,
   getMemberSpaces,
+  isHiddenToken,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -220,7 +221,9 @@ export async function GET(
       });
     });
 
-    const allTokens: Token[] = Array.from(addressMap.values());
+    const allTokens: Token[] = Array.from(addressMap.values()).filter(
+      (token) => !isHiddenToken(token.address),
+    );
 
     let prices: Record<string, number | undefined> = {};
     try {
