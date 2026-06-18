@@ -118,7 +118,7 @@ export function EcosystemNavigationMainPanel({
   const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
     spaceSlug: daoSlug,
     space: currentSpace,
-    spaceId: currentSpace?.web3SpaceId,
+    spaceId: currentSpace?.web3SpaceId ?? undefined,
   });
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
     useOrganisationSpacesBySingleSlug(daoSlug);
