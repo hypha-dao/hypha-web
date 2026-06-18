@@ -58,6 +58,14 @@ const perSpaceMonthlyAICost = (model, profile) =>
 const ONBOARDING_BASELINE = 0.56; // Composer Fast one-time onboarding / space
 const onboardingCost = (model) => ONBOARDING_BASELINE * (model.input / 3.0); // scales with input price
 
+// ============================================================
+// Base L2 gas cost model (from docs/hypha-ai-cost)
+// Active governance · 0.005 Gwei · ETH $1,748 · non-exec vote @ 150k gas
+// ============================================================
+const GAS_MONTHLY_BY_PROFILE = { light: 0.06, typical: 0.37, heavy: 3.27 };
+const GAS_SETUP_ONE_TIME = 0.035;
+const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_MONTHLY_BY_PROFILE.typical;
+
 
 const GROWTH_PRESETS = {
   min: {
@@ -222,7 +230,9 @@ const TokenomicsSimulator = () => {
 
     const aiModel = getModel(aiModelId);
     const perSpaceAI = perSpaceMonthlyAICost(aiModel, aiProfile);
+    const perSpaceGas = perSpaceMonthlyGas(aiProfile);
     let cumulativeAICost = 0;
+    let cumulativeGasCost = 0;
 
     for (let month = 1; month <= months; month++) {
       const monthStakingRate = getMonthlyParameter('stakingRate', month) / 100;
@@ -250,7 +260,10 @@ const TokenomicsSimulator = () => {
       // AI operating cost for this month (all active spaces)
       const monthAICost = currentOrgCount * perSpaceAI;
       cumulativeAICost += monthAICost;
+      const monthGasCost = currentOrgCount * perSpaceGas;
+      cumulativeGasCost += monthGasCost;
       const netContribution = orgTotalPurchase - monthAICost;
+      const netAfterGas = netContribution - monthGasCost;
 
       const dexPrice = dexUsdc / dexHypha;
       const dexHyphaBefore = dexHypha;
@@ -363,7 +376,8 @@ const TokenomicsSimulator = () => {
         investorSellingUsdc: monthInvestorSelling, tokensSold,
         fdv: Math.round(fdv),
         aiCost: monthAICost, cumulativeAICost,
-        netContribution,
+        gasCost: monthGasCost, cumulativeGasCost,
+        netContribution, netAfterGas,
       });
 
       graphData.push({
@@ -384,8 +398,11 @@ const TokenomicsSimulator = () => {
         'Space Purchases': Math.round(actualOrgPurchasedTokens),
         'Space Contributions (USD)': Math.round(orgTotalPurchase),
         'AI Cost (USD)': Math.round(monthAICost),
+        'Gas Cost (USD)': Math.round(monthGasCost),
         'Net Contributions (USD)': Math.round(netContribution),
+        'Net After AI + Gas (USD)': Math.round(netAfterGas),
         'Cumulative AI Cost (USD)': Math.round(cumulativeAICost),
+        'Cumulative Gas Cost (USD)': Math.round(cumulativeGasCost),
       });
     }
 
@@ -426,6 +443,7 @@ const TokenomicsSimulator = () => {
 
   const aiModel = getModel(aiModelId);
   const perSpaceAI = perSpaceMonthlyAICost(aiModel, aiProfile);
+  const perSpaceGas = perSpaceMonthlyGas(aiProfile);
   const baselinePerSpace = perSpaceMonthlyAICost(getModel('composer-fast'), aiProfile);
 
 
@@ -434,14 +452,14 @@ const TokenomicsSimulator = () => {
       <div className="flex gap-6">
         <div className="flex-1 min-w-0">
       <h1 className="text-2xl font-bold mb-1">HYPHA Tokenomics Simulator (Phase II)</h1>
-      <p className="text-sm text-gray-500 mb-4">With per-Space AI operating cost model — closed-source vs open-source LLMs.</p>
+      <p className="text-sm text-gray-500 mb-4">With per-Space AI + Base L2 gas operating cost model — closed-source vs open-source LLMs.</p>
 
       {/* ============ AI OPERATING COST SECTION ============ */}
       <div className="mb-6 border border-indigo-200 bg-indigo-50 p-4 rounded-lg">
-        <h2 className="text-lg font-semibold mb-1">AI Operating Cost per Space</h2>
+        <h2 className="text-lg font-semibold mb-1">AI &amp; On-Chain Operating Cost per Space</h2>
         <p className="text-xs text-gray-600 mb-3">
           A Space's AI workload (full vision) is ~{TYPICAL_INPUT_M}M input + {TYPICAL_OUTPUT_M}M output tokens/month for a Typical space.
-          Pick the inference model and Space profile; the simulator bills every active Space each month.
+          Pick the inference model and Space profile; the simulator bills every active Space each month for AI inference and Base L2 gas (active governance).
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -477,7 +495,7 @@ const TokenomicsSimulator = () => {
               <option value="typical">Typical (~15 members · 1×)</option>
               <option value="heavy">Heavy (~50 members · 2.73×)</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">Scales the per-Space token volume.</p>
+            <p className="text-xs text-gray-500 mt-1">Scales AI token volume and gas activity (proposals/votes).</p>
           </div>
 
           <div className="bg-white border rounded p-3">
@@ -488,6 +506,26 @@ const TokenomicsSimulator = () => {
             </div>
             <div className="text-xs text-gray-500">
               vs Composer Fast: {(baselinePerSpace / perSpaceAI).toFixed(1)}× cheaper
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 border border-amber-200 bg-amber-50 rounded p-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-xs text-gray-600 font-medium">Base L2 gas / Space / month ({aiProfile})</div>
+              <div className="text-2xl font-bold text-amber-700">${perSpaceGas.toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">Active governance · 0.005 Gwei · ETH $1,748</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 font-medium">One-time setup / Space</div>
+              <div className="text-2xl font-bold text-amber-700">${GAS_SETUP_ONE_TIME.toFixed(3)}</div>
+              <div className="text-xs text-gray-500 mt-1">Create space + deploy-token proposal + deciding vote</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 font-medium">Combined ops / Space / month</div>
+              <div className="text-2xl font-bold text-gray-800">${(perSpaceAI + perSpaceGas).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">AI ${perSpaceAI.toFixed(2)} + gas ${perSpaceGas.toFixed(2)}</div>
             </div>
           </div>
         </div>
@@ -633,7 +671,7 @@ const TokenomicsSimulator = () => {
               <input type="number" min="0" max="200" value={monthlyParams[selectedMonth]?.orgPayment ?? orgPayment} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgPayment(v) : updateMonthlyParameter('orgPayment', v); }} className="w-20 p-1 border rounded text-right" />
               <span className="ml-1">USDC</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">AI cost (${perSpaceAI.toFixed(2)}/Space) is tracked separately from IEX purchases.</p>
+            <p className="text-xs text-gray-500 mt-1">AI (${perSpaceAI.toFixed(2)}/Space) and gas (${perSpaceGas.toFixed(2)}/Space) tracked separately from IEX purchases.</p>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Additional Investor Purchases + buybacks (% of USDC on IEX)</label>
@@ -727,6 +765,22 @@ const TokenomicsSimulator = () => {
               </p>
               <p className="text-sm text-gray-500">Contributions − AI cost</p>
             </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-amber-400">
+              <h3 className="text-sm font-medium text-gray-500">Monthly Gas Cost</h3>
+              <p className="text-2xl font-bold text-amber-800">${Math.round(results[results.length - 1].gasCost).toLocaleString()}</p>
+              <p className="text-sm text-gray-500">${perSpaceGas.toFixed(2)}/Space · {aiProfile} profile</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-amber-400">
+              <h3 className="text-sm font-medium text-gray-500">Cumulative Gas Cost</h3>
+              <p className="text-2xl font-bold text-amber-800">${Math.round(results[results.length - 1].cumulativeGasCost).toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-teal-400">
+              <h3 className="text-sm font-medium text-gray-500">Net After AI + Gas (monthly)</h3>
+              <p className={`text-2xl font-bold ${results[results.length - 1].netAfterGas >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${Math.round(results[results.length - 1].netAfterGas).toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500">Contributions − AI − gas</p>
+            </div>
           </div>
         </div>
       )}
@@ -819,9 +873,9 @@ const TokenomicsSimulator = () => {
             </ResponsiveContainer>
           </div>
           <div className="h-80 bg-white p-4 rounded-lg shadow md:col-span-2">
-            <h3 className="text-md font-medium mb-1">Space Contributions vs AI Cost</h3>
+            <h3 className="text-md font-medium mb-1">Space Contributions vs AI &amp; Gas Cost</h3>
             <p className="text-xs text-gray-500 mb-2">
-              Contributions = Spaces × ${orgPayment} USDC/Space. Flat stretches happen when per-month Space Growth Rate is 0% (default: months 2–26). AI cost scales with the same Space count × selected model rate.
+              Contributions = Spaces × ${orgPayment} USDC/Space. Flat stretches happen when per-month Space Growth Rate is 0% (default: months 2–26). AI and gas costs scale with the same Space count × selected model/profile rates.
             </p>
             <ResponsiveContainer width="100%" height="85%">
               <LineChart data={chartData} margin={{ top: 5, right: 50, left: 50, bottom: 5 }}>
@@ -832,19 +886,23 @@ const TokenomicsSimulator = () => {
                 <Legend />
                 <Line type="monotone" dataKey="Space Contributions (USD)" stroke="#82ca9d" strokeWidth={2} />
                 <Line type="monotone" dataKey="AI Cost (USD)" stroke="#6366f1" strokeWidth={2} />
+                <Line type="monotone" dataKey="Gas Cost (USD)" stroke="#d97706" strokeWidth={2} />
                 <Line type="monotone" dataKey="Net Contributions (USD)" stroke="#ff7300" strokeWidth={2} />
+                <Line type="monotone" dataKey="Net After AI + Gas (USD)" stroke="#0d9488" strokeWidth={2} strokeDasharray="5 5" />
               </LineChart>
             </ResponsiveContainer>
           </div>
           <div className="h-80 bg-white p-4 rounded-lg shadow">
-            <h3 className="text-md font-medium mb-2">Cumulative AI Cost</h3>
+            <h3 className="text-md font-medium mb-2">Cumulative AI &amp; Gas Cost</h3>
             <ResponsiveContainer width="100%" height="90%">
               <LineChart data={chartData} margin={{ top: 5, right: 40, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis tickFormatter={(v) => v.toLocaleString()} width={60} />
                 <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
                 <Line type="monotone" dataKey="Cumulative AI Cost (USD)" stroke="#6366f1" strokeWidth={2} />
+                <Line type="monotone" dataKey="Cumulative Gas Cost (USD)" stroke="#d97706" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -872,8 +930,11 @@ const TokenomicsSimulator = () => {
                 <th className="py-2 px-4 border text-right">IEX USDC</th>
                 <th className="py-2 px-4 border text-right">Space Contributions (USD)</th>
                 <th className="py-2 px-4 border text-right">AI Cost (USD)</th>
+                <th className="py-2 px-4 border text-right">Gas Cost (USD)</th>
                 <th className="py-2 px-4 border text-right">Net After AI (USD)</th>
+                <th className="py-2 px-4 border text-right">Net After AI + Gas (USD)</th>
                 <th className="py-2 px-4 border text-right">Cumulative AI Cost (USD)</th>
+                <th className="py-2 px-4 border text-right">Cumulative Gas Cost (USD)</th>
                 <th className="py-2 px-4 border text-right">Token Price</th>
                 <th className="py-2 px-4 border text-right">Price Change</th>
                 <th className="py-2 px-4 border text-right">FDV (USD)</th>
@@ -903,10 +964,15 @@ const TokenomicsSimulator = () => {
                   <td className="py-2 px-4 border text-right">{row.dexUsdc.toLocaleString()}</td>
                   <td className="py-2 px-4 border text-right">${Math.round(row.orgUsdcPurchase).toLocaleString()}</td>
                   <td className="py-2 px-4 border text-right text-indigo-700">${Math.round(row.aiCost).toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right text-amber-700">${Math.round(row.gasCost).toLocaleString()}</td>
                   <td className={`py-2 px-4 border text-right ${row.netContribution >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     ${Math.round(row.netContribution).toLocaleString()}
                   </td>
+                  <td className={`py-2 px-4 border text-right ${row.netAfterGas >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${Math.round(row.netAfterGas).toLocaleString()}
+                  </td>
                   <td className="py-2 px-4 border text-right text-indigo-700">${Math.round(row.cumulativeAICost).toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right text-amber-700">${Math.round(row.cumulativeGasCost).toLocaleString()}</td>
                   <td className="py-2 px-4 border text-right">${row.tokenPrice}</td>
                   <td className="py-2 px-4 border text-right">{row.deltaPrice}%</td>
                   <td className="py-2 px-4 border text-right">${row.fdv.toLocaleString()}</td>
