@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hypha AI — Estimated AI Cost per Space</title>
+<title>Hypha — AI &amp; On-chain Cost per Space</title>
 <style>
   :root {
     --bg: #0f1115;
@@ -196,6 +196,63 @@
   </ul>
 
   <hr />
+
+  <h2>On-chain (gas) cost per Space — Base</h2>
+  <p>Governance, treasury and membership actions settle on the <strong>Base</strong> L2. These figures take the <strong>real gas amounts measured on Base mainnet</strong> (from the repo's <code>gas-cost-analysis</code> script) and re-price them at the current network conditions below. At these prices, on-chain activity is effectively free.</p>
+  <div class="pill-row">
+    <span class="tag">Gas price: 0.005 Gwei</span>
+    <span class="tag">ETH: $1,748</span>
+    <span class="tag">Cost per gas unit: ~$0.0000000087</span>
+    <span class="tag">Source: Base mainnet receipts</span>
+  </div>
+
+  <div class="stats" style="margin-top:18px">
+    <div class="stat"><div class="v accent">$0.12</div><div class="l">Gas / month · Typical space</div></div>
+    <div class="stat"><div class="v">$1.45</div><div class="l">Gas / year · Typical space</div></div>
+    <div class="stat"><div class="v warn">$0.035</div><div class="l">One-time setup (create + token)</div></div>
+    <div class="stat"><div class="v">~140×</div><div class="l">AI cost vs gas (Composer Fast)</div></div>
+  </div>
+
+  <h3>Cost per on-chain operation (at 0.005 Gwei)</h3>
+  <p>Gas units are actual on-chain measurements. In Hypha, a passing proposal auto-executes on the deciding vote, so execution gas can be bundled into that vote.</p>
+  <div class="frame">
+    <table>
+      <thead><tr><th>Operation</th><th>When</th><th class="n">Gas units</th><th class="n">Cost (USD)</th></tr></thead>
+      <tbody>
+        <tr><td>Token deploy — vote + auto-execute</td><td>Setup (one-time)</td><td class="n">2,549,025</td><td class="n">$0.0223</td></tr>
+        <tr><td>Space creation</td><td>Setup (one-time)</td><td class="n">960,285</td><td class="n">$0.0084</td></tr>
+        <tr><td>Token deployment proposal</td><td>Setup (one-time)</td><td class="n">527,418</td><td class="n">$0.0046</td></tr>
+        <tr><td>Proposal creation</td><td>Recurring</td><td class="n">~400,000</td><td class="n">$0.0035</td></tr>
+        <tr><td>Proposal execution (agreement)</td><td>Recurring</td><td class="n">~450,000</td><td class="n">$0.0039</td></tr>
+        <tr><td>Vote cast</td><td>Recurring</td><td class="n">~150,000</td><td class="n">$0.0013</td></tr>
+        <tr><td>Member join</td><td>Recurring</td><td class="n">~100,000</td><td class="n">$0.0009</td></tr>
+        <tr><td>Treasury transfer (ERC-20 / USDC)</td><td>Recurring</td><td class="n">62,135</td><td class="n">$0.0005</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Recurring gas cost by Space size</h3>
+  <p>Monthly on-chain activity assumed per profile (proposals × votes dominate). Setup is one-time and excluded from the monthly figure.</p>
+  <div class="frame">
+    <table>
+      <thead><tr>
+        <th>Profile</th><th class="n">Proposals/mo</th><th class="n">Votes/mo</th>
+        <th class="n">Treasury txns/mo</th><th class="n">Gas/mo</th><th class="n">Monthly</th><th class="n">Annual</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Light (~5 members)</td><td class="n">2</td><td class="n">6</td><td class="n">1</td><td class="n">2.8M</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:4px"></span><span class="barlabel">$0.024</span></div></td><td class="n">$0.29</td></tr>
+        <tr><td><strong>Typical (~15 members)</strong></td><td class="n">6</td><td class="n">54</td><td class="n">5</td><td class="n">13.8M</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:20px"></span><span class="barlabel"><strong>$0.12</strong></span></div></td><td class="n">$1.45</td></tr>
+        <tr><td>Heavy (~50 members)</td><td class="n">20</td><td class="n">600</td><td class="n">20</td><td class="n">109M</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:160px"></span><span class="barlabel">$0.96</span></div></td><td class="n">$11.46</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub">For the Typical space, member votes are ~59% of monthly gas (54 votes × ~150k), proposal execution ~20%, proposal creation ~17%.</p>
+
+  <div class="callout">
+    <div class="t">Gas is negligible vs AI at these prices</div>
+    <p>A Typical space's on-chain cost is <strong>~$0.12/month</strong> — roughly <strong>140× smaller</strong> than the Composer 2.5 Fast AI estimate ($16.52), and still a fraction of even the cheapest open-source AI option (~$0.70). The AI layer, not the blockchain, is the cost driver.</p>
+  </div>
+  <p class="sub"><strong>Caveats.</strong> Figures are L2 execution gas at the stated 0.005 Gwei; Base also adds a small L1 data fee per transaction (typically sub-cent under current blob-fee conditions) not captured by a single L2 gas price. Gas scales linearly with gas price — a 10× spike to 0.05 Gwei makes a Typical space ~$1.20/month, still negligible. Who pays (member wallets vs. a platform paymaster) is a separate question; this is the aggregate on-chain cost of a Space's activity regardless of payer.</p>
 
   <div class="grid2">
     <div>
