@@ -74,7 +74,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end lg:w-auto">
+      <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto lg:shrink-0">
         <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
           <Input
             type="checkbox"
@@ -84,40 +84,42 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           />
           <span>{tTreasury('hideSmall')}</span>
         </label>
-        <div className="flex flex-row flex-wrap items-center justify-end gap-2">
-          {isDisabled ? (
-            <Button
-              colorVariant="accent"
-              variant="outline"
-              disabled
-              title={tooltipMessage || ''}
-            >
-              <RadiobuttonIcon />
-              {tTreasury('newToken')}
-            </Button>
-          ) : (
+        {isDisabled ? (
+          <Button
+            colorVariant="accent"
+            variant="outline"
+            disabled
+            title={tooltipMessage || ''}
+          >
+            <RadiobuttonIcon />
+            {tTreasury('newToken')}
+          </Button>
+        ) : (
+          <Button
+            asChild
+            colorVariant="accent"
+            variant="outline"
+            title={tooltipMessage || ''}
+          >
             <Link
               href={`${basePath}/create/issue-new-token?hideBack=true`}
               scroll={false}
-              title={tooltipMessage || ''}
             >
-              <Button colorVariant="accent" variant="outline">
-                <RadiobuttonIcon />
-                {tTreasury('newToken')}
-              </Button>
+              <RadiobuttonIcon />
+              {tTreasury('newToken')}
             </Link>
-          )}
-
-          <Button
-            className={cn(isDisabled && 'cursor-not-allowed')}
-            title={tooltipMessage || ''}
-            onClick={fundWallet}
-            disabled={isDisabled}
-          >
-            <CopyIcon />
-            {tTreasury('depositFunds')}
           </Button>
-        </div>
+        )}
+
+        <Button
+          className={cn(isDisabled && 'cursor-not-allowed')}
+          title={tooltipMessage || ''}
+          onClick={fundWallet}
+          disabled={isDisabled}
+        >
+          <CopyIcon />
+          {tTreasury('depositFunds')}
+        </Button>
       </div>
     </div>
   );
