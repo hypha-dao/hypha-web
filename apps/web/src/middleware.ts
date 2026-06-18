@@ -119,6 +119,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|signin|placeholder|icon|onesignal|tokenomics2|.well-known|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|signin|placeholder|icon|onesignal|tokenomics1|tokenomics2|.well-known|_next/static|_next/image|favicon.ico).*)',
   ],
 };
