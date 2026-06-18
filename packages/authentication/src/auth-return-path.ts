@@ -1,3 +1,5 @@
+'use client';
+
 const STORAGE_KEY = 'hypha:auth-return-path:v1';
 
 const DHO_SPACE_CONTEXT_PATH = /^\/[^/]+\/dho\/[^/]+/;
@@ -7,7 +9,10 @@ export function isDhoSpaceContextPath(pathname: string): boolean {
 }
 
 export function saveAuthReturnPath(pathname: string): void {
-  if (!isDhoSpaceContextPath(pathname)) return;
+  if (!isDhoSpaceContextPath(pathname)) {
+    clearAuthReturnPath();
+    return;
+  }
 
   try {
     window.sessionStorage.setItem(STORAGE_KEY, pathname);

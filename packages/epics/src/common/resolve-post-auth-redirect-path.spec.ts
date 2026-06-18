@@ -5,12 +5,10 @@ import {
   consumeAuthReturnPath,
   isDhoSpaceContextPath,
   peekAuthReturnPath,
-  saveAuthReturnPath,
-} from '@hypha-platform/authentication';
-import {
   resolvePostAuthRedirectPath,
   resolvePostAuthRedirectPathOrDefault,
-} from './resolve-post-auth-redirect-path';
+  saveAuthReturnPath,
+} from '@hypha-platform/authentication';
 
 describe('auth-return-path', () => {
   beforeEach(() => {
@@ -41,6 +39,7 @@ describe('auth-return-path', () => {
   });
 
   it('ignores non-DHO paths', () => {
+    saveAuthReturnPath('/en/dho/hypha/coherence');
     saveAuthReturnPath('/en/network');
     expect(peekAuthReturnPath()).toBeNull();
   });

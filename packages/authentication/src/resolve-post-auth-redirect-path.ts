@@ -1,10 +1,49 @@
+'use client';
+
 import {
   clearAuthReturnPath,
   consumeAuthReturnPath,
   peekAuthReturnPath,
-} from '@hypha-platform/authentication';
-import { getDhoSpaceContextPath } from './get-dho-space-context-path';
-import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+} from './auth-return-path';
+
+const VALID_DHO_TABS = new Set([
+  'overview',
+  'ecosystem-navigation',
+  'coherence',
+  'agreements',
+  'members',
+  'treasury',
+  'banking',
+  'rewards',
+  'memory',
+]);
+
+const DHO_SPACE_SLUG_FROM_PATH = /^\/[^/]+\/dho\/([^/]+)/;
+
+function getDhoSpaceSlugFromPathname(pathname: string): string | undefined {
+  return pathname.match(DHO_SPACE_SLUG_FROM_PATH)?.[1];
+}
+
+function getDhoSpaceContextPath({
+  pathname,
+  lang,
+  spaceSlug,
+}: {
+  pathname: string;
+  lang: string;
+  spaceSlug: string;
+}): string {
+  const match = pathname.match(/^\/[^/]+\/dho\/[^/]+(?:\/([^/]+))?/);
+  if (!match) {
+    return pathname;
+  }
+
+  const nextSegment = match[1];
+  const activeTab =
+    nextSegment && VALID_DHO_TABS.has(nextSegment) ? nextSegment : 'agreements';
+
+  return `/${lang}/dho/${spaceSlug}/${activeTab}`;
+}
 
 type ResolvePostAuthRedirectPathParams = {
   pathname: string;

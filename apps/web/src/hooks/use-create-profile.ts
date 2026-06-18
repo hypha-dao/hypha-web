@@ -13,7 +13,7 @@ import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import type { ProfileFormData } from './profile-form-data';
 import { useSWRConfig } from 'swr';
-import { resolvePostAuthRedirectPath } from '@hypha-platform/epics';
+import { resolvePostAuthRedirectPath } from '@hypha-platform/authentication';
 
 export const useCreateProfile = (
   endpoint = '/api/v1/people/create-profile',

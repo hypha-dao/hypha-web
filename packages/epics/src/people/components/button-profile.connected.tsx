@@ -2,12 +2,15 @@
 
 import { ButtonProfile } from './button-profile';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { UseAuthentication } from '@hypha-platform/authentication';
+import {
+  UseAuthentication,
+  resolvePostAuthRedirectPathOrDefault,
+} from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
-import { resolvePostAuthRedirectPathOrDefault } from '../../common/resolve-post-auth-redirect-path';
+
 type ConnectedButtonProfileProps = {
   useAuthentication: UseAuthentication;
   useMe: UseMe;
