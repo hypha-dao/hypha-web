@@ -7,7 +7,7 @@ import type { Locale } from '@hypha-platform/i18n';
 import { InnerSpaceCardList } from './inner-space-card-list';
 import { Button } from '@hypha-platform/ui';
 import type { UseMembers } from '../hooks';
-import { useCanMutateInSpace } from '../hooks/use-can-mutate-in-space';
+import { useCanMutateInSpace } from '../hooks/use-can-mutate-in-space.web3.rpc';
 import Link from 'next/link';
 
 interface SubspaceSectionProps {

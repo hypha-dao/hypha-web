@@ -13,7 +13,7 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
-import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space';
+import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
 import { useParams } from 'next/navigation';

@@ -115,11 +115,6 @@ export function EcosystemNavigationMainPanel({
   );
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
-  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
-    spaceSlug: daoSlug,
-    space: currentSpace,
-    spaceId: currentSpace?.web3SpaceId ?? undefined,
-  });
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
     useOrganisationSpacesBySingleSlug(daoSlug);
 
@@ -201,7 +196,25 @@ export function EcosystemNavigationMainPanel({
   );
   const selectedSpaceTitle =
     selectedSpace?.name ?? currentSpaceTitle ?? t('title');
-  const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
+  const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug ?? daoSlug;
+  const selectedSpaceRecord = useMemo(() => {
+    if (!currentSpace) return null;
+    if (!selectedSpace?.id) return currentSpace;
+    const spacesWithCurrent = nonArchivedSpaces.some(
+      (s) => s.id === currentSpace.id,
+    )
+      ? nonArchivedSpaces
+      : [...nonArchivedSpaces, currentSpace];
+    return (
+      spacesWithCurrent.find((space) => space.id === selectedSpace.id) ??
+      currentSpace
+    );
+  }, [selectedSpace?.id, nonArchivedSpaces, currentSpace]);
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
+    spaceSlug: selectedSpaceSlug,
+    space: selectedSpaceRecord ?? currentSpace,
+    spaceId: (selectedSpaceRecord ?? currentSpace)?.web3SpaceId ?? undefined,
+  });
   const canRenderSpaceActions = Boolean(
     currentSpace && selectedSpaceSlug && !isMutateLoading && canMutate,
   );
@@ -217,19 +230,6 @@ export function EcosystemNavigationMainPanel({
     canRenderSpaceActions && visitSpaceHref
       ? `${visitSpaceHref}/space/create`
       : null;
-  const selectedSpaceRecord = useMemo(() => {
-    if (!currentSpace) return null;
-    if (!selectedSpace?.id) return currentSpace;
-    const spacesWithCurrent = nonArchivedSpaces.some(
-      (s) => s.id === currentSpace.id,
-    )
-      ? nonArchivedSpaces
-      : [...nonArchivedSpaces, currentSpace];
-    return (
-      spacesWithCurrent.find((space) => space.id === selectedSpace.id) ??
-      currentSpace
-    );
-  }, [selectedSpace?.id, nonArchivedSpaces, currentSpace]);
   const rootSpaceRecord = useMemo(() => {
     if (!currentSpace) return null;
     const spacesWithCurrent = nonArchivedSpaces.some(

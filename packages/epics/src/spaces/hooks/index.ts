@@ -10,7 +10,7 @@ export * from './use-space-member';
 export * from './use-action-gating';
 export * from './use-space-discoverability';
 export * from './use-user-space-state';
-export * from './use-can-mutate-in-space';
+export * from './use-can-mutate-in-space.web3.rpc';
 export * from './use-spaces-discoverability-batch';
 export {
   checkAccess,
