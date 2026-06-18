@@ -100,7 +100,10 @@ export const ProfileMemberSpaces = ({
               {spaces?.map((space, index) => (
                 <Link
                   key={space.id || index}
-                  href={getDhoPathDefaultLanding(lang as Locale, space.slug ?? '')}
+                  href={getDhoPathDefaultLanding(
+                    lang as Locale,
+                    space.slug ?? '',
+                  )}
                 >
                   <div className="group relative" title={space.title}>
                     <div

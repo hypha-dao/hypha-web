@@ -120,7 +120,10 @@ export const MemberSpaces = ({
               {filteredSpaces?.map((space, index) => (
                 <Link
                   key={index}
-                  href={getDhoPathDefaultLanding(lang as Locale, space.slug ?? '')}
+                  href={getDhoPathDefaultLanding(
+                    lang as Locale,
+                    space.slug ?? '',
+                  )}
                 >
                   <div title={space.title}>
                     <div
