@@ -6,7 +6,6 @@ import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import {
   Button,
-  Combobox,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -14,6 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@hypha-platform/ui';
 import { MapPinIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -52,7 +56,7 @@ export function NetworkAddLocationButton({
   const { person } = useMe();
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
-  const [selectedSlug, setSelectedSlug] = React.useState<string | undefined>();
+  const [selectedSlug, setSelectedSlug] = React.useState('');
 
   const { web3SpaceIds, isLoading: isLoadingMemberSpaces } =
     useMemberWeb3SpaceIds({
@@ -87,7 +91,7 @@ export function NetworkAddLocationButton({
 
   React.useEffect(() => {
     if (!open) {
-      setSelectedSlug(undefined);
+      setSelectedSlug('');
     }
   }, [open]);
 
@@ -115,14 +119,22 @@ export function NetworkAddLocationButton({
         ) : mySpaces.length === 0 ? (
           <p className="text-2 text-neutral-11">{t('addLocationNoSpaces')}</p>
         ) : (
-          <Combobox
-            options={spaceOptions}
-            placeholder={t('addLocationSelectPlaceholder')}
-            onChange={(value) => setSelectedSlug(value || undefined)}
-            initialValue={selectedSlug ?? ''}
-            allowEmptyChoice={false}
-            popoverModal={false}
-          />
+          <Select
+            modal={false}
+            value={selectedSlug || undefined}
+            onValueChange={setSelectedSlug}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t('addLocationSelectPlaceholder')} />
+            </SelectTrigger>
+            <SelectContent className="z-[100] max-h-60">
+              {spaceOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
         <DialogFooter>
           <Button

@@ -30,13 +30,16 @@ import clsx from 'clsx';
 import {
   Address,
   ALLOWED_IMAGE_FILE_SIZE,
-  categories,
   Category,
+  categoryGroupOptions,
+  collapseCategoriesToGroups,
   createSpaceFiles,
+  mergeCategoryGroupsWithExisting,
   refineSpaceLocationCoords,
   schemaCreateSpaceFields,
   Space,
   SpaceFlags,
+  type CategoryGroupId,
   useMe,
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlugExists,
@@ -187,13 +190,7 @@ export const SpaceForm = ({
     isLoading: slugIsChecking,
   } = useSpaceBySlugExists(slug ?? '');
 
-  const categoryOptions = React.useMemo(
-    () =>
-      categories
-        .filter((c) => !c.archive)
-        .map((c) => ({ value: c.value as string, label: c.label })),
-    [],
-  );
+  const categoryOptions = React.useMemo(() => categoryGroupOptions, []);
 
   React.useEffect(() => {
     form.setValue('parentId', parentSpaceId ?? null);
@@ -823,9 +820,16 @@ export const SpaceForm = ({
                   placeholder={tSpaces('selectOneOrMore')}
                   searchPlaceholder={tSpaces('search')}
                   options={categoryOptions}
-                  value={field.value}
+                  value={collapseCategoriesToGroups(field.value ?? [])}
                   allowToggleAll={false}
-                  onValueChange={field.onChange}
+                  onValueChange={(groupIds) =>
+                    field.onChange(
+                      mergeCategoryGroupsWithExisting(
+                        groupIds as CategoryGroupId[],
+                        field.value ?? [],
+                      ),
+                    )
+                  }
                 />
               </FormControl>
               <FormMessage />

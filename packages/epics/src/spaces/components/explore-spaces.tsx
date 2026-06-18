@@ -1,11 +1,14 @@
 'use client';
 
 import {
-  Category,
+  CategoryGroupId,
   Space,
   SpaceOrder,
+  CATEGORY_GROUPS,
+  getCategoryGroupLabel,
   hasSpaceMapLocation,
   isSpaceArchived,
+  spaceMatchesCategoryGroups,
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
@@ -26,7 +29,6 @@ import {
 import React from 'react';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { categories as categoryOptions } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
@@ -37,16 +39,11 @@ interface ExploreSpacesProps {
   lang: Locale;
   query?: string;
   spaces: Space[];
-  categories?: Category[];
+  categoryGroups?: CategoryGroupId[];
   order?: SpaceOrder;
-  uniqueCategories: Category[];
+  uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
 }
-
-const categoriesIntersected = (
-  categories1: Category[],
-  categories2: Category[],
-) => categories1.some((category) => categories2.includes(category));
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
   return a.toLowerCase() as Lowercase<A>;
@@ -54,30 +51,25 @@ function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
 
 const CategoryLabel = ({
   selectedSpaces,
-  categories,
+  categoryGroups,
   allLabel,
   className,
 }: {
   selectedSpaces: Space[];
-  categories?: Category[];
+  categoryGroups?: CategoryGroupId[];
   allLabel: string;
   className?: string | undefined;
 }) => {
   return (
     <Text className={cn('text-4 text-left', className)}>
-      {categories ? (
+      {categoryGroups ? (
         <Text className="text-4 text-left">
-          {categories.map((category, index) => {
-            const label =
-              categoryOptions.find((o) => o.value === category)?.label ??
-              category;
-            return (
-              <Text key={`cat-title-${category}`} className="text-4 ml-1">
-                {index !== 0 && ' | '}
-                {label}
-              </Text>
-            );
-          })}{' '}
+          {categoryGroups.map((groupId, index) => (
+            <Text key={`cat-title-${groupId}`} className="text-4 ml-1">
+              {index !== 0 && ' | '}
+              {getCategoryGroupLabel(groupId)}
+            </Text>
+          ))}{' '}
           <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
@@ -96,9 +88,9 @@ export function ExploreSpaces({
   lang,
   query,
   spaces,
-  categories,
+  categoryGroups,
   order,
-  uniqueCategories,
+  uniqueCategoryGroups,
   enableNetworkMap = false,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
@@ -138,12 +130,12 @@ export function ExploreSpaces({
 
   const categoryFilteredSpaces = React.useMemo(
     () =>
-      categories && categories.length > 0
+      categoryGroups && categoryGroups.length > 0
         ? nonArchivedSpaces.filter((space) =>
-            categoriesIntersected(space.categories, categories),
+            spaceMatchesCategoryGroups(space.categories, categoryGroups),
           )
         : nonArchivedSpaces,
-    [nonArchivedSpaces, categories],
+    [nonArchivedSpaces, categoryGroups],
   );
 
   const { filteredSpaces: selectedSpaces } =
@@ -174,24 +166,17 @@ export function ExploreSpaces({
 
   const tags = React.useMemo(
     () =>
-      uniqueCategories
-        .map((category) =>
-          categoryOptions.find(
-            (option) => !option.archive && option.value === category,
-          ),
-        )
-        .filter(
-          (category): category is NonNullable<typeof category> => !!category,
-        )
-        .sort((a, b) => (a.label > b.label ? 1 : -1)),
-    [uniqueCategories],
+      CATEGORY_GROUPS.filter((group) =>
+        uniqueCategoryGroups.includes(group.id),
+      ).sort((a, b) => (a.label > b.label ? 1 : -1)),
+    [uniqueCategoryGroups],
   );
 
-  const setCategories = React.useCallback(
-    (categories: string[]) => {
+  const setCategoryGroups = React.useCallback(
+    (nextCategoryGroups: CategoryGroupId[]) => {
       const params = new URLSearchParams(searchParams);
-      if (categories.length > 0) {
-        params.set('category', categories.join(','));
+      if (nextCategoryGroups.length > 0) {
+        params.set('category', nextCategoryGroups.join(','));
       } else {
         params.delete('category');
       }
@@ -316,7 +301,7 @@ export function ExploreSpaces({
       <div className="flex flex-row w-full items-center gap-2">
         <CategoryLabel
           selectedSpaces={selectedSpaces}
-          categories={categories}
+          categoryGroups={categoryGroups}
           allLabel={t('all')}
           className="flex grow"
         />
@@ -356,20 +341,20 @@ export function ExploreSpaces({
         <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
           {tags.map((tag) => (
             <Badge
-              key={tag.value}
+              key={tag.id}
               className={cn(
                 multiSelectVariants({
-                  variant: categories?.includes(tag.value)
+                  variant: categoryGroups?.includes(tag.id)
                     ? 'secondary'
                     : 'default',
                 }),
               )}
               style={{ cursor: 'pointer', animationDuration: '0s' }}
               onClick={() => {
-                const newCategories = categories?.includes(tag.value)
+                const nextCategoryGroups = categoryGroups?.includes(tag.id)
                   ? []
-                  : [tag.value];
-                setCategories(newCategories);
+                  : [tag.id];
+                setCategoryGroups(nextCategoryGroups);
               }}
             >
               {tag.label}

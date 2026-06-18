@@ -3,8 +3,8 @@ import { Container } from '@hypha-platform/ui';
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import {
-  CATEGORIES,
-  Category,
+  extractUniqueCategoryGroups,
+  parseCategoryGroupFilterParam,
   SPACE_ORDERS,
   SpaceOrder,
 } from '@hypha-platform/core/client';
@@ -19,29 +19,11 @@ type PageProps = {
   }>;
 };
 
-function extractUniqueCategories(spaces: Space[]): Category[] {
-  const categoriesSet = new Set<Category>();
-
-  spaces.forEach((space) => {
-    if (space.categories) {
-      space.categories.forEach((category) => categoriesSet.add(category));
-    }
-  });
-
-  return Array.from(categoriesSet);
-}
-
 export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
-  const categoriesRaw = searchParams?.category;
-  const categories: Category[] | undefined = categoriesRaw
-    ?.split(',')
-    .map((category) => category.trim() as Category)
-    .filter((category): category is Category => {
-      return CATEGORIES.includes(category);
-    });
+  const categoryGroups = parseCategoryGroupFilterParam(searchParams?.category);
   const orderRaw = searchParams?.order;
   const order: SpaceOrder =
     orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
@@ -62,7 +44,7 @@ export default async function Index(props: PageProps) {
     console.error('Failed to fetch spaces:', err);
   }
 
-  const uniqueCategories = extractUniqueCategories(spaces);
+  const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
 
   return (
     <Container className="flex flex-col gap-9 py-9">
@@ -70,9 +52,9 @@ export default async function Index(props: PageProps) {
         lang={lang}
         query={query}
         spaces={spaces}
-        categories={categories}
+        categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
         order={order}
-        uniqueCategories={uniqueCategories}
+        uniqueCategoryGroups={uniqueCategoryGroups}
         enableNetworkMap={enableNetworkMap}
       />
     </Container>

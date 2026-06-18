@@ -115,7 +115,7 @@ export function Combobox({
           <ChevronDownIcon className="size-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full md:w-72 p-0" align="end">
+      <PopoverContent className="z-[100] w-full md:w-72 p-0" align="end">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
@@ -142,6 +142,9 @@ export function Combobox({
                       key={`${option.value}-${index}`}
                       value={option.searchText ?? option.label ?? option.value}
                       onSelect={() => handleSelect(option.value)}
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                      }}
                       disabled={disabled}
                     >
                       <div className="flex items-center gap-2 w-full">
