@@ -7,6 +7,7 @@ import { UseMe } from '../hooks/types';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
+import { resolvePostAuthRedirectPathOrDefault } from '../../common/resolve-post-auth-redirect-path';
 type ConnectedButtonProfileProps = {
   useAuthentication: UseAuthentication;
   useMe: UseMe;
@@ -56,6 +57,8 @@ export const ConnectedButtonProfile = ({
   const { resolvedTheme, setTheme } = useTheme();
   const onboardingUrl =
     typeof lang === 'string' ? `/${lang}/onboarding` : undefined;
+  const localizedSignupPath =
+    typeof lang === 'string' ? `/${lang}/profile/signup` : newUserRedirectPath;
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
@@ -81,14 +84,29 @@ export const ConnectedButtonProfile = ({
       if (person) {
         if (isErrorUser(person)) {
           if (person.error !== 'Internal Server Error') {
-            router.push(newUserRedirectPath);
+            router.push(localizedSignupPath);
           }
-        } else if (person?.id && pathname === newUserRedirectPath) {
-          router.push(baseRedirectPath);
+        } else if (
+          person?.id &&
+          (pathname === newUserRedirectPath || pathname === localizedSignupPath)
+        ) {
+          router.push(
+            resolvePostAuthRedirectPathOrDefault({
+              pathname,
+              lang: typeof lang === 'string' ? lang : undefined,
+              baseRedirectPath,
+            }),
+          );
           setLoggingIn(false);
         } else if (isLoggingIn) {
           if (!pathname.includes('/onboarding')) {
-            router.push(baseRedirectPath);
+            router.push(
+              resolvePostAuthRedirectPathOrDefault({
+                pathname,
+                lang: typeof lang === 'string' ? lang : undefined,
+                baseRedirectPath,
+              }),
+            );
           }
           setLoggingIn(false);
         }
@@ -108,6 +126,8 @@ export const ConnectedButtonProfile = ({
     isLoggingIn,
     setLoggingIn,
     pathname,
+    localizedSignupPath,
+    lang,
   ]);
 
   const handleThemeChange = () => {

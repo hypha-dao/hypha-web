@@ -13,6 +13,7 @@ import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import type { ProfileFormData } from './profile-form-data';
 import { useSWRConfig } from 'swr';
+import { resolvePostAuthRedirectPath } from '@hypha-platform/epics';
 
 export const useCreateProfile = (
   endpoint = '/api/v1/people/create-profile',
@@ -88,16 +89,25 @@ export const useCreateProfile = (
         }
 
         const lang = params?.lang;
+        const spaceContextReturnPath = resolvePostAuthRedirectPath({
+          pathname:
+            typeof window !== 'undefined' ? window.location.pathname : '',
+          lang: typeof lang === 'string' ? lang : undefined,
+          baseRedirectPath: lang ? `/${lang}/onboarding` : '/en/profile',
+        });
         const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
-        try {
-          window.sessionStorage.setItem(
-            'hypha:onboarding-adventure:just-signed-up:v1',
-            'true',
-          );
-        } catch {
-          // Ignore storage failures; onboarding falls back to existing logic.
+        const nextPath = spaceContextReturnPath ?? onboardingPath;
+        if (!spaceContextReturnPath) {
+          try {
+            window.sessionStorage.setItem(
+              'hypha:onboarding-adventure:just-signed-up:v1',
+              'true',
+            );
+          } catch {
+            // Ignore storage failures; onboarding falls back to existing logic.
+          }
         }
-        router.replace(onboardingPath);
+        router.replace(nextPath);
         return createdProfile;
       } catch (err) {
         console.error('Profile creation error:', err);

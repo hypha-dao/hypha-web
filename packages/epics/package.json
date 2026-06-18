@@ -6,7 +6,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run src/common/human-chat-panel/__tests__/ src/common/__tests__/ src/common/composer/__tests__/"
+    "test": "vitest run src/common/human-chat-panel/__tests__/ src/common/__tests__/ src/common/composer/__tests__/ src/common/resolve-post-auth-redirect-path.spec.ts"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
