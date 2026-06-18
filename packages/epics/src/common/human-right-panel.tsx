@@ -4202,6 +4202,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       >
         {isAuthLoading ? (
           <HumanChatPanelLoader />
+        ) : blockSpaceChatForActivityAccess ? (
+          <div className="flex flex-1 items-center justify-center px-6">
+            <SpaceAccessDenied
+              userState={userSpaceState}
+              spaceId={effectiveSpaceWeb3Id}
+              spaceSlug={spaceSlug ?? undefined}
+            />
+          </div>
         ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <Empty>
@@ -4215,14 +4223,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 </div>
               </div>
             </Empty>
-          </div>
-        ) : blockSpaceChatForActivityAccess ? (
-          <div className="flex flex-1 items-center justify-center px-6">
-            <SpaceAccessDenied
-              userState={userSpaceState}
-              spaceId={effectiveSpaceWeb3Id}
-              spaceSlug={spaceSlug ?? undefined}
-            />
           </div>
         ) : (
           <>

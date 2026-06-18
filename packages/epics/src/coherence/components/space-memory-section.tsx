@@ -13,6 +13,7 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
+import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
 import { useParams } from 'next/navigation';
@@ -40,6 +41,11 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     loadMore,
   } = useSpaceMemoryOrg(spaceSlug);
   const { space } = useSpaceBySlug(spaceSlug);
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
+    spaceSlug,
+    space,
+    spaceId: space?.web3SpaceId ?? undefined,
+  });
   const matrixChatRoomId = space?.chatRoomId?.trim() || null;
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const [activeFilter, setActiveFilter] =
@@ -184,6 +190,8 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         newMemoryHref={newMemoryHref}
+        canCreateMemory={canMutate}
+        isCreateMemoryLoading={isMutateLoading}
         counts={counts}
       />
 

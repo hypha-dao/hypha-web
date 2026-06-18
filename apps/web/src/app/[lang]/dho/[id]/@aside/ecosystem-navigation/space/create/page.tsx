@@ -3,6 +3,7 @@
 import {
   CreateSubspaceForm,
   ProposalOverlayShell,
+  SpaceMemberAsideGuard,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
@@ -50,12 +51,14 @@ export default function CreateSubspacePage() {
 
   return (
     <ProposalOverlayShell>
-      <CreateSubspaceForm
-        successfulUrl={successfulUrl}
-        backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-        parentSpaceId={space.id}
-        parentSpaceSlug={space.slug}
-      />
+      <SpaceMemberAsideGuard spaceSlug={spaceSlug ?? ''} space={space}>
+        <CreateSubspaceForm
+          successfulUrl={successfulUrl}
+          backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
+          parentSpaceId={space.id}
+          parentSpaceSlug={space.slug}
+        />
+      </SpaceMemberAsideGuard>
     </ProposalOverlayShell>
   );
 }

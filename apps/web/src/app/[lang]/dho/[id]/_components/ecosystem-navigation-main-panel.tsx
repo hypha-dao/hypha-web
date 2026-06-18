@@ -8,6 +8,7 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
+  useCanMutateInSpace,
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
@@ -114,6 +115,11 @@ export function EcosystemNavigationMainPanel({
   );
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
+    spaceSlug: daoSlug,
+    space: currentSpace,
+    spaceId: currentSpace?.web3SpaceId,
+  });
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
     useOrganisationSpacesBySingleSlug(daoSlug);
 
@@ -196,7 +202,9 @@ export function EcosystemNavigationMainPanel({
   const selectedSpaceTitle =
     selectedSpace?.name ?? currentSpaceTitle ?? t('title');
   const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
-  const canRenderSpaceActions = Boolean(currentSpace && selectedSpaceSlug);
+  const canRenderSpaceActions = Boolean(
+    currentSpace && selectedSpaceSlug && !isMutateLoading && canMutate,
+  );
   const visitSpaceHref =
     canRenderSpaceActions && selectedSpaceSlug
       ? getDhoSpaceContextPath({

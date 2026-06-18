@@ -3,6 +3,7 @@
 import {
   SelectAction,
   useActionGating,
+  useCanMutateInSpace,
   type ActionProps,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -47,7 +48,13 @@ export const SelectSettingsAction = ({
   children,
 }: SelectSettingsActionProps) => {
   const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
+    spaceSlug: daoSlug,
+    space,
+    spaceId: space?.web3SpaceId,
+  });
   const t = useTranslations('SpaceSettingsAction');
+  const isActionDisabled = isMutateLoading || !canMutate;
 
   const SETTINGS_ACTIONS = [
     {
@@ -278,6 +285,9 @@ export const SelectSettingsAction = ({
         return {
           ...action,
           href,
+          disabled:
+            action.disabled ||
+            (isActionDisabled && action.href !== 'https://hypha.energy'),
         };
       })}
     >

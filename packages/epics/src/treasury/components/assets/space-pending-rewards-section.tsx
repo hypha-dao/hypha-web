@@ -195,10 +195,6 @@ export const SpacePendingRewardsSection: FC<
           <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <AssetCard isLoading />
           </div>
-        ) : !isAuthenticated ? (
-          <Empty>
-            <p>{tTreasury('rewardsSection.signInToViewSpaceRewards')}</p>
-          </Empty>
         ) : (
           <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <AssetCard

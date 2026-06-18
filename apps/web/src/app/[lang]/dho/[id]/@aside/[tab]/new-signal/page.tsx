@@ -1,4 +1,5 @@
 import { ConnectedCreateSignalForm } from '@web/components/connected-create-signal-form';
+import { ConnectedSpaceMemberAsideGuard } from '@web/components/connected-space-member-aside-guard';
 import { ProposalOverlayShell } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../../../@tab/coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
@@ -35,17 +36,22 @@ export default async function NewSignalPage({
   const successfulUrl = getDhoPathCoherence(lang, id);
   return (
     <ProposalOverlayShell>
-      <ConnectedCreateSignalForm
-        successfulUrl={successfulUrl}
-        closeUrl={successfulUrl}
-        backUrl={successfulUrl}
-        spaceId={spaceFromDb.id}
-        initialValues={
-          inheritedBoardTags.length > 0
-            ? { tags: inheritedBoardTags }
-            : undefined
-        }
-      />
+      <ConnectedSpaceMemberAsideGuard
+        spaceSlug={id}
+        spaceId={spaceFromDb.web3SpaceId ?? undefined}
+      >
+        <ConnectedCreateSignalForm
+          successfulUrl={successfulUrl}
+          closeUrl={successfulUrl}
+          backUrl={successfulUrl}
+          spaceId={spaceFromDb.id}
+          initialValues={
+            inheritedBoardTags.length > 0
+              ? { tags: inheritedBoardTags }
+              : undefined
+          }
+        />
+      </ConnectedSpaceMemberAsideGuard>
     </ProposalOverlayShell>
   );
 }
