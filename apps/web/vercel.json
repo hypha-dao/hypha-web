@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/tokenomics2",
+      "destination": "/tokenomics2/",
+      "permanent": true
+    }
+  ]
+}
