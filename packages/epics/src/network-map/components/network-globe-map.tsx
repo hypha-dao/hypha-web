@@ -53,10 +53,10 @@ function mapPaletteForTheme(theme: string | undefined): MapPalette {
   }
 
   return {
-    ocean: 'var(--info-3)',
-    landFill: 'var(--neutral-6)',
-    landStroke: 'var(--neutral-9)',
-    graticule: 'var(--neutral-8)',
+    ocean: 'var(--blue-4, #1e3a5f)',
+    landFill: 'var(--neutral-6, #444)',
+    landStroke: 'var(--neutral-9, #ccc)',
+    graticule: 'var(--neutral-8, #888)',
     sphereShadow: null,
   };
 }
