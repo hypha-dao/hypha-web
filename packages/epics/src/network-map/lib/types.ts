@@ -1,3 +1,4 @@
+import type { Space } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 
 export type NetworkMapPin = {
@@ -11,7 +12,7 @@ export type NetworkMapPin = {
 
 export type NetworkGlobeMapProps = {
   lang: Locale;
-  pins: NetworkMapPin[];
+  spaces: Space[];
   className?: string;
 };
 

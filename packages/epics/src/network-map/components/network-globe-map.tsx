@@ -13,8 +13,13 @@ import type {
   NetworkMapLayerVisibility,
   NetworkMapProjectionMode,
 } from '../lib/types';
+import { hasSpaceMapLocation } from '@hypha-platform/core/client';
 import { loadLandGeo } from '../lib/load-land-geo';
 import { cartesian, rotationDelta } from '../lib/versor';
+import {
+  clampHoverPosition,
+  NetworkMapPinHoverCard,
+} from './network-map-pin-hover-card';
 const PROJECTION_ANIMATION_MS = 1200;
 
 function pinColor(id: number): string {
@@ -72,13 +77,26 @@ function buildProjection(
 
 export function NetworkGlobeMap({
   lang,
-  pins,
+  spaces,
   className,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const router = useRouter();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
+
+  const locatedSpaces = React.useMemo(
+    () => spaces.filter(hasSpaceMapLocation),
+    [spaces],
+  );
+
+  const [hoveredPin, setHoveredPin] = React.useState<{
+    spaceId: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const setHoveredPinRef = React.useRef(setHoveredPin);
+  setHoveredPinRef.current = setHoveredPin;
 
   const [layers, setLayers] = React.useState<NetworkMapLayerVisibility>({
     land: true,
@@ -97,14 +115,39 @@ export function NetworkGlobeMap({
   const rotateRef = React.useRef<[number, number, number]>([0, -20, 0]);
   const morphRef = React.useRef(morphProgress);
   const layersRef = React.useRef(layers);
-  const pinsRef = React.useRef(pins);
+  const locatedSpacesRef = React.useRef(locatedSpaces);
   const dragSurfaceRef = React.useRef<[number, number, number] | null>(null);
   const rotateStartRef = React.useRef<[number, number, number]>([0, -20, 0]);
   const animationFrameRef = React.useRef<number | null>(null);
 
   morphRef.current = morphProgress;
   layersRef.current = layers;
-  pinsRef.current = pins;
+  locatedSpacesRef.current = locatedSpaces;
+
+  const updateHoveredPin = React.useCallback(
+    (spaceId: number, event: MouseEvent) => {
+      const container = containerRef.current;
+      if (!container) {
+        return;
+      }
+      const rect = container.getBoundingClientRect();
+      setHoveredPinRef.current({
+        spaceId,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+    },
+    [],
+  );
+
+  const clearHoveredPin = React.useCallback(() => {
+    setHoveredPinRef.current(null);
+  }, []);
+
+  const updateHoveredPinRef = React.useRef(updateHoveredPin);
+  const clearHoveredPinRef = React.useRef(clearHoveredPin);
+  updateHoveredPinRef.current = updateHoveredPin;
+  clearHoveredPinRef.current = clearHoveredPin;
 
   const renderMap = React.useCallback(() => {
     const svg = d3.select(svgRef.current);
@@ -169,8 +212,14 @@ export function NetworkGlobeMap({
     }
 
     const pinGroup = rootMerge.append('g').attr('class', 'map-pins');
-    for (const pin of pinsRef.current) {
-      const projected = projection([pin.longitude, pin.latitude]);
+    for (const space of locatedSpacesRef.current) {
+      const latitude = space.latitude;
+      const longitude = space.longitude;
+      if (latitude == null || longitude == null) {
+        continue;
+      }
+
+      const projected = projection([longitude, latitude]);
       if (!projected) {
         continue;
       }
@@ -185,17 +234,33 @@ export function NetworkGlobeMap({
         .attr('transform', `translate(${x},${y})`)
         .attr('cursor', 'pointer')
         .on('click', () => {
-          router.push(`/${lang}/dho/${pin.slug}/agreements`);
+          router.push(`/${lang}/dho/${space.slug}/agreements`);
+        })
+        .on('mouseenter', function (event: MouseEvent) {
+          updateHoveredPinRef.current(space.id, event);
+        })
+        .on('mousemove', function (event: MouseEvent) {
+          updateHoveredPinRef.current(space.id, event);
+        })
+        .on('mouseleave', () => {
+          clearHoveredPinRef.current();
         });
 
       pinNode
         .append('circle')
-        .attr('r', 5)
-        .attr('fill', pinColor(pin.id))
-        .attr('stroke', 'white')
-        .attr('stroke-width', 1.5);
+        .attr('r', 12)
+        .attr('fill', 'transparent')
+        .attr('pointer-events', 'all');
 
-      pinNode.append('title').text(pin.locationLabel ?? pin.title);
+      pinNode
+        .append('circle')
+        .attr('r', 5)
+        .attr('fill', pinColor(space.id))
+        .attr('stroke', 'white')
+        .attr('stroke-width', 1.5)
+        .attr('pointer-events', 'none');
+
+      pinNode.append('title').text(space.locationLabel ?? space.title);
     }
   }, [lang, router]);
 
@@ -245,7 +310,7 @@ export function NetworkGlobeMap({
 
   React.useEffect(() => {
     renderMap();
-  }, [layers, morphProgress, projectionMode, pins, renderMap]);
+  }, [layers, morphProgress, projectionMode, locatedSpaces, renderMap]);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -262,6 +327,7 @@ export function NetworkGlobeMap({
     const dragBehavior = d3
       .drag<SVGSVGElement, unknown>()
       .on('start', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
+        clearHoveredPinRef.current();
         const invert = getProjection()?.invert?.([event.x, event.y]);
         if (!invert) {
           dragSurfaceRef.current = null;
@@ -360,7 +426,25 @@ export function NetworkGlobeMap({
     };
   }, []);
 
-  if (pins.length === 0) {
+  const hoveredSpace = hoveredPin
+    ? locatedSpaces.find((space) => space.id === hoveredPin.spaceId)
+    : null;
+
+  const hoverCard =
+    hoveredSpace && hoveredPin ? (
+      <NetworkMapPinHoverCard
+        lang={lang}
+        space={hoveredSpace}
+        {...clampHoverPosition(
+          hoveredPin.x,
+          hoveredPin.y,
+          containerRef.current?.clientWidth ?? 640,
+          containerRef.current?.clientHeight ?? 360,
+        )}
+      />
+    ) : null;
+
+  if (locatedSpaces.length === 0) {
     return (
       <div className={cn('flex flex-col gap-4', className)}>
         <NetworkMapLayerControls
@@ -395,6 +479,7 @@ export function NetworkGlobeMap({
             role="img"
             aria-label={t('mapAriaLabel')}
           />
+          {hoverCard}
         </div>
         <div className="rounded-lg border border-dashed border-neutral-6 bg-neutral-2/50 px-4 py-3 text-center">
           <p className="text-4 text-neutral-11">{t('noSpacesWithLocation')}</p>
@@ -440,6 +525,7 @@ export function NetworkGlobeMap({
           role="img"
           aria-label={t('mapAriaLabel')}
         />
+        {hoverCard}
       </div>
     </div>
   );

@@ -280,16 +280,8 @@ export function ExploreSpaces({
     });
   }, [selectedSpaces, order]);
 
-  const mapPins = React.useMemo(
-    () =>
-      sortedSpaces.filter(hasSpaceMapLocation).map((space) => ({
-        id: space.id,
-        slug: space.slug,
-        title: space.title,
-        latitude: space.latitude!,
-        longitude: space.longitude!,
-        locationLabel: space.locationLabel,
-      })),
+  const mapSpaces = React.useMemo(
+    () => sortedSpaces.filter(hasSpaceMapLocation),
     [sortedSpaces],
   );
 
@@ -411,7 +403,7 @@ export function ExploreSpaces({
       </div>
       <div className="space-y-6 flex mt-4 mb-7">
         {view === 'map' && enableNetworkMap ? (
-          <NetworkGlobeMap lang={lang} pins={mapPins} className="w-full" />
+          <NetworkGlobeMap lang={lang} spaces={mapSpaces} className="w-full" />
         ) : (
           <SpaceCardList
             lang={lang}
