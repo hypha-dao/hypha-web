@@ -119,8 +119,9 @@ export function NetworkAddLocationButton({
             options={spaceOptions}
             placeholder={t('addLocationSelectPlaceholder')}
             onChange={(value) => setSelectedSlug(value || undefined)}
-            initialValue={selectedSlug}
-            allowEmptyChoice
+            initialValue={selectedSlug ?? ''}
+            allowEmptyChoice={false}
+            popoverModal={false}
           />
         )}
         <DialogFooter>

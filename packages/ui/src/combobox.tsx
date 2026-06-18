@@ -36,6 +36,8 @@ type ComboboxProps = {
   className?: string;
   disabled?: boolean;
   emptyListMessage?: string;
+  /** Set false when the combobox is rendered inside a modal dialog. */
+  popoverModal?: boolean;
 };
 
 export const COMBOBOX_TITLE = '===';
@@ -53,6 +55,7 @@ export function Combobox({
   className,
   disabled = false,
   emptyListMessage = 'No options found.',
+  popoverModal = true,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
@@ -87,6 +90,7 @@ export function Combobox({
 
   return (
     <Popover
+      modal={popoverModal}
       open={open && !disabled}
       onOpenChange={(isOpen) => !disabled && setOpen(isOpen)}
     >
@@ -136,8 +140,8 @@ export function Combobox({
                   ) : (
                     <CommandItem
                       key={`${option.value}-${index}`}
-                      value={option.value}
-                      onSelect={handleSelect}
+                      value={option.searchText ?? option.label ?? option.value}
+                      onSelect={() => handleSelect(option.value)}
                       disabled={disabled}
                     >
                       <div className="flex items-center gap-2 w-full">
