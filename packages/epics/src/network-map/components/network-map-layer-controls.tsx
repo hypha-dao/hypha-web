@@ -18,7 +18,7 @@ type NetworkMapLayerControlsProps = {
   className?: string;
 };
 
-const LAYER_IDS: NetworkMapLayerId[] = ['land', 'water', 'graticule'];
+const LAYER_IDS = [...NETWORK_MAP_LAYER_IDS];
 
 export function NetworkMapLayerControls({
   layers,

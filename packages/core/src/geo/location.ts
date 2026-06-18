@@ -11,38 +11,40 @@ export function isNullIsland(
   return Math.abs(latitude) < epsilon && Math.abs(longitude) < epsilon;
 }
 
+export function collapseWhitespace(value: string): string {
+  return value.trim().split(/\s+/).filter(Boolean).join(' ');
+}
+
 export function normalizeGeocodeQuery(query: string): string {
-  return query.trim().replace(/\s+/g, ' ').toLowerCase();
+  return collapseWhitespace(query).toLowerCase();
 }
 
 /** Strip unit/suite tokens that often prevent Nominatim matches. */
 export function simplifyGeocodeQuery(query: string): string {
-  return query
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(
-      /\s*[-–—]\s*(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s*[\w-]+/gi,
-      '',
-    )
-    .replace(
-      /\s+(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s+[\w-]+/gi,
-      '',
-    )
-    .replace(/\s+#\s*[\w-]+/gi, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+  return collapseWhitespace(
+    collapseWhitespace(query)
+      .replace(
+        /\s*[-–—]\s*(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s*[\w-]+/gi,
+        '',
+      )
+      .replace(
+        /\s+(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s+[\w-]+/gi,
+        '',
+      )
+      .replace(/\s+#\s*[\w-]+/gi, ''),
+  );
 }
 
 /** Ordered query variants — most specific first, then relaxed forms. */
 export function prepareGeocodeQueries(query: string): string[] {
-  const trimmed = query.trim().replace(/\s+/g, ' ');
+  const trimmed = collapseWhitespace(query);
   if (trimmed.length < 2) {
     return [];
   }
 
   const variants: string[] = [];
   const push = (value: string) => {
-    const normalized = value.trim().replace(/\s+/g, ' ');
+    const normalized = collapseWhitespace(value);
     if (normalized.length >= 2 && !variants.includes(normalized)) {
       variants.push(normalized);
     }
@@ -53,10 +55,9 @@ export function prepareGeocodeQueries(query: string): string[] {
   const simplified = simplifyGeocodeQuery(trimmed);
   push(simplified);
 
-  const withoutPostal = simplified
-    .replace(/\b\d{4,6}\s*[A-Z]{0,2}\b/gi, ' ')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+  const withoutPostal = collapseWhitespace(
+    simplified.replace(/\b\d{4,6}\s*[A-Z]{0,2}\b/gi, ' '),
+  );
   push(withoutPostal);
 
   const commaParts = simplified

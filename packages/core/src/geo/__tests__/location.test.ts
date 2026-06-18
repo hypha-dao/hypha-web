@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildLocatedAtPatch,
+  collapseWhitespace,
   hasSpaceMapLocation,
   isNullIsland,
   mapNominatimResults,
@@ -18,6 +19,12 @@ describe('normalizeGeocodeQuery', () => {
     expect(normalizeGeocodeQuery('  Berlin   Germany  ')).toBe(
       'berlin germany',
     );
+  });
+});
+
+describe('collapseWhitespace', () => {
+  it('collapses repeated spaces without regex backtracking', () => {
+    expect(collapseWhitespace('  Berlin   Germany  ')).toBe('Berlin Germany');
   });
 });
 
