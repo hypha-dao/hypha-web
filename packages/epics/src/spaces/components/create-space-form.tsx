@@ -638,9 +638,13 @@ export const SpaceForm = ({
               disabled={isLoading}
               value={locationValue}
               onChange={(next) => {
-                form.setValue('latitude', next.latitude, { shouldDirty: true });
+                form.setValue('latitude', next.latitude, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
                 form.setValue('longitude', next.longitude, {
                   shouldDirty: true,
+                  shouldValidate: true,
                 });
                 form.setValue('locationLabel', next.locationLabel, {
                   shouldDirty: true,
@@ -648,6 +652,7 @@ export const SpaceForm = ({
                 form.setValue('locationSource', next.locationSource, {
                   shouldDirty: true,
                 });
+                form.clearErrors(['latitude', 'longitude']);
               }}
             />
           </>

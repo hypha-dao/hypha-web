@@ -85,4 +85,36 @@ describe('searchNominatim', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('retries with a simplified query when the first search returns no results', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          {
+            place_id: 99,
+            display_name: 'Slotermeerlaan, Amsterdam, Netherlands',
+            lat: '52.3676',
+            lon: '4.9041',
+          },
+        ],
+      });
+
+    const results = await searchNominatim(
+      'Slotermeerlaan 69-Unit D8, 1064 HA Amsterdam, Netherlands',
+      5,
+    );
+
+    expect(results).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const secondUrl = decodeURIComponent(
+      String(fetchMock.mock.calls[1]?.[0] ?? '').replace(/\+/g, ' '),
+    );
+    expect(secondUrl).toContain('Slotermeerlaan 69');
+    expect(secondUrl).not.toContain('Unit D8');
+  });
 });

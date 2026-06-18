@@ -1,7 +1,10 @@
 'use server';
 
 import slugify from 'slugify';
-import { buildLocatedAtPatch } from '../../geo/location';
+import {
+  buildLocatedAtPatch,
+  normalizeSpaceLocationFields,
+} from '../../geo/location';
 import { CreateSpaceInput, UpdateSpaceInput } from '../types';
 import { eq } from 'drizzle-orm';
 import { DatabaseInstance } from '@hypha-platform/core/server';
@@ -32,11 +35,21 @@ export const createSpace = async (
 function withLocationTimestamp<T extends UpdateSpaceInput>(
   input: T,
 ): T & { locatedAt?: Date | null } {
-  const locatedAtPatch = buildLocatedAtPatch({
+  const normalizedLocation = normalizeSpaceLocationFields({
     latitude: input.latitude,
     longitude: input.longitude,
+    locationLabel: input.locationLabel,
+    locationSource: input.locationSource,
   });
-  return { ...input, ...locatedAtPatch };
+  const locatedAtPatch = buildLocatedAtPatch({
+    latitude: normalizedLocation.latitude,
+    longitude: normalizedLocation.longitude,
+  });
+  return {
+    ...input,
+    ...normalizedLocation,
+    ...locatedAtPatch,
+  };
 }
 
 export const updateSpaceBySlug = async (

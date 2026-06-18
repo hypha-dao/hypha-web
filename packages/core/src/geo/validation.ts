@@ -1,5 +1,26 @@
 import { z } from 'zod';
 
+function coerceOptionalCoordinate(value: unknown): unknown {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null || value === '') {
+    return null;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    const parsed = Number.parseFloat(trimmed.replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed : value;
+  }
+  return value;
+}
+
 export const SPACE_LOCATION_SOURCES = [
   'geocode',
   'manual',
@@ -8,15 +29,21 @@ export const SPACE_LOCATION_SOURCES = [
 
 export type SpaceLocationSource = (typeof SPACE_LOCATION_SOURCES)[number];
 
-export const spaceLatitudeSchema = z
-  .number()
-  .min(-90, 'Latitude must be between -90 and 90')
-  .max(90, 'Latitude must be between -90 and 90');
+export const spaceLatitudeSchema = z.preprocess(
+  coerceOptionalCoordinate,
+  z
+    .number()
+    .min(-90, 'Latitude must be between -90 and 90')
+    .max(90, 'Latitude must be between -90 and 90'),
+);
 
-export const spaceLongitudeSchema = z
-  .number()
-  .min(-180, 'Longitude must be between -180 and 180')
-  .max(180, 'Longitude must be between -180 and 180');
+export const spaceLongitudeSchema = z.preprocess(
+  coerceOptionalCoordinate,
+  z
+    .number()
+    .min(-180, 'Longitude must be between -180 and 180')
+    .max(180, 'Longitude must be between -180 and 180'),
+);
 
 export const spaceLocationLabelSchema = z.string().trim().max(500);
 
@@ -42,7 +69,7 @@ export const spaceLocationFieldsSchema = z
   });
 
 export const geocodeRequestSchema = z.object({
-  query: z.string().trim().min(2).max(200),
+  query: z.string().trim().min(2).max(500),
   limit: z.number().int().min(1).max(10).optional(),
 });
 

@@ -2,6 +2,8 @@
 
 import {
   type GeocodeResult,
+  parseCoordinateInput,
+  roundCoordinate,
   type SpaceLocationSource,
   useGeocodeSearch,
 } from '@hypha-platform/core/client';
@@ -113,8 +115,8 @@ export function SpaceLocationPicker({
       locationSource: SpaceLocationSource,
     ) => {
       onChange({
-        latitude,
-        longitude,
+        latitude: roundCoordinate(latitude),
+        longitude: roundCoordinate(longitude),
         locationLabel,
         locationSource,
       });
@@ -159,28 +161,47 @@ export function SpaceLocationPicker({
   const [lngInput, setLngInput] = React.useState(
     value.longitude != null ? String(value.longitude) : '',
   );
+  const [manualError, setManualError] = React.useState<string | null>(null);
+  const hasSyncedSearchQuery = React.useRef(false);
 
   const handleManualCoordinates = React.useCallback(() => {
-    const lat = Number.parseFloat(latInput);
-    const lng = Number.parseFloat(lngInput);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+    const lat = parseCoordinateInput(latInput);
+    const lng = parseCoordinateInput(lngInput);
+
+    if (lat == null || lng == null) {
+      setManualError(t('manualCoordinateInvalid'));
+      return;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      setManualError(t('manualCoordinateOutOfRange'));
+      return;
+    }
+
+    setManualError(null);
     applySelection(
       lat,
       lng,
-      t('manualLabel', { latitude: lat, longitude: lng }),
+      value.locationLabel?.trim() ||
+        t('manualLabel', { latitude: lat, longitude: lng }),
       'manual',
     );
-  }, [applySelection, latInput, lngInput, t]);
+  }, [applySelection, latInput, lngInput, t, value.locationLabel]);
 
   React.useEffect(() => {
     setLatInput(value.latitude != null ? String(value.latitude) : '');
     setLngInput(value.longitude != null ? String(value.longitude) : '');
+    setManualError(null);
   }, [value.latitude, value.longitude]);
 
   React.useEffect(() => {
-    setQuery(value.locationLabel ?? '');
+    if (!hasSyncedSearchQuery.current) {
+      setQuery(value.locationLabel ?? '');
+      hasSyncedSearchQuery.current = true;
+    }
   }, [setQuery, value.locationLabel]);
+
+  const showNoResults =
+    query.trim().length >= 2 && !isSearching && !error && results.length === 0;
 
   const clearLocation = React.useCallback(() => {
     onChange({
@@ -192,6 +213,8 @@ export function SpaceLocationPicker({
     setQuery('');
     setLatInput('');
     setLngInput('');
+    setManualError(null);
+    hasSyncedSearchQuery.current = false;
   }, [onChange, setQuery]);
 
   return (
@@ -220,6 +243,9 @@ export function SpaceLocationPicker({
           <p className="text-1 text-error-11" role="alert">
             {t('searchError')}
           </p>
+        ) : null}
+        {showNoResults ? (
+          <p className="text-1 text-neutral-11">{t('searchNoResults')}</p>
         ) : null}
         {results.length > 0 ? (
           <ul
@@ -351,7 +377,10 @@ export function SpaceLocationPicker({
             id="space-location-lat"
             inputMode="decimal"
             value={latInput}
-            onChange={(event) => setLatInput(event.target.value)}
+            onChange={(event) => {
+              setLatInput(event.target.value);
+              setManualError(null);
+            }}
             placeholder={t('latitudePlaceholder')}
             disabled={disabled}
           />
@@ -362,7 +391,10 @@ export function SpaceLocationPicker({
             id="space-location-lng"
             inputMode="decimal"
             value={lngInput}
-            onChange={(event) => setLngInput(event.target.value)}
+            onChange={(event) => {
+              setLngInput(event.target.value);
+              setManualError(null);
+            }}
             placeholder={t('longitudePlaceholder')}
             disabled={disabled}
           />
@@ -378,6 +410,11 @@ export function SpaceLocationPicker({
       >
         {t('applyCoordinates')}
       </Button>
+      {manualError ? (
+        <p className="text-1 text-error-11" role="alert">
+          {manualError}
+        </p>
+      ) : null}
 
       {hasPin ? (
         <div className="flex flex-wrap items-center justify-between gap-2">

@@ -15,6 +15,135 @@ export function normalizeGeocodeQuery(query: string): string {
   return query.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+/** Strip unit/suite tokens that often prevent Nominatim matches. */
+export function simplifyGeocodeQuery(query: string): string {
+  return query
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(
+      /\s*[-–—]\s*(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s*[\w-]+/gi,
+      '',
+    )
+    .replace(
+      /\s+(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s+[\w-]+/gi,
+      '',
+    )
+    .replace(/\s+#\s*[\w-]+/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/** Ordered query variants — most specific first, then relaxed forms. */
+export function prepareGeocodeQueries(query: string): string[] {
+  const trimmed = query.trim().replace(/\s+/g, ' ');
+  if (trimmed.length < 2) {
+    return [];
+  }
+
+  const variants: string[] = [];
+  const push = (value: string) => {
+    const normalized = value.trim().replace(/\s+/g, ' ');
+    if (normalized.length >= 2 && !variants.includes(normalized)) {
+      variants.push(normalized);
+    }
+  };
+
+  push(trimmed);
+
+  const simplified = simplifyGeocodeQuery(trimmed);
+  push(simplified);
+
+  const withoutPostal = simplified
+    .replace(/\b\d{4,6}\s*[A-Z]{0,2}\b/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  push(withoutPostal);
+
+  const commaParts = simplified
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (commaParts.length >= 2) {
+    push(commaParts.slice(0, 2).join(', '));
+    push(commaParts[0]!);
+  }
+
+  return variants;
+}
+
+export function parseCoordinateInput(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const normalized = trimmed.replace(',', '.');
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function roundCoordinate(value: number): number {
+  return Math.round(value * 1e6) / 1e6;
+}
+
+export function normalizeSpaceLocationFields(input: {
+  latitude?: number | null;
+  longitude?: number | null;
+  locationLabel?: string | null;
+  locationSource?: SpaceLocationSource | null;
+}): {
+  latitude: number | null;
+  longitude: number | null;
+  locationLabel: string | null;
+  locationSource: SpaceLocationSource | null;
+} {
+  const rawLat =
+    typeof input.latitude === 'string'
+      ? parseCoordinateInput(input.latitude)
+      : input.latitude;
+  const rawLng =
+    typeof input.longitude === 'string'
+      ? parseCoordinateInput(input.longitude)
+      : input.longitude;
+
+  const hasLat = rawLat != null && Number.isFinite(rawLat);
+  const hasLng = rawLng != null && Number.isFinite(rawLng);
+
+  let latitude: number | null = hasLat ? roundCoordinate(rawLat!) : null;
+  let longitude: number | null = hasLng ? roundCoordinate(rawLng!) : null;
+  let locationLabel =
+    typeof input.locationLabel === 'string'
+      ? input.locationLabel.trim().slice(0, 500)
+      : input.locationLabel ?? null;
+  let locationSource = isSpaceLocationSource(input.locationSource)
+    ? input.locationSource
+    : null;
+
+  if (locationLabel === '') {
+    locationLabel = null;
+  }
+
+  if (hasLat !== hasLng) {
+    latitude = null;
+    longitude = null;
+    locationSource = null;
+  } else if (latitude != null && longitude != null) {
+    if (isNullIsland(latitude, longitude)) {
+      latitude = null;
+      longitude = null;
+      locationSource = null;
+    }
+  } else {
+    locationSource = null;
+  }
+
+  return {
+    latitude,
+    longitude,
+    locationLabel,
+    locationSource,
+  };
+}
+
 export type NominatimSearchResult = {
   place_id: number;
   display_name: string;

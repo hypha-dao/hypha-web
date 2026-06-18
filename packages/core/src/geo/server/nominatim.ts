@@ -3,6 +3,7 @@ import 'server-only';
 import {
   mapNominatimResults,
   normalizeGeocodeQuery,
+  prepareGeocodeQueries,
   type NominatimSearchResult,
 } from '../location';
 import type { GeocodeResult } from '../validation';
@@ -40,31 +41,30 @@ function getNominatimUserAgent(): string {
   return 'HyphaPlatform/1.0 (https://hypha.earth; contact@hypha.earth)';
 }
 
-export async function searchNominatim(
+function dedupeGeocodeResults(results: GeocodeResult[]): GeocodeResult[] {
+  const seen = new Set<string>();
+  const deduped: GeocodeResult[] = [];
+  for (const result of results) {
+    const key = `${result.placeId ?? result.label}:${result.latitude}:${
+      result.longitude
+    }`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    deduped.push(result);
+  }
+  return deduped;
+}
+
+async function fetchNominatimOnce(
   query: string,
-  limit = DEFAULT_LIMIT,
+  limit: number,
 ): Promise<GeocodeResult[]> {
-  const now = Date.now();
-  pruneGeocodeCache(now);
-  const normalizedLimit = Number.isFinite(limit)
-    ? Math.floor(limit)
-    : DEFAULT_LIMIT;
-  const safeLimit = Math.max(1, Math.min(normalizedLimit, MAX_LIMIT));
-  const normalizedQuery = normalizeGeocodeQuery(query);
-  if (normalizedQuery.length < 2) {
-    return [];
-  }
-
-  const cacheKey = `${normalizedQuery}:${safeLimit}`;
-  const cached = geocodeCache.get(cacheKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.results;
-  }
-
   const url = new URL(NOMINATIM_SEARCH_URL);
-  url.searchParams.set('q', query.trim());
+  url.searchParams.set('q', query);
   url.searchParams.set('format', 'json');
-  url.searchParams.set('limit', String(safeLimit));
+  url.searchParams.set('limit', String(limit));
   url.searchParams.set('addressdetails', '0');
 
   const controller = new AbortController();
@@ -93,7 +93,40 @@ export async function searchNominatim(
   }
 
   const payload = (await response.json()) as NominatimSearchResult[];
-  const results = mapNominatimResults(payload);
+  return mapNominatimResults(payload);
+}
+
+export async function searchNominatim(
+  query: string,
+  limit = DEFAULT_LIMIT,
+): Promise<GeocodeResult[]> {
+  const now = Date.now();
+  pruneGeocodeCache(now);
+  const normalizedLimit = Number.isFinite(limit)
+    ? Math.floor(limit)
+    : DEFAULT_LIMIT;
+  const safeLimit = Math.max(1, Math.min(normalizedLimit, MAX_LIMIT));
+  const queryVariants = prepareGeocodeQueries(query);
+  if (queryVariants.length === 0) {
+    return [];
+  }
+
+  const cacheKey = `${normalizeGeocodeQuery(queryVariants[0]!)}:${safeLimit}`;
+  const cached = geocodeCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.results;
+  }
+
+  let mergedResults: GeocodeResult[] = [];
+  for (const variant of queryVariants) {
+    const batch = await fetchNominatimOnce(variant, safeLimit);
+    mergedResults = dedupeGeocodeResults([...mergedResults, ...batch]);
+    if (mergedResults.length > 0) {
+      break;
+    }
+  }
+
+  const results = mergedResults.slice(0, safeLimit);
 
   geocodeCache.set(cacheKey, {
     results,

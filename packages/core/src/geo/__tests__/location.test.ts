@@ -6,6 +6,10 @@ import {
   isNullIsland,
   mapNominatimResults,
   normalizeGeocodeQuery,
+  normalizeSpaceLocationFields,
+  parseCoordinateInput,
+  prepareGeocodeQueries,
+  simplifyGeocodeQuery,
 } from '../location';
 import { geocodeRequestSchema, spaceLocationFieldsSchema } from '../validation';
 
@@ -14,6 +18,76 @@ describe('normalizeGeocodeQuery', () => {
     expect(normalizeGeocodeQuery('  Berlin   Germany  ')).toBe(
       'berlin germany',
     );
+  });
+});
+
+describe('simplifyGeocodeQuery', () => {
+  it('strips unit suffixes from street addresses', () => {
+    expect(
+      simplifyGeocodeQuery(
+        'Slotermeerlaan 69-Unit D8, 1064 HA Amsterdam, Netherlands',
+      ),
+    ).toBe('Slotermeerlaan 69, 1064 HA Amsterdam, Netherlands');
+  });
+});
+
+describe('prepareGeocodeQueries', () => {
+  it('returns relaxed variants after the original query', () => {
+    const variants = prepareGeocodeQueries(
+      'Slotermeerlaan 69-Unit D8, 1064 HA Amsterdam, Netherlands',
+    );
+
+    expect(variants[0]).toBe(
+      'Slotermeerlaan 69-Unit D8, 1064 HA Amsterdam, Netherlands',
+    );
+    expect(variants).toContain(
+      'Slotermeerlaan 69, 1064 HA Amsterdam, Netherlands',
+    );
+  });
+});
+
+describe('parseCoordinateInput', () => {
+  it('parses decimal strings with comma separators', () => {
+    expect(parseCoordinateInput('52,3676')).toBe(52.3676);
+    expect(parseCoordinateInput('4.9041')).toBe(4.9041);
+  });
+
+  it('returns null for invalid values', () => {
+    expect(parseCoordinateInput('')).toBeNull();
+    expect(parseCoordinateInput('abc')).toBeNull();
+  });
+});
+
+describe('normalizeSpaceLocationFields', () => {
+  it('clears mismatched coordinates before save', () => {
+    expect(
+      normalizeSpaceLocationFields({
+        latitude: 52.3,
+        longitude: null,
+        locationSource: 'manual',
+      }),
+    ).toEqual({
+      latitude: null,
+      longitude: null,
+      locationLabel: null,
+      locationSource: null,
+    });
+  });
+
+  it('rounds valid coordinate pairs', () => {
+    expect(
+      normalizeSpaceLocationFields({
+        latitude: 52.367584,
+        longitude: 4.904139,
+        locationLabel: 'Amsterdam',
+        locationSource: 'geocode',
+      }),
+    ).toMatchObject({
+      latitude: 52.367584,
+      longitude: 4.904139,
+      locationLabel: 'Amsterdam',
+      locationSource: 'geocode',
+    });
   });
 });
 
