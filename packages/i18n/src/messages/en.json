@@ -3448,7 +3448,14 @@
     "noSpacesWithLocationHint": "Spaces appear on the map once an admin sets a location in space configuration.",
     "loadingMap": "Loading map…",
     "mapAriaLabel": "Interactive network map of Hypha spaces",
-    "viewToggleLabel": "Network view"
+    "viewToggleLabel": "Network view",
+    "addLocation": "Add location",
+    "addLocationTitle": "Add a location to your space",
+    "addLocationDescription": "Select one of your spaces to set its location on the network map.",
+    "addLocationSelectPlaceholder": "Select a space",
+    "addLocationContinue": "Continue to configuration",
+    "addLocationLoading": "Loading your spaces…",
+    "addLocationNoSpaces": "You are not a member of any spaces yet."
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",

@@ -193,6 +193,14 @@ export function NetworkGlobeMap({
     }
   }, [lang, router]);
 
+  const scheduleRender = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        renderMap();
+      });
+    });
+  }, [renderMap]);
+
   React.useEffect(() => {
     let cancelled = false;
     setIsLoadingGeo(true);
@@ -205,7 +213,7 @@ export function NetworkGlobeMap({
         }
         landRef.current = land;
         setIsLoadingGeo(false);
-        renderMap();
+        scheduleRender();
       })
       .catch((error: unknown) => {
         if (cancelled) {
@@ -220,7 +228,14 @@ export function NetworkGlobeMap({
     return () => {
       cancelled = true;
     };
-  }, [renderMap]);
+  }, [scheduleRender]);
+
+  React.useEffect(() => {
+    if (isLoadingGeo || loadError || !landRef.current) {
+      return;
+    }
+    scheduleRender();
+  }, [isLoadingGeo, loadError, scheduleRender]);
 
   React.useEffect(() => {
     renderMap();
@@ -229,7 +244,7 @@ export function NetworkGlobeMap({
   React.useEffect(() => {
     const container = containerRef.current;
     const svgElement = svgRef.current;
-    if (!container || !svgElement) {
+    if (!container || !svgElement || isLoadingGeo || loadError) {
       return;
     }
 
@@ -296,7 +311,7 @@ export function NetworkGlobeMap({
       resizeObserver.disconnect();
       d3.select(svgElement).on('.drag', null);
     };
-  }, [renderMap]);
+  }, [renderMap, isLoadingGeo, loadError]);
 
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
@@ -347,16 +362,46 @@ export function NetworkGlobeMap({
 
   if (pins.length === 0) {
     return (
-      <div
-        className={cn(
-          'flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-neutral-6 bg-neutral-2/50 p-8 text-center',
-          className,
-        )}
-      >
-        <p className="text-4 text-neutral-11">{t('noSpacesWithLocation')}</p>
-        <p className="text-2 text-neutral-10">
-          {t('noSpacesWithLocationHint')}
-        </p>
+      <div className={cn('flex flex-col gap-4', className)}>
+        <NetworkMapLayerControls
+          layers={layers}
+          projectionMode={projectionMode}
+          onLayerChange={(layer, visible) =>
+            setLayers((current) => ({ ...current, [layer]: visible }))
+          }
+          onProjectionModeChange={animateProjection}
+        />
+        <div
+          ref={containerRef}
+          className="relative min-h-[360px] w-full overflow-hidden rounded-lg border border-neutral-6 bg-neutral-1"
+        >
+          {isLoadingGeo ? (
+            <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-neutral-1 text-neutral-11">
+              <Loader2 className="size-5 animate-spin" />
+              <span>{t('loadingMap')}</span>
+            </div>
+          ) : null}
+          {loadError ? (
+            <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
+              {loadError}
+            </div>
+          ) : null}
+          <svg
+            ref={svgRef}
+            className={cn(
+              'block w-full cursor-grab touch-none select-none active:cursor-grabbing',
+              isLoadingGeo ? 'invisible' : undefined,
+            )}
+            role="img"
+            aria-label={t('mapAriaLabel')}
+          />
+        </div>
+        <div className="rounded-lg border border-dashed border-neutral-6 bg-neutral-2/50 px-4 py-3 text-center">
+          <p className="text-4 text-neutral-11">{t('noSpacesWithLocation')}</p>
+          <p className="text-2 text-neutral-10">
+            {t('noSpacesWithLocationHint')}
+          </p>
+        </div>
       </div>
     );
   }
@@ -373,25 +418,28 @@ export function NetworkGlobeMap({
       />
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-lg border border-neutral-6 bg-neutral-1"
+        className="relative min-h-[360px] w-full overflow-hidden rounded-lg border border-neutral-6 bg-neutral-1"
       >
         {isLoadingGeo ? (
-          <div className="flex min-h-[360px] items-center justify-center gap-2 text-neutral-11">
+          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-neutral-1 text-neutral-11">
             <Loader2 className="size-5 animate-spin" />
             <span>{t('loadingMap')}</span>
           </div>
-        ) : loadError ? (
-          <div className="flex min-h-[360px] items-center justify-center px-6 text-center text-3 text-neutral-11">
+        ) : null}
+        {loadError ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
             {loadError}
           </div>
-        ) : (
-          <svg
-            ref={svgRef}
-            className="block w-full touch-none select-none"
-            role="img"
-            aria-label={t('mapAriaLabel')}
-          />
-        )}
+        ) : null}
+        <svg
+          ref={svgRef}
+          className={cn(
+            'block w-full cursor-grab touch-none select-none active:cursor-grabbing',
+            isLoadingGeo ? 'invisible' : undefined,
+          )}
+          role="img"
+          aria-label={t('mapAriaLabel')}
+        />
       </div>
     </div>
   );

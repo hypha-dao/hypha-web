@@ -3405,7 +3405,14 @@
     "noSpacesWithLocationHint": "Spaces erscheinen auf der Karte, sobald ein Admin einen Standort in der Space-Konfiguration festlegt.",
     "loadingMap": "Karte wird geladen…",
     "mapAriaLabel": "Interaktive Netzwerkkarte der Hypha-Spaces",
-    "viewToggleLabel": "Netzwerkansicht"
+    "viewToggleLabel": "Netzwerkansicht",
+    "addLocation": "Standort hinzufügen",
+    "addLocationTitle": "Standort für deinen Space festlegen",
+    "addLocationDescription": "Wähle einen deiner Spaces, um den Standort auf der Netzwerkkarte festzulegen.",
+    "addLocationSelectPlaceholder": "Space auswählen",
+    "addLocationContinue": "Zur Konfiguration",
+    "addLocationLoading": "Deine Spaces werden geladen…",
+    "addLocationNoSpaces": "Du bist noch in keinem Space Mitglied."
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",

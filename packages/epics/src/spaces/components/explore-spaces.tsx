@@ -8,6 +8,7 @@ import {
   isSpaceArchived,
 } from '@hypha-platform/core/client';
 import {
+  NetworkAddLocationButton,
   NetworkGlobeMap,
   NetworkMapView,
   NetworkMapViewToggle,
@@ -217,13 +218,13 @@ export function ExploreSpaces({
   );
 
   const view: NetworkMapView =
-    enableNetworkMap && searchParams.get('view') === 'map' ? 'map' : 'list';
+    enableNetworkMap && searchParams.get('view') !== 'list' ? 'map' : 'list';
 
   const setView = React.useCallback(
     (nextView: NetworkMapView) => {
       const params = new URLSearchParams(searchParams);
-      if (nextView === 'map') {
-        params.set('view', 'map');
+      if (nextView === 'list') {
+        params.set('view', 'list');
       } else {
         params.delete('view');
       }
@@ -389,6 +390,13 @@ export function ExploreSpaces({
             allowEmptyChoice={false}
           />
         </div>
+        {enableNetworkMap ? (
+          <NetworkAddLocationButton
+            lang={lang}
+            spaces={spaces}
+            className="ml-2"
+          />
+        ) : null}
         <Link
           className={!isAuthenticated ? 'cursor-not-allowed' : ''}
           title={!isAuthenticated ? tCommon('signIn') : ''}

@@ -2916,7 +2916,14 @@
     "noSpacesWithLocationHint": "Los espacios aparecen en el mapa cuando un administrador define la ubicación en la configuración.",
     "loadingMap": "Cargando mapa…",
     "mapAriaLabel": "Mapa interactivo de la red Hypha",
-    "viewToggleLabel": "Vista de red"
+    "viewToggleLabel": "Vista de red",
+    "addLocation": "Añadir ubicación",
+    "addLocationTitle": "Añadir ubicación a tu espacio",
+    "addLocationDescription": "Selecciona uno de tus espacios para definir su ubicación en el mapa de la red.",
+    "addLocationSelectPlaceholder": "Seleccionar un espacio",
+    "addLocationContinue": "Continuar a la configuración",
+    "addLocationLoading": "Cargando tus espacios…",
+    "addLocationNoSpaces": "Aún no eres miembro de ningún espacio."
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",

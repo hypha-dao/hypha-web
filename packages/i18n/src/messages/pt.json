@@ -2879,7 +2879,14 @@
     "noSpacesWithLocationHint": "Os spaces aparecem no mapa depois que um admin define a localização na configuração do space.",
     "loadingMap": "A carregar mapa…",
     "mapAriaLabel": "Mapa interativo da rede Hypha",
-    "viewToggleLabel": "Vista da rede"
+    "viewToggleLabel": "Vista da rede",
+    "addLocation": "Adicionar localização",
+    "addLocationTitle": "Adicionar localização ao seu space",
+    "addLocationDescription": "Selecione um dos seus spaces para definir a localização no mapa da rede.",
+    "addLocationSelectPlaceholder": "Selecionar um space",
+    "addLocationContinue": "Continuar para a configuração",
+    "addLocationLoading": "A carregar os seus spaces…",
+    "addLocationNoSpaces": "Ainda não é membro de nenhum space."
   },
   "SignalCard": {
     "noConversationRoom": "Ainda não há sala de conversa",
