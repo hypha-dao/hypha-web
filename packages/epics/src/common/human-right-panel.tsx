@@ -64,8 +64,12 @@ import {
   useUserSpaceState,
 } from '../spaces/hooks/use-user-space-state';
 import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
-import { checkAccess } from '../spaces/utils/transparency-access';
+import {
+  checkAccess,
+  canInteractInSpace,
+} from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
+import { JoinSpace } from '../spaces/components/join-space';
 
 import {
   HumanChatPanelHeader,
@@ -942,6 +946,7 @@ type HumanRightPanelProps = {
 
 export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
+  const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
   const isMobile = useIsMobile() ?? false;
   const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
@@ -1014,14 +1019,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceActivityAccess,
     userSpaceState,
   );
-  const isSpaceMember = userSpaceState === UserSpaceState.LOGGED_IN_SPACE;
+  const isSpaceMember = canInteractInSpace(userSpaceState);
   const blockSpaceChatForActivityAccess =
     mode === 'space' &&
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
-  const blockSpaceChatComposer =
-    mode === 'space' && !isUserSpaceStateLoading && !isSpaceMember;
+  const blockSpaceChatForMembership =
+    (mode === 'space' || mode === 'coherence') &&
+    (isUserSpaceStateLoading || !isSpaceMember);
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -1809,8 +1815,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
   const isChatFollowerTab = connectionStatus === 'follower';
-  const chatComposerLocked = !canInteractWithSignalThread || isChatFollowerTab;
-  const chatComposerLockedMessage = !canInteractWithSignalThread
+  const chatComposerLocked =
+    blockSpaceChatForMembership ||
+    !canInteractWithSignalThread ||
+    isChatFollowerTab;
+  const chatComposerLockedMessage = blockSpaceChatForMembership
+    ? tCommon('joinSpaceToUse')
+    : !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
     : isChatFollowerTab
     ? t('connectionFollowerTitle')
@@ -3729,6 +3740,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     if (isChatFollowerTab) return;
+    if (blockSpaceChatForMembership) {
+      setComposerError(tCommon('joinSpaceToUse'));
+      return;
+    }
     if (!canInteractWithSignalThread) {
       setComposerError(t('signalTeamInteractionRestricted'));
       return;
@@ -3994,6 +4009,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     notifyChatMention,
     hasSignalTeamPolicy,
     signalTeamMemberIdSet,
+    blockSpaceChatForMembership,
+    tCommon,
     t,
   ]);
 
@@ -4307,6 +4324,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {signalDeepLinkNotice}
                   </div>
                 ) : null}
+                {blockSpaceChatForMembership &&
+                !isUserSpaceStateLoading &&
+                space?.id &&
+                effectiveSpaceWeb3Id ? (
+                  <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2 text-sm text-foreground">
+                    <p>{tSpaces('accessDeniedNotMember')}</p>
+                    <div className="mt-2">
+                      <JoinSpace
+                        spaceId={space.id}
+                        web3SpaceId={effectiveSpaceWeb3Id}
+                        hideWhenMember
+                      />
+                    </div>
+                  </div>
+                ) : null}
                 {isSignalThread &&
                   hasSignalTeamPolicy &&
                   !canInteractWithSignalThread && (
@@ -4495,10 +4527,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     roomId={roomId}
                     currentUserId={currentUserId}
                     currentUserAvatarUrl={currentUserAvatarUrl}
-                    onReply={handleReplyToMessage}
-                    onEditMessage={handleEditMessage}
-                    onDeleteMessage={handleDeleteMessage}
-                    onToggleReaction={handleToggleReaction}
+                    onReply={
+                      blockSpaceChatForMembership
+                        ? undefined
+                        : handleReplyToMessage
+                    }
+                    onEditMessage={
+                      blockSpaceChatForMembership
+                        ? undefined
+                        : handleEditMessage
+                    }
+                    onDeleteMessage={
+                      blockSpaceChatForMembership
+                        ? undefined
+                        : handleDeleteMessage
+                    }
+                    onToggleReaction={
+                      blockSpaceChatForMembership
+                        ? undefined
+                        : handleToggleReaction
+                    }
                     resolveReactionReactorLabel={(userId) =>
                       resolveMemberLabel(userId)
                     }
@@ -4574,50 +4622,54 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </>
         )}
       </SidebarContent>
-      {activeTab === 'chat' && !blockSpaceChatComposer && (
-        <SidebarFooter className="relative z-20 bg-background-2 p-0">
-          <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
-            <HumanChatPanelChatBar
-              value={input}
-              onChange={setInput}
-              onSend={handleSend}
-              mentionCandidates={mentionCandidates}
-              mentionPickerEnabled={mentionPickerEnabled}
-              composerLocked={chatComposerLocked}
-              composerLockedMessage={chatComposerLockedMessage}
-              getMentionComposerLabel={getMentionComposerLabel}
-              onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
-              draftAttachments={draftAttachments}
-              onDraftAttachmentsChange={setDraftAttachments}
-              replyPreview={
-                replyDraft
-                  ? {
-                      authorLabel: replyDraft.authorLabel,
-                      excerpt: replyDraft.excerpt,
-                      sourceUserId: replyDraft.sourceUserId,
-                      isYou: replyDraft.isYou,
-                      onDismiss: () => setReplyDraft(null),
-                    }
-                  : undefined
-              }
-              editPreview={
-                editDraft
-                  ? {
-                      excerpt: editDraft.excerpt,
-                      onDismiss: () => {
-                        setEditDraft(null);
-                        setInput('');
-                        disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-                        setDraftAttachments([]);
-                      },
-                    }
-                  : undefined
-              }
-              editMediaMode={Boolean(editDraft?.editMediaMode)}
-            />
-          </div>
-        </SidebarFooter>
-      )}
+      {activeTab === 'chat' &&
+        !showAuthPrompt &&
+        !blockSpaceChatForActivityAccess && (
+          <SidebarFooter className="relative z-20 bg-background-2 p-0">
+            <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
+              <HumanChatPanelChatBar
+                value={input}
+                onChange={setInput}
+                onSend={handleSend}
+                mentionCandidates={mentionCandidates}
+                mentionPickerEnabled={mentionPickerEnabled}
+                composerLocked={chatComposerLocked}
+                composerLockedMessage={chatComposerLockedMessage}
+                getMentionComposerLabel={getMentionComposerLabel}
+                onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
+                draftAttachments={draftAttachments}
+                onDraftAttachmentsChange={setDraftAttachments}
+                replyPreview={
+                  replyDraft
+                    ? {
+                        authorLabel: replyDraft.authorLabel,
+                        excerpt: replyDraft.excerpt,
+                        sourceUserId: replyDraft.sourceUserId,
+                        isYou: replyDraft.isYou,
+                        onDismiss: () => setReplyDraft(null),
+                      }
+                    : undefined
+                }
+                editPreview={
+                  editDraft
+                    ? {
+                        excerpt: editDraft.excerpt,
+                        onDismiss: () => {
+                          setEditDraft(null);
+                          setInput('');
+                          disposeDraftAttachmentUrls(
+                            draftAttachmentsRef.current,
+                          );
+                          setDraftAttachments([]);
+                        },
+                      }
+                    : undefined
+                }
+                editMediaMode={Boolean(editDraft?.editMediaMode)}
+              />
+            </div>
+          </SidebarFooter>
+        )}
     </>
   );
 }

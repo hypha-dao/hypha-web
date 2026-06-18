@@ -72,8 +72,12 @@ import {
   useUserSpaceState,
 } from '../spaces/hooks/use-user-space-state';
 import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
-import { checkAccess } from '../spaces/utils/transparency-access';
+import {
+  checkAccess,
+  canInteractInSpace,
+} from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
+import { JoinSpace } from '../spaces/components/join-space';
 import { AiPanelSubscriptionBanner } from '../spaces/components/ai-panel-subscription-banner';
 import { useSalesBanner } from '../spaces/hooks/use-sales-banner';
 import {
@@ -200,6 +204,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
+  const blockSpaceAiForMembership =
+    Boolean(spaceSlug) &&
+    !isOnboardingPath &&
+    !isUserSpaceStateLoading &&
+    !canInteractInSpace(userSpaceState);
   const { status: spacePaymentStatus, isLoading: isSpacePaymentStatusLoading } =
     useSalesBanner({
       spaceId: effectiveSpaceWeb3Id,
@@ -209,6 +218,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     Boolean(effectiveSpaceWeb3Id) &&
     !isSpacePaymentStatusLoading &&
     spacePaymentStatus === 'expired';
+  const blockSpaceAiForInteraction =
+    blockSpaceAiForMembership || blockSpaceAiForSubscription;
   const {
     open: isAiOpen,
     overlayVisible,
@@ -1248,7 +1259,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (
-      blockSpaceAiForSubscription ||
+      blockSpaceAiForInteraction ||
       !error ||
       status !== 'error' ||
       autoRetryingRef.current
@@ -1285,7 +1296,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }
     })();
   }, [
-    blockSpaceAiForSubscription,
+    blockSpaceAiForInteraction,
     buildMessageOptions,
     clearError,
     error,
@@ -1295,13 +1306,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
-    if (blockSpaceAiForSubscription) {
+    if (blockSpaceAiForInteraction) {
       clearError();
     }
-  }, [blockSpaceAiForSubscription, clearError]);
+  }, [blockSpaceAiForInteraction, clearError]);
 
   const handleSend = useCallback(async () => {
-    if (blockSpaceAiForSubscription) return;
+    if (blockSpaceAiForInteraction) return;
     if ((!input.trim() && draftAttachments.length === 0) || isStreaming) return;
     const text = input;
     const attachments = [...draftAttachments];
@@ -1400,7 +1411,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     activeSpaceChatRoomId,
     matrix,
     onboardingContext,
-    blockSpaceAiForSubscription,
+    blockSpaceAiForInteraction,
   ]);
 
   const handleStop = useCallback(() => {
@@ -1419,7 +1430,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
-      if (blockSpaceAiForSubscription) return;
+      if (blockSpaceAiForInteraction) return;
       try {
         clearError();
         if (spaceSlug && text.trim()) {
@@ -1449,7 +1460,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }
     },
     [
-      blockSpaceAiForSubscription,
+      blockSpaceAiForInteraction,
       sendMessage,
       buildMessageOptions,
       clearError,
@@ -1460,6 +1471,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleActionReplySelect = useCallback(
     async (text: string) => {
+      if (blockSpaceAiForInteraction) return;
       try {
         clearError();
         if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
@@ -1480,7 +1492,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         console.error('[AiLeftPanel] action reply sendMessage error:', err);
       }
     },
-    [buildMessageOptions, clearError, onboardingContext, sendMessage],
+    [
+      blockSpaceAiForInteraction,
+      buildMessageOptions,
+      clearError,
+      onboardingContext,
+      sendMessage,
+    ],
   );
 
   const handleTriggerClick = useCallback(() => {
@@ -1687,7 +1705,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
           </div>
         ) : null}
-        {error && !blockSpaceAiForSubscription ? (
+        {spaceSlug && blockSpaceAiForMembership && space?.id ? (
+          <div className="mx-3 mt-3 shrink-0 rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-foreground">
+            <p>{tSpaces('accessDeniedNotMember')}</p>
+            {effectiveSpaceWeb3Id ? (
+              <div className="mt-2">
+                <JoinSpace
+                  spaceId={space.id}
+                  web3SpaceId={effectiveSpaceWeb3Id}
+                  hideWhenMember
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {error && !blockSpaceAiForInteraction ? (
           <div
             role="alert"
             className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -1733,21 +1765,19 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestionItems={suggestionItems}
-          showInlineSuggestions={
-            !hasUserMessage && !blockSpaceAiForSubscription
-          }
+          showInlineSuggestions={!hasUserMessage && !blockSpaceAiForInteraction}
           onSuggestionSelect={
-            blockSpaceAiForSubscription ? undefined : handleSuggestionSelect
+            blockSpaceAiForInteraction ? undefined : handleSuggestionSelect
           }
           onActionReplySelect={
-            blockSpaceAiForSubscription ? undefined : handleActionReplySelect
+            blockSpaceAiForInteraction ? undefined : handleActionReplySelect
           }
           activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
         />
       </SidebarContent>
       <SidebarFooter className="bg-background-2 p-0">
-        {hasUserMessage && !blockSpaceAiForSubscription ? (
+        {hasUserMessage && !blockSpaceAiForInteraction ? (
           <AiPanelSuggestions
             items={suggestionItems}
             onSelect={handleSuggestionSelect}
@@ -1762,7 +1792,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           onDraftAttachmentsChange={setDraftAttachments}
           onStop={handleStop}
           isStreaming={isStreaming}
-          composerDisabled={blockSpaceAiForSubscription}
+          composerDisabled={blockSpaceAiForInteraction}
         />
       </SidebarFooter>
     </>
