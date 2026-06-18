@@ -221,6 +221,8 @@ export type CreatePayoutAccountInput = {
   accountName: string;
   accountOwnerName: string;
   accountOwnerType: 'business' | 'individual';
+  firstName?: string;
+  lastName?: string;
   businessName?: string;
   routingNumber?: string;
   accountNumber?: string;
@@ -232,6 +234,7 @@ export type CreatePayoutAccountInput = {
   wireMessage?: string;
   // SWIFT-specific fields
   swiftAccountFormat?: 'iban' | 'other';
+  swiftIbanCountry?: string;
   swiftBankAddress?: {
     street_line_1: string;
     city: string;

@@ -128,6 +128,11 @@ function toBridgeExternalAccountBody(
     body.business_name = input.businessName;
   }
 
+  if (input.accountOwnerType === 'individual') {
+    if (input.firstName) body.first_name = input.firstName;
+    if (input.lastName) body.last_name = input.lastName;
+  }
+
   if (rail.externalAccountType === 'us') {
     body.account = {
       routing_number: input.routingNumber,
@@ -152,26 +157,18 @@ function toBridgeExternalAccountBody(
     };
   } else if (rail.externalAccountType === 'swift') {
     const isIban = input.swiftAccountFormat !== 'other';
-    body.account_type = isIban ? 'iban' : 'unknown';
 
     let swiftAccount:
       | { account_number: string; bic?: string; country: string }
       | { account_number: string; bic: string };
     if (isIban) {
-      const ibanAlpha2 = input
-        .iban!.replace(/\s/g, '')
-        .toUpperCase()
-        .slice(0, 2);
-      const ibanAlpha3 = IBAN_ALPHA2_TO_ALPHA3[ibanAlpha2];
-      if (!ibanAlpha3) {
-        throw new Error(
-          `Unsupported IBAN country prefix for SWIFT: ${ibanAlpha2}`,
-        );
+      if (!input.swiftIbanCountry) {
+        throw new Error('Missing SWIFT IBAN account country');
       }
       swiftAccount = {
         account_number: input.iban!.replace(/\s/g, '').toUpperCase(),
         ...(input.bic ? { bic: input.bic.toUpperCase() } : {}),
-        country: ibanAlpha3,
+        country: input.swiftIbanCountry,
       };
     } else {
       swiftAccount = {

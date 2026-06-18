@@ -89,6 +89,8 @@ export type RegisterExternalAccountInput = {
   accountName: string;
   accountOwnerName: string;
   accountOwnerType: 'business' | 'individual';
+  firstName?: string;
+  lastName?: string;
   businessName?: string;
   routingNumber?: string;
   accountNumber?: string;
@@ -99,6 +101,7 @@ export type RegisterExternalAccountInput = {
   destinationCurrency?: string;
   // SWIFT-specific fields
   swiftAccountFormat?: 'iban' | 'other';
+  swiftIbanCountry?: string;
   swiftBankAddress?: {
     street_line_1: string;
     city: string;

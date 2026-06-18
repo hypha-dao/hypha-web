@@ -21,6 +21,7 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
+import { AddressFormFields } from './address-form-fields';
 import type {
   BankPayoutAccountPublic,
   CreatePayoutAccountInput,
@@ -40,7 +41,6 @@ import {
 } from './payout-currency-option-row';
 
 const ADD_PAYOUT_FORM_ID = 'add-payout-account-form';
-const STREET_MAX_LENGTH = 35;
 const REQUIRED_MSG = 'This field is required';
 
 function isValidIban(raw: string): boolean {
@@ -177,16 +177,23 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const t = useTranslations('BankingTab.payouts.addDialog');
   const radioName = useId();
 
-  const [step, setStep] = useState<'currency' | 'form' | 'review'>('currency');
+  const [step, setStep] = useState<
+    'currency' | 'form' | 'compliance' | 'review'
+  >('currency');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [selectedCurrency, setSelectedCurrency] =
     useState<PayoutCurrencyKey>('usd');
   const [sourceCurrency, setSourceCurrency] = useState<'usdc' | 'eurc'>('usdc');
   const [bankName, setBankName] = useState('');
   const [accountName, setAccountName] = useState('');
+  const [accountOwnerType, setAccountOwnerType] = useState<
+    'business' | 'individual'
+  >('business');
   const [accountOwnerName, setAccountOwnerName] = useState(
     defaultAccountOwnerName,
   );
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState(defaultBusinessName);
   const [routingNumber, setRoutingNumber] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -202,6 +209,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const [swiftAccountFormat, setSwiftAccountFormat] = useState<
     'iban' | 'other'
   >('iban');
+  const [swiftIbanCountry, setSwiftIbanCountry] = useState('');
   const [swiftBankStreet, setSwiftBankStreet] = useState('');
   const [swiftBankCity, setSwiftBankCity] = useState('');
   const [swiftBankPostal, setSwiftBankPostal] = useState('');
@@ -218,6 +226,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     setBic('');
     setSortCode('');
     setSwiftAccountFormat('iban');
+    setSwiftIbanCountry('');
     setSwiftBankStreet('');
     setSwiftBankCity('');
     setSwiftBankPostal('');
@@ -237,7 +246,10 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     setSourceCurrency('usdc');
     setBankName('');
     setAccountName('');
+    setAccountOwnerType('business');
     setAccountOwnerName(defaultAccountOwnerName);
+    setFirstName('');
+    setLastName('');
     setBusinessName(defaultBusinessName);
     clearRailSpecificFields();
     setStreetLine1('');
@@ -292,27 +304,31 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
       setFieldErrors({});
       setStep('currency');
     }
-    if (step === 'review') {
+    if (step === 'compliance') {
       setFieldErrors({});
       setStep('form');
     }
+    if (step === 'review') {
+      setFieldErrors({});
+      setStep('compliance');
+    }
   };
 
-  // Validates all required fields and the IBAN checksum; advances to review on pass.
-  // Accepts an optional FormEvent so it can be called from both onSubmit (Enter key) and a button onClick.
+  // Step 2 validation: bank account details + account holder.
   const handleFormContinue = (event?: FormEvent) => {
     event?.preventDefault();
     const errs: Record<string, string> = {};
 
     if (!accountName.trim()) errs.accountName = REQUIRED_MSG;
     if (!bankName.trim()) errs.bankName = REQUIRED_MSG;
-    if (!accountOwnerName.trim()) errs.accountOwnerName = REQUIRED_MSG;
-    if (!businessName.trim()) errs.businessName = REQUIRED_MSG;
-    if (!streetLine1.trim()) errs.street = REQUIRED_MSG;
-    if (!city.trim()) errs.city = REQUIRED_MSG;
-    if (!postalCode.trim()) errs.postal = REQUIRED_MSG;
-    if (!country) errs.country = REQUIRED_MSG;
-    if (isUsAddress && !subdivision.trim()) errs.subdivision = REQUIRED_MSG;
+
+    if (accountOwnerType === 'individual') {
+      if (!firstName.trim()) errs.firstName = REQUIRED_MSG;
+      if (!lastName.trim()) errs.lastName = REQUIRED_MSG;
+    } else {
+      if (!accountOwnerName.trim()) errs.accountOwnerName = REQUIRED_MSG;
+      if (!businessName.trim()) errs.businessName = REQUIRED_MSG;
+    }
 
     if (showUsFields) {
       if (!routingNumber.trim()) errs.routingNumber = REQUIRED_MSG;
@@ -325,11 +341,8 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     if (selectedCurrency === 'eur') {
       if (!iban.trim()) {
         errs.iban = REQUIRED_MSG;
-      } else {
-        const ibanValue = iban.trim().replace(/\s/g, '');
-        if (!isValidIban(ibanValue)) {
-          errs.iban = 'Invalid IBAN — check the number and try again';
-        }
+      } else if (!isValidIban(iban.trim().replace(/\s/g, ''))) {
+        errs.iban = 'Invalid IBAN — check the number and try again';
       }
     } else if (selectedCurrency === 'swift') {
       if (swiftAccountFormat === 'iban') {
@@ -338,6 +351,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
         } else if (!isValidIban(iban.trim().replace(/\s/g, ''))) {
           errs.iban = 'Invalid IBAN — check the number and try again';
         }
+        if (!swiftIbanCountry) errs.swiftIbanCountry = REQUIRED_MSG;
       } else {
         if (!accountNumber.trim()) errs.accountNumber = REQUIRED_MSG;
         if (!bic.trim()) errs.bic = REQUIRED_MSG;
@@ -345,6 +359,28 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
       if (!swiftBankStreet.trim()) errs.swiftBankStreet = REQUIRED_MSG;
       if (!swiftBankCity.trim()) errs.swiftBankCity = REQUIRED_MSG;
       if (!swiftBankCountry) errs.swiftBankCountry = REQUIRED_MSG;
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+
+    setFieldErrors({});
+    setStep('compliance');
+  };
+
+  // Step 3 validation: beneficiary address + SWIFT transfer details.
+  const handleComplianceContinue = () => {
+    const errs: Record<string, string> = {};
+
+    if (!streetLine1.trim()) errs.street = REQUIRED_MSG;
+    if (!city.trim()) errs.city = REQUIRED_MSG;
+    if (!postalCode.trim()) errs.postal = REQUIRED_MSG;
+    if (!country) errs.country = REQUIRED_MSG;
+    if (isUsAddress && !subdivision.trim()) errs.subdivision = REQUIRED_MSG;
+
+    if (selectedCurrency === 'swift') {
       if (!swiftCategory) errs.swiftCategory = REQUIRED_MSG;
       if (swiftPurposeOfFunds.length === 0)
         errs.swiftPurposeOfFunds = REQUIRED_MSG;
@@ -369,9 +405,19 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
         sourceCurrency,
         bankName: bankName.trim(),
         accountName: accountName.trim(),
-        accountOwnerName: accountOwnerName.trim(),
-        accountOwnerType: 'business',
-        businessName: businessName.trim() || accountOwnerName.trim(),
+        accountOwnerName:
+          accountOwnerType === 'individual'
+            ? `${firstName.trim()} ${lastName.trim()}`.trim()
+            : accountOwnerName.trim(),
+        accountOwnerType: accountOwnerType,
+        firstName:
+          accountOwnerType === 'individual' ? firstName.trim() : undefined,
+        lastName:
+          accountOwnerType === 'individual' ? lastName.trim() : undefined,
+        businessName:
+          accountOwnerType === 'business'
+            ? businessName.trim() || accountOwnerName.trim()
+            : undefined,
         routingNumber: routingNumber.trim() || undefined,
         accountNumber: accountNumber.trim() || undefined,
         iban: iban.trim().replace(/\s/g, '') || undefined,
@@ -379,6 +425,10 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
         sortCode: sortCode.trim() || undefined,
         swiftAccountFormat:
           selectedCurrency === 'swift' ? swiftAccountFormat : undefined,
+        swiftIbanCountry:
+          selectedCurrency === 'swift' && swiftAccountFormat === 'iban'
+            ? swiftIbanCountry
+            : undefined,
         swiftBankAddress:
           selectedCurrency === 'swift'
             ? {
@@ -431,7 +481,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               ? t('step1Description')
               : step === 'form'
               ? t('step2Description')
-              : t('step3Description')}
+              : step === 'compliance'
+              ? t('step3Description')
+              : t('step4Description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -439,7 +491,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
           {step === 'currency' ? (
             <div className="flex flex-col gap-4">
               <p className="text-right text-1 text-muted-foreground">
-                {t('stepOf', { current: '1', total: '3' })}
+                {t('stepOf', { current: '1', total: '4' })}
               </p>
               <div className="flex flex-col gap-2">
                 <Label>{t('currencyLabel')}</Label>
@@ -488,9 +540,11 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   {t('back')}
                 </Button>
                 <span className="text-1 text-muted-foreground">
-                  {t('stepOf', { current: '2', total: '3' })}
+                  {t('stepOf', { current: '2', total: '4' })}
                 </span>
               </div>
+
+              <PayoutSelectedCurrencyBadge currency={selectedCurrency} />
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="payout-account-name">{t('accountName')}</Label>
@@ -517,8 +571,6 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   {t('accountNameHint')}
                 </p>
               </div>
-
-              <PayoutSelectedCurrencyBadge currency={selectedCurrency} />
 
               {/* Source token */}
               <FormSection title={t('sourceCurrencySection')}>
@@ -759,24 +811,71 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     </div>
 
                     {swiftAccountFormat === 'iban' ? (
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="payout-swift-iban">{t('iban')}</Label>
-                        <Input
-                          id="payout-swift-iban"
-                          value={iban}
-                          onChange={(event) => {
-                            setIban(event.target.value.toUpperCase());
-                            clearFieldError('iban');
-                          }}
-                          placeholder={t('ibanPlaceholder')}
-                          disabled={isSubmitting}
-                          aria-invalid={fieldErrors.iban ? true : undefined}
-                          aria-describedby={
-                            fieldErrors.iban ? 'err-iban' : undefined
-                          }
-                          className={cn(inputErrorClass('iban'))}
-                        />
-                        <FieldError id="err-iban" message={fieldErrors.iban} />
+                      <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="payout-swift-iban">{t('iban')}</Label>
+                          <Input
+                            id="payout-swift-iban"
+                            value={iban}
+                            onChange={(event) => {
+                              setIban(event.target.value.toUpperCase());
+                              clearFieldError('iban');
+                            }}
+                            placeholder={t('ibanPlaceholder')}
+                            disabled={isSubmitting}
+                            aria-invalid={fieldErrors.iban ? true : undefined}
+                            aria-describedby={
+                              fieldErrors.iban ? 'err-iban' : undefined
+                            }
+                            className={cn(inputErrorClass('iban'))}
+                          />
+                          <FieldError
+                            id="err-iban"
+                            message={fieldErrors.iban}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="payout-swift-iban-country">
+                            {t('country')}
+                          </Label>
+                          <div className="relative flex min-h-6 w-full items-center">
+                            <select
+                              id="payout-swift-iban-country"
+                              className={cn(
+                                'min-h-6 w-full appearance-none rounded border border-input bg-neutral-1 px-3 py-2 text-2 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                                fieldErrors.swiftIbanCountry &&
+                                  'border-destructive ring-2 ring-destructive',
+                              )}
+                              value={swiftIbanCountry}
+                              onChange={(event) => {
+                                setSwiftIbanCountry(event.target.value);
+                                clearFieldError('swiftIbanCountry');
+                              }}
+                              disabled={isSubmitting}
+                              aria-invalid={
+                                fieldErrors.swiftIbanCountry ? true : undefined
+                              }
+                              aria-describedby={
+                                fieldErrors.swiftIbanCountry
+                                  ? 'err-swiftIbanCountry'
+                                  : undefined
+                              }
+                            >
+                              <option value="">
+                                {t('countryPlaceholder')}
+                              </option>
+                              {SEPA_COUNTRIES.map((c) => (
+                                <option key={c.alpha3} value={c.alpha3}>
+                                  {c.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <FieldError
+                            id="err-swiftIbanCountry"
+                            message={fieldErrors.swiftIbanCountry}
+                          />
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2">
@@ -835,353 +934,288 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
 
               {/* Account holder */}
               <FormSection title={t('accountHolderSection')}>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-owner-name">
-                    {t('accountOwnerName')}
-                  </Label>
-                  <Input
-                    id="payout-owner-name"
-                    value={accountOwnerName}
-                    onChange={(event) => {
-                      setAccountOwnerName(event.target.value);
-                      clearFieldError('accountOwnerName');
-                    }}
-                    disabled={isSubmitting}
-                    aria-invalid={
-                      fieldErrors.accountOwnerName ? true : undefined
-                    }
-                    aria-describedby={
-                      fieldErrors.accountOwnerName
-                        ? 'err-accountOwnerName'
-                        : undefined
-                    }
-                    className={cn(inputErrorClass('accountOwnerName'))}
-                  />
-                  <FieldError
-                    id="err-accountOwnerName"
-                    message={fieldErrors.accountOwnerName}
-                  />
+                <div
+                  className="flex gap-2"
+                  role="radiogroup"
+                  aria-label={t('ownerTypeLabel')}
+                >
+                  {(['business', 'individual'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      disabled={isSubmitting}
+                      className={cn(
+                        'rounded-md border px-3 py-2 text-2 font-medium transition-colors',
+                        accountOwnerType === type
+                          ? 'border-accent-9 bg-accent-9 text-accent-contrast shadow-sm'
+                          : 'border-border bg-card text-foreground hover:bg-background-2/80',
+                        isSubmitting && 'cursor-not-allowed opacity-60',
+                      )}
+                      onClick={() => {
+                        setAccountOwnerType(type);
+                        setFirstName('');
+                        setLastName('');
+                        setBusinessName('');
+                        clearFieldError('firstName');
+                        clearFieldError('lastName');
+                        clearFieldError('businessName');
+                      }}
+                    >
+                      {type === 'business'
+                        ? t('ownerTypeBusiness')
+                        : t('ownerTypeIndividual')}
+                    </button>
+                  ))}
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-business-name">
-                    {t('businessName')}
-                  </Label>
-                  <Input
-                    id="payout-business-name"
-                    value={businessName}
-                    onChange={(event) => {
-                      setBusinessName(event.target.value);
-                      clearFieldError('businessName');
-                    }}
-                    disabled={isSubmitting}
-                    aria-invalid={fieldErrors.businessName ? true : undefined}
-                    aria-describedby={
-                      fieldErrors.businessName ? 'err-businessName' : undefined
-                    }
-                    className={cn(inputErrorClass('businessName'))}
-                  />
-                  <FieldError
-                    id="err-businessName"
-                    message={fieldErrors.businessName}
-                  />
-                </div>
+                {accountOwnerType === 'individual' ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="payout-first-name">
+                        {t('firstName')}
+                      </Label>
+                      <Input
+                        id="payout-first-name"
+                        value={firstName}
+                        onChange={(event) => {
+                          setFirstName(event.target.value);
+                          clearFieldError('firstName');
+                        }}
+                        disabled={isSubmitting}
+                        aria-invalid={fieldErrors.firstName ? true : undefined}
+                        aria-describedby={
+                          fieldErrors.firstName ? 'err-firstName' : undefined
+                        }
+                        className={cn(inputErrorClass('firstName'))}
+                      />
+                      <FieldError
+                        id="err-firstName"
+                        message={fieldErrors.firstName}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="payout-last-name">{t('lastName')}</Label>
+                      <Input
+                        id="payout-last-name"
+                        value={lastName}
+                        onChange={(event) => {
+                          setLastName(event.target.value);
+                          clearFieldError('lastName');
+                        }}
+                        disabled={isSubmitting}
+                        aria-invalid={fieldErrors.lastName ? true : undefined}
+                        aria-describedby={
+                          fieldErrors.lastName ? 'err-lastName' : undefined
+                        }
+                        className={cn(inputErrorClass('lastName'))}
+                      />
+                      <FieldError
+                        id="err-lastName"
+                        message={fieldErrors.lastName}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="payout-owner-name">
+                        {t('accountOwnerName')}
+                      </Label>
+                      <Input
+                        id="payout-owner-name"
+                        value={accountOwnerName}
+                        onChange={(event) => {
+                          setAccountOwnerName(event.target.value);
+                          clearFieldError('accountOwnerName');
+                        }}
+                        disabled={isSubmitting}
+                        aria-invalid={
+                          fieldErrors.accountOwnerName ? true : undefined
+                        }
+                        aria-describedby={
+                          fieldErrors.accountOwnerName
+                            ? 'err-accountOwnerName'
+                            : undefined
+                        }
+                        className={cn(inputErrorClass('accountOwnerName'))}
+                      />
+                      <FieldError
+                        id="err-accountOwnerName"
+                        message={fieldErrors.accountOwnerName}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="payout-business-name">
+                        {t('businessName')}
+                      </Label>
+                      <Input
+                        id="payout-business-name"
+                        value={businessName}
+                        onChange={(event) => {
+                          setBusinessName(event.target.value);
+                          clearFieldError('businessName');
+                        }}
+                        disabled={isSubmitting}
+                        aria-invalid={
+                          fieldErrors.businessName ? true : undefined
+                        }
+                        aria-describedby={
+                          fieldErrors.businessName
+                            ? 'err-businessName'
+                            : undefined
+                        }
+                        className={cn(inputErrorClass('businessName'))}
+                      />
+                      <FieldError
+                        id="err-businessName"
+                        message={fieldErrors.businessName}
+                      />
+                    </div>
+                  </>
+                )}
               </FormSection>
 
               {/* SWIFT bank address */}
               {selectedCurrency === 'swift' ? (
                 <FormSection title={t('swift.bankAddressSection')}>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="swift-bank-street">{t('street')}</Label>
-                    <Input
-                      id="swift-bank-street"
-                      value={swiftBankStreet}
-                      onChange={(event) => {
-                        setSwiftBankStreet(event.target.value);
-                        clearFieldError('swiftBankStreet');
-                      }}
-                      placeholder={t('streetPlaceholder')}
-                      maxLength={STREET_MAX_LENGTH}
-                      disabled={isSubmitting}
-                      aria-invalid={
-                        fieldErrors.swiftBankStreet ? true : undefined
-                      }
-                      aria-describedby={
-                        fieldErrors.swiftBankStreet
-                          ? 'err-swiftBankStreet'
-                          : undefined
-                      }
-                      className={cn(inputErrorClass('swiftBankStreet'))}
-                    />
-                    <FieldError
-                      id="err-swiftBankStreet"
-                      message={fieldErrors.swiftBankStreet}
-                    />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="swift-bank-city">{t('city')}</Label>
-                      <Input
-                        id="swift-bank-city"
-                        value={swiftBankCity}
-                        onChange={(event) => {
-                          setSwiftBankCity(event.target.value);
-                          clearFieldError('swiftBankCity');
-                        }}
-                        disabled={isSubmitting}
-                        aria-invalid={
-                          fieldErrors.swiftBankCity ? true : undefined
-                        }
-                        aria-describedby={
-                          fieldErrors.swiftBankCity
-                            ? 'err-swiftBankCity'
-                            : undefined
-                        }
-                        className={cn(inputErrorClass('swiftBankCity'))}
-                      />
-                      <FieldError
-                        id="err-swiftBankCity"
-                        message={fieldErrors.swiftBankCity}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="swift-bank-postal">
-                        {t('postalCode')}
-                      </Label>
-                      <Input
-                        id="swift-bank-postal"
-                        value={swiftBankPostal}
-                        onChange={(event) =>
-                          setSwiftBankPostal(event.target.value)
-                        }
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="swift-bank-country">{t('country')}</Label>
-                      <select
-                        id="swift-bank-country"
-                        className={cn(
-                          'h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-                          fieldErrors.swiftBankCountry &&
-                            'border-destructive ring-1 ring-destructive',
-                        )}
-                        value={swiftBankCountry}
-                        onChange={(event) => {
-                          setSwiftBankCountry(event.target.value);
-                          clearFieldError('swiftBankCountry');
-                        }}
-                        disabled={isSubmitting}
-                        aria-invalid={
-                          fieldErrors.swiftBankCountry ? true : undefined
-                        }
-                        aria-describedby={
-                          fieldErrors.swiftBankCountry
-                            ? 'err-swiftBankCountry'
-                            : undefined
-                        }
-                      >
-                        <option value="">{t('countryPlaceholder')}</option>
-                        {SEPA_COUNTRIES.map((c) => (
-                          <option key={c.alpha3} value={c.alpha3}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                      <FieldError
-                        id="err-swiftBankCountry"
-                        message={fieldErrors.swiftBankCountry}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="swift-bank-state">
-                        {t('subdivision')}
-                      </Label>
-                      <Input
-                        id="swift-bank-state"
-                        value={swiftBankState}
-                        onChange={(event) =>
-                          setSwiftBankState(event.target.value)
-                        }
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                  </div>
+                  <AddressFormFields
+                    idPrefix="swift-bank"
+                    streetLine1={swiftBankStreet}
+                    onStreetLine1Change={setSwiftBankStreet}
+                    city={swiftBankCity}
+                    onCityChange={setSwiftBankCity}
+                    postalCode={swiftBankPostal}
+                    onPostalCodeChange={setSwiftBankPostal}
+                    postalRequired={false}
+                    country={swiftBankCountry}
+                    onCountryChange={setSwiftBankCountry}
+                    countryOptions={COUNTRIES}
+                    subdivision={swiftBankState}
+                    onSubdivisionChange={setSwiftBankState}
+                    subdivisionRequired={false}
+                    disabled={isSubmitting}
+                    fieldErrors={fieldErrors}
+                    onClearFieldError={clearFieldError}
+                    errorKeys={{
+                      street: 'swiftBankStreet',
+                      city: 'swiftBankCity',
+                      country: 'swiftBankCountry',
+                    }}
+                  />
                 </FormSection>
               ) : null}
+            </form>
+          ) : step === 'compliance' ? (
+            // Step 3 — beneficiary address + transfer details
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto w-fit gap-1.5 px-0 py-1 text-2 text-muted-foreground hover:text-foreground"
+                  disabled={isSubmitting}
+                  onClick={handleBack}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {t('back')}
+                </Button>
+                <span className="text-1 text-muted-foreground">
+                  {t('stepOf', { current: '3', total: '4' })}
+                </span>
+              </div>
+
+              {/* Account holder context badge */}
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-1 text-muted-foreground">
+                    {accountOwnerType === 'business'
+                      ? t('businessName')
+                      : t('accountHolderSection')}
+                  </span>
+                  <span className="text-2 font-semibold text-foreground">
+                    {accountOwnerType === 'business'
+                      ? businessName.trim() || accountOwnerName.trim()
+                      : `${firstName.trim()} ${lastName.trim()}`.trim()}
+                  </span>
+                </span>
+              </div>
 
               {/* Beneficiary address */}
               <FormSection title={t('addressSection')}>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-street">{t('street')}</Label>
-                  <Input
-                    id="payout-street"
-                    value={streetLine1}
-                    onChange={(event) => {
-                      setStreetLine1(event.target.value);
-                      clearFieldError('street');
-                    }}
-                    placeholder={t('streetPlaceholder')}
-                    maxLength={STREET_MAX_LENGTH}
-                    disabled={isSubmitting}
-                    aria-invalid={fieldErrors.street ? true : undefined}
-                    aria-describedby={
-                      fieldErrors.street ? 'err-street' : undefined
-                    }
-                    className={cn(inputErrorClass('street'))}
-                  />
-                  <FieldError id="err-street" message={fieldErrors.street} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-street2">{t('street2')}</Label>
-                  <Input
-                    id="payout-street2"
-                    value={streetLine2}
-                    onChange={(event) => setStreetLine2(event.target.value)}
-                    placeholder={t('street2Placeholder')}
-                    maxLength={STREET_MAX_LENGTH}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="payout-city">{t('city')}</Label>
-                    <Input
-                      id="payout-city"
-                      value={city}
-                      onChange={(event) => {
-                        setCity(event.target.value);
-                        clearFieldError('city');
-                      }}
-                      disabled={isSubmitting}
-                      aria-invalid={fieldErrors.city ? true : undefined}
-                      aria-describedby={
-                        fieldErrors.city ? 'err-city' : undefined
-                      }
-                      className={cn(inputErrorClass('city'))}
-                    />
-                    <FieldError id="err-city" message={fieldErrors.city} />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="payout-subdivision">
-                      {isUsAddress ? t('subdivisionUs') : t('subdivision')}
-                    </Label>
-                    <Input
-                      id="payout-subdivision"
-                      value={subdivision}
-                      onChange={(event) => {
-                        setSubdivision(event.target.value);
-                        clearFieldError('subdivision');
-                      }}
-                      placeholder={isUsAddress ? 'CA' : undefined}
-                      maxLength={isUsAddress ? 2 : undefined}
-                      disabled={isSubmitting}
-                      aria-invalid={fieldErrors.subdivision ? true : undefined}
-                      aria-describedby={
-                        fieldErrors.subdivision ? 'err-subdivision' : undefined
-                      }
-                      className={cn(inputErrorClass('subdivision'))}
-                    />
-                    <FieldError
-                      id="err-subdivision"
-                      message={fieldErrors.subdivision}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="payout-postal">{t('postalCode')}</Label>
-                    <Input
-                      id="payout-postal"
-                      value={postalCode}
-                      onChange={(event) => {
-                        setPostalCode(event.target.value);
-                        clearFieldError('postal');
-                      }}
-                      disabled={isSubmitting}
-                      aria-invalid={fieldErrors.postal ? true : undefined}
-                      aria-describedby={
-                        fieldErrors.postal ? 'err-postal' : undefined
-                      }
-                      className={cn(inputErrorClass('postal'))}
-                    />
-                    <FieldError id="err-postal" message={fieldErrors.postal} />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="payout-country">{t('country')}</Label>
-                    <select
-                      id="payout-country"
-                      className={cn(
-                        'h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-                        fieldErrors.country &&
-                          'border-destructive ring-1 ring-destructive',
-                      )}
-                      value={country}
-                      onChange={(event) => {
-                        setCountry(event.target.value);
-                        clearFieldError('country');
-                      }}
-                      disabled={isSubmitting}
-                      aria-invalid={fieldErrors.country ? true : undefined}
-                      aria-describedby={
-                        fieldErrors.country ? 'err-country' : undefined
-                      }
-                    >
-                      <option value="">{t('countryPlaceholder')}</option>
-                      {countryOptions.map((c) => (
-                        <option key={c.alpha3} value={c.alpha3}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    <FieldError
-                      id="err-country"
-                      message={fieldErrors.country}
-                    />
-                  </div>
-                </div>
+                <AddressFormFields
+                  idPrefix="beneficiary"
+                  streetLine1={streetLine1}
+                  onStreetLine1Change={setStreetLine1}
+                  streetLine2={streetLine2}
+                  onStreetLine2Change={setStreetLine2}
+                  city={city}
+                  onCityChange={setCity}
+                  postalCode={postalCode}
+                  onPostalCodeChange={setPostalCode}
+                  country={country}
+                  onCountryChange={setCountry}
+                  countryOptions={countryOptions}
+                  subdivision={subdivision}
+                  onSubdivisionChange={setSubdivision}
+                  subdivisionLabel={
+                    isUsAddress ? t('subdivisionUs') : t('subdivision')
+                  }
+                  subdivisionRequired={isUsAddress}
+                  subdivisionMaxLength={isUsAddress ? 2 : undefined}
+                  subdivisionPlaceholder={isUsAddress ? 'CA' : undefined}
+                  disabled={isSubmitting}
+                  fieldErrors={fieldErrors}
+                  onClearFieldError={clearFieldError}
+                />
               </FormSection>
 
-              {/* SWIFT compliance */}
+              {/* SWIFT transfer details */}
               {selectedCurrency === 'swift' ? (
                 <FormSection title={t('swift.complianceSection')}>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="swift-category">
                       {t('swift.categoryLabel')}
                     </Label>
-                    <select
-                      id="swift-category"
-                      className={cn(
-                        'h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-                        fieldErrors.swiftCategory &&
-                          'border-destructive ring-1 ring-destructive',
-                      )}
-                      value={swiftCategory}
-                      onChange={(event) => {
-                        setSwiftCategory(event.target.value);
-                        clearFieldError('swiftCategory');
-                      }}
-                      disabled={isSubmitting}
-                      aria-invalid={
-                        fieldErrors.swiftCategory ? true : undefined
-                      }
-                      aria-describedby={
-                        fieldErrors.swiftCategory
-                          ? 'err-swiftCategory'
-                          : undefined
-                      }
-                    >
-                      <option value="">{t('swift.categoryPlaceholder')}</option>
-                      <option value="client">
-                        {t('swift.categoryClient')}
-                      </option>
-                      <option value="parent_company">
-                        {t('swift.categoryParentCompany')}
-                      </option>
-                      <option value="subsidiary">
-                        {t('swift.categorySubsidiary')}
-                      </option>
-                      <option value="supplier">
-                        {t('swift.categorySupplier')}
-                      </option>
-                    </select>
+                    <div className="relative flex min-h-6 w-full items-center">
+                      <select
+                        id="swift-category"
+                        className={cn(
+                          'min-h-6 w-full appearance-none rounded border border-input bg-neutral-1 px-3 py-2 text-2 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                          fieldErrors.swiftCategory &&
+                            'border-destructive ring-2 ring-destructive',
+                        )}
+                        value={swiftCategory}
+                        onChange={(event) => {
+                          setSwiftCategory(event.target.value);
+                          clearFieldError('swiftCategory');
+                        }}
+                        disabled={isSubmitting}
+                        aria-invalid={
+                          fieldErrors.swiftCategory ? true : undefined
+                        }
+                        aria-describedby={
+                          fieldErrors.swiftCategory
+                            ? 'err-swiftCategory'
+                            : undefined
+                        }
+                      >
+                        <option value="">
+                          {t('swift.categoryPlaceholder')}
+                        </option>
+                        <option value="client">
+                          {t('swift.categoryClient')}
+                        </option>
+                        <option value="parent_company">
+                          {t('swift.categoryParentCompany')}
+                        </option>
+                        <option value="subsidiary">
+                          {t('swift.categorySubsidiary')}
+                        </option>
+                        <option value="supplier">
+                          {t('swift.categorySupplier')}
+                        </option>
+                      </select>
+                    </div>
                     <FieldError
                       id="err-swiftCategory"
                       message={fieldErrors.swiftCategory}
@@ -1269,9 +1303,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   </div>
                 </FormSection>
               ) : null}
-            </form>
+            </div>
           ) : (
-            // Review step
+            // Step 4 — review
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <Button
@@ -1286,7 +1320,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   {t('back')}
                 </Button>
                 <span className="text-1 text-muted-foreground">
-                  {t('stepOf', { current: '3', total: '3' })}
+                  {t('stepOf', { current: '4', total: '4' })}
                 </span>
               </div>
 
@@ -1327,6 +1361,16 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     {swiftAccountFormat === 'iban' && iban ? (
                       <ReviewRow label={t('iban')} value={iban} />
                     ) : null}
+                    {swiftAccountFormat === 'iban' && swiftIbanCountry ? (
+                      <ReviewRow
+                        label={t('country')}
+                        value={
+                          SEPA_COUNTRIES.find(
+                            (c) => c.alpha3 === swiftIbanCountry,
+                          )?.name ?? swiftIbanCountry
+                        }
+                      />
+                    ) : null}
                     {swiftAccountFormat === 'other' && accountNumber ? (
                       <ReviewRow
                         label={t('swift.accountNumber')}
@@ -1347,22 +1391,38 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       .join(', ')}
                   </p>
                   <p className="text-2 text-foreground">
-                    {SEPA_COUNTRIES.find((c) => c.alpha3 === swiftBankCountry)
+                    {COUNTRIES.find((c) => c.alpha3 === swiftBankCountry)
                       ?.name ?? swiftBankCountry}
                   </p>
                 </FormSection>
               ) : null}
 
               <FormSection title={t('accountHolderSection')}>
-                {accountOwnerName ? (
-                  <ReviewRow
-                    label={t('accountOwnerName')}
-                    value={accountOwnerName}
-                  />
-                ) : null}
-                {businessName ? (
-                  <ReviewRow label={t('businessName')} value={businessName} />
-                ) : null}
+                {accountOwnerType === 'individual' ? (
+                  <>
+                    {firstName ? (
+                      <ReviewRow label={t('firstName')} value={firstName} />
+                    ) : null}
+                    {lastName ? (
+                      <ReviewRow label={t('lastName')} value={lastName} />
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    {accountOwnerName ? (
+                      <ReviewRow
+                        label={t('accountOwnerName')}
+                        value={accountOwnerName}
+                      />
+                    ) : null}
+                    {businessName ? (
+                      <ReviewRow
+                        label={t('businessName')}
+                        value={businessName}
+                      />
+                    ) : null}
+                  </>
+                )}
               </FormSection>
 
               <FormSection title={t('addressSection')}>
@@ -1381,13 +1441,31 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   {swiftCategory ? (
                     <ReviewRow
                       label={t('swift.categoryLabel')}
-                      value={swiftCategory}
+                      value={
+                        swiftCategory === 'client'
+                          ? t('swift.categoryClient')
+                          : swiftCategory === 'parent_company'
+                          ? t('swift.categoryParentCompany')
+                          : swiftCategory === 'subsidiary'
+                          ? t('swift.categorySubsidiary')
+                          : swiftCategory === 'supplier'
+                          ? t('swift.categorySupplier')
+                          : swiftCategory
+                      }
                     />
                   ) : null}
                   {swiftPurposeOfFunds.length > 0 ? (
                     <ReviewRow
                       label={t('swift.purposeLabel')}
-                      value={swiftPurposeOfFunds.join(', ')}
+                      value={swiftPurposeOfFunds
+                        .map((v) =>
+                          v === 'intra_group_transfer'
+                            ? t('swift.purposeIntraGroup')
+                            : v === 'invoice_for_goods_and_services'
+                            ? t('swift.purposeInvoice')
+                            : v,
+                        )
+                        .join(', ')}
                     />
                   ) : null}
                   {swiftBusinessDescription ? (
@@ -1410,6 +1488,15 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
 
         <DialogFooter className={BANKING_DIALOG_FOOTER_CLASS}>
           <>
+            {(step === 'form' || step === 'compliance') &&
+            Object.keys(fieldErrors).length > 0 ? (
+              <p
+                className="w-full text-center text-1 text-destructive"
+                role="alert"
+              >
+                {t('formHasErrors')}
+              </p>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -1433,6 +1520,15 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                 colorVariant="accent"
                 disabled={isSubmitting}
                 onClick={() => handleFormContinue()}
+              >
+                {t('continue')}
+              </Button>
+            ) : step === 'compliance' ? (
+              <Button
+                type="button"
+                colorVariant="accent"
+                disabled={isSubmitting}
+                onClick={handleComplianceContinue}
               >
                 {t('continue')}
               </Button>
