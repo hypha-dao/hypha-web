@@ -47,6 +47,22 @@ function effectiveRotation(morph: number, rotate: Rotation): Rotation {
   return morph >= 1 ? FLAT_ROTATION : rotate;
 }
 
+/** Orthographic projects back-hemisphere points onto the visible disk — hide those. */
+function isPinVisibleOnProjection(
+  projection: d3.GeoProjection,
+  longitude: number,
+  latitude: number,
+): boolean {
+  const clipAngle = projection.clipAngle?.();
+  if (clipAngle == null || clipAngle >= 180) {
+    return true;
+  }
+
+  const rotate = projection.rotate();
+  const center: [number, number] = [-rotate[0], -rotate[1]];
+  return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
+}
+
 function buildProjection(
   width: number,
   height: number,
@@ -306,6 +322,11 @@ export function NetworkGlobeMap({
 
       const projected = projection([longitude, latitude]);
       if (!projected) {
+        d3.select(this).style('display', 'none');
+        return;
+      }
+
+      if (!isPinVisibleOnProjection(projection, longitude, latitude)) {
         d3.select(this).style('display', 'none');
         return;
       }
