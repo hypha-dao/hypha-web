@@ -92,18 +92,10 @@ export const ConnectedButtonProfile = ({
             router.push(localizedSignupPath);
           }
         } else if (
-          person?.id &&
-          (pathname === newUserRedirectPath || pathname === localizedSignupPath)
+          isLoggingIn &&
+          pathname !== newUserRedirectPath &&
+          pathname !== localizedSignupPath
         ) {
-          router.push(
-            resolvePostAuthRedirectPathOrDefault({
-              pathname,
-              lang: typeof lang === 'string' ? lang : undefined,
-              baseRedirectPath,
-            }),
-          );
-          setLoggingIn(false);
-        } else if (isLoggingIn) {
           if (!pathname.includes('/onboarding')) {
             router.push(
               resolvePostAuthRedirectPathOrDefault({

@@ -80,15 +80,9 @@ export const useCreateProfile = (
           throw new Error('Profile was created but missing from response');
         }
 
-        // Prevent post-signup redirect guards from briefly treating the user
-        // as profile-less on the next route transition.
-        if (jwt) {
-          await mutate(['/api/v1/people/me', jwt], createdProfile, {
-            revalidate: false,
-          });
-        }
-
         const lang = params?.lang;
+        // Resolve before mutating SWR — ConnectedButtonProfile reacts to person.id
+        // on the signup page and would consume the stored DHO path first.
         const spaceContextReturnPath = resolvePostAuthRedirectPath({
           pathname:
             typeof window !== 'undefined' ? window.location.pathname : '',
@@ -97,6 +91,14 @@ export const useCreateProfile = (
         });
         const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
         const nextPath = spaceContextReturnPath ?? onboardingPath;
+
+        // Prevent post-signup redirect guards from briefly treating the user
+        // as profile-less on the next route transition.
+        if (jwt) {
+          await mutate(['/api/v1/people/me', jwt], createdProfile, {
+            revalidate: false,
+          });
+        }
         if (!spaceContextReturnPath) {
           try {
             window.sessionStorage.setItem(
