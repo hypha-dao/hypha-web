@@ -214,10 +214,10 @@
   </div>
 
   <div class="stats" style="margin-top:18px">
-    <div class="stat"><div class="v accent">$0.05–0.13</div><div class="l">Gas / month · Typical space (range)</div></div>
-    <div class="stat"><div class="v">$0.046</div><div class="l">Verified floor · Typical space</div></div>
+    <div class="stat"><div class="v accent">$0.23–0.40</div><div class="l">Gas / month · Typical space (range)</div></div>
+    <div class="stat"><div class="v">$0.11</div><div class="l">Verified floor · Typical space</div></div>
     <div class="stat"><div class="v warn">$0.035</div><div class="l">One-time setup (verified)</div></div>
-    <div class="stat"><div class="v">130–360×</div><div class="l">AI cost vs gas (Composer Fast)</div></div>
+    <div class="stat"><div class="v">40–150×</div><div class="l">AI cost vs gas (Composer Fast)</div></div>
   </div>
 
   <h3>Verified on-chain measurements (0.005 Gwei · ETH $1,748)</h3>
@@ -239,7 +239,7 @@
   <p class="sub"><strong>Verified one-time setup</strong> (create space + deploy-token proposal + deciding vote that deploys token): 4,036,728 gas → <strong>$0.035</strong>. <strong>Verified recurring proposal</strong> (mint-scale agreement): 378,389 create + 446,949 deciding vote = 825,338 gas → <strong>$0.0072</strong> per proposal, before any non-executing member votes.</p>
 
   <h3>Recurring gas by Space size</h3>
-  <p>Monthly model: each proposal = 1× verified create (378,389) + 1× verified deciding vote (446,949) + treasury transfers (62,135 each). Non-executing member votes are <strong>not measured</strong>; the range adds a sensitivity band of 80k–200k gas per vote (industry-typical DAO range, unverified for Hypha).</p>
+  <p>Assumes <strong>active governance</strong>: more proposals and broader member participation than a quiet space. Each proposal = 1× verified create (378,389) + 1× verified deciding vote (446,949) + treasury transfers (62,135 each). Non-executing member votes are <strong>not measured</strong>; the range adds a sensitivity band of 80k–200k gas per vote (industry-typical DAO range, unverified for Hypha).</p>
   <div class="frame">
     <table>
       <thead><tr>
@@ -247,17 +247,17 @@
         <th class="n">Treasury/mo</th><th class="n">Verified floor</th><th class="n">Range (incl. unmeasured votes)</th>
       </tr></thead>
       <tbody>
-        <tr><td>Light (~5 members)</td><td class="n">2</td><td class="n">6</td><td class="n">4</td><td class="n">1</td><td class="n">$0.015</td><td class="n">$0.015–0.022</td></tr>
-        <tr><td><strong>Typical (~15 members)</strong></td><td class="n">6</td><td class="n">54</td><td class="n">48</td><td class="n">5</td><td class="n">$0.046</td><td class="n"><strong>$0.05–0.13</strong></td></tr>
-        <tr><td>Heavy (~50 members)</td><td class="n">20</td><td class="n">600</td><td class="n">580</td><td class="n">20</td><td class="n">$0.15</td><td class="n">$0.56–1.17</td></tr>
+        <tr><td>Light (~5 members)</td><td class="n">5</td><td class="n">30</td><td class="n">25</td><td class="n">3</td><td class="n">$0.036</td><td class="n">$0.05–0.08</td></tr>
+        <tr><td><strong>Typical (~15 members)</strong></td><td class="n">15</td><td class="n">180</td><td class="n">165</td><td class="n">12</td><td class="n">$0.11</td><td class="n"><strong>$0.23–0.40</strong></td></tr>
+        <tr><td>Heavy (~50 members)</td><td class="n">50</td><td class="n">2,000</td><td class="n">1,950</td><td class="n">50</td><td class="n">$0.39</td><td class="n">$1.75–3.80</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="sub">Verified floor counts only measured operations. The upper bound assumes non-executing votes at 200k gas each — still unverified. A Heavy space with a token-deploy proposal in a given month would add ~$0.023 (verified deploy vote) on top of these figures.</p>
+  <p class="sub">Activity assumptions: Typical ≈ 1 proposal every 2 days, ~12 member votes per proposal on average. Light ≈ 1/week with ~6 votes each. Heavy ≈ 1–2/day across a 50-member ecosystem with ~40 votes per proposal. Verified floor counts only measured operations; upper bound assumes non-executing votes at 200k gas each — still unverified.</p>
 
   <div class="callout">
     <div class="t">Gas remains negligible vs AI</div>
-    <p>Even at the upper bound, a Typical space pays <strong>$0.05–0.13/month</strong> on-chain vs <strong>$16.52/month</strong> for AI (Composer 2.5 Fast) — roughly <strong>130–360× less</strong>. The verified floor alone ($0.046/mo) is <strong>~360× smaller</strong> than AI. Gas is not the cost driver.</p>
+    <p>Even with active governance, a Typical space pays <strong>$0.23–0.40/month</strong> on-chain vs <strong>$16.52/month</strong> for AI (Composer 2.5 Fast) — roughly <strong>40–150× less</strong>. Only at Heavy scale with maximum unverified vote assumptions does gas approach a few dollars/month — still well below AI for most Spaces.</p>
   </div>
   <p class="sub"><strong>Caveats.</strong> L2 execution gas only at 0.005 Gwei; Base adds a small L1 data fee per tx (typically sub-cent). Gas scales linearly with gas price. Who pays (member wallets vs. paymaster) is separate from the aggregate cost shown here. Re-run <code>gas-cost-analysis.ts</code> on Base to capture a non-executing vote and a successful join.</p>
 

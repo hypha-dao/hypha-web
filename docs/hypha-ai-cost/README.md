@@ -198,19 +198,19 @@ In Hypha, a passing proposal **auto-executes on the deciding vote** — there is
 
 ### Recurring gas by Space size
 
-Each proposal = 1× verified create (378,389) + 1× verified deciding vote (446,949) + treasury transfers (62,135 each). Non-executing member votes are **not measured**; the range adds an unverified sensitivity band of 80k–200k gas per vote.
+Assumes **active governance** — more proposals and broader member participation than a quiet space. Each proposal = 1× verified create (378,389) + 1× verified deciding vote (446,949) + treasury transfers (62,135 each). Non-executing member votes are **not measured**; the range adds an unverified sensitivity band of 80k–200k gas per vote.
 
 | Profile | Proposals/mo | Votes/mo | Non-exec votes | Treasury/mo | Verified floor | Range (incl. unmeasured votes) |
 |---|--:|--:|--:|--:|--:|--:|
-| Light (~5) | 2 | 6 | 4 | 1 | $0.015 | $0.015–0.022 |
-| **Typical (~15)** | **6** | **54** | **48** | **5** | **$0.046** | **$0.05–0.13** |
-| Heavy (~50) | 20 | 600 | 580 | 20 | $0.15 | $0.56–1.17 |
+| Light (~5) | 5 | 30 | 25 | 3 | $0.036 | $0.05–0.08 |
+| **Typical (~15)** | **15** | **180** | **165** | **12** | **$0.11** | **$0.23–0.40** |
+| Heavy (~50) | 50 | 2,000 | 1,950 | 50 | $0.39 | $1.75–3.80 |
 
-The verified floor counts only measured operations. The upper bound assumes non-executing votes at 200k gas each — still unverified for Hypha. A Heavy space running a token-deploy proposal in a given month adds ~$0.023 (verified) on top.
+**Activity assumptions:** Typical ≈ 1 proposal every 2 days, ~12 member votes per proposal. Light ≈ 1/week with ~6 votes each. Heavy ≈ 1–2/day across a 50-member ecosystem with ~40 votes per proposal. Verified floor counts only measured operations; upper bound assumes non-executing votes at 200k gas each — still unverified.
 
 ### Gas vs AI
 
-Even at the upper bound, a Typical space pays **$0.05–0.13/month** on-chain vs **$16.52/month** for AI (Composer 2.5 Fast) — roughly **130–360× less**. The verified floor alone ($0.046/mo) is **~360× smaller** than AI.
+Even with active governance, a Typical space pays **$0.23–0.40/month** on-chain vs **$16.52/month** for AI (Composer 2.5 Fast) — roughly **40–150× less**. Only at Heavy scale with maximum unverified vote assumptions does gas approach a few dollars/month.
 
 **Caveats:** L2 execution gas only; Base adds a small L1 data fee per tx. Gas scales linearly with gas price. Re-run `gas-cost-analysis.ts` on Base to capture a non-executing vote and a successful join.
 
