@@ -16,3 +16,4 @@ export {
 } from './banking/bridge-destination-currencies';
 export { DEFAULT_BANK_PROVIDER } from './banking/constants';
 export type { BankProvider } from './banking/types';
+export { emailsMatchForBypass } from './banking/normalize-email-for-bypass';

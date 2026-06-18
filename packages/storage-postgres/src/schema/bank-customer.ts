@@ -6,6 +6,7 @@ import {
   serial,
   text,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
@@ -23,7 +24,8 @@ export const bankCustomers = pgTable(
     entityType: text('entity_type').notNull(),
     provider: text('provider').notNull(),
     providerCustomerId: text('provider_customer_id'),
-    providerKycLinkId: text('provider_kyc_link_id').notNull(),
+    providerKycLinkId: text('provider_kyc_link_id'),
+    jwtNonce: uuid('jwt_nonce'),
     requestedRails: jsonb('requested_rails')
       .$type<BankCustomerRequestedRails>()
       .notNull()

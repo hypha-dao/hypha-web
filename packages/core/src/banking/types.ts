@@ -66,6 +66,14 @@ export type BankOnboardingResult = {
   };
 };
 
+export type PendingEmailConfirmationStatus = {
+  requestedRails: string[];
+};
+
+export type PendingEmailConfirmationResult = {
+  status: 'pending_email_confirmation';
+};
+
 export type RequestSpaceBankOnboardingInput = {
   spaceSlug: string;
   authToken: string;

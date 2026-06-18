@@ -4,6 +4,7 @@ import type { BankCustomer } from '@hypha-platform/storage-postgres';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import type {
   BankEndorsementPublicStatus,
+  PendingEmailConfirmationStatus,
   BankPendingRequirements,
   BankRailPublicStatus,
   BankValidationRequirement,
@@ -47,6 +48,7 @@ export type SpaceBankCustomerPublicStatus = {
     validation: BankValidationRequirement;
   }>;
   requestedRails: string[];
+  pendingEmailConfirmation?: PendingEmailConfirmationStatus;
   /** Missing requirements that need user action beyond the main KYB flow. */
   pendingRequirements?: BankPendingRequirements;
 };
@@ -72,6 +74,41 @@ function mapCurrencyStatuses(
   });
 }
 
+function buildDefaultPendingProcedures(): SpaceBankCustomerPublicStatus['procedures'] {
+  return {
+    tos: {
+      key: 'tos',
+      status: 'pending',
+      isComplete: false,
+    },
+    kyc: {
+      key: 'kyc',
+      status: 'not_started',
+      isComplete: false,
+    },
+  };
+}
+
+export function buildPendingEmailConfirmationPublicStatus(
+  customer: BankCustomer,
+): SpaceBankCustomerPublicStatus {
+  const requestedRails = customer.requestedRails ?? [];
+
+  return {
+    hasCustomer: true,
+    isApproved: false,
+    approvalRegistered: false,
+    procedures: buildDefaultPendingProcedures(),
+    railStatuses: [],
+    endorsementStatuses: [],
+    currencyStatuses: [],
+    requestedRails,
+    pendingEmailConfirmation: {
+      requestedRails,
+    },
+  };
+}
+
 export async function getSpaceBankCustomerPublicStatus(
   space: Pick<Space, 'id' | 'title'>,
   { db }: { db: DatabaseInstance },
@@ -83,6 +120,10 @@ export async function getSpaceBankCustomerPublicStatus(
 
   if (!customer) {
     return null;
+  }
+
+  if (customer.jwtNonce && !customer.providerKycLinkId) {
+    return buildPendingEmailConfirmationPublicStatus(customer);
   }
 
   return buildPublicStatusFromCustomer(customer, { db });

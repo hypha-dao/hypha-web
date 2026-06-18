@@ -725,7 +725,7 @@
     },
     "tosStatus": {
       "pending": {
-        "title": "Terms not accepted",
+        "title": "Verification not started",
         "description": "Accept the terms of service to continue."
       },
       "approved": {
@@ -937,11 +937,33 @@
       "title": "Enable bank deposits",
       "description": "We use this information to verify your organization. Once approved, your space will be set up to receive bank transfers.",
       "legalName": "Legal entity name",
-      "contactEmail": "Contact email",
+      "contactEmail": "Space or administrator contact email",
+      "contactEmailHelper": "This email will be registered with our provider (Bridge).",
+      "authorizeOwnEmail": "I confirm I am authorized to register this email for Bridge bank integration on behalf of this space.",
       "endorsementsLabel": "Payment rails",
       "endorsementsHint": "These are Bridge KYB endorsements (e.g. base for USD, sepa for EUR). Each selected rail is included in the verification link.",
       "submit": "Start verification",
       "submitting": "Starting…"
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirm contact email",
+      "statusPending": "Pending confirmation",
+      "contactEmailLabel": "Space or administrator contact email",
+      "railsLabel": "Payment rails",
+      "resendCheckbox": "Send a new confirmation email",
+      "resendHelper": "Sending a new email will invalidate the previous confirmation link.",
+      "submit": "Send",
+      "submitting": "Sending…"
+    },
+    "emailConfirmation": {
+      "verifyPage": {
+        "loading": "Confirming your email…",
+        "missingToken": "This confirmation link is invalid.",
+        "successTitle": "Email confirmed",
+        "successBody": "Thank you. Bank verification can continue for the space.",
+        "failureTitle": "Confirmation failed",
+        "failureBody": "This link is invalid or has expired. Ask the space admin to send a new confirmation email."
+      }
     },
     "status": {
       "not_started": {
