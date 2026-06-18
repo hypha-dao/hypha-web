@@ -175,9 +175,14 @@ tokens/month**:
 
 Governance, treasury and membership settle on **Base**. Gas units below are from **verified Base mainnet receipts** in `packages/storage-evm/scripts/base-mainnet-contracts-scripts/gas-cost-analysis-results.json` (Aug 2025), re-priced at **0.005 Gwei** and **ETH $1,748** (June 2026). Unmeasured operations are labeled and excluded from verified totals.
 
-### Execution is bundled into the deciding vote
+### Two vote types — most votes do not execute
 
-In Hypha, a passing proposal **auto-executes on the deciding vote** — there is no separate execution transaction. Measured vote gas **includes agreement execution** (447k for a mint-scale agreement; 2.5M when the vote also deploys a token). Do not add a separate "execution" line on top of vote gas.
+In Hypha, a passing proposal **auto-executes on the deciding vote** — there is no separate execution transaction.
+
+- **Non-executing vote:** a member casts yes/no while the proposal is still open. Records voting power but **does not run the agreement** on-chain.
+- **Deciding vote:** the vote that reaches quorum/unity and **auto-executes** the proposal via the Executor (447k gas verified for a mint-scale agreement — execution bundled in this tx; 2.5M when the vote also deploys a token).
+
+Every proposal has exactly **1 deciding vote** and typically **many more non-executing votes**. Do not add a separate "execution" line on top of deciding-vote gas.
 
 ### Verified measurements
 
@@ -196,21 +201,28 @@ In Hypha, a passing proposal **auto-executes on the deciding vote** — there is
 
 **Verified recurring proposal** (mint-scale agreement): 378,389 create + 446,949 deciding vote = **825,338 gas → $0.0072** per proposal, before non-executing member votes.
 
+### Two vote types — most votes do not execute
+
+- **Non-executing vote:** a member casts yes/no while the proposal is still open. Records voting power but **does not run the agreement** on-chain.
+- **Deciding vote:** the vote that reaches quorum/unity and **auto-executes** the proposal via the Executor (447k gas verified for a mint-scale agreement — execution bundled in this tx).
+
+Every proposal has exactly **1 deciding vote** and typically **many more non-executing votes**. The monthly model reflects this ratio explicitly.
+
 ### Recurring gas by Space size
 
-Assumes **active governance** — more proposals and broader member participation than a quiet space. Each proposal = 1× verified create (378,389) + 1× verified deciding vote (446,949) + treasury transfers (62,135 each). Non-executing member votes are **not measured**; the range adds an unverified sensitivity band of 80k–200k gas per vote.
+Assumes **active governance** with high member participation. Per proposal: 1× verified create + 1× verified deciding vote (includes execution) + **(N−1) non-executing votes** where N = members voting. Non-executing vote gas is **not measured**; the range uses 80k–200k gas each (unverified sensitivity band).
 
-| Profile | Proposals/mo | Votes/mo | Non-exec votes | Treasury/mo | Verified floor | Range (incl. unmeasured votes) |
-|---|--:|--:|--:|--:|--:|--:|
-| Light (~5) | 5 | 30 | 25 | 3 | $0.036 | $0.05–0.08 |
-| **Typical (~15)** | **15** | **180** | **165** | **12** | **$0.11** | **$0.23–0.40** |
-| Heavy (~50) | 50 | 2,000 | 1,950 | 50 | $0.39 | $1.75–3.80 |
+| Profile | Proposals/mo | Deciding votes | Non-exec votes | Ratio | Treasury/mo | Verified floor | Range (incl. non-exec) |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| Light (~5) | 5 | 5 | 20 | 4:1 | 3 | $0.036 | $0.05–0.07 |
+| **Typical (~15)** | **15** | **15** | **195** | **13:1** | **12** | **$0.12** | **$0.25–0.46** |
+| Heavy (~50) | 50 | 50 | 2,200 | 44:1 | 50 | $0.39 | $2.0–4.3 |
 
-**Activity assumptions:** Typical ≈ 1 proposal every 2 days, ~12 member votes per proposal. Light ≈ 1/week with ~6 votes each. Heavy ≈ 1–2/day across a 50-member ecosystem with ~40 votes per proposal. Verified floor counts only measured operations; upper bound assumes non-executing votes at 200k gas each — still unverified.
+**Vote participation:** Typical ≈ 14 of 15 members vote per proposal (1 deciding + 13 non-exec). Light ≈ 5 of 5 (4:1). Heavy ≈ 45 of 50 (44:1). At these ratios, **non-executing votes dominate total gas** in the sensitivity range — there are far more of them, even though each one is cheaper than a deciding vote.
 
 ### Gas vs AI
 
-Even with active governance, a Typical space pays **$0.23–0.40/month** on-chain vs **$16.52/month** for AI (Composer 2.5 Fast) — roughly **40–150× less**. Only at Heavy scale with maximum unverified vote assumptions does gas approach a few dollars/month.
+Even with active governance, a Typical space pays **$0.25–0.46/month** on-chain vs **$16.52/month** for AI (Composer 2.5 Fast) — roughly **36–65× less**. Only at Heavy scale with maximum assumptions does gas approach a few dollars/month.
 
 **Caveats:** L2 execution gas only; Base adds a small L1 data fee per tx. Gas scales linearly with gas price. Re-run `gas-cost-analysis.ts` on Base to capture a non-executing vote and a successful join.
 
