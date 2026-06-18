@@ -7,9 +7,11 @@ import {
 } from '@hypha-platform/core/client';
 import { Button, FormLabel, Input, Label } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import * as d3 from 'd3';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import React from 'react';
+import { loadLandGeo } from '../../network-map/lib/load-land-geo';
 
 export type SpaceLocationValue = {
   latitude: number | null;
@@ -56,6 +58,42 @@ export function SpaceLocationPicker({
   const t = useTranslations('SpaceLocation');
   const mapRef = React.useRef<HTMLDivElement>(null);
   const { query, setQuery, results, isSearching, error } = useGeocodeSearch();
+  const [landPath, setLandPath] = React.useState<string | null>(null);
+  const [isLoadingLand, setIsLoadingLand] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    loadLandGeo()
+      .then((land) => {
+        if (cancelled) {
+          return;
+        }
+        const projection = d3.geoEquirectangular().fitExtent(
+          [
+            [0, 0],
+            [MAP_WIDTH, MAP_HEIGHT],
+          ],
+          land,
+        );
+        const path = d3.geoPath(projection);
+        setLandPath(path(land) ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLandPath(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingLand(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const hasPin =
     value.latitude != null &&
@@ -234,44 +272,59 @@ export function SpaceLocationPicker({
           }}
           className={cn(
             'relative overflow-hidden rounded-md border border-border',
-            'bg-gradient-to-b from-accent-3 to-accent-2',
+            'bg-[var(--blue-4,#1e3a5f)]',
             disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-crosshair',
           )}
           style={{ width: '100%', maxWidth: MAP_WIDTH, aspectRatio: '2 / 1' }}
         >
+          {isLoadingLand ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="size-5 animate-spin text-neutral-11" />
+            </div>
+          ) : null}
           <svg
             viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-            className="absolute inset-0 h-full w-full opacity-30"
+            className="absolute inset-0 h-full w-full"
             aria-hidden
           >
-            {Array.from({ length: 7 }).map((_, index) => {
-              const y = (index / 6) * MAP_HEIGHT;
-              return (
-                <line
-                  key={`lat-${index}`}
-                  x1={0}
-                  y1={y}
-                  x2={MAP_WIDTH}
-                  y2={y}
-                  stroke="currentColor"
-                  strokeWidth={0.5}
-                />
-              );
-            })}
-            {Array.from({ length: 13 }).map((_, index) => {
-              const x = (index / 12) * MAP_WIDTH;
-              return (
-                <line
-                  key={`lng-${index}`}
-                  x1={x}
-                  y1={0}
-                  x2={x}
-                  y2={MAP_HEIGHT}
-                  stroke="currentColor"
-                  strokeWidth={0.5}
-                />
-              );
-            })}
+            {landPath ? (
+              <path
+                d={landPath}
+                fill="var(--neutral-6, #444)"
+                stroke="var(--neutral-9, #ccc)"
+                strokeWidth={0.5}
+              />
+            ) : null}
+            <g className="opacity-25">
+              {Array.from({ length: 7 }).map((_, index) => {
+                const y = (index / 6) * MAP_HEIGHT;
+                return (
+                  <line
+                    key={`lat-${index}`}
+                    x1={0}
+                    y1={y}
+                    x2={MAP_WIDTH}
+                    y2={y}
+                    stroke="currentColor"
+                    strokeWidth={0.5}
+                  />
+                );
+              })}
+              {Array.from({ length: 13 }).map((_, index) => {
+                const x = (index / 12) * MAP_WIDTH;
+                return (
+                  <line
+                    key={`lng-${index}`}
+                    x1={x}
+                    y1={0}
+                    x2={x}
+                    y2={MAP_HEIGHT}
+                    stroke="currentColor"
+                    strokeWidth={0.5}
+                  />
+                );
+              })}
+            </g>
           </svg>
           {pinPosition ? (
             <span

@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import * as d3 from 'd3';
-import { feature } from 'topojson-client';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
@@ -14,9 +13,8 @@ import type {
   NetworkMapLayerVisibility,
   NetworkMapProjectionMode,
 } from '../lib/types';
+import { loadLandGeo } from '../lib/load-land-geo';
 import { cartesian, rotationDelta } from '../lib/versor';
-
-const GEO_LAND_URL = '/geo/land-110m.json';
 const PROJECTION_ANIMATION_MS = 1200;
 
 function pinColor(id: number): string {
@@ -200,24 +198,12 @@ export function NetworkGlobeMap({
     setIsLoadingGeo(true);
     setLoadError(null);
 
-    fetch(GEO_LAND_URL)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load map data (${response.status})`);
-        }
-        return response.json() as Promise<unknown>;
-      })
-      .then((topology) => {
+    loadLandGeo()
+      .then((land) => {
         if (cancelled) {
           return;
         }
-        const topo = topology as Parameters<typeof feature>[0] & {
-          objects: { land: Parameters<typeof feature>[1] };
-        };
-        landRef.current = feature(
-          topo,
-          topo.objects.land,
-        ) as d3.GeoPermissibleObjects;
+        landRef.current = land;
         setIsLoadingGeo(false);
         renderMap();
       })
