@@ -171,6 +171,51 @@ tokens/month**:
 
 ---
 
+## On-chain (gas) cost per Space — Base
+
+Governance, treasury and membership settle on **Base**. Gas units below are from **verified Base mainnet receipts** in `packages/storage-evm/scripts/base-mainnet-contracts-scripts/gas-cost-analysis-results.json` (Aug 2025), re-priced at **0.005 Gwei** and **ETH $1,748** (June 2026). Unmeasured operations are labeled and excluded from verified totals.
+
+### Execution is bundled into the deciding vote
+
+In Hypha, a passing proposal **auto-executes on the deciding vote** — there is no separate execution transaction. Measured vote gas **includes agreement execution** (447k for a mint-scale agreement; 2.5M when the vote also deploys a token). Do not add a separate "execution" line on top of vote gas.
+
+### Verified measurements
+
+| Operation | When | Status | Gas units | Cost (USD) | Tx / note |
+|---|---|---|--:|--:|---|
+| Vote + auto-execute (token deploy) | Setup | Verified | 2,549,025 | $0.0223 | `0x1f7ed7f4…` |
+| Space creation | Setup | Verified | 960,285 | $0.0084 | `0xb6b98a19…` |
+| Proposal creation (token deploy) | Setup | Verified | 527,418 | $0.0046 | `0x64e3d917…` |
+| Vote + auto-execute (token mint) | Recurring | Verified | 446,949 | $0.0039 | `0x3f0d5487…` · deciding vote incl. execution |
+| Proposal creation (token mint) | Recurring | Verified | 378,389 | $0.0033 | `0xab9a53ae…` · typical agreement proposal |
+| USDC transfer (ERC-20) | Recurring | Verified | 62,135 | $0.0005 | `0x80e51f14…` |
+| Member join | Recurring | **Estimated** | 100,000 | $0.0009 | tx failed in analysis run |
+| Non-executing vote | Recurring | **Not measured** | — | — | no successful mainnet receipt in repo |
+
+**Verified one-time setup** (create + deploy-token proposal + deciding deploy vote): **4,036,728 gas → $0.035**.
+
+**Verified recurring proposal** (mint-scale agreement): 378,389 create + 446,949 deciding vote = **825,338 gas → $0.0072** per proposal, before non-executing member votes.
+
+### Recurring gas by Space size
+
+Each proposal = 1× verified create (378,389) + 1× verified deciding vote (446,949) + treasury transfers (62,135 each). Non-executing member votes are **not measured**; the range adds an unverified sensitivity band of 80k–200k gas per vote.
+
+| Profile | Proposals/mo | Votes/mo | Non-exec votes | Treasury/mo | Verified floor | Range (incl. unmeasured votes) |
+|---|--:|--:|--:|--:|--:|--:|
+| Light (~5) | 2 | 6 | 4 | 1 | $0.015 | $0.015–0.022 |
+| **Typical (~15)** | **6** | **54** | **48** | **5** | **$0.046** | **$0.05–0.13** |
+| Heavy (~50) | 20 | 600 | 580 | 20 | $0.15 | $0.56–1.17 |
+
+The verified floor counts only measured operations. The upper bound assumes non-executing votes at 200k gas each — still unverified for Hypha. A Heavy space running a token-deploy proposal in a given month adds ~$0.023 (verified) on top.
+
+### Gas vs AI
+
+Even at the upper bound, a Typical space pays **$0.05–0.13/month** on-chain vs **$16.52/month** for AI (Composer 2.5 Fast) — roughly **130–360× less**. The verified floor alone ($0.046/mo) is **~360× smaller** than AI.
+
+**Caveats:** L2 execution gas only; Base adds a small L1 data fee per tx. Gas scales linearly with gas price. Re-run `gas-cost-analysis.ts` on Base to capture a non-executing vote and a successful join.
+
+---
+
 ## Levers to reduce cost (any model)
 
 1. **Trim the system prompt / cache it.** It's ~5.6k tokens re-sent every step. Prompt
@@ -194,6 +239,8 @@ tokens/month**:
 - Token volumes & feature inventory: `packages/chat-server` (system prompt, 6-step
   tool loop), `packages/core/src/coherence/server/signal-orchestrator.ts`,
   `packages/core/src/governance/server/call-artifacts.ts`.
+- Gas measurements: `packages/storage-evm/scripts/base-mainnet-contracts-scripts/gas-cost-analysis-results.json`
+  (Base mainnet, Aug 2025).
 
 > An interactive version of this model (toggle Space profile and scope) is also
 > available as a Cursor canvas: `hypha-ai-cost-per-space.canvas.tsx`.

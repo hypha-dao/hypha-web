@@ -61,6 +61,8 @@
   .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--stroke); color: var(--text-2); }
   .tag.live { color: var(--good); border-color: var(--good-soft); background: var(--good-soft); }
   .tag.heur { color: var(--warn); border-color: #3a2f17; background: #251d0f; }
+  .tag.verified { color: var(--good); border-color: var(--good-soft); background: var(--good-soft); }
+  .tag.est { color: var(--warn); border-color: #3a2f17; background: #251d0f; }
 
   .callout { background: var(--accent-soft); border: 1px solid #284468; border-radius: 10px; padding: 14px 16px; margin: 16px 0; }
   .callout .t { font-weight: 650; color: #bcd6f7; margin-bottom: 4px; }
@@ -198,61 +200,66 @@
   <hr />
 
   <h2>On-chain (gas) cost per Space — Base</h2>
-  <p>Governance, treasury and membership actions settle on the <strong>Base</strong> L2. These figures take the <strong>real gas amounts measured on Base mainnet</strong> (from the repo's <code>gas-cost-analysis</code> script) and re-price them at the current network conditions below. At these prices, on-chain activity is effectively free.</p>
+  <p>Governance, treasury and membership actions settle on <strong>Base</strong>. Gas units below come from <strong>verified Base mainnet receipts</strong> captured in <code>packages/storage-evm/scripts/base-mainnet-contracts-scripts/gas-cost-analysis-results.json</code> (Aug 2025), re-priced at the conditions below. Unmeasured operations are labeled explicitly and excluded from verified totals.</p>
   <div class="pill-row">
     <span class="tag">Gas price: 0.005 Gwei</span>
     <span class="tag">ETH: $1,748</span>
-    <span class="tag">Cost per gas unit: ~$0.0000000087</span>
-    <span class="tag">Source: Base mainnet receipts</span>
+    <span class="tag">Verified: 6 mainnet txs</span>
+    <span class="tag est">1 operation estimated (join failed)</span>
+  </div>
+
+  <div class="callout">
+    <div class="t">Execution is bundled into the deciding vote</div>
+    <p>In Hypha, a passing proposal <strong>auto-executes on the deciding vote</strong> — there is no separate execution transaction. Measured vote gas therefore <strong>includes agreement execution</strong> (447k for a mint-scale agreement; 2.5M when the vote also deploys a token). Do not add a separate "execution" line on top of vote gas.</p>
   </div>
 
   <div class="stats" style="margin-top:18px">
-    <div class="stat"><div class="v accent">$0.12</div><div class="l">Gas / month · Typical space</div></div>
-    <div class="stat"><div class="v">$1.45</div><div class="l">Gas / year · Typical space</div></div>
-    <div class="stat"><div class="v warn">$0.035</div><div class="l">One-time setup (create + token)</div></div>
-    <div class="stat"><div class="v">~140×</div><div class="l">AI cost vs gas (Composer Fast)</div></div>
+    <div class="stat"><div class="v accent">$0.05–0.13</div><div class="l">Gas / month · Typical space (range)</div></div>
+    <div class="stat"><div class="v">$0.046</div><div class="l">Verified floor · Typical space</div></div>
+    <div class="stat"><div class="v warn">$0.035</div><div class="l">One-time setup (verified)</div></div>
+    <div class="stat"><div class="v">130–360×</div><div class="l">AI cost vs gas (Composer Fast)</div></div>
   </div>
 
-  <h3>Cost per on-chain operation (at 0.005 Gwei)</h3>
-  <p>Gas units are actual on-chain measurements. In Hypha, a passing proposal auto-executes on the deciding vote, so execution gas can be bundled into that vote.</p>
+  <h3>Verified on-chain measurements (0.005 Gwei · ETH $1,748)</h3>
   <div class="frame">
     <table>
-      <thead><tr><th>Operation</th><th>When</th><th class="n">Gas units</th><th class="n">Cost (USD)</th></tr></thead>
+      <thead><tr><th>Operation</th><th>When</th><th>Status</th><th class="n">Gas units</th><th class="n">Cost (USD)</th><th>Tx / note</th></tr></thead>
       <tbody>
-        <tr><td>Token deploy — vote + auto-execute</td><td>Setup (one-time)</td><td class="n">2,549,025</td><td class="n">$0.0223</td></tr>
-        <tr><td>Space creation</td><td>Setup (one-time)</td><td class="n">960,285</td><td class="n">$0.0084</td></tr>
-        <tr><td>Token deployment proposal</td><td>Setup (one-time)</td><td class="n">527,418</td><td class="n">$0.0046</td></tr>
-        <tr><td>Proposal creation</td><td>Recurring</td><td class="n">~400,000</td><td class="n">$0.0035</td></tr>
-        <tr><td>Proposal execution (agreement)</td><td>Recurring</td><td class="n">~450,000</td><td class="n">$0.0039</td></tr>
-        <tr><td>Vote cast</td><td>Recurring</td><td class="n">~150,000</td><td class="n">$0.0013</td></tr>
-        <tr><td>Member join</td><td>Recurring</td><td class="n">~100,000</td><td class="n">$0.0009</td></tr>
-        <tr><td>Treasury transfer (ERC-20 / USDC)</td><td>Recurring</td><td class="n">62,135</td><td class="n">$0.0005</td></tr>
+        <tr><td>Vote + auto-execute (token deploy)</td><td>Setup</td><td><span class="tag verified">verified</span></td><td class="n">2,549,025</td><td class="n">$0.0223</td><td><code>0x1f7ed7f4…</code></td></tr>
+        <tr><td>Space creation</td><td>Setup</td><td><span class="tag verified">verified</span></td><td class="n">960,285</td><td class="n">$0.0084</td><td><code>0xb6b98a19…</code></td></tr>
+        <tr><td>Proposal creation (token deploy)</td><td>Setup</td><td><span class="tag verified">verified</span></td><td class="n">527,418</td><td class="n">$0.0046</td><td><code>0x64e3d917…</code></td></tr>
+        <tr><td>Vote + auto-execute (token mint)</td><td>Recurring</td><td><span class="tag verified">verified</span></td><td class="n">446,949</td><td class="n">$0.0039</td><td><code>0x3f0d5487…</code> · deciding vote incl. execution</td></tr>
+        <tr><td>Proposal creation (token mint)</td><td>Recurring</td><td><span class="tag verified">verified</span></td><td class="n">378,389</td><td class="n">$0.0033</td><td><code>0xab9a53ae…</code> · typical agreement proposal</td></tr>
+        <tr><td>USDC transfer (ERC-20)</td><td>Recurring</td><td><span class="tag verified">verified</span></td><td class="n">62,135</td><td class="n">$0.0005</td><td><code>0x80e51f14…</code></td></tr>
+        <tr><td>Member join</td><td>Recurring</td><td><span class="tag est">estimated</span></td><td class="n">100,000</td><td class="n">$0.0009</td><td>tx failed in analysis run; not verified</td></tr>
+        <tr><td>Non-executing vote</td><td>Recurring</td><td><span class="tag est">not measured</span></td><td class="n">—</td><td class="n">—</td><td>no successful mainnet receipt in repo</td></tr>
       </tbody>
     </table>
   </div>
+  <p class="sub"><strong>Verified one-time setup</strong> (create space + deploy-token proposal + deciding vote that deploys token): 4,036,728 gas → <strong>$0.035</strong>. <strong>Verified recurring proposal</strong> (mint-scale agreement): 378,389 create + 446,949 deciding vote = 825,338 gas → <strong>$0.0072</strong> per proposal, before any non-executing member votes.</p>
 
-  <h3>Recurring gas cost by Space size</h3>
-  <p>Monthly on-chain activity assumed per profile (proposals × votes dominate). Setup is one-time and excluded from the monthly figure.</p>
+  <h3>Recurring gas by Space size</h3>
+  <p>Monthly model: each proposal = 1× verified create (378,389) + 1× verified deciding vote (446,949) + treasury transfers (62,135 each). Non-executing member votes are <strong>not measured</strong>; the range adds a sensitivity band of 80k–200k gas per vote (industry-typical DAO range, unverified for Hypha).</p>
   <div class="frame">
     <table>
       <thead><tr>
-        <th>Profile</th><th class="n">Proposals/mo</th><th class="n">Votes/mo</th>
-        <th class="n">Treasury txns/mo</th><th class="n">Gas/mo</th><th class="n">Monthly</th><th class="n">Annual</th>
+        <th>Profile</th><th class="n">Proposals/mo</th><th class="n">Votes/mo</th><th class="n">Non-exec votes</th>
+        <th class="n">Treasury/mo</th><th class="n">Verified floor</th><th class="n">Range (incl. unmeasured votes)</th>
       </tr></thead>
       <tbody>
-        <tr><td>Light (~5 members)</td><td class="n">2</td><td class="n">6</td><td class="n">1</td><td class="n">2.8M</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:4px"></span><span class="barlabel">$0.024</span></div></td><td class="n">$0.29</td></tr>
-        <tr><td><strong>Typical (~15 members)</strong></td><td class="n">6</td><td class="n">54</td><td class="n">5</td><td class="n">13.8M</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:20px"></span><span class="barlabel"><strong>$0.12</strong></span></div></td><td class="n">$1.45</td></tr>
-        <tr><td>Heavy (~50 members)</td><td class="n">20</td><td class="n">600</td><td class="n">20</td><td class="n">109M</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:160px"></span><span class="barlabel">$0.96</span></div></td><td class="n">$11.46</td></tr>
+        <tr><td>Light (~5 members)</td><td class="n">2</td><td class="n">6</td><td class="n">4</td><td class="n">1</td><td class="n">$0.015</td><td class="n">$0.015–0.022</td></tr>
+        <tr><td><strong>Typical (~15 members)</strong></td><td class="n">6</td><td class="n">54</td><td class="n">48</td><td class="n">5</td><td class="n">$0.046</td><td class="n"><strong>$0.05–0.13</strong></td></tr>
+        <tr><td>Heavy (~50 members)</td><td class="n">20</td><td class="n">600</td><td class="n">580</td><td class="n">20</td><td class="n">$0.15</td><td class="n">$0.56–1.17</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="sub">For the Typical space, member votes are ~59% of monthly gas (54 votes × ~150k), proposal execution ~20%, proposal creation ~17%.</p>
+  <p class="sub">Verified floor counts only measured operations. The upper bound assumes non-executing votes at 200k gas each — still unverified. A Heavy space with a token-deploy proposal in a given month would add ~$0.023 (verified deploy vote) on top of these figures.</p>
 
   <div class="callout">
-    <div class="t">Gas is negligible vs AI at these prices</div>
-    <p>A Typical space's on-chain cost is <strong>~$0.12/month</strong> — roughly <strong>140× smaller</strong> than the Composer 2.5 Fast AI estimate ($16.52), and still a fraction of even the cheapest open-source AI option (~$0.70). The AI layer, not the blockchain, is the cost driver.</p>
+    <div class="t">Gas remains negligible vs AI</div>
+    <p>Even at the upper bound, a Typical space pays <strong>$0.05–0.13/month</strong> on-chain vs <strong>$16.52/month</strong> for AI (Composer 2.5 Fast) — roughly <strong>130–360× less</strong>. The verified floor alone ($0.046/mo) is <strong>~360× smaller</strong> than AI. Gas is not the cost driver.</p>
   </div>
-  <p class="sub"><strong>Caveats.</strong> Figures are L2 execution gas at the stated 0.005 Gwei; Base also adds a small L1 data fee per transaction (typically sub-cent under current blob-fee conditions) not captured by a single L2 gas price. Gas scales linearly with gas price — a 10× spike to 0.05 Gwei makes a Typical space ~$1.20/month, still negligible. Who pays (member wallets vs. a platform paymaster) is a separate question; this is the aggregate on-chain cost of a Space's activity regardless of payer.</p>
+  <p class="sub"><strong>Caveats.</strong> L2 execution gas only at 0.005 Gwei; Base adds a small L1 data fee per tx (typically sub-cent). Gas scales linearly with gas price. Who pays (member wallets vs. paymaster) is separate from the aggregate cost shown here. Re-run <code>gas-cost-analysis.ts</code> on Base to capture a non-executing vote and a successful join.</p>
 
   <div class="grid2">
     <div>
