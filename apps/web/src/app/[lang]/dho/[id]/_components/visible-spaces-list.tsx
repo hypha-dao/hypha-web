@@ -14,11 +14,9 @@ import {
 } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { getDhoSpaceContextPath } from '@hypha-platform/epics';
 import {
-  useSpaceDiscoverability,
-  useUserSpaceState,
-  checkAccess,
+  useCanMutateInSpace,
+  getDhoSpaceContextPath,
 } from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
 import { useTranslations } from 'next-intl';
@@ -46,11 +44,7 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const spaceSlug = fullSpace?.slug || space.slug;
   const hasSpaceInfo = !!web3SpaceId && !!spaceSlug;
 
-  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
-    spaceId: web3SpaceId ? BigInt(web3SpaceId) : undefined,
-  });
-
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+  const { canMutate, isLoading } = useCanMutateInSpace({
     spaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
     spaceSlug,
     space: fullSpace,
@@ -72,9 +66,7 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
     );
   }
 
-  const hasAccess = checkAccess(access, userState);
-  const isLoading = isAccessLoading || isUserStateLoading;
-  const isDisabled = isLoading || !hasAccess;
+  const isDisabled = isLoading || !canMutate;
 
   const createSpacePath = `${
     getDhoSpaceContextPath({
@@ -86,12 +78,12 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
 
   return (
     <Link
-      href={hasAccess && !isLoading ? createSpacePath : '#'}
+      href={canMutate && !isLoading ? createSpacePath : '#'}
       className={isDisabled ? 'cursor-not-allowed' : 'flex-1 md:flex-none'}
       title={
         isLoading
           ? t('visibleSpaces.loading')
-          : !hasAccess
+          : !canMutate
           ? t('visibleSpaces.noAccessAddSpace')
           : t('visibleSpaces.addSpace')
       }

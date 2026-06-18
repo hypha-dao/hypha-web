@@ -59,14 +59,17 @@ export function SpaceAccessDenied({
     userState === UserSpaceState.LOGGED_IN ||
     userState === UserSpaceState.LOGGED_IN_ORG
   ) {
+    const joinSpaceDbId =
+      resolvedSpaceId ?? space?.id ?? spacesByWeb3Id[0]?.id ?? undefined;
+
     return (
       <Empty>
         <div className="flex flex-col gap-7">
           <p>{t('accessDeniedNotMember')}</p>
-          {resolvedSpaceId && effectiveSpaceId ? (
+          {effectiveSpaceId && joinSpaceDbId ? (
             <div className="flex items-center justify-center">
               <JoinSpace
-                spaceId={resolvedSpaceId}
+                spaceId={joinSpaceDbId}
                 web3SpaceId={effectiveSpaceId}
                 hideWhenMember
               />

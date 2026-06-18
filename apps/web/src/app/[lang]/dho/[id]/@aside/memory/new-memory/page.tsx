@@ -6,6 +6,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound } from 'next/navigation';
+import { ConnectedSpaceMemberAsideGuard } from '@web/components/connected-space-member-aside-guard';
 import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
@@ -23,15 +24,20 @@ export default async function NewMemoryPage({ params }: PageProps) {
 
   return (
     <ProposalOverlayShell>
-      <CreateAgreementForm
-        successfulUrl={successfulUrl}
-        backUrl={successfulUrl}
-        closeUrl={successfulUrl}
-        spaceId={spaceFromDb.id}
-        web3SpaceId={spaceFromDb.web3SpaceId}
-        stickyHeaderTitle={tCoherence('newMemory')}
-        mode="memory"
-      />
+      <ConnectedSpaceMemberAsideGuard
+        spaceSlug={id}
+        spaceId={spaceFromDb.web3SpaceId ?? undefined}
+      >
+        <CreateAgreementForm
+          successfulUrl={successfulUrl}
+          backUrl={successfulUrl}
+          closeUrl={successfulUrl}
+          spaceId={spaceFromDb.id}
+          web3SpaceId={spaceFromDb.web3SpaceId}
+          stickyHeaderTitle={tCoherence('newMemory')}
+          mode="memory"
+        />
+      </ConnectedSpaceMemberAsideGuard>
     </ProposalOverlayShell>
   );
 }

@@ -1,8 +1,6 @@
 'use client';
 
-import { useAuthentication } from '@hypha-platform/authentication';
-import { Button, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
-import { Empty } from '../../common/empty';
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   Coherence,
   useFindCoherences,
@@ -94,9 +92,7 @@ export function CoherenceBlock({
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
-  const tSpaces = useTranslations('Spaces');
   const [hideArchived, setHideArchived] = React.useState(true);
-  const { isAuthenticated, login } = useAuthentication();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const {
     coherences: signals,
@@ -192,34 +188,20 @@ export function CoherenceBlock({
           ) : null}
         </h1>
       </div>
-      {isAuthenticated ? (
-        <div className="flex flex-col gap-4">
-          <SignalSection
-            toolbarLeft={priorityTabs}
-            basePath={chatBasePath}
-            web3SpaceId={space?.web3SpaceId ?? 0}
-            signals={filteredSignals}
-            leadImage={space?.leadImage ?? undefined}
-            isLoading={isSpaceLoading || isSignalsLoading}
-            hideArchived={hideArchived}
-            setHideArchived={setHideArchived}
-            refresh={refresh}
-            onSignalClick={onSignalClick}
-          />
-        </div>
-      ) : (
-        <Empty>
-          <div className="flex flex-col gap-7">
-            <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
-            <div className="flex items-center justify-center gap-4">
-              <Button variant="outline" onClick={login}>
-                {tSpaces('signIn')}
-              </Button>
-              <Button onClick={login}>{tSpaces('getStarted')}</Button>
-            </div>
-          </div>
-        </Empty>
-      )}
+      <div className="flex flex-col gap-4">
+        <SignalSection
+          toolbarLeft={priorityTabs}
+          basePath={chatBasePath}
+          web3SpaceId={space?.web3SpaceId ?? 0}
+          signals={filteredSignals}
+          leadImage={space?.leadImage ?? undefined}
+          isLoading={isSpaceLoading || isSignalsLoading}
+          hideArchived={hideArchived}
+          setHideArchived={setHideArchived}
+          refresh={refresh}
+          onSignalClick={onSignalClick}
+        />
+      </div>
     </div>
   );
 }

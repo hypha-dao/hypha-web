@@ -74,8 +74,8 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      <div className="flex w-full flex-col items-end justify-end gap-2 sm:w-auto">
-        <label className="flex w-full shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground sm:w-auto">
+      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end lg:w-auto">
+        <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
           <Input
             type="checkbox"
             checked={hideSmallBalances}
@@ -84,7 +84,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           />
           <span>{tTreasury('hideSmall')}</span>
         </label>
-        <div className="flex w-full flex-row flex-wrap items-center justify-end gap-2">
+        <div className="flex flex-row flex-wrap items-center justify-end gap-2">
           {isDisabled ? (
             <Button
               colorVariant="accent"

@@ -1624,6 +1624,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   }
 
+  if (blockSpaceAiForActivityAccess) {
+    return (
+      <>
+        <SidebarHeader className="bg-background-2 p-0">
+          <AiPanelHeader
+            showCloseButton={false}
+            leftSlot={triggerButton}
+            rightSlot={closeButton}
+          />
+        </SidebarHeader>
+        <SidebarContent className="flex flex-1 items-center justify-center px-6">
+          <SpaceAccessDenied
+            userState={userSpaceState}
+            spaceId={effectiveSpaceWeb3Id}
+            spaceSlug={spaceSlug ?? undefined}
+          />
+        </SidebarContent>
+      </>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <>
@@ -1646,27 +1667,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
               </div>
             </div>
           </Empty>
-        </SidebarContent>
-      </>
-    );
-  }
-
-  if (blockSpaceAiForActivityAccess) {
-    return (
-      <>
-        <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            leftSlot={triggerButton}
-            rightSlot={closeButton}
-          />
-        </SidebarHeader>
-        <SidebarContent className="flex flex-1 items-center justify-center px-6">
-          <SpaceAccessDenied
-            userState={userSpaceState}
-            spaceId={effectiveSpaceWeb3Id}
-            spaceSlug={spaceSlug ?? undefined}
-          />
         </SidebarContent>
       </>
     );
