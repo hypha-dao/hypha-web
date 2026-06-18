@@ -1,7 +1,15 @@
 'use client';
 
-import { Switch, Label } from '@hypha-platform/ui';
+import { Separator, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import {
+  Globe,
+  Grid3x3,
+  LandPlot,
+  Map,
+  Waves,
+  type LucideIcon,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   NETWORK_MAP_LAYER_IDS,
@@ -20,6 +28,12 @@ type NetworkMapLayerControlsProps = {
 
 const LAYER_IDS = [...NETWORK_MAP_LAYER_IDS];
 
+const LAYER_ICONS: Record<NetworkMapLayerId, LucideIcon> = {
+  land: LandPlot,
+  water: Waves,
+  graticule: Grid3x3,
+};
+
 export function NetworkMapLayerControls({
   layers,
   projectionMode,
@@ -32,49 +46,77 @@ export function NetworkMapLayerControls({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-4 px-0 py-2 text-sm',
+        'inline-flex w-fit max-w-full flex-wrap items-center gap-2 rounded-xl border border-neutral-6 bg-neutral-2/95 p-1.5 shadow-sm backdrop-blur-sm',
         className,
       )}
+      role="toolbar"
+      aria-label={t('layerControlsLabel')}
     >
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className={cn(
-            'rounded-md px-3 py-1.5 transition-colors',
-            projectionMode === 'globe'
-              ? 'bg-accent-9 text-white'
-              : 'text-neutral-11 hover:bg-neutral-4',
-          )}
-          onClick={() => onProjectionModeChange('globe')}
-        >
-          {t('globeView')}
-        </button>
-        <button
-          type="button"
-          className={cn(
-            'rounded-md px-3 py-1.5 transition-colors',
-            projectionMode === 'flat'
-              ? 'bg-accent-9 text-white'
-              : 'text-neutral-11 hover:bg-neutral-4',
-          )}
-          onClick={() => onProjectionModeChange('flat')}
-        >
-          {t('flatView')}
-        </button>
-      </div>
-      <div className="flex flex-wrap items-center gap-4">
-        {LAYER_IDS.map((layerId) => (
-          <div key={layerId} className="flex items-center gap-2">
-            <Switch
-              id={`network-map-layer-${layerId}`}
-              checked={layers[layerId]}
-              onCheckedChange={(checked) => onLayerChange(layerId, checked)}
-            />
-            <Label htmlFor={`network-map-layer-${layerId}`}>
-              {t(`${layerId}Layer`)}
-            </Label>
-          </div>
-        ))}
+      <Tabs
+        value={projectionMode}
+        onValueChange={(value) =>
+          onProjectionModeChange(value as NetworkMapProjectionMode)
+        }
+      >
+        <TabsList triggerVariant="switch" className="h-8 shrink-0">
+          <TabsTrigger
+            variant="switch"
+            value="globe"
+            className="gap-1.5 px-2.5 text-xs sm:text-sm"
+          >
+            <Globe className="size-3.5 shrink-0" aria-hidden />
+            {t('globeView')}
+          </TabsTrigger>
+          <TabsTrigger
+            variant="switch"
+            value="flat"
+            className="gap-1.5 px-2.5 text-xs sm:text-sm"
+          >
+            <Map className="size-3.5 shrink-0" aria-hidden />
+            {t('flatView')}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Separator
+        orientation="vertical"
+        className="hidden h-6 bg-neutral-6 sm:block"
+      />
+
+      <div
+        className="inline-flex flex-wrap items-center gap-0.5 rounded-lg bg-neutral-3 p-0.5"
+        role="group"
+        aria-label={t('layersLabel')}
+      >
+        {LAYER_IDS.map((layerId) => {
+          const Icon = LAYER_ICONS[layerId];
+          const active = layers[layerId];
+
+          return (
+            <button
+              key={layerId}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onLayerChange(layerId, !active)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all sm:text-sm',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                active
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-neutral-4/80 hover:text-foreground',
+              )}
+            >
+              <Icon
+                className={cn(
+                  'size-3.5 shrink-0',
+                  active ? 'text-accent-9' : 'text-neutral-9',
+                )}
+                aria-hidden
+              />
+              <span>{t(`${layerId}Layer`)}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -3409,6 +3409,8 @@
     "loadingMap": "Karte wird geladen…",
     "mapAriaLabel": "Interaktive Netzwerkkarte der Hypha-Spaces",
     "viewToggleLabel": "Netzwerkansicht",
+    "layerControlsLabel": "Kartenanzeige",
+    "layersLabel": "Ebenen",
     "addLocation": "Standort hinzufügen",
     "addLocationTitle": "Standort für deinen Space festlegen",
     "addLocationDescription": "Wähle einen deiner Spaces, um den Standort auf der Netzwerkkarte festzulegen.",

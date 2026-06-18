@@ -3452,6 +3452,8 @@
     "loadingMap": "Loading map…",
     "mapAriaLabel": "Interactive network map of Hypha spaces",
     "viewToggleLabel": "Network view",
+    "layerControlsLabel": "Map display options",
+    "layersLabel": "Layers",
     "addLocation": "Add location",
     "addLocationTitle": "Add a location to your space",
     "addLocationDescription": "Select one of your spaces to set its location on the network map.",

@@ -2920,6 +2920,8 @@
     "loadingMap": "Cargando mapa…",
     "mapAriaLabel": "Mapa interactivo de la red Hypha",
     "viewToggleLabel": "Vista de red",
+    "layerControlsLabel": "Opciones de mapa",
+    "layersLabel": "Capas",
     "addLocation": "Añadir ubicación",
     "addLocationTitle": "Añadir ubicación a tu espacio",
     "addLocationDescription": "Selecciona uno de tus espacios para definir su ubicación en el mapa de la red.",
