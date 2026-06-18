@@ -3,19 +3,20 @@
 import { ButtonProfile } from './button-profile';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import {
-  UseAuthentication,
-  resolvePostAuthRedirectPathOrDefault,
-} from '@hypha-platform/authentication';
-import { UseMe } from '../hooks/types';
+  ProfileUseAuthentication,
+  ResolvePostAuthRedirectPathOrDefault,
+  UseMe,
+} from '../hooks/types';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 
 type ConnectedButtonProfileProps = {
-  useAuthentication: UseAuthentication;
+  useAuthentication: ProfileUseAuthentication;
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
+  resolvePostAuthRedirectPathOrDefault: ResolvePostAuthRedirectPathOrDefault;
   navItems: ButtonNavItemProps[];
   trailingBeforeProfile?: ReactNode;
   compact?: boolean;
@@ -39,6 +40,7 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
+  resolvePostAuthRedirectPathOrDefault,
   navItems,
   trailingBeforeProfile,
   compact = false,
@@ -131,6 +133,7 @@ export const ConnectedButtonProfile = ({
     pathname,
     localizedSignupPath,
     lang,
+    resolvePostAuthRedirectPathOrDefault,
   ]);
 
   const handleThemeChange = () => {
