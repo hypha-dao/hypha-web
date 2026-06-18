@@ -16,7 +16,13 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Button, Combobox, Heading } from '@hypha-platform/ui';
+import {
+  Badge,
+  Button,
+  Combobox,
+  Heading,
+  Separator,
+} from '@hypha-platform/ui';
 import React from 'react';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
@@ -278,28 +284,30 @@ export function ExploreSpaces({
         <NetworkGlobeMap lang={lang} spaces={mapSpaces} className="w-full" />
       ) : null}
 
-      <div className="flex justify-around flex-row columns-3 space-x-3">
-        <div className="flex flex-col">
+      <div className="flex items-stretch justify-center gap-0">
+        <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
           <div className="flex justify-center text-7 font-medium">
             {selectedSpaces.length}
           </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+          <div className="mt-2 flex justify-center text-1 text-neutral-500">
             {tCommon('Spaces')}
           </div>
         </div>
-        <div className="flex flex-col">
+        <Separator orientation="vertical" className="bg-neutral-6" />
+        <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
           <div className="flex justify-center text-7 font-medium">
             {uniqueMemberAddresses.size}
           </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+          <div className="mt-2 flex justify-center text-1 text-neutral-500">
             {tCommon('Members')}
           </div>
         </div>
-        <div className="flex flex-col">
+        <Separator orientation="vertical" className="bg-neutral-6" />
+        <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
           <div className="flex justify-center text-7 font-medium">
             {agreementCount}
           </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
+          <div className="mt-2 flex justify-center text-1 text-neutral-500">
             {tCommon('Agreements')}
           </div>
         </div>

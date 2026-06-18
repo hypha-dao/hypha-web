@@ -4,6 +4,7 @@ import * as React from 'react';
 import * as d3 from 'd3';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { Loader2 } from 'lucide-react';
 import { NetworkMapLayerControls } from './network-map-layer-controls';
@@ -30,6 +31,35 @@ import {
 const PROJECTION_ANIMATION_MS = 1200;
 const DEFAULT_GLOBE_ROTATION: Rotation = [0, -20, 0];
 const FLAT_ROTATION: Rotation = [0, 0, 0];
+
+type MapPalette = {
+  ocean: string;
+  landFill: string;
+  landStroke: string;
+  graticule: string;
+  sphereShadow: string | null;
+};
+
+function mapPaletteForTheme(theme: string | undefined): MapPalette {
+  if (theme === 'light') {
+    return {
+      ocean: 'var(--info-5)',
+      landFill: 'var(--neutral-7)',
+      landStroke: 'var(--neutral-9)',
+      graticule: 'var(--neutral-8)',
+      sphereShadow:
+        'drop-shadow(0 10px 28px color-mix(in oklab, var(--info-9) 18%, transparent))',
+    };
+  }
+
+  return {
+    ocean: 'var(--info-3)',
+    landFill: 'var(--neutral-6)',
+    landStroke: 'var(--neutral-9)',
+    graticule: 'var(--neutral-8)',
+    sphereShadow: null,
+  };
+}
 
 function pinColor(id: number): string {
   const hue = Math.abs((id * 47) % 360);
@@ -115,9 +145,17 @@ export function NetworkGlobeMap({
   className,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
+  const { resolvedTheme } = useTheme();
   const router = useRouter();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
+
+  const mapPalette = React.useMemo(
+    () => mapPaletteForTheme(resolvedTheme),
+    [resolvedTheme],
+  );
+  const mapPaletteRef = React.useRef(mapPalette);
+  mapPaletteRef.current = mapPalette;
 
   const locatedSpaces = React.useMemo(
     () => spaces.filter(hasSpaceMapLocation),
@@ -212,6 +250,8 @@ export function NetworkGlobeMap({
     const projection = buildProjection(width, height, morph, rotate);
     const path = d3.geoPath(projection);
     const layerState = layersRef.current;
+    const palette = mapPaletteRef.current;
+    const isGlobeView = morph < 1;
 
     let root = svg.select<SVGGElement>('g.map-root');
     if (root.empty()) {
@@ -222,11 +262,16 @@ export function NetworkGlobeMap({
       root.append('g').attr('class', 'map-pins');
     }
 
+    root.style(
+      'filter',
+      isGlobeView && palette.sphereShadow ? palette.sphereShadow : 'none',
+    );
+
     const ocean = root.select<SVGPathElement>('path.map-ocean');
     if (layerState.water) {
       ocean
         .attr('d', path({ type: 'Sphere' }) ?? '')
-        .attr('fill', 'var(--blue-4, #1e3a5f)')
+        .attr('fill', palette.ocean)
         .attr('stroke', 'none')
         .style('display', null);
     } else {
@@ -238,7 +283,7 @@ export function NetworkGlobeMap({
       graticule
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
-        .attr('stroke', 'var(--neutral-8, #888)')
+        .attr('stroke', palette.graticule)
         .attr('stroke-width', 0.4)
         .attr('opacity', 0.45)
         .style('display', null);
@@ -250,8 +295,8 @@ export function NetworkGlobeMap({
     if (layerState.land) {
       landPath
         .attr('d', path(land) ?? '')
-        .attr('fill', 'var(--neutral-6, #444)')
-        .attr('stroke', 'var(--neutral-9, #ccc)')
+        .attr('fill', palette.landFill)
+        .attr('stroke', palette.landStroke)
         .attr('stroke-width', 0.5)
         .style('display', null);
     } else {
@@ -401,7 +446,14 @@ export function NetworkGlobeMap({
 
   React.useEffect(() => {
     renderMap();
-  }, [layers, morphProgress, projectionMode, locatedSpaces, renderMap]);
+  }, [
+    layers,
+    morphProgress,
+    projectionMode,
+    locatedSpaces,
+    mapPalette,
+    renderMap,
+  ]);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -586,14 +638,16 @@ export function NetworkGlobeMap({
   if (locatedSpaces.length === 0) {
     return (
       <div className={cn('flex flex-col gap-4', className)}>
-        <NetworkMapLayerControls
-          layers={layers}
-          projectionMode={selectedProjection}
-          onLayerChange={(layer, visible) =>
-            setLayers((current) => ({ ...current, [layer]: visible }))
-          }
-          onProjectionModeChange={animateProjection}
-        />
+        <div className="flex justify-center">
+          <NetworkMapLayerControls
+            layers={layers}
+            projectionMode={selectedProjection}
+            onLayerChange={(layer, visible) =>
+              setLayers((current) => ({ ...current, [layer]: visible }))
+            }
+            onProjectionModeChange={animateProjection}
+          />
+        </div>
         <div
           ref={containerRef}
           className="relative min-h-[360px] w-full overflow-hidden"
@@ -635,14 +689,16 @@ export function NetworkGlobeMap({
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
-      <NetworkMapLayerControls
-        layers={layers}
-        projectionMode={selectedProjection}
-        onLayerChange={(layer, visible) =>
-          setLayers((current) => ({ ...current, [layer]: visible }))
-        }
-        onProjectionModeChange={animateProjection}
-      />
+      <div className="flex justify-center">
+        <NetworkMapLayerControls
+          layers={layers}
+          projectionMode={selectedProjection}
+          onLayerChange={(layer, visible) =>
+            setLayers((current) => ({ ...current, [layer]: visible }))
+          }
+          onProjectionModeChange={animateProjection}
+        />
+      </div>
       <div
         ref={containerRef}
         className="relative min-h-[360px] w-full overflow-hidden"

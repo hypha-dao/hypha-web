@@ -80,7 +80,7 @@ export function NetworkMapLayerControls({
 
       <Separator
         orientation="vertical"
-        className="hidden h-6 bg-neutral-6 sm:block"
+        className="mx-0.5 h-6 shrink-0 self-center bg-neutral-7"
       />
 
       <div
