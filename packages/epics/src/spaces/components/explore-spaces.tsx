@@ -16,13 +16,7 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import {
-  Badge,
-  Button,
-  Combobox,
-  Heading,
-  Separator,
-} from '@hypha-platform/ui';
+import { Badge, Button, Combobox, Heading } from '@hypha-platform/ui';
 import React from 'react';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
@@ -311,37 +305,6 @@ export function ExploreSpaces({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-center">
-          <SpaceSearch value={query} />
-        </div>
-        <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
-          {tags.map((tag) => (
-            <Badge
-              key={tag.value}
-              className={cn(
-                multiSelectVariants({
-                  variant: categories?.includes(tag.value)
-                    ? 'secondary'
-                    : 'default',
-                }),
-              )}
-              style={{ cursor: 'pointer', animationDuration: '0s' }}
-              onClick={() => {
-                const newCategories = categories?.includes(tag.value)
-                  ? []
-                  : [tag.value];
-                setCategories(newCategories);
-              }}
-            >
-              {tag.label}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
       <div className="flex flex-row w-full items-center gap-2">
         <CategoryLabel
           selectedSpaces={selectedSpaces}
@@ -376,6 +339,35 @@ export function ExploreSpaces({
             {tSpaces('createSpace')}
           </Button>
         </Link>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-center">
+          <SpaceSearch value={query} />
+        </div>
+        <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
+          {tags.map((tag) => (
+            <Badge
+              key={tag.value}
+              className={cn(
+                multiSelectVariants({
+                  variant: categories?.includes(tag.value)
+                    ? 'secondary'
+                    : 'default',
+                }),
+              )}
+              style={{ cursor: 'pointer', animationDuration: '0s' }}
+              onClick={() => {
+                const newCategories = categories?.includes(tag.value)
+                  ? []
+                  : [tag.value];
+                setCategories(newCategories);
+              }}
+            >
+              {tag.label}
+            </Badge>
+          ))}
+        </div>
       </div>
 
       <SpaceCardList
