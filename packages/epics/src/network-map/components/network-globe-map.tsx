@@ -40,6 +40,15 @@ type MapPalette = {
   sphereShadow: string | null;
 };
 
+/** Pinned dark-mode globe colors — do not use theme CSS vars (they shift with .light/.dark). */
+const DARK_GLOBE_PALETTE: MapPalette = {
+  ocean: '#1e3a5f',
+  landFill: 'oklch(34.655% 0.01033 254.043)',
+  landStroke: 'oklch(53.701% 0.01538 262.385)',
+  graticule: 'oklch(48.932% 0.01557 251.766)',
+  sphereShadow: null,
+};
+
 function mapPaletteForTheme(theme: string | undefined): MapPalette {
   if (theme === 'light') {
     return {
@@ -52,13 +61,7 @@ function mapPaletteForTheme(theme: string | undefined): MapPalette {
     };
   }
 
-  return {
-    ocean: 'var(--blue-4, #1e3a5f)',
-    landFill: 'var(--neutral-6, #444)',
-    landStroke: 'var(--neutral-9, #ccc)',
-    graticule: 'var(--neutral-8, #888)',
-    sphereShadow: null,
-  };
+  return DARK_GLOBE_PALETTE;
 }
 
 function pinColor(id: number): string {
