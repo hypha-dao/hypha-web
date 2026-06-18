@@ -51,7 +51,7 @@ export const SelectSettingsAction = ({
   const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
     spaceSlug: daoSlug,
     space,
-    spaceId: space?.web3SpaceId,
+    spaceId: space?.web3SpaceId ?? undefined,
   });
   const t = useTranslations('SpaceSettingsAction');
   const isActionDisabled = isMutateLoading || !canMutate;
