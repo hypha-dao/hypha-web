@@ -19,20 +19,89 @@ export function normalizeGeocodeQuery(query: string): string {
   return collapseWhitespace(query).toLowerCase();
 }
 
+const UNIT_KEYWORDS = [
+  'apartment',
+  'building',
+  'suite',
+  'floor',
+  'unit',
+  'apt',
+  'bldg',
+  'ste',
+  'fl',
+] as const;
+
+function isTokenChar(char: string): boolean {
+  return /[\w-]/i.test(char);
+}
+
+function skipSpaces(value: string, index: number): number {
+  while (index < value.length && value[index] === ' ') {
+    index += 1;
+  }
+  return index;
+}
+
+function readTokenEnd(value: string, index: number): number {
+  let end = index;
+  while (end < value.length && isTokenChar(value[end]!)) {
+    end += 1;
+  }
+  return end;
+}
+
+/** Remove unit/suite/apartment suffixes without regex backtracking. */
+function stripUnitSuffixFromSegment(segment: string): string {
+  let result = collapseWhitespace(segment);
+
+  const hashIndex = result.indexOf('#');
+  if (hashIndex !== -1) {
+    const afterHash = skipSpaces(result, hashIndex + 1);
+    const tokenEnd = readTokenEnd(result, afterHash);
+    if (tokenEnd > afterHash) {
+      result = collapseWhitespace(result.slice(0, hashIndex));
+    }
+  }
+
+  const lower = result.toLowerCase();
+  for (const keyword of UNIT_KEYWORDS) {
+    for (const delimiter of ['-', ' ', '–', '—']) {
+      const needle = `${delimiter}${keyword}`;
+      const index = lower.lastIndexOf(needle);
+      if (index === -1) {
+        continue;
+      }
+
+      const afterKeyword = skipSpaces(result, index + needle.length);
+      const tokenEnd = readTokenEnd(result, afterKeyword);
+      if (tokenEnd > afterKeyword) {
+        result = collapseWhitespace(result.slice(0, index));
+        return stripUnitSuffixFromSegment(result);
+      }
+    }
+  }
+
+  return result;
+}
+
+export function stripAddressUnitSuffixes(value: string): string {
+  return collapseWhitespace(
+    value
+      .split(',')
+      .map((part) => stripUnitSuffixFromSegment(part))
+      .join(', '),
+  );
+}
+
+function stripPostalCodes(value: string): string {
+  const parts = collapseWhitespace(value).split(' ');
+  const kept = parts.filter((part) => !/^\d{4,6}[A-Z]{0,2}$/i.test(part));
+  return kept.join(' ');
+}
+
 /** Strip unit/suite tokens that often prevent Nominatim matches. */
 export function simplifyGeocodeQuery(query: string): string {
-  return collapseWhitespace(
-    collapseWhitespace(query)
-      .replace(
-        /\s*[-–—]\s*(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s*[\w-]+/gi,
-        '',
-      )
-      .replace(
-        /\s+(unit|suite|apt|apartment|floor|fl|ste|bldg|building)\s+[\w-]+/gi,
-        '',
-      )
-      .replace(/\s+#\s*[\w-]+/gi, ''),
-  );
+  return stripAddressUnitSuffixes(query);
 }
 
 /** Ordered query variants — most specific first, then relaxed forms. */
@@ -55,9 +124,7 @@ export function prepareGeocodeQueries(query: string): string[] {
   const simplified = simplifyGeocodeQuery(trimmed);
   push(simplified);
 
-  const withoutPostal = collapseWhitespace(
-    simplified.replace(/\b\d{4,6}\s*[A-Z]{0,2}\b/gi, ' '),
-  );
+  const withoutPostal = stripPostalCodes(simplified);
   push(withoutPostal);
 
   const commaParts = simplified
