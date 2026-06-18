@@ -29,6 +29,47 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+function buildProjection(
+  width: number,
+  height: number,
+  morph: number,
+  rotate: [number, number, number],
+): d3.GeoProjection {
+  const minDim = Math.min(width, height);
+  const globeScale = minDim / 2 - 24;
+  const flatScale = width / (2 * Math.PI);
+  const center: [number, number] = [width / 2, height / 2];
+
+  if (morph <= 0) {
+    return d3
+      .geoOrthographic()
+      .scale(globeScale)
+      .translate(center)
+      .rotate(rotate)
+      .clipAngle(90);
+  }
+
+  if (morph >= 1) {
+    return d3
+      .geoEquirectangular()
+      .scale(flatScale)
+      .translate(center)
+      .rotate(rotate);
+  }
+
+  const scale = globeScale * (1 - morph) + flatScale * morph;
+  if (morph < 0.5) {
+    return d3
+      .geoOrthographic()
+      .scale(scale)
+      .translate(center)
+      .rotate(rotate)
+      .clipAngle(90 - morph * 45);
+  }
+
+  return d3.geoEquirectangular().scale(scale).translate(center).rotate(rotate);
+}
+
 export function NetworkGlobeMap({
   lang,
   pins,
@@ -46,13 +87,14 @@ export function NetworkGlobeMap({
   });
   const [projectionMode, setProjectionMode] =
     React.useState<NetworkMapProjectionMode>('globe');
+  const [selectedProjection, setSelectedProjection] =
+    React.useState<NetworkMapProjectionMode>('globe');
   const [morphProgress, setMorphProgress] = React.useState(0);
   const [isLoadingGeo, setIsLoadingGeo] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
 
   const landRef = React.useRef<d3.GeoPermissibleObjects | null>(null);
   const rotateRef = React.useRef<[number, number, number]>([0, -20, 0]);
-  const projectionModeRef = React.useRef(projectionMode);
   const morphRef = React.useRef(morphProgress);
   const layersRef = React.useRef(layers);
   const pinsRef = React.useRef(pins);
@@ -60,7 +102,6 @@ export function NetworkGlobeMap({
   const rotateStartRef = React.useRef<[number, number, number]>([0, -20, 0]);
   const animationFrameRef = React.useRef<number | null>(null);
 
-  projectionModeRef.current = projectionMode;
   morphRef.current = morphProgress;
   layersRef.current = layers;
   pinsRef.current = pins;
@@ -75,53 +116,18 @@ export function NetworkGlobeMap({
 
     const width = container.clientWidth;
     const height = Math.max(360, Math.min(560, width * 0.62));
+    if (width <= 0) {
+      return;
+    }
+
     svg
       .attr('width', width)
       .attr('height', height)
       .attr('viewBox', `0 0 ${width} ${height}`);
 
-    const mode = projectionModeRef.current;
     const morph = morphRef.current;
     const rotate = rotateRef.current;
-    const minDim = Math.min(width, height);
-    const globeScale = minDim / 2 - 24;
-    const flatScale = width / (2 * Math.PI);
-
-    const useFlat = mode === 'flat' || morph >= 1;
-    const useGlobe = mode === 'globe' && morph <= 0;
-
-    let projection: d3.GeoProjection;
-    if (useFlat) {
-      projection = d3
-        .geoEquirectangular()
-        .scale(flatScale)
-        .translate([width / 2, height / 2])
-        .rotate(rotate);
-    } else if (useGlobe) {
-      projection = d3
-        .geoOrthographic()
-        .scale(globeScale)
-        .translate([width / 2, height / 2])
-        .rotate(rotate)
-        .clipAngle(90);
-    } else {
-      const tMorph = morph;
-      const scale = globeScale * (1 - tMorph) + flatScale * tMorph;
-      if (tMorph < 0.5) {
-        projection = d3
-          .geoOrthographic()
-          .scale(scale)
-          .translate([width / 2, height / 2])
-          .rotate(rotate)
-          .clipAngle(90 - tMorph * 45);
-      } else {
-        projection = d3
-          .geoEquirectangular()
-          .scale(scale)
-          .translate([width / 2, height / 2])
-          .rotate(rotate);
-      }
-    }
+    const projection = buildProjection(width, height, morph, rotate);
 
     const path = d3.geoPath(projection);
     const layerState = layersRef.current;
@@ -287,24 +293,12 @@ export function NetworkGlobeMap({
     function getProjection() {
       const width = container!.clientWidth;
       const height = Math.max(360, Math.min(560, width * 0.62));
-      const rotate = rotateRef.current;
-      const minDim = Math.min(width, height);
-      const mode = projectionModeRef.current;
-      const morph = morphRef.current;
-
-      if (mode === 'flat' || morph >= 1) {
-        return d3
-          .geoEquirectangular()
-          .scale(width / (2 * Math.PI))
-          .translate([width / 2, height / 2])
-          .rotate(rotate);
-      }
-      return d3
-        .geoOrthographic()
-        .scale(minDim / 2 - 24)
-        .translate([width / 2, height / 2])
-        .rotate(rotate)
-        .clipAngle(90);
+      return buildProjection(
+        width,
+        height,
+        morphRef.current,
+        rotateRef.current,
+      );
     }
 
     return () => {
@@ -319,37 +313,43 @@ export function NetworkGlobeMap({
         cancelAnimationFrame(animationFrameRef.current);
       }
 
-      const fromMode = projectionModeRef.current;
-      if (fromMode === target) {
+      const fromMorph = morphRef.current;
+      const toMorph = target === 'flat' ? 1 : 0;
+      if (Math.abs(fromMorph - toMorph) < 1e-6) {
         return;
       }
 
+      setSelectedProjection(target);
+
       if (prefersReducedMotion()) {
-        setMorphProgress(target === 'flat' ? 1 : 0);
+        morphRef.current = toMorph;
+        setMorphProgress(toMorph);
         setProjectionMode(target);
+        renderMap();
         return;
       }
 
       const start = performance.now();
-      const fromMorph = fromMode === 'flat' ? 1 : 0;
-      const toMorph = target === 'flat' ? 1 : 0;
 
       const step = (now: number) => {
         const t = Math.min(1, (now - start) / PROJECTION_ANIMATION_MS);
         const eased = d3.easeCubicInOut(t);
-        setMorphProgress(fromMorph + (toMorph - fromMorph) * eased);
+        morphRef.current = fromMorph + (toMorph - fromMorph) * eased;
+        renderMap();
         if (t < 1) {
           animationFrameRef.current = requestAnimationFrame(step);
         } else {
           animationFrameRef.current = null;
-          setProjectionMode(target);
+          morphRef.current = toMorph;
           setMorphProgress(toMorph);
+          setProjectionMode(target);
+          renderMap();
         }
       };
 
       animationFrameRef.current = requestAnimationFrame(step);
     },
-    [],
+    [renderMap],
   );
 
   React.useEffect(() => {
@@ -365,7 +365,7 @@ export function NetworkGlobeMap({
       <div className={cn('flex flex-col gap-4', className)}>
         <NetworkMapLayerControls
           layers={layers}
-          projectionMode={projectionMode}
+          projectionMode={selectedProjection}
           onLayerChange={(layer, visible) =>
             setLayers((current) => ({ ...current, [layer]: visible }))
           }
@@ -410,7 +410,7 @@ export function NetworkGlobeMap({
     <div className={cn('flex flex-col gap-4', className)}>
       <NetworkMapLayerControls
         layers={layers}
-        projectionMode={projectionMode}
+        projectionMode={selectedProjection}
         onLayerChange={(layer, visible) =>
           setLayers((current) => ({ ...current, [layer]: visible }))
         }
