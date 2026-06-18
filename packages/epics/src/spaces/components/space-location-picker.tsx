@@ -227,8 +227,12 @@ export function SpaceLocationPicker({
             role="listbox"
             aria-label={t('resultsLabel')}
           >
-            {results.map((result) => (
-              <li key={`${result.placeId ?? result.label}-${result.latitude}`}>
+            {results.map((result, index) => (
+              <li
+                key={`${index}-${result.placeId ?? 'no-place'}-${
+                  result.label
+                }-${result.latitude}-${result.longitude}`}
+              >
                 <button
                   type="button"
                   className="w-full text-left px-3 py-2 text-2 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-8"

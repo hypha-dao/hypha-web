@@ -16,7 +16,6 @@ type PageProps = {
     query?: string;
     category?: string;
     order?: string;
-    view?: string;
   }>;
 };
 
@@ -52,11 +51,16 @@ export default async function Index(props: PageProps) {
   const { lang } = params;
   const enableNetworkMap = await getEnableNetworkMapAsync();
 
-  const spaces = await getAllSpaces({
-    search: query?.trim() || undefined,
-    parentOnly: false,
-    omitArchived: true,
-  });
+  let spaces: Space[] = [];
+  try {
+    spaces = await getAllSpaces({
+      search: query?.trim() || undefined,
+      parentOnly: false,
+      omitArchived: true,
+    });
+  } catch (err) {
+    console.error('Failed to fetch spaces:', err);
+  }
 
   const uniqueCategories = extractUniqueCategories(spaces);
 

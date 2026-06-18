@@ -49,6 +49,37 @@ describe('mapNominatimResults', () => {
       placeId: '1',
     });
   });
+
+  it('drops coordinates outside valid latitude and longitude bounds', () => {
+    const results = mapNominatimResults([
+      {
+        place_id: 3,
+        display_name: 'Invalid latitude',
+        lat: '91',
+        lon: '10',
+      },
+      {
+        place_id: 4,
+        display_name: 'Invalid longitude',
+        lat: '10',
+        lon: '181',
+      },
+      {
+        place_id: 5,
+        display_name: 'Valid location',
+        lat: '48.8566',
+        lon: '2.3522',
+      },
+    ]);
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      label: 'Valid location',
+      latitude: 48.8566,
+      longitude: 2.3522,
+      placeId: '5',
+    });
+  });
 });
 
 describe('buildLocatedAtPatch', () => {

@@ -16,7 +16,9 @@ export type NetworkGlobeMapProps = {
   className?: string;
 };
 
-export type NetworkMapLayerId = 'land' | 'water' | 'graticule';
+export const NETWORK_MAP_LAYER_IDS = ['land', 'water', 'graticule'] as const;
+
+export type NetworkMapLayerId = (typeof NETWORK_MAP_LAYER_IDS)[number];
 
 export type NetworkMapLayerVisibility = Record<NetworkMapLayerId, boolean>;
 

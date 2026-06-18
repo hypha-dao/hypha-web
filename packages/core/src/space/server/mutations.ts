@@ -124,6 +124,10 @@ export const updateSpaceConfigurationById = async (
         ? normalizedRest.parentId
         : originalSpace.parentId;
 
+    if (nextParentId != null && nextParentId === id) {
+      throw new Error('A space cannot be its own parent');
+    }
+
     if (
       originalSpace.parentId == null &&
       nextParentId != null &&

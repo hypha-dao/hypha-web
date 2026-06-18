@@ -457,10 +457,10 @@ export function NetworkGlobeMap({
         />
         <div
           ref={containerRef}
-          className="relative min-h-[360px] w-full overflow-hidden rounded-lg border border-neutral-6 bg-neutral-1"
+          className="relative min-h-[360px] w-full overflow-hidden"
         >
           {isLoadingGeo ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-neutral-1 text-neutral-11">
+            <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
               <Loader2 className="size-5 animate-spin" />
               <span>{t('loadingMap')}</span>
             </div>
@@ -481,7 +481,7 @@ export function NetworkGlobeMap({
           />
           {hoverCard}
         </div>
-        <div className="rounded-lg border border-dashed border-neutral-6 bg-neutral-2/50 px-4 py-3 text-center">
+        <div className="px-0 py-2 text-center">
           <p className="text-4 text-neutral-11">{t('noSpacesWithLocation')}</p>
           <p className="text-2 text-neutral-10">
             {t('noSpacesWithLocationHint')}
@@ -503,10 +503,10 @@ export function NetworkGlobeMap({
       />
       <div
         ref={containerRef}
-        className="relative min-h-[360px] w-full overflow-hidden rounded-lg border border-neutral-6 bg-neutral-1"
+        className="relative min-h-[360px] w-full overflow-hidden"
       >
         {isLoadingGeo ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-neutral-1 text-neutral-11">
+          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
             <Loader2 className="size-5 animate-spin" />
             <span>{t('loadingMap')}</span>
           </div>

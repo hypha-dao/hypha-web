@@ -3,10 +3,11 @@
 import { Switch, Label } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
-import type {
-  NetworkMapLayerId,
-  NetworkMapLayerVisibility,
-  NetworkMapProjectionMode,
+import {
+  NETWORK_MAP_LAYER_IDS,
+  type NetworkMapLayerId,
+  type NetworkMapLayerVisibility,
+  type NetworkMapProjectionMode,
 } from '../lib/types';
 
 type NetworkMapLayerControlsProps = {
@@ -31,7 +32,7 @@ export function NetworkMapLayerControls({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-4 rounded-lg border border-neutral-6 bg-neutral-2/80 px-4 py-3 text-sm backdrop-blur-sm',
+        'flex flex-wrap items-center gap-4 px-0 py-2 text-sm',
         className,
       )}
     >

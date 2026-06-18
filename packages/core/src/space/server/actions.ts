@@ -1,7 +1,7 @@
 'use server';
 
 // TODO: #602 Define RLS Policies for Spaces Table
-// import { getDb } from '@hypha-platform/core/server';
+import { getDb } from '../../common/server/get-db';
 import {
   createSpace,
   deleteSpaceBySlug,
@@ -67,11 +67,13 @@ export async function updateSpaceConfigurationByIdAction(
   data: UpdateSpaceByIdInput,
   { authToken }: { authToken?: string },
 ) {
-  // TODO: #602 Define RLS Policies for Spaces Table
-  // const db = getDb({ authToken });
+  if (!authToken) {
+    throw new Error('authToken is required to update space configuration');
+  }
+  const authDb = getDb({ authToken });
   const { originalSpace, updatedSpace } = await updateSpaceConfigurationById(
     data,
-    { db },
+    { db: authDb },
   );
 
   const { slug: originalSlug } = originalSpace;

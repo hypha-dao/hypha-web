@@ -10,8 +10,6 @@ import {
 import {
   NetworkAddLocationButton,
   NetworkGlobeMap,
-  NetworkMapView,
-  NetworkMapViewToggle,
   SpaceCardList,
   SpaceSearch,
 } from '@hypha-platform/epics';
@@ -148,14 +146,12 @@ export function ExploreSpaces({
     [nonArchivedSpaces, categories],
   );
 
-  const {
-    filteredSpaces: selectedSpaces,
-    isLoading: isDiscoverabilityLoading,
-  } = useFilterSpacesListWithDiscoverability({
-    spaces: categoryFilteredSpaces,
-    useGeneralState: true,
-    excludeSpaceLevelFromNetwork: true,
-  });
+  const { filteredSpaces: selectedSpaces } =
+    useFilterSpacesListWithDiscoverability({
+      spaces: categoryFilteredSpaces,
+      useGeneralState: true,
+      excludeSpaceLevelFromNetwork: true,
+    });
 
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(
@@ -217,22 +213,6 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
-  const view: NetworkMapView =
-    enableNetworkMap && searchParams.get('view') !== 'list' ? 'map' : 'list';
-
-  const setView = React.useCallback(
-    (nextView: NetworkMapView) => {
-      const params = new URLSearchParams(searchParams);
-      if (nextView === 'list') {
-        params.set('view', 'list');
-      } else {
-        params.delete('view');
-      }
-      replace(`${pathname}?${params.toString()}`);
-    },
-    [searchParams, pathname, replace],
-  );
-
   const multiSelectVariants = cva(
     'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
     {
@@ -288,57 +268,29 @@ export function ExploreSpaces({
   const { isAuthenticated } = useAuthentication();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-9">
       <Heading
         size="9"
         color="secondary"
         weight="medium"
         align="center"
-        className="flex flex-col mb-16"
+        className="flex flex-col"
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>
       </Heading>
-      <div className="flex justify-center">
-        <SpaceSearch value={query} />
-      </div>
-      {/* Restore after bring counters back to top */}
-      {/* <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-15 flex-wrap"> */}
-      <div className="flex justify-center space-x-2 space-y-2 mt-3 mb-3 flex-wrap">
-        {tags.map((tag) => (
-          <Badge
-            key={tag.value}
-            className={cn(
-              multiSelectVariants({
-                variant: categories?.includes(tag.value)
-                  ? 'secondary'
-                  : 'default',
-              }),
-            )}
-            style={{ cursor: 'pointer', animationDuration: '0s' }}
-            onClick={() => {
-              const newCategories = categories?.includes(tag.value)
-                ? []
-                : [tag.value];
-              setCategories(newCategories);
-            }}
-          >
-            {tag.label}
-          </Badge>
-        ))}
-      </div>
-      {/*
-        Uncomment following piece when counters
-        are needed to be moved to top
-      */}
-      {/* <Separator className="mt-1 mb-1" />
-      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 mb-6">
+
+      {enableNetworkMap ? (
+        <NetworkGlobeMap lang={lang} spaces={mapSpaces} className="w-full" />
+      ) : null}
+
+      <div className="flex justify-around flex-row columns-3 space-x-3">
         <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
             {selectedSpaces.length}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Spaces
+            {tCommon('Spaces')}
           </div>
         </div>
         <div className="flex flex-col">
@@ -346,7 +298,7 @@ export function ExploreSpaces({
             {uniqueMemberAddresses.size}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Members
+            {tCommon('Members')}
           </div>
         </div>
         <div className="flex flex-col">
@@ -354,25 +306,49 @@ export function ExploreSpaces({
             {agreementCount}
           </div>
           <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            Agreements
+            {tCommon('Agreements')}
           </div>
         </div>
       </div>
-      <Separator className="mt-1 mb-1" /> */}
-      <div className="flex flex-row w-full h-4 pt-10 pb-10 items-center">
+
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-center">
+          <SpaceSearch value={query} />
+        </div>
+        <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
+          {tags.map((tag) => (
+            <Badge
+              key={tag.value}
+              className={cn(
+                multiSelectVariants({
+                  variant: categories?.includes(tag.value)
+                    ? 'secondary'
+                    : 'default',
+                }),
+              )}
+              style={{ cursor: 'pointer', animationDuration: '0s' }}
+              onClick={() => {
+                const newCategories = categories?.includes(tag.value)
+                  ? []
+                  : [tag.value];
+                setCategories(newCategories);
+              }}
+            >
+              {tag.label}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="flex flex-row w-full items-center gap-2">
         <CategoryLabel
           selectedSpaces={selectedSpaces}
           categories={categories}
           allLabel={t('all')}
           className="flex grow"
         />
-        {enableNetworkMap ? (
-          <NetworkMapViewToggle
-            value={view}
-            onChange={setView}
-            className="mr-2"
-          />
-        ) : null}
         <div className="flex flex-col grow-0">
           <Combobox
             options={orderOptions}
@@ -401,45 +377,13 @@ export function ExploreSpaces({
           </Button>
         </Link>
       </div>
-      <div className="space-y-6 flex mt-4 mb-7">
-        {view === 'map' && enableNetworkMap ? (
-          <NetworkGlobeMap lang={lang} spaces={mapSpaces} className="w-full" />
-        ) : (
-          <SpaceCardList
-            lang={lang}
-            spaces={sortedSpaces}
-            pageSize={12}
-            cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-          />
-        )}
-      </div>
-      <Separator className="mt-1 mb-1" />
-      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 -mb-15">
-        <div className="flex flex-col">
-          <div className="flex justify-center text-7 font-medium">
-            {selectedSpaces.length}
-          </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            {tCommon('Spaces')}
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex justify-center text-7 font-medium">
-            {uniqueMemberAddresses.size}
-          </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            {tCommon('Members')}
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex justify-center text-7 font-medium">
-            {agreementCount}
-          </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            {tCommon('Agreements')}
-          </div>
-        </div>
-      </div>
+
+      <SpaceCardList
+        lang={lang}
+        spaces={sortedSpaces}
+        pageSize={12}
+        cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+      />
     </div>
   );
 }
