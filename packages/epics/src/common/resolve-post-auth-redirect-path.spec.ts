@@ -73,6 +73,18 @@ describe('resolvePostAuthRedirectPath', () => {
     ).toBe('/en/dho/hypha/coherence');
   });
 
+  it('normalizes bare stored space paths to overview', () => {
+    saveAuthReturnPath('/en/dho/hypha');
+
+    expect(
+      resolvePostAuthRedirectPath({
+        pathname: '/en/profile/signup',
+        lang: 'en',
+        baseRedirectPath: '/my-spaces',
+      }),
+    ).toBe('/en/dho/hypha/overview');
+  });
+
   it('falls back to the current DHO path when no stored return path exists', () => {
     expect(
       resolvePostAuthRedirectPathOrDefault({

@@ -50,7 +50,7 @@ export const SpaceBreadcrumbItem = ({
       </BreadcrumbSeparator>
       <BreadcrumbItem>
         <BreadcrumbLink
-          href={`${lang ? `/${lang}` : ''}/dho/${breadcrumb.slug}/agreements`}
+          href={`${lang ? `/${lang}` : ''}/dho/${breadcrumb.slug}/overview`}
           className="flex items-center"
         >
           {breadcrumb.title}

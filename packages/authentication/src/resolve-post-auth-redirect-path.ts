@@ -40,7 +40,7 @@ function getDhoSpaceContextPath({
 
   const nextSegment = match[1];
   const activeTab =
-    nextSegment && VALID_DHO_TABS.has(nextSegment) ? nextSegment : 'agreements';
+    nextSegment && VALID_DHO_TABS.has(nextSegment) ? nextSegment : 'overview';
 
   return `/${lang}/dho/${spaceSlug}/${activeTab}`;
 }
