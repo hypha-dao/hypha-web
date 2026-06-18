@@ -4,7 +4,6 @@ import * as React from 'react';
 import * as d3 from 'd3';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import { Loader2 } from 'lucide-react';
 import { NetworkMapLayerControls } from './network-map-layer-controls';
@@ -15,12 +14,22 @@ import type {
 } from '../lib/types';
 import { hasSpaceMapLocation } from '@hypha-platform/core/client';
 import { loadLandGeo } from '../lib/load-land-geo';
-import { cartesian, rotationDelta } from '../lib/versor';
+import {
+  cartesian,
+  delta,
+  fromAngles,
+  interpolateAngles,
+  multiply,
+  toAngles,
+  type Rotation,
+} from '../lib/versor';
 import {
   clampHoverPosition,
   NetworkMapPinHoverCard,
 } from './network-map-pin-hover-card';
 const PROJECTION_ANIMATION_MS = 1200;
+const DEFAULT_GLOBE_ROTATION: Rotation = [0, -20, 0];
+const FLAT_ROTATION: Rotation = [0, 0, 0];
 
 function pinColor(id: number): string {
   const hue = Math.abs((id * 47) % 360);
@@ -34,12 +43,17 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+function effectiveRotation(morph: number, rotate: Rotation): Rotation {
+  return morph >= 1 ? FLAT_ROTATION : rotate;
+}
+
 function buildProjection(
   width: number,
   height: number,
   morph: number,
-  rotate: [number, number, number],
+  rotate: Rotation,
 ): d3.GeoProjection {
+  const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
   const globeScale = minDim / 2 - 24;
   const flatScale = width / (2 * Math.PI);
@@ -50,7 +64,7 @@ function buildProjection(
       .geoOrthographic()
       .scale(globeScale)
       .translate(center)
-      .rotate(rotate)
+      .rotate(rotation)
       .clipAngle(90);
   }
 
@@ -59,7 +73,7 @@ function buildProjection(
       .geoEquirectangular()
       .scale(flatScale)
       .translate(center)
-      .rotate(rotate);
+      .rotate(rotation);
   }
 
   const scale = globeScale * (1 - morph) + flatScale * morph;
@@ -68,11 +82,15 @@ function buildProjection(
       .geoOrthographic()
       .scale(scale)
       .translate(center)
-      .rotate(rotate)
+      .rotate(rotation)
       .clipAngle(90 - morph * 45);
   }
 
-  return d3.geoEquirectangular().scale(scale).translate(center).rotate(rotate);
+  return d3
+    .geoEquirectangular()
+    .scale(scale)
+    .translate(center)
+    .rotate(rotation);
 }
 
 export function NetworkGlobeMap({
@@ -112,13 +130,18 @@ export function NetworkGlobeMap({
   const [loadError, setLoadError] = React.useState<string | null>(null);
 
   const landRef = React.useRef<d3.GeoPermissibleObjects | null>(null);
-  const rotateRef = React.useRef<[number, number, number]>([0, -20, 0]);
+  const rotateRef = React.useRef<Rotation>(DEFAULT_GLOBE_ROTATION);
+  const savedGlobeRotateRef = React.useRef<Rotation>(DEFAULT_GLOBE_ROTATION);
   const morphRef = React.useRef(morphProgress);
   const layersRef = React.useRef(layers);
   const locatedSpacesRef = React.useRef(locatedSpaces);
-  const dragSurfaceRef = React.useRef<[number, number, number] | null>(null);
-  const rotateStartRef = React.useRef<[number, number, number]>([0, -20, 0]);
+  const dragV0Ref = React.useRef<[number, number, number] | null>(null);
+  const dragR0Ref = React.useRef<Rotation>(DEFAULT_GLOBE_ROTATION);
+  const dragQ0Ref = React.useRef<ReturnType<typeof fromAngles> | null>(null);
   const animationFrameRef = React.useRef<number | null>(null);
+  const renderFrameRef = React.useRef<number | null>(null);
+  const isDraggingRef = React.useRef(false);
+  const renderMapRef = React.useRef<() => void>(() => {});
 
   morphRef.current = morphProgress;
   layersRef.current = layers;
@@ -171,106 +194,153 @@ export function NetworkGlobeMap({
     const morph = morphRef.current;
     const rotate = rotateRef.current;
     const projection = buildProjection(width, height, morph, rotate);
-
     const path = d3.geoPath(projection);
     const layerState = layersRef.current;
 
-    const root = svg.selectAll<SVGGElement, unknown>('g.map-root').data([null]);
-    const rootEnter = root.enter().append('g').attr('class', 'map-root');
-    const rootMerge = rootEnter.merge(root);
-
-    rootMerge.selectAll('*').remove();
-
-    if (layerState.water) {
-      rootMerge
-        .append('path')
-        .attr('class', 'map-ocean')
-        .attr('d', path({ type: 'Sphere' }) ?? '')
-        .attr('fill', 'var(--blue-4, #1e3a5f)')
-        .attr('stroke', 'none');
+    let root = svg.select<SVGGElement>('g.map-root');
+    if (root.empty()) {
+      root = svg.append('g').attr('class', 'map-root');
+      root.append('path').attr('class', 'map-ocean');
+      root.append('path').attr('class', 'map-graticule');
+      root.append('path').attr('class', 'map-land');
+      root.append('g').attr('class', 'map-pins');
     }
 
+    const ocean = root.select<SVGPathElement>('path.map-ocean');
+    if (layerState.water) {
+      ocean
+        .attr('d', path({ type: 'Sphere' }) ?? '')
+        .attr('fill', 'var(--blue-4, #1e3a5f)')
+        .attr('stroke', 'none')
+        .style('display', null);
+    } else {
+      ocean.attr('d', null).style('display', 'none');
+    }
+
+    const graticule = root.select<SVGPathElement>('path.map-graticule');
     if (layerState.graticule) {
-      rootMerge
-        .append('path')
-        .attr('class', 'map-graticule')
+      graticule
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
         .attr('stroke', 'var(--neutral-8, #888)')
         .attr('stroke-width', 0.4)
-        .attr('opacity', 0.45);
+        .attr('opacity', 0.45)
+        .style('display', null);
+    } else {
+      graticule.attr('d', null).style('display', 'none');
     }
 
+    const landPath = root.select<SVGPathElement>('path.map-land');
     if (layerState.land) {
-      rootMerge
-        .append('path')
-        .attr('class', 'map-land')
+      landPath
         .attr('d', path(land) ?? '')
         .attr('fill', 'var(--neutral-6, #444)')
         .attr('stroke', 'var(--neutral-9, #ccc)')
-        .attr('stroke-width', 0.5);
+        .attr('stroke-width', 0.5)
+        .style('display', null);
+    } else {
+      landPath.attr('d', null).style('display', 'none');
     }
 
-    const pinGroup = rootMerge.append('g').attr('class', 'map-pins');
-    for (const space of locatedSpacesRef.current) {
+    const pinGroup = root.select<SVGGElement>('g.map-pins');
+    const pins = pinGroup
+      .selectAll<SVGGElement, (typeof locatedSpacesRef.current)[number]>(
+        'g.map-pin',
+      )
+      .data(locatedSpacesRef.current, (space) => space.id);
+
+    pins.exit().remove();
+
+    const pinsEnter = pins
+      .enter()
+      .append('g')
+      .attr('class', 'map-pin')
+      .attr('cursor', 'pointer')
+      .on('click', (_event, space) => {
+        router.push(`/${lang}/dho/${space.slug}/agreements`);
+      })
+      .on('mouseenter', function (event: MouseEvent, space) {
+        if (isDraggingRef.current) {
+          return;
+        }
+        updateHoveredPinRef.current(space.id, event);
+      })
+      .on('mousemove', function (event: MouseEvent, space) {
+        if (isDraggingRef.current) {
+          return;
+        }
+        updateHoveredPinRef.current(space.id, event);
+      })
+      .on('mouseleave', () => {
+        if (isDraggingRef.current) {
+          return;
+        }
+        clearHoveredPinRef.current();
+      });
+
+    pinsEnter
+      .append('circle')
+      .attr('r', 12)
+      .attr('fill', 'transparent')
+      .attr('pointer-events', 'all');
+
+    pinsEnter
+      .append('circle')
+      .attr('r', 5)
+      .attr('fill', (space) => pinColor(space.id))
+      .attr('stroke', 'white')
+      .attr('stroke-width', 1.5)
+      .attr('pointer-events', 'none');
+
+    pinsEnter
+      .append('title')
+      .text((space) => space.locationLabel ?? space.title);
+
+    pins.merge(pinsEnter).each(function (space) {
       const latitude = space.latitude;
       const longitude = space.longitude;
       if (latitude == null || longitude == null) {
-        continue;
+        d3.select(this).style('display', 'none');
+        return;
       }
 
       const projected = projection([longitude, latitude]);
       if (!projected) {
-        continue;
+        d3.select(this).style('display', 'none');
+        return;
       }
+
       const [x, y] = projected;
       if (!Number.isFinite(x) || !Number.isFinite(y)) {
-        continue;
+        d3.select(this).style('display', 'none');
+        return;
       }
 
-      const pinNode = pinGroup
-        .append('g')
-        .attr('class', 'map-pin')
+      d3.select(this)
         .attr('transform', `translate(${x},${y})`)
-        .attr('cursor', 'pointer')
-        .on('click', () => {
-          router.push(`/${lang}/dho/${space.slug}/agreements`);
-        })
-        .on('mouseenter', function (event: MouseEvent) {
-          updateHoveredPinRef.current(space.id, event);
-        })
-        .on('mousemove', function (event: MouseEvent) {
-          updateHoveredPinRef.current(space.id, event);
-        })
-        .on('mouseleave', () => {
-          clearHoveredPinRef.current();
-        });
-
-      pinNode
-        .append('circle')
-        .attr('r', 12)
-        .attr('fill', 'transparent')
-        .attr('pointer-events', 'all');
-
-      pinNode
-        .append('circle')
-        .attr('r', 5)
-        .attr('fill', pinColor(space.id))
-        .attr('stroke', 'white')
-        .attr('stroke-width', 1.5)
-        .attr('pointer-events', 'none');
-
-      pinNode.append('title').text(space.locationLabel ?? space.title);
-    }
+        .style('display', null);
+    });
   }, [lang, router]);
+
+  renderMapRef.current = renderMap;
+
+  const requestRender = React.useCallback(() => {
+    if (renderFrameRef.current != null) {
+      return;
+    }
+    renderFrameRef.current = requestAnimationFrame(() => {
+      renderFrameRef.current = null;
+      renderMapRef.current();
+    });
+  }, []);
 
   const scheduleRender = React.useCallback(() => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        renderMap();
+        requestRender();
       });
     });
-  }, [renderMap]);
+  }, [requestRender]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -320,58 +390,90 @@ export function NetworkGlobeMap({
     }
 
     const resizeObserver = new ResizeObserver(() => {
-      renderMap();
+      requestRender();
     });
     resizeObserver.observe(container);
 
+    function mapDimensions() {
+      const width = container!.clientWidth;
+      const height = Math.max(360, Math.min(560, width * 0.62));
+      return { width, height };
+    }
+
+    function pointerFromEvent(
+      event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>,
+    ): [number, number] {
+      return d3.pointer(event.sourceEvent, svgElement);
+    }
+
+    function globeProjectionAtRotation(rotate: Rotation) {
+      const { width, height } = mapDimensions();
+      return buildProjection(width, height, 0, rotate);
+    }
+
     const dragBehavior = d3
       .drag<SVGSVGElement, unknown>()
+      .filter((event) => {
+        if (morphRef.current >= 0.01) {
+          return false;
+        }
+        return !event.ctrlKey && !event.button;
+      })
       .on('start', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
+        if (event.sourceEvent instanceof MouseEvent) {
+          event.sourceEvent.preventDefault();
+        }
+        isDraggingRef.current = true;
         clearHoveredPinRef.current();
-        const invert = getProjection()?.invert?.([event.x, event.y]);
+
+        const [x, y] = pointerFromEvent(event);
+        const invert = globeProjectionAtRotation(rotateRef.current).invert?.([
+          x,
+          y,
+        ]);
         if (!invert) {
-          dragSurfaceRef.current = null;
+          dragV0Ref.current = null;
+          dragQ0Ref.current = null;
           return;
         }
-        dragSurfaceRef.current = cartesian(invert);
-        rotateStartRef.current = [...rotateRef.current];
+
+        dragV0Ref.current = cartesian(invert);
+        dragR0Ref.current = [...rotateRef.current];
+        dragQ0Ref.current = fromAngles(rotateRef.current);
       })
       .on('drag', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
-        const invert = getProjection()?.invert?.([event.x, event.y]);
-        const surface = dragSurfaceRef.current;
-        if (!invert || !surface) {
+        const v0 = dragV0Ref.current;
+        const r0 = dragR0Ref.current;
+        const q0 = dragQ0Ref.current;
+        if (!v0 || !q0) {
           return;
         }
-        const delta = rotationDelta(surface, cartesian(invert));
-        rotateRef.current = [
-          rotateStartRef.current[0] + delta[0],
-          rotateStartRef.current[1] + delta[1],
-          rotateStartRef.current[2],
-        ];
-        renderMap();
+
+        const [x, y] = pointerFromEvent(event);
+        const invert = globeProjectionAtRotation(r0).invert?.([x, y]);
+        if (!invert) {
+          return;
+        }
+
+        const v1 = cartesian(invert);
+        const q1 = multiply(q0, delta(v0, v1));
+        rotateRef.current = toAngles(q1);
+        savedGlobeRotateRef.current = rotateRef.current;
+        requestRender();
       })
       .on('end', () => {
-        dragSurfaceRef.current = null;
+        isDraggingRef.current = false;
+        dragV0Ref.current = null;
+        dragQ0Ref.current = null;
       });
 
     d3.select(svgElement).call(dragBehavior);
-
-    function getProjection() {
-      const width = container!.clientWidth;
-      const height = Math.max(360, Math.min(560, width * 0.62));
-      return buildProjection(
-        width,
-        height,
-        morphRef.current,
-        rotateRef.current,
-      );
-    }
 
     return () => {
       resizeObserver.disconnect();
       d3.select(svgElement).on('.drag', null);
     };
-  }, [renderMap, isLoadingGeo, loadError]);
+  }, [isLoadingGeo, loadError, requestRender]);
 
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
@@ -387,11 +489,22 @@ export function NetworkGlobeMap({
 
       setSelectedProjection(target);
 
+      const fromRotate = [...rotateRef.current] as Rotation;
+      const toRotate: Rotation =
+        target === 'flat'
+          ? (() => {
+              savedGlobeRotateRef.current = [...rotateRef.current] as Rotation;
+              return FLAT_ROTATION;
+            })()
+          : savedGlobeRotateRef.current;
+      const interpolateRotation = interpolateAngles(fromRotate, toRotate);
+
       if (prefersReducedMotion()) {
         morphRef.current = toMorph;
+        rotateRef.current = toRotate;
         setMorphProgress(toMorph);
         setProjectionMode(target);
-        renderMap();
+        requestRender();
         return;
       }
 
@@ -401,27 +514,32 @@ export function NetworkGlobeMap({
         const t = Math.min(1, (now - start) / PROJECTION_ANIMATION_MS);
         const eased = d3.easeCubicInOut(t);
         morphRef.current = fromMorph + (toMorph - fromMorph) * eased;
-        renderMap();
+        rotateRef.current = interpolateRotation(eased);
+        requestRender();
         if (t < 1) {
           animationFrameRef.current = requestAnimationFrame(step);
         } else {
           animationFrameRef.current = null;
           morphRef.current = toMorph;
+          rotateRef.current = toRotate;
           setMorphProgress(toMorph);
           setProjectionMode(target);
-          renderMap();
+          requestRender();
         }
       };
 
       animationFrameRef.current = requestAnimationFrame(step);
     },
-    [renderMap],
+    [requestRender],
   );
 
   React.useEffect(() => {
     return () => {
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (renderFrameRef.current != null) {
+        cancelAnimationFrame(renderFrameRef.current);
       }
     };
   }, []);
@@ -473,7 +591,10 @@ export function NetworkGlobeMap({
           <svg
             ref={svgRef}
             className={cn(
-              'block w-full cursor-grab touch-none select-none active:cursor-grabbing',
+              'block w-full touch-none select-none',
+              projectionMode === 'globe'
+                ? 'cursor-grab active:cursor-grabbing'
+                : 'cursor-default',
               isLoadingGeo ? 'invisible' : undefined,
             )}
             role="img"
@@ -519,7 +640,10 @@ export function NetworkGlobeMap({
         <svg
           ref={svgRef}
           className={cn(
-            'block w-full cursor-grab touch-none select-none active:cursor-grabbing',
+            'block w-full touch-none select-none',
+            projectionMode === 'globe'
+              ? 'cursor-grab active:cursor-grabbing'
+              : 'cursor-default',
             isLoadingGeo ? 'invisible' : undefined,
           )}
           role="img"
