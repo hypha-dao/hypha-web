@@ -17,6 +17,11 @@ import {
   type NetworkMapLayerVisibility,
   type NetworkMapProjectionMode,
 } from '../lib/types';
+import {
+  segmentedButtonClass,
+  segmentedListClass,
+  segmentedTriggerClass,
+} from '../lib/segmented-control-styles';
 
 type NetworkMapLayerControlsProps = {
   layers: NetworkMapLayerVisibility;
@@ -58,18 +63,12 @@ export function NetworkMapLayerControls({
           onProjectionModeChange(value as NetworkMapProjectionMode)
         }
       >
-        <TabsList className="h-8 w-full shrink-0 gap-0.5 bg-transparent p-0 sm:w-auto">
-          <TabsTrigger
-            value="globe"
-            className="gap-1.5 rounded-md bg-transparent px-2.5 text-xs text-muted-foreground shadow-none hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none sm:text-sm"
-          >
+        <TabsList className={cn(segmentedListClass, 'w-full sm:w-auto')}>
+          <TabsTrigger value="globe" className={segmentedTriggerClass}>
             <Globe className="size-3.5 shrink-0" aria-hidden />
             {t('globeView')}
           </TabsTrigger>
-          <TabsTrigger
-            value="flat"
-            className="gap-1.5 rounded-md bg-transparent px-2.5 text-xs text-muted-foreground shadow-none hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none sm:text-sm"
-          >
+          <TabsTrigger value="flat" className={segmentedTriggerClass}>
             <Map className="size-3.5 shrink-0" aria-hidden />
             {t('flatView')}
           </TabsTrigger>
@@ -96,21 +95,9 @@ export function NetworkMapLayerControls({
               type="button"
               aria-pressed={active}
               onClick={() => onLayerChange(layerId, !active)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-                active
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
+              className={segmentedButtonClass(active)}
             >
-              <Icon
-                className={cn(
-                  'size-3.5 shrink-0',
-                  active ? 'text-accent-9' : 'text-neutral-9',
-                )}
-                aria-hidden
-              />
+              <Icon className="size-3.5 shrink-0" aria-hidden />
               <span>{t(`${layerId}Layer`)}</span>
             </button>
           );
