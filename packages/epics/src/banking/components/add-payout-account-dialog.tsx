@@ -1225,7 +1225,10 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     onPostalCodeChange={setSwiftBankPostal}
                     postalRequired={false}
                     country={swiftBankCountry}
-                    onCountryChange={setSwiftBankCountry}
+                    onCountryChange={(c) => {
+                      setSwiftBankCountry(c);
+                      setSwiftBankState('');
+                    }}
                     countryOptions={COUNTRIES}
                     subdivision={swiftBankState}
                     onSubdivisionChange={setSwiftBankState}
@@ -1291,7 +1294,10 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   postalCode={postalCode}
                   onPostalCodeChange={setPostalCode}
                   country={country}
-                  onCountryChange={setCountry}
+                  onCountryChange={(c) => {
+                    setCountry(c);
+                    setSubdivision('');
+                  }}
                   countryOptions={countryOptions}
                   subdivision={subdivision}
                   onSubdivisionChange={setSubdivision}
@@ -1299,8 +1305,6 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     isUsAddress ? t('subdivisionUs') : t('subdivision')
                   }
                   subdivisionRequired={isUsAddress}
-                  subdivisionMaxLength={isUsAddress ? 2 : undefined}
-                  subdivisionPlaceholder={isUsAddress ? 'CA' : undefined}
                   disabled={isSubmitting}
                   fieldErrors={fieldErrors}
                   onClearFieldError={clearFieldError}

@@ -778,6 +778,7 @@
         "city": "Stadt",
         "subdivision": "Bundesland / Region",
         "subdivisionUs": "Bundesstaat",
+        "subdivisionUsPlaceholder": "Bundesstaat auswählen…",
         "postalCode": "Postleitzahl",
         "country": "Land",
         "countryPlaceholder": "Land auswählen…",

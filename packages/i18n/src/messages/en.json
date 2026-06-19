@@ -702,6 +702,7 @@
         "city": "City",
         "subdivision": "State / Province",
         "subdivisionUs": "State",
+        "subdivisionUsPlaceholder": "Select a state…",
         "postalCode": "Postal code",
         "country": "Country",
         "countryPlaceholder": "Select a country…",

@@ -2971,6 +2971,7 @@
         "city": "Ciudad",
         "subdivision": "Estado / Provincia",
         "subdivisionUs": "Estado",
+        "subdivisionUsPlaceholder": "Seleccionar estado…",
         "postalCode": "Código postal",
         "country": "País",
         "countryPlaceholder": "Seleccione un país…",

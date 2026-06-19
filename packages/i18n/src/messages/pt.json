@@ -2969,6 +2969,7 @@
         "city": "Cidade",
         "subdivision": "Estado / Província",
         "subdivisionUs": "Estado",
+        "subdivisionUsPlaceholder": "Selecionar estado…",
         "postalCode": "CEP / Código postal",
         "country": "País",
         "countryPlaceholder": "Selecione um país…",
