@@ -2971,6 +2971,8 @@
         "postalCode": "Code postal",
         "country": "Pays",
         "countryPlaceholder": "Sélectionner un pays…",
+        "fieldRequired": "Ce champ est obligatoire",
+        "invalidIban": "IBAN invalide — vérifiez le numéro et réessayez",
         "submit": "Ajouter un compte de paiement",
         "submitting": "Création…",
         "success": {

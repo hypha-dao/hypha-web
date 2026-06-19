@@ -47,7 +47,6 @@ import {
 } from '../banking-ui';
 
 const ADD_PAYOUT_FORM_ID = 'add-payout-account-form';
-const REQUIRED_MSG = 'This field is required';
 
 const ENABLED_PAYOUT_CURRENCIES = getEnabledPayoutCurrencyKeys();
 
@@ -187,6 +186,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   onSuccess,
 }) => {
   const t = useTranslations('BankingTab.payouts.addDialog');
+  const REQUIRED_MSG = t('fieldRequired');
   const radioName = useId();
 
   const [step, setStep] = useState<
@@ -386,14 +386,14 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
       if (!iban.trim()) {
         errs.iban = REQUIRED_MSG;
       } else if (!isValidIban(iban.trim().replace(/\s/g, ''))) {
-        errs.iban = 'Invalid IBAN — check the number and try again';
+        errs.iban = t('invalidIban');
       }
     } else if (selectedCurrency === 'swift') {
       if (swiftAccountFormat === 'iban') {
         if (!iban.trim()) {
           errs.iban = REQUIRED_MSG;
         } else if (!isValidIban(iban.trim().replace(/\s/g, ''))) {
-          errs.iban = 'Invalid IBAN — check the number and try again';
+          errs.iban = t('invalidIban');
         }
         if (!swiftIbanCountry) errs.swiftIbanCountry = REQUIRED_MSG;
       } else {

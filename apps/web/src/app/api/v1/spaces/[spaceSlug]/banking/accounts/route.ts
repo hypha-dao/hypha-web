@@ -106,10 +106,10 @@ export async function POST(
     const supportedCurrencies = new Set(
       supportedRailsEnv
         .split(',')
-        .map((s) => s.trim())
+        .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
     );
-    if (!supportedCurrencies.has(parsed.data.currency)) {
+    if (!supportedCurrencies.has(parsed.data.currency.toLowerCase())) {
       return NextResponse.json(
         { error: 'This deposit rail is not currently enabled.' },
         { status: 403 },

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { DatabaseInstance } from '../../common/server/types';
 import {
   BRIDGE_LIQUIDATION_SOURCE_CHAIN,
@@ -93,11 +94,19 @@ export async function createSpaceBankPayoutAccount(
   const kycProvider =
     options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
 
-  const externalAccountIdempotencyKey = `ea:${customerId}:${
-    input.railKey
-  }:${sourceCurrency}:${
-    input.accountNumber ?? input.iban ?? input.routingNumber ?? 'unknown'
-  }`;
+  const idempotencyFingerprint = createHash('sha256')
+    .update(
+      [
+        input.accountNumber ?? '',
+        input.iban ?? '',
+        input.routingNumber ?? '',
+        input.sortCode ?? '',
+      ]
+        .join('|')
+        .toLowerCase(),
+    )
+    .digest('hex');
+  const externalAccountIdempotencyKey = `ea:${customerId}:${input.railKey}:${sourceCurrency}:${idempotencyFingerprint}`;
 
   const externalAccount = await kycProvider.registerExternalAccount({
     customerId,

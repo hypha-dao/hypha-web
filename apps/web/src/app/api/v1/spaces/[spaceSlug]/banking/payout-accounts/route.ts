@@ -98,10 +98,10 @@ export async function POST(
     const supportedRails = new Set(
       supportedRailsEnv
         .split(',')
-        .map((s) => s.trim())
+        .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
     );
-    if (!supportedRails.has(parsed.data.railKey)) {
+    if (!supportedRails.has(parsed.data.railKey.toLowerCase())) {
       return NextResponse.json(
         { error: 'This payout rail is not currently enabled.' },
         { status: 403 },

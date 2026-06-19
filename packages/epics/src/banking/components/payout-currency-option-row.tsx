@@ -54,11 +54,11 @@ export function getEnabledPayoutCurrencyKeys(): PayoutCurrencyKey[] {
   const allowed = new Set(
     raw
       .split(',')
-      .map((s) => s.trim())
+      .map((s) => s.trim().toLowerCase())
       .filter(Boolean),
   );
   return PAYOUT_CURRENCY_KEYS.filter((c) =>
-    allowed.has(payoutCurrencyToRailKey(c)),
+    allowed.has(payoutCurrencyToRailKey(c).toLowerCase()),
   );
 }
 

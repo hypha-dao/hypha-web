@@ -782,6 +782,8 @@
         "postalCode": "Postleitzahl",
         "country": "Land",
         "countryPlaceholder": "Land auswählen…",
+        "fieldRequired": "Dieses Feld ist erforderlich",
+        "invalidIban": "Ungültige IBAN — bitte prüfen Sie die Nummer und versuchen Sie es erneut",
         "submit": "Auszahlungskonto hinzufügen",
         "submitting": "Wird erstellt…",
         "success": {

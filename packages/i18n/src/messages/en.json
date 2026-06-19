@@ -706,6 +706,8 @@
         "postalCode": "Postal code",
         "country": "Country",
         "countryPlaceholder": "Select a country…",
+        "fieldRequired": "This field is required",
+        "invalidIban": "Invalid IBAN — check the number and try again",
         "submit": "Add payout account",
         "submitting": "Creating…",
         "success": {

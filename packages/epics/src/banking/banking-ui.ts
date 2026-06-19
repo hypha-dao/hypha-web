@@ -344,10 +344,12 @@ export function getEnabledDepositCurrencies(): readonly string[] {
   const allowed = new Set(
     raw
       .split(',')
-      .map((s) => s.trim())
+      .map((s) => s.trim().toLowerCase())
       .filter(Boolean),
   );
-  return BANK_VIRTUAL_ACCOUNT_CURRENCIES.filter((c) => allowed.has(c));
+  return BANK_VIRTUAL_ACCOUNT_CURRENCIES.filter((c) =>
+    allowed.has(c.toLowerCase()),
+  );
 }
 
 export function isBankRailSelectable(

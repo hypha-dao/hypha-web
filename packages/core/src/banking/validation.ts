@@ -186,7 +186,7 @@ export const schemaCreatePayoutAccount = z
       }),
     bic: z.string().trim().optional(),
     sortCode: z.string().trim().optional(),
-    destinationCurrency: z.string().trim().optional(),
+    destinationCurrency: z.string().trim().min(1).optional(),
     wireMessage: z.string().trim().max(140).optional(),
     // SWIFT-specific fields
     swiftAccountFormat: z.enum(['iban', 'other']).optional(),

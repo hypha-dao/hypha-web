@@ -2973,6 +2973,8 @@
         "postalCode": "CEP / Código postal",
         "country": "País",
         "countryPlaceholder": "Selecione um país…",
+        "fieldRequired": "Este campo é obrigatório",
+        "invalidIban": "IBAN inválido — verifique o número e tente novamente",
         "submit": "Adicionar conta de pagamento",
         "submitting": "Criando…",
         "success": {
