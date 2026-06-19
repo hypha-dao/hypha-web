@@ -181,11 +181,10 @@ export function SpaceLocationPicker({
     applySelection(
       lat,
       lng,
-      value.locationLabel?.trim() ||
-        t('manualLabel', { latitude: lat, longitude: lng }),
+      t('manualLabel', { latitude: lat, longitude: lng }),
       'manual',
     );
-  }, [applySelection, latInput, lngInput, t, value.locationLabel]);
+  }, [applySelection, latInput, lngInput, t]);
 
   React.useEffect(() => {
     setLatInput(value.latitude != null ? String(value.latitude) : '');
@@ -250,7 +249,6 @@ export function SpaceLocationPicker({
         {results.length > 0 ? (
           <ul
             className="border border-border rounded-md bg-background max-h-48 overflow-y-auto"
-            role="listbox"
             aria-label={t('resultsLabel')}
           >
             {results.map((result, index) => (

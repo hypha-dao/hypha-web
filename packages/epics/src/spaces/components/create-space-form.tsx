@@ -34,6 +34,7 @@ import {
   categoryGroupOptions,
   collapseCategoriesToGroups,
   createSpaceFiles,
+  isCategoryGroupId,
   mergeCategoryGroupsWithExisting,
   refineSpaceLocationCoords,
   schemaCreateSpaceFields,
@@ -825,7 +826,7 @@ export const SpaceForm = ({
                   onValueChange={(groupIds) =>
                     field.onChange(
                       mergeCategoryGroupsWithExisting(
-                        groupIds as CategoryGroupId[],
+                        groupIds.filter(isCategoryGroupId),
                         field.value ?? [],
                       ),
                     )

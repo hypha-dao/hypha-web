@@ -1,13 +1,14 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
-import { getAllSpaces, Space } from '@hypha-platform/core/server';
-import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import {
   extractUniqueCategoryGroups,
+  getAllSpaces,
   parseCategoryGroupFilterParam,
   SPACE_ORDERS,
+  Space,
   SpaceOrder,
-} from '@hypha-platform/core/client';
+} from '@hypha-platform/core/server';
+import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import { ExploreSpaces } from '@hypha-platform/epics';
 
 type PageProps = {

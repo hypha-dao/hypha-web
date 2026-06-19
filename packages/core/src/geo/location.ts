@@ -145,6 +145,9 @@ export function parseCoordinateInput(value: string): number | null {
     return null;
   }
   const normalized = trimmed.replace(',', '.');
+  if (!/^-?\d+(?:\.\d+)?$/.test(normalized)) {
+    return null;
+  }
   const parsed = Number.parseFloat(normalized);
   return Number.isFinite(parsed) ? parsed : null;
 }

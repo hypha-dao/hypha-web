@@ -3385,7 +3385,7 @@
     "manualCoordinateOutOfRange": "Breitengrad muss zwischen -90 und 90 liegen, Längengrad zwischen -180 und 180.",
     "resultsLabel": "Suchergebnisse für Standorte",
     "mapLabel": "Auf Karte markieren",
-    "mapAriaLabel": "Weltkarte. Klicken, um eine Markierung zu setzen.",
+    "mapAriaLabel": "Weltkarte. Wählen Sie einen Punkt, um eine Markierung zu setzen.",
     "mapHint": "Klicken Sie auf die Karte, um Koordinaten zu setzen, oder nutzen Sie die Suche oben.",
     "mapClickLabel": "{latitude}, {longitude}",
     "manualLabel": "{latitude}, {longitude}",

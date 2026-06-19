@@ -24,3 +24,8 @@ export * from './matrix/types';
 export * from './banking/server';
 export * from './geo/server';
 export { geocodeRequestSchema, geocodeResponseSchema } from './geo/validation';
+export {
+  extractUniqueCategoryGroups,
+  parseCategoryGroupFilterParam,
+} from './categories/groups';
+export { SPACE_ORDERS, type SpaceOrder } from './categories/types';

@@ -2857,7 +2857,7 @@
     "manualCoordinateOutOfRange": "La latitude doit être entre -90 et 90, la longitude entre -180 et 180.",
     "resultsLabel": "Résultats de recherche de lieu",
     "mapLabel": "Épingler sur la carte",
-    "mapAriaLabel": "Carte du monde. Cliquez pour placer une épingle.",
+    "mapAriaLabel": "Carte du monde. Sélectionnez un point pour placer une épingle.",
     "mapHint": "Cliquez sur la carte pour définir les coordonnées, ou utilisez la recherche ci-dessus.",
     "mapClickLabel": "{latitude}, {longitude}",
     "manualLabel": "{latitude}, {longitude}",

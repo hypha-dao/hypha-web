@@ -62,6 +62,7 @@ describe('parseCoordinateInput', () => {
   it('returns null for invalid values', () => {
     expect(parseCoordinateInput('')).toBeNull();
     expect(parseCoordinateInput('abc')).toBeNull();
+    expect(parseCoordinateInput('52abc')).toBeNull();
   });
 });
 

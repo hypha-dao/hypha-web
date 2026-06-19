@@ -2859,7 +2859,7 @@
     "manualCoordinateOutOfRange": "A latitude deve estar entre -90 e 90 e a longitude entre -180 e 180.",
     "resultsLabel": "Resultados da pesquisa de localização",
     "mapLabel": "Marcar no mapa",
-    "mapAriaLabel": "Mapa do mundo. Clique para colocar um pin.",
+    "mapAriaLabel": "Mapa do mundo. Selecione um ponto para colocar um pin.",
     "mapHint": "Clique no mapa para definir coordenadas ou use a pesquisa acima.",
     "mapClickLabel": "{latitude}, {longitude}",
     "manualLabel": "{latitude}, {longitude}",

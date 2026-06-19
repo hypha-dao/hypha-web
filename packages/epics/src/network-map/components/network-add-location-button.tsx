@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuthentication } from '@hypha-platform/authentication';
 import { Address, Space, isSpaceArchived } from '@hypha-platform/core/client';
 import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
@@ -43,16 +42,17 @@ type NetworkAddLocationButtonProps = {
   lang: Locale;
   spaces: Space[];
   className?: string;
+  isAuthenticated?: boolean;
 };
 
 export function NetworkAddLocationButton({
   lang,
   spaces,
   className,
+  isAuthenticated = false,
 }: NetworkAddLocationButtonProps) {
   const t = useTranslations('NetworkMap');
   const tCommon = useTranslations('Common');
-  const { isAuthenticated } = useAuthentication();
   const { person } = useMe();
   const router = useRouter();
   const [open, setOpen] = React.useState(false);

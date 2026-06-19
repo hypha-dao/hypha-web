@@ -21,13 +21,7 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import {
-  Badge,
-  Button,
-  Combobox,
-  Heading,
-  Separator,
-} from '@hypha-platform/ui';
+import { Button, Combobox, Heading, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
@@ -64,7 +58,7 @@ const CategoryLabel = ({
 }) => {
   return (
     <Text className={cn('text-4 text-left', className)}>
-      {categoryGroups ? (
+      {categoryGroups && categoryGroups.length > 0 ? (
         <Text className="text-4 text-left">
           {categoryGroups.map((groupId, index) => (
             <Text key={`cat-title-${groupId}`} className="text-4 ml-1">
@@ -307,6 +301,7 @@ export function ExploreSpaces({
             lang={lang}
             spaces={spaces}
             className="ml-2"
+            isAuthenticated={isAuthenticated}
           />
         ) : null}
         <Link
@@ -327,27 +322,28 @@ export function ExploreSpaces({
           <SpaceSearch value={query} />
         </div>
         <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
-          {tags.map((tag) => (
-            <Badge
-              key={tag.id}
-              className={cn(
-                multiSelectVariants({
-                  variant: categoryGroups?.includes(tag.id)
-                    ? 'secondary'
-                    : 'default',
-                }),
-              )}
-              style={{ cursor: 'pointer', animationDuration: '0s' }}
-              onClick={() => {
-                const nextCategoryGroups = categoryGroups?.includes(tag.id)
-                  ? []
-                  : [tag.id];
-                setCategoryGroups(nextCategoryGroups);
-              }}
-            >
-              {tag.label}
-            </Badge>
-          ))}
+          {tags.map((tag) => {
+            const isSelected = categoryGroups?.includes(tag.id) ?? false;
+            return (
+              <button
+                key={tag.id}
+                type="button"
+                aria-pressed={isSelected}
+                className={cn(
+                  multiSelectVariants({
+                    variant: isSelected ? 'secondary' : 'default',
+                  }),
+                )}
+                style={{ cursor: 'pointer', animationDuration: '0s' }}
+                onClick={() => {
+                  const nextCategoryGroups = isSelected ? [] : [tag.id];
+                  setCategoryGroups(nextCategoryGroups);
+                }}
+              >
+                {tag.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </>

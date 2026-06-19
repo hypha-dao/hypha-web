@@ -92,8 +92,12 @@ async function fetchNominatimOnce(
     throw new Error(`Nominatim request failed (${response.status})`);
   }
 
-  const payload = (await response.json()) as NominatimSearchResult[];
-  return mapNominatimResults(payload);
+  const payload: unknown = await response.json();
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  return mapNominatimResults(payload as NominatimSearchResult[]);
 }
 
 export async function searchNominatim(
