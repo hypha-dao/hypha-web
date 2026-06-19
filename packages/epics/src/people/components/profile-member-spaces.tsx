@@ -13,6 +13,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
 import { ExitIcon, GlobeIcon } from '@radix-ui/react-icons';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
 
 export type ProfileMemberSpacesProps = {
@@ -36,6 +37,7 @@ export const ProfileMemberSpaces = ({
   const isMyProfile = person.slug ? isMe(person.slug) : false;
 
   const iconSize = React.useMemo(() => (profileView ? 64 : 40), [profileView]);
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
@@ -52,6 +54,7 @@ export const ProfileMemberSpaces = ({
               </Link>
               <CreateSpaceButton
                 lang={lang as Locale}
+                isAuthenticated={isAuthenticated}
                 buttonClassName="gap-2"
               />
             </div>

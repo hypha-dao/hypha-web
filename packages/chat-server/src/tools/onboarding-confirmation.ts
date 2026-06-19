@@ -6,15 +6,13 @@ export type OnboardingConfirmationContext = {
 
 const VISUAL_GENERATION_PATTERN =
   /\b(generate|create|make)\b.*\b(image|images|logo|banner|icon|visual|visuals|placeholder|placeholders)\b|\b(image|images|logo|banner|icon|visual|visuals|placeholder|placeholders)\b.*\b(generate|create|make)\b/i;
+const VISUAL_NEGATION_PATTERN =
+  /\b(no|not|don't|do not|without|skip)\b.*\b(image|images|logo|banner|icon|visual|visuals|placeholder|placeholders|generate|create|make)\b/i;
 
 export function hasOnboardingConfirmation(
   ctx: OnboardingConfirmationContext,
   token: string,
 ): boolean {
-  if (ctx.setupPhase === 'confirm' || ctx.setupPhase === 'execute') {
-    return true;
-  }
-
   const candidates = [ctx.lastUserText, ...(ctx.recentUserTexts ?? [])].filter(
     (value): value is string => typeof value === 'string' && !!value.trim(),
   );
@@ -30,6 +28,7 @@ export function wantsGeneratedVisualsFromText(
   text: string | null | undefined,
 ): boolean {
   if (!text?.trim()) return false;
+  if (VISUAL_NEGATION_PATTERN.test(text)) return false;
   return VISUAL_GENERATION_PATTERN.test(text);
 }
 

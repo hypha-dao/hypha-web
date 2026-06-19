@@ -18,6 +18,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
 import { GlobeIcon } from '@radix-ui/react-icons';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
 
 export type MemberSpacesProps = {
@@ -52,6 +53,7 @@ export const MemberSpaces = ({
     () => isLoading || isLoadingSpaces,
     [isLoading, isLoadingSpaces],
   );
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
@@ -68,6 +70,7 @@ export const MemberSpaces = ({
               </Link>
               <CreateSpaceButton
                 lang={lang as Locale}
+                isAuthenticated={isAuthenticated}
                 buttonClassName="gap-2"
               />
             </div>

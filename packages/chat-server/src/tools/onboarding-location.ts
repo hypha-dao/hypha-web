@@ -7,11 +7,9 @@ export function normalizeLocationChoice(value: unknown): string {
 export function isSkippedLocationAnswer(value: unknown): boolean {
   const normalized = normalizeLocationChoice(value);
   if (!normalized) return false;
+  const exactSkips = new Set(['skip', 'no', 'none', 'skip location']);
+  if (exactSkips.has(normalized)) return true;
   return (
-    normalized === 'skip' ||
-    normalized === 'no' ||
-    normalized === 'none' ||
-    normalized.includes('skip') ||
     normalized.includes('no location') ||
     normalized.includes('prefer not') ||
     normalized.includes('not now') ||

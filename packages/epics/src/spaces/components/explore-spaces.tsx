@@ -272,7 +272,7 @@ export function ExploreSpaces({
             spaces={spaces}
             isAuthenticated={isAuthenticated}
           />
-          <CreateSpaceButton lang={lang} />
+          <CreateSpaceButton lang={lang} isAuthenticated={isAuthenticated} />
           <NetworkMapViewToggle value={view} onChange={setView} />
         </div>
       </div>
@@ -341,7 +341,11 @@ export function ExploreSpaces({
             allowEmptyChoice={false}
           />
         </div>
-        <CreateSpaceButton lang={lang} className="ml-2" />
+        <CreateSpaceButton
+          lang={lang}
+          isAuthenticated={isAuthenticated}
+          className="ml-2"
+        />
       </div>
     </div>
   );

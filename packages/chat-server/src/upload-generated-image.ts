@@ -1,14 +1,32 @@
 import 'server-only';
 import { UTApi } from 'uploadthing/server';
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  'image/png',
+  'image/webp',
+  'image/jpeg',
+]);
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
 function parseDataUrl(dataUrl: string): { buffer: Buffer; mimeType: string } {
   const match = /^data:([^;]+);base64,(.+)$/i.exec(dataUrl.trim());
   if (!match?.[1] || !match[2]) {
     throw new Error('Invalid image data URL.');
   }
+
+  const mimeType = match[1].toLowerCase();
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) {
+    throw new Error(`Unsupported image MIME type: ${mimeType}`);
+  }
+
+  const buffer = Buffer.from(match[2], 'base64');
+  if (buffer.byteLength > MAX_IMAGE_BYTES) {
+    throw new Error('Generated image exceeds the maximum allowed size.');
+  }
+
   return {
-    mimeType: match[1],
-    buffer: Buffer.from(match[2], 'base64'),
+    mimeType,
+    buffer,
   };
 }
 

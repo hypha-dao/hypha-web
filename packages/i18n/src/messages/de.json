@@ -165,6 +165,10 @@
       "sendFailed": "Prompt konnte nicht an die AI gesendet werden. Bitte erneut versuchen.",
       "helper": "Die AI schlägt jede Aktion vor und fragt vor Erstellung oder Änderung immer nach Bestätigung.",
       "unavailable": "AI-Onboarding ist in dieser Bereitstellung derzeit nicht verfügbar.",
+      "skipLocationMessage": "Standort überspringen",
+      "onboardingLocationSetWithLabel": "Standort festgelegt: {label}",
+      "onboardingLocationSetWithCoordinates": "Standort festgelegt: {latitude}, {longitude}",
+      "onboardingLocationSetFallback": "Standort festgelegt",
       "ariaLabel": "AI-Onboarding-Prompt",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -2660,7 +2664,11 @@
     "onboardingLocationTitle": "Standort auf der Karte",
     "onboardingLocationHint": "Suche eine Adresse oder klicke auf die Karte, um eine Markierung zu setzen. Du kannst überspringen, wenn du keinen Standort angeben möchtest.",
     "onboardingLocationConfirm": "Diesen Standort verwenden",
-    "onboardingLocationSkip": "Standort überspringen"
+    "onboardingLocationSkip": "Standort überspringen",
+    "onboardingLocationSkipMessage": "Standort überspringen",
+    "onboardingLocationSetWithLabel": "Standort festgelegt: {label}",
+    "onboardingLocationSetWithCoordinates": "Standort festgelegt: {latitude}, {longitude}",
+    "onboardingLocationSetFallback": "Standort festgelegt"
   },
   "HumanChatPanel": {
     "title": "Chat",

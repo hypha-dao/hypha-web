@@ -16,10 +16,13 @@ export const chatUiMessageSchema = z.object({
 });
 
 const onboardingSpaceLocationSchema = z.object({
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
-  locationLabel: z.string().nullable(),
-  locationSource: z.enum(['geocode', 'manual', 'map_click']).nullable(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  locationLabel: z.string().nullable().optional(),
+  locationSource: z
+    .enum(['geocode', 'manual', 'map_click'])
+    .nullable()
+    .optional(),
   skipped: z.boolean().optional(),
 });
 

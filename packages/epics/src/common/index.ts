@@ -38,6 +38,7 @@ export {
 export {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
+  type OnboardingLocationMessageLabels,
   onboardingSpaceLocationFromPicker,
   getClientEnableNetworkMap,
   shouldShowOnboardingLocationPicker,

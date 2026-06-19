@@ -165,6 +165,10 @@
       "sendFailed": "Prompt could not be sent to AI. Please retry.",
       "helper": "AI will propose each action and ask for confirmation before creating or updating anything.",
       "unavailable": "AI onboarding is temporarily unavailable on this deployment.",
+      "skipLocationMessage": "Skip location",
+      "onboardingLocationSetWithLabel": "Location set: {label}",
+      "onboardingLocationSetWithCoordinates": "Location set: {latitude}, {longitude}",
+      "onboardingLocationSetFallback": "Location set",
       "ariaLabel": "AI onboarding prompt",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -2662,7 +2666,11 @@
     "onboardingLocationTitle": "Location on map",
     "onboardingLocationHint": "Search for an address or click the map to place a pin. You can skip if you prefer not to show a location yet.",
     "onboardingLocationConfirm": "Use this location",
-    "onboardingLocationSkip": "Skip location"
+    "onboardingLocationSkip": "Skip location",
+    "onboardingLocationSkipMessage": "Skip location",
+    "onboardingLocationSetWithLabel": "Location set: {label}",
+    "onboardingLocationSetWithCoordinates": "Location set: {latitude}, {longitude}",
+    "onboardingLocationSetFallback": "Location set"
   },
   "HumanChatPanel": {
     "title": "Chat",

@@ -6,15 +6,6 @@ import {
 } from '../onboarding-confirmation';
 
 describe('onboarding confirmation helpers', () => {
-  it('treats setupPhase confirm as confirmed', () => {
-    expect(
-      hasOnboardingConfirmation(
-        { setupPhase: 'confirm', lastUserText: 'already did' },
-        'confirm-create-space',
-      ),
-    ).toBe(true);
-  });
-
   it('finds confirmation in recent user texts', () => {
     expect(
       hasOnboardingConfirmation(
@@ -27,6 +18,15 @@ describe('onboarding confirmation helpers', () => {
     ).toBe(true);
   });
 
+  it('does not bypass confirmation from setupPhase alone', () => {
+    expect(
+      hasOnboardingConfirmation(
+        { setupPhase: 'confirm', lastUserText: 'tell me more' },
+        'confirm-create-space',
+      ),
+    ).toBe(false);
+  });
+
   it('detects visual generation requests', () => {
     expect(wantsGeneratedVisualsFromText('perfect, generate images')).toBe(
       true,
@@ -37,5 +37,10 @@ describe('onboarding confirmation helpers', () => {
         'generate images',
       ]),
     ).toBe(true);
+  });
+
+  it('ignores negated visual generation requests', () => {
+    expect(wantsGeneratedVisualsFromText("don't generate images")).toBe(false);
+    expect(wantsGeneratedVisualsFromText('skip image generation')).toBe(false);
   });
 });

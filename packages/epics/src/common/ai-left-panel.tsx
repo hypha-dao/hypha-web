@@ -1542,12 +1542,26 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [buildMessageOptions, sendMessage],
   );
 
+  const onboardingLocationMessageLabels = useMemo(
+    () => ({
+      withLabel: (label: string) =>
+        t('onboardingLocationSetWithLabel', { label }),
+      withCoordinates: (latitude: number, longitude: number) =>
+        t('onboardingLocationSetWithCoordinates', { latitude, longitude }),
+      fallback: t('onboardingLocationSetFallback'),
+    }),
+    [t],
+  );
+
   const handleOnboardingLocationConfirm = useCallback(
     async (value: SpaceLocationValue) => {
       if (!onboardingContext || isStreaming) return;
       try {
         clearError();
-        const message = formatOnboardingLocationSubmitMessage(value);
+        const message = formatOnboardingLocationSubmitMessage(
+          value,
+          onboardingLocationMessageLabels,
+        );
         const nextContext = applyOnboardingLocationToContext(
           onboardingContext,
           onboardingSpaceLocationFromPicker(value),
@@ -1558,14 +1572,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         console.error('[AiLeftPanel] location confirm sendMessage error:', err);
       }
     },
-    [clearError, isStreaming, onboardingContext, sendOnboardingLocationMessage],
+    [
+      clearError,
+      isStreaming,
+      onboardingContext,
+      onboardingLocationMessageLabels,
+      sendOnboardingLocationMessage,
+    ],
   );
 
   const handleOnboardingLocationSkip = useCallback(async () => {
     if (!onboardingContext || isStreaming) return;
     try {
       clearError();
-      const message = 'skip location';
+      const message = t('onboardingLocationSkipMessage');
       const nextContext = applyOnboardingLocationToContext(
         onboardingContext,
         skippedOnboardingSpaceLocation(),
@@ -1580,6 +1600,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     isStreaming,
     onboardingContext,
     sendOnboardingLocationMessage,
+    t,
   ]);
 
   const enableNetworkMap = getClientEnableNetworkMap();

@@ -78,16 +78,23 @@ export function shouldShowOnboardingLocationPicker({
   return false;
 }
 
+export type OnboardingLocationMessageLabels = {
+  withLabel: (label: string) => string;
+  withCoordinates: (latitude: number, longitude: number) => string;
+  fallback: string;
+};
+
 export function formatOnboardingLocationSubmitMessage(
   value: SpaceLocationValue,
+  labels: OnboardingLocationMessageLabels,
 ): string {
   if (value.locationLabel?.trim()) {
-    return `Location set: ${value.locationLabel.trim()}`;
+    return labels.withLabel(value.locationLabel.trim());
   }
   if (value.latitude != null && value.longitude != null) {
-    return `Location set: ${value.latitude}, ${value.longitude}`;
+    return labels.withCoordinates(value.latitude, value.longitude);
   }
-  return 'Location set';
+  return labels.fallback;
 }
 
 export function onboardingSpaceLocationFromPicker(

@@ -60,9 +60,11 @@ export async function generateOpenRouterImage(prompt: string): Promise<string> {
     throw new Error('OPENROUTER_API_KEY is missing.');
   }
 
-  const response = await fetch(
-    'https://openrouter.ai/api/v1/chat/completions',
-    {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  let response: Response;
+  try {
+    response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -75,8 +77,11 @@ export async function generateOpenRouterImage(prompt: string): Promise<string> {
         modalities: ['image'],
         stream: false,
       }),
-    },
-  );
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => '');

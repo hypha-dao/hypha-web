@@ -14,4 +14,9 @@ describe('onboarding location helpers', () => {
     expect(isAnsweredLocationStep('Lisbon, Portugal')).toBe(true);
     expect(isSkippedLocationAnswer('Lisbon, Portugal')).toBe(false);
   });
+
+  it('does not treat place names containing "skip" as skipped', () => {
+    expect(isSkippedLocationAnswer('Skippack, Pennsylvania')).toBe(false);
+    expect(isAnsweredLocationStep('Skippack, Pennsylvania')).toBe(true);
+  });
 });

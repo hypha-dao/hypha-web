@@ -117,7 +117,7 @@ async function resolveSpaceLocationFields(
       latitude,
       longitude,
       locationLabel,
-      locationSource: locationSource ?? 'geocode',
+      locationSource: locationSource ?? null,
     };
   }
 

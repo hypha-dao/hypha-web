@@ -42,14 +42,14 @@ type NetworkAddLocationButtonProps = {
   lang: Locale;
   spaces: Space[];
   className?: string;
-  isAuthenticated?: boolean;
+  isAuthenticated: boolean;
 };
 
 export function NetworkAddLocationButton({
   lang,
   spaces,
   className,
-  isAuthenticated = false,
+  isAuthenticated,
 }: NetworkAddLocationButtonProps) {
   const t = useTranslations('NetworkMap');
   const tCommon = useTranslations('Common');

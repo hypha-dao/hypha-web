@@ -1,5 +1,18 @@
 import type { SpaceLocationSource } from '@hypha-platform/core/client';
 
+function parseFiniteCoordinate(
+  value: unknown,
+  min: number,
+  max: number,
+): number | null {
+  return typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= min &&
+    value <= max
+    ? value
+    : null;
+}
+
 export function onboardingLocationFromCreatePayload(
   payload: Record<string, unknown>,
 ): {
@@ -8,10 +21,8 @@ export function onboardingLocationFromCreatePayload(
   locationLabel?: string | null;
   locationSource?: SpaceLocationSource;
 } {
-  const latitude =
-    typeof payload.latitude === 'number' ? payload.latitude : null;
-  const longitude =
-    typeof payload.longitude === 'number' ? payload.longitude : null;
+  const latitude = parseFiniteCoordinate(payload.latitude, -90, 90);
+  const longitude = parseFiniteCoordinate(payload.longitude, -180, 180);
   if (latitude == null || longitude == null) {
     return {};
   }

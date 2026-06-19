@@ -151,12 +151,29 @@ export function OnboardingAiFullPage({
     [buildMessageOptions, sendMessage],
   );
 
+  const onboardingLocationMessageLabels = useMemo(
+    () => ({
+      withLabel: (label: string) =>
+        t('aiHero.onboardingLocationSetWithLabel', { label }),
+      withCoordinates: (latitude: number, longitude: number) =>
+        t('aiHero.onboardingLocationSetWithCoordinates', {
+          latitude,
+          longitude,
+        }),
+      fallback: t('aiHero.onboardingLocationSetFallback'),
+    }),
+    [t],
+  );
+
   const handleOnboardingLocationConfirm = useCallback(
     async (value: SpaceLocationValue) => {
       if (isStreaming) return;
       try {
         clearError();
-        const message = formatOnboardingLocationSubmitMessage(value);
+        const message = formatOnboardingLocationSubmitMessage(
+          value,
+          onboardingLocationMessageLabels,
+        );
         const nextContext = applyOnboardingLocationToContext(
           onboardingContext,
           onboardingSpaceLocationFromPicker(value),
@@ -170,14 +187,20 @@ export function OnboardingAiFullPage({
         );
       }
     },
-    [clearError, isStreaming, onboardingContext, sendOnboardingLocationMessage],
+    [
+      clearError,
+      isStreaming,
+      onboardingContext,
+      onboardingLocationMessageLabels,
+      sendOnboardingLocationMessage,
+    ],
   );
 
   const handleOnboardingLocationSkip = useCallback(async () => {
     if (isStreaming) return;
     try {
       clearError();
-      const message = 'skip location';
+      const message = t('aiHero.skipLocationMessage');
       const nextContext = applyOnboardingLocationToContext(
         onboardingContext,
         skippedOnboardingSpaceLocation(),
@@ -195,6 +218,7 @@ export function OnboardingAiFullPage({
     isStreaming,
     onboardingContext,
     sendOnboardingLocationMessage,
+    t,
   ]);
 
   const enableNetworkMap = getClientEnableNetworkMap();

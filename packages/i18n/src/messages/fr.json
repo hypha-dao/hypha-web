@@ -165,6 +165,10 @@
       "sendFailed": "Le prompt n’a pas pu être envoyé à l’AI. Veuillez réessayer.",
       "helper": "L’AI proposera chaque action et demandera une confirmation avant toute création ou modification.",
       "unavailable": "L’onboarding AI est temporairement indisponible sur ce déploiement.",
+      "skipLocationMessage": "Ignorer l'emplacement",
+      "onboardingLocationSetWithLabel": "Emplacement défini : {label}",
+      "onboardingLocationSetWithCoordinates": "Emplacement défini : {latitude}, {longitude}",
+      "onboardingLocationSetFallback": "Emplacement défini",
       "ariaLabel": "Invite d’onboarding AI",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -2136,7 +2140,11 @@
     "onboardingLocationTitle": "Emplacement sur la carte",
     "onboardingLocationHint": "Recherchez une adresse ou cliquez sur la carte pour placer une épingle. Vous pouvez ignorer si vous ne souhaitez pas afficher d'emplacement.",
     "onboardingLocationConfirm": "Utiliser cet emplacement",
-    "onboardingLocationSkip": "Ignorer l'emplacement"
+    "onboardingLocationSkip": "Ignorer l'emplacement",
+    "onboardingLocationSkipMessage": "Ignorer l'emplacement",
+    "onboardingLocationSetWithLabel": "Emplacement défini : {label}",
+    "onboardingLocationSetWithCoordinates": "Emplacement défini : {latitude}, {longitude}",
+    "onboardingLocationSetFallback": "Emplacement défini"
   },
   "HumanChatPanel": {
     "title": "Chat",

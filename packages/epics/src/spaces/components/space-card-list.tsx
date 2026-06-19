@@ -13,6 +13,7 @@ import { GlobeIcon } from '@radix-ui/react-icons';
 import { useSpaceCardList } from '../hooks/use-space-card-list';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { Text } from '@radix-ui/themes';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
 
 type SpaceCardListProps = {
@@ -37,6 +38,7 @@ export function SpaceCardList({
     pageSize,
   });
   const tCommon = useTranslations('Common');
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <>
@@ -75,7 +77,11 @@ export function SpaceCardList({
                   {tCommon('exploreSpaces')}
                 </Button>
               </Link>
-              <CreateSpaceButton lang={lang} buttonClassName="gap-2" />
+              <CreateSpaceButton
+                lang={lang}
+                isAuthenticated={isAuthenticated}
+                buttonClassName="gap-2"
+              />
             </div>
           </div>
         </Empty>

@@ -62,6 +62,19 @@ type SeedAckEventDetail = {
 
 const ONBOARDING_CONTEXT_STORAGE_KEY = 'hypha:ai-onboarding-context:v1';
 
+function parseStoredCoordinate(
+  value: unknown,
+  min: number,
+  max: number,
+): number | null {
+  return typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= min &&
+    value <= max
+    ? value
+    : null;
+}
+
 function parseStoredSpaceLocation(
   raw: unknown,
 ): OnboardingSpaceLocation | undefined {
@@ -75,18 +88,8 @@ function parseStoredSpaceLocation(
     return undefined;
   }
   return {
-    latitude:
-      typeof candidate.latitude === 'number'
-        ? candidate.latitude
-        : candidate.latitude === null
-        ? null
-        : null,
-    longitude:
-      typeof candidate.longitude === 'number'
-        ? candidate.longitude
-        : candidate.longitude === null
-        ? null
-        : null,
+    latitude: parseStoredCoordinate(candidate.latitude, -90, 90),
+    longitude: parseStoredCoordinate(candidate.longitude, -180, 180),
     locationLabel:
       typeof candidate.locationLabel === 'string'
         ? candidate.locationLabel
