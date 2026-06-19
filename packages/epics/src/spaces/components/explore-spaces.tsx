@@ -7,7 +7,7 @@ import {
   CATEGORY_GROUPS,
   getCategoryGroupLabel,
   hasSpaceMapLocation,
-  isSpaceExplicitlyArchived,
+  isSpaceArchived,
   spaceMatchesCategoryGroups,
 } from '@hypha-platform/core/client';
 import {
@@ -118,7 +118,7 @@ export function ExploreSpaces({
   const { replace } = useRouter();
 
   const nonArchivedSpaces = React.useMemo(
-    () => spaces.filter((space) => !isSpaceExplicitlyArchived(space)),
+    () => spaces.filter((space) => !isSpaceArchived(space)),
     [spaces],
   );
 
@@ -359,7 +359,10 @@ export function ExploreSpaces({
           {tCommon('Spaces')}
         </div>
       </div>
-      <Separator orientation="vertical" className="bg-neutral-6" />
+      <Separator
+        orientation="vertical"
+        className="h-auto self-stretch bg-neutral-6"
+      />
       <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
         <div className="flex justify-center text-7 font-medium">
           {uniqueMemberAddresses.size}
@@ -368,7 +371,10 @@ export function ExploreSpaces({
           {tCommon('Members')}
         </div>
       </div>
-      <Separator orientation="vertical" className="bg-neutral-6" />
+      <Separator
+        orientation="vertical"
+        className="h-auto self-stretch bg-neutral-6"
+      />
       <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
         <div className="flex justify-center text-7 font-medium">
           {agreementCount}
