@@ -72,9 +72,6 @@ export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({
     account.accountName ?? account.bankName ?? t('cardBankFallback');
   const destination = account.destinationCurrency.toUpperCase();
   const source = account.sourceCurrency.toUpperCase();
-  const maskedAccount = account.accountLast4
-    ? `••••${account.accountLast4}`
-    : null;
 
   return (
     <Card
@@ -103,7 +100,6 @@ export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({
           <p className="text-3 font-semibold text-foreground">{primaryLabel}</p>
           <p className="mt-0.5 text-2 text-muted-foreground">
             {`${source} → ${destination}`}
-            {maskedAccount ? ` · ${maskedAccount}` : ''}
           </p>
         </div>
         <span

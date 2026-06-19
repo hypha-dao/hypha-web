@@ -51,8 +51,15 @@ export const PAYOUT_CURRENCY_KEYS: PayoutCurrencyKey[] = [
 export function getEnabledPayoutCurrencyKeys(): PayoutCurrencyKey[] {
   const raw = process.env.NEXT_PUBLIC_BANKING_SUPPORTED_PAYOUT_RAILS?.trim();
   if (!raw) return PAYOUT_CURRENCY_KEYS;
-  const allowed = new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
-  return PAYOUT_CURRENCY_KEYS.filter((c) => allowed.has(payoutCurrencyToRailKey(c)));
+  const allowed = new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  return PAYOUT_CURRENCY_KEYS.filter((c) =>
+    allowed.has(payoutCurrencyToRailKey(c)),
+  );
 }
 
 /**

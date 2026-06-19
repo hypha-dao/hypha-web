@@ -98,7 +98,10 @@ export async function POST(
     process.env.NEXT_PUBLIC_BANKING_SUPPORTED_PAYOUT_RAILS?.trim();
   if (supportedRailsEnv) {
     const supportedRails = new Set(
-      supportedRailsEnv.split(',').map((s) => s.trim()).filter(Boolean),
+      supportedRailsEnv
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
     );
     if (!supportedRails.has(parsed.data.railKey)) {
       return NextResponse.json(

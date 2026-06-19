@@ -800,8 +800,12 @@ export type BridgeExternalAccountResponse = {
   account?: {
     last_4?: string;
     routing_number?: string;
-    iban?: string;
     sort_code?: string;
+    checking_or_savings?: string;
+  };
+  iban?: {
+    last_4?: string;
+    country?: string;
   };
   created_at?: string;
   updated_at?: string;

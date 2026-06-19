@@ -169,9 +169,14 @@ export async function createSpaceBankPayoutAccount(
       bank_name: externalAccount.bankName ?? undefined,
       account_owner_name: externalAccount.accountOwnerName ?? undefined,
       last_4: externalAccount.accountLast4 ?? undefined,
-      account: externalAccount.accountLast4
-        ? { last_4: externalAccount.accountLast4 }
-        : undefined,
+      account:
+        externalAccount.accountLast4 || externalAccount.checkingOrSavings
+          ? {
+              last_4: externalAccount.accountLast4 ?? undefined,
+              checking_or_savings:
+                externalAccount.checkingOrSavings ?? undefined,
+            }
+          : undefined,
     },
   });
 

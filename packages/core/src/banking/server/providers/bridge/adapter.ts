@@ -386,7 +386,10 @@ export function createBridgeKycProvider(): BankKycProvider {
         currency: response.currency?.toLowerCase() ?? destinationCurrency,
         paymentRail: rail.destinationPaymentRail,
         active: response.active ?? true,
-        accountLast4: readExternalAccountLast4(response),
+        accountLast4:
+          readExternalAccountLast4(response) ??
+          (input.iban ? input.iban.replace(/\s/g, '').slice(-4) : null),
+        checkingOrSavings: response.account?.checking_or_savings ?? null,
         accountName: response.account_name ?? input.accountName,
         bankName: response.bank_name ?? input.bankName,
         accountOwnerName: response.account_owner_name ?? input.accountOwnerName,

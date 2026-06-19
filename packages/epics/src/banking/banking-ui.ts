@@ -341,7 +341,12 @@ export function hasAddAccountRailAvailable(
 export function getEnabledDepositCurrencies(): readonly string[] {
   const raw = process.env.NEXT_PUBLIC_BANKING_SUPPORTED_DEPOSIT_RAILS?.trim();
   if (!raw) return BANK_VIRTUAL_ACCOUNT_CURRENCIES;
-  const allowed = new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
+  const allowed = new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
   return BANK_VIRTUAL_ACCOUNT_CURRENCIES.filter((c) => allowed.has(c));
 }
 
@@ -370,7 +375,8 @@ export function getPayoutRailEndorsementStatus(
   status: BankCustomerPublicStatus | null | undefined,
 ): BankEndorsementPublicStatus['operationalStatus'] {
   if (!status) return 'not_requested';
-  const railConfig = BANK_PAYOUT_RAILS[railKey as keyof typeof BANK_PAYOUT_RAILS];
+  const railConfig =
+    BANK_PAYOUT_RAILS[railKey as keyof typeof BANK_PAYOUT_RAILS];
   if (!railConfig) return 'not_requested';
   const endorsementEntry = status.endorsementStatuses?.find(
     (e) => e.endorsement === railConfig.endorsement,

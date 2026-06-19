@@ -129,6 +129,7 @@ export type RegisterExternalAccountResult = {
   paymentRail: string;
   active: boolean;
   accountLast4: string | null;
+  checkingOrSavings: string | null;
   accountName: string | null;
   bankName: string | null;
   accountOwnerName: string | null;

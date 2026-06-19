@@ -142,4 +142,60 @@ describe('mapBridgePayoutAccountToPublic', () => {
     expect(result.accountLast4).toBe('1234');
     expect(result.status).toBe('active');
   });
+
+  it('extracts last 4 from iban.last_4 when account.last_4 is absent (SEPA)', () => {
+    const result = mapBridgePayoutAccountToPublic({
+      liquidationAddress: {
+        id: 'la_2',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation2',
+        external_account_id: 'ext_2',
+        destination_payment_rail: 'sepa',
+        destination_currency: 'eur',
+        state: 'active',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      externalAccount: {
+        id: 'ext_2',
+        active: true,
+        currency: 'eur',
+        bank_name: 'ING',
+        account_owner_name: 'Acme DAO',
+        iban: { last_4: '3000', country: 'DEU' },
+      },
+    });
+
+    expect(result.accountLast4).toBe('3000');
+  });
+
+  it('extracts checkingOrSavings for USD accounts', () => {
+    const result = mapBridgePayoutAccountToPublic({
+      liquidationAddress: {
+        id: 'la_3',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation3',
+        external_account_id: 'ext_3',
+        destination_payment_rail: 'ach',
+        destination_currency: 'usd',
+        state: 'active',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      externalAccount: {
+        id: 'ext_3',
+        active: true,
+        currency: 'usd',
+        last_4: '7890',
+        account: {
+          last_4: '7890',
+          routing_number: '021000021',
+          checking_or_savings: 'checking',
+        },
+      },
+    });
+
+    expect(result.accountLast4).toBe('7890');
+    expect(result.checkingOrSavings).toBe('checking');
+  });
 });

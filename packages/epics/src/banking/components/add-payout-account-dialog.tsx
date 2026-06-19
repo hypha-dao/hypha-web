@@ -195,11 +195,16 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const firstSelectableCurrency =
     ENABLED_PAYOUT_CURRENCIES.find((c) =>
-      isBankRailSelectable(getPayoutRailEndorsementStatus(payoutCurrencyToRailKey(c), status)),
-    ) ?? ENABLED_PAYOUT_CURRENCIES[0] ?? 'usd';
+      isBankRailSelectable(
+        getPayoutRailEndorsementStatus(payoutCurrencyToRailKey(c), status),
+      ),
+    ) ??
+    ENABLED_PAYOUT_CURRENCIES[0] ??
+    'usd';
 
-  const [selectedCurrency, setSelectedCurrency] =
-    useState<PayoutCurrencyKey>(firstSelectableCurrency);
+  const [selectedCurrency, setSelectedCurrency] = useState<PayoutCurrencyKey>(
+    firstSelectableCurrency,
+  );
   const [sourceCurrency, setSourceCurrency] = useState<'usdc' | 'eurc'>('usdc');
   const [bankName, setBankName] = useState('');
   const [accountName, setAccountName] = useState('');
@@ -214,6 +219,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const [businessName, setBusinessName] = useState(defaultBusinessName);
   const [routingNumber, setRoutingNumber] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
+  const [checkingOrSavings, setCheckingOrSavings] = useState<
+    'checking' | 'savings'
+  >('checking');
   const [iban, setIban] = useState('');
   const [bic, setBic] = useState('');
   const [sortCode, setSortCode] = useState('');
@@ -239,6 +247,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const clearRailSpecificFields = () => {
     setRoutingNumber('');
     setAccountNumber('');
+    setCheckingOrSavings('checking');
     setIban('');
     setBic('');
     setSortCode('');
@@ -460,6 +469,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
             : undefined,
         routingNumber: routingNumber.trim() || undefined,
         accountNumber: accountNumber.trim() || undefined,
+        checkingOrSavings: showUsFields ? checkingOrSavings : undefined,
         iban: iban.trim().replace(/\s/g, '') || undefined,
         bic: bic.trim().toUpperCase() || undefined,
         sortCode: sortCode.trim() || undefined,
@@ -545,7 +555,8 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       railKey,
                       status,
                     );
-                    const railSelectable = isBankRailSelectable(endorsementStatus);
+                    const railSelectable =
+                      isBankRailSelectable(endorsementStatus);
                     return (
                       <PayoutCurrencyOptionRow
                         key={currency}
@@ -553,7 +564,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         selected={selectedCurrency === currency}
                         disabled={isSubmitting || !railSelectable}
                         radioName={radioName}
-                        onSelect={() => railSelectable && handleCurrencySelect(currency)}
+                        onSelect={() =>
+                          railSelectable && handleCurrencySelect(currency)
+                        }
                       />
                     );
                   })}
@@ -678,69 +691,95 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                 </div>
 
                 {showUsFields ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-routing">
-                        {t('routingNumber')}
-                      </Label>
-                      <Input
-                        id="payout-routing"
-                        value={routingNumber}
-                        onChange={(event) => {
-                          setRoutingNumber(
-                            event.target.value.replace(/\D/g, '').slice(0, 9),
-                          );
-                          clearFieldError('routingNumber');
-                        }}
-                        placeholder={t('routingNumberPlaceholder')}
-                        inputMode="numeric"
-                        maxLength={9}
-                        disabled={isSubmitting}
-                        aria-invalid={
-                          fieldErrors.routingNumber ? true : undefined
-                        }
-                        aria-describedby={
-                          fieldErrors.routingNumber
-                            ? 'err-routingNumber'
-                            : undefined
-                        }
-                        className={cn(inputErrorClass('routingNumber'))}
-                      />
-                      <FieldError
-                        id="err-routingNumber"
-                        message={fieldErrors.routingNumber}
-                      />
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="payout-routing">
+                          {t('routingNumber')}
+                        </Label>
+                        <Input
+                          id="payout-routing"
+                          value={routingNumber}
+                          onChange={(event) => {
+                            setRoutingNumber(
+                              event.target.value.replace(/\D/g, '').slice(0, 9),
+                            );
+                            clearFieldError('routingNumber');
+                          }}
+                          placeholder={t('routingNumberPlaceholder')}
+                          inputMode="numeric"
+                          maxLength={9}
+                          disabled={isSubmitting}
+                          aria-invalid={
+                            fieldErrors.routingNumber ? true : undefined
+                          }
+                          aria-describedby={
+                            fieldErrors.routingNumber
+                              ? 'err-routingNumber'
+                              : undefined
+                          }
+                          className={cn(inputErrorClass('routingNumber'))}
+                        />
+                        <FieldError
+                          id="err-routingNumber"
+                          message={fieldErrors.routingNumber}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="payout-account-number">
+                          {t('accountNumber')}
+                        </Label>
+                        <Input
+                          id="payout-account-number"
+                          value={accountNumber}
+                          onChange={(event) => {
+                            setAccountNumber(event.target.value);
+                            clearFieldError('accountNumber');
+                          }}
+                          placeholder={t('accountNumberPlaceholder')}
+                          inputMode="numeric"
+                          disabled={isSubmitting}
+                          aria-invalid={
+                            fieldErrors.accountNumber ? true : undefined
+                          }
+                          aria-describedby={
+                            fieldErrors.accountNumber
+                              ? 'err-accountNumber'
+                              : undefined
+                          }
+                          className={cn(inputErrorClass('accountNumber'))}
+                        />
+                        <FieldError
+                          id="err-accountNumber"
+                          message={fieldErrors.accountNumber}
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-account-number">
-                        {t('accountNumber')}
-                      </Label>
-                      <Input
-                        id="payout-account-number"
-                        value={accountNumber}
-                        onChange={(event) => {
-                          setAccountNumber(event.target.value);
-                          clearFieldError('accountNumber');
-                        }}
-                        placeholder={t('accountNumberPlaceholder')}
-                        inputMode="numeric"
-                        disabled={isSubmitting}
-                        aria-invalid={
-                          fieldErrors.accountNumber ? true : undefined
-                        }
-                        aria-describedby={
-                          fieldErrors.accountNumber
-                            ? 'err-accountNumber'
-                            : undefined
-                        }
-                        className={cn(inputErrorClass('accountNumber'))}
-                      />
-                      <FieldError
-                        id="err-accountNumber"
-                        message={fieldErrors.accountNumber}
-                      />
+                      <Label>{t('checkingOrSavings')}</Label>
+                      <div className="flex gap-2" role="radiogroup">
+                        {(['checking', 'savings'] as const).map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            disabled={isSubmitting}
+                            className={cn(
+                              'rounded-md border px-3 py-2 text-2 font-medium transition-colors',
+                              checkingOrSavings === type
+                                ? 'border-accent-9 bg-accent-9 text-accent-contrast shadow-sm'
+                                : 'border-border bg-card text-foreground hover:bg-background-2/80',
+                              isSubmitting && 'cursor-not-allowed opacity-60',
+                            )}
+                            onClick={() => setCheckingOrSavings(type)}
+                          >
+                            {type === 'checking'
+                              ? t('checkingOrSavingsChecking')
+                              : t('checkingOrSavingsSavings')}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 ) : null}
 
                 {showGbpFields ? (

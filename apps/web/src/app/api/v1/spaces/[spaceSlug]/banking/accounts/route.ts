@@ -104,7 +104,10 @@ export async function POST(
     process.env.NEXT_PUBLIC_BANKING_SUPPORTED_DEPOSIT_RAILS?.trim();
   if (supportedRailsEnv) {
     const supportedCurrencies = new Set(
-      supportedRailsEnv.split(',').map((s) => s.trim()).filter(Boolean),
+      supportedRailsEnv
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
     );
     if (!supportedCurrencies.has(parsed.data.currency)) {
       return NextResponse.json(

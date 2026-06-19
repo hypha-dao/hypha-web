@@ -172,11 +172,11 @@ export function mapBridgeTransferToPublic(
 function readExternalAccountLast4(
   account: BridgeExternalAccountResponse,
 ): string | null {
-  if (typeof account.last_4 === 'string') {
-    return account.last_4;
-  }
-  const nested = account.account?.last_4;
-  return typeof nested === 'string' ? nested : null;
+  if (typeof account.last_4 === 'string') return account.last_4;
+  if (typeof account.account?.last_4 === 'string')
+    return account.account.last_4;
+  if (typeof account.iban?.last_4 === 'string') return account.iban.last_4;
+  return null;
 }
 
 function resolvePayoutAccountStatus(input: {
@@ -217,6 +217,7 @@ export function mapBridgePayoutAccountToPublic(input: {
     accountLast4: externalAccount
       ? readExternalAccountLast4(externalAccount)
       : null,
+    checkingOrSavings: externalAccount?.account?.checking_or_savings ?? null,
     accountName: externalAccount?.account_name ?? null,
     bankName: externalAccount?.bank_name ?? null,
     accountOwnerName: externalAccount?.account_owner_name ?? null,

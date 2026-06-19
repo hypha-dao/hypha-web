@@ -98,11 +98,6 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
                 <p className="text-2 font-semibold text-foreground">
                   {`${source} → ${dest}`}
                 </p>
-                {maskedAccount ? (
-                  <p className="text-1 text-muted-foreground">
-                    {maskedAccount}
-                  </p>
-                ) : null}
               </div>
               <span
                 className={cn(
@@ -129,8 +124,22 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
               ) : null}
               {maskedAccount ? (
                 <DetailRow
-                  label={tDialog('accountNumber')}
+                  label={
+                    account.paymentRail === 'sepa'
+                      ? tDialog('iban')
+                      : tDialog('accountNumber')
+                  }
                   value={maskedAccount}
+                />
+              ) : null}
+              {account.checkingOrSavings ? (
+                <DetailRow
+                  label={tDialog('checkingOrSavings')}
+                  value={
+                    account.checkingOrSavings === 'checking'
+                      ? tDialog('checkingOrSavingsChecking')
+                      : tDialog('checkingOrSavingsSavings')
+                  }
                 />
               ) : null}
               {account.accountOwnerName ? (

@@ -161,19 +161,26 @@ describe('schemaCreatePayoutAccount', () => {
 
   it('rejects USD ACH accountOwnerName under 3 chars', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseUsd, accountOwnerName: 'AB' }).success,
+      schemaCreatePayoutAccount.safeParse({
+        ...baseUsd,
+        accountOwnerName: 'AB',
+      }).success,
     ).toBe(false);
   });
 
   it('rejects USD ACH accountOwnerName over 35 chars', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseUsd, accountOwnerName: 'A'.repeat(36) }).success,
+      schemaCreatePayoutAccount.safeParse({
+        ...baseUsd,
+        accountOwnerName: 'A'.repeat(36),
+      }).success,
     ).toBe(false);
   });
 
   it('rejects unknown fields (strict mode)', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseUsd, unknownField: 'x' }).success,
+      schemaCreatePayoutAccount.safeParse({ ...baseUsd, unknownField: 'x' })
+        .success,
     ).toBe(false);
   });
 
@@ -185,7 +192,12 @@ describe('schemaCreatePayoutAccount', () => {
     accountOwnerName: 'Acme DAO',
     sortCode: '200000',
     accountNumber: '12345678',
-    address: { street_line_1: '10 Downing St', city: 'London', postal_code: 'SW1A 2AA', country: 'GBR' },
+    address: {
+      street_line_1: '10 Downing St',
+      city: 'London',
+      postal_code: 'SW1A 2AA',
+      country: 'GBR',
+    },
   };
 
   it('accepts valid GBP input', () => {
@@ -194,31 +206,40 @@ describe('schemaCreatePayoutAccount', () => {
 
   it('accepts GBP sortCode with hyphens (normalised to 6 digits)', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseGbp, sortCode: '20-00-00' }).success,
+      schemaCreatePayoutAccount.safeParse({ ...baseGbp, sortCode: '20-00-00' })
+        .success,
     ).toBe(true);
   });
 
   it('rejects GBP sortCode shorter than 6 digits', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseGbp, sortCode: '12345' }).success,
+      schemaCreatePayoutAccount.safeParse({ ...baseGbp, sortCode: '12345' })
+        .success,
     ).toBe(false);
   });
 
   it('rejects GBP sortCode longer than 6 digits', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseGbp, sortCode: '1234567' }).success,
+      schemaCreatePayoutAccount.safeParse({ ...baseGbp, sortCode: '1234567' })
+        .success,
     ).toBe(false);
   });
 
   it('rejects GBP accountNumber with 7 digits', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseGbp, accountNumber: '1234567' }).success,
+      schemaCreatePayoutAccount.safeParse({
+        ...baseGbp,
+        accountNumber: '1234567',
+      }).success,
     ).toBe(false);
   });
 
   it('rejects GBP accountNumber with 9 digits', () => {
     expect(
-      schemaCreatePayoutAccount.safeParse({ ...baseGbp, accountNumber: '123456789' }).success,
+      schemaCreatePayoutAccount.safeParse({
+        ...baseGbp,
+        accountNumber: '123456789',
+      }).success,
     ).toBe(false);
   });
 
@@ -239,7 +260,12 @@ describe('schemaCreatePayoutAccount', () => {
     accountName: 'Operating',
     accountOwnerName: 'Acme DAO',
     iban: 'DE89370400440532013000',
-    address: { street_line_1: 'Hauptstraße 1', city: 'Berlin', postal_code: '10115', country: 'DEU' },
+    address: {
+      street_line_1: 'Hauptstraße 1',
+      city: 'Berlin',
+      postal_code: '10115',
+      country: 'DEU',
+    },
   };
 
   it('accepts valid EUR SEPA business input', () => {
