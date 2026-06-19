@@ -23,8 +23,13 @@ Ensure `../hypha-context` is current. Offer to pull if behind origin.
 ### 2. Load developer config
 Read `../hypha-context/progress/members/gerroza/AGENTS.local.md`.
 
-### 3. Read the GitHub issue
-Fetch the issue with `gh issue view <number> --repo hypha-dao/hypha-web`. If no issue exists yet, note it.
+### 3. Read the GitHub issue (board soft-step — gated)
+If the developer's general `AGENTS.local.md` has `github.enabled: true`, use the `hypha-board`
+skill: fetch the issue with `gh issue view <number> --repo hypha-dao/hypha-web` to ground the
+spec. If no issue exists yet and the work belongs on the board, *offer* to create one (correct
+`type(scope):` title, labels per `../hypha-context/planning/issue-guidelines.md`, add to project
+#14, set Priority/Target date) — state the proposed write and wait for a yes before creating.
+Skip this step silently if `github.enabled` is absent or false.
 
 ### 4. Classify the task (skip any already answered by the issue/config)
 - **Type:** analysis · feature · bug · process
