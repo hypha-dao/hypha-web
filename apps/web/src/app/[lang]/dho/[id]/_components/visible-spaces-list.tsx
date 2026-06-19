@@ -51,6 +51,10 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   });
 
   if (!hasSpaceInfo) {
+    return null;
+  }
+
+  if (isLoading) {
     return (
       <Button
         variant="default"
@@ -58,7 +62,7 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
         colorVariant="accent"
         className="w-full md:w-auto"
         disabled={true}
-        title={t('visibleSpaces.spaceInfoNotAvailable')}
+        title={t('visibleSpaces.loading')}
       >
         <PlusIcon className="w-4 h-4" />
         {t('visibleSpaces.addSpace')}
@@ -66,7 +70,9 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
     );
   }
 
-  const isDisabled = isLoading || !canMutate;
+  if (!canMutate) {
+    return null;
+  }
 
   const createSpacePath = `${
     getDhoSpaceContextPath({
@@ -78,22 +84,15 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
 
   return (
     <Link
-      href={canMutate && !isLoading ? createSpacePath : '#'}
-      className={isDisabled ? 'cursor-not-allowed' : 'flex-1 md:flex-none'}
-      title={
-        isLoading
-          ? t('visibleSpaces.loading')
-          : !canMutate
-          ? t('visibleSpaces.noAccessAddSpace')
-          : t('visibleSpaces.addSpace')
-      }
+      href={createSpacePath}
+      className="flex-1 md:flex-none"
+      title={t('visibleSpaces.addSpace')}
     >
       <Button
         variant="default"
         size="default"
         colorVariant="accent"
         className="w-full md:w-auto"
-        disabled={isDisabled}
       >
         <PlusIcon className="w-4 h-4" />
         {t('visibleSpaces.addSpace')}

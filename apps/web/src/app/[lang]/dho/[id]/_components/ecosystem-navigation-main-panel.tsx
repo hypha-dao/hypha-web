@@ -215,21 +215,19 @@ export function EcosystemNavigationMainPanel({
     space: selectedSpaceRecord ?? currentSpace,
     spaceId: (selectedSpaceRecord ?? currentSpace)?.web3SpaceId ?? undefined,
   });
-  const canRenderSpaceActions = Boolean(
+  const canAddSpace = Boolean(
     currentSpace && selectedSpaceSlug && !isMutateLoading && canMutate,
   );
-  const visitSpaceHref =
-    canRenderSpaceActions && selectedSpaceSlug
-      ? getDhoSpaceContextPath({
-          pathname,
-          lang,
-          spaceSlug: selectedSpaceSlug,
-        })
-      : null;
+  const visitSpaceHref = selectedSpaceSlug
+    ? getDhoSpaceContextPath({
+        pathname,
+        lang,
+        spaceSlug: selectedSpaceSlug,
+      })
+    : null;
+  const canVisitSpace = Boolean(currentSpace && visitSpaceHref);
   const addSpaceHref =
-    canRenderSpaceActions && visitSpaceHref
-      ? `${visitSpaceHref}/space/create`
-      : null;
+    canAddSpace && visitSpaceHref ? `${visitSpaceHref}/space/create` : null;
   const rootSpaceRecord = useMemo(() => {
     if (!currentSpace) return null;
     const spacesWithCurrent = nonArchivedSpaces.some(
@@ -302,7 +300,7 @@ export function EcosystemNavigationMainPanel({
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
                 <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))] p-4 sm:p-6">
-                  {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
+                  {canVisitSpace && visitSpaceHref ? (
                     <div className="pointer-events-none mb-[6px] flex justify-center">
                       <div className="pointer-events-auto inline-flex w-fit max-w-[min(96vw,46rem)] items-center gap-1 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 dark:border-border/85 sm:gap-1.5 sm:px-2.5">
                         <span
@@ -330,25 +328,27 @@ export function EcosystemNavigationMainPanel({
                             {t('visibleSpaces.visitSpace')}
                           </TooltipContent>
                         </Tooltip>
-                        <Tooltip delayDuration={80}>
-                          <TooltipTrigger asChild>
-                            <Button
-                              asChild
-                              variant="default"
-                              colorVariant="accent"
-                              className="h-7 w-7 p-0"
-                              style={iconFilledStyle}
-                              aria-label={t('visibleSpaces.addSpace')}
-                            >
-                              <Link href={addSpaceHref}>
-                                <PlusIcon />
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t('visibleSpaces.addSpace')}
-                          </TooltipContent>
-                        </Tooltip>
+                        {canAddSpace && addSpaceHref ? (
+                          <Tooltip delayDuration={80}>
+                            <TooltipTrigger asChild>
+                              <Button
+                                asChild
+                                variant="default"
+                                colorVariant="accent"
+                                className="h-7 w-7 p-0"
+                                style={iconFilledStyle}
+                                aria-label={t('visibleSpaces.addSpace')}
+                              >
+                                <Link href={addSpaceHref}>
+                                  <PlusIcon />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t('visibleSpaces.addSpace')}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}
@@ -390,7 +390,8 @@ export function EcosystemNavigationMainPanel({
     ],
     [
       addSpaceHref,
-      canRenderSpaceActions,
+      canAddSpace,
+      canVisitSpace,
       currentSpace?.id,
       handleVisibleSpacesChange,
       hierarchyData,
