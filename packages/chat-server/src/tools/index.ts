@@ -21,32 +21,16 @@ import { createMcpNavigationTool } from './mcp-navigation';
 import { createOnboardingGuidanceTool } from './onboarding-guidance';
 import { createSearchSpacesTool } from './search-spaces';
 
-type SetupPhase = 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
-
-function inferSetupPhase(context: unknown): SetupPhase {
-  if (!context || typeof context !== 'object') return 'discover';
-  const phase = (context as { setupPhase?: unknown }).setupPhase;
-  return phase === 'discover' ||
-    phase === 'draft' ||
-    phase === 'confirm' ||
-    phase === 'execute' ||
-    phase === 'verify'
-    ? phase
-    : 'discover';
-}
-
 function withInjectedOnboardingLastUserText<T extends Record<string, unknown>>(
   payload: T,
-  setupPhase: SetupPhase,
-  onboardingLastUserText?: string,
+  lastUserText?: string,
 ): T & { onboarding_last_user_text?: string } {
-  if (setupPhase === 'confirm' || setupPhase === 'execute') {
-    return {
-      ...payload,
-      onboarding_last_user_text: onboardingLastUserText,
-    };
-  }
-  return payload;
+  const trimmed = lastUserText?.trim();
+  if (!trimmed) return payload;
+  return {
+    ...payload,
+    onboarding_last_user_text: trimmed,
+  };
 }
 
 function safeTool(toolName: string, tool: ChatRouteTool): ChatRouteTool {
@@ -82,9 +66,9 @@ export function createChatTools(
     onboardingWriteToolsEnabled?: boolean;
     ecosystemAutomationEnabled?: boolean;
   },
+  lastUserTextFromRequest?: string | null,
 ): Record<string, ChatRouteTool> {
-  const setupPhase = inferSetupPhase(conversationContext);
-  const onboardingLastUserText =
+  const contextLastUserText =
     conversationContext &&
     typeof conversationContext === 'object' &&
     'lastUserText' in conversationContext &&
@@ -92,12 +76,14 @@ export function createChatTools(
       'string'
       ? (conversationContext as { lastUserText: string }).lastUserText
       : undefined;
+  const effectiveLastUserText =
+    contextLastUserText ?? lastUserTextFromRequest ?? undefined;
 
   const createSpaceFromOnboardingTool =
     createCreateSpaceFromOnboardingTool(authToken);
   const updateSpaceSettingsTool = createUpdateSpaceSettingsTool(
     authToken,
-    onboardingLastUserText,
+    effectiveLastUserText,
   );
   const createSpaceSetupProposalTool =
     createCreateSpaceSetupProposalTool(authToken);
@@ -171,11 +157,7 @@ export function createChatTools(
         ...createSpaceFromOnboardingTool,
         execute: async (args) =>
           createSpaceFromOnboardingTool.execute(
-            withInjectedOnboardingLastUserText(
-              args,
-              setupPhase,
-              onboardingLastUserText,
-            ),
+            withInjectedOnboardingLastUserText(args, effectiveLastUserText),
           ),
       },
     );
@@ -183,11 +165,7 @@ export function createChatTools(
       ...updateSpaceSettingsTool,
       execute: async (args) =>
         updateSpaceSettingsTool.execute(
-          withInjectedOnboardingLastUserText(
-            args,
-            setupPhase,
-            onboardingLastUserText,
-          ),
+          withInjectedOnboardingLastUserText(args, effectiveLastUserText),
         ),
     });
     tools.create_space_setup_proposal = safeTool(
@@ -196,11 +174,7 @@ export function createChatTools(
         ...createSpaceSetupProposalTool,
         execute: async (args) =>
           createSpaceSetupProposalTool.execute(
-            withInjectedOnboardingLastUserText(
-              args,
-              setupPhase,
-              onboardingLastUserText,
-            ),
+            withInjectedOnboardingLastUserText(args, effectiveLastUserText),
           ),
       },
     );
@@ -214,11 +188,7 @@ export function createChatTools(
       ...createEcosystemSpaceTool,
       execute: async (args) =>
         createEcosystemSpaceTool.execute(
-          withInjectedOnboardingLastUserText(
-            args,
-            setupPhase,
-            onboardingLastUserText,
-          ),
+          withInjectedOnboardingLastUserText(args, effectiveLastUserText),
         ),
     });
   }

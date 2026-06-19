@@ -11,6 +11,7 @@ import {
   getSpaceRegularTokens,
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
+  isHiddenToken,
 } from '@hypha-platform/core/client';
 import {
   tokenBackingVaultImplementationAbi,
@@ -110,11 +111,13 @@ export async function GET(
         decayingResult.result.length !== 0
           ? decayingResult.result
           : [];
-      spaceTokens = [
-        ...regularTokens,
-        ...ownershipTokens,
-        ...decayingTokens,
-      ] as `0x${string}`[];
+      spaceTokens = (
+        [
+          ...regularTokens,
+          ...ownershipTokens,
+          ...decayingTokens,
+        ] as `0x${string}`[]
+      ).filter((address) => !isHiddenToken(address));
     } catch (err: any) {
       const errorMessage =
         err?.message || err?.shortMessage || JSON.stringify(err);

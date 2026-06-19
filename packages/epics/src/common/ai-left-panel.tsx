@@ -33,6 +33,7 @@ import {
   Space,
   SpaceFlags,
   useCreateSpaceOrchestrator,
+  useCreateAgreementOrchestrator,
   useJwt,
   useMatrix,
   useSpaceBySlug,
@@ -228,6 +229,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [input, setInput] = useState('');
   const aiWalletCreateInFlightRef = useRef(false);
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
+  const aiWalletProposalInFlightRef = useRef(false);
+  const handledWalletProposalPayloadKeyRef = useRef<string | null>(null);
   const [draftAttachments, setDraftAttachments] = useState<
     AiPanelDraftAttachment[]
   >([]);
@@ -253,6 +256,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     isError: isCreateSpaceWithWalletFlowError,
     errors: createSpaceWithWalletFlowErrors,
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const {
+    createAgreement: createAgreementWithWalletFlow,
+    isError: isCreateAgreementWithWalletFlowError,
+    errors: createAgreementWithWalletFlowErrors,
+  } = useCreateAgreementOrchestrator({ authToken: jwt, config });
+
+  useEffect(() => {
+    if (createAgreementWithWalletFlowErrors.length === 0) return;
+    console.error(
+      '[AiLeftPanel] wallet agreement flow errors:',
+      createAgreementWithWalletFlowErrors,
+    );
+  }, [createAgreementWithWalletFlowErrors]);
+
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -1038,6 +1055,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
           return false;
         }
+        if (part.type !== 'tool-create_space_from_onboarding') {
+          return false;
+        }
         const toolPart = part as {
           state?: string;
           output?: {
@@ -1128,6 +1148,103 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }
     })();
   }, [createSpaceWithWalletFlow, messages, onboardingContext, pathname]);
+
+  useEffect(() => {
+    if (aiWalletProposalInFlightRef.current) return;
+
+    const latestWalletProposalPayload = [...messages]
+      .reverse()
+      .flatMap((message) =>
+        (message.parts ?? []).map((part, index) => ({
+          messageId: message.id,
+          index,
+          part,
+        })),
+      )
+      .find(({ part }) => {
+        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+          return false;
+        }
+        if (part.type !== 'tool-create_space_setup_proposal') {
+          return false;
+        }
+        const toolPart = part as {
+          state?: string;
+          output?: {
+            ok?: boolean;
+            requires_wallet_signature?: boolean;
+            create_payload?: Record<string, unknown>;
+          };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          toolPart.output?.requires_wallet_signature === true &&
+          typeof toolPart.output?.create_payload === 'object'
+        );
+      }) as
+      | {
+          messageId?: string;
+          index?: number;
+          part?: {
+            output?: {
+              create_payload?: {
+                title?: string;
+                description?: string;
+                space_id?: number;
+                web3_space_id?: number;
+                creator_id?: number;
+                label?: string;
+              };
+            };
+          };
+        }
+      | undefined;
+
+    const payloadKey = latestWalletProposalPayload
+      ? `${latestWalletProposalPayload.messageId ?? 'm'}:${
+          latestWalletProposalPayload.index ?? 0
+        }`
+      : null;
+    if (
+      payloadKey &&
+      handledWalletProposalPayloadKeyRef.current === payloadKey
+    ) {
+      return;
+    }
+    const payload = latestWalletProposalPayload?.part?.output?.create_payload;
+    if (
+      !payload?.title ||
+      !payload.description ||
+      typeof payload.space_id !== 'number' ||
+      typeof payload.web3_space_id !== 'number' ||
+      typeof payload.creator_id !== 'number'
+    ) {
+      return;
+    }
+    if (payloadKey) handledWalletProposalPayloadKeyRef.current = payloadKey;
+
+    aiWalletProposalInFlightRef.current = true;
+    void (async () => {
+      try {
+        await createAgreementWithWalletFlow({
+          title: payload.title!.trim(),
+          description: payload.description!.trim(),
+          spaceId: payload.space_id!,
+          creatorId: payload.creator_id!,
+          label: payload.label ?? 'space setup',
+          web3SpaceId: payload.web3_space_id!,
+        });
+      } catch (walletFlowError) {
+        console.error(
+          '[AiLeftPanel] wallet-based proposal creation failed:',
+          walletFlowError,
+        );
+      } finally {
+        aiWalletProposalInFlightRef.current = false;
+      }
+    })();
+  }, [createAgreementWithWalletFlow, messages]);
 
   useEffect(() => {
     if (
@@ -1596,6 +1713,19 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
                     item instanceof Error ? item.message : String(item),
                   )
                   .join('\n')}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {isCreateAgreementWithWalletFlowError ? (
+          <div
+            role="alert"
+            className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            <div>{t('streamError')}</div>
+            {createAgreementWithWalletFlowErrors.length > 0 ? (
+              <div className="mt-1 text-xs opacity-90">
+                {t('walletAgreementError')}
               </div>
             ) : null}
           </div>
