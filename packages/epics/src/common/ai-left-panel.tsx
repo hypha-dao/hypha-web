@@ -156,7 +156,7 @@ type NavItem = {
 };
 
 export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
-  const { isLoading, getAccessToken } = useAuthentication();
+  const { isAuthenticated, isLoading, getAccessToken } = useAuthentication();
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
@@ -1660,6 +1660,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <>
+        <SidebarHeader className="bg-background-2 p-0">
+          <AiPanelHeader
+            showCloseButton={false}
+            leftSlot={triggerButton}
+            rightSlot={closeButton}
+          />
+        </SidebarHeader>
+        <SidebarContent className="flex flex-1 items-center justify-center px-6">
+          <SpaceAccessDenied
+            userState={userSpaceState}
+            spaceId={effectiveSpaceWeb3Id}
+            spaceSlug={spaceSlug ?? undefined}
+          />
+        </SidebarContent>
+      </>
+    );
+  }
+
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
@@ -1678,6 +1699,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         {spaceSlug &&
         blockSpaceAiForMembership &&
         hasSpaceActivityAccess &&
+        isAuthenticated &&
         !isUserSpaceStateLoading ? (
           <div className="mx-3 mt-3 shrink-0">
             <SpaceAccessDenied
