@@ -11,7 +11,6 @@ import { defaultMessages } from '@hypha-platform/i18n/messages';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
   AiPanelTrigger,
@@ -20,11 +19,10 @@ import {
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
-  ConnectedButtonProfile,
 } from '@hypha-platform/epics';
+import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
-import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
 import { TooltipProvider } from '@hypha-platform/ui';
@@ -299,8 +297,6 @@ export default async function RootLayout({
                             }
                             mobileAction={
                               <ConnectedButtonProfile
-                                useAuthentication={useAuthentication}
-                                useMe={useMe}
                                 newUserRedirectPath="/profile/signup"
                                 baseRedirectPath="/my-spaces"
                                 navItems={[
@@ -328,8 +324,6 @@ export default async function RootLayout({
                           >
                             <div className="hidden md:flex">
                               <ConnectedButtonProfile
-                                useAuthentication={useAuthentication}
-                                useMe={useMe}
                                 newUserRedirectPath="/profile/signup"
                                 baseRedirectPath="/my-spaces"
                                 navItems={[

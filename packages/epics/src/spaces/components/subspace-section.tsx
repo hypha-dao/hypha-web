@@ -7,9 +7,7 @@ import type { Locale } from '@hypha-platform/i18n';
 import { InnerSpaceCardList } from './inner-space-card-list';
 import { Button } from '@hypha-platform/ui';
 import type { UseMembers } from '../hooks';
-import { useSpaceDiscoverability } from '../hooks/use-space-discoverability';
-import { useUserSpaceState } from '../hooks/use-user-space-state';
-import { checkAccess } from '../utils/transparency-access';
+import { useCanMutateInSpace } from '../hooks/use-can-mutate-in-space.web3.rpc';
 import Link from 'next/link';
 
 interface SubspaceSectionProps {
@@ -29,18 +27,11 @@ export const SubspaceSection = ({
   currentSpaceSlug,
   useMembers,
 }: SubspaceSectionProps) => {
-  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
-    spaceId: currentSpaceWeb3Id ? BigInt(currentSpaceWeb3Id) : undefined,
-  });
-
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+  const { canMutate, isLoading } = useCanMutateInSpace({
     spaceId: currentSpaceWeb3Id,
     spaceSlug: currentSpaceSlug,
   });
-
-  const hasAccess = checkAccess(access, userState);
-  const isLoading = isAccessLoading || isUserStateLoading;
-  const isDisabled = isLoading || !hasAccess;
+  const isDisabled = isLoading || !canMutate;
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,13 +39,13 @@ export const SubspaceSection = ({
         <Text className="text-4">Organisation Spaces | {spaces.length}</Text>
         <div className="flex items-center">
           <Link
-            href={hasAccess && !isLoading ? 'space/create' : '#'}
+            href={canMutate && !isLoading ? 'space/create' : '#'}
             className={isDisabled ? 'cursor-not-allowed' : ''}
             title={
               isLoading
                 ? 'Loading...'
-                : !hasAccess
-                ? 'You do not have access to add spaces to this organization.'
+                : !canMutate
+                ? 'You must be a space member to add spaces to this organization.'
                 : 'Add Space'
             }
           >

@@ -2,16 +2,21 @@
 
 import { ButtonProfile } from './button-profile';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { UseAuthentication } from '@hypha-platform/authentication';
-import { UseMe } from '../hooks/types';
+import {
+  ProfileUseAuthentication,
+  ResolvePostAuthRedirectPathOrDefault,
+  UseMe,
+} from '../hooks/types';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
+
 type ConnectedButtonProfileProps = {
-  useAuthentication: UseAuthentication;
+  useAuthentication: ProfileUseAuthentication;
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
+  resolvePostAuthRedirectPathOrDefault: ResolvePostAuthRedirectPathOrDefault;
   navItems: ButtonNavItemProps[];
   trailingBeforeProfile?: ReactNode;
   compact?: boolean;
@@ -35,6 +40,7 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
+  resolvePostAuthRedirectPathOrDefault,
   navItems,
   trailingBeforeProfile,
   compact = false,
@@ -56,6 +62,8 @@ export const ConnectedButtonProfile = ({
   const { resolvedTheme, setTheme } = useTheme();
   const onboardingUrl =
     typeof lang === 'string' ? `/${lang}/onboarding` : undefined;
+  const localizedSignupPath =
+    typeof lang === 'string' ? `/${lang}/profile/signup` : newUserRedirectPath;
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
@@ -81,14 +89,21 @@ export const ConnectedButtonProfile = ({
       if (person) {
         if (isErrorUser(person)) {
           if (person.error !== 'Internal Server Error') {
-            router.push(newUserRedirectPath);
+            router.push(localizedSignupPath);
           }
-        } else if (person?.id && pathname === newUserRedirectPath) {
-          router.push(baseRedirectPath);
-          setLoggingIn(false);
-        } else if (isLoggingIn) {
+        } else if (
+          isLoggingIn &&
+          pathname !== newUserRedirectPath &&
+          pathname !== localizedSignupPath
+        ) {
           if (!pathname.includes('/onboarding')) {
-            router.push(baseRedirectPath);
+            router.push(
+              resolvePostAuthRedirectPathOrDefault({
+                pathname,
+                lang: typeof lang === 'string' ? lang : undefined,
+                baseRedirectPath,
+              }),
+            );
           }
           setLoggingIn(false);
         }
@@ -108,6 +123,9 @@ export const ConnectedButtonProfile = ({
     isLoggingIn,
     setLoggingIn,
     pathname,
+    localizedSignupPath,
+    lang,
+    resolvePostAuthRedirectPathOrDefault,
   ]);
 
   const handleThemeChange = () => {

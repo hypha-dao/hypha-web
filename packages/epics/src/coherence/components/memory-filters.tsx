@@ -26,6 +26,8 @@ type MemoryFiltersProps = {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   newMemoryHref: string;
+  canCreateMemory?: boolean;
+  isCreateMemoryLoading?: boolean;
   counts: Record<MemoryFilterValue, number>;
 };
 
@@ -35,6 +37,8 @@ export function MemoryFilters({
   searchTerm,
   onSearchChange,
   newMemoryHref,
+  canCreateMemory = false,
+  isCreateMemoryLoading = false,
   counts,
 }: MemoryFiltersProps) {
   const t = useTranslations('CoherenceTab');
@@ -97,11 +101,21 @@ export function MemoryFilters({
           className="w-full"
         />
         <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
-          <Button asChild variant="default" colorVariant="accent">
-            <Link href={newMemoryHref} scroll={false}>
+          {canCreateMemory ? (
+            <Button asChild variant="default" colorVariant="accent">
+              <Link href={newMemoryHref} scroll={false}>
+                {t('newMemory')}
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              colorVariant="accent"
+              disabled={isCreateMemoryLoading || !canCreateMemory}
+            >
               {t('newMemory')}
-            </Link>
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
     </div>

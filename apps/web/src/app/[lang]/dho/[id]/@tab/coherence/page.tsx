@@ -10,7 +10,7 @@ import {
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
-import { getDhoPathAgreements } from '../agreements/constants';
+import { getDhoPathOverview } from '../overview/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -25,7 +25,7 @@ export default async function CoherencePage(props: PageProps) {
   const params = await props.params;
   const coherenceEnabled = await getEnableCoherence();
   if (!coherenceEnabled) {
-    redirect(getDhoPathAgreements(params.lang, params.id));
+    redirect(getDhoPathOverview(params.lang, params.id));
   }
 
   const humanChatEnabled = await getEnableHumanChat();
