@@ -87,11 +87,9 @@ function useGeneralUserState(): UserSpaceState {
 export function useFilterSpacesListWithDiscoverability({
   spaces,
   useGeneralState = false,
-  excludeSpaceLevelFromNetwork = false,
 }: {
   spaces: Space[];
   useGeneralState?: boolean;
-  excludeSpaceLevelFromNetwork?: boolean;
 }): {
   filteredSpaces: Space[];
   isLoading: boolean;
@@ -159,14 +157,11 @@ export function useFilterSpacesListWithDiscoverability({
     });
 
     return spaces.filter((space) => {
-      if (!space.web3SpaceId) return true;
+      if (!space.web3SpaceId) return false;
       const discoverability = discoverabilityMap.get(space.web3SpaceId);
 
       if (useGeneralState) {
         if (discoverability === TransparencyLevel.SPACE) {
-          if (excludeSpaceLevelFromNetwork) {
-            return false;
-          }
           return userMemberSpaceIdsSet.has(space.web3SpaceId);
         }
 
@@ -202,7 +197,6 @@ export function useFilterSpacesListWithDiscoverability({
     discoverabilityMap,
     userState,
     useGeneralState,
-    excludeSpaceLevelFromNetwork,
     userMemberSpaceIdsSet,
   ]);
 

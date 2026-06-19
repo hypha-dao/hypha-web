@@ -26,12 +26,17 @@ describe('category groups', () => {
   });
 
   it('expands and collapses groups consistently', () => {
-    const expanded = expandCategoryGroups(['environment', 'technology']);
+    const expanded = expandCategoryGroups([
+      'environment',
+      'energy',
+      'technology',
+    ]);
     expect(expanded).toEqual(
-      expect.arrayContaining(['ocean', 'tech', 'energy']),
+      expect.arrayContaining(['ocean', 'energy', 'tech']),
     );
     expect(collapseCategoriesToGroups(expanded)).toEqual([
       'environment',
+      'energy',
       'technology',
     ]);
   });
@@ -50,6 +55,7 @@ describe('category groups', () => {
       'environment',
       'governance',
     ]);
+    expect(parseCategoryGroupFilterParam('energy')).toEqual(['energy']);
   });
 
   it('preserves existing granular tags when re-saving grouped selections', () => {

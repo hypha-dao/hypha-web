@@ -4,6 +4,7 @@ import { CATEGORIES, type Category } from './types';
 export const CATEGORY_GROUP_IDS = [
   'arts_culture',
   'environment',
+  'energy',
   'places',
   'food',
   'health',
@@ -30,14 +31,12 @@ export const CATEGORY_GROUPS = [
   {
     id: 'environment',
     label: 'Environment',
-    categories: [
-      'biodiversity',
-      'bioregions',
-      'land',
-      'ocean',
-      'water',
-      'energy',
-    ],
+    categories: ['biodiversity', 'bioregions', 'land', 'ocean', 'water'],
+  },
+  {
+    id: 'energy',
+    label: 'Energy',
+    categories: ['energy'],
   },
   {
     id: 'places',
