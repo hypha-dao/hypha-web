@@ -1507,9 +1507,8 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       <ReviewRow
                         label={t('country')}
                         value={
-                          COUNTRIES.find(
-                            (c) => c.alpha3 === swiftIbanCountry,
-                          )?.name ?? swiftIbanCountry
+                          COUNTRIES.find((c) => c.alpha3 === swiftIbanCountry)
+                            ?.name ?? swiftIbanCountry
                         }
                       />
                     ) : null}
