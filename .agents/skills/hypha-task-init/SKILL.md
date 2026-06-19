@@ -24,6 +24,7 @@ Ensure `../hypha-context` is current. Offer to pull if behind origin.
 Read `../hypha-context/progress/members/gerroza/AGENTS.local.md`.
 
 ### 3. Read the GitHub issue (board soft-step — gated)
+
 If the developer's general `AGENTS.local.md` has `github.enabled: true`, use the `hypha-board`
 skill: fetch the issue with `gh issue view <number> --repo hypha-dao/hypha-web` to ground the
 spec. If no issue exists yet and the work belongs on the board, *offer* to create one (correct
@@ -32,6 +33,7 @@ spec. If no issue exists yet and the work belongs on the board, *offer* to creat
 Skip this step silently if `github.enabled` is absent or false.
 
 ### 4. Classify the task (skip any already answered by the issue/config)
+
 - **Type:** analysis · feature · bug · process
 - **Reviewer:** will another contributor review before merge?
 - **Discovery:** is research needed, or is the area already understood?
