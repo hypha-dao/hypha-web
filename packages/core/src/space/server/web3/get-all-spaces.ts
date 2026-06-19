@@ -2,7 +2,7 @@
 
 import { db } from '@hypha-platform/storage-postgres';
 import { findAllSpaces } from '@hypha-platform/core/server';
-import { Space, isSpaceArchived } from '@hypha-platform/core/client';
+import { Space, isSpaceExplicitlyArchived } from '@hypha-platform/core/client';
 import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
@@ -87,7 +87,9 @@ export async function getAllSpaces(
     });
 
     if (props.omitArchived) {
-      return enrichedSpaces.filter((space) => !isSpaceArchived(space));
+      return enrichedSpaces.filter(
+        (space) => !isSpaceExplicitlyArchived(space),
+      );
     }
 
     return enrichedSpaces;

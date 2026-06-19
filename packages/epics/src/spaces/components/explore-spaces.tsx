@@ -1,12 +1,14 @@
 'use client';
 
 import {
-  Category,
+  CategoryGroupId,
   Space,
   SpaceOrder,
-  categories as categoryOptions,
+  CATEGORY_GROUPS,
+  getCategoryGroupLabel,
   hasSpaceMapLocation,
-  isSpaceArchived,
+  isSpaceExplicitlyArchived,
+  spaceMatchesCategoryGroups,
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
@@ -20,12 +22,11 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Combobox, Heading, Separator, Button } from '@hypha-platform/ui';
+import { Badge, Combobox, Heading, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
-import { Clock } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 
@@ -33,16 +34,11 @@ interface ExploreSpacesProps {
   lang: Locale;
   query?: string;
   spaces: Space[];
-  categories?: Category[];
+  categoryGroups?: CategoryGroupId[];
   order?: SpaceOrder;
-  uniqueCategories: Category[];
+  uniqueCategoryGroups: CategoryGroupId[];
   enableNetworkMap?: boolean;
 }
-
-const categoriesIntersected = (
-  categories1: Category[],
-  categories2: Category[],
-) => categories1.some((category) => categories2.includes(category));
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
   return a.toLowerCase() as Lowercase<A>;
@@ -50,30 +46,25 @@ function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
 
 const CategoryLabel = ({
   selectedSpaces,
-  categories,
+  categoryGroups,
   allLabel,
   className,
 }: {
   selectedSpaces: Space[];
-  categories?: Category[];
+  categoryGroups?: CategoryGroupId[];
   allLabel: string;
   className?: string | undefined;
 }) => {
   return (
     <Text className={cn('text-4 text-left', className)}>
-      {categories && categories.length > 0 ? (
+      {categoryGroups && categoryGroups.length > 0 ? (
         <Text className="text-4 text-left">
-          {categories.map((category, index) => {
-            const label =
-              categoryOptions.find((option) => option.value === category)
-                ?.label ?? category;
-            return (
-              <Text key={`cat-title-${category}`} className="text-4 ml-1">
-                {index !== 0 && ' | '}
-                {label}
-              </Text>
-            );
-          })}{' '}
+          {categoryGroups.map((groupId, index) => (
+            <Text key={`cat-title-${groupId}`} className="text-4 ml-1">
+              {index !== 0 && ' | '}
+              {getCategoryGroupLabel(groupId)}
+            </Text>
+          ))}{' '}
           <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
@@ -92,9 +83,9 @@ export function ExploreSpaces({
   lang,
   query,
   spaces,
-  categories,
+  categoryGroups,
   order,
-  uniqueCategories,
+  uniqueCategoryGroups,
   enableNetworkMap = false,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
@@ -127,18 +118,18 @@ export function ExploreSpaces({
   const { replace } = useRouter();
 
   const nonArchivedSpaces = React.useMemo(
-    () => spaces.filter((space) => !isSpaceArchived(space)),
+    () => spaces.filter((space) => !isSpaceExplicitlyArchived(space)),
     [spaces],
   );
 
   const categoryFilteredSpaces = React.useMemo(
     () =>
-      categories && categories.length > 0
+      categoryGroups && categoryGroups.length > 0
         ? nonArchivedSpaces.filter((space) =>
-            categoriesIntersected(space.categories ?? [], categories),
+            spaceMatchesCategoryGroups(space.categories, categoryGroups),
           )
         : nonArchivedSpaces,
-    [nonArchivedSpaces, categories],
+    [nonArchivedSpaces, categoryGroups],
   );
 
   const { filteredSpaces: selectedSpaces } =
@@ -168,24 +159,17 @@ export function ExploreSpaces({
 
   const tags = React.useMemo(
     () =>
-      uniqueCategories
-        .map((category) =>
-          categoryOptions.find(
-            (option) => !option.archive && option.value === category,
-          ),
-        )
-        .filter(
-          (category): category is NonNullable<typeof category> => !!category,
-        )
-        .sort((a, b) => (a.label > b.label ? 1 : -1)),
-    [uniqueCategories],
+      CATEGORY_GROUPS.filter((group) =>
+        uniqueCategoryGroups.includes(group.id),
+      ).sort((a, b) => (a.label > b.label ? 1 : -1)),
+    [uniqueCategoryGroups],
   );
 
-  const setCategories = React.useCallback(
-    (nextCategories: Category[]) => {
+  const setCategoryGroups = React.useCallback(
+    (nextCategoryGroups: CategoryGroupId[]) => {
       const params = new URLSearchParams(searchParams);
-      if (nextCategories.length > 0) {
-        params.set('category', nextCategories.join(','));
+      if (nextCategoryGroups.length > 0) {
+        params.set('category', nextCategoryGroups.join(','));
       } else {
         params.delete('category');
       }
@@ -224,13 +208,16 @@ export function ExploreSpaces({
   );
 
   const multiSelectVariants = cva(
-    'rounded-md px-2 py-1 text-sm transition-colors duration-150',
+    'transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
     {
       variants: {
         variant: {
-          default: 'text-neutral-11 hover:text-foreground',
-          secondary: 'text-foreground font-medium',
-          destructive: 'text-destructive',
+          default:
+            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
+          secondary:
+            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
+          destructive:
+            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
           inverted: 'inverted',
         },
       },
@@ -291,28 +278,26 @@ export function ExploreSpaces({
 
   const categoryFilters = (
     <div className="flex flex-wrap justify-center gap-2">
-      {tags.map((tag) => (
-        <button
-          key={tag.value}
-          type="button"
-          aria-pressed={categories?.includes(tag.value) ?? false}
-          className={cn(
-            multiSelectVariants({
-              variant: categories?.includes(tag.value)
-                ? 'secondary'
-                : 'default',
-            }),
-          )}
-          onClick={() => {
-            const newCategories = categories?.includes(tag.value)
-              ? []
-              : [tag.value];
-            setCategories(newCategories);
-          }}
-        >
-          {tag.label}
-        </button>
-      ))}
+      {tags.map((tag) => {
+        const isSelected = categoryGroups?.includes(tag.id) ?? false;
+        return (
+          <Badge
+            key={tag.id}
+            className={cn(
+              multiSelectVariants({
+                variant: isSelected ? 'secondary' : 'default',
+              }),
+            )}
+            style={{ cursor: 'pointer', animationDuration: '0s' }}
+            onClick={() => {
+              const nextCategoryGroups = isSelected ? [] : [tag.id];
+              setCategoryGroups(nextCategoryGroups);
+            }}
+          >
+            {tag.label}
+          </Badge>
+        );
+      })}
     </div>
   );
 
@@ -320,20 +305,13 @@ export function ExploreSpaces({
     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
       <SpaceSearch value={query} className="w-full min-w-0 sm:flex-1" />
       <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-        <Button
-          type="button"
-          variant="outline"
-          colorVariant="neutral"
-          className={cn(
-            'h-9 shrink-0 gap-1.5 px-2.5 text-xs sm:h-10 sm:px-4 sm:text-sm',
-            order === 'mostrecent' && 'border-accent-9 text-accent-11',
-          )}
-          aria-pressed={order === 'mostrecent'}
-          onClick={() => setOrder('mostrecent')}
-        >
-          <Clock className="size-3.5 shrink-0" aria-hidden />
-          {t('mostRecent')}
-        </Button>
+        <Combobox
+          options={orderOptions}
+          initialValue={order}
+          className="h-9 shrink-0 border-0 md:w-40"
+          onChange={setOrder}
+          allowEmptyChoice={false}
+        />
         <CreateSpaceButton
           lang={lang}
           isAuthenticated={isAuthenticated}
@@ -362,19 +340,10 @@ export function ExploreSpaces({
     <div className="mb-4 flex w-full flex-row items-center gap-2">
       <CategoryLabel
         selectedSpaces={selectedSpaces}
-        categories={categories}
+        categoryGroups={categoryGroups}
         allLabel={t('all')}
         className="flex grow"
       />
-      <div className="flex shrink-0 flex-col">
-        <Combobox
-          options={orderOptions}
-          initialValue={order}
-          className="border-0 md:w-40"
-          onChange={setOrder}
-          allowEmptyChoice={false}
-        />
-      </div>
     </div>
   );
 
