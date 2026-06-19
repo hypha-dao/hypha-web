@@ -120,7 +120,6 @@ export function NetworkAddLocationButton({
           <p className="text-2 text-neutral-11">{t('addLocationNoSpaces')}</p>
         ) : (
           <Select
-            modal={false}
             value={selectedSlug || undefined}
             onValueChange={setSelectedSlug}
           >
