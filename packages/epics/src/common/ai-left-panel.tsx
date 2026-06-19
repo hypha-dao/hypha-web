@@ -1641,7 +1641,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   }
 
-  if (blockSpaceAiForActivityAccess || blockSpaceAiForMembership) {
+  if (blockSpaceAiForActivityAccess) {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
@@ -1702,6 +1702,19 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         {spaceSlug && blockSpaceAiForSubscription ? (
           <div className="mx-3 mt-3 shrink-0">
             <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
+          </div>
+        ) : null}
+        {spaceSlug &&
+        blockSpaceAiForMembership &&
+        hasSpaceActivityAccess &&
+        !isUserSpaceStateLoading ? (
+          <div className="mx-3 mt-3 shrink-0">
+            <SpaceAccessDenied
+              userState={userSpaceState}
+              spaceId={effectiveSpaceWeb3Id}
+              spaceSlug={spaceSlug}
+              className="py-4"
+            />
           </div>
         ) : null}
         {error && !blockSpaceAiForInteraction ? (

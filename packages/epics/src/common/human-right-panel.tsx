@@ -4045,78 +4045,55 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {!showMembershipAccessGate ? (
-          <>
-            <HumanChatPanelTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              chatMentionCount={bellMentionCount}
-              chatMentionCountCapped={bellMentionCapped}
-              mentionTabBadgeCount={bellMentionCount}
-              mentionTabBadgeCapped={bellMentionCapped}
-              tabRowEnd={
-                showSidebarCallChrome &&
-                !inSpaceCall &&
-                !spaceCallShowJoinStrip ? (
-                  <HumanChatPanelCallToolbar
-                    callState={spaceCallState}
-                    callKind={spaceCallKind}
-                    disabled={!callUiEnabled}
-                    roomCallInProgressToJoin={spaceCallToolbarJoinHint}
-                    onAudio={() => {
-                      if (!canJoinSignalThreadCall && isSignalThread) {
-                        void requestSignalTeamAccess();
-                        return;
-                      }
-                      handleCallAudio();
-                    }}
-                    onVideo={() => {
-                      if (!canJoinSignalThreadCall && isSignalThread) {
-                        void requestSignalTeamAccess();
-                        return;
-                      }
-                      handleCallVideo();
-                    }}
-                  />
-                ) : null
-              }
-            />
-            {spaceCallShowJoinUi && (
-              <HumanChatPanelCallJoinStrip
-                deviceCount={spaceCallRoomGroupDeviceCount}
-                disabled={!callUiEnabled}
-                busy={spaceCallBusyJoining}
-                captureConsent={spaceCallCaptureConsent}
-                roomId={roomId}
-                onJoinAudio={() => {
-                  if (!canJoinSignalThreadCall && isSignalThread) {
-                    void requestSignalTeamAccess();
-                    return;
-                  }
-                  handleCallAudio();
-                }}
-                onJoinVideo={() => {
-                  if (!canJoinSignalThreadCall && isSignalThread) {
-                    void requestSignalTeamAccess();
-                    return;
-                  }
-                  handleCallVideo();
-                }}
-              />
-            )}
-            <HumanChatPanelCallJoinInvitation
-              open={joinInviteOpen}
-              deviceCount={spaceCallRoomGroupDeviceCount}
-              busy={spaceCallBusyJoining}
-              disabled={!callUiEnabled}
-              onOpenChange={setJoinInviteOpen}
-              onJoinAudio={
-                canJoinSignalThreadCall
-                  ? () => {
-                      handleCallAudio();
+        <>
+          <HumanChatPanelTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            chatMentionCount={bellMentionCount}
+            chatMentionCountCapped={bellMentionCapped}
+            mentionTabBadgeCount={bellMentionCount}
+            mentionTabBadgeCapped={bellMentionCapped}
+            tabRowEnd={
+              showSidebarCallChrome &&
+              !inSpaceCall &&
+              !spaceCallShowJoinStrip ? (
+                <HumanChatPanelCallToolbar
+                  callState={spaceCallState}
+                  callKind={spaceCallKind}
+                  disabled={!callUiEnabled}
+                  roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                  onAudio={() => {
+                    if (!canJoinSignalThreadCall && isSignalThread) {
+                      void requestSignalTeamAccess();
+                      return;
                     }
-                  : undefined
-              }
+                    handleCallAudio();
+                  }}
+                  onVideo={() => {
+                    if (!canJoinSignalThreadCall && isSignalThread) {
+                      void requestSignalTeamAccess();
+                      return;
+                    }
+                    handleCallVideo();
+                  }}
+                />
+              ) : null
+            }
+          />
+          {spaceCallShowJoinUi && (
+            <HumanChatPanelCallJoinStrip
+              deviceCount={spaceCallRoomGroupDeviceCount}
+              disabled={!callUiEnabled}
+              busy={spaceCallBusyJoining}
+              captureConsent={spaceCallCaptureConsent}
+              roomId={roomId}
+              onJoinAudio={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleCallAudio();
+              }}
               onJoinVideo={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
                   void requestSignalTeamAccess();
@@ -4124,111 +4101,128 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 }
                 handleCallVideo();
               }}
-              onDismiss={dismissJoinInvite}
             />
-            {showSidebarCallChrome &&
-              (inSpaceCall ||
-                spaceCallState === 'error' ||
-                spaceCallState === 'disconnecting') && (
-                <HumanChatPanelCallBanner
-                  callState={spaceCallState}
-                  callKind={spaceCallKind}
-                  errorCode={spaceCallError}
-                  isScreensharing={spaceCallScreensharing}
-                  remoteScreenshareActive={spaceCallRemoteScreenshareActive}
-                  screenshareErrorCode={spaceCallScreenshareError}
-                  screenshareTabAudioMissing={
-                    spaceCallScreenshareTabAudioMissing
+          )}
+          <HumanChatPanelCallJoinInvitation
+            open={joinInviteOpen}
+            deviceCount={spaceCallRoomGroupDeviceCount}
+            busy={spaceCallBusyJoining}
+            disabled={!callUiEnabled}
+            onOpenChange={setJoinInviteOpen}
+            onJoinAudio={
+              canJoinSignalThreadCall
+                ? () => {
+                    handleCallAudio();
                   }
-                  onDismissScreenshareTabAudioHint={
-                    dismissSpaceCallScreenshareTabAudioHint
-                  }
-                  onRetryScreenshareWithTabAudio={() => {
-                    void retrySpaceCallScreenshareWithTabAudio();
-                  }}
-                  cameraAccessBlocked={spaceCallCameraAccessBlocked}
-                  onDismissCameraAccessBlocked={
-                    dismissSpaceCallCameraAccessBlocked
-                  }
-                  sessionRefreshFailedDuringCall={
-                    sessionRefreshFailedDuringCall
-                  }
-                  onReconnectMatrixSession={() => {
-                    void refreshSession();
-                  }}
-                  tabBackgroundWhileInCall={
-                    showFloatingDock ? false : spaceCallTabBackground
-                  }
-                  isMicrophoneMuted={spaceCallMicMuted}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  participantCount={spaceCallRoomGroupDeviceCount}
-                  othersInRoomCallCount={spaceCallOthersInRoom}
-                  remoteMediaStall={spaceCallRemoteMediaStall}
-                  remoteMediaWarming={spaceCallRemoteMediaWarming}
-                  turnServerUnavailable={spaceCallTurnServerUnavailable}
-                  onDismissTurnServerUnavailable={
-                    dismissSpaceCallTurnServerUnavailable
-                  }
-                  onDismissRemoteMediaStall={dismissSpaceCallRemoteMediaStall}
-                  onRetryRemoteMedia={retrySpaceCallRemoteMedia}
-                  showScaleWarning={showCallScaleWarning}
-                  onLeave={handleCallLeave}
-                  onToggleMic={handleCallToggleMic}
-                  onToggleCamera={handleCallToggleCamera}
-                  onStartScreenshare={handleCallStartScreenshare}
-                  onStopScreenshare={handleCallStopScreenshare}
-                  voiceProcessingPreset={spaceCallVoiceProcessingPreset}
-                  onVoiceProcessingPresetChange={
-                    handleCallVoiceProcessingPresetChange
-                  }
-                  presenterVoiceBoostActive={spaceCallPresenterVoiceBoostActive}
-                  captureMode={spaceCallCaptureMode}
-                  capturePreference={spaceCallCapturePreference}
-                  capturePreferenceSelected={spaceCallCapturePreferenceSelected}
-                  onCapturePreferenceChange={setSpaceCallCapturePreference}
-                  onStartCapture={startSpaceCallCapture}
-                  onPauseCapture={pauseSpaceCallCapture}
-                  onResumeCapture={resumeSpaceCallCapture}
-                  onStopCapture={stopSpaceCallCapture}
-                  recordingStatus={spaceCallRecordingStatus}
-                  recordingError={spaceCallRecordingError}
-                  recordingWarning={spaceCallRecordingWarning}
-                  canRetryRecordingUpload={spaceCallCanRetryRecordingUpload}
-                  onRetryRecordingUpload={() => {
-                    void retrySpaceCallRecordingUpload();
-                  }}
-                  captureConsent={spaceCallCaptureConsent}
-                  roomId={roomId}
-                  controlsMode="leave_only"
-                  canSendCallReactions={canSendCallReactions}
-                  localHandRaised={localHandRaised}
-                  onSendReaction={sendReaction}
-                  onToggleRaiseHand={toggleRaiseHand}
-                  includeReactionsWhenLeaveOnly={isTouchCallChrome}
-                  onDismissScreenshareError={dismissSpaceCallScreenshareError}
-                  onRetryCall={handleRetrySpaceCall}
-                  onDismissCallError={dismissSpaceCallError}
-                />
-              )}
-            {!showFloatingDock && callUiEnabled ? (
-              <HumanChatPanelScreenshareTakeoverDialog
-                incoming={spaceCallScreenshareTakeoverIncoming}
-                pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
-                denied={spaceCallScreenshareTakeoverDenied}
-                onApprove={(request) => {
-                  void approveSpaceCallScreenshareTakeover(request);
+                : undefined
+            }
+            onJoinVideo={() => {
+              if (!canJoinSignalThreadCall && isSignalThread) {
+                void requestSignalTeamAccess();
+                return;
+              }
+              handleCallVideo();
+            }}
+            onDismiss={dismissJoinInvite}
+          />
+          {showSidebarCallChrome &&
+            (inSpaceCall ||
+              spaceCallState === 'error' ||
+              spaceCallState === 'disconnecting') && (
+              <HumanChatPanelCallBanner
+                callState={spaceCallState}
+                callKind={spaceCallKind}
+                errorCode={spaceCallError}
+                isScreensharing={spaceCallScreensharing}
+                remoteScreenshareActive={spaceCallRemoteScreenshareActive}
+                screenshareErrorCode={spaceCallScreenshareError}
+                screenshareTabAudioMissing={spaceCallScreenshareTabAudioMissing}
+                onDismissScreenshareTabAudioHint={
+                  dismissSpaceCallScreenshareTabAudioHint
+                }
+                onRetryScreenshareWithTabAudio={() => {
+                  void retrySpaceCallScreenshareWithTabAudio();
                 }}
-                onDeny={(request) => {
-                  void denySpaceCallScreenshareTakeover(request);
+                cameraAccessBlocked={spaceCallCameraAccessBlocked}
+                onDismissCameraAccessBlocked={
+                  dismissSpaceCallCameraAccessBlocked
+                }
+                sessionRefreshFailedDuringCall={sessionRefreshFailedDuringCall}
+                onReconnectMatrixSession={() => {
+                  void refreshSession();
                 }}
-                onCancelPending={() => {
-                  void cancelSpaceCallScreenshareTakeoverRequest();
+                tabBackgroundWhileInCall={
+                  showFloatingDock ? false : spaceCallTabBackground
+                }
+                isMicrophoneMuted={spaceCallMicMuted}
+                isLocalVideoMuted={spaceCallVideoMuted}
+                participantCount={spaceCallRoomGroupDeviceCount}
+                othersInRoomCallCount={spaceCallOthersInRoom}
+                remoteMediaStall={spaceCallRemoteMediaStall}
+                remoteMediaWarming={spaceCallRemoteMediaWarming}
+                turnServerUnavailable={spaceCallTurnServerUnavailable}
+                onDismissTurnServerUnavailable={
+                  dismissSpaceCallTurnServerUnavailable
+                }
+                onDismissRemoteMediaStall={dismissSpaceCallRemoteMediaStall}
+                onRetryRemoteMedia={retrySpaceCallRemoteMedia}
+                showScaleWarning={showCallScaleWarning}
+                onLeave={handleCallLeave}
+                onToggleMic={handleCallToggleMic}
+                onToggleCamera={handleCallToggleCamera}
+                onStartScreenshare={handleCallStartScreenshare}
+                onStopScreenshare={handleCallStopScreenshare}
+                voiceProcessingPreset={spaceCallVoiceProcessingPreset}
+                onVoiceProcessingPresetChange={
+                  handleCallVoiceProcessingPresetChange
+                }
+                presenterVoiceBoostActive={spaceCallPresenterVoiceBoostActive}
+                captureMode={spaceCallCaptureMode}
+                capturePreference={spaceCallCapturePreference}
+                capturePreferenceSelected={spaceCallCapturePreferenceSelected}
+                onCapturePreferenceChange={setSpaceCallCapturePreference}
+                onStartCapture={startSpaceCallCapture}
+                onPauseCapture={pauseSpaceCallCapture}
+                onResumeCapture={resumeSpaceCallCapture}
+                onStopCapture={stopSpaceCallCapture}
+                recordingStatus={spaceCallRecordingStatus}
+                recordingError={spaceCallRecordingError}
+                recordingWarning={spaceCallRecordingWarning}
+                canRetryRecordingUpload={spaceCallCanRetryRecordingUpload}
+                onRetryRecordingUpload={() => {
+                  void retrySpaceCallRecordingUpload();
                 }}
-                onDismissDenied={dismissSpaceCallScreenshareTakeoverPrompt}
+                captureConsent={spaceCallCaptureConsent}
+                roomId={roomId}
+                controlsMode="leave_only"
+                canSendCallReactions={canSendCallReactions}
+                localHandRaised={localHandRaised}
+                onSendReaction={sendReaction}
+                onToggleRaiseHand={toggleRaiseHand}
+                includeReactionsWhenLeaveOnly={isTouchCallChrome}
+                onDismissScreenshareError={dismissSpaceCallScreenshareError}
+                onRetryCall={handleRetrySpaceCall}
+                onDismissCallError={dismissSpaceCallError}
               />
-            ) : null}
-          </>
-        ) : null}
+            )}
+          {!showFloatingDock && callUiEnabled ? (
+            <HumanChatPanelScreenshareTakeoverDialog
+              incoming={spaceCallScreenshareTakeoverIncoming}
+              pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
+              denied={spaceCallScreenshareTakeoverDenied}
+              onApprove={(request) => {
+                void approveSpaceCallScreenshareTakeover(request);
+              }}
+              onDeny={(request) => {
+                void denySpaceCallScreenshareTakeover(request);
+              }}
+              onCancelPending={() => {
+                void cancelSpaceCallScreenshareTakeoverRequest();
+              }}
+              onDismissDenied={dismissSpaceCallScreenshareTakeoverPrompt}
+            />
+          ) : null}
+        </>
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent
@@ -4237,7 +4231,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       >
         {isAuthLoading ? (
           <HumanChatPanelLoader />
-        ) : blockSpaceChatForActivityAccess || showMembershipAccessGate ? (
+        ) : blockSpaceChatForActivityAccess ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <SpaceAccessDenied
               userState={userSpaceState}
@@ -4334,6 +4328,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   }}
                   onUseThisTab={claimMatrixSyncLeadership}
                 />
+                {showMembershipAccessGate && hasSpaceActivityAccess ? (
+                  <div className="mt-0 w-full border-b border-border/70 bg-muted/40 px-3 py-2">
+                    <SpaceAccessDenied
+                      userState={userSpaceState}
+                      spaceId={effectiveSpaceWeb3Id}
+                      spaceSlug={spaceSlug ?? undefined}
+                      className="py-3"
+                    />
+                  </div>
+                ) : null}
                 {signalDeepLinkNotice ? (
                   <div
                     role="alert"
@@ -4627,8 +4631,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       </SidebarContent>
       {activeTab === 'chat' &&
         !showAuthPrompt &&
-        !blockSpaceChatForActivityAccess &&
-        !showMembershipAccessGate && (
+        !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 bg-background-2 p-0">
             <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
               <HumanChatPanelChatBar
