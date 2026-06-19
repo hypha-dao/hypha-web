@@ -658,7 +658,7 @@ export function NetworkGlobeMap({
 
   if (locatedSpaces.length === 0) {
     return (
-      <div className={cn('flex flex-col gap-4', className)}>
+      <div className={cn('flex min-w-0 flex-col gap-4', className)}>
         {toolbar}
         <div
           ref={containerRef}
@@ -700,7 +700,7 @@ export function NetworkGlobeMap({
   }
 
   return (
-    <div className={cn('flex flex-col gap-4', className)}>
+    <div className={cn('flex min-w-0 flex-col gap-4', className)}>
       {toolbar}
       <div
         ref={containerRef}

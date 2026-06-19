@@ -263,16 +263,26 @@ export function ExploreSpaces({
 
   const renderMapToolbar = React.useCallback(
     (layerControls: React.ReactNode) => (
-      <div className="flex w-full flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 justify-start">{layerControls}</div>
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="flex w-full min-w-0 flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 w-full xl:flex-1">{layerControls}</div>
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 xl:w-auto xl:shrink-0 xl:justify-end">
           <NetworkAddLocationButton
             lang={lang}
             spaces={spaces}
             isAuthenticated={isAuthenticated}
+            className="h-9 shrink-0 px-2.5 text-xs sm:h-10 sm:px-4 sm:text-sm"
           />
-          <CreateSpaceButton lang={lang} isAuthenticated={isAuthenticated} />
-          <NetworkMapViewToggle value={view} onChange={setView} />
+          <CreateSpaceButton
+            lang={lang}
+            isAuthenticated={isAuthenticated}
+            className="shrink-0"
+            buttonClassName="h-9 gap-1.5 px-2.5 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+          />
+          <NetworkMapViewToggle
+            value={view}
+            onChange={setView}
+            className="ml-auto shrink-0 xl:ml-0"
+          />
         </div>
       </div>
     ),
@@ -280,18 +290,8 @@ export function ExploreSpaces({
   );
 
   const listViewToolbar = (
-    <div className="flex w-full flex-wrap items-center justify-between gap-3">
-      <div className="min-w-0 flex-1" aria-hidden="true" />
-      <div className="flex shrink-0 items-center gap-2">
-        <NetworkAddLocationButton
-          lang={lang}
-          spaces={spaces}
-          isAuthenticated={isAuthenticated}
-          className="pointer-events-none invisible"
-          aria-hidden
-        />
-        <NetworkMapViewToggle value={view} onChange={setView} />
-      </div>
+    <div className="flex w-full min-w-0 justify-end">
+      <NetworkMapViewToggle value={view} onChange={setView} />
     </div>
   );
 
@@ -381,7 +381,7 @@ export function ExploreSpaces({
   );
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-w-0 flex-col">
       <Heading
         size="9"
         color="secondary"

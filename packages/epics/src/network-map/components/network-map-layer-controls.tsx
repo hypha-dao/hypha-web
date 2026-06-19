@@ -46,7 +46,7 @@ export function NetworkMapLayerControls({
   return (
     <div
       className={cn(
-        'inline-flex w-fit max-w-full flex-wrap items-center gap-2 rounded-xl border border-neutral-6 bg-neutral-2/95 p-1.5 shadow-sm backdrop-blur-sm',
+        'flex w-full min-w-0 max-w-full flex-col gap-2 rounded-xl border border-neutral-6 bg-neutral-2/95 p-1.5 shadow-sm backdrop-blur-sm sm:inline-flex sm:w-fit sm:flex-row sm:flex-wrap sm:items-center',
         className,
       )}
       role="toolbar"
@@ -58,7 +58,10 @@ export function NetworkMapLayerControls({
           onProjectionModeChange(value as NetworkMapProjectionMode)
         }
       >
-        <TabsList triggerVariant="switch" className="h-8 shrink-0">
+        <TabsList
+          triggerVariant="switch"
+          className="h-8 w-full shrink-0 sm:w-auto"
+        >
           <TabsTrigger
             variant="switch"
             value="globe"
@@ -80,11 +83,11 @@ export function NetworkMapLayerControls({
 
       <Separator
         orientation="vertical"
-        className="mx-0.5 h-6 shrink-0 self-center bg-neutral-7"
+        className="mx-0.5 hidden h-6 shrink-0 self-center bg-neutral-7 sm:block"
       />
 
       <div
-        className="inline-flex flex-wrap items-center gap-0.5 rounded-lg bg-neutral-3 p-0.5"
+        className="flex w-full min-w-0 flex-wrap items-center gap-0.5 rounded-lg bg-neutral-3 p-0.5 sm:w-auto"
         role="group"
         aria-label={t('layersLabel')}
       >
