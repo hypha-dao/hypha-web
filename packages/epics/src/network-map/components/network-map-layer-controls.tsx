@@ -31,7 +31,7 @@ const LAYER_IDS = [...NETWORK_MAP_LAYER_IDS];
 const LAYER_ICONS: Record<NetworkMapLayerId, LucideIcon> = {
   land: LandPlot,
   water: Waves,
-  graticule: Grid3x3,
+  grid: Grid3x3,
 };
 
 export function NetworkMapLayerControls({

@@ -36,7 +36,7 @@ type MapPalette = {
   ocean: string;
   landFill: string;
   landStroke: string;
-  graticule: string;
+  grid: string;
   sphereShadow: string | null;
 };
 
@@ -45,7 +45,7 @@ const DARK_GLOBE_PALETTE: MapPalette = {
   ocean: '#1e3a5f',
   landFill: 'oklch(34.655% 0.01033 254.043)',
   landStroke: 'oklch(53.701% 0.01538 262.385)',
-  graticule: 'oklch(48.932% 0.01557 251.766)',
+  grid: 'oklch(48.932% 0.01557 251.766)',
   sphereShadow: null,
 };
 
@@ -55,7 +55,7 @@ function mapPaletteForTheme(theme: string | undefined): MapPalette {
       ocean: 'var(--info-5)',
       landFill: 'var(--neutral-7)',
       landStroke: 'var(--neutral-9)',
-      graticule: 'var(--neutral-8)',
+      grid: 'var(--neutral-8)',
       sphereShadow:
         'drop-shadow(0 10px 28px color-mix(in oklab, var(--info-9) 18%, transparent))',
     };
@@ -146,6 +146,7 @@ export function NetworkGlobeMap({
   lang,
   spaces,
   className,
+  renderToolbar,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -176,7 +177,7 @@ export function NetworkGlobeMap({
   const [layers, setLayers] = React.useState<NetworkMapLayerVisibility>({
     land: true,
     water: true,
-    graticule: false,
+    grid: false,
   });
   const [projectionMode, setProjectionMode] =
     React.useState<NetworkMapProjectionMode>('globe');
@@ -260,7 +261,7 @@ export function NetworkGlobeMap({
     if (root.empty()) {
       root = svg.append('g').attr('class', 'map-root');
       root.append('path').attr('class', 'map-ocean');
-      root.append('path').attr('class', 'map-graticule');
+      root.append('path').attr('class', 'map-grid');
       root.append('path').attr('class', 'map-land');
       root.append('g').attr('class', 'map-pins');
     }
@@ -281,17 +282,17 @@ export function NetworkGlobeMap({
       ocean.attr('d', null).style('display', 'none');
     }
 
-    const graticule = root.select<SVGPathElement>('path.map-graticule');
-    if (layerState.graticule) {
-      graticule
+    const gridPath = root.select<SVGPathElement>('path.map-grid');
+    if (layerState.grid) {
+      gridPath
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
-        .attr('stroke', palette.graticule)
+        .attr('stroke', palette.grid)
         .attr('stroke-width', 0.4)
         .attr('opacity', 0.45)
         .style('display', null);
     } else {
-      graticule.attr('d', null).style('display', 'none');
+      gridPath.attr('d', null).style('display', 'none');
     }
 
     const landPath = root.select<SVGPathElement>('path.map-land');
@@ -638,19 +639,27 @@ export function NetworkGlobeMap({
       />
     ) : null;
 
+  const layerControls = (
+    <NetworkMapLayerControls
+      layers={layers}
+      projectionMode={selectedProjection}
+      onLayerChange={(layer, visible) =>
+        setLayers((current) => ({ ...current, [layer]: visible }))
+      }
+      onProjectionModeChange={animateProjection}
+    />
+  );
+
+  const toolbar = renderToolbar ? (
+    renderToolbar(layerControls)
+  ) : (
+    <div className="flex justify-center">{layerControls}</div>
+  );
+
   if (locatedSpaces.length === 0) {
     return (
       <div className={cn('flex flex-col gap-4', className)}>
-        <div className="flex justify-center">
-          <NetworkMapLayerControls
-            layers={layers}
-            projectionMode={selectedProjection}
-            onLayerChange={(layer, visible) =>
-              setLayers((current) => ({ ...current, [layer]: visible }))
-            }
-            onProjectionModeChange={animateProjection}
-          />
-        </div>
+        {toolbar}
         <div
           ref={containerRef}
           className="relative min-h-[360px] w-full overflow-hidden"
@@ -692,16 +701,7 @@ export function NetworkGlobeMap({
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
-      <div className="flex justify-center">
-        <NetworkMapLayerControls
-          layers={layers}
-          projectionMode={selectedProjection}
-          onLayerChange={(layer, visible) =>
-            setLayers((current) => ({ ...current, [layer]: visible }))
-          }
-          onProjectionModeChange={animateProjection}
-        />
-      </div>
+      {toolbar}
       <div
         ref={containerRef}
         className="relative min-h-[360px] w-full overflow-hidden"

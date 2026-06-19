@@ -3403,7 +3403,7 @@
     "flatView": "Flache Karte",
     "landLayer": "Land",
     "waterLayer": "Wasser",
-    "graticuleLayer": "Gradnetz",
+    "gridLayer": "Raster",
     "noSpacesWithLocation": "Noch keine Spaces mit Standort",
     "noSpacesWithLocationHint": "Spaces erscheinen auf der Karte, sobald ein Admin einen Standort in der Space-Konfiguration festlegt.",
     "loadingMap": "Karte wird geladen…",

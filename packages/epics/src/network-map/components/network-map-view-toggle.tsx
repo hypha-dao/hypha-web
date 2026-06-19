@@ -1,6 +1,8 @@
 'use client';
 
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { LayoutList, Map } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 export type NetworkMapView = 'list' | 'map';
@@ -21,36 +23,35 @@ export function NetworkMapViewToggle({
   return (
     <div
       className={cn(
-        'inline-flex rounded-md border border-neutral-6 bg-neutral-2 p-0.5',
+        'inline-flex w-fit max-w-full flex-wrap items-center gap-2 rounded-xl border border-neutral-6 bg-neutral-2/95 p-1.5 shadow-sm backdrop-blur-sm',
         className,
       )}
       role="group"
       aria-label={t('viewToggleLabel')}
     >
-      <button
-        type="button"
-        className={cn(
-          'rounded px-3 py-1.5 text-sm transition-colors',
-          value === 'list'
-            ? 'bg-accent-9 text-white'
-            : 'text-neutral-11 hover:bg-neutral-4',
-        )}
-        onClick={() => onChange('list')}
+      <Tabs
+        value={value}
+        onValueChange={(nextValue) => onChange(nextValue as NetworkMapView)}
       >
-        {t('listView')}
-      </button>
-      <button
-        type="button"
-        className={cn(
-          'rounded px-3 py-1.5 text-sm transition-colors',
-          value === 'map'
-            ? 'bg-accent-9 text-white'
-            : 'text-neutral-11 hover:bg-neutral-4',
-        )}
-        onClick={() => onChange('map')}
-      >
-        {t('mapView')}
-      </button>
+        <TabsList triggerVariant="switch" className="h-8 shrink-0">
+          <TabsTrigger
+            variant="switch"
+            value="map"
+            className="gap-1.5 px-2.5 text-xs sm:text-sm"
+          >
+            <Map className="size-3.5 shrink-0" aria-hidden />
+            {t('mapView')}
+          </TabsTrigger>
+          <TabsTrigger
+            variant="switch"
+            value="list"
+            className="gap-1.5 px-2.5 text-xs sm:text-sm"
+          >
+            <LayoutList className="size-3.5 shrink-0" aria-hidden />
+            {t('listView')}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </div>
   );
 }

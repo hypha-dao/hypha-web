@@ -2914,7 +2914,7 @@
     "flatView": "Mapa plano",
     "landLayer": "Tierra",
     "waterLayer": "Agua",
-    "graticuleLayer": "Retícula",
+    "gridLayer": "Cuadrícula",
     "noSpacesWithLocation": "Aún no hay espacios con ubicación",
     "noSpacesWithLocationHint": "Los espacios aparecen en el mapa cuando un administrador define la ubicación en la configuración.",
     "loadingMap": "Cargando mapa…",

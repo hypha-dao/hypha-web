@@ -3446,7 +3446,7 @@
     "flatView": "Flat map",
     "landLayer": "Land",
     "waterLayer": "Water",
-    "graticuleLayer": "Graticule",
+    "gridLayer": "Grid",
     "noSpacesWithLocation": "No spaces with a location yet",
     "noSpacesWithLocationHint": "Spaces appear on the map once an admin sets a location in space configuration.",
     "loadingMap": "Loading map…",

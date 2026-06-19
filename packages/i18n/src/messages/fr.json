@@ -2875,7 +2875,7 @@
     "flatView": "Carte plate",
     "landLayer": "Terre",
     "waterLayer": "Eau",
-    "graticuleLayer": "Graticule",
+    "gridLayer": "Grille",
     "noSpacesWithLocation": "Aucun espace avec un emplacement pour l'instant",
     "noSpacesWithLocationHint": "Les espaces apparaissent sur la carte une fois qu'un administrateur définit un emplacement dans la configuration.",
     "loadingMap": "Chargement de la carte…",

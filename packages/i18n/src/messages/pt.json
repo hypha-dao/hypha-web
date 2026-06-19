@@ -2877,7 +2877,7 @@
     "flatView": "Mapa plano",
     "landLayer": "Terra",
     "waterLayer": "Água",
-    "graticuleLayer": "Graticule",
+    "gridLayer": "Grelha",
     "noSpacesWithLocation": "Ainda não há spaces com localização",
     "noSpacesWithLocationHint": "Os spaces aparecem no mapa depois que um admin define a localização na configuração do space.",
     "loadingMap": "A carregar mapa…",

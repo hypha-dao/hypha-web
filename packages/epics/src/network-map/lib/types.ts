@@ -14,9 +14,10 @@ export type NetworkGlobeMapProps = {
   lang: Locale;
   spaces: Space[];
   className?: string;
+  renderToolbar?: (layerControls: React.ReactNode) => React.ReactNode;
 };
 
-export const NETWORK_MAP_LAYER_IDS = ['land', 'water', 'graticule'] as const;
+export const NETWORK_MAP_LAYER_IDS = ['land', 'water', 'grid'] as const;
 
 export type NetworkMapLayerId = (typeof NETWORK_MAP_LAYER_IDS)[number];
 

@@ -13,6 +13,8 @@ import {
 import {
   NetworkAddLocationButton,
   NetworkGlobeMap,
+  NetworkMapView,
+  NetworkMapViewToggle,
   SpaceCardList,
   SpaceSearch,
 } from '@hypha-platform/epics';
@@ -198,6 +200,36 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
+  const view: NetworkMapView =
+    enableNetworkMap && searchParams.get('view') !== 'list' ? 'map' : 'list';
+
+  const setView = React.useCallback(
+    (nextView: NetworkMapView) => {
+      const params = new URLSearchParams(searchParams);
+      if (nextView === 'list') {
+        params.set('view', 'list');
+      } else {
+        params.delete('view');
+      }
+      replace(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, replace],
+  );
+
+  const renderMapToolbar = React.useCallback(
+    (layerControls: React.ReactNode) => (
+      <div className="flex w-full flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 justify-start">{layerControls}</div>
+        <NetworkMapViewToggle
+          value={view}
+          onChange={setView}
+          className="shrink-0"
+        />
+      </div>
+    ),
+    [view, setView],
+  );
+
   const multiSelectVariants = cva(
     'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
     {
@@ -266,7 +298,26 @@ export function ExploreSpaces({
       </Heading>
 
       {enableNetworkMap ? (
-        <NetworkGlobeMap lang={lang} spaces={mapSpaces} className="w-full" />
+        view === 'map' ? (
+          <NetworkGlobeMap
+            lang={lang}
+            spaces={mapSpaces}
+            className="w-full"
+            renderToolbar={renderMapToolbar}
+          />
+        ) : (
+          <div className="flex w-full flex-col gap-4">
+            <div className="flex w-full justify-end">
+              <NetworkMapViewToggle value={view} onChange={setView} />
+            </div>
+            <SpaceCardList
+              lang={lang}
+              spaces={sortedSpaces}
+              pageSize={12}
+              cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+            />
+          </div>
+        )
       ) : null}
 
       <Separator className="mt-1 mb-1" />
@@ -362,12 +413,14 @@ export function ExploreSpaces({
         </div>
       </div>
 
-      <SpaceCardList
-        lang={lang}
-        spaces={sortedSpaces}
-        pageSize={12}
-        cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-      />
+      {!enableNetworkMap ? (
+        <SpaceCardList
+          lang={lang}
+          spaces={sortedSpaces}
+          pageSize={12}
+          cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+        />
+      ) : null}
     </div>
   );
 }
