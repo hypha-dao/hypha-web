@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { Locale } from '@hypha-platform/i18n';
 import QRCode from 'react-qr-code';
 import {
   Button,
@@ -878,7 +879,9 @@ export function OnboardingAdventurePage({
               <Button
                 type="button"
                 className={primaryCtaClass}
-                onClick={() => router.push(getLegacyCreateSpacePath(locale))}
+                onClick={() =>
+                  router.push(getLegacyCreateSpacePath(locale as Locale))
+                }
               >
                 {t('create.cta')}
               </Button>
