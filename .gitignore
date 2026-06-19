@@ -69,3 +69,8 @@ playwright-report/
 
 # Hypha context satellite (personal, machine-specific — never commit)
 .hypha-context.local/
+
+# Hypha local-only skills and draft working files (personal, never committed)
+**/.local/
+.claude/skills/*.local/
+context-local/
