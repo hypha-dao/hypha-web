@@ -284,70 +284,8 @@ export function ExploreSpaces({
 
   const { isAuthenticated } = useAuthentication();
 
-  return (
-    <div className="flex flex-col gap-9">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="flex flex-col"
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
-
-      {enableNetworkMap ? (
-        view === 'map' ? (
-          <NetworkGlobeMap
-            lang={lang}
-            spaces={mapSpaces}
-            className="w-full"
-            renderToolbar={renderMapToolbar}
-          />
-        ) : (
-          <div className="flex w-full flex-col gap-4">
-            <div className="flex w-full justify-end">
-              <NetworkMapViewToggle value={view} onChange={setView} />
-            </div>
-            <SpaceCardList
-              lang={lang}
-              spaces={sortedSpaces}
-              pageSize={12}
-              cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-            />
-          </div>
-        )
-      ) : null}
-
-      <Separator className="mt-1 mb-1" />
-      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6">
-        <div className="flex flex-col">
-          <div className="flex justify-center text-7 font-medium">
-            {selectedSpaces.length}
-          </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            {tCommon('Spaces')}
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex justify-center text-7 font-medium">
-            {uniqueMemberAddresses.size}
-          </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            {tCommon('Members')}
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex justify-center text-7 font-medium">
-            {agreementCount}
-          </div>
-          <div className="flex justify-center text-1 mt-2 text-neutral-500">
-            {tCommon('Agreements')}
-          </div>
-        </div>
-      </div>
-
+  const listFiltersSection = (
+    <>
       <div className="flex flex-row w-full items-center gap-2">
         <CategoryLabel
           selectedSpaces={selectedSpaces}
@@ -412,15 +350,95 @@ export function ExploreSpaces({
           ))}
         </div>
       </div>
+    </>
+  );
+
+  const metricsSection = (
+    <div className="flex items-stretch justify-center gap-0">
+      <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+        <div className="flex justify-center text-7 font-medium">
+          {selectedSpaces.length}
+        </div>
+        <div className="mt-2 flex justify-center text-1 text-neutral-500">
+          {tCommon('Spaces')}
+        </div>
+      </div>
+      <Separator orientation="vertical" className="bg-neutral-6" />
+      <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+        <div className="flex justify-center text-7 font-medium">
+          {uniqueMemberAddresses.size}
+        </div>
+        <div className="mt-2 flex justify-center text-1 text-neutral-500">
+          {tCommon('Members')}
+        </div>
+      </div>
+      <Separator orientation="vertical" className="bg-neutral-6" />
+      <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+        <div className="flex justify-center text-7 font-medium">
+          {agreementCount}
+        </div>
+        <div className="mt-2 flex justify-center text-1 text-neutral-500">
+          {tCommon('Agreements')}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-9">
+      <Heading
+        size="9"
+        color="secondary"
+        weight="medium"
+        align="center"
+        className="flex flex-col"
+      >
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
+      </Heading>
+
+      {enableNetworkMap ? (
+        view === 'map' ? (
+          <NetworkGlobeMap
+            lang={lang}
+            spaces={mapSpaces}
+            className="w-full"
+            renderToolbar={renderMapToolbar}
+          />
+        ) : (
+          <div className="flex w-full flex-col gap-9">
+            {listFiltersSection}
+            <div className="flex w-full flex-col gap-4">
+              <div className="flex w-full justify-end">
+                <NetworkMapViewToggle value={view} onChange={setView} />
+              </div>
+              <SpaceCardList
+                lang={lang}
+                spaces={sortedSpaces}
+                pageSize={12}
+                cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+              />
+            </div>
+          </div>
+        )
+      ) : null}
+
+      {enableNetworkMap && view === 'map' ? metricsSection : null}
 
       {!enableNetworkMap ? (
-        <SpaceCardList
-          lang={lang}
-          spaces={sortedSpaces}
-          pageSize={12}
-          cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-        />
+        <>
+          {metricsSection}
+          {listFiltersSection}
+          <SpaceCardList
+            lang={lang}
+            spaces={sortedSpaces}
+            pageSize={12}
+            cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+          />
+        </>
       ) : null}
+
+      {enableNetworkMap && view === 'list' ? metricsSection : null}
     </div>
   );
 }

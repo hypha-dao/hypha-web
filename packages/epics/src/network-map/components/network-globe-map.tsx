@@ -40,9 +40,9 @@ type MapPalette = {
   sphereShadow: string | null;
 };
 
-/** Pinned dark-mode globe colors — do not use theme CSS vars (they shift with .light/.dark). */
+/** Pinned dark-mode globe colors — pale ocean + dark land on black page background. */
 const DARK_GLOBE_PALETTE: MapPalette = {
-  ocean: '#1e3a5f',
+  ocean: 'oklch(90.334% 0.04675 220.665)',
   landFill: 'oklch(34.655% 0.01033 254.043)',
   landStroke: 'oklch(53.701% 0.01538 262.385)',
   grid: 'oklch(48.932% 0.01557 251.766)',
