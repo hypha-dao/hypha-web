@@ -16,6 +16,8 @@ export interface NotifyChatMentionInput {
   actorDisplayName?: string;
   mentionMatrixUserIds: string[];
   messagePreview?: string;
+  /** Human-readable context, e.g. signal title or space name — used in email copy. */
+  contextLabel?: string;
   url: string;
 }
 
