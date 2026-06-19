@@ -31,8 +31,8 @@ export function SpaceMemberAsideGuard({
         aria-busy="true"
         aria-live="polite"
       >
-        <Skeleton height={24} width="60%" />
-        <Skeleton height={120} width="100%" />
+        <Skeleton loading height={24} width="60%" />
+        <Skeleton loading height={120} width="100%" />
       </div>
     );
   }

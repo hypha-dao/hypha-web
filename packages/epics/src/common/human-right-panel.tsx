@@ -2577,6 +2577,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           if (canonicalRoomId) {
             throw new Error('Failed to join canonical space chat room');
           }
+          if (blockSpaceChatForMembership) {
+            return;
+          }
           const { roomId: newRoomId } = await createRoom(`space-${spaceSlug}`);
           if (!newRoomId) {
             throw new Error('Failed to create room: empty roomId returned');
@@ -2647,6 +2650,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isUserSpaceStateLoading,
     hasSpaceActivityAccess,
     space?.chatRoomId,
+    blockSpaceChatForMembership,
   ]);
 
   // Track previous mode to detect actual transitions (not initial mount)
@@ -2718,7 +2722,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         // If no room exists yet, only create one when we can link it back
         if (!targetRoomId) {
-          if (!coherenceSlug) {
+          if (!coherenceSlug || blockSpaceChatForMembership) {
             // Cannot persist without a slug — skip room creation
             setIsJoining(false);
             return;
@@ -2840,6 +2844,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceDescription,
     isMatrixAvailable,
     isMatrixAuthenticated,
+    blockSpaceChatForMembership,
   ]);
 
   // Register listener for incoming messages

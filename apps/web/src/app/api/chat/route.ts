@@ -102,7 +102,7 @@ export async function POST(req: Request) {
   const spaceSlug = parsed.data.spaceSlug;
   const conversationContext = parsed.data.conversationContext;
 
-  if (spaceSlug?.trim() && conversationContext?.mode !== 'onboarding_setup') {
+  if (spaceSlug?.trim()) {
     const interactionAuth = await authorizeSpacePanelInteraction({
       spaceSlug: spaceSlug.trim(),
       authToken,
