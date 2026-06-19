@@ -32,14 +32,17 @@ export async function GET(
       return authResult.response;
     }
 
-    const limit = Number.parseInt(searchParams.get('limit') ?? '25', 10);
+    const parsedLimit = Number.parseInt(searchParams.get('limit') ?? '25', 10);
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 100)
+      : 25;
     const startingAfter = searchParams.get('starting_after') ?? undefined;
 
     const result = await getSpaceBankPayoutAccounts(
       authResult.space,
       {
         spaceSlug,
-        limit: Number.isFinite(limit) ? limit : 25,
+        limit,
         startingAfter,
       },
       { db },
@@ -72,11 +75,6 @@ export async function POST(
   { params }: { params: Promise<Params> },
 ) {
   const { spaceSlug } = await params;
-
-  const authResult = await authenticateBankCustomerRequest(request, spaceSlug);
-  if (!authResult.ok) {
-    return authResult.response;
-  }
 
   let body: unknown;
   try {
@@ -111,12 +109,20 @@ export async function POST(
     }
   }
 
-  const authToken = extractBearerToken(request);
-  if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
+    const authResult = await authenticateBankCustomerRequest(
+      request,
+      spaceSlug,
+    );
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
+    const authToken = extractBearerToken(request);
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const result = await createSpaceBankPayoutAccount(
       {
         spaceSlug,

@@ -182,6 +182,7 @@ export type BankPayoutAccountPublic = {
   destinationCurrency: string;
   paymentRail: string;
   accountLast4: string | null;
+  checkingOrSavings: string | null;
   accountName: string | null;
   bankName: string | null;
   accountOwnerName: string | null;
