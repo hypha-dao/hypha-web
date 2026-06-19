@@ -32,7 +32,9 @@ export {
   spaceLocationSourceSchema,
 } from './geo/validation';
 export {
+  extractUniqueCategories,
   extractUniqueCategoryGroups,
+  parseCategoryFilterParam,
   parseCategoryGroupFilterParam,
 } from './categories/groups';
 export { SPACE_ORDERS, type SpaceOrder } from './categories/types';

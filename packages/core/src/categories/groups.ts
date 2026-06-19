@@ -222,6 +222,37 @@ export function parseCategoryGroupFilterParam(
   return CATEGORY_GROUP_IDS.filter((groupId) => groupIds.has(groupId));
 }
 
+export function extractUniqueCategories(
+  spaces: readonly { categories?: readonly Category[] | null }[],
+): Category[] {
+  const categoriesSet = new Set<Category>();
+  for (const space of spaces) {
+    for (const category of space.categories ?? []) {
+      categoriesSet.add(category);
+    }
+  }
+  return [...categoriesSet];
+}
+
+export function parseCategoryFilterParam(raw: string | undefined): Category[] {
+  if (!raw?.trim()) {
+    return [];
+  }
+
+  const categories: Category[] = [];
+  for (const token of raw.split(',')) {
+    const value = token.trim();
+    if (!(CATEGORIES as readonly string[]).includes(value)) {
+      continue;
+    }
+    const category = value as Category;
+    if (!categories.includes(category)) {
+      categories.push(category);
+    }
+  }
+  return categories;
+}
+
 export function getCategoryLabel(category: Category): string {
   return (
     categoryOptions.find((option) => option.value === category)?.label ??

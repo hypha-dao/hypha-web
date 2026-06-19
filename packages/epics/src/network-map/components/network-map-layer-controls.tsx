@@ -46,7 +46,7 @@ export function NetworkMapLayerControls({
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 max-w-full flex-col gap-2 rounded-xl border border-neutral-6 bg-neutral-2/95 p-1.5 shadow-sm backdrop-blur-sm sm:inline-flex sm:w-fit sm:flex-row sm:flex-wrap sm:items-center',
+        'flex w-full min-w-0 max-w-full flex-col gap-2 sm:inline-flex sm:w-fit sm:flex-row sm:flex-wrap sm:items-center',
         className,
       )}
       role="toolbar"
@@ -58,22 +58,17 @@ export function NetworkMapLayerControls({
           onProjectionModeChange(value as NetworkMapProjectionMode)
         }
       >
-        <TabsList
-          triggerVariant="switch"
-          className="h-8 w-full shrink-0 sm:w-auto"
-        >
+        <TabsList className="h-8 w-full shrink-0 gap-0.5 bg-transparent p-0 sm:w-auto">
           <TabsTrigger
-            variant="switch"
             value="globe"
-            className="gap-1.5 px-2.5 text-xs sm:text-sm"
+            className="gap-1.5 rounded-md bg-transparent px-2.5 text-xs text-muted-foreground shadow-none hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none sm:text-sm"
           >
             <Globe className="size-3.5 shrink-0" aria-hidden />
             {t('globeView')}
           </TabsTrigger>
           <TabsTrigger
-            variant="switch"
             value="flat"
-            className="gap-1.5 px-2.5 text-xs sm:text-sm"
+            className="gap-1.5 rounded-md bg-transparent px-2.5 text-xs text-muted-foreground shadow-none hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none sm:text-sm"
           >
             <Map className="size-3.5 shrink-0" aria-hidden />
             {t('flatView')}
@@ -87,7 +82,7 @@ export function NetworkMapLayerControls({
       />
 
       <div
-        className="flex w-full min-w-0 flex-wrap items-center gap-0.5 rounded-lg bg-neutral-3 p-0.5 sm:w-auto"
+        className="flex w-full min-w-0 flex-wrap items-center gap-1 sm:w-auto"
         role="group"
         aria-label={t('layersLabel')}
       >
@@ -102,11 +97,11 @@ export function NetworkMapLayerControls({
               aria-pressed={active}
               onClick={() => onLayerChange(layerId, !active)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all sm:text-sm',
+                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:text-sm',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
                 active
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-neutral-4/80 hover:text-foreground',
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <Icon

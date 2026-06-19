@@ -3,6 +3,7 @@ import { Input, Button } from '@hypha-platform/ui';
 import { SearchIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { cn } from '@hypha-platform/ui-utils';
 import { useDebouncedCallback } from 'use-debounce';
 
 type Suggestion = {
@@ -12,9 +13,14 @@ type Suggestion = {
 type SpaceSearchProps = {
   suggestions?: Suggestion[];
   value?: string;
+  className?: string;
 };
 
-export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
+export const SpaceSearch = ({
+  suggestions,
+  value,
+  className,
+}: SpaceSearchProps) => {
   const t = useTranslations('Network');
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -31,7 +37,7 @@ export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
   }, 300);
 
   return (
-    <div className="flex flex-col flex-grow gap-2">
+    <div className={cn('flex min-w-0 flex-col gap-2', className)}>
       <Input
         type="search"
         placeholder={t('findASpace')}

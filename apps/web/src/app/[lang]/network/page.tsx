@@ -1,9 +1,9 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import {
-  extractUniqueCategoryGroups,
+  extractUniqueCategories,
   getAllSpaces,
-  parseCategoryGroupFilterParam,
+  parseCategoryFilterParam,
   SPACE_ORDERS,
   Space,
   SpaceOrder,
@@ -24,7 +24,7 @@ export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
-  const categoryGroups = parseCategoryGroupFilterParam(searchParams?.category);
+  const categories = parseCategoryFilterParam(searchParams?.category);
   const orderRaw = searchParams?.order;
   const order: SpaceOrder =
     orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
@@ -45,7 +45,7 @@ export default async function Index(props: PageProps) {
     console.error('Failed to fetch spaces:', err);
   }
 
-  const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
+  const uniqueCategories = extractUniqueCategories(spaces);
 
   return (
     <Container className="flex flex-col gap-9 py-9">
@@ -53,9 +53,9 @@ export default async function Index(props: PageProps) {
         lang={lang}
         query={query}
         spaces={spaces}
-        categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
+        categories={categories.length > 0 ? categories : undefined}
         order={order}
-        uniqueCategoryGroups={uniqueCategoryGroups}
+        uniqueCategories={uniqueCategories}
         enableNetworkMap={enableNetworkMap}
       />
     </Container>

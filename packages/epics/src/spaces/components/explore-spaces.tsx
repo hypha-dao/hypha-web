@@ -1,14 +1,12 @@
 'use client';
 
 import {
-  CategoryGroupId,
+  Category,
   Space,
   SpaceOrder,
-  CATEGORY_GROUPS,
-  getCategoryGroupLabel,
+  categories as categoryOptions,
   hasSpaceMapLocation,
   isSpaceArchived,
-  spaceMatchesCategoryGroups,
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
@@ -22,11 +20,12 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Combobox, Heading, Separator } from '@hypha-platform/ui';
+import { Combobox, Heading, Separator, Button } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
+import { Clock } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 
@@ -34,11 +33,16 @@ interface ExploreSpacesProps {
   lang: Locale;
   query?: string;
   spaces: Space[];
-  categoryGroups?: CategoryGroupId[];
+  categories?: Category[];
   order?: SpaceOrder;
-  uniqueCategoryGroups: CategoryGroupId[];
+  uniqueCategories: Category[];
   enableNetworkMap?: boolean;
 }
+
+const categoriesIntersected = (
+  categories1: Category[],
+  categories2: Category[],
+) => categories1.some((category) => categories2.includes(category));
 
 function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
   return a.toLowerCase() as Lowercase<A>;
@@ -46,25 +50,30 @@ function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
 
 const CategoryLabel = ({
   selectedSpaces,
-  categoryGroups,
+  categories,
   allLabel,
   className,
 }: {
   selectedSpaces: Space[];
-  categoryGroups?: CategoryGroupId[];
+  categories?: Category[];
   allLabel: string;
   className?: string | undefined;
 }) => {
   return (
     <Text className={cn('text-4 text-left', className)}>
-      {categoryGroups && categoryGroups.length > 0 ? (
+      {categories && categories.length > 0 ? (
         <Text className="text-4 text-left">
-          {categoryGroups.map((groupId, index) => (
-            <Text key={`cat-title-${groupId}`} className="text-4 ml-1">
-              {index !== 0 && ' | '}
-              {getCategoryGroupLabel(groupId)}
-            </Text>
-          ))}{' '}
+          {categories.map((category, index) => {
+            const label =
+              categoryOptions.find((option) => option.value === category)
+                ?.label ?? category;
+            return (
+              <Text key={`cat-title-${category}`} className="text-4 ml-1">
+                {index !== 0 && ' | '}
+                {label}
+              </Text>
+            );
+          })}{' '}
           <Text className="text-4 ml-1 mr-1">|</Text>
           {selectedSpaces?.length}
         </Text>
@@ -83,9 +92,9 @@ export function ExploreSpaces({
   lang,
   query,
   spaces,
-  categoryGroups,
+  categories,
   order,
-  uniqueCategoryGroups,
+  uniqueCategories,
   enableNetworkMap = false,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
@@ -124,12 +133,12 @@ export function ExploreSpaces({
 
   const categoryFilteredSpaces = React.useMemo(
     () =>
-      categoryGroups && categoryGroups.length > 0
+      categories && categories.length > 0
         ? nonArchivedSpaces.filter((space) =>
-            spaceMatchesCategoryGroups(space.categories, categoryGroups),
+            categoriesIntersected(space.categories ?? [], categories),
           )
         : nonArchivedSpaces,
-    [nonArchivedSpaces, categoryGroups],
+    [nonArchivedSpaces, categories],
   );
 
   const { filteredSpaces: selectedSpaces } =
@@ -159,17 +168,24 @@ export function ExploreSpaces({
 
   const tags = React.useMemo(
     () =>
-      CATEGORY_GROUPS.filter((group) =>
-        uniqueCategoryGroups.includes(group.id),
-      ).sort((a, b) => (a.label > b.label ? 1 : -1)),
-    [uniqueCategoryGroups],
+      uniqueCategories
+        .map((category) =>
+          categoryOptions.find(
+            (option) => !option.archive && option.value === category,
+          ),
+        )
+        .filter(
+          (category): category is NonNullable<typeof category> => !!category,
+        )
+        .sort((a, b) => (a.label > b.label ? 1 : -1)),
+    [uniqueCategories],
   );
 
-  const setCategoryGroups = React.useCallback(
-    (nextCategoryGroups: CategoryGroupId[]) => {
+  const setCategories = React.useCallback(
+    (nextCategories: Category[]) => {
       const params = new URLSearchParams(searchParams);
-      if (nextCategoryGroups.length > 0) {
-        params.set('category', nextCategoryGroups.join(','));
+      if (nextCategories.length > 0) {
+        params.set('category', nextCategories.join(','));
       } else {
         params.delete('category');
       }
@@ -208,16 +224,13 @@ export function ExploreSpaces({
   );
 
   const multiSelectVariants = cva(
-    'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
+    'rounded-md px-2 py-1 text-sm transition-colors duration-150',
     {
       variants: {
         variant: {
-          default:
-            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
-          secondary:
-            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          destructive:
-            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+          default: 'text-neutral-11 hover:text-foreground',
+          secondary: 'text-foreground font-medium',
+          destructive: 'text-destructive',
           inverted: 'inverted',
         },
       },
@@ -263,87 +276,103 @@ export function ExploreSpaces({
 
   const renderMapToolbar = React.useCallback(
     (layerControls: React.ReactNode) => (
-      <div className="flex w-full min-w-0 flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div className="min-w-0 w-full xl:flex-1">{layerControls}</div>
-        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 xl:w-auto xl:shrink-0 xl:justify-end">
-          <NetworkAddLocationButton
-            lang={lang}
-            spaces={spaces}
-            isAuthenticated={isAuthenticated}
-            className="h-9 shrink-0 px-2.5 text-xs sm:h-10 sm:px-4 sm:text-sm"
-          />
-          <CreateSpaceButton
-            lang={lang}
-            isAuthenticated={isAuthenticated}
-            className="shrink-0"
-            buttonClassName="h-9 gap-1.5 px-2.5 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
-          />
-          <NetworkMapViewToggle
-            value={view}
-            onChange={setView}
-            className="ml-auto shrink-0 xl:ml-0"
-          />
-        </div>
+      <div className="mb-4 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="min-w-0 w-full sm:flex-1">{layerControls}</div>
+        <NetworkAddLocationButton
+          lang={lang}
+          spaces={spaces}
+          isAuthenticated={isAuthenticated}
+          className="h-9 shrink-0 px-2.5 text-xs sm:h-10 sm:px-4 sm:text-sm"
+        />
       </div>
     ),
-    [view, setView, lang, spaces, isAuthenticated],
+    [lang, spaces, isAuthenticated],
   );
 
-  const listViewToolbar = (
-    <div className="flex w-full min-w-0 justify-end">
-      <NetworkMapViewToggle value={view} onChange={setView} />
+  const categoryFilters = (
+    <div className="flex flex-wrap justify-center gap-2">
+      {tags.map((tag) => (
+        <button
+          key={tag.value}
+          type="button"
+          aria-pressed={categories?.includes(tag.value) ?? false}
+          className={cn(
+            multiSelectVariants({
+              variant: categories?.includes(tag.value)
+                ? 'secondary'
+                : 'default',
+            }),
+          )}
+          onClick={() => {
+            const newCategories = categories?.includes(tag.value)
+              ? []
+              : [tag.value];
+            setCategories(newCategories);
+          }}
+        >
+          {tag.label}
+        </button>
+      ))}
     </div>
   );
 
-  const listFiltersSection = (
-    <div className="flex flex-col gap-3">
-      <div className="flex justify-center">
-        <SpaceSearch value={query} />
-      </div>
-      <div className="flex flex-wrap justify-center gap-x-2 gap-y-2">
-        {tags.map((tag) => {
-          const isSelected = categoryGroups?.includes(tag.id) ?? false;
-          return (
-            <button
-              key={tag.id}
-              type="button"
-              aria-pressed={isSelected}
-              className={cn(
-                multiSelectVariants({
-                  variant: isSelected ? 'secondary' : 'default',
-                }),
-              )}
-              style={{ cursor: 'pointer', animationDuration: '0s' }}
-              onClick={() => {
-                const nextCategoryGroups = isSelected ? [] : [tag.id];
-                setCategoryGroups(nextCategoryGroups);
-              }}
-            >
-              {tag.label}
-            </button>
-          );
-        })}
-      </div>
-      <div className="flex w-full flex-row items-center gap-2 pt-6 pb-2">
-        <CategoryLabel
-          selectedSpaces={selectedSpaces}
-          categoryGroups={categoryGroups}
-          allLabel={t('all')}
-          className="flex grow"
-        />
-        <div className="flex shrink-0 flex-col">
-          <Combobox
-            options={orderOptions}
-            initialValue={order}
-            className="border-0 md:w-40"
-            onChange={setOrder}
-            allowEmptyChoice={false}
-          />
-        </div>
+  const searchActionsRow = (
+    <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+      <SpaceSearch value={query} className="w-full min-w-0 sm:flex-1" />
+      <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+        <Button
+          type="button"
+          variant="outline"
+          colorVariant="neutral"
+          className={cn(
+            'h-9 shrink-0 gap-1.5 px-2.5 text-xs sm:h-10 sm:px-4 sm:text-sm',
+            order === 'mostrecent' && 'border-accent-9 text-accent-11',
+          )}
+          aria-pressed={order === 'mostrecent'}
+          onClick={() => setOrder('mostrecent')}
+        >
+          <Clock className="size-3.5 shrink-0" aria-hidden />
+          {t('mostRecent')}
+        </Button>
         <CreateSpaceButton
           lang={lang}
           isAuthenticated={isAuthenticated}
-          className="ml-2"
+          className="shrink-0"
+          buttonClassName="h-9 gap-1.5 px-2.5 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+        />
+        {enableNetworkMap ? (
+          <NetworkMapViewToggle
+            value={view}
+            onChange={setView}
+            className="ml-auto shrink-0 sm:ml-0"
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const sharedHeader = (
+    <div className="mb-6 flex flex-col gap-4">
+      {searchActionsRow}
+      {categoryFilters}
+    </div>
+  );
+
+  const listMetaRow = (
+    <div className="mb-4 flex w-full flex-row items-center gap-2">
+      <CategoryLabel
+        selectedSpaces={selectedSpaces}
+        categories={categories}
+        allLabel={t('all')}
+        className="flex grow"
+      />
+      <div className="flex shrink-0 flex-col">
+        <Combobox
+          options={orderOptions}
+          initialValue={order}
+          className="border-0 md:w-40"
+          onChange={setOrder}
+          allowEmptyChoice={false}
         />
       </div>
     </div>
@@ -387,11 +416,13 @@ export function ExploreSpaces({
         color="secondary"
         weight="medium"
         align="center"
-        className="mb-12 flex flex-col"
+        className="mb-8 flex flex-col"
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>
       </Heading>
+
+      {sharedHeader}
 
       {enableNetworkMap ? (
         view === 'map' ? (
@@ -402,9 +433,8 @@ export function ExploreSpaces({
             renderToolbar={renderMapToolbar}
           />
         ) : (
-          <div className="flex w-full flex-col gap-4">
-            {listFiltersSection}
-            {listViewToolbar}
+          <div className="flex w-full flex-col">
+            {listMetaRow}
             <SpaceCardList
               lang={lang}
               spaces={sortedSpaces}
@@ -421,7 +451,7 @@ export function ExploreSpaces({
 
       {!enableNetworkMap ? (
         <>
-          {listFiltersSection}
+          {listMetaRow}
           <SpaceCardList
             lang={lang}
             spaces={sortedSpaces}
