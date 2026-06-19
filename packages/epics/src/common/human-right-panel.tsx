@@ -53,6 +53,7 @@ import {
   type Person,
   looksLikeTechnicalSpaceMemoryName,
   type SignalTeamNotice,
+  replacePlainTextMatrixMxidsWithLabels,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -126,6 +127,7 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
+import { buildHyphaChatMentionDeepLinkUrl } from './human-chat-panel/human-chat-message-link';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 
@@ -3413,6 +3415,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (mode !== 'space') return;
+    /** Signal deep links (`?signal=`) are handled by the dedicated effect below. */
+    if (searchParams?.get('signal')?.trim()) return;
     const qpChat = searchParams?.get('chat')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
     if (!qpMsg || !roomId) return;
@@ -3865,15 +3869,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           return signalTeamMemberIdSet.has(matrixId);
         });
         if (mentionTargets.length > 0 && sendResult.eventId) {
-          const params = new URLSearchParams(
-            searchParams?.toString() ?? undefined,
-          );
-          params.set('msg', sendResult.eventId);
-          params.set('chat', roomId);
-          if (mode === 'coherence' && coherenceSlug?.trim()) {
-            params.set('signal', coherenceSlug.trim());
-          }
-          const query = params.toString();
           const lang = getLocaleFromPath(pathname);
           const mappedSpaceSlug = roomId
             ? window.sessionStorage
@@ -3881,24 +3876,41 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 ?.trim() || readRoomIdToSpaceSlugFromStorage().get(roomId)
             : null;
           const canonicalSpaceSlug = spaceSlug?.trim() || mappedSpaceSlug;
-          const canonicalPath = canonicalSpaceSlug
-            ? `/${lang}/dho/${canonicalSpaceSlug}`
+          const signalSlugForLink =
+            mode === 'coherence' ? coherenceSlug?.trim() || null : null;
+          const deepLink = canonicalSpaceSlug
+            ? buildHyphaChatMentionDeepLinkUrl({
+                lang,
+                spaceSlug: canonicalSpaceSlug,
+                messageId: sendResult.eventId,
+                signalSlug: signalSlugForLink,
+                roomId: signalSlugForLink ? null : roomId,
+                origin:
+                  typeof window !== 'undefined'
+                    ? window.location.origin
+                    : undefined,
+              })
             : pathname;
-          const deepLink =
-            typeof window !== 'undefined'
-              ? `${window.location.origin}${canonicalPath}${
-                  query ? `?${query}` : ''
-                }`
-              : canonicalPath;
+          const messagePreview = replacePlainTextMatrixMxidsWithLabels(
+            wirePlain,
+            resolveMentionMemberLabel,
+          )
+            .trim()
+            .slice(0, 220);
           const actorDisplayName =
             [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
             me?.nickname?.trim() ||
             t('you');
+          const mentionContextLabel =
+            mode === 'coherence'
+              ? coherenceTitle?.trim() || coherenceSlug?.trim() || space?.title
+              : space?.title;
           void notifyChatMention({
             actorSlug: me?.slug,
             actorDisplayName,
             mentionMatrixUserIds: mentionTargets,
-            messagePreview: wirePlain.trim().slice(0, 220),
+            messagePreview,
+            contextLabel: mentionContextLabel?.trim() || undefined,
             url: deepLink,
           }).catch((notifyErr) => {
             console.warn(
@@ -4010,8 +4022,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     me?.nickname,
     me?.slug,
     spaceSlug,
+    space?.title,
     coherenceSlug,
+    coherenceTitle,
     notifyChatMention,
+    resolveMentionMemberLabel,
     hasSignalTeamPolicy,
     signalTeamMemberIdSet,
     blockSpaceChatForMembership,
