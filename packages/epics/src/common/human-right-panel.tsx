@@ -126,7 +126,6 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
-import { Empty } from './empty';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 
@@ -1040,7 +1039,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const {
     isAuthenticated,
     isLoading: isAuthLoading,
-    login,
   } = useAuthentication();
 
   const currentUserAvatarUrl = me?.avatarUrl;
@@ -1320,6 +1318,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (spaceCallShowJoinStrip || spaceCallRoomGroupDeviceCount > 0);
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
+  const showPanelInteractionPrompt =
+    hasSpaceActivityAccess &&
+    !isUserSpaceStateLoading &&
+    (showMembershipAccessGate || showAuthPrompt);
   const sidebarContentRef = useRef<HTMLDivElement | null>(null);
   const sidebarWidthBeforeAuthPromptRef = useRef<string | null>(null);
 
@@ -1820,7 +1822,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     blockSpaceChatForMembership ||
     !canInteractWithSignalThread ||
     isChatFollowerTab;
-  const chatComposerLockedMessage = blockSpaceChatForMembership
+  const chatComposerLockedMessage = showAuthPrompt
+    ? tSpaces('accessDeniedNotLoggedIn')
+    : blockSpaceChatForMembership
     ? tCommon('joinSpaceToUse')
     : !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
@@ -4239,20 +4243,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               spaceSlug={spaceSlug ?? undefined}
             />
           </div>
-        ) : showAuthPrompt ? (
-          <div className="flex flex-1 items-center justify-center px-6">
-            <Empty>
-              <div className="flex flex-col gap-7">
-                <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
-                <div className="flex items-center justify-center gap-4">
-                  <Button variant="outline" onClick={login}>
-                    {tSpaces('signIn')}
-                  </Button>
-                  <Button onClick={login}>{tSpaces('getStarted')}</Button>
-                </div>
-              </div>
-            </Empty>
-          </div>
         ) : (
           <>
             {activeTab === 'chat' && (
@@ -4328,7 +4318,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   }}
                   onUseThisTab={claimMatrixSyncLeadership}
                 />
-                {showMembershipAccessGate && hasSpaceActivityAccess ? (
+                {showPanelInteractionPrompt ? (
                   <div className="mt-0 w-full border-b border-border/70 bg-muted/40 px-3 py-2">
                     <SpaceAccessDenied
                       userState={userSpaceState}
@@ -4629,54 +4619,50 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </>
         )}
       </SidebarContent>
-      {activeTab === 'chat' &&
-        !showAuthPrompt &&
-        !blockSpaceChatForActivityAccess && (
-          <SidebarFooter className="relative z-20 bg-background-2 p-0">
-            <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
-              <HumanChatPanelChatBar
-                value={input}
-                onChange={setInput}
-                onSend={handleSend}
-                mentionCandidates={mentionCandidates}
-                mentionPickerEnabled={mentionPickerEnabled}
-                composerLocked={chatComposerLocked}
-                composerLockedMessage={chatComposerLockedMessage}
-                getMentionComposerLabel={getMentionComposerLabel}
-                onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
-                draftAttachments={draftAttachments}
-                onDraftAttachmentsChange={setDraftAttachments}
-                replyPreview={
-                  replyDraft
-                    ? {
-                        authorLabel: replyDraft.authorLabel,
-                        excerpt: replyDraft.excerpt,
-                        sourceUserId: replyDraft.sourceUserId,
-                        isYou: replyDraft.isYou,
-                        onDismiss: () => setReplyDraft(null),
-                      }
-                    : undefined
-                }
-                editPreview={
-                  editDraft
-                    ? {
-                        excerpt: editDraft.excerpt,
-                        onDismiss: () => {
-                          setEditDraft(null);
-                          setInput('');
-                          disposeDraftAttachmentUrls(
-                            draftAttachmentsRef.current,
-                          );
-                          setDraftAttachments([]);
-                        },
-                      }
-                    : undefined
-                }
-                editMediaMode={Boolean(editDraft?.editMediaMode)}
-              />
-            </div>
-          </SidebarFooter>
-        )}
+      {activeTab === 'chat' && !blockSpaceChatForActivityAccess && (
+        <SidebarFooter className="relative z-20 bg-background-2 p-0">
+          <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
+            <HumanChatPanelChatBar
+              value={input}
+              onChange={setInput}
+              onSend={handleSend}
+              mentionCandidates={mentionCandidates}
+              mentionPickerEnabled={mentionPickerEnabled}
+              composerLocked={chatComposerLocked}
+              composerLockedMessage={chatComposerLockedMessage}
+              getMentionComposerLabel={getMentionComposerLabel}
+              onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
+              draftAttachments={draftAttachments}
+              onDraftAttachmentsChange={setDraftAttachments}
+              replyPreview={
+                replyDraft
+                  ? {
+                      authorLabel: replyDraft.authorLabel,
+                      excerpt: replyDraft.excerpt,
+                      sourceUserId: replyDraft.sourceUserId,
+                      isYou: replyDraft.isYou,
+                      onDismiss: () => setReplyDraft(null),
+                    }
+                  : undefined
+              }
+              editPreview={
+                editDraft
+                  ? {
+                      excerpt: editDraft.excerpt,
+                      onDismiss: () => {
+                        setEditDraft(null);
+                        setInput('');
+                        disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                        setDraftAttachments([]);
+                      },
+                    }
+                  : undefined
+              }
+              editMediaMode={Boolean(editDraft?.editMediaMode)}
+            />
+          </div>
+        </SidebarFooter>
+      )}
     </>
   );
 }

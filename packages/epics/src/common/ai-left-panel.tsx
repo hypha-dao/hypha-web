@@ -65,7 +65,6 @@ import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import { useCompactHeaderMode } from '@hypha-platform/ui';
 import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
-import { Empty } from './empty';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import {
   UserSpaceState,
@@ -157,8 +156,7 @@ type NavItem = {
 };
 
 export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
-  const { isAuthenticated, isLoading, login, getAccessToken } =
-    useAuthentication();
+  const { isLoading, getAccessToken } = useAuthentication();
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
@@ -1657,33 +1655,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             spaceId={effectiveSpaceWeb3Id}
             spaceSlug={spaceSlug ?? undefined}
           />
-        </SidebarContent>
-      </>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <>
-        <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            leftSlot={triggerButton}
-            rightSlot={closeButton}
-          />
-        </SidebarHeader>
-        <SidebarContent className="flex flex-1 items-center justify-center px-6">
-          <Empty>
-            <div className="flex flex-col gap-7">
-              <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
-              <div className="flex gap-4 items-center justify-center">
-                <Button variant="outline" onClick={login}>
-                  {tSpaces('signIn')}
-                </Button>
-                <Button onClick={login}>{tSpaces('getStarted')}</Button>
-              </div>
-            </div>
-          </Empty>
         </SidebarContent>
       </>
     );
