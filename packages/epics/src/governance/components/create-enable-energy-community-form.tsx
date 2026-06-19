@@ -73,7 +73,11 @@ const priceToInternalUnits = (input: string): string => {
   if (!match) {
     throw new Error(`Invalid price: ${input}`);
   }
-  const whole = BigInt(match[1]);
+  const wholePart = match[1];
+  if (!wholePart) {
+    throw new Error(`Invalid price: ${input}`);
+  }
+  const whole = BigInt(wholePart);
   const fraction = (match[2] ?? '').padEnd(2, '0');
   return (whole * 100n + BigInt(fraction)).toString();
 };
