@@ -77,8 +77,8 @@ export type GeocodeRequest = z.infer<typeof geocodeRequestSchema>;
 
 export const geocodeResultSchema = z.object({
   label: z.string(),
-  latitude: z.number(),
-  longitude: z.number(),
+  latitude: spaceLatitudeSchema,
+  longitude: spaceLongitudeSchema,
   placeId: z.string().optional(),
 });
 

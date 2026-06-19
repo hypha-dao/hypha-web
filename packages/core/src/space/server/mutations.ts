@@ -15,6 +15,16 @@ export const createSpace = async (
   { db }: { db: DatabaseInstance },
 ) => {
   const slug = maybeSlug || slugify(title, { lower: true });
+  const normalizedLocation = normalizeSpaceLocationFields({
+    latitude: rest.latitude,
+    longitude: rest.longitude,
+    locationLabel: rest.locationLabel,
+    locationSource: rest.locationSource,
+  });
+  const locatedAtPatch = buildLocatedAtPatch({
+    latitude: normalizedLocation.latitude,
+    longitude: normalizedLocation.longitude,
+  });
 
   const [newSpace] = await db
     .insert(spaces)
@@ -22,6 +32,8 @@ export const createSpace = async (
       title,
       slug,
       ...rest,
+      ...normalizedLocation,
+      ...locatedAtPatch,
     })
     .returning();
 
