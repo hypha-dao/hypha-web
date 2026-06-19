@@ -12,6 +12,7 @@ export const bridgeEndorsementSchema = z.enum([
   'pix',
   'sepa',
   'spei',
+  'swift',
 ]);
 
 export type BridgeEndorsement = z.infer<typeof bridgeEndorsementSchema>;

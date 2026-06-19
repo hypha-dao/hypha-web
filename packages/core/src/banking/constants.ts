@@ -1,4 +1,5 @@
 import type { BankProvider } from './types';
+import type { BridgeEndorsement } from './server/providers/bridge/endorsements';
 
 /** Default banking provider for space onboarding (Stage 1). */
 export const DEFAULT_BANK_PROVIDER: BankProvider = 'bridge';
@@ -272,8 +273,8 @@ export type BankPayoutRailConfig = {
   destinationCurrency: string;
   destinationPaymentRail: string;
   externalAccountType: string;
-  /** Bridge endorsement required for this payout rail (same as the corresponding deposit endorsement). */
-  endorsement: string;
+  /** Bridge endorsement required for this payout rail. */
+  endorsement: BridgeEndorsement;
 };
 
 export const BANK_PAYOUT_RAILS: Record<
