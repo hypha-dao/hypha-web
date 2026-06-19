@@ -2951,7 +2951,7 @@
         "checkingOrSavings": "Tipo de conta",
         "checkingOrSavingsChecking": "Corrente",
         "checkingOrSavingsSavings": "Poupança",
-        "routingNumber": "Routing number",
+        "routingNumber": "Número de roteamento (Routing number)",
         "routingNumberPlaceholder": "021000021 (9 dígitos)",
         "accountNumber": "Número da conta",
         "accountNumberPlaceholder": "1234567890",

@@ -2,7 +2,15 @@
 
 import { FC, ReactNode, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  Button,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@hypha-platform/ui';
 
 import { ApprovedBankingDeposits } from './approved-banking-deposits';
 import type { ApprovedBankingDepositsProps } from './approved-banking-deposits';
@@ -91,9 +99,12 @@ function SectionActionButton({
 
   if (tooltipText && disabled) {
     return (
-      <span className="inline-flex shrink-0" title={tooltipText}>
-        {button}
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex shrink-0">{button}</span>
+        </TooltipTrigger>
+        <TooltipContent>{tooltipText}</TooltipContent>
+      </Tooltip>
     );
   }
 
@@ -137,8 +148,12 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       : null;
 
   const payoutAccountTooltip =
-    openPayoutAccountDisabledReason === 'finishVerificationFirst'
+    openPayoutAccountDisabledReason === 'loadingAccounts'
+      ? tToolbar('loadingAccounts')
+      : openPayoutAccountDisabledReason === 'finishVerificationFirst'
       ? tToolbar('finishVerificationFirst')
+      : openPayoutAccountDisabledReason === 'allCurrenciesCovered'
+      ? tToolbar('allCurrenciesCovered')
       : null;
 
   return (

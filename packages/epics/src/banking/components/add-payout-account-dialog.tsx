@@ -960,7 +960,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                               <option value="">
                                 {t('countryPlaceholder')}
                               </option>
-                              {SEPA_COUNTRIES.map((c) => (
+                              {COUNTRIES.map((c) => (
                                 <option key={c.alpha3} value={c.alpha3}>
                                   {c.name}
                                 </option>
@@ -1507,7 +1507,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       <ReviewRow
                         label={t('country')}
                         value={
-                          SEPA_COUNTRIES.find(
+                          COUNTRIES.find(
                             (c) => c.alpha3 === swiftIbanCountry,
                           )?.name ?? swiftIbanCountry
                         }

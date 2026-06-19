@@ -2896,12 +2896,12 @@
       },
       "section": {
         "title": "Cuentas de pago",
-        "description": "Registre dónde envía el fiat el tesoro tras una propuesta aprobada. Cada cuenta obtiene una dirección de liquidación para propuestas de Financiación o Gastos."
+        "description": "Registre dónde envía el fiat la tesorería tras una propuesta aprobada. Cada cuenta obtiene una dirección de liquidación para propuestas de Financiación o Gastos."
       },
       "addCta": "Añadir cuenta de pago",
       "loading": "Cargando cuentas de pago…",
       "emptyTitle": "Aún no hay cuentas de pago",
-      "emptyDescription": "Registre una cuenta bancaria para recibir pagos del tesoro. USDC del tesoro → dirección de liquidación → votación → fiat en su banco.",
+      "emptyDescription": "Registre una cuenta bancaria para recibir pagos de la tesorería. USDC de la tesorería → dirección de liquidación → votación → fiat en su banco.",
       "cardBankFallback": "Cuenta bancaria",
       "liquidationAddressLabel": "Dirección de liquidación",
       "payoutAddressLabel": "Dirección de pago",

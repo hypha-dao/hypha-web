@@ -765,7 +765,7 @@
         "accountNumber": "Kontonummer",
         "accountNumberPlaceholder": "1234567890",
         "gbpAccountNumberPlaceholder": "12345678",
-        "sortCode": "Sort code",
+        "sortCode": "Sortiercode (Sort code)",
         "sortCodePlaceholder": "200000",
         "iban": "IBAN",
         "ibanPlaceholder": "DE89 3704 0044 0532 0130 00",
@@ -819,7 +819,7 @@
         },
         "rails": {
           "usd_ach": "USD — ACH",
-          "usd_wire": "USD — Wire",
+          "usd_wire": "USD — Überweisung (Wire)",
           "eur_sepa": "EUR — SEPA",
           "gbp": "GBP — Faster Payments",
           "swift": "SWIFT international"
@@ -953,7 +953,7 @@
       "gbp": {
         "code": "GBP",
         "name": "Britisches Pfund",
-        "payoutMethod": "Sort Code und Kontonummer"
+        "payoutMethod": "Sortiercode (Sort code) und Kontonummer"
       },
       "mxn": {
         "code": "MXN",
@@ -1086,7 +1086,7 @@
       "bicInternational": "BIC / SWIFT (für internationale Überweisungen)",
       "routingNumber": "Routing-Nummer",
       "accountNumber": "Kontonummer",
-      "sortCode": "Sort Code",
+      "sortCode": "Sortiercode (Sort code)",
       "bankName": "Bankname",
       "accountHolder": "Kontoinhaber",
       "bankNameAndAddress": "Bankname und -adresse",
