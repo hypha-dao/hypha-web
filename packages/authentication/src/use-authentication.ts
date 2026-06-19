@@ -4,6 +4,7 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React from 'react';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useRouter } from 'next/navigation';
+import { saveAuthReturnPath } from './auth-return-path';
 
 export function useAuthentication() {
   const {
@@ -43,6 +44,9 @@ export function useAuthentication() {
   }, [privyLogin]);
 
   const login = React.useCallback(async (): Promise<void> => {
+    if (typeof window !== 'undefined') {
+      saveAuthReturnPath(window.location.pathname);
+    }
     openLoginModal();
     setLoggingIn(true);
   }, [openLoginModal]);

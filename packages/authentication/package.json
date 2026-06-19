@@ -4,11 +4,13 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
-    "@hypha-platform/config-typescript": "workspace:*"
+    "@hypha-platform/config-typescript": "workspace:*",
+    "vitest": "^1.3.1"
   },
   "dependencies": {
     "@hypha-platform/evm": "workspace:*"

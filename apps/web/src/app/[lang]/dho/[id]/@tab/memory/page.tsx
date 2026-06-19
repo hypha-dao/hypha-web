@@ -5,7 +5,7 @@ import {
 import { getEnableSpaceMemory } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
-import { getDhoPathAgreements } from '../agreements/constants';
+import { getDhoPathOverview } from '../overview/constants';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -16,7 +16,7 @@ export default async function MemoryPage(props: PageProps) {
   const memoryEnabled = await getEnableSpaceMemory();
 
   if (!memoryEnabled) {
-    redirect(getDhoPathAgreements(params.lang, params.id));
+    redirect(getDhoPathOverview(params.lang, params.id));
   }
 
   const { id } = params;

@@ -245,10 +245,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
     [clearOnboardingError, refresh, requestOnboarding],
   );
 
-  if (!isAuthenticated) {
-    return <p className="text-2 text-muted-foreground">{tCommon('signIn')}</p>;
-  }
-
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
   }

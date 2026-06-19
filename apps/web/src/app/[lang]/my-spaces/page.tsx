@@ -16,7 +16,7 @@ import {
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { getAllSpaces } from '@hypha-platform/core/server';
-import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
+import { getDhoPathOverview } from '../dho/[id]/@tab/overview/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import { getTranslations } from 'next-intl/server';
@@ -83,7 +83,7 @@ export default async function Index(props: PageProps) {
                 >
                   <Link
                     className="flex flex-col flex-1"
-                    href={getDhoPathAgreements(lang, space.slug as string)}
+                    href={getDhoPathOverview(lang, space.slug as string)}
                   >
                     <SpaceCard
                       description={space.description as string}
@@ -97,7 +97,7 @@ export default async function Index(props: PageProps) {
                       isArchived={isSpaceArchived(space)}
                       web3SpaceId={space.web3SpaceId as number}
                       createdAt={space.createdAt}
-                      configPath={`${getDhoPathAgreements(
+                      configPath={`${getDhoPathOverview(
                         lang,
                         space.slug,
                       )}/space-configuration`}
