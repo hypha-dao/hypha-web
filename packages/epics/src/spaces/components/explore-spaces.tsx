@@ -304,27 +304,29 @@ export function ExploreSpaces({
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
       <SpaceSearch value={query} className="w-full min-w-0 sm:flex-1" />
-      <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-        <Combobox
-          options={orderOptions}
-          initialValue={order}
-          className="h-9 shrink-0 border-0 md:w-40"
-          onChange={setOrder}
-          allowEmptyChoice={false}
-        />
-        <CreateSpaceButton
-          lang={lang}
-          isAuthenticated={isAuthenticated}
-          className="shrink-0"
-          buttonClassName="h-9 gap-1.5 px-2.5 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
-        />
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
         {enableNetworkMap ? (
           <NetworkMapViewToggle
             value={view}
             onChange={setView}
-            className="ml-auto shrink-0 sm:ml-0"
+            className="shrink-0"
           />
         ) : null}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Combobox
+            options={orderOptions}
+            initialValue={order}
+            className="h-9 shrink-0 border-0 md:w-40"
+            onChange={setOrder}
+            allowEmptyChoice={false}
+          />
+          <CreateSpaceButton
+            lang={lang}
+            isAuthenticated={isAuthenticated}
+            className="shrink-0"
+            buttonClassName="h-9 gap-1.5 px-2.5 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+          />
+        </div>
       </div>
     </div>
   );

@@ -3,7 +3,6 @@ import {
   MyFilteredSpaces,
   SpaceSearch,
   AuthenticatedLinkButton,
-  getOnboardingPath,
 } from '@hypha-platform/epics';
 import { isSpaceArchived } from '@hypha-platform/core/client';
 import Link from 'next/link';
@@ -16,7 +15,7 @@ import {
 } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { getAllSpaces } from '@hypha-platform/core/server';
+import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import { getDhoPathOverview } from '../dho/[id]/@tab/overview/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
@@ -36,11 +35,18 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const [allSpaces, mySpaces, t] = await Promise.all([
-    getAllSpaces({ parentOnly: false, omitSandbox: true }),
-    getAllSpaces({ search: query, parentOnly: false }),
-    getTranslations('Spaces'),
-  ]);
+  let allSpaces: Space[] = [];
+  let mySpaces: Space[] = [];
+  try {
+    [allSpaces, mySpaces] = await Promise.all([
+      getAllSpaces({ parentOnly: false, omitSandbox: true }),
+      getAllSpaces({ search: query, parentOnly: false }),
+    ]);
+  } catch (err) {
+    console.error('[my-spaces/page] Failed to fetch spaces', { err, query });
+  }
+
+  const t = await getTranslations('Spaces');
 
   return (
     <div className="w-full overflow-auto">
@@ -60,7 +66,7 @@ export default async function Index(props: PageProps) {
           {mySpaces?.length > 0 ? (
             <AuthenticatedLinkButton
               hideInsteadDisabled
-              href={getOnboardingPath(lang)}
+              href={`/${lang}/onboarding`}
             >
               <PlusIcon />
               {t('createSpace')}
