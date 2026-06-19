@@ -1036,10 +1036,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const updateCoherenceBySlugRef = useRef(updateCoherenceBySlug);
   updateCoherenceBySlugRef.current = updateCoherenceBySlug;
   const { open: sidebarOpen, isMobile: isSidebarMobile } = useSidebar();
-  const {
-    isAuthenticated,
-    isLoading: isAuthLoading,
-  } = useAuthentication();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuthentication();
 
   const currentUserAvatarUrl = me?.avatarUrl;
   const currentUserAvatarUrlRef = useRef(currentUserAvatarUrl);
