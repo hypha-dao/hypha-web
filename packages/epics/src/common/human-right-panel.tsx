@@ -69,7 +69,6 @@ import {
   canInteractInSpace,
 } from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
-import { JoinSpace } from '../spaces/components/join-space';
 
 import {
   HumanChatPanelHeader,
@@ -1028,6 +1027,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const blockSpaceChatForMembership =
     (mode === 'space' || mode === 'coherence') &&
     (isUserSpaceStateLoading || !isSpaceMember);
+  const showMembershipAccessGate =
+    blockSpaceChatForMembership && !isUserSpaceStateLoading;
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -4044,6 +4045,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
+        {!showMembershipAccessGate ? (
+          <>
         <HumanChatPanelTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -4216,6 +4219,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             onDismissDenied={dismissSpaceCallScreenshareTakeoverPrompt}
           />
         ) : null}
+          </>
+        ) : null}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent
@@ -4224,7 +4229,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       >
         {isAuthLoading ? (
           <HumanChatPanelLoader />
-        ) : blockSpaceChatForActivityAccess ? (
+        ) : blockSpaceChatForActivityAccess || showMembershipAccessGate ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <SpaceAccessDenied
               userState={userSpaceState}
@@ -4327,21 +4332,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {signalDeepLinkNotice}
-                  </div>
-                ) : null}
-                {blockSpaceChatForMembership &&
-                !isUserSpaceStateLoading &&
-                space?.id &&
-                effectiveSpaceWeb3Id ? (
-                  <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2 text-sm text-foreground">
-                    <p>{tSpaces('accessDeniedNotMember')}</p>
-                    <div className="mt-2">
-                      <JoinSpace
-                        spaceId={space.id}
-                        web3SpaceId={effectiveSpaceWeb3Id}
-                        hideWhenMember
-                      />
-                    </div>
                   </div>
                 ) : null}
                 {isSignalThread &&
@@ -4629,7 +4619,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       </SidebarContent>
       {activeTab === 'chat' &&
         !showAuthPrompt &&
-        !blockSpaceChatForActivityAccess && (
+        !blockSpaceChatForActivityAccess &&
+        !showMembershipAccessGate && (
           <SidebarFooter className="relative z-20 bg-background-2 p-0">
             <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
               <HumanChatPanelChatBar

@@ -77,7 +77,6 @@ import {
   canInteractInSpace,
 } from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
-import { JoinSpace } from '../spaces/components/join-space';
 import { AiPanelSubscriptionBanner } from '../spaces/components/ai-panel-subscription-banner';
 import { useSalesBanner } from '../spaces/hooks/use-sales-banner';
 import {
@@ -1642,7 +1641,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   }
 
-  if (blockSpaceAiForActivityAccess) {
+  if (blockSpaceAiForActivityAccess || blockSpaceAiForMembership) {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
@@ -1703,20 +1702,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         {spaceSlug && blockSpaceAiForSubscription ? (
           <div className="mx-3 mt-3 shrink-0">
             <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
-          </div>
-        ) : null}
-        {spaceSlug && blockSpaceAiForMembership && space?.id ? (
-          <div className="mx-3 mt-3 shrink-0 rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-foreground">
-            <p>{tSpaces('accessDeniedNotMember')}</p>
-            {effectiveSpaceWeb3Id ? (
-              <div className="mt-2">
-                <JoinSpace
-                  spaceId={space.id}
-                  web3SpaceId={effectiveSpaceWeb3Id}
-                  hideWhenMember
-                />
-              </div>
-            ) : null}
           </div>
         ) : null}
         {error && !blockSpaceAiForInteraction ? (
