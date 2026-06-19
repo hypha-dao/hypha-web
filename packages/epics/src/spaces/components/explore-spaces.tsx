@@ -269,30 +269,29 @@ export function ExploreSpaces({
         <NetworkGlobeMap lang={lang} spaces={mapSpaces} className="w-full" />
       ) : null}
 
-      <div className="flex items-stretch justify-center gap-0">
-        <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+      <Separator className="mt-1 mb-1" />
+      <div className="flex justify-around flex-row columns-3 space-x-3 mt-6">
+        <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
             {selectedSpaces.length}
           </div>
-          <div className="mt-2 flex justify-center text-1 text-neutral-500">
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
             {tCommon('Spaces')}
           </div>
         </div>
-        <Separator orientation="vertical" className="bg-neutral-6" />
-        <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+        <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
             {uniqueMemberAddresses.size}
           </div>
-          <div className="mt-2 flex justify-center text-1 text-neutral-500">
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
             {tCommon('Members')}
           </div>
         </div>
-        <Separator orientation="vertical" className="bg-neutral-6" />
-        <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+        <div className="flex flex-col">
           <div className="flex justify-center text-7 font-medium">
             {agreementCount}
           </div>
-          <div className="mt-2 flex justify-center text-1 text-neutral-500">
+          <div className="flex justify-center text-1 mt-2 text-neutral-500">
             {tCommon('Agreements')}
           </div>
         </div>
