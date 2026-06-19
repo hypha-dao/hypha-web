@@ -1,5 +1,17 @@
-import AsideCreateSpacePage from '@web/app/[lang]/my-spaces/@aside/create/page';
+'use client';
+
+import { getOnboardingPath } from '@hypha-platform/epics';
+import { Locale } from '@hypha-platform/i18n';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function NetworkCreateSpacePage() {
-  return <AsideCreateSpacePage />;
+  const { lang } = useParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace(getOnboardingPath(lang as Locale));
+  }, [lang, router]);
+
+  return null;
 }

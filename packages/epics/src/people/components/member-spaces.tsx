@@ -9,6 +9,7 @@ import {
 import {
   filterSpaces,
   getDhoPathDefaultLanding,
+  CreateSpaceButton,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import React from 'react';
@@ -16,8 +17,7 @@ import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
-import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
-import { useAuthentication } from '@hypha-platform/authentication';
+import { GlobeIcon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
 
 export type MemberSpacesProps = {
@@ -36,7 +36,6 @@ export const MemberSpaces = ({
   personSlug,
 }: MemberSpacesProps) => {
   const tCommon = useTranslations('Common');
-  const tSpaces = useTranslations('Spaces');
   const { lang } = useParams();
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
     personAddress,
@@ -53,7 +52,6 @@ export const MemberSpaces = ({
     () => isLoading || isLoadingSpaces,
     [isLoading, isLoadingSpaces],
   );
-  const { isAuthenticated } = useAuthentication();
 
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
@@ -68,17 +66,10 @@ export const MemberSpaces = ({
                   {tCommon('exploreSpaces')}
                 </Button>
               </Link>
-              <Link
-                className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-                title={!isAuthenticated ? tCommon('signIn') : ''}
-                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
-                scroll={false}
-              >
-                <Button disabled={!isAuthenticated} className="gap-2">
-                  <PlusIcon />
-                  {tSpaces('createSpace')}
-                </Button>
-              </Link>
+              <CreateSpaceButton
+                lang={lang as Locale}
+                buttonClassName="gap-2"
+              />
             </div>
           </div>
         </Empty>

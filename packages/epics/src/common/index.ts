@@ -25,12 +25,25 @@ export {
   AI_ONBOARDING_SEED_ACK_EVENT,
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
+  applyOnboardingContextForUserText,
   clearOnboardingConversationContext,
   dispatchAiOnboardingSeed,
   dispatchAiOnboardingSeedAck,
+  isPlainOnboardingConfirmationReply,
   readOnboardingConversationContext,
   saveOnboardingConversationContext,
+  type OnboardingConversationContext,
+  type OnboardingSpaceLocation,
 } from './ai-onboarding-context';
+export {
+  applyOnboardingLocationToContext,
+  formatOnboardingLocationSubmitMessage,
+  onboardingSpaceLocationFromPicker,
+  getClientEnableNetworkMap,
+  shouldShowOnboardingLocationPicker,
+  skippedOnboardingSpaceLocation,
+} from './onboarding-location-ui';
+export { onboardingLocationFromCreatePayload } from './onboarding-create-payload';
 export {
   PanelProviders,
   PanelWrapLayout,

@@ -18,6 +18,7 @@ import {
   buildSystemPrompt,
   sanitizeSlug,
 } from './system-prompt';
+import { wantsGeneratedVisualsFromText } from './tools/onboarding-confirmation';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -1056,6 +1057,43 @@ function extractLastUserText(
   return null;
 }
 
+function extractRecentUserTexts(
+  messages: ChatRequestPayload['messages'],
+  limit = 10,
+): string[] {
+  const texts: string[] = [];
+  for (let i = messages.length - 1; i >= 0 && texts.length < limit; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== 'user') continue;
+    const parts = message.parts ?? [];
+    let found = false;
+    for (const part of parts) {
+      if (
+        part &&
+        typeof part === 'object' &&
+        part.type === 'text' &&
+        'text' in part &&
+        typeof part.text === 'string'
+      ) {
+        const text = part.text.trim();
+        if (text) {
+          texts.push(text);
+          found = true;
+          break;
+        }
+      }
+    }
+    if (
+      !found &&
+      typeof message.content === 'string' &&
+      message.content.trim()
+    ) {
+      texts.push(message.content.trim());
+    }
+  }
+  return texts;
+}
+
 function normalizeConversationContext(
   context: ChatRequestPayload['conversationContext'],
   lastUserText: string | null,
@@ -1124,6 +1162,7 @@ export async function createChatStreamResult(
 ): Promise<ReturnType<typeof streamText>> {
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
+  const recentUserTexts = extractRecentUserTexts(messages);
   const normalizedConversationContext = normalizeConversationContext(
     conversationContext,
     lastUserText,
@@ -1137,6 +1176,7 @@ export async function createChatStreamResult(
       ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
     },
     lastUserText,
+    recentUserTexts,
   );
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
@@ -1152,7 +1192,16 @@ export async function createChatStreamResult(
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active.\n- Act as a setup architect for creating and configuring a first space.\n- Before any write action, present a concise action plan and request explicit confirmation.\n- Prefer structured, step-by-step guidance with clear defaults and trade-offs.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
           normalizedConversationContext.setupPhase ?? 'discover'
-        }.`
+        }.\n- For create-space onboarding, ask where the space is based and let the user set it with the interactive map UI (search address or pin) or skip, then icon/logo/banner assets or offer AI-generated visuals via generate_space_visual_assets.\n- When the user sets location via the map UI, pass coordinates into create_space_from_onboarding. Use geocode_space_location only when the user types a place name instead of using the map.\n- After wallet handoff, instruct the user to complete the wallet signing prompt instead of repeating verbal confirmations.${
+          recentUserTexts.some((text) => wantsGeneratedVisualsFromText(text))
+            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation.'
+            : ''
+        }${
+          normalizedConversationContext.setupPhase === 'confirm' ||
+          normalizedConversationContext.setupPhase === 'execute'
+            ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) and then wallet signing.'
+            : ''
+        }`
       : effectiveSystemPrompt;
 
   if (modelMessages.length === 0) {

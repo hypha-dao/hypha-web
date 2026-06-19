@@ -11,6 +11,15 @@ import {
   AiPanelChatBar,
   AiPanelMessages,
   type AiPanelDraftAttachment,
+  applyOnboardingContextForUserText,
+  applyOnboardingLocationToContext,
+  formatOnboardingLocationSubmitMessage,
+  getClientEnableNetworkMap,
+  onboardingLocationFromCreatePayload,
+  onboardingSpaceLocationFromPicker,
+  skippedOnboardingSpaceLocation,
+  type OnboardingConversationContext,
+  type SpaceLocationValue,
 } from '@hypha-platform/epics';
 import {
   Category,
@@ -20,20 +29,10 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 
-type OnboardingContext = {
-  mode: 'onboarding_setup';
-  source: 'onboarding_hero';
-  firstName?: string;
-  locale?: string;
-  createdAt: string;
-  setupPhase?: 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
-  lastUserText?: string;
-};
-
 type OnboardingAiFullPageProps = {
   seedPrompt: string;
   seedAttachments: File[];
-  context: OnboardingContext;
+  context: OnboardingConversationContext;
   onExit: () => void;
 };
 
@@ -66,34 +65,6 @@ async function fileToPart(
   };
 }
 
-function isPlainConfirmationReply(text: string): boolean {
-  const normalized = text.trim().toLowerCase();
-  const normalizedCompact = normalized
-    .replace(/[.,!?;:]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!normalized) return false;
-  if (/^confirm\b/.test(normalized) || /^confirm\b/.test(normalizedCompact))
-    return true;
-  const affirmatives = new Set([
-    'yes',
-    'y',
-    'yep',
-    'yeah',
-    'sure',
-    'ok',
-    'okay',
-    'ready',
-    'go ahead',
-    'proceed',
-    'do it',
-    'yes, proceed',
-    'yes proceed',
-    'sounds good',
-  ]);
-  return affirmatives.has(normalized) || affirmatives.has(normalizedCompact);
-}
-
 export function OnboardingAiFullPage({
   seedPrompt,
   seedAttachments,
@@ -111,15 +82,21 @@ export function OnboardingAiFullPage({
     AiPanelDraftAttachment[]
   >([]);
   const [onboardingContext, setOnboardingContext] =
-    useState<OnboardingContext>(context);
+    useState<OnboardingConversationContext>(context);
   const seededRef = useRef(false);
   const walletCreateInFlightRef = useRef(false);
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
   const navigatedHrefRef = useRef<string | null>(null);
   const createdSpaceRef = useRef<string | null>(null);
 
-  const { createSpace: createSpaceWithWalletFlow, space: walletCreatedSpace } =
-    useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const {
+    createSpace: createSpaceWithWalletFlow,
+    space: walletCreatedSpace,
+    isPending: isWalletCreatePending,
+    currentAction: walletCreateAction,
+    isError: isWalletCreateError,
+    errors: walletCreateErrors,
+  } = useCreateSpaceOrchestrator({ authToken: jwt, config });
 
   const transport = useMemo(
     () =>
@@ -143,7 +120,7 @@ export function OnboardingAiFullPage({
   const isStreaming = status === 'streaming' || status === 'submitted';
 
   const buildMessageOptions = useCallback(
-    async (contextOverride?: OnboardingContext) => {
+    async (contextOverride?: OnboardingConversationContext) => {
       const token = (await getAccessToken?.()) ?? undefined;
       const headers: Record<string, string> = token
         ? { Authorization: `Bearer ${token}` }
@@ -156,22 +133,71 @@ export function OnboardingAiFullPage({
     [getAccessToken, onboardingContext],
   );
 
-  const applyOnboardingContextForUserText = useCallback(
-    (text: string): OnboardingContext => {
-      const normalized = text.trim();
-      const isExplicitConfirmation = isPlainConfirmationReply(normalized);
-      return {
-        ...onboardingContext,
-        lastUserText: normalized,
-        setupPhase: isExplicitConfirmation
-          ? 'confirm'
-          : onboardingContext.setupPhase === 'discover'
-          ? 'draft'
-          : onboardingContext.setupPhase,
-      };
-    },
+  const applyOnboardingContextForUserTextLocal = useCallback(
+    (text: string): OnboardingConversationContext =>
+      applyOnboardingContextForUserText(onboardingContext, text),
     [onboardingContext],
   );
+
+  const sendOnboardingLocationMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      setOnboardingContext(nextContext);
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const handleOnboardingLocationConfirm = useCallback(
+    async (value: SpaceLocationValue) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const message = formatOnboardingLocationSubmitMessage(value);
+        const nextContext = applyOnboardingLocationToContext(
+          onboardingContext,
+          onboardingSpaceLocationFromPicker(value),
+          message,
+        );
+        await sendOnboardingLocationMessage(message, nextContext);
+      } catch (sendError) {
+        console.error(
+          '[OnboardingAiFullPage] location confirm send failed:',
+          sendError,
+        );
+      }
+    },
+    [clearError, isStreaming, onboardingContext, sendOnboardingLocationMessage],
+  );
+
+  const handleOnboardingLocationSkip = useCallback(async () => {
+    if (isStreaming) return;
+    try {
+      clearError();
+      const message = 'skip location';
+      const nextContext = applyOnboardingLocationToContext(
+        onboardingContext,
+        skippedOnboardingSpaceLocation(),
+        message,
+      );
+      await sendOnboardingLocationMessage(message, nextContext);
+    } catch (sendError) {
+      console.error(
+        '[OnboardingAiFullPage] location skip send failed:',
+        sendError,
+      );
+    }
+  }, [
+    clearError,
+    isStreaming,
+    onboardingContext,
+    sendOnboardingLocationMessage,
+  ]);
+
+  const enableNetworkMap = getClientEnableNetworkMap();
 
   useEffect(() => {
     if (seededRef.current) return;
@@ -350,12 +376,17 @@ export function OnboardingAiFullPage({
     if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
     const payload = payloadResult?.part?.output?.create_payload;
     if (!payload?.title || !payload.description) return;
-    if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
     const normalizedDescription =
       typeof payload.description === 'string' ? payload.description.trim() : '';
     if (!normalizedTitle || !normalizedDescription) return;
+    const executeContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      setupPhase: 'execute',
+      lastUserText: onboardingContext.lastUserText,
+    };
+    setOnboardingContext(executeContext);
     walletCreateInFlightRef.current = true;
     void (async () => {
       try {
@@ -380,7 +411,9 @@ export function OnboardingAiFullPage({
           ...(payload.ecosystem_logo_dark_url
             ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
             : {}),
+          ...onboardingLocationFromCreatePayload(payload),
         });
+        if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
       } catch (walletFlowError) {
         console.error(
           '[OnboardingAiFullPage] wallet creation failed:',
@@ -401,7 +434,7 @@ export function OnboardingAiFullPage({
     try {
       clearError();
       const nextContext = text.trim()
-        ? applyOnboardingContextForUserText(text)
+        ? applyOnboardingContextForUserTextLocal(text)
         : onboardingContext;
       if (text.trim()) {
         setOnboardingContext(nextContext);
@@ -444,7 +477,7 @@ export function OnboardingAiFullPage({
       setDraftAttachments([]);
       try {
         clearError();
-        const nextContext = applyOnboardingContextForUserText(normalized);
+        const nextContext = applyOnboardingContextForUserTextLocal(normalized);
         setOnboardingContext(nextContext);
         const options = await buildMessageOptions(nextContext);
         await sendMessage(
@@ -460,7 +493,7 @@ export function OnboardingAiFullPage({
       }
     },
     [
-      applyOnboardingContextForUserText,
+      applyOnboardingContextForUserTextLocal,
       buildMessageOptions,
       clearError,
       isStreaming,
@@ -516,6 +549,10 @@ export function OnboardingAiFullPage({
               onSuggestionSelect={(text) => setInput(text)}
               isStreaming={isStreaming}
               onActionReplySelect={handleActionReplySelect}
+              onboardingContext={onboardingContext}
+              enableNetworkMap={enableNetworkMap}
+              onOnboardingLocationConfirm={handleOnboardingLocationConfirm}
+              onOnboardingLocationSkip={handleOnboardingLocationSkip}
             />
             <AiPanelChatBar
               value={input}
@@ -531,6 +568,16 @@ export function OnboardingAiFullPage({
           {error ? (
             <p className="mt-2 px-2 text-1 text-destructive">
               {String(error.message || error)}
+            </p>
+          ) : null}
+          {isWalletCreatePending && walletCreateAction ? (
+            <p className="mt-2 px-2 text-1 text-muted-foreground">
+              {walletCreateAction}
+            </p>
+          ) : null}
+          {isWalletCreateError && walletCreateErrors.length > 0 ? (
+            <p className="mt-2 px-2 text-1 text-destructive">
+              {String(walletCreateErrors[0]?.message ?? walletCreateErrors[0])}
             </p>
           ) : null}
         </div>

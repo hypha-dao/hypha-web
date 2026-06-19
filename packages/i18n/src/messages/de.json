@@ -2656,7 +2656,11 @@
     "cancel": "Abbrechen",
     "showMore": "Mehr anzeigen",
     "showLess": "Weniger anzeigen",
-    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > KI-Agenten."
+    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > KI-Agenten.",
+    "onboardingLocationTitle": "Standort auf der Karte",
+    "onboardingLocationHint": "Suche eine Adresse oder klicke auf die Karte, um eine Markierung zu setzen. Du kannst überspringen, wenn du keinen Standort angeben möchtest.",
+    "onboardingLocationConfirm": "Diesen Standort verwenden",
+    "onboardingLocationSkip": "Standort überspringen"
   },
   "HumanChatPanel": {
     "title": "Chat",

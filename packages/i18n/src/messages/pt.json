@@ -2132,7 +2132,11 @@
     "cancel": "Cancelar",
     "showMore": "Ler mais",
     "showLess": "Mostrar menos",
-    "welcomeSpecialistsHint": "Os especialistas ativos também aparecem em Membros > Agentes de IA."
+    "welcomeSpecialistsHint": "Os especialistas ativos também aparecem em Membros > Agentes de IA.",
+    "onboardingLocationTitle": "Localização no mapa",
+    "onboardingLocationHint": "Pesquise um endereço ou clique no mapa para colocar um pin. Pode ignorar se preferir não mostrar uma localização.",
+    "onboardingLocationConfirm": "Usar esta localização",
+    "onboardingLocationSkip": "Ignorar localização"
   },
   "HumanChatPanel": {
     "title": "Chat",

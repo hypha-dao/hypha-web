@@ -40,6 +40,7 @@ import { Space, useMe } from '@hypha-platform/core/client';
 import {
   ComposerAttachGoogleDriveMenuItem,
   filesToFileList,
+  getLegacyCreateSpacePath,
   ONBOARDING_SETUP_MODE,
   saveOnboardingConversationContext,
 } from '@hypha-platform/epics';
@@ -55,7 +56,6 @@ const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
 
 const getNetworkPath = (lang: string) => `/${lang}/network`;
-const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
 const primaryCtaClass =
@@ -878,7 +878,7 @@ export function OnboardingAdventurePage({
               <Button
                 type="button"
                 className={primaryCtaClass}
-                onClick={() => router.push(getCreateSpacePath(locale))}
+                onClick={() => router.push(getLegacyCreateSpacePath(locale))}
               >
                 {t('create.cta')}
               </Button>

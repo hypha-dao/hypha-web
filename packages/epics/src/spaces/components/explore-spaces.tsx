@@ -15,16 +15,15 @@ import {
   NetworkGlobeMap,
   NetworkMapView,
   NetworkMapViewToggle,
+  CreateSpaceButton,
   SpaceCardList,
   SpaceSearch,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Button, Combobox, Heading, Separator } from '@hypha-platform/ui';
+import { Combobox, Heading, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import Link from 'next/link';
-import { PlusIcon } from '@radix-ui/react-icons';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
@@ -91,7 +90,6 @@ export function ExploreSpaces({
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
   const tCommon = useTranslations('Common');
-  const tSpaces = useTranslations('Spaces');
 
   const orderOptions: {
     value: SpaceOrder;
@@ -210,20 +208,6 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
-  const renderMapToolbar = React.useCallback(
-    (layerControls: React.ReactNode) => (
-      <div className="flex w-full flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 justify-start">{layerControls}</div>
-        <NetworkMapViewToggle
-          value={view}
-          onChange={setView}
-          className="shrink-0"
-        />
-      </div>
-    ),
-    [view, setView],
-  );
-
   const multiSelectVariants = cva(
     'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
     {
@@ -278,16 +262,77 @@ export function ExploreSpaces({
 
   const { isAuthenticated } = useAuthentication();
 
+  const renderMapToolbar = React.useCallback(
+    (layerControls: React.ReactNode) => (
+      <div className="flex w-full flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 justify-start">{layerControls}</div>
+        <div className="flex shrink-0 items-center gap-2">
+          <NetworkAddLocationButton
+            lang={lang}
+            spaces={spaces}
+            isAuthenticated={isAuthenticated}
+          />
+          <CreateSpaceButton lang={lang} />
+          <NetworkMapViewToggle value={view} onChange={setView} />
+        </div>
+      </div>
+    ),
+    [view, setView, lang, spaces, isAuthenticated],
+  );
+
+  const listViewToolbar = (
+    <div className="flex w-full flex-wrap items-center justify-between gap-3">
+      <div className="min-w-0 flex-1" aria-hidden="true" />
+      <div className="flex shrink-0 items-center gap-2">
+        <NetworkAddLocationButton
+          lang={lang}
+          spaces={spaces}
+          isAuthenticated={isAuthenticated}
+          className="pointer-events-none invisible"
+          aria-hidden
+        />
+        <NetworkMapViewToggle value={view} onChange={setView} />
+      </div>
+    </div>
+  );
+
   const listFiltersSection = (
-    <>
-      <div className="flex flex-row w-full items-center gap-2">
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-center">
+        <SpaceSearch value={query} />
+      </div>
+      <div className="flex flex-wrap justify-center gap-x-2 gap-y-2">
+        {tags.map((tag) => {
+          const isSelected = categoryGroups?.includes(tag.id) ?? false;
+          return (
+            <button
+              key={tag.id}
+              type="button"
+              aria-pressed={isSelected}
+              className={cn(
+                multiSelectVariants({
+                  variant: isSelected ? 'secondary' : 'default',
+                }),
+              )}
+              style={{ cursor: 'pointer', animationDuration: '0s' }}
+              onClick={() => {
+                const nextCategoryGroups = isSelected ? [] : [tag.id];
+                setCategoryGroups(nextCategoryGroups);
+              }}
+            >
+              {tag.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex w-full flex-row items-center gap-2 pt-6 pb-2">
         <CategoryLabel
           selectedSpaces={selectedSpaces}
           categoryGroups={categoryGroups}
           allLabel={t('all')}
           className="flex grow"
         />
-        <div className="flex flex-col grow-0">
+        <div className="flex shrink-0 flex-col">
           <Combobox
             options={orderOptions}
             initialValue={order}
@@ -296,57 +341,9 @@ export function ExploreSpaces({
             allowEmptyChoice={false}
           />
         </div>
-        {enableNetworkMap ? (
-          <NetworkAddLocationButton
-            lang={lang}
-            spaces={spaces}
-            className="ml-2"
-            isAuthenticated={isAuthenticated}
-          />
-        ) : null}
-        <Link
-          className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-          title={!isAuthenticated ? tCommon('signIn') : ''}
-          href={isAuthenticated ? `/${lang}/network/create` : {}}
-          scroll={false}
-        >
-          <Button disabled={!isAuthenticated} className="ml-2">
-            <PlusIcon />
-            {tSpaces('createSpace')}
-          </Button>
-        </Link>
+        <CreateSpaceButton lang={lang} className="ml-2" />
       </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-center">
-          <SpaceSearch value={query} />
-        </div>
-        <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
-          {tags.map((tag) => {
-            const isSelected = categoryGroups?.includes(tag.id) ?? false;
-            return (
-              <button
-                key={tag.id}
-                type="button"
-                aria-pressed={isSelected}
-                className={cn(
-                  multiSelectVariants({
-                    variant: isSelected ? 'secondary' : 'default',
-                  }),
-                )}
-                style={{ cursor: 'pointer', animationDuration: '0s' }}
-                onClick={() => {
-                  const nextCategoryGroups = isSelected ? [] : [tag.id];
-                  setCategoryGroups(nextCategoryGroups);
-                }}
-              >
-                {tag.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </>
+    </div>
   );
 
   const metricsSection = (
@@ -381,13 +378,13 @@ export function ExploreSpaces({
   );
 
   return (
-    <div className="flex flex-col gap-9">
+    <div className="flex flex-col">
       <Heading
         size="9"
         color="secondary"
         weight="medium"
         align="center"
-        className="flex flex-col"
+        className="mb-12 flex flex-col"
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>
@@ -402,28 +399,25 @@ export function ExploreSpaces({
             renderToolbar={renderMapToolbar}
           />
         ) : (
-          <div className="flex w-full flex-col gap-9">
+          <div className="flex w-full flex-col gap-4">
             {listFiltersSection}
-            <div className="flex w-full flex-col gap-4">
-              <div className="flex w-full justify-end">
-                <NetworkMapViewToggle value={view} onChange={setView} />
-              </div>
-              <SpaceCardList
-                lang={lang}
-                spaces={sortedSpaces}
-                pageSize={12}
-                cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-              />
-            </div>
+            {listViewToolbar}
+            <SpaceCardList
+              lang={lang}
+              spaces={sortedSpaces}
+              pageSize={12}
+              cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+            />
           </div>
         )
       ) : null}
 
-      {enableNetworkMap && view === 'map' ? metricsSection : null}
+      {enableNetworkMap && view === 'map' ? (
+        <div className="mt-8">{metricsSection}</div>
+      ) : null}
 
       {!enableNetworkMap ? (
         <>
-          {metricsSection}
           {listFiltersSection}
           <SpaceCardList
             lang={lang}
@@ -434,7 +428,9 @@ export function ExploreSpaces({
         </>
       ) : null}
 
-      {enableNetworkMap && view === 'list' ? metricsSection : null}
+      {enableNetworkMap && view === 'list' ? (
+        <div className="mt-8">{metricsSection}</div>
+      ) : null}
     </div>
   );
 }

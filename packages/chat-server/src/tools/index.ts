@@ -20,16 +20,107 @@ import { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-bluep
 import { createMcpNavigationTool } from './mcp-navigation';
 import { createOnboardingGuidanceTool } from './onboarding-guidance';
 import { createSearchSpacesTool } from './search-spaces';
+import { createGenerateSpaceVisualAssetsTool } from './generate-space-visual-assets';
+import { createGeocodeSpaceLocationTool } from './geocode-space-location';
 
-function withInjectedOnboardingLastUserText<T extends Record<string, unknown>>(
+function withInjectedOnboardingContext<T extends Record<string, unknown>>(
   payload: T,
-  lastUserText?: string,
-): T & { onboarding_last_user_text?: string } {
-  const trimmed = lastUserText?.trim();
-  if (!trimmed) return payload;
+  context: {
+    lastUserText?: string;
+    recentUserTexts?: string[];
+    setupPhase?: string;
+  },
+): T & {
+  onboarding_last_user_text?: string;
+  onboarding_recent_user_texts?: string[];
+  onboarding_setup_phase?: string;
+} {
   return {
     ...payload,
-    onboarding_last_user_text: trimmed,
+    ...(context.lastUserText
+      ? { onboarding_last_user_text: context.lastUserText }
+      : {}),
+    ...(context.recentUserTexts?.length
+      ? { onboarding_recent_user_texts: context.recentUserTexts }
+      : {}),
+    ...(context.setupPhase
+      ? { onboarding_setup_phase: context.setupPhase }
+      : {}),
+  };
+}
+
+type OnboardingSpaceLocationContext = {
+  latitude: number | null;
+  longitude: number | null;
+  locationLabel: string | null;
+  locationSource: 'geocode' | 'manual' | 'map_click' | null;
+  skipped?: boolean;
+};
+
+function extractSpaceLocationFromContext(
+  conversationContext?: unknown,
+): OnboardingSpaceLocationContext | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const raw = (conversationContext as { spaceLocation?: unknown })
+    .spaceLocation;
+  if (!raw || typeof raw !== 'object') return undefined;
+
+  const candidate = raw as Partial<OnboardingSpaceLocationContext>;
+  return {
+    latitude:
+      typeof candidate.latitude === 'number' ? candidate.latitude : null,
+    longitude:
+      typeof candidate.longitude === 'number' ? candidate.longitude : null,
+    locationLabel:
+      typeof candidate.locationLabel === 'string'
+        ? candidate.locationLabel
+        : candidate.locationLabel === null
+        ? null
+        : null,
+    locationSource:
+      candidate.locationSource === 'geocode' ||
+      candidate.locationSource === 'manual' ||
+      candidate.locationSource === 'map_click'
+        ? candidate.locationSource
+        : candidate.locationSource === null
+        ? null
+        : null,
+    skipped: candidate.skipped === true,
+  };
+}
+
+function withInjectedOnboardingSpaceLocation<T extends Record<string, unknown>>(
+  payload: T,
+  spaceLocation?: OnboardingSpaceLocationContext,
+): T {
+  if (
+    !spaceLocation ||
+    spaceLocation.skipped ||
+    spaceLocation.latitude == null ||
+    spaceLocation.longitude == null
+  ) {
+    return payload;
+  }
+  if (
+    payload.latitude !== undefined ||
+    payload.longitude !== undefined ||
+    typeof payload.location_query === 'string'
+  ) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    latitude: spaceLocation.latitude,
+    longitude: spaceLocation.longitude,
+    ...(spaceLocation.locationLabel
+      ? { location_label: spaceLocation.locationLabel }
+      : {}),
+    ...(spaceLocation.locationSource
+      ? { location_source: spaceLocation.locationSource }
+      : {}),
   };
 }
 
@@ -67,6 +158,7 @@ export function createChatTools(
     ecosystemAutomationEnabled?: boolean;
   },
   lastUserTextFromRequest?: string | null,
+  recentUserTextsFromRequest?: string[],
 ): Record<string, ChatRouteTool> {
   const contextLastUserText =
     conversationContext &&
@@ -76,8 +168,23 @@ export function createChatTools(
       'string'
       ? (conversationContext as { lastUserText: string }).lastUserText
       : undefined;
+  const contextSetupPhase =
+    conversationContext &&
+    typeof conversationContext === 'object' &&
+    'setupPhase' in conversationContext &&
+    typeof (conversationContext as { setupPhase?: unknown }).setupPhase ===
+      'string'
+      ? (conversationContext as { setupPhase: string }).setupPhase
+      : undefined;
   const effectiveLastUserText =
-    contextLastUserText ?? lastUserTextFromRequest ?? undefined;
+    lastUserTextFromRequest?.trim() || contextLastUserText?.trim() || undefined;
+  const onboardingInjectionContext = {
+    lastUserText: effectiveLastUserText,
+    recentUserTexts: recentUserTextsFromRequest,
+    setupPhase: contextSetupPhase,
+  };
+  const contextSpaceLocation =
+    extractSpaceLocationFromContext(conversationContext);
 
   const createSpaceFromOnboardingTool =
     createCreateSpaceFromOnboardingTool(authToken);
@@ -149,6 +256,14 @@ export function createChatTools(
       'mcp_navigation',
       createMcpNavigationTool(authToken),
     ),
+    generate_space_visual_assets: safeTool(
+      'generate_space_visual_assets',
+      createGenerateSpaceVisualAssetsTool(),
+    ),
+    geocode_space_location: safeTool(
+      'geocode_space_location',
+      createGeocodeSpaceLocationTool(),
+    ),
   };
   if (featureGates?.onboardingWriteToolsEnabled !== false) {
     tools.create_space_from_onboarding = safeTool(
@@ -157,7 +272,10 @@ export function createChatTools(
         ...createSpaceFromOnboardingTool,
         execute: async (args) =>
           createSpaceFromOnboardingTool.execute(
-            withInjectedOnboardingLastUserText(args, effectiveLastUserText),
+            withInjectedOnboardingSpaceLocation(
+              withInjectedOnboardingContext(args, onboardingInjectionContext),
+              contextSpaceLocation,
+            ),
           ),
       },
     );
@@ -165,7 +283,7 @@ export function createChatTools(
       ...updateSpaceSettingsTool,
       execute: async (args) =>
         updateSpaceSettingsTool.execute(
-          withInjectedOnboardingLastUserText(args, effectiveLastUserText),
+          withInjectedOnboardingContext(args, onboardingInjectionContext),
         ),
     });
     tools.create_space_setup_proposal = safeTool(
@@ -174,7 +292,7 @@ export function createChatTools(
         ...createSpaceSetupProposalTool,
         execute: async (args) =>
           createSpaceSetupProposalTool.execute(
-            withInjectedOnboardingLastUserText(args, effectiveLastUserText),
+            withInjectedOnboardingContext(args, onboardingInjectionContext),
           ),
       },
     );
@@ -188,7 +306,7 @@ export function createChatTools(
       ...createEcosystemSpaceTool,
       execute: async (args) =>
         createEcosystemSpaceTool.execute(
-          withInjectedOnboardingLastUserText(args, effectiveLastUserText),
+          withInjectedOnboardingContext(args, onboardingInjectionContext),
         ),
     });
   }

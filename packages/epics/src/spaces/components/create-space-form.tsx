@@ -597,10 +597,13 @@ export const SpaceForm = ({
                   }
                   uploadText={
                     <>
-                      <span className="text-accent-11 gap-1">
+                      <span className="text-foreground">
                         {tSpaces('uploadSpaceBanner')}
                       </span>{' '}
-                      {tSpaces('spaceBanner')} <RequirementMark />
+                      <span className="text-muted-foreground">
+                        {tSpaces('spaceBanner')}
+                      </span>{' '}
+                      <RequirementMark />
                     </>
                   }
                   enableImageResizer={true}

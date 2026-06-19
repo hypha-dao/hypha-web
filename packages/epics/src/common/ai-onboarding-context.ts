@@ -4,11 +4,20 @@ export const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
 export const AI_ONBOARDING_SEED_EVENT = 'hypha:ai-onboarding-seed';
 export const AI_ONBOARDING_SEED_ACK_EVENT = 'hypha:ai-onboarding-seed-ack';
 
+export type OnboardingSpaceLocation = {
+  latitude: number | null;
+  longitude: number | null;
+  locationLabel: string | null;
+  locationSource: 'geocode' | 'manual' | 'map_click' | null;
+  skipped?: boolean;
+};
+
 export type OnboardingConversationContext = {
   mode: typeof ONBOARDING_SETUP_MODE;
   source: 'onboarding_hero';
   firstName?: string;
   setupPhase?: 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
+  spaceLocation?: OnboardingSpaceLocation;
   setupPlan?: {
     spaceIntent?: {
       title?: string;
@@ -53,6 +62,49 @@ type SeedAckEventDetail = {
 
 const ONBOARDING_CONTEXT_STORAGE_KEY = 'hypha:ai-onboarding-context:v1';
 
+function parseStoredSpaceLocation(
+  raw: unknown,
+): OnboardingSpaceLocation | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as Partial<OnboardingSpaceLocation>;
+  if (
+    candidate.latitude === undefined &&
+    candidate.longitude === undefined &&
+    candidate.skipped !== true
+  ) {
+    return undefined;
+  }
+  return {
+    latitude:
+      typeof candidate.latitude === 'number'
+        ? candidate.latitude
+        : candidate.latitude === null
+        ? null
+        : null,
+    longitude:
+      typeof candidate.longitude === 'number'
+        ? candidate.longitude
+        : candidate.longitude === null
+        ? null
+        : null,
+    locationLabel:
+      typeof candidate.locationLabel === 'string'
+        ? candidate.locationLabel
+        : candidate.locationLabel === null
+        ? null
+        : null,
+    locationSource:
+      candidate.locationSource === 'geocode' ||
+      candidate.locationSource === 'manual' ||
+      candidate.locationSource === 'map_click'
+        ? candidate.locationSource
+        : candidate.locationSource === null
+        ? null
+        : null,
+    skipped: candidate.skipped === true,
+  };
+}
+
 export function readOnboardingConversationContext():
   | OnboardingConversationContext
   | undefined {
@@ -69,6 +121,7 @@ export function readOnboardingConversationContext():
     ) {
       return undefined;
     }
+    const parsedSpaceLocation = parseStoredSpaceLocation(parsed.spaceLocation);
     return {
       mode: ONBOARDING_SETUP_MODE,
       source: 'onboarding_hero',
@@ -86,6 +139,7 @@ export function readOnboardingConversationContext():
         parsed.setupPlan && typeof parsed.setupPlan === 'object'
           ? (parsed.setupPlan as OnboardingConversationContext['setupPlan'])
           : undefined,
+      spaceLocation: parsedSpaceLocation,
       lastUserText:
         typeof parsed.lastUserText === 'string'
           ? parsed.lastUserText
@@ -111,6 +165,57 @@ export function saveOnboardingConversationContext(
 export function clearOnboardingConversationContext(): void {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(ONBOARDING_CONTEXT_STORAGE_KEY);
+}
+
+export function isPlainOnboardingConfirmationReply(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  const normalizedCompact = normalized
+    .replace(/[.,!?;:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) return false;
+  if (/^confirm\b/.test(normalized) || /^confirm\b/.test(normalizedCompact)) {
+    return true;
+  }
+  const affirmatives = new Set([
+    'yes',
+    'y',
+    'yep',
+    'yeah',
+    'sure',
+    'ok',
+    'okay',
+    'ready',
+    'go ahead',
+    'proceed',
+    'do it',
+    'yes, proceed',
+    'yes proceed',
+    'sounds good',
+    'prompt signature',
+    'sign',
+    'signed',
+    'already did',
+    'done',
+  ]);
+  return affirmatives.has(normalized) || affirmatives.has(normalizedCompact);
+}
+
+export function applyOnboardingContextForUserText(
+  context: OnboardingConversationContext,
+  text: string,
+): OnboardingConversationContext {
+  const normalized = text.trim();
+  const isExplicitConfirmation = isPlainOnboardingConfirmationReply(normalized);
+  return {
+    ...context,
+    lastUserText: normalized,
+    setupPhase: isExplicitConfirmation
+      ? 'confirm'
+      : context.setupPhase === 'discover'
+      ? 'draft'
+      : context.setupPhase,
+  };
 }
 
 export function dispatchAiOnboardingSeed(detail: SeedEventDetail): void {

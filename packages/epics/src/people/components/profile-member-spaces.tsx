@@ -2,14 +2,17 @@
 
 import { Skeleton, Image, Button } from '@hypha-platform/ui';
 import { Person, Space, useMe } from '@hypha-platform/core/client';
-import { ExitSpace, getDhoPathDefaultLanding } from '@hypha-platform/epics';
+import {
+  ExitSpace,
+  getDhoPathDefaultLanding,
+  CreateSpaceButton,
+} from '@hypha-platform/epics';
 import React from 'react';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
-import { ExitIcon, GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
-import { useAuthentication } from '@hypha-platform/authentication';
+import { ExitIcon, GlobeIcon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
 
 export type ProfileMemberSpacesProps = {
@@ -33,7 +36,6 @@ export const ProfileMemberSpaces = ({
   const isMyProfile = person.slug ? isMe(person.slug) : false;
 
   const iconSize = React.useMemo(() => (profileView ? 64 : 40), [profileView]);
-  const { isAuthenticated } = useAuthentication();
 
   return (
     <div className="flex justify-between items-center mt-4 mb-4">
@@ -48,17 +50,10 @@ export const ProfileMemberSpaces = ({
                   {tCommon('exploreSpaces')}
                 </Button>
               </Link>
-              <Link
-                className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-                title={!isAuthenticated ? tCommon('signIn') : ''}
-                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
-                scroll={false}
-              >
-                <Button disabled={!isAuthenticated} className="gap-2">
-                  <PlusIcon />
-                  {tSpaces('createSpace')}
-                </Button>
-              </Link>
+              <CreateSpaceButton
+                lang={lang as Locale}
+                buttonClassName="gap-2"
+              />
             </div>
           </div>
         </Empty>

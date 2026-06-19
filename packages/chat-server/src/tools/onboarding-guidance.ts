@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ChatRouteTool } from './types';
 import { createSearchSpacesTool } from './search-spaces';
+import { isAnsweredLocationStep } from './onboarding-location';
 
 const processSchema = z.enum([
   'create_space',
@@ -22,6 +23,7 @@ type GuidanceStep = {
   field: string;
   question: string;
   requiredWhen?: (answers: Record<string, unknown>) => boolean;
+  isAnswered?: (value: unknown, answers: Record<string, unknown>) => boolean;
 };
 
 type GuidanceDefinition = {
@@ -70,6 +72,12 @@ function getGuidanceDefinition(
             'What is the purpose of this space? If helpful, I can suggest a few examples.',
         },
         {
+          field: 'space_location',
+          question:
+            'Where is this space based? Use the map below to search for an address or drop a pin—or say skip if you prefer not to add a location yet.',
+          isAnswered: (value) => isAnsweredLocationStep(value),
+        },
+        {
           field: 'link_parent_ecosystem',
           question:
             'Should this be linked to a parent ecosystem space? (yes/no)',
@@ -106,7 +114,12 @@ function getGuidanceDefinition(
         'Confirm the exact space draft payload before execution.',
         'Sign with wallet to create the space when required.',
       ],
-      suggested_tools: ['create_space_from_onboarding', 'mcp_navigation'],
+      suggested_tools: [
+        'geocode_space_location',
+        'generate_space_visual_assets',
+        'create_space_from_onboarding',
+        'mcp_navigation',
+      ],
     };
   }
   if (process === 'configure_space') {
@@ -217,12 +230,20 @@ export function createOnboardingGuidanceTool() {
       const activeSteps = guidance.steps.filter((step) =>
         step.requiredWhen ? step.requiredWhen(answers) : true,
       );
-      const nextStep = activeSteps.find(
-        (step) => !isFilled(answers[step.field]),
-      );
-      const collected = activeSteps.filter((step) =>
-        isFilled(answers[step.field]),
-      ).length;
+      const nextStep = activeSteps.find((step) => {
+        const value = answers[step.field];
+        if (step.isAnswered) {
+          return !step.isAnswered(value, answers);
+        }
+        return !isFilled(value);
+      });
+      const collected = activeSteps.filter((step) => {
+        const value = answers[step.field];
+        if (step.isAnswered) {
+          return step.isAnswered(value, answers);
+        }
+        return isFilled(value);
+      }).length;
       const total = activeSteps.length;
       const readyForValidation = !nextStep;
 
@@ -239,6 +260,10 @@ export function createOnboardingGuidanceTool() {
               limit: 8,
             })
           : null;
+      const requiresLocationPicker = nextStep?.field === 'space_location';
+      const locationAssistantInstruction = requiresLocationPicker
+        ? 'Ask only the next_question in one short sentence. The user can set location with the interactive map shown below the chat—do not ask them to type coordinates.'
+        : null;
       return {
         ok: true,
         process,
@@ -247,13 +272,16 @@ export function createOnboardingGuidanceTool() {
         question_mode: 'single_step',
         assistant_instruction: exploreReady
           ? 'Return concrete space matches now in this same reply. If search_results has entries, list the best 3-5 with clear names and short reasons. If none are found, say that clearly and suggest the next best step. Do not ask another discovery question first.'
-          : 'Ask only the next_question as a single natural-language question. Do not provide a checklist, field list, or form labels.',
+          : locationAssistantInstruction ??
+            'Ask only the next_question as a single natural-language question. Do not provide a checklist, field list, or form labels.',
         progress: {
           answered: collected,
           total,
           remaining: Math.max(total - collected, 0),
         },
         next_question: nextStep?.question ?? null,
+        next_field: nextStep?.field ?? null,
+        requires_location_picker: requiresLocationPicker,
         ready_for_search: exploreReady,
         search_results: searchResults,
         ready_for_validation: readyForValidation,

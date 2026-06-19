@@ -5,6 +5,7 @@ export * from './space-accent-from-images';
 export * from './space-accent-portal-context';
 export * from './category-search';
 export * from './category-spaces';
+export * from './create-space-button';
 export * from './create-space-form';
 export * from './create-subspace-form';
 export * from './entry-method-field';

@@ -231,7 +231,7 @@ function resolveAppScreenPath(
   if (screen === 'onboarding') return `/${lang}/onboarding`;
   if (screen === 'network') return `/${lang}/network`;
   if (screen === 'my_spaces') return `/${lang}/my-spaces`;
-  if (screen === 'create_space') return `/${lang}/my-spaces/create`;
+  if (screen === 'create_space') return `/${lang}/onboarding`;
   return `/${lang}/profile/signup`;
 }
 

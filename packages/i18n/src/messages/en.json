@@ -2658,7 +2658,11 @@
     "walletAgreementError": "We couldn't publish the proposal on-chain. Check your wallet connection and try again.",
     "assistantExpiredSubtitle": "Your Hypha Network contribution expired {expiredElapsed}. Please reactivate your space before using Hypha AI.",
     "attachment": "Attachment",
-    "welcomeSpecialistsHint": "Active specialists also appear under Members > AI Agents."
+    "welcomeSpecialistsHint": "Active specialists also appear under Members > AI Agents.",
+    "onboardingLocationTitle": "Location on map",
+    "onboardingLocationHint": "Search for an address or click the map to place a pin. You can skip if you prefer not to show a location yet.",
+    "onboardingLocationConfirm": "Use this location",
+    "onboardingLocationSkip": "Skip location"
   },
   "HumanChatPanel": {
     "title": "Chat",

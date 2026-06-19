@@ -113,7 +113,9 @@ export const UploadAvatar = ({
       className={clsx(
         'group cursor-pointer relative',
         'flex justify-center items-center overflow-hidden',
-        'min-w-9 w-9 h-9 rounded-xl bg-accent-5',
+        'min-w-9 w-9 h-9 rounded-xl',
+        'border border-dashed border-neutral-7 bg-neutral-3 text-neutral-11',
+        'transition-colors hover:border-neutral-8 hover:bg-neutral-4',
         className,
       )}
     >

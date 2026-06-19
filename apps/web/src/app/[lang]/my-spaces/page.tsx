@@ -3,6 +3,7 @@ import {
   MyFilteredSpaces,
   SpaceSearch,
   AuthenticatedLinkButton,
+  getOnboardingPath,
 } from '@hypha-platform/epics';
 import { isSpaceArchived } from '@hypha-platform/core/client';
 import Link from 'next/link';
@@ -59,7 +60,7 @@ export default async function Index(props: PageProps) {
           {mySpaces?.length > 0 ? (
             <AuthenticatedLinkButton
               hideInsteadDisabled
-              href={`/${lang}/my-spaces/create`}
+              href={getOnboardingPath(lang)}
             >
               <PlusIcon />
               {t('createSpace')}

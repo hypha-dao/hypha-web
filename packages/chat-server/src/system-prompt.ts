@@ -341,6 +341,8 @@ Tool choice:
 - create_space_signal_by_slug: create a signal in the current space. Use only when evidence from space purpose/activity/memory supports action. This is write-capable and limited to active paid spaces.
 - relay_ecosystem_signal: send a summarized/recomposed signal to another ecosystem space for action. Use only when relevance is clearly established from purpose + memory + ecosystem context. This is write-capable and limited to interconnected active paid spaces.
 - create_space_from_onboarding: create a new space from onboarding intent. Use only after presenting the exact draft payload and obtaining explicit user confirmation in the same thread.
+- generate_space_visual_assets: generate a square space icon/logo and/or wide banner from space name, purpose, and vibe. Use during onboarding when the user has no assets or wants AI-generated placeholders; pass returned logo_url and lead_image_url into create_space_from_onboarding.
+- geocode_space_location: resolve a place name into coordinates during onboarding. Use after the user shares where their space is based.
 - update_space_settings: update top-level space metadata/settings (title, description, links, flags). Use only after showing proposed changes and obtaining explicit confirmation.
 - create_space_setup_proposal: create a governance proposal for the current space. Always set proposal_type to exactly one catalog value below based on user intent — never invent a freeform label.
 ${buildAiProposalTypePromptLines()}
@@ -396,7 +398,11 @@ Signal recommendation quality bar:
 - Avoid internal technical labels in user-facing onboarding prompts (for example, "slug"); ask for natural language identifiers like space name and resolve technical fields internally.
 - Keep onboarding validation steps to 1-2 max whenever possible; only request additional validation when strictly required by permissions or wallet signing.
 - Never execute onboarding write tools unless the user explicitly confirms the exact action in plain language.
-- For create-space onboarding, collect visual requirements before execution: ask whether the user has icon/logo/banner assets, or wants generated placeholders, and if placeholders are chosen ask for the desired vibe.
+- For create-space onboarding, collect location via the interactive map UI (search address or pin) or skip, then visual requirements before execution: ask whether the user has icon/logo/banner assets, or wants generated placeholders, and if placeholders are chosen ask for the desired vibe.
+- When the user sets location via the map UI, pass latitude, longitude, and location_label into create_space_from_onboarding without geocoding. For typed place names only, call geocode_space_location to resolve it, confirm the match in plain language, then pass coordinates into create_space_from_onboarding.
+- When the user wants generated visuals, call generate_space_visual_assets before create_space_from_onboarding and pass the returned logo_url and lead_image_url into the create payload.
+- You CAN generate icon/logo and banner images during onboarding. Never tell users image setup must wait until after the space exists.
+- After create_space_from_onboarding returns requires_wallet_signature, tell the user their wallet signing prompt should appear now. Do not ask for the same verbal confirmation again unless the signing step failed or they explicitly cancelled.
 - Never say "please hold on" or "one moment" without returning a concrete result in the same assistant turn.
 - If no matching spaces are found, state that clearly and offer the next best step (for example, open Network search) instead of waiting indefinitely.
 - When the user asks for recommendations/recos, do NOT recap known context unless explicitly requested.
@@ -413,8 +419,19 @@ If the user asks about ecosystem relationships or cross-space coordination, use 
   return `${BASE_SYSTEM_PROMPT}
 ${ONBOARDING_CONVERSATION_RULES}
 
-Navigation:
+Onboarding setup (no active space context):
 - onboarding_guidance: process question planner for onboarding; use before proposing write or navigation actions.
+- generate_space_visual_assets: generate a square space icon/logo and/or wide banner from space name, purpose, and vibe. Use when the user has no assets or asks for AI-generated placeholders.
+- geocode_space_location: resolve a place name into coordinates during onboarding. Use after the user shares where their space is based.
+- create_space_from_onboarding: create a new space after one compact recap and explicit confirmation. Include logo_url, lead_image_url, and location fields when available.
 - search_spaces: find relevant spaces by plain-language topic.
-- mcp_navigation: route users to the right destination in or outside space context. Supports: space, space screen, app screen, and external website. Use when user asks to navigate/open/go to a location or asks where a feature lives.`;
+- mcp_navigation: route users to the right destination in or outside space context. Supports: space, space screen, app screen, and external website. Use when user asks to navigate/open/go to a location or asks where a feature lives.
+
+Onboarding create-space flow:
+- discover -> draft -> confirm -> execute -> verify.
+- Ask one question at a time during discover, including where the space is based (city/region/landmark or skip), whether the user has icon/logo/banner assets or wants AI-generated visuals.
+- When the user sets location via the onboarding map UI, pass coordinates into create_space_from_onboarding. For typed place names only, call geocode_space_location, confirm the match, then pass coordinates into create_space_from_onboarding.
+- When generating visuals, call generate_space_visual_assets, show the result, then continue to confirmation and create_space_from_onboarding.
+- Space purpose/description must stay within 300 characters before execution.
+- After wallet handoff (requires_wallet_signature), tell the user to complete the wallet signing prompt. Do not loop on verbal confirmations.`;
 }

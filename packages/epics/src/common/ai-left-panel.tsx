@@ -89,11 +89,21 @@ import { recordMobilizedAiAgentsForQuestion } from './ai-agent-competencies';
 import {
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
+  applyOnboardingContextForUserText,
   dispatchAiOnboardingSeedAck,
   readOnboardingConversationContext,
   saveOnboardingConversationContext,
   type OnboardingConversationContext,
 } from './ai-onboarding-context';
+import { onboardingLocationFromCreatePayload } from './onboarding-create-payload';
+import {
+  applyOnboardingLocationToContext,
+  formatOnboardingLocationSubmitMessage,
+  getClientEnableNetworkMap,
+  onboardingSpaceLocationFromPicker,
+  skippedOnboardingSpaceLocation,
+} from './onboarding-location-ui';
+import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 type ChatUIMessage = {
   id: string;
@@ -722,23 +732,30 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     lastMcpNavigationTargetSpaceSlugRef.current = null;
   }, [setMessages, spaceSlug]);
 
-  const buildMessageOptions = useCallback(async () => {
-    let token: string | undefined;
-    try {
-      token = (await getAccessToken?.()) ?? undefined;
-    } catch (error) {
-      console.error('[AiLeftPanel] getAccessToken failed for message options', {
-        error,
-      });
-    }
-    const hdrs: Record<string, string> = {};
-    if (token) hdrs['Authorization'] = `Bearer ${token}`;
-    const body: Record<string, unknown> = {
-      ...(spaceSlug && { spaceSlug }),
-      ...(onboardingContext ? { conversationContext: onboardingContext } : {}),
-    };
-    return { body, headers: hdrs };
-  }, [getAccessToken, onboardingContext, spaceSlug]);
+  const buildMessageOptions = useCallback(
+    async (contextOverride?: OnboardingConversationContext) => {
+      let token: string | undefined;
+      try {
+        token = (await getAccessToken?.()) ?? undefined;
+      } catch (error) {
+        console.error(
+          '[AiLeftPanel] getAccessToken failed for message options',
+          {
+            error,
+          },
+        );
+      }
+      const hdrs: Record<string, string> = {};
+      if (token) hdrs['Authorization'] = `Bearer ${token}`;
+      const activeContext = contextOverride ?? onboardingContext;
+      const body: Record<string, unknown> = {
+        ...(spaceSlug && { spaceSlug }),
+        ...(activeContext ? { conversationContext: activeContext } : {}),
+      };
+      return { body, headers: hdrs };
+    },
+    [getAccessToken, onboardingContext, spaceSlug],
+  );
 
   useEffect(() => {
     const onSeed = (event: Event) => {
@@ -1112,7 +1129,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
     const payload = latestWalletCreatePayload?.part?.output?.create_payload;
     if (!payload?.title || !payload.description) return;
-    if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
     const normalizedDescription =
@@ -1124,6 +1140,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const normalizedCategories: Category[] = Array.isArray(payload.categories)
       ? (payload.categories as Category[])
       : [];
+
+    if (onboardingContext) {
+      const executeContext: OnboardingConversationContext = {
+        ...onboardingContext,
+        setupPhase: 'execute',
+      };
+      setOnboardingContext(executeContext);
+      saveOnboardingConversationContext(executeContext);
+    }
 
     aiWalletCreateInFlightRef.current = true;
     void (async () => {
@@ -1145,7 +1170,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           ...(payload.ecosystem_logo_dark_url
             ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
             : {}),
+          ...onboardingLocationFromCreatePayload(payload),
         });
+        if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
       } catch (walletFlowError) {
         console.error(
           '[AiLeftPanel] wallet-based onboarding space creation failed:',
@@ -1317,7 +1344,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     setDraftAttachments([]);
     try {
       clearError();
-      const options = await buildMessageOptions();
+      let nextContext = onboardingContext;
+      if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
+        nextContext = applyOnboardingContextForUserText(
+          onboardingContext,
+          text,
+        );
+        setOnboardingContext(nextContext);
+        saveOnboardingConversationContext(nextContext);
+      }
+      const options = await buildMessageOptions(nextContext);
       let attachmentParts: Array<
         | { type: 'text'; text: string }
         | { type: 'file'; mediaType: string; url: string }
@@ -1357,18 +1393,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         );
       }
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
-      if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-        const nextContext: OnboardingConversationContext = {
-          ...onboardingContext,
-          lastUserText: text.trim(),
-          setupPhase:
-            onboardingContext.setupPhase === 'discover'
-              ? 'draft'
-              : onboardingContext.setupPhase,
-        };
-        setOnboardingContext(nextContext);
-        saveOnboardingConversationContext(nextContext);
-      }
       if (spaceSlug && text.trim()) {
         recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
       }
@@ -1434,16 +1458,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
         }
         if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-          const nextContext: OnboardingConversationContext = {
-            ...onboardingContext,
-            lastUserText: text.trim(),
-            setupPhase:
-              onboardingContext.setupPhase === 'discover'
-                ? 'draft'
-                : onboardingContext.setupPhase,
-          };
+          const nextContext = applyOnboardingContextForUserText(
+            onboardingContext,
+            text,
+          );
           setOnboardingContext(nextContext);
           saveOnboardingConversationContext(nextContext);
+          const options = await buildMessageOptions(nextContext);
+          if (DEBUG)
+            console.log('[AiLeftPanel] suggestion selected', {
+              text,
+              spaceSlug,
+            });
+          await sendMessage(
+            { role: 'user', parts: [{ type: 'text', text }] },
+            options,
+          );
+          return;
         }
         const options = await buildMessageOptions();
         if (DEBUG)
@@ -1471,16 +1502,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       if (blockSpaceAiForInteraction) return;
       try {
         clearError();
+        let nextContext = onboardingContext;
         if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-          const nextContext: OnboardingConversationContext = {
-            ...onboardingContext,
-            lastUserText: text.trim(),
-            setupPhase: 'confirm',
-          };
+          nextContext = applyOnboardingContextForUserText(
+            onboardingContext,
+            text,
+          );
           setOnboardingContext(nextContext);
           saveOnboardingConversationContext(nextContext);
         }
-        const options = await buildMessageOptions();
+        const options = await buildMessageOptions(nextContext);
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text }] },
           options,
@@ -1497,6 +1528,61 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       sendMessage,
     ],
   );
+
+  const sendOnboardingLocationMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const handleOnboardingLocationConfirm = useCallback(
+    async (value: SpaceLocationValue) => {
+      if (!onboardingContext || isStreaming) return;
+      try {
+        clearError();
+        const message = formatOnboardingLocationSubmitMessage(value);
+        const nextContext = applyOnboardingLocationToContext(
+          onboardingContext,
+          onboardingSpaceLocationFromPicker(value),
+          message,
+        );
+        await sendOnboardingLocationMessage(message, nextContext);
+      } catch (err) {
+        console.error('[AiLeftPanel] location confirm sendMessage error:', err);
+      }
+    },
+    [clearError, isStreaming, onboardingContext, sendOnboardingLocationMessage],
+  );
+
+  const handleOnboardingLocationSkip = useCallback(async () => {
+    if (!onboardingContext || isStreaming) return;
+    try {
+      clearError();
+      const message = 'skip location';
+      const nextContext = applyOnboardingLocationToContext(
+        onboardingContext,
+        skippedOnboardingSpaceLocation(),
+        message,
+      );
+      await sendOnboardingLocationMessage(message, nextContext);
+    } catch (err) {
+      console.error('[AiLeftPanel] location skip sendMessage error:', err);
+    }
+  }, [
+    clearError,
+    isStreaming,
+    onboardingContext,
+    sendOnboardingLocationMessage,
+  ]);
+
+  const enableNetworkMap = getClientEnableNetworkMap();
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
@@ -1765,6 +1851,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           }
           activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
+          onboardingContext={onboardingContext}
+          enableNetworkMap={enableNetworkMap}
+          onOnboardingLocationConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingLocationConfirm
+          }
+          onOnboardingLocationSkip={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingLocationSkip
+          }
         />
       </SidebarContent>
       <SidebarFooter className="bg-background-2 p-0">

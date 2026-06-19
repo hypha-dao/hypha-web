@@ -4,11 +4,15 @@ import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { resolveMobilizedAgentsForAssistantMessage } from '../ai-agent-competencies';
+import type { OnboardingConversationContext } from '../ai-onboarding-context';
+import { shouldShowOnboardingLocationPicker } from '../onboarding-location-ui';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
+import { OnboardingSpaceLocationCard } from './onboarding-space-location-card';
 import {
   AiPanelSuggestions,
   type AiPanelSuggestionItem,
 } from './ai-panel-suggestions';
+import type { SpaceLocationValue } from '../../spaces/components/space-location-picker';
 
 type UIMessage = {
   id: string;
@@ -27,6 +31,10 @@ type AiPanelMessagesProps = {
   activeSpaceName?: string;
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
+  onboardingContext?: OnboardingConversationContext;
+  enableNetworkMap?: boolean;
+  onOnboardingLocationConfirm?: (value: SpaceLocationValue) => void;
+  onOnboardingLocationSkip?: () => void;
 };
 
 export function AiPanelMessages({
@@ -36,9 +44,20 @@ export function AiPanelMessages({
   onSuggestionSelect,
   isStreaming = false,
   onActionReplySelect,
+  onboardingContext,
+  enableNetworkMap = false,
+  onOnboardingLocationConfirm,
+  onOnboardingLocationSkip,
 }: AiPanelMessagesProps) {
   const t = useTranslations('AiPanel');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const showLocationPicker = shouldShowOnboardingLocationPicker({
+    messages,
+    onboardingContext,
+    isStreaming,
+    enableNetworkMap,
+  });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -89,6 +108,16 @@ export function AiPanelMessages({
             }
           />
         ))}
+
+        {showLocationPicker &&
+        onOnboardingLocationConfirm &&
+        onOnboardingLocationSkip ? (
+          <OnboardingSpaceLocationCard
+            disabled={isStreaming}
+            onConfirm={onOnboardingLocationConfirm}
+            onSkip={onOnboardingLocationSkip}
+          />
+        ) : null}
 
         {showInlineSuggestions && onSuggestionSelect ? (
           <div className="flex flex-col gap-2">

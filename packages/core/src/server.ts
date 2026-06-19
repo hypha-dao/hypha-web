@@ -23,7 +23,14 @@ export * from './matrix/server';
 export * from './matrix/types';
 export * from './banking/server';
 export * from './geo/server';
-export { geocodeRequestSchema, geocodeResponseSchema } from './geo/validation';
+export {
+  geocodeRequestSchema,
+  geocodeResponseSchema,
+  spaceLatitudeSchema,
+  spaceLongitudeSchema,
+  spaceLocationLabelSchema,
+  spaceLocationSourceSchema,
+} from './geo/validation';
 export {
   extractUniqueCategoryGroups,
   parseCategoryGroupFilterParam,

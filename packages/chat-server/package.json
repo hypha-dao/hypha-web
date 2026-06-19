@@ -15,6 +15,7 @@
     "ai": "^6.0.105",
     "jose": "^5.9.6",
     "server-only": "^0.0.1",
+    "uploadthing": "^7.5.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {
