@@ -43,6 +43,35 @@ export const PAYOUT_CURRENCY_KEYS: PayoutCurrencyKey[] = [
   'swift',
 ];
 
+/**
+ * Returns the subset of PAYOUT_CURRENCY_KEYS whose mapped rail key appears in
+ * NEXT_PUBLIC_BANKING_SUPPORTED_PAYOUT_RAILS. When the env var is unset or
+ * empty all currencies are considered enabled (open-world default).
+ */
+export function getEnabledPayoutCurrencyKeys(): PayoutCurrencyKey[] {
+  const raw = process.env.NEXT_PUBLIC_BANKING_SUPPORTED_PAYOUT_RAILS?.trim();
+  if (!raw) return PAYOUT_CURRENCY_KEYS;
+  const allowed = new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
+  return PAYOUT_CURRENCY_KEYS.filter((c) => allowed.has(payoutCurrencyToRailKey(c)));
+}
+
+/**
+ * Source stablecoins accepted by Bridge for each payout rail.
+ * Keep in sync with Bridge Route Explorer (base → destination rail).
+ * USD ACH/Wire: USDC only (no EURC→USD route).
+ * EUR SEPA: both USDC and EURC (EURC is default, matches on-ramp behavior).
+ * GBP FPS / SWIFT: USDC only — verify against Bridge Route Explorer if adding EURC support.
+ */
+export const PAYOUT_RAIL_SOURCE_CURRENCIES: Record<
+  PayoutCurrencyKey,
+  ('usdc' | 'eurc')[]
+> = {
+  usd: ['usdc'],
+  eur: ['usdc', 'eurc'],
+  gbp: ['usdc'],
+  swift: ['usdc'],
+};
+
 export const PayoutCurrencyOptionRow: FC<PayoutCurrencyOptionRowProps> = ({
   currency,
   selected,

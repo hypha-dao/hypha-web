@@ -117,20 +117,24 @@ function toBridgeExternalAccountBody(
     bank_name: input.bankName,
     account_name: input.accountName,
     account_owner_name: input.accountOwnerName,
-    account_owner_type: input.accountOwnerType,
     address: {
       ...restAddress,
       ...(subdivision ? { state: subdivision } : {}),
     },
   };
 
-  if (input.accountOwnerType === 'business' && input.businessName) {
-    body.business_name = input.businessName;
-  }
-
-  if (input.accountOwnerType === 'individual') {
-    if (input.firstName) body.first_name = input.firstName;
-    if (input.lastName) body.last_name = input.lastName;
+  // US ACH/Wire only accepts account_owner_name — no owner-type fields in the schema
+  if (rail.externalAccountType !== 'us') {
+    if (input.accountOwnerType) {
+      body.account_owner_type = input.accountOwnerType;
+    }
+    if (input.accountOwnerType === 'business' && input.businessName) {
+      body.business_name = input.businessName;
+    }
+    if (input.accountOwnerType === 'individual') {
+      if (input.firstName) body.first_name = input.firstName;
+      if (input.lastName) body.last_name = input.lastName;
+    }
   }
 
   if (rail.externalAccountType === 'us') {
@@ -152,7 +156,7 @@ function toBridgeExternalAccountBody(
     };
   } else if (rail.externalAccountType === 'gb') {
     body.account = {
-      sort_code: input.sortCode,
+      sort_code: (input.sortCode ?? '').replace(/\D/g, ''),
       account_number: input.accountNumber,
     };
   } else if (rail.externalAccountType === 'swift') {

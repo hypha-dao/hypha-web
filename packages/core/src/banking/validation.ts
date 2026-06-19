@@ -170,7 +170,9 @@ export const schemaCreatePayoutAccount = z
     bankName: z.string().trim().min(1).max(256),
     accountName: z.string().trim().min(1).max(256),
     accountOwnerName: z.string().trim().min(1).max(256),
-    accountOwnerType: z.enum(['business', 'individual']),
+    accountOwnerType: z.enum(['business', 'individual']).optional(),
+    firstName: z.string().trim().max(256).optional(),
+    lastName: z.string().trim().max(256).optional(),
     businessName: z.string().trim().max(256).optional(),
     routingNumber: z.string().trim().optional(),
     accountNumber: z.string().trim().optional(),
@@ -222,28 +224,70 @@ export const schemaCreatePayoutAccount = z
           path: ['accountNumber'],
         });
       }
+      // Bridge enforces 3–35 chars on account_owner_name for ACH/Wire
+      const ownerName = data.accountOwnerName.trim();
+      if (ownerName.length < 3 || ownerName.length > 35) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'accountOwnerName must be 3–35 characters for US ACH/Wire accounts',
+          path: ['accountOwnerName'],
+        });
+      }
     }
 
-    if (rail.externalAccountType === 'iban' && !data.iban?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'iban is required for SEPA accounts',
-        path: ['iban'],
-      });
+    if (rail.externalAccountType === 'iban') {
+      if (!data.iban?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'iban is required for SEPA accounts',
+          path: ['iban'],
+        });
+      }
+      if (data.accountOwnerType === 'individual') {
+        if (!data.firstName?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'firstName is required for individual SEPA accounts',
+            path: ['firstName'],
+          });
+        }
+        if (!data.lastName?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'lastName is required for individual SEPA accounts',
+            path: ['lastName'],
+          });
+        }
+      }
     }
 
     if (rail.externalAccountType === 'gb') {
-      if (!data.sortCode?.trim()) {
+      const cleanSortCode = (data.sortCode ?? '').replace(/\D/g, '');
+      if (!cleanSortCode) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'sortCode is required for GBP accounts',
           path: ['sortCode'],
         });
+      } else if (!/^\d{6}$/.test(cleanSortCode)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'sortCode must be exactly 6 digits for GBP accounts',
+          path: ['sortCode'],
+        });
       }
-      if (!data.accountNumber?.trim()) {
+      const gbpAccountNumber = (data.accountNumber ?? '').trim();
+      if (!gbpAccountNumber) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'accountNumber is required for GBP accounts',
+          path: ['accountNumber'],
+        });
+      } else if (!/^\d{8}$/.test(gbpAccountNumber)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'accountNumber must be exactly 8 digits for GBP accounts',
           path: ['accountNumber'],
         });
       }
@@ -312,7 +356,12 @@ export const schemaCreatePayoutAccount = z
       }
     }
 
-    if (data.accountOwnerType === 'business' && !data.businessName?.trim()) {
+    // US ACH/Wire: no accountOwnerType — Bridge only uses account_owner_name
+    if (
+      rail.externalAccountType !== 'us' &&
+      data.accountOwnerType === 'business' &&
+      !data.businessName?.trim()
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'businessName is required for business accounts',

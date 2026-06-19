@@ -88,7 +88,7 @@ export type RegisterExternalAccountInput = {
   bankName: string;
   accountName: string;
   accountOwnerName: string;
-  accountOwnerType: 'business' | 'individual';
+  accountOwnerType?: 'business' | 'individual';
   firstName?: string;
   lastName?: string;
   businessName?: string;

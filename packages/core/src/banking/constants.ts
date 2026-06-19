@@ -272,6 +272,8 @@ export type BankPayoutRailConfig = {
   destinationCurrency: string;
   destinationPaymentRail: string;
   externalAccountType: string;
+  /** Bridge endorsement required for this payout rail (same as the corresponding deposit endorsement). */
+  endorsement: string;
 };
 
 export const BANK_PAYOUT_RAILS: Record<
@@ -283,30 +285,35 @@ export const BANK_PAYOUT_RAILS: Record<
     destinationCurrency: 'usd',
     destinationPaymentRail: 'ach',
     externalAccountType: 'us',
+    endorsement: 'base',
   },
   usd_wire: {
     railKey: 'usd_wire',
     destinationCurrency: 'usd',
     destinationPaymentRail: 'wire',
     externalAccountType: 'us',
+    endorsement: 'base',
   },
   eur_sepa: {
     railKey: 'eur_sepa',
     destinationCurrency: 'eur',
     destinationPaymentRail: 'sepa',
     externalAccountType: 'iban',
+    endorsement: 'sepa',
   },
   gbp: {
     railKey: 'gbp',
     destinationCurrency: 'gbp',
     destinationPaymentRail: 'faster_payments',
     externalAccountType: 'gb',
+    endorsement: 'faster_payments',
   },
   swift: {
     railKey: 'swift',
     destinationCurrency: 'usd',
     destinationPaymentRail: 'swift',
     externalAccountType: 'swift',
+    endorsement: 'swift',
   },
 };
 

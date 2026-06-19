@@ -87,10 +87,25 @@ export async function POST(
 
   const parsed = schemaCreatePayoutAccount.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Validation failed', details: parsed.error.format() },
-      { status: 400 },
+    console.error(
+      'banking/payout-accounts POST validation failed:',
+      JSON.stringify(parsed.error.format(), null, 2),
     );
+    return NextResponse.json({ error: 'Validation failed' }, { status: 400 });
+  }
+
+  const supportedRailsEnv =
+    process.env.NEXT_PUBLIC_BANKING_SUPPORTED_PAYOUT_RAILS?.trim();
+  if (supportedRailsEnv) {
+    const supportedRails = new Set(
+      supportedRailsEnv.split(',').map((s) => s.trim()).filter(Boolean),
+    );
+    if (!supportedRails.has(parsed.data.railKey)) {
+      return NextResponse.json(
+        { error: 'This payout rail is not currently enabled.' },
+        { status: 403 },
+      );
+    }
   }
 
   const authToken = extractBearerToken(request);

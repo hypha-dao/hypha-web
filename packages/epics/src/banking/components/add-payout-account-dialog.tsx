@@ -23,6 +23,7 @@ import {
 } from '../bank-currency-display';
 import { AddressFormFields } from './address-form-fields';
 import type {
+  BankCustomerPublicStatus,
   BankPayoutAccountPublic,
   CreatePayoutAccountInput,
 } from '../hooks/types';
@@ -34,14 +35,21 @@ import {
 } from './banking-dialog-layout';
 import { CurrencyFlagBadge } from './currency-flag-badge';
 import {
-  PAYOUT_CURRENCY_KEYS,
+  getEnabledPayoutCurrencyKeys,
+  PAYOUT_RAIL_SOURCE_CURRENCIES,
   PayoutCurrencyOptionRow,
   payoutCurrencyToRailKey,
   type PayoutCurrencyKey,
 } from './payout-currency-option-row';
+import {
+  getPayoutRailEndorsementStatus,
+  isBankRailSelectable,
+} from '../banking-ui';
 
 const ADD_PAYOUT_FORM_ID = 'add-payout-account-form';
 const REQUIRED_MSG = 'This field is required';
+
+const ENABLED_PAYOUT_CURRENCIES = getEnabledPayoutCurrencyKeys();
 
 function isValidIban(raw: string): boolean {
   const iban = raw.replace(/\s/g, '').toUpperCase();
@@ -64,6 +72,8 @@ type AddPayoutAccountDialogProps = {
   error: string | null;
   defaultAccountOwnerName?: string;
   defaultBusinessName?: string;
+  /** Customer status used to gate rails by Bridge endorsement — mirrors the deposit-side check. */
+  status?: BankCustomerPublicStatus | null;
   onSubmit: (
     input: CreatePayoutAccountInput,
   ) => Promise<BankPayoutAccountPublic>;
@@ -71,7 +81,8 @@ type AddPayoutAccountDialogProps = {
 };
 
 function defaultSourceCurrency(currency: PayoutCurrencyKey): 'usdc' | 'eurc' {
-  return currency === 'eur' ? 'eurc' : 'usdc';
+  const supported = PAYOUT_RAIL_SOURCE_CURRENCIES[currency];
+  return supported.includes('eurc') ? 'eurc' : 'usdc';
 }
 
 function PayoutSelectedCurrencyBadge({
@@ -171,6 +182,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   error,
   defaultAccountOwnerName = '',
   defaultBusinessName = '',
+  status,
   onSubmit,
   onSuccess,
 }) => {
@@ -181,8 +193,13 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     'currency' | 'form' | 'compliance' | 'review'
   >('currency');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const firstSelectableCurrency =
+    ENABLED_PAYOUT_CURRENCIES.find((c) =>
+      isBankRailSelectable(getPayoutRailEndorsementStatus(payoutCurrencyToRailKey(c), status)),
+    ) ?? ENABLED_PAYOUT_CURRENCIES[0] ?? 'usd';
+
   const [selectedCurrency, setSelectedCurrency] =
-    useState<PayoutCurrencyKey>('usd');
+    useState<PayoutCurrencyKey>(firstSelectableCurrency);
   const [sourceCurrency, setSourceCurrency] = useState<'usdc' | 'eurc'>('usdc');
   const [bankName, setBankName] = useState('');
   const [accountName, setAccountName] = useState('');
@@ -242,7 +259,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     if (open) return;
 
     setStep('currency');
-    setSelectedCurrency('usd');
+    setSelectedCurrency(firstSelectableCurrency);
     setSourceCurrency('usdc');
     setBankName('');
     setAccountName('');
@@ -322,7 +339,17 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     if (!accountName.trim()) errs.accountName = REQUIRED_MSG;
     if (!bankName.trim()) errs.bankName = REQUIRED_MSG;
 
-    if (accountOwnerType === 'individual') {
+    if (showUsFields) {
+      // USD ACH/Wire: only account_owner_name, 3–35 chars per Bridge constraint
+      if (!accountOwnerName.trim()) {
+        errs.accountOwnerName = REQUIRED_MSG;
+      } else if (
+        accountOwnerName.trim().length < 3 ||
+        accountOwnerName.trim().length > 35
+      ) {
+        errs.accountOwnerName = 'Must be 3–35 characters for US accounts';
+      }
+    } else if (accountOwnerType === 'individual') {
       if (!firstName.trim()) errs.firstName = REQUIRED_MSG;
       if (!lastName.trim()) errs.lastName = REQUIRED_MSG;
     } else {
@@ -335,8 +362,16 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
       if (!accountNumber.trim()) errs.accountNumber = REQUIRED_MSG;
     }
     if (showGbpFields) {
-      if (!sortCode.trim()) errs.sortCode = REQUIRED_MSG;
-      if (!accountNumber.trim()) errs.accountNumber = REQUIRED_MSG;
+      if (!sortCode.trim()) {
+        errs.sortCode = REQUIRED_MSG;
+      } else if (!/^\d{6}$/.test(sortCode)) {
+        errs.sortCode = 'Must be exactly 6 digits';
+      }
+      if (!accountNumber.trim()) {
+        errs.accountNumber = REQUIRED_MSG;
+      } else if (!/^\d{8}$/.test(accountNumber)) {
+        errs.accountNumber = 'Must be exactly 8 digits';
+      }
     }
     if (selectedCurrency === 'eur') {
       if (!iban.trim()) {
@@ -405,17 +440,22 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
         sourceCurrency,
         bankName: bankName.trim(),
         accountName: accountName.trim(),
-        accountOwnerName:
-          accountOwnerType === 'individual'
-            ? `${firstName.trim()} ${lastName.trim()}`.trim()
-            : accountOwnerName.trim(),
-        accountOwnerType: accountOwnerType,
+        accountOwnerName: showUsFields
+          ? accountOwnerName.trim()
+          : accountOwnerType === 'individual'
+          ? `${firstName.trim()} ${lastName.trim()}`.trim()
+          : accountOwnerName.trim(),
+        accountOwnerType: showUsFields ? undefined : accountOwnerType,
         firstName:
-          accountOwnerType === 'individual' ? firstName.trim() : undefined,
+          !showUsFields && accountOwnerType === 'individual'
+            ? firstName.trim()
+            : undefined,
         lastName:
-          accountOwnerType === 'individual' ? lastName.trim() : undefined,
+          !showUsFields && accountOwnerType === 'individual'
+            ? lastName.trim()
+            : undefined,
         businessName:
-          accountOwnerType === 'business'
+          !showUsFields && accountOwnerType === 'business'
             ? businessName.trim() || accountOwnerName.trim()
             : undefined,
         routingNumber: routingNumber.trim() || undefined,
@@ -499,16 +539,24 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   {t('currencyHint')}
                 </p>
                 <div className="flex flex-col gap-2">
-                  {PAYOUT_CURRENCY_KEYS.map((currency) => (
-                    <PayoutCurrencyOptionRow
-                      key={currency}
-                      currency={currency}
-                      selected={selectedCurrency === currency}
-                      disabled={isSubmitting}
-                      radioName={radioName}
-                      onSelect={() => handleCurrencySelect(currency)}
-                    />
-                  ))}
+                  {ENABLED_PAYOUT_CURRENCIES.map((currency) => {
+                    const railKey = payoutCurrencyToRailKey(currency);
+                    const endorsementStatus = getPayoutRailEndorsementStatus(
+                      railKey,
+                      status,
+                    );
+                    const railSelectable = isBankRailSelectable(endorsementStatus);
+                    return (
+                      <PayoutCurrencyOptionRow
+                        key={currency}
+                        currency={currency}
+                        selected={selectedCurrency === currency}
+                        disabled={isSubmitting || !railSelectable}
+                        radioName={radioName}
+                        onSelect={() => railSelectable && handleCurrencySelect(currency)}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
@@ -582,23 +630,25 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   role="radiogroup"
                   aria-label={t('sourceCurrencyLabel')}
                 >
-                  {(['usdc', 'eurc'] as const).map((token) => (
-                    <button
-                      key={token}
-                      type="button"
-                      disabled={isSubmitting}
-                      className={cn(
-                        'rounded-md border px-3 py-2 text-2 font-medium transition-colors',
-                        sourceCurrency === token
-                          ? 'border-accent-9 bg-accent-9 text-accent-contrast shadow-sm'
-                          : 'border-border bg-card text-foreground hover:bg-background-2/80',
-                        isSubmitting && 'cursor-not-allowed opacity-60',
-                      )}
-                      onClick={() => setSourceCurrency(token)}
-                    >
-                      {token.toUpperCase()}
-                    </button>
-                  ))}
+                  {PAYOUT_RAIL_SOURCE_CURRENCIES[selectedCurrency].map(
+                    (token) => (
+                      <button
+                        key={token}
+                        type="button"
+                        disabled={isSubmitting}
+                        className={cn(
+                          'rounded-md border px-3 py-2 text-2 font-medium transition-colors',
+                          sourceCurrency === token
+                            ? 'border-accent-9 bg-accent-9 text-accent-contrast shadow-sm'
+                            : 'border-border bg-card text-foreground hover:bg-background-2/80',
+                          isSubmitting && 'cursor-not-allowed opacity-60',
+                        )}
+                        onClick={() => setSourceCurrency(token)}
+                      >
+                        {token.toUpperCase()}
+                      </button>
+                    ),
+                  )}
                 </div>
               </FormSection>
 
@@ -701,10 +751,14 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         id="payout-sort-code"
                         value={sortCode}
                         onChange={(event) => {
-                          setSortCode(event.target.value);
+                          setSortCode(
+                            event.target.value.replace(/\D/g, '').slice(0, 6),
+                          );
                           clearFieldError('sortCode');
                         }}
                         placeholder={t('sortCodePlaceholder')}
+                        inputMode="numeric"
+                        maxLength={6}
                         disabled={isSubmitting}
                         aria-invalid={fieldErrors.sortCode ? true : undefined}
                         aria-describedby={
@@ -725,11 +779,14 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         id="payout-gbp-account"
                         value={accountNumber}
                         onChange={(event) => {
-                          setAccountNumber(event.target.value);
+                          setAccountNumber(
+                            event.target.value.replace(/\D/g, '').slice(0, 8),
+                          );
                           clearFieldError('accountNumber');
                         }}
-                        placeholder={t('accountNumberPlaceholder')}
+                        placeholder={t('gbpAccountNumberPlaceholder')}
                         inputMode="numeric"
+                        maxLength={8}
                         disabled={isSubmitting}
                         aria-invalid={
                           fieldErrors.accountNumber ? true : undefined
@@ -934,142 +991,184 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
 
               {/* Account holder */}
               <FormSection title={t('accountHolderSection')}>
-                <div
-                  className="flex gap-2"
-                  role="radiogroup"
-                  aria-label={t('ownerTypeLabel')}
-                >
-                  {(['business', 'individual'] as const).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      disabled={isSubmitting}
-                      className={cn(
-                        'rounded-md border px-3 py-2 text-2 font-medium transition-colors',
-                        accountOwnerType === type
-                          ? 'border-accent-9 bg-accent-9 text-accent-contrast shadow-sm'
-                          : 'border-border bg-card text-foreground hover:bg-background-2/80',
-                        isSubmitting && 'cursor-not-allowed opacity-60',
-                      )}
-                      onClick={() => {
-                        setAccountOwnerType(type);
-                        setFirstName('');
-                        setLastName('');
-                        setBusinessName('');
-                        clearFieldError('firstName');
-                        clearFieldError('lastName');
-                        clearFieldError('businessName');
+                {showUsFields ? (
+                  // USD ACH/Wire: Bridge only needs account_owner_name (3–35 chars)
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="payout-owner-name">
+                      {t('accountOwnerName')}
+                    </Label>
+                    <Input
+                      id="payout-owner-name"
+                      value={accountOwnerName}
+                      onChange={(event) => {
+                        setAccountOwnerName(event.target.value);
+                        clearFieldError('accountOwnerName');
                       }}
-                    >
-                      {type === 'business'
-                        ? t('ownerTypeBusiness')
-                        : t('ownerTypeIndividual')}
-                    </button>
-                  ))}
-                </div>
-                {accountOwnerType === 'individual' ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-first-name">
-                        {t('firstName')}
-                      </Label>
-                      <Input
-                        id="payout-first-name"
-                        value={firstName}
-                        onChange={(event) => {
-                          setFirstName(event.target.value);
-                          clearFieldError('firstName');
-                        }}
-                        disabled={isSubmitting}
-                        aria-invalid={fieldErrors.firstName ? true : undefined}
-                        aria-describedby={
-                          fieldErrors.firstName ? 'err-firstName' : undefined
-                        }
-                        className={cn(inputErrorClass('firstName'))}
-                      />
-                      <FieldError
-                        id="err-firstName"
-                        message={fieldErrors.firstName}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-last-name">{t('lastName')}</Label>
-                      <Input
-                        id="payout-last-name"
-                        value={lastName}
-                        onChange={(event) => {
-                          setLastName(event.target.value);
-                          clearFieldError('lastName');
-                        }}
-                        disabled={isSubmitting}
-                        aria-invalid={fieldErrors.lastName ? true : undefined}
-                        aria-describedby={
-                          fieldErrors.lastName ? 'err-lastName' : undefined
-                        }
-                        className={cn(inputErrorClass('lastName'))}
-                      />
-                      <FieldError
-                        id="err-lastName"
-                        message={fieldErrors.lastName}
-                      />
-                    </div>
+                      maxLength={35}
+                      disabled={isSubmitting}
+                      aria-invalid={
+                        fieldErrors.accountOwnerName ? true : undefined
+                      }
+                      aria-describedby={
+                        fieldErrors.accountOwnerName
+                          ? 'err-accountOwnerName'
+                          : undefined
+                      }
+                      className={cn(inputErrorClass('accountOwnerName'))}
+                    />
+                    <FieldError
+                      id="err-accountOwnerName"
+                      message={fieldErrors.accountOwnerName}
+                    />
                   </div>
                 ) : (
                   <>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-owner-name">
-                        {t('accountOwnerName')}
-                      </Label>
-                      <Input
-                        id="payout-owner-name"
-                        value={accountOwnerName}
-                        onChange={(event) => {
-                          setAccountOwnerName(event.target.value);
-                          clearFieldError('accountOwnerName');
-                        }}
-                        disabled={isSubmitting}
-                        aria-invalid={
-                          fieldErrors.accountOwnerName ? true : undefined
-                        }
-                        aria-describedby={
-                          fieldErrors.accountOwnerName
-                            ? 'err-accountOwnerName'
-                            : undefined
-                        }
-                        className={cn(inputErrorClass('accountOwnerName'))}
-                      />
-                      <FieldError
-                        id="err-accountOwnerName"
-                        message={fieldErrors.accountOwnerName}
-                      />
+                    <div
+                      className="flex gap-2"
+                      role="radiogroup"
+                      aria-label={t('ownerTypeLabel')}
+                    >
+                      {(['business', 'individual'] as const).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          disabled={isSubmitting}
+                          className={cn(
+                            'rounded-md border px-3 py-2 text-2 font-medium transition-colors',
+                            accountOwnerType === type
+                              ? 'border-accent-9 bg-accent-9 text-accent-contrast shadow-sm'
+                              : 'border-border bg-card text-foreground hover:bg-background-2/80',
+                            isSubmitting && 'cursor-not-allowed opacity-60',
+                          )}
+                          onClick={() => {
+                            setAccountOwnerType(type);
+                            setFirstName('');
+                            setLastName('');
+                            setBusinessName('');
+                            clearFieldError('firstName');
+                            clearFieldError('lastName');
+                            clearFieldError('businessName');
+                          }}
+                        >
+                          {type === 'business'
+                            ? t('ownerTypeBusiness')
+                            : t('ownerTypeIndividual')}
+                        </button>
+                      ))}
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-business-name">
-                        {t('businessName')}
-                      </Label>
-                      <Input
-                        id="payout-business-name"
-                        value={businessName}
-                        onChange={(event) => {
-                          setBusinessName(event.target.value);
-                          clearFieldError('businessName');
-                        }}
-                        disabled={isSubmitting}
-                        aria-invalid={
-                          fieldErrors.businessName ? true : undefined
-                        }
-                        aria-describedby={
-                          fieldErrors.businessName
-                            ? 'err-businessName'
-                            : undefined
-                        }
-                        className={cn(inputErrorClass('businessName'))}
-                      />
-                      <FieldError
-                        id="err-businessName"
-                        message={fieldErrors.businessName}
-                      />
-                    </div>
+                    {accountOwnerType === 'individual' ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="payout-first-name">
+                            {t('firstName')}
+                          </Label>
+                          <Input
+                            id="payout-first-name"
+                            value={firstName}
+                            onChange={(event) => {
+                              setFirstName(event.target.value);
+                              clearFieldError('firstName');
+                            }}
+                            disabled={isSubmitting}
+                            aria-invalid={
+                              fieldErrors.firstName ? true : undefined
+                            }
+                            aria-describedby={
+                              fieldErrors.firstName
+                                ? 'err-firstName'
+                                : undefined
+                            }
+                            className={cn(inputErrorClass('firstName'))}
+                          />
+                          <FieldError
+                            id="err-firstName"
+                            message={fieldErrors.firstName}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="payout-last-name">
+                            {t('lastName')}
+                          </Label>
+                          <Input
+                            id="payout-last-name"
+                            value={lastName}
+                            onChange={(event) => {
+                              setLastName(event.target.value);
+                              clearFieldError('lastName');
+                            }}
+                            disabled={isSubmitting}
+                            aria-invalid={
+                              fieldErrors.lastName ? true : undefined
+                            }
+                            aria-describedby={
+                              fieldErrors.lastName ? 'err-lastName' : undefined
+                            }
+                            className={cn(inputErrorClass('lastName'))}
+                          />
+                          <FieldError
+                            id="err-lastName"
+                            message={fieldErrors.lastName}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="payout-owner-name">
+                            {t('accountOwnerName')}
+                          </Label>
+                          <Input
+                            id="payout-owner-name"
+                            value={accountOwnerName}
+                            onChange={(event) => {
+                              setAccountOwnerName(event.target.value);
+                              clearFieldError('accountOwnerName');
+                            }}
+                            disabled={isSubmitting}
+                            aria-invalid={
+                              fieldErrors.accountOwnerName ? true : undefined
+                            }
+                            aria-describedby={
+                              fieldErrors.accountOwnerName
+                                ? 'err-accountOwnerName'
+                                : undefined
+                            }
+                            className={cn(inputErrorClass('accountOwnerName'))}
+                          />
+                          <FieldError
+                            id="err-accountOwnerName"
+                            message={fieldErrors.accountOwnerName}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="payout-business-name">
+                            {t('businessName')}
+                          </Label>
+                          <Input
+                            id="payout-business-name"
+                            value={businessName}
+                            onChange={(event) => {
+                              setBusinessName(event.target.value);
+                              clearFieldError('businessName');
+                            }}
+                            disabled={isSubmitting}
+                            aria-invalid={
+                              fieldErrors.businessName ? true : undefined
+                            }
+                            aria-describedby={
+                              fieldErrors.businessName
+                                ? 'err-businessName'
+                                : undefined
+                            }
+                            className={cn(inputErrorClass('businessName'))}
+                          />
+                          <FieldError
+                            id="err-businessName"
+                            message={fieldErrors.businessName}
+                          />
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </FormSection>
@@ -1128,12 +1227,12 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-1 text-muted-foreground">
-                    {accountOwnerType === 'business'
-                      ? t('businessName')
-                      : t('accountHolderSection')}
+                    {t('accountHolderSection')}
                   </span>
                   <span className="text-2 font-semibold text-foreground">
-                    {accountOwnerType === 'business'
+                    {showUsFields
+                      ? accountOwnerName.trim()
+                      : accountOwnerType === 'business'
                       ? businessName.trim() || accountOwnerName.trim()
                       : `${firstName.trim()} ${lastName.trim()}`.trim()}
                   </span>
@@ -1398,7 +1497,14 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               ) : null}
 
               <FormSection title={t('accountHolderSection')}>
-                {accountOwnerType === 'individual' ? (
+                {showUsFields ? (
+                  accountOwnerName ? (
+                    <ReviewRow
+                      label={t('accountOwnerName')}
+                      value={accountOwnerName}
+                    />
+                  ) : null
+                ) : accountOwnerType === 'individual' ? (
                   <>
                     {firstName ? (
                       <ReviewRow label={t('firstName')} value={firstName} />

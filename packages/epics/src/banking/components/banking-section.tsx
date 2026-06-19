@@ -407,6 +407,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
         error={createPayoutAccountError}
         defaultAccountOwnerName={fallbackLegalName}
         defaultBusinessName={fallbackLegalName}
+        status={status}
         onSubmit={async (input) => {
           clearCreatePayoutAccountError();
           const result = await createPayoutAccount(input);
