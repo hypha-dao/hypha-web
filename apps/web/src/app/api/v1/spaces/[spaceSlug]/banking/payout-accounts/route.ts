@@ -1,9 +1,8 @@
 import {
   BankOnboardingError,
-  createSpaceBankVirtualAccount,
-  getAddAccountRailOptions,
-  getSpaceBankVirtualAccounts,
-  schemaProvisionVirtualAccount,
+  createSpaceBankPayoutAccount,
+  getSpaceBankPayoutAccounts,
+  schemaCreatePayoutAccount,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
@@ -33,19 +32,17 @@ export async function GET(
       return authResult.response;
     }
 
-    if (searchParams.get('mode') === 'add-options') {
-      const options = await getAddAccountRailOptions(authResult.space, { db });
-      return NextResponse.json({ options });
-    }
-
-    const limit = Number.parseInt(searchParams.get('limit') ?? '25', 10);
+    const parsedLimit = Number.parseInt(searchParams.get('limit') ?? '25', 10);
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 100)
+      : 25;
     const startingAfter = searchParams.get('starting_after') ?? undefined;
 
-    const result = await getSpaceBankVirtualAccounts(
+    const result = await getSpaceBankPayoutAccounts(
       authResult.space,
       {
         spaceSlug,
-        limit: Number.isFinite(limit) ? limit : 25,
+        limit,
         startingAfter,
       },
       { db },
@@ -63,11 +60,11 @@ export async function GET(
     }
 
     console.error(
-      'banking/accounts GET failed:',
+      'banking/payout-accounts GET failed:',
       error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
-      { error: 'Failed to fetch bank accounts' },
+      { error: 'Failed to fetch payout accounts' },
       { status: 500 },
     );
   }
@@ -79,11 +76,6 @@ export async function POST(
 ) {
   const { spaceSlug } = await params;
 
-  const authResult = await authenticateBankCustomerRequest(request, spaceSlug);
-  if (!authResult.ok) {
-    return authResult.response;
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -91,44 +83,51 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const parsed = schemaProvisionVirtualAccount.safeParse(body);
+  const parsed = schemaCreatePayoutAccount.safeParse(body);
   if (!parsed.success) {
     console.error(
-      'banking/accounts POST validation failed:',
+      'banking/payout-accounts POST validation failed:',
       JSON.stringify(parsed.error.format(), null, 2),
     );
     return NextResponse.json({ error: 'Validation failed' }, { status: 400 });
   }
 
   const supportedRailsEnv =
-    process.env.NEXT_PUBLIC_BANKING_SUPPORTED_DEPOSIT_RAILS?.trim();
+    process.env.NEXT_PUBLIC_BANKING_SUPPORTED_PAYOUT_RAILS?.trim();
   if (supportedRailsEnv) {
-    const supportedCurrencies = new Set(
+    const supportedRails = new Set(
       supportedRailsEnv
         .split(',')
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
     );
-    if (!supportedCurrencies.has(parsed.data.currency.toLowerCase())) {
+    if (!supportedRails.has(parsed.data.railKey.toLowerCase())) {
       return NextResponse.json(
-        { error: 'This deposit rail is not currently enabled.' },
+        { error: 'This payout rail is not currently enabled.' },
         { status: 403 },
       );
     }
   }
 
-  const authToken = extractBearerToken(request);
-  if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    const result = await createSpaceBankVirtualAccount(
+    const authResult = await authenticateBankCustomerRequest(
+      request,
+      spaceSlug,
+    );
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
+    const authToken = extractBearerToken(request);
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const result = await createSpaceBankPayoutAccount(
       {
         spaceSlug,
         authToken,
-        currency: parsed.data.currency,
-        destinationCurrency: parsed.data.destinationCurrency,
+        ...parsed.data,
       },
       { db },
     );
@@ -145,11 +144,11 @@ export async function POST(
     }
 
     console.error(
-      'banking/accounts POST failed:',
+      'banking/payout-accounts POST failed:',
       error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
-      { error: 'Failed to create bank account' },
+      { error: 'Failed to create payout account' },
       { status: 500 },
     );
   }

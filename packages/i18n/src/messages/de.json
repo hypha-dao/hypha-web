@@ -696,6 +696,136 @@
         "signInHint": "Melden Sie sich an, um Bankkonten zu verwalten."
       }
     },
+    "payouts": {
+      "tabs": {
+        "deposits": "Einzahlungen",
+        "payouts": "Auszahlungen"
+      },
+      "section": {
+        "title": "Auszahlungskonten",
+        "description": "Registrieren Sie, wohin die Treasury nach einem genehmigten Vorschlag Fiat sendet. Jedes Konto erhält eine Liquidationsadresse für Finanzierungs- oder Ausgabenvorschläge."
+      },
+      "addCta": "Auszahlungskonto hinzufügen",
+      "loading": "Auszahlungskonten werden geladen…",
+      "emptyTitle": "Noch keine Auszahlungskonten",
+      "emptyDescription": "Registrieren Sie ein Bankkonto für Auszahlungen aus der Treasury. Treasury-USDC → Liquidationsadresse → Abstimmung → Fiat auf Ihrem Konto.",
+      "cardBankFallback": "Bankkonto",
+      "liquidationAddressLabel": "Liquidationsadresse",
+      "payoutAddressLabel": "Auszahlungsadresse",
+      "detail": {
+        "title": "Auszahlungskonto",
+        "titleFallback": "Auszahlungskonto",
+        "sourceToken": "Treasury-Token",
+        "close": "Schließen",
+        "openAriaLabel": "Kontodetails öffnen"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "pending": "Ausstehend"
+      },
+      "addDialog": {
+        "title": "Auszahlungskonto hinzufügen",
+        "stepOf": "Schritt {current} von {total}",
+        "step1Description": "Wählen Sie die Zielwährung für dieses Auszahlungskonto.",
+        "step2Description": "Geben Sie die Bankdaten des Zielkontos ein.",
+        "step3Description": "Geben Sie die Adresse des Begünstigten und die Überweisungsdetails ein.",
+        "step4Description": "Überprüfen und bestätigen Sie Ihre Auszahlungskontodaten.",
+        "formHasErrors": "Bitte korrigieren Sie die obigen Fehler, bevor Sie fortfahren.",
+        "reviewHint": "Überprüfen Sie die Angaben unten. Gehen Sie zurück, um Änderungen vorzunehmen.",
+        "confirm": "Senden",
+        "currencyLabel": "Zielwährung",
+        "currencyHint": "Währung, die dieses externe Konto erhält.",
+        "continue": "Weiter",
+        "back": "Zurück",
+        "cancel": "Abbrechen",
+        "sourceCurrencyLabel": "Treasury-Token",
+        "sourceCurrencySection": "Treasury-Token",
+        "sourceCurrencyHint": "Wählen Sie, welchen Token die Treasury an dieses Konto sendet.",
+        "bankAccountSection": "Bankkonto",
+        "accountHolderSection": "Kontoinhaber",
+        "addressSection": "Adresse des Begünstigten",
+        "bankName": "Bankname",
+        "bankNamePlaceholder": "z.B. Deutsche Bank, Sparkasse",
+        "accountName": "Bezeichnung",
+        "accountNamePlaceholder": "z.B. Betrieb USD",
+        "accountNameHint": "Interne Bezeichnung für Ihr Team — wird nicht an die Bank übermittelt.",
+        "ownerTypeLabel": "Kontotyp",
+        "ownerTypeBusiness": "Unternehmen",
+        "ownerTypeIndividual": "Privatperson",
+        "accountOwnerName": "Kontoinhaber",
+        "firstName": "Vorname",
+        "lastName": "Nachname",
+        "businessName": "Rechtlicher Firmenname",
+        "checkingOrSavings": "Kontotyp",
+        "checkingOrSavingsChecking": "Girokonto",
+        "checkingOrSavingsSavings": "Sparkonto",
+        "routingNumber": "Routing-Nummer",
+        "routingNumberPlaceholder": "021000021 (9 Stellen)",
+        "accountNumber": "Kontonummer",
+        "accountNumberPlaceholder": "1234567890",
+        "gbpAccountNumberPlaceholder": "12345678",
+        "sortCode": "Sortiercode (Sort code)",
+        "sortCodePlaceholder": "200000",
+        "iban": "IBAN",
+        "ibanPlaceholder": "DE89 3704 0044 0532 0130 00",
+        "bic": "BIC / SWIFT-Code",
+        "bicPlaceholder": "AAAADEBBXXX",
+        "street": "Straße",
+        "streetPlaceholder": "Musterstraße 1",
+        "street2": "Adresszeile 2",
+        "street2Placeholder": "Wohnung, Etage (optional)",
+        "city": "Stadt",
+        "subdivision": "Bundesland / Region",
+        "subdivisionUs": "Bundesstaat",
+        "subdivisionUsPlaceholder": "Bundesstaat auswählen…",
+        "postalCode": "Postleitzahl",
+        "country": "Land",
+        "countryPlaceholder": "Land auswählen…",
+        "fieldRequired": "Dieses Feld ist erforderlich",
+        "invalidIban": "Ungültige IBAN — bitte prüfen Sie die Nummer und versuchen Sie es erneut",
+        "submit": "Auszahlungskonto hinzufügen",
+        "submitting": "Wird erstellt…",
+        "success": {
+          "title": "Auszahlungskonto registriert",
+          "subtitle": "Das Konto ist aktiv. Kopieren Sie die Liquidationsadresse für Vorschläge.",
+          "liquidationAddressLabel": "Liquidationsadresse",
+          "howToTitle": "So führen Sie Auszahlungen durch",
+          "howToText": "Erstellen Sie einen Finanzierungs- oder Ausgabenvorschlag → fügen Sie diese Adresse als Empfänger ein → wählen Sie USDC oder EURC als Token → abstimmen und ausführen. Bridge konvertiert und überweist Fiat an die registrierte Bank.",
+          "done": "Fertig"
+        },
+        "swift": {
+          "code": "SWIFT (USD)",
+          "hint": "Internationale Überweisung via BIC/SWIFT",
+          "accountFormatLabel": "Kontoformat",
+          "accountFormatIban": "IBAN",
+          "accountFormatOther": "Andere Kontonummer",
+          "accountNumber": "Kontonummer",
+          "accountNumberPlaceholder": "12345678",
+          "bankAddressSection": "Bankadresse",
+          "complianceSection": "Überweisungsdetails",
+          "categoryLabel": "Empfängerbeziehung",
+          "categoryPlaceholder": "Beziehung auswählen…",
+          "categoryClient": "Kunde",
+          "categoryParentCompany": "Muttergesellschaft",
+          "categorySubsidiary": "Tochtergesellschaft",
+          "categorySupplier": "Lieferant",
+          "purposeLabel": "Verwendungszweck",
+          "purposeIntraGroup": "Konzerninterne Überweisung",
+          "purposeInvoice": "Rechnung für Waren und Dienstleistungen",
+          "businessDescription": "Geschäftsbeschreibung",
+          "businessDescriptionPlaceholder": "Beschreiben Sie, wofür diese Mittel verwendet werden",
+          "businessDescriptionHint": "Kurze Beschreibung der Geschäftsbeziehung und des Überweisungszwecks."
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Überweisung (Wire)",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT international"
+        }
+      }
+    },
     "openAccount": {
       "title": "Space-Konto eröffnen",
       "titleAddCurrency": "Bankkonto hinzufügen",
@@ -813,7 +943,7 @@
       "eur": {
         "code": "EUR",
         "name": "Euro",
-        "payoutMethod": "IBAN und SWIFT/BIC"
+        "payoutMethod": "IBAN (SEPA)"
       },
       "usd": {
         "code": "USD",
@@ -823,7 +953,7 @@
       "gbp": {
         "code": "GBP",
         "name": "Britisches Pfund",
-        "payoutMethod": "Sort Code und Kontonummer"
+        "payoutMethod": "Sortiercode (Sort code) und Kontonummer"
       },
       "mxn": {
         "code": "MXN",
@@ -956,7 +1086,7 @@
       "bicInternational": "BIC / SWIFT (für internationale Überweisungen)",
       "routingNumber": "Routing-Nummer",
       "accountNumber": "Kontonummer",
-      "sortCode": "Sort Code",
+      "sortCode": "Sortiercode (Sort code)",
       "bankName": "Bankname",
       "accountHolder": "Kontoinhaber",
       "bankNameAndAddress": "Bankname und -adresse",

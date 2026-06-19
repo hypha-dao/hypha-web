@@ -48,6 +48,8 @@ const mockProvider: BankKycProvider = {
   provider: 'bridge',
   provisionVirtualAccount: vi.fn(),
   createTransfer: vi.fn(),
+  registerExternalAccount: vi.fn(),
+  createLiquidationAddress: vi.fn(),
   createKycLink: vi.fn().mockResolvedValue({
     providerCustomerId: 'cust_1',
     providerKycLinkId: 'link_1',

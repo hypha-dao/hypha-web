@@ -14,5 +14,9 @@ export {
   getDefaultDestinationCurrency,
   getDestinationCurrenciesForSourceRail,
 } from './banking/bridge-destination-currencies';
-export { DEFAULT_BANK_PROVIDER } from './banking/constants';
+export {
+  DEFAULT_BANK_PROVIDER,
+  BANK_PAYOUT_RAILS,
+  BANK_VIRTUAL_ACCOUNT_CURRENCIES,
+} from './banking/constants';
 export type { BankProvider } from './banking/types';

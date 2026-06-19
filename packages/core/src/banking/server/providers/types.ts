@@ -74,4 +74,83 @@ export interface BankKycProvider {
     input: ProvisionVirtualAccountInput,
   ): Promise<ProvisionVirtualAccountResult>;
   createTransfer(input: CreateTransferInput): Promise<CreateTransferResult>;
+  registerExternalAccount(
+    input: RegisterExternalAccountInput,
+  ): Promise<RegisterExternalAccountResult>;
+  createLiquidationAddress(
+    input: CreateLiquidationAddressInput,
+  ): Promise<CreateLiquidationAddressResult>;
 }
+
+export type RegisterExternalAccountInput = {
+  customerId: string;
+  railKey: string;
+  bankName: string;
+  accountName: string;
+  accountOwnerName: string;
+  accountOwnerType?: 'business' | 'individual';
+  firstName?: string;
+  lastName?: string;
+  businessName?: string;
+  routingNumber?: string;
+  accountNumber?: string;
+  checkingOrSavings?: 'checking' | 'savings';
+  iban?: string;
+  bic?: string;
+  sortCode?: string;
+  destinationCurrency?: string;
+  // SWIFT-specific fields
+  swiftAccountFormat?: 'iban' | 'other';
+  swiftIbanCountry?: string;
+  swiftBankAddress?: {
+    street_line_1: string;
+    city: string;
+    postal_code?: string;
+    country: string;
+    state?: string;
+  };
+  swiftCategory?: string;
+  swiftPurposeOfFunds?: string[];
+  swiftBusinessDescription?: string;
+  address: {
+    street_line_1: string;
+    street_line_2?: string;
+    city: string;
+    subdivision?: string;
+    postal_code: string;
+    country: string;
+  };
+  idempotencyKey: string;
+};
+
+export type RegisterExternalAccountResult = {
+  providerExternalAccountId: string;
+  currency: string;
+  paymentRail: string;
+  active: boolean;
+  accountLast4: string | null;
+  checkingOrSavings: string | null;
+  accountName: string | null;
+  bankName: string | null;
+  accountOwnerName: string | null;
+};
+
+export type CreateLiquidationAddressInput = {
+  customerId: string;
+  externalAccountId: string;
+  sourceCurrency: string;
+  destinationPaymentRail: string;
+  destinationCurrency: string;
+  wireMessage?: string;
+  idempotencyKey: string;
+};
+
+export type CreateLiquidationAddressResult = {
+  providerLiquidationAddressId: string;
+  evmAddress: string;
+  sourceCurrency: string;
+  sourceChain: string;
+  destinationPaymentRail: string;
+  destinationCurrency: string;
+  state: string;
+};
