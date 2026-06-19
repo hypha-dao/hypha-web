@@ -5,10 +5,12 @@ import {
   consumeAuthReturnPath,
   isDhoSpaceContextPath,
   peekAuthReturnPath,
+  saveAuthReturnPath,
+} from './auth-return-path';
+import {
   resolvePostAuthRedirectPath,
   resolvePostAuthRedirectPathOrDefault,
-  saveAuthReturnPath,
-} from '@hypha-platform/authentication';
+} from './resolve-post-auth-redirect-path';
 
 describe('auth-return-path', () => {
   beforeEach(() => {
