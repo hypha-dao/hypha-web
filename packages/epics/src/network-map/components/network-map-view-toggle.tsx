@@ -1,6 +1,7 @@
 'use client';
 
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { LayoutList, Map } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -27,7 +28,7 @@ export function NetworkMapViewToggle({
     <Tabs
       value={value}
       onValueChange={(nextValue) => onChange(nextValue as NetworkMapView)}
-      className={className}
+      className={cn('w-full sm:w-auto', className)}
     >
       <TabsList
         className={segmentedListClass}

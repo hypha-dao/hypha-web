@@ -191,8 +191,11 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
-  const view: NetworkMapView =
-    enableNetworkMap && searchParams.get('view') !== 'list' ? 'map' : 'list';
+  const view: NetworkMapView = enableNetworkMap
+    ? searchParams.get('view') === 'list'
+      ? 'list'
+      : 'map'
+    : 'list';
 
   const setView = React.useCallback(
     (nextView: NetworkMapView) => {
@@ -200,7 +203,7 @@ export function ExploreSpaces({
       if (nextView === 'list') {
         params.set('view', 'list');
       } else {
-        params.delete('view');
+        params.set('view', 'map');
       }
       replace(`${pathname}?${params.toString()}`);
     },
@@ -208,7 +211,7 @@ export function ExploreSpaces({
   );
 
   const multiSelectVariants = cva(
-    'transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
+    'transition ease-in-out delay-150 duration-300 max-sm:hover:translate-y-0 max-sm:hover:scale-100 sm:hover:-translate-y-1 sm:hover:scale-110',
     {
       variants: {
         variant: {
@@ -269,7 +272,7 @@ export function ExploreSpaces({
           lang={lang}
           spaces={spaces}
           isAuthenticated={isAuthenticated}
-          className="h-9 shrink-0 px-2.5 text-xs sm:h-10 sm:px-4 sm:text-sm"
+          className="h-9 w-full shrink-0 px-2.5 text-xs sm:h-10 sm:w-auto sm:px-4 sm:text-sm"
         />
       </div>
     ),
@@ -277,13 +280,14 @@ export function ExploreSpaces({
   );
 
   const categoryFilters = (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible [&::-webkit-scrollbar]:hidden">
       {tags.map((tag) => {
         const isSelected = categoryGroups?.includes(tag.id) ?? false;
         return (
           <Badge
             key={tag.id}
             className={cn(
+              'shrink-0',
               multiSelectVariants({
                 variant: isSelected ? 'secondary' : 'default',
               }),
@@ -302,9 +306,9 @@ export function ExploreSpaces({
   );
 
   const searchActionsRow = (
-    <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-      <SpaceSearch value={query} className="w-full min-w-0 sm:flex-1" />
-      <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
+    <div className="flex w-full min-w-0 flex-col gap-3">
+      <SpaceSearch value={query} className="w-full min-w-0" />
+      <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
         {enableNetworkMap ? (
           <NetworkMapViewToggle
             value={view}
@@ -312,19 +316,24 @@ export function ExploreSpaces({
             className="shrink-0"
           />
         ) : null}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div
+          className={cn(
+            'flex w-full min-w-0 items-stretch gap-2',
+            enableNetworkMap && 'sm:ml-auto sm:w-auto',
+          )}
+        >
           <Combobox
             options={orderOptions}
             initialValue={order}
-            className="h-9 shrink-0 border-0 md:w-40"
+            className="h-9 min-w-0 flex-1 border-0 sm:w-40 sm:flex-none"
             onChange={setOrder}
             allowEmptyChoice={false}
           />
           <CreateSpaceButton
             lang={lang}
             isAuthenticated={isAuthenticated}
-            className="shrink-0"
-            buttonClassName="h-9 gap-1.5 px-2.5 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+            className="min-w-0 shrink-0"
+            buttonClassName="h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
           />
         </div>
       </div>
@@ -393,7 +402,7 @@ export function ExploreSpaces({
         color="secondary"
         weight="medium"
         align="center"
-        className="mb-8 flex flex-col"
+        className="mb-6 flex flex-col sm:mb-8"
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>

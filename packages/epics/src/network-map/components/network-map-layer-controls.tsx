@@ -51,7 +51,7 @@ export function NetworkMapLayerControls({
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 max-w-full flex-col gap-2 sm:inline-flex sm:w-fit sm:flex-row sm:flex-wrap sm:items-center',
+        'flex w-full min-w-0 max-w-full flex-col items-stretch gap-3 sm:inline-flex sm:w-fit sm:flex-row sm:flex-wrap sm:items-center sm:gap-2',
         className,
       )}
       role="toolbar"
@@ -62,8 +62,9 @@ export function NetworkMapLayerControls({
         onValueChange={(value) =>
           onProjectionModeChange(value as NetworkMapProjectionMode)
         }
+        className="w-full sm:w-auto"
       >
-        <TabsList className={cn(segmentedListClass, 'w-full sm:w-auto')}>
+        <TabsList className={segmentedListClass}>
           <TabsTrigger value="globe" className={segmentedTriggerClass}>
             <Globe className="size-3.5 shrink-0" aria-hidden />
             {t('globeView')}
@@ -75,13 +76,15 @@ export function NetworkMapLayerControls({
         </TabsList>
       </Tabs>
 
+      <Separator orientation="horizontal" className="bg-neutral-7 sm:hidden" />
+
       <Separator
         orientation="vertical"
         className="mx-0.5 hidden h-6 shrink-0 self-center bg-neutral-7 sm:block"
       />
 
       <div
-        className="flex w-full min-w-0 flex-wrap items-center gap-1 sm:w-auto"
+        className="flex w-full min-w-0 items-stretch gap-1 sm:w-auto sm:items-center"
         role="group"
         aria-label={t('layersLabel')}
       >
