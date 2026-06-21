@@ -4,6 +4,7 @@ import { SpaceOrder } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Combobox } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React from 'react';
@@ -70,24 +71,26 @@ export function MySpacesControls({
   );
 
   return (
-    <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
-      <SpaceSearch value={query} className="min-w-0 flex-1" />
+    <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex w-full min-w-0 items-center gap-2 sm:contents">
+        <SpaceSearch value={query} className="min-w-0 flex-1 sm:order-1" />
+        {showCreateButton ? (
+          <CreateSpaceButton
+            lang={lang}
+            isAuthenticated={isAuthenticated}
+            className="min-w-0 shrink-0 sm:ml-auto sm:order-3"
+            buttonClassName={spaceToolbarPrimaryButtonClassName}
+          />
+        ) : null}
+      </div>
       <Combobox
         options={orderOptions}
         initialValue={order}
         triggerVariant="ghost"
-        className={spaceToolbarSortComboboxClassName}
+        className={cn(spaceToolbarSortComboboxClassName, 'sm:order-2')}
         onChange={setOrder}
         allowEmptyChoice={false}
       />
-      {showCreateButton ? (
-        <CreateSpaceButton
-          lang={lang}
-          isAuthenticated={isAuthenticated}
-          className="min-w-0 shrink-0"
-          buttonClassName={spaceToolbarPrimaryButtonClassName}
-        />
-      ) : null}
     </div>
   );
 }
