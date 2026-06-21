@@ -9,7 +9,6 @@ import {
 import {
   filterSpaces,
   getDhoPathDefaultLanding,
-  CreateSpaceButton,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import React from 'react';
@@ -17,7 +16,7 @@ import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
-import { GlobeIcon } from '@radix-ui/react-icons';
+import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
 
@@ -37,6 +36,7 @@ export const MemberSpaces = ({
   personSlug,
 }: MemberSpacesProps) => {
   const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
   const { lang } = useParams();
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
     personAddress,
@@ -68,11 +68,17 @@ export const MemberSpaces = ({
                   {tCommon('exploreSpaces')}
                 </Button>
               </Link>
-              <CreateSpaceButton
-                lang={lang as Locale}
-                isAuthenticated={isAuthenticated}
-                buttonClassName="gap-2"
-              />
+              <Link
+                className={!isAuthenticated ? 'cursor-not-allowed' : ''}
+                title={!isAuthenticated ? tCommon('signIn') : ''}
+                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
+                scroll={false}
+              >
+                <Button disabled={!isAuthenticated} className="gap-2">
+                  <PlusIcon />
+                  {tSpaces('createSpace')}
+                </Button>
+              </Link>
             </div>
           </div>
         </Empty>

@@ -49,7 +49,6 @@ export type ButtonProfileProps = {
   notificationCentrePath?: string;
   navItems: ButtonNavItemProps[];
   person?: Person;
-  isPersonLoading?: boolean;
   resolvedTheme?: string;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
@@ -65,7 +64,6 @@ const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 export const ButtonProfile = ({
   person,
-  isPersonLoading = false,
   isConnected,
   address,
   onLogin,
@@ -117,8 +115,6 @@ export const ButtonProfile = ({
   );
 
   const displayName = [person?.name, person?.surname].filter(Boolean).join(' ');
-  const avatarDisplayName =
-    displayName.trim() || person?.nickname || person?.email || undefined;
   const primaryLine = displayName.trim() || person?.nickname || t('myProfile');
   const isCompactPanels = useCompactPanelsMode();
   const isMobile = useIsMobile();
@@ -172,8 +168,7 @@ export const ButtonProfile = ({
                 <PersonAvatar
                   size="toolbar"
                   avatarSrc={person?.avatarUrl}
-                  userName={avatarDisplayName}
-                  isLoading={isPersonLoading}
+                  userName={person?.nickname}
                   shape="rounded"
                   className="h-full w-full rounded-md ring-0"
                 />
@@ -194,7 +189,7 @@ export const ButtonProfile = ({
                   <PersonAvatar
                     size="md"
                     avatarSrc={person?.avatarUrl}
-                    userName={avatarDisplayName}
+                    userName={person?.nickname}
                     shape="rounded"
                     className="ring-1 ring-border/60"
                   />
@@ -379,8 +374,7 @@ export const ButtonProfile = ({
             <PersonAvatar
               size="toolbar"
               avatarSrc={person?.avatarUrl}
-              userName={avatarDisplayName}
-              isLoading={isPersonLoading}
+              userName={person?.nickname}
               shape="rounded"
               className="h-full w-full rounded-md ring-0"
             />
@@ -399,7 +393,7 @@ export const ButtonProfile = ({
                   <PersonAvatar
                     size="md"
                     avatarSrc={person?.avatarUrl}
-                    userName={avatarDisplayName}
+                    userName={person?.nickname}
                     shape="rounded"
                     className="ring-1 ring-border/60"
                   />
@@ -596,8 +590,7 @@ export const ButtonProfile = ({
             >
               <PersonAvatar
                 avatarSrc={person?.avatarUrl}
-                userName={avatarDisplayName}
-                isLoading={isPersonLoading}
+                userName={person?.nickname}
                 size="lg"
                 shape="rounded"
               />
@@ -713,8 +706,7 @@ export const ButtonProfile = ({
                   <PersonAvatar
                     size="toolbar"
                     avatarSrc={person?.avatarUrl}
-                    userName={avatarDisplayName}
-                    isLoading={isPersonLoading}
+                    userName={person?.nickname}
                     shape="rounded"
                     className="h-full w-full rounded-md ring-0"
                   />
@@ -735,7 +727,7 @@ export const ButtonProfile = ({
                     <PersonAvatar
                       size="md"
                       avatarSrc={person?.avatarUrl}
-                      userName={avatarDisplayName}
+                      userName={person?.nickname}
                       shape="rounded"
                       className="ring-1 ring-border/60"
                     />
