@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
+import { buildNetworkAddLocationConfigurationPath } from '../lib/add-location-return';
 
 function filterMemberSpaces(
   spaces: Space[],
@@ -86,7 +87,7 @@ export function NetworkAddLocationButton({
       return;
     }
     setOpen(false);
-    router.push(`/${lang}/dho/${selectedSlug}/agreements/space-configuration`);
+    router.push(buildNetworkAddLocationConfigurationPath(lang, selectedSlug));
   }, [lang, router, selectedSlug]);
 
   React.useEffect(() => {

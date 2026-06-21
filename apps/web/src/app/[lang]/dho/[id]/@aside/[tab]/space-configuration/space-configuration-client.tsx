@@ -11,8 +11,10 @@ import {
   SchemaCreateSpaceForm,
   ProposalOverlayShell,
   SpaceForm,
+  getNetworkMapReturnPath,
+  isNetworkAddLocationReturn,
 } from '@hypha-platform/epics';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui';
 import { Button } from '@hypha-platform/ui';
@@ -46,12 +48,21 @@ export function SpaceConfigurationClient({
     reset,
   } = useUpdateSpaceOrchestrator({ authToken: jwt });
   const [newSpaceSlug, setNewSpaceSlug] = React.useState(spaceSlug);
+  const searchParams = useSearchParams();
+  const returnToNetworkMap = React.useMemo(
+    () => isNetworkAddLocationReturn(searchParams),
+    [searchParams],
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isPending && newSpaceSlug) {
+      if (returnToNetworkMap) {
+        router.push(getNetworkMapReturnPath(lang as Locale));
+        return;
+      }
       router.push(getDhoPathAgreements(lang as Locale, newSpaceSlug));
     }
-  }, [progress, isPending, newSpaceSlug, lang, router]);
+  }, [progress, isPending, newSpaceSlug, lang, router, returnToNetworkMap]);
 
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
