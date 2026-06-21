@@ -27,7 +27,7 @@ export function CreateSpaceButton({
   const tSpaces = useTranslations('Spaces');
 
   const button = (
-    <Button disabled={!isAuthenticated} className={buttonClassName}>
+    <Button disabled={!isAuthenticated} size="sm" className={buttonClassName}>
       <PlusIcon />
       {tSpaces('createSpace')}
     </Button>

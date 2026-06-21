@@ -66,14 +66,14 @@ export function MySpacesControls({
   );
 
   const createSpaceButtonClassName =
-    'h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm';
+    'h-8 min-h-8 gap-1 px-2 text-xs whitespace-nowrap sm:h-10 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm';
 
   const sortControl = (
     <Combobox
       options={orderOptions}
       initialValue={order}
       triggerVariant="ghost"
-      className="h-9 w-fit shrink-0 justify-end px-1 font-normal md:w-auto"
+      className="h-9 w-fit shrink-0 justify-end px-1 font-normal md:w-fit"
       onChange={setOrder}
       allowEmptyChoice={false}
     />

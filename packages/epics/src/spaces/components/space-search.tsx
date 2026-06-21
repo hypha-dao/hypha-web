@@ -49,7 +49,7 @@ export const SpaceSearch = ({
   return (
     <div className={cn('flex min-w-0 flex-col gap-2', className)}>
       {suffix ? (
-        <div className="flex min-h-10 w-full min-w-0 items-center rounded border border-input bg-neutral-1 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+        <div className="flex min-h-8 w-full min-w-0 items-center rounded border border-input bg-neutral-1 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:min-h-10">
           <div className="pointer-events-none flex shrink-0 items-center pl-3 text-accent-9">
             <SearchIcon size="16px" />
           </div>

@@ -287,13 +287,13 @@ export function ExploreSpaces({
 
   const renderMapToolbar = React.useCallback(
     (layerControls: React.ReactNode) => (
-      <div className="mb-4 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="mb-4 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         <div className="min-w-0 w-full sm:flex-1">{layerControls}</div>
         <NetworkAddLocationButton
           lang={lang}
           spaces={spaces}
           isAuthenticated={isAuthenticated}
-          className="h-9 w-full shrink-0 px-2.5 text-xs sm:h-10 sm:w-auto sm:px-4 sm:text-sm"
+          className="h-8 w-fit shrink-0 self-start px-2.5 text-xs sm:h-10 sm:self-auto sm:px-4 sm:text-sm"
         />
       </div>
     ),
@@ -301,7 +301,7 @@ export function ExploreSpaces({
   );
 
   const categoryFilters = (
-    <div className="mx-auto flex w-full max-w-xl flex-wrap justify-center gap-2">
+    <div className="mx-auto grid w-full max-w-xl grid-cols-2 justify-items-center gap-2 sm:max-w-2xl sm:grid-cols-3 md:max-w-5xl md:grid-cols-5 md:gap-x-3 md:gap-y-2">
       {tags.map((tag) => {
         const isSelected = categoryGroups?.includes(tag.id) ?? false;
         return (
@@ -328,8 +328,11 @@ export function ExploreSpaces({
 
   const showSortControl = !enableNetworkMap || view === 'list';
 
+  const sortComboboxClassName =
+    'h-9 w-fit shrink-0 justify-start px-0 font-normal md:w-fit';
+
   const createSpaceButtonClassName =
-    'h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm';
+    'h-8 min-h-8 gap-1 px-2 text-xs whitespace-nowrap sm:h-10 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm';
 
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-col gap-3">
@@ -352,7 +355,7 @@ export function ExploreSpaces({
               options={orderOptions}
               initialValue={order}
               triggerVariant="ghost"
-              className="h-9 w-fit justify-start px-0 font-normal sm:order-2"
+              className={cn(sortComboboxClassName, 'sm:order-2')}
               onChange={setOrder}
               allowEmptyChoice={false}
             />
@@ -361,7 +364,7 @@ export function ExploreSpaces({
             value={view}
             onChange={setView}
             className={cn(
-              'w-full shrink-0 sm:w-auto',
+              'w-fit max-w-full shrink-0',
               showSortControl ? 'sm:order-3' : 'sm:order-2',
             )}
           />
@@ -374,7 +377,7 @@ export function ExploreSpaces({
               options={orderOptions}
               initialValue={order}
               triggerVariant="ghost"
-              className="h-9 w-fit justify-start px-0 font-normal"
+              className={sortComboboxClassName}
               onChange={setOrder}
               allowEmptyChoice={false}
             />

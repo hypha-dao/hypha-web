@@ -28,7 +28,7 @@ export function NetworkMapViewToggle({
     <Tabs
       value={value}
       onValueChange={(nextValue) => onChange(nextValue as NetworkMapView)}
-      className={cn('w-full sm:w-auto', className)}
+      className={cn('w-fit max-w-full', className)}
     >
       <TabsList
         className={segmentedListClass}
