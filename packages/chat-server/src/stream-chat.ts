@@ -1201,6 +1201,10 @@ export async function createChatStreamResult(
           normalizedConversationContext.setupPhase === 'execute'
             ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) and then wallet signing.'
             : ''
+        }${
+          normalizedConversationContext.discoveryMode === 'voice_interview'
+            ? '\n- Voice interview mode is active: speak like a warm human advisor—reflect what you heard, show empathy and enthusiasm, ask one question at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally.'
+            : ''
         }`
       : effectiveSystemPrompt;
 

@@ -86,6 +86,20 @@ export {
   type OnboardingEntryMethod,
 } from './onboarding-entry-method-ui';
 export {
+  isOnboardingDiscoveryMode,
+  parseOnboardingDiscoveryMode,
+  type OnboardingDiscoveryMode,
+} from './onboarding-discovery-mode';
+export {
+  speakOnboardingText,
+  stopOnboardingSpeech,
+  stripMarkdownForSpeech,
+} from './onboarding-voice-speech';
+export {
+  useOnboardingVoiceInterview,
+  type VoiceInterviewPhase,
+} from './use-onboarding-voice-interview';
+export {
   ONBOARDING_MOBILIZED_SCOPE,
   recordMobilizedAiAgentsForOnboarding,
 } from './ai-agent-competencies';

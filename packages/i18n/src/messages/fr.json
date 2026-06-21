@@ -2191,7 +2191,21 @@
     "onboardingEntryMethodTokenNote": "L'adhésion par token nécessite de créer un token de membership — nous vous guiderons après la création de l'espace.",
     "onboardingEntryMethodSetOpen": "Méthode d'entrée : Accès ouvert",
     "onboardingEntryMethodSetInvite": "Méthode d'entrée : Invitation / demande d'adhésion",
-    "onboardingEntryMethodSetToken": "Méthode d'entrée : Adhésion par token"
+    "onboardingEntryMethodSetToken": "Méthode d'entrée : Adhésion par token",
+    "onboardingDiscoveryModeLabel": "Mode de découverte",
+    "onboardingDiscoveryModeChat": "Chat",
+    "onboardingDiscoveryModeVoice": "Entretien vocal",
+    "onboardingVoiceInterviewTitle": "Parlons-en",
+    "onboardingVoiceInterviewHint": "Parlez naturellement — j'écoute, je reformule ce que j'entends et je pose des questions de suivi. Passez au chat à tout moment.",
+    "onboardingVoiceStatusReady": "Appuyez sur le micro quand vous êtes prêt",
+    "onboardingVoiceStatusListening": "J'écoute…",
+    "onboardingVoiceStatusThinking": "Je réfléchis…",
+    "onboardingVoiceStatusSpeaking": "Je parle…",
+    "onboardingVoiceStartListening": "Commencer à parler",
+    "onboardingVoiceFinishTurn": "Terminer le tour",
+    "onboardingVoiceStopSpeaking": "Arrêter",
+    "onboardingVoiceUnsupported": "La voix n'est pas prise en charge dans ce navigateur — essayez le chat ou un autre navigateur.",
+    "onboardingVoiceError": "Entrée vocale en échec — réessayez ou passez au chat."
   },
   "HumanChatPanel": {
     "title": "Chat",

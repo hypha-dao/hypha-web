@@ -13,4 +13,6 @@ export { OnboardingActivationModeCard } from './onboarding-activation-mode-card'
 export { OnboardingSetupJourneyCard } from './onboarding-setup-journey-card';
 export { OnboardingTransparencyMatrixCard } from './onboarding-transparency-matrix-card';
 export { OnboardingEntryMethodCard } from './onboarding-entry-method-card';
+export { OnboardingDiscoveryModeToggle } from './onboarding-discovery-mode-toggle';
+export { OnboardingVoiceInterviewBar } from './onboarding-voice-interview-bar';
 export * from './mock-data';

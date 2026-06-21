@@ -2717,7 +2717,21 @@
     "onboardingEntryMethodTokenNote": "Token-based membership requires creating a membership token — we will guide you through that setup after your space is created.",
     "onboardingEntryMethodSetOpen": "Entry method: Open access",
     "onboardingEntryMethodSetInvite": "Entry method: Invite / request to join",
-    "onboardingEntryMethodSetToken": "Entry method: Token-based membership"
+    "onboardingEntryMethodSetToken": "Entry method: Token-based membership",
+    "onboardingDiscoveryModeLabel": "Discovery mode",
+    "onboardingDiscoveryModeChat": "Chat",
+    "onboardingDiscoveryModeVoice": "Voice interview",
+    "onboardingVoiceInterviewTitle": "Let's talk it through",
+    "onboardingVoiceInterviewHint": "Speak naturally — I'll listen, reflect back what I hear, and ask thoughtful follow-ups. Switch to chat anytime.",
+    "onboardingVoiceStatusReady": "Tap the mic when you're ready",
+    "onboardingVoiceStatusListening": "Listening…",
+    "onboardingVoiceStatusThinking": "Thinking…",
+    "onboardingVoiceStatusSpeaking": "Speaking…",
+    "onboardingVoiceStartListening": "Start speaking",
+    "onboardingVoiceFinishTurn": "Finish turn",
+    "onboardingVoiceStopSpeaking": "Stop",
+    "onboardingVoiceUnsupported": "Voice isn't supported in this browser — try chat mode or a different browser.",
+    "onboardingVoiceError": "Voice input hit a snag — try again or switch to chat."
   },
   "HumanChatPanel": {
     "title": "Chat",

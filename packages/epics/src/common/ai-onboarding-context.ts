@@ -1,5 +1,9 @@
 'use client';
 
+import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
+import { parseOnboardingDiscoveryMode } from './onboarding-discovery-mode';
+
+export type { OnboardingDiscoveryMode };
 export const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
 export const AI_PANEL_SETUP_SOURCE = 'ai_panel' as const;
 export const ONBOARDING_HERO_SOURCE = 'onboarding_hero' as const;
@@ -40,6 +44,8 @@ export type OnboardingConversationContext = {
   entryMethod?: OnboardingEntryMethod;
   /** Root space slug after ecosystem onboarding handoff to the left AI panel. */
   ecosystemRootSlug?: string;
+  /** Chat text vs voice interview during discovery. */
+  discoveryMode?: OnboardingDiscoveryMode;
   setupPlan?: {
     spaceIntent?: {
       title?: string;
@@ -295,6 +301,7 @@ export function readOnboardingConversationContext():
         typeof parsed.ecosystemRootSlug === 'string'
           ? parsed.ecosystemRootSlug
           : undefined,
+      discoveryMode: parseOnboardingDiscoveryMode(parsed.discoveryMode),
       lastUserText:
         typeof parsed.lastUserText === 'string'
           ? parsed.lastUserText

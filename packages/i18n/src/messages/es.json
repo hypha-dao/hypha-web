@@ -2191,7 +2191,21 @@
     "onboardingEntryMethodTokenNote": "La membresía basada en token requiere crear un token de membresía — te guiaremos en ese proceso después de crear el espacio.",
     "onboardingEntryMethodSetOpen": "Método de entrada: Acceso abierto",
     "onboardingEntryMethodSetInvite": "Método de entrada: Invitación / solicitud para unirse",
-    "onboardingEntryMethodSetToken": "Método de entrada: Membresía basada en token"
+    "onboardingEntryMethodSetToken": "Método de entrada: Membresía basada en token",
+    "onboardingDiscoveryModeLabel": "Modo de descubrimiento",
+    "onboardingDiscoveryModeChat": "Chat",
+    "onboardingDiscoveryModeVoice": "Entrevista por voz",
+    "onboardingVoiceInterviewTitle": "Hablemos",
+    "onboardingVoiceInterviewHint": "Habla con naturalidad — escucho, reflejo lo que entiendo y hago preguntas de seguimiento. Cambia al chat cuando quieras.",
+    "onboardingVoiceStatusReady": "Toca el micrófono cuando estés listo",
+    "onboardingVoiceStatusListening": "Escuchando…",
+    "onboardingVoiceStatusThinking": "Pensando…",
+    "onboardingVoiceStatusSpeaking": "Hablando…",
+    "onboardingVoiceStartListening": "Empezar a hablar",
+    "onboardingVoiceFinishTurn": "Terminar turno",
+    "onboardingVoiceStopSpeaking": "Detener",
+    "onboardingVoiceUnsupported": "La voz no es compatible con este navegador — prueba el chat u otro navegador.",
+    "onboardingVoiceError": "Error de entrada de voz — inténtalo de nuevo o cambia al chat."
   },
   "HumanChatPanel": {
     "title": "Chat",

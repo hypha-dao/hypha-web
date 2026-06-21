@@ -10,6 +10,8 @@ import { useConfig } from 'wagmi';
 import {
   AiPanelChatBar,
   AiPanelMessages,
+  OnboardingDiscoveryModeToggle,
+  OnboardingVoiceInterviewBar,
   type AiPanelDraftAttachment,
   applyOnboardingContextForUserText,
   applyOnboardingLocationToContext,
@@ -32,6 +34,8 @@ import {
   dispatchAiOnboardingSeed,
   AI_PANEL_SETUP_SOURCE,
   recordMobilizedAiAgentsForOnboarding,
+  useOnboardingVoiceInterview,
+  type OnboardingDiscoveryMode,
   type OnboardingEntryMethod,
   type OnboardingActivationMethod,
   type OnboardingSetupJourney,
@@ -81,6 +85,18 @@ async function fileToPart(
     mediaType: file.type || 'application/octet-stream',
     url: dataUrl,
   };
+}
+
+function extractAssistantText(message: ChatMessage | undefined): string {
+  if (!message || message.role !== 'assistant') return '';
+  const parts = message.parts ?? [];
+  return parts
+    .filter(
+      (part): part is { type: 'text'; text: string } => part.type === 'text',
+    )
+    .map((part) => part.text)
+    .join('\n')
+    .trim();
 }
 
 export function OnboardingAiFullPage({
@@ -792,6 +808,70 @@ export function OnboardingAiFullPage({
     [t],
   );
   const hasUserMessage = messages.some((message) => message.role === 'user');
+  const discoveryMode: OnboardingDiscoveryMode =
+    onboardingContext.discoveryMode ?? 'chat';
+  const isVoiceInterview = discoveryMode === 'voice_interview';
+
+  const lastAssistantText = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const text = extractAssistantText(messages[i] as ChatMessage);
+      if (text) return text;
+    }
+    return '';
+  }, [messages]);
+
+  const handleVoiceTranscriptSend = useCallback(
+    async (text: string) => {
+      const normalized = text.trim();
+      if (!normalized || isStreaming) return;
+      setInput('');
+      setDraftAttachments([]);
+      try {
+        clearError();
+        const nextContext = applyOnboardingContextForUserTextLocal(normalized);
+        recordMobilizedAiAgentsForOnboarding(normalized);
+        setOnboardingContext(nextContext);
+        const options = await buildMessageOptions(nextContext);
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text: normalized }] },
+          options,
+        );
+      } catch (sendError) {
+        console.error('[OnboardingAiFullPage] voice send failed:', sendError);
+      }
+    },
+    [
+      applyOnboardingContextForUserTextLocal,
+      buildMessageOptions,
+      clearError,
+      isStreaming,
+      sendMessage,
+    ],
+  );
+
+  const voiceInterview = useOnboardingVoiceInterview({
+    enabled: isVoiceInterview,
+    isStreaming,
+    lastAssistantText,
+    locale: onboardingContext.locale,
+    onSendTranscript: handleVoiceTranscriptSend,
+  });
+
+  const handleDiscoveryModeChange = useCallback(
+    (mode: OnboardingDiscoveryMode) => {
+      if (mode === discoveryMode) return;
+      if (mode === 'chat') {
+        voiceInterview.stopListening();
+        voiceInterview.stopSpeaking();
+      }
+      setOnboardingContext((prev) => {
+        const next = { ...prev, discoveryMode: mode };
+        saveOnboardingConversationContext(next);
+        return next;
+      });
+    },
+    [discoveryMode, voiceInterview],
+  );
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 md:px-8 lg:px-12">
@@ -810,12 +890,19 @@ export function OnboardingAiFullPage({
                 {t('aiHero.title')}
               </h2>
             </div>
-            <Button
-              onClick={onExit}
-              className="h-10 rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-4 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
-            >
-              {tCommon('back')}
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              <OnboardingDiscoveryModeToggle
+                mode={discoveryMode}
+                disabled={isStreaming}
+                onChange={handleDiscoveryModeChange}
+              />
+              <Button
+                onClick={onExit}
+                className="h-10 rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-4 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
+              >
+                {tCommon('back')}
+              </Button>
+            </div>
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/70">
             <AiPanelMessages
@@ -840,16 +927,27 @@ export function OnboardingAiFullPage({
                 handleOnboardingEntryMethodConfirm
               }
             />
-            <AiPanelChatBar
-              value={input}
-              onChange={setInput}
-              onSend={handleSend}
-              onStop={() => void stop()}
-              isStreaming={isStreaming}
-              draftAttachments={draftAttachments}
-              onDraftAttachmentsChange={setDraftAttachments}
-              placeholder={t('aiHero.placeholder')}
-            />
+            {isVoiceInterview ? (
+              <OnboardingVoiceInterviewBar
+                phase={voiceInterview.phase}
+                liveTranscript={voiceInterview.liveTranscript}
+                voiceError={voiceInterview.voiceError}
+                disabled={isStreaming}
+                onToggleListening={voiceInterview.toggleListening}
+                onStopSpeaking={voiceInterview.stopSpeaking}
+              />
+            ) : (
+              <AiPanelChatBar
+                value={input}
+                onChange={setInput}
+                onSend={handleSend}
+                onStop={() => void stop()}
+                isStreaming={isStreaming}
+                draftAttachments={draftAttachments}
+                onDraftAttachmentsChange={setDraftAttachments}
+                placeholder={t('aiHero.placeholder')}
+              />
+            )}
           </div>
           {error ? (
             <p className="mt-2 px-2 text-1 text-destructive">

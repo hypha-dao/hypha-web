@@ -2715,7 +2715,21 @@
     "onboardingEntryMethodTokenNote": "Token-basierte Mitgliedschaft erfordert ein Mitgliedschafts-Token — wir führen Sie nach der Space-Erstellung durch dieses Setup.",
     "onboardingEntryMethodSetOpen": "Beitrittsmethode: Offener Zugang",
     "onboardingEntryMethodSetInvite": "Beitrittsmethode: Einladung / Beitrittsanfrage",
-    "onboardingEntryMethodSetToken": "Beitrittsmethode: Token-basierte Mitgliedschaft"
+    "onboardingEntryMethodSetToken": "Beitrittsmethode: Token-basierte Mitgliedschaft",
+    "onboardingDiscoveryModeLabel": "Entdeckungsmodus",
+    "onboardingDiscoveryModeChat": "Chat",
+    "onboardingDiscoveryModeVoice": "Sprach-Interview",
+    "onboardingVoiceInterviewTitle": "Lassen Sie uns sprechen",
+    "onboardingVoiceInterviewHint": "Sprechen Sie natürlich — ich höre zu, spiegele zurück, was ich verstehe, und stelle durchdachte Folgefragen. Jederzeit zum Chat wechseln.",
+    "onboardingVoiceStatusReady": "Tippen Sie auf das Mikro, wenn Sie bereit sind",
+    "onboardingVoiceStatusListening": "Ich höre zu…",
+    "onboardingVoiceStatusThinking": "Einen Moment…",
+    "onboardingVoiceStatusSpeaking": "Ich spreche…",
+    "onboardingVoiceStartListening": "Sprechen beginnen",
+    "onboardingVoiceFinishTurn": "Beitrag beenden",
+    "onboardingVoiceStopSpeaking": "Stoppen",
+    "onboardingVoiceUnsupported": "Sprache wird in diesem Browser nicht unterstützt — Chat-Modus oder anderen Browser versuchen.",
+    "onboardingVoiceError": "Spracheingabe fehlgeschlagen — erneut versuchen oder zum Chat wechseln."
   },
   "HumanChatPanel": {
     "title": "Chat",

@@ -57,6 +57,8 @@ import {
   AiPanelMessages,
   AiPanelSuggestions,
   AiPanelChatBar,
+  OnboardingDiscoveryModeToggle,
+  OnboardingVoiceInterviewBar,
   type AiPanelDraftAttachment,
 } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
@@ -131,7 +133,23 @@ import {
   type OnboardingEntryMethod,
 } from './onboarding-entry-method-ui';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
+import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
+import { useOnboardingVoiceInterview } from './use-onboarding-voice-interview';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
+
+function extractAssistantTextFromMessage(
+  message: ChatUIMessage | undefined,
+): string {
+  if (!message || message.role !== 'assistant') return '';
+  const parts = message.parts ?? [];
+  return parts
+    .filter(
+      (part): part is { type: 'text'; text: string } => part.type === 'text',
+    )
+    .map((part) => part.text)
+    .join('\n')
+    .trim();
+}
 
 type ChatUIMessage = {
   id: string;
@@ -1865,6 +1883,84 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const enableNetworkMap = getClientEnableNetworkMap();
+  const isOnboardingSetup = isSpaceSetupContext(onboardingContext);
+  const discoveryMode: OnboardingDiscoveryMode =
+    onboardingContext?.discoveryMode ?? 'chat';
+  const isVoiceInterview =
+    isOnboardingSetup && discoveryMode === 'voice_interview';
+
+  const lastAssistantText = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const text = extractAssistantTextFromMessage(
+        messages[i] as ChatUIMessage,
+      );
+      if (text) return text;
+    }
+    return '';
+  }, [messages]);
+
+  const handleVoiceTranscriptSend = useCallback(
+    async (text: string) => {
+      if (blockSpaceAiForInteraction) return;
+      const normalized = text.trim();
+      if (!normalized || isStreaming) return;
+      setInput('');
+      setDraftAttachments([]);
+      try {
+        clearError();
+        const nextContext = resolveSetupContextForUserMessage(
+          normalized,
+          onboardingContext,
+          lang,
+        );
+        const options = await buildMessageOptions(nextContext);
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text: normalized }] },
+          options,
+        );
+        if (nextContext && nextContext !== onboardingContext) {
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
+      } catch (err) {
+        console.error('[AiLeftPanel] voice send failed:', err);
+      }
+    },
+    [
+      blockSpaceAiForInteraction,
+      buildMessageOptions,
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      sendMessage,
+    ],
+  );
+
+  const voiceInterview = useOnboardingVoiceInterview({
+    enabled: isVoiceInterview,
+    isStreaming,
+    lastAssistantText,
+    locale: lang,
+    onSendTranscript: handleVoiceTranscriptSend,
+  });
+
+  const handleDiscoveryModeChange = useCallback(
+    (mode: OnboardingDiscoveryMode) => {
+      if (!isOnboardingSetup || mode === discoveryMode) return;
+      if (mode === 'chat') {
+        voiceInterview.stopListening();
+        voiceInterview.stopSpeaking();
+      }
+      setOnboardingContext((prev) => {
+        const base = ensureSpaceSetupContext(prev, lang);
+        const next = { ...base, discoveryMode: mode };
+        saveOnboardingConversationContext(next);
+        return next;
+      });
+    },
+    [discoveryMode, isOnboardingSetup, lang, voiceInterview],
+  );
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
@@ -2168,6 +2264,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarContent>
       <SidebarFooter className="bg-background-2 p-0">
+        {isOnboardingSetup ? (
+          <div className="flex justify-center border-t border-border/60 px-3 py-2">
+            <OnboardingDiscoveryModeToggle
+              mode={discoveryMode}
+              disabled={blockSpaceAiForInteraction || isStreaming}
+              onChange={handleDiscoveryModeChange}
+            />
+          </div>
+        ) : null}
         {hasUserMessage && !blockSpaceAiForInteraction ? (
           <AiPanelSuggestions
             items={suggestionItems}
@@ -2175,16 +2280,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             variant="tags"
           />
         ) : null}
-        <AiPanelChatBar
-          value={input}
-          onChange={setInput}
-          onSend={handleSend}
-          draftAttachments={draftAttachments}
-          onDraftAttachmentsChange={setDraftAttachments}
-          onStop={handleStop}
-          isStreaming={isStreaming}
-          composerDisabled={blockSpaceAiForInteraction}
-        />
+        {isVoiceInterview ? (
+          <OnboardingVoiceInterviewBar
+            phase={voiceInterview.phase}
+            liveTranscript={voiceInterview.liveTranscript}
+            voiceError={voiceInterview.voiceError}
+            disabled={blockSpaceAiForInteraction || isStreaming}
+            onToggleListening={voiceInterview.toggleListening}
+            onStopSpeaking={voiceInterview.stopSpeaking}
+          />
+        ) : (
+          <AiPanelChatBar
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+            draftAttachments={draftAttachments}
+            onDraftAttachmentsChange={setDraftAttachments}
+            onStop={handleStop}
+            isStreaming={isStreaming}
+            composerDisabled={blockSpaceAiForInteraction}
+          />
+        )}
       </SidebarFooter>
     </>
   );
