@@ -3,10 +3,10 @@
 import type { SpaceLocationSource } from '@hypha-platform/core/client';
 
 import {
-  ONBOARDING_SETUP_MODE,
   type OnboardingConversationContext,
   type OnboardingSpaceLocation,
 } from './ai-onboarding-context';
+import { shouldShowOnboardingGuidancePicker } from './onboarding-guidance-picker-ui';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 function parseEnableNetworkMap(value: string | undefined): boolean {
@@ -24,12 +24,6 @@ type ChatUiMessage = {
   parts?: Array<{ type: string; [key: string]: unknown }>;
 };
 
-type OnboardingGuidanceOutput = {
-  ok?: boolean;
-  requires_location_picker?: boolean;
-  next_field?: string | null;
-};
-
 export function shouldShowOnboardingLocationPicker({
   messages,
   onboardingContext,
@@ -42,40 +36,17 @@ export function shouldShowOnboardingLocationPicker({
   enableNetworkMap: boolean;
 }): boolean {
   if (!enableNetworkMap) return false;
-  if (isStreaming) return false;
-  if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return false;
-  if (onboardingContext.spaceLocation?.skipped) return false;
-  if (
-    onboardingContext.spaceLocation?.latitude != null &&
-    onboardingContext.spaceLocation?.longitude != null
-  ) {
-    return false;
-  }
-
-  for (
-    let messageIndex = messages.length - 1;
-    messageIndex >= 0;
-    messageIndex -= 1
-  ) {
-    const message = messages[messageIndex];
-    if (!message || message.role !== 'assistant') continue;
-
-    for (const part of message.parts ?? []) {
-      if (part.type !== 'tool-onboarding_guidance') continue;
-      if (part.state !== 'output-available') continue;
-
-      const output = part.output as OnboardingGuidanceOutput | undefined;
-      if (!output?.ok) continue;
-      if (
-        output.requires_location_picker === true ||
-        output.next_field === 'space_location'
-      ) {
-        return true;
-      }
-    }
-  }
-
-  return false;
+  const locationAnswered =
+    onboardingContext?.spaceLocation?.skipped === true ||
+    (onboardingContext?.spaceLocation?.latitude != null &&
+      onboardingContext?.spaceLocation?.longitude != null);
+  return shouldShowOnboardingGuidancePicker({
+    messages,
+    isStreaming,
+    nextField: 'space_location',
+    requiresFlag: 'requires_location_picker',
+    alreadyAnswered: locationAnswered,
+  });
 }
 
 export type OnboardingLocationMessageLabels = {

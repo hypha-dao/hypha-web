@@ -25,16 +25,39 @@ export {
   AI_ONBOARDING_SEED_ACK_EVENT,
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
+  ONBOARDING_HERO_SOURCE,
+  AI_PANEL_SETUP_SOURCE,
   applyOnboardingContextForUserText,
   clearOnboardingConversationContext,
+  createAiPanelSetupContext,
   dispatchAiOnboardingSeed,
   dispatchAiOnboardingSeedAck,
+  ensureSpaceSetupContext,
   isPlainOnboardingConfirmationReply,
+  isSpaceSetupContext,
   readOnboardingConversationContext,
+  resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
+  shouldEnterSpaceSetupFromUserText,
   type OnboardingConversationContext,
   type OnboardingSpaceLocation,
+  type OnboardingActivationMethod,
+  type OnboardingSetupJourney,
+  type OnboardingTransparencyMatrix,
 } from './ai-onboarding-context';
+export {
+  applyOnboardingActivationToContext,
+  activationMethodToFlags,
+  formatOnboardingActivationSubmitMessage,
+  type OnboardingActivationMessageLabels,
+  shouldShowOnboardingActivationPicker,
+} from './onboarding-activation-ui';
+export {
+  applyOnboardingSetupJourneyToContext,
+  formatOnboardingSetupJourneySubmitMessage,
+  type OnboardingSetupJourneyMessageLabels,
+  shouldShowOnboardingSetupJourneyPicker,
+} from './onboarding-setup-journey-ui';
 export {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
@@ -44,7 +67,16 @@ export {
   shouldShowOnboardingLocationPicker,
   skippedOnboardingSpaceLocation,
 } from './onboarding-location-ui';
-export { onboardingLocationFromCreatePayload } from './onboarding-create-payload';
+export {
+  onboardingLocationFromCreatePayload,
+  onboardingTransparencyFromCreatePayload,
+} from './onboarding-create-payload';
+export {
+  applyOnboardingTransparencyToContext,
+  formatOnboardingTransparencySubmitMessage,
+  type OnboardingTransparencyMessageLabels,
+  shouldShowOnboardingTransparencyPicker,
+} from './onboarding-transparency-ui';
 export {
   PanelProviders,
   PanelWrapLayout,
