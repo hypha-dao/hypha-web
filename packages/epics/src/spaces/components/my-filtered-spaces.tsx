@@ -1,7 +1,12 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Address, Space, isSpaceArchived } from '@hypha-platform/core/client';
+import {
+  Address,
+  Space,
+  SpaceOrder,
+  isSpaceArchived,
+} from '@hypha-platform/core/client';
 import { SpaceCardList, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
@@ -25,13 +30,39 @@ export function filterSpaces(
   return userSpaces;
 }
 
+function sortSpacesByOrder(spaces: Space[], order?: SpaceOrder): Space[] {
+  const compareMembers = (a: Space, b: Space) => {
+    const aCount = a.memberAddresses?.length ?? a.memberCount ?? 0;
+    const bCount = b.memberAddresses?.length ?? b.memberCount ?? 0;
+    return bCount - aCount;
+  };
+  const compareAgreements = (a: Space, b: Space) =>
+    (b.documentCount ?? 0) - (a.documentCount ?? 0);
+  const compareRecent = (a: Space, b: Space) => b.id - a.id;
+
+  return [...spaces].sort((a, b) => {
+    switch (order) {
+      case 'mostmembers':
+        return compareMembers(a, b);
+      case 'mostagreements':
+        return compareAgreements(a, b);
+      case 'mostrecent':
+        return compareRecent(a, b);
+      default:
+        return compareMembers(a, b);
+    }
+  });
+}
+
 export function MyFilteredSpaces({
   lang,
   spaces,
+  order,
   showLoadMore = true,
 }: {
   lang: Locale;
   spaces: Space[];
+  order?: SpaceOrder;
   showLoadMore?: boolean;
 }) {
   const { person, isLoading: isLoadingPerson } = useMe();
@@ -60,11 +91,11 @@ export function MyFilteredSpaces({
     isDiscoverabilityLoading;
 
   const displayedSpaces = React.useMemo(() => {
-    if (hideArchivedSpaces) {
-      return filteredSpaces.filter((space) => !isSpaceArchived(space));
-    }
-    return filteredSpaces;
-  }, [filteredSpaces, hideArchivedSpaces]);
+    const visibleSpaces = hideArchivedSpaces
+      ? filteredSpaces.filter((space) => !isSpaceArchived(space))
+      : filteredSpaces;
+    return sortSpacesByOrder(visibleSpaces, order);
+  }, [filteredSpaces, hideArchivedSpaces, order]);
 
   return (
     <div className="space-y-6">

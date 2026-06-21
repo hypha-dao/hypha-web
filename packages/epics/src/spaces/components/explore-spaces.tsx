@@ -305,40 +305,51 @@ export function ExploreSpaces({
     </div>
   );
 
+  const showSortControl = !enableNetworkMap || view === 'list';
+
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-col gap-3">
       <SpaceSearch value={query} className="w-full min-w-0" />
-      <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-        {enableNetworkMap ? (
+      {showSortControl ? (
+        <div
+          className={cn(
+            'flex w-full min-w-0 items-center gap-2',
+            !enableNetworkMap && 'justify-between',
+          )}
+        >
+          <Combobox
+            options={orderOptions}
+            initialValue={order}
+            triggerVariant="ghost"
+            className="h-9 w-fit justify-start px-0 font-normal"
+            onChange={setOrder}
+            allowEmptyChoice={false}
+          />
+          {!enableNetworkMap ? (
+            <CreateSpaceButton
+              lang={lang}
+              isAuthenticated={isAuthenticated}
+              className="min-w-0 shrink-0"
+              buttonClassName="h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+            />
+          ) : null}
+        </div>
+      ) : null}
+      {enableNetworkMap ? (
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
           <NetworkMapViewToggle
             value={view}
             onChange={setView}
             className="shrink-0"
           />
-        ) : null}
-        <div
-          className={cn(
-            'flex w-full min-w-0 items-stretch gap-2',
-            enableNetworkMap && 'sm:ml-auto sm:w-auto',
-          )}
-        >
-          {!enableNetworkMap || view === 'list' ? (
-            <Combobox
-              options={orderOptions}
-              initialValue={order}
-              className="h-9 min-w-0 flex-1 border-0 sm:w-40 sm:flex-none"
-              onChange={setOrder}
-              allowEmptyChoice={false}
-            />
-          ) : null}
           <CreateSpaceButton
             lang={lang}
             isAuthenticated={isAuthenticated}
-            className="min-w-0 shrink-0"
+            className="min-w-0 shrink-0 sm:ml-auto"
             buttonClassName="h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
           />
         </div>
-      </div>
+      ) : null}
     </div>
   );
 

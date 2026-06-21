@@ -38,6 +38,7 @@ type ComboboxProps = {
   emptyListMessage?: string;
   /** Set false when the combobox is rendered inside a modal dialog. */
   popoverModal?: boolean;
+  triggerVariant?: React.ComponentProps<typeof Button>['variant'];
 };
 
 export const COMBOBOX_TITLE = '===';
@@ -56,6 +57,7 @@ export function Combobox({
   disabled = false,
   emptyListMessage = 'No options found.',
   popoverModal = true,
+  triggerVariant = 'outline',
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
@@ -96,7 +98,7 @@ export function Combobox({
     >
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant={triggerVariant}
           colorVariant="neutral"
           role="combobox"
           aria-expanded={open && !disabled}

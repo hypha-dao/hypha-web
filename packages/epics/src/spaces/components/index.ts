@@ -12,6 +12,7 @@ export * from './entry-method-field';
 export * from './entry-method-token-field';
 export * from './exit-space';
 export * from './explore-spaces';
+export * from './my-spaces-controls';
 export * from './my-filtered-spaces';
 export * from './inner-space-card.wrapper';
 export * from './inner-space-card';
