@@ -122,6 +122,22 @@ function isAnsweredEcosystemBlueprint(value: unknown): boolean {
   );
 }
 
+function isAnsweredEntryMethod(value: unknown): boolean {
+  const normalized = normalizeChoice(value);
+  return (
+    normalized === 'open_access' ||
+    normalized.includes('open access') ||
+    normalized === 'invite_only' ||
+    normalized.includes('invite') ||
+    normalized === 'token_based' ||
+    normalized.includes('token')
+  );
+}
+
+function isAnsweredText(value: unknown, minLength: number): boolean {
+  return typeof value === 'string' && value.trim().length >= minLength;
+}
+
 function getCreateSpaceGuidance(
   answers: Record<string, unknown>,
 ): GuidanceDefinition {
@@ -131,20 +147,59 @@ function getCreateSpaceGuidance(
         field: 'org_name',
         question:
           'What should we call your organisation or ecosystem (the root space)?',
+        isAnswered: (value) => isAnsweredText(value, 2),
       }
-    : { field: 'space_name', question: 'What should we call your space?' };
+    : {
+        field: 'space_name',
+        question: 'What should we call your space?',
+        isAnswered: (value) => isAnsweredText(value, 2),
+      };
 
   const purposeStep: GuidanceStep = ecosystem
     ? {
         field: 'org_purpose',
         question:
-          'What is the purpose of this organisation? I can propose the spaces it needs once I understand your mission.',
+          'What is the purpose of this organisation? Describe the mission in your own words—I can help refine it.',
+        isAnswered: (value) => isAnsweredText(value, 10),
       }
     : {
         field: 'space_purpose',
         question:
-          'What is the purpose of this space? If helpful, I can suggest a few examples.',
+          'What is the purpose of this space? Describe it in your own words—I can suggest wording if helpful.',
+        isAnswered: (value) => isAnsweredText(value, 10),
       };
+
+  const discoverySteps: GuidanceStep[] = [
+    {
+      field: 'principles_reaction',
+      question:
+        'I shared guiding principles above—does this direction feel right, or what would you change?',
+      isAnswered: (value) => isAnsweredText(value, 3),
+    },
+    {
+      field: 'org_discovery',
+      question:
+        'Help me understand the organisation better: what industry or domain are you in, roughly how many people are involved, and who makes up the core team?',
+      isAnswered: (value) => isAnsweredText(value, 8),
+    },
+  ];
+
+  const ecosystemStructureSteps: GuidanceStep[] = ecosystem
+    ? [
+        {
+          field: 'ecosystem_root_role',
+          question:
+            'As the root space that holds the others, what role should it play—public face, coordination hub, governance layer, or something else?',
+          isAnswered: (value) => isAnsweredText(value, 5),
+        },
+        {
+          field: 'ecosystem_structure',
+          question:
+            'How should the child spaces relate to each other and to the root? Who owns what, and how will members move between spaces?',
+          isAnswered: (value) => isAnsweredText(value, 8),
+        },
+      ]
+    : [];
 
   const sharedSteps: GuidanceStep[] = [
     {
@@ -155,17 +210,25 @@ function getCreateSpaceGuidance(
     },
     nameStep,
     purposeStep,
+    ...discoverySteps,
+    ...ecosystemStructureSteps,
     {
       field: 'activation_method',
       question:
-        'Which activation mode fits: Sandbox (private testing), Pilot (demos and validation on the network), or Deployment (live and publicly discoverable)?',
+        'Which activation mode fits: Sandbox (private testing), Pilot (demos on the network), or Deployment (live)?',
       isAnswered: (value) => isAnsweredActivationMethod(value),
     },
     {
       field: 'transparency_matrix',
       question:
-        'How transparent should this be? Set discoverability (who can find it) and space activity access (who can view activity). More openness helps you benefit from planetary cross-pollination across the Hypha network.',
+        'Set discoverability (who can find this space) and space activity access (who can view activity) using the transparency matrix below—each dimension has four levels with descriptions.',
       isAnswered: (value) => isAnsweredTransparencyMatrix(value),
+    },
+    {
+      field: 'entry_method',
+      question:
+        'How should people join this space? Choose open access, invite/request, or token-based entry (token-based also requires setting up a membership token).',
+      isAnswered: (value) => isAnsweredEntryMethod(value),
     },
     {
       field: 'space_location',
@@ -211,9 +274,9 @@ function getCreateSpaceGuidance(
         },
       ],
       validation_steps: [
-        'Call propose_organisation_blueprint (or get_network_ecosystem_patterns first) before asking for blueprint confirmation.',
-        'Confirm the root space draft, create it with create_space_from_onboarding, then create each child with create_ecosystem_space.',
-        'Sign with wallet when required for each space.',
+        'Call get_network_ecosystem_patterns first (public, non-sandbox examples) then propose_organisation_blueprint before asking for blueprint confirmation.',
+        'Create ONLY the root space first with create_space_from_onboarding and wallet signing.',
+        'After the root space exists, continue child spaces with create_ecosystem_space from the left AI panel—keep conversation memory.',
       ],
       suggested_tools: [
         'get_network_ecosystem_patterns',
@@ -424,6 +487,7 @@ export function createOnboardingGuidanceTool() {
       const requiresActivationPicker = nextStep?.field === 'activation_method';
       const requiresTransparencyPicker =
         nextStep?.field === 'transparency_matrix';
+      const requiresEntryMethodPicker = nextStep?.field === 'entry_method';
       const requiresSetupJourneyPicker = nextStep?.field === 'setup_journey';
       const setupJourneyAssistantInstruction = requiresSetupJourneyPicker
         ? 'Ask only the next_question in one short sentence. The user can choose Single space or Full ecosystem with the journey cards shown below the chat—do not list both options as a long checklist.'
@@ -435,8 +499,19 @@ export function createOnboardingGuidanceTool() {
         ? 'Ask only the next_question in one short sentence. The user can choose Sandbox, Pilot, or Deployment with the activation cards shown below the chat—do not list all options as a checklist.'
         : null;
       const transparencyAssistantInstruction = requiresTransparencyPicker
-        ? 'Ask only the next_question in one short sentence. Mention that openness supports planetary cross-pollination across knowledge, value, and impact flows. The user can set discoverability and space activity access with the transparency matrix shown below the chat—do not list every level as a checklist.'
+        ? 'Ask only the next_question in one short sentence. Do NOT list combined transparency options or numbered shortcuts—the user must use the transparency matrix card below, which shows discoverability and activity access separately with four levels each and descriptions.'
         : null;
+      const entryMethodAssistantInstruction = requiresEntryMethodPicker
+        ? 'Ask only the next_question in one short sentence. The user can choose open access, invite/request, or token-based entry with the entry method cards below—do not list all options as a checklist. Mention that token-based entry requires creating a membership token.'
+        : null;
+      const principlesAssistantInstruction =
+        nextStep?.field === 'principles_reaction'
+          ? 'Before this question, propose 2-4 concise guiding principles for this organisation based on name and purpose. Then ask only the next_question and wait for the user reaction.'
+          : null;
+      const orgDiscoveryInstruction =
+        nextStep?.field === 'org_discovery'
+          ? 'Be genuinely curious—this is discovery, not a form. Ask only the next_question. You may propose industry tags and a draft description the user can accept or edit.'
+          : null;
       return {
         ok: true,
         process,
@@ -445,9 +520,12 @@ export function createOnboardingGuidanceTool() {
         question_mode: 'single_step',
         assistant_instruction: exploreReady
           ? 'Return concrete space matches now in this same reply. If search_results has entries, list the best 3-5 with clear names and short reasons. If none are found, say that clearly and suggest the next best step. Do not ask another discovery question first.'
-          : locationAssistantInstruction ??
+          : principlesAssistantInstruction ??
+            orgDiscoveryInstruction ??
+            locationAssistantInstruction ??
             activationAssistantInstruction ??
             transparencyAssistantInstruction ??
+            entryMethodAssistantInstruction ??
             setupJourneyAssistantInstruction ??
             'Ask only the next_question as a single natural-language question. Do not provide a checklist, field list, or form labels.',
         progress: {
@@ -460,6 +538,7 @@ export function createOnboardingGuidanceTool() {
         requires_location_picker: requiresLocationPicker,
         requires_activation_picker: requiresActivationPicker,
         requires_transparency_picker: requiresTransparencyPicker,
+        requires_entry_method_picker: requiresEntryMethodPicker,
         requires_setup_journey_picker: requiresSetupJourneyPicker,
         setup_journey: isAnsweredSetupJourney(answers.setup_journey)
           ? isEcosystemJourney(answers)

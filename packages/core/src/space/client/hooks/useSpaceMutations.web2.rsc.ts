@@ -25,8 +25,36 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
     data: createdSpace,
   } = useSWRMutation(
     authToken ? [authToken, 'createSpace'] : null,
-    async ([authToken], { arg }: { arg: CreateSpaceInput }) =>
-      await createSpaceAction(arg, { authToken }),
+    async ([authToken], { arg }: { arg: CreateSpaceInput }) => {
+      try {
+        return await createSpaceAction(arg, { authToken });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          message.includes('Server Action') &&
+          message.includes('was not found')
+        ) {
+          const response = await fetch('/api/v1/spaces/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify(arg),
+          });
+          if (!response.ok) {
+            const body = (await response.json().catch(() => null)) as {
+              error?: string;
+            } | null;
+            throw new Error(
+              body?.error ?? `Failed to create space (${response.status})`,
+            );
+          }
+          return response.json();
+        }
+        throw error;
+      }
+    },
   );
 
   const {

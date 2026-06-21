@@ -12,4 +12,5 @@ export { OnboardingSpaceLocationCard } from './onboarding-space-location-card';
 export { OnboardingActivationModeCard } from './onboarding-activation-mode-card';
 export { OnboardingSetupJourneyCard } from './onboarding-setup-journey-card';
 export { OnboardingTransparencyMatrixCard } from './onboarding-transparency-matrix-card';
+export { OnboardingEntryMethodCard } from './onboarding-entry-method-card';
 export * from './mock-data';

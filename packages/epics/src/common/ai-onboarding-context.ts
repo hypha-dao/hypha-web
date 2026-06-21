@@ -23,6 +23,11 @@ export type OnboardingTransparencyMatrix = {
   access: 0 | 1 | 2 | 3;
 };
 
+export type OnboardingEntryMethod =
+  | 'open_access'
+  | 'invite_only'
+  | 'token_based';
+
 export type OnboardingConversationContext = {
   mode: typeof ONBOARDING_SETUP_MODE;
   source: typeof ONBOARDING_HERO_SOURCE | typeof AI_PANEL_SETUP_SOURCE;
@@ -32,6 +37,9 @@ export type OnboardingConversationContext = {
   activationMethod?: OnboardingActivationMethod;
   setupJourney?: OnboardingSetupJourney;
   transparencyMatrix?: OnboardingTransparencyMatrix;
+  entryMethod?: OnboardingEntryMethod;
+  /** Root space slug after ecosystem onboarding handoff to the left AI panel. */
+  ecosystemRootSlug?: string;
   setupPlan?: {
     spaceIntent?: {
       title?: string;
@@ -163,6 +171,15 @@ function parseStoredSetupJourney(
   return undefined;
 }
 
+function parseStoredEntryMethod(
+  raw: unknown,
+): OnboardingEntryMethod | undefined {
+  if (raw === 'open_access' || raw === 'invite_only' || raw === 'token_based') {
+    return raw;
+  }
+  return undefined;
+}
+
 function parseStoredSource(
   raw: unknown,
 ): OnboardingConversationContext['source'] {
@@ -273,6 +290,11 @@ export function readOnboardingConversationContext():
       transparencyMatrix: parseStoredTransparencyMatrix(
         parsed.transparencyMatrix,
       ),
+      entryMethod: parseStoredEntryMethod(parsed.entryMethod),
+      ecosystemRootSlug:
+        typeof parsed.ecosystemRootSlug === 'string'
+          ? parsed.ecosystemRootSlug
+          : undefined,
       lastUserText:
         typeof parsed.lastUserText === 'string'
           ? parsed.lastUserText

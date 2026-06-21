@@ -937,6 +937,9 @@
       "onboardingTransparencyLevelOrganisation": "Organización",
       "onboardingTransparencyLevelSpace": "Espacio",
       "onboardingTransparencySetSummary": "Matriz de transparencia definida — descubrimiento: {discoverability}, acceso a la actividad: {access}",
+      "onboardingEntryMethodSetOpen": "Método de entrada: Acceso abierto",
+      "onboardingEntryMethodSetInvite": "Método de entrada: Invitación / solicitud para unirse",
+      "onboardingEntryMethodSetToken": "Método de entrada: Membresía basada en token",
       "ariaLabel": "Prompt de onboarding con AI",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -2180,7 +2183,15 @@
     "onboardingTransparencySetSummary": "Matriz de transparencia definida — descubrimiento: {discoverability}, acceso a la actividad: {access}",
     "onboardingLocationSetWithLabel": "Ubicación establecida: {label}",
     "onboardingLocationSetWithCoordinates": "Ubicación establecida: {latitude}, {longitude}",
-    "onboardingLocationSetFallback": "Ubicación establecida"
+    "onboardingLocationSetFallback": "Ubicación establecida",
+    "walletSignaturePending": "Revisa tu wallet para firmar la transacción. Funciona con wallets estándar y configuraciones 2FA/MFA.",
+    "onboardingEntryMethodTitle": "Método de entrada",
+    "onboardingEntryMethodHint": "Elige cómo pueden unirse las personas a tu espacio: abierto a todos, solo por invitación/solicitud, o membresía basada en token.",
+    "onboardingEntryMethodConfirm": "Usar este método de entrada",
+    "onboardingEntryMethodTokenNote": "La membresía basada en token requiere crear un token de membresía — te guiaremos en ese proceso después de crear el espacio.",
+    "onboardingEntryMethodSetOpen": "Método de entrada: Acceso abierto",
+    "onboardingEntryMethodSetInvite": "Método de entrada: Invitación / solicitud para unirse",
+    "onboardingEntryMethodSetToken": "Método de entrada: Membresía basada en token"
   },
   "HumanChatPanel": {
     "title": "Chat",

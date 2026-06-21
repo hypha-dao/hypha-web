@@ -3,17 +3,23 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
-import { resolveMobilizedAgentsForAssistantMessage } from '../ai-agent-competencies';
+import {
+  ONBOARDING_MOBILIZED_SCOPE,
+  readMobilizedAiAgents,
+  resolveMobilizedAgentsForAssistantMessage,
+} from '../ai-agent-competencies';
 import type { OnboardingConversationContext } from '../ai-onboarding-context';
 import { shouldShowOnboardingLocationPicker } from '../onboarding-location-ui';
 import { shouldShowOnboardingSetupJourneyPicker } from '../onboarding-setup-journey-ui';
 import { shouldShowOnboardingActivationPicker } from '../onboarding-activation-ui';
 import { shouldShowOnboardingTransparencyPicker } from '../onboarding-transparency-ui';
+import { shouldShowOnboardingEntryMethodPicker } from '../onboarding-entry-method-ui';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
 import { OnboardingSpaceLocationCard } from './onboarding-space-location-card';
 import { OnboardingSetupJourneyCard } from './onboarding-setup-journey-card';
 import { OnboardingActivationModeCard } from './onboarding-activation-mode-card';
 import { OnboardingTransparencyMatrixCard } from './onboarding-transparency-matrix-card';
+import { OnboardingEntryMethodCard } from './onboarding-entry-method-card';
 import {
   AiPanelSuggestions,
   type AiPanelSuggestionItem,
@@ -21,6 +27,7 @@ import {
 import type { OnboardingActivationMethod } from '../onboarding-activation-ui';
 import type { OnboardingSetupJourney } from '../onboarding-setup-journey-ui';
 import type { OnboardingTransparencyMatrix } from '../ai-onboarding-context';
+import type { OnboardingEntryMethod } from '../onboarding-entry-method-ui';
 import type { SpaceLocationValue } from '../../spaces/components/space-location-picker';
 
 type UIMessage = {
@@ -49,6 +56,7 @@ type AiPanelMessagesProps = {
   onOnboardingTransparencyConfirm?: (
     matrix: OnboardingTransparencyMatrix,
   ) => void;
+  onOnboardingEntryMethodConfirm?: (method: OnboardingEntryMethod) => void;
 };
 
 export function AiPanelMessages({
@@ -65,6 +73,7 @@ export function AiPanelMessages({
   onOnboardingSetupJourneySelect,
   onOnboardingActivationSelect,
   onOnboardingTransparencyConfirm,
+  onOnboardingEntryMethodConfirm,
 }: AiPanelMessagesProps) {
   const t = useTranslations('AiPanel');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,6 +95,11 @@ export function AiPanelMessages({
     isStreaming,
   });
   const showTransparencyPicker = shouldShowOnboardingTransparencyPicker({
+    messages,
+    onboardingContext,
+    isStreaming,
+  });
+  const showEntryMethodPicker = shouldShowOnboardingEntryMethodPicker({
     messages,
     onboardingContext,
     isStreaming,
@@ -126,9 +140,34 @@ export function AiPanelMessages({
             message={msg}
             mobilizedAgents={
               msg.role === 'assistant' && msg.id !== 'welcome'
-                ? resolveMobilizedAgentsForAssistantMessage(
-                    displayMessages,
-                    index,
+                ? [
+                    ...resolveMobilizedAgentsForAssistantMessage(
+                      displayMessages,
+                      index,
+                    ),
+                    ...(onboardingContext
+                      ? readMobilizedAiAgents(ONBOARDING_MOBILIZED_SCOPE).map(
+                          ({
+                            id,
+                            tagGroup,
+                            role,
+                            focus,
+                            avatarLabel,
+                            roleDefinition,
+                          }) => ({
+                            id,
+                            tagGroup,
+                            role,
+                            focus,
+                            avatarLabel,
+                            roleDefinition,
+                          }),
+                        )
+                      : []),
+                  ].filter(
+                    (agent, agentIndex, list) =>
+                      list.findIndex((item) => item.id === agent.id) ===
+                      agentIndex,
                   )
                 : []
             }
@@ -153,6 +192,13 @@ export function AiPanelMessages({
             disabled={isStreaming}
             activationMethod={onboardingContext?.activationMethod}
             onConfirm={onOnboardingTransparencyConfirm}
+          />
+        ) : null}
+
+        {showEntryMethodPicker && onOnboardingEntryMethodConfirm ? (
+          <OnboardingEntryMethodCard
+            disabled={isStreaming}
+            onConfirm={onOnboardingEntryMethodConfirm}
           />
         ) : null}
 

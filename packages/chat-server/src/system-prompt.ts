@@ -66,6 +66,19 @@ Onboarding conversation behavior:
 - If the user already confirmed in plain language (for example: "yes", "yep", "ready", "go ahead"), do not ask for the same confirmation again. Proceed to the next step.
 - If onboarding_guidance returns next_question, ask only that question and nothing else.`;
 
+const ONBOARDING_ADVISOR_GUIDELINES = `
+Onboarding advisor behavior (create space / ecosystem):
+- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.
+- Never skip to activation mode, transparency, entry method, or wallet signing until onboarding_guidance shows name, purpose, principles_reaction, and org_discovery are answered.
+- Discovery should feel like a trusted advisor conversation (~3 minutes max): be genuinely curious about purpose, industry, community size, core team, and coordination model. Propose draft principles and descriptions proactively; the user always has the final say.
+- Before technical settings, propose general principles based on what you know and ask for the user's reaction—do not jump straight to Sandbox/Pilot/Deployment.
+- Infer relevant Hypha category tags from the industry/domain; use search_spaces or external knowledge when you need domain context.
+- For ecosystem setups: ask how the root space relates to child spaces, call get_network_ecosystem_patterns (public, non-sandbox examples only), then propose_organisation_blueprint. Create the root space first; continue child spaces from the left AI panel with conversation memory.
+- For transparency: never summarize as three combined options—direct users to the matrix UI with separate discoverability and activity access (four levels each).
+- For entry method: present open access, invite/request, and token-based options; token-based implies a membership token setup flow.
+- When generate_space_visual_assets returns URLs, describe the visuals and ensure the user sees thumbnail previews in chat.
+- After wallet handoff, tell the user to sign in their wallet (works with standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer to retry—never loop on verbal confirmations.`;
+
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type CompetencyProfile = {
@@ -383,6 +396,7 @@ Signal recommendation quality bar:
 - If evidence is weak or missing, state uncertainty clearly and request the exact missing data.
 - Always produce a final user-facing text answer after tool usage. Never stop at tool output alone.
 - For onboarding setup mode, strictly follow: discover -> draft -> confirm -> execute -> verify.
+${ONBOARDING_ADVISOR_GUIDELINES}
 - During discover in onboarding setup mode, call onboarding_guidance first and ask only the minimum questions required to complete the chosen process.
 - For "explore network" requests, if the user already gave a topic (for example: bioregions), call search_spaces immediately and return matches in the same reply.
 - For any request to find/list spaces by topic, call search_spaces before answering. Do not answer from guesswork.
@@ -423,6 +437,7 @@ If the user asks about ecosystem relationships or cross-space coordination, use 
   }
   return `${BASE_SYSTEM_PROMPT}
 ${ONBOARDING_CONVERSATION_RULES}
+${ONBOARDING_ADVISOR_GUIDELINES}
 
 Onboarding setup (no active space context):
 - onboarding_guidance: process question planner for onboarding; use before proposing write or navigation actions.
@@ -434,7 +449,7 @@ Onboarding setup (no active space context):
 
 Onboarding create-space flow:
 - discover -> draft -> confirm -> execute -> verify.
-- Ask one question at a time during discover, including activation mode (Sandbox, Pilot, or Deployment), transparency matrix (discoverability and space activity access), where the space is based (city/region/landmark or skip), and whether the user has icon/logo/banner assets or wants AI-generated visuals.
+- Ask one question at a time during discover, in onboarding_guidance order: name, purpose, principles reaction, org discovery, then activation mode, transparency matrix (use UI), entry method (use UI), location, then visuals.
 - When the user sets location via the onboarding map UI, pass coordinates into create_space_from_onboarding. For typed place names only, call geocode_space_location, confirm the match, then pass coordinates into create_space_from_onboarding.
 - When generating visuals, call generate_space_visual_assets, show the result, then continue to confirmation and create_space_from_onboarding.
 - Space purpose/description must stay within 300 characters before execution.

@@ -16,15 +16,23 @@ import {
   applyOnboardingActivationToContext,
   applyOnboardingSetupJourneyToContext,
   applyOnboardingTransparencyToContext,
+  applyOnboardingEntryMethodToContext,
   formatOnboardingLocationSubmitMessage,
   formatOnboardingActivationSubmitMessage,
   formatOnboardingSetupJourneySubmitMessage,
   formatOnboardingTransparencySubmitMessage,
+  formatOnboardingEntryMethodSubmitMessage,
   getClientEnableNetworkMap,
   onboardingLocationFromCreatePayload,
   onboardingTransparencyFromCreatePayload,
+  onboardingJoinMethodFromCreatePayload,
   onboardingSpaceLocationFromPicker,
   skippedOnboardingSpaceLocation,
+  saveOnboardingConversationContext,
+  dispatchAiOnboardingSeed,
+  AI_PANEL_SETUP_SOURCE,
+  recordMobilizedAiAgentsForOnboarding,
+  type OnboardingEntryMethod,
   type OnboardingActivationMethod,
   type OnboardingSetupJourney,
   type OnboardingConversationContext,
@@ -392,6 +400,58 @@ export function OnboardingAiFullPage({
     ],
   );
 
+  const sendOnboardingEntryMethodMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingEntryMethodMessageLabels = useMemo(
+    () => ({
+      openAccess: t('aiHero.onboardingEntryMethodSetOpen'),
+      inviteOnly: t('aiHero.onboardingEntryMethodSetInvite'),
+      tokenBased: t('aiHero.onboardingEntryMethodSetToken'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingEntryMethodConfirm = useCallback(
+    async (method: OnboardingEntryMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const message = formatOnboardingEntryMethodSubmitMessage(
+          method,
+          onboardingEntryMethodMessageLabels,
+        );
+        const nextContext = applyOnboardingEntryMethodToContext(
+          onboardingContext,
+          method,
+          message,
+        );
+        await sendOnboardingEntryMethodMessage(message, nextContext);
+      } catch (sendError) {
+        console.error(
+          '[OnboardingAiFullPage] entry method confirm send failed:',
+          sendError,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      onboardingContext,
+      onboardingEntryMethodMessageLabels,
+      sendOnboardingEntryMethodMessage,
+    ],
+  );
+
   const enableNetworkMap = getClientEnableNetworkMap();
 
   useEffect(() => {
@@ -461,8 +521,25 @@ export function OnboardingAiFullPage({
     if (!slug) return;
     if (createdSpaceRef.current === slug) return;
     createdSpaceRef.current = slug;
+
+    if (onboardingContext.setupJourney === 'ecosystem') {
+      const continuationContext: OnboardingConversationContext = {
+        ...onboardingContext,
+        source: AI_PANEL_SETUP_SOURCE,
+        setupPhase: 'execute',
+        ecosystemRootSlug: slug,
+      };
+      saveOnboardingConversationContext(continuationContext);
+      dispatchAiOnboardingSeed({
+        prompt: `Root space is live. Let's continue creating the remaining child spaces from our ecosystem plan—keeping everything we discussed during onboarding.`,
+        context: continuationContext,
+      });
+      router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
+      return;
+    }
+
     router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
-  }, [context.locale, router, walletCreatedSpace?.slug]);
+  }, [context.locale, onboardingContext, router, walletCreatedSpace?.slug]);
 
   useEffect(() => {
     const navOutput = [...messages]
@@ -608,9 +685,11 @@ export function OnboardingAiFullPage({
             : {}),
           ...onboardingLocationFromCreatePayload(payload),
           ...onboardingTransparencyFromCreatePayload(payload),
+          ...onboardingJoinMethodFromCreatePayload(payload),
         });
         if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
       } catch (walletFlowError) {
+        handledWalletPayloadKeyRef.current = null;
         console.error(
           '[OnboardingAiFullPage] wallet creation failed:',
           walletFlowError,
@@ -633,6 +712,7 @@ export function OnboardingAiFullPage({
         ? applyOnboardingContextForUserTextLocal(text)
         : onboardingContext;
       if (text.trim()) {
+        recordMobilizedAiAgentsForOnboarding(text.trim());
         setOnboardingContext(nextContext);
       }
       const options = await buildMessageOptions(nextContext);
@@ -755,6 +835,9 @@ export function OnboardingAiFullPage({
               onOnboardingActivationSelect={handleOnboardingActivationSelect}
               onOnboardingTransparencyConfirm={
                 handleOnboardingTransparencyConfirm
+              }
+              onOnboardingEntryMethodConfirm={
+                handleOnboardingEntryMethodConfirm
               }
             />
             <AiPanelChatBar

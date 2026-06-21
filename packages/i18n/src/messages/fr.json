@@ -179,6 +179,9 @@
       "onboardingTransparencyLevelOrganisation": "Organisation",
       "onboardingTransparencyLevelSpace": "Espace",
       "onboardingTransparencySetSummary": "Matrice de transparence définie — découvrabilité : {discoverability}, accès à l'activité : {access}",
+      "onboardingEntryMethodSetOpen": "Méthode d'entrée : Accès ouvert",
+      "onboardingEntryMethodSetInvite": "Méthode d'entrée : Invitation / demande d'adhésion",
+      "onboardingEntryMethodSetToken": "Méthode d'entrée : Adhésion par token",
       "ariaLabel": "Invite d’onboarding AI",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -2180,7 +2183,15 @@
     "onboardingTransparencySetSummary": "Matrice de transparence définie — découvrabilité : {discoverability}, accès à l'activité : {access}",
     "onboardingLocationSetWithLabel": "Emplacement défini : {label}",
     "onboardingLocationSetWithCoordinates": "Emplacement défini : {latitude}, {longitude}",
-    "onboardingLocationSetFallback": "Emplacement défini"
+    "onboardingLocationSetFallback": "Emplacement défini",
+    "walletSignaturePending": "Vérifiez votre wallet pour signer la transaction. Compatible avec les wallets standard et la 2FA/MFA.",
+    "onboardingEntryMethodTitle": "Méthode d'entrée",
+    "onboardingEntryMethodHint": "Choisissez comment les personnes peuvent rejoindre votre espace : ouvert à tous, sur invitation/demande uniquement, ou adhésion par token.",
+    "onboardingEntryMethodConfirm": "Utiliser cette méthode d'entrée",
+    "onboardingEntryMethodTokenNote": "L'adhésion par token nécessite de créer un token de membership — nous vous guiderons après la création de l'espace.",
+    "onboardingEntryMethodSetOpen": "Méthode d'entrée : Accès ouvert",
+    "onboardingEntryMethodSetInvite": "Méthode d'entrée : Invitation / demande d'adhésion",
+    "onboardingEntryMethodSetToken": "Méthode d'entrée : Adhésion par token"
   },
   "HumanChatPanel": {
     "title": "Chat",

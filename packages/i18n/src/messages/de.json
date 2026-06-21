@@ -179,6 +179,9 @@
       "onboardingTransparencyLevelOrganisation": "Organisation",
       "onboardingTransparencyLevelSpace": "Space",
       "onboardingTransparencySetSummary": "Transparenzmatrix festgelegt — Auffindbarkeit: {discoverability}, Aktivitätszugriff: {access}",
+      "onboardingEntryMethodSetOpen": "Beitrittsmethode: Offener Zugang",
+      "onboardingEntryMethodSetInvite": "Beitrittsmethode: Einladung / Beitrittsanfrage",
+      "onboardingEntryMethodSetToken": "Beitrittsmethode: Token-basierte Mitgliedschaft",
       "ariaLabel": "AI-Onboarding-Prompt",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -2704,7 +2707,15 @@
     "onboardingTransparencySetSummary": "Transparenzmatrix festgelegt — Auffindbarkeit: {discoverability}, Aktivitätszugriff: {access}",
     "onboardingLocationSetWithLabel": "Standort festgelegt: {label}",
     "onboardingLocationSetWithCoordinates": "Standort festgelegt: {latitude}, {longitude}",
-    "onboardingLocationSetFallback": "Standort festgelegt"
+    "onboardingLocationSetFallback": "Standort festgelegt",
+    "walletSignaturePending": "Prüfen Sie Ihre Wallet, um die Transaktion zu signieren. Funktioniert mit Standard-Wallets und 2FA/MFA.",
+    "onboardingEntryMethodTitle": "Beitrittsmethode",
+    "onboardingEntryMethodHint": "Wählen Sie, wie Personen Ihrem Space beitreten können: offen für alle, nur per Einladung/Anfrage oder token-basierte Mitgliedschaft.",
+    "onboardingEntryMethodConfirm": "Diese Beitrittsmethode verwenden",
+    "onboardingEntryMethodTokenNote": "Token-basierte Mitgliedschaft erfordert ein Mitgliedschafts-Token — wir führen Sie nach der Space-Erstellung durch dieses Setup.",
+    "onboardingEntryMethodSetOpen": "Beitrittsmethode: Offener Zugang",
+    "onboardingEntryMethodSetInvite": "Beitrittsmethode: Einladung / Beitrittsanfrage",
+    "onboardingEntryMethodSetToken": "Beitrittsmethode: Token-basierte Mitgliedschaft"
   },
   "HumanChatPanel": {
     "title": "Chat",

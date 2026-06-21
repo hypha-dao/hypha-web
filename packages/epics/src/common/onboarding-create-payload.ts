@@ -69,3 +69,14 @@ export function onboardingTransparencyFromCreatePayload(
     ...(access !== undefined && access >= 0 && access <= 3 ? { access } : {}),
   };
 }
+
+export function onboardingJoinMethodFromCreatePayload(
+  payload: Record<string, unknown>,
+): { joinMethod?: number } {
+  const joinMethod =
+    typeof payload.join_method === 'number' ? payload.join_method : undefined;
+  if (joinMethod === undefined || joinMethod < 0 || joinMethod > 3) {
+    return {};
+  }
+  return { joinMethod };
+}

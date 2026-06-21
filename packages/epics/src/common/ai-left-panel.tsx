@@ -101,6 +101,7 @@ import {
 import {
   onboardingLocationFromCreatePayload,
   onboardingTransparencyFromCreatePayload,
+  onboardingJoinMethodFromCreatePayload,
 } from './onboarding-create-payload';
 import {
   applyOnboardingLocationToContext,
@@ -124,6 +125,11 @@ import {
   formatOnboardingTransparencySubmitMessage,
   type OnboardingTransparencyMessageLabels,
 } from './onboarding-transparency-ui';
+import {
+  applyOnboardingEntryMethodToContext,
+  formatOnboardingEntryMethodSubmitMessage,
+  type OnboardingEntryMethod,
+} from './onboarding-entry-method-ui';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
@@ -1203,6 +1209,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             : {}),
           ...onboardingLocationFromCreatePayload(payload),
           ...onboardingTransparencyFromCreatePayload(payload),
+          ...onboardingJoinMethodFromCreatePayload(payload),
         });
         if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
       } catch (walletFlowError) {
@@ -1802,6 +1809,61 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
+  const sendOnboardingEntryMethodMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingEntryMethodMessageLabels = useMemo(
+    () => ({
+      openAccess: t('onboardingEntryMethodSetOpen'),
+      inviteOnly: t('onboardingEntryMethodSetInvite'),
+      tokenBased: t('onboardingEntryMethodSetToken'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingEntryMethodConfirm = useCallback(
+    async (method: OnboardingEntryMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingEntryMethodSubmitMessage(
+          method,
+          onboardingEntryMethodMessageLabels,
+        );
+        const nextContext = applyOnboardingEntryMethodToContext(
+          baseContext,
+          method,
+          message,
+        );
+        await sendOnboardingEntryMethodMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] entry method confirm sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingEntryMethodMessageLabels,
+      sendOnboardingEntryMethodMessage,
+    ],
+  );
+
   const enableNetworkMap = getClientEnableNetworkMap();
 
   const handleTriggerClick = useCallback(() => {
@@ -2097,6 +2159,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             blockSpaceAiForSubscription
               ? undefined
               : handleOnboardingTransparencyConfirm
+          }
+          onOnboardingEntryMethodConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingEntryMethodConfirm
           }
         />
       </SidebarContent>

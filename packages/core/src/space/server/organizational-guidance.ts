@@ -160,6 +160,8 @@ WITH RECURSIVE org_tree AS (
   WHERE parent_id IS NULL
     AND is_archived = false
     AND NOT (COALESCE(flags, '[]'::jsonb) @> '["archived"]'::jsonb)
+    AND NOT (COALESCE(flags, '[]'::jsonb) @> '["sandbox"]'::jsonb)
+    AND NOT (COALESCE(flags, '[]'::jsonb) @> '["demo"]'::jsonb)
   UNION ALL
   SELECT
     s.id,

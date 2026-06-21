@@ -70,6 +70,7 @@ export {
 export {
   onboardingLocationFromCreatePayload,
   onboardingTransparencyFromCreatePayload,
+  onboardingJoinMethodFromCreatePayload,
 } from './onboarding-create-payload';
 export {
   applyOnboardingTransparencyToContext,
@@ -77,6 +78,17 @@ export {
   type OnboardingTransparencyMessageLabels,
   shouldShowOnboardingTransparencyPicker,
 } from './onboarding-transparency-ui';
+export {
+  applyOnboardingEntryMethodToContext,
+  formatOnboardingEntryMethodSubmitMessage,
+  type OnboardingEntryMethodMessageLabels,
+  shouldShowOnboardingEntryMethodPicker,
+  type OnboardingEntryMethod,
+} from './onboarding-entry-method-ui';
+export {
+  ONBOARDING_MOBILIZED_SCOPE,
+  recordMobilizedAiAgentsForOnboarding,
+} from './ai-agent-competencies';
 export {
   PanelProviders,
   PanelWrapLayout,

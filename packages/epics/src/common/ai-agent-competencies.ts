@@ -502,6 +502,12 @@ export function recordMobilizedAiAgentsForQuestion(
   );
 }
 
+export const ONBOARDING_MOBILIZED_SCOPE = '__onboarding__';
+
+export function recordMobilizedAiAgentsForOnboarding(question: string): void {
+  recordMobilizedAiAgentsForQuestion(ONBOARDING_MOBILIZED_SCOPE, question);
+}
+
 export function subscribeMobilizedAiAgents(
   spaceSlug: string | null | undefined,
   onChange: () => void,

@@ -219,6 +219,39 @@ function withInjectedOnboardingTransparencyMatrix<
   };
 }
 
+function withInjectedOnboardingEntryMethod<T extends Record<string, unknown>>(
+  payload: T,
+  entryMethod?: OnboardingEntryMethodContext,
+): T {
+  if (!entryMethod) {
+    return payload;
+  }
+  if (payload.join_method !== undefined) {
+    return payload;
+  }
+  const joinMethod =
+    entryMethod === 'open_access' ? 0 : entryMethod === 'token_based' ? 1 : 2;
+  return { ...payload, join_method: joinMethod };
+}
+
+type OnboardingEntryMethodContext =
+  | 'open_access'
+  | 'invite_only'
+  | 'token_based';
+
+function extractEntryMethodFromContext(
+  conversationContext?: unknown,
+): OnboardingEntryMethodContext | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const raw = (conversationContext as { entryMethod?: unknown }).entryMethod;
+  if (raw === 'open_access' || raw === 'invite_only' || raw === 'token_based') {
+    return raw;
+  }
+  return undefined;
+}
+
 function extractSetupJourneyFromContext(
   conversationContext?: unknown,
 ): 'single_space' | 'ecosystem' | undefined {
@@ -299,6 +332,7 @@ export function createChatTools(
     extractTransparencyMatrixFromContext(conversationContext);
   const contextSetupJourney =
     extractSetupJourneyFromContext(conversationContext);
+  const contextEntryMethod = extractEntryMethodFromContext(conversationContext);
 
   const createSpaceFromOnboardingTool =
     createCreateSpaceFromOnboardingTool(authToken);
@@ -336,6 +370,9 @@ export function createChatTools(
       }
       if (contextSpaceLocation && knownAnswers.space_location == null) {
         knownAnswers.space_location = contextSpaceLocation;
+      }
+      if (contextEntryMethod && knownAnswers.entry_method == null) {
+        knownAnswers.entry_method = contextEntryMethod;
       }
       return onboardingGuidanceTool.execute({
         ...payload,
@@ -426,9 +463,12 @@ export function createChatTools(
             withInjectedOnboardingSpaceLocation(
               withInjectedOnboardingActivationMethod(
                 withInjectedOnboardingTransparencyMatrix(
-                  withInjectedOnboardingContext(
-                    args,
-                    onboardingInjectionContext,
+                  withInjectedOnboardingEntryMethod(
+                    withInjectedOnboardingContext(
+                      args,
+                      onboardingInjectionContext,
+                    ),
+                    contextEntryMethod,
                   ),
                   contextTransparencyMatrix,
                 ),

@@ -179,6 +179,9 @@
       "onboardingTransparencyLevelOrganisation": "Organisation",
       "onboardingTransparencyLevelSpace": "Space",
       "onboardingTransparencySetSummary": "Transparency matrix set — discoverability: {discoverability}, activity access: {access}",
+      "onboardingEntryMethodSetOpen": "Entry method: Open access",
+      "onboardingEntryMethodSetInvite": "Entry method: Invite / request to join",
+      "onboardingEntryMethodSetToken": "Entry method: Token-based membership",
       "ariaLabel": "AI onboarding prompt",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -2706,7 +2709,15 @@
     "onboardingTransparencySetSummary": "Transparency matrix set — discoverability: {discoverability}, activity access: {access}",
     "onboardingLocationSetWithLabel": "Location set: {label}",
     "onboardingLocationSetWithCoordinates": "Location set: {latitude}, {longitude}",
-    "onboardingLocationSetFallback": "Location set"
+    "onboardingLocationSetFallback": "Location set",
+    "walletSignaturePending": "Check your wallet to sign the transaction. This works with standard wallets and 2FA/MFA setups.",
+    "onboardingEntryMethodTitle": "Entry method",
+    "onboardingEntryMethodHint": "Choose how people can join your space: open to anyone, invite or request only, or token-based membership.",
+    "onboardingEntryMethodConfirm": "Use this entry method",
+    "onboardingEntryMethodTokenNote": "Token-based membership requires creating a membership token — we will guide you through that setup after your space is created.",
+    "onboardingEntryMethodSetOpen": "Entry method: Open access",
+    "onboardingEntryMethodSetInvite": "Entry method: Invite / request to join",
+    "onboardingEntryMethodSetToken": "Entry method: Token-based membership"
   },
   "HumanChatPanel": {
     "title": "Chat",

@@ -310,11 +310,18 @@ export const useCreateSpaceOrchestrator = ({
             ? arg.access
             : 2;
 
+        const joinMethod =
+          typeof arg.joinMethod === 'number' &&
+          arg.joinMethod >= 0 &&
+          arg.joinMethod <= 3
+            ? arg.joinMethod
+            : 2;
+
         const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
           quorum: 50,
           unity: 80,
           votingPowerSource: 2,
-          joinMethod: 2,
+          joinMethod,
           exitMethod: 1,
           access,
           discoverability,
