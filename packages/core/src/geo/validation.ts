@@ -11,11 +11,14 @@ function coerceOptionalCoordinate(value: unknown): unknown {
     return Number.isFinite(value) ? value : null;
   }
   if (typeof value === 'string') {
-    const trimmed = value.trim();
+    const trimmed = value.trim().replace(',', '.');
     if (!trimmed) {
       return null;
     }
-    const parsed = Number.parseFloat(trimmed.replace(',', '.'));
+    if (!/^-?\d+(?:\.\d+)?$/.test(trimmed)) {
+      return null;
+    }
+    const parsed = Number(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
   }
   return value;
@@ -83,7 +86,15 @@ export const geocodeResultSchema = z.object({
 });
 
 export const geocodeResponseSchema = z.object({
-  results: z.array(geocodeResultSchema),
+  data: z.array(geocodeResultSchema),
+  pagination: z.object({
+    total: z.number().int().nonnegative(),
+    page: z.number().int().positive(),
+    pageSize: z.number().int().positive(),
+    totalPages: z.number().int().nonnegative(),
+    hasNextPage: z.boolean(),
+    hasPreviousPage: z.boolean(),
+  }),
 });
 
 export type GeocodeResult = z.infer<typeof geocodeResultSchema>;

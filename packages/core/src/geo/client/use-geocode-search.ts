@@ -48,7 +48,7 @@ export function useGeocodeSearch({
           setError('request_failed');
           return;
         }
-        setResults(payload.data.results);
+        setResults(payload.data.data);
       } catch (fetchError) {
         if (controller.signal.aborted) return;
         setResults([]);

@@ -110,7 +110,19 @@ export async function POST(request: Request) {
       parsed.data.query,
       parsed.data.limit ?? 5,
     );
-    const response = geocodeResponseSchema.parse({ results });
+    const pageSize = parsed.data.limit ?? 5;
+    const total = results.length;
+    const response = geocodeResponseSchema.parse({
+      data: results,
+      pagination: {
+        total,
+        page: 1,
+        pageSize,
+        totalPages: total === 0 ? 0 : 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    });
     return NextResponse.json(response);
   } catch (error) {
     console.error('[api/v1/geocode] Failed to geocode:', error);

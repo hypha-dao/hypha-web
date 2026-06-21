@@ -11,7 +11,7 @@ describe('onboarding confirmation helpers', () => {
     expect(
       hasOnboardingConfirmation(
         {
-          lastUserText: 'already did',
+          lastUserText: 'tell me more',
           recentUserTexts: ['yes, proceed', 'already did'],
         },
         'confirm-create-space',
