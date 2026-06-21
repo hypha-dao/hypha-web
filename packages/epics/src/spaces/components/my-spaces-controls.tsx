@@ -65,26 +65,34 @@ export function MySpacesControls({
     [pathname, replace, searchParams],
   );
 
+  const createSpaceButtonClassName =
+    'h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm';
+
+  const sortControl = (
+    <Combobox
+      options={orderOptions}
+      initialValue={order}
+      triggerVariant="ghost"
+      className="h-9 w-fit shrink-0 justify-end px-1 font-normal md:w-auto"
+      onChange={setOrder}
+      allowEmptyChoice={false}
+    />
+  );
+
   return (
-    <div className="flex w-full min-w-0 flex-col gap-3">
-      <SpaceSearch value={query} className="w-full min-w-0" />
-      <Combobox
-        options={orderOptions}
-        initialValue={order}
-        triggerVariant="ghost"
-        className="h-9 w-fit justify-start px-0 font-normal"
-        onChange={setOrder}
-        allowEmptyChoice={false}
+    <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
+      <SpaceSearch
+        value={query}
+        className="min-w-0 flex-1"
+        suffix={sortControl}
       />
       {showCreateButton ? (
-        <div className="flex w-full justify-end">
-          <CreateSpaceButton
-            lang={lang}
-            isAuthenticated={isAuthenticated}
-            className="min-w-0 shrink-0"
-            buttonClassName="h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
-          />
-        </div>
+        <CreateSpaceButton
+          lang={lang}
+          isAuthenticated={isAuthenticated}
+          className="min-w-0 shrink-0"
+          buttonClassName={createSpaceButtonClassName}
+        />
       ) : null}
     </div>
   );
