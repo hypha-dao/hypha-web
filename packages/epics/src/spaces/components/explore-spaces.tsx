@@ -191,23 +191,44 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
-  const view: NetworkMapView = enableNetworkMap
-    ? searchParams.get('view') === 'list'
-      ? 'list'
-      : 'map'
-    : 'list';
+  const viewFromUrl = (params: URLSearchParams): NetworkMapView =>
+    params.get('view') === 'list' ? 'list' : 'map';
+
+  const [view, setViewState] = React.useState<NetworkMapView>(() =>
+    enableNetworkMap ? viewFromUrl(searchParams) : 'list',
+  );
+
+  React.useEffect(() => {
+    if (!enableNetworkMap) {
+      return;
+    }
+
+    const onPopState = () => {
+      setViewState(viewFromUrl(new URLSearchParams(window.location.search)));
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [enableNetworkMap]);
 
   const setView = React.useCallback(
     (nextView: NetworkMapView) => {
-      const params = new URLSearchParams(searchParams);
+      setViewState(nextView);
+
+      const params = new URLSearchParams(window.location.search);
       if (nextView === 'list') {
         params.set('view', 'list');
       } else {
         params.set('view', 'map');
       }
-      replace(`${pathname}?${params.toString()}`);
+      const queryString = params.toString();
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${pathname}${queryString ? `?${queryString}` : ''}`,
+      );
     },
-    [searchParams, pathname, replace],
+    [pathname],
   );
 
   const multiSelectVariants = cva(
@@ -307,49 +328,65 @@ export function ExploreSpaces({
 
   const showSortControl = !enableNetworkMap || view === 'list';
 
+  const createSpaceButtonClassName =
+    'h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm';
+
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-col gap-3">
-      <SpaceSearch value={query} className="w-full min-w-0" />
-      {showSortControl ? (
-        <div
-          className={cn(
-            'flex w-full min-w-0 items-center gap-2',
-            !enableNetworkMap && 'justify-between',
-          )}
-        >
-          <Combobox
-            options={orderOptions}
-            initialValue={order}
-            triggerVariant="ghost"
-            className="h-9 w-fit justify-start px-0 font-normal"
-            onChange={setOrder}
-            allowEmptyChoice={false}
+      {enableNetworkMap ? (
+        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex w-full min-w-0 items-center gap-2 sm:contents">
+            <SpaceSearch value={query} className="min-w-0 flex-1 sm:order-1" />
+            <CreateSpaceButton
+              lang={lang}
+              isAuthenticated={isAuthenticated}
+              className={cn(
+                'min-w-0 shrink-0 sm:ml-auto',
+                showSortControl ? 'sm:order-4' : 'sm:order-3',
+              )}
+              buttonClassName={createSpaceButtonClassName}
+            />
+          </div>
+          {showSortControl ? (
+            <Combobox
+              options={orderOptions}
+              initialValue={order}
+              triggerVariant="ghost"
+              className="h-9 w-fit justify-start px-0 font-normal sm:order-2"
+              onChange={setOrder}
+              allowEmptyChoice={false}
+            />
+          ) : null}
+          <NetworkMapViewToggle
+            value={view}
+            onChange={setView}
+            className={cn(
+              'w-full shrink-0 sm:w-auto',
+              showSortControl ? 'sm:order-3' : 'sm:order-2',
+            )}
           />
-          {!enableNetworkMap ? (
+        </div>
+      ) : (
+        <>
+          <SpaceSearch value={query} className="w-full min-w-0" />
+          <div className="flex w-full min-w-0 items-center justify-between gap-2">
+            <Combobox
+              options={orderOptions}
+              initialValue={order}
+              triggerVariant="ghost"
+              className="h-9 w-fit justify-start px-0 font-normal"
+              onChange={setOrder}
+              allowEmptyChoice={false}
+            />
             <CreateSpaceButton
               lang={lang}
               isAuthenticated={isAuthenticated}
               className="min-w-0 shrink-0"
-              buttonClassName="h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+              buttonClassName={createSpaceButtonClassName}
             />
-          ) : null}
-        </div>
-      ) : null}
-      {enableNetworkMap ? (
-        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-          <NetworkMapViewToggle
-            value={view}
-            onChange={setView}
-            className="shrink-0"
-          />
-          <CreateSpaceButton
-            lang={lang}
-            isAuthenticated={isAuthenticated}
-            className="min-w-0 shrink-0 sm:ml-auto"
-            buttonClassName="h-9 gap-1.5 px-2.5 text-xs whitespace-nowrap sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
-          />
-        </div>
-      ) : null}
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -424,15 +461,17 @@ export function ExploreSpaces({
       {sharedHeader}
 
       {enableNetworkMap ? (
-        view === 'map' ? (
-          <NetworkGlobeMap
-            lang={lang}
-            spaces={mapSpaces}
-            className="w-full"
-            renderToolbar={renderMapToolbar}
-          />
-        ) : (
-          <div className="flex w-full flex-col">
+        <>
+          <div className={cn(view !== 'map' && 'hidden')}>
+            <NetworkGlobeMap
+              lang={lang}
+              spaces={mapSpaces}
+              className="w-full"
+              renderToolbar={renderMapToolbar}
+              isActive={view === 'map'}
+            />
+          </div>
+          <div className={cn(view !== 'list' && 'hidden')}>
             {listMetaRow}
             <SpaceCardList
               lang={lang}
@@ -441,14 +480,9 @@ export function ExploreSpaces({
               cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
             />
           </div>
-        )
-      ) : null}
-
-      {enableNetworkMap && view === 'map' ? (
-        <div className="mt-8">{metricsSection}</div>
-      ) : null}
-
-      {!enableNetworkMap ? (
+          <div className="mt-8">{metricsSection}</div>
+        </>
+      ) : (
         <>
           {listMetaRow}
           <SpaceCardList
@@ -458,11 +492,7 @@ export function ExploreSpaces({
             cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
           />
         </>
-      ) : null}
-
-      {enableNetworkMap && view === 'list' ? (
-        <div className="mt-8">{metricsSection}</div>
-      ) : null}
+      )}
     </div>
   );
 }
