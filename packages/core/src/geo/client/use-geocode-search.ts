@@ -17,8 +17,14 @@ export function useGeocodeSearch({
   const [isSearching, setIsSearching] = React.useState(false);
   const [error, setError] = React.useState<GeocodeSearchError>(null);
 
+  const suppressSearchRef = React.useRef(false);
+
   React.useEffect(() => {
     const trimmed = query.trim();
+    if (suppressSearchRef.current) {
+      suppressSearchRef.current = false;
+      return;
+    }
     if (trimmed.length < 2) {
       setResults([]);
       setError(null);
@@ -73,9 +79,18 @@ export function useGeocodeSearch({
     setIsSearching(false);
   }, []);
 
+  const setQueryFromSelection = React.useCallback((nextQuery: string) => {
+    suppressSearchRef.current = true;
+    setQuery(nextQuery);
+    setResults([]);
+    setError(null);
+    setIsSearching(false);
+  }, []);
+
   return {
     query,
     setQuery,
+    setQueryFromSelection,
     results,
     isSearching,
     error,

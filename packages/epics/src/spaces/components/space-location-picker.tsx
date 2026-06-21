@@ -62,9 +62,17 @@ export const SpaceLocationPicker = React.forwardRef<
 >(function SpaceLocationPicker({ value, onChange, disabled = false }, ref) {
   const t = useTranslations('SpaceLocation');
   const mapRef = React.useRef<HTMLDivElement>(null);
-  const { query, setQuery, results, isSearching, error } = useGeocodeSearch();
+  const {
+    query,
+    setQuery,
+    setQueryFromSelection,
+    results,
+    isSearching,
+    error,
+  } = useGeocodeSearch();
   const [landPath, setLandPath] = React.useState<string | null>(null);
   const [isLoadingLand, setIsLoadingLand] = React.useState(true);
+  const [isResultsOpen, setIsResultsOpen] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -153,9 +161,10 @@ export const SpaceLocationPicker = React.forwardRef<
         result.label,
         'geocode',
       );
-      setQuery(result.label);
+      setQueryFromSelection(result.label);
+      setIsResultsOpen(false);
     },
-    [applySelection, setQuery],
+    [applySelection, setQueryFromSelection],
   );
 
   const [latInput, setLatInput] = React.useState(
@@ -228,10 +237,10 @@ export const SpaceLocationPicker = React.forwardRef<
 
   React.useEffect(() => {
     if (!hasSyncedSearchQuery.current) {
-      setQuery(value.locationLabel ?? '');
+      setQueryFromSelection(value.locationLabel ?? '');
       hasSyncedSearchQuery.current = true;
     }
-  }, [setQuery, value.locationLabel]);
+  }, [setQueryFromSelection, value.locationLabel]);
 
   const showNoResults =
     query.trim().length >= 2 && !isSearching && !error && results.length === 0;
@@ -247,6 +256,7 @@ export const SpaceLocationPicker = React.forwardRef<
     setLatInput('');
     setLngInput('');
     setManualError(null);
+    setIsResultsOpen(false);
     hasSyncedSearchQuery.current = false;
   }, [onChange, setQuery]);
 
@@ -263,7 +273,10 @@ export const SpaceLocationPicker = React.forwardRef<
           <Input
             id="space-location-search"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setIsResultsOpen(true);
+              setQuery(event.target.value);
+            }}
             placeholder={t('searchPlaceholder')}
             disabled={disabled}
             autoComplete="off"
@@ -280,7 +293,7 @@ export const SpaceLocationPicker = React.forwardRef<
         {showNoResults ? (
           <p className="text-1 text-neutral-11">{t('searchNoResults')}</p>
         ) : null}
-        {results.length > 0 ? (
+        {isResultsOpen && results.length > 0 ? (
           <ul
             className="border border-border rounded-md bg-background max-h-48 overflow-y-auto"
             aria-label={t('resultsLabel')}
@@ -294,6 +307,7 @@ export const SpaceLocationPicker = React.forwardRef<
                 <button
                   type="button"
                   className="w-full text-left px-3 py-2 text-2 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-8"
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={() => handleSelectResult(result)}
                   disabled={disabled}
                 >
