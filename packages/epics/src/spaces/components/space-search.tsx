@@ -15,15 +15,12 @@ type SpaceSearchProps = {
   suggestions?: Suggestion[];
   value?: string;
   className?: string;
-  /** Renders inside the search field border (e.g. sort dropdown on My Spaces). */
-  suffix?: React.ReactNode;
 };
 
 export const SpaceSearch = ({
   suggestions,
   value,
   className,
-  suffix,
 }: SpaceSearchProps) => {
   const t = useTranslations('Network');
   const pathname = usePathname();
@@ -48,29 +45,13 @@ export const SpaceSearch = ({
 
   return (
     <div className={cn('flex min-w-0 flex-col gap-2', className)}>
-      {suffix ? (
-        <div className="flex h-8 w-full min-w-0 items-center overflow-hidden rounded border border-input bg-neutral-1 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:h-10">
-          <div className="pointer-events-none flex shrink-0 items-center pl-3 text-accent-9">
-            <SearchIcon size="16px" />
-          </div>
-          <input
-            type="search"
-            placeholder={t('findASpace')}
-            defaultValue={value}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="min-h-0 min-w-0 flex-1 border-0 bg-transparent py-0 pl-3 pr-2 text-2 text-accent-9 caret-accent-9 placeholder:text-accent-9 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          <div className="flex h-full shrink-0 items-center pr-1">{suffix}</div>
-        </div>
-      ) : (
-        <Input
-          type="search"
-          placeholder={t('findASpace')}
-          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          defaultValue={value}
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-      )}
+      <Input
+        type="search"
+        placeholder={t('findASpace')}
+        leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+        defaultValue={value}
+        onChange={(e) => handleSearch(e.target.value)}
+      />
       {suggestions && (
         <div className="flex items-center justify-center w-full gap-2">
           {suggestions.map((suggestion) => (
