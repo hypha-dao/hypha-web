@@ -10,6 +10,10 @@ import React from 'react';
 
 import { CreateSpaceButton } from './create-space-button';
 import { SpaceSearch } from './space-search';
+import {
+  spaceToolbarPrimaryButtonClassName,
+  spaceToolbarSortComboboxClassName,
+} from './space-toolbar-styles';
 
 type MySpacesControlsProps = {
   lang: Locale;
@@ -65,9 +69,6 @@ export function MySpacesControls({
     [pathname, replace, searchParams],
   );
 
-  const createSpaceButtonClassName =
-    'h-8 min-h-8 gap-1 px-2 text-xs whitespace-nowrap sm:h-10 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm';
-
   return (
     <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
       <SpaceSearch value={query} className="min-w-0 flex-1" />
@@ -75,7 +76,7 @@ export function MySpacesControls({
         options={orderOptions}
         initialValue={order}
         triggerVariant="ghost"
-        className="h-9 w-fit shrink-0 justify-start px-0 font-normal md:w-fit"
+        className={spaceToolbarSortComboboxClassName}
         onChange={setOrder}
         allowEmptyChoice={false}
       />
@@ -84,7 +85,7 @@ export function MySpacesControls({
           lang={lang}
           isAuthenticated={isAuthenticated}
           className="min-w-0 shrink-0"
-          buttonClassName={createSpaceButtonClassName}
+          buttonClassName={spaceToolbarPrimaryButtonClassName}
         />
       ) : null}
     </div>

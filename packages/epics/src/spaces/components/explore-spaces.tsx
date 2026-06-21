@@ -19,6 +19,10 @@ import {
 import { CreateSpaceButton } from './create-space-button';
 import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
+import {
+  spaceToolbarPrimaryButtonClassName,
+  spaceToolbarSortComboboxClassName,
+} from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
@@ -293,7 +297,10 @@ export function ExploreSpaces({
           lang={lang}
           spaces={spaces}
           isAuthenticated={isAuthenticated}
-          className="h-8 w-fit shrink-0 self-start px-2.5 text-xs sm:h-10 sm:self-auto sm:px-4 sm:text-sm"
+          className={cn(
+            spaceToolbarPrimaryButtonClassName,
+            'w-fit shrink-0 self-start sm:self-auto',
+          )}
         />
       </div>
     ),
@@ -328,12 +335,6 @@ export function ExploreSpaces({
 
   const showSortControl = !enableNetworkMap || view === 'list';
 
-  const sortComboboxClassName =
-    'h-9 w-fit shrink-0 justify-start px-0 font-normal md:w-fit';
-
-  const createSpaceButtonClassName =
-    'h-8 min-h-8 gap-1 px-2 text-xs whitespace-nowrap sm:h-10 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm';
-
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-col gap-3">
       {enableNetworkMap ? (
@@ -347,7 +348,7 @@ export function ExploreSpaces({
                 'min-w-0 shrink-0 sm:ml-auto',
                 showSortControl ? 'sm:order-4' : 'sm:order-3',
               )}
-              buttonClassName={createSpaceButtonClassName}
+              buttonClassName={spaceToolbarPrimaryButtonClassName}
             />
           </div>
           {showSortControl ? (
@@ -355,7 +356,7 @@ export function ExploreSpaces({
               options={orderOptions}
               initialValue={order}
               triggerVariant="ghost"
-              className={cn(sortComboboxClassName, 'sm:order-2')}
+              className={cn(spaceToolbarSortComboboxClassName, 'sm:order-2')}
               onChange={setOrder}
               allowEmptyChoice={false}
             />
@@ -377,7 +378,7 @@ export function ExploreSpaces({
               options={orderOptions}
               initialValue={order}
               triggerVariant="ghost"
-              className={sortComboboxClassName}
+              className={spaceToolbarSortComboboxClassName}
               onChange={setOrder}
               allowEmptyChoice={false}
             />
@@ -385,7 +386,7 @@ export function ExploreSpaces({
               lang={lang}
               isAuthenticated={isAuthenticated}
               className="min-w-0 shrink-0"
-              buttonClassName={createSpaceButtonClassName}
+              buttonClassName={spaceToolbarPrimaryButtonClassName}
             />
           </div>
         </>

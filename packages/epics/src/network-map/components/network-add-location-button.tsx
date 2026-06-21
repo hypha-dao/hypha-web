@@ -101,7 +101,6 @@ export function NetworkAddLocationButton({
         <Button
           type="button"
           variant="outline"
-          size="sm"
           className={className}
           disabled={!isAuthenticated}
           title={!isAuthenticated ? tCommon('signIn') : undefined}

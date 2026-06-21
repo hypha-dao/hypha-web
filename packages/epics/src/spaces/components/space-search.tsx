@@ -7,6 +7,11 @@ import { cn } from '@hypha-platform/ui-utils';
 import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
+import {
+  spaceToolbarInputClassName,
+  spaceToolbarInputRootClassName,
+} from './space-toolbar-styles';
+
 type Suggestion = {
   title: string;
 };
@@ -51,6 +56,8 @@ export const SpaceSearch = ({
         leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
         defaultValue={value}
         onChange={(e) => handleSearch(e.target.value)}
+        rootClassName={spaceToolbarInputRootClassName}
+        className={spaceToolbarInputClassName}
       />
       {suggestions && (
         <div className="flex items-center justify-center w-full gap-2">
