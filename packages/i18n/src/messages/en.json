@@ -3509,7 +3509,9 @@
     "addLocationSelectPlaceholder": "Select a space",
     "addLocationContinue": "Continue to configuration",
     "addLocationLoading": "Loading your spaces…",
-    "addLocationNoSpaces": "You are not a member of any spaces yet."
+    "addLocationNoSpaces": "You are not a member of any spaces yet.",
+    "clusterExpandTitle": "{count} spaces at this location",
+    "clusterZoomOut": "Zoom out"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",

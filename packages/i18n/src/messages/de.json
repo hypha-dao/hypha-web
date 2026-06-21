@@ -3466,7 +3466,9 @@
     "addLocationSelectPlaceholder": "Space auswählen",
     "addLocationContinue": "Zur Konfiguration",
     "addLocationLoading": "Deine Spaces werden geladen…",
-    "addLocationNoSpaces": "Du bist noch in keinem Space Mitglied."
+    "addLocationNoSpaces": "Du bist noch in keinem Space Mitglied.",
+    "clusterExpandTitle": "{count} Spaces an diesem Ort",
+    "clusterZoomOut": "Herauszoomen"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",

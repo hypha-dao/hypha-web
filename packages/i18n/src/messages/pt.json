@@ -2940,7 +2940,9 @@
     "addLocationSelectPlaceholder": "Selecionar um space",
     "addLocationContinue": "Continuar para a configuração",
     "addLocationLoading": "A carregar os seus spaces…",
-    "addLocationNoSpaces": "Ainda não é membro de nenhum space."
+    "addLocationNoSpaces": "Ainda não é membro de nenhum space.",
+    "clusterExpandTitle": "{count} spaces neste local",
+    "clusterZoomOut": "Afastar"
   },
   "SignalCard": {
     "noConversationRoom": "Ainda não há sala de conversa",

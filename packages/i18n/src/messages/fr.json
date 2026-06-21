@@ -2938,7 +2938,9 @@
     "addLocationSelectPlaceholder": "Sélectionner un espace",
     "addLocationContinue": "Continuer vers la configuration",
     "addLocationLoading": "Chargement de vos espaces…",
-    "addLocationNoSpaces": "Vous n'êtes membre d'aucun espace pour l'instant."
+    "addLocationNoSpaces": "Vous n'êtes membre d'aucun espace pour l'instant.",
+    "clusterExpandTitle": "{count} espaces à cet emplacement",
+    "clusterZoomOut": "Dézoomer"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",

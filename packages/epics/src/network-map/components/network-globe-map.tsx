@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { cn } from '@hypha-platform/ui-utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Minus } from 'lucide-react';
+import { Button } from '@hypha-platform/ui';
 import { NetworkMapLayerControls } from './network-map-layer-controls';
 import type {
   NetworkGlobeMapProps,
@@ -34,7 +35,19 @@ import {
   globeRotationForCenter,
 } from '../lib/globe-rotation';
 import { setNetworkGlobeReady } from '../lib/network-globe-ready-store';
+import {
+  buildMapPinData,
+  pinDatumSpace,
+  spiderfyOffsets,
+  type MapPinDatum,
+} from '../lib/pin-clusters';
+
 const PROJECTION_ANIMATION_MS = 1200;
+const CLUSTER_FOCUS_MS = 1100;
+const CLUSTER_BLUR_MS = 650;
+const CLUSTER_ZOOM_SCALE = 1.85;
+const SPIDERFY_RADIUS = 34;
+const SPIDERFY_START = 0.62;
 const FLAT_ROTATION: Rotation = [0, 0, 0];
 
 type MapPalette = {
@@ -130,10 +143,12 @@ function buildProjection(
   height: number,
   morph: number,
   rotate: Rotation,
+  zoomScale = 1,
 ): d3.GeoProjection {
   const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
-  const globeScale = minDim / 2 - 24;
+  const globeScale =
+    (minDim / 2 - 24) * Math.max(0.75, Math.min(zoomScale, 2.5));
   const flatScale = width / (2 * Math.PI);
   const center: [number, number] = [width / 2, height / 2];
 
@@ -197,6 +212,16 @@ export function NetworkGlobeMap({
     [spaces],
   );
 
+  const [focusedClusterId, setFocusedClusterId] = React.useState<string | null>(
+    null,
+  );
+  const [clusterSpread, setClusterSpread] = React.useState(0);
+
+  const mapPinData = React.useMemo(
+    () => buildMapPinData(locatedSpaces, focusedClusterId),
+    [locatedSpaces, focusedClusterId],
+  );
+
   const [hoveredPin, setHoveredPin] = React.useState<{
     spaceId: number;
     x: number;
@@ -232,6 +257,11 @@ export function NetworkGlobeMap({
   const morphRef = React.useRef(morphProgress);
   const layersRef = React.useRef(layers);
   const locatedSpacesRef = React.useRef(locatedSpaces);
+  const mapPinDataRef = React.useRef(mapPinData);
+  const focusedClusterIdRef = React.useRef<string | null>(null);
+  const clusterSpreadRef = React.useRef(0);
+  const globeZoomRef = React.useRef(1);
+  const clusterAnimFrameRef = React.useRef<number | null>(null);
   const dragV0Ref = React.useRef<[number, number, number] | null>(null);
   const dragR0Ref = React.useRef<Rotation>(DEFAULT_GLOBE_ROTATION);
   const dragQ0Ref = React.useRef<ReturnType<typeof fromAngles> | null>(null);
@@ -244,6 +274,9 @@ export function NetworkGlobeMap({
   morphRef.current = morphProgress;
   layersRef.current = layers;
   locatedSpacesRef.current = locatedSpaces;
+  mapPinDataRef.current = mapPinData;
+  focusedClusterIdRef.current = focusedClusterId;
+  clusterSpreadRef.current = clusterSpread;
 
   const updateHoveredPin = React.useCallback(
     (spaceId: number, event: MouseEvent) => {
@@ -291,6 +324,11 @@ export function NetworkGlobeMap({
   clearHoveredPinRef.current = clearHoveredPin;
   clearSelectedPinRef.current = clearSelectedPin;
 
+  const animateClusterFocusRef = React.useRef<
+    (cluster: Extract<MapPinDatum, { kind: 'cluster' }>) => void
+  >(() => {});
+  const clearClusterFocusRef = React.useRef<() => void>(() => {});
+
   const renderMap = React.useCallback(() => {
     const svg = d3.select(svgRef.current);
     const container = containerRef.current;
@@ -312,7 +350,13 @@ export function NetworkGlobeMap({
 
     const morph = morphRef.current;
     const rotate = rotateRef.current;
-    const projection = buildProjection(width, height, morph, rotate);
+    const projection = buildProjection(
+      width,
+      height,
+      morph,
+      rotate,
+      globeZoomRef.current,
+    );
     const path = d3.geoPath(projection);
     const layerState = layersRef.current;
     const palette = mapPaletteRef.current;
@@ -324,7 +368,48 @@ export function NetworkGlobeMap({
       root.append('path').attr('class', 'map-ocean');
       root.append('path').attr('class', 'map-grid');
       root.append('path').attr('class', 'map-land');
+      root.append('g').attr('class', 'map-spiderfy');
       root.append('g').attr('class', 'map-pins');
+    }
+
+    if (root.select('g.map-spiderfy').empty()) {
+      root.insert('g', 'g.map-pins').attr('class', 'map-spiderfy');
+    }
+
+    const spiderfyLayer = root.select<SVGGElement>('g.map-spiderfy');
+    spiderfyLayer.selectAll('line').remove();
+
+    const spread = clusterSpreadRef.current;
+    const focusedClusterId = focusedClusterIdRef.current;
+    const spiderfyPins = mapPinDataRef.current.filter(
+      (datum): datum is Extract<MapPinDatum, { kind: 'spiderfy-space' }> =>
+        datum.kind === 'spiderfy-space',
+    );
+
+    if (focusedClusterId && spread > 0.01 && spiderfyPins.length > 0) {
+      const anchor = spiderfyPins[0]!;
+      const projectedAnchor = projection([anchor.longitude, anchor.latitude]);
+      if (projectedAnchor) {
+        const [centerX, centerY] = projectedAnchor;
+        const offsets = spiderfyOffsets(
+          anchor.spiderfyCount,
+          SPIDERFY_RADIUS * spread,
+        );
+
+        spiderfyLayer
+          .selectAll<SVGLineElement, { x: number; y: number }>('line')
+          .data(offsets)
+          .join('line')
+          .attr('x1', centerX)
+          .attr('y1', centerY)
+          .attr('x2', (_, index) => centerX + offsets[index]!.x)
+          .attr('y2', (_, index) => centerY + offsets[index]!.y)
+          .attr('stroke', 'white')
+          .attr('stroke-opacity', 0.35 * spread)
+          .attr('stroke-width', 1.25)
+          .attr('stroke-dasharray', '4 4')
+          .attr('pointer-events', 'none');
+      }
     }
 
     root.style(
@@ -370,23 +455,31 @@ export function NetworkGlobeMap({
 
     const pinGroup = root.select<SVGGElement>('g.map-pins');
     const pins = pinGroup
-      .selectAll<SVGGElement, (typeof locatedSpacesRef.current)[number]>(
-        'g.map-pin',
-      )
-      .data(locatedSpacesRef.current, (space) => space.id);
+      .selectAll<SVGGElement, MapPinDatum>('g.map-pin')
+      .data(mapPinDataRef.current, (datum) => datum.pinKey);
 
     pins.exit().remove();
 
     const pinsEnter = pins
       .enter()
       .append('g')
-      .attr('class', 'map-pin')
+      .attr('class', (datum) =>
+        datum.kind === 'cluster' ? 'map-pin map-pin-cluster' : 'map-pin',
+      )
       .attr('cursor', 'pointer')
       .attr('tabindex', 0)
-      .attr('role', 'link')
-      .on('click', function (event: MouseEvent, space) {
+      .attr('role', (datum) => (datum.kind === 'cluster' ? 'button' : 'link'))
+      .on('click', function (event: MouseEvent, datum) {
         event.stopPropagation();
         if (isDraggingRef.current) {
+          return;
+        }
+        if (datum.kind === 'cluster') {
+          animateClusterFocusRef.current(datum);
+          return;
+        }
+        const space = pinDatumSpace(datum);
+        if (!space) {
           return;
         }
         if (canHoverRef.current) {
@@ -403,20 +496,39 @@ export function NetworkGlobeMap({
             : { spaceId: space.id, ...position },
         );
       })
-      .on('keydown', (event: KeyboardEvent, space) => {
+      .on('keydown', (event: KeyboardEvent, datum) => {
+        if (datum.kind === 'cluster') {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            animateClusterFocusRef.current(datum);
+          }
+          return;
+        }
+        const space = pinDatumSpace(datum);
+        if (!space) {
+          return;
+        }
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           router.push(`/${lang}/dho/${space.slug}/agreements`);
         }
       })
-      .on('mouseenter', function (event: MouseEvent, space) {
+      .on('mouseenter', function (event: MouseEvent, datum) {
         if (!canHoverRef.current || isDraggingRef.current) {
+          return;
+        }
+        const space = pinDatumSpace(datum);
+        if (!space) {
           return;
         }
         updateHoveredPinRef.current(space.id, event);
       })
-      .on('mousemove', function (event: MouseEvent, space) {
+      .on('mousemove', function (event: MouseEvent, datum) {
         if (!canHoverRef.current || isDraggingRef.current) {
+          return;
+        }
+        const space = pinDatumSpace(datum);
+        if (!space) {
           return;
         }
         updateHoveredPinRef.current(space.id, event);
@@ -428,27 +540,74 @@ export function NetworkGlobeMap({
         clearHoveredPinRef.current();
       });
 
-    pinsEnter
-      .append('circle')
-      .attr('r', 12)
-      .attr('fill', 'transparent')
-      .attr('pointer-events', 'all');
+    pinsEnter.each(function (datum) {
+      const group = d3.select(this);
+      if (datum.kind === 'cluster') {
+        group
+          .append('circle')
+          .attr('class', 'map-pin-cluster-pulse')
+          .attr('r', 12)
+          .attr('fill', 'none')
+          .attr('stroke', '#3b82f6')
+          .attr('stroke-width', 2)
+          .attr('pointer-events', 'none');
+        group
+          .append('circle')
+          .attr('r', 11)
+          .attr('fill', 'white')
+          .attr('opacity', 0.92)
+          .attr('pointer-events', 'none');
+        group
+          .append('circle')
+          .attr('r', 8)
+          .attr('fill', '#2563eb')
+          .attr('pointer-events', 'none');
+        group
+          .append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dy', '0.35em')
+          .attr('font-size', 10)
+          .attr('font-weight', 600)
+          .attr('fill', 'white')
+          .attr('pointer-events', 'none')
+          .text(String(datum.count));
+        group
+          .append('title')
+          .text(t('clusterExpandTitle', { count: datum.count }));
+        return;
+      }
 
-    pinsEnter
-      .append('circle')
-      .attr('r', 5)
-      .attr('fill', (space) => pinColor(space.id))
-      .attr('stroke', 'white')
-      .attr('stroke-width', 1.5)
-      .attr('pointer-events', 'none');
+      const space = pinDatumSpace(datum);
+      if (!space) {
+        return;
+      }
 
-    pinsEnter
-      .append('title')
-      .text((space) => space.locationLabel ?? space.title);
+      group
+        .append('circle')
+        .attr('r', 12)
+        .attr('fill', 'transparent')
+        .attr('pointer-events', 'all');
+      group
+        .append('circle')
+        .attr('class', 'map-pin-dot')
+        .attr('r', 5)
+        .attr('fill', pinColor(space.id))
+        .attr('stroke', 'white')
+        .attr('stroke-width', 1.5)
+        .attr('pointer-events', 'none');
+      group.append('title').text(space.locationLabel ?? space.title);
+    });
 
-    pins.merge(pinsEnter).each(function (space) {
-      const latitude = space.latitude;
-      const longitude = space.longitude;
+    pins.merge(pinsEnter).each(function (datum) {
+      const latitude =
+        datum.kind === 'cluster' || datum.kind === 'spiderfy-space'
+          ? datum.latitude
+          : datum.space.latitude;
+      const longitude =
+        datum.kind === 'cluster' || datum.kind === 'spiderfy-space'
+          ? datum.longitude
+          : datum.space.longitude;
+
       if (latitude == null || longitude == null) {
         d3.select(this).style('display', 'none');
         return;
@@ -471,11 +630,32 @@ export function NetworkGlobeMap({
         return;
       }
 
+      let offsetX = 0;
+      let offsetY = 0;
+      let pinOpacity = 'dimmed' in datum && datum.dimmed ? 0.28 : 1;
+      let pinScale = 1;
+
+      if (datum.kind === 'spiderfy-space') {
+        const offsets = spiderfyOffsets(
+          datum.spiderfyCount,
+          SPIDERFY_RADIUS * spread,
+        );
+        const offset = offsets[datum.spiderfyIndex] ?? { x: 0, y: 0 };
+        offsetX = offset.x;
+        offsetY = offset.y;
+        pinOpacity = spread;
+        pinScale = 0.65 + spread * 0.35;
+      }
+
       d3.select(this)
-        .attr('transform', `translate(${x},${y})`)
+        .attr(
+          'transform',
+          `translate(${x + offsetX},${y + offsetY}) scale(${pinScale})`,
+        )
+        .attr('opacity', pinOpacity)
         .style('display', null);
     });
-  }, [lang, router]);
+  }, [lang, router, t]);
 
   renderMapRef.current = renderMap;
 
@@ -494,6 +674,137 @@ export function NetworkGlobeMap({
       renderMapRef.current();
     });
   }, []);
+
+  const clearClusterFocus = React.useCallback(() => {
+    if (!focusedClusterIdRef.current) {
+      return;
+    }
+
+    if (clusterAnimFrameRef.current != null) {
+      cancelAnimationFrame(clusterAnimFrameRef.current);
+      clusterAnimFrameRef.current = null;
+    }
+
+    clearHoveredPinRef.current();
+    clearSelectedPinRef.current();
+
+    const fromZoom = globeZoomRef.current;
+    const fromSpread = clusterSpreadRef.current;
+
+    if (prefersReducedMotion()) {
+      globeZoomRef.current = 1;
+      clusterSpreadRef.current = 0;
+      focusedClusterIdRef.current = null;
+      setFocusedClusterId(null);
+      setClusterSpread(0);
+      requestRender();
+      return;
+    }
+
+    const start = performance.now();
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / CLUSTER_BLUR_MS);
+      const eased = d3.easeCubicInOut(t);
+      const remaining = 1 - eased;
+
+      globeZoomRef.current = 1 + (fromZoom - 1) * remaining;
+      clusterSpreadRef.current = fromSpread * remaining;
+      setClusterSpread(fromSpread * remaining);
+      requestRender();
+
+      if (t < 1) {
+        clusterAnimFrameRef.current = requestAnimationFrame(step);
+      } else {
+        globeZoomRef.current = 1;
+        clusterSpreadRef.current = 0;
+        focusedClusterIdRef.current = null;
+        setFocusedClusterId(null);
+        setClusterSpread(0);
+        clusterAnimFrameRef.current = null;
+        requestRender();
+      }
+    };
+
+    clusterAnimFrameRef.current = requestAnimationFrame(step);
+  }, [requestRender]);
+
+  const animateClusterFocus = React.useCallback(
+    (cluster: Extract<MapPinDatum, { kind: 'cluster' }>) => {
+      if (clusterAnimFrameRef.current != null) {
+        cancelAnimationFrame(clusterAnimFrameRef.current);
+        clusterAnimFrameRef.current = null;
+      }
+      if (animationFrameRef.current != null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+
+      clearHoveredPinRef.current();
+      clearSelectedPinRef.current();
+
+      const isGlobe = morphRef.current < 0.01;
+      const fromRotate = [...rotateRef.current] as Rotation;
+      const toRotate = globeRotationForCenter(
+        cluster.longitude,
+        cluster.latitude,
+      );
+      const fromZoom = globeZoomRef.current;
+      const toZoom = CLUSTER_ZOOM_SCALE;
+      const interpolateRotation = interpolateAngles(fromRotate, toRotate);
+
+      focusedClusterIdRef.current = cluster.clusterId;
+      setFocusedClusterId(cluster.clusterId);
+
+      if (prefersReducedMotion() || !isGlobe) {
+        rotateRef.current = isGlobe ? toRotate : rotateRef.current;
+        globeZoomRef.current = isGlobe ? toZoom : 1;
+        savedGlobeRotateRef.current = isGlobe
+          ? toRotate
+          : savedGlobeRotateRef.current;
+        clusterSpreadRef.current = 1;
+        setClusterSpread(1);
+        requestRender();
+        return;
+      }
+
+      clusterSpreadRef.current = 0;
+      setClusterSpread(0);
+      const start = performance.now();
+      savedGlobeRotateRef.current = toRotate;
+
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / CLUSTER_FOCUS_MS);
+        const eased = d3.easeCubicInOut(t);
+
+        rotateRef.current = interpolateRotation(eased);
+        globeZoomRef.current =
+          fromZoom + (toZoom - fromZoom) * d3.easeCubicOut(t);
+
+        const spreadT =
+          t <= SPIDERFY_START ? 0 : (t - SPIDERFY_START) / (1 - SPIDERFY_START);
+        const spread = d3.easeCubicOut(spreadT);
+        clusterSpreadRef.current = spread;
+        setClusterSpread(spread);
+        requestRender();
+
+        if (t < 1) {
+          clusterAnimFrameRef.current = requestAnimationFrame(step);
+        } else {
+          clusterSpreadRef.current = 1;
+          setClusterSpread(1);
+          clusterAnimFrameRef.current = null;
+          requestRender();
+        }
+      };
+
+      clusterAnimFrameRef.current = requestAnimationFrame(step);
+    },
+    [requestRender],
+  );
+
+  animateClusterFocusRef.current = animateClusterFocus;
+  clearClusterFocusRef.current = clearClusterFocus;
 
   const scheduleRender = React.useCallback(() => {
     requestAnimationFrame(() => {
@@ -587,6 +898,8 @@ export function NetworkGlobeMap({
     morphProgress,
     projectionMode,
     locatedSpaces,
+    mapPinData,
+    clusterSpread,
     mapPalette,
     renderMap,
   ]);
@@ -617,12 +930,15 @@ export function NetworkGlobeMap({
 
     function globeProjectionAtRotation(rotate: Rotation) {
       const { width, height } = mapDimensions();
-      return buildProjection(width, height, 0, rotate);
+      return buildProjection(width, height, 0, rotate, globeZoomRef.current);
     }
 
     const dragBehavior = d3
       .drag<SVGSVGElement, unknown>()
       .filter((event) => {
+        if (focusedClusterIdRef.current) {
+          return false;
+        }
         if (morphRef.current >= 0.01) {
           return false;
         }
@@ -691,6 +1007,17 @@ export function NetworkGlobeMap({
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (clusterAnimFrameRef.current != null) {
+        cancelAnimationFrame(clusterAnimFrameRef.current);
+        clusterAnimFrameRef.current = null;
+      }
+      if (focusedClusterIdRef.current) {
+        focusedClusterIdRef.current = null;
+        setFocusedClusterId(null);
+        clusterSpreadRef.current = 0;
+        setClusterSpread(0);
+      }
+      globeZoomRef.current = 1;
 
       const fromMorph = morphRef.current;
       const toMorph = target === 'flat' ? 1 : 0;
@@ -749,6 +1076,9 @@ export function NetworkGlobeMap({
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (clusterAnimFrameRef.current != null) {
+        cancelAnimationFrame(clusterAnimFrameRef.current);
+      }
       if (renderFrameRef.current != null) {
         cancelAnimationFrame(renderFrameRef.current);
       }
@@ -762,23 +1092,36 @@ export function NetworkGlobeMap({
     }
 
     function handlePointerDown(event: PointerEvent) {
-      if (canHoverRef.current) {
-        return;
-      }
       const target = event.target;
       if (!(target instanceof Element)) {
         return;
       }
       if (
         !target.closest('.map-pin') &&
-        !target.closest('[data-network-map-hover-card]')
+        !target.closest('[data-network-map-hover-card]') &&
+        !target.closest('[data-network-map-cluster-controls]')
       ) {
-        clearSelectedPinRef.current();
+        if (focusedClusterIdRef.current) {
+          clearClusterFocusRef.current();
+        }
+        if (!canHoverRef.current) {
+          clearSelectedPinRef.current();
+        }
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && focusedClusterIdRef.current) {
+        clearClusterFocusRef.current();
       }
     }
 
     document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const activePin = hoveredPin ?? selectedPin;
@@ -815,6 +1158,39 @@ export function NetworkGlobeMap({
     renderToolbar(layerControls)
   ) : (
     <div className="flex justify-center">{layerControls}</div>
+  );
+
+  const clusterControls = focusedClusterId ? (
+    <div
+      data-network-map-cluster-controls
+      className="absolute left-3 top-3 z-20"
+    >
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 gap-1.5 bg-neutral-2/90 shadow-sm backdrop-blur-sm"
+        onClick={clearClusterFocus}
+      >
+        <Minus className="size-3.5" aria-hidden />
+        {t('clusterZoomOut')}
+      </Button>
+    </div>
+  ) : null;
+
+  const mapClusterStyles = (
+    <style>{`
+      @keyframes network-map-cluster-pulse {
+        0% { transform: scale(0.9); opacity: 0.55; }
+        70% { transform: scale(1.45); opacity: 0; }
+        100% { transform: scale(1.45); opacity: 0; }
+      }
+      g.map-pin-cluster .map-pin-cluster-pulse {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: network-map-cluster-pulse 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+      }
+    `}</style>
   );
 
   if (locatedSpaces.length === 0) {
@@ -878,6 +1254,8 @@ export function NetworkGlobeMap({
             {loadError}
           </div>
         ) : null}
+        {mapClusterStyles}
+        {clusterControls}
         <svg
           ref={svgRef}
           className={cn(
