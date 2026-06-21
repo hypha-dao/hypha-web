@@ -29,6 +29,7 @@ export function NetworkMapPinHoverCard({
   return (
     <div
       className="pointer-events-none absolute z-20 w-[min(100%,280px)] shadow-lg"
+      data-network-map-hover-card
       style={{ left, top }}
     >
       <Link href={href} className="pointer-events-auto block">

@@ -96,6 +96,30 @@ function isPinVisibleOnProjection(
   return d3.geoDistance([longitude, latitude], center) <= Math.PI / 2 + 1e-9;
 }
 
+function parsePinTransform(element: Element): { x: number; y: number } | null {
+  const transform = element.getAttribute('transform');
+  if (!transform) {
+    return null;
+  }
+  const match = /translate\(([-\d.]+),([-\d.]+)\)/.exec(transform);
+  if (!match?.[1] || !match[2]) {
+    return null;
+  }
+  const x = Number.parseFloat(match[1]);
+  const y = Number.parseFloat(match[2]);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return null;
+  }
+  return { x, y };
+}
+
+function canUseHover(): boolean {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
 function buildProjection(
   width: number,
   height: number,
@@ -172,8 +196,16 @@ export function NetworkGlobeMap({
     x: number;
     y: number;
   } | null>(null);
+  const [selectedPin, setSelectedPin] = React.useState<{
+    spaceId: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const setHoveredPinRef = React.useRef(setHoveredPin);
   setHoveredPinRef.current = setHoveredPin;
+  const setSelectedPinRef = React.useRef(setSelectedPin);
+  setSelectedPinRef.current = setSelectedPin;
+  const canHoverRef = React.useRef(canUseHover());
 
   const [layers, setLayers] = React.useState<NetworkMapLayerVisibility>({
     land: true,
@@ -226,10 +258,31 @@ export function NetworkGlobeMap({
     setHoveredPinRef.current(null);
   }, []);
 
+  const clearSelectedPin = React.useCallback(() => {
+    setSelectedPinRef.current(null);
+  }, []);
+
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const syncCanHover = () => {
+      canHoverRef.current = mediaQuery.matches;
+      if (mediaQuery.matches) {
+        clearSelectedPin();
+      } else {
+        clearHoveredPin();
+      }
+    };
+    syncCanHover();
+    mediaQuery.addEventListener('change', syncCanHover);
+    return () => mediaQuery.removeEventListener('change', syncCanHover);
+  }, [clearHoveredPin, clearSelectedPin]);
+
   const updateHoveredPinRef = React.useRef(updateHoveredPin);
   const clearHoveredPinRef = React.useRef(clearHoveredPin);
+  const clearSelectedPinRef = React.useRef(clearSelectedPin);
   updateHoveredPinRef.current = updateHoveredPin;
   clearHoveredPinRef.current = clearHoveredPin;
+  clearSelectedPinRef.current = clearSelectedPin;
 
   const renderMap = React.useCallback(() => {
     const svg = d3.select(svgRef.current);
@@ -324,8 +377,24 @@ export function NetworkGlobeMap({
       .attr('cursor', 'pointer')
       .attr('tabindex', 0)
       .attr('role', 'link')
-      .on('click', (_event, space) => {
-        router.push(`/${lang}/dho/${space.slug}/agreements`);
+      .on('click', function (event: MouseEvent, space) {
+        event.stopPropagation();
+        if (isDraggingRef.current) {
+          return;
+        }
+        if (canHoverRef.current) {
+          router.push(`/${lang}/dho/${space.slug}/agreements`);
+          return;
+        }
+        const position = parsePinTransform(this);
+        if (!position) {
+          return;
+        }
+        setSelectedPinRef.current((current) =>
+          current?.spaceId === space.id
+            ? null
+            : { spaceId: space.id, ...position },
+        );
       })
       .on('keydown', (event: KeyboardEvent, space) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -334,19 +403,19 @@ export function NetworkGlobeMap({
         }
       })
       .on('mouseenter', function (event: MouseEvent, space) {
-        if (isDraggingRef.current) {
+        if (!canHoverRef.current || isDraggingRef.current) {
           return;
         }
         updateHoveredPinRef.current(space.id, event);
       })
       .on('mousemove', function (event: MouseEvent, space) {
-        if (isDraggingRef.current) {
+        if (!canHoverRef.current || isDraggingRef.current) {
           return;
         }
         updateHoveredPinRef.current(space.id, event);
       })
       .on('mouseleave', () => {
-        if (isDraggingRef.current) {
+        if (!canHoverRef.current || isDraggingRef.current) {
           return;
         }
         clearHoveredPinRef.current();
@@ -515,6 +584,7 @@ export function NetworkGlobeMap({
         }
         isDraggingRef.current = true;
         clearHoveredPinRef.current();
+        clearSelectedPinRef.current();
 
         const [x, y] = pointerFromEvent(event);
         const invert = globeProjectionAtRotation(rotateRef.current).invert?.([
@@ -634,18 +704,45 @@ export function NetworkGlobeMap({
     };
   }, []);
 
-  const hoveredSpace = hoveredPin
-    ? locatedSpaces.find((space) => space.id === hoveredPin.spaceId)
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (canHoverRef.current) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      if (
+        !target.closest('.map-pin') &&
+        !target.closest('[data-network-map-hover-card]')
+      ) {
+        clearSelectedPinRef.current();
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, []);
+
+  const activePin = hoveredPin ?? selectedPin;
+  const activeSpace = activePin
+    ? locatedSpaces.find((space) => space.id === activePin.spaceId)
     : null;
 
   const hoverCard =
-    hoveredSpace && hoveredPin ? (
+    activeSpace && activePin ? (
       <NetworkMapPinHoverCard
         lang={lang}
-        space={hoveredSpace}
+        space={activeSpace}
         {...clampHoverPosition(
-          hoveredPin.x,
-          hoveredPin.y,
+          activePin.x,
+          activePin.y,
           containerRef.current?.clientWidth ?? 640,
           containerRef.current?.clientHeight ?? 360,
         )}
