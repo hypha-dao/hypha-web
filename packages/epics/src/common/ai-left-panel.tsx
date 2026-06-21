@@ -91,11 +91,17 @@ import {
   ONBOARDING_SETUP_MODE,
   applyOnboardingContextForUserText,
   dispatchAiOnboardingSeedAck,
+  ensureSpaceSetupContext,
+  isSpaceSetupContext,
   readOnboardingConversationContext,
+  resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
   type OnboardingConversationContext,
 } from './ai-onboarding-context';
-import { onboardingLocationFromCreatePayload } from './onboarding-create-payload';
+import {
+  onboardingLocationFromCreatePayload,
+  onboardingTransparencyFromCreatePayload,
+} from './onboarding-create-payload';
 import {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
@@ -103,6 +109,22 @@ import {
   onboardingSpaceLocationFromPicker,
   skippedOnboardingSpaceLocation,
 } from './onboarding-location-ui';
+import {
+  applyOnboardingActivationToContext,
+  formatOnboardingActivationSubmitMessage,
+  type OnboardingActivationMethod,
+} from './onboarding-activation-ui';
+import {
+  applyOnboardingSetupJourneyToContext,
+  formatOnboardingSetupJourneySubmitMessage,
+  type OnboardingSetupJourney,
+} from './onboarding-setup-journey-ui';
+import {
+  applyOnboardingTransparencyToContext,
+  formatOnboardingTransparencySubmitMessage,
+  type OnboardingTransparencyMessageLabels,
+} from './onboarding-transparency-ui';
+import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 type ChatUIMessage = {
@@ -463,6 +485,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const suggestionItems = useMemo(
     () =>
       [
+        ...(!spaceSlug
+          ? ([
+              {
+                id: 'createSpace',
+                prompt: t('suggestions.createSpace'),
+                tagLabel: t('suggestionTags.createSpace'),
+              },
+              {
+                id: 'createEcosystem',
+                prompt: t('suggestions.createEcosystem'),
+                tagLabel: t('suggestionTags.createEcosystem'),
+              },
+            ] as const)
+          : []),
         {
           id: 'spaceHealth',
           prompt: t('suggestions.spaceHealth'),
@@ -494,7 +530,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           tagLabel: t('suggestionTags.valueFlows'),
         },
       ] as const,
-    [t],
+    [spaceSlug, t],
   );
 
   const handleOverlayClose = useCallback(() => {
@@ -733,7 +769,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [setMessages, spaceSlug]);
 
   const buildMessageOptions = useCallback(
-    async (contextOverride?: OnboardingConversationContext) => {
+    async (contextOverride?: OnboardingConversationContext | undefined) => {
       let token: string | undefined;
       try {
         token = (await getAccessToken?.()) ?? undefined;
@@ -877,8 +913,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [buildMessageOptions, clearError, isStreaming, sendMessage]);
 
   useEffect(() => {
-    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
-    if (!pathname.includes('/onboarding')) return;
+    if (!isSpaceSetupContext(onboardingContext)) return;
 
     const latestCreatedSpaceSlug = [...messages]
       .reverse()
@@ -922,7 +957,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     messages,
     onboardingContext,
     openAiPanel,
-    pathname,
     router,
     setAiOverlayVisible,
   ]);
@@ -1034,8 +1068,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [messages, openAiPanel, router, setAiOverlayVisible]);
 
   useEffect(() => {
-    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
-    if (!pathname.includes('/onboarding')) return;
+    if (!isSpaceSetupContext(onboardingContext)) return;
     const slug =
       typeof walletCreatedSpace?.slug === 'string'
         ? walletCreatedSpace.slug.trim()
@@ -1056,15 +1089,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     lang,
     onboardingContext,
     openAiPanel,
-    pathname,
     router,
     setAiOverlayVisible,
     walletCreatedSpace?.slug,
   ]);
 
   useEffect(() => {
-    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
-    if (!pathname.includes('/onboarding')) return;
+    if (!isSpaceSetupContext(onboardingContext)) return;
     if (aiWalletCreateInFlightRef.current) return;
 
     const latestWalletCreatePayload = [...messages]
@@ -1171,6 +1202,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
             : {}),
           ...onboardingLocationFromCreatePayload(payload),
+          ...onboardingTransparencyFromCreatePayload(payload),
         });
         if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
       } catch (walletFlowError) {
@@ -1182,7 +1214,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         aiWalletCreateInFlightRef.current = false;
       }
     })();
-  }, [createSpaceWithWalletFlow, messages, onboardingContext, pathname]);
+  }, [createSpaceWithWalletFlow, messages, onboardingContext]);
 
   useEffect(() => {
     if (aiWalletProposalInFlightRef.current) return;
@@ -1344,13 +1376,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     setDraftAttachments([]);
     try {
       clearError();
-      let nextContext = onboardingContext;
-      if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-        nextContext = applyOnboardingContextForUserText(
-          onboardingContext,
-          text,
-        );
-      }
+      const nextContext = resolveSetupContextForUserMessage(
+        text,
+        onboardingContext,
+        lang,
+      );
       const options = await buildMessageOptions(nextContext);
       let attachmentParts: Array<
         | { type: 'text'; text: string }
@@ -1410,7 +1440,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         { role: 'user', parts: [...textParts, ...attachmentParts] },
         options,
       );
-      if (nextContext !== onboardingContext) {
+      if (nextContext && nextContext !== onboardingContext) {
         setOnboardingContext(nextContext);
         saveOnboardingConversationContext(nextContext);
       }
@@ -1435,6 +1465,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     matrix,
     onboardingContext,
     blockSpaceAiForInteraction,
+    lang,
   ]);
 
   const handleStop = useCallback(() => {
@@ -1459,34 +1490,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         if (spaceSlug && text.trim()) {
           recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
         }
-        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-          const nextContext = applyOnboardingContextForUserText(
-            onboardingContext,
-            text,
-          );
-          const options = await buildMessageOptions(nextContext);
-          if (DEBUG)
-            console.log('[AiLeftPanel] suggestion selected', {
-              text,
-              spaceSlug,
-            });
-          await sendMessage(
-            { role: 'user', parts: [{ type: 'text', text }] },
-            options,
-          );
-          if (nextContext !== onboardingContext) {
-            setOnboardingContext(nextContext);
-            saveOnboardingConversationContext(nextContext);
-          }
-          return;
-        }
-        const options = await buildMessageOptions();
+        const nextContext = resolveSetupContextForUserMessage(
+          text,
+          onboardingContext,
+          lang,
+        );
+        const options = await buildMessageOptions(nextContext);
         if (DEBUG)
-          console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
+          console.log('[AiLeftPanel] suggestion selected', {
+            text,
+            spaceSlug,
+          });
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text }] },
           options,
         );
+        if (nextContext && nextContext !== onboardingContext) {
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
       } catch (err) {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
@@ -1496,6 +1518,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       sendMessage,
       buildMessageOptions,
       clearError,
+      lang,
       onboardingContext,
       spaceSlug,
     ],
@@ -1506,19 +1529,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       if (blockSpaceAiForInteraction) return;
       try {
         clearError();
-        let nextContext = onboardingContext;
-        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-          nextContext = applyOnboardingContextForUserText(
-            onboardingContext,
-            text,
-          );
-        }
+        const nextContext = resolveSetupContextForUserMessage(
+          text,
+          onboardingContext,
+          lang,
+        );
         const options = await buildMessageOptions(nextContext);
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text }] },
           options,
         );
-        if (nextContext !== onboardingContext) {
+        if (nextContext && nextContext !== onboardingContext) {
           setOnboardingContext(nextContext);
           saveOnboardingConversationContext(nextContext);
         }
@@ -1530,6 +1551,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       blockSpaceAiForInteraction,
       buildMessageOptions,
       clearError,
+      lang,
       onboardingContext,
       sendMessage,
     ],
@@ -1561,15 +1583,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleOnboardingLocationConfirm = useCallback(
     async (value: SpaceLocationValue) => {
-      if (!onboardingContext || isStreaming) return;
+      if (isStreaming) return;
       try {
         clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
         const message = formatOnboardingLocationSubmitMessage(
           value,
           onboardingLocationMessageLabels,
         );
         const nextContext = applyOnboardingLocationToContext(
-          onboardingContext,
+          baseContext,
           onboardingSpaceLocationFromPicker(value),
           message,
         );
@@ -1581,6 +1604,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [
       clearError,
       isStreaming,
+      lang,
       onboardingContext,
       onboardingLocationMessageLabels,
       sendOnboardingLocationMessage,
@@ -1588,12 +1612,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const handleOnboardingLocationSkip = useCallback(async () => {
-    if (!onboardingContext || isStreaming) return;
+    if (isStreaming) return;
     try {
       clearError();
+      const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
       const message = t('onboardingLocationSkipMessage');
       const nextContext = applyOnboardingLocationToContext(
-        onboardingContext,
+        baseContext,
         skippedOnboardingSpaceLocation(),
         message,
       );
@@ -1604,10 +1629,178 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [
     clearError,
     isStreaming,
+    lang,
     onboardingContext,
     sendOnboardingLocationMessage,
     t,
   ]);
+
+  const sendOnboardingActivationMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const sendOnboardingSetupJourneyMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingSetupJourneyMessageLabels = useMemo(
+    () => ({
+      singleSpace: t('onboardingSetupJourneySetSingle'),
+      ecosystem: t('onboardingSetupJourneySetEcosystem'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingSetupJourneySelect = useCallback(
+    async (journey: OnboardingSetupJourney) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingSetupJourneySubmitMessage(
+          journey,
+          onboardingSetupJourneyMessageLabels,
+        );
+        const nextContext = applyOnboardingSetupJourneyToContext(
+          baseContext,
+          journey,
+          message,
+        );
+        await sendOnboardingSetupJourneyMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] setup journey select sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingSetupJourneyMessageLabels,
+      sendOnboardingSetupJourneyMessage,
+    ],
+  );
+
+  const onboardingActivationMessageLabels = useMemo(
+    () => ({
+      sandbox: t('onboardingActivationSetSandbox'),
+      pilot: t('onboardingActivationSetPilot'),
+      deployment: t('onboardingActivationSetDeployment'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingActivationSelect = useCallback(
+    async (method: OnboardingActivationMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingActivationSubmitMessage(
+          method,
+          onboardingActivationMessageLabels,
+        );
+        const nextContext = applyOnboardingActivationToContext(
+          baseContext,
+          method,
+          message,
+        );
+        await sendOnboardingActivationMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] activation select sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingActivationMessageLabels,
+      onboardingContext,
+      sendOnboardingActivationMessage,
+    ],
+  );
+
+  const sendOnboardingTransparencyMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingTransparencyMessageLabels = useMemo(
+    () => ({
+      levelPublic: t('onboardingTransparencyLevelPublic'),
+      levelNetwork: t('onboardingTransparencyLevelNetwork'),
+      levelOrganisation: t('onboardingTransparencyLevelOrganisation'),
+      levelSpace: t('onboardingTransparencyLevelSpace'),
+      summary: (discoverability: string, access: string) =>
+        t('onboardingTransparencySetSummary', { discoverability, access }),
+    }),
+    [t],
+  );
+
+  const handleOnboardingTransparencyConfirm = useCallback(
+    async (matrix: OnboardingTransparencyMatrix) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingTransparencySubmitMessage(
+          matrix,
+          onboardingTransparencyMessageLabels,
+        );
+        const nextContext = applyOnboardingTransparencyToContext(
+          baseContext,
+          matrix,
+          message,
+        );
+        await sendOnboardingTransparencyMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] transparency confirm sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingTransparencyMessageLabels,
+      sendOnboardingTransparencyMessage,
+    ],
+  );
 
   const enableNetworkMap = getClientEnableNetworkMap();
 
@@ -1889,6 +2082,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             blockSpaceAiForSubscription
               ? undefined
               : handleOnboardingLocationSkip
+          }
+          onOnboardingSetupJourneySelect={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingSetupJourneySelect
+          }
+          onOnboardingActivationSelect={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingActivationSelect
+          }
+          onOnboardingTransparencyConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingTransparencyConfirm
           }
         />
       </SidebarContent>

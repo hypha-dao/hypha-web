@@ -13,12 +13,22 @@ import {
   type AiPanelDraftAttachment,
   applyOnboardingContextForUserText,
   applyOnboardingLocationToContext,
+  applyOnboardingActivationToContext,
+  applyOnboardingSetupJourneyToContext,
+  applyOnboardingTransparencyToContext,
   formatOnboardingLocationSubmitMessage,
+  formatOnboardingActivationSubmitMessage,
+  formatOnboardingSetupJourneySubmitMessage,
+  formatOnboardingTransparencySubmitMessage,
   getClientEnableNetworkMap,
   onboardingLocationFromCreatePayload,
+  onboardingTransparencyFromCreatePayload,
   onboardingSpaceLocationFromPicker,
   skippedOnboardingSpaceLocation,
+  type OnboardingActivationMethod,
+  type OnboardingSetupJourney,
   type OnboardingConversationContext,
+  type OnboardingTransparencyMatrix,
   type SpaceLocationValue,
 } from '@hypha-platform/epics';
 import {
@@ -151,6 +161,18 @@ export function OnboardingAiFullPage({
     [buildMessageOptions, sendMessage],
   );
 
+  const sendOnboardingActivationMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
   const onboardingLocationMessageLabels = useMemo(
     () => ({
       withLabel: (label: string) =>
@@ -220,6 +242,155 @@ export function OnboardingAiFullPage({
     sendOnboardingLocationMessage,
     t,
   ]);
+
+  const sendOnboardingSetupJourneyMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingSetupJourneyMessageLabels = useMemo(
+    () => ({
+      singleSpace: t('aiHero.onboardingSetupJourneySetSingle'),
+      ecosystem: t('aiHero.onboardingSetupJourneySetEcosystem'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingSetupJourneySelect = useCallback(
+    async (journey: OnboardingSetupJourney) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const message = formatOnboardingSetupJourneySubmitMessage(
+          journey,
+          onboardingSetupJourneyMessageLabels,
+        );
+        const nextContext = applyOnboardingSetupJourneyToContext(
+          onboardingContext,
+          journey,
+          message,
+        );
+        await sendOnboardingSetupJourneyMessage(message, nextContext);
+      } catch (sendError) {
+        console.error(
+          '[OnboardingAiFullPage] setup journey select send failed:',
+          sendError,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      onboardingContext,
+      onboardingSetupJourneyMessageLabels,
+      sendOnboardingSetupJourneyMessage,
+    ],
+  );
+
+  const onboardingActivationMessageLabels = useMemo(
+    () => ({
+      sandbox: t('aiHero.onboardingActivationSetSandbox'),
+      pilot: t('aiHero.onboardingActivationSetPilot'),
+      deployment: t('aiHero.onboardingActivationSetDeployment'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingActivationSelect = useCallback(
+    async (method: OnboardingActivationMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const message = formatOnboardingActivationSubmitMessage(
+          method,
+          onboardingActivationMessageLabels,
+        );
+        const nextContext = applyOnboardingActivationToContext(
+          onboardingContext,
+          method,
+          message,
+        );
+        await sendOnboardingActivationMessage(message, nextContext);
+      } catch (sendError) {
+        console.error(
+          '[OnboardingAiFullPage] activation select send failed:',
+          sendError,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      onboardingActivationMessageLabels,
+      onboardingContext,
+      sendOnboardingActivationMessage,
+    ],
+  );
+
+  const sendOnboardingTransparencyMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingTransparencyMessageLabels = useMemo(
+    () => ({
+      levelPublic: t('aiHero.onboardingTransparencyLevelPublic'),
+      levelNetwork: t('aiHero.onboardingTransparencyLevelNetwork'),
+      levelOrganisation: t('aiHero.onboardingTransparencyLevelOrganisation'),
+      levelSpace: t('aiHero.onboardingTransparencyLevelSpace'),
+      summary: (discoverability: string, access: string) =>
+        t('aiHero.onboardingTransparencySetSummary', {
+          discoverability,
+          access,
+        }),
+    }),
+    [t],
+  );
+
+  const handleOnboardingTransparencyConfirm = useCallback(
+    async (matrix: OnboardingTransparencyMatrix) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const message = formatOnboardingTransparencySubmitMessage(
+          matrix,
+          onboardingTransparencyMessageLabels,
+        );
+        const nextContext = applyOnboardingTransparencyToContext(
+          onboardingContext,
+          matrix,
+          message,
+        );
+        await sendOnboardingTransparencyMessage(message, nextContext);
+      } catch (sendError) {
+        console.error(
+          '[OnboardingAiFullPage] transparency confirm send failed:',
+          sendError,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      onboardingContext,
+      onboardingTransparencyMessageLabels,
+      sendOnboardingTransparencyMessage,
+    ],
+  );
 
   const enableNetworkMap = getClientEnableNetworkMap();
 
@@ -436,6 +607,7 @@ export function OnboardingAiFullPage({
             ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
             : {}),
           ...onboardingLocationFromCreatePayload(payload),
+          ...onboardingTransparencyFromCreatePayload(payload),
         });
         if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
       } catch (walletFlowError) {
@@ -577,6 +749,13 @@ export function OnboardingAiFullPage({
               enableNetworkMap={enableNetworkMap}
               onOnboardingLocationConfirm={handleOnboardingLocationConfirm}
               onOnboardingLocationSkip={handleOnboardingLocationSkip}
+              onOnboardingSetupJourneySelect={
+                handleOnboardingSetupJourneySelect
+              }
+              onOnboardingActivationSelect={handleOnboardingActivationSelect}
+              onOnboardingTransparencyConfirm={
+                handleOnboardingTransparencyConfirm
+              }
             />
             <AiPanelChatBar
               value={input}
