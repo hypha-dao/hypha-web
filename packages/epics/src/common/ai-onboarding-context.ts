@@ -1,6 +1,8 @@
 'use client';
 
 export const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
+export const AI_PANEL_SETUP_SOURCE = 'ai_panel' as const;
+export const ONBOARDING_HERO_SOURCE = 'onboarding_hero' as const;
 export const AI_ONBOARDING_SEED_EVENT = 'hypha:ai-onboarding-seed';
 export const AI_ONBOARDING_SEED_ACK_EVENT = 'hypha:ai-onboarding-seed-ack';
 
@@ -12,12 +14,24 @@ export type OnboardingSpaceLocation = {
   skipped?: boolean;
 };
 
+export type OnboardingActivationMethod = 'sandbox' | 'pilot' | 'deployment';
+
+export type OnboardingSetupJourney = 'single_space' | 'ecosystem';
+
+export type OnboardingTransparencyMatrix = {
+  discoverability: 0 | 1 | 2 | 3;
+  access: 0 | 1 | 2 | 3;
+};
+
 export type OnboardingConversationContext = {
   mode: typeof ONBOARDING_SETUP_MODE;
-  source: 'onboarding_hero';
+  source: typeof ONBOARDING_HERO_SOURCE | typeof AI_PANEL_SETUP_SOURCE;
   firstName?: string;
   setupPhase?: 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
   spaceLocation?: OnboardingSpaceLocation;
+  activationMethod?: OnboardingActivationMethod;
+  setupJourney?: OnboardingSetupJourney;
+  transparencyMatrix?: OnboardingTransparencyMatrix;
   setupPlan?: {
     spaceIntent?: {
       title?: string;
@@ -108,6 +122,117 @@ function parseStoredSpaceLocation(
   };
 }
 
+function parseStoredTransparencyMatrix(
+  raw: unknown,
+): OnboardingTransparencyMatrix | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as Partial<OnboardingTransparencyMatrix>;
+  const discoverability = candidate.discoverability;
+  const access = candidate.access;
+  if (
+    typeof discoverability !== 'number' ||
+    discoverability < 0 ||
+    discoverability > 3 ||
+    typeof access !== 'number' ||
+    access < 0 ||
+    access > 3
+  ) {
+    return undefined;
+  }
+  return {
+    discoverability: discoverability as 0 | 1 | 2 | 3,
+    access: access as 0 | 1 | 2 | 3,
+  };
+}
+
+function parseStoredActivationMethod(
+  raw: unknown,
+): OnboardingActivationMethod | undefined {
+  if (raw === 'sandbox' || raw === 'pilot' || raw === 'deployment') {
+    return raw;
+  }
+  return undefined;
+}
+
+function parseStoredSetupJourney(
+  raw: unknown,
+): OnboardingSetupJourney | undefined {
+  if (raw === 'single_space' || raw === 'ecosystem') {
+    return raw;
+  }
+  return undefined;
+}
+
+function parseStoredSource(
+  raw: unknown,
+): OnboardingConversationContext['source'] {
+  if (raw === AI_PANEL_SETUP_SOURCE) return AI_PANEL_SETUP_SOURCE;
+  return ONBOARDING_HERO_SOURCE;
+}
+
+export function createAiPanelSetupContext(
+  locale?: string,
+): OnboardingConversationContext {
+  return {
+    mode: ONBOARDING_SETUP_MODE,
+    source: AI_PANEL_SETUP_SOURCE,
+    setupPhase: 'discover',
+    createdAt: new Date().toISOString(),
+    ...(locale ? { locale } : {}),
+  };
+}
+
+export function isSpaceSetupContext(
+  context: OnboardingConversationContext | undefined,
+): context is OnboardingConversationContext {
+  return context?.mode === ONBOARDING_SETUP_MODE;
+}
+
+export function ensureSpaceSetupContext(
+  context: OnboardingConversationContext | undefined,
+  locale?: string,
+): OnboardingConversationContext {
+  if (isSpaceSetupContext(context)) return context;
+  return createAiPanelSetupContext(locale);
+}
+
+export function shouldEnterSpaceSetupFromUserText(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) return false;
+  if (
+    /\b(full ecosystem|multiple spaces|single space|organisation blueprint|organization blueprint)\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  const wantsSetup = /\b(create|set up|setup|start|launch|build|new)\b/.test(
+    normalized,
+  );
+  const setupTarget =
+    /\b(space|spaces|organisation|organization|ecosystem|dao|dho|org)\b/.test(
+      normalized,
+    );
+  return wantsSetup && setupTarget;
+}
+
+export function resolveSetupContextForUserMessage(
+  text: string,
+  current: OnboardingConversationContext | undefined,
+  locale?: string,
+): OnboardingConversationContext | undefined {
+  if (isSpaceSetupContext(current)) {
+    return text.trim()
+      ? applyOnboardingContextForUserText(current, text)
+      : current;
+  }
+  if (!shouldEnterSpaceSetupFromUserText(text)) {
+    return current;
+  }
+  const base = createAiPanelSetupContext(locale);
+  return text.trim() ? applyOnboardingContextForUserText(base, text) : base;
+}
+
 export function readOnboardingConversationContext():
   | OnboardingConversationContext
   | undefined {
@@ -119,15 +244,15 @@ export function readOnboardingConversationContext():
     if (
       !parsed ||
       parsed.mode !== ONBOARDING_SETUP_MODE ||
-      parsed.source !== 'onboarding_hero' ||
       typeof parsed.createdAt !== 'string'
     ) {
       return undefined;
     }
+    const source = parseStoredSource(parsed.source);
     const parsedSpaceLocation = parseStoredSpaceLocation(parsed.spaceLocation);
     return {
       mode: ONBOARDING_SETUP_MODE,
-      source: 'onboarding_hero',
+      source,
       firstName:
         typeof parsed.firstName === 'string' ? parsed.firstName : undefined,
       setupPhase:
@@ -143,6 +268,11 @@ export function readOnboardingConversationContext():
           ? (parsed.setupPlan as OnboardingConversationContext['setupPlan'])
           : undefined,
       spaceLocation: parsedSpaceLocation,
+      activationMethod: parseStoredActivationMethod(parsed.activationMethod),
+      setupJourney: parseStoredSetupJourney(parsed.setupJourney),
+      transparencyMatrix: parseStoredTransparencyMatrix(
+        parsed.transparencyMatrix,
+      ),
       lastUserText:
         typeof parsed.lastUserText === 'string'
           ? parsed.lastUserText

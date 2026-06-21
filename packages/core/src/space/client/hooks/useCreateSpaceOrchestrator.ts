@@ -291,7 +291,13 @@ export const useCreateSpaceOrchestrator = ({
         const isLive = !isDemo && !isSandbox;
 
         let discoverability: number;
-        if (isSandbox) {
+        if (
+          typeof arg.discoverability === 'number' &&
+          arg.discoverability >= 0 &&
+          arg.discoverability <= 3
+        ) {
+          discoverability = arg.discoverability;
+        } else if (isSandbox) {
           discoverability = 3;
         } else if (isDemo) {
           discoverability = 1;
@@ -299,7 +305,10 @@ export const useCreateSpaceOrchestrator = ({
           discoverability = 0;
         }
 
-        const access = 2;
+        const access =
+          typeof arg.access === 'number' && arg.access >= 0 && arg.access <= 3
+            ? arg.access
+            : 2;
 
         const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
           quorum: 50,

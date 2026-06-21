@@ -44,3 +44,28 @@ export function onboardingLocationFromCreatePayload(
     locationSource,
   };
 }
+
+export function onboardingTransparencyFromCreatePayload(
+  payload: Record<string, unknown>,
+): {
+  discoverability?: number;
+  access?: number;
+} {
+  const discoverability =
+    typeof payload.discoverability === 'number'
+      ? payload.discoverability
+      : undefined;
+  const access =
+    typeof payload.access === 'number' ? payload.access : undefined;
+  if (discoverability === undefined && access === undefined) {
+    return {};
+  }
+  return {
+    ...(discoverability !== undefined &&
+    discoverability >= 0 &&
+    discoverability <= 3
+      ? { discoverability }
+      : {}),
+    ...(access !== undefined && access >= 0 && access <= 3 ? { access } : {}),
+  };
+}
