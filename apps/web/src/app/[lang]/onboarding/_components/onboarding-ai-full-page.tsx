@@ -141,12 +141,12 @@ export function OnboardingAiFullPage({
 
   const sendOnboardingLocationMessage = useCallback(
     async (text: string, nextContext: OnboardingConversationContext) => {
-      setOnboardingContext(nextContext);
       const options = await buildMessageOptions(nextContext);
       await sendMessage(
         { role: 'user', parts: [{ type: 'text', text }] },
         options,
       );
+      setOnboardingContext(nextContext);
     },
     [buildMessageOptions, sendMessage],
   );

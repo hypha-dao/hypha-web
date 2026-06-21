@@ -106,7 +106,8 @@ function withInjectedOnboardingSpaceLocation<T extends Record<string, unknown>>(
   if (
     payload.latitude !== undefined ||
     payload.longitude !== undefined ||
-    typeof payload.location_query === 'string'
+    (typeof payload.location_query === 'string' &&
+      payload.location_query.trim().length > 0)
   ) {
     return payload;
   }

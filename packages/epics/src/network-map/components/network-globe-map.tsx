@@ -321,8 +321,16 @@ export function NetworkGlobeMap({
       .append('g')
       .attr('class', 'map-pin')
       .attr('cursor', 'pointer')
+      .attr('tabindex', 0)
+      .attr('role', 'link')
       .on('click', (_event, space) => {
         router.push(`/${lang}/dho/${space.slug}/agreements`);
+      })
+      .on('keydown', (event: KeyboardEvent, space) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          router.push(`/${lang}/dho/${space.slug}/agreements`);
+        }
       })
       .on('mouseenter', function (event: MouseEvent, space) {
         if (isDraggingRef.current) {
@@ -430,16 +438,14 @@ export function NetworkGlobeMap({
         if (cancelled) {
           return;
         }
-        setLoadError(
-          error instanceof Error ? error.message : 'Failed to load map data',
-        );
+        setLoadError(t('mapLoadError'));
         setIsLoadingGeo(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [scheduleRender]);
+  }, [scheduleRender, t]);
 
   React.useEffect(() => {
     if (isLoadingGeo || loadError || !landRef.current) {

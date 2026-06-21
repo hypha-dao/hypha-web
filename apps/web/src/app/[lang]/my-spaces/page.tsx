@@ -47,13 +47,25 @@ export default async function Index(props: PageProps) {
 
   let allSpaces: Space[] = [];
   let mySpaces: Space[] = [];
-  try {
-    [allSpaces, mySpaces] = await Promise.all([
-      getAllSpaces({ parentOnly: false, omitSandbox: true }),
-      getAllSpaces({ search: query, parentOnly: false }),
-    ]);
-  } catch (err) {
-    console.error('[my-spaces/page] Failed to fetch spaces', { err, query });
+  const [allSpacesResult, mySpacesResult] = await Promise.allSettled([
+    getAllSpaces({ parentOnly: false, omitSandbox: true }),
+    getAllSpaces({ search: query, parentOnly: false }),
+  ]);
+  if (allSpacesResult.status === 'fulfilled') {
+    allSpaces = allSpacesResult.value;
+  } else {
+    console.error(
+      '[my-spaces/page] Failed to fetch all spaces',
+      allSpacesResult.reason,
+    );
+  }
+  if (mySpacesResult.status === 'fulfilled') {
+    mySpaces = mySpacesResult.value;
+  } else {
+    console.error(
+      '[my-spaces/page] Failed to fetch filtered spaces',
+      mySpacesResult.reason,
+    );
   }
 
   const t = await getTranslations('Spaces');

@@ -3419,6 +3419,7 @@
     "noSpacesWithLocation": "Noch keine Spaces mit Standort",
     "noSpacesWithLocationHint": "Spaces erscheinen auf der Karte, sobald ein Admin einen Standort in der Space-Konfiguration festlegt.",
     "loadingMap": "Karte wird geladen…",
+    "mapLoadError": "Karte konnte nicht geladen werden. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.",
     "mapAriaLabel": "Interaktive Netzwerkkarte der Hypha-Spaces",
     "viewToggleLabel": "Netzwerkansicht",
     "layerControlsLabel": "Kartenanzeige",

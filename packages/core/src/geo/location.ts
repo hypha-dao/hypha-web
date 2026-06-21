@@ -222,13 +222,28 @@ export type NominatimSearchResult = {
   lon: string;
 };
 
-export function mapNominatimResults(rows: NominatimSearchResult[]): Array<{
+function isNominatimSearchResult(row: unknown): row is NominatimSearchResult {
+  if (!row || typeof row !== 'object') {
+    return false;
+  }
+  const candidate = row as Record<string, unknown>;
+  const placeId = candidate.place_id;
+  return (
+    (typeof placeId === 'number' || typeof placeId === 'string') &&
+    typeof candidate.display_name === 'string' &&
+    typeof candidate.lat === 'string' &&
+    typeof candidate.lon === 'string'
+  );
+}
+
+export function mapNominatimResults(rows: unknown[]): Array<{
   label: string;
   latitude: number;
   longitude: number;
   placeId: string;
 }> {
   return rows
+    .filter(isNominatimSearchResult)
     .map((row) => {
       const latitude = Number.parseFloat(row.lat);
       const longitude = Number.parseFloat(row.lon);

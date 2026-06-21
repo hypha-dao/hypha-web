@@ -4,6 +4,7 @@ import {
   searchNominatim,
 } from '@hypha-platform/core/server';
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
@@ -39,25 +40,52 @@ function getClientIp(request: Request): string {
   return 'unknown';
 }
 
-function isRateLimited(ip: string): boolean {
+function getRateLimitKey(ip: string): string {
+  if (ip !== 'unknown') {
+    return ip;
+  }
+  return `unknown:${randomUUID()}`;
+}
+
+function isRateLimited(key: string): boolean {
   const now = Date.now();
   pruneRateLimitBuckets(now);
-  const bucket = rateLimitByIp.get(ip);
+  const bucket = rateLimitByIp.get(key);
   if (!bucket || now - bucket.windowStartedAt > RATE_LIMIT_WINDOW_MS) {
-    rateLimitByIp.set(ip, { count: 1, windowStartedAt: now });
+    rateLimitByIp.set(key, { count: 1, windowStartedAt: now });
     return false;
   }
   bucket.count += 1;
   return bucket.count > RATE_LIMIT_MAX_REQUESTS;
 }
 
+function geocodeErrorResponse(
+  code: string,
+  message: string,
+  status: number,
+  details?: unknown,
+) {
+  return NextResponse.json(
+    {
+      error: {
+        code,
+        message,
+        ...(details !== undefined ? { details } : {}),
+      },
+    },
+    { status },
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    if (isRateLimited(ip)) {
-      return NextResponse.json(
-        { error: 'Too many geocode requests. Please try again shortly.' },
-        { status: 429 },
+    const rateLimitKey = getRateLimitKey(ip);
+    if (isRateLimited(rateLimitKey)) {
+      return geocodeErrorResponse(
+        'RATE_LIMIT_EXCEEDED',
+        'Too many geocode requests. Please try again shortly.',
+        429,
       );
     }
 
@@ -65,17 +93,16 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: 'Malformed JSON body' },
-        { status: 400 },
-      );
+      return geocodeErrorResponse('MALFORMED_JSON', 'Malformed JSON body', 400);
     }
 
     const parsed = geocodeRequestSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: parsed.error.format() },
-        { status: 400 },
+      return geocodeErrorResponse(
+        'VALIDATION_FAILED',
+        'Validation failed',
+        400,
+        parsed.error.format(),
       );
     }
 
@@ -87,9 +114,13 @@ export async function POST(request: Request) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('[api/v1/geocode] Failed to geocode:', error);
-    return NextResponse.json(
-      { error: 'Failed to geocode location' },
-      { status: 500 },
+    const message =
+      error instanceof Error ? error.message : 'Failed to geocode location';
+    const isUpstream = /nominatim/i.test(message);
+    return geocodeErrorResponse(
+      isUpstream ? 'UPSTREAM_GEOCODE_FAILED' : 'GEOCODE_FAILED',
+      isUpstream ? 'Geocoding service is temporarily unavailable.' : message,
+      isUpstream ? 502 : 500,
     );
   }
 }

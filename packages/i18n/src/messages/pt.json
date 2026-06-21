@@ -2893,6 +2893,7 @@
     "noSpacesWithLocation": "Ainda não há spaces com localização",
     "noSpacesWithLocationHint": "Os spaces aparecem no mapa depois que um admin define a localização na configuração do space.",
     "loadingMap": "A carregar mapa…",
+    "mapLoadError": "Falha ao carregar o mapa. Atualize a página e tente novamente.",
     "mapAriaLabel": "Mapa interativo da rede Hypha",
     "viewToggleLabel": "Vista da rede",
     "layerControlsLabel": "Opções do mapa",

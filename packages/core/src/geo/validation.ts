@@ -16,7 +16,7 @@ function coerceOptionalCoordinate(value: unknown): unknown {
       return null;
     }
     const parsed = Number.parseFloat(trimmed.replace(',', '.'));
-    return Number.isFinite(parsed) ? parsed : value;
+    return Number.isFinite(parsed) ? parsed : null;
   }
   return value;
 }

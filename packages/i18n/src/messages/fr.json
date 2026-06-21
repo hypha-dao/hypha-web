@@ -2891,6 +2891,7 @@
     "noSpacesWithLocation": "Aucun espace avec un emplacement pour l'instant",
     "noSpacesWithLocationHint": "Les espaces apparaissent sur la carte une fois qu'un administrateur définit un emplacement dans la configuration.",
     "loadingMap": "Chargement de la carte…",
+    "mapLoadError": "Impossible de charger la carte. Actualisez la page et réessayez.",
     "mapAriaLabel": "Carte interactive du réseau Hypha",
     "viewToggleLabel": "Vue réseau",
     "layerControlsLabel": "Options d'affichage",

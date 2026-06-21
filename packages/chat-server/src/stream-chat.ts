@@ -18,7 +18,7 @@ import {
   buildSystemPrompt,
   sanitizeSlug,
 } from './system-prompt';
-import { wantsGeneratedVisualsFromText } from './tools/onboarding-confirmation';
+import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -1193,7 +1193,7 @@ export async function createChatStreamResult(
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active.\n- Act as a setup architect for creating and configuring a first space.\n- Before any write action, present a concise action plan and request explicit confirmation.\n- Prefer structured, step-by-step guidance with clear defaults and trade-offs.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
           normalizedConversationContext.setupPhase ?? 'discover'
         }.\n- For create-space onboarding, ask where the space is based and let the user set it with the interactive map UI (search address or pin) or skip, then icon/logo/banner assets or offer AI-generated visuals via generate_space_visual_assets.\n- When the user sets location via the map UI, pass coordinates into create_space_from_onboarding. Use geocode_space_location only when the user types a place name instead of using the map.\n- After wallet handoff, instruct the user to complete the wallet signing prompt instead of repeating verbal confirmations.${
-          recentUserTexts.some((text) => wantsGeneratedVisualsFromText(text))
+          resolveLatestVisualGenerationIntent(recentUserTexts)
             ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation.'
             : ''
         }${

@@ -60,23 +60,45 @@ export async function generateSpaceVisualAssets(
 
     let logoUrl: string | null = null;
     let leadImageUrl: string | null = null;
+    const failures: string[] = [];
 
     if (shouldGenerateLogo) {
-      const logoDataUrl = await generateOpenRouterImage(buildLogoPrompt(data));
-      logoUrl = await uploadGeneratedImageDataUrl(
-        logoDataUrl,
-        `${slugStem}-logo`,
-      );
+      try {
+        const logoDataUrl = await generateOpenRouterImage(
+          buildLogoPrompt(data),
+        );
+        logoUrl = await uploadGeneratedImageDataUrl(
+          logoDataUrl,
+          `${slugStem}-logo`,
+        );
+      } catch (error) {
+        failures.push(
+          error instanceof Error ? error.message : 'Logo generation failed.',
+        );
+      }
     }
 
     if (shouldGenerateBanner) {
-      const bannerDataUrl = await generateOpenRouterImage(
-        buildBannerPrompt(data),
-      );
-      leadImageUrl = await uploadGeneratedImageDataUrl(
-        bannerDataUrl,
-        `${slugStem}-banner`,
-      );
+      try {
+        const bannerDataUrl = await generateOpenRouterImage(
+          buildBannerPrompt(data),
+        );
+        leadImageUrl = await uploadGeneratedImageDataUrl(
+          bannerDataUrl,
+          `${slugStem}-banner`,
+        );
+      } catch (error) {
+        failures.push(
+          error instanceof Error ? error.message : 'Banner generation failed.',
+        );
+      }
+    }
+
+    if (!logoUrl && !leadImageUrl) {
+      return {
+        ok: false,
+        error: failures.join(' ') || 'Image generation failed.',
+      };
     }
 
     return {
@@ -84,7 +106,11 @@ export async function generateSpaceVisualAssets(
       logo_url: logoUrl,
       lead_image_url: leadImageUrl,
       next_step:
-        'Show the generated visuals to the user and ask whether they want to use them for space creation or regenerate with a different vibe.',
+        failures.length > 0
+          ? `Partial success (${failures.join(
+              '; ',
+            )}). Show the generated visuals to the user and ask whether they want to use them or regenerate.`
+          : 'Show the generated visuals to the user and ask whether they want to use them for space creation or regenerate with a different vibe.',
     };
   } catch (error) {
     const message =

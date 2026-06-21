@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   hasOnboardingConfirmation,
   hasRecentVisualGenerationRequest,
+  resolveLatestVisualGenerationIntent,
   wantsGeneratedVisualsFromText,
 } from '../onboarding-confirmation';
 
@@ -35,6 +36,21 @@ describe('onboarding confirmation helpers', () => {
       hasRecentVisualGenerationRequest([
         'expand description',
         'generate images',
+      ]),
+    ).toBe(true);
+  });
+
+  it('uses latest user intent for visual generation requests', () => {
+    expect(
+      resolveLatestVisualGenerationIntent([
+        'generate images',
+        "don't generate images",
+      ]),
+    ).toBe(false);
+    expect(
+      resolveLatestVisualGenerationIntent([
+        "don't generate images",
+        'generate a logo please',
       ]),
     ).toBe(true);
   });

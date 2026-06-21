@@ -32,11 +32,23 @@ export function wantsGeneratedVisualsFromText(
   return VISUAL_GENERATION_PATTERN.test(text);
 }
 
-export function hasRecentVisualGenerationRequest(
+export function resolveLatestVisualGenerationIntent(
   texts: string[] | null | undefined,
 ): boolean {
   if (!texts?.length) return false;
-  return texts.some((text) => wantsGeneratedVisualsFromText(text));
+  for (let index = texts.length - 1; index >= 0; index -= 1) {
+    const text = texts[index];
+    if (!text?.trim()) continue;
+    if (VISUAL_NEGATION_PATTERN.test(text)) return false;
+    if (VISUAL_GENERATION_PATTERN.test(text)) return true;
+  }
+  return false;
+}
+
+export function hasRecentVisualGenerationRequest(
+  texts: string[] | null | undefined,
+): boolean {
+  return resolveLatestVisualGenerationIntent(texts);
 }
 
 export function inferVisualVibe(args: {

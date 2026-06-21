@@ -1,17 +1,11 @@
-'use client';
-
-import { getOnboardingPath } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { redirect } from 'next/navigation';
 
-export default function NetworkCreateSpacePage() {
-  const { lang } = useParams();
-  const router = useRouter();
+type PageProps = {
+  params: Promise<{ lang: Locale }>;
+};
 
-  useEffect(() => {
-    router.replace(getOnboardingPath(lang as Locale));
-  }, [lang, router]);
-
-  return null;
+export default async function NetworkCreateSpacePage({ params }: PageProps) {
+  const { lang } = await params;
+  redirect(`/${lang}/onboarding`);
 }

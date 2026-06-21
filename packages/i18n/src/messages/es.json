@@ -2930,6 +2930,7 @@
     "noSpacesWithLocation": "Aún no hay espacios con ubicación",
     "noSpacesWithLocationHint": "Los espacios aparecen en el mapa cuando un administrador define la ubicación en la configuración.",
     "loadingMap": "Cargando mapa…",
+    "mapLoadError": "No se pudo cargar el mapa. Actualiza la página e inténtalo de nuevo.",
     "mapAriaLabel": "Mapa interactivo de la red Hypha",
     "viewToggleLabel": "Vista de red",
     "layerControlsLabel": "Opciones de mapa",

@@ -3462,6 +3462,7 @@
     "noSpacesWithLocation": "No spaces with a location yet",
     "noSpacesWithLocationHint": "Spaces appear on the map once an admin sets a location in space configuration.",
     "loadingMap": "Loading map…",
+    "mapLoadError": "Failed to load map data. Please refresh and try again.",
     "mapAriaLabel": "Interactive network map of Hypha spaces",
     "viewToggleLabel": "Network view",
     "layerControlsLabel": "Map display options",

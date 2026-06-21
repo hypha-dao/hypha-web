@@ -1350,8 +1350,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           onboardingContext,
           text,
         );
-        setOnboardingContext(nextContext);
-        saveOnboardingConversationContext(nextContext);
       }
       const options = await buildMessageOptions(nextContext);
       let attachmentParts: Array<
@@ -1412,6 +1410,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         { role: 'user', parts: [...textParts, ...attachmentParts] },
         options,
       );
+      if (nextContext !== onboardingContext) {
+        setOnboardingContext(nextContext);
+        saveOnboardingConversationContext(nextContext);
+      }
       for (const att of attachments) {
         if (att.previewUrl.startsWith('blob:')) {
           URL.revokeObjectURL(att.previewUrl);
@@ -1462,8 +1464,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             onboardingContext,
             text,
           );
-          setOnboardingContext(nextContext);
-          saveOnboardingConversationContext(nextContext);
           const options = await buildMessageOptions(nextContext);
           if (DEBUG)
             console.log('[AiLeftPanel] suggestion selected', {
@@ -1474,6 +1474,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             { role: 'user', parts: [{ type: 'text', text }] },
             options,
           );
+          if (nextContext !== onboardingContext) {
+            setOnboardingContext(nextContext);
+            saveOnboardingConversationContext(nextContext);
+          }
           return;
         }
         const options = await buildMessageOptions();
@@ -1508,14 +1512,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             onboardingContext,
             text,
           );
-          setOnboardingContext(nextContext);
-          saveOnboardingConversationContext(nextContext);
         }
         const options = await buildMessageOptions(nextContext);
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text }] },
           options,
         );
+        if (nextContext !== onboardingContext) {
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
       } catch (err) {
         console.error('[AiLeftPanel] action reply sendMessage error:', err);
       }
@@ -1531,13 +1537,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const sendOnboardingLocationMessage = useCallback(
     async (text: string, nextContext: OnboardingConversationContext) => {
-      setOnboardingContext(nextContext);
-      saveOnboardingConversationContext(nextContext);
       const options = await buildMessageOptions(nextContext);
       await sendMessage(
         { role: 'user', parts: [{ type: 'text', text }] },
         options,
       );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
     },
     [buildMessageOptions, sendMessage],
   );

@@ -44,6 +44,15 @@ export const createSpace = async (
   return newSpace;
 };
 
+function updateIncludesLocationFields(input: UpdateSpaceInput): boolean {
+  return (
+    input.latitude !== undefined ||
+    input.longitude !== undefined ||
+    input.locationLabel !== undefined ||
+    input.locationSource !== undefined
+  );
+}
+
 function withLocationTimestamp<T extends UpdateSpaceInput>(
   input: T,
 ): T & { locatedAt?: Date | null } {
@@ -64,13 +73,22 @@ function withLocationTimestamp<T extends UpdateSpaceInput>(
   };
 }
 
+function applyLocationFieldsIfPresent<T extends UpdateSpaceInput>(
+  input: T,
+): T & { locatedAt?: Date | null } {
+  if (!updateIncludesLocationFields(input)) {
+    return input;
+  }
+  return withLocationTimestamp(input);
+}
+
 export const updateSpaceBySlug = async (
   { slug, ...rest }: { slug: string } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const [updatedSpace] = await db
     .update(spaces)
-    .set(withLocationTimestamp(rest))
+    .set(applyLocationFieldsIfPresent(rest))
     .where(eq(spaces.slug, slug))
     .returning();
 
@@ -99,7 +117,7 @@ export const updateSpaceById = async (
 
     const [updatedSpace] = await tx
       .update(spaces)
-      .set(withLocationTimestamp(rest))
+      .set(applyLocationFieldsIfPresent(rest))
       .where(eq(spaces.id, id))
       .returning();
 
@@ -166,7 +184,7 @@ export const updateSpaceConfigurationById = async (
 
     const [updatedSpace] = await tx
       .update(spaces)
-      .set(withLocationTimestamp(normalizedRest))
+      .set(applyLocationFieldsIfPresent(normalizedRest))
       .where(eq(spaces.id, id))
       .returning();
 

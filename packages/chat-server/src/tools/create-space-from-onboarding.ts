@@ -104,6 +104,15 @@ async function resolveSpaceLocationFields(
     }
   | { ok: false; error: string }
 > {
+  const hasLat = data.latitude !== undefined;
+  const hasLng = data.longitude !== undefined;
+  if (hasLat !== hasLng) {
+    return {
+      ok: false,
+      error: 'Latitude and longitude must both be provided together.',
+    };
+  }
+
   const latitude =
     data.latitude === undefined ? null : (data.latitude as number | null);
   const longitude =
@@ -132,7 +141,15 @@ async function resolveSpaceLocationFields(
     };
   }
 
-  const results = await searchNominatim(query, 1);
+  let results;
+  try {
+    results = await searchNominatim(query, 1);
+  } catch {
+    return {
+      ok: false,
+      error: `Geocoding failed for "${query}". Ask the user to retry or pick a location on the map.`,
+    };
+  }
   if (results.length === 0) {
     return {
       ok: false,
