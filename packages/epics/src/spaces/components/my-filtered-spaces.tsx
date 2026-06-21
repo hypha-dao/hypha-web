@@ -7,7 +7,8 @@ import {
   SpaceOrder,
   isSpaceArchived,
 } from '@hypha-platform/core/client';
-import { SpaceCardList, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
+import { SpaceCardList } from './space-card-list';
+import { useMemberWeb3SpaceIds } from '../hooks/use-member-web3-space-ids';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';

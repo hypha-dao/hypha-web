@@ -13,12 +13,12 @@ import {
 import {
   NetworkAddLocationButton,
   NetworkGlobeMap,
-  NetworkMapView,
   NetworkMapViewToggle,
-  CreateSpaceButton,
-  SpaceCardList,
-  SpaceSearch,
-} from '@hypha-platform/epics';
+  type NetworkMapView,
+} from '../../network-map';
+import { CreateSpaceButton } from './create-space-button';
+import { SpaceCardList } from './space-card-list';
+import { SpaceSearch } from './space-search';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';

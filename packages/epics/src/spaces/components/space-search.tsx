@@ -4,6 +4,7 @@ import { SearchIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@hypha-platform/ui-utils';
+import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
 type Suggestion = {
@@ -35,6 +36,12 @@ export const SpaceSearch = ({
     }
     replace(`${pathname}?${params.toString()}`);
   }, 300);
+
+  React.useEffect(() => {
+    return () => {
+      handleSearch.cancel();
+    };
+  }, [handleSearch]);
 
   return (
     <div className={cn('flex min-w-0 flex-col gap-2', className)}>

@@ -23,6 +23,7 @@ import {
 import { getDhoPathOverview } from '../dho/[id]/@tab/overview/constants';
 import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -70,12 +71,14 @@ export default async function Index(props: PageProps) {
           <span>{t('allYourSpaces')}</span>
           <span> {t('inOnePlace')}</span>
         </Heading>
-        <MySpacesControls
-          lang={lang}
-          query={query}
-          order={order}
-          showCreateButton={(mySpaces?.length ?? 0) > 0}
-        />
+        <Suspense fallback={null}>
+          <MySpacesControls
+            lang={lang}
+            query={query}
+            order={order}
+            showCreateButton={(mySpaces?.length ?? 0) > 0}
+          />
+        </Suspense>
         <MyFilteredSpaces
           lang={lang}
           spaces={mySpaces}
