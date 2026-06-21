@@ -28,8 +28,12 @@ import {
   clampHoverPosition,
   NetworkMapPinHoverCard,
 } from './network-map-pin-hover-card';
+import { useInitialGlobeCenter } from '../hooks/use-initial-globe-center';
+import {
+  DEFAULT_GLOBE_ROTATION,
+  globeRotationForCenter,
+} from '../lib/globe-rotation';
 const PROJECTION_ANIMATION_MS = 1200;
-const DEFAULT_GLOBE_ROTATION: Rotation = [0, -20, 0];
 const FLAT_ROTATION: Rotation = [0, 0, 0];
 
 type MapPalette = {
@@ -176,6 +180,7 @@ export function NetworkGlobeMap({
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
   const router = useRouter();
+  const initialCenter = useInitialGlobeCenter();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
 
@@ -232,6 +237,7 @@ export function NetworkGlobeMap({
   const animationFrameRef = React.useRef<number | null>(null);
   const renderFrameRef = React.useRef<number | null>(null);
   const isDraggingRef = React.useRef(false);
+  const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
 
   morphRef.current = morphProgress;
@@ -497,6 +503,20 @@ export function NetworkGlobeMap({
   }, [requestRender]);
 
   React.useEffect(() => {
+    if (hasUserRotatedRef.current || morphRef.current >= 1) {
+      return;
+    }
+
+    const rotation = globeRotationForCenter(
+      initialCenter.longitude,
+      initialCenter.latitude,
+    );
+    rotateRef.current = rotation;
+    savedGlobeRotateRef.current = rotation;
+    requestRender();
+  }, [initialCenter.latitude, initialCenter.longitude, requestRender]);
+
+  React.useEffect(() => {
     let cancelled = false;
     setIsLoadingGeo(true);
     setLoadError(null);
@@ -583,6 +603,7 @@ export function NetworkGlobeMap({
           event.sourceEvent.preventDefault();
         }
         isDraggingRef.current = true;
+        hasUserRotatedRef.current = true;
         clearHoveredPinRef.current();
         clearSelectedPinRef.current();
 
