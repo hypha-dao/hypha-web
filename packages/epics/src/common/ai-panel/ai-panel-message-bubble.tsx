@@ -4,7 +4,7 @@ import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Copy, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
@@ -324,50 +324,47 @@ function formatConfidenceDisplay(text: string): string {
 function renderInlineMarkdown(text: string): React.ReactNode {
   const displayText = formatConfidenceDisplay(text);
   const nodes: React.ReactNode[] = [];
-  const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`|!\[[^\]]*\]\([^)]+\))/g;
-  let lastIndex = 0;
   let partIndex = 0;
-  let match: RegExpExecArray | null;
 
-  while ((match = tokenRegex.exec(displayText)) !== null) {
-    const token = match[0];
-    const start = match.index;
-    if (start > lastIndex) {
-      nodes.push(displayText.slice(lastIndex, start));
+  for (const token of tokenizeInlineMarkdown(displayText)) {
+    if (token.type === 'text') {
+      if (token.value) {
+        nodes.push(token.value);
+      }
+      continue;
     }
-    const imageMatch = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(token);
-    if (imageMatch?.[2] && /^https?:\/\//i.test(imageMatch[2].trim())) {
+
+    if (token.type === 'image' && /^https?:\/\//i.test(token.url.trim())) {
       nodes.push(
         <img
           key={`md-inline-${partIndex++}`}
-          src={imageMatch[2].trim()}
-          alt={imageMatch[1]?.trim() || 'Generated visual'}
+          src={token.url.trim()}
+          alt={token.alt.trim() || 'Generated visual'}
           className="my-2 max-h-48 max-w-full rounded-lg border border-border/60 object-contain"
         />,
       );
-    } else if (token.startsWith('**') && token.endsWith('**')) {
+      continue;
+    }
+
+    if (token.type === 'bold') {
       nodes.push(
         <strong key={`md-inline-${partIndex++}`} className="font-semibold">
-          {token.slice(2, -2)}
+          {token.value}
         </strong>,
       );
-    } else if (token.startsWith('`') && token.endsWith('`')) {
+      continue;
+    }
+
+    if (token.type === 'inlineCode') {
       nodes.push(
         <code
           key={`md-inline-${partIndex++}`}
           className="rounded bg-muted px-1.5 py-0.5 text-[0.8em] text-foreground"
         >
-          {token.slice(1, -1)}
+          {token.value}
         </code>,
       );
-    } else {
-      nodes.push(token);
     }
-    lastIndex = tokenRegex.lastIndex;
-  }
-
-  if (lastIndex < displayText.length) {
-    nodes.push(displayText.slice(lastIndex));
   }
 
   return nodes.length > 0 ? nodes : displayText;

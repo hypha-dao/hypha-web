@@ -1,15 +1,13 @@
 'use client';
 
+import {
+  removeMarkdownImageTokens,
+  stripMarkdown,
+} from '@hypha-platform/ui-utils';
+
 /** Strip markdown and URLs so browser TTS reads naturally. */
 export function stripMarkdownForSpeech(text: string): string {
-  return text
-    .replace(/!\[[^\]]*]\([^)]+\)/g, '')
-    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
-    .replace(/`{1,3}([^`]+)`{1,3}/g, '$1')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/^[-*•]\s+/gm, '')
+  return stripMarkdown(removeMarkdownImageTokens(text))
     .replace(/https?:\/\/\S+/g, '')
     .replace(/\s+/g, ' ')
     .trim();
