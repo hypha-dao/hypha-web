@@ -49,7 +49,7 @@ export const SpaceSearch = ({
   return (
     <div className={cn('flex min-w-0 flex-col gap-2', className)}>
       {suffix ? (
-        <div className="flex min-h-8 w-full min-w-0 items-center rounded border border-input bg-neutral-1 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:min-h-10">
+        <div className="flex h-8 w-full min-w-0 items-center overflow-hidden rounded border border-input bg-neutral-1 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:h-10">
           <div className="pointer-events-none flex shrink-0 items-center pl-3 text-accent-9">
             <SearchIcon size="16px" />
           </div>
@@ -58,9 +58,9 @@ export const SpaceSearch = ({
             placeholder={t('findASpace')}
             defaultValue={value}
             onChange={(e) => handleSearch(e.target.value)}
-            className="min-w-0 flex-1 border-0 bg-transparent py-2 pl-3 pr-2 text-2 text-accent-9 caret-accent-9 placeholder:text-accent-9 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-0 min-w-0 flex-1 border-0 bg-transparent py-0 pl-3 pr-2 text-2 text-accent-9 caret-accent-9 placeholder:text-accent-9 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
-          <div className="shrink-0 pr-1">{suffix}</div>
+          <div className="flex h-full shrink-0 items-center pr-1">{suffix}</div>
         </div>
       ) : (
         <Input

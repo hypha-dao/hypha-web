@@ -73,7 +73,7 @@ export function MySpacesControls({
       options={orderOptions}
       initialValue={order}
       triggerVariant="ghost"
-      className="h-9 w-fit shrink-0 justify-end px-1 font-normal md:w-fit"
+      className="h-full min-h-0 w-fit shrink-0 justify-end px-1 py-0 font-normal md:w-fit"
       onChange={setOrder}
       allowEmptyChoice={false}
     />
