@@ -14,6 +14,8 @@ import {
   NetworkAddLocationButton,
   NetworkGlobeMap,
   NetworkMapViewToggle,
+  useNetworkGlobeReady,
+  loadLandGeo,
   type NetworkMapView,
 } from '../../network-map';
 import { CreateSpaceButton } from './create-space-button';
@@ -120,6 +122,13 @@ export function ExploreSpaces({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
+  const globeReady = useNetworkGlobeReady();
+
+  React.useEffect(() => {
+    if (enableNetworkMap) {
+      void loadLandGeo();
+    }
+  }, [enableNetworkMap]);
 
   const nonArchivedSpaces = React.useMemo(
     () => spaces.filter((space) => !isSpaceArchived(space)),
@@ -334,6 +343,8 @@ export function ExploreSpaces({
   );
 
   const showSortControl = !enableNetworkMap || view === 'list';
+  const deferBelowMapContent =
+    enableNetworkMap && view === 'map' && !globeReady;
 
   const searchActionsRow = (
     <div className="flex w-full min-w-0 flex-col gap-3">
@@ -484,7 +495,9 @@ export function ExploreSpaces({
               cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
             />
           </div>
-          <div className="mt-8">{metricsSection}</div>
+          <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
+            {metricsSection}
+          </div>
         </>
       ) : (
         <>

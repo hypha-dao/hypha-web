@@ -33,6 +33,7 @@ import {
   DEFAULT_GLOBE_ROTATION,
   globeRotationForCenter,
 } from '../lib/globe-rotation';
+import { setNetworkGlobeReady } from '../lib/network-globe-ready-store';
 const PROJECTION_ANIMATION_MS = 1200;
 const FLAT_ROTATION: Rotation = [0, 0, 0];
 
@@ -515,6 +516,35 @@ export function NetworkGlobeMap({
     savedGlobeRotateRef.current = rotation;
     requestRender();
   }, [initialCenter.latitude, initialCenter.longitude, requestRender]);
+
+  React.useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+    setNetworkGlobeReady(false);
+    return () => setNetworkGlobeReady(false);
+  }, [isActive]);
+
+  React.useEffect(() => {
+    if (!isActive || isLoadingGeo || loadError) {
+      setNetworkGlobeReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) {
+          setNetworkGlobeReady(true);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      setNetworkGlobeReady(false);
+    };
+  }, [isActive, isLoadingGeo, loadError]);
 
   React.useEffect(() => {
     let cancelled = false;
