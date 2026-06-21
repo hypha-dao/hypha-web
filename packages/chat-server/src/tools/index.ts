@@ -17,6 +17,8 @@ import { createUpdateSpaceSettingsTool } from './update-space-settings';
 import { createCreateSpaceSetupProposalTool } from './create-space-setup-proposal';
 import { createCreateEcosystemSpaceTool } from './create-ecosystem-space';
 import { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-blueprint';
+import { createGetNetworkEcosystemPatternsTool } from './get-network-ecosystem-patterns';
+import { createProposeOrganisationBlueprintTool } from './propose-organisation-blueprint';
 import { createMcpNavigationTool } from './mcp-navigation';
 import { createOnboardingGuidanceTool } from './onboarding-guidance';
 import { createSearchSpacesTool } from './search-spaces';
@@ -125,6 +127,111 @@ function withInjectedOnboardingSpaceLocation<T extends Record<string, unknown>>(
   };
 }
 
+type OnboardingActivationMethodContext = 'sandbox' | 'pilot' | 'deployment';
+
+function extractActivationMethodFromContext(
+  conversationContext?: unknown,
+): OnboardingActivationMethodContext | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const raw = (conversationContext as { activationMethod?: unknown })
+    .activationMethod;
+  if (raw === 'sandbox' || raw === 'pilot' || raw === 'deployment') {
+    return raw;
+  }
+  return undefined;
+}
+
+function activationMethodToFlags(
+  method: OnboardingActivationMethodContext,
+): Array<'sandbox' | 'demo' | 'archived'> {
+  switch (method) {
+    case 'sandbox':
+      return ['sandbox'];
+    case 'pilot':
+      return ['demo'];
+    case 'deployment':
+      return [];
+  }
+}
+
+function withInjectedOnboardingActivationMethod<
+  T extends Record<string, unknown>,
+>(payload: T, activationMethod?: OnboardingActivationMethodContext): T {
+  if (!activationMethod) {
+    return payload;
+  }
+  if (Array.isArray(payload.flags) && payload.flags.length > 0) {
+    return payload;
+  }
+  return {
+    ...payload,
+    flags: activationMethodToFlags(activationMethod),
+  };
+}
+
+type OnboardingTransparencyMatrixContext = {
+  discoverability: number;
+  access: number;
+};
+
+function extractTransparencyMatrixFromContext(
+  conversationContext?: unknown,
+): OnboardingTransparencyMatrixContext | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const raw = (conversationContext as { transparencyMatrix?: unknown })
+    .transparencyMatrix;
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as Partial<OnboardingTransparencyMatrixContext>;
+  if (
+    typeof candidate.discoverability !== 'number' ||
+    candidate.discoverability < 0 ||
+    candidate.discoverability > 3 ||
+    typeof candidate.access !== 'number' ||
+    candidate.access < 0 ||
+    candidate.access > 3
+  ) {
+    return undefined;
+  }
+  return {
+    discoverability: candidate.discoverability,
+    access: candidate.access,
+  };
+}
+
+function withInjectedOnboardingTransparencyMatrix<
+  T extends Record<string, unknown>,
+>(payload: T, transparencyMatrix?: OnboardingTransparencyMatrixContext): T {
+  if (!transparencyMatrix) {
+    return payload;
+  }
+  return {
+    ...payload,
+    ...(payload.discoverability === undefined
+      ? { discoverability: transparencyMatrix.discoverability }
+      : {}),
+    ...(payload.access === undefined
+      ? { access: transparencyMatrix.access }
+      : {}),
+  };
+}
+
+function extractSetupJourneyFromContext(
+  conversationContext?: unknown,
+): 'single_space' | 'ecosystem' | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const raw = (conversationContext as { setupJourney?: unknown }).setupJourney;
+  if (raw === 'single_space' || raw === 'ecosystem') {
+    return raw;
+  }
+  return undefined;
+}
+
 function safeTool(toolName: string, tool: ChatRouteTool): ChatRouteTool {
   const originalExecute = tool.execute as (
     ...args: unknown[]
@@ -186,6 +293,12 @@ export function createChatTools(
   };
   const contextSpaceLocation =
     extractSpaceLocationFromContext(conversationContext);
+  const contextActivationMethod =
+    extractActivationMethodFromContext(conversationContext);
+  const contextTransparencyMatrix =
+    extractTransparencyMatrixFromContext(conversationContext);
+  const contextSetupJourney =
+    extractSetupJourneyFromContext(conversationContext);
 
   const createSpaceFromOnboardingTool =
     createCreateSpaceFromOnboardingTool(authToken);
@@ -197,6 +310,39 @@ export function createChatTools(
     createCreateSpaceSetupProposalTool(authToken);
   const createEcosystemSpaceTool = createCreateEcosystemSpaceTool(authToken);
   const generateEcosystemBlueprintTool = createGenerateEcosystemBlueprintTool();
+  const onboardingGuidanceTool = createOnboardingGuidanceTool();
+  const onboardingGuidanceWithContext = {
+    ...onboardingGuidanceTool,
+    execute: async (args: unknown) => {
+      const payload =
+        args && typeof args === 'object'
+          ? (args as Record<string, unknown>)
+          : {};
+      const knownAnswers = {
+        ...((payload.known_answers as Record<string, unknown> | undefined) ??
+          {}),
+      };
+      if (contextSetupJourney && knownAnswers.setup_journey == null) {
+        knownAnswers.setup_journey = contextSetupJourney;
+      }
+      if (contextActivationMethod && knownAnswers.activation_method == null) {
+        knownAnswers.activation_method = contextActivationMethod;
+      }
+      if (
+        contextTransparencyMatrix &&
+        knownAnswers.transparency_matrix == null
+      ) {
+        knownAnswers.transparency_matrix = contextTransparencyMatrix;
+      }
+      if (contextSpaceLocation && knownAnswers.space_location == null) {
+        knownAnswers.space_location = contextSpaceLocation;
+      }
+      return onboardingGuidanceTool.execute({
+        ...payload,
+        known_answers: knownAnswers,
+      } as Parameters<typeof onboardingGuidanceTool.execute>[0]);
+    },
+  };
 
   const tools: Record<string, ChatRouteTool> = {
     get_space_by_slug: safeTool('get_space_by_slug', getSpaceBySlugTool),
@@ -251,7 +397,7 @@ export function createChatTools(
     search_spaces: safeTool('search_spaces', createSearchSpacesTool()),
     onboarding_guidance: safeTool(
       'onboarding_guidance',
-      createOnboardingGuidanceTool(),
+      onboardingGuidanceWithContext,
     ),
     mcp_navigation: safeTool(
       'mcp_navigation',
@@ -265,6 +411,10 @@ export function createChatTools(
       'geocode_space_location',
       createGeocodeSpaceLocationTool(),
     ),
+    get_network_ecosystem_patterns: safeTool(
+      'get_network_ecosystem_patterns',
+      createGetNetworkEcosystemPatternsTool(),
+    ),
   };
   if (featureGates?.onboardingWriteToolsEnabled !== false) {
     tools.create_space_from_onboarding = safeTool(
@@ -274,7 +424,16 @@ export function createChatTools(
         execute: async (args) =>
           createSpaceFromOnboardingTool.execute(
             withInjectedOnboardingSpaceLocation(
-              withInjectedOnboardingContext(args, onboardingInjectionContext),
+              withInjectedOnboardingActivationMethod(
+                withInjectedOnboardingTransparencyMatrix(
+                  withInjectedOnboardingContext(
+                    args,
+                    onboardingInjectionContext,
+                  ),
+                  contextTransparencyMatrix,
+                ),
+                contextActivationMethod,
+              ),
               contextSpaceLocation,
             ),
           ),
@@ -299,6 +458,10 @@ export function createChatTools(
     );
   }
   if (featureGates?.ecosystemAutomationEnabled !== false) {
+    tools.propose_organisation_blueprint = safeTool(
+      'propose_organisation_blueprint',
+      createProposeOrganisationBlueprintTool(),
+    );
     tools.generate_ecosystem_blueprint = safeTool(
       'generate_ecosystem_blueprint',
       generateEcosystemBlueprintTool,
@@ -331,6 +494,8 @@ export { createUpdateSpaceSettingsTool } from './update-space-settings';
 export { createCreateSpaceSetupProposalTool } from './create-space-setup-proposal';
 export { createCreateEcosystemSpaceTool } from './create-ecosystem-space';
 export { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-blueprint';
+export { createGetNetworkEcosystemPatternsTool } from './get-network-ecosystem-patterns';
+export { createProposeOrganisationBlueprintTool } from './propose-organisation-blueprint';
 export { createMcpNavigationTool } from './mcp-navigation';
 export { createOnboardingGuidanceTool } from './onboarding-guidance';
 export { createSearchSpacesTool } from './search-spaces';

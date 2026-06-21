@@ -26,12 +26,20 @@ const onboardingSpaceLocationSchema = z.object({
   skipped: z.boolean().optional(),
 });
 
+const onboardingTransparencyMatrixSchema = z.object({
+  discoverability: z.number().int().min(0).max(3),
+  access: z.number().int().min(0).max(3),
+});
+
 const onboardingConversationContextSchema = z.object({
   mode: z.literal('onboarding_setup'),
-  source: z.literal('onboarding_hero').optional(),
+  source: z.enum(['onboarding_hero', 'ai_panel']).optional(),
   setupPhase: setupPhaseSchema.optional(),
   setupPlan: setupPlanSchema.optional(),
   spaceLocation: onboardingSpaceLocationSchema.optional(),
+  activationMethod: z.enum(['sandbox', 'pilot', 'deployment']).optional(),
+  setupJourney: z.enum(['single_space', 'ecosystem']).optional(),
+  transparencyMatrix: onboardingTransparencyMatrixSchema.optional(),
   lastUserText: z.string().optional(),
   locale: z.string().trim().min(2).max(16).optional(),
   createdAt: z.string().optional(),
