@@ -17,6 +17,8 @@ import {
   createSpaceDiscussionSummary,
   getSpaceMembersRoster,
   serializeSpaceMembersRosterDatesForJson,
+  getNetworkEcosystemPatterns,
+  proposeOrganisationBlueprint,
 } from '@hypha-platform/core/server';
 import {
   createSpaceSignalBySlugInputSchema,
@@ -58,6 +60,14 @@ import {
   ingestSpaceCallArtifactsInputSchema,
   ingestSpaceCallArtifactsOutputSchema,
 } from './ingest-space-call-artifacts-schema.js';
+import {
+  getNetworkEcosystemPatternsInputSchema,
+  getNetworkEcosystemPatternsOutputSchema,
+} from './get-network-ecosystem-patterns-schema.js';
+import {
+  proposeOrganisationBlueprintInputSchema,
+  proposeOrganisationBlueprintOutputSchema,
+} from './propose-organisation-blueprint-schema.js';
 import { buildMatrixDiagnosticHint } from './build-matrix-diagnostic-hint.js';
 
 const server = new McpServer(
@@ -67,7 +77,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); create signals in space; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -462,6 +472,160 @@ server.registerTool(
       ],
       structuredContent: out.data,
     };
+  },
+);
+
+server.registerTool(
+  'get_network_ecosystem_patterns',
+  {
+    description:
+      'Read-only organisational guidance: analyze multi-space ecosystems across the Hypha network. Returns role frequency, title keywords, and sample structures to inform organisation setup.',
+    inputSchema: getNetworkEcosystemPatternsInputSchema,
+    outputSchema: getNetworkEcosystemPatternsOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = getNetworkEcosystemPatternsInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const patterns = await getNetworkEcosystemPatterns(
+        {
+          limit: parsed.data.limit,
+          minChildCount: parsed.data.min_child_count,
+        },
+        { db },
+      );
+      const structured = { ok: true, ...patterns };
+      const out = getNetworkEcosystemPatternsOutputSchema.safeParse(structured);
+      if (!out.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${out.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Analyzed ${
+              out.data.sampled_ecosystem_count ?? 0
+            } network ecosystems (avg ${
+              out.data.average_child_count ?? 0
+            } child spaces). Top roles: ${
+              Object.entries(out.data.common_role_counts ?? {})
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([role, count]) => `${role} (${count})`)
+                .join(', ') || 'none yet'
+            }.`,
+          },
+        ],
+        structuredContent: out.data,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return {
+        content: [
+          { type: 'text', text: `Failed to analyze ecosystems: ${message}` },
+        ],
+        structuredContent: { ok: false, error: message },
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'propose_organisation_blueprint',
+  {
+    description:
+      'Plan-only organisational guidance: propose a multi-space blueprint for a new organisation/ecosystem. Uses live network patterns; does not create spaces.',
+    inputSchema: proposeOrganisationBlueprintInputSchema,
+    outputSchema: proposeOrganisationBlueprintOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = proposeOrganisationBlueprintInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const blueprint = await proposeOrganisationBlueprint(
+        {
+          organisation_name: parsed.data.organisation_name,
+          purpose: parsed.data.purpose,
+          root_slug: parsed.data.root_slug,
+          functional_domains: parsed.data.functional_domains,
+          include_liquidity_bridge: parsed.data.include_liquidity_bridge,
+          include_ip_registry: parsed.data.include_ip_registry,
+          include_governance_space: parsed.data.include_governance_space,
+          pattern_limit: parsed.data.pattern_limit,
+        },
+        { db },
+      );
+      const structured = { ok: true, blueprint };
+      const out =
+        proposeOrganisationBlueprintOutputSchema.safeParse(structured);
+      if (!out.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${out.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      const nodeCount = out.data.blueprint?.nodes.length ?? 0;
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Proposed ${nodeCount} child spaces for "${
+              out.data.blueprint?.root_title ?? parsed.data.organisation_name
+            }" based on ${
+              out.data.blueprint?.network_context.sampled_ecosystem_count ?? 0
+            } network ecosystems.`,
+          },
+        ],
+        structuredContent: out.data,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return {
+        content: [
+          { type: 'text', text: `Failed to propose blueprint: ${message}` },
+        ],
+        structuredContent: { ok: false, error: message },
+        isError: true,
+      };
+    }
   },
 );
 

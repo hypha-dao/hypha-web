@@ -43,6 +43,8 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 | `create_space_signal_by_slug` | Create a signal in a space (write-capable; limited to active paid spaces). |
 | `relay_ecosystem_signal` | Relay a summarized signal from one ecosystem space to another (write-capable). |
 | `get_ecosystem_by_space_slug` | Return interconnected ecosystem context (spaces graph and parent-child links). |
+| `get_network_ecosystem_patterns` | Analyze multi-space ecosystems across the network (organisational guidance). |
+| `propose_organisation_blueprint` | Propose a multi-space organisation blueprint from network patterns (plan-only). |
 | `get_people_by_space_slug` | Members by space slug (people + space-as-members), with membership/join metadata. |
 | `get_org_memory_by_space_slug` | Organization memory (member roster + org memory assets with asset keys). |
 | `fetch_org_memory_asset` | Fetch one memory asset by `space_slug` + `asset_key` (text/PDF/image/video modes). |
