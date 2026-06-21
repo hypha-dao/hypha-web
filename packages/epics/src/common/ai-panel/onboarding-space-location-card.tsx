@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@hypha-platform/ui';
 
 import {
   SpaceLocationPicker,
+  type SpaceLocationPickerHandle,
   type SpaceLocationValue,
 } from '../../spaces/components/space-location-picker';
 
@@ -22,6 +23,7 @@ export function OnboardingSpaceLocationCard({
   onSkip,
 }: OnboardingSpaceLocationCardProps) {
   const t = useTranslations('AiPanel');
+  const locationPickerRef = useRef<SpaceLocationPickerHandle>(null);
   const [value, setValue] = useState<SpaceLocationValue>({
     latitude: null,
     longitude: null,
@@ -29,7 +31,13 @@ export function OnboardingSpaceLocationCard({
     locationSource: null,
   });
 
-  const canConfirm = value.latitude != null && value.longitude != null;
+  const handleConfirm = () => {
+    const next = locationPickerRef.current?.commitPendingCoordinates() ?? value;
+    if (next.latitude == null || next.longitude == null) {
+      return;
+    }
+    onConfirm(next);
+  };
 
   return (
     <div className="rounded-xl border border-border/80 bg-background/90 p-4 shadow-sm">
@@ -40,16 +48,13 @@ export function OnboardingSpaceLocationCard({
         {t('onboardingLocationHint')}
       </p>
       <SpaceLocationPicker
+        ref={locationPickerRef}
         value={value}
         onChange={setValue}
         disabled={disabled}
       />
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button
-          type="button"
-          onClick={() => onConfirm(value)}
-          disabled={!canConfirm || disabled}
-        >
+        <Button type="button" onClick={handleConfirm} disabled={disabled}>
           {t('onboardingLocationConfirm')}
         </Button>
         <Button

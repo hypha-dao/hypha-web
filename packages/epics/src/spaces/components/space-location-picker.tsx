@@ -22,6 +22,10 @@ export type SpaceLocationValue = {
   locationSource: SpaceLocationSource | null;
 };
 
+export type SpaceLocationPickerHandle = {
+  commitPendingCoordinates: () => SpaceLocationValue;
+};
+
 type SpaceLocationPickerProps = {
   value: SpaceLocationValue;
   onChange: (value: SpaceLocationValue) => void;
@@ -52,11 +56,10 @@ function projectToMap(latitude: number, longitude: number) {
   return { x, y };
 }
 
-export function SpaceLocationPicker({
-  value,
-  onChange,
-  disabled = false,
-}: SpaceLocationPickerProps) {
+export const SpaceLocationPicker = React.forwardRef<
+  SpaceLocationPickerHandle,
+  SpaceLocationPickerProps
+>(function SpaceLocationPicker({ value, onChange, disabled = false }, ref) {
   const t = useTranslations('SpaceLocation');
   const mapRef = React.useRef<HTMLDivElement>(null);
   const { query, setQuery, results, isSearching, error } = useGeocodeSearch();
@@ -164,27 +167,58 @@ export function SpaceLocationPicker({
   const [manualError, setManualError] = React.useState<string | null>(null);
   const hasSyncedSearchQuery = React.useRef(false);
 
-  const handleManualCoordinates = React.useCallback(() => {
+  const commitPendingCoordinates = React.useCallback((): SpaceLocationValue => {
     const lat = parseCoordinateInput(latInput);
     const lng = parseCoordinateInput(lngInput);
+    const latEmpty = latInput.trim() === '';
+    const lngEmpty = lngInput.trim() === '';
+
+    if (latEmpty && lngEmpty) {
+      setManualError(null);
+      return value;
+    }
 
     if (lat == null || lng == null) {
       setManualError(t('manualCoordinateInvalid'));
-      return;
+      return value;
     }
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       setManualError(t('manualCoordinateOutOfRange'));
-      return;
+      return value;
     }
 
     setManualError(null);
-    applySelection(
-      lat,
-      lng,
-      t('manualLabel', { latitude: lat, longitude: lng }),
-      'manual',
-    );
-  }, [applySelection, latInput, lngInput, t]);
+    const next: SpaceLocationValue = {
+      latitude: roundCoordinate(lat),
+      longitude: roundCoordinate(lng),
+      locationLabel: t('manualLabel', { latitude: lat, longitude: lng }),
+      locationSource: 'manual',
+    };
+
+    const hasChanged =
+      next.latitude !== value.latitude ||
+      next.longitude !== value.longitude ||
+      next.locationLabel !== value.locationLabel ||
+      next.locationSource !== value.locationSource;
+
+    if (hasChanged) {
+      onChange(next);
+    }
+
+    return next;
+  }, [latInput, lngInput, onChange, t, value]);
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      commitPendingCoordinates,
+    }),
+    [commitPendingCoordinates],
+  );
+
+  const handleManualCoordinates = React.useCallback(() => {
+    commitPendingCoordinates();
+  }, [commitPendingCoordinates]);
 
   React.useEffect(() => {
     setLatInput(value.latitude != null ? String(value.latitude) : '');
@@ -379,6 +413,7 @@ export function SpaceLocationPicker({
               setLatInput(event.target.value);
               setManualError(null);
             }}
+            onBlur={handleManualCoordinates}
             placeholder={t('latitudePlaceholder')}
             disabled={disabled}
           />
@@ -393,21 +428,18 @@ export function SpaceLocationPicker({
               setLngInput(event.target.value);
               setManualError(null);
             }}
+            onBlur={handleManualCoordinates}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleManualCoordinates();
+              }
+            }}
             placeholder={t('longitudePlaceholder')}
             disabled={disabled}
           />
         </div>
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-fit"
-        onClick={handleManualCoordinates}
-        disabled={disabled}
-      >
-        {t('applyCoordinates')}
-      </Button>
       {manualError ? (
         <p className="text-1 text-error-11" role="alert">
           {manualError}
@@ -436,4 +468,4 @@ export function SpaceLocationPicker({
       ) : null}
     </div>
   );
-}
+});

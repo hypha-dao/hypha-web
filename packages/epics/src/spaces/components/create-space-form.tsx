@@ -55,7 +55,10 @@ import {
   ButtonBack,
   ButtonClose,
 } from '@hypha-platform/epics';
-import { SpaceLocationPicker } from './space-location-picker';
+import {
+  SpaceLocationPicker,
+  type SpaceLocationPickerHandle,
+} from './space-location-picker';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -166,6 +169,7 @@ export const SpaceForm = ({
     .superRefine(refineSpaceLocationCoords);
 
   const formRef = React.useRef<HTMLFormElement>(null);
+  const locationPickerRef = React.useRef<SpaceLocationPickerHandle>(null);
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schema),
     defaultValues,
@@ -427,41 +431,56 @@ export const SpaceForm = ({
     }
   }, [label, tModalAside]);
 
+  const handleFormSubmit = React.useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      locationPickerRef.current?.commitPendingCoordinates();
+      void form.handleSubmit(
+        async (space) => {
+          if (
+            !space.flags?.includes('sandbox') &&
+            !space.flags?.includes('archived') &&
+            space.categories.length === 0
+          ) {
+            showCategoriesError();
+            return;
+          }
+          if (parentSpaceId === -1) {
+            showUnsetParentIdError();
+            return;
+          }
+          await onSubmit(space, organisationSpaces);
+        },
+        () => {
+          const flags = form.getValues()['flags'];
+          const categories = form.getValues()['categories'];
+          if (
+            !flags?.includes('sandbox') &&
+            !flags?.includes('archived') &&
+            categories.length === 0
+          ) {
+            showCategoriesError();
+          }
+          if (parentSpaceId === -1) {
+            showUnsetParentIdError();
+          }
+        },
+      )(event);
+    },
+    [
+      form,
+      onSubmit,
+      organisationSpaces,
+      parentSpaceId,
+      showCategoriesError,
+      showUnsetParentIdError,
+    ],
+  );
+
   return (
     <Form {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(
-          async (space) => {
-            if (
-              !space.flags?.includes('sandbox') &&
-              !space.flags?.includes('archived') &&
-              space.categories.length === 0
-            ) {
-              showCategoriesError();
-              return;
-            }
-            if (parentSpaceId === -1) {
-              showUnsetParentIdError();
-              return;
-            }
-            await onSubmit(space, organisationSpaces);
-          },
-          (e) => {
-            const flags = form.getValues()['flags'];
-            const categories = form.getValues()['categories'];
-            if (
-              !flags?.includes('sandbox') &&
-              !flags?.includes('archived') &&
-              categories.length === 0
-            ) {
-              showCategoriesError();
-            }
-            if (parentSpaceId === -1) {
-              showUnsetParentIdError();
-            }
-          },
-        )}
+        onSubmit={handleFormSubmit}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
         <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
@@ -636,6 +655,7 @@ export const SpaceForm = ({
           <>
             <Separator />
             <SpaceLocationPicker
+              ref={locationPickerRef}
               disabled={isLoading}
               value={locationValue}
               onChange={(next) => {

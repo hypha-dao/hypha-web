@@ -1,7 +1,6 @@
 'use server';
 
 // TODO: #602 Define RLS Policies for Spaces Table
-import { getDb } from '../../common/server/get-db';
 import {
   createSpace,
   deleteSpaceBySlug,
@@ -70,10 +69,10 @@ export async function updateSpaceConfigurationByIdAction(
   if (!authToken) {
     throw new Error('authToken is required to update space configuration');
   }
-  const authDb = getDb({ authToken });
+  // TODO: #602 switch to getDb({ authToken }) once spaces RLS policies exist.
   const { originalSpace, updatedSpace } = await updateSpaceConfigurationById(
     data,
-    { db: authDb },
+    { db },
   );
 
   const { slug: originalSlug } = originalSpace;

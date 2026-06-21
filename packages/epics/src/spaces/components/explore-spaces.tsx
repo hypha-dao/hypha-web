@@ -258,8 +258,8 @@ export function ExploreSpaces({
   }, [selectedSpaces, order]);
 
   const mapSpaces = React.useMemo(
-    () => sortedSpaces.filter(hasSpaceMapLocation),
-    [sortedSpaces],
+    () => selectedSpaces.filter(hasSpaceMapLocation),
+    [selectedSpaces],
   );
 
   const { isAuthenticated } = useAuthentication();
@@ -322,13 +322,15 @@ export function ExploreSpaces({
             enableNetworkMap && 'sm:ml-auto sm:w-auto',
           )}
         >
-          <Combobox
-            options={orderOptions}
-            initialValue={order}
-            className="h-9 min-w-0 flex-1 border-0 sm:w-40 sm:flex-none"
-            onChange={setOrder}
-            allowEmptyChoice={false}
-          />
+          {!enableNetworkMap || view === 'list' ? (
+            <Combobox
+              options={orderOptions}
+              initialValue={order}
+              className="h-9 min-w-0 flex-1 border-0 sm:w-40 sm:flex-none"
+              onChange={setOrder}
+              allowEmptyChoice={false}
+            />
+          ) : null}
           <CreateSpaceButton
             lang={lang}
             isAuthenticated={isAuthenticated}

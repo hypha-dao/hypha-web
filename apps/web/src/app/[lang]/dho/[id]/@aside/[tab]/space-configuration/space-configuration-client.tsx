@@ -40,6 +40,7 @@ export function SpaceConfigurationClient({
     updateSpaceConfiguration,
     currentAction,
     isError,
+    errors,
     isPending,
     progress,
     reset,
@@ -114,8 +115,17 @@ export function SpaceConfigurationClient({
         isLoading={isBusy}
         message={
           isError ? (
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-3">
               <div>{tSpaces('errorOhSnap')}</div>
+              {errors.length > 0 ? (
+                <div className="text-sm text-neutral-10">
+                  {errors.map((error, index) => (
+                    <p key={index}>
+                      {error instanceof Error ? error.message : String(error)}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
               <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (

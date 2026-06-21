@@ -10,8 +10,16 @@ export type getDbConfig = {
   authToken?: string;
 };
 export const getDb = ({ authToken }: getDbConfig) => {
-  const url = authToken ? AUTHENTICATED : ANONYMOUS;
-  console.debug('getDb', { url, hasAuthToken: Boolean(authToken) });
+  // Preview deploys set BRANCH_DB_URL so migrations run against an isolated Neon
+  // branch. Reads use `db` from storage-postgres (same URL); writes through getDb
+  // must use the same branch or updates hit a schema without new columns.
+  const branchUrl = process.env.BRANCH_DB_URL;
+  const url = branchUrl ? branchUrl : authToken ? AUTHENTICATED : ANONYMOUS;
+  console.debug('getDb', {
+    url,
+    hasAuthToken: Boolean(authToken),
+    hasBranchUrl: Boolean(branchUrl),
+  });
 
   invariant(url, 'connection string is missing');
 
