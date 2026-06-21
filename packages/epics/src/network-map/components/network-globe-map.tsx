@@ -147,9 +147,9 @@ function buildProjection(
 ): d3.GeoProjection {
   const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
-  const globeScale =
-    (minDim / 2 - 24) * Math.max(0.75, Math.min(zoomScale, 2.5));
-  const flatScale = width / (2 * Math.PI);
+  const zoom = Math.max(0.75, Math.min(zoomScale, 2.5));
+  const globeScale = (minDim / 2 - 24) * zoom;
+  const flatScale = (width / (2 * Math.PI)) * zoom;
   const center: [number, number] = [width / 2, height / 2];
 
   if (morph <= 0) {
@@ -469,6 +469,10 @@ export function NetworkGlobeMap({
       .attr('cursor', 'pointer')
       .attr('tabindex', 0)
       .attr('role', (datum) => (datum.kind === 'cluster' ? 'button' : 'link'))
+      .on('pointerdown', (event: PointerEvent) => {
+        event.stopPropagation();
+        isDraggingRef.current = false;
+      })
       .on('click', function (event: MouseEvent, datum) {
         event.stopPropagation();
         if (isDraggingRef.current) {
@@ -545,6 +549,12 @@ export function NetworkGlobeMap({
       if (datum.kind === 'cluster') {
         group
           .append('circle')
+          .attr('class', 'map-pin-hit')
+          .attr('r', 14)
+          .attr('fill', 'transparent')
+          .attr('pointer-events', 'all');
+        group
+          .append('circle')
           .attr('class', 'map-pin-cluster-pulse')
           .attr('r', 12)
           .attr('fill', 'none')
@@ -599,6 +609,19 @@ export function NetworkGlobeMap({
     });
 
     pins.merge(pinsEnter).each(function (datum) {
+      const group = d3.select(this);
+      if (
+        datum.kind === 'cluster' &&
+        group.select('circle.map-pin-hit').empty()
+      ) {
+        group
+          .insert('circle', ':first-child')
+          .attr('class', 'map-pin-hit')
+          .attr('r', 14)
+          .attr('fill', 'transparent')
+          .attr('pointer-events', 'all');
+      }
+
       const latitude =
         datum.kind === 'cluster' || datum.kind === 'spiderfy-space'
           ? datum.latitude
@@ -743,7 +766,6 @@ export function NetworkGlobeMap({
       clearHoveredPinRef.current();
       clearSelectedPinRef.current();
 
-      const isGlobe = morphRef.current < 0.01;
       const fromRotate = [...rotateRef.current] as Rotation;
       const toRotate = globeRotationForCenter(
         cluster.longitude,
@@ -756,12 +778,10 @@ export function NetworkGlobeMap({
       focusedClusterIdRef.current = cluster.clusterId;
       setFocusedClusterId(cluster.clusterId);
 
-      if (prefersReducedMotion() || !isGlobe) {
-        rotateRef.current = isGlobe ? toRotate : rotateRef.current;
-        globeZoomRef.current = isGlobe ? toZoom : 1;
-        savedGlobeRotateRef.current = isGlobe
-          ? toRotate
-          : savedGlobeRotateRef.current;
+      if (prefersReducedMotion()) {
+        rotateRef.current = toRotate;
+        globeZoomRef.current = toZoom;
+        savedGlobeRotateRef.current = toRotate;
         clusterSpreadRef.current = 1;
         setClusterSpread(1);
         requestRender();
