@@ -10,16 +10,11 @@ export type getDbConfig = {
   authToken?: string;
 };
 export const getDb = ({ authToken }: getDbConfig) => {
-  // Preview deploys set BRANCH_DB_URL so migrations run against an isolated Neon
-  // branch. Reads use `db` from storage-postgres (same URL); writes through getDb
-  // must use the same branch or updates hit a schema without new columns.
-  const branchUrl = process.env.BRANCH_DB_URL;
-  const url = branchUrl ? branchUrl : authToken ? AUTHENTICATED : ANONYMOUS;
-  console.debug('getDb', {
-    url,
-    hasAuthToken: Boolean(authToken),
-    hasBranchUrl: Boolean(branchUrl),
-  });
+  // Authenticated routes (/me, profile create, etc.) must use the Neon JWT
+  // endpoint — preview BRANCH_DB_URL pooler URLs do not substitute for it.
+  // Preview schema/data for migrations uses `db` from storage-postgres instead.
+  const url = authToken ? AUTHENTICATED : ANONYMOUS;
+  console.debug('getDb', { url, hasAuthToken: Boolean(authToken) });
 
   invariant(url, 'connection string is missing');
 
