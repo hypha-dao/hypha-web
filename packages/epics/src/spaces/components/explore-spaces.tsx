@@ -280,7 +280,7 @@ export function ExploreSpaces({
   );
 
   const categoryFilters = (
-    <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+    <div className="mx-auto flex w-full max-w-xl flex-wrap justify-center gap-2">
       {tags.map((tag) => {
         const isSelected = categoryGroups?.includes(tag.id) ?? false;
         return (
