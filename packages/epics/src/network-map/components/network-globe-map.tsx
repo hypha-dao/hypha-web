@@ -147,6 +147,7 @@ export function NetworkGlobeMap({
   spaces,
   className,
   renderToolbar,
+  isActive = true,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -402,7 +403,13 @@ export function NetworkGlobeMap({
 
   renderMapRef.current = renderMap;
 
+  const isActiveRef = React.useRef(isActive);
+  isActiveRef.current = isActive;
+
   const requestRender = React.useCallback(() => {
+    if (!isActiveRef.current) {
+      return;
+    }
     if (renderFrameRef.current != null) {
       return;
     }
@@ -448,11 +455,11 @@ export function NetworkGlobeMap({
   }, [scheduleRender, t]);
 
   React.useEffect(() => {
-    if (isLoadingGeo || loadError || !landRef.current) {
+    if (!isActive || isLoadingGeo || loadError || !landRef.current) {
       return;
     }
     scheduleRender();
-  }, [isLoadingGeo, loadError, scheduleRender]);
+  }, [isActive, isLoadingGeo, loadError, scheduleRender]);
 
   React.useEffect(() => {
     renderMap();
