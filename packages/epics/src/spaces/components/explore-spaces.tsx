@@ -21,14 +21,12 @@ import {
 import { CreateSpaceButton } from './create-space-button';
 import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
-import {
-  spaceToolbarPrimaryButtonClassName,
-  spaceToolbarSortComboboxClassName,
-} from './space-toolbar-styles';
+import { SpaceOrderCombobox } from './space-order-combobox';
+import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Combobox, Heading, Separator } from '@hypha-platform/ui';
+import { Badge, Heading, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -97,28 +95,6 @@ export function ExploreSpaces({
   const t = useTranslations('Network');
   const tCommon = useTranslations('Common');
 
-  const orderOptions: {
-    value: SpaceOrder;
-    label: string;
-    searchText: string;
-  }[] = [
-    {
-      value: 'mostmembers',
-      label: t('mostMembers'),
-      searchText: t('mostMembers'),
-    },
-    {
-      value: 'mostagreements',
-      label: t('mostAgreements'),
-      searchText: t('mostAgreements'),
-    },
-    {
-      value: 'mostrecent',
-      label: t('mostRecent'),
-      searchText: t('mostRecent'),
-    },
-  ];
-
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -185,19 +161,6 @@ export function ExploreSpaces({
         params.set('category', nextCategoryGroups.join(','));
       } else {
         params.delete('category');
-      }
-      replace(`${pathname}?${params.toString()}`);
-    },
-    [searchParams, pathname, replace],
-  );
-
-  const setOrder = React.useCallback(
-    (order: string) => {
-      const params = new URLSearchParams(searchParams);
-      if (order) {
-        params.set('order', order);
-      } else {
-        params.delete('order');
       }
       replace(`${pathname}?${params.toString()}`);
     },
@@ -350,57 +313,29 @@ export function ExploreSpaces({
     <div className="flex w-full min-w-0 flex-col gap-3">
       {enableNetworkMap ? (
         <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex w-full min-w-0 items-center gap-2 sm:contents">
-            <SpaceSearch value={query} className="min-w-0 flex-1 sm:order-1" />
-            <CreateSpaceButton
-              lang={lang}
-              isAuthenticated={isAuthenticated}
-              className={cn(
-                'min-w-0 shrink-0 sm:ml-auto',
-                showSortControl ? 'sm:order-4' : 'sm:order-3',
-              )}
-              buttonClassName={spaceToolbarPrimaryButtonClassName}
-            />
-          </div>
-          {showSortControl ? (
-            <Combobox
-              options={orderOptions}
-              initialValue={order}
-              triggerVariant="ghost"
-              className={cn(spaceToolbarSortComboboxClassName, 'sm:order-2')}
-              onChange={setOrder}
-              allowEmptyChoice={false}
-            />
-          ) : null}
+          <SpaceSearch value={query} className="min-w-0 flex-1" />
+          <CreateSpaceButton
+            lang={lang}
+            isAuthenticated={isAuthenticated}
+            className="min-w-0 shrink-0 sm:ml-auto"
+            buttonClassName={spaceToolbarPrimaryButtonClassName}
+          />
           <NetworkMapViewToggle
             value={view}
             onChange={setView}
-            className={cn(
-              'w-fit max-w-full shrink-0',
-              showSortControl ? 'sm:order-3' : 'sm:order-2',
-            )}
+            className="w-fit max-w-full shrink-0"
           />
         </div>
       ) : (
-        <>
-          <SpaceSearch value={query} className="w-full min-w-0" />
-          <div className="flex w-full min-w-0 items-center justify-between gap-2">
-            <Combobox
-              options={orderOptions}
-              initialValue={order}
-              triggerVariant="ghost"
-              className={spaceToolbarSortComboboxClassName}
-              onChange={setOrder}
-              allowEmptyChoice={false}
-            />
-            <CreateSpaceButton
-              lang={lang}
-              isAuthenticated={isAuthenticated}
-              className="min-w-0 shrink-0"
-              buttonClassName={spaceToolbarPrimaryButtonClassName}
-            />
-          </div>
-        </>
+        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+          <SpaceSearch value={query} className="min-w-0 flex-1" />
+          <CreateSpaceButton
+            lang={lang}
+            isAuthenticated={isAuthenticated}
+            className="min-w-0 shrink-0 sm:ml-auto"
+            buttonClassName={spaceToolbarPrimaryButtonClassName}
+          />
+        </div>
       )}
     </div>
   );
@@ -413,13 +348,13 @@ export function ExploreSpaces({
   );
 
   const listMetaRow = (
-    <div className="mb-4 flex w-full flex-row items-center gap-2">
+    <div className="mb-4 flex w-full flex-row items-center justify-between gap-2">
       <CategoryLabel
         selectedSpaces={selectedSpaces}
         categoryGroups={categoryGroups}
         allLabel={t('all')}
-        className="flex grow"
       />
+      {showSortControl ? <SpaceOrderCombobox order={order} /> : null}
     </div>
   );
 

@@ -15,6 +15,7 @@ import { Text } from '@radix-ui/themes';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { SectionFilter, Input } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { SpaceOrderCombobox } from './space-order-combobox';
 
 export function filterSpaces(
   spaces: Space[],
@@ -104,19 +105,22 @@ export function MyFilteredSpaces({
         count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         label={tSpaces('mySpacesLabel')}
       >
-        <label
-          htmlFor="hide-archived-spaces"
-          className="flex items-center gap-1"
-        >
-          <Input
-            id="hide-archived-spaces"
-            type="checkbox"
-            checked={hideArchivedSpaces}
-            onChange={(e) => setHideArchivedSpaces(e.target.checked)}
-            className="h-4 w-4"
-          />
-          <span>{tSpaces('hideArchivedSpaces')}</span>
-        </label>
+        <div className="flex items-center gap-4">
+          <label
+            htmlFor="hide-archived-spaces"
+            className="flex items-center gap-1"
+          >
+            <Input
+              id="hide-archived-spaces"
+              type="checkbox"
+              checked={hideArchivedSpaces}
+              onChange={(e) => setHideArchivedSpaces(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <span>{tSpaces('hideArchivedSpaces')}</span>
+          </label>
+          <SpaceOrderCombobox order={order} />
+        </div>
       </SectionFilter>
       {isLoadingSpaces ? (
         <Text className="text-3 text-muted-foreground">

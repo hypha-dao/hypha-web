@@ -11,6 +11,7 @@ export * from './create-subspace-form';
 export * from './entry-method-field';
 export * from './entry-method-token-field';
 export * from './exit-space';
+export * from './space-order-combobox';
 export * from './explore-spaces';
 export * from './my-spaces-controls';
 export * from './my-filtered-spaces';
