@@ -8,6 +8,8 @@ import {
 export type UseMeReturn = {
   person: Person | undefined;
   isLoading: boolean;
+  needsProfileSetup?: boolean;
+  profileError?: string;
 };
 export type UseMe = () => UseMeReturn;
 

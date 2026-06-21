@@ -297,7 +297,7 @@ export default async function RootLayout({
                             }
                             mobileAction={
                               <ConnectedButtonProfile
-                                newUserRedirectPath="/profile/signup"
+                                newUserRedirectPath={`/${locale}/profile/signup`}
                                 baseRedirectPath="/my-spaces"
                                 navItems={[
                                   {
@@ -324,7 +324,7 @@ export default async function RootLayout({
                           >
                             <div className="hidden md:flex">
                               <ConnectedButtonProfile
-                                newUserRedirectPath="/profile/signup"
+                                newUserRedirectPath={`/${locale}/profile/signup`}
                                 baseRedirectPath="/my-spaces"
                                 navItems={[
                                   {

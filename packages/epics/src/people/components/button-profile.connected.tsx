@@ -22,19 +22,6 @@ type ConnectedButtonProfileProps = {
   compact?: boolean;
 };
 
-type ErrorUser = {
-  error: string;
-};
-
-const isErrorUser = (obj: unknown): obj is ErrorUser => {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'error' in obj &&
-    typeof (obj as { error?: unknown }).error === 'string'
-  );
-};
-
 export const ConnectedButtonProfile = ({
   useAuthentication,
   useMe,
@@ -54,7 +41,11 @@ export const ConnectedButtonProfile = ({
     user,
     isLoading: isAuthLoading,
   } = useAuthentication();
-  const { person, isLoading: isPersonLoading } = useMe();
+  const {
+    person,
+    isLoading: isPersonLoading,
+    needsProfileSetup = false,
+  } = useMe();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -81,35 +72,58 @@ export const ConnectedButtonProfile = ({
     }
   }, [lang, id, person, isPersonLoading, pathname]);
 
+  const profileUrl = useMemo(() => {
+    if (isPersonLoading) {
+      return undefined;
+    }
+    if (person?.slug) {
+      return `/${lang}/profile/${person.slug}`;
+    }
+    if (needsProfileSetup) {
+      return localizedSignupPath;
+    }
+    return undefined;
+  }, [
+    isPersonLoading,
+    person?.slug,
+    needsProfileSetup,
+    lang,
+    localizedSignupPath,
+  ]);
+
   useEffect(() => {
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
       return;
     }
-    if (user) {
-      if (person) {
-        if (isErrorUser(person)) {
-          if (person.error !== 'Internal Server Error') {
-            router.push(localizedSignupPath);
-          }
-        } else if (
-          isLoggingIn &&
-          pathname !== newUserRedirectPath &&
-          pathname !== localizedSignupPath
-        ) {
-          if (!pathname.includes('/onboarding')) {
-            router.push(
-              resolvePostAuthRedirectPathOrDefault({
-                pathname,
-                lang: typeof lang === 'string' ? lang : undefined,
-                baseRedirectPath,
-              }),
-            );
-          }
-          setLoggingIn(false);
-        }
-      } else {
-        logout();
+    if (!user) {
+      return;
+    }
+
+    if (
+      needsProfileSetup &&
+      pathname !== newUserRedirectPath &&
+      pathname !== localizedSignupPath
+    ) {
+      router.push(localizedSignupPath);
+      return;
+    }
+
+    if (
+      person &&
+      isLoggingIn &&
+      pathname !== newUserRedirectPath &&
+      pathname !== localizedSignupPath
+    ) {
+      if (!pathname.includes('/onboarding')) {
+        router.push(
+          resolvePostAuthRedirectPathOrDefault({
+            pathname,
+            lang: typeof lang === 'string' ? lang : undefined,
+            baseRedirectPath,
+          }),
+        );
       }
+      setLoggingIn(false);
     }
   }, [
     isPersonLoading,
@@ -125,6 +139,7 @@ export const ConnectedButtonProfile = ({
     pathname,
     localizedSignupPath,
     lang,
+    needsProfileSetup,
     resolvePostAuthRedirectPathOrDefault,
   ]);
 
@@ -147,11 +162,7 @@ export const ConnectedButtonProfile = ({
       onDelete={handleOnDelete}
       onChangeThemeMode={handleThemeChange}
       resolvedTheme={resolvedTheme}
-      profileUrl={
-        person?.slug
-          ? `/${lang}/profile/${person?.slug ?? ''}`
-          : newUserRedirectPath
-      }
+      profileUrl={profileUrl}
       onboardingUrl={onboardingUrl}
       notificationCentrePath={notificationCentrePath}
       navItems={navItems}

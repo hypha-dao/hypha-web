@@ -4,9 +4,15 @@ import React from 'react';
 import useSWR from 'swr';
 import { Person, useJwt } from '@hypha-platform/core/client';
 
+export const ME_USER_NOT_FOUND_ERROR = 'User not found';
+
 export const useMe = (): {
   person: Person | undefined;
   isLoading: boolean;
+  /** True when Privy auth succeeded but no Hypha profile row exists yet. */
+  needsProfileSetup: boolean;
+  /** Set when `/me` failed for reasons other than a missing profile. */
+  profileError: string | undefined;
   /**
    * Refetch `/me`, or set cache from a known-good `Person` (e.g. right after save)
    * without waiting for a network round-trip.
@@ -20,6 +26,7 @@ export const useMe = (): {
 
   const {
     data: person,
+    error: swrError,
     isLoading: isLoadingPerson,
     mutate,
   } = useSWR<Person>(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
@@ -60,9 +67,14 @@ export const useMe = (): {
     [mutate],
   );
 
+  const profileError = swrError instanceof Error ? swrError.message : undefined;
+  const needsProfileSetup = profileError === ME_USER_NOT_FOUND_ERROR;
+
   return {
     person,
     isLoading: isLoadingJwt || isLoadingPerson,
+    needsProfileSetup,
+    profileError,
     revalidate,
     isMe,
   };
