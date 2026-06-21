@@ -140,6 +140,7 @@ export const ConnectedButtonProfile = ({
     <ButtonProfile
       address={user?.wallet?.address}
       person={person}
+      isPersonLoading={isPersonLoading}
       isConnected={isAuthenticated}
       onLogin={login}
       onLogout={logout}

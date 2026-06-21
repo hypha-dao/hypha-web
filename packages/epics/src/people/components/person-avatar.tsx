@@ -63,7 +63,9 @@ export const PersonAvatar = ({
       className={cn(radiusClass, className)}
     >
       <Avatar className={cn(avatarSize, radiusClass, className)}>
-        <AvatarImage src={avatarSrc} alt={`${userName}'s avatar`} />
+        {avatarSrc?.trim() ? (
+          <AvatarImage src={avatarSrc} alt={`${userName}'s avatar`} />
+        ) : null}
         <AvatarFallback>{getFallbackContent()}</AvatarFallback>
       </Avatar>
     </Skeleton>

@@ -28,7 +28,17 @@ export const useMe = (): {
         Authorization: `Bearer ${jwt}`,
         'Content-Type': 'application/json',
       },
-    }).then((res) => res.json() as Promise<Person>),
+    }).then(async (res) => {
+      const payload = (await res.json()) as Person | { error?: string };
+      if (!res.ok || !('slug' in payload) || !payload.slug) {
+        throw new Error(
+          'error' in payload && payload.error
+            ? payload.error
+            : `Failed to load profile (${res.status})`,
+        );
+      }
+      return payload;
+    }),
   );
 
   const isMe = React.useCallback(
