@@ -2862,6 +2862,7 @@
     "returnBannerDismiss": "Fermer",
     "returnBannerApprovedHint": "La vérification est terminée. Ouvrez un compte space pour ajouter les devises restantes.",
     "errorLoad": "Impossible de charger le statut du compte bancaire.",
+    "errorFetchStatus": "Un problème est survenu lors de la récupération de vos informations bancaires. Veuillez réessayer plus tard.",
     "sections": {
       "transfers": {
         "title": "Virements bancaires ponctuels",

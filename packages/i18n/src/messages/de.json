@@ -596,6 +596,7 @@
     "loading": "Bankkontostatus wird geladen…",
     "returnBanner": "Willkommen zurück — wir prüfen Ihren Verifizierungsstatus.",
     "errorLoad": "Bankkontostatus konnte nicht geladen werden.",
+    "errorFetchStatus": "Beim Abrufen Ihrer Bankinformationen ist ein Problem aufgetreten. Bitte versuchen Sie es später erneut.",
     "notStarted": {
       "description": "Banking ist für diesen Space noch nicht eingerichtet.",
       "enableCta": "Weiter"
