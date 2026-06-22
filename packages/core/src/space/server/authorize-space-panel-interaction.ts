@@ -1,6 +1,3 @@
-import { and, eq } from 'drizzle-orm';
-import { memberships } from '@hypha-platform/storage-postgres';
-
 import { findSelf } from '../../people/server/queries';
 import { getDb } from '../../common/server/get-db';
 import { findSpaceBySlug } from './queries';
@@ -27,42 +24,11 @@ export async function authorizeSpacePanelInteraction({
       return { authorized: false, message: 'Space not found.' };
     }
 
-    if (space.web3SpaceId == null) {
-      const [membership] = await db
-        .select({ id: memberships.id })
-        .from(memberships)
-        .where(
-          and(
-            eq(memberships.spaceId, space.id),
-            eq(memberships.personId, person.id),
-          ),
-        )
-        .limit(1);
-
-      if (!membership) {
-        return {
-          authorized: false,
-          message:
-            'You must be a space member or delegate to interact in this space.',
-        };
-      }
-
+    if (await hasPostgresSpaceMembership(space.id, authToken)) {
       return { authorized: true };
     }
 
-    if (!person.address) {
-      return { authorized: false, message: 'Could not verify your identity.' };
-    }
-
-    const allowed = await isOnChainMemberOrDelegate(
-      space.web3SpaceId,
-      person.address as `0x${string}`,
-    );
-
-    if (!allowed) {
-      if (await hasPostgresSpaceMembership(space.id, authToken)) {
-        return { authorized: true };
-      }
+    if (space.web3SpaceId == null) {
       return {
         authorized: false,
         message:
@@ -70,7 +36,30 @@ export async function authorizeSpacePanelInteraction({
       };
     }
 
-    return { authorized: true };
+    if (!person.address) {
+      return { authorized: false, message: 'Could not verify your identity.' };
+    }
+
+    try {
+      const allowed = await isOnChainMemberOrDelegate(
+        space.web3SpaceId,
+        person.address as `0x${string}`,
+      );
+      if (allowed) {
+        return { authorized: true };
+      }
+    } catch (onChainError) {
+      console.error(
+        '[authorizeSpacePanelInteraction] on-chain check failed',
+        onChainError,
+      );
+    }
+
+    return {
+      authorized: false,
+      message:
+        'You must be a space member or delegate to interact in this space.',
+    };
   } catch (error) {
     console.error('[authorizeSpacePanelInteraction]', error);
     try {

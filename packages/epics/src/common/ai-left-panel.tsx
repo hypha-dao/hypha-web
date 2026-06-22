@@ -869,13 +869,34 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
 
+    if (previousSlug && isSpaceSetupContext(onboardingContext)) {
+      const { staleOnboardingContext } = resolveChatTransportBody({
+        spaceSlug: nextSlug ?? undefined,
+        activeSpaceTitle: activeSpaceName,
+        onboardingContext,
+        isOnboardingPath,
+      });
+      if (staleOnboardingContext) {
+        clearOnboardingConversationContext();
+        setOnboardingContext(undefined);
+      }
+    }
+
     lastChatSpaceSlugRef.current = nextSlug;
     lastMcpNavigationTargetSpaceSlugRef.current = null;
     lastAutoNavigationKeyRef.current = null;
     stop();
     clearError();
     setMessages([]);
-  }, [clearError, setMessages, spaceSlug, stop]);
+  }, [
+    activeSpaceName,
+    clearError,
+    isOnboardingPath,
+    onboardingContext,
+    setMessages,
+    spaceSlug,
+    stop,
+  ]);
 
   const buildMessageOptions = useCallback(
     async (contextOverride?: OnboardingConversationContext | undefined) => {

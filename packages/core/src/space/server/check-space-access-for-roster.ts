@@ -133,7 +133,19 @@ export async function checkSpaceAccessForSpace(
     const db = getDb({ authToken });
     const person = await findSelf({ db });
 
-    if (!person?.address) {
+    if (!person?.id) {
+      return {
+        hasAccess: false,
+        message: 'Could not verify your identity.',
+        httpStatus: 401,
+      };
+    }
+
+    if (await hasPostgresSpaceMembership(host.id, authToken)) {
+      return { hasAccess: true };
+    }
+
+    if (!person.address) {
       return {
         hasAccess: false,
         message: 'Could not verify your identity.',
