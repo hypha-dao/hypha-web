@@ -305,11 +305,15 @@ export function NetworkGlobeMap({
     setSelectedPinRef.current(null);
   }, []);
 
+  const [canHover, setCanHover] = React.useState(() => canUseHover());
+
   React.useEffect(() => {
     const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
     const syncCanHover = () => {
-      canHoverRef.current = mediaQuery.matches;
-      if (mediaQuery.matches) {
+      const matches = mediaQuery.matches;
+      canHoverRef.current = matches;
+      setCanHover(matches);
+      if (matches) {
         clearSelectedPin();
       } else {
         clearHoveredPin();
@@ -1163,12 +1167,15 @@ export function NetworkGlobeMap({
       <NetworkMapPinHoverCard
         lang={lang}
         space={activeSpace}
-        {...clampHoverPosition(
-          activePin.x,
-          activePin.y,
-          containerRef.current?.clientWidth ?? 640,
-          containerRef.current?.clientHeight ?? 360,
-        )}
+        compact={!canHover}
+        {...(canHover
+          ? clampHoverPosition(
+              activePin.x,
+              activePin.y,
+              containerRef.current?.clientWidth ?? 640,
+              containerRef.current?.clientHeight ?? 360,
+            )
+          : {})}
       />
     ) : null;
 
