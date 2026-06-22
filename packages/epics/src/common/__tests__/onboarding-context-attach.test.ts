@@ -8,8 +8,10 @@ function baseContext(
 ): OnboardingConversationContext {
   return {
     mode: 'onboarding_setup',
+    source: 'onboarding_hero',
     setupPhase: 'discover',
-    setupJourney: 'single',
+    setupJourney: 'single_space',
+    createdAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   };
 }

@@ -2,6 +2,17 @@ import type { OnboardingConversationContext } from './ai-onboarding-context';
 
 const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
 
+/** Fields required to decide whether onboarding context attaches to a space route. */
+export type OnboardingContextAttachInput = Pick<
+  OnboardingConversationContext,
+  | 'mode'
+  | 'setupPhase'
+  | 'setupJourney'
+  | 'createdSpaceSlug'
+  | 'ecosystemRootSlug'
+  | 'setupPlan'
+>;
+
 function normalizeSlug(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed || undefined;
@@ -20,12 +31,12 @@ function slugMatchesBlueprintEntry(
 
 /** Whether onboarding context should ride along on chat requests for this space. */
 export function shouldAttachOnboardingContext(
-  context: OnboardingConversationContext | undefined,
+  context: OnboardingContextAttachInput | undefined,
   options: {
     spaceSlug?: string;
     isOnboardingPath?: boolean;
   },
-): context is OnboardingConversationContext {
+): context is OnboardingContextAttachInput {
   if (!context || context.mode !== ONBOARDING_SETUP_MODE) return false;
   if (options.isOnboardingPath) return true;
 

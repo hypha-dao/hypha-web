@@ -3,6 +3,7 @@
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { parseOnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { transferMobilizedAiAgentsToSpace } from './ai-agent-competencies';
+import { shouldAttachOnboardingContext } from './onboarding-context-attach';
 
 export type { OnboardingDiscoveryMode };
 export const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
