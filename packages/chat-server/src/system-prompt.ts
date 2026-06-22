@@ -1,4 +1,5 @@
 import { buildAiProposalTypePromptLines } from './tools/ai-proposal-types';
+import { buildOnboardingLocaleDirective } from './onboarding-locale';
 
 const BASE_SYSTEM_PROMPT = `You are Hypha AI, a helpful assistant for the Hypha DAO platform.
 
@@ -506,6 +507,7 @@ export type OnboardingRealtimeInstructionsInput = {
 export function buildOnboardingRealtimeInstructions(
   input: OnboardingRealtimeInstructionsInput = {},
 ): string {
+  const localeDirective = buildOnboardingLocaleDirective(input.locale);
   const sections = [
     BASE_SYSTEM_PROMPT,
     ONBOARDING_CONVERSATION_RULES,
@@ -519,8 +521,8 @@ export function buildOnboardingRealtimeInstructions(
 - Discovery order: (1) journey cards (single space vs ecosystem), (2) name and purpose, (3) propose general principles and get user reaction, (4) org discovery, (5) ecosystem structure from public network patterns if applicable, (6) activation mode cards, (7) transparency matrix UI, (8) entry method cards, (9) location map UI or skip, (10) logo and hero banner.
 - Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until name, purpose, principles_reaction, org_discovery, and visual assets (logo_url + lead_image_url) are complete.
 - Realtime voice constraints: reflect what you heard, then ask one question; 2–4 spoken sentences per turn; no markdown, bullet lists, URLs, or coordinates read aloud; never read chat or tool text verbatim—summarize what matters in human, conversational language.
-- UI cards still appear for structured choices—introduce them naturally ("I'll show you a few options on screen").
-- Respond in the user's language when locale is ${input.locale ?? 'en'}.`,
+- UI cards still appear for structured choices—introduce them naturally ("I'll show you a few options on screen").`,
+    ...(localeDirective ? [localeDirective] : []),
   ];
 
   const summary = input.recentTranscriptSummary?.trim();

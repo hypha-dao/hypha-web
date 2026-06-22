@@ -13,6 +13,8 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import { buildOnboardingLocaleDirective } from './onboarding-locale';
+import { buildEcosystemExecutePhaseDirective } from './onboarding-ecosystem-blueprint';
 import {
   buildQuestionCompetencyDirective,
   buildSystemPrompt,
@@ -1341,6 +1343,14 @@ export async function createChatStreamResult(
     normalizedConversationContext,
     spaceContextSnapshot,
   );
+  const onboardingLocaleDirective =
+    normalizedConversationContext?.mode === 'onboarding_setup'
+      ? buildOnboardingLocaleDirective(normalizedConversationContext.locale)
+      : null;
+  const ecosystemExecuteDirective =
+    normalizedConversationContext?.mode === 'onboarding_setup'
+      ? buildEcosystemExecutePhaseDirective(normalizedConversationContext)
+      : null;
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before any write action, present a concise action plan and request explicit confirmation.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
@@ -1354,15 +1364,14 @@ export async function createChatStreamResult(
             ? '\n- Verify phase (space is live): finish governance setup before signals or member-gated read tools. Ask voting method first — the user picks with the voting method card in the panel. Then confirm entry method with the entry method card if it was skipped during discover. Use mcp_navigation to agreements/create/change-voting-method when the user is ready to submit the on-chain voting-method proposal. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.'
             : ''
         }${
-          normalizedConversationContext.setupPhase === 'confirm' ||
-          normalizedConversationContext.setupPhase === 'execute'
+          normalizedConversationContext.setupPhase === 'confirm'
             ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'
             : ''
-        }${
+        }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
           normalizedConversationContext.discoveryMode === 'voice_interview'
             ? '\n- Voice interview mode is active: speak like a warm human advisor—reflect what you heard, show empathy and enthusiasm, ask one question at a time, keep replies short and conversational (no bullet lists or markdown). Never read chat text or tool output verbatim; summarize the important points in a human way and focus on what matters for the next step. UI cards still appear for structured choices; introduce them naturally without reading every option aloud.'
             : ''
-        }`
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
       : effectiveSystemPrompt;
 
   if (modelMessages.length === 0) {

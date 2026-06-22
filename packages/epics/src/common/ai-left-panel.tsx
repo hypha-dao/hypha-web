@@ -122,6 +122,10 @@ import {
   mergeVisualAssetsIntoCreatePayload,
 } from './onboarding-visual-assets';
 import {
+  preparePostRootOnboardingHandoff,
+  syncEcosystemBlueprintInContext,
+} from './onboarding-ecosystem-blueprint';
+import {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
   onboardingSpaceLocationFromPicker,
@@ -899,6 +903,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;
+    if (onboardingContext.locale?.trim()) return;
+    const next: OnboardingConversationContext = {
+      ...onboardingContext,
+      locale: lang,
+    };
+    setOnboardingContext(next);
+    saveOnboardingConversationContext(next);
+  }, [lang, onboardingContext]);
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
     const { staleOnboardingContext } = resolveChatTransportBody({
       spaceSlug,
       activeSpaceTitle: activeSpaceName,
@@ -1055,7 +1070,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       .reverse()
       .flatMap((message) => message.parts ?? [])
       .find((part) => {
-        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+        if (part.type !== 'tool-create_space_from_onboarding') {
           return false;
         }
         const toolPart = part as {
@@ -1079,17 +1094,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (lastAutoTransitionSpaceSlugRef.current === createdSlug) return;
     lastAutoTransitionSpaceSlugRef.current = createdSlug;
 
-    const nextContext: OnboardingConversationContext = {
-      ...onboardingContext,
-      setupPhase:
-        onboardingContext.setupJourney === 'ecosystem' ? 'execute' : 'verify',
-      createdSpaceSlug: createdSlug,
-      ...(onboardingContext.setupJourney === 'ecosystem'
-        ? { ecosystemRootSlug: createdSlug }
-        : {}),
-    };
-    setOnboardingContext(nextContext);
-    saveOnboardingConversationContext(nextContext);
+    const handoff = preparePostRootOnboardingHandoff(
+      onboardingContext,
+      messages,
+      createdSlug,
+    );
+    setOnboardingContext(handoff.context);
+    saveOnboardingConversationContext(handoff.context);
     transferMobilizedAiAgentsToSpace(createdSlug, {
       messages: messages as Array<{
         role: string;
@@ -1099,9 +1110,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     transferredMobilizedAgentsSlugRef.current = createdSlug;
     openAiPanel();
     setAiOverlayVisible(false);
-    const continuationPrompt = getPostOnboardingContinuationPrompt(
-      onboardingContext.setupJourney,
-    );
+    const continuationPrompt = handoff.continuationPrompt;
     if (continuationPrompt) {
       pendingSeedPromptRef.current = continuationPrompt;
     }
@@ -1236,15 +1245,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (!slug) return;
     if (lastAutoTransitionSpaceSlugRef.current === slug) return;
     lastAutoTransitionSpaceSlugRef.current = slug;
-    const isEcosystem = onboardingContext.setupJourney === 'ecosystem';
-    const nextContext: OnboardingConversationContext = {
-      ...onboardingContext,
-      setupPhase: isEcosystem ? 'execute' : 'verify',
-      createdSpaceSlug: slug,
-      ...(isEcosystem ? { ecosystemRootSlug: slug } : {}),
-    };
-    setOnboardingContext(nextContext);
-    saveOnboardingConversationContext(nextContext);
+    const handoff = preparePostRootOnboardingHandoff(
+      onboardingContext,
+      messages,
+      slug,
+    );
+    setOnboardingContext(handoff.context);
+    saveOnboardingConversationContext(handoff.context);
     transferMobilizedAiAgentsToSpace(slug, {
       messages: messages as Array<{
         role: string;
@@ -1254,9 +1261,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     transferredMobilizedAgentsSlugRef.current = slug;
     openAiPanel();
     setAiOverlayVisible(false);
-    const continuationPrompt = getPostOnboardingContinuationPrompt(
-      onboardingContext.setupJourney,
-    );
+    const continuationPrompt = handoff.continuationPrompt;
     if (continuationPrompt) {
       pendingSeedPromptRef.current = continuationPrompt;
     }
@@ -1288,6 +1293,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     };
     setOnboardingContext(nextContext);
     saveOnboardingConversationContext(nextContext);
+  }, [messages, onboardingContext]);
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
+    const synced = syncEcosystemBlueprintInContext(onboardingContext, messages);
+    if (!synced) return;
+    setOnboardingContext(synced);
+    saveOnboardingConversationContext(synced);
   }, [messages, onboardingContext]);
 
   useEffect(() => {

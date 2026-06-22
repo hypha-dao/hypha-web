@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -29,6 +29,8 @@ import {
   onboardingJoinMethodFromCreatePayload,
   extractOnboardingVisualAssetsFromMessages,
   mergeVisualAssetsIntoCreatePayload,
+  preparePostRootOnboardingHandoff,
+  syncEcosystemBlueprintInContext,
   onboardingSpaceLocationFromPicker,
   skippedOnboardingSpaceLocation,
   saveOnboardingConversationContext,
@@ -38,7 +40,6 @@ import {
   buildRecentTranscriptSummaryFromChatMessages,
   toStoredOnboardingChatMessages,
   getPostOnboardingLandingPath,
-  getPostOnboardingContinuationPrompt,
   AI_PANEL_SETUP_SOURCE,
   recordMobilizedAiAgentsForOnboarding,
   useOnboardingVoiceDiscovery,
@@ -116,6 +117,7 @@ export function OnboardingAiFullPage({
 }: OnboardingAiFullPageProps) {
   const t = useTranslations('OnboardingAdventure');
   const tCommon = useTranslations('Common');
+  const routeLocale = useLocale();
   const { getAccessToken } = useAuthentication();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -131,6 +133,16 @@ export function OnboardingAiFullPage({
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
   const navigatedHrefRef = useRef<string | null>(null);
   const createdSpaceRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const resolved = onboardingContext.locale ?? context.locale ?? routeLocale;
+    if (onboardingContext.locale === resolved) return;
+    setOnboardingContext((prev) => {
+      const next = { ...prev, locale: resolved };
+      saveOnboardingConversationContext(next);
+      return next;
+    });
+  }, [context.locale, onboardingContext.locale, routeLocale]);
 
   const {
     createSpace: createSpaceWithWalletFlow,
@@ -523,8 +535,7 @@ export function OnboardingAiFullPage({
       .reverse()
       .flatMap((message) => message.parts ?? [])
       .find((part) => {
-        if (typeof part.type !== 'string' || !part.type.startsWith('tool-'))
-          return false;
+        if (part.type !== 'tool-create_space_from_onboarding') return false;
         const toolPart = part as {
           state?: string;
           output?: { ok?: boolean; space?: { slug?: string } };
@@ -559,21 +570,16 @@ export function OnboardingAiFullPage({
     if (createdSpaceRef.current === slug) return;
     createdSpaceRef.current = slug;
 
-    const isEcosystem = onboardingContext.setupJourney === 'ecosystem';
-    const continuationContext: OnboardingConversationContext = {
-      ...onboardingContext,
-      source: AI_PANEL_SETUP_SOURCE,
-      setupPhase: isEcosystem ? 'execute' : 'verify',
-      createdSpaceSlug: slug,
-      ...(isEcosystem ? { ecosystemRootSlug: slug } : {}),
-    };
+    const handoff = preparePostRootOnboardingHandoff(
+      { ...onboardingContext, source: AI_PANEL_SETUP_SOURCE },
+      messages,
+      slug,
+    );
 
     handoffOnboardingToAiPanel({
       messages: messages as StoredOnboardingChatMessage[],
-      context: continuationContext,
-      continuationPrompt: getPostOnboardingContinuationPrompt(
-        onboardingContext.setupJourney,
-      ),
+      context: handoff.context,
+      continuationPrompt: handoff.continuationPrompt,
     });
 
     router.push(
@@ -655,6 +661,13 @@ export function OnboardingAiFullPage({
     };
     setOnboardingContext(nextContext);
     saveOnboardingConversationContext(nextContext);
+  }, [messages, onboardingContext]);
+
+  useEffect(() => {
+    const synced = syncEcosystemBlueprintInContext(onboardingContext, messages);
+    if (!synced) return;
+    setOnboardingContext(synced);
+    saveOnboardingConversationContext(synced);
   }, [messages, onboardingContext]);
 
   useEffect(() => {
@@ -938,11 +951,13 @@ export function OnboardingAiFullPage({
     [setMessages],
   );
 
+  const voiceLocale = onboardingContext.locale ?? context.locale ?? routeLocale;
+
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview,
     isStreaming,
     lastAssistantText,
-    locale: onboardingContext.locale,
+    locale: voiceLocale,
     conversationContext: onboardingContext,
     recentTranscriptSummary,
     getAccessToken,

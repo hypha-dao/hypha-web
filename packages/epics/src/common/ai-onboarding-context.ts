@@ -621,9 +621,30 @@ export function getPostOnboardingLandingPath(
 /** Auto-continue AI discovery after landing on the new space. */
 export function getPostOnboardingContinuationPrompt(
   setupJourney?: OnboardingSetupJourney,
+  ecosystemBlueprint?: Array<{
+    key: string;
+    role: string;
+    title: string;
+    status: 'planned' | 'confirmed' | 'created';
+  }>,
+  rootSlug?: string,
 ): string | undefined {
   if (setupJourney === 'ecosystem') {
-    return `Our root space is live. Based on everything we discussed during onboarding, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We'll create them one by one together.`;
+    // Lazy import avoided — caller may pass pre-built prompt via preparePostRootOnboardingHandoff.
+    const pending =
+      ecosystemBlueprint?.filter((entry) => entry.status !== 'created') ?? [];
+    const rootLabel = rootSlug?.trim() ? `"${rootSlug.trim()}"` : 'is live';
+    if (pending.length > 0) {
+      const lines = pending
+        .slice(0, 8)
+        .map(
+          (entry, index) =>
+            `${index + 1}. ${entry.title} (${entry.role.replace(/_/g, ' ')})`,
+        )
+        .join('\n');
+      return `Our root space ${rootLabel}. Continue the ecosystem blueprint we agreed during onboarding. Pending child spaces:\n${lines}\n\nPresent the first pending space, get my confirmation, then create it with create_ecosystem_space under the root. Work through the list one by one—do not restart discovery.`;
+    }
+    return `Our root space ${rootLabel}. Based on everything we discussed during onboarding, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We'll create them one by one together.`;
   }
   if (setupJourney === 'single_space') {
     return `Our space is live. Let's finish setup: first help me choose our voting method, then confirm entry method if we skipped it earlier. Use the cards in the panel when available and guide me step by step.`;

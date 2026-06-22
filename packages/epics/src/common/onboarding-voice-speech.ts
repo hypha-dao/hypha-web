@@ -1,5 +1,7 @@
 'use client';
 
+import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
+
 import {
   removeMarkdownImageTokens,
   stripMarkdown,
@@ -123,7 +125,9 @@ export function speakOnboardingText(
     if (cancelled) return;
     globalThis.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(spoken);
-    const lang = options?.lang ?? document.documentElement.lang ?? 'en';
+    const lang = resolveOnboardingSpeechLocale(
+      options?.lang ?? document.documentElement.lang,
+    );
     utterance.lang = lang;
     utterance.rate = options?.rate ?? 0.92;
     utterance.pitch = 1.03;

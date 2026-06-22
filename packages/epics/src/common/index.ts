@@ -89,6 +89,14 @@ export {
   type OnboardingVisualAssets,
 } from './onboarding-visual-assets';
 export {
+  extractEcosystemBlueprintFromMessages,
+  mergeEcosystemBlueprintWithCreatedSpaces,
+  preparePostRootOnboardingHandoff,
+  resolveEcosystemBlueprintForContext,
+  syncEcosystemBlueprintInContext,
+  type EcosystemBlueprintEntry,
+} from './onboarding-ecosystem-blueprint';
+export {
   applyOnboardingTransparencyToContext,
   formatOnboardingTransparencySubmitMessage,
   type OnboardingTransparencyMessageLabels,

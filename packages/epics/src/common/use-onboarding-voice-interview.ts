@@ -6,6 +6,7 @@ import {
   stopOnboardingSpeech,
   speakOnboardingText,
 } from './onboarding-voice-speech';
+import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -302,7 +303,7 @@ export function useOnboardingVoiceInterview({
       const recognition = new SR();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = locale ?? document.documentElement.lang ?? 'en';
+      recognition.lang = resolveOnboardingSpeechLocale(locale);
       recognition.onresult = (event) => {
         if (generation !== listeningGenerationRef.current) return;
         // Rebuild from the cumulative results list each event — do not append

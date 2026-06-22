@@ -50,5 +50,14 @@ describe('buildOnboardingRealtimeInstructions', () => {
     expect(instructions).toContain('discover');
     expect(instructions).toContain('User wants a bioregion DAO.');
     expect(instructions).toContain('onboarding_guidance');
+    expect(instructions).toContain('Respond in English');
+  });
+
+  it('includes locale language for non-English onboarding', () => {
+    const instructions = buildOnboardingRealtimeInstructions({
+      setupPhase: 'discover',
+      locale: 'de',
+    });
+    expect(instructions).toContain('Respond in German');
   });
 });
