@@ -102,6 +102,13 @@ export {
   type OnboardingEntryMethod,
 } from './onboarding-entry-method-ui';
 export {
+  shouldShowOnboardingVotingMethodPicker,
+  applyOnboardingVotingMethodToContext,
+  formatOnboardingVotingMethodSubmitMessage,
+  type OnboardingVotingMethod,
+} from './onboarding-voting-method-ui';
+export { isPostCreateOnboardingPhase } from './ai-onboarding-context';
+export {
   isOnboardingDiscoveryMode,
   parseOnboardingDiscoveryMode,
   type OnboardingDiscoveryMode,

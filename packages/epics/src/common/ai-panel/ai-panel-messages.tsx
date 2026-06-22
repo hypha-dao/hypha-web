@@ -14,12 +14,15 @@ import { shouldShowOnboardingSetupJourneyPicker } from '../onboarding-setup-jour
 import { shouldShowOnboardingActivationPicker } from '../onboarding-activation-ui';
 import { shouldShowOnboardingTransparencyPicker } from '../onboarding-transparency-ui';
 import { shouldShowOnboardingEntryMethodPicker } from '../onboarding-entry-method-ui';
+import { shouldShowOnboardingVotingMethodPicker } from '../onboarding-voting-method-ui';
+import { isPostCreateOnboardingPhase } from '../ai-onboarding-context';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
 import { OnboardingSpaceLocationCard } from './onboarding-space-location-card';
 import { OnboardingSetupJourneyCard } from './onboarding-setup-journey-card';
 import { OnboardingActivationModeCard } from './onboarding-activation-mode-card';
 import { OnboardingTransparencyMatrixCard } from './onboarding-transparency-matrix-card';
 import { OnboardingEntryMethodCard } from './onboarding-entry-method-card';
+import { OnboardingVotingMethodCard } from './onboarding-voting-method-card';
 import {
   AiPanelSuggestions,
   type AiPanelSuggestionItem,
@@ -28,6 +31,7 @@ import type { OnboardingActivationMethod } from '../onboarding-activation-ui';
 import type { OnboardingSetupJourney } from '../onboarding-setup-journey-ui';
 import type { OnboardingTransparencyMatrix } from '../ai-onboarding-context';
 import type { OnboardingEntryMethod } from '../onboarding-entry-method-ui';
+import type { OnboardingVotingMethod } from '../onboarding-voting-method-ui';
 import type { SpaceLocationValue } from '../../spaces/components/space-location-picker';
 
 type UIMessage = {
@@ -56,6 +60,7 @@ type AiPanelMessagesProps = {
     matrix: OnboardingTransparencyMatrix,
   ) => void;
   onOnboardingEntryMethodConfirm?: (method: OnboardingEntryMethod) => void;
+  onOnboardingVotingMethodSelect?: (method: OnboardingVotingMethod) => void;
 };
 
 export function AiPanelMessages({
@@ -72,6 +77,7 @@ export function AiPanelMessages({
   onOnboardingActivationSelect,
   onOnboardingTransparencyConfirm,
   onOnboardingEntryMethodConfirm,
+  onOnboardingVotingMethodSelect,
 }: AiPanelMessagesProps) {
   const t = useTranslations('AiPanel');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,8 +108,17 @@ export function AiPanelMessages({
     onboardingContext,
     isStreaming,
   });
-  const showEntryMethodPicker = shouldShowOnboardingEntryMethodPicker({
-    messages,
+  const showEntryMethodPicker =
+    shouldShowOnboardingEntryMethodPicker({
+      messages,
+      onboardingContext,
+      isStreaming,
+    }) ||
+    (isPostCreateOnboardingPhase(onboardingContext) &&
+      !onboardingContext?.entryMethod &&
+      !isStreaming &&
+      Boolean(onboardingContext?.votingMethod));
+  const showVotingMethodPicker = shouldShowOnboardingVotingMethodPicker({
     onboardingContext,
     isStreaming,
   });
@@ -195,6 +210,13 @@ export function AiPanelMessages({
             disabled={isStreaming}
             activationMethod={onboardingContext?.activationMethod}
             onConfirm={onOnboardingTransparencyConfirm}
+          />
+        ) : null}
+
+        {showVotingMethodPicker && onOnboardingVotingMethodSelect ? (
+          <OnboardingVotingMethodCard
+            disabled={isStreaming}
+            onSelect={onOnboardingVotingMethodSelect}
           />
         ) : null}
 

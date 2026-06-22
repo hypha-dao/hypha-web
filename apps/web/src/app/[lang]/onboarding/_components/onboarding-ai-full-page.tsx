@@ -564,6 +564,7 @@ export function OnboardingAiFullPage({
       ...onboardingContext,
       source: AI_PANEL_SETUP_SOURCE,
       setupPhase: isEcosystem ? 'execute' : 'verify',
+      createdSpaceSlug: slug,
       ...(isEcosystem ? { ecosystemRootSlug: slug } : {}),
     };
 

@@ -1350,6 +1350,10 @@ export async function createChatStreamResult(
             ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation.'
             : ''
         }${
+          normalizedConversationContext.setupPhase === 'verify'
+            ? '\n- Verify phase (space is live): finish governance setup before signals or member-gated read tools. Ask voting method first — the user picks with the voting method card in the panel. Then confirm entry method with the entry method card if it was skipped during discover. Use mcp_navigation to agreements/create/change-voting-method when the user is ready to submit the on-chain voting-method proposal. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.'
+            : ''
+        }${
           normalizedConversationContext.setupPhase === 'confirm' ||
           normalizedConversationContext.setupPhase === 'execute'
             ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'

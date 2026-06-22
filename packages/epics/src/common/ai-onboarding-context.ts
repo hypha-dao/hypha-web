@@ -43,6 +43,8 @@ export type OnboardingEntryMethod =
   | 'invite_only'
   | 'token_based';
 
+export type OnboardingVotingMethod = '1m1v' | '1v1v' | '1t1v';
+
 export type OnboardingConversationContext = {
   mode: typeof ONBOARDING_SETUP_MODE;
   source: typeof ONBOARDING_HERO_SOURCE | typeof AI_PANEL_SETUP_SOURCE;
@@ -53,6 +55,8 @@ export type OnboardingConversationContext = {
   setupJourney?: OnboardingSetupJourney;
   transparencyMatrix?: OnboardingTransparencyMatrix;
   entryMethod?: OnboardingEntryMethod;
+  /** Governance voting model chosen during post-create verify phase. */
+  votingMethod?: OnboardingVotingMethod;
   /** Root space slug after ecosystem onboarding handoff to the left AI panel. */
   ecosystemRootSlug?: string;
   /** Slug of the space created during onboarding (single-space or ecosystem root). */
@@ -204,6 +208,21 @@ function parseStoredEntryMethod(
   return undefined;
 }
 
+function parseStoredVotingMethod(
+  raw: unknown,
+): OnboardingVotingMethod | undefined {
+  if (raw === '1m1v' || raw === '1v1v' || raw === '1t1v') {
+    return raw;
+  }
+  return undefined;
+}
+
+export function isPostCreateOnboardingPhase(
+  context: OnboardingConversationContext | undefined,
+): boolean {
+  return context?.setupPhase === 'verify' || context?.setupPhase === 'execute';
+}
+
 function parseStoredSource(
   raw: unknown,
 ): OnboardingConversationContext['source'] {
@@ -337,6 +356,9 @@ export function readOnboardingConversationContext():
         parsed.transparencyMatrix,
       ),
       entryMethod: parseStoredEntryMethod(parsed.entryMethod),
+      votingMethod:
+        parseStoredVotingMethod(parsed.votingMethod) ??
+        parseStoredVotingMethod(parsed.setupPlan?.governance?.votingModel),
       ecosystemRootSlug:
         typeof parsed.ecosystemRootSlug === 'string'
           ? parsed.ecosystemRootSlug
@@ -396,7 +418,10 @@ export function shouldAttachOnboardingContext(
   if (phase === 'execute' || phase === 'verify') {
     const anchorSlug =
       context.createdSpaceSlug?.trim() || context.ecosystemRootSlug?.trim();
-    if (!anchorSlug) return false;
+    if (!anchorSlug) {
+      // Handoff may land before createdSpaceSlug is persisted — keep context on the active space.
+      return Boolean(activeSlug);
+    }
     if (!activeSlug) return true;
     if (phase === 'execute' && context.setupJourney === 'ecosystem') {
       return true;
@@ -595,7 +620,7 @@ export function getPostOnboardingContinuationPrompt(
     return `Our root space is live. Based on everything we discussed during onboarding, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We'll create them one by one together.`;
   }
   if (setupJourney === 'single_space') {
-    return `Our space is live. Based on our onboarding conversation, propose one strong first signal—what it should focus on, its type and priority, and why it matters right now. Use get_signals_by_space_slug for context, then help me create it when you're ready.`;
+    return `Our space is live. Let's finish setup: first help me choose our voting method, then confirm entry method if we skipped it earlier. Use the cards in the panel when available and guide me step by step.`;
   }
   return undefined;
 }

@@ -143,6 +143,11 @@ import {
   formatOnboardingEntryMethodSubmitMessage,
   type OnboardingEntryMethod,
 } from './onboarding-entry-method-ui';
+import {
+  applyOnboardingVotingMethodToContext,
+  formatOnboardingVotingMethodSubmitMessage,
+  type OnboardingVotingMethod,
+} from './onboarding-voting-method-ui';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
@@ -883,6 +888,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       isOnboardingPath,
     });
     if (!staleOnboardingContext) return;
+
+    const activeSlug = spaceSlug?.trim();
+    const isPostCreate =
+      onboardingContext.setupPhase === 'verify' ||
+      onboardingContext.setupPhase === 'execute';
+    if (
+      isPostCreate &&
+      activeSlug &&
+      !onboardingContext.createdSpaceSlug?.trim()
+    ) {
+      const patched: OnboardingConversationContext = {
+        ...onboardingContext,
+        createdSpaceSlug: activeSlug,
+      };
+      setOnboardingContext(patched);
+      saveOnboardingConversationContext(patched);
+      return;
+    }
+
     clearOnboardingConversationContext();
     setOnboardingContext(undefined);
   }, [activeSpaceName, isOnboardingPath, onboardingContext, spaceSlug]);
@@ -2020,6 +2044,61 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
+  const sendOnboardingVotingMethodMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingVotingMethodMessageLabels = useMemo(
+    () => ({
+      oneMemberOneVote: t('onboardingVotingMethodSetOneMemberOneVote'),
+      oneVoiceOneVote: t('onboardingVotingMethodSetOneVoiceOneVote'),
+      oneTokenOneVote: t('onboardingVotingMethodSetOneTokenOneVote'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingVotingMethodSelect = useCallback(
+    async (method: OnboardingVotingMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingVotingMethodSubmitMessage(
+          method,
+          onboardingVotingMethodMessageLabels,
+        );
+        const nextContext = applyOnboardingVotingMethodToContext(
+          baseContext,
+          method,
+          message,
+        );
+        await sendOnboardingVotingMethodMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] voting method select sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingVotingMethodMessageLabels,
+      sendOnboardingVotingMethodMessage,
+    ],
+  );
+
   const isOnboardingSetup = isSpaceSetupContext(onboardingContext);
   const discoveryMode: OnboardingDiscoveryMode =
     onboardingContext?.discoveryMode ?? 'chat';
@@ -2429,6 +2508,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             blockSpaceAiForSubscription
               ? undefined
               : handleOnboardingEntryMethodConfirm
+          }
+          onOnboardingVotingMethodSelect={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingVotingMethodSelect
           }
         />
       </SidebarContent>
