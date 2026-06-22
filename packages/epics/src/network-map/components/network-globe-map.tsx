@@ -44,13 +44,23 @@ import {
 } from '../lib/pin-clusters';
 
 const PROJECTION_ANIMATION_MS = 1200;
-const CLUSTER_FOCUS_MS = 1200;
-const CLUSTER_BLUR_MS = 650;
+/** Cluster zoom-in duration — slightly shorter than before for a snappier camera feel. */
+const CLUSTER_FOCUS_MS = 920;
+/** Cluster zoom-out duration — matched to focus so in/out feel symmetric. */
+const CLUSTER_BLUR_MS = 580;
 const CLUSTER_ZOOM_SCALE = 4;
 const MAX_MAP_ZOOM = 5;
 const SPIDERFY_RADIUS = 36;
 /** Spiderfy begins after this fraction of the focus animation (zoom-first). */
 const SPIDERFY_START = 0.78;
+/** Fast takeoff with a soft landing — reads like a camera dolly-in. */
+const easeClusterZoomIn = d3.easeExpOut;
+/** Smooth pull-back into the world view. */
+const easeClusterZoomOut = d3.easePolyOut.exponent(4);
+/** Gentle fan-out once zoom has mostly settled. */
+const easeClusterSpreadIn = d3.easePolyOut.exponent(3);
+/** Quick fold-in before zoom-out begins. */
+const easeClusterSpreadOut = d3.easePolyIn.exponent(2);
 const FLAT_ROTATION: Rotation = [0, 0, 0];
 
 type MapPalette = {
@@ -743,8 +753,8 @@ export function NetworkGlobeMap({
       // Collapse spiderfy first, then zoom out so pins stay anchored.
       const spreadPhase = Math.min(1, t / 0.45);
       const zoomPhase = Math.max(0, (t - 0.35) / 0.65);
-      const spreadRemaining = 1 - d3.easeCubicIn(spreadPhase);
-      const zoomRemaining = 1 - d3.easeCubicInOut(zoomPhase);
+      const spreadRemaining = 1 - easeClusterSpreadOut(spreadPhase);
+      const zoomRemaining = 1 - easeClusterZoomOut(zoomPhase);
 
       clusterSpreadRef.current = fromSpread * spreadRemaining;
       setClusterSpread(fromSpread * spreadRemaining);
@@ -812,11 +822,11 @@ export function NetworkGlobeMap({
         // Keep the cluster anchor pinned at the viewport center while zooming.
         rotateRef.current = centeredRotation;
         globeZoomRef.current =
-          fromZoom + (toZoom - fromZoom) * d3.easeCubicOut(t);
+          fromZoom + (toZoom - fromZoom) * easeClusterZoomIn(t);
 
         const spreadT =
           t <= SPIDERFY_START ? 0 : (t - SPIDERFY_START) / (1 - SPIDERFY_START);
-        const spread = d3.easeCubicOut(spreadT);
+        const spread = easeClusterSpreadIn(spreadT);
         clusterSpreadRef.current = spread;
         setClusterSpread(spread);
         requestRender();
