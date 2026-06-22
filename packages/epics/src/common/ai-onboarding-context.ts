@@ -9,6 +9,17 @@ export const AI_PANEL_SETUP_SOURCE = 'ai_panel' as const;
 export const ONBOARDING_HERO_SOURCE = 'onboarding_hero' as const;
 export const AI_ONBOARDING_SEED_EVENT = 'hypha:ai-onboarding-seed';
 export const AI_ONBOARDING_SEED_ACK_EVENT = 'hypha:ai-onboarding-seed-ack';
+const ONBOARDING_CHAT_MESSAGES_STORAGE_KEY =
+  'hypha:onboarding-chat-messages:v1';
+const ONBOARDING_OPEN_AI_PANEL_KEY = 'hypha:onboarding-open-ai-panel:v1';
+const ONBOARDING_CONTINUATION_PROMPT_KEY =
+  'hypha:onboarding-continuation-prompt:v1';
+
+export type StoredOnboardingChatMessage = {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  parts?: Array<{ type: string; [key: string]: unknown }>;
+};
 
 export type OnboardingSpaceLocation = {
   latitude: number | null;
@@ -327,6 +338,115 @@ export function saveOnboardingConversationContext(
 export function clearOnboardingConversationContext(): void {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(ONBOARDING_CONTEXT_STORAGE_KEY);
+}
+
+function sanitizeOnboardingChatMessageForStorage(
+  message: StoredOnboardingChatMessage,
+): StoredOnboardingChatMessage {
+  return {
+    id: message.id,
+    role: message.role,
+    parts: message.parts?.map((part) => {
+      if (part.type === 'file') {
+        return { type: 'text', text: '[Uploaded file]' };
+      }
+      return part;
+    }),
+  };
+}
+
+export function saveOnboardingChatMessages(
+  messages: StoredOnboardingChatMessage[],
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      ONBOARDING_CHAT_MESSAGES_STORAGE_KEY,
+      JSON.stringify(messages.map(sanitizeOnboardingChatMessageForStorage)),
+    );
+  } catch {
+    // Ignore quota errors — context handoff still works without full history.
+  }
+}
+
+export function readOnboardingChatMessages():
+  | StoredOnboardingChatMessage[]
+  | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const raw = window.localStorage.getItem(
+      ONBOARDING_CHAT_MESSAGES_STORAGE_KEY,
+    );
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return undefined;
+    return parsed.filter(
+      (entry): entry is StoredOnboardingChatMessage =>
+        !!entry &&
+        typeof entry === 'object' &&
+        typeof (entry as StoredOnboardingChatMessage).id === 'string' &&
+        typeof (entry as StoredOnboardingChatMessage).role === 'string',
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+export function clearOnboardingChatMessages(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(ONBOARDING_CHAT_MESSAGES_STORAGE_KEY);
+}
+
+export function markOnboardingOpenAiPanelPending(): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(ONBOARDING_OPEN_AI_PANEL_KEY, 'true');
+}
+
+export function consumeOnboardingOpenAiPanelPending(): boolean {
+  if (typeof window === 'undefined') return false;
+  const pending =
+    window.sessionStorage.getItem(ONBOARDING_OPEN_AI_PANEL_KEY) === 'true';
+  if (pending) {
+    window.sessionStorage.removeItem(ONBOARDING_OPEN_AI_PANEL_KEY);
+  }
+  return pending;
+}
+
+export function saveOnboardingContinuationPrompt(prompt: string): void {
+  if (typeof window === 'undefined') return;
+  const trimmed = prompt.trim();
+  if (!trimmed) return;
+  window.sessionStorage.setItem(ONBOARDING_CONTINUATION_PROMPT_KEY, trimmed);
+}
+
+export function consumeOnboardingContinuationPrompt(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const prompt = window.sessionStorage.getItem(
+    ONBOARDING_CONTINUATION_PROMPT_KEY,
+  );
+  if (prompt) {
+    window.sessionStorage.removeItem(ONBOARDING_CONTINUATION_PROMPT_KEY);
+    return prompt.trim() || undefined;
+  }
+  return undefined;
+}
+
+/** Persist onboarding chat + context and open the left AI panel on the next page. */
+export function handoffOnboardingToAiPanel({
+  messages,
+  context,
+  continuationPrompt,
+}: {
+  messages: StoredOnboardingChatMessage[];
+  context: OnboardingConversationContext;
+  continuationPrompt?: string;
+}): void {
+  saveOnboardingChatMessages(messages);
+  saveOnboardingConversationContext(context);
+  markOnboardingOpenAiPanelPending();
+  if (continuationPrompt?.trim()) {
+    saveOnboardingContinuationPrompt(continuationPrompt);
+  }
 }
 
 export function isPlainOnboardingConfirmationReply(text: string): boolean {

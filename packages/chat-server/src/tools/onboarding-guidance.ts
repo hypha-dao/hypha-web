@@ -51,8 +51,15 @@ function wantsGeneratedPlaceholders(value: unknown): boolean {
     normalized.includes('placeholder') ||
     normalized.includes('generate') ||
     normalized.includes('create for me') ||
+    normalized.includes('create them') ||
+    normalized.includes("don't have") ||
+    normalized.includes('do not have') ||
+    normalized.includes('not yet') ||
+    normalized.includes('no logo') ||
+    normalized.includes('no banner') ||
     normalized === 'no' ||
-    normalized === 'no assets'
+    normalized === 'no assets' ||
+    normalized === 'nope'
   );
 }
 
@@ -62,8 +69,63 @@ function hasOwnAssets(value: unknown): boolean {
     normalized.includes('i have') ||
     normalized.includes('upload') ||
     normalized.includes('use mine') ||
-    normalized === 'yes'
+    normalized.includes('already have') ||
+    normalized === 'yes' ||
+    normalized === 'yep'
   );
+}
+
+function isAnsweredVisualAssetsChoice(value: unknown): boolean {
+  return hasOwnAssets(value) || wantsGeneratedPlaceholders(value);
+}
+
+function isAnsweredVisualAssetsConfirmed(value: unknown): boolean {
+  const normalized = normalizeChoice(value);
+  return (
+    normalized === 'yes' ||
+    normalized.includes('looks good') ||
+    normalized.includes('love it') ||
+    normalized.includes('perfect') ||
+    normalized.includes('confirm') ||
+    normalized.includes('proceed') ||
+    normalized.includes('use these')
+  );
+}
+
+function buildVisualAssetsSteps(): GuidanceStep[] {
+  return [
+    {
+      field: 'visual_assets_choice',
+      question:
+        'Do you have a logo and hero banner for this space? You can upload image files here in the chat if you do—or say no and we will take it from there.',
+      isAnswered: (value) => isAnsweredVisualAssetsChoice(value),
+    },
+    {
+      field: 'visual_assets_links',
+      question:
+        'Perfect — please upload your logo and hero banner here, or paste links to them.',
+      requiredWhen: (stepAnswers) =>
+        hasOwnAssets(stepAnswers.visual_assets_choice),
+      isAnswered: (value) => isAnsweredText(value, 3),
+    },
+    {
+      field: 'visual_vibe',
+      question:
+        'No problem — I can generate a logo and hero banner that fit your space. What feeling should they convey? For example: bold, calm, playful, visionary.',
+      requiredWhen: (stepAnswers) =>
+        wantsGeneratedPlaceholders(stepAnswers.visual_assets_choice),
+      isAnswered: (value) => isAnsweredText(value, 3),
+    },
+    {
+      field: 'visual_assets_confirmed',
+      question:
+        'Do these logo and banner work for you before we create the space on-chain?',
+      requiredWhen: (stepAnswers) =>
+        wantsGeneratedPlaceholders(stepAnswers.visual_assets_choice) &&
+        isAnsweredText(stepAnswers.visual_vibe, 3),
+      isAnswered: (value) => isAnsweredVisualAssetsConfirmed(value),
+    },
+  ];
 }
 
 function isAnsweredTransparencyMatrix(value: unknown): boolean {
@@ -267,6 +329,7 @@ function getCreateSpaceGuidance(
         'Where is this based? Use the map below to search for an address or drop a pin—or say skip if you prefer not to add a location yet.',
       isAnswered: (value) => isAnsweredLocationStep(value),
     },
+    ...buildVisualAssetsSteps(),
   ];
 
   if (ecosystem) {
@@ -284,30 +347,12 @@ function getCreateSpaceGuidance(
             'Review the proposed spaces above. Ready to create the root space and child spaces? (yes/no)',
           isAnswered: (value) => isAnsweredEcosystemBlueprint(value),
         },
-        {
-          field: 'visual_assets_choice',
-          question:
-            'Do you already have an icon, logo, and banner image for the root space, or should I generate placeholders for you?',
-        },
-        {
-          field: 'visual_assets_links',
-          question:
-            'Great. Please share the icon/logo/banner image links now, or upload the files here and I will use them.',
-          requiredWhen: (stepAnswers) =>
-            hasOwnAssets(stepAnswers.visual_assets_choice),
-        },
-        {
-          field: 'visual_vibe',
-          question:
-            'Perfect. What emotion or vibe should the placeholders express? For example: bold, calm, playful, visionary.',
-          requiredWhen: (stepAnswers) =>
-            wantsGeneratedPlaceholders(stepAnswers.visual_assets_choice),
-        },
       ],
       validation_steps: [
         'Call get_network_ecosystem_patterns first (public, non-sandbox examples) then propose_organisation_blueprint before asking for blueprint confirmation.',
+        'Complete logo and hero banner (upload or generate_space_visual_assets with user confirmation) before create_space_from_onboarding or wallet signing.',
         'Create ONLY the root space first with create_space_from_onboarding and wallet signing.',
-        'After the root space exists, continue child spaces with create_ecosystem_space from the left AI panel—keep conversation memory.',
+        'After the root space exists, continue child spaces with create_ecosystem_space from the left AI panel—propose 3-4 child spaces and keep conversation memory.',
       ],
       suggested_tools: [
         'get_network_ecosystem_patterns',
@@ -336,27 +381,9 @@ function getCreateSpaceGuidance(
             .toLowerCase()
             .trim() === 'yes',
       },
-      {
-        field: 'visual_assets_choice',
-        question:
-          'Do you already have an icon, logo, and banner image, or should I generate placeholders for you?',
-      },
-      {
-        field: 'visual_assets_links',
-        question:
-          'Great. Please share the icon/logo/banner image links now, or upload the files here and I will use them.',
-        requiredWhen: (stepAnswers) =>
-          hasOwnAssets(stepAnswers.visual_assets_choice),
-      },
-      {
-        field: 'visual_vibe',
-        question:
-          'Perfect. What emotion or vibe should the placeholders express? For example: bold, calm, playful, visionary.',
-        requiredWhen: (stepAnswers) =>
-          wantsGeneratedPlaceholders(stepAnswers.visual_assets_choice),
-      },
     ],
     validation_steps: [
+      'Complete logo and hero banner (upload or generate_space_visual_assets with user confirmation) before create_space_from_onboarding or wallet signing.',
       'Confirm the exact space draft payload before execution.',
       'Sign with wallet to create the space when required.',
     ],
@@ -564,6 +591,16 @@ export function createOnboardingGuidanceTool() {
                 ', ',
               )}) in one short phrase—not as a question. Pass suggested_categories into create_space_from_onboarding. Never invent tags outside the fixed ten groups.`
           : null;
+      const requiresVisualAssetsPicker =
+        nextStep?.field === 'visual_assets_choice' ||
+        nextStep?.field === 'visual_assets_links';
+      const visualAssetsAssistantInstruction = requiresVisualAssetsPicker
+        ? 'Ask only the next_question in one warm sentence. First ask whether they have a logo and hero banner to upload—if not, reassure them you can generate both. Never trigger wallet signing or create_space_from_onboarding until logo_url and lead_image_url are set.'
+        : nextStep?.field === 'visual_vibe'
+        ? 'Ask only the next_question. After they share the vibe, call generate_space_visual_assets in the same or next turn and show thumbnail previews before asking for confirmation.'
+        : nextStep?.field === 'visual_assets_confirmed'
+        ? 'Show the generated logo and banner previews if not already visible, then ask only the next_question. Do not proceed to create_space_from_onboarding until they confirm.'
+        : null;
       return {
         ok: true,
         process,
@@ -575,6 +612,7 @@ export function createOnboardingGuidanceTool() {
           : principlesAssistantInstruction ??
             orgDiscoveryInstruction ??
             assignedCategoryInstruction ??
+            visualAssetsAssistantInstruction ??
             locationAssistantInstruction ??
             activationAssistantInstruction ??
             transparencyAssistantInstruction ??

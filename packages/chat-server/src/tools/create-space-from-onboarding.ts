@@ -12,7 +12,6 @@ import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 import {
   hasOnboardingConfirmation,
-  hasRecentVisualGenerationRequest,
   inferVisualVibe,
 } from './onboarding-confirmation';
 import { generateSpaceVisualAssets } from './generate-space-visual-assets';
@@ -251,14 +250,9 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
       let logoUrl = data.logo_url ?? null;
       let leadImageUrl = data.lead_image_url ?? null;
       const shouldGenerateVisuals =
-        data.generate_visuals ||
-        hasRecentVisualGenerationRequest(data.onboarding_recent_user_texts) ||
-        ((!logoUrl || !leadImageUrl) &&
-          hasRecentVisualGenerationRequest([
-            data.onboarding_last_user_text ?? '',
-          ]));
+        data.generate_visuals === true && (!logoUrl || !leadImageUrl);
 
-      if (shouldGenerateVisuals && (!logoUrl || !leadImageUrl)) {
+      if (shouldGenerateVisuals) {
         const generated = await generateSpaceVisualAssets({
           space_name: data.title,
           space_purpose: data.description,
@@ -280,6 +274,15 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
       const locationFields = await resolveSpaceLocationFields(data);
       if (!locationFields.ok) {
         return { ok: false, error: locationFields.error };
+      }
+
+      if (!logoUrl?.trim() || !leadImageUrl?.trim()) {
+        return {
+          ok: false,
+          error:
+            'Logo and hero banner are required before on-chain creation. Ask whether the user wants to upload their own images or have them generated, then pass logo_url and lead_image_url (or call generate_space_visual_assets and confirm with the user) before create_space_from_onboarding.',
+          requires_visual_assets: true,
+        };
       }
 
       if (data.dry_run || !explicitConfirmation) {

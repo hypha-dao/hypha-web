@@ -98,6 +98,9 @@ import {
   readOnboardingConversationContext,
   resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
+  consumeOnboardingOpenAiPanelPending,
+  consumeOnboardingContinuationPrompt,
+  readOnboardingChatMessages,
   type OnboardingConversationContext,
 } from './ai-onboarding-context';
 import {
@@ -313,6 +316,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
   const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
   const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
+  const skipNextChatResetRef = useRef(false);
+  const onboardingHandoffHydratedRef = useRef(false);
   const {
     createSpace: createSpaceWithWalletFlow,
     space: walletCreatedSpace,
@@ -776,9 +781,45 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   useEffect(() => {
+    if (onboardingHandoffHydratedRef.current) return;
+    if (!consumeOnboardingOpenAiPanelPending()) return;
+    onboardingHandoffHydratedRef.current = true;
+    skipNextChatResetRef.current = true;
+
+    const storedMessages = readOnboardingChatMessages();
+    const storedContext = readOnboardingConversationContext();
+    if (storedContext) {
+      setOnboardingContext(storedContext);
+    }
+    if (storedMessages?.length) {
+      setMessages(
+        storedMessages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          parts: message.parts ?? [],
+        })) as Parameters<typeof setMessages>[0],
+      );
+    }
+    openAiPanel();
+    setAiOverlayVisible(false);
+
+    const continuationPrompt = consumeOnboardingContinuationPrompt();
+    if (continuationPrompt) {
+      pendingSeedPromptRef.current = continuationPrompt;
+    }
+  }, [openAiPanel, setAiOverlayVisible, setMessages]);
+
+  useEffect(() => {
     const nextSlug = spaceSlug?.trim() || null;
     const previousSlug = lastChatSpaceSlugRef.current;
     if (previousSlug === nextSlug) return;
+
+    if (skipNextChatResetRef.current) {
+      skipNextChatResetRef.current = false;
+      lastChatSpaceSlugRef.current = nextSlug;
+      return;
+    }
+
     lastChatSpaceSlugRef.current = nextSlug;
     const fromMcpNavigation =
       !!nextSlug && lastMcpNavigationTargetSpaceSlugRef.current === nextSlug;
@@ -1099,14 +1140,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (!slug) return;
     if (lastAutoTransitionSpaceSlugRef.current === slug) return;
     lastAutoTransitionSpaceSlugRef.current = slug;
+    const isEcosystem = onboardingContext.setupJourney === 'ecosystem';
     const nextContext: OnboardingConversationContext = {
       ...onboardingContext,
-      setupPhase: 'verify',
+      setupPhase: isEcosystem ? 'execute' : 'verify',
+      ...(isEcosystem ? { ecosystemRootSlug: slug } : {}),
     };
     setOnboardingContext(nextContext);
     saveOnboardingConversationContext(nextContext);
     openAiPanel();
     setAiOverlayVisible(false);
+    if (isEcosystem) {
+      pendingSeedPromptRef.current =
+        'Our root space is live. Based on everything we discussed, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We will create them one by one together.';
+    }
     router.push(`/${lang}/dho/${slug}/agreements`);
   }, [
     lang,
@@ -1188,6 +1235,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const normalizedDescription =
       typeof payload.description === 'string' ? payload.description.trim() : '';
     if (!normalizedTitle || !normalizedDescription) return;
+    const logoUrl =
+      typeof payload.logo_url === 'string' ? payload.logo_url.trim() : '';
+    const leadImageUrl =
+      typeof payload.lead_image_url === 'string'
+        ? payload.lead_image_url.trim()
+        : '';
+    if (!logoUrl || !leadImageUrl) return;
     const normalizedFlags: SpaceFlags[] = Array.isArray(payload.flags)
       ? (payload.flags as SpaceFlags[])
       : [];

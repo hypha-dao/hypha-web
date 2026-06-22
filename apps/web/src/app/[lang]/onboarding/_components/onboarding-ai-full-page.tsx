@@ -30,7 +30,7 @@ import {
   onboardingSpaceLocationFromPicker,
   skippedOnboardingSpaceLocation,
   saveOnboardingConversationContext,
-  dispatchAiOnboardingSeed,
+  handoffOnboardingToAiPanel,
   AI_PANEL_SETUP_SOURCE,
   recordMobilizedAiAgentsForOnboarding,
   useOnboardingVoiceInterview,
@@ -41,6 +41,7 @@ import {
   type OnboardingConversationContext,
   type OnboardingTransparencyMatrix,
   type SpaceLocationValue,
+  type StoredOnboardingChatMessage,
 } from '@hypha-platform/epics';
 import {
   Category,
@@ -535,24 +536,30 @@ export function OnboardingAiFullPage({
     if (createdSpaceRef.current === slug) return;
     createdSpaceRef.current = slug;
 
-    if (onboardingContext.setupJourney === 'ecosystem') {
-      const continuationContext: OnboardingConversationContext = {
-        ...onboardingContext,
-        source: AI_PANEL_SETUP_SOURCE,
-        setupPhase: 'execute',
-        ecosystemRootSlug: slug,
-      };
-      saveOnboardingConversationContext(continuationContext);
-      dispatchAiOnboardingSeed({
-        prompt: `Root space is live. Let's continue creating the remaining child spaces from our ecosystem plan—keeping everything we discussed during onboarding.`,
-        context: continuationContext,
-      });
-      router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
-      return;
-    }
+    const isEcosystem = onboardingContext.setupJourney === 'ecosystem';
+    const continuationContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      source: AI_PANEL_SETUP_SOURCE,
+      setupPhase: 'execute',
+      ...(isEcosystem ? { ecosystemRootSlug: slug } : {}),
+    };
+
+    handoffOnboardingToAiPanel({
+      messages: messages as StoredOnboardingChatMessage[],
+      context: continuationContext,
+      continuationPrompt: isEcosystem
+        ? `Our root space is live. Based on everything we discussed during onboarding, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We'll create them one by one together.`
+        : undefined,
+    });
 
     router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
-  }, [context.locale, onboardingContext, router, walletCreatedSpace?.slug]);
+  }, [
+    context.locale,
+    messages,
+    onboardingContext,
+    router,
+    walletCreatedSpace?.slug,
+  ]);
 
   useEffect(() => {
     const navOutput = [...messages]
@@ -666,6 +673,13 @@ export function OnboardingAiFullPage({
     const normalizedDescription =
       typeof payload.description === 'string' ? payload.description.trim() : '';
     if (!normalizedTitle || !normalizedDescription) return;
+    const logoUrl =
+      typeof payload.logo_url === 'string' ? payload.logo_url.trim() : '';
+    const leadImageUrl =
+      typeof payload.lead_image_url === 'string'
+        ? payload.lead_image_url.trim()
+        : '';
+    if (!logoUrl || !leadImageUrl) return;
     const executeContext: OnboardingConversationContext = {
       ...onboardingContext,
       setupPhase: 'execute',
