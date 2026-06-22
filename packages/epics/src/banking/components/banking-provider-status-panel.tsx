@@ -253,7 +253,7 @@ function EndorsementValidationsList({
                   entry.operationalStatus === 'approved'
                     ? 'accent'
                     : entry.operationalStatus === 'rejected'
-                    ? 'destructive'
+                    ? 'error'
                     : 'neutral'
                 }
                 className="pointer-events-none cursor-default text-1 shadow-none"
