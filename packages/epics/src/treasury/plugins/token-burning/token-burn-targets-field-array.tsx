@@ -36,7 +36,6 @@ type TokenBurnTargetsFieldArrayProps = {
   spaces?: Space[];
   selectedTokenAddress?: `0x${string}`;
   selectedTokenSymbol?: string;
-  currentSpaceSlug?: string;
   name?: string;
 };
 
@@ -59,7 +58,6 @@ export const TokenBurnTargetsFieldArray = ({
   spaces = [],
   selectedTokenAddress,
   selectedTokenSymbol,
-  currentSpaceSlug,
   name = 'tokenBurning.burns',
 }: TokenBurnTargetsFieldArrayProps) => {
   const { control, setValue, clearErrors } = useFormContext();
@@ -95,17 +93,12 @@ export const TokenBurnTargetsFieldArray = ({
         .filter((space) => space.address)
         .map((space) => ({
           value: space.address as string,
-          label:
-            space.slug === currentSpaceSlug
-              ? `${space.title} (${tAgreementFlow(
-                  'plugins.tokenBurning.currentSpaceTag',
-                )})`
-              : space.title,
+          label: space.title,
           searchText: space.title.toLowerCase(),
           avatarUrl: space.logoUrl,
           address: space.address as string,
         })),
-    [filteredSpaces, currentSpaceSlug, tAgreementFlow],
+    [filteredSpaces],
   );
 
   return (
