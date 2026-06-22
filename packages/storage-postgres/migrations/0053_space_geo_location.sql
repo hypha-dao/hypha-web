@@ -30,6 +30,5 @@ ALTER TABLE "spaces" ADD CONSTRAINT "spaces_geo_not_null_island" CHECK (
   NOT ("latitude" = 0 AND "longitude" = 0)
 );
 --> statement-breakpoint
--- Apply during a low-traffic window: non-concurrent index builds can block writes on spaces.
-CREATE INDEX "spaces_geo_idx" ON "spaces" ("latitude", "longitude")
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "spaces_geo_idx" ON "spaces" ("latitude", "longitude")
 WHERE "latitude" IS NOT NULL;
