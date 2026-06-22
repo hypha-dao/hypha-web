@@ -1237,8 +1237,26 @@ async function buildSpaceContextSnapshot(
       ...(typeof space.documentCount === 'number'
         ? [`- Documents: ${space.documentCount}`]
         : []),
+      ...(typeof (space as { activationMode?: string }).activationMode ===
+      'string'
+        ? [
+            `- Activation mode: ${
+              (space as { activationMode: string }).activationMode
+            }`,
+          ]
+        : []),
+      ...((
+        space as { privacy?: { isAlreadyPrivate?: boolean; summary?: string } }
+      ).privacy?.summary
+        ? [
+            `- Privacy: ${
+              (space as { privacy: { summary: string } }).privacy.summary
+            }`,
+          ]
+        : []),
       `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`,
       `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`,
+      `- Privacy/transparency changes on existing spaces require create_space_setup_proposal (proposal_type space_transparency) and member vote — never claim updates via update_space_settings.`,
     ].join('\n');
   } catch {
     return null;

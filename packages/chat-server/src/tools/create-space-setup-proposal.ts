@@ -15,6 +15,62 @@ import {
   aiCreatableProposalTypeSchema,
   resolveAiProposalTypeConfig,
 } from './ai-proposal-types';
+import {
+  buildSpaceTransparencySnapshot,
+  transparencyLevelsMatchRequest,
+} from './space-transparency-policy';
+
+const transparencyLevelSchema = z.number().int().min(0).max(3);
+
+async function evaluateSpaceTransparencyProposal(args: {
+  web3SpaceId: number;
+  flags?: string[] | null;
+  description: string;
+  spaceDiscoverability?: number;
+  spaceActivityAccess?: number;
+}) {
+  const transparencySnapshot = await buildSpaceTransparencySnapshot({
+    web3SpaceId: args.web3SpaceId,
+    flags: args.flags ?? [],
+  });
+  const current = transparencySnapshot.onChainTransparency;
+  const hasTargetLevels =
+    args.spaceDiscoverability !== undefined ||
+    args.spaceActivityAccess !== undefined;
+
+  if (
+    current &&
+    hasTargetLevels &&
+    transparencyLevelsMatchRequest(current, {
+      discoverability: args.spaceDiscoverability,
+      access: args.spaceActivityAccess,
+    })
+  ) {
+    return {
+      alreadySatisfied: true as const,
+      transparencySnapshot,
+      current,
+    };
+  }
+
+  if (
+    !hasTargetLevels &&
+    transparencySnapshot.privacy.isAlreadyPrivate &&
+    /private|restrict|hidden|sandbox|confidential/i.test(args.description)
+  ) {
+    return {
+      alreadySatisfied: true as const,
+      transparencySnapshot,
+      current,
+    };
+  }
+
+  return {
+    alreadySatisfied: false as const,
+    transparencySnapshot,
+    current,
+  };
+}
 
 const inputSchema = z.object({
   space_slug: z.string().trim().min(1),
@@ -23,6 +79,10 @@ const inputSchema = z.object({
   proposal_type: z
     .enum(aiCreatableProposalTypeSchema)
     .default('collective_agreement'),
+  /** Target discoverability level (0 public … 3 space-only). Used for space_transparency. */
+  space_discoverability: transparencyLevelSchema.optional(),
+  /** Target activity access level (0 public … 3 space-only). Used for space_transparency. */
+  space_activity_access: transparencyLevelSchema.optional(),
   onboarding_last_user_text: z.string().optional(),
   require_confirmation_token: z
     .string()
@@ -36,7 +96,7 @@ const inputSchema = z.object({
 export function createCreateSpaceSetupProposalTool(authToken: string) {
   return {
     description:
-      'Write: create a governance proposal for a space. Pick proposal_type from the supported Hypha proposal catalog (Collective Agreement, Contribution, etc.). Requires explicit user confirmation before wallet signing or UI handoff.',
+      'Write: create a governance proposal for a space. Pick proposal_type from the supported Hypha proposal catalog (Collective Agreement, Space Transparency, Contribution, etc.). Requires explicit user confirmation before wallet signing or UI handoff. Use space_transparency for discoverability/activity access changes on existing spaces.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -62,6 +122,30 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
         confirmationToken,
       );
 
+      if (
+        data.proposal_type === 'space_transparency' &&
+        host.web3SpaceId != null
+      ) {
+        const evaluation = await evaluateSpaceTransparencyProposal({
+          web3SpaceId: host.web3SpaceId,
+          flags: host.flags ?? [],
+          description: data.description,
+          spaceDiscoverability: data.space_discoverability,
+          spaceActivityAccess: data.space_activity_access,
+        });
+        if (evaluation.alreadySatisfied) {
+          return {
+            ok: true,
+            already_satisfied: true,
+            proposal_type: data.proposal_type,
+            privacy: evaluation.transparencySnapshot.privacy,
+            on_chain_transparency: evaluation.current,
+            next_step:
+              'Tell the user this space is already private in warm, plain language. Do not ask for confirmation or claim privacy was updated.',
+          };
+        }
+      }
+
       if (!confirmed || data.dry_run) {
         logOnboardingToolEvent({
           tool: 'create_space_setup_proposal',
@@ -70,6 +154,16 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
           spaceSlug: safe,
           dedupeKey: `proposal:${safe}:${data.title.toLowerCase()}`,
         });
+        const previewTransparency =
+          data.proposal_type === 'space_transparency' &&
+          host.web3SpaceId != null
+            ? (
+                await buildSpaceTransparencySnapshot({
+                  web3SpaceId: host.web3SpaceId,
+                  flags: host.flags ?? [],
+                })
+              ).onChainTransparency
+            : undefined;
         return {
           ok: true,
           requires_confirmation: true,
@@ -78,6 +172,9 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
             title: data.title,
             proposal_type: proposalTypeConfig.documentLabel,
             description: data.description,
+            ...(previewTransparency
+              ? { current_on_chain_transparency: previewTransparency }
+              : {}),
           },
           next_step: proposalTypeConfig.aiWalletExecutable
             ? 'I need one more confirmation from you before the signing step. Press Confirm and then sign in your wallet to publish this proposal.'
@@ -108,6 +205,18 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
           proposal_type: data.proposal_type,
           document_label: proposalTypeConfig.documentLabel,
           create_path: proposalTypeConfig.createPath,
+          ...(data.proposal_type === 'space_transparency'
+            ? {
+                on_chain_transparency: (
+                  await buildSpaceTransparencySnapshot({
+                    web3SpaceId: host.web3SpaceId,
+                    flags: host.flags ?? [],
+                  })
+                ).onChainTransparency,
+                suggested_discoverability: data.space_discoverability,
+                suggested_activity_access: data.space_activity_access,
+              }
+            : {}),
           next_step: `This ${proposalTypeConfig.documentLabel} proposal needs extra fields in Agreements. Offer to open ${proposalTypeConfig.createPath} for the user.`,
         };
       }

@@ -53,6 +53,13 @@ export const AI_CREATABLE_PROPOSAL_TYPES = {
     aiWalletExecutable: false,
     createPath: 'agreements/create/airdrop',
   },
+  space_transparency: {
+    documentLabel: 'Space Transparency',
+    summary:
+      'Change on-chain discoverability (who can find the space) and activity access (who can view space activity). Requires member vote after proposal creation.',
+    aiWalletExecutable: false,
+    createPath: 'agreements/create/space-settings-transparency',
+  },
 } as const;
 
 export type AiCreatableProposalType = keyof typeof AI_CREATABLE_PROPOSAL_TYPES;
@@ -66,6 +73,7 @@ export const aiCreatableProposalTypeSchema = [
   'exchange',
   'deploy_funds',
   'airdrop',
+  'space_transparency',
 ] as const;
 
 export function buildAiProposalTypePromptLines(): string {

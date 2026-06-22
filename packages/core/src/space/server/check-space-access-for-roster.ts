@@ -13,13 +13,9 @@ import { getDelegatesForSpace } from '../client/web3/dao-space-factory/get-deleg
 import { getDelegators } from '../client/web3/dao-space-factory/get-delegators';
 import { isMember as isMemberConfig } from '../client/web3/dao-space-factory/is-member';
 import type { Space } from '../types';
+import { SpaceTransparencyLevel } from '../transparency-policy';
 
-export enum SpaceTransparencyLevel {
-  PUBLIC = 0,
-  NETWORK = 1,
-  ORGANISATION = 2,
-  SPACE = 3,
-}
+export { SpaceTransparencyLevel };
 
 export type CheckSpaceAccessForRosterResult =
   | { hasAccess: true }

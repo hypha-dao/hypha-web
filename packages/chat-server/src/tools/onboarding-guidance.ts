@@ -415,8 +415,18 @@ function getGuidanceDefinition(
           question: 'How would you like it to look after this change?',
         },
       ],
-      validation_steps: ['Confirm the exact diff before updates.'],
-      suggested_tools: ['update_space_settings', 'mcp_navigation'],
+      validation_steps: [
+        'Call get_space_by_slug before answering privacy or transparency questions.',
+        'Database-only metadata (title, description, activation flags) uses update_space_settings after confirmation.',
+        'On-chain transparency (discoverability + activity access) requires create_space_setup_proposal with proposal_type space_transparency, then member vote — never update_space_settings.',
+        'If the space is already private, explain that warmly. Never claim privacy was updated without a successful proposal or wallet-signed create flow.',
+      ],
+      suggested_tools: [
+        'get_space_by_slug',
+        'update_space_settings',
+        'create_space_setup_proposal',
+        'mcp_navigation',
+      ],
     };
   }
   if (process === 'join_space') {

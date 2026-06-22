@@ -1,6 +1,7 @@
 export * from './actions';
 export * from './authorize-space-panel-interaction';
 export * from './check-space-access-for-roster';
+export * from './read-space-on-chain-transparency';
 export * from './get-space-members-roster';
 export * from './is-on-chain-member-or-delegate';
 export * from './resolve-space-executor-address';
