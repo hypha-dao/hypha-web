@@ -117,7 +117,9 @@ export function MyFilteredSpaces({
               onChange={(e) => setHideArchivedSpaces(e.target.checked)}
               className="h-4 w-4"
             />
-            <span>{tSpaces('hideArchivedSpaces')}</span>
+            <span className="text-2 font-normal text-neutral-11">
+              {tSpaces('hideArchivedSpaces')}
+            </span>
           </label>
           <SpaceOrderCombobox order={order} />
         </div>
