@@ -250,19 +250,19 @@ function EndorsementValidationsList({
               <Badge
                 variant="outline"
                 colorVariant={
-                  entry.operationalStatus === 'active'
-                    ? 'success'
-                    : entry.operationalStatus === 'approved'
+                  entry.operationalStatus === 'approved'
                     ? 'accent'
+                    : entry.operationalStatus === 'rejected'
+                    ? 'error'
                     : 'neutral'
                 }
                 className="pointer-events-none cursor-default text-1 shadow-none"
               >
                 {tAdvanced(
                   `currencyStatus.${entry.operationalStatus}` as
-                    | 'currencyStatus.active'
                     | 'currencyStatus.approved'
                     | 'currencyStatus.pending'
+                    | 'currencyStatus.rejected'
                     | 'currencyStatus.not_approved'
                     | 'currencyStatus.not_requested',
                 )}

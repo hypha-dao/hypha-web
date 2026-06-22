@@ -148,9 +148,7 @@ export function hasApprovedBankCurrencies(
   }
 
   return getBankEndorsementStatusesForPanel(status).some(
-    (entry) =>
-      entry.operationalStatus === 'approved' ||
-      entry.operationalStatus === 'active',
+    (entry) => entry.operationalStatus === 'approved',
   );
 }
 
@@ -355,7 +353,7 @@ export function getEnabledDepositCurrencies(): readonly string[] {
 export function isBankRailSelectable(
   status: BankCustomerPublicStatus['railStatuses'][number]['operationalStatus'],
 ): boolean {
-  return status === 'approved' || status === 'active';
+  return status === 'approved';
 }
 
 export function bankRailNeedsEndorsementRequest(

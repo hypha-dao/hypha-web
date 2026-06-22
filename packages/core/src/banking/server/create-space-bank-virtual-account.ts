@@ -19,7 +19,6 @@ import {
   buildRailStatuses,
   loadBankingProviderState,
   resolveCustomerApproved,
-  syncProviderCustomerIdFromKycLink,
   vaPairKey,
 } from './providers/bridge/banking-provider-state';
 import {
@@ -27,7 +26,6 @@ import {
   isBridgeEndorsementApproved,
 } from './bridge-customer-endorsements';
 import { mapBridgeVirtualAccountToPublic } from './map-bridge-resources';
-import { updateBankCustomer } from './mutations';
 import { requireSpaceTreasuryAddress } from './require-space-treasury-address';
 
 export type CreateSpaceBankVirtualAccountOptions = {
@@ -94,16 +92,7 @@ export async function createSpaceBankVirtualAccount(
     );
   }
 
-  let customerId = customer.providerCustomerId;
-  if (!customerId) {
-    customerId = await syncProviderCustomerIdFromKycLink(customer);
-    if (customerId) {
-      await updateBankCustomer(
-        { id: customer.id, providerCustomerId: customerId },
-        { db },
-      );
-    }
-  }
+  const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     throw new BankOnboardingError(

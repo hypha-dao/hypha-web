@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  FC,
-  FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { FC, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -31,7 +24,6 @@ import {
   isBankRailSelectable,
 } from '../banking-ui';
 import type { BankCustomerPublicStatus } from '../hooks/types';
-import { useRequestEndorsementKyc } from '../hooks/use-request-endorsement-kyc';
 import {
   BANKING_DIALOG_FOOTER_CLASS,
   BANKING_DIALOG_FORM_CONTENT_CLASS,
@@ -53,7 +45,6 @@ type CreateTransferDialogProps = {
   isSubmitting: boolean;
   error: string | null;
   onOpenGear: () => void;
-  onRefreshStatus?: () => Promise<unknown>;
   onSubmit: (input: {
     corridorKey: BankTransferCorridorKey;
     amount?: string;
@@ -70,12 +61,9 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
   isSubmitting,
   error,
   onOpenGear,
-  onRefreshStatus,
   onSubmit,
 }) => {
   const t = useTranslations('BankingTab.createTransfer');
-  const { requestEndorsementKyc, isLoading: isRequestingEndorsement } =
-    useRequestEndorsementKyc(spaceSlug);
 
   const options = useMemo(
     () => (status ? getTransferRailOptionsFromStatus(status) : []),
@@ -146,17 +134,6 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
     (option) => option.railKey === selectedId,
   );
 
-  const handleRequestEndorsement = useCallback(
-    async (endorsement: string) => {
-      const { kycLinkUrl } = await requestEndorsementKyc(endorsement);
-      window.open(kycLinkUrl, '_blank', 'noopener,noreferrer');
-      onOpenChange(false);
-      onOpenGear();
-      void onRefreshStatus?.();
-    },
-    [onOpenChange, onOpenGear, onRefreshStatus, requestEndorsementKyc],
-  );
-
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (
@@ -217,8 +194,6 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
                 primaryActionLabel={t('submit')}
                 onPrimaryAction={() => {}}
                 showPrimaryAction={false}
-                requestEndorsementLoading={isRequestingEndorsement}
-                onRequestEndorsement={handleRequestEndorsement}
                 disabled={isSubmitting}
               />
             )}

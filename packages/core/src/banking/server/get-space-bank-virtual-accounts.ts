@@ -12,7 +12,6 @@ import {
   bridgeVirtualAccountTargetsSpace,
   mapBridgeVirtualAccountToPublic,
 } from './map-bridge-resources';
-import { syncProviderCustomerIdFromKycLink } from './providers/bridge/banking-provider-state';
 
 export async function getSpaceBankVirtualAccounts(
   space: Pick<Space, 'id' | 'web3SpaceId'>,
@@ -28,9 +27,7 @@ export async function getSpaceBankVirtualAccounts(
     return { accounts: [], hasMore: false, nextCursor: null };
   }
 
-  const customerId =
-    customer.providerCustomerId ??
-    (await syncProviderCustomerIdFromKycLink(customer));
+  const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     return { accounts: [], hasMore: false, nextCursor: null };

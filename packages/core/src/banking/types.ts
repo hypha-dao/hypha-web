@@ -28,9 +28,9 @@ export type BankValidationRequirement = {
 };
 
 export type BankRailOperationalStatus =
-  | 'active'
   | 'approved'
   | 'pending'
+  | 'rejected'
   | 'not_approved'
   | 'not_requested';
 

@@ -19,10 +19,8 @@ import {
   laPairKey,
   loadBankingProviderState,
   resolveCustomerApproved,
-  syncProviderCustomerIdFromKycLink,
 } from './providers/bridge/banking-provider-state';
 import { mapBridgePayoutAccountToPublic } from './map-bridge-resources';
-import { updateBankCustomer } from './mutations';
 
 export type CreateSpaceBankPayoutAccountOptions = {
   kycProvider?: BankKycProvider;
@@ -73,16 +71,7 @@ export async function createSpaceBankPayoutAccount(
     );
   }
 
-  let customerId = customer.providerCustomerId;
-  if (!customerId) {
-    customerId = await syncProviderCustomerIdFromKycLink(customer);
-    if (customerId) {
-      await updateBankCustomer(
-        { id: customer.id, providerCustomerId: customerId },
-        { db },
-      );
-    }
-  }
+  const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     throw new BankOnboardingError(

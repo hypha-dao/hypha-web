@@ -893,9 +893,9 @@
       "currencyStatusesDescriptionAdd": "Unterstützung für einen Währungskorridor hinzufügen. Bridge kann für einige Regionen eine zusätzliche Verifizierung verlangen.",
       "addCurrencySupport": "{currency}-Konto eröffnen",
       "currencyStatus": {
-        "active": "Aktiv",
         "approved": "Genehmigt",
         "pending": "Verifizierung ausstehend",
+        "rejected": "Abgelehnt",
         "not_approved": "Nicht genehmigt",
         "not_requested": "Nicht angefordert",
         "not_opened": "Nicht eröffnet"

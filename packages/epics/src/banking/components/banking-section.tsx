@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   useIsDelegate,
@@ -185,19 +185,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
     ? t('blockers.noTreasury')
     : null;
 
-  useEffect(() => {
-    if (showBankingListings) {
-      void refreshVirtualAccounts();
-      void refreshTransfers();
-      void refreshPayoutAccounts();
-    }
-  }, [
-    showBankingListings,
-    refreshPayoutAccounts,
-    refreshTransfers,
-    refreshVirtualAccounts,
-  ]);
-
   const verificationInProgress = isBankVerificationInProgress(status);
 
   const openVerificationGear = useCallback(() => {
@@ -211,10 +198,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const fallbackContactEmail = person?.email?.trim() ?? '';
 
   const canAddAccount = hasAddAccountRailAvailable(status, virtualAccounts);
-
-  const isListsLoading =
-    showBankingListings &&
-    (virtualAccountsLoading || transfersLoading || payoutAccountsLoading);
 
   const openSpaceAccountDisabled = verificationInProgress || !canAddAccount;
   const openPayoutAccountDisabled = verificationInProgress;
@@ -298,10 +281,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
     );
   }
 
-  if (isListsLoading) {
-    return <BankingPageSkeleton />;
-  }
-
   return (
     <div className="flex w-full flex-col gap-6">
       <BankAccountsSection
@@ -334,24 +313,21 @@ export const BankingSection: FC<BankingSectionProps> = ({
         openPayoutAccountDisabled={openPayoutAccountDisabled}
         openPayoutAccountDisabledReason={openPayoutAccountDisabledReason}
         payoutAccounts={payoutAccounts}
-        payoutAccountsLoading={false}
-        hideListLoadingState
+        payoutAccountsLoading={payoutAccountsLoading}
         depositsProps={{
           virtualAccounts,
-          virtualAccountsLoading: false,
+          virtualAccountsLoading,
           canManage,
-          hideLoadingState: true,
         }}
         transfersProps={{
           transfers,
-          transfersLoading: false,
+          transfersLoading,
           hasBankCustomer: true,
           canManage,
           newTransferDisabled: verificationInProgress,
           newTransferDisabledReason: verificationInProgress
             ? 'finishVerificationFirst'
             : null,
-          hideListLoadingState: true,
           onNewTransfer: () => {
             clearCreateTransferError();
             setCreateTransferOpen(true);
@@ -367,7 +343,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
         isSubmitting={isCreatingTransfer}
         error={createTransferError}
         onOpenGear={openVerificationGear}
-        onRefreshStatus={refreshBankingState}
         onSubmit={async (input) => {
           try {
             await createTransfer(input);
@@ -392,7 +367,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
         submittingCurrency={creatingCurrency}
         error={createAccountError}
         onOpenGear={openVerificationGear}
-        onRefreshStatus={refreshBankingState}
         onAddCurrency={async ({ currency, destinationCurrency }) => {
           clearCreateAccountError();
           try {
