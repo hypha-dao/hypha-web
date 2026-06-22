@@ -7,6 +7,7 @@ import {
 } from '@hypha-platform/core/server';
 import type { ChatRouteTool } from './types';
 import { createSearchSpacesTool } from './search-spaces';
+import { isAnsweredActivationMethod } from './onboarding-activation-method';
 import { isAnsweredLocationStep } from './onboarding-location';
 
 const processSchema = z.enum([
@@ -62,20 +63,6 @@ function hasOwnAssets(value: unknown): boolean {
     normalized.includes('upload') ||
     normalized.includes('use mine') ||
     normalized === 'yes'
-  );
-}
-
-function isAnsweredActivationMethod(value: unknown): boolean {
-  const normalized = normalizeChoice(value);
-  return (
-    normalized === 'sandbox' ||
-    normalized.includes('sandbox mode') ||
-    normalized === 'pilot' ||
-    normalized.includes('pilot mode') ||
-    normalized === 'deployment' ||
-    normalized.includes('live mode') ||
-    normalized.includes('live') ||
-    normalized.includes('deploy')
   );
 }
 
@@ -259,7 +246,7 @@ function getCreateSpaceGuidance(
     {
       field: 'activation_method',
       question:
-        'Which activation mode fits: Sandbox (private testing), Pilot (demos on the network), or Deployment (live)?',
+        'Which activation mode fits: Sandbox Mode (private testing), Pilot Mode (demos on the network), or Live Mode (fully operational)?',
       isAnswered: (value) => isAnsweredActivationMethod(value),
     },
     {
@@ -541,7 +528,7 @@ export function createOnboardingGuidanceTool() {
         ? 'Ask only the next_question in one short sentence. The user can set location with the interactive map shown below the chat—do not ask them to type coordinates.'
         : null;
       const activationAssistantInstruction = requiresActivationPicker
-        ? 'Ask only the next_question in one short sentence. The user can choose Sandbox, Pilot, or Deployment with the activation cards shown below the chat—do not list all options as a checklist.'
+        ? 'Ask only the next_question in one short sentence. This step is activation mode only (Sandbox Mode, Pilot Mode, or Live Mode)—not entry method. The user picks with the activation cards below; do not ask about open access, invites, or tokens here.'
         : null;
       const transparencyAssistantInstruction = requiresTransparencyPicker
         ? 'Ask only the next_question in one short sentence. Do NOT list combined transparency options or numbered shortcuts—the user must use the transparency matrix card below, which shows discoverability and activity access separately with four levels each and descriptions.'

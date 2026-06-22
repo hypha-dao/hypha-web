@@ -18,21 +18,26 @@ export type OnboardingGuidancePickerOutput = {
 export function findLatestOnboardingGuidanceOutput(
   messages: ChatUiMessage[],
 ): OnboardingGuidancePickerOutput | null {
+  let latestAssistantMessage: ChatUiMessage | null = null;
   for (
     let messageIndex = messages.length - 1;
     messageIndex >= 0;
     messageIndex -= 1
   ) {
     const message = messages[messageIndex];
-    if (!message || message.role !== 'assistant') continue;
-
-    for (const part of message.parts ?? []) {
-      if (part.type !== 'tool-onboarding_guidance') continue;
-      if (part.state !== 'output-available') continue;
-
-      const output = part.output as OnboardingGuidancePickerOutput | undefined;
-      if (output?.ok) return output;
+    if (message?.role === 'assistant') {
+      latestAssistantMessage = message;
+      break;
     }
+  }
+  if (!latestAssistantMessage) return null;
+
+  for (const part of latestAssistantMessage.parts ?? []) {
+    if (part.type !== 'tool-onboarding_guidance') continue;
+    if (part.state !== 'output-available') continue;
+
+    const output = part.output as OnboardingGuidancePickerOutput | undefined;
+    if (output?.ok) return output;
   }
 
   return null;
