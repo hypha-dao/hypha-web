@@ -1360,7 +1360,7 @@ export async function createChatStreamResult(
             : ''
         }${
           normalizedConversationContext.discoveryMode === 'voice_interview'
-            ? '\n- Voice interview mode is active: speak like a warm human advisor—reflect what you heard, show empathy and enthusiasm, ask one question at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally.'
+            ? '\n- Voice interview mode is active: speak like a warm human advisor—reflect what you heard, show empathy and enthusiasm, ask one question at a time, keep replies short and conversational (no bullet lists or markdown). Never read chat text or tool output verbatim; summarize the important points in a human way and focus on what matters for the next step. UI cards still appear for structured choices; introduce them naturally without reading every option aloud.'
             : ''
         }`
       : effectiveSystemPrompt;

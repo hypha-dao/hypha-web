@@ -1034,6 +1034,8 @@ export function OnboardingAiFullPage({
                 disabled={isStreaming}
                 isConnecting={voiceInterview.isConnecting}
                 isRealtimeConnected={voiceInterview.isRealtimeConnected}
+                transport={voiceInterview.transport}
+                realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
                 usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
                 onToggleListening={voiceInterview.toggleListening}
                 onStopSpeaking={voiceInterview.stopSpeaking}

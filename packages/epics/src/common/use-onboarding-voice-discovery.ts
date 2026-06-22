@@ -75,6 +75,7 @@ export function useOnboardingVoiceDiscovery(
     ...voice,
     voiceError: voiceErrorMessage,
     transport: useRealtime ? ('realtime' as const) : ('web_speech' as const),
+    realtimeFeatureEnabled: realtimeFlagEnabled,
     isRealtimeConnected:
       useRealtime && 'isRealtimeConnected' in realtime
         ? realtime.isRealtimeConnected

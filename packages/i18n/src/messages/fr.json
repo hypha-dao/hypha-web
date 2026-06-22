@@ -2216,6 +2216,9 @@
     "onboardingVoiceError": "Entrée vocale en échec — réessayez ou passez au chat.",
     "onboardingVoiceStatusConnecting": "Connexion à la voix en direct…",
     "onboardingVoiceRealtimeLive": "Direct",
+    "onboardingVoiceTransportRealtime": "OpenAI Realtime",
+    "onboardingVoiceTransportBrowser": "Voix du navigateur",
+    "onboardingVoiceTransportConnecting": "Connexion",
     "onboardingVoiceRealtimeFallback": "Mode voix standard — la voix en direct n'est pas disponible pour le moment.",
     "onboardingVoiceSessionError": "Impossible de démarrer la voix en direct — réessayez ou passez au chat."
   },

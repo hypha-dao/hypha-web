@@ -15,6 +15,8 @@ type OnboardingVoiceInterviewBarProps = {
   disabled?: boolean;
   isConnecting?: boolean;
   isRealtimeConnected?: boolean;
+  transport?: 'realtime' | 'web_speech';
+  realtimeFeatureEnabled?: boolean;
   usingWebSpeechFallback?: boolean;
   onToggleListening: () => void;
   onStopSpeaking: () => void;
@@ -67,11 +69,24 @@ export function OnboardingVoiceInterviewBar({
   disabled = false,
   isConnecting = false,
   isRealtimeConnected = false,
+  transport = 'web_speech',
+  realtimeFeatureEnabled = false,
   usingWebSpeechFallback = false,
   onToggleListening,
   onStopSpeaking,
 }: OnboardingVoiceInterviewBarProps) {
   const t = useTranslations('AiPanel');
+
+  const transportBadgeLabel =
+    transport === 'realtime'
+      ? isRealtimeConnected
+        ? t('onboardingVoiceRealtimeLive')
+        : isConnecting
+        ? t('onboardingVoiceTransportConnecting')
+        : t('onboardingVoiceTransportRealtime')
+      : realtimeFeatureEnabled && usingWebSpeechFallback
+      ? null
+      : t('onboardingVoiceTransportBrowser');
 
   const statusKey = isConnecting
     ? 'onboardingVoiceStatusConnecting'
@@ -104,9 +119,18 @@ export function OnboardingVoiceInterviewBar({
         <p className="text-center text-sm font-medium text-foreground">
           {t('onboardingVoiceInterviewTitle')}
         </p>
-        {isRealtimeConnected ? (
-          <span className="rounded-full bg-accent-9/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-11">
-            {t('onboardingVoiceRealtimeLive')}
+        {transportBadgeLabel ? (
+          <span
+            className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+              transport === 'realtime' && isRealtimeConnected
+                ? 'bg-accent-9/15 text-accent-11'
+                : transport === 'realtime'
+                ? 'bg-info-9/15 text-info-11'
+                : 'bg-muted text-muted-foreground',
+            )}
+          >
+            {transportBadgeLabel}
           </span>
         ) : null}
       </div>

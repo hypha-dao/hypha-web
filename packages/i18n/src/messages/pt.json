@@ -2216,6 +2216,9 @@
     "onboardingVoiceError": "Entrada de voz falhou — tente novamente ou mude para chat.",
     "onboardingVoiceStatusConnecting": "A ligar voz em direto…",
     "onboardingVoiceRealtimeLive": "Ao vivo",
+    "onboardingVoiceTransportRealtime": "OpenAI Realtime",
+    "onboardingVoiceTransportBrowser": "Voz do navegador",
+    "onboardingVoiceTransportConnecting": "A conectar",
     "onboardingVoiceRealtimeFallback": "Modo de voz padrão — a voz em direto não está disponível agora.",
     "onboardingVoiceSessionError": "Não foi possível iniciar a voz em direto — tente novamente ou mude para chat."
   },
