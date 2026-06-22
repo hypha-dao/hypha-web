@@ -46,3 +46,12 @@ export type {
   RealtimeVoiceSessionResult,
   RealtimeVoiceSessionErrorCode,
 } from './voice-realtime/session';
+export {
+  createOnboardingRealtimeTools,
+  ONBOARDING_REALTIME_TOOL_NAMES,
+} from './voice-realtime/onboarding-tools';
+export type { OnboardingToolConfig } from './tools/onboarding-tool-set';
+export {
+  createOnboardingToolSet,
+  safeChatTool,
+} from './tools/onboarding-tool-set';
