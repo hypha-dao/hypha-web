@@ -101,6 +101,7 @@ import {
   isPostCreateOnboardingPhase,
   readOnboardingConversationContext,
   resolveChatTransportBody,
+  shouldAttachOnboardingContext,
   resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
   clearOnboardingConversationContext,
@@ -289,10 +290,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
+  const attachOnboardingForActiveSpace = useMemo(
+    () =>
+      shouldAttachOnboardingContext(onboardingContext, {
+        spaceSlug,
+        isOnboardingPath,
+      }),
+    [isOnboardingPath, onboardingContext, spaceSlug],
+  );
   const blockSpaceAiForMembership =
     Boolean(spaceSlug) &&
     !isOnboardingPath &&
-    !isSpaceSetupContext(onboardingContext) &&
+    !attachOnboardingForActiveSpace &&
     !isUserSpaceStateLoading &&
     !canInteractInSpace(userSpaceState);
   const { status: spacePaymentStatus, isLoading: isSpacePaymentStatusLoading } =
@@ -302,7 +311,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const blockSpaceAiForSubscription =
     Boolean(spaceSlug) &&
     Boolean(effectiveSpaceWeb3Id) &&
-    !isSpaceSetupContext(onboardingContext) &&
+    !attachOnboardingForActiveSpace &&
     !isSpacePaymentStatusLoading &&
     spacePaymentStatus === 'expired';
   const blockSpaceAiForInteraction =
@@ -921,24 +930,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       isOnboardingPath,
     });
     if (!staleOnboardingContext) return;
-
-    const activeSlug = spaceSlug?.trim();
-    const isPostCreate =
-      onboardingContext.setupPhase === 'verify' ||
-      onboardingContext.setupPhase === 'execute';
-    if (
-      isPostCreate &&
-      activeSlug &&
-      !onboardingContext.createdSpaceSlug?.trim()
-    ) {
-      const patched: OnboardingConversationContext = {
-        ...onboardingContext,
-        createdSpaceSlug: activeSlug,
-      };
-      setOnboardingContext(patched);
-      saveOnboardingConversationContext(patched);
-      return;
-    }
 
     clearOnboardingConversationContext();
     setOnboardingContext(undefined);
@@ -2144,7 +2135,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
-  const isOnboardingSetup = isSpaceSetupContext(onboardingContext);
+  const isOnboardingSetup = attachOnboardingForActiveSpace;
   const discoveryMode: OnboardingDiscoveryMode =
     onboardingContext?.discoveryMode ?? 'chat';
   const isVoiceInterview =

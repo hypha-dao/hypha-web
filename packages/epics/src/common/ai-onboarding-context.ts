@@ -397,41 +397,7 @@ export function clearOnboardingConversationContext(): void {
   window.localStorage.removeItem(ONBOARDING_CONTEXT_STORAGE_KEY);
 }
 
-export function shouldAttachOnboardingContext(
-  context: OnboardingConversationContext | undefined,
-  options: {
-    spaceSlug?: string;
-    isOnboardingPath?: boolean;
-  },
-): context is OnboardingConversationContext {
-  if (!isSpaceSetupContext(context)) return false;
-  if (options.isOnboardingPath) return true;
-
-  const phase = context.setupPhase ?? 'discover';
-  const activeSlug = options.spaceSlug?.trim();
-
-  if (phase === 'discover' || phase === 'draft' || phase === 'confirm') {
-    if (options.isOnboardingPath) return true;
-    // Stale setup context while browsing an unrelated space via picker or recent list.
-    return !activeSlug;
-  }
-
-  if (phase === 'execute' || phase === 'verify') {
-    const anchorSlug =
-      context.createdSpaceSlug?.trim() || context.ecosystemRootSlug?.trim();
-    if (!anchorSlug) {
-      // Handoff may land before createdSpaceSlug is persisted — keep context on the active space.
-      return Boolean(activeSlug);
-    }
-    if (!activeSlug) return true;
-    if (phase === 'execute' && context.setupJourney === 'ecosystem') {
-      return true;
-    }
-    return activeSlug === anchorSlug;
-  }
-
-  return false;
-}
+export { shouldAttachOnboardingContext } from './onboarding-context-attach';
 
 /** Resolve chat API body fields and whether persisted onboarding context is stale. */
 export function resolveChatTransportBody({

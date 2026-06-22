@@ -18,6 +18,7 @@ import {
   getEnableOnboardingWriteTools,
 } from '@hypha-platform/feature-flags';
 import { authorizeSpacePanelInteraction } from '@hypha-platform/core/server';
+import { shouldAttachOnboardingContext } from '@hypha-platform/epics';
 
 export const maxDuration = 300;
 
@@ -102,9 +103,14 @@ export async function POST(req: Request) {
   const spaceSlug = parsed.data.spaceSlug;
   const activeSpaceTitle = parsed.data.activeSpaceTitle;
   const conversationContext = parsed.data.conversationContext;
-  const isOnboardingSetup = conversationContext?.mode === 'onboarding_setup';
+  const attachOnboardingContext =
+    conversationContext?.mode === 'onboarding_setup' &&
+    shouldAttachOnboardingContext(conversationContext, {
+      spaceSlug: spaceSlug?.trim(),
+      isOnboardingPath: false,
+    });
 
-  if (spaceSlug?.trim() && !isOnboardingSetup) {
+  if (spaceSlug?.trim() && !attachOnboardingContext) {
     const interactionAuth = await authorizeSpacePanelInteraction({
       spaceSlug: spaceSlug.trim(),
       authToken,

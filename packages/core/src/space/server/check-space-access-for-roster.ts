@@ -21,6 +21,32 @@ export type CheckSpaceAccessForRosterResult =
   | { hasAccess: true }
   | { hasAccess: false; message: string; httpStatus: 401 | 403 | 500 };
 
+export async function hasPostgresSpaceMembership(
+  spaceId: number,
+  authToken: string | undefined,
+): Promise<boolean> {
+  if (!authToken?.trim()) return false;
+  try {
+    const db = getDb({ authToken });
+    const person = await findSelf({ db });
+    if (!person?.id) return false;
+    const [membership] = await db
+      .select({ id: memberships.id })
+      .from(memberships)
+      .where(
+        and(
+          eq(memberships.spaceId, spaceId),
+          eq(memberships.personId, person.id),
+        ),
+      )
+      .limit(1);
+    return Boolean(membership);
+  } catch (error) {
+    console.error('hasPostgresSpaceMembership:', error);
+    return false;
+  }
+}
+
 /**
  * Same visibility / membership rules as `apps/web` `checkSpaceAccess`, without Next.js.
  * Used by MCP stdio server to mirror GET /api/v1/spaces/[spaceSlug]/members gating.
@@ -245,12 +271,20 @@ export async function checkSpaceAccessForSpace(
         }
       }
 
+      if (await hasPostgresSpaceMembership(host.id, authToken)) {
+        return { hasAccess: true };
+      }
+
       return {
         hasAccess: false,
         message:
           'You need to be a member of the organisation to access this space data.',
         httpStatus: 403,
       };
+    }
+
+    if (await hasPostgresSpaceMembership(host.id, authToken)) {
+      return { hasAccess: true };
     }
 
     return {
@@ -260,6 +294,9 @@ export async function checkSpaceAccessForSpace(
     };
   } catch (error) {
     console.error('checkSpaceAccessForSpace:', error);
+    if (await hasPostgresSpaceMembership(host.id, authToken)) {
+      return { hasAccess: true };
+    }
     return {
       hasAccess: false,
       message: 'An error occurred while checking your permissions.',
