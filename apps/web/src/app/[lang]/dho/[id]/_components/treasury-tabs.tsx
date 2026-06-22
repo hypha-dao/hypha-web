@@ -11,6 +11,7 @@ import {
   useBankCustomerStatus,
   useTransfers,
   useVaults,
+  useVirtualAccounts,
 } from '@hypha-platform/epics';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -43,16 +44,14 @@ export function TreasuryTabs({
   const { transfers } = useTransfers({ spaceSlug });
   const { vaults } = useVaults({ spaceSlug });
   const { status: bankCustomerStatus } = useBankCustomerStatus({ spaceSlug });
+  const { accounts: virtualAccounts } = useVirtualAccounts({
+    spaceSlug,
+    enabled: Boolean(bankCustomerStatus),
+  });
   const walletCount = assets.filter((asset) => asset.value > 0).length;
   const transactionCount = transfers.length;
   const vaultCount = vaults.length;
-  // Count currencies usable for banking (approved/active) — derived from the
-  // already-loaded status; counting actual virtual accounts would need an
-  // extra Bridge list call just to render this badge.
-  const supportedCurrencyCount =
-    bankCustomerStatus?.currencyStatuses?.filter(
-      (currency) => currency.isApproved,
-    ).length ?? 0;
+  const bankAccountCount = virtualAccounts.length;
 
   return (
     <div className="flex w-full flex-col gap-4 py-4">
@@ -92,7 +91,7 @@ export function TreasuryTabs({
               <span className="inline-flex items-center gap-1">
                 <span>{tTreasury('bankAccounts')}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({format.number(supportedCurrencyCount)})
+                  ({format.number(bankAccountCount)})
                 </span>
               </span>
             </TabsTrigger>

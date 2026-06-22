@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=web --filter=@hypha-platform/ui-utils",
     "build": "turbo run build",
     "start": "turbo run start",
     "migrate": "turbo run migrate",

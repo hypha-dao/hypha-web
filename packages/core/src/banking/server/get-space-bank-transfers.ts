@@ -9,7 +9,6 @@ import {
   bridgeTransferTargetsSpace,
   mapBridgeTransferToPublic,
 } from './map-bridge-resources';
-import { syncProviderCustomerIdFromKycLink } from './providers/bridge/banking-provider-state';
 
 export async function getSpaceBankTransfers(
   space: Pick<Space, 'id' | 'web3SpaceId'>,
@@ -25,10 +24,7 @@ export async function getSpaceBankTransfers(
     return { transfers: [], hasMore: false, nextCursor: null };
   }
 
-  const customerIdFromKycLink = customer.providerCustomerId
-    ? null
-    : await syncProviderCustomerIdFromKycLink(customer);
-  const customerId = customer.providerCustomerId ?? customerIdFromKycLink;
+  const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     return { transfers: [], hasMore: false, nextCursor: null };

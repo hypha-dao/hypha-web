@@ -343,10 +343,3 @@ export async function resolveCustomerApproved(
   const live = await fetchBridgeKycLinkLive(customer);
   return Boolean(live?.isKycApproved && live?.isTosApproved);
 }
-
-export async function syncProviderCustomerIdFromKycLink(
-  customer: BankCustomer,
-): Promise<string | null> {
-  const live = await fetchBridgeKycLinkLive(customer);
-  return live?.providerCustomerId ?? customer.providerCustomerId ?? null;
-}
