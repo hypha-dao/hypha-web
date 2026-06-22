@@ -36,7 +36,8 @@ const onboardingVisualAssetsSchema = z.object({
   leadImageUrl: z.string().url(),
 });
 
-const onboardingConversationContextSchema = z.object({
+/** Validates onboarding conversation context shared by chat and voice Realtime. */
+export const onboardingConversationContextSchema = z.object({
   mode: z.literal('onboarding_setup'),
   source: z.enum(['onboarding_hero', 'ai_panel']).optional(),
   setupPhase: setupPhaseSchema.optional(),

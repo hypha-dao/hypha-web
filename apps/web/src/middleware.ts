@@ -14,6 +14,10 @@ const CONNECT_SOURCES =
  */
 const UPLOADTHING_UFS_HOST = 'https://*.ufs.sh';
 
+/** OpenAI Realtime API (WebRTC / client secrets) — onboarding voice discovery Phase 2. */
+const OPENAI_REALTIME_CONNECT_SOURCES =
+  'https://api.openai.com wss://api.openai.com';
+
 /** Origin of `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` for CSP (timeline MXC → HTTP). */
 function matrixHomeserverImgSrc(): string {
   const raw = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim();
@@ -67,6 +71,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   const connectSrc = [
     ...CONNECT_SOURCES,
     ...matrixTurnConnectSourcesFromEnv(),
+    OPENAI_REALTIME_CONNECT_SOURCES,
     'https://www.googleapis.com',
     UPLOADTHING_UFS_HOST,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',

@@ -107,6 +107,16 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableOnboardingVoiceRealtime: {
+    key: 'enable-onboarding-voice-realtime',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME) ??
+      false,
+    description:
+      'OpenAI Realtime transport for onboarding voice discovery. Opt in: NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -205,3 +215,16 @@ export async function getEnableNetworkMapAsync(): Promise<boolean> {
     false,
   );
 }
+
+export async function getEnableOnboardingVoiceRealtimeAsync(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-onboarding-voice-realtime',
+    process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME,
+    false,
+  );
+}
+
+export {
+  getEnableNetworkMap,
+  getEnableOnboardingVoiceRealtime,
+} from './client';

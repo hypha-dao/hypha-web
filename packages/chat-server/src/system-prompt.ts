@@ -493,3 +493,40 @@ Onboarding create-space flow:
 - Space purpose/description must stay within 300 characters before execution.
 - After wallet handoff (requires_wallet_signature), tell the user to complete the wallet signing prompt. Do not loop on verbal confirmations.`;
 }
+
+export type OnboardingRealtimeInstructionsInput = {
+  setupPhase?: string;
+  locale?: string;
+  recentTranscriptSummary?: string;
+};
+
+/** System instructions for OpenAI Realtime voice discovery (onboarding setup only). */
+export function buildOnboardingRealtimeInstructions(
+  input: OnboardingRealtimeInstructionsInput = {},
+): string {
+  const sections = [
+    BASE_SYSTEM_PROMPT,
+    ONBOARDING_CONVERSATION_RULES,
+    ONBOARDING_ADVISOR_GUIDELINES,
+    ONBOARDING_VOICE_INTERVIEW_GUIDELINES,
+    ONCHAIN_GOVERNANCE_WRITE_INTEGRITY,
+    `Onboarding setup mode is active (voice discovery).
+- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.
+- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.
+- Current setup phase: ${input.setupPhase ?? 'discover'}.
+- Discovery order: (1) journey cards (single space vs ecosystem), (2) name and purpose, (3) propose general principles and get user reaction, (4) org discovery, (5) ecosystem structure from public network patterns if applicable, (6) activation mode cards, (7) transparency matrix UI, (8) entry method cards, (9) location map UI or skip, (10) logo and hero banner.
+- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until name, purpose, principles_reaction, org_discovery, and visual assets (logo_url + lead_image_url) are complete.
+- Realtime voice constraints: reflect what you heard, then ask one question; 2–4 spoken sentences per turn; no markdown, bullet lists, URLs, or coordinates read aloud.
+- UI cards still appear for structured choices—introduce them naturally ("I'll show you a few options on screen").
+- Respond in the user's language when locale is ${input.locale ?? 'en'}.`,
+  ];
+
+  const summary = input.recentTranscriptSummary?.trim();
+  if (summary) {
+    sections.push(
+      `Recent conversation summary (chat and prior voice turns):\n${summary}`,
+    );
+  }
+
+  return sections.join('\n\n');
+}
