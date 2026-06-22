@@ -15,6 +15,17 @@ export type SpaceEnergySource = {
   active: boolean;
 };
 
+export type SpaceEnergyMemberDetail = {
+  address: `0x${string}`;
+  /** Signed internal energy-credit balance (positive = credit, negative = debt). */
+  energyCreditBalance: string | null;
+  ownerships: {
+    sourceId: `0x${string}`;
+    sourceLabel: string;
+    ownershipBps: number;
+  }[];
+};
+
 export type SpaceEnergyResponse = {
   enabled: boolean;
   activation?: {
@@ -48,6 +59,7 @@ export type SpaceEnergyResponse = {
     exportDeviceId: string | null;
   };
   members?: `0x${string}`[];
+  memberDetails?: SpaceEnergyMemberDetail[];
   optimization?: {
     configured: boolean;
     purposeRanking: string[];

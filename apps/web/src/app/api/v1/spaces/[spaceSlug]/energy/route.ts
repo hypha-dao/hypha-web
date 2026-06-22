@@ -331,6 +331,34 @@ export async function GET(
 
     const memberAddressList = memberAddresses ?? [];
 
+    // Per-member on-chain detail: signed energy-credit balance (positive =
+    // holds credit, negative = owes) and the source ids this member co-owns
+    // (with ownership bps). Powers the Ownership and Credits views in the UI.
+    const memberDetails = await Promise.all(
+      memberAddressList.map(async (rawAddress) => {
+        const address = rawAddress.toLowerCase() as `0x${string}`;
+        const [creditBalance, ownerships] = await Promise.all([
+          safeRead<bigint>('getEnergyCreditBalance', [address]),
+          safeRead<readonly [readonly `0x${string}`[], readonly bigint[]]>(
+            'getAllSourceOwnerships',
+            [address],
+          ),
+        ]);
+        const ownedIds = ownerships ? ownerships[0] : [];
+        const ownedBps = ownerships ? ownerships[1] : [];
+        return {
+          address,
+          energyCreditBalance:
+            creditBalance !== null ? creditBalance.toString() : null,
+          ownerships: ownedIds.map((sourceId, index) => ({
+            sourceId,
+            sourceLabel: decodeSourceId(sourceId),
+            ownershipBps: Number(ownedBps[index] ?? 0n),
+          })),
+        };
+      }),
+    );
+
     const [optimizationConfig, socialWalletsRaw] = await Promise.all([
       safeRead<readonly [readonly number[], number, bigint, number, boolean]>(
         'getOptimizationConfig',
@@ -399,6 +427,7 @@ export async function GET(
           exportDeviceId !== null ? exportDeviceId.toString() : null,
       },
       members: memberAddressList.map((a) => a.toLowerCase() as `0x${string}`),
+      memberDetails,
       sources,
       optimization,
     });
