@@ -1,6 +1,6 @@
 import { publicClient } from '../../common/web3/public-client';
-import { findSelf } from '../../people/server/queries';
-import { getDb } from '../../common/server/get-db';
+import { db } from '@hypha-platform/storage-postgres';
+import { resolvePersonFromAuthToken } from '../../people/server/resolve-person-from-auth-token';
 import { and, eq } from 'drizzle-orm';
 import { memberships } from '@hypha-platform/storage-postgres';
 import {
@@ -12,6 +12,7 @@ import { getSpaceVisibility } from '../client/web3/dao-space-factory/get-space-v
 import { getDelegatesForSpace } from '../client/web3/dao-space-factory/get-delegates-for-space';
 import { getDelegators } from '../client/web3/dao-space-factory/get-delegators';
 import { isMember as isMemberConfig } from '../client/web3/dao-space-factory/is-member';
+import { isOnChainMemberOrDelegate } from './is-on-chain-member-or-delegate';
 import type { Space } from '../types';
 import { SpaceTransparencyLevel } from '../transparency-policy';
 
@@ -27,8 +28,7 @@ export async function hasPostgresSpaceMembership(
 ): Promise<boolean> {
   if (!authToken?.trim()) return false;
   try {
-    const db = getDb({ authToken });
-    const person = await findSelf({ db });
+    const person = await resolvePersonFromAuthToken(authToken);
     if (!person?.id) return false;
     const [membership] = await db
       .select({ id: memberships.id })
@@ -68,8 +68,7 @@ export async function checkSpaceAccessForSpace(
       };
     }
     try {
-      const db = getDb({ authToken });
-      const person = await findSelf({ db });
+      const person = await resolvePersonFromAuthToken(authToken);
       if (!person?.id) {
         return {
           hasAccess: false,
@@ -130,8 +129,7 @@ export async function checkSpaceAccessForSpace(
       };
     }
 
-    const db = getDb({ authToken });
-    const person = await findSelf({ db });
+    const person = await resolvePersonFromAuthToken(authToken);
 
     if (!person?.id) {
       return {
@@ -308,6 +306,25 @@ export async function checkSpaceAccessForSpace(
     console.error('checkSpaceAccessForSpace:', error);
     if (await hasPostgresSpaceMembership(host.id, authToken)) {
       return { hasAccess: true };
+    }
+    if (host.web3SpaceId != null && authToken) {
+      try {
+        const person = await resolvePersonFromAuthToken(authToken);
+        if (person?.address) {
+          const allowed = await isOnChainMemberOrDelegate(
+            host.web3SpaceId,
+            person.address as `0x${string}`,
+          );
+          if (allowed) {
+            return { hasAccess: true };
+          }
+        }
+      } catch (fallbackError) {
+        console.error(
+          'checkSpaceAccessForSpace on-chain fallback failed:',
+          fallbackError,
+        );
+      }
     }
     return {
       hasAccess: false,
