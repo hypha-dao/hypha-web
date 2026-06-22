@@ -380,14 +380,18 @@ export const CreateEnableEnergyCommunityForm = ({
             (member) =>
               `${member.memberAddress} — ${member.deviceIds.length} meter(s)`,
           ),
-          sources: deployInput.sources.map(
-            (source) =>
-              `${source.tokenName} [${
-                source.sourceType
-              }] @ ${internalUnitsToPriceDisplay(
-                String(source.basePricePerKwh),
-              )}/kWh`,
-          ),
+          sources: deployInput.sources.map((source) => ({
+            name: `${source.tokenName} [${source.sourceType}]`,
+            pricePerKwh: `${internalUnitsToPriceDisplay(
+              String(source.basePricePerKwh),
+            )}/kWh`,
+            owners: source.holders.map(
+              (holder, index) =>
+                `${holder}: ${(
+                  Number(source.holderAmounts[index] ?? 0) / 100
+                ).toFixed(2)}%`,
+            ),
+          })),
         };
       }}
       buildExtraTransactions={(values) => {

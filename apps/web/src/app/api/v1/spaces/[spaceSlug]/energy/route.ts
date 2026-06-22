@@ -337,19 +337,26 @@ export async function GET(
     const memberDetails = await Promise.all(
       memberAddressList.map(async (rawAddress) => {
         const address = rawAddress.toLowerCase() as `0x${string}`;
-        const [creditBalance, ownerships] = await Promise.all([
-          safeRead<bigint>('getEnergyCreditBalance', [address]),
-          safeRead<readonly [readonly `0x${string}`[], readonly bigint[]]>(
-            'getAllSourceOwnerships',
-            [address],
-          ),
-        ]);
+        const [creditBalance, debtStablecoin, creditStablecoin, ownerships] =
+          await Promise.all([
+            safeRead<bigint>('getEnergyCreditBalance', [address]),
+            safeRead<bigint>('getDebtInStablecoin', [address]),
+            safeRead<bigint>('getCreditInStablecoin', [address]),
+            safeRead<readonly [readonly `0x${string}`[], readonly bigint[]]>(
+              'getAllSourceOwnerships',
+              [address],
+            ),
+          ]);
         const ownedIds = ownerships ? ownerships[0] : [];
         const ownedBps = ownerships ? ownerships[1] : [];
         return {
           address,
           energyCreditBalance:
             creditBalance !== null ? creditBalance.toString() : null,
+          debtInStablecoin:
+            debtStablecoin !== null ? debtStablecoin.toString() : null,
+          creditInStablecoin:
+            creditStablecoin !== null ? creditStablecoin.toString() : null,
           ownerships: ownedIds.map((sourceId, index) => ({
             sourceId,
             sourceLabel: decodeSourceId(sourceId),

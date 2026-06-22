@@ -109,6 +109,17 @@ export const buildProductionSeries = (
   return { perSource, consumption };
 };
 
+/**
+ * Cumulative amount a member has already settled, in stablecoin micro-units
+ * (USDC, 6 decimals). Placeholder until a settlement indexer exists — seeded
+ * off the address so it stays stable across renders.
+ */
+export const dummySettledMicro = (address: string): string => {
+  const rand = seeded(hashString(`settled-${address.toLowerCase()}`));
+  const usdc = 40 + Math.round(rand() * 460); // 40–500 USDC
+  return (usdc * 1_000_000).toString();
+};
+
 /** Settled energy (kWh equivalent reconciled) per period. */
 export const buildSettlementSeries = (timeframe: Timeframe) => {
   const tf = TIMEFRAMES.find((t) => t.id === timeframe) ?? TIMEFRAMES[1]!;

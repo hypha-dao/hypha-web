@@ -6,22 +6,34 @@ import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { ENERGY_PALETTE } from './charts';
 import { EnergyPersonCard } from './shared';
 import { useEnergyPeople } from './use-energy-people';
-import { formatBpsPct, prettySourceLabel } from './format';
+import { formatBpsPct, sourceDisplayName } from './format';
 
 type Owner = { address: string; bps: number };
 
 export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const details = data.memberDetails ?? [];
 
+  // sourceId -> { type, label } from the registered source list so we can show
+  // friendly names (Solar / Battery) instead of the raw on-chain id.
+  const sourceMeta = React.useMemo(() => {
+    const map = new Map<string, { type: string; label: string }>();
+    (data.sources ?? []).forEach((source) => {
+      map.set(source.sourceId.toLowerCase(), {
+        type: source.sourceType,
+        label: source.sourceLabel,
+      });
+    });
+    return map;
+  }, [data.sources]);
+
   const { groups, allAddresses } = React.useMemo(() => {
-    const map = new Map<string, { label: string; owners: Owner[] }>();
+    const map = new Map<string, { owners: Owner[] }>();
     const addresses = new Set<string>();
     for (const member of details) {
       for (const ownership of member.ownerships) {
-        const existing = map.get(ownership.sourceId) ?? {
-          label: ownership.sourceLabel,
-          owners: [],
-        };
+        // Hide members with no active share in the source.
+        if (ownership.ownershipBps <= 0) continue;
+        const existing = map.get(ownership.sourceId) ?? { owners: [] };
         existing.owners.push({
           address: member.address,
           bps: ownership.ownershipBps,
@@ -30,13 +42,18 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
         addresses.add(member.address.toLowerCase());
       }
     }
-    const groups = Array.from(map.entries()).map(([sourceId, value]) => ({
-      sourceId,
-      label: value.label,
-      owners: value.owners.sort((a, b) => b.bps - a.bps),
-    }));
+    const groups = Array.from(map.entries())
+      .filter(([, value]) => value.owners.length > 0)
+      .map(([sourceId, value], index) => {
+        const meta = sourceMeta.get(sourceId.toLowerCase());
+        return {
+          sourceId,
+          name: sourceDisplayName(meta?.type, meta?.label, index),
+          owners: value.owners.sort((a, b) => b.bps - a.bps),
+        };
+      });
     return { groups, allAddresses: Array.from(addresses) };
-  }, [details]);
+  }, [details, sourceMeta]);
 
   const { people, isLoading } = useEnergyPeople(allAddresses);
 
@@ -60,7 +77,7 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
                   className="h-2.5 w-2.5 rounded-full"
                   style={{ backgroundColor: accent }}
                 />
-                <CardTitle>{prettySourceLabel(group.label, index)}</CardTitle>
+                <CardTitle>{group.name}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">

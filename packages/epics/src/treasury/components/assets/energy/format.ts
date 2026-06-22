@@ -50,17 +50,27 @@ export const isReadableLabel = (label: string) => {
   return printable.length >= Math.max(2, Math.floor(label.length * 0.7));
 };
 
+const titleCaseType = (type?: string) =>
+  type && type !== 'UNKNOWN'
+    ? `${type[0]}${type.slice(1).toLowerCase()}`
+    : null;
+
 export const prettySourceLabel = (
   label: string,
   index: number,
   type?: string,
 ) => {
   if (isReadableLabel(label)) return label;
-  const base =
-    type && type !== 'UNKNOWN'
-      ? `${type[0]}${type.slice(1).toLowerCase()}`
-      : 'Source';
-  return `${base} ${index + 1}`;
+  return `${titleCaseType(type) ?? 'Source'} ${index + 1}`;
+};
+
+/**
+ * Display name for an energy source preferring the human label, then the type
+ * (e.g. "Solar", "Battery"), then a numbered fallback.
+ */
+export const sourceDisplayName = (type?: string, label?: string, index = 0) => {
+  if (label && isReadableLabel(label)) return label;
+  return titleCaseType(type) ?? `Source ${index + 1}`;
 };
 
 export const personDisplayName = (

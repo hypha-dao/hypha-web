@@ -1,6 +1,9 @@
 'use client';
 
+import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
+import { PersonAvatar } from '../../people/components/person-avatar';
+import { usePersonByWeb3Address } from '../hooks/use-person-by-web3-address';
 
 /**
  * Internal payload keys that are implementation detail rather than something a
@@ -8,6 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
  * rendered card.
  */
 const HIDDEN_KEYS = new Set(['contractMethod']);
+
+const ADDRESS_RE = /0x[a-fA-F0-9]{40}/;
+const ADDRESS_RE_G = /0x[a-fA-F0-9]{40}/g;
 
 const humanizeKey = (key: string): string =>
   key
@@ -17,6 +23,63 @@ const humanizeKey = (key: string): string =>
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const shortAddr = (a: string) =>
+  a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a;
+
+const personName = (
+  person?: {
+    name?: string | null;
+    surname?: string | null;
+    nickname?: string | null;
+  } | null,
+) => {
+  if (!person) return null;
+  const full = [person.name, person.surname].filter(Boolean).join(' ').trim();
+  return full || person.nickname || null;
+};
+
+/** Resolves a wallet address to a Hypha profile (avatar + name), short address fallback. */
+const AddressProfile = ({ address }: { address: `0x${string}` }) => {
+  const { person } = usePersonByWeb3Address(address);
+  const name = personName(person);
+  return (
+    <span className="inline-flex items-center gap-1.5 align-middle">
+      <PersonAvatar
+        avatarSrc={person?.avatarUrl ?? undefined}
+        userName={name ?? undefined}
+        size="sm"
+        shape="circle"
+      />
+      <span className="font-medium text-neutral-12">
+        {name ?? shortAddr(address)}
+      </span>
+    </span>
+  );
+};
+
+/**
+ * Renders a string that may embed one or more wallet addresses, swapping each
+ * address for the member's profile (avatar + name) while preserving the
+ * surrounding text (e.g. " — 2 meter(s)" or ": 50.00%").
+ */
+const AddressAwareText = ({ text }: { text: string }) => {
+  const matches = text.match(ADDRESS_RE_G);
+  if (!matches) return <>{text}</>;
+  const parts = text.split(ADDRESS_RE_G);
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-1">
+      {parts.map((part, index) => (
+        <React.Fragment key={index}>
+          {part ? <span>{part}</span> : null}
+          {matches[index] ? (
+            <AddressProfile address={matches[index] as `0x${string}`} />
+          ) : null}
+        </React.Fragment>
+      ))}
+    </span>
+  );
+};
 
 const renderPrimitive = (value: unknown): string => {
   if (value === null || value === undefined) return '—';
@@ -30,11 +93,20 @@ const isEmpty = (value: unknown): boolean =>
   (typeof value === 'string' && value.trim() === '') ||
   (Array.isArray(value) && value.length === 0);
 
-const PrimitiveValue = ({ value }: { value: unknown }) => (
-  <span className="text-2 font-medium text-neutral-12 break-words">
-    {renderPrimitive(value)}
-  </span>
-);
+const PrimitiveValue = ({ value }: { value: unknown }) => {
+  if (typeof value === 'string' && ADDRESS_RE.test(value)) {
+    return (
+      <span className="text-2 font-medium text-neutral-12 break-words">
+        <AddressAwareText text={value} />
+      </span>
+    );
+  }
+  return (
+    <span className="text-2 font-medium text-neutral-12 break-words">
+      {renderPrimitive(value)}
+    </span>
+  );
+};
 
 const ListValue = ({ items }: { items: unknown[] }) => (
   <ul className="flex flex-col gap-1.5">
@@ -45,6 +117,8 @@ const ListValue = ({ items }: { items: unknown[] }) => (
       >
         {isPlainObject(item) ? (
           <NestedRows data={item} />
+        ) : typeof item === 'string' && ADDRESS_RE.test(item) ? (
+          <AddressAwareText text={item} />
         ) : (
           renderPrimitive(item)
         )}

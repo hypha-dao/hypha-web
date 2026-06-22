@@ -19,6 +19,10 @@ export type SpaceEnergyMemberDetail = {
   address: `0x${string}`;
   /** Signed internal energy-credit balance (positive = credit, negative = debt). */
   energyCreditBalance: string | null;
+  /** Outstanding debt the member still needs to settle, in stablecoin micro-units (USDC 6dp). */
+  debtInStablecoin: string | null;
+  /** Credit the member can claim, in stablecoin micro-units (USDC 6dp). */
+  creditInStablecoin: string | null;
   ownerships: {
     sourceId: `0x${string}`;
     sourceLabel: string;

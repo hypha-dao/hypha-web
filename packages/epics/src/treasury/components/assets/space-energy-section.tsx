@@ -8,7 +8,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hypha-platform/ui';
-import { UsersIcon, ZapIcon, CoinsIcon, ActivityIcon } from 'lucide-react';
+import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
 import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/charts';
@@ -50,16 +50,10 @@ export const SpaceEnergySection = () => {
   }
 
   const overview = data.overview;
-  const zeroSum =
-    overview.zeroSumOk === null
-      ? '—'
-      : overview.zeroSumOk
-      ? 'Healthy'
-      : 'Mismatch';
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           label="Energy consumers"
           value={overview.memberCount}
@@ -77,15 +71,6 @@ export const SpaceEnergySection = () => {
           value={formatStablecoinMicro(overview.contractStablecoinBalance)}
           accent={ENERGY_PALETTE[1]}
           icon={<CoinsIcon size={16} />}
-        />
-        <StatCard
-          label="Accounting"
-          value={zeroSum}
-          hint="Zero-sum integrity check"
-          accent={
-            overview.zeroSumOk === false ? ENERGY_PALETTE[4] : ENERGY_PALETTE[3]
-          }
-          icon={<ActivityIcon size={16} />}
         />
       </div>
 
