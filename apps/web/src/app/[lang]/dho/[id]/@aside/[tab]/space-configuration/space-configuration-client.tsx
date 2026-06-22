@@ -173,7 +173,7 @@ export function SpaceConfigurationClient({
           )
         }
       >
-        {formValues ? (
+        {formValues && space ? (
           <SpaceForm
             submitLabel={tAgreementFlow('spaceConfiguration.update')}
             submitLoadingLabel={tAgreementFlow('spaceConfiguration.updating')}
@@ -190,10 +190,12 @@ export function SpaceConfigurationClient({
             values={formValues}
             label="configure"
             enableNetworkMap={enableNetworkMap}
-            initialParentSpaceId={space?.parentId ?? null}
+            initialParentSpaceId={space.parentId ?? null}
             spaceId={space.id}
           />
-        ) : null}
+        ) : (
+          <div aria-hidden="true" className="min-h-px" />
+        )}
       </LoadingBackdrop>
     </ProposalOverlayShell>
   );

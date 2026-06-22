@@ -95,6 +95,8 @@ const inputSchema = z.object({
   dry_run: z.boolean().optional().default(false),
 });
 
+export type CreateSpaceFromOnboardingInput = z.infer<typeof inputSchema>;
+
 async function resolveSpaceLocationFields(
   data: z.infer<typeof inputSchema>,
 ): Promise<

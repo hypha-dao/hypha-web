@@ -13,6 +13,7 @@ import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 import { webSearchTool } from './web-search';
 import { createCreateSpaceFromOnboardingTool } from './create-space-from-onboarding';
+import type { CreateSpaceFromOnboardingInput } from './create-space-from-onboarding';
 import { createUpdateSpaceSettingsTool } from './update-space-settings';
 import { createCreateSpaceSetupProposalTool } from './create-space-setup-proposal';
 import { createCreateEcosystemSpaceTool } from './create-ecosystem-space';
@@ -527,7 +528,7 @@ export function createChatTools(
                 contextActivationMethod,
               ),
               contextSpaceLocation,
-            ),
+            ) as CreateSpaceFromOnboardingInput,
           ),
       },
     );

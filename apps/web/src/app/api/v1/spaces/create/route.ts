@@ -4,12 +4,15 @@ import { createSpace } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextResponse } from 'next/server';
 
-const schemaCreateSpaceApi = schemaCreateSpaceWeb2.extend({
-  logoUrl: z.string().url().optional(),
-  leadImage: z.string().url().optional(),
-  ecosystemLogoUrlLight: z.string().url().optional(),
-  ecosystemLogoUrlDark: z.string().url().optional(),
-});
+const schemaCreateSpaceApi = z.intersection(
+  schemaCreateSpaceWeb2,
+  z.object({
+    logoUrl: z.string().url().optional(),
+    leadImage: z.string().url().optional(),
+    ecosystemLogoUrlLight: z.string().url().optional(),
+    ecosystemLogoUrlDark: z.string().url().optional(),
+  }),
+);
 
 export async function POST(request: Request) {
   try {
