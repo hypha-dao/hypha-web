@@ -142,9 +142,9 @@ export function OnboardingAiFullPage({
           const token = (await getAccessToken?.()) ?? undefined;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: { conversationContext: onboardingContext },
+        body: {},
       }),
-    [getAccessToken, onboardingContext],
+    [getAccessToken],
   );
 
   const { messages, sendMessage, stop, status, error, clearError } = useChat({

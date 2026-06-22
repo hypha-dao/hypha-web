@@ -751,15 +751,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           }
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: {
-          ...(spaceSlug &&
-            !isSpaceSetupContext(onboardingContext) && { spaceSlug }),
-          ...(onboardingContext
-            ? { conversationContext: onboardingContext }
-            : {}),
-        },
+        // Per-request body comes from buildMessageOptions — keep transport stable
+        // so useChat does not reinitialize when onboarding context updates.
+        body: {},
       }),
-    [getAccessToken, onboardingContext, spaceSlug],
+    [getAccessToken],
   );
 
   const {
@@ -1468,7 +1464,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (blockSpaceAiForInteraction) {
       clearError();
     }
-  }, [blockSpaceAiForInteraction, clearError]);
+    // clearError identity from useChat is unstable — only react to block toggles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [blockSpaceAiForInteraction]);
 
   const handleSend = useCallback(async () => {
     if (blockSpaceAiForInteraction) return;
@@ -2036,7 +2034,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         return next;
       });
     },
-    [discoveryMode, isOnboardingSetup, lang, voiceInterview],
+    [
+      discoveryMode,
+      isOnboardingSetup,
+      lang,
+      voiceInterview.stopListening,
+      voiceInterview.stopSpeaking,
+    ],
   );
 
   const handleTriggerClick = useCallback(() => {

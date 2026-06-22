@@ -79,8 +79,10 @@ export function useOnboardingVoiceInterview({
   const lastSpokenAssistantRef = useRef('');
   const wasStreamingRef = useRef(false);
   const sendInFlightRef = useRef(false);
+  const phaseRef = useRef<VoiceInterviewPhase>('idle');
 
   const [phase, setPhase] = useState<VoiceInterviewPhase>('idle');
+  phaseRef.current = phase;
   const [liveTranscript, setLiveTranscript] = useState('');
   const [voiceError, setVoiceError] = useState<string | null>(null);
 
@@ -212,7 +214,7 @@ export function useOnboardingVoiceInterview({
         void flushTranscript();
         return;
       }
-      if (phase === 'listening') setPhase('idle');
+      if (phaseRef.current === 'listening') setPhase('idle');
     };
 
     recognitionRef.current = recognition;
@@ -229,7 +231,6 @@ export function useOnboardingVoiceInterview({
     flushTranscript,
     isStreaming,
     locale,
-    phase,
     scheduleSendAfterSilence,
     stopListening,
     stopSpeaking,
@@ -275,7 +276,6 @@ export function useOnboardingVoiceInterview({
       isAssistantFailureText(spoken)
     ) {
       setPhase('idle');
-      if (autoResumeListening) startListening();
       return;
     }
     lastSpokenAssistantRef.current = spoken;
