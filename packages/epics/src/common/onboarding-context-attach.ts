@@ -78,3 +78,22 @@ export function shouldAttachOnboardingContext(
 
   return false;
 }
+
+/** Pre-create onboarding only — skip space membership/subscription gates in the UI. */
+export function shouldBypassSpaceMembershipForOnboarding(
+  context: OnboardingContextAttachInput | undefined,
+  options: {
+    spaceSlug?: string;
+    isOnboardingPath?: boolean;
+  },
+): boolean {
+  if (!context || context.mode !== ONBOARDING_SETUP_MODE) return false;
+  if (options.isOnboardingPath) return true;
+
+  const phase = context.setupPhase ?? 'discover';
+  if (phase !== 'discover' && phase !== 'draft' && phase !== 'confirm') {
+    return false;
+  }
+
+  return !normalizeSlug(options.spaceSlug);
+}

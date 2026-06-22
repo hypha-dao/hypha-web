@@ -399,6 +399,7 @@ export function clearOnboardingConversationContext(): void {
 }
 
 export { shouldAttachOnboardingContext } from './onboarding-context-attach';
+export { shouldBypassSpaceMembershipForOnboarding } from './onboarding-context-attach';
 
 /** Resolve chat API body fields and whether persisted onboarding context is stale. */
 export function resolveChatTransportBody({

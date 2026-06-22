@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { OnboardingConversationContext } from '../ai-onboarding-context';
-import { shouldAttachOnboardingContext } from '../onboarding-context-attach';
+import {
+  shouldAttachOnboardingContext,
+  shouldBypassSpaceMembershipForOnboarding,
+} from '../onboarding-context-attach';
 
 function baseContext(
   overrides: Partial<OnboardingConversationContext> = {},
@@ -75,6 +78,55 @@ describe('shouldAttachOnboardingContext', () => {
     ).toBe(true);
     expect(
       shouldAttachOnboardingContext(context, { spaceSlug: 'hypha-platform' }),
+    ).toBe(false);
+  });
+});
+
+describe('shouldBypassSpaceMembershipForOnboarding', () => {
+  it('bypasses on the onboarding path regardless of phase', () => {
+    const context = baseContext({ setupPhase: 'execute' });
+    expect(
+      shouldBypassSpaceMembershipForOnboarding(context, {
+        isOnboardingPath: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('bypasses discover phase without an active space slug', () => {
+    const context = baseContext({ setupPhase: 'discover' });
+    expect(shouldBypassSpaceMembershipForOnboarding(context, {})).toBe(true);
+  });
+
+  it('does not bypass discover phase on an unrelated space', () => {
+    const context = baseContext({ setupPhase: 'discover' });
+    expect(
+      shouldBypassSpaceMembershipForOnboarding(context, {
+        spaceSlug: 'hypha-platform',
+      }),
+    ).toBe(false);
+  });
+
+  it('does not bypass execute phase on the created anchor slug', () => {
+    const context = baseContext({
+      setupPhase: 'execute',
+      createdSpaceSlug: 'my-root',
+    });
+    expect(
+      shouldBypassSpaceMembershipForOnboarding(context, {
+        spaceSlug: 'my-root',
+      }),
+    ).toBe(false);
+  });
+
+  it('does not bypass verify phase on the created anchor slug', () => {
+    const context = baseContext({
+      setupPhase: 'verify',
+      createdSpaceSlug: 'my-root',
+    });
+    expect(
+      shouldBypassSpaceMembershipForOnboarding(context, {
+        spaceSlug: 'my-root',
+      }),
     ).toBe(false);
   });
 });

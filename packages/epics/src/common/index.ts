@@ -31,6 +31,7 @@ export {
   clearOnboardingConversationContext,
   resolveChatTransportBody,
   shouldAttachOnboardingContext,
+  shouldBypassSpaceMembershipForOnboarding,
   createAiPanelSetupContext,
   dispatchAiOnboardingSeed,
   dispatchAiOnboardingSeedAck,

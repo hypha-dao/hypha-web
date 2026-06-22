@@ -102,6 +102,7 @@ import {
   readOnboardingConversationContext,
   resolveChatTransportBody,
   shouldAttachOnboardingContext,
+  shouldBypassSpaceMembershipForOnboarding,
   resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
   clearOnboardingConversationContext,
@@ -298,10 +299,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }),
     [isOnboardingPath, onboardingContext, spaceSlug],
   );
+  const bypassOnboardingMembership = useMemo(
+    () =>
+      shouldBypassSpaceMembershipForOnboarding(onboardingContext, {
+        spaceSlug,
+        isOnboardingPath,
+      }),
+    [isOnboardingPath, onboardingContext, spaceSlug],
+  );
   const blockSpaceAiForMembership =
     Boolean(spaceSlug) &&
     !isOnboardingPath &&
-    !attachOnboardingForActiveSpace &&
+    !bypassOnboardingMembership &&
     !isUserSpaceStateLoading &&
     !canInteractInSpace(userSpaceState);
   const { status: spacePaymentStatus, isLoading: isSpacePaymentStatusLoading } =
@@ -311,7 +320,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const blockSpaceAiForSubscription =
     Boolean(spaceSlug) &&
     Boolean(effectiveSpaceWeb3Id) &&
-    !attachOnboardingForActiveSpace &&
+    !bypassOnboardingMembership &&
     !isSpacePaymentStatusLoading &&
     spacePaymentStatus === 'expired';
   const blockSpaceAiForInteraction =
