@@ -201,14 +201,9 @@ export function buildCustomerValidations(
 
 function resolveRailOperationalStatus(input: {
   endorsementStatus: string | null;
-  hasVirtualAccount: boolean;
   enabled: boolean;
   isRejected?: boolean;
 }): BankRailOperationalStatus {
-  if (input.hasVirtualAccount) {
-    return 'approved';
-  }
-
   if (!input.enabled) {
     return 'not_requested';
   }
@@ -265,7 +260,6 @@ export function buildRailStatuses(input: {
 
     const operationalStatus = resolveRailOperationalStatus({
       endorsementStatus,
-      hasVirtualAccount,
       enabled,
       isRejected: rejectedEndorsements.has(endorsement),
     });
@@ -316,7 +310,6 @@ export function buildRailStatuses(input: {
     const enabled = enabledSet.has(corridor.currency.toLowerCase());
     const operationalStatus = resolveRailOperationalStatus({
       endorsementStatus,
-      hasVirtualAccount: false,
       enabled,
       isRejected: rejectedEndorsements.has(endorsement),
     });
