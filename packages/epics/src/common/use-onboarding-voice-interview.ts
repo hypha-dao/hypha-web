@@ -22,6 +22,7 @@ type SpeechRecognitionLike = {
 };
 
 type SpeechRecognitionEventLike = {
+  resultIndex: number;
   results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
 };
 
@@ -303,7 +304,9 @@ export function useOnboardingVoiceInterview({
       recognition.lang = locale ?? document.documentElement.lang ?? 'en';
       recognition.onresult = (event) => {
         if (generation !== listeningGenerationRef.current) return;
-        let committed = committedRef.current;
+        // Rebuild from the cumulative results list each event — do not append
+        // onto committedRef or prior finals get duplicated on every update.
+        let committed = '';
         let interim = '';
         for (let i = 0; i < event.results.length; i++) {
           const result = event.results[i];
