@@ -31,6 +31,8 @@ import {
   skippedOnboardingSpaceLocation,
   saveOnboardingConversationContext,
   handoffOnboardingToAiPanel,
+  getPostOnboardingLandingPath,
+  getPostOnboardingContinuationPrompt,
   AI_PANEL_SETUP_SOURCE,
   recordMobilizedAiAgentsForOnboarding,
   useOnboardingVoiceInterview,
@@ -524,8 +526,14 @@ export function OnboardingAiFullPage({
     if (!slug) return;
     if (createdSpaceRef.current === slug) return;
     createdSpaceRef.current = slug;
-    router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
-  }, [context.locale, messages, router]);
+    router.push(
+      getPostOnboardingLandingPath(
+        context.locale ?? 'en',
+        slug,
+        onboardingContext.setupJourney,
+      ),
+    );
+  }, [context.locale, messages, onboardingContext.setupJourney, router]);
 
   useEffect(() => {
     const slug =
@@ -540,19 +548,25 @@ export function OnboardingAiFullPage({
     const continuationContext: OnboardingConversationContext = {
       ...onboardingContext,
       source: AI_PANEL_SETUP_SOURCE,
-      setupPhase: 'execute',
+      setupPhase: isEcosystem ? 'execute' : 'verify',
       ...(isEcosystem ? { ecosystemRootSlug: slug } : {}),
     };
 
     handoffOnboardingToAiPanel({
       messages: messages as StoredOnboardingChatMessage[],
       context: continuationContext,
-      continuationPrompt: isEcosystem
-        ? `Our root space is live. Based on everything we discussed during onboarding, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We'll create them one by one together.`
-        : undefined,
+      continuationPrompt: getPostOnboardingContinuationPrompt(
+        onboardingContext.setupJourney,
+      ),
     });
 
-    router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
+    router.push(
+      getPostOnboardingLandingPath(
+        context.locale ?? 'en',
+        slug,
+        onboardingContext.setupJourney,
+      ),
+    );
   }, [
     context.locale,
     messages,

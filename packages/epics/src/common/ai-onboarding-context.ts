@@ -449,6 +449,33 @@ export function handoffOnboardingToAiPanel({
   }
 }
 
+/** First screen after onboarding space creation (ecosystem map vs signals board). */
+export function getPostOnboardingLandingPath(
+  lang: string,
+  slug: string,
+  setupJourney?: OnboardingSetupJourney,
+): string {
+  const locale = lang.trim() || 'en';
+  const safeSlug = slug.trim();
+  if (setupJourney === 'ecosystem') {
+    return `/${locale}/dho/${safeSlug}/ecosystem-navigation`;
+  }
+  return `/${locale}/dho/${safeSlug}/coherence`;
+}
+
+/** Auto-continue AI discovery after landing on the new space. */
+export function getPostOnboardingContinuationPrompt(
+  setupJourney?: OnboardingSetupJourney,
+): string | undefined {
+  if (setupJourney === 'ecosystem') {
+    return `Our root space is live. Based on everything we discussed during onboarding, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We'll create them one by one together.`;
+  }
+  if (setupJourney === 'single_space') {
+    return `Our space is live. Based on our onboarding conversation, propose one strong first signal—what it should focus on, its type and priority, and why it matters right now. Use get_signals_by_space_slug for context, then help me create it when you're ready.`;
+  }
+  return undefined;
+}
+
 export function isPlainOnboardingConfirmationReply(text: string): boolean {
   const normalized = text.trim().toLowerCase();
   const normalizedCompact = normalized

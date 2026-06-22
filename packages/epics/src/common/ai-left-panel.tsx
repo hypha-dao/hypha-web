@@ -101,6 +101,8 @@ import {
   consumeOnboardingOpenAiPanelPending,
   consumeOnboardingContinuationPrompt,
   readOnboardingChatMessages,
+  getPostOnboardingLandingPath,
+  getPostOnboardingContinuationPrompt,
   type OnboardingConversationContext,
 } from './ai-onboarding-context';
 import {
@@ -1009,13 +1011,29 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const nextContext: OnboardingConversationContext = {
       ...onboardingContext,
-      setupPhase: 'verify',
+      setupPhase:
+        onboardingContext.setupJourney === 'ecosystem' ? 'execute' : 'verify',
+      ...(onboardingContext.setupJourney === 'ecosystem'
+        ? { ecosystemRootSlug: createdSlug }
+        : {}),
     };
     setOnboardingContext(nextContext);
     saveOnboardingConversationContext(nextContext);
     openAiPanel();
     setAiOverlayVisible(false);
-    router.push(`/${lang}/dho/${createdSlug}/agreements`);
+    const continuationPrompt = getPostOnboardingContinuationPrompt(
+      onboardingContext.setupJourney,
+    );
+    if (continuationPrompt) {
+      pendingSeedPromptRef.current = continuationPrompt;
+    }
+    router.push(
+      getPostOnboardingLandingPath(
+        lang,
+        createdSlug,
+        onboardingContext.setupJourney,
+      ),
+    );
   }, [
     lang,
     messages,
@@ -1150,11 +1168,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     saveOnboardingConversationContext(nextContext);
     openAiPanel();
     setAiOverlayVisible(false);
-    if (isEcosystem) {
-      pendingSeedPromptRef.current =
-        'Our root space is live. Based on everything we discussed, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We will create them one by one together.';
+    const continuationPrompt = getPostOnboardingContinuationPrompt(
+      onboardingContext.setupJourney,
+    );
+    if (continuationPrompt) {
+      pendingSeedPromptRef.current = continuationPrompt;
     }
-    router.push(`/${lang}/dho/${slug}/agreements`);
+    router.push(
+      getPostOnboardingLandingPath(lang, slug, onboardingContext.setupJourney),
+    );
   }, [
     lang,
     onboardingContext,

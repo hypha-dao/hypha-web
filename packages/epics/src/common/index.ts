@@ -44,6 +44,8 @@ export {
   consumeOnboardingContinuationPrompt,
   readOnboardingChatMessages,
   clearOnboardingChatMessages,
+  getPostOnboardingLandingPath,
+  getPostOnboardingContinuationPrompt,
   type StoredOnboardingChatMessage,
   type OnboardingConversationContext,
   type OnboardingSpaceLocation,
