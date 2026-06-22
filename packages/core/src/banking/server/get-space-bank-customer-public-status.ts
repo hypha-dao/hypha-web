@@ -61,9 +61,7 @@ function mapCurrencyStatuses(
       endorsement: entry.endorsement,
       endorsementStatus: entry.endorsementStatus,
       virtualAccountId: primary.hasVirtualAccount ? primary.railKey : null,
-      isApproved:
-        entry.operationalStatus === 'approved' ||
-        entry.operationalStatus === 'active',
+      isApproved: entry.operationalStatus === 'approved',
       operationalStatus: entry.operationalStatus,
       validation: entry.validation,
     };

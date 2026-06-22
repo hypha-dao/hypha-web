@@ -3084,9 +3084,9 @@
       "currencyStatusesDescriptionAdd": "Adicione suporte a um corredor de moeda. O Bridge pode exigir verificação adicional para algumas regiões.",
       "addCurrencySupport": "Abrir conta em {currency}",
       "currencyStatus": {
-        "active": "Ativa",
         "approved": "Aprovada",
         "pending": "Verificação pendente",
+        "rejected": "Rejeitada",
         "not_approved": "Não aprovada",
         "not_requested": "Não solicitada",
         "not_opened": "Não aberta"

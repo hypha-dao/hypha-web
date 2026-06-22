@@ -39,6 +39,33 @@ export function parseBridgeCustomerEndorsements(
   return map;
 }
 
+/**
+ * Returns the set of endorsement names that Bridge has effectively rejected:
+ * incomplete status + no pending requirements + at least one blocking issue.
+ * This matches Bridge's own "Rejected" display on their dashboard.
+ */
+export function parseBridgeEndorsementRejections(
+  endorsements: BridgeCustomerEndorsement[] | undefined,
+): Set<string> {
+  const rejected = new Set<string>();
+  for (const entry of endorsements ?? []) {
+    if (typeof entry.name !== 'string' || entry.status !== 'incomplete') {
+      continue;
+    }
+    const pending = entry.requirements?.pending;
+    const issues = entry.requirements?.issues;
+    if (
+      Array.isArray(pending) &&
+      pending.length === 0 &&
+      Array.isArray(issues) &&
+      issues.length > 0
+    ) {
+      rejected.add(entry.name);
+    }
+  }
+  return rejected;
+}
+
 export type CustomerMissingFlags = {
   sofMissing: boolean;
   pendingUbos: BankPendingUbo[];

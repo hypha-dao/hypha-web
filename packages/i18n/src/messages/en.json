@@ -817,9 +817,9 @@
       "currencyStatusesDescriptionAdd": "Add support for a currency rail. Bridge may require additional verification for some regions.",
       "addCurrencySupport": "Open {currency} account",
       "currencyStatus": {
-        "active": "Active",
         "approved": "Approved",
         "pending": "Pending verification",
+        "rejected": "Rejected",
         "not_approved": "Not approved",
         "not_requested": "Not requested",
         "not_opened": "Not opened"

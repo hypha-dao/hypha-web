@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 // storage-postgres (needs a DB URL). Mock with the real rail/destination values
 // so this stays a pure unit test of the per-pair filtering.
 vi.mock('@hypha-platform/core/client', () => ({
+  BANK_VIRTUAL_ACCOUNT_CURRENCIES: ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop'],
+  BANK_PAYOUT_RAILS: {},
   getDestinationCurrenciesForSourceRail: (rail: string) =>
     rail === 'sepa' || rail === 'spei' ? ['usdc', 'eurc'] : ['usdc'],
   getDefaultDestinationCurrency: ({
@@ -78,7 +80,7 @@ describe('getAvailableAddAccountRailOptions (per-(currency,destination) dedup)',
       rail({
         currency: 'eur',
         paymentRail: 'sepa',
-        operationalStatus: 'active',
+        operationalStatus: 'approved',
         hasVirtualAccount: true,
       }),
     ]);
@@ -98,7 +100,7 @@ describe('getAvailableAddAccountRailOptions (per-(currency,destination) dedup)',
       rail({
         currency: 'eur',
         paymentRail: 'sepa',
-        operationalStatus: 'active',
+        operationalStatus: 'approved',
         hasVirtualAccount: true,
       }),
     ]);
@@ -117,7 +119,7 @@ describe('getAvailableAddAccountRailOptions (per-(currency,destination) dedup)',
         currency: 'usd',
         paymentRail: 'ach',
         endorsement: 'base',
-        operationalStatus: 'active',
+        operationalStatus: 'approved',
         hasVirtualAccount: true,
       }),
     ]);

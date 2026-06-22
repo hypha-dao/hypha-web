@@ -3082,9 +3082,9 @@
       "currencyStatusesDescriptionAdd": "Ajoutez la prise en charge d'un corridor de devise. Bridge peut exiger une vérification supplémentaire pour certaines régions.",
       "addCurrencySupport": "Ouvrir un compte {currency}",
       "currencyStatus": {
-        "active": "Actif",
         "approved": "Approuvé",
         "pending": "Vérification en attente",
+        "rejected": "Rejeté",
         "not_approved": "Non approuvé",
         "not_requested": "Non demandé",
         "not_opened": "Non ouvert"

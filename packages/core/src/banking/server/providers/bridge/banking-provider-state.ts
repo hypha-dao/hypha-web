@@ -22,6 +22,7 @@ import { BRIDGE_DEFAULT_DESTINATION_CURRENCY } from '../../../bridge-destination
 import {
   isBridgeEndorsementApproved,
   parseBridgeCustomerEndorsements,
+  parseBridgeEndorsementRejections,
 } from '../../bridge-customer-endorsements';
 import {
   fetchBridgeKycLinkLive,
@@ -202,9 +203,10 @@ function resolveRailOperationalStatus(input: {
   endorsementStatus: string | null;
   hasVirtualAccount: boolean;
   enabled: boolean;
+  isRejected?: boolean;
 }): BankRailOperationalStatus {
   if (input.hasVirtualAccount) {
-    return 'active';
+    return 'approved';
   }
 
   if (!input.enabled) {
@@ -213,6 +215,10 @@ function resolveRailOperationalStatus(input: {
 
   if (isBridgeEndorsementApproved(input.endorsementStatus)) {
     return 'approved';
+  }
+
+  if (input.isRejected) {
+    return 'rejected';
   }
 
   if (
@@ -236,6 +242,9 @@ export function buildRailStatuses(input: {
   const endorsementMap = input.state.customer
     ? parseBridgeCustomerEndorsements(input.state.customer.endorsements)
     : new Map<string, string>();
+  const rejectedEndorsements = input.state.customer
+    ? parseBridgeEndorsementRejections(input.state.customer.endorsements)
+    : new Set<string>();
 
   const validations = buildCustomerValidations(input.state.kycLink);
   const enabledSet = new Set(
@@ -258,6 +267,7 @@ export function buildRailStatuses(input: {
       endorsementStatus,
       hasVirtualAccount,
       enabled,
+      isRejected: rejectedEndorsements.has(endorsement),
     });
 
     const needsAction =
@@ -274,8 +284,7 @@ export function buildRailStatuses(input: {
       validation: {
         key: endorsement,
         status: endorsementStatus,
-        isComplete:
-          operationalStatus === 'active' || operationalStatus === 'approved',
+        isComplete: operationalStatus === 'approved',
         action:
           needsAction && validations.kyc.action
             ? validations.kyc.action
@@ -309,7 +318,11 @@ export function buildRailStatuses(input: {
       endorsementStatus,
       hasVirtualAccount: false,
       enabled,
+      isRejected: rejectedEndorsements.has(endorsement),
     });
+
+    const corridorNeedsAction =
+      operationalStatus === 'not_approved' || operationalStatus === 'pending';
 
     rails.push({
       railKey: corridorKey,
@@ -323,13 +336,8 @@ export function buildRailStatuses(input: {
         key: corridorKey,
         status: endorsementStatus,
         isComplete: operationalStatus === 'approved',
-        action:
-          operationalStatus === 'not_approved' ||
-          operationalStatus === 'pending'
-            ? validations.kyc.action
-            : undefined,
-        linkDisabled:
-          operationalStatus === 'active' || operationalStatus === 'approved',
+        action: corridorNeedsAction ? validations.kyc.action : undefined,
+        linkDisabled: !corridorNeedsAction,
       },
     });
   }
