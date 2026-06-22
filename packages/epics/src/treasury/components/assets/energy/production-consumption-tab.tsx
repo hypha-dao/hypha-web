@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
-import { ENERGY_PALETTE, LineAreaChart, type ChartSeries } from './charts';
+import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
 import {
   buildProductionSeries,
   timeframeLabels,
@@ -102,7 +102,12 @@ export const ProductionConsumptionTab = ({
           <CardTitle>Production vs consumption</CardTitle>
         </CardHeader>
         <CardContent>
-          <LineAreaChart series={productionVsConsumption} labels={labels} />
+          <BarChart
+            series={productionVsConsumption}
+            labels={labels}
+            mode="grouped"
+            valueSuffix=" kWh"
+          />
         </CardContent>
       </Card>
 
@@ -111,7 +116,12 @@ export const ProductionConsumptionTab = ({
           <CardTitle>Production by source</CardTitle>
         </CardHeader>
         <CardContent>
-          <LineAreaChart series={bySource} labels={labels} fill={false} />
+          <BarChart
+            series={bySource}
+            labels={labels}
+            mode="stacked"
+            valueSuffix=" kWh"
+          />
         </CardContent>
       </Card>
     </div>

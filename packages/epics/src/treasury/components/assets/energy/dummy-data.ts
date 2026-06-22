@@ -110,14 +110,36 @@ export const buildProductionSeries = (
 };
 
 /**
+ * Communities that show placeholder EURC settlement figures (demo data) until
+ * the settlement indexer is wired up. Real communities keep their on-chain
+ * values.
+ */
+const EURC_DUMMY_COMMUNITY_SLUGS = new Set(['energy3000']);
+
+export const isEurcDummyCommunity = (slug?: string | null): boolean =>
+  !!slug && EURC_DUMMY_COMMUNITY_SLUGS.has(slug.toLowerCase());
+
+/**
  * Cumulative amount a member has already settled, in stablecoin micro-units
- * (USDC, 6 decimals). Placeholder until a settlement indexer exists — seeded
+ * (EURC, 6 decimals). Placeholder until a settlement indexer exists — seeded
  * off the address so it stays stable across renders.
  */
 export const dummySettledMicro = (address: string): string => {
   const rand = seeded(hashString(`settled-${address.toLowerCase()}`));
-  const usdc = 40 + Math.round(rand() * 460); // 40–500 USDC
-  return (usdc * 1_000_000).toString();
+  const eurc = 40 + Math.round(rand() * 460); // 40–500 EURC
+  return (eurc * 1_000_000).toString();
+};
+
+/**
+ * Amount a member still needs to settle, in stablecoin micro-units (EURC,
+ * 6 decimals). Some members are fully settled (0); others carry an outstanding
+ * balance. Deterministic per address.
+ */
+export const dummyToSettleMicro = (address: string): string => {
+  const rand = seeded(hashString(`to-settle-${address.toLowerCase()}`));
+  if (rand() < 0.35) return '0';
+  const eurc = 5 + Math.round(rand() * 75); // 5–80 EURC
+  return (eurc * 1_000_000).toString();
 };
 
 /** Settled energy (kWh equivalent reconciled) per period. */

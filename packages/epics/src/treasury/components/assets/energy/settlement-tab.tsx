@@ -4,30 +4,58 @@ import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import { CoinsIcon } from 'lucide-react';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
-import { BarChart, ENERGY_PALETTE } from './charts';
-import { buildSettlementSeries, type Timeframe } from './dummy-data';
+import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
+import {
+  buildSettlementSeries,
+  dummySettledMicro,
+  isEurcDummyCommunity,
+  timeframeLabels,
+  type Timeframe,
+} from './dummy-data';
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
-import { formatStablecoinMicro, formatSignedInternal } from './format';
+import { formatStablecoinMicro } from './format';
+import { useCommunitySlug } from './use-community-slug';
 
 export const SettlementTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const [timeframe, setTimeframe] = React.useState<Timeframe>('30d');
-  const series = React.useMemo(
+  const slug = useCommunitySlug();
+  const dummyEurc = isEurcDummyCommunity(slug);
+
+  const labels = React.useMemo(() => timeframeLabels(timeframe), [timeframe]);
+  const settlementSeries = React.useMemo(
     () => buildSettlementSeries(timeframe),
     [timeframe],
   );
 
-  const totalSettledUsdc = formatStablecoinMicro(
-    data.overview?.contractStablecoinBalance,
-  );
-  const settledKwh = series.reduce((acc, d) => acc + d.value, 0);
+  const totalSettledEurc = React.useMemo(() => {
+    if (dummyEurc) {
+      const total = (data.memberDetails ?? []).reduce(
+        (acc, m) => acc + BigInt(dummySettledMicro(m.address)),
+        0n,
+      );
+      return formatStablecoinMicro(total.toString());
+    }
+    return formatStablecoinMicro(data.overview?.contractStablecoinBalance);
+  }, [dummyEurc, data.memberDetails, data.overview?.contractStablecoinBalance]);
+
+  const settledKwh = settlementSeries.reduce((acc, d) => acc + d.value, 0);
+
+  const chartSeries: ChartSeries[] = [
+    {
+      key: 'settled',
+      label: 'Settled energy',
+      color: ENERGY_PALETTE[3]!,
+      values: settlementSeries.map((d) => d.value),
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <StatCard
-          label="Total settled (USDC)"
-          value={totalSettledUsdc}
+          label="Total settled (EURC)"
+          value={totalSettledEurc}
           hint="Stablecoin reconciled through the PPA contract"
           accent={ENERGY_PALETTE[1]}
           icon={<CoinsIcon size={16} />}
@@ -37,12 +65,6 @@ export const SettlementTab = ({ data }: { data: SpaceEnergyResponse }) => {
           value={`${settledKwh.toLocaleString()} kWh`}
           hint={`Across the selected ${timeframe.toUpperCase()} window`}
           accent={ENERGY_PALETTE[3]}
-        />
-        <StatCard
-          label="Settled balance (internal)"
-          value={formatSignedInternal(data.overview?.settledBalance)}
-          hint="On-chain internal settlement units"
-          accent={ENERGY_PALETTE[5]}
         />
       </div>
 
@@ -55,10 +77,14 @@ export const SettlementTab = ({ data }: { data: SpaceEnergyResponse }) => {
         </CardHeader>
         <CardContent>
           <BarChart
-            data={series}
-            color={ENERGY_PALETTE[3]}
-            unit="kWh reconciled per period (placeholder telemetry)"
+            series={chartSeries}
+            labels={labels}
+            valueSuffix=" kWh"
+            showLegend={false}
           />
+          <p className="mt-2 text-1 text-neutral-11">
+            kWh reconciled per period (placeholder telemetry)
+          </p>
         </CardContent>
       </Card>
     </div>

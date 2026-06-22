@@ -4,9 +4,10 @@ import * as React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 
 /**
- * Lightweight, dependency-free SVG charts tuned for the Hypha dark theme.
- * Each chart renders into a responsive `viewBox` so it scales to its
- * container while keeping crisp vector strokes and gradient fills.
+ * Lightweight, dependency-free SVG bar charts tuned for the Hypha dark theme.
+ * Rendered into a responsive `viewBox` (wrapped in an aspect-ratio box) so they
+ * scale to their container without distortion. Hovering a category band reveals
+ * an HTML tooltip positioned in viewBox-percentage space.
  */
 
 export const ENERGY_PALETTE = [
@@ -31,6 +32,8 @@ const PAD_L = 44;
 const PAD_R = 16;
 const PAD_T = 16;
 const PAD_B = 30;
+const INNER_W = VIEW_W - PAD_L - PAD_R;
+const INNER_H = VIEW_H - PAD_T - PAD_B;
 
 const niceMax = (max: number) => {
   if (max <= 0) return 1;
@@ -62,20 +65,12 @@ const Legend = ({ series }: { series: ChartSeries[] }) => (
   </div>
 );
 
-type AxisGridProps = {
-  max: number;
-  labels: string[];
-};
-
-const AxisGrid = ({ max, labels }: AxisGridProps) => {
+const GridLines = ({ max }: { max: number }) => {
   const rows = 4;
-  const innerW = VIEW_W - PAD_L - PAD_R;
-  const innerH = VIEW_H - PAD_T - PAD_B;
-  const labelStep = Math.ceil(labels.length / 7);
   return (
     <g>
       {Array.from({ length: rows + 1 }).map((_, i) => {
-        const y = PAD_T + (innerH * i) / rows;
+        const y = PAD_T + (INNER_H * i) / rows;
         const value = max - (max * i) / rows;
         return (
           <g key={i}>
@@ -100,160 +95,87 @@ const AxisGrid = ({ max, labels }: AxisGridProps) => {
           </g>
         );
       })}
-      {labels.map((label, i) => {
-        if (i % labelStep !== 0 && i !== labels.length - 1) return null;
-        const x =
-          labels.length === 1
-            ? PAD_L + innerW / 2
-            : PAD_L + (innerW * i) / (labels.length - 1);
-        return (
-          <text
-            key={`${label}-${i}`}
-            x={x}
-            y={VIEW_H - 10}
-            textAnchor="middle"
-            className="fill-neutral-11"
-            style={{ fontSize: 10 }}
-          >
-            {label}
-          </text>
-        );
-      })}
     </g>
   );
 };
 
-export type LineAreaChartProps = {
+export type BarChartProps = {
   series: ChartSeries[];
   labels: string[];
+  mode?: 'grouped' | 'stacked';
   height?: number;
   className?: string;
-  fill?: boolean;
-};
-
-export const LineAreaChart = ({
-  series,
-  labels,
-  height = 260,
-  className,
-  fill = true,
-}: LineAreaChartProps) => {
-  const gradId = React.useId();
-  const allValues = series.flatMap((s) => s.values);
-  const rawMax = Math.max(1, ...allValues);
-  const max = niceMax(rawMax);
-  const innerW = VIEW_W - PAD_L - PAD_R;
-  const innerH = VIEW_H - PAD_T - PAD_B;
-  const count = labels.length;
-
-  const xFor = (i: number) =>
-    count <= 1 ? PAD_L + innerW / 2 : PAD_L + (innerW * i) / (count - 1);
-  const yFor = (v: number) => PAD_T + innerH - (innerH * v) / max;
-
-  return (
-    <div className={cn('w-full', className)}>
-      <div
-        className="mx-auto w-full"
-        style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}`, maxHeight: height }}
-      >
-        <svg
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          className="h-full w-full"
-          preserveAspectRatio="xMidYMid meet"
-          role="img"
-        >
-          <AxisGrid max={max} labels={labels} />
-          {series.map((s, si) => {
-            const linePath = s.values
-              .map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)} ${yFor(v)}`)
-              .join(' ');
-            const areaPath =
-              `${linePath} L ${xFor(s.values.length - 1)} ${PAD_T + innerH} ` +
-              `L ${xFor(0)} ${PAD_T + innerH} Z`;
-            const gid = `${gradId}-${si}`;
-            return (
-              <g key={s.key}>
-                {fill ? (
-                  <>
-                    <defs>
-                      <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="0%"
-                          stopColor={s.color}
-                          stopOpacity={0.28}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor={s.color}
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <path d={areaPath} fill={`url(#${gid})`} stroke="none" />
-                  </>
-                ) : null}
-                <path
-                  d={linePath}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={2}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-                {s.values.map((v, i) => (
-                  <circle
-                    key={i}
-                    cx={xFor(i)}
-                    cy={yFor(v)}
-                    r={count > 30 ? 0 : 2.5}
-                    fill={s.color}
-                  />
-                ))}
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-      <div className="mt-3">
-        <Legend series={series} />
-      </div>
-    </div>
-  );
-};
-
-export type BarChartDatum = {
-  label: string;
-  value: number;
-};
-
-export type BarChartProps = {
-  data: BarChartDatum[];
-  color?: string;
-  height?: number;
-  className?: string;
-  unit?: string;
+  /** Suffix appended to values in the hover tooltip (e.g. " kWh"). */
+  valueSuffix?: string;
+  showLegend?: boolean;
 };
 
 export const BarChart = ({
-  data,
-  color = ENERGY_PALETTE[1],
-  height = 260,
+  series,
+  labels,
+  mode = 'grouped',
+  height = 280,
   className,
-  unit,
+  valueSuffix = '',
+  showLegend = true,
 }: BarChartProps) => {
   const gradId = React.useId();
-  const rawMax = Math.max(1, ...data.map((d) => d.value));
+  const [hovered, setHovered] = React.useState<number | null>(null);
+
+  const count = labels.length;
+  const slot = INNER_W / Math.max(count, 1);
+
+  const rawMax =
+    mode === 'stacked'
+      ? Math.max(
+          1,
+          ...labels.map((_, i) =>
+            series.reduce((acc, s) => acc + (s.values[i] ?? 0), 0),
+          ),
+        )
+      : Math.max(1, ...series.flatMap((s) => s.values));
   const max = niceMax(rawMax);
-  const innerW = VIEW_W - PAD_L - PAD_R;
-  const innerH = VIEW_H - PAD_T - PAD_B;
-  const count = data.length;
-  const slot = innerW / Math.max(count, 1);
-  const barW = Math.min(slot * 0.6, 34);
+
+  const yFor = (v: number) => PAD_T + INNER_H - (INNER_H * v) / max;
+  const labelStep = Math.ceil(count / 8);
+
+  // Bar geometry within each category slot.
+  const groupW = Math.min(slot * 0.72, mode === 'stacked' ? 40 : 56);
+  const groupStart = (i: number) => PAD_L + slot * i + (slot - groupW) / 2;
+  const barW =
+    mode === 'stacked' ? groupW : groupW / Math.max(series.length, 1);
+
+  const fmt = (v: number) =>
+    `${v.toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    })}${valueSuffix}`;
+
+  // Tooltip anchor for the hovered band.
+  const tooltip = React.useMemo(() => {
+    if (hovered === null) return null;
+    const topValue =
+      mode === 'stacked'
+        ? series.reduce((acc, s) => acc + (s.values[hovered] ?? 0), 0)
+        : Math.max(...series.map((s) => s.values[hovered] ?? 0));
+    const xCenter = PAD_L + slot * (hovered + 0.5);
+    const yTop = yFor(topValue);
+    return {
+      leftPct: (xCenter / VIEW_W) * 100,
+      topPct: (yTop / VIEW_H) * 100,
+      label: labels[hovered],
+      rows: series.map((s) => ({
+        label: s.label,
+        color: s.color,
+        value: s.values[hovered] ?? 0,
+      })),
+      total: topValue,
+    };
+  }, [hovered, labels, series, slot, mode]);
 
   return (
     <div className={cn('w-full', className)}>
       <div
-        className="mx-auto w-full"
+        className="relative mx-auto w-full"
         style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}`, maxHeight: height }}
       >
         <svg
@@ -263,31 +185,140 @@ export const BarChart = ({
           role="img"
         >
           <defs>
-            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.95} />
-              <stop offset="100%" stopColor={color} stopOpacity={0.45} />
-            </linearGradient>
+            {series.map((s, si) => (
+              <linearGradient
+                key={si}
+                id={`${gradId}-${si}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor={s.color} stopOpacity={0.95} />
+                <stop offset="100%" stopColor={s.color} stopOpacity={0.5} />
+              </linearGradient>
+            ))}
           </defs>
-          <AxisGrid max={max} labels={data.map((d) => d.label)} />
-          {data.map((d, i) => {
-            const x = PAD_L + slot * i + (slot - barW) / 2;
-            const h = (innerH * d.value) / max;
-            const y = PAD_T + innerH - h;
+
+          <GridLines max={max} />
+
+          {/* Bars */}
+          {labels.map((_, i) => {
+            if (mode === 'stacked') {
+              let cursor = 0;
+              return (
+                <g key={i} style={{ pointerEvents: 'none' }}>
+                  {series.map((s, si) => {
+                    const v = s.values[i] ?? 0;
+                    const h = (INNER_H * v) / max;
+                    cursor += v;
+                    const y = yFor(cursor);
+                    return (
+                      <rect
+                        key={si}
+                        x={groupStart(i)}
+                        y={y}
+                        width={barW}
+                        height={Math.max(h, 0)}
+                        fill={`url(#${gradId}-${si})`}
+                        opacity={hovered === null || hovered === i ? 1 : 0.4}
+                        rx={2}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            }
             return (
-              <rect
-                key={`${d.label}-${i}`}
-                x={x}
-                y={y}
-                width={barW}
-                height={Math.max(h, 0)}
-                rx={3}
-                fill={`url(#${gradId})`}
-              />
+              <g key={i} style={{ pointerEvents: 'none' }}>
+                {series.map((s, si) => {
+                  const v = s.values[i] ?? 0;
+                  const h = (INNER_H * v) / max;
+                  const y = yFor(v);
+                  return (
+                    <rect
+                      key={si}
+                      x={groupStart(i) + barW * si}
+                      y={y}
+                      width={Math.max(barW - 1.5, 1)}
+                      height={Math.max(h, 0)}
+                      fill={`url(#${gradId}-${si})`}
+                      opacity={hovered === null || hovered === i ? 1 : 0.4}
+                      rx={2}
+                    />
+                  );
+                })}
+              </g>
             );
           })}
+
+          {/* X labels */}
+          {labels.map((label, i) => {
+            if (i % labelStep !== 0 && i !== count - 1) return null;
+            return (
+              <text
+                key={`${label}-${i}`}
+                x={PAD_L + slot * (i + 0.5)}
+                y={VIEW_H - 10}
+                textAnchor="middle"
+                className="fill-neutral-11"
+                style={{ fontSize: 10 }}
+              >
+                {label}
+              </text>
+            );
+          })}
+
+          {/* Hover bands (capture pointer) */}
+          {labels.map((_, i) => (
+            <rect
+              key={`band-${i}`}
+              x={PAD_L + slot * i}
+              y={PAD_T}
+              width={slot}
+              height={INNER_H}
+              fill={hovered === i ? 'currentColor' : 'transparent'}
+              fillOpacity={hovered === i ? 0.05 : 0}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered((cur) => (cur === i ? null : cur))}
+              style={{ cursor: 'pointer' }}
+            />
+          ))}
         </svg>
+
+        {tooltip ? (
+          <div
+            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+8px)] whitespace-nowrap rounded-lg border border-border bg-background-2 px-2.5 py-1.5 shadow-lg"
+            style={{ left: `${tooltip.leftPct}%`, top: `${tooltip.topPct}%` }}
+          >
+            <p className="mb-1 text-1 font-medium text-foreground">
+              {tooltip.label}
+            </p>
+            {tooltip.rows.map((row) => (
+              <div key={row.label} className="flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: row.color }}
+                />
+                <span className="text-1 text-neutral-11">{row.label}</span>
+                <span className="text-1 font-medium text-foreground">
+                  {fmt(row.value)}
+                </span>
+              </div>
+            ))}
+            {mode === 'stacked' && tooltip.rows.length > 1 ? (
+              <div className="mt-1 border-t border-border pt-1 text-1 font-medium text-foreground">
+                Total {fmt(tooltip.total)}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-      {unit ? <p className="mt-2 text-1 text-neutral-11">{unit}</p> : null}
+      {showLegend && series.length > 1 ? (
+        <div className="mt-3">
+          <Legend series={series} />
+        </div>
+      ) : null}
     </div>
   );
 };

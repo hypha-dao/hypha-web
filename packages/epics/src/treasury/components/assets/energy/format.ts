@@ -3,7 +3,7 @@ import { formatUnits } from 'viem';
 export const UNAVAILABLE = '—';
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-/** Stablecoin held by the PPA (e.g. USDC, 6 decimals). */
+/** Stablecoin held by the PPA (e.g. EURC, 6 decimals). */
 export const formatStablecoinMicro = (value: string | null | undefined) => {
   if (value === null || value === undefined) return UNAVAILABLE;
   try {

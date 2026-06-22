@@ -7,7 +7,12 @@ import { EnergyPersonCard } from './shared';
 import { useEnergyPeople } from './use-energy-people';
 import { ENERGY_PALETTE } from './charts';
 import { formatStablecoinMicro } from './format';
-import { dummySettledMicro } from './dummy-data';
+import {
+  dummySettledMicro,
+  dummyToSettleMicro,
+  isEurcDummyCommunity,
+} from './dummy-data';
+import { useCommunitySlug } from './use-community-slug';
 
 type Row = {
   address: string;
@@ -46,18 +51,27 @@ const SettleProgress = ({
   );
 };
 
+const eurc = (micro: bigint) =>
+  `${formatStablecoinMicro(micro.toString())} EURC`;
+
 export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const details = data.memberDetails ?? [];
+  const slug = useCommunitySlug();
+  const dummyEurc = isEurcDummyCommunity(slug);
 
   const { rows, addresses } = React.useMemo(() => {
     const rows: Row[] = details.map((member) => ({
       address: member.address,
-      toSettleMicro: toBigInt(member.debtInStablecoin),
-      settledMicro: toBigInt(dummySettledMicro(member.address)),
+      toSettleMicro: dummyEurc
+        ? toBigInt(dummyToSettleMicro(member.address))
+        : toBigInt(member.debtInStablecoin),
+      settledMicro: dummyEurc
+        ? toBigInt(dummySettledMicro(member.address))
+        : 0n,
     }));
     rows.sort((a, b) => (b.toSettleMicro > a.toSettleMicro ? 1 : -1));
     return { rows, addresses: details.map((m) => m.address.toLowerCase()) };
-  }, [details]);
+  }, [details, dummyEurc]);
 
   const { people, isLoading } = useEnergyPeople(addresses);
 
@@ -76,7 +90,7 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-border bg-background-2 p-4">
-          <p className="text-1 text-neutral-11">Outstanding to settle (USDC)</p>
+          <p className="text-1 text-neutral-11">Outstanding to settle (EURC)</p>
           <p
             className="mt-1 text-5 font-semibold"
             style={{ color: ENERGY_PALETTE[4] }}
@@ -85,7 +99,7 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
           </p>
         </div>
         <div className="rounded-xl border border-border bg-background-2 p-4">
-          <p className="text-1 text-neutral-11">Already settled (USDC)</p>
+          <p className="text-1 text-neutral-11">Already settled (EURC)</p>
           <p
             className="mt-1 text-5 font-semibold"
             style={{ color: ENERGY_PALETTE[1] }}
@@ -112,12 +126,10 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
                       className="font-medium"
                       style={{ color: ENERGY_PALETTE[4] }}
                     >
-                      {formatStablecoinMicro(row.toSettleMicro.toString())} to
-                      settle
+                      {eurc(row.toSettleMicro)} to settle
                     </p>
                     <p className="text-1 text-neutral-11">
-                      {formatStablecoinMicro(row.settledMicro.toString())}{' '}
-                      settled
+                      {eurc(row.settledMicro)} settled
                     </p>
                   </div>
                 }
@@ -129,8 +141,9 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
             </div>
           ))}
           <p className="text-1 text-neutral-11">
-            “Already settled” totals are placeholder figures pending the
-            settlement indexer; “to settle” reflects live on-chain debt.
+            {dummyEurc
+              ? 'EURC settlement figures are placeholder demo data pending the settlement indexer.'
+              : '“Already settled” totals are placeholder pending the settlement indexer; “to settle” reflects live on-chain debt.'}
           </p>
         </CardContent>
       </Card>
