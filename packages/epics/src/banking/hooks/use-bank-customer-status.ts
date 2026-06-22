@@ -82,7 +82,13 @@ export const useBankCustomerStatus = ({
       },
     );
 
-  const refresh = React.useCallback(() => mutate(), [mutate]);
+  const refresh = React.useCallback(async () => {
+    try {
+      return await mutate();
+    } catch {
+      return undefined;
+    }
+  }, [mutate]);
 
   return {
     status: data ?? null,

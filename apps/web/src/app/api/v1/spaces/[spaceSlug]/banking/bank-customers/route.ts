@@ -36,7 +36,10 @@ export async function GET(
       db,
     });
     if (status === null) {
-      return NextResponse.json(null, { status: 404 });
+      return NextResponse.json(null, {
+        status: 404,
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
     }
     return NextResponse.json(status, {
       headers: { 'Cache-Control': 'private, no-store' },
