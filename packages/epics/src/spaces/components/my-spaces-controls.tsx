@@ -24,7 +24,7 @@ export function MySpacesControls({
   const { isAuthenticated } = useAuthentication();
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="flex w-full min-w-0 flex-row items-center gap-3">
       <SpaceSearch value={query} className="min-w-0 flex-1" />
       {showCreateButton ? (
         <CreateSpaceButton

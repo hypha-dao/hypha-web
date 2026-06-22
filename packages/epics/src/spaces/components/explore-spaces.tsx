@@ -313,13 +313,15 @@ export function ExploreSpaces({
     <div className="flex w-full min-w-0 flex-col gap-3">
       {enableNetworkMap ? (
         <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <SpaceSearch value={query} className="min-w-0 flex-1" />
-          <CreateSpaceButton
-            lang={lang}
-            isAuthenticated={isAuthenticated}
-            className="min-w-0 shrink-0 sm:ml-auto"
-            buttonClassName={spaceToolbarPrimaryButtonClassName}
-          />
+          <div className="flex w-full min-w-0 flex-row items-center gap-3 sm:contents">
+            <SpaceSearch value={query} className="min-w-0 flex-1" />
+            <CreateSpaceButton
+              lang={lang}
+              isAuthenticated={isAuthenticated}
+              className="min-w-0 shrink-0 sm:ml-auto"
+              buttonClassName={spaceToolbarPrimaryButtonClassName}
+            />
+          </div>
           <NetworkMapViewToggle
             value={view}
             onChange={setView}
@@ -327,7 +329,7 @@ export function ExploreSpaces({
           />
         </div>
       ) : (
-        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex w-full min-w-0 flex-row items-center gap-3">
           <SpaceSearch value={query} className="min-w-0 flex-1" />
           <CreateSpaceButton
             lang={lang}
