@@ -127,7 +127,10 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
-import { buildHyphaChatMentionDeepLinkUrl } from './human-chat-panel/human-chat-message-link';
+import {
+  buildHyphaChatMentionDeepLinkUrl,
+  setSignalSearchParam,
+} from './human-chat-panel/human-chat-message-link';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 
@@ -2471,6 +2474,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
+  const prevChatModeRef = useRef(mode);
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
@@ -3489,20 +3493,54 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [mode, roomId, pathname, router, searchParams, openHumanChatPanel]);
 
   useEffect(() => {
-    if (mode !== 'space' || !spaceSlug?.trim()) return;
+    const prevMode = prevChatModeRef.current;
+    prevChatModeRef.current = mode;
+
+    if (mode === 'coherence' && coherenceSlug?.trim()) {
+      const slug = coherenceSlug.trim();
+      if (searchParams?.get('signal')?.trim() === slug) return;
+      router.replace(
+        setSignalSearchParam(pathname, searchParams?.toString() ?? '', slug),
+        { scroll: false },
+      );
+      return;
+    }
+
+    if (
+      prevMode === 'coherence' &&
+      mode === 'space' &&
+      searchParams?.get('signal')?.trim()
+    ) {
+      router.replace(
+        setSignalSearchParam(pathname, searchParams?.toString() ?? '', null),
+        { scroll: false },
+      );
+    }
+  }, [coherenceSlug, mode, pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!spaceSlug?.trim()) return;
     const qpSignal = searchParams?.get('signal')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
     if (!qpSignal) return;
 
+    if (
+      mode === 'coherence' &&
+      coherenceSlug?.trim() === qpSignal &&
+      coherenceRoomId?.trim()
+    ) {
+      return;
+    }
+
+    if (mode !== 'space') return;
+
     let cancelled = false;
 
-    const stripSignalQueryFromUrl = () => {
-      const next = new URLSearchParams(searchParams?.toString() ?? '');
-      next.delete('signal');
-      next.delete('joinCall');
-      if (qpMsg) next.delete('msg');
-      const qs = next.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    const stripInvalidSignalFromUrl = () => {
+      router.replace(
+        setSignalSearchParam(pathname, searchParams?.toString() ?? '', null),
+        { scroll: false },
+      );
     };
 
     void (async () => {
@@ -3528,7 +3566,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ? 'signalDeepLinkNotFound'
             : 'signalDeepLinkNetworkError';
         setSignalDeepLinkNotice(t(messageKey));
-        stripSignalQueryFromUrl();
+        stripInvalidSignalFromUrl();
         return;
       }
 
@@ -3546,7 +3584,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       openHumanChatPanel();
       setActiveTab('chat');
       if (qpMsg) setScrollToEventId(qpMsg);
-      stripSignalQueryFromUrl();
     })();
 
     return () => {
@@ -3555,6 +3592,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     mode,
     spaceSlug,
+    coherenceSlug,
+    coherenceRoomId,
     pathname,
     router,
     searchParams,

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildHyphaChatMentionDeepLinkUrl } from '../human-chat-message-link';
+import {
+  buildHyphaChatMentionDeepLinkUrl,
+  setSignalSearchParam,
+} from '../human-chat-message-link';
 
 describe('buildHyphaChatMentionDeepLinkUrl', () => {
   it('builds signal thread mention links with signal + msg params', () => {
@@ -36,5 +39,29 @@ describe('buildHyphaChatMentionDeepLinkUrl', () => {
         messageId: '$abc123',
       }),
     ).toBe('/en/dho/hypha-energy?chat=%21room%3Amatrix.org&msg=%24abc123');
+  });
+});
+
+describe('setSignalSearchParam', () => {
+  it('adds signal slug to the current path', () => {
+    expect(
+      setSignalSearchParam(
+        '/en/dho/hypha-platform/coherence',
+        'priority=high',
+        'guidelines-for-signal-creation',
+      ),
+    ).toBe(
+      '/en/dho/hypha-platform/coherence?priority=high&signal=guidelines-for-signal-creation',
+    );
+  });
+
+  it('removes signal slug when cleared', () => {
+    expect(
+      setSignalSearchParam(
+        '/en/dho/hypha-platform/coherence',
+        'priority=high&signal=old-signal',
+        null,
+      ),
+    ).toBe('/en/dho/hypha-platform/coherence?priority=high');
   });
 });
