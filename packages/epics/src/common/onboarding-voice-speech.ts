@@ -13,20 +13,100 @@ export function stripMarkdownForSpeech(text: string): string {
     .trim();
 }
 
-function pickPreferredVoice(lang: string): SpeechSynthesisVoice | undefined {
+/** Warm, empathic feminine voices — earlier entries rank higher per locale. */
+const PREFERRED_FEMININE_VOICE_PARTS = [
+  'samantha',
+  'karen',
+  'moira',
+  'fiona',
+  'victoria',
+  'allison',
+  'ava',
+  'serena',
+  'tessa',
+  'kate',
+  'susan',
+  'sonia',
+  'jenny',
+  'aria',
+  'zira',
+  'hazel',
+  'google uk english female',
+  'google us english female',
+  'google portugu',
+  'google español',
+  'google francais',
+  'google deutsch',
+  'female',
+  'natural',
+  'premium',
+  'enhanced',
+];
+
+const MASCULINE_VOICE_PARTS = [
+  'daniel',
+  'alex',
+  'fred',
+  'ralph',
+  'bruce',
+  'tom',
+  'mark',
+  'david',
+  'jorge',
+  'male',
+];
+
+function voiceMatchesLanguage(
+  voice: SpeechSynthesisVoice,
+  lang: string,
+): boolean {
+  const target = lang.toLowerCase();
+  const voiceLang = voice.lang.toLowerCase();
+  const langPrefix = target.split('-')[0] ?? target;
+  return voiceLang === target || voiceLang.startsWith(`${langPrefix}-`);
+}
+
+function isMasculineVoiceName(name: string): boolean {
+  const normalized = name.toLowerCase();
+  return MASCULINE_VOICE_PARTS.some((part) => normalized.includes(part));
+}
+
+function scoreFeminineVoice(voice: SpeechSynthesisVoice): number {
+  const name = voice.name.toLowerCase();
+  if (isMasculineVoiceName(name)) return -100;
+
+  let score = 0;
+  for (
+    let index = 0;
+    index < PREFERRED_FEMININE_VOICE_PARTS.length;
+    index += 1
+  ) {
+    const part = PREFERRED_FEMININE_VOICE_PARTS[index]!;
+    if (name.includes(part)) {
+      score += 100 - index;
+    }
+  }
+  if (voice.localService) score += 5;
+  if (name.includes('female')) score += 4;
+  if (/natural|premium|enhanced|neural/i.test(name)) score += 3;
+  return score;
+}
+
+function pickWarmFeminineVoice(lang: string): SpeechSynthesisVoice | undefined {
   if (typeof globalThis.speechSynthesis === 'undefined') return undefined;
   const voices = globalThis.speechSynthesis.getVoices();
-  const langPrefix = lang.split('-')[0]?.toLowerCase() ?? 'en';
-  const ranked = voices.filter((voice) =>
-    voice.lang.toLowerCase().startsWith(langPrefix),
+  if (voices.length === 0) return undefined;
+
+  const langMatches = voices.filter((voice) =>
+    voiceMatchesLanguage(voice, lang),
   );
-  const premium =
-    ranked.find((voice) =>
-      /samantha|daniel|karen|moira|fiona|google|natural|premium|enhanced/i.test(
-        voice.name,
-      ),
-    ) ?? ranked[0];
-  return premium ?? voices[0];
+  const pool = langMatches.length > 0 ? langMatches : voices;
+  const ranked = [...pool].sort(
+    (a, b) => scoreFeminineVoice(b) - scoreFeminineVoice(a),
+  );
+
+  const best = ranked.find((voice) => scoreFeminineVoice(voice) > 0);
+  return best ?? ranked[0];
 }
 
 export function speakOnboardingText(
@@ -37,19 +117,43 @@ export function speakOnboardingText(
   const spoken = stripMarkdownForSpeech(text);
   if (!spoken) return null;
 
-  globalThis.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(spoken);
-  const lang = options?.lang ?? document.documentElement.lang ?? 'en';
-  utterance.lang = lang;
-  utterance.rate = options?.rate ?? 0.95;
-  utterance.pitch = 1;
-  const voice = pickPreferredVoice(lang);
-  if (voice) utterance.voice = voice;
-  utterance.onend = () => options?.onEnd?.();
-  utterance.onerror = () => options?.onEnd?.();
-  globalThis.speechSynthesis.speak(utterance);
+  let cancelled = false;
+
+  const speak = () => {
+    if (cancelled) return;
+    globalThis.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(spoken);
+    const lang = options?.lang ?? document.documentElement.lang ?? 'en';
+    utterance.lang = lang;
+    utterance.rate = options?.rate ?? 0.92;
+    utterance.pitch = 1.03;
+    utterance.volume = 0.96;
+    const voice = pickWarmFeminineVoice(lang);
+    if (voice) utterance.voice = voice;
+    utterance.onend = () => options?.onEnd?.();
+    utterance.onerror = () => options?.onEnd?.();
+    globalThis.speechSynthesis.speak(utterance);
+  };
+
+  const voices = globalThis.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    speak();
+  } else {
+    const onVoicesChanged = () => {
+      globalThis.speechSynthesis.removeEventListener(
+        'voiceschanged',
+        onVoicesChanged,
+      );
+      speak();
+    };
+    globalThis.speechSynthesis.addEventListener(
+      'voiceschanged',
+      onVoicesChanged,
+    );
+  }
 
   return () => {
+    cancelled = true;
     globalThis.speechSynthesis.cancel();
   };
 }
