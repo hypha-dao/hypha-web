@@ -37,6 +37,7 @@ export type VoiceInterviewErrorCode =
   | 'not-allowed'
   | 'audio-capture'
   | 'network'
+  | 'session'
   | 'error';
 
 const AUTO_RESUME_DELAY_MS = 450;

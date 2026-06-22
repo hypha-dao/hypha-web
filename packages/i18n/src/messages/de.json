@@ -2732,7 +2732,11 @@
     "onboardingVoicePermissionDenied": "Mikrofonzugriff ist blockiert — erlauben Sie das Mikrofon in den Browser-Einstellungen und versuchen Sie es erneut.",
     "onboardingVoiceMicUnavailable": "Kein Mikrofon gefunden — schließen Sie eines an oder wechseln Sie zum Chat.",
     "onboardingVoiceNetworkError": "Spracherkennung benötigt eine Netzwerkverbindung — prüfen Sie die Verbindung und versuchen Sie es erneut.",
-    "onboardingVoiceError": "Spracheingabe fehlgeschlagen — erneut versuchen oder zum Chat wechseln."
+    "onboardingVoiceError": "Spracheingabe fehlgeschlagen — erneut versuchen oder zum Chat wechseln.",
+    "onboardingVoiceStatusConnecting": "Live-Sprache wird verbunden…",
+    "onboardingVoiceRealtimeLive": "Live",
+    "onboardingVoiceRealtimeFallback": "Standard-Sprachmodus — Live-Sprache ist derzeit nicht verfügbar.",
+    "onboardingVoiceSessionError": "Live-Sprache konnte nicht gestartet werden — erneut versuchen oder zum Chat wechseln."
   },
   "HumanChatPanel": {
     "title": "Chat",

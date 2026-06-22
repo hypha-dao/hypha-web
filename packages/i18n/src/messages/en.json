@@ -2734,7 +2734,11 @@
     "onboardingVoicePermissionDenied": "Microphone access is blocked — allow the mic in your browser settings, then try again.",
     "onboardingVoiceMicUnavailable": "No microphone was found — connect a mic or switch to chat.",
     "onboardingVoiceNetworkError": "Voice recognition needs a network connection — check your connection and try again.",
-    "onboardingVoiceError": "Voice input hit a snag — try again or switch to chat."
+    "onboardingVoiceError": "Voice input hit a snag — try again or switch to chat.",
+    "onboardingVoiceStatusConnecting": "Connecting live voice…",
+    "onboardingVoiceRealtimeLive": "Live",
+    "onboardingVoiceRealtimeFallback": "Using standard voice mode — live voice is unavailable right now.",
+    "onboardingVoiceSessionError": "Could not start live voice — try again or switch to chat."
   },
   "HumanChatPanel": {
     "title": "Chat",

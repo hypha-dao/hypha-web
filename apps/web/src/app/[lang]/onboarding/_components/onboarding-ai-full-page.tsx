@@ -37,7 +37,7 @@ import {
   getPostOnboardingContinuationPrompt,
   AI_PANEL_SETUP_SOURCE,
   recordMobilizedAiAgentsForOnboarding,
-  useOnboardingVoiceInterview,
+  useOnboardingVoiceDiscovery,
   type OnboardingDiscoveryMode,
   type OnboardingEntryMethod,
   type OnboardingActivationMethod,
@@ -909,11 +909,13 @@ export function OnboardingAiFullPage({
     ],
   );
 
-  const voiceInterview = useOnboardingVoiceInterview({
+  const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview,
     isStreaming,
     lastAssistantText,
     locale: onboardingContext.locale,
+    conversationContext: onboardingContext,
+    getAccessToken,
     onSendTranscript: handleVoiceTranscriptSend,
   });
 
@@ -996,6 +998,9 @@ export function OnboardingAiFullPage({
                 liveTranscript={voiceInterview.liveTranscript}
                 voiceError={voiceInterview.voiceError}
                 disabled={isStreaming}
+                isConnecting={voiceInterview.isConnecting}
+                isRealtimeConnected={voiceInterview.isRealtimeConnected}
+                usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
                 onToggleListening={voiceInterview.toggleListening}
                 onStopSpeaking={voiceInterview.stopSpeaking}
               />

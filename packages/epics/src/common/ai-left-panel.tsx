@@ -144,7 +144,7 @@ import {
 } from './onboarding-entry-method-ui';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
-import { useOnboardingVoiceInterview } from './use-onboarding-voice-interview';
+import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 function extractAssistantTextFromMessage(
@@ -2068,12 +2068,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
-  const voiceInterview = useOnboardingVoiceInterview({
+  const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview,
     isStreaming,
     lastAssistantText,
     locale: lang,
     activeSpaceSlug: spaceSlug,
+    conversationContext: onboardingContext,
+    getAccessToken,
     onSendTranscript: handleVoiceTranscriptSend,
   });
 
@@ -2423,6 +2425,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             liveTranscript={voiceInterview.liveTranscript}
             voiceError={voiceInterview.voiceError}
             disabled={blockSpaceAiForInteraction || isStreaming}
+            isConnecting={voiceInterview.isConnecting}
+            isRealtimeConnected={voiceInterview.isRealtimeConnected}
+            usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
             onToggleListening={voiceInterview.toggleListening}
             onStopSpeaking={voiceInterview.stopSpeaking}
           />

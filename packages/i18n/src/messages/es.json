@@ -2208,7 +2208,11 @@
     "onboardingVoicePermissionDenied": "El acceso al micrófono está bloqueado — permite el micrófono en la configuración del navegador e inténtalo de nuevo.",
     "onboardingVoiceMicUnavailable": "No se encontró micrófono — conecta uno o cambia al chat.",
     "onboardingVoiceNetworkError": "El reconocimiento de voz necesita conexión a internet — comprueba tu conexión e inténtalo de nuevo.",
-    "onboardingVoiceError": "Error de entrada de voz — inténtalo de nuevo o cambia al chat."
+    "onboardingVoiceError": "Error de entrada de voz — inténtalo de nuevo o cambia al chat.",
+    "onboardingVoiceStatusConnecting": "Conectando voz en directo…",
+    "onboardingVoiceRealtimeLive": "En directo",
+    "onboardingVoiceRealtimeFallback": "Modo de voz estándar — la voz en directo no está disponible ahora.",
+    "onboardingVoiceSessionError": "No se pudo iniciar la voz en directo — inténtalo de nuevo o cambia al chat."
   },
   "HumanChatPanel": {
     "title": "Chat",

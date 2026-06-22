@@ -13,6 +13,9 @@ type OnboardingVoiceInterviewBarProps = {
   liveTranscript: string;
   voiceError: string | null;
   disabled?: boolean;
+  isConnecting?: boolean;
+  isRealtimeConnected?: boolean;
+  usingWebSpeechFallback?: boolean;
   onToggleListening: () => void;
   onStopSpeaking: () => void;
 };
@@ -62,19 +65,23 @@ export function OnboardingVoiceInterviewBar({
   liveTranscript,
   voiceError,
   disabled = false,
+  isConnecting = false,
+  isRealtimeConnected = false,
+  usingWebSpeechFallback = false,
   onToggleListening,
   onStopSpeaking,
 }: OnboardingVoiceInterviewBarProps) {
   const t = useTranslations('AiPanel');
 
-  const statusKey =
-    phase === 'listening'
-      ? 'onboardingVoiceStatusListening'
-      : phase === 'processing'
-      ? 'onboardingVoiceStatusThinking'
-      : phase === 'speaking'
-      ? 'onboardingVoiceStatusSpeaking'
-      : 'onboardingVoiceStatusReady';
+  const statusKey = isConnecting
+    ? 'onboardingVoiceStatusConnecting'
+    : phase === 'listening'
+    ? 'onboardingVoiceStatusListening'
+    : phase === 'processing'
+    ? 'onboardingVoiceStatusThinking'
+    : phase === 'speaking'
+    ? 'onboardingVoiceStatusSpeaking'
+    : 'onboardingVoiceStatusReady';
 
   const errorMessage =
     voiceError === 'unsupported'
@@ -85,18 +92,32 @@ export function OnboardingVoiceInterviewBar({
       ? t('onboardingVoiceMicUnavailable')
       : voiceError === 'network'
       ? t('onboardingVoiceNetworkError')
+      : voiceError === 'session'
+      ? t('onboardingVoiceSessionError')
       : voiceError
       ? t('onboardingVoiceError')
       : null;
 
   return (
     <div className="border-t border-border/70 bg-background/90 px-4 py-4 md:px-5">
-      <p className="mb-1 text-center text-sm font-medium text-foreground">
-        {t('onboardingVoiceInterviewTitle')}
-      </p>
+      <div className="mb-1 flex items-center justify-center gap-2">
+        <p className="text-center text-sm font-medium text-foreground">
+          {t('onboardingVoiceInterviewTitle')}
+        </p>
+        {isRealtimeConnected ? (
+          <span className="rounded-full bg-accent-9/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-11">
+            {t('onboardingVoiceRealtimeLive')}
+          </span>
+        ) : null}
+      </div>
       <p className="mb-4 text-center text-xs leading-relaxed text-muted-foreground">
         {t('onboardingVoiceInterviewHint')}
       </p>
+      {usingWebSpeechFallback ? (
+        <p className="mb-3 text-center text-xs text-muted-foreground">
+          {t('onboardingVoiceRealtimeFallback')}
+        </p>
+      ) : null}
 
       <div className="flex flex-col items-center gap-3">
         <VoiceOrb phase={phase} />
@@ -116,7 +137,10 @@ export function OnboardingVoiceInterviewBar({
           <Button
             type="button"
             disabled={
-              disabled || phase === 'processing' || phase === 'speaking'
+              disabled ||
+              isConnecting ||
+              phase === 'processing' ||
+              phase === 'speaking'
             }
             onClick={onToggleListening}
             className="min-w-[140px]"

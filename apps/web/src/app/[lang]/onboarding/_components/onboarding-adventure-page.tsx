@@ -46,7 +46,6 @@ import {
   OnboardingDiscoveryModeToggle,
   OnboardingVoiceInterviewBar,
   saveOnboardingConversationContext,
-  useOnboardingVoiceInterview,
   type OnboardingDiscoveryMode,
 } from '@hypha-platform/epics';
 import {

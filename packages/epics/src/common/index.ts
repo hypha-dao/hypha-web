@@ -113,7 +113,10 @@ export {
 export {
   useOnboardingVoiceInterview,
   type VoiceInterviewPhase,
+  type VoiceInterviewErrorCode,
 } from './use-onboarding-voice-interview';
+export { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
+export { getClientEnableOnboardingVoiceRealtime } from './onboarding-voice-realtime-flag';
 export {
   ONBOARDING_MOBILIZED_SCOPE,
   recordMobilizedAiAgentsForOnboarding,

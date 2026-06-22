@@ -2208,7 +2208,11 @@
     "onboardingVoicePermissionDenied": "O acesso ao microfone está bloqueado — permita o microfone nas definições do browser e tente novamente.",
     "onboardingVoiceMicUnavailable": "Nenhum microfone encontrado — ligue um ou mude para chat.",
     "onboardingVoiceNetworkError": "O reconhecimento de voz precisa de ligação à internet — verifique a ligação e tente novamente.",
-    "onboardingVoiceError": "Entrada de voz falhou — tente novamente ou mude para chat."
+    "onboardingVoiceError": "Entrada de voz falhou — tente novamente ou mude para chat.",
+    "onboardingVoiceStatusConnecting": "A ligar voz em direto…",
+    "onboardingVoiceRealtimeLive": "Ao vivo",
+    "onboardingVoiceRealtimeFallback": "Modo de voz padrão — a voz em direto não está disponível agora.",
+    "onboardingVoiceSessionError": "Não foi possível iniciar a voz em direto — tente novamente ou mude para chat."
   },
   "HumanChatPanel": {
     "title": "Chat",
