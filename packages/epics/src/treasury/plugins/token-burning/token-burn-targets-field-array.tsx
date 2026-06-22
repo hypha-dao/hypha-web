@@ -36,7 +36,6 @@ type TokenBurnTargetsFieldArrayProps = {
   spaces?: Space[];
   selectedTokenAddress?: `0x${string}`;
   selectedTokenSymbol?: string;
-  currentSpaceSlug?: string;
   name?: string;
 };
 
@@ -53,14 +52,12 @@ const DEFAULT_TARGET = {
   amount: '',
   allBalance: false,
 };
-const EMPTY_RECIPIENT_SET = new Set<string>();
 
 export const TokenBurnTargetsFieldArray = ({
   members = [],
   spaces = [],
   selectedTokenAddress,
   selectedTokenSymbol,
-  currentSpaceSlug,
   name = 'tokenBurning.burns',
 }: TokenBurnTargetsFieldArrayProps) => {
   const { control, setValue, clearErrors } = useFormContext();
@@ -76,7 +73,7 @@ export const TokenBurnTargetsFieldArray = ({
   });
   const entries = (useWatch({ control, name }) ?? []) as BurnTargetEntry[];
 
-  const memberOptionsAll = useMemo(
+  const memberOptions = useMemo(
     () =>
       members
         .filter((member) => member.address)
@@ -90,106 +87,19 @@ export const TokenBurnTargetsFieldArray = ({
     [members],
   );
 
-  const spaceOptionsAll = useMemo(
+  const spaceOptions = useMemo(
     () =>
       filteredSpaces
         .filter((space) => space.address)
         .map((space) => ({
           value: space.address as string,
-          label:
-            space.slug === currentSpaceSlug
-              ? `${space.title} (${tAgreementFlow(
-                  'plugins.tokenBurning.currentSpaceTag',
-                )})`
-              : space.title,
+          label: space.title,
           searchText: space.title.toLowerCase(),
           avatarUrl: space.logoUrl,
           address: space.address as string,
         })),
-    [filteredSpaces, currentSpaceSlug, tAgreementFlow],
+    [filteredSpaces],
   );
-  const allRecipientAddresses = useMemo(
-    () => [
-      ...memberOptionsAll.map((option) => option.address),
-      ...spaceOptionsAll.map((option) => option.address),
-    ],
-    [memberOptionsAll, spaceOptionsAll],
-  );
-  const {
-    positiveBalanceAddresses,
-    isLoading: isLoadingRecipientOptions,
-    hasLoaded: hasLoadedRecipientOptions,
-  } = useRecipientPositiveBalanceAddresses({
-    tokenAddress: selectedTokenAddress,
-    recipientAddresses: allRecipientAddresses,
-  });
-  const memberOptions = useMemo(() => {
-    if (!selectedTokenAddress) return memberOptionsAll;
-    if (!hasLoadedRecipientOptions) return [];
-    return memberOptionsAll.filter((option) =>
-      positiveBalanceAddresses.has(option.address.toLowerCase()),
-    );
-  }, [
-    selectedTokenAddress,
-    memberOptionsAll,
-    hasLoadedRecipientOptions,
-    positiveBalanceAddresses,
-  ]);
-  const spaceOptions = useMemo(() => {
-    if (!selectedTokenAddress) return spaceOptionsAll;
-    if (!hasLoadedRecipientOptions) return [];
-    return spaceOptionsAll.filter((option) =>
-      positiveBalanceAddresses.has(option.address.toLowerCase()),
-    );
-  }, [
-    selectedTokenAddress,
-    spaceOptionsAll,
-    hasLoadedRecipientOptions,
-    positiveBalanceAddresses,
-  ]);
-
-  useEffect(() => {
-    if (
-      !selectedTokenAddress ||
-      isLoadingRecipientOptions ||
-      !hasLoadedRecipientOptions
-    ) {
-      return;
-    }
-
-    entries.forEach((entry, index) => {
-      const selectedAddress = entry?.address?.trim?.() ?? '';
-      if (!selectedAddress) {
-        return;
-      }
-
-      const availableOptions =
-        entry.type === 'space' ? spaceOptions : memberOptions;
-      const isAddressAvailable = availableOptions.some(
-        (option) =>
-          option.value.toLowerCase() === selectedAddress.toLowerCase(),
-      );
-
-      if (!isAddressAvailable) {
-        setValue(`${name}.${index}.address`, '', {
-          shouldDirty: true,
-          shouldTouch: true,
-          shouldValidate: true,
-        });
-        clearErrors(`${name}.${index}.address`);
-      }
-    });
-  }, [
-    selectedTokenAddress,
-    entries,
-    memberOptions,
-    spaceOptions,
-    name,
-    setValue,
-    clearErrors,
-    isLoadingRecipientOptions,
-    hasLoadedRecipientOptions,
-  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -245,7 +155,6 @@ export const TokenBurnTargetsFieldArray = ({
                   <div className="w-full md:min-w-72">
                     <Combobox
                       options={currentOptions}
-                      disabled={isLoadingRecipientOptions}
                       placeholder={
                         currentType === 'member'
                           ? tAgreementFlow(
@@ -264,11 +173,7 @@ export const TokenBurnTargetsFieldArray = ({
                         })
                       }
                       emptyListMessage={
-                        isLoadingRecipientOptions
-                          ? tAgreementFlow(
-                              'plugins.tokenBurning.recipientBalanceLoading',
-                            )
-                          : currentType === 'member'
+                        currentType === 'member'
                           ? tAgreementFlow(
                               'plugins.tokenBurning.noMembersFound',
                             )
@@ -496,93 +401,6 @@ function useRecipientTokenBalance({
   );
 
   return { data, error, isLoading, isValidRecipient };
-}
-
-function useRecipientPositiveBalanceAddresses({
-  tokenAddress,
-  recipientAddresses,
-}: {
-  tokenAddress?: `0x${string}`;
-  recipientAddresses: string[];
-}) {
-  const normalizedRecipientAddresses = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          recipientAddresses
-            .filter((address): address is `0x${string}` => isAddress(address))
-            .map((address) => address.toLowerCase() as `0x${string}`),
-        ),
-      ),
-    [recipientAddresses],
-  );
-
-  const key =
-    tokenAddress && normalizedRecipientAddresses.length > 0
-      ? [
-          tokenAddress.toLowerCase(),
-          normalizedRecipientAddresses.join(','),
-          'token-burning-positive-balances',
-        ]
-      : null;
-
-  const { data, error, isLoading, isValidating } = useSWR(
-    key,
-    async ([token, addresses]: readonly [string, string, string]) => {
-      const recipients = addresses
-        .split(',')
-        .filter((address): address is `0x${string}` => isAddress(address));
-
-      const balances = await publicClient.multicall({
-        contracts: recipients.map((recipient) => ({
-          address: token as `0x${string}`,
-          abi: erc20Abi,
-          functionName: 'balanceOf',
-          args: [recipient],
-        })),
-        allowFailure: true,
-      });
-
-      const recipientsWithPositiveBalance = new Set<string>();
-      balances.forEach((result, index) => {
-        const recipientAddress = recipients[index];
-        if (
-          result.status === 'success' &&
-          typeof result.result === 'bigint' &&
-          result.result > 0n &&
-          recipientAddress
-        ) {
-          recipientsWithPositiveBalance.add(recipientAddress);
-        }
-      });
-
-      return recipientsWithPositiveBalance;
-    },
-    {
-      revalidateIfStale: true,
-      revalidateOnMount: true,
-      revalidateOnFocus: true,
-      dedupingInterval: 0,
-    },
-  );
-
-  const requiresLiveBalanceCheck =
-    Boolean(tokenAddress) && normalizedRecipientAddresses.length > 0;
-  const isRefreshingLiveBalances = requiresLiveBalanceCheck && isValidating;
-
-  return {
-    // Prevent stale cached balances from being shown while a live re-check runs.
-    positiveBalanceAddresses: isRefreshingLiveBalances
-      ? EMPTY_RECIPIENT_SET
-      : data ?? EMPTY_RECIPIENT_SET,
-    isLoading: isLoading || isRefreshingLiveBalances,
-    hasLoaded:
-      !tokenAddress ||
-      normalizedRecipientAddresses.length === 0 ||
-      (Boolean(data) && !isRefreshingLiveBalances) ||
-      (Boolean(error) && !isRefreshingLiveBalances),
-    error,
-  };
 }
 
 function RecipientTokenBalanceHint({

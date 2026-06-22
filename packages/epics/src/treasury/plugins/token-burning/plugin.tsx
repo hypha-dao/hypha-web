@@ -265,7 +265,6 @@ export const TokenBurningPlugin = ({
             spaces={spaces}
             selectedTokenAddress={selectedTokenData?.address}
             selectedTokenSymbol={selectedTokenData?.symbol}
-            currentSpaceSlug={spaceSlug}
           />
         </div>
       )}
