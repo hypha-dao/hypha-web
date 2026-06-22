@@ -2475,6 +2475,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
   const prevChatModeRef = useRef(mode);
+  const lastHumanChatSpaceSlugRef = useRef(spaceSlug?.trim() || null);
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
@@ -2482,6 +2483,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, closeCoherenceChat]);
+
+  // Reset human chat when navigating to a different space (picker, recently visited, etc.)
+  useEffect(() => {
+    const nextSlug = spaceSlug?.trim() || null;
+    const prevSlug = lastHumanChatSpaceSlugRef.current;
+    if (prevSlug === nextSlug) return;
+    lastHumanChatSpaceSlugRef.current = nextSlug;
+    if (!prevSlug) return;
+
+    closeCoherenceChat();
+    setSignalDeepLinkNotice(null);
+
+    if (searchParams?.get('signal')?.trim()) {
+      router.replace(
+        setSignalSearchParam(pathname, searchParams?.toString() ?? '', null),
+        { scroll: false },
+      );
+    }
+
+    resetChatStateOnAuthDrop();
+  }, [
+    spaceSlug,
+    closeCoherenceChat,
+    pathname,
+    router,
+    searchParams,
+    resetChatStateOnAuthDrop,
+  ]);
 
   useEffect(() => {
     hasLoadedCoherenceMessagesRef.current = false;
@@ -3498,6 +3527,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     if (mode === 'coherence' && coherenceSlug?.trim()) {
       const slug = coherenceSlug.trim();
+      const currentSpace = spaceSlug?.trim();
+      if (coherenceRoomId?.trim() && currentSpace) {
+        const session = readRoomToCoherenceSession(coherenceRoomId);
+        if (session.spaceSlug && session.spaceSlug !== currentSpace) {
+          return;
+        }
+      }
       if (searchParams?.get('signal')?.trim() === slug) return;
       router.replace(
         setSignalSearchParam(pathname, searchParams?.toString() ?? '', slug),
@@ -3516,7 +3552,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         { scroll: false },
       );
     }
-  }, [coherenceSlug, mode, pathname, router, searchParams]);
+  }, [
+    coherenceRoomId,
+    coherenceSlug,
+    mode,
+    pathname,
+    router,
+    searchParams,
+    spaceSlug,
+  ]);
 
   useEffect(() => {
     if (!spaceSlug?.trim()) return;
