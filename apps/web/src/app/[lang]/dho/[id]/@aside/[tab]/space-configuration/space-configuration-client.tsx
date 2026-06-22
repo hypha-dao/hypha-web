@@ -81,6 +81,35 @@ export function SpaceConfigurationClient({
     return pathname.replace(segment, '') || '/';
   }, [pathname]);
 
+  const formValues = React.useMemo(():
+    | Partial<SchemaCreateSpaceForm>
+    | undefined => {
+    if (!space) {
+      return undefined;
+    }
+
+    return {
+      ...space,
+      title: space.title || '',
+      description: space.description || '',
+      slug: space.slug || '',
+      logoUrl: space.logoUrl || '',
+      ecosystemLogoUrlLight: space.ecosystemLogoUrlLight ?? undefined,
+      ecosystemLogoUrlDark: space.ecosystemLogoUrlDark ?? undefined,
+      leadImage: space.leadImage || '',
+      categories: space.categories || [],
+      links: space.links || [],
+      web3SpaceId: space.web3SpaceId || undefined,
+      parentId: space.parentId || null,
+      address: space.address || '',
+      flags: space.flags ?? [],
+      latitude: space.latitude ?? null,
+      longitude: space.longitude ?? null,
+      locationLabel: space.locationLabel ?? null,
+      locationSource: space.locationSource ?? null,
+    };
+  }, [space]);
+
   const submitForm = React.useCallback(
     async (updatedSpace: SchemaCreateSpaceForm) => {
       if (!space) {
@@ -144,44 +173,27 @@ export function SpaceConfigurationClient({
           )
         }
       >
-        <SpaceForm
-          submitLabel={tAgreementFlow('spaceConfiguration.update')}
-          submitLoadingLabel={tAgreementFlow('spaceConfiguration.updating')}
-          isLoading={isBusy}
-          closeUrl={closeUrl}
-          backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-          backLabel={tSpaces('backToSettings')}
-          creator={{
-            name: person?.name,
-            surname: person?.surname,
-          }}
-          onSubmit={submitForm}
-          slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}
-          values={{
-            ...space,
-            title: space?.title || '',
-            description: space?.description || '',
-            slug: space?.slug || '',
-            logoUrl: space?.logoUrl || '',
-            ecosystemLogoUrlLight: space?.ecosystemLogoUrlLight ?? undefined,
-            ecosystemLogoUrlDark: space?.ecosystemLogoUrlDark ?? undefined,
-            leadImage: space?.leadImage || '',
-            categories: space?.categories || [],
-            links: space?.links || [],
-            web3SpaceId: space?.web3SpaceId || undefined,
-            parentId: space?.parentId || null,
-            address: space?.address || '',
-            flags: space?.flags || [],
-            latitude: space?.latitude ?? null,
-            longitude: space?.longitude ?? null,
-            locationLabel: space?.locationLabel ?? null,
-            locationSource: space?.locationSource ?? null,
-          }}
-          label="configure"
-          enableNetworkMap={enableNetworkMap}
-          initialParentSpaceId={space?.parentId ?? null}
-          spaceId={space?.id}
-        />
+        {formValues ? (
+          <SpaceForm
+            submitLabel={tAgreementFlow('spaceConfiguration.update')}
+            submitLoadingLabel={tAgreementFlow('spaceConfiguration.updating')}
+            isLoading={isBusy}
+            closeUrl={closeUrl}
+            backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
+            backLabel={tSpaces('backToSettings')}
+            creator={{
+              name: person?.name,
+              surname: person?.surname,
+            }}
+            onSubmit={submitForm}
+            slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}
+            values={formValues}
+            label="configure"
+            enableNetworkMap={enableNetworkMap}
+            initialParentSpaceId={space?.parentId ?? null}
+            spaceId={space.id}
+          />
+        ) : null}
       </LoadingBackdrop>
     </ProposalOverlayShell>
   );
