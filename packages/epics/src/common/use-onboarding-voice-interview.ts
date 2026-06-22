@@ -144,6 +144,8 @@ type UseOnboardingVoiceInterviewOptions = {
   isStreaming: boolean;
   lastAssistantText: string;
   locale?: string;
+  /** Reset voice session state when the active space route changes. */
+  activeSpaceSlug?: string;
   autoResumeListening?: boolean;
   silenceMsBeforeSend?: number;
   onSendTranscript: (text: string) => void | Promise<void>;
@@ -154,6 +156,7 @@ export function useOnboardingVoiceInterview({
   isStreaming,
   lastAssistantText,
   locale,
+  activeSpaceSlug,
   autoResumeListening = true,
   silenceMsBeforeSend = 1400,
   onSendTranscript,
@@ -174,6 +177,8 @@ export function useOnboardingVoiceInterview({
   const startListeningRef = useRef<
     (options?: { userInitiated?: boolean }) => Promise<void>
   >(() => Promise.resolve());
+
+  const lastActiveSpaceSlugRef = useRef(activeSpaceSlug?.trim() || undefined);
 
   const [phase, setPhase] = useState<VoiceInterviewPhase>('idle');
   phaseRef.current = phase;
@@ -414,6 +419,20 @@ export function useOnboardingVoiceInterview({
       stopSpeaking();
     };
   }, [enabled, stopListening, stopSpeaking]);
+
+  useEffect(() => {
+    const next = activeSpaceSlug?.trim() || undefined;
+    if (lastActiveSpaceSlugRef.current === next) return;
+    lastActiveSpaceSlugRef.current = next;
+    lastSpokenAssistantRef.current = '';
+    noSpeechRetryRef.current = 0;
+    networkRetryRef.current = 0;
+    userInitiatedListeningRef.current = false;
+    stopListening();
+    stopSpeaking();
+    setPhase('idle');
+    setVoiceError(null);
+  }, [activeSpaceSlug, stopListening, stopSpeaking]);
 
   useEffect(() => {
     if (!enabled) return;

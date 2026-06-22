@@ -285,6 +285,7 @@ const OPENROUTER_TEMP_UNAVAILABLE_REPLY =
 type DeterministicFallbackContext = {
   text: string;
   kind:
+    | 'current_space'
     | 'space_overview'
     | 'documents'
     | 'ecosystem'
@@ -401,6 +402,21 @@ function isSignalRecommendationQuestion(text: string): boolean {
   );
 }
 
+function isCurrentSpaceQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    /\b(which|what)\s+space\b/.test(t) ||
+    /\bon which space\b/.test(t) ||
+    /\bin which space\b/.test(t) ||
+    /\bwhere am i\b/.test(t) ||
+    /\bwhich space am i\b/.test(t) ||
+    /\bwhat space am i\b/.test(t) ||
+    (/\bcurrent space\b/.test(t) &&
+      /\b(which|what|where|am i|are we)\b/.test(t))
+  );
+}
+
 function isBlindspotQuestion(text: string): boolean {
   const t = text.trim().toLowerCase();
   if (!t) return false;
@@ -431,6 +447,47 @@ async function buildDeterministicSpaceFallback({
   if (!safe) return null;
 
   try {
+    if (isCurrentSpaceQuestion(lastUserText)) {
+      const spaceResult = await getSpaceBySlugTool.execute({ slug: safe });
+      if (
+        spaceResult &&
+        typeof spaceResult === 'object' &&
+        'found' in spaceResult &&
+        spaceResult.found === true &&
+        'space' in spaceResult &&
+        spaceResult.space &&
+        typeof spaceResult.space === 'object'
+      ) {
+        const space = spaceResult.space as {
+          title?: string;
+          description?: string | null;
+          memberCount?: number;
+        };
+        const title =
+          typeof space.title === 'string' && space.title.trim()
+            ? space.title.trim()
+            : safe;
+        const description =
+          typeof space.description === 'string' && space.description.trim()
+            ? space.description.trim()
+            : null;
+        const memberLine =
+          typeof space.memberCount === 'number'
+            ? `${space.memberCount} member${
+                space.memberCount === 1 ? '' : 's'
+              }.`
+            : null;
+        const text = [
+          `You are currently in **${title}**.`,
+          description,
+          memberLine,
+        ]
+          .filter((line): line is string => Boolean(line?.trim()))
+          .join('\n\n');
+        return { kind: 'current_space', text };
+      }
+    }
+
     if (isBlindspotQuestion(lastUserText)) {
       const signalsTool = createGetSignalsBySpaceSlugTool(authToken);
       const signalsResult = await signalsTool.execute({
@@ -950,6 +1007,7 @@ export type ChatStreamCallbacks = {
   debugRequestId: string;
   /** Lets org memory resolve the viewer's Matrix token (same as Space Memory API). */
   requestUrlForSessionMatrix?: string;
+  activeSpaceTitle?: string | null;
   conversationContext?: ChatRequestPayload['conversationContext'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
@@ -1134,6 +1192,7 @@ function buildEffectiveSystemPrompt(
 
 async function buildSpaceContextSnapshot(
   spaceSlug: string,
+  clientTitle?: string | null,
 ): Promise<string | null> {
   const safe = sanitizeSlug(spaceSlug);
   if (!safe) return null;
@@ -1165,8 +1224,12 @@ async function buildSpaceContextSnapshot(
         : null;
 
     return [
-      'Live current-space snapshot (authoritative for "this space" / "where am I" questions):',
-      `- Name: ${title}`,
+      'CRITICAL — ACTIVE SPACE CONTEXT (this overrides any other space name from earlier chat turns):',
+      `- Active space slug for tools: ${safe}`,
+      `- Display name: ${title}`,
+      ...(clientTitle && clientTitle !== title
+        ? [`- Client-reported title: ${clientTitle}`]
+        : []),
       ...(description ? [`- Purpose: ${description}`] : []),
       ...(typeof space.memberCount === 'number'
         ? [`- Members: ${space.memberCount}`]
@@ -1174,7 +1237,8 @@ async function buildSpaceContextSnapshot(
       ...(typeof space.documentCount === 'number'
         ? [`- Documents: ${space.documentCount}`]
         : []),
-      'Answer from this snapshot and Hypha tools. Never claim you lack access or ask the user to name the space.',
+      `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`,
+      `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`,
     ].join('\n');
   } catch {
     return null;
@@ -1220,6 +1284,7 @@ export async function createChatStreamResult(
   {
     debugRequestId,
     requestUrlForSessionMatrix,
+    activeSpaceTitle,
     conversationContext,
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
@@ -1250,7 +1315,7 @@ export async function createChatStreamResult(
     debugRequestId,
   });
   const spaceContextSnapshot = spaceSlug?.trim()
-    ? await buildSpaceContextSnapshot(spaceSlug)
+    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle)
     : null;
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
     spaceSlug,

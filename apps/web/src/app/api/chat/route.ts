@@ -100,6 +100,7 @@ export async function POST(req: Request) {
 
   const messages: ChatRequestPayload['messages'] = parsed.data.messages;
   const spaceSlug = parsed.data.spaceSlug;
+  const activeSpaceTitle = parsed.data.activeSpaceTitle;
   const conversationContext = parsed.data.conversationContext;
   const isOnboardingSetup = conversationContext?.mode === 'onboarding_setup';
 
@@ -128,6 +129,7 @@ export async function POST(req: Request) {
     result = await createChatStreamResult(messages, spaceSlug, authToken, {
       debugRequestId,
       requestUrlForSessionMatrix: req.url,
+      activeSpaceTitle: activeSpaceTitle ?? null,
       conversationContext,
       onboardingWriteToolsEnabled,
       ecosystemAutomationEnabled,

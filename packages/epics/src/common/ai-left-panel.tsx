@@ -828,16 +828,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }
 
     lastChatSpaceSlugRef.current = nextSlug;
-    const fromMcpNavigation =
-      !!nextSlug && lastMcpNavigationTargetSpaceSlugRef.current === nextSlug;
-    // Keep context for AI-directed space hops, but reset on manual space changes
-    // (space picker / direct nav) to avoid stale answers from prior space history.
-    if (!fromMcpNavigation) {
-      setMessages([]);
-      lastAutoNavigationKeyRef.current = null;
-    }
     lastMcpNavigationTargetSpaceSlugRef.current = null;
-  }, [setMessages, spaceSlug]);
+    lastAutoNavigationKeyRef.current = null;
+    stop();
+    clearError();
+    setMessages([]);
+  }, [clearError, setMessages, spaceSlug, stop]);
 
   const buildMessageOptions = useCallback(
     async (contextOverride?: OnboardingConversationContext | undefined) => {
@@ -857,25 +853,33 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       const activeContext = contextOverride ?? onboardingContext;
       const { body } = resolveChatTransportBody({
         spaceSlug,
+        activeSpaceTitle: activeSpaceName,
         onboardingContext: activeContext,
         isOnboardingPath,
       });
       return { body, headers: hdrs };
     },
-    [getAccessToken, isOnboardingPath, onboardingContext, spaceSlug],
+    [
+      activeSpaceName,
+      getAccessToken,
+      isOnboardingPath,
+      onboardingContext,
+      spaceSlug,
+    ],
   );
 
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;
     const { staleOnboardingContext } = resolveChatTransportBody({
       spaceSlug,
+      activeSpaceTitle: activeSpaceName,
       onboardingContext,
       isOnboardingPath,
     });
     if (!staleOnboardingContext) return;
     clearOnboardingConversationContext();
     setOnboardingContext(undefined);
-  }, [isOnboardingPath, onboardingContext, spaceSlug]);
+  }, [activeSpaceName, isOnboardingPath, onboardingContext, spaceSlug]);
 
   useEffect(() => {
     const onSeed = (event: Event) => {
@@ -2069,6 +2073,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     isStreaming,
     lastAssistantText,
     locale: lang,
+    activeSpaceSlug: spaceSlug,
     onSendTranscript: handleVoiceTranscriptSend,
   });
 

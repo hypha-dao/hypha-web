@@ -366,6 +366,7 @@ ${ONBOARDING_CONVERSATION_RULES}
 Internal context only: the user is currently in space "${safe}".
 Do not expose this internal identifier wording in user-facing text.
 You always know which space the user is viewing. Never tell the user you lack access to the current space or ask them to provide the space name — call get_space_by_slug with slug "${safe}" immediately for any question about "this space", "where am I", or the organisation they are in.
+If earlier chat messages mention a different space (for example after the user switched via the space picker or recently visited list), treat those references as stale — the active space is always "${safe}" until the client sends a different space context on a later request.
 
 Space conversation value bar:
 - Default stance: outside view — what this space is not seeing, not a dashboard recap.

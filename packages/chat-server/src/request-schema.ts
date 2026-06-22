@@ -47,6 +47,7 @@ const onboardingConversationContextSchema = z.object({
   transparencyMatrix: onboardingTransparencyMatrixSchema.optional(),
   entryMethod: z.enum(['open_access', 'invite_only', 'token_based']).optional(),
   ecosystemRootSlug: z.string().optional(),
+  createdSpaceSlug: z.string().optional(),
   visualAssets: onboardingVisualAssetsSchema.optional(),
   discoveryMode: z.enum(['chat', 'voice_interview']).optional(),
   lastUserText: z.string().optional(),
@@ -57,6 +58,8 @@ const onboardingConversationContextSchema = z.object({
 export const chatRequestSchema = z.object({
   messages: z.array(chatUiMessageSchema),
   spaceSlug: z.string().nullish(),
+  /** Client-resolved display title for the active space route (sanity check only). */
+  activeSpaceTitle: z.string().trim().min(1).optional(),
   conversationContext: onboardingConversationContextSchema.optional(),
 });
 

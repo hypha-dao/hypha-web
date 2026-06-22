@@ -388,7 +388,9 @@ export function shouldAttachOnboardingContext(
   const activeSlug = options.spaceSlug?.trim();
 
   if (phase === 'discover' || phase === 'draft' || phase === 'confirm') {
-    return true;
+    if (options.isOnboardingPath) return true;
+    // Stale setup context while browsing an unrelated space via picker or recent list.
+    return !activeSlug;
   }
 
   if (phase === 'execute' || phase === 'verify') {
@@ -408,25 +410,30 @@ export function shouldAttachOnboardingContext(
 /** Resolve chat API body fields and whether persisted onboarding context is stale. */
 export function resolveChatTransportBody({
   spaceSlug,
+  activeSpaceTitle,
   onboardingContext,
   isOnboardingPath,
 }: {
   spaceSlug?: string;
+  activeSpaceTitle?: string;
   onboardingContext?: OnboardingConversationContext;
   isOnboardingPath: boolean;
 }): {
   body: {
     spaceSlug?: string;
+    activeSpaceTitle?: string;
     conversationContext?: OnboardingConversationContext;
   };
   staleOnboardingContext: boolean;
 } {
   const trimmedSlug = spaceSlug?.trim() || undefined;
+  const trimmedTitle = activeSpaceTitle?.trim() || undefined;
 
   if (!isSpaceSetupContext(onboardingContext)) {
     return {
       body: {
         ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
+        ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
       },
       staleOnboardingContext: false,
     };
@@ -441,20 +448,16 @@ export function resolveChatTransportBody({
     return {
       body: {
         ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
+        ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
       },
       staleOnboardingContext: true,
     };
   }
 
-  const phase = onboardingContext.setupPhase ?? 'discover';
-  const suppressSpaceSlugDuringSetup =
-    phase === 'discover' || phase === 'draft' || phase === 'confirm';
-
   return {
     body: {
-      ...(trimmedSlug && !suppressSpaceSlugDuringSetup
-        ? { spaceSlug: trimmedSlug }
-        : {}),
+      ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
+      ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
       conversationContext: onboardingContext,
     },
     staleOnboardingContext: false,
