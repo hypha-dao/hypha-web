@@ -44,17 +44,17 @@ import {
 } from '../lib/pin-clusters';
 
 const PROJECTION_ANIMATION_MS = 1200;
-/** Cluster zoom-in duration — slightly shorter than before for a snappier camera feel. */
-const CLUSTER_FOCUS_MS = 920;
+/** Cluster zoom-in duration — balanced for a smooth camera dolly. */
+const CLUSTER_FOCUS_MS = 1000;
 /** Cluster zoom-out duration — matched to focus so in/out feel symmetric. */
-const CLUSTER_BLUR_MS = 580;
+const CLUSTER_BLUR_MS = 620;
 const CLUSTER_ZOOM_SCALE = 4;
 const MAX_MAP_ZOOM = 5;
 const SPIDERFY_RADIUS = 36;
 /** Spiderfy begins after this fraction of the focus animation (zoom-first). */
 const SPIDERFY_START = 0.78;
-/** Fast takeoff with a soft landing — reads like a camera dolly-in. */
-const easeClusterZoomIn = d3.easeExpOut;
+/** Smooth zoom-in with gentle acceleration and deceleration. */
+const easeClusterZoomIn = d3.easeCubicInOut;
 /** Smooth pull-back into the world view. */
 const easeClusterZoomOut = d3.easePolyOut.exponent(4);
 /** Gentle fan-out once zoom has mostly settled. */
@@ -275,6 +275,8 @@ export function NetworkGlobeMap({
   const clusterSpreadRef = React.useRef(0);
   const globeZoomRef = React.useRef(1);
   const clusterAnimFrameRef = React.useRef<number | null>(null);
+  const clusterAnimatingRef = React.useRef(false);
+  const [clusterAnimating, setClusterAnimating] = React.useState(false);
   const dragV0Ref = React.useRef<[number, number, number] | null>(null);
   const dragR0Ref = React.useRef<Rotation>(DEFAULT_GLOBE_ROTATION);
   const dragQ0Ref = React.useRef<ReturnType<typeof fromAngles> | null>(null);
@@ -340,6 +342,11 @@ export function NetworkGlobeMap({
   updateHoveredPinRef.current = updateHoveredPin;
   clearHoveredPinRef.current = clearHoveredPin;
   clearSelectedPinRef.current = clearSelectedPin;
+
+  const syncClusterAnimating = React.useCallback((animating: boolean) => {
+    clusterAnimatingRef.current = animating;
+    setClusterAnimating(animating);
+  }, []);
 
   const animateClusterFocusRef = React.useRef<
     (cluster: Extract<MapPinDatum, { kind: 'cluster' }>) => void
@@ -500,6 +507,7 @@ export function NetworkGlobeMap({
           return;
         }
         if (datum.kind === 'cluster') {
+          (this as SVGGElement).blur();
           animateClusterFocusRef.current(datum);
           return;
         }
@@ -525,6 +533,7 @@ export function NetworkGlobeMap({
         if (datum.kind === 'cluster') {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
+            (event.currentTarget as SVGGElement).blur();
             animateClusterFocusRef.current(datum);
           }
           return;
@@ -539,7 +548,11 @@ export function NetworkGlobeMap({
         }
       })
       .on('mouseenter', function (event: MouseEvent, datum) {
-        if (!canHoverRef.current || isDraggingRef.current) {
+        if (
+          !canHoverRef.current ||
+          isDraggingRef.current ||
+          clusterAnimatingRef.current
+        ) {
           return;
         }
         const space = pinDatumSpace(datum);
@@ -549,7 +562,11 @@ export function NetworkGlobeMap({
         updateHoveredPinRef.current(space.id, event);
       })
       .on('mousemove', function (event: MouseEvent, datum) {
-        if (!canHoverRef.current || isDraggingRef.current) {
+        if (
+          !canHoverRef.current ||
+          isDraggingRef.current ||
+          clusterAnimatingRef.current
+        ) {
           return;
         }
         const space = pinDatumSpace(datum);
@@ -741,10 +758,12 @@ export function NetworkGlobeMap({
       focusedClusterIdRef.current = null;
       setFocusedClusterId(null);
       setClusterSpread(0);
+      syncClusterAnimating(false);
       requestRender();
       return;
     }
 
+    syncClusterAnimating(true);
     const start = performance.now();
 
     const step = (now: number) => {
@@ -770,12 +789,13 @@ export function NetworkGlobeMap({
         setFocusedClusterId(null);
         setClusterSpread(0);
         clusterAnimFrameRef.current = null;
+        syncClusterAnimating(false);
         requestRender();
       }
     };
 
     clusterAnimFrameRef.current = requestAnimationFrame(step);
-  }, [requestRender]);
+  }, [requestRender, syncClusterAnimating]);
 
   const animateClusterFocus = React.useCallback(
     (cluster: Extract<MapPinDatum, { kind: 'cluster' }>) => {
@@ -807,10 +827,12 @@ export function NetworkGlobeMap({
         savedGlobeRotateRef.current = centeredRotation;
         clusterSpreadRef.current = 1;
         setClusterSpread(1);
+        syncClusterAnimating(false);
         requestRender();
         return;
       }
 
+      syncClusterAnimating(true);
       clusterSpreadRef.current = 0;
       setClusterSpread(0);
       const start = performance.now();
@@ -837,13 +859,14 @@ export function NetworkGlobeMap({
           clusterSpreadRef.current = 1;
           setClusterSpread(1);
           clusterAnimFrameRef.current = null;
+          syncClusterAnimating(false);
           requestRender();
         }
       };
 
       clusterAnimFrameRef.current = requestAnimationFrame(step);
     },
-    [requestRender],
+    [requestRender, syncClusterAnimating],
   );
 
   animateClusterFocusRef.current = animateClusterFocus;
@@ -1059,6 +1082,7 @@ export function NetworkGlobeMap({
         setFocusedClusterId(null);
         clusterSpreadRef.current = 0;
         setClusterSpread(0);
+        syncClusterAnimating(false);
       }
       globeZoomRef.current = 1;
 
@@ -1111,7 +1135,7 @@ export function NetworkGlobeMap({
 
       animationFrameRef.current = requestAnimationFrame(step);
     },
-    [requestRender],
+    [requestRender, syncClusterAnimating],
   );
 
   React.useEffect(() => {
@@ -1173,7 +1197,7 @@ export function NetworkGlobeMap({
     : null;
 
   const hoverCard =
-    activeSpace && activePin ? (
+    activeSpace && activePin && !clusterAnimating ? (
       <NetworkMapPinHoverCard
         lang={lang}
         space={activeSpace}
@@ -1226,6 +1250,10 @@ export function NetworkGlobeMap({
 
   const mapClusterStyles = (
     <style>{`
+      g.map-pin:focus,
+      g.map-pin:focus-visible {
+        outline: none;
+      }
       @keyframes network-map-cluster-pulse {
         0% { transform: scale(0.9); opacity: 0.55; }
         70% { transform: scale(1.45); opacity: 0; }
