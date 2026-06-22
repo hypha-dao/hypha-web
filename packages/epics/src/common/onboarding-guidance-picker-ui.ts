@@ -15,29 +15,31 @@ export type OnboardingGuidancePickerOutput = {
   requires_location_picker?: boolean;
 };
 
+function findGuidanceOutputOnMessage(
+  message: ChatUiMessage,
+): OnboardingGuidancePickerOutput | null {
+  for (const part of message.parts ?? []) {
+    if (part.type !== 'tool-onboarding_guidance') continue;
+    if (part.state !== 'output-available') continue;
+
+    const output = part.output as OnboardingGuidancePickerOutput | undefined;
+    if (output?.ok) return output;
+  }
+
+  return null;
+}
+
 export function findLatestOnboardingGuidanceOutput(
   messages: ChatUiMessage[],
 ): OnboardingGuidancePickerOutput | null {
-  let latestAssistantMessage: ChatUiMessage | null = null;
   for (
     let messageIndex = messages.length - 1;
     messageIndex >= 0;
     messageIndex -= 1
   ) {
     const message = messages[messageIndex];
-    if (message?.role === 'assistant') {
-      latestAssistantMessage = message;
-      break;
-    }
-  }
-  if (!latestAssistantMessage) return null;
-
-  for (const part of latestAssistantMessage.parts ?? []) {
-    if (part.type !== 'tool-onboarding_guidance') continue;
-    if (part.state !== 'output-available') continue;
-
-    const output = part.output as OnboardingGuidancePickerOutput | undefined;
-    if (output?.ok) return output;
+    if (message?.role !== 'assistant') continue;
+    return findGuidanceOutputOnMessage(message);
   }
 
   return null;
@@ -56,9 +58,12 @@ export function shouldShowOnboardingGuidancePicker({
   requiresFlag?: keyof OnboardingGuidancePickerOutput;
   alreadyAnswered?: boolean;
 }): boolean {
-  if (isStreaming || alreadyAnswered) return false;
+  if (isStreaming || alreadyAnswered || messages.length === 0) return false;
 
-  const output = findLatestOnboardingGuidanceOutput(messages);
+  const latestMessage = messages[messages.length - 1];
+  if (latestMessage?.role !== 'assistant') return false;
+
+  const output = findGuidanceOutputOnMessage(latestMessage);
   if (!output?.ok) return false;
   if (requiresFlag && output[requiresFlag] === true) return true;
   return output.next_field === nextField;

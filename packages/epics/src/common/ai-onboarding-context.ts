@@ -510,15 +510,41 @@ export function isPlainOnboardingConfirmationReply(text: string): boolean {
   return affirmatives.has(normalized) || affirmatives.has(normalizedCompact);
 }
 
+function inferSetupJourneyFromUserText(
+  text: string,
+): OnboardingSetupJourney | undefined {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (
+    normalized.includes('full ecosystem') ||
+    normalized.includes('multiple spaces') ||
+    normalized.includes('full organisation') ||
+    normalized.includes('full organization')
+  ) {
+    return 'ecosystem';
+  }
+  if (
+    normalized.includes('single space') ||
+    normalized === 'single' ||
+    normalized.includes('one space')
+  ) {
+    return 'single_space';
+  }
+  return undefined;
+}
+
 export function applyOnboardingContextForUserText(
   context: OnboardingConversationContext,
   text: string,
 ): OnboardingConversationContext {
   const normalized = text.trim();
   const isExplicitConfirmation = isPlainOnboardingConfirmationReply(normalized);
+  const inferredJourney =
+    context.setupJourney ?? inferSetupJourneyFromUserText(normalized);
   return {
     ...context,
     lastUserText: normalized,
+    ...(inferredJourney ? { setupJourney: inferredJourney } : {}),
     setupPhase: isExplicitConfirmation
       ? 'confirm'
       : context.setupPhase === 'discover'
