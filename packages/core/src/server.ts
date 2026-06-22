@@ -36,5 +36,14 @@ export {
   extractUniqueCategoryGroups,
   parseCategoryFilterParam,
   parseCategoryGroupFilterParam,
+  CATEGORY_GROUPS,
+  CATEGORY_GROUP_IDS,
+  expandCategoryGroups,
+  getCategoryGroupLabel,
 } from './categories/groups';
+export type { CategoryGroupId } from './categories/groups';
+export {
+  inferCategoryGroupsFromText,
+  formatCategoryGroupLabels,
+} from './categories/infer-category-groups';
 export { SPACE_ORDERS, type SpaceOrder } from './categories/types';

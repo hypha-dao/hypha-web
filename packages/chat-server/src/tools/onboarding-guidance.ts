@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  CATEGORY_GROUPS,
+  expandCategoryGroups,
+  inferCategoryGroupsFromText,
+  type CategoryGroupId,
+} from '@hypha-platform/core/server';
 import type { ChatRouteTool } from './types';
 import { createSearchSpacesTool } from './search-spaces';
 import { isAnsweredLocationStep } from './onboarding-location';
@@ -138,6 +144,39 @@ function isAnsweredText(value: unknown, minLength: number): boolean {
   return typeof value === 'string' && value.trim().length >= minLength;
 }
 
+const HYPHA_CATEGORY_GROUP_LABELS = CATEGORY_GROUPS.map((group) => group.label);
+
+function buildDiscoveryText(answers: Record<string, unknown>): string {
+  return [
+    answers.space_name,
+    answers.org_name,
+    answers.space_purpose,
+    answers.org_purpose,
+    answers.org_discovery,
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ');
+}
+
+function isAnsweredCategoryGroups(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((entry) => typeof entry === 'string' && entry.trim().length > 0)
+  );
+}
+
+function applyInferredCategoryGroups(answers: Record<string, unknown>): void {
+  if (isAnsweredCategoryGroups(answers.category_groups)) {
+    return;
+  }
+  if (!isAnsweredText(answers.org_discovery, 8)) {
+    return;
+  }
+  const inferred = inferCategoryGroupsFromText(buildDiscoveryText(answers));
+  answers.category_groups = inferred;
+}
+
 function getCreateSpaceGuidance(
   answers: Record<string, unknown>,
 ): GuidanceDefinition {
@@ -181,6 +220,11 @@ function getCreateSpaceGuidance(
       question:
         'Help me understand the organisation better: what industry or domain are you in, roughly how many people are involved, and who makes up the core team?',
       isAnswered: (value) => isAnsweredText(value, 8),
+    },
+    {
+      field: 'category_groups',
+      question: '',
+      isAnswered: (value) => isAnsweredCategoryGroups(value),
     },
   ];
 
@@ -441,6 +485,7 @@ export function createOnboardingGuidanceTool() {
 
       const { process, user_goal, space_slug, known_answers } = parsed.data;
       const answers = { ...(known_answers ?? {}) } as Record<string, unknown>;
+      applyInferredCategoryGroups(answers);
       if (
         process === 'explore_network' &&
         !isFilled(answers.explore_scope) &&
@@ -510,7 +555,28 @@ export function createOnboardingGuidanceTool() {
           : null;
       const orgDiscoveryInstruction =
         nextStep?.field === 'org_discovery'
-          ? 'Be genuinely curious—this is discovery, not a form. Ask only the next_question. You may propose industry tags and a draft description the user can accept or edit.'
+          ? `Ask only the next_question. Do NOT invent custom tags (Collaboration, Creativity, Entrepreneurship, etc.) or ask the user to pick tags. Hypha uses exactly these ten fixed category groups: ${HYPHA_CATEGORY_GROUP_LABELS.join(
+              ', ',
+            )}. Tags are assigned automatically after this answer.`
+          : null;
+      const assignedCategoryGroups = isAnsweredCategoryGroups(
+        answers.category_groups,
+      )
+        ? (answers.category_groups as CategoryGroupId[])
+        : [];
+      const assignedCategoryInstruction =
+        assignedCategoryGroups.length > 0 &&
+        nextStep?.field !== 'org_discovery' &&
+        nextStep?.field !== 'category_groups'
+          ? `Briefly state the Hypha category tag(s) you assigned (${assignedCategoryGroups
+              .map(
+                (groupId) =>
+                  CATEGORY_GROUPS.find((group) => group.id === groupId)?.label,
+              )
+              .filter(Boolean)
+              .join(
+                ', ',
+              )}) in one short phrase—not as a question. Pass suggested_categories into create_space_from_onboarding. Never invent tags outside the fixed ten groups.`
           : null;
       return {
         ok: true,
@@ -522,6 +588,7 @@ export function createOnboardingGuidanceTool() {
           ? 'Return concrete space matches now in this same reply. If search_results has entries, list the best 3-5 with clear names and short reasons. If none are found, say that clearly and suggest the next best step. Do not ask another discovery question first.'
           : principlesAssistantInstruction ??
             orgDiscoveryInstruction ??
+            assignedCategoryInstruction ??
             locationAssistantInstruction ??
             activationAssistantInstruction ??
             transparencyAssistantInstruction ??
@@ -533,8 +600,16 @@ export function createOnboardingGuidanceTool() {
           total,
           remaining: Math.max(total - collected, 0),
         },
-        next_question: nextStep?.question ?? null,
+        next_question: nextStep?.question?.trim() ? nextStep.question : null,
         next_field: nextStep?.field ?? null,
+        allowed_category_groups: HYPHA_CATEGORY_GROUP_LABELS,
+        assigned_category_groups: assignedCategoryGroups.map((groupId) => ({
+          id: groupId,
+          label:
+            CATEGORY_GROUPS.find((group) => group.id === groupId)?.label ??
+            groupId,
+        })),
+        suggested_categories: expandCategoryGroups(assignedCategoryGroups),
         requires_location_picker: requiresLocationPicker,
         requires_activation_picker: requiresActivationPicker,
         requires_transparency_picker: requiresTransparencyPicker,
