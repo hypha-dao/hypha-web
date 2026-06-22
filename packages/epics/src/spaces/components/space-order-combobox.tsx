@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React from 'react';
 
+import { readClientSearchParams } from '../read-client-search-params';
 import { spaceToolbarSortComboboxClassName } from './space-toolbar-styles';
 
 type SpaceOrderComboboxProps = {
@@ -47,7 +48,7 @@ export function SpaceOrderCombobox({
 
   const setOrder = React.useCallback(
     (nextOrder: string) => {
-      const params = new URLSearchParams(searchParams);
+      const params = readClientSearchParams(searchParams);
       if (nextOrder) {
         params.set('order', nextOrder);
       } else {

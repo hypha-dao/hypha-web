@@ -33,6 +33,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cva } from 'class-variance-authority';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
+import { readClientSearchParams } from '../read-client-search-params';
 
 interface ExploreSpacesProps {
   lang: Locale;
@@ -156,7 +157,7 @@ export function ExploreSpaces({
 
   const setCategoryGroups = React.useCallback(
     (nextCategoryGroups: CategoryGroupId[]) => {
-      const params = new URLSearchParams(searchParams);
+      const params = readClientSearchParams(searchParams);
       if (nextCategoryGroups.length > 0) {
         params.set('category', nextCategoryGroups.join(','));
       } else {

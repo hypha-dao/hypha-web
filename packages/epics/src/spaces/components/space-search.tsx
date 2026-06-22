@@ -7,6 +7,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
+import { readClientSearchParams } from '../read-client-search-params';
 import {
   spaceToolbarInputClassName,
   spaceToolbarInputRootClassName,
@@ -33,7 +34,7 @@ export const SpaceSearch = ({
   const { replace } = useRouter();
 
   const handleSearch = useDebouncedCallback((term: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = readClientSearchParams(searchParams);
     if (term) {
       params.set('query', term);
     } else {
