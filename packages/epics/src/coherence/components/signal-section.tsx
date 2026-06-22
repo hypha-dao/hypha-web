@@ -686,7 +686,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
               variant="outline"
               colorVariant="accent"
               className="w-auto"
+              disabled={isMemberLoading || !isMember}
               onClick={() => {
+                if (isMemberLoading || !isMember) return;
                 resetBoardForm();
                 setCreateBoardOpen(true);
               }}

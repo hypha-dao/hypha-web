@@ -17,6 +17,7 @@ import {
   getEnableEcosystemAutomation,
   getEnableOnboardingWriteTools,
 } from '@hypha-platform/feature-flags';
+import { authorizeSpacePanelInteraction } from '@hypha-platform/core/server';
 
 export const maxDuration = 300;
 
@@ -100,6 +101,21 @@ export async function POST(req: Request) {
   const messages: ChatRequestPayload['messages'] = parsed.data.messages;
   const spaceSlug = parsed.data.spaceSlug;
   const conversationContext = parsed.data.conversationContext;
+
+  if (spaceSlug?.trim()) {
+    const interactionAuth = await authorizeSpacePanelInteraction({
+      spaceSlug: spaceSlug.trim(),
+      authToken,
+    });
+    if (!interactionAuth.authorized) {
+      return createChatFailureStreamResponse({
+        debugRequestId,
+        errorType: 'forbidden',
+        message: interactionAuth.message,
+      });
+    }
+  }
+
   const [onboardingWriteToolsEnabled, ecosystemAutomationEnabled] =
     await Promise.all([
       getEnableOnboardingWriteTools(),

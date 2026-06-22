@@ -1,6 +1,8 @@
 import {
   getDefaultDestinationCurrency,
   getDestinationCurrenciesForSourceRail,
+  BANK_PAYOUT_RAILS,
+  BANK_VIRTUAL_ACCOUNT_CURRENCIES,
 } from '@hypha-platform/core/client';
 
 import {
@@ -246,7 +248,9 @@ export function getAvailableAddAccountRailOptions(
   virtualAccounts: BankVirtualAccountPublic[],
 ): BankAddAccountRailOption[] {
   const covered = getCoveredAccountPairs(virtualAccounts);
+  const enabledCurrencies = new Set(getEnabledDepositCurrencies());
   return getAddAccountRailOptionsFromStatus(status)
+    .filter((option) => enabledCurrencies.has(option.currency))
     .map((option) => {
       const destinationCurrencies = option.destinationCurrencies.filter(
         (destination) =>
@@ -328,6 +332,26 @@ export function hasAddAccountRailAvailable(
   return getAvailableAddAccountRailOptions(status, virtualAccounts).length > 0;
 }
 
+/**
+ * Returns the subset of deposit currencies enabled via
+ * NEXT_PUBLIC_BANKING_SUPPORTED_DEPOSIT_RAILS. When the env var is unset or
+ * empty all currencies are considered enabled (open-world default).
+ * Valid values: usd, eur, gbp, mxn, brl, cop
+ */
+export function getEnabledDepositCurrencies(): readonly string[] {
+  const raw = process.env.NEXT_PUBLIC_BANKING_SUPPORTED_DEPOSIT_RAILS?.trim();
+  if (!raw) return BANK_VIRTUAL_ACCOUNT_CURRENCIES;
+  const allowed = new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  return BANK_VIRTUAL_ACCOUNT_CURRENCIES.filter((c) =>
+    allowed.has(c.toLowerCase()),
+  );
+}
+
 export function isBankRailSelectable(
   status: BankCustomerPublicStatus['railStatuses'][number]['operationalStatus'],
 ): boolean {
@@ -338,4 +362,26 @@ export function bankRailNeedsEndorsementRequest(
   status: BankCustomerPublicStatus['railStatuses'][number]['operationalStatus'],
 ): boolean {
   return status === 'not_requested';
+}
+
+/**
+ * Returns the Bridge endorsement `operationalStatus` for a payout rail as
+ * reported in `BankCustomerPublicStatus.endorsementStatuses`.
+ *
+ * Call with `payoutCurrencyToRailKey(currency)` to get the railKey from a
+ * `PayoutCurrencyKey`. Returns `'not_requested'` when the status is missing
+ * or the endorsement is not yet listed.
+ */
+export function getPayoutRailEndorsementStatus(
+  railKey: string,
+  status: BankCustomerPublicStatus | null | undefined,
+): BankEndorsementPublicStatus['operationalStatus'] {
+  if (!status) return 'not_requested';
+  const railConfig =
+    BANK_PAYOUT_RAILS[railKey as keyof typeof BANK_PAYOUT_RAILS];
+  if (!railConfig) return 'not_requested';
+  const endorsementEntry = status.endorsementStatuses?.find(
+    (e) => e.endorsement === railConfig.endorsement,
+  );
+  return endorsementEntry?.operationalStatus ?? 'not_requested';
 }

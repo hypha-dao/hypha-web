@@ -2,10 +2,16 @@ import 'server-only';
 
 import type {
   BridgeCreateVirtualAccountResponse,
+  BridgeExternalAccountResponse,
+  BridgeLiquidationAddressResponse,
   BridgeTransferResponse,
 } from '../../common/server/bridge-client';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
-import type { BankTransferPublic, BankVirtualAccountPublic } from '../types';
+import type {
+  BankPayoutAccountPublic,
+  BankTransferPublic,
+  BankVirtualAccountPublic,
+} from '../types';
 
 export function normalizeExecutorAddress(
   address: string | null | undefined,
@@ -160,5 +166,65 @@ export function mapBridgeTransferToPublic(
     depositInstructions: enriched,
     destinationAddress: response.destination?.to_address ?? destinationAddress,
     createdAt: response.created_at ?? new Date().toISOString(),
+  };
+}
+
+function readExternalAccountLast4(
+  account: BridgeExternalAccountResponse,
+): string | null {
+  if (typeof account.last_4 === 'string') return account.last_4;
+  if (typeof account.account?.last_4 === 'string')
+    return account.account.last_4;
+  if (typeof account.iban?.last_4 === 'string') return account.iban.last_4;
+  return null;
+}
+
+function resolvePayoutAccountStatus(input: {
+  externalActive: boolean;
+  liquidationState: string | undefined;
+}): string {
+  if (input.liquidationState === 'deactivated' || !input.externalActive) {
+    return 'inactive';
+  }
+  if (input.liquidationState === 'active' && input.externalActive) {
+    return 'active';
+  }
+  return input.liquidationState ?? 'pending';
+}
+
+export function mapBridgePayoutAccountToPublic(input: {
+  liquidationAddress: BridgeLiquidationAddressResponse;
+  externalAccount: BridgeExternalAccountResponse | null;
+}): BankPayoutAccountPublic {
+  const { liquidationAddress, externalAccount } = input;
+  const destinationCurrency =
+    liquidationAddress.destination_currency?.toLowerCase() ??
+    externalAccount?.currency?.toLowerCase() ??
+    'unknown';
+  const paymentRail = liquidationAddress.destination_payment_rail ?? 'unknown';
+  const externalActive = externalAccount?.active ?? true;
+
+  return {
+    id: liquidationAddress.id,
+    externalAccountId:
+      liquidationAddress.external_account_id ?? externalAccount?.id ?? '',
+    liquidationAddressId: liquidationAddress.id,
+    evmAddress: liquidationAddress.address,
+    sourceCurrency: liquidationAddress.currency.toLowerCase(),
+    sourceChain: liquidationAddress.chain,
+    destinationCurrency,
+    paymentRail,
+    accountLast4: externalAccount
+      ? readExternalAccountLast4(externalAccount)
+      : null,
+    checkingOrSavings: externalAccount?.account?.checking_or_savings ?? null,
+    accountName: externalAccount?.account_name ?? null,
+    bankName: externalAccount?.bank_name ?? null,
+    accountOwnerName: externalAccount?.account_owner_name ?? null,
+    status: resolvePayoutAccountStatus({
+      externalActive,
+      liquidationState: liquidationAddress.state,
+    }),
+    createdAt: liquidationAddress.created_at ?? null,
   };
 }

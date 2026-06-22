@@ -64,3 +64,33 @@ export type UseUploadThingFileUploaderReturn = {
 export type UseUploadThingFileUploader = (
   props: UseUploadThingFileUploaderProps,
 ) => UseUploadThingFileUploaderReturn;
+
+export type PostAuthRedirectPathParams = {
+  pathname: string;
+  lang?: string;
+  baseRedirectPath: string;
+  consume?: boolean;
+};
+
+export type ResolvePostAuthRedirectPathOrDefault = (
+  params: PostAuthRedirectPathParams,
+) => string;
+
+export type ProfileAuthUser = {
+  id: string;
+  wallet?: {
+    address?: `0x${string}`;
+  };
+};
+
+export type ProfileAuthHook = {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: ProfileAuthUser | null;
+  login: () => void;
+  logout: (redirect?: boolean) => void;
+  isLoggingIn: boolean;
+  setLoggingIn: (value: boolean) => void;
+};
+
+export type ProfileUseAuthentication = () => ProfileAuthHook;

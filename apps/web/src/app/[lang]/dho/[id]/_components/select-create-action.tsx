@@ -3,6 +3,7 @@
 import {
   SelectAction,
   useActionGating,
+  useCanMutateInSpace,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -33,6 +34,11 @@ export const SelectCreateAction = ({
 }: SelectCreateActionProps) => {
   const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
   const { data: spaceEnergy } = useSpaceEnergy();
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
+    spaceSlug: daoSlug,
+    space,
+    spaceId: space?.web3SpaceId ?? undefined,
+  });
   const t = useTranslations('SelectCreateAction');
   const tSettings = useTranslations('SpaceSettingsAction');
   const isEnergyCommunity = spaceEnergy?.enabled === true;
@@ -97,7 +103,7 @@ export const SelectCreateAction = ({
       description: t('actions.makeCollectiveAgreement.description'),
       href: 'agreements/create',
       icon: <FileText className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       defaultDurationDays: 4,
@@ -105,7 +111,7 @@ export const SelectCreateAction = ({
       description: t('actions.proposeContribution.description'),
       href: 'agreements/create/propose-contribution',
       icon: <Rocket className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       defaultDurationDays: 4,
@@ -113,7 +119,7 @@ export const SelectCreateAction = ({
       description: tSettings('actions.redeemTokens.description'),
       href: 'agreements/create/redeem-tokens',
       icon: <Gift className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       defaultDurationDays: 7,
@@ -121,7 +127,7 @@ export const SelectCreateAction = ({
       description: t('actions.payExpenses.description'),
       href: 'agreements/create/pay-for-expenses',
       icon: <TrendingUp className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       defaultDurationDays: 7,
@@ -129,7 +135,7 @@ export const SelectCreateAction = ({
       description: t('actions.acceptInvestment.description'),
       href: 'agreements/create/accept-investment',
       icon: <PiggyBank className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       defaultDurationDays: 7,
@@ -137,7 +143,7 @@ export const SelectCreateAction = ({
       description: t('actions.exchangeStakesAndTokens.description'),
       href: 'agreements/create/exchange-stakes-and-tokens',
       icon: <Package className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       defaultDurationDays: 7,
@@ -145,7 +151,7 @@ export const SelectCreateAction = ({
       description: t('actions.deployFunds.description'),
       href: 'agreements/create/deploy-funds',
       icon: <Workflow className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       defaultDurationDays: 7,
@@ -153,7 +159,7 @@ export const SelectCreateAction = ({
       description: t('actions.airdrop.description'),
       href: 'agreements/create/airdrop',
       icon: <Send className="size-[22px] shrink-0" strokeWidth={1.75} />,
-      disabled: isPaymentExpired,
+      disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       title: t('actions.depositFunds.title'),
@@ -162,7 +168,7 @@ export const SelectCreateAction = ({
       onAction: () => {
         fundWallet();
       },
-      disabled: !space?.address,
+      disabled: !space?.address || isMutateLoading || !canMutate,
     },
   ];
   return (

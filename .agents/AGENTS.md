@@ -31,3 +31,21 @@ When the user has not specified a role, select the best-matching one based on th
 ## Fallback
 
 If no role matches, work directly without a role. Do not fabricate expertise — state what you don't know.
+
+---
+
+## GitHub / board integration (opt-in, per developer)
+
+When you detect ticket-related activity — creating an issue, scaffolding a ticket workspace,
+opening a PR, moving work to review — **check the developer's local config before acting on GitHub**:
+
+1. Read the developer's general `AGENTS.local.md` (at `../hypha-context/AGENTS.local.md` or in the
+   `.hypha-context.local/` satellite if present). If `github.enabled: true` and the profile is
+   technical, the **`hypha-board` skill** is available — use it for GitHub reads and (with
+   confirmation) writes.
+2. If the config is absent or `github.enabled` is false/missing, **do not offer or attempt any
+   GitHub writes**. Skip silently.
+
+Board conventions (title format `type(scope): description`, label taxonomy, column meanings) live
+in `../hypha-context/planning/issue-guidelines.md`. The `hypha-board` skill references them —
+don't invent or duplicate conventions here.

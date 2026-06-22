@@ -16,12 +16,14 @@ type SpaceAccessDeniedProps = {
   userState: UserSpaceState;
   spaceId?: number;
   spaceSlug?: string;
+  className?: string;
 };
 
 export function SpaceAccessDenied({
   userState,
   spaceId,
   spaceSlug,
+  className,
 }: SpaceAccessDeniedProps) {
   const t = useTranslations('Spaces');
   const { login } = useAuthentication();
@@ -41,7 +43,7 @@ export function SpaceAccessDenied({
 
   if (userState === UserSpaceState.NOT_LOGGED_IN) {
     return (
-      <Empty>
+      <Empty className={className}>
         <div className="flex flex-col gap-7">
           <p>{t('accessDeniedNotLoggedIn')}</p>
           <div className="flex gap-4 items-center justify-center">
@@ -59,14 +61,17 @@ export function SpaceAccessDenied({
     userState === UserSpaceState.LOGGED_IN ||
     userState === UserSpaceState.LOGGED_IN_ORG
   ) {
+    const joinSpaceDbId =
+      resolvedSpaceId ?? space?.id ?? spacesByWeb3Id[0]?.id ?? undefined;
+
     return (
-      <Empty>
+      <Empty className={className}>
         <div className="flex flex-col gap-7">
           <p>{t('accessDeniedNotMember')}</p>
-          {resolvedSpaceId && effectiveSpaceId ? (
+          {effectiveSpaceId && joinSpaceDbId ? (
             <div className="flex items-center justify-center">
               <JoinSpace
-                spaceId={resolvedSpaceId}
+                spaceId={joinSpaceDbId}
                 web3SpaceId={effectiveSpaceId}
                 hideWhenMember
               />
@@ -78,7 +83,7 @@ export function SpaceAccessDenied({
   }
 
   return (
-    <Empty>
+    <Empty className={className}>
       <p>{t('accessDenied')}</p>
     </Empty>
   );

@@ -93,10 +93,28 @@ export async function POST(
 
   const parsed = schemaProvisionVirtualAccount.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Validation failed', details: parsed.error.format() },
-      { status: 400 },
+    console.error(
+      'banking/accounts POST validation failed:',
+      JSON.stringify(parsed.error.format(), null, 2),
     );
+    return NextResponse.json({ error: 'Validation failed' }, { status: 400 });
+  }
+
+  const supportedRailsEnv =
+    process.env.NEXT_PUBLIC_BANKING_SUPPORTED_DEPOSIT_RAILS?.trim();
+  if (supportedRailsEnv) {
+    const supportedCurrencies = new Set(
+      supportedRailsEnv
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
+    );
+    if (!supportedCurrencies.has(parsed.data.currency.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'This deposit rail is not currently enabled.' },
+        { status: 403 },
+      );
+    }
   }
 
   const authToken = extractBearerToken(request);

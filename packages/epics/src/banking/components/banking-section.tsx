@@ -11,11 +11,14 @@ import {
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
 
+import { Empty } from '../../common';
 import { useSpaceMember } from '../../spaces';
 import {
   useBankCustomerStatus,
   useBankTransfers,
+  useCreatePayoutAccount,
   useCreateTransfer,
+  usePayoutAccounts,
   useProvisionVirtualAccount,
   useRequestBankOnboarding,
   useVirtualAccounts,
@@ -26,10 +29,12 @@ import {
   isBankVerificationInProgress,
 } from '../banking-ui';
 import type { BankCurrencyCode } from '../bank-currency-display';
+import type { BankPayoutAccountPublic } from '../hooks/types';
 import { BankAccountsSection } from './bank-accounts-section';
-import { BankTransfersSection } from './bank-transfers-section';
 import { BankingAdvancedDialog } from './banking-advanced-dialog';
 import { AddBankCurrencyDialog } from './add-bank-currency-dialog';
+import { AddPayoutAccountDialog } from './add-payout-account-dialog';
+import { PayoutAccountDetailDialog } from './payout-account-detail-dialog';
 import { CreateTransferDialog } from './create-transfer-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
@@ -53,6 +58,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const { person } = useMe();
   const {
     status,
+    isError: isStatusError,
     isLoading: isStatusLoading,
     isRefreshing: isStatusRefreshing,
     refresh,
@@ -66,6 +72,14 @@ export const BankingSection: FC<BankingSectionProps> = ({
     isLoading: virtualAccountsLoading,
     refresh: refreshVirtualAccounts,
   } = useVirtualAccounts({
+    spaceSlug,
+    enabled: isAuthenticated && showBankingListings,
+  });
+  const {
+    accounts: payoutAccounts,
+    isLoading: payoutAccountsLoading,
+    refresh: refreshPayoutAccounts,
+  } = usePayoutAccounts({
     spaceSlug,
     enabled: isAuthenticated && showBankingListings,
   });
@@ -99,9 +113,19 @@ export const BankingSection: FC<BankingSectionProps> = ({
     clearError: clearCreateAccountError,
   } = useProvisionVirtualAccount({ spaceSlug });
 
+  const {
+    createPayoutAccount,
+    isCreating: isCreatingPayoutAccount,
+    error: createPayoutAccountError,
+    clearError: clearCreatePayoutAccountError,
+  } = useCreatePayoutAccount({ spaceSlug });
+
   const [gearOpen, setGearOpen] = useState(false);
   const [createTransferOpen, setCreateTransferOpen] = useState(false);
   const [addCurrencyDialogOpen, setAddCurrencyDialogOpen] = useState(false);
+  const [addPayoutDialogOpen, setAddPayoutDialogOpen] = useState(false);
+  const [detailAccount, setDetailAccount] =
+    useState<BankPayoutAccountPublic | null>(null);
 
   const needsProviderStatusRefresh =
     hasCustomer && status != null && !status.approvalRegistered;
@@ -111,9 +135,15 @@ export const BankingSection: FC<BankingSectionProps> = ({
     if (hasApprovedBankCurrencies(updated)) {
       void refreshVirtualAccounts();
       void refreshTransfers();
+      void refreshPayoutAccounts();
     }
     return updated;
-  }, [refresh, refreshTransfers, refreshVirtualAccounts]);
+  }, [
+    refresh,
+    refreshPayoutAccounts,
+    refreshTransfers,
+    refreshVirtualAccounts,
+  ]);
 
   const handleGearOpenChange = useCallback(
     (open: boolean) => {
@@ -159,8 +189,14 @@ export const BankingSection: FC<BankingSectionProps> = ({
     if (showBankingListings) {
       void refreshVirtualAccounts();
       void refreshTransfers();
+      void refreshPayoutAccounts();
     }
-  }, [showBankingListings, refreshTransfers, refreshVirtualAccounts]);
+  }, [
+    showBankingListings,
+    refreshPayoutAccounts,
+    refreshTransfers,
+    refreshVirtualAccounts,
+  ]);
 
   const verificationInProgress = isBankVerificationInProgress(status);
 
@@ -177,9 +213,15 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const canAddAccount = hasAddAccountRailAvailable(status, virtualAccounts);
 
   const isListsLoading =
-    showBankingListings && (virtualAccountsLoading || transfersLoading);
+    showBankingListings &&
+    (virtualAccountsLoading || transfersLoading || payoutAccountsLoading);
 
   const openSpaceAccountDisabled = verificationInProgress || !canAddAccount;
+  const openPayoutAccountDisabled = verificationInProgress;
+
+  const openPayoutAccountDisabledReason = verificationInProgress
+    ? 'finishVerificationFirst'
+    : null;
 
   const openSpaceAccountDisabledReason = verificationInProgress
     ? 'finishVerificationFirst'
@@ -205,12 +247,16 @@ export const BankingSection: FC<BankingSectionProps> = ({
     [clearOnboardingError, refresh, requestOnboarding],
   );
 
-  if (!isAuthenticated) {
-    return <p className="text-2 text-muted-foreground">{tCommon('signIn')}</p>;
-  }
-
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
+  }
+
+  if (isStatusError) {
+    return (
+      <Empty>
+        <p>{t('errorFetchStatus')}</p>
+      </Empty>
+    );
   }
 
   if (!hasCustomer) {
@@ -280,6 +326,15 @@ export const BankingSection: FC<BankingSectionProps> = ({
           clearCreateAccountError();
           setAddCurrencyDialogOpen(true);
         }}
+        onOpenPayoutAccount={() => {
+          clearCreatePayoutAccountError();
+          setAddPayoutDialogOpen(true);
+        }}
+        onPayoutAccountClick={(account) => setDetailAccount(account)}
+        openPayoutAccountDisabled={openPayoutAccountDisabled}
+        openPayoutAccountDisabledReason={openPayoutAccountDisabledReason}
+        payoutAccounts={payoutAccounts}
+        payoutAccountsLoading={false}
         hideListLoadingState
         depositsProps={{
           virtualAccounts,
@@ -287,21 +342,20 @@ export const BankingSection: FC<BankingSectionProps> = ({
           canManage,
           hideLoadingState: true,
         }}
-      />
-
-      <BankTransfersSection
-        transfers={transfers}
-        transfersLoading={false}
-        hasBankCustomer
-        canManage={canManage}
-        newTransferDisabled={verificationInProgress}
-        newTransferDisabledReason={
-          verificationInProgress ? 'finishVerificationFirst' : null
-        }
-        hideListLoadingState
-        onNewTransfer={() => {
-          clearCreateTransferError();
-          setCreateTransferOpen(true);
+        transfersProps={{
+          transfers,
+          transfersLoading: false,
+          hasBankCustomer: true,
+          canManage,
+          newTransferDisabled: verificationInProgress,
+          newTransferDisabledReason: verificationInProgress
+            ? 'finishVerificationFirst'
+            : null,
+          hideListLoadingState: true,
+          onNewTransfer: () => {
+            clearCreateTransferError();
+            setCreateTransferOpen(true);
+          },
         }}
       />
 
@@ -349,6 +403,34 @@ export const BankingSection: FC<BankingSectionProps> = ({
           } catch {
             // hook sets error
           }
+        }}
+      />
+
+      <AddPayoutAccountDialog
+        open={addPayoutDialogOpen}
+        onOpenChange={setAddPayoutDialogOpen}
+        isSubmitting={isCreatingPayoutAccount}
+        error={createPayoutAccountError}
+        defaultAccountOwnerName={fallbackLegalName}
+        defaultBusinessName={fallbackLegalName}
+        status={status}
+        onSubmit={async (input) => {
+          clearCreatePayoutAccountError();
+          const result = await createPayoutAccount(input);
+          void refreshPayoutAccounts();
+          return result.account;
+        }}
+        onSuccess={(account) => {
+          setAddPayoutDialogOpen(false);
+          setDetailAccount(account);
+        }}
+      />
+
+      <PayoutAccountDetailDialog
+        open={detailAccount != null}
+        account={detailAccount}
+        onOpenChange={(open) => {
+          if (!open) setDetailAccount(null);
         }}
       />
     </div>

@@ -2870,6 +2870,7 @@
     "returnBannerDismiss": "Dispensar",
     "returnBannerApprovedHint": "A verificação está concluída. Abra uma conta do space para adicionar as moedas restantes.",
     "errorLoad": "Não foi possível carregar o status da conta bancária.",
+    "errorFetchStatus": "Houve um problema ao recuperar suas informações bancárias. Por favor, tente novamente mais tarde.",
     "sections": {
       "transfers": {
         "title": "Transferências bancárias únicas",
@@ -2891,6 +2892,136 @@
         "continueVerificationCta": "Continuar verificação",
         "loadingAccounts": "Carregando contas bancárias…",
         "signInHint": "Entre para gerenciar contas bancárias."
+      }
+    },
+    "payouts": {
+      "tabs": {
+        "deposits": "Depósitos",
+        "payouts": "Pagamentos"
+      },
+      "section": {
+        "title": "Contas de pagamento",
+        "description": "Registre para onde o tesouro envia fiat após uma proposta aprovada. Cada conta recebe um endereço de liquidação para propostas de Financiamento ou Despesas."
+      },
+      "addCta": "Adicionar conta de pagamento",
+      "loading": "Carregando contas de pagamento…",
+      "emptyTitle": "Ainda não há contas de pagamento",
+      "emptyDescription": "Registre uma conta bancária para receber pagamentos do tesouro. USDC do tesouro → endereço de liquidação → votação → fiat no seu banco.",
+      "cardBankFallback": "Conta bancária",
+      "liquidationAddressLabel": "Endereço de liquidação",
+      "payoutAddressLabel": "Endereço de pagamento",
+      "detail": {
+        "title": "Conta de pagamento",
+        "titleFallback": "Conta de pagamento",
+        "sourceToken": "Token de tesouro",
+        "close": "Fechar",
+        "openAriaLabel": "Abrir detalhes da conta"
+      },
+      "status": {
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "pending": "Pendente"
+      },
+      "addDialog": {
+        "title": "Adicionar conta de pagamento",
+        "stepOf": "Etapa {current} de {total}",
+        "step1Description": "Escolha a moeda de destino desta conta de pagamento.",
+        "step2Description": "Informe os dados bancários da conta de destino.",
+        "step3Description": "Insira o endereço do beneficiário e os detalhes da transferência.",
+        "step4Description": "Revise e confirme os detalhes da sua conta de pagamento.",
+        "formHasErrors": "Por favor, corrija os erros acima antes de continuar.",
+        "reviewHint": "Verifique os detalhes abaixo. Volte para fazer alterações antes de enviar.",
+        "confirm": "Enviar",
+        "currencyLabel": "Moeda de destino",
+        "currencyHint": "Moeda que esta conta externa receberá.",
+        "continue": "Continuar",
+        "back": "Voltar",
+        "cancel": "Cancelar",
+        "sourceCurrencyLabel": "Token do tesouro",
+        "sourceCurrencySection": "Token do tesouro",
+        "sourceCurrencyHint": "Selecione qual token o tesouro enviará para esta conta.",
+        "bankAccountSection": "Conta bancária",
+        "accountHolderSection": "Titular da conta",
+        "addressSection": "Endereço do beneficiário",
+        "bankName": "Nome do banco",
+        "bankNamePlaceholder": "ex. Itaú, Barclays",
+        "accountName": "Apelido",
+        "accountNamePlaceholder": "ex. Operações USD",
+        "accountNameHint": "Etiqueta interna para sua equipe — não enviada ao banco.",
+        "ownerTypeLabel": "Tipo de conta",
+        "ownerTypeBusiness": "Empresa",
+        "ownerTypeIndividual": "Particular",
+        "accountOwnerName": "Nome do titular",
+        "firstName": "Nome",
+        "lastName": "Sobrenome",
+        "businessName": "Razão social",
+        "checkingOrSavings": "Tipo de conta",
+        "checkingOrSavingsChecking": "Corrente",
+        "checkingOrSavingsSavings": "Poupança",
+        "routingNumber": "Número de roteamento (Routing number)",
+        "routingNumberPlaceholder": "021000021 (9 dígitos)",
+        "accountNumber": "Número da conta",
+        "accountNumberPlaceholder": "1234567890",
+        "gbpAccountNumberPlaceholder": "12345678",
+        "sortCode": "Sort code",
+        "sortCodePlaceholder": "200000",
+        "iban": "IBAN",
+        "ibanPlaceholder": "DE89 3704 0044 0532 0130 00",
+        "bic": "BIC / código SWIFT",
+        "bicPlaceholder": "AAAADEBBXXX",
+        "street": "Endereço",
+        "streetPlaceholder": "Rua Principal, 123",
+        "street2": "Endereço linha 2",
+        "street2Placeholder": "Apto, andar (opcional)",
+        "city": "Cidade",
+        "subdivision": "Estado / Província",
+        "subdivisionUs": "Estado",
+        "subdivisionUsPlaceholder": "Selecionar estado…",
+        "postalCode": "CEP / Código postal",
+        "country": "País",
+        "countryPlaceholder": "Selecione um país…",
+        "fieldRequired": "Este campo é obrigatório",
+        "invalidIban": "IBAN inválido — verifique o número e tente novamente",
+        "submit": "Adicionar conta de pagamento",
+        "submitting": "Criando…",
+        "success": {
+          "title": "Conta de pagamento registrada",
+          "subtitle": "A conta está ativa. Copie o endereço de liquidação para usar em propostas.",
+          "liquidationAddressLabel": "Endereço de liquidação",
+          "howToTitle": "Como realizar pagamentos",
+          "howToText": "Crie uma proposta de Financiamento ou Despesas → cole este endereço como destinatário → selecione USDC ou EURC como token → vote e execute. A Bridge converte e transfere fiat para o banco registrado.",
+          "done": "Concluído"
+        },
+        "swift": {
+          "code": "SWIFT (USD)",
+          "hint": "Transferência internacional via BIC/SWIFT",
+          "accountFormatLabel": "Formato da conta",
+          "accountFormatIban": "IBAN",
+          "accountFormatOther": "Outro número de conta",
+          "accountNumber": "Número da conta",
+          "accountNumberPlaceholder": "12345678",
+          "bankAddressSection": "Endereço do banco",
+          "complianceSection": "Detalhes da transferência",
+          "categoryLabel": "Relação com o destinatário",
+          "categoryPlaceholder": "Selecionar uma relação…",
+          "categoryClient": "Cliente",
+          "categoryParentCompany": "Empresa-mãe",
+          "categorySubsidiary": "Subsidiária",
+          "categorySupplier": "Fornecedor",
+          "purposeLabel": "Finalidade dos fundos",
+          "purposeIntraGroup": "Transferência intragrupo",
+          "purposeInvoice": "Fatura por bens e serviços",
+          "businessDescription": "Descrição do negócio",
+          "businessDescriptionPlaceholder": "Descreva como esses fundos serão utilizados",
+          "businessDescriptionHint": "Breve descrição da relação comercial e da finalidade da transferência."
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT internacional"
+        }
       }
     },
     "openAccount": {
@@ -3010,7 +3141,7 @@
       "eur": {
         "code": "EUR",
         "name": "Euro",
-        "payoutMethod": "IBAN e SWIFT/BIC"
+        "payoutMethod": "IBAN (SEPA)"
       },
       "usd": {
         "code": "USD",

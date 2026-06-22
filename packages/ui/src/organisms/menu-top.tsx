@@ -43,8 +43,6 @@ export const MenuTop = ({
   compactDataAttribute = 'data-compact-header',
   showLeadingActionOnlyWhenCompact = false,
 }: MenuTopProps) => {
-  const PANEL_COMPACT_ATTR = 'data-compact-panels';
-  const PANEL_OPEN_ATTR = 'data-side-panels-open';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
@@ -109,15 +107,12 @@ export const MenuTop = ({
         desktopEl.getBoundingClientRect().width,
       );
       const freeSpace = rowWidth - leadWidth - desktopNeeded - 16;
-      const isCompactPanels = root.getAttribute(PANEL_COMPACT_ATTR) === 'true';
-      const hasOpenSidePanel = root.getAttribute(PANEL_OPEN_ATTR) === 'true';
 
       const shouldCompact = compactRef
         ? freeSpace < compactReleaseThresholdPx
         : freeSpace < compactSafeThresholdPx;
-      const shouldCompactForOpenPanel = hasOpenSidePanel && isCompactPanels;
 
-      const nextCompact = shouldCompact || shouldCompactForOpenPanel;
+      const nextCompact = shouldCompact;
       if (nextCompact !== compactRef) {
         compactRef = nextCompact;
         setIsCompact(nextCompact);
@@ -133,11 +128,6 @@ export const MenuTop = ({
     ro.observe(rowEl);
     ro.observe(leadEl);
     ro.observe(desktopEl);
-    const attrObserver = new MutationObserver(schedule);
-    attrObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: [PANEL_COMPACT_ATTR, PANEL_OPEN_ATTR],
-    });
     window.addEventListener('resize', schedule);
     schedule();
 
@@ -146,7 +136,6 @@ export const MenuTop = ({
         window.cancelAnimationFrame(raf);
       }
       ro.disconnect();
-      attrObserver.disconnect();
       window.removeEventListener('resize', schedule);
     };
   }, [compactReleaseThresholdPx, compactSafeThresholdPx, isCompact]);

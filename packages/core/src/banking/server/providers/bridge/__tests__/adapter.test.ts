@@ -5,12 +5,18 @@ import { createBridgeKycProvider } from '../adapter';
 const bridgeCreateKycLink = vi.fn();
 const bridgeCreateVirtualAccount = vi.fn();
 const bridgeCreateTransfer = vi.fn();
+const bridgeCreateExternalAccount = vi.fn();
+const bridgeCreateLiquidationAddress = vi.fn();
 
 vi.mock('../../../../../common/server/bridge-client', () => ({
   bridgeCreateKycLink: (...args: unknown[]) => bridgeCreateKycLink(...args),
   bridgeCreateVirtualAccount: (...args: unknown[]) =>
     bridgeCreateVirtualAccount(...args),
   bridgeCreateTransfer: (...args: unknown[]) => bridgeCreateTransfer(...args),
+  bridgeCreateExternalAccount: (...args: unknown[]) =>
+    bridgeCreateExternalAccount(...args),
+  bridgeCreateLiquidationAddress: (...args: unknown[]) =>
+    bridgeCreateLiquidationAddress(...args),
 }));
 
 describe('createBridgeKycProvider', () => {
@@ -482,6 +488,226 @@ describe('createBridgeKycProvider', () => {
         developerFeePercent: null,
         status: 'awaiting_funds',
       });
+    });
+  });
+
+  describe('registerExternalAccount', () => {
+    beforeEach(() => {
+      bridgeCreateExternalAccount.mockResolvedValue({
+        id: 'ext_1',
+        currency: 'usd',
+        active: true,
+        bank_name: 'Lead Bank',
+        account_owner_name: 'Acme DAO',
+        last_4: '9123',
+      });
+    });
+
+    it('maps USD ACH external account request', async () => {
+      const provider = createBridgeKycProvider();
+      const result = await provider.registerExternalAccount({
+        customerId: 'cust_1',
+        railKey: 'usd_ach',
+        bankName: 'Lead Bank',
+        accountName: 'Operating',
+        accountOwnerName: 'Acme DAO',
+        accountOwnerType: 'business',
+        businessName: 'Acme DAO',
+        routingNumber: '101019644',
+        accountNumber: '215268129123',
+        checkingOrSavings: 'checking',
+        address: {
+          street_line_1: '923 Folsom Street',
+          city: 'San Francisco',
+          subdivision: 'CA',
+          postal_code: '94107',
+          country: 'USA',
+        },
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440020',
+      });
+
+      expect(bridgeCreateExternalAccount).toHaveBeenCalledWith(
+        'cust_1',
+        expect.objectContaining({
+          currency: 'usd',
+          account_type: 'us',
+          account: {
+            routing_number: '101019644',
+            account_number: '215268129123',
+            checking_or_savings: 'checking',
+          },
+        }),
+        '550e8400-e29b-41d4-a716-446655440020',
+      );
+      expect(result.providerExternalAccountId).toBe('ext_1');
+      expect(result.accountLast4).toBe('9123');
+    });
+
+    it('strips hyphens from sort_code before sending to Bridge (GBP)', async () => {
+      bridgeCreateExternalAccount.mockResolvedValueOnce({
+        id: 'ext_gbp_1',
+        currency: 'gbp',
+        active: true,
+        bank_name: 'Barclays',
+        account_owner_name: 'Acme DAO',
+        last_4: '5678',
+      });
+
+      const provider = createBridgeKycProvider();
+      await provider.registerExternalAccount({
+        customerId: 'cust_1',
+        railKey: 'gbp',
+        bankName: 'Barclays',
+        accountName: 'Operating',
+        accountOwnerName: 'Acme DAO',
+        sortCode: '20-00-00',
+        accountNumber: '12345678',
+        address: {
+          street_line_1: '10 Downing Street',
+          city: 'London',
+          postal_code: 'SW1A 2AA',
+          country: 'GBR',
+        },
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440030',
+      });
+
+      expect(bridgeCreateExternalAccount).toHaveBeenCalledWith(
+        'cust_1',
+        expect.objectContaining({
+          currency: 'gbp',
+          account_type: 'gb',
+          account: { sort_code: '200000', account_number: '12345678' },
+        }),
+        '550e8400-e29b-41d4-a716-446655440030',
+      );
+    });
+
+    it('maps EUR SEPA business external account with iban and businessName', async () => {
+      bridgeCreateExternalAccount.mockResolvedValueOnce({
+        id: 'ext_eur_1',
+        currency: 'eur',
+        active: true,
+        bank_name: 'ING',
+        account_owner_name: 'Acme Foundation',
+        last_4: null,
+      });
+
+      const provider = createBridgeKycProvider();
+      await provider.registerExternalAccount({
+        customerId: 'cust_1',
+        railKey: 'eur_sepa',
+        bankName: 'ING',
+        accountName: 'Operating',
+        accountOwnerName: 'Acme Foundation',
+        accountOwnerType: 'business',
+        businessName: 'Acme Foundation GmbH',
+        iban: 'DE89370400440532013000',
+        address: {
+          street_line_1: 'Hauptstraße 1',
+          city: 'Berlin',
+          postal_code: '10115',
+          country: 'DEU',
+        },
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440031',
+      });
+
+      expect(bridgeCreateExternalAccount).toHaveBeenCalledWith(
+        'cust_1',
+        expect.objectContaining({
+          currency: 'eur',
+          account_type: 'iban',
+          account_owner_type: 'business',
+          business_name: 'Acme Foundation GmbH',
+          iban: expect.objectContaining({
+            account_number: 'DE89370400440532013000',
+            country: 'DEU',
+          }),
+        }),
+        '550e8400-e29b-41d4-a716-446655440031',
+      );
+    });
+
+    it('maps EUR SEPA individual account with first_name and last_name', async () => {
+      bridgeCreateExternalAccount.mockResolvedValueOnce({
+        id: 'ext_eur_2',
+        currency: 'eur',
+        active: true,
+        bank_name: 'BNP Paribas',
+        account_owner_name: 'Jane Doe',
+        last_4: null,
+      });
+
+      const provider = createBridgeKycProvider();
+      await provider.registerExternalAccount({
+        customerId: 'cust_1',
+        railKey: 'eur_sepa',
+        bankName: 'BNP Paribas',
+        accountName: 'Personal',
+        accountOwnerName: 'Jane Doe',
+        accountOwnerType: 'individual',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        iban: 'FR7630006000011234567890189',
+        address: {
+          street_line_1: '1 Rue de la Paix',
+          city: 'Paris',
+          postal_code: '75001',
+          country: 'FRA',
+        },
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440032',
+      });
+
+      expect(bridgeCreateExternalAccount).toHaveBeenCalledWith(
+        'cust_1',
+        expect.objectContaining({
+          account_type: 'iban',
+          account_owner_type: 'individual',
+          first_name: 'Jane',
+          last_name: 'Doe',
+        }),
+        '550e8400-e29b-41d4-a716-446655440032',
+      );
+    });
+  });
+
+  describe('createLiquidationAddress', () => {
+    beforeEach(() => {
+      bridgeCreateLiquidationAddress.mockResolvedValue({
+        id: 'la_1',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation',
+        external_account_id: 'ext_1',
+        destination_payment_rail: 'ach',
+        destination_currency: 'usd',
+        state: 'active',
+      });
+    });
+
+    it('creates liquidation address linked to external account', async () => {
+      const provider = createBridgeKycProvider();
+      const result = await provider.createLiquidationAddress({
+        customerId: 'cust_1',
+        externalAccountId: 'ext_1',
+        sourceCurrency: 'usdc',
+        destinationPaymentRail: 'ach',
+        destinationCurrency: 'usd',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440021',
+      });
+
+      expect(bridgeCreateLiquidationAddress).toHaveBeenCalledWith(
+        'cust_1',
+        {
+          chain: 'base',
+          currency: 'usdc',
+          external_account_id: 'ext_1',
+          destination_payment_rail: 'ach',
+          destination_currency: 'usd',
+        },
+        '550e8400-e29b-41d4-a716-446655440021',
+      );
+      expect(result.evmAddress).toBe('0xliquidation');
+      expect(result.state).toBe('active');
     });
   });
 });

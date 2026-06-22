@@ -9,6 +9,7 @@ import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 import { computeSpaceMemberEntries } from '../../space/server/get-space-members-roster';
 import { fetchSpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetails';
 import { web3Client } from '../../common/server/web3-rpc/client';
+import { isHiddenToken } from '../../common/web3/tokens';
 import { tokens } from '@hypha-platform/storage-postgres';
 
 type HolderKind = 'person' | 'space' | 'treasury' | 'other';
@@ -356,6 +357,9 @@ export async function getTokenHoldingsBySpaceSlug(
       normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS),
     ]);
   }
+
+  // Drop retired/hidden tokens so they never appear in holder breakdowns.
+  tokenAddresses = tokenAddresses.filter((address) => !isHiddenToken(address));
 
   const computedRoster = await computeSpaceMemberEntries(spaceSlug, { db });
   const holderMap = new Map<`0x${string}`, HolderDescriptor>();

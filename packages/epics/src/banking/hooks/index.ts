@@ -10,3 +10,5 @@ export * from './use-request-endorsement-kyc';
 export { useTransfers as useBankTransfers } from './use-transfers';
 export * from './use-create-transfer';
 export * from './use-sync-banking';
+export * from './use-payout-accounts';
+export * from './use-create-payout-account';
