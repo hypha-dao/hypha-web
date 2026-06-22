@@ -2194,7 +2194,7 @@
     "onboardingEntryMethodSetToken": "Méthode d'entrée : Adhésion par token",
     "onboardingDiscoveryModeLabel": "Mode de découverte",
     "onboardingDiscoveryModeChat": "Chat",
-    "onboardingDiscoveryModeVoice": "Entretien vocal",
+    "onboardingDiscoveryModeVoice": "Découverte vocale",
     "onboardingVoiceInterviewTitle": "Parlons-en",
     "onboardingVoiceInterviewHint": "Parlez naturellement — j'écoute, je reformule ce que j'entends et je pose des questions de suivi. Passez au chat à tout moment.",
     "onboardingVoiceStatusReady": "Appuyez sur le micro quand vous êtes prêt",

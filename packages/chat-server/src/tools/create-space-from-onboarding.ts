@@ -13,6 +13,7 @@ import { sanitizeSlug } from '../system-prompt';
 import {
   hasOnboardingConfirmation,
   inferVisualVibe,
+  resolveLatestVisualGenerationIntent,
 } from './onboarding-confirmation';
 import { generateSpaceVisualAssets } from './generate-space-visual-assets';
 import { isSkippedLocationAnswer } from './onboarding-location';
@@ -249,8 +250,15 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
 
       let logoUrl = data.logo_url ?? null;
       let leadImageUrl = data.lead_image_url ?? null;
+      const wantsGeneratedVisuals =
+        data.generate_visuals === true ||
+        resolveLatestVisualGenerationIntent(
+          data.onboarding_recent_user_texts ?? [],
+        );
       const shouldGenerateVisuals =
-        data.generate_visuals === true && (!logoUrl || !leadImageUrl);
+        (!logoUrl || !leadImageUrl) &&
+        (wantsGeneratedVisuals ||
+          (explicitConfirmation && !data.dry_run && Boolean(data.title)));
 
       if (shouldGenerateVisuals) {
         const generated = await generateSpaceVisualAssets({

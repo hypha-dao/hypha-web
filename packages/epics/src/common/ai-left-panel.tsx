@@ -111,6 +111,10 @@ import {
   onboardingJoinMethodFromCreatePayload,
 } from './onboarding-create-payload';
 import {
+  extractOnboardingVisualAssetsFromMessages,
+  mergeVisualAssetsIntoCreatePayload,
+} from './onboarding-visual-assets';
+import {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
   onboardingSpaceLocationFromPicker,
@@ -1187,6 +1191,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;
+    const resolved = extractOnboardingVisualAssetsFromMessages(messages);
+    if (!resolved) return;
+    if (
+      onboardingContext.visualAssets?.logoUrl === resolved.logoUrl &&
+      onboardingContext.visualAssets?.leadImageUrl === resolved.leadImageUrl
+    ) {
+      return;
+    }
+    const nextContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      visualAssets: resolved,
+    };
+    setOnboardingContext(nextContext);
+    saveOnboardingConversationContext(nextContext);
+  }, [messages, onboardingContext]);
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
     if (aiWalletCreateInFlightRef.current) return;
 
     const latestWalletCreatePayload = [...messages]
@@ -1249,7 +1271,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         }`
       : null;
     if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
-    const payload = latestWalletCreatePayload?.part?.output?.create_payload;
+    const payload = mergeVisualAssetsIntoCreatePayload(
+      (latestWalletCreatePayload?.part?.output?.create_payload ?? {}) as Record<
+        string,
+        unknown
+      >,
+      messages,
+      onboardingContext.visualAssets,
+    );
     if (!payload?.title || !payload.description) return;
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
@@ -1262,7 +1291,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       typeof payload.lead_image_url === 'string'
         ? payload.lead_image_url.trim()
         : '';
-    if (!logoUrl || !leadImageUrl) return;
+    if (!logoUrl || !leadImageUrl) {
+      console.warn(
+        '[AiLeftPanel] Skipping wallet create — logo and banner URLs are required.',
+        { title: payload.title },
+      );
+      return;
+    }
     const normalizedFlags: SpaceFlags[] = Array.isArray(payload.flags)
       ? (payload.flags as SpaceFlags[])
       : [];
@@ -1285,18 +1320,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         await createSpaceWithWalletFlow({
           title: normalizedTitle,
           description: normalizedDescription,
-          slug: payload.slug ?? '',
+          slug: typeof payload.slug === 'string' ? payload.slug : '',
           parentId:
             typeof payload.parent_id === 'number' ? payload.parent_id : null,
           flags: normalizedFlags,
           links: Array.isArray(payload.links) ? payload.links : [],
           categories: normalizedCategories,
-          logoUrl: payload.logo_url ?? '',
-          leadImage: payload.lead_image_url ?? '',
-          ...(payload.ecosystem_logo_light_url
+          logoUrl,
+          leadImage: leadImageUrl,
+          ...(typeof payload.ecosystem_logo_light_url === 'string'
             ? { ecosystemLogoUrlLight: payload.ecosystem_logo_light_url }
             : {}),
-          ...(payload.ecosystem_logo_dark_url
+          ...(typeof payload.ecosystem_logo_dark_url === 'string'
             ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
             : {}),
           ...onboardingLocationFromCreatePayload(payload),

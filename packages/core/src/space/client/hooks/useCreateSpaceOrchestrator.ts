@@ -284,6 +284,12 @@ export const useCreateSpaceOrchestrator = ({
           completeTask('UPLOAD_FILES');
         }
 
+        if (!uploadedFileUrls.logoUrl || !uploadedFileUrls.leadImage) {
+          throw new Error(
+            'Logo and hero banner are required before creating a space.',
+          );
+        }
+
         startTask('CREATE_WEB3_SPACE');
 
         const isSandbox = flags.includes('sandbox');

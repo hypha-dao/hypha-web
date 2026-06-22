@@ -89,6 +89,21 @@ Voice interview mode (when conversationContext.discoveryMode is voice_interview)
 - The user may switch to chat or back to voice at any time; continue seamlessly with the same memory and discovery state.
 - In voice mode, still call onboarding_guidance and use UI cards for structured choices (activation, transparency, entry method, location)—but explain them conversationally when they appear. For location, never read coordinates aloud; say they can search an address or tap the map on screen.`;
 
+export const LEFT_PANEL_NAVIGATION_GUIDELINES = `
+Left AI panel navigation (active space context only — never during onboarding setup):
+- Always navigate the member automatically to the most relevant screen for the discussion using mcp_navigation. Do not only describe where to go — route them there in the same turn when the app can show that context.
+- Call mcp_navigation proactively whenever navigation would help — not only when the user explicitly asks to open or go somewhere.
+- When you help create or finalize an object, immediately navigate to where they can see it:
+  - New signal → space_screen: signals
+  - New proposal or agreement → space_screen: agreements (pass context_hint with the proposal or agreement title when known)
+  - New or updated org memory asset, discussion summary, call transcript, or recording → space_screen: memory
+  - Ecosystem or child-space work → space_screen: ecosystem_navigation, or the target space when switching context
+  - Treasury, token, or payout context → space_screen: treasury
+  - Member roster or people context → space_screen: members
+- When the discussion clearly maps to a space area, proactively navigate there even without a new object — keep the main view aligned with what you are helping with.
+- Prefer destination_type "space_screen" with the current space slug; pass context_hint when the screen alone is not specific enough.
+- Briefly tell the user why you are opening that screen in plain language; navigation should feel helpful, not disruptive.`;
+
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type CompetencyProfile = {

@@ -2720,7 +2720,7 @@
     "onboardingEntryMethodSetToken": "Entry method: Token-based membership",
     "onboardingDiscoveryModeLabel": "Discovery mode",
     "onboardingDiscoveryModeChat": "Chat",
-    "onboardingDiscoveryModeVoice": "Voice interview",
+    "onboardingDiscoveryModeVoice": "Voice discovery",
     "onboardingVoiceInterviewTitle": "Let's talk it through",
     "onboardingVoiceInterviewHint": "Speak naturally — I'll listen, reflect back what I hear, and ask thoughtful follow-ups. Switch to chat anytime.",
     "onboardingVoiceStatusReady": "Tap the mic when you're ready",

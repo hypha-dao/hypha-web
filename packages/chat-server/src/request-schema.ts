@@ -31,6 +31,11 @@ const onboardingTransparencyMatrixSchema = z.object({
   access: z.number().int().min(0).max(3),
 });
 
+const onboardingVisualAssetsSchema = z.object({
+  logoUrl: z.string().url(),
+  leadImageUrl: z.string().url(),
+});
+
 const onboardingConversationContextSchema = z.object({
   mode: z.literal('onboarding_setup'),
   source: z.enum(['onboarding_hero', 'ai_panel']).optional(),
@@ -42,6 +47,7 @@ const onboardingConversationContextSchema = z.object({
   transparencyMatrix: onboardingTransparencyMatrixSchema.optional(),
   entryMethod: z.enum(['open_access', 'invite_only', 'token_based']).optional(),
   ecosystemRootSlug: z.string().optional(),
+  visualAssets: onboardingVisualAssetsSchema.optional(),
   discoveryMode: z.enum(['chat', 'voice_interview']).optional(),
   lastUserText: z.string().optional(),
   locale: z.string().trim().min(2).max(16).optional(),

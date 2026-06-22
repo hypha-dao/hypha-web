@@ -16,6 +16,7 @@ import type { ChatRequestPayload } from './request-schema';
 import {
   buildQuestionCompetencyDirective,
   buildSystemPrompt,
+  LEFT_PANEL_NAVIGATION_GUIDELINES,
   sanitizeSlug,
 } from './system-prompt';
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
@@ -1109,11 +1110,18 @@ function normalizeConversationContext(
 function buildEffectiveSystemPrompt(
   spaceSlug: string | null | undefined,
   lastUserText: string | null,
+  conversationContext: ChatRequestPayload['conversationContext'],
 ): string {
   const basePrompt = buildSystemPrompt(spaceSlug);
+  const parts = [basePrompt];
+  if (spaceSlug?.trim() && conversationContext?.mode !== 'onboarding_setup') {
+    parts.push(LEFT_PANEL_NAVIGATION_GUIDELINES);
+  }
   const competencyDirective = buildQuestionCompetencyDirective(lastUserText);
-  if (!competencyDirective) return basePrompt;
-  return `${basePrompt}\n\n${competencyDirective}`;
+  if (competencyDirective) {
+    parts.push(`\n\n${competencyDirective}`);
+  }
+  return parts.join('');
 }
 
 async function convertMessagesSafely(
@@ -1187,6 +1195,7 @@ export async function createChatStreamResult(
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
     spaceSlug,
     lastUserText,
+    normalizedConversationContext,
   );
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'

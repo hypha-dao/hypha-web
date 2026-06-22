@@ -81,6 +81,11 @@ export {
   onboardingJoinMethodFromCreatePayload,
 } from './onboarding-create-payload';
 export {
+  extractOnboardingVisualAssetsFromMessages,
+  mergeVisualAssetsIntoCreatePayload,
+  type OnboardingVisualAssets,
+} from './onboarding-visual-assets';
+export {
   applyOnboardingTransparencyToContext,
   formatOnboardingTransparencySubmitMessage,
   type OnboardingTransparencyMessageLabels,

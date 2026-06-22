@@ -27,6 +27,8 @@ import {
   onboardingLocationFromCreatePayload,
   onboardingTransparencyFromCreatePayload,
   onboardingJoinMethodFromCreatePayload,
+  extractOnboardingVisualAssetsFromMessages,
+  mergeVisualAssetsIntoCreatePayload,
   onboardingSpaceLocationFromPicker,
   skippedOnboardingSpaceLocation,
   saveOnboardingConversationContext,
@@ -625,6 +627,23 @@ export function OnboardingAiFullPage({
   }, [messages, router]);
 
   useEffect(() => {
+    const resolved = extractOnboardingVisualAssetsFromMessages(messages);
+    if (!resolved) return;
+    if (
+      onboardingContext.visualAssets?.logoUrl === resolved.logoUrl &&
+      onboardingContext.visualAssets?.leadImageUrl === resolved.leadImageUrl
+    ) {
+      return;
+    }
+    const nextContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      visualAssets: resolved,
+    };
+    setOnboardingContext(nextContext);
+    saveOnboardingConversationContext(nextContext);
+  }, [messages, onboardingContext]);
+
+  useEffect(() => {
     if (walletCreateInFlightRef.current) return;
     const payloadResult = [...messages]
       .reverse()
@@ -680,7 +699,14 @@ export function OnboardingAiFullPage({
       ? `${payloadResult.messageId ?? 'm'}:${payloadResult.index ?? 0}`
       : null;
     if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
-    const payload = payloadResult?.part?.output?.create_payload;
+    const payload = mergeVisualAssetsIntoCreatePayload(
+      (payloadResult?.part?.output?.create_payload ?? {}) as Record<
+        string,
+        unknown
+      >,
+      messages,
+      onboardingContext.visualAssets,
+    );
     if (!payload?.title || !payload.description) return;
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
@@ -693,7 +719,13 @@ export function OnboardingAiFullPage({
       typeof payload.lead_image_url === 'string'
         ? payload.lead_image_url.trim()
         : '';
-    if (!logoUrl || !leadImageUrl) return;
+    if (!logoUrl || !leadImageUrl) {
+      console.warn(
+        '[OnboardingAiFullPage] Skipping wallet create — logo and banner URLs are required.',
+        { title: payload.title },
+      );
+      return;
+    }
     const executeContext: OnboardingConversationContext = {
       ...onboardingContext,
       setupPhase: 'execute',
@@ -706,22 +738,24 @@ export function OnboardingAiFullPage({
         await createSpaceWithWalletFlow({
           title: normalizedTitle,
           description: normalizedDescription,
-          slug: payload.slug ?? '',
+          slug: typeof payload.slug === 'string' ? payload.slug : '',
           parentId:
             typeof payload.parent_id === 'number' ? payload.parent_id : null,
           flags: (Array.isArray(payload.flags)
             ? payload.flags
             : []) as SpaceFlags[],
-          links: Array.isArray(payload.links) ? payload.links : [],
+          links: Array.isArray(payload.links)
+            ? (payload.links as string[])
+            : [],
           categories: (Array.isArray(payload.categories)
             ? payload.categories
             : []) as Category[],
-          logoUrl: payload.logo_url ?? '',
-          leadImage: payload.lead_image_url ?? '',
-          ...(payload.ecosystem_logo_light_url
+          logoUrl,
+          leadImage: leadImageUrl,
+          ...(typeof payload.ecosystem_logo_light_url === 'string'
             ? { ecosystemLogoUrlLight: payload.ecosystem_logo_light_url }
             : {}),
-          ...(payload.ecosystem_logo_dark_url
+          ...(typeof payload.ecosystem_logo_dark_url === 'string'
             ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
             : {}),
           ...onboardingLocationFromCreatePayload(payload),

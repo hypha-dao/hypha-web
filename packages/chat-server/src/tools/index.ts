@@ -234,6 +234,53 @@ function withInjectedOnboardingEntryMethod<T extends Record<string, unknown>>(
   return { ...payload, join_method: joinMethod };
 }
 
+type OnboardingVisualAssetsContext = {
+  logoUrl: string;
+  leadImageUrl: string;
+};
+
+function extractVisualAssetsFromContext(
+  conversationContext?: unknown,
+): OnboardingVisualAssetsContext | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const raw = (conversationContext as { visualAssets?: unknown }).visualAssets;
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as Partial<OnboardingVisualAssetsContext>;
+  if (
+    typeof candidate.logoUrl !== 'string' ||
+    typeof candidate.leadImageUrl !== 'string' ||
+    !/^https?:\/\//i.test(candidate.logoUrl.trim()) ||
+    !/^https?:\/\//i.test(candidate.leadImageUrl.trim())
+  ) {
+    return undefined;
+  }
+  return {
+    logoUrl: candidate.logoUrl.trim(),
+    leadImageUrl: candidate.leadImageUrl.trim(),
+  };
+}
+
+function withInjectedOnboardingVisualAssets<T extends Record<string, unknown>>(
+  payload: T,
+  visualAssets?: OnboardingVisualAssetsContext,
+): T {
+  if (!visualAssets) {
+    return payload;
+  }
+  return {
+    ...payload,
+    ...(typeof payload.logo_url !== 'string' || !payload.logo_url.trim()
+      ? { logo_url: visualAssets.logoUrl }
+      : {}),
+    ...(typeof payload.lead_image_url !== 'string' ||
+    !payload.lead_image_url.trim()
+      ? { lead_image_url: visualAssets.leadImageUrl }
+      : {}),
+  };
+}
+
 type OnboardingEntryMethodContext =
   | 'open_access'
   | 'invite_only'
@@ -333,6 +380,8 @@ export function createChatTools(
   const contextSetupJourney =
     extractSetupJourneyFromContext(conversationContext);
   const contextEntryMethod = extractEntryMethodFromContext(conversationContext);
+  const contextVisualAssets =
+    extractVisualAssetsFromContext(conversationContext);
 
   const createSpaceFromOnboardingTool =
     createCreateSpaceFromOnboardingTool(authToken);
@@ -464,9 +513,12 @@ export function createChatTools(
               withInjectedOnboardingActivationMethod(
                 withInjectedOnboardingTransparencyMatrix(
                   withInjectedOnboardingEntryMethod(
-                    withInjectedOnboardingContext(
-                      args,
-                      onboardingInjectionContext,
+                    withInjectedOnboardingVisualAssets(
+                      withInjectedOnboardingContext(
+                        args as Record<string, unknown>,
+                        onboardingInjectionContext,
+                      ),
+                      contextVisualAssets,
                     ),
                     contextEntryMethod,
                   ),

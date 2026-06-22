@@ -55,6 +55,11 @@ export type OnboardingConversationContext = {
   entryMethod?: OnboardingEntryMethod;
   /** Root space slug after ecosystem onboarding handoff to the left AI panel. */
   ecosystemRootSlug?: string;
+  /** Confirmed logo + hero banner URLs from upload or generation. */
+  visualAssets?: {
+    logoUrl: string;
+    leadImageUrl: string;
+  };
   /** Chat text vs voice interview during discovery. */
   discoveryMode?: OnboardingDiscoveryMode;
   setupPlan?: {
@@ -204,6 +209,28 @@ function parseStoredSource(
   return ONBOARDING_HERO_SOURCE;
 }
 
+function parseStoredVisualAssets(
+  raw: unknown,
+): OnboardingConversationContext['visualAssets'] {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as {
+    logoUrl?: unknown;
+    leadImageUrl?: unknown;
+  };
+  if (
+    typeof candidate.logoUrl !== 'string' ||
+    typeof candidate.leadImageUrl !== 'string' ||
+    !/^https?:\/\//i.test(candidate.logoUrl.trim()) ||
+    !/^https?:\/\//i.test(candidate.leadImageUrl.trim())
+  ) {
+    return undefined;
+  }
+  return {
+    logoUrl: candidate.logoUrl.trim(),
+    leadImageUrl: candidate.leadImageUrl.trim(),
+  };
+}
+
 export function createAiPanelSetupContext(
   locale?: string,
 ): OnboardingConversationContext {
@@ -312,6 +339,7 @@ export function readOnboardingConversationContext():
         typeof parsed.ecosystemRootSlug === 'string'
           ? parsed.ecosystemRootSlug
           : undefined,
+      visualAssets: parseStoredVisualAssets(parsed.visualAssets),
       discoveryMode: parseOnboardingDiscoveryMode(parsed.discoveryMode),
       lastUserText:
         typeof parsed.lastUserText === 'string'
