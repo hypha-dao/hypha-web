@@ -108,7 +108,6 @@ import {
 import {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
-  getClientEnableNetworkMap,
   onboardingSpaceLocationFromPicker,
   skippedOnboardingSpaceLocation,
 } from './onboarding-location-ui';
@@ -1882,7 +1881,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
-  const enableNetworkMap = getClientEnableNetworkMap();
   const isOnboardingSetup = isSpaceSetupContext(onboardingContext);
   const discoveryMode: OnboardingDiscoveryMode =
     onboardingContext?.discoveryMode ?? 'chat';
@@ -2230,7 +2228,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
           onboardingContext={onboardingContext}
-          enableNetworkMap={enableNetworkMap}
           onOnboardingLocationConfirm={
             blockSpaceAiForSubscription
               ? undefined

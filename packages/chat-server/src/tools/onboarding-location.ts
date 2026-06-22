@@ -18,8 +18,24 @@ export function isSkippedLocationAnswer(value: unknown): boolean {
   );
 }
 
+function isStructuredOnboardingLocation(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as {
+    skipped?: unknown;
+    latitude?: unknown;
+    longitude?: unknown;
+  };
+  if (candidate.skipped === true) return true;
+  return (
+    typeof candidate.latitude === 'number' &&
+    Number.isFinite(candidate.latitude) &&
+    typeof candidate.longitude === 'number' &&
+    Number.isFinite(candidate.longitude)
+  );
+}
+
+/** Location is answered only via the map UI (structured coords) or an explicit skip. */
 export function isAnsweredLocationStep(value: unknown): boolean {
   if (isSkippedLocationAnswer(value)) return true;
-  if (typeof value === 'string') return value.trim().length > 0;
-  return value != null;
+  return isStructuredOnboardingLocation(value);
 }

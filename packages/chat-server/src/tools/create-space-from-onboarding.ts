@@ -173,7 +173,7 @@ async function resolveSpaceLocationFields(
 export function createCreateSpaceFromOnboardingTool(authToken: string) {
   return {
     description:
-      'Write: create a new Hypha space from onboarding input. Requires explicit user confirmation before execution and membership access checks when nested under a parent space. When the user wants AI-generated icon/logo or banner images, set generate_visuals=true (or call generate_space_visual_assets first and pass logo_url and lead_image_url). Never tell the user that images must wait until after creation. When the user sets location via the onboarding map UI, latitude, longitude, and location_label are already in conversation context—pass them through without calling geocode_space_location. For typed place names only, call geocode_space_location first, confirm the match, then pass latitude, longitude, and location_label (or location_query for auto-resolution).',
+      'Write: create a new Hypha space from onboarding input. Requires explicit user confirmation before execution and membership access checks when nested under a parent space. When the user wants AI-generated icon/logo or banner images, set generate_visuals=true (or call generate_space_visual_assets first and pass logo_url and lead_image_url). Never tell the user that images must wait until after creation. When the user sets location via the onboarding map card, latitude, longitude, and location_label are already in conversation context—pass them through without calling geocode_space_location. Never ask users to confirm raw coordinates in chat.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);

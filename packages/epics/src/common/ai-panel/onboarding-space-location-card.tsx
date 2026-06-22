@@ -13,12 +13,15 @@ import {
 
 type OnboardingSpaceLocationCardProps = {
   disabled?: boolean;
+  /** Pre-fill address search when the user already named a place in chat. */
+  initialSearchQuery?: string;
   onConfirm: (value: SpaceLocationValue) => void;
   onSkip: () => void;
 };
 
 export function OnboardingSpaceLocationCard({
   disabled = false,
+  initialSearchQuery,
   onConfirm,
   onSkip,
 }: OnboardingSpaceLocationCardProps) {
@@ -52,6 +55,8 @@ export function OnboardingSpaceLocationCard({
         value={value}
         onChange={setValue}
         disabled={disabled}
+        showManualCoordinates={false}
+        initialSearchQuery={initialSearchQuery}
       />
       <div className="mt-4 flex flex-wrap gap-2">
         <Button type="button" onClick={handleConfirm} disabled={disabled}>

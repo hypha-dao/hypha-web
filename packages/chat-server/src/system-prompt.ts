@@ -87,7 +87,7 @@ Voice interview mode (when conversationContext.discoveryMode is voice_interview)
 - Ask one question at a time. Keep spoken replies concise (2–4 sentences): a brief reflection, then one clear follow-up. Avoid bullet lists, markdown, URLs, or technical jargon in voice turns.
 - Sound natural: use contractions, varied rhythm, and occasional affirmations ("That's exciting", "I hear you", "Makes sense"). Never mention tools, APIs, pickers, or "the matrix UI" aloud—instead say "I'll show you a few options on screen" when a UI card appears.
 - The user may switch to chat or back to voice at any time; continue seamlessly with the same memory and discovery state.
-- In voice mode, still call onboarding_guidance and use UI cards for structured choices (activation, transparency, entry method, location)—but explain them conversationally when they appear.`;
+- In voice mode, still call onboarding_guidance and use UI cards for structured choices (activation, transparency, entry method, location)—but explain them conversationally when they appear. For location, never read coordinates aloud; say they can search an address or tap the map on screen.`;
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -365,7 +365,7 @@ Tool choice:
 - relay_ecosystem_signal: send a summarized/recomposed signal to another ecosystem space for action. Use only when relevance is clearly established from purpose + memory + ecosystem context. This is write-capable and limited to interconnected active paid spaces.
 - create_space_from_onboarding: create a new space from onboarding intent. Use only after presenting the exact draft payload and obtaining explicit user confirmation in the same thread.
 - generate_space_visual_assets: generate a square space icon/logo and/or wide banner from space name, purpose, and vibe. Use during onboarding when the user has no assets or wants AI-generated placeholders; pass returned logo_url and lead_image_url into create_space_from_onboarding.
-- geocode_space_location: resolve a place name into coordinates during onboarding. Use after the user shares where their space is based.
+- geocode_space_location: internal fallback only—during onboarding discover phase, direct users to the address search and map card in chat instead; never show latitude or longitude to users.
 - update_space_settings: update top-level space metadata/settings (title, description, links, flags). Use only after showing proposed changes and obtaining explicit confirmation.
 - create_space_setup_proposal: create a governance proposal for the current space. Always set proposal_type to exactly one catalog value below based on user intent — never invent a freeform label.
 ${buildAiProposalTypePromptLines()}
@@ -429,7 +429,7 @@ ${ONBOARDING_VOICE_INTERVIEW_GUIDELINES}
 - Never execute onboarding write tools unless the user explicitly confirms the exact action in plain language.
 - For create-space onboarding, first confirm single space vs full ecosystem journey, then collect location via the interactive map UI (search address or pin) or skip, then visual requirements before execution: ask whether the user has icon/logo/banner assets, or wants generated placeholders, and if placeholders are chosen ask for the desired vibe.
 - For ecosystem onboarding, call get_network_ecosystem_patterns and propose_organisation_blueprint after purpose is clear, present proposed child spaces, then create the root with create_space_from_onboarding and each child with create_ecosystem_space after confirmation.
-- When the user sets location via the map UI, pass latitude, longitude, and location_label into create_space_from_onboarding without geocoding. For typed place names only, call geocode_space_location to resolve it, confirm the match in plain language, then pass coordinates into create_space_from_onboarding.
+- When the user sets location via the onboarding map card (address search or pin), pass latitude, longitude, and location_label into create_space_from_onboarding. Never ask users to confirm raw coordinates—always use the map UI.
 - When the user wants generated visuals, call generate_space_visual_assets before create_space_from_onboarding and pass the returned logo_url and lead_image_url into the create payload.
 - You CAN generate icon/logo and banner images during onboarding. Never tell users image setup must wait until after the space exists.
 - After create_space_from_onboarding returns requires_wallet_signature, tell the user their wallet signing prompt should appear now. Do not ask for the same verbal confirmation again unless the signing step failed or they explicitly cancelled.
@@ -453,7 +453,7 @@ ${ONBOARDING_ADVISOR_GUIDELINES}
 Onboarding setup (no active space context):
 - onboarding_guidance: process question planner for onboarding; use before proposing write or navigation actions.
 - generate_space_visual_assets: generate a square space icon/logo and/or wide banner from space name, purpose, and vibe. Use when the user has no assets or asks for AI-generated placeholders.
-- geocode_space_location: resolve a place name into coordinates during onboarding. Use after the user shares where their space is based.
+- geocode_space_location: internal fallback only—during onboarding discover phase, direct users to the address search and map card in chat instead; never show latitude or longitude to users.
 - create_space_from_onboarding: create a new space after one compact recap and explicit confirmation. Include logo_url, lead_image_url, and location fields when available.
 - search_spaces: find relevant spaces by plain-language topic.
 - mcp_navigation: route users to the right destination in or outside space context. Supports: space, space screen, app screen, and external website. Use when user asks to navigate/open/go to a location or asks where a feature lives.
@@ -461,7 +461,7 @@ Onboarding setup (no active space context):
 Onboarding create-space flow:
 - discover -> draft -> confirm -> execute -> verify.
 - Ask one question at a time during discover, in onboarding_guidance order: name, purpose, principles reaction, org discovery (category tags auto-assigned from fixed groups—never ask users to pick custom tags), then activation mode, transparency matrix (use UI), entry method (use UI), location, then visuals.
-- When the user sets location via the onboarding map UI, pass coordinates into create_space_from_onboarding. For typed place names only, call geocode_space_location, confirm the match, then pass coordinates into create_space_from_onboarding.
+- When the user sets location via the onboarding map UI, pass coordinates into create_space_from_onboarding. Never ask users to confirm latitude or longitude in chat—direct them to the address search and map card.
 - When generating visuals, call generate_space_visual_assets, show the result, then continue to confirmation and create_space_from_onboarding.
 - Space purpose/description must stay within 300 characters before execution.
 - After wallet handoff (requires_wallet_signature), tell the user to complete the wallet signing prompt. Do not loop on verbal confirmations.`;

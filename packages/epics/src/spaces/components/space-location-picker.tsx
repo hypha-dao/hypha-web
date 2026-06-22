@@ -30,6 +30,10 @@ type SpaceLocationPickerProps = {
   value: SpaceLocationValue;
   onChange: (value: SpaceLocationValue) => void;
   disabled?: boolean;
+  /** When false, hides manual latitude/longitude inputs (e.g. onboarding chat). */
+  showManualCoordinates?: boolean;
+  /** Pre-fill the address search field once on mount. */
+  initialSearchQuery?: string;
 };
 
 const MAP_WIDTH = 360;
@@ -59,7 +63,16 @@ function projectToMap(latitude: number, longitude: number) {
 export const SpaceLocationPicker = React.forwardRef<
   SpaceLocationPickerHandle,
   SpaceLocationPickerProps
->(function SpaceLocationPicker({ value, onChange, disabled = false }, ref) {
+>(function SpaceLocationPicker(
+  {
+    value,
+    onChange,
+    disabled = false,
+    showManualCoordinates = true,
+    initialSearchQuery,
+  },
+  ref,
+) {
   const t = useTranslations('SpaceLocation');
   const mapRef = React.useRef<HTMLDivElement>(null);
   const {
@@ -237,10 +250,16 @@ export const SpaceLocationPicker = React.forwardRef<
 
   React.useEffect(() => {
     if (!hasSyncedSearchQuery.current) {
-      setQueryFromSelection(value.locationLabel ?? '');
+      const seed = initialSearchQuery?.trim() || value.locationLabel?.trim();
+      if (seed) {
+        setQueryFromSelection(seed);
+        if (initialSearchQuery?.trim()) {
+          setIsResultsOpen(true);
+        }
+      }
       hasSyncedSearchQuery.current = true;
     }
-  }, [setQueryFromSelection, value.locationLabel]);
+  }, [initialSearchQuery, setQueryFromSelection, value.locationLabel]);
 
   const showNoResults =
     query.trim().length >= 2 && !isSearching && !error && results.length === 0;
@@ -416,45 +435,47 @@ export const SpaceLocationPicker = React.forwardRef<
         <p className="text-1 text-neutral-11">{t('mapHint')}</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="space-location-lat">{t('latitudeLabel')}</Label>
-          <Input
-            id="space-location-lat"
-            inputMode="decimal"
-            value={latInput}
-            onChange={(event) => {
-              setLatInput(event.target.value);
-              setManualError(null);
-            }}
-            onBlur={handleManualCoordinates}
-            placeholder={t('latitudePlaceholder')}
-            disabled={disabled}
-          />
+      {showManualCoordinates ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="space-location-lat">{t('latitudeLabel')}</Label>
+            <Input
+              id="space-location-lat"
+              inputMode="decimal"
+              value={latInput}
+              onChange={(event) => {
+                setLatInput(event.target.value);
+                setManualError(null);
+              }}
+              onBlur={handleManualCoordinates}
+              placeholder={t('latitudePlaceholder')}
+              disabled={disabled}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="space-location-lng">{t('longitudeLabel')}</Label>
+            <Input
+              id="space-location-lng"
+              inputMode="decimal"
+              value={lngInput}
+              onChange={(event) => {
+                setLngInput(event.target.value);
+                setManualError(null);
+              }}
+              onBlur={handleManualCoordinates}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleManualCoordinates();
+                }
+              }}
+              placeholder={t('longitudePlaceholder')}
+              disabled={disabled}
+            />
+          </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="space-location-lng">{t('longitudeLabel')}</Label>
-          <Input
-            id="space-location-lng"
-            inputMode="decimal"
-            value={lngInput}
-            onChange={(event) => {
-              setLngInput(event.target.value);
-              setManualError(null);
-            }}
-            onBlur={handleManualCoordinates}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                handleManualCoordinates();
-              }
-            }}
-            placeholder={t('longitudePlaceholder')}
-            disabled={disabled}
-          />
-        </div>
-      </div>
-      {manualError ? (
+      ) : null}
+      {showManualCoordinates && manualError ? (
         <p className="text-1 text-error-11" role="alert">
           {manualError}
         </p>

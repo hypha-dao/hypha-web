@@ -361,7 +361,6 @@ function getCreateSpaceGuidance(
       'Sign with wallet to create the space when required.',
     ],
     suggested_tools: [
-      'geocode_space_location',
       'generate_space_visual_assets',
       'create_space_from_onboarding',
       'mcp_navigation',
@@ -525,7 +524,7 @@ export function createOnboardingGuidanceTool() {
         ? 'Ask only the next_question in one short sentence. The user can choose Single space or Full ecosystem with the journey cards shown below the chat—do not list both options as a long checklist.'
         : null;
       const locationAssistantInstruction = requiresLocationPicker
-        ? 'Ask only the next_question in one short sentence. The user can set location with the interactive map shown below the chat—do not ask them to type coordinates.'
+        ? 'Ask only the next_question in one short sentence. Direct the user to the location card below: search by address or place name, pick a result, or drop a pin on the map—or skip. Never read latitude/longitude or ask the user to confirm raw coordinates. If they already named a place in chat, tell them to search for it in the address field below.'
         : null;
       const activationAssistantInstruction = requiresActivationPicker
         ? 'Ask only the next_question in one short sentence. This step is activation mode only (Sandbox Mode, Pilot Mode, or Live Mode)—not entry method. The user picks with the activation cards below; do not ask about open access, invites, or tokens here.'

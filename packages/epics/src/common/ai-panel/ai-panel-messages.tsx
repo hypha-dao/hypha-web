@@ -48,7 +48,6 @@ type AiPanelMessagesProps = {
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
   onboardingContext?: OnboardingConversationContext;
-  enableNetworkMap?: boolean;
   onOnboardingLocationConfirm?: (value: SpaceLocationValue) => void;
   onOnboardingLocationSkip?: () => void;
   onOnboardingSetupJourneySelect?: (journey: OnboardingSetupJourney) => void;
@@ -67,7 +66,6 @@ export function AiPanelMessages({
   isStreaming = false,
   onActionReplySelect,
   onboardingContext,
-  enableNetworkMap = false,
   onOnboardingLocationConfirm,
   onOnboardingLocationSkip,
   onOnboardingSetupJourneySelect,
@@ -87,8 +85,13 @@ export function AiPanelMessages({
     messages,
     onboardingContext,
     isStreaming,
-    enableNetworkMap,
   });
+  const locationSearchHint =
+    showLocationPicker &&
+    !onboardingContext?.spaceLocation?.latitude &&
+    onboardingContext?.spaceLocation?.skipped !== true
+      ? onboardingContext?.lastUserText?.trim()
+      : undefined;
   const showActivationPicker = shouldShowOnboardingActivationPicker({
     messages,
     onboardingContext,
@@ -214,6 +217,7 @@ export function AiPanelMessages({
         onOnboardingLocationSkip ? (
           <OnboardingSpaceLocationCard
             disabled={isStreaming}
+            initialSearchQuery={locationSearchHint}
             onConfirm={onOnboardingLocationConfirm}
             onSkip={onOnboardingLocationSkip}
           />

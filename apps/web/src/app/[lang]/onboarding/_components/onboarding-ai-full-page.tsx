@@ -24,7 +24,6 @@ import {
   formatOnboardingSetupJourneySubmitMessage,
   formatOnboardingTransparencySubmitMessage,
   formatOnboardingEntryMethodSubmitMessage,
-  getClientEnableNetworkMap,
   onboardingLocationFromCreatePayload,
   onboardingTransparencyFromCreatePayload,
   onboardingJoinMethodFromCreatePayload,
@@ -467,8 +466,6 @@ export function OnboardingAiFullPage({
       sendOnboardingEntryMethodMessage,
     ],
   );
-
-  const enableNetworkMap = getClientEnableNetworkMap();
 
   useEffect(() => {
     if (seededRef.current) return;
@@ -913,7 +910,6 @@ export function OnboardingAiFullPage({
               isStreaming={isStreaming}
               onActionReplySelect={handleActionReplySelect}
               onboardingContext={onboardingContext}
-              enableNetworkMap={enableNetworkMap}
               onOnboardingLocationConfirm={handleOnboardingLocationConfirm}
               onOnboardingLocationSkip={handleOnboardingLocationSkip}
               onOnboardingSetupJourneySelect={

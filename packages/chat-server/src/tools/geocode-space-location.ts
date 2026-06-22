@@ -10,7 +10,7 @@ const inputSchema = z.object({
 export function createGeocodeSpaceLocationTool() {
   return {
     description:
-      'Resolve a place name into coordinates for space onboarding. Use after the user shares a city, region, or landmark. Returns label + latitude + longitude candidates to confirm with the user before create_space_from_onboarding.',
+      'Resolve a place name into coordinates for internal use only. During onboarding discover phase, do NOT call this tool—direct the user to the address search and map card in chat instead. Never present latitude or longitude to the user.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -44,8 +44,8 @@ export function createGeocodeSpaceLocationTool() {
           })),
           next_step:
             results.length === 1
-              ? 'One match found. Confirm with the user, then pass latitude, longitude, and location_label into create_space_from_onboarding.'
-              : 'Multiple matches found. Ask the user which place they mean, then pass the chosen coordinates into create_space_from_onboarding.',
+              ? 'Do not show coordinates to the user. Ask them to confirm the place using the address search and map card in chat.'
+              : 'Do not show coordinates to the user. Ask them to pick the correct place using the address search and map card in chat.',
         };
       } catch (error) {
         const message =

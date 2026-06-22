@@ -28,14 +28,11 @@ export function shouldShowOnboardingLocationPicker({
   messages,
   onboardingContext,
   isStreaming,
-  enableNetworkMap,
 }: {
   messages: ChatUiMessage[];
   onboardingContext?: OnboardingConversationContext;
   isStreaming: boolean;
-  enableNetworkMap: boolean;
 }): boolean {
-  if (!enableNetworkMap) return false;
   const locationAnswered =
     onboardingContext?.spaceLocation?.skipped === true ||
     (onboardingContext?.spaceLocation?.latitude != null &&
@@ -61,9 +58,6 @@ export function formatOnboardingLocationSubmitMessage(
 ): string {
   if (value.locationLabel?.trim()) {
     return labels.withLabel(value.locationLabel.trim());
-  }
-  if (value.latitude != null && value.longitude != null) {
-    return labels.withCoordinates(value.latitude, value.longitude);
   }
   return labels.fallback;
 }
