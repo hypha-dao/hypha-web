@@ -39,15 +39,18 @@ import {
   buildMapPinData,
   pinDatumSpace,
   spiderfyOffsets,
+  spiderfyRadiusPx,
   type MapPinDatum,
 } from '../lib/pin-clusters';
 
 const PROJECTION_ANIMATION_MS = 1200;
-const CLUSTER_FOCUS_MS = 1100;
+const CLUSTER_FOCUS_MS = 1200;
 const CLUSTER_BLUR_MS = 650;
-const CLUSTER_ZOOM_SCALE = 1.85;
-const SPIDERFY_RADIUS = 34;
-const SPIDERFY_START = 0.62;
+const CLUSTER_ZOOM_SCALE = 4;
+const MAX_MAP_ZOOM = 5;
+const SPIDERFY_RADIUS = 36;
+/** Spiderfy begins after this fraction of the focus animation (zoom-first). */
+const SPIDERFY_START = 0.78;
 const FLAT_ROTATION: Rotation = [0, 0, 0];
 
 type MapPalette = {
@@ -147,7 +150,7 @@ function buildProjection(
 ): d3.GeoProjection {
   const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
-  const zoom = Math.max(0.75, Math.min(zoomScale, 2.5));
+  const zoom = Math.max(0.75, Math.min(zoomScale, MAX_MAP_ZOOM));
   const globeScale = (minDim / 2 - 24) * zoom;
   const flatScale = (width / (2 * Math.PI)) * zoom;
   const center: [number, number] = [width / 2, height / 2];
@@ -381,6 +384,10 @@ export function NetworkGlobeMap({
 
     const spread = clusterSpreadRef.current;
     const focusedClusterId = focusedClusterIdRef.current;
+    const spiderfyRadius = spiderfyRadiusPx(
+      SPIDERFY_RADIUS,
+      globeZoomRef.current,
+    );
     const spiderfyPins = mapPinDataRef.current.filter(
       (datum): datum is Extract<MapPinDatum, { kind: 'spiderfy-space' }> =>
         datum.kind === 'spiderfy-space',
@@ -393,7 +400,7 @@ export function NetworkGlobeMap({
         const [centerX, centerY] = projectedAnchor;
         const offsets = spiderfyOffsets(
           anchor.spiderfyCount,
-          SPIDERFY_RADIUS * spread,
+          spiderfyRadius * spread,
         );
 
         spiderfyLayer
@@ -661,7 +668,7 @@ export function NetworkGlobeMap({
       if (datum.kind === 'spiderfy-space') {
         const offsets = spiderfyOffsets(
           datum.spiderfyCount,
-          SPIDERFY_RADIUS * spread,
+          spiderfyRadius * spread,
         );
         const offset = offsets[datum.spiderfyIndex] ?? { x: 0, y: 0 };
         offsetX = offset.x;
@@ -728,12 +735,16 @@ export function NetworkGlobeMap({
 
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / CLUSTER_BLUR_MS);
-      const eased = d3.easeCubicInOut(t);
-      const remaining = 1 - eased;
 
-      globeZoomRef.current = 1 + (fromZoom - 1) * remaining;
-      clusterSpreadRef.current = fromSpread * remaining;
-      setClusterSpread(fromSpread * remaining);
+      // Collapse spiderfy first, then zoom out so pins stay anchored.
+      const spreadPhase = Math.min(1, t / 0.45);
+      const zoomPhase = Math.max(0, (t - 0.35) / 0.65);
+      const spreadRemaining = 1 - d3.easeCubicIn(spreadPhase);
+      const zoomRemaining = 1 - d3.easeCubicInOut(zoomPhase);
+
+      clusterSpreadRef.current = fromSpread * spreadRemaining;
+      setClusterSpread(fromSpread * spreadRemaining);
+      globeZoomRef.current = 1 + (fromZoom - 1) * zoomRemaining;
       requestRender();
 
       if (t < 1) {
@@ -766,22 +777,20 @@ export function NetworkGlobeMap({
       clearHoveredPinRef.current();
       clearSelectedPinRef.current();
 
-      const fromRotate = [...rotateRef.current] as Rotation;
-      const toRotate = globeRotationForCenter(
+      const fromZoom = globeZoomRef.current;
+      const toZoom = CLUSTER_ZOOM_SCALE;
+      const centeredRotation = globeRotationForCenter(
         cluster.longitude,
         cluster.latitude,
       );
-      const fromZoom = globeZoomRef.current;
-      const toZoom = CLUSTER_ZOOM_SCALE;
-      const interpolateRotation = interpolateAngles(fromRotate, toRotate);
 
       focusedClusterIdRef.current = cluster.clusterId;
       setFocusedClusterId(cluster.clusterId);
 
       if (prefersReducedMotion()) {
-        rotateRef.current = toRotate;
+        rotateRef.current = centeredRotation;
         globeZoomRef.current = toZoom;
-        savedGlobeRotateRef.current = toRotate;
+        savedGlobeRotateRef.current = centeredRotation;
         clusterSpreadRef.current = 1;
         setClusterSpread(1);
         requestRender();
@@ -791,13 +800,13 @@ export function NetworkGlobeMap({
       clusterSpreadRef.current = 0;
       setClusterSpread(0);
       const start = performance.now();
-      savedGlobeRotateRef.current = toRotate;
+      savedGlobeRotateRef.current = centeredRotation;
 
       const step = (now: number) => {
         const t = Math.min(1, (now - start) / CLUSTER_FOCUS_MS);
-        const eased = d3.easeCubicInOut(t);
 
-        rotateRef.current = interpolateRotation(eased);
+        // Keep the cluster anchor pinned at the viewport center while zooming.
+        rotateRef.current = centeredRotation;
         globeZoomRef.current =
           fromZoom + (toZoom - fromZoom) * d3.easeCubicOut(t);
 

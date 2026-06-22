@@ -127,6 +127,14 @@ export function spiderfyOffsets(
   return offsets;
 }
 
+/** Shrink spiderfy ring as map zoom increases so pins stay near their geo anchor. */
+export function spiderfyRadiusPx(
+  baseRadius: number,
+  zoomScale: number,
+): number {
+  return baseRadius / Math.max(1, zoomScale);
+}
+
 export function pinDatumSpace(datum: MapPinDatum): Space | null {
   if (datum.kind === 'space' || datum.kind === 'spiderfy-space') {
     return datum.space;
