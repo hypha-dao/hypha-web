@@ -20,6 +20,7 @@ type UseOnboardingVoiceDiscoveryOptions = {
   locale?: string;
   activeSpaceSlug?: string;
   conversationContext?: OnboardingConversationContext;
+  recentTranscriptSummary?: string;
   getAccessToken?: () => Promise<string | null | undefined>;
   onSendTranscript: (text: string) => void | Promise<void>;
   onTranscriptTurn?: (turn: {
@@ -56,6 +57,7 @@ export function useOnboardingVoiceDiscovery(
     enabled: options.enabled && useRealtime,
     locale: options.locale,
     conversationContext: options.conversationContext,
+    recentTranscriptSummary: options.recentTranscriptSummary,
     getAccessToken: options.getAccessToken,
     activeSpaceSlug: options.activeSpaceSlug,
     onFallback: handleFallback,

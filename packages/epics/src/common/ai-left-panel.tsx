@@ -103,6 +103,7 @@ import {
   consumeOnboardingOpenAiPanelPending,
   consumeOnboardingContinuationPrompt,
   readOnboardingChatMessages,
+  saveOnboardingChatMessages,
   getPostOnboardingLandingPath,
   getPostOnboardingContinuationPrompt,
   type OnboardingConversationContext,
@@ -145,6 +146,11 @@ import {
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
+import {
+  appendVoiceTranscriptTurn,
+  buildRecentTranscriptSummaryFromChatMessages,
+  toStoredOnboardingChatMessages,
+} from './onboarding-voice-transcript-bridge';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 function extractAssistantTextFromMessage(
@@ -2068,6 +2074,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
+  const recentTranscriptSummary = useMemo(
+    () => buildRecentTranscriptSummaryFromChatMessages(messages),
+    [messages],
+  );
+
+  const handleVoiceTranscriptTurn = useCallback(
+    (turn: { role: 'user' | 'assistant'; text: string }) => {
+      setMessages((prev) => {
+        const next = appendVoiceTranscriptTurn(prev, turn);
+        if (isOnboardingSetup) {
+          saveOnboardingChatMessages(toStoredOnboardingChatMessages(next));
+        }
+        return next;
+      });
+    },
+    [isOnboardingSetup, setMessages],
+  );
+
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview,
     isStreaming,
@@ -2075,8 +2099,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     locale: lang,
     activeSpaceSlug: spaceSlug,
     conversationContext: onboardingContext,
+    recentTranscriptSummary,
     getAccessToken,
     onSendTranscript: handleVoiceTranscriptSend,
+    onTranscriptTurn: handleVoiceTranscriptTurn,
   });
 
   const handleDiscoveryModeChange = useCallback(
@@ -2085,6 +2111,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       if (mode === 'chat') {
         voiceInterview.stopListening();
         voiceInterview.stopSpeaking();
+        if (messages.length) {
+          saveOnboardingChatMessages(toStoredOnboardingChatMessages(messages));
+        }
       }
       setOnboardingContext((prev) => {
         const base = ensureSpaceSetupContext(prev, lang);
@@ -2097,6 +2126,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       discoveryMode,
       isOnboardingSetup,
       lang,
+      messages,
       voiceInterview.stopListening,
       voiceInterview.stopSpeaking,
     ],

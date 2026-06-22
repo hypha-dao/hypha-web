@@ -50,6 +50,11 @@ export {
   createOnboardingRealtimeTools,
   ONBOARDING_REALTIME_TOOL_NAMES,
 } from './voice-realtime/onboarding-tools';
+export {
+  buildRecentTranscriptSummary,
+  mergeAdjacentVoiceTranscriptTurns,
+} from './voice-realtime/transcript-bridge';
+export type { VoiceTranscriptTurn } from './voice-realtime/transcript-bridge';
 export type { OnboardingToolConfig } from './tools/onboarding-tool-set';
 export {
   createOnboardingToolSet,

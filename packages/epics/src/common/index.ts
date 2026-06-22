@@ -45,6 +45,7 @@ export {
   consumeOnboardingOpenAiPanelPending,
   consumeOnboardingContinuationPrompt,
   readOnboardingChatMessages,
+  saveOnboardingChatMessages,
   clearOnboardingChatMessages,
   getPostOnboardingLandingPath,
   getPostOnboardingContinuationPrompt,
@@ -117,6 +118,12 @@ export {
 } from './use-onboarding-voice-interview';
 export { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
 export { getClientEnableOnboardingVoiceRealtime } from './onboarding-voice-realtime-flag';
+export {
+  appendVoiceTranscriptTurn,
+  buildRecentTranscriptSummaryFromChatMessages,
+  toStoredOnboardingChatMessages,
+  type VoiceTranscriptTurn,
+} from './onboarding-voice-transcript-bridge';
 export {
   ONBOARDING_MOBILIZED_SCOPE,
   recordMobilizedAiAgentsForOnboarding,

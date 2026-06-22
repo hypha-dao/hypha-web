@@ -18,6 +18,7 @@ type UseOnboardingVoiceRealtimeOptions = {
   enabled: boolean;
   locale?: string;
   conversationContext?: OnboardingConversationContext;
+  recentTranscriptSummary?: string;
   getAccessToken?: () => Promise<string | null | undefined>;
   activeSpaceSlug?: string;
   onFallback?: () => void;
@@ -63,6 +64,7 @@ export function useOnboardingVoiceRealtime({
   enabled,
   locale,
   conversationContext,
+  recentTranscriptSummary,
   getAccessToken,
   activeSpaceSlug,
   onFallback,
@@ -71,9 +73,11 @@ export function useOnboardingVoiceRealtime({
   const connectionRef = useRef<RealtimeVoiceConnection | null>(null);
   const connectInFlightRef = useRef(false);
   const phaseRef = useRef<VoiceInterviewPhase>('idle');
+  const assistantBufferRef = useRef('');
   const lastActiveSpaceSlugRef = useRef(activeSpaceSlug?.trim() || undefined);
   const onFallbackRef = useRef(onFallback);
   const onTranscriptTurnRef = useRef(onTranscriptTurn);
+  const recentTranscriptSummaryRef = useRef(recentTranscriptSummary);
 
   const [phase, setPhase] = useState<VoiceInterviewPhase>('idle');
   phaseRef.current = phase;
@@ -86,8 +90,17 @@ export function useOnboardingVoiceRealtime({
 
   onFallbackRef.current = onFallback;
   onTranscriptTurnRef.current = onTranscriptTurn;
+  recentTranscriptSummaryRef.current = recentTranscriptSummary;
+
+  const flushPendingAssistantTranscript = useCallback(() => {
+    const text = assistantBufferRef.current.trim();
+    if (!text) return;
+    assistantBufferRef.current = '';
+    onTranscriptTurnRef.current?.({ role: 'assistant', text });
+  }, []);
 
   const disconnect = useCallback(() => {
+    flushPendingAssistantTranscript();
     connectInFlightRef.current = false;
     setIsConnecting(false);
     setIsRealtimeConnected(false);
@@ -97,46 +110,61 @@ export function useOnboardingVoiceRealtime({
       connection.close();
     }
     setPhase('idle');
-  }, []);
+  }, [flushPendingAssistantTranscript]);
 
-  const handleServerEvent = useCallback((event: RealtimeServerEvent) => {
-    const nextPhase = resolveEventPhase(event, phaseRef.current);
-    if (nextPhase) {
-      setPhase(nextPhase);
-    }
-
-    if (
-      event.type === 'conversation.item.input_audio_transcription.completed'
-    ) {
-      const transcript =
-        typeof event.transcript === 'string' ? event.transcript.trim() : '';
-      if (transcript) {
-        setLiveTranscript(transcript);
-        onTranscriptTurnRef.current?.({ role: 'user', text: transcript });
+  const handleServerEvent = useCallback(
+    (event: RealtimeServerEvent) => {
+      const nextPhase = resolveEventPhase(event, phaseRef.current);
+      if (nextPhase) {
+        setPhase(nextPhase);
       }
-    }
 
-    if (
-      event.type === 'response.audio_transcript.done' ||
-      event.type === 'response.output_audio_transcript.done'
-    ) {
-      const transcript =
-        typeof event.transcript === 'string' ? event.transcript.trim() : '';
-      if (transcript) {
-        onTranscriptTurnRef.current?.({
-          role: 'assistant',
-          text: transcript,
-        });
+      if (
+        event.type === 'conversation.item.input_audio_transcription.completed'
+      ) {
+        const transcript =
+          typeof event.transcript === 'string' ? event.transcript.trim() : '';
+        if (transcript) {
+          setLiveTranscript(transcript);
+          onTranscriptTurnRef.current?.({ role: 'user', text: transcript });
+        }
       }
-    }
 
-    if (event.type === 'response.audio_transcript.delta') {
-      const delta = typeof event.delta === 'string' ? event.delta : '';
-      if (delta) {
-        setLiveTranscript((prev) => `${prev}${delta}`);
+      if (
+        event.type === 'response.audio_transcript.done' ||
+        event.type === 'response.output_audio_transcript.done'
+      ) {
+        const transcript =
+          typeof event.transcript === 'string'
+            ? event.transcript.trim()
+            : assistantBufferRef.current.trim();
+        assistantBufferRef.current = '';
+        if (transcript) {
+          onTranscriptTurnRef.current?.({
+            role: 'assistant',
+            text: transcript,
+          });
+        }
+        setLiveTranscript('');
       }
-    }
-  }, []);
+
+      if (event.type === 'response.audio_transcript.delta') {
+        const delta = typeof event.delta === 'string' ? event.delta : '';
+        if (delta) {
+          assistantBufferRef.current = `${assistantBufferRef.current}${delta}`;
+          setLiveTranscript(assistantBufferRef.current);
+        }
+      }
+
+      if (
+        event.type === 'response.done' ||
+        event.type === 'response.completed'
+      ) {
+        flushPendingAssistantTranscript();
+      }
+    },
+    [flushPendingAssistantTranscript],
+  );
 
   const connect = useCallback(async () => {
     if (connectInFlightRef.current || connectionRef.current) return;
@@ -150,6 +178,7 @@ export function useOnboardingVoiceRealtime({
     setVoiceError(null);
     setPhase('processing');
     setLiveTranscript('');
+    assistantBufferRef.current = '';
 
     try {
       const token = (await getAccessToken?.())?.trim();
@@ -163,6 +192,7 @@ export function useOnboardingVoiceRealtime({
         authToken: token,
         conversationContext: conversationContext as Record<string, unknown>,
         locale,
+        recentTranscriptSummary: recentTranscriptSummaryRef.current,
       });
 
       const connection = await connectOpenAiRealtimeCall({

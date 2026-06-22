@@ -33,6 +33,10 @@ import {
   skippedOnboardingSpaceLocation,
   saveOnboardingConversationContext,
   handoffOnboardingToAiPanel,
+  saveOnboardingChatMessages,
+  appendVoiceTranscriptTurn,
+  buildRecentTranscriptSummaryFromChatMessages,
+  toStoredOnboardingChatMessages,
   getPostOnboardingLandingPath,
   getPostOnboardingContinuationPrompt,
   AI_PANEL_SETUP_SOURCE,
@@ -150,7 +154,15 @@ export function OnboardingAiFullPage({
     [getAccessToken],
   );
 
-  const { messages, sendMessage, stop, status, error, clearError } = useChat({
+  const {
+    messages,
+    sendMessage,
+    stop,
+    status,
+    error,
+    clearError,
+    setMessages,
+  } = useChat({
     transport,
     onError: (chatError) => {
       console.error('[OnboardingAiFullPage][useChat]', chatError);
@@ -909,14 +921,32 @@ export function OnboardingAiFullPage({
     ],
   );
 
+  const recentTranscriptSummary = useMemo(
+    () => buildRecentTranscriptSummaryFromChatMessages(messages),
+    [messages],
+  );
+
+  const handleVoiceTranscriptTurn = useCallback(
+    (turn: { role: 'user' | 'assistant'; text: string }) => {
+      setMessages((prev) => {
+        const next = appendVoiceTranscriptTurn(prev, turn);
+        saveOnboardingChatMessages(toStoredOnboardingChatMessages(next));
+        return next;
+      });
+    },
+    [setMessages],
+  );
+
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview,
     isStreaming,
     lastAssistantText,
     locale: onboardingContext.locale,
     conversationContext: onboardingContext,
+    recentTranscriptSummary,
     getAccessToken,
     onSendTranscript: handleVoiceTranscriptSend,
+    onTranscriptTurn: handleVoiceTranscriptTurn,
   });
 
   const handleDiscoveryModeChange = useCallback(
@@ -925,6 +955,9 @@ export function OnboardingAiFullPage({
       if (mode === 'chat') {
         voiceInterview.stopListening();
         voiceInterview.stopSpeaking();
+        if (messages.length) {
+          saveOnboardingChatMessages(toStoredOnboardingChatMessages(messages));
+        }
       }
       setOnboardingContext((prev) => {
         const next = { ...prev, discoveryMode: mode };
@@ -932,7 +965,7 @@ export function OnboardingAiFullPage({
         return next;
       });
     },
-    [discoveryMode, voiceInterview],
+    [discoveryMode, messages, voiceInterview],
   );
 
   return (
