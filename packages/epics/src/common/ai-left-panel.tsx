@@ -221,6 +221,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
   const isOnboardingPath = pathname.includes('/onboarding');
+  const [onboardingContext, setOnboardingContext] = useState<
+    OnboardingConversationContext | undefined
+  >(() => readOnboardingConversationContext());
   const spaceSlugFromPath = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
@@ -264,6 +267,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const blockSpaceAiForMembership =
     Boolean(spaceSlug) &&
     !isOnboardingPath &&
+    !isSpaceSetupContext(onboardingContext) &&
     !isUserSpaceStateLoading &&
     !canInteractInSpace(userSpaceState);
   const { status: spacePaymentStatus, isLoading: isSpacePaymentStatusLoading } =
@@ -273,6 +277,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const blockSpaceAiForSubscription =
     Boolean(spaceSlug) &&
     Boolean(effectiveSpaceWeb3Id) &&
+    !isSpaceSetupContext(onboardingContext) &&
     !isSpacePaymentStatusLoading &&
     spacePaymentStatus === 'expired';
   const blockSpaceAiForInteraction =
@@ -309,9 +314,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
-  const [onboardingContext, setOnboardingContext] = useState<
-    OnboardingConversationContext | undefined
-  >(() => readOnboardingConversationContext());
   const pendingSeedPromptRef = useRef<string | null>(null);
   const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
@@ -750,7 +752,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
         body: {
-          ...(spaceSlug && { spaceSlug }),
+          ...(spaceSlug &&
+            !isSpaceSetupContext(onboardingContext) && { spaceSlug }),
           ...(onboardingContext
             ? { conversationContext: onboardingContext }
             : {}),
@@ -851,7 +854,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       if (token) hdrs['Authorization'] = `Bearer ${token}`;
       const activeContext = contextOverride ?? onboardingContext;
       const body: Record<string, unknown> = {
-        ...(spaceSlug && { spaceSlug }),
+        ...(spaceSlug && !isSpaceSetupContext(activeContext) && { spaceSlug }),
         ...(activeContext ? { conversationContext: activeContext } : {}),
       };
       return { body, headers: hdrs };

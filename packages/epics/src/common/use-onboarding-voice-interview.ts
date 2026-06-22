@@ -39,6 +39,19 @@ function joinWithSingleSpace(a: string, b: string): string {
   return `${left} ${right}`;
 }
 
+function isAssistantFailureText(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) return false;
+  return (
+    normalized.includes('error occurred while checking your permissions') ||
+    normalized.includes('authentication is required') ||
+    normalized.includes('authentication failed') ||
+    normalized.includes('must be a space member') ||
+    normalized.includes('could not verify your identity') ||
+    normalized.includes('hit an issue while starting the response')
+  );
+}
+
 type UseOnboardingVoiceInterviewOptions = {
   enabled: boolean;
   isStreaming: boolean;
@@ -256,7 +269,11 @@ export function useOnboardingVoiceInterview({
     wasStreamingRef.current = false;
 
     const spoken = lastAssistantText.trim();
-    if (!spoken || spoken === lastSpokenAssistantRef.current) {
+    if (
+      !spoken ||
+      spoken === lastSpokenAssistantRef.current ||
+      isAssistantFailureText(spoken)
+    ) {
       setPhase('idle');
       if (autoResumeListening) startListening();
       return;

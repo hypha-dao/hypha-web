@@ -101,8 +101,9 @@ export async function POST(req: Request) {
   const messages: ChatRequestPayload['messages'] = parsed.data.messages;
   const spaceSlug = parsed.data.spaceSlug;
   const conversationContext = parsed.data.conversationContext;
+  const isOnboardingSetup = conversationContext?.mode === 'onboarding_setup';
 
-  if (spaceSlug?.trim()) {
+  if (spaceSlug?.trim() && !isOnboardingSetup) {
     const interactionAuth = await authorizeSpacePanelInteraction({
       spaceSlug: spaceSlug.trim(),
       authToken,
