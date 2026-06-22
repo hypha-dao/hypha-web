@@ -54,6 +54,7 @@ import {
   useJwt,
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
+import { ChevronLeftIcon } from '@radix-ui/react-icons';
 
 type OnboardingAiFullPageProps = {
   seedPrompt: string;
@@ -949,18 +950,22 @@ export function OnboardingAiFullPage({
                 {t('aiHero.title')}
               </h2>
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                colorVariant="neutral"
+                onClick={onExit}
+                className="text-neutral-10 px-0 md:px-3"
+              >
+                <ChevronLeftIcon className="size-4" />
+                {tCommon('back')}
+              </Button>
               <OnboardingDiscoveryModeToggle
                 mode={discoveryMode}
                 disabled={isStreaming}
                 onChange={handleDiscoveryModeChange}
               />
-              <Button
-                onClick={onExit}
-                className="h-10 rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-4 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
-              >
-                {tCommon('back')}
-              </Button>
             </div>
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/70">
