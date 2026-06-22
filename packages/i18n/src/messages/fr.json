@@ -2205,6 +2205,9 @@
     "onboardingVoiceFinishTurn": "Terminer le tour",
     "onboardingVoiceStopSpeaking": "Arrêter",
     "onboardingVoiceUnsupported": "La voix n'est pas prise en charge dans ce navigateur — essayez le chat ou un autre navigateur.",
+    "onboardingVoicePermissionDenied": "L'accès au micro est bloqué — autorisez le micro dans les réglages du navigateur, puis réessayez.",
+    "onboardingVoiceMicUnavailable": "Aucun micro détecté — branchez-en un ou passez au chat.",
+    "onboardingVoiceNetworkError": "La reconnaissance vocale nécessite une connexion réseau — vérifiez votre connexion et réessayez.",
     "onboardingVoiceError": "Entrée vocale en échec — réessayez ou passez au chat."
   },
   "HumanChatPanel": {

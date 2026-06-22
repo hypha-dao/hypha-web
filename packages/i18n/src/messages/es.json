@@ -2205,6 +2205,9 @@
     "onboardingVoiceFinishTurn": "Terminar turno",
     "onboardingVoiceStopSpeaking": "Detener",
     "onboardingVoiceUnsupported": "La voz no es compatible con este navegador — prueba el chat u otro navegador.",
+    "onboardingVoicePermissionDenied": "El acceso al micrófono está bloqueado — permite el micrófono en la configuración del navegador e inténtalo de nuevo.",
+    "onboardingVoiceMicUnavailable": "No se encontró micrófono — conecta uno o cambia al chat.",
+    "onboardingVoiceNetworkError": "El reconocimiento de voz necesita conexión a internet — comprueba tu conexión e inténtalo de nuevo.",
     "onboardingVoiceError": "Error de entrada de voz — inténtalo de nuevo o cambia al chat."
   },
   "HumanChatPanel": {

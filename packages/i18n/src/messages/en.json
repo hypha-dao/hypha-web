@@ -2731,6 +2731,9 @@
     "onboardingVoiceFinishTurn": "Finish turn",
     "onboardingVoiceStopSpeaking": "Stop",
     "onboardingVoiceUnsupported": "Voice isn't supported in this browser — try chat mode or a different browser.",
+    "onboardingVoicePermissionDenied": "Microphone access is blocked — allow the mic in your browser settings, then try again.",
+    "onboardingVoiceMicUnavailable": "No microphone was found — connect a mic or switch to chat.",
+    "onboardingVoiceNetworkError": "Voice recognition needs a network connection — check your connection and try again.",
     "onboardingVoiceError": "Voice input hit a snag — try again or switch to chat."
   },
   "HumanChatPanel": {

@@ -31,6 +31,23 @@ export type VoiceInterviewPhase =
   | 'processing'
   | 'speaking';
 
+export type VoiceInterviewErrorCode =
+  | 'unsupported'
+  | 'not-allowed'
+  | 'audio-capture'
+  | 'network'
+  | 'error';
+
+const AUTO_RESUME_DELAY_MS = 450;
+const RECOGNITION_RESTART_DELAY_MS = 180;
+const NETWORK_RETRY_DELAY_MS = 900;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 function joinWithSingleSpace(a: string, b: string): string {
   const left = a.trimEnd();
   const right = b.trimStart();
@@ -50,6 +67,76 @@ function isAssistantFailureText(text: string): boolean {
     normalized.includes('could not verify your identity') ||
     normalized.includes('hit an issue while starting the response')
   );
+}
+
+function resolveSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
+  return (
+    (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
+      .SpeechRecognition ??
+    (
+      globalThis as unknown as {
+        webkitSpeechRecognition?: SpeechRecognitionCtor;
+      }
+    ).webkitSpeechRecognition ??
+    null
+  );
+}
+
+function mapSpeechRecognitionError(
+  code: string | undefined,
+): VoiceInterviewErrorCode {
+  switch (code) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'not-allowed';
+    case 'audio-capture':
+      return 'audio-capture';
+    case 'network':
+      return 'network';
+    default:
+      return 'error';
+  }
+}
+
+function isBenignSpeechRecognitionError(code: string | undefined): boolean {
+  return code === 'aborted' || code === 'no-speech';
+}
+
+async function waitForSpeechOutputToSettle(): Promise<void> {
+  if (typeof globalThis.speechSynthesis === 'undefined') return;
+  if (!globalThis.speechSynthesis.speaking) return;
+  globalThis.speechSynthesis.cancel();
+  await delay(120);
+}
+
+async function ensureMicrophoneAccess(): Promise<
+  { ok: true } | { ok: false; code: VoiceInterviewErrorCode }
+> {
+  if (typeof window === 'undefined') {
+    return { ok: false, code: 'unsupported' };
+  }
+  if (!window.isSecureContext) {
+    return { ok: false, code: 'not-allowed' };
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return { ok: true };
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+    return { ok: true };
+  } catch (error) {
+    const name = error instanceof DOMException ? error.name : '';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return { ok: false, code: 'not-allowed' };
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return { ok: false, code: 'audio-capture' };
+    }
+    return { ok: false, code: 'error' };
+  }
 }
 
 type UseOnboardingVoiceInterviewOptions = {
@@ -80,11 +167,20 @@ export function useOnboardingVoiceInterview({
   const wasStreamingRef = useRef(false);
   const sendInFlightRef = useRef(false);
   const phaseRef = useRef<VoiceInterviewPhase>('idle');
+  const userInitiatedListeningRef = useRef(false);
+  const listeningGenerationRef = useRef(0);
+  const noSpeechRetryRef = useRef(0);
+  const networkRetryRef = useRef(0);
+  const startListeningRef = useRef<
+    (options?: { userInitiated?: boolean }) => Promise<void>
+  >(() => Promise.resolve());
 
   const [phase, setPhase] = useState<VoiceInterviewPhase>('idle');
   phaseRef.current = phase;
   const [liveTranscript, setLiveTranscript] = useState('');
-  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [voiceError, setVoiceError] = useState<VoiceInterviewErrorCode | null>(
+    null,
+  );
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
@@ -95,6 +191,7 @@ export function useOnboardingVoiceInterview({
 
   const stopListening = useCallback(() => {
     clearSilenceTimer();
+    listeningGenerationRef.current += 1;
     const recognition = recognitionRef.current;
     if (recognition) {
       try {
@@ -146,111 +243,172 @@ export function useOnboardingVoiceInterview({
     }, silenceMsBeforeSend);
   }, [clearSilenceTimer, flushTranscript, silenceMsBeforeSend]);
 
-  const startListening = useCallback(() => {
-    if (!enabled || isStreaming || sendInFlightRef.current) return;
-    setVoiceError(null);
-    stopSpeaking();
-
-    const SR =
-      (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
-        .SpeechRecognition ??
-      (
-        globalThis as unknown as {
-          webkitSpeechRecognition?: SpeechRecognitionCtor;
-        }
-      ).webkitSpeechRecognition;
-
-    if (!SR) {
-      setVoiceError('unsupported');
-      setPhase('idle');
-      return;
-    }
-
-    stopListening();
-    committedRef.current = '';
-    interimRef.current = '';
-
-    const recognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = locale ?? document.documentElement.lang ?? 'en';
-    recognition.onresult = (event) => {
-      let committed = committedRef.current;
-      let interim = '';
-      for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (!result?.[0]) continue;
-        if (result.isFinal) {
-          committed = joinWithSingleSpace(
-            committed,
-            result[0].transcript.trim(),
-          );
-        } else {
-          interim = joinWithSingleSpace(interim, result[0].transcript);
-        }
-      }
-      committedRef.current = committed;
-      interimRef.current = interim.trim();
-      const preview = joinWithSingleSpace(committed, interimRef.current);
-      setLiveTranscript(preview);
-      if (committedRef.current.trim() || interimRef.current.trim()) {
-        scheduleSendAfterSilence();
-      }
-    };
-    recognition.onerror = (event) => {
-      if (event.error === 'aborted') return;
-      setVoiceError(event.error ?? 'error');
-      stopListening();
-      setPhase('idle');
-    };
-    recognition.onend = () => {
-      recognitionRef.current = null;
-      if (
-        enabled &&
-        !isStreaming &&
-        !sendInFlightRef.current &&
-        (committedRef.current.trim() || interimRef.current.trim())
-      ) {
-        void flushTranscript();
+  const reportRecognitionFailure = useCallback(
+    (code: VoiceInterviewErrorCode, options?: { userInitiated?: boolean }) => {
+      if (!options?.userInitiated && !userInitiatedListeningRef.current) {
+        setPhase('idle');
         return;
       }
-      if (phaseRef.current === 'listening') setPhase('idle');
-    };
-
-    recognitionRef.current = recognition;
-    try {
-      recognition.start();
-      setPhase('listening');
-    } catch {
-      recognitionRef.current = null;
-      setVoiceError('unsupported');
+      setVoiceError(code);
+      stopListening();
       setPhase('idle');
-    }
-  }, [
-    enabled,
-    flushTranscript,
-    isStreaming,
-    locale,
-    scheduleSendAfterSilence,
-    stopListening,
-    stopSpeaking,
-  ]);
+    },
+    [stopListening],
+  );
+
+  const startListening = useCallback(
+    async (options?: { userInitiated?: boolean }) => {
+      if (!enabled || isStreaming || sendInFlightRef.current) return;
+
+      const userInitiated = options?.userInitiated === true;
+      if (userInitiated) {
+        userInitiatedListeningRef.current = true;
+        noSpeechRetryRef.current = 0;
+        networkRetryRef.current = 0;
+      }
+
+      setVoiceError(null);
+      stopSpeaking();
+      await waitForSpeechOutputToSettle();
+
+      const SR = resolveSpeechRecognitionCtor();
+      if (!SR) {
+        reportRecognitionFailure('unsupported', { userInitiated });
+        return;
+      }
+
+      const micAccess = await ensureMicrophoneAccess();
+      if (!micAccess.ok) {
+        reportRecognitionFailure(micAccess.code, { userInitiated });
+        return;
+      }
+
+      stopListening();
+      await delay(RECOGNITION_RESTART_DELAY_MS);
+
+      const generation = listeningGenerationRef.current + 1;
+      listeningGenerationRef.current = generation;
+
+      committedRef.current = '';
+      interimRef.current = '';
+
+      const recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = locale ?? document.documentElement.lang ?? 'en';
+      recognition.onresult = (event) => {
+        if (generation !== listeningGenerationRef.current) return;
+        let committed = committedRef.current;
+        let interim = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (!result?.[0]) continue;
+          if (result.isFinal) {
+            committed = joinWithSingleSpace(
+              committed,
+              result[0].transcript.trim(),
+            );
+          } else {
+            interim = joinWithSingleSpace(interim, result[0].transcript);
+          }
+        }
+        committedRef.current = committed;
+        interimRef.current = interim.trim();
+        const preview = joinWithSingleSpace(committed, interimRef.current);
+        setLiveTranscript(preview);
+        if (committedRef.current.trim() || interimRef.current.trim()) {
+          scheduleSendAfterSilence();
+        }
+      };
+      recognition.onerror = (event) => {
+        if (generation !== listeningGenerationRef.current) return;
+        const code = event.error;
+        if (isBenignSpeechRecognitionError(code)) {
+          if (code === 'no-speech' && noSpeechRetryRef.current < 1) {
+            noSpeechRetryRef.current += 1;
+            window.setTimeout(() => {
+              void startListeningRef.current({ userInitiated });
+            }, 300);
+            return;
+          }
+          if (!userInitiated && !userInitiatedListeningRef.current) {
+            setPhase('idle');
+            return;
+          }
+          if (code === 'no-speech') {
+            setPhase('idle');
+            return;
+          }
+          return;
+        }
+        if (code === 'network' && networkRetryRef.current < 1) {
+          networkRetryRef.current += 1;
+          window.setTimeout(() => {
+            void startListeningRef.current({ userInitiated });
+          }, NETWORK_RETRY_DELAY_MS);
+          return;
+        }
+        console.warn('[VoiceInterview] speech recognition error', { code });
+        reportRecognitionFailure(mapSpeechRecognitionError(code), {
+          userInitiated,
+        });
+      };
+      recognition.onend = () => {
+        if (generation !== listeningGenerationRef.current) return;
+        recognitionRef.current = null;
+        if (
+          enabled &&
+          !isStreaming &&
+          !sendInFlightRef.current &&
+          (committedRef.current.trim() || interimRef.current.trim())
+        ) {
+          void flushTranscript();
+          return;
+        }
+        if (phaseRef.current === 'listening') setPhase('idle');
+      };
+
+      recognitionRef.current = recognition;
+      try {
+        recognition.start();
+        setPhase('listening');
+      } catch (error) {
+        recognitionRef.current = null;
+        console.warn('[VoiceInterview] speech recognition start failed', error);
+        reportRecognitionFailure('unsupported', { userInitiated });
+      }
+    },
+    [
+      enabled,
+      flushTranscript,
+      isStreaming,
+      locale,
+      reportRecognitionFailure,
+      scheduleSendAfterSilence,
+      stopListening,
+      stopSpeaking,
+    ],
+  );
+
+  startListeningRef.current = startListening;
 
   const toggleListening = useCallback(() => {
     if (phase === 'listening') {
       void flushTranscript();
       return;
     }
-    startListening();
+    void startListening({ userInitiated: true });
   }, [flushTranscript, phase, startListening]);
 
   useEffect(() => {
     if (!enabled) {
       stopListening();
       stopSpeaking();
+      userInitiatedListeningRef.current = false;
       setPhase('idle');
       return;
     }
+    void ensureMicrophoneAccess();
     return () => {
       stopListening();
       stopSpeaking();
@@ -286,7 +444,10 @@ export function useOnboardingVoiceInterview({
       onEnd: () => {
         cancelSpeechRef.current = null;
         setPhase('idle');
-        if (autoResumeListening && enabled) startListening();
+        if (!autoResumeListening || !enabled) return;
+        window.setTimeout(() => {
+          void startListeningRef.current({ userInitiated: false });
+        }, AUTO_RESUME_DELAY_MS);
       },
     });
   }, [
@@ -295,7 +456,6 @@ export function useOnboardingVoiceInterview({
     isStreaming,
     lastAssistantText,
     locale,
-    startListening,
     stopListening,
     stopSpeaking,
   ]);

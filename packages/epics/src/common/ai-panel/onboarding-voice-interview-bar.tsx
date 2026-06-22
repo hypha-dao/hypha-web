@@ -79,6 +79,12 @@ export function OnboardingVoiceInterviewBar({
   const errorMessage =
     voiceError === 'unsupported'
       ? t('onboardingVoiceUnsupported')
+      : voiceError === 'not-allowed'
+      ? t('onboardingVoicePermissionDenied')
+      : voiceError === 'audio-capture'
+      ? t('onboardingVoiceMicUnavailable')
+      : voiceError === 'network'
+      ? t('onboardingVoiceNetworkError')
       : voiceError
       ? t('onboardingVoiceError')
       : null;

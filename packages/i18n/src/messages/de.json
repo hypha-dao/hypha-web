@@ -2729,6 +2729,9 @@
     "onboardingVoiceFinishTurn": "Beitrag beenden",
     "onboardingVoiceStopSpeaking": "Stoppen",
     "onboardingVoiceUnsupported": "Sprache wird in diesem Browser nicht unterstützt — Chat-Modus oder anderen Browser versuchen.",
+    "onboardingVoicePermissionDenied": "Mikrofonzugriff ist blockiert — erlauben Sie das Mikrofon in den Browser-Einstellungen und versuchen Sie es erneut.",
+    "onboardingVoiceMicUnavailable": "Kein Mikrofon gefunden — schließen Sie eines an oder wechseln Sie zum Chat.",
+    "onboardingVoiceNetworkError": "Spracherkennung benötigt eine Netzwerkverbindung — prüfen Sie die Verbindung und versuchen Sie es erneut.",
     "onboardingVoiceError": "Spracheingabe fehlgeschlagen — erneut versuchen oder zum Chat wechseln."
   },
   "HumanChatPanel": {
