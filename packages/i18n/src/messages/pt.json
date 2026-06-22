@@ -2864,6 +2864,7 @@
     "returnBannerDismiss": "Dispensar",
     "returnBannerApprovedHint": "A verificação está concluída. Abra uma conta do space para adicionar as moedas restantes.",
     "errorLoad": "Não foi possível carregar o status da conta bancária.",
+    "errorFetchStatus": "Houve um problema ao recuperar suas informações bancárias. Por favor, tente novamente mais tarde.",
     "sections": {
       "transfers": {
         "title": "Transferências bancárias únicas",

@@ -13,7 +13,6 @@ import { insertBankCustomer } from './mutations';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { currenciesToEndorsements } from '../constants';
-import { buildPublicStatusFromCustomer } from './get-space-bank-customer-public-status';
 import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
 import { findBankCustomerBySpaceAndProvider } from './queries';
 
@@ -60,15 +59,17 @@ export async function requestSpaceBankOnboarding(
   );
 
   if (existing) {
-    const status = await buildPublicStatusFromCustomer(existing, { db });
     return {
       provider: DEFAULT_BANK_PROVIDER,
       created: false,
       spaceTitle: emailMeta.spaceTitle,
       requesterSlug: emailMeta.requesterSlug,
-      kycLink: status.procedures.kyc.action?.url ?? null,
-      tosLink: status.procedures.tos.action?.url ?? null,
-      procedures: status.procedures,
+      kycLink: null,
+      tosLink: null,
+      procedures: {
+        tos: { key: 'tos', status: null, isComplete: false },
+        kyc: { key: 'kyc', status: null, isComplete: false },
+      },
     };
   }
 

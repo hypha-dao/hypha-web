@@ -16,6 +16,8 @@ type UseBankCustomerStatusOptions = {
 
 type UseBankCustomerStatusReturn = {
   status: BankCustomerPublicStatus | null;
+  /** True when the GET returned a non-404 error (customer row exists but fetch failed). */
+  isError: boolean;
   /** True only on the first status fetch (not background revalidation). */
   isLoading: boolean;
   isRefreshing: boolean;
@@ -37,11 +39,12 @@ async function fetchBankCustomerStatus(
     },
   });
 
-  if (!res.ok) {
-    console.warn(
-      `[banking] bank-customers GET returned ${res.status}; treating as no customer`,
-    );
+  if (res.status === 404) {
     return null;
+  }
+
+  if (!res.ok) {
+    throw new Error(`bank-customers GET failed with status ${res.status}`);
   }
 
   const body = (await res.json()) as BankCustomerPublicStatus | null;
@@ -68,7 +71,7 @@ export const useBankCustomerStatus = ({
     [endpoint, isAuthenticated],
   );
 
-  const { data, isLoading, isValidating, mutate } =
+  const { data, error, isLoading, isValidating, mutate } =
     useSWR<BankCustomerPublicStatus | null>(
       swrKey,
       ([url]: [string, string]) => fetchBankCustomerStatus(url, getAccessToken),
@@ -83,6 +86,7 @@ export const useBankCustomerStatus = ({
 
   return {
     status: data ?? null,
+    isError: error != null,
     isLoading: isAuthenticated && isLoading,
     isRefreshing: isAuthenticated && isValidating && !isLoading,
     refresh,

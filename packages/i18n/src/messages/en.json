@@ -597,6 +597,7 @@
     "returnBannerDismiss": "Dismiss",
     "returnBannerApprovedHint": "Verification is complete. Open a space account to add any remaining currencies.",
     "errorLoad": "Could not load bank account status.",
+    "errorFetchStatus": "There was an issue retrieving your banking information. Please try again later.",
     "sections": {
       "transfers": {
         "title": "One-time Bank Transfers",

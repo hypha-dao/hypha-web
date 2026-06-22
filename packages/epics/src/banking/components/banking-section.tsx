@@ -11,6 +11,7 @@ import {
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
 
+import { Empty } from '../../common';
 import { useSpaceMember } from '../../spaces';
 import {
   useBankCustomerStatus,
@@ -57,6 +58,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const { person } = useMe();
   const {
     status,
+    isError: isStatusError,
     isLoading: isStatusLoading,
     isRefreshing: isStatusRefreshing,
     refresh,
@@ -247,6 +249,14 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
+  }
+
+  if (isStatusError) {
+    return (
+      <Empty>
+        <p>{t('errorFetchStatus')}</p>
+      </Empty>
+    );
   }
 
   if (!hasCustomer) {
