@@ -29,6 +29,8 @@ export {
   AI_PANEL_SETUP_SOURCE,
   applyOnboardingContextForUserText,
   clearOnboardingConversationContext,
+  resolveChatTransportBody,
+  shouldAttachOnboardingContext,
   createAiPanelSetupContext,
   dispatchAiOnboardingSeed,
   dispatchAiOnboardingSeedAck,

@@ -96,8 +96,10 @@ import {
   ensureSpaceSetupContext,
   isSpaceSetupContext,
   readOnboardingConversationContext,
+  resolveChatTransportBody,
   resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
+  clearOnboardingConversationContext,
   consumeOnboardingOpenAiPanelPending,
   consumeOnboardingContinuationPrompt,
   readOnboardingChatMessages,
@@ -853,14 +855,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       const hdrs: Record<string, string> = {};
       if (token) hdrs['Authorization'] = `Bearer ${token}`;
       const activeContext = contextOverride ?? onboardingContext;
-      const body: Record<string, unknown> = {
-        ...(spaceSlug && !isSpaceSetupContext(activeContext) && { spaceSlug }),
-        ...(activeContext ? { conversationContext: activeContext } : {}),
-      };
+      const { body } = resolveChatTransportBody({
+        spaceSlug,
+        onboardingContext: activeContext,
+        isOnboardingPath,
+      });
       return { body, headers: hdrs };
     },
-    [getAccessToken, onboardingContext, spaceSlug],
+    [getAccessToken, isOnboardingPath, onboardingContext, spaceSlug],
   );
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
+    const { staleOnboardingContext } = resolveChatTransportBody({
+      spaceSlug,
+      onboardingContext,
+      isOnboardingPath,
+    });
+    if (!staleOnboardingContext) return;
+    clearOnboardingConversationContext();
+    setOnboardingContext(undefined);
+  }, [isOnboardingPath, onboardingContext, spaceSlug]);
 
   useEffect(() => {
     const onSeed = (event: Event) => {
@@ -1016,6 +1031,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ...onboardingContext,
       setupPhase:
         onboardingContext.setupJourney === 'ecosystem' ? 'execute' : 'verify',
+      createdSpaceSlug: createdSlug,
       ...(onboardingContext.setupJourney === 'ecosystem'
         ? { ecosystemRootSlug: createdSlug }
         : {}),
@@ -1165,6 +1181,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const nextContext: OnboardingConversationContext = {
       ...onboardingContext,
       setupPhase: isEcosystem ? 'execute' : 'verify',
+      createdSpaceSlug: slug,
       ...(isEcosystem ? { ecosystemRootSlug: slug } : {}),
     };
     setOnboardingContext(nextContext);

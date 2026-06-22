@@ -1111,10 +1111,18 @@ function buildEffectiveSystemPrompt(
   spaceSlug: string | null | undefined,
   lastUserText: string | null,
   conversationContext: ChatRequestPayload['conversationContext'],
+  spaceContextSnapshot: string | null,
 ): string {
   const basePrompt = buildSystemPrompt(spaceSlug);
   const parts = [basePrompt];
-  if (spaceSlug?.trim() && conversationContext?.mode !== 'onboarding_setup') {
+  if (spaceContextSnapshot) {
+    parts.push(`\n\n${spaceContextSnapshot}`);
+  }
+  const inOnboarding = conversationContext?.mode === 'onboarding_setup';
+  const postCreateOnboardingPhase =
+    conversationContext?.setupPhase === 'execute' ||
+    conversationContext?.setupPhase === 'verify';
+  if (spaceSlug?.trim() && (!inOnboarding || postCreateOnboardingPhase)) {
     parts.push(LEFT_PANEL_NAVIGATION_GUIDELINES);
   }
   const competencyDirective = buildQuestionCompetencyDirective(lastUserText);
@@ -1122,6 +1130,55 @@ function buildEffectiveSystemPrompt(
     parts.push(`\n\n${competencyDirective}`);
   }
   return parts.join('');
+}
+
+async function buildSpaceContextSnapshot(
+  spaceSlug: string,
+): Promise<string | null> {
+  const safe = sanitizeSlug(spaceSlug);
+  if (!safe) return null;
+
+  try {
+    const result = await getSpaceBySlugTool.execute({ slug: safe });
+    if (
+      !result ||
+      typeof result !== 'object' ||
+      !('found' in result) ||
+      result.found !== true ||
+      !('space' in result) ||
+      !result.space ||
+      typeof result.space !== 'object'
+    ) {
+      return null;
+    }
+
+    const space = result.space as {
+      title?: string;
+      description?: string | null;
+      memberCount?: number;
+      documentCount?: number;
+    };
+    const title = typeof space.title === 'string' ? space.title : safe;
+    const description =
+      typeof space.description === 'string' && space.description.trim()
+        ? space.description.trim()
+        : null;
+
+    return [
+      'Live current-space snapshot (authoritative for "this space" / "where am I" questions):',
+      `- Name: ${title}`,
+      ...(description ? [`- Purpose: ${description}`] : []),
+      ...(typeof space.memberCount === 'number'
+        ? [`- Members: ${space.memberCount}`]
+        : []),
+      ...(typeof space.documentCount === 'number'
+        ? [`- Documents: ${space.documentCount}`]
+        : []),
+      'Answer from this snapshot and Hypha tools. Never claim you lack access or ask the user to name the space.',
+    ].join('\n');
+  } catch {
+    return null;
+  }
 }
 
 async function convertMessagesSafely(
@@ -1192,10 +1249,14 @@ export async function createChatStreamResult(
     authToken,
     debugRequestId,
   });
+  const spaceContextSnapshot = spaceSlug?.trim()
+    ? await buildSpaceContextSnapshot(spaceSlug)
+    : null;
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
     spaceSlug,
     lastUserText,
     normalizedConversationContext,
+    spaceContextSnapshot,
   );
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'

@@ -55,6 +55,8 @@ export type OnboardingConversationContext = {
   entryMethod?: OnboardingEntryMethod;
   /** Root space slug after ecosystem onboarding handoff to the left AI panel. */
   ecosystemRootSlug?: string;
+  /** Slug of the space created during onboarding (single-space or ecosystem root). */
+  createdSpaceSlug?: string;
   /** Confirmed logo + hero banner URLs from upload or generation. */
   visualAssets?: {
     logoUrl: string;
@@ -339,6 +341,10 @@ export function readOnboardingConversationContext():
         typeof parsed.ecosystemRootSlug === 'string'
           ? parsed.ecosystemRootSlug
           : undefined,
+      createdSpaceSlug:
+        typeof parsed.createdSpaceSlug === 'string'
+          ? parsed.createdSpaceSlug
+          : undefined,
       visualAssets: parseStoredVisualAssets(parsed.visualAssets),
       discoveryMode: parseOnboardingDiscoveryMode(parsed.discoveryMode),
       lastUserText:
@@ -366,6 +372,93 @@ export function saveOnboardingConversationContext(
 export function clearOnboardingConversationContext(): void {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(ONBOARDING_CONTEXT_STORAGE_KEY);
+}
+
+export function shouldAttachOnboardingContext(
+  context: OnboardingConversationContext | undefined,
+  options: {
+    spaceSlug?: string;
+    isOnboardingPath?: boolean;
+  },
+): context is OnboardingConversationContext {
+  if (!isSpaceSetupContext(context)) return false;
+  if (options.isOnboardingPath) return true;
+
+  const phase = context.setupPhase ?? 'discover';
+  const activeSlug = options.spaceSlug?.trim();
+
+  if (phase === 'discover' || phase === 'draft' || phase === 'confirm') {
+    return true;
+  }
+
+  if (phase === 'execute' || phase === 'verify') {
+    const anchorSlug =
+      context.createdSpaceSlug?.trim() || context.ecosystemRootSlug?.trim();
+    if (!anchorSlug) return false;
+    if (!activeSlug) return true;
+    if (phase === 'execute' && context.setupJourney === 'ecosystem') {
+      return true;
+    }
+    return activeSlug === anchorSlug;
+  }
+
+  return false;
+}
+
+/** Resolve chat API body fields and whether persisted onboarding context is stale. */
+export function resolveChatTransportBody({
+  spaceSlug,
+  onboardingContext,
+  isOnboardingPath,
+}: {
+  spaceSlug?: string;
+  onboardingContext?: OnboardingConversationContext;
+  isOnboardingPath: boolean;
+}): {
+  body: {
+    spaceSlug?: string;
+    conversationContext?: OnboardingConversationContext;
+  };
+  staleOnboardingContext: boolean;
+} {
+  const trimmedSlug = spaceSlug?.trim() || undefined;
+
+  if (!isSpaceSetupContext(onboardingContext)) {
+    return {
+      body: {
+        ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
+      },
+      staleOnboardingContext: false,
+    };
+  }
+
+  const attach = shouldAttachOnboardingContext(onboardingContext, {
+    spaceSlug: trimmedSlug,
+    isOnboardingPath,
+  });
+
+  if (!attach) {
+    return {
+      body: {
+        ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
+      },
+      staleOnboardingContext: true,
+    };
+  }
+
+  const phase = onboardingContext.setupPhase ?? 'discover';
+  const suppressSpaceSlugDuringSetup =
+    phase === 'discover' || phase === 'draft' || phase === 'confirm';
+
+  return {
+    body: {
+      ...(trimmedSlug && !suppressSpaceSlugDuringSetup
+        ? { spaceSlug: trimmedSlug }
+        : {}),
+      conversationContext: onboardingContext,
+    },
+    staleOnboardingContext: false,
+  };
 }
 
 function sanitizeOnboardingChatMessageForStorage(
