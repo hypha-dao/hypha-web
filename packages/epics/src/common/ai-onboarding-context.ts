@@ -2,6 +2,7 @@
 
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { parseOnboardingDiscoveryMode } from './onboarding-discovery-mode';
+import { transferMobilizedAiAgentsToSpace } from './ai-agent-competencies';
 
 export type { OnboardingDiscoveryMode };
 export const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
@@ -592,6 +593,11 @@ export function handoffOnboardingToAiPanel({
 }): void {
   saveOnboardingChatMessages(messages);
   saveOnboardingConversationContext(context);
+  const createdSlug =
+    context.createdSpaceSlug?.trim() || context.ecosystemRootSlug?.trim();
+  if (createdSlug) {
+    transferMobilizedAiAgentsToSpace(createdSlug, { messages });
+  }
   markOnboardingOpenAiPanelPending();
   if (continuationPrompt?.trim()) {
     saveOnboardingContinuationPrompt(continuationPrompt);

@@ -134,6 +134,7 @@ export {
 export {
   ONBOARDING_MOBILIZED_SCOPE,
   recordMobilizedAiAgentsForOnboarding,
+  transferMobilizedAiAgentsToSpace,
 } from './ai-agent-competencies';
 export {
   PanelProviders,

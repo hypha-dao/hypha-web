@@ -502,6 +502,100 @@ export function recordMobilizedAiAgentsForQuestion(
   );
 }
 
+function persistMobilizedAgents(
+  spaceSlug: string,
+  agents: MobilizedAiCompetencyAgent[],
+): void {
+  window.localStorage.setItem(storageKey(spaceSlug), JSON.stringify(agents));
+  window.dispatchEvent(
+    new CustomEvent(AGENT_UPDATED_EVENT, {
+      detail: { spaceSlug },
+    }),
+  );
+}
+
+function mergeMobilizedAgentLists(
+  base: MobilizedAiCompetencyAgent[],
+  incoming: MobilizedAiCompetencyAgent[],
+): MobilizedAiCompetencyAgent[] {
+  const map = new Map(base.map((agent) => [agent.id, agent]));
+  for (const agent of incoming) {
+    const existing = map.get(agent.id);
+    map.set(agent.id, {
+      ...agent,
+      mobilizedCount: (existing?.mobilizedCount ?? 0) + agent.mobilizedCount,
+      lastMobilizedAt:
+        existing &&
+        new Date(existing.lastMobilizedAt).getTime() >
+          new Date(agent.lastMobilizedAt).getTime()
+          ? existing.lastMobilizedAt
+          : agent.lastMobilizedAt,
+    });
+  }
+  return Array.from(map.values()).sort(
+    (a, b) =>
+      new Date(b.lastMobilizedAt).getTime() -
+      new Date(a.lastMobilizedAt).getTime(),
+  );
+}
+
+export function detectMobilizedAgentsFromChatMessages(
+  messages: Array<{ role: string; parts?: ChatMessagePart[] }>,
+): AiCompetencyAgent[] {
+  const detected = new Map<string, AiCompetencyAgent>();
+  for (const message of messages) {
+    if (message.role !== 'user') continue;
+    const question = extractTextFromChatMessageParts(message.parts);
+    if (!question) continue;
+    for (const agent of detectAiAgentsForQuestion(question)) {
+      detected.set(agent.id, agent);
+    }
+  }
+  return Array.from(detected.values());
+}
+
+/** Move onboarding-scoped mobilized agents onto a newly created space. */
+export function transferMobilizedAiAgentsToSpace(
+  spaceSlug: string,
+  options?: {
+    messages?: Array<{ role: string; parts?: ChatMessagePart[] }>;
+    clearOnboardingScope?: boolean;
+  },
+): void {
+  const slug = spaceSlug.trim();
+  if (!slug || typeof window === 'undefined') return;
+
+  const now = new Date().toISOString();
+  const fromOnboarding = readMobilizedAiAgents(ONBOARDING_MOBILIZED_SCOPE);
+  const fromMessages = (options?.messages ?? [])
+    .flatMap((message) => {
+      if (message.role !== 'user') return [];
+      const question = extractTextFromChatMessageParts(message.parts);
+      return question ? detectAiAgentsForQuestion(question) : [];
+    })
+    .map(
+      (agent): MobilizedAiCompetencyAgent => ({
+        ...agent,
+        mobilizedCount: 1,
+        lastMobilizedAt: now,
+      }),
+    );
+
+  const uniqueFromMessages = mergeMobilizedAgentLists([], fromMessages);
+  const incoming = mergeMobilizedAgentLists(fromOnboarding, uniqueFromMessages);
+  if (incoming.length === 0) return;
+
+  const merged = mergeMobilizedAgentLists(
+    readMobilizedAiAgents(slug),
+    incoming,
+  );
+  persistMobilizedAgents(slug, merged);
+
+  if (options?.clearOnboardingScope !== false) {
+    window.localStorage.removeItem(storageKey(ONBOARDING_MOBILIZED_SCOPE));
+  }
+}
+
 export const ONBOARDING_MOBILIZED_SCOPE = '__onboarding__';
 
 export function recordMobilizedAiAgentsForOnboarding(question: string): void {

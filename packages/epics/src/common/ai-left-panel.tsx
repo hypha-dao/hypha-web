@@ -87,7 +87,10 @@ import {
   subscribeRecentSpaceSlugs,
   syncRecentSpacesForActiveSlug,
 } from './recent-space-history';
-import { recordMobilizedAiAgentsForQuestion } from './ai-agent-competencies';
+import {
+  recordMobilizedAiAgentsForQuestion,
+  transferMobilizedAiAgentsToSpace,
+} from './ai-agent-competencies';
 import {
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
@@ -95,6 +98,7 @@ import {
   dispatchAiOnboardingSeedAck,
   ensureSpaceSetupContext,
   isSpaceSetupContext,
+  isPostCreateOnboardingPhase,
   readOnboardingConversationContext,
   resolveChatTransportBody,
   resolveSetupContextForUserMessage,
@@ -334,6 +338,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const pendingSeedPromptRef = useRef<string | null>(null);
   const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
+  const transferredMobilizedAgentsSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
   const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
   const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
@@ -828,6 +833,19 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [openAiPanel, setAiOverlayVisible, setMessages]);
 
   useEffect(() => {
+    const slug = spaceSlug?.trim();
+    if (!slug || transferredMobilizedAgentsSlugRef.current === slug) return;
+    if (!isPostCreateOnboardingPhase(onboardingContext)) return;
+    transferMobilizedAiAgentsToSpace(slug, {
+      messages: messages as Array<{
+        role: string;
+        parts?: Array<{ type: string; text?: string }>;
+      }>,
+    });
+    transferredMobilizedAgentsSlugRef.current = slug;
+  }, [messages, onboardingContext, spaceSlug]);
+
+  useEffect(() => {
     const nextSlug = spaceSlug?.trim() || null;
     const previousSlug = lastChatSpaceSlugRef.current;
     if (previousSlug === nextSlug) return;
@@ -1072,6 +1090,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     };
     setOnboardingContext(nextContext);
     saveOnboardingConversationContext(nextContext);
+    transferMobilizedAiAgentsToSpace(createdSlug, {
+      messages: messages as Array<{
+        role: string;
+        parts?: Array<{ type: string; text?: string }>;
+      }>,
+    });
+    transferredMobilizedAgentsSlugRef.current = createdSlug;
     openAiPanel();
     setAiOverlayVisible(false);
     const continuationPrompt = getPostOnboardingContinuationPrompt(
@@ -1220,6 +1245,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     };
     setOnboardingContext(nextContext);
     saveOnboardingConversationContext(nextContext);
+    transferMobilizedAiAgentsToSpace(slug, {
+      messages: messages as Array<{
+        role: string;
+        parts?: Array<{ type: string; text?: string }>;
+      }>,
+    });
+    transferredMobilizedAgentsSlugRef.current = slug;
     openAiPanel();
     setAiOverlayVisible(false);
     const continuationPrompt = getPostOnboardingContinuationPrompt(
