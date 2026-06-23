@@ -590,35 +590,30 @@
     "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}"
   },
   "BankingTab": {
-    "title": "Bank Transfers",
-    "subtitle": "Receive bank transfers into your treasury and manage space deposit accounts.",
+    "title": "Banking",
     "loading": "Loading bank account status…",
     "returnBanner": "Welcome back — we're checking your verification status.",
     "returnBannerDismiss": "Dismiss",
-    "returnBannerApprovedHint": "Verification is complete. Open a space account to add any remaining currencies.",
+    "returnBannerApprovedHint": "Verification is complete. Add routing accounts for any remaining currencies.",
     "errorLoad": "Could not load bank account status.",
     "errorFetchStatus": "There was an issue retrieving your banking information. Please try again later.",
     "sections": {
       "transfers": {
-        "title": "One-time Bank Transfers",
-        "description": "One-time incoming transfers.",
-        "emptyTitle": "No one-time transfers yet",
-        "emptyDescription": "Create a one-time transfer when you need a single incoming payment without setting up a full deposit account.",
-        "newTransferCta": "New one-time transfer",
+        "title": "One-time Transfer Routes",
+        "description": "Single-use bank transfer accounts that automatically route incoming funds to the space USDC or EURC wallets.",
+        "emptyTitle": "No one-time transfer routes yet",
+        "newTransferCta": "Add one-time route",
         "loading": "Loading transfers…"
       },
       "accounts": {
-        "title": "Bank Accounts",
-        "description": "Permanent deposit details per currency.",
-        "openAccountCta": "Open a space account",
-        "addCurrencyCta": "Add bank account",
-        "emptyTitle": "No bank accounts yet",
-        "emptyDescription": "Open a space account and choose which currencies you need. We'll set up deposit details for each one.",
+        "title": "Deposit Routing Accounts",
+        "description": "Bank transfer accounts that automatically route incoming funds to the space USDC or EURC wallets.",
+        "emptyTitle": "No deposit routing accounts yet",
         "pendingTitle": "Verification in progress",
-        "pendingDescription": "Finish verification in Bridge to activate the currencies you selected. Your accounts will be created automatically once approved.",
+        "pendingDescription": "Finish verification in Bridge to activate the currencies you selected. Your routing accounts will be set up automatically once approved.",
         "continueVerificationCta": "Continue verification",
         "loadingAccounts": "Loading bank accounts…",
-        "signInHint": "Sign in to manage bank accounts."
+        "signInHint": "Sign in to manage banking routes."
       }
     },
     "payouts": {
@@ -627,15 +622,14 @@
         "payouts": "Payouts"
       },
       "section": {
-        "title": "Payout Accounts",
-        "description": "Register where the treasury sends fiat after an approved proposal. Each account gets a liquidation address for Funding or Expenses proposals."
+        "title": "Payout Bank Accounts",
+        "description": "Register an external bank account to transfer funds from your USDC or EURC wallets through proposals."
       },
       "addCta": "Add payout account",
       "loading": "Loading payout accounts…",
-      "emptyTitle": "No payout accounts yet",
-      "emptyDescription": "Register a bank account to receive treasury payouts. Treasury USDC → liquidation address → vote → fiat in your bank.",
+      "emptyTitle": "No payout bank accounts yet",
       "cardBankFallback": "Bank account",
-      "liquidationAddressLabel": "Liquidation address",
+      "liquidationAddressLabel": "Payout address",
       "payoutAddressLabel": "Payout address",
       "detail": {
         "title": "Payout account",
@@ -650,9 +644,9 @@
         "pending": "Pending"
       },
       "addDialog": {
-        "title": "Add payout account",
+        "title": "Add payout bank account",
         "stepOf": "Step {current} of {total}",
-        "step1Description": "Choose the destination currency for this payout account.",
+        "step1Description": "Indicate the currency of the destination bank account.",
         "step2Description": "Enter the bank account details for the payout destination.",
         "step3Description": "Enter the beneficiary address and transfer details.",
         "step4Description": "Review and confirm your payout account details.",
@@ -713,10 +707,10 @@
         "submitting": "Creating…",
         "success": {
           "title": "Payout account registered",
-          "subtitle": "The account is active. Copy the liquidation address to use in proposals.",
-          "liquidationAddressLabel": "Liquidation address",
+          "subtitle": "The account is active. Copy the payout address to use in proposals.",
+          "liquidationAddressLabel": "Payout address",
           "howToTitle": "How to pay out",
-          "howToText": "Create a Funding or Expenses proposal pointing to this address as the payout destination. Bridge will convert and wire fiat to your registered bank.",
+          "howToText": "Create a Funding or Expenses proposal pointing to this address as the payout destination. Funds will be converted and transferred to your registered bank.",
           "done": "Done"
         },
         "swift": {
@@ -752,22 +746,22 @@
       }
     },
     "openAccount": {
-      "title": "Open a space account",
-      "titleAddCurrency": "Add a bank account",
-      "description": "Tell us about your organization and which currencies you need. We'll verify your space once, then create accounts for each currency.",
-      "descriptionAddCurrency": "Choose additional currencies to add deposit accounts for your space.",
-      "descriptionAddCurrencySingle": "Choose the deposit currency for this bank account. Additional verification from the provider may be required.",
+      "title": "Set up deposit routing accounts",
+      "titleAddCurrency": "Add a deposit routing account",
+      "description": "Tell us about your organization and which currencies you support. You'll verify your space once, and then be able to use deposit and payout banking routes.",
+      "descriptionAddCurrency": "Choose additional currencies to add deposit routing accounts for your space.",
+      "descriptionAddCurrencySingle": "Create permanent deposit instructions for incoming transfers. Funds are automatically converted to USDC or EURC and settled in your treasury wallet.",
       "bankAccountDepositLabel": "Deposit currency",
-      "bankAccountDepositHint": "Currency this bank account will receive.",
+      "bankAccountDepositHint": "Currency this routing account will receive.",
       "legalName": "Legal entity name",
       "contactEmail": "Contact email",
       "currenciesLabel": "Currencies",
-      "currenciesHint": "Select every currency you want to receive bank transfers in.",
-      "currenciesHintSingle": "Select a currency you want to receive bank transfers in.",
-      "submit": "Open account",
-      "submitAddCurrency": "Add bank account",
+      "currenciesHint": "Select every currency you want to receive bank deposits in.",
+      "currenciesHintSingle": "Select a currency you want to receive bank deposits in.",
+      "submit": "Set up routing accounts",
+      "submitAddCurrency": "Add routing account",
       "submitting": "Working…",
-      "noCurrenciesAvailable": "All supported bank accounts are already open for this space.",
+      "noCurrenciesAvailable": "All supported deposit routing accounts are already set up for this space.",
       "railLabel": "Payment rail",
       "railPlaceholder": "Select a rail",
       "requestRail": "Request",
@@ -778,9 +772,7 @@
       "redirectPendingDescription": "Accept terms and complete verification to activate your selected currencies."
     },
     "toolbar": {
-      "add": "Add",
-      "addCurrency": "Add bank account",
-      "openSpaceAccount": "Open a space account",
+      "addCurrency": "Add routing account",
       "finishVerificationFirst": "Finish the current verification first",
       "allCurrenciesCovered": "All supported currencies already have accounts",
       "loadingAccounts": "Loading bank accounts…",
@@ -796,6 +788,10 @@
       "activating": "Activating…",
       "activateFailed": "We couldn't complete setup. Please try again later. If the problem continues, contact us.",
       "openGearForVerification": "Click to open verification details and Bridge links."
+    },
+    "minimums": {
+      "depositNote": "Minimum deposit:",
+      "payoutNote": "Minimum transfer:"
     },
     "advanced": {
       "gearLabel": "Banking settings",
@@ -900,7 +896,7 @@
       "organizationLegend": "Organization details",
       "organizationHint": "Organization details are sent to our banking partner for verification and are not stored on Hypha.",
       "currenciesTitle": "Currencies you want to use",
-      "currenciesDescription": "Select the currencies this space will accept by bank transfer. We verify your organization once with our banking partner.",
+      "currenciesDescription": "Select the currencies this space will use for bank deposits and payouts. Your organization will be verified once with our banking partner.",
       "currenciesHint": "You can add more currencies later from Banking settings.",
       "submit": "Continue"
     },
@@ -996,7 +992,7 @@
     },
     "createTransfer": {
       "title": "New one-time transfer",
-      "description": "Create deposit instructions for a single incoming transfer. Funds are converted to a stablecoin (USDC or EURC) in your treasury.",
+      "description": "Create deposit instructions for a single incoming transfer. Funds are automatically converted to USDC or EURC and settled in your treasury wallet.",
       "corridorLabel": "Rail",
       "corridorHint": "Select how the payer will send funds. This determines the deposit instructions.",
       "fixedAmountLabel": "Require a fixed amount",
@@ -1118,7 +1114,7 @@
     }
   },
   "TreasuryTab": {
-    "bankAccounts": "Bank Accounts",
+    "bankingRoutes": "Banking",
     "balance": "Balance",
     "wallet": "Wallet",
     "searchTokens": "Search tokens",

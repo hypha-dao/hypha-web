@@ -591,7 +591,7 @@
     "aiAgentsMobilizedCount": "Mobilisé {count, plural, one {# fois} other {# fois}}"
   },
   "TreasuryTab": {
-    "bankAccounts": "Comptes bancaires",
+    "bankingRoutes": "Banque",
     "balance": "Solde",
     "wallet": "Portefeuille",
     "searchTokens": "Rechercher des tokens",
@@ -2855,35 +2855,30 @@
     "deleteFailed": "Impossible de supprimer ce signal. Réessayez."
   },
   "BankingTab": {
-    "title": "Virements bancaires",
-    "subtitle": "Recevez des virements bancaires dans votre trésorerie et gérez les comptes de dépôt du space.",
+    "title": "Banque",
     "loading": "Chargement du statut du compte bancaire…",
     "returnBanner": "Bon retour — nous vérifions votre statut de vérification.",
     "returnBannerDismiss": "Fermer",
-    "returnBannerApprovedHint": "La vérification est terminée. Ouvrez un compte space pour ajouter les devises restantes.",
+    "returnBannerApprovedHint": "La vérification est terminée. Ajoutez des comptes de routage pour les devises restantes.",
     "errorLoad": "Impossible de charger le statut du compte bancaire.",
     "errorFetchStatus": "Un problème est survenu lors de la récupération de vos informations bancaires. Veuillez réessayer plus tard.",
     "sections": {
       "transfers": {
-        "title": "Virements bancaires ponctuels",
-        "description": "Virements entrants ponctuels.",
-        "emptyTitle": "Aucun virement ponctuel pour le moment",
-        "emptyDescription": "Créez un virement ponctuel lorsque vous avez besoin d'un seul paiement entrant sans configurer un compte de dépôt complet.",
-        "newTransferCta": "Nouveau virement ponctuel",
+        "title": "Virements ponctuels",
+        "description": "Comptes de virement bancaire à usage unique qui acheminent automatiquement les fonds entrants vers les portefeuilles USDC ou EURC de l’espace.",
+        "emptyTitle": "Aucun virement ponctuel pour l’instant",
+        "newTransferCta": "Ajouter un virement ponctuel",
         "loading": "Chargement des virements…"
       },
       "accounts": {
-        "title": "Comptes bancaires",
-        "description": "Coordonnées de dépôt permanentes par devise.",
-        "openAccountCta": "Ouvrir un compte space",
-        "addCurrencyCta": "Ajouter un compte bancaire",
-        "emptyTitle": "Aucun compte bancaire pour le moment",
-        "emptyDescription": "Ouvrez un compte space et choisissez les devises dont vous avez besoin. Nous configurerons les coordonnées de dépôt pour chacune.",
+        "title": "Comptes de routage des dépôts",
+        "description": "Comptes de virement bancaire qui acheminent automatiquement les fonds entrants vers les portefeuilles USDC ou EURC de l’espace.",
+        "emptyTitle": "Aucun compte de routage des dépôts pour l’instant",
         "pendingTitle": "Vérification en cours",
-        "pendingDescription": "Terminez la vérification dans Bridge pour activer les devises sélectionnées. Vos comptes seront créés automatiquement une fois approuvés.",
+        "pendingDescription": "Terminez la vérification dans Bridge pour activer les devises sélectionnées. Vos comptes de routage seront configurés automatiquement une fois approuvés.",
         "continueVerificationCta": "Continuer la vérification",
         "loadingAccounts": "Chargement des comptes bancaires…",
-        "signInHint": "Connectez-vous pour gérer les comptes bancaires."
+        "signInHint": "Connectez-vous pour gérer vos routes bancaires."
       }
     },
     "payouts": {
@@ -2892,15 +2887,14 @@
         "payouts": "Paiements"
       },
       "section": {
-        "title": "Comptes de paiement",
-        "description": "Enregistrez où le trésor envoie les fonds après une proposition approuvée. Chaque compte reçoit une adresse de liquidation pour les propositions Financement ou Dépenses."
+        "title": "Comptes bancaires de paiement",
+        "description": "Enregistrez un compte bancaire externe pour transférer des fonds depuis vos portefeuilles USDC ou EURC via des propositions."
       },
       "addCta": "Ajouter un compte de paiement",
       "loading": "Chargement des comptes de paiement…",
-      "emptyTitle": "Aucun compte de paiement pour l'instant",
-      "emptyDescription": "Enregistrez un compte bancaire pour recevoir les paiements du trésor. USDC du trésor → adresse de liquidation → vote → fiat dans votre banque.",
+      "emptyTitle": "Aucun compte bancaire de paiement pour l’instant",
       "cardBankFallback": "Compte bancaire",
-      "liquidationAddressLabel": "Adresse de liquidation",
+      "liquidationAddressLabel": "Adresse de paiement",
       "payoutAddressLabel": "Adresse de paiement",
       "detail": {
         "title": "Compte de paiement",
@@ -2917,7 +2911,7 @@
       "addDialog": {
         "title": "Ajouter un compte de paiement",
         "stepOf": "Étape {current} sur {total}",
-        "step1Description": "Choisissez la devise de destination de ce compte de paiement.",
+        "step1Description": "Indiquez la devise du compte bancaire de destination.",
         "step2Description": "Saisissez les coordonnées bancaires du compte de destination.",
         "step3Description": "Saisissez l'adresse du bénéficiaire et les détails du virement.",
         "step4Description": "Vérifiez et confirmez les détails de votre compte de paiement.",
@@ -2978,10 +2972,10 @@
         "submitting": "Création…",
         "success": {
           "title": "Compte de paiement enregistré",
-          "subtitle": "Le compte est actif. Copiez l'adresse de liquidation pour l'utiliser dans des propositions.",
-          "liquidationAddressLabel": "Adresse de liquidation",
+          "subtitle": "Le compte est actif. Copiez l’adresse de paiement pour l’utiliser dans vos propositions.",
+          "liquidationAddressLabel": "Adresse de paiement",
           "howToTitle": "Comment effectuer un paiement",
-          "howToText": "Créez une proposition Financement ou Dépenses → collez cette adresse comme destinataire → sélectionnez USDC ou EURC comme jeton → votez et exécutez. Bridge convertit et vire les fonds en fiat vers la banque enregistrée.",
+          "howToText": "Créez une proposition Funding ou Expenses en indiquant cette adresse comme destination de paiement. Les fonds seront convertis et transférés vers votre banque enregistrée.",
           "done": "Terminé"
         },
         "swift": {
@@ -3017,22 +3011,22 @@
       }
     },
     "openAccount": {
-      "title": "Ouvrir un compte space",
-      "titleAddCurrency": "Ajouter un compte bancaire",
-      "description": "Parlez-nous de votre organisation et des devises dont vous avez besoin. Nous vérifierons votre space une seule fois, puis créerons des comptes pour chaque devise.",
-      "descriptionAddCurrency": "Choisissez des devises supplémentaires pour ajouter des comptes de dépôt à votre space.",
-      "descriptionAddCurrencySingle": "Choisissez la devise de dépôt pour ce compte bancaire. Une vérification supplémentaire du fournisseur peut être requise.",
+      "title": "Configurer les comptes de routage des dépôts",
+      "titleAddCurrency": "Ajouter un compte de routage des dépôts",
+      "description": "Parlez-nous de votre organisation et des devises que vous prenez en charge. Vous vérifierez votre espace une seule fois, puis pourrez utiliser les routes bancaires de dépôt et de paiement.",
+      "descriptionAddCurrency": "Choisissez des devises supplémentaires pour ajouter des comptes de routage des dépôts à votre espace.",
+      "descriptionAddCurrencySingle": "Créez des instructions de dépôt permanentes pour les virements entrants. Les fonds sont automatiquement convertis en USDC ou EURC et réglés dans votre portefeuille de trésorerie.",
       "bankAccountDepositLabel": "Devise de dépôt",
-      "bankAccountDepositHint": "Devise que ce compte bancaire recevra.",
+      "bankAccountDepositHint": "Devise que ce compte de routage recevra.",
       "legalName": "Nom légal de l'entité",
       "contactEmail": "E-mail de contact",
       "currenciesLabel": "Devises",
-      "currenciesHint": "Sélectionnez toutes les devises dans lesquelles vous souhaitez recevoir des virements bancaires.",
-      "currenciesHintSingle": "Sélectionnez une devise dans laquelle vous souhaitez recevoir des virements bancaires.",
-      "submit": "Ouvrir le compte",
-      "submitAddCurrency": "Ajouter un compte bancaire",
+      "currenciesHint": "Sélectionnez toutes les devises dans lesquelles vous souhaitez recevoir des dépôts bancaires.",
+      "currenciesHintSingle": "Sélectionnez une devise dans laquelle vous souhaitez recevoir des dépôts bancaires.",
+      "submit": "Configurer les comptes de routage",
+      "submitAddCurrency": "Ajouter un compte de routage",
       "submitting": "Traitement en cours…",
-      "noCurrenciesAvailable": "Tous les comptes bancaires pris en charge sont déjà ouverts pour ce space.",
+      "noCurrenciesAvailable": "Tous les comptes de routage des dépôts pris en charge sont déjà configurés pour cet espace.",
       "railLabel": "Canal de paiement",
       "railPlaceholder": "Sélectionner un canal",
       "requestRail": "Demander",
@@ -3043,9 +3037,7 @@
       "redirectPendingDescription": "Acceptez les conditions et terminez la vérification pour activer les devises sélectionnées."
     },
     "toolbar": {
-      "add": "Ajouter",
-      "addCurrency": "Ajouter un compte bancaire",
-      "openSpaceAccount": "Ouvrir un compte space",
+      "addCurrency": "Ajouter un compte de routage",
       "finishVerificationFirst": "Terminez d'abord la vérification en cours",
       "allCurrenciesCovered": "Toutes les devises prises en charge ont déjà des comptes",
       "loadingAccounts": "Chargement des comptes bancaires…",
@@ -3061,6 +3053,10 @@
       "activating": "Activation…",
       "activateFailed": "Nous n'avons pas pu terminer la configuration. Veuillez réessayer plus tard. Si le problème persiste, contactez-nous.",
       "openGearForVerification": "Cliquez pour ouvrir les détails de vérification et les liens Bridge."
+    },
+    "minimums": {
+      "depositNote": "Dépôt minimum :",
+      "payoutNote": "Virement minimum :"
     },
     "advanced": {
       "gearLabel": "Paramètres bancaires",
@@ -3165,7 +3161,7 @@
       "organizationLegend": "Informations sur l'organisation",
       "organizationHint": "Les informations sur l'organisation sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
       "currenciesTitle": "Devises que vous souhaitez utiliser",
-      "currenciesDescription": "Sélectionnez les devises que ce space acceptera par virement bancaire. Nous vérifions votre organisation une seule fois avec notre partenaire bancaire.",
+      "currenciesDescription": "Sélectionnez les devises que cet espace utilisera pour les dépôts et paiements bancaires. Votre organisation sera vérifiée une fois avec notre partenaire bancaire.",
       "currenciesHint": "Vous pourrez ajouter d'autres devises plus tard depuis les paramètres bancaires.",
       "submit": "Continuer"
     },
@@ -3261,7 +3257,7 @@
     },
     "createTransfer": {
       "title": "Nouveau virement ponctuel",
-      "description": "Créez des instructions de dépôt pour un seul virement entrant. Les fonds sont convertis en stablecoin (USDC ou EURC) dans votre trésorerie.",
+      "description": "Créez des instructions de dépôt pour un seul virement entrant. Les fonds sont automatiquement convertis en USDC ou EURC et réglés dans votre portefeuille de trésorerie.",
       "corridorLabel": "Corridor",
       "corridorHint": "Sélectionnez comment le payeur enverra les fonds. Cela détermine les instructions de dépôt.",
       "fixedAmountLabel": "Exiger un montant fixe",

@@ -18,6 +18,7 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
+import { PAYOUT_RAIL_MINIMUMS } from '../banking-minimums';
 import type { BankPayoutAccountPublic } from '../hooks/types';
 import {
   BANKING_DIALOG_FOOTER_CLASS,
@@ -59,6 +60,7 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
 }) => {
   const t = useTranslations('BankingTab.payouts');
   const tDialog = useTranslations('BankingTab.payouts.addDialog');
+  const tMinimums = useTranslations('BankingTab.minimums');
 
   if (!account) return null;
 
@@ -166,6 +168,17 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
               <p className="text-2 text-muted-foreground">
                 {tDialog('success.howToText')}
               </p>
+              {account.paymentRail &&
+              PAYOUT_RAIL_MINIMUMS[account.paymentRail]?.(
+                account.sourceCurrency.toLowerCase(),
+              ) ? (
+                <p className="text-1 text-muted-foreground">
+                  {tMinimums('payoutNote')}{' '}
+                  {PAYOUT_RAIL_MINIMUMS[account.paymentRail]?.(
+                    account.sourceCurrency.toLowerCase(),
+                  )}
+                </p>
+              ) : null}
             </div>
           </div>
         </BankingDialogBody>

@@ -1349,8 +1349,8 @@
     "aiAgentsMobilizedCount": "Movilizado {count, plural, one {# vez} other {# veces}}"
   },
   "TreasuryTab": {
-    "bankAccounts": "Cuentas bancarias",
-    "balance": "Balance",
+    "bankingRoutes": "Banca",
+    "balance": "Saldo",
     "wallet": "Billetera",
     "searchTokens": "Buscar tokens",
     "hideSmall": "Ocultar pequeños",
@@ -2859,35 +2859,30 @@
     "deleteFailed": "No se pudo eliminar esta señal. Inténtalo de nuevo."
   },
   "BankingTab": {
-    "title": "Transferencias bancarias",
-    "subtitle": "Reciba transferencias bancarias en su tesorería y gestione las cuentas de depósito del space.",
+    "title": "Banca",
     "loading": "Cargando el estado de la cuenta bancaria…",
     "returnBanner": "Bienvenido de nuevo — estamos comprobando su estado de verificación.",
     "returnBannerDismiss": "Descartar",
-    "returnBannerApprovedHint": "La verificación está completa. Abra una cuenta del space para añadir las monedas restantes.",
+    "returnBannerApprovedHint": "La verificación ha sido completada. Añada cuentas de enrutamiento para las monedas restantes.",
     "errorLoad": "No se pudo cargar el estado de la cuenta bancaria.",
     "errorFetchStatus": "Hubo un problema al recuperar su información bancaria. Por favor, inténtelo de nuevo más tarde.",
     "sections": {
       "transfers": {
-        "title": "Transferencias bancarias únicas",
-        "description": "Transferencias entrantes puntuales.",
-        "emptyTitle": "Aún no hay transferencias únicas",
-        "emptyDescription": "Cree una transferencia única cuando necesite un solo pago entrante sin configurar una cuenta de depósito completa.",
-        "newTransferCta": "Nueva transferencia única",
+        "title": "Rutas de Transferencia Única",
+        "description": "Cuentas de transferencia bancaria de un solo uso que enrutan automáticamente los fondos entrantes a las billeteras USDC o EURC del space.",
+        "emptyTitle": "Aún no hay rutas de transferencia única",
+        "newTransferCta": "Añadir ruta única",
         "loading": "Cargando transferencias…"
       },
       "accounts": {
-        "title": "Cuentas bancarias",
-        "description": "Datos de depósito permanentes por moneda.",
-        "openAccountCta": "Abrir una cuenta del space",
-        "addCurrencyCta": "Añadir cuenta bancaria",
-        "emptyTitle": "Aún no hay cuentas bancarias",
-        "emptyDescription": "Abra una cuenta del space y elija las monedas que necesita. Configuraremos los datos de depósito para cada una.",
+        "title": "Cuentas de Enrutamiento de Depósito",
+        "description": "Cuentas de transferencia bancaria que enrutan automáticamente los fondos entrantes a las billeteras USDC o EURC del space.",
+        "emptyTitle": "Aún no hay cuentas de enrutamiento de depósito",
         "pendingTitle": "Verificación en curso",
-        "pendingDescription": "Complete la verificación en Bridge para activar las monedas seleccionadas. Sus cuentas se crearán automáticamente una vez aprobadas.",
+        "pendingDescription": "Complete la verificación en Bridge para activar las monedas seleccionadas. Las cuentas de enrutamiento se configurarán automáticamente una vez aprobadas.",
         "continueVerificationCta": "Continuar verificación",
         "loadingAccounts": "Cargando cuentas bancarias…",
-        "signInHint": "Inicie sesión para gestionar cuentas bancarias."
+        "signInHint": "Inicie sesión para gestionar las rutas bancarias."
       }
     },
     "payouts": {
@@ -2896,15 +2891,14 @@
         "payouts": "Pagos"
       },
       "section": {
-        "title": "Cuentas de pago",
-        "description": "Registre dónde envía el fiat la tesorería tras una propuesta aprobada. Cada cuenta obtiene una dirección de liquidación para propuestas de Financiación o Gastos."
+        "title": "Cuentas Bancarias de Pago",
+        "description": "Registre una cuenta bancaria externa para transferir fondos desde sus billeteras USDC o EURC a través de propuestas."
       },
       "addCta": "Añadir cuenta de pago",
       "loading": "Cargando cuentas de pago…",
-      "emptyTitle": "Aún no hay cuentas de pago",
-      "emptyDescription": "Registre una cuenta bancaria para recibir pagos de la tesorería. USDC de la tesorería → dirección de liquidación → votación → fiat en su banco.",
+      "emptyTitle": "Aún no hay cuentas bancarias de pago",
       "cardBankFallback": "Cuenta bancaria",
-      "liquidationAddressLabel": "Dirección de liquidación",
+      "liquidationAddressLabel": "Dirección de pago",
       "payoutAddressLabel": "Dirección de pago",
       "detail": {
         "title": "Cuenta de pago",
@@ -2921,7 +2915,7 @@
       "addDialog": {
         "title": "Añadir cuenta de pago",
         "stepOf": "Paso {current} de {total}",
-        "step1Description": "Elija la moneda de destino de esta cuenta de pago.",
+        "step1Description": "Indique la moneda de la cuenta bancaria de destino.",
         "step2Description": "Introduzca los datos bancarios de la cuenta de destino.",
         "step3Description": "Introduzca la dirección del beneficiario y los detalles de la transferencia.",
         "step4Description": "Revise y confirme los detalles de su cuenta de pago.",
@@ -2982,10 +2976,10 @@
         "submitting": "Creando…",
         "success": {
           "title": "Cuenta de pago registrada",
-          "subtitle": "La cuenta está activa. Copie la dirección de liquidación para usarla en propuestas.",
-          "liquidationAddressLabel": "Dirección de liquidación",
+          "subtitle": "La cuenta está activa. Copie la dirección de pago para usarla en propuestas.",
+          "liquidationAddressLabel": "Dirección de pago",
           "howToTitle": "Cómo realizar pagos",
-          "howToText": "Cree una propuesta de Financiación o Gastos → pegue esta dirección como destinatario → seleccione USDC o EURC como token → vote y ejecute. Bridge convierte y transfiere el fiat al banco registrado.",
+          "howToText": "Cree una propuesta de Funding o Expenses apuntando a esta dirección como destino de pago. Los fondos serán convertidos y transferidos a su banco registrado.",
           "done": "Listo"
         },
         "swift": {
@@ -3021,22 +3015,22 @@
       }
     },
     "openAccount": {
-      "title": "Abrir una cuenta del space",
-      "titleAddCurrency": "Añadir una cuenta bancaria",
-      "description": "Cuéntenos sobre su organización y qué monedas necesita. Verificaremos su space una sola vez y luego crearemos cuentas para cada moneda.",
-      "descriptionAddCurrency": "Elija monedas adicionales para añadir cuentas de depósito a su space.",
-      "descriptionAddCurrencySingle": "Elija la moneda de depósito para esta cuenta bancaria. El proveedor puede requerir verificación adicional.",
+      "title": "Configurar cuentas de enrutamiento de depósito",
+      "titleAddCurrency": "Añadir una cuenta de enrutamiento de depósito",
+      "description": "Cuéntenos sobre su organización y las monedas que admite. Verificará su space una sola vez y luego podrá usar rutas bancarias de depósito y pago.",
+      "descriptionAddCurrency": "Elija monedas adicionales para añadir cuentas de enrutamiento de depósito para su space.",
+      "descriptionAddCurrencySingle": "Cree instrucciones de depósito permanentes para transferencias entrantes. Los fondos se convierten automáticamente a USDC o EURC y se liquidan en su billetera de tesorería.",
       "bankAccountDepositLabel": "Moneda de depósito",
-      "bankAccountDepositHint": "Moneda que recibirá esta cuenta bancaria.",
+      "bankAccountDepositHint": "Moneda que recibirá esta cuenta de enrutamiento.",
       "legalName": "Nombre legal de la entidad",
       "contactEmail": "Correo de contacto",
       "currenciesLabel": "Monedas",
-      "currenciesHint": "Seleccione todas las monedas en las que desea recibir transferencias bancarias.",
-      "currenciesHintSingle": "Seleccione una moneda en la que desea recibir transferencias bancarias.",
-      "submit": "Abrir cuenta",
-      "submitAddCurrency": "Añadir cuenta bancaria",
+      "currenciesHint": "Seleccione todas las monedas en las que desea recibir depósitos bancarios.",
+      "currenciesHintSingle": "Seleccione una moneda en la que desea recibir depósitos bancarios.",
+      "submit": "Configurar cuentas de enrutamiento",
+      "submitAddCurrency": "Añadir cuenta de enrutamiento",
       "submitting": "Procesando…",
-      "noCurrenciesAvailable": "Todas las cuentas bancarias compatibles ya están abiertas para este space.",
+      "noCurrenciesAvailable": "Todas las cuentas de enrutamiento de depósito compatibles ya están configuradas para este space.",
       "railLabel": "Vía de pago",
       "railPlaceholder": "Seleccionar vía",
       "requestRail": "Solicitar",
@@ -3047,9 +3041,7 @@
       "redirectPendingDescription": "Acepte los términos y complete la verificación para activar las monedas seleccionadas."
     },
     "toolbar": {
-      "add": "Añadir",
-      "addCurrency": "Añadir cuenta bancaria",
-      "openSpaceAccount": "Abrir una cuenta del space",
+      "addCurrency": "Añadir cuenta de enrutamiento",
       "finishVerificationFirst": "Complete primero la verificación en curso",
       "allCurrenciesCovered": "Todas las monedas compatibles ya tienen cuentas",
       "loadingAccounts": "Cargando cuentas bancarias…",
@@ -3065,6 +3057,10 @@
       "activating": "Activando…",
       "activateFailed": "No pudimos completar la configuración. Inténtelo de nuevo más tarde. Si el problema persiste, contáctenos.",
       "openGearForVerification": "Haga clic para abrir los detalles de verificación y los enlaces de Bridge."
+    },
+    "minimums": {
+      "depositNote": "Depósito mínimo:",
+      "payoutNote": "Transferencia mínima:"
     },
     "advanced": {
       "gearLabel": "Configuración bancaria",
@@ -3169,7 +3165,7 @@
       "organizationLegend": "Datos de la organización",
       "organizationHint": "Los datos de la organización se envían a nuestro socio bancario para verificación y no se almacenan en Hypha.",
       "currenciesTitle": "Monedas que desea utilizar",
-      "currenciesDescription": "Seleccione las monedas que este space aceptará por transferencia bancaria. Verificamos su organización una sola vez con nuestro socio bancario.",
+      "currenciesDescription": "Seleccione las monedas que este space utilizará para depósitos y pagos bancarios. Su organización será verificada una vez con nuestro socio bancario.",
       "currenciesHint": "Puede añadir más monedas más tarde desde la configuración bancaria.",
       "submit": "Continuar"
     },
@@ -3265,7 +3261,7 @@
     },
     "createTransfer": {
       "title": "Nueva transferencia única",
-      "description": "Cree instrucciones de depósito para una sola transferencia entrante. Los fondos se convierten a una stablecoin (USDC o EURC) en su tesorería.",
+      "description": "Cree instrucciones de depósito para una sola transferencia entrante. Los fondos se convierten automáticamente a USDC o EURC y se liquidan en su billetera de tesorería.",
       "corridorLabel": "Corredor",
       "corridorHint": "Seleccione cómo enviará fondos el pagador. Esto determina las instrucciones de depósito.",
       "fixedAmountLabel": "Exigir un importe fijo",

@@ -591,8 +591,7 @@
     "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}"
   },
   "BankingTab": {
-    "title": "Banküberweisungen",
-    "subtitle": "Empfangen Sie Banküberweisungen in Ihrer Treasury und verwalten Sie Einzahlungskonten des Space.",
+    "title": "Bankdienste",
     "loading": "Bankkontostatus wird geladen…",
     "returnBanner": "Willkommen zurück — wir prüfen Ihren Verifizierungsstatus.",
     "errorLoad": "Bankkontostatus konnte nicht geladen werden.",
@@ -673,28 +672,24 @@
       }
     },
     "returnBannerDismiss": "Schließen",
-    "returnBannerApprovedHint": "Die Verifizierung ist abgeschlossen. Eröffnen Sie ein Space-Konto, um fehlende Währungen hinzuzufügen.",
+    "returnBannerApprovedHint": "Die Verifizierung ist abgeschlossen. Fügen Sie Routing-Konten für verbleibende Währungen hinzu.",
     "sections": {
       "transfers": {
-        "title": "Einmalige Banküberweisungen",
-        "description": "Einmalige eingehende Überweisungen.",
-        "emptyTitle": "Noch keine einmaligen Überweisungen",
-        "emptyDescription": "Erstellen Sie eine einmalige Überweisung, wenn Sie eine einzelne eingehende Zahlung benötigen, ohne ein vollständiges Einzahlungskonto einzurichten.",
-        "newTransferCta": "Neue einmalige Überweisung",
+        "title": "Einmalige Überweisungsrouten",
+        "description": "Einmalig nutzbare Bankkonten, die eingehende Gelder automatisch zu den USDC- oder EURC-Wallets des Spaces weiterleiten.",
+        "emptyTitle": "Noch keine einmaligen Überweisungsrouten",
+        "newTransferCta": "Einmalige Route hinzufügen",
         "loading": "Überweisungen werden geladen…"
       },
       "accounts": {
-        "title": "Bankkonten",
-        "description": "Permanente Einzahlungsdetails pro Währung.",
-        "openAccountCta": "Space-Konto eröffnen",
-        "addCurrencyCta": "Bankkonto hinzufügen",
-        "emptyTitle": "Noch keine Bankkonten",
-        "emptyDescription": "Eröffnen Sie ein Space-Konto und wählen Sie die benötigten Währungen. Wir richten für jede Währung Einzahlungsdetails ein.",
+        "title": "Einzahlungs-Routing-Konten",
+        "description": "Bankkonten, die eingehende Gelder automatisch zu den USDC- oder EURC-Wallets des Spaces weiterleiten.",
+        "emptyTitle": "Noch keine Einzahlungs-Routing-Konten",
         "pendingTitle": "Verifizierung läuft",
-        "pendingDescription": "Schließen Sie die Verifizierung in Bridge ab, um die ausgewählten Währungen zu aktivieren. Ihre Konten werden nach der Freigabe automatisch erstellt.",
+        "pendingDescription": "Schließen Sie die Verifizierung in Bridge ab, um die ausgewählten Währungen zu aktivieren. Ihre Routing-Konten werden nach der Genehmigung automatisch eingerichtet.",
         "continueVerificationCta": "Verifizierung fortsetzen",
         "loadingAccounts": "Bankkonten werden geladen…",
-        "signInHint": "Melden Sie sich an, um Bankkonten zu verwalten."
+        "signInHint": "Melden Sie sich an, um Banking-Routen zu verwalten."
       }
     },
     "payouts": {
@@ -703,15 +698,14 @@
         "payouts": "Auszahlungen"
       },
       "section": {
-        "title": "Auszahlungskonten",
-        "description": "Registrieren Sie, wohin die Treasury nach einem genehmigten Vorschlag Fiat sendet. Jedes Konto erhält eine Liquidationsadresse für Finanzierungs- oder Ausgabenvorschläge."
+        "title": "Auszahlungsbankkonten",
+        "description": "Registrieren Sie ein externes Bankkonto, um Gelder aus Ihren USDC- oder EURC-Wallets über Anträge zu überweisen."
       },
       "addCta": "Auszahlungskonto hinzufügen",
       "loading": "Auszahlungskonten werden geladen…",
-      "emptyTitle": "Noch keine Auszahlungskonten",
-      "emptyDescription": "Registrieren Sie ein Bankkonto für Auszahlungen aus der Treasury. Treasury-USDC → Liquidationsadresse → Abstimmung → Fiat auf Ihrem Konto.",
+      "emptyTitle": "Noch keine Auszahlungsbankkonten",
       "cardBankFallback": "Bankkonto",
-      "liquidationAddressLabel": "Liquidationsadresse",
+      "liquidationAddressLabel": "Auszahlungsadresse",
       "payoutAddressLabel": "Auszahlungsadresse",
       "detail": {
         "title": "Auszahlungskonto",
@@ -728,7 +722,7 @@
       "addDialog": {
         "title": "Auszahlungskonto hinzufügen",
         "stepOf": "Schritt {current} von {total}",
-        "step1Description": "Wählen Sie die Zielwährung für dieses Auszahlungskonto.",
+        "step1Description": "Geben Sie die Währung des Zielbankontos an.",
         "step2Description": "Geben Sie die Bankdaten des Zielkontos ein.",
         "step3Description": "Geben Sie die Adresse des Begünstigten und die Überweisungsdetails ein.",
         "step4Description": "Überprüfen und bestätigen Sie Ihre Auszahlungskontodaten.",
@@ -789,10 +783,10 @@
         "submitting": "Wird erstellt…",
         "success": {
           "title": "Auszahlungskonto registriert",
-          "subtitle": "Das Konto ist aktiv. Kopieren Sie die Liquidationsadresse für Vorschläge.",
-          "liquidationAddressLabel": "Liquidationsadresse",
+          "subtitle": "Das Konto ist aktiv. Kopieren Sie die Auszahlungsadresse zur Verwendung in Anträgen.",
+          "liquidationAddressLabel": "Auszahlungsadresse",
           "howToTitle": "So führen Sie Auszahlungen durch",
-          "howToText": "Erstellen Sie einen Finanzierungs- oder Ausgabenvorschlag → fügen Sie diese Adresse als Empfänger ein → wählen Sie USDC oder EURC als Token → abstimmen und ausführen. Bridge konvertiert und überweist Fiat an die registrierte Bank.",
+          "howToText": "Erstellen Sie einen Funding- oder Expenses-Antrag mit dieser Adresse als Auszahlungsziel. Die Gelder werden umgewandelt und an Ihre registrierte Bank überwiesen.",
           "done": "Fertig"
         },
         "swift": {
@@ -828,22 +822,22 @@
       }
     },
     "openAccount": {
-      "title": "Space-Konto eröffnen",
-      "titleAddCurrency": "Bankkonto hinzufügen",
-      "description": "Teilen Sie uns mit, welche Organisation Sie vertreten und welche Währungen Sie benötigen. Wir verifizieren Ihren Space einmalig und erstellen anschließend Konten für jede Währung.",
-      "descriptionAddCurrency": "Wählen Sie zusätzliche Währungen, für die Sie Einzahlungskonten für Ihren Space hinzufügen möchten.",
-      "descriptionAddCurrencySingle": "Wählen Sie die Einzahlungswährung für dieses Bankkonto. Möglicherweise ist eine zusätzliche Verifizierung beim Anbieter erforderlich.",
+      "title": "Einzahlungs-Routing-Konten einrichten",
+      "titleAddCurrency": "Einzahlungs-Routing-Konto hinzufügen",
+      "description": "Teilen Sie uns Angaben zu Ihrer Organisation und den unterstützten Währungen mit. Sie verifizieren Ihren Space einmalig und können dann Einzahlungs- und Auszahlungsrouten nutzen.",
+      "descriptionAddCurrency": "Wählen Sie weitere Währungen aus, um Einzahlungs-Routing-Konten für Ihren Space hinzuzufügen.",
+      "descriptionAddCurrencySingle": "Erstellen Sie dauerhafte Einzahlungsanweisungen für eingehende Überweisungen. Die Gelder werden automatisch in USDC oder EURC umgewandelt und in Ihrer Treasury-Wallet verrechnet.",
       "bankAccountDepositLabel": "Einzahlungswährung",
-      "bankAccountDepositHint": "Währung, die dieses Bankkonto empfängt.",
+      "bankAccountDepositHint": "Währung, die dieses Routing-Konto empfängt.",
       "legalName": "Rechtlicher Name der Organisation",
       "contactEmail": "Kontakt-E-Mail",
       "currenciesLabel": "Währungen",
-      "currenciesHint": "Wählen Sie alle Währungen, in denen Sie Banküberweisungen empfangen möchten.",
-      "currenciesHintSingle": "Wählen Sie eine Währung, in der Sie Banküberweisungen empfangen möchten.",
-      "submit": "Konto eröffnen",
-      "submitAddCurrency": "Bankkonto hinzufügen",
+      "currenciesHint": "Wählen Sie alle Währungen aus, in denen Sie Bankeinzahlungen empfangen möchten.",
+      "currenciesHintSingle": "Wählen Sie eine Währung aus, in der Sie Bankeinzahlungen empfangen möchten.",
+      "submit": "Routing-Konten einrichten",
+      "submitAddCurrency": "Routing-Konto hinzufügen",
       "submitting": "Wird bearbeitet…",
-      "noCurrenciesAvailable": "Alle unterstützten Bankkonten sind für diesen Space bereits eröffnet.",
+      "noCurrenciesAvailable": "Alle unterstützten Einzahlungs-Routing-Konten sind für diesen Space bereits eingerichtet.",
       "railLabel": "Zahlungsweg",
       "railPlaceholder": "Zahlungsweg auswählen",
       "requestRail": "Anfordern",
@@ -854,9 +848,7 @@
       "redirectPendingDescription": "Akzeptieren Sie die Bedingungen und schließen Sie die Verifizierung ab, um die ausgewählten Währungen zu aktivieren."
     },
     "toolbar": {
-      "add": "Hinzufügen",
-      "addCurrency": "Bankkonto hinzufügen",
-      "openSpaceAccount": "Space-Konto eröffnen",
+      "addCurrency": "Routing-Konto hinzufügen",
       "finishVerificationFirst": "Schließen Sie zuerst die laufende Verifizierung ab",
       "allCurrenciesCovered": "Für alle unterstützten Währungen existieren bereits Konten",
       "loadingAccounts": "Bankkonten werden geladen…",
@@ -872,6 +864,10 @@
       "activating": "Wird aktiviert…",
       "activateFailed": "Die Einrichtung konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut. Wenn das Problem bestehen bleibt, kontaktieren Sie uns.",
       "openGearForVerification": "Klicken Sie, um Verifizierungsdetails und Bridge-Links zu öffnen."
+    },
+    "minimums": {
+      "depositNote": "Mindesteinzahlung:",
+      "payoutNote": "Mindestüberweisung:"
     },
     "advanced": {
       "gearLabel": "Banking-Einstellungen",
@@ -976,7 +972,7 @@
       "organizationLegend": "Organisationsdetails",
       "organizationHint": "Organisationsdetails werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
       "currenciesTitle": "Gewünschte Währungen",
-      "currenciesDescription": "Wählen Sie die Währungen, die dieser Space per Banküberweisung akzeptieren soll. Wir verifizieren Ihre Organisation einmalig bei unserem Banking-Partner.",
+      "currenciesDescription": "Wählen Sie die Währungen, die dieser Space für Bankeinzahlungen und Auszahlungen verwenden soll. Ihre Organisation wird einmalig von unserem Banking-Partner verifiziert.",
       "currenciesHint": "Weitere Währungen können Sie später in den Banking-Einstellungen hinzufügen.",
       "submit": "Weiter"
     },
@@ -1057,7 +1053,7 @@
     },
     "createTransfer": {
       "title": "Neue einmalige Überweisung",
-      "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Mittel werden in einen Stablecoin (USDC oder EURC) in Ihrer Treasury umgewandelt.",
+      "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Gelder werden automatisch in USDC oder EURC umgewandelt und in Ihrer Treasury-Wallet verrechnet.",
       "corridorLabel": "Korridor",
       "corridorHint": "Wählen Sie, wie der Zahler Mittel sendet. Dies bestimmt die Einzahlungsanweisungen.",
       "fixedAmountLabel": "Festen Betrag verlangen",
@@ -1119,7 +1115,7 @@
     }
   },
   "TreasuryTab": {
-    "bankAccounts": "Bankkonten",
+    "bankingRoutes": "Bankdienste",
     "balance": "Kontostand",
     "wallet": "Wallet",
     "searchTokens": "Tokens suchen",

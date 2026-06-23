@@ -11,6 +11,10 @@ import type {
   BankTransferCorridorKey,
 } from '../bank-currency-display';
 import { isBankRailSelectable } from '../banking-ui';
+import {
+  DEPOSIT_CORRIDOR_MINIMUMS,
+  DEPOSIT_CURRENCY_MINIMUMS,
+} from '../banking-minimums';
 import type { BankCurrencyOperationalStatus } from '../hooks/types';
 import { BankDepositRailOptionRow } from './bank-deposit-rail-option-row';
 
@@ -58,6 +62,7 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
   const tOpenAccount = useTranslations('BankingTab.openAccount');
   const tCreateTransfer = useTranslations('BankingTab.createTransfer');
   const tDeposit = useTranslations('BankingTab.depositInstructions');
+  const tMinimums = useTranslations('BankingTab.minimums');
   const radioName = useId();
 
   const selected = options.find((option) => option.id === selectedId);
@@ -155,6 +160,19 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
           </div>
         </div>
       ) : null}
+
+      {selected
+        ? (() => {
+            const minimum = selected.corridorKey
+              ? DEPOSIT_CORRIDOR_MINIMUMS[selected.corridorKey]
+              : DEPOSIT_CURRENCY_MINIMUMS[selected.currency];
+            return minimum ? (
+              <p className="text-1 text-muted-foreground">
+                {tMinimums('depositNote')} {minimum}
+              </p>
+            ) : null;
+          })()
+        : null}
 
       {showPrimaryAction && selected ? (
         <Button

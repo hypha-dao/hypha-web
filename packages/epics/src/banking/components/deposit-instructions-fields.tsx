@@ -23,6 +23,7 @@ import {
   BANKING_REFERENCE_WARNING_BANNER_CLASS,
   isTransferDepositInstructionsReadOnly,
 } from '../banking-ui';
+import { DEPOSIT_RAIL_MINIMUMS } from '../banking-minimums';
 import { CopyableInstructionBlock } from './copyable-instruction-block';
 import { TreasuryDestinationCard } from './treasury-destination-card';
 import { TransferReceiptBox } from './transfer-bridge-receipt-section';
@@ -56,6 +57,7 @@ export const DepositInstructionsPanel: FC<DepositInstructionsPanelProps> = (
   props,
 ) => {
   const t = useTranslations('BankingTab.depositInstructions');
+  const tMinimums = useTranslations('BankingTab.minimums');
   const tDetails = useTranslations('BankingTab.transferDetails');
   const source = toPanelSource(props);
 
@@ -158,6 +160,12 @@ export const DepositInstructionsPanel: FC<DepositInstructionsPanelProps> = (
               </Button>
             ) : null}
           </div>
+          {source.paymentRail && DEPOSIT_RAIL_MINIMUMS[source.paymentRail] ? (
+            <p className="text-1 text-muted-foreground">
+              {tMinimums('depositNote')}{' '}
+              {DEPOSIT_RAIL_MINIMUMS[source.paymentRail]}
+            </p>
+          ) : null}
           <div
             className={cn(
               'flex flex-col gap-2',
