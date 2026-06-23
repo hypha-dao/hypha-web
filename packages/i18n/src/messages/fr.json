@@ -3161,7 +3161,7 @@
       "organizationLegend": "Informations sur l'organisation",
       "organizationHint": "Les informations sur l'organisation sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
       "currenciesTitle": "Devises que vous souhaitez utiliser",
-      "currenciesDescription": "Sélectionnez les devises que ce space acceptera par virement bancaire. Nous vérifions votre organisation une seule fois avec notre partenaire bancaire.",
+      "currenciesDescription": "Sélectionnez les devises que cet espace utilisera pour les dépôts et paiements bancaires. Votre organisation sera vérifiée une fois avec notre partenaire bancaire.",
       "currenciesHint": "Vous pourrez ajouter d'autres devises plus tard depuis les paramètres bancaires.",
       "submit": "Continuer"
     },

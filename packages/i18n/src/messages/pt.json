@@ -3163,7 +3163,7 @@
       "organizationLegend": "Dados da organização",
       "organizationHint": "Os dados da organização são enviados ao nosso parceiro bancário para verificação e não são armazenados na Hypha.",
       "currenciesTitle": "Moedas que deseja utilizar",
-      "currenciesDescription": "Selecione as moedas que este space aceitará por transferência bancária. Verificamos sua organização uma vez com nosso parceiro bancário.",
+      "currenciesDescription": "Selecione as moedas que este space utilizará para depósitos e pagamentos bancários. Sua organização será verificada uma vez com nosso parceiro bancário.",
       "currenciesHint": "Você pode adicionar mais moedas depois nas configurações bancárias.",
       "submit": "Continuar"
     },

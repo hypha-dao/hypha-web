@@ -896,7 +896,7 @@
       "organizationLegend": "Organization details",
       "organizationHint": "Organization details are sent to our banking partner for verification and are not stored on Hypha.",
       "currenciesTitle": "Currencies you want to use",
-      "currenciesDescription": "Select the currencies this space will accept by bank transfer. We verify your organization once with our banking partner.",
+      "currenciesDescription": "Select the currencies this space will use for bank deposits and payouts. Your organization will be verified once with our banking partner.",
       "currenciesHint": "You can add more currencies later from Banking settings.",
       "submit": "Continue"
     },

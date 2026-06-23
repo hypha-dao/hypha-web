@@ -1,4 +1,4 @@
-﻿{
+{
   "Common": {
     "Assignments": "Zuweisungen",
     "Members": "Mitglieder",
@@ -972,7 +972,7 @@
       "organizationLegend": "Organisationsdetails",
       "organizationHint": "Organisationsdetails werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
       "currenciesTitle": "Gewünschte Währungen",
-      "currenciesDescription": "Wählen Sie die Währungen, die dieser Space per Banküberweisung akzeptieren soll. Wir verifizieren Ihre Organisation einmalig bei unserem Banking-Partner.",
+      "currenciesDescription": "Wählen Sie die Währungen, die dieser Space für Bankeinzahlungen und Auszahlungen verwenden soll. Ihre Organisation wird einmalig von unserem Banking-Partner verifiziert.",
       "currenciesHint": "Weitere Währungen können Sie später in den Banking-Einstellungen hinzufügen.",
       "submit": "Weiter"
     },
