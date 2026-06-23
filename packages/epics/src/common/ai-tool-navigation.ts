@@ -9,6 +9,8 @@ type ChatToolNavigation = {
   signal_title?: string;
   room_id?: string;
   message_event_id?: string;
+  focus_field?: string;
+  focus_section?: string;
 };
 
 export type AiPanelNavigationTarget = {
@@ -16,6 +18,8 @@ export type AiPanelNavigationTarget = {
   openInNewTab: boolean;
   openHumanChat: boolean;
   resubmitPayload?: Record<string, unknown>;
+  focusField?: string;
+  focusSection?: string;
   coherenceChat?: {
     roomId: string | null;
     title: string;
@@ -71,6 +75,8 @@ function parseNavigationTarget(args: {
       typeof args.output.resubmit_payload === 'object'
         ? (args.output.resubmit_payload as Record<string, unknown>)
         : undefined,
+    focusField: navigation?.focus_field?.trim() || undefined,
+    focusSection: navigation?.focus_section?.trim() || undefined,
     coherenceChat,
     key: `${args.messageId}:${args.partKey}:${href}`,
   };

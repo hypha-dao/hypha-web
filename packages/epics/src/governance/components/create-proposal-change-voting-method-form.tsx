@@ -18,6 +18,7 @@ import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-back
 import { VOTING_METHOD_TYPES } from '../hooks';
 import {
   useClearResubmitOnSuccess,
+  useProposalFormSectionFocus,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -99,6 +100,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  useProposalFormSectionFocus(true);
   const { resubmitKey } = useResubmitProposalData(
     form,
     spaceId,
@@ -201,27 +203,31 @@ export const CreateProposalChangeVotingMethodForm = ({
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >
-          <CreateAgreementBaseFields
-            key={resubmitKey}
-            creator={{
-              avatar: person?.avatarUrl || '',
-              name: person?.name || '',
-              surname: person?.surname || '',
-            }}
-            successfulUrl={successfulUrl}
-            closeUrl={successfulUrl}
-            backUrl={backUrl}
-            backLabel={tSpaces('backToSettings')}
-            isLoading={false}
-            label={tAgreementFlow('labels.votingMethod')}
-            progress={progress}
-          />
-          {React.isValidElement(plugin)
-            ? React.cloneElement(
-                plugin as React.ReactElement<{ resubmitKey?: number }>,
-                { resubmitKey },
-              )
-            : plugin}
+          <div data-proposal-section="basics">
+            <CreateAgreementBaseFields
+              key={resubmitKey}
+              creator={{
+                avatar: person?.avatarUrl || '',
+                name: person?.name || '',
+                surname: person?.surname || '',
+              }}
+              successfulUrl={successfulUrl}
+              closeUrl={successfulUrl}
+              backUrl={backUrl}
+              backLabel={tSpaces('backToSettings')}
+              isLoading={false}
+              label={tAgreementFlow('labels.votingMethod')}
+              progress={progress}
+            />
+          </div>
+          <div data-proposal-section="voting_method">
+            {React.isValidElement(plugin)
+              ? React.cloneElement(
+                  plugin as React.ReactElement<{ resubmitKey?: number }>,
+                  { resubmitKey },
+                )
+              : plugin}
+          </div>
           <Separator />
           <div className="flex justify-end w-full">
             <Button type="submit" disabled={isButtonDisabled}>

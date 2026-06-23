@@ -60,3 +60,12 @@ export {
   createOnboardingToolSet,
   safeChatTool,
 } from './tools/onboarding-tool-set';
+export {
+  createPrepareGovernanceProposalTool,
+  createProposalGuidanceTool,
+} from './tools/prepare-governance-proposal';
+export {
+  PROPOSAL_CATALOG,
+  PROPOSAL_CATALOG_KEYS,
+  PREPARE_GOVERNANCE_PROPOSAL_TYPES,
+} from './tools/proposal-catalog';

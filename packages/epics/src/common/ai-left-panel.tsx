@@ -184,6 +184,7 @@ import {
 } from './space-voice-session-context';
 import { findLatestAiPanelNavigationTarget } from './ai-tool-navigation';
 import { writeGovernanceProposalResubmitPayload } from './governance-proposal-navigation';
+import { writeProposalFormFocus } from './proposal-form-focus';
 import {
   appendVoiceTranscriptTurn,
   buildRecentTranscriptSummaryFromChatMessages,
@@ -1287,6 +1288,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     if (navigationTarget.resubmitPayload) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
+    }
+
+    if (navigationTarget.focusField || navigationTarget.focusSection) {
+      writeProposalFormFocus({
+        focusField: navigationTarget.focusField,
+        focusSection: navigationTarget.focusSection,
+      });
     }
 
     if (navigationTarget.openHumanChat) {

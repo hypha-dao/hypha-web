@@ -6,6 +6,8 @@ export type ResubmitProposalTemplateSegment = string;
 
 export const RESUBMIT_PROPOSAL_DATA_KEY = 'resubmitProposalData';
 export const RESUBMIT_FORM_DATA_KEY = 'resubmitFormData';
+/** AI walkthrough: scroll target after prepare_governance_proposal navigation. */
+export const PROPOSAL_FORM_FOCUS_KEY = 'proposalFormFocus';
 
 /**
  * Map a human-readable proposal label to its create-route URL segment.

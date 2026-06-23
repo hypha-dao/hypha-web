@@ -74,6 +74,16 @@ import {
   createHumanChatMessageOutputSchema,
 } from './create-human-chat-message-schema.js';
 import { buildMatrixDiagnosticHint } from './build-matrix-diagnostic-hint.js';
+import {
+  createPrepareGovernanceProposalTool,
+  createProposalGuidanceTool,
+} from '@hypha-platform/chat-server/tools/prepare-governance-proposal';
+import {
+  prepareGovernanceProposalInputSchema,
+  prepareGovernanceProposalOutputSchema,
+  proposalGuidanceInputSchema,
+  proposalGuidanceOutputSchema,
+} from './proposal-tools-schema.js';
 
 const mcpMatrixRequestUrl =
   process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
@@ -88,7 +98,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance and prepare_governance_proposal for discovery and pre-filled governance proposal forms; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -1194,6 +1204,84 @@ server.registerTool(
         isError: true,
       };
     }
+  },
+);
+
+const proposalGuidanceTool = createProposalGuidanceTool();
+server.registerTool(
+  'proposal_guidance',
+  {
+    description: proposalGuidanceTool.description,
+    inputSchema: proposalGuidanceInputSchema,
+    outputSchema: proposalGuidanceOutputSchema,
+  },
+  async (args) => {
+    const parsed = proposalGuidanceInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await proposalGuidanceTool.execute(parsed.data);
+    const out = proposalGuidanceOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [{ type: 'text', text: JSON.stringify(out.data, null, 2) }],
+      structuredContent: out.data,
+    };
+  },
+);
+
+const prepareGovernanceProposalTool = createPrepareGovernanceProposalTool(
+  process.env.HYPHA_MCP_AUTH_TOKEN ?? '',
+);
+server.registerTool(
+  'prepare_governance_proposal',
+  {
+    description: prepareGovernanceProposalTool.description,
+    inputSchema: prepareGovernanceProposalInputSchema,
+    outputSchema: prepareGovernanceProposalOutputSchema,
+  },
+  async (args) => {
+    const parsed = prepareGovernanceProposalInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await prepareGovernanceProposalTool.execute(parsed.data);
+    const out = prepareGovernanceProposalOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [{ type: 'text', text: JSON.stringify(out.data, null, 2) }],
+      structuredContent: out.data,
+    };
   },
 );
 
