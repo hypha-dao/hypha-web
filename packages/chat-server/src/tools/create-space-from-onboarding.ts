@@ -19,46 +19,15 @@ import { generateSpaceVisualAssets } from './generate-space-visual-assets';
 import { isSkippedLocationAnswer } from './onboarding-location';
 import { resolveActorPerson } from './onboarding-actor';
 import { logOnboardingToolEvent } from './onboarding-observability';
+import {
+  createOnboardingCategoriesSchema,
+  resolveOnboardingCategories,
+} from './onboarding-categories';
 
 type ResolvedLocationSource = 'geocode' | 'manual' | 'map_click';
 
 const allowedSpaceFlags = ['sandbox', 'demo', 'archived'] as const;
-const allowedCategories = [
-  'art',
-  'events',
-  'arts',
-  'biodiversity',
-  'bioregions',
-  'cities',
-  'culture',
-  'education',
-  'emergency',
-  'energy',
-  'finance',
-  'food',
-  'gaming',
-  'governance',
-  'health',
-  'housing',
-  'innovation',
-  'knowledge',
-  'land',
-  'media',
-  'mobility',
-  'networks',
-  'ocean',
-  'distribution',
-  'goods',
-  'services',
-  'sport',
-  'tech',
-  'tourism',
-  'villages',
-  'water',
-  'wellbeing',
-] as const;
 const spaceFlagSchema = z.enum(allowedSpaceFlags);
-const categorySchema = z.enum(allowedCategories);
 const httpUrlSchema = z
   .string()
   .url()
@@ -74,7 +43,7 @@ const inputSchema = z.object({
   parent_space_name: z.string().trim().min(1).max(180).optional(),
   flags: z.array(spaceFlagSchema).optional().default([]),
   links: z.array(httpUrlSchema).optional().default([]),
-  categories: z.array(categorySchema).optional().default([]),
+  categories: createOnboardingCategoriesSchema(),
   lead_image_url: httpUrlSchema.optional(),
   logo_url: httpUrlSchema.optional(),
   generate_visuals: z.boolean().optional().default(false),
@@ -180,7 +149,14 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
       if (!parsed.success) return { ok: false, error: parsed.error.message };
-      const data = parsed.data;
+      const categories =
+        parsed.data.categories.length > 0
+          ? parsed.data.categories
+          : resolveOnboardingCategories(
+              [],
+              `${parsed.data.title} ${parsed.data.description}`,
+            );
+      const data = { ...parsed.data, categories };
 
       const safeSlug = data.slug ? sanitizeSlug(data.slug) : null;
       if (data.slug && !safeSlug) {

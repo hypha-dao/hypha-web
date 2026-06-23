@@ -15,6 +15,10 @@ import {
   resolveActorPerson,
 } from './onboarding-actor';
 import { logOnboardingToolEvent } from './onboarding-observability';
+import {
+  createOnboardingCategoriesSchema,
+  resolveOnboardingCategories,
+} from './onboarding-categories';
 
 const inputSchema = z.object({
   parent_space_slug: z.string().trim().min(1),
@@ -33,45 +37,7 @@ const inputSchema = z.object({
     ])
     .default('other'),
   links: z.array(z.string().url()).optional().default([]),
-  categories: z
-    .array(
-      z.enum([
-        'art',
-        'events',
-        'arts',
-        'biodiversity',
-        'bioregions',
-        'cities',
-        'culture',
-        'education',
-        'emergency',
-        'energy',
-        'finance',
-        'food',
-        'gaming',
-        'governance',
-        'health',
-        'housing',
-        'innovation',
-        'knowledge',
-        'land',
-        'media',
-        'mobility',
-        'networks',
-        'ocean',
-        'distribution',
-        'goods',
-        'services',
-        'sport',
-        'tech',
-        'tourism',
-        'villages',
-        'water',
-        'wellbeing',
-      ]),
-    )
-    .optional()
-    .default([]),
+  categories: createOnboardingCategoriesSchema(),
   flags: z
     .array(z.enum(['sandbox', 'demo', 'archived']))
     .optional()
@@ -102,12 +68,19 @@ const roleLabels: Record<
 export function createCreateEcosystemSpaceTool(authToken: string) {
   return {
     description:
-      'Write: create a new child space under a parent as part of ecosystem scaffolding. Requires explicit confirmation token.',
+      'Write: create a new nested space under a parent as part of ecosystem scaffolding. Requires explicit confirmation token.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
       if (!parsed.success) return { ok: false, error: parsed.error.message };
-      const data = parsed.data;
+      const categories =
+        parsed.data.categories.length > 0
+          ? parsed.data.categories
+          : resolveOnboardingCategories(
+              [],
+              `${parsed.data.title} ${parsed.data.description}`,
+            );
+      const data = { ...parsed.data, categories };
 
       const safeParent = sanitizeSlug(data.parent_space_slug);
       if (!safeParent)

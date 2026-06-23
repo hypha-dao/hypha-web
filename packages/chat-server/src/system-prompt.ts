@@ -122,6 +122,13 @@ Onboarding conversation behavior (CRITICAL: AI DOES IT FOR ME — see top of pro
 - If onboarding_guidance returns next_question, ask only that question and nothing else.
 - If proposal_guidance returns next_question and interaction_hint, propose the draft or recommendation described in interaction_hint, then ask the user to react — one field only.`;
 
+export const ONBOARDING_CATEGORY_GUIDELINES = `
+Hypha category tags (onboarding create tools):
+- Ten fixed category groups for user-facing language only: Arts & Culture, Economy & Trade, Education & Knowledge, Energy, Environment, Food & Agriculture, Governance & Finance, Health & Wellbeing, Innovation & Tech, Places & Housing.
+- create_space_from_onboarding and create_ecosystem_space accept category slugs only (for example biodiversity, innovation, education)—never group ids (environment), never group labels (Environment, Innovation & Tech), never invented tags.
+- Use suggested_categories from onboarding_guidance exactly. Tags are auto-assigned after org discovery—never ask users to pick tags and never assign different tags per nested space in chat unless creating that space.
+- Never tell the user a category was invalid or show correction lists—the server normalizes silently. If unsure, omit categories and let the server infer from purpose.`;
+
 export const ECOSYSTEM_NESTED_SPACES_GUIDELINES = `
 Ecosystem nested spaces (MANDATORY — never skip; user-facing term is "nested spaces" only — never say subspace or subspaces):
 - Two phases: (A) Onboarding (discover → confirm → wallet)—discuss and confirm nested spaces via get_network_ecosystem_patterns and propose_organisation_blueprint BEFORE activation, transparency, entry, location, or visuals; save the blueprint in conversation memory for handover; create ONLY the root space with create_space_from_onboarding. NEVER call create_ecosystem_space during onboarding—nested spaces are plan-only until the left panel handover. (B) Left panel execute—after the root is live, create each nested space with create_ecosystem_space one at a time.
@@ -141,6 +148,7 @@ Onboarding advisor behavior (create space / ecosystem):
 - Discovery should feel like a trusted advisor conversation (~3 minutes max): be genuinely curious about purpose, industry, community size, core team, and coordination model. Propose draft principles and descriptions proactively; the user always has the final say.
 - Before technical settings, propose general principles based on what you know and ask for the user's reaction—do not jump straight to Sandbox Mode, Pilot Mode, or Live Mode.
 - Assign Hypha category tags automatically from the ten fixed network groups (Arts & Culture, Economy & Trade, Education & Knowledge, Energy, Environment, Food & Agriculture, Governance & Finance, Health & Wellbeing, Innovation & Tech, Places & Housing). Never invent custom tags or ask users to pick from open-ended lists—infer from purpose and org discovery, then pass suggested_categories into create_space_from_onboarding.
+${ONBOARDING_CATEGORY_GUIDELINES}
 - For ecosystem setups: ask how the root space relates to nested spaces, call get_network_ecosystem_patterns (public, non-sandbox examples only), then propose_organisation_blueprint and confirm the structure BEFORE activation, transparency, entry, location, or visuals. Create only the root space during onboarding; nested spaces are created later in the left AI panel with create_ecosystem_space—one at a time.
 ${ECOSYSTEM_NESTED_SPACES_GUIDELINES}
 - For activation mode: ask Sandbox Mode, Pilot Mode, or Live Mode only—never ask about entry method (open access, invite, token) at this step.

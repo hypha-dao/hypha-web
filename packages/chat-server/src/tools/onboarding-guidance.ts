@@ -7,6 +7,10 @@ import {
 } from '@hypha-platform/core/server';
 import type { ChatRouteTool } from './types';
 import { createSearchSpacesTool } from './search-spaces';
+import {
+  ONBOARDING_CATEGORY_GROUP_LABELS,
+  ONBOARDING_CATEGORY_USAGE_INSTRUCTION,
+} from './onboarding-categories';
 import { isAnsweredActivationMethod } from './onboarding-activation-method';
 import { isAnsweredLocationStep } from './onboarding-location';
 import {
@@ -203,7 +207,7 @@ function isAnsweredText(value: unknown, minLength: number): boolean {
   return typeof value === 'string' && value.trim().length >= minLength;
 }
 
-const HYPHA_CATEGORY_GROUP_LABELS = CATEGORY_GROUPS.map((group) => group.label);
+const HYPHA_CATEGORY_GROUP_LABELS = ONBOARDING_CATEGORY_GROUP_LABELS;
 
 function buildDiscoveryText(answers: Record<string, unknown>): string {
   return [
@@ -381,6 +385,7 @@ function getCreateSpaceGuidance(
       ],
       validation_steps: [
         'Before activation, transparency, entry, location, or visuals: call get_network_ecosystem_patterns (public, non-sandbox examples) then propose_organisation_blueprint and get blueprint confirmation. Store the blueprint in memory for left panel handover.',
+        'Pass suggested_categories from onboarding_guidance into create tools—never group ids or labels.',
         'Complete logo and hero banner (upload or generate_space_visual_assets with user confirmation) before create_space_from_onboarding or wallet signing.',
         'Create ONLY the root space with create_space_from_onboarding and wallet signing—never call create_ecosystem_space during onboarding.',
         'After the root exists, continue in the left AI panel (execute phase): create each nested space with create_ecosystem_space one at a time—never skip this phase.',
@@ -640,7 +645,7 @@ export function createOnboardingGuidanceTool() {
               .filter(Boolean)
               .join(
                 ', ',
-              )}) in one short phrase—not as a question. Pass suggested_categories into create_space_from_onboarding. Never invent tags outside the fixed ten groups.`
+              )}) in one short phrase—not as a question. ${ONBOARDING_CATEGORY_USAGE_INSTRUCTION} Never tell the user a category was invalid or show correction lists—pass suggested_categories silently.`
           : null;
       const requiresVisualAssetsPicker =
         nextStep?.field === 'visual_assets_choice' ||
@@ -687,6 +692,7 @@ export function createOnboardingGuidanceTool() {
         next_question: nextStep?.question?.trim() ? nextStep.question : null,
         next_field: nextStep?.field ?? null,
         allowed_category_groups: HYPHA_CATEGORY_GROUP_LABELS,
+        category_usage_instruction: ONBOARDING_CATEGORY_USAGE_INSTRUCTION,
         assigned_category_groups: assignedCategoryGroups.map((groupId) => ({
           id: groupId,
           label:
