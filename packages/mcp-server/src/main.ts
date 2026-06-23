@@ -19,6 +19,7 @@ import {
   serializeSpaceMembersRosterDatesForJson,
   getNetworkEcosystemPatterns,
   proposeOrganisationBlueprint,
+  sendHumanChatMessageForSpace,
 } from '@hypha-platform/core/server';
 import {
   createSpaceSignalBySlugInputSchema,
@@ -68,7 +69,17 @@ import {
   proposeOrganisationBlueprintInputSchema,
   proposeOrganisationBlueprintOutputSchema,
 } from './propose-organisation-blueprint-schema.js';
+import {
+  createHumanChatMessageInputSchema,
+  createHumanChatMessageOutputSchema,
+} from './create-human-chat-message-schema.js';
 import { buildMatrixDiagnosticHint } from './build-matrix-diagnostic-hint.js';
+
+const mcpMatrixRequestUrl =
+  process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
+  (process.env.VERCEL_URL?.trim()
+    ? `https://${process.env.VERCEL_URL.trim()}`
+    : undefined);
 
 const server = new McpServer(
   {
@@ -77,7 +88,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -280,6 +291,67 @@ server.registerTool(
                 out.data.spaceSlug
               }.`
             : `Failed to create signal: ${out.data.error}`,
+        },
+      ],
+      structuredContent: out.data,
+      ...(out.data.ok ? {} : { isError: true }),
+    };
+  },
+);
+
+server.registerTool(
+  'create_human_chat_message',
+  {
+    description:
+      'Write: post a message in Human Chat on behalf of the signed-in member. Use target space_chat for the space group room, or signal_chat with signal_slug for a signal thread. Returns navigation metadata to open the right Human Chat panel.',
+    inputSchema: createHumanChatMessageInputSchema,
+    outputSchema: createHumanChatMessageOutputSchema,
+  },
+  async (args) => {
+    const parsed = createHumanChatMessageInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    const result = await sendHumanChatMessageForSpace(
+      {
+        spaceSlug: parsed.data.space_slug,
+        message: parsed.data.message,
+        target: parsed.data.target,
+        signalSlug: parsed.data.signal_slug,
+        roomId: parsed.data.room_id,
+        lang: parsed.data.lang,
+        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        requestUrlForSessionMatrix: mcpMatrixRequestUrl,
+      },
+      { db },
+    );
+
+    const out = createHumanChatMessageOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: out.data.ok
+            ? `Posted Human Chat message in ${parsed.data.space_slug} (${out.data.navigation.chat_target}). Open ${out.data.navigation.href} to review.`
+            : `Failed to post Human Chat message: ${out.data.error}`,
         },
       ],
       structuredContent: out.data,

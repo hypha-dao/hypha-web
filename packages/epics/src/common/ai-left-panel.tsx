@@ -182,7 +182,7 @@ import {
   buildSpaceAdvisorVoiceSessionContext,
   type VoiceSessionContext,
 } from './space-voice-session-context';
-import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
+import { findLatestAiPanelNavigationTarget } from './ai-tool-navigation';
 import {
   appendVoiceTranscriptTurn,
   buildRecentTranscriptSummaryFromChatMessages,
@@ -389,7 +389,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
-  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const {
+    open: rightOpen,
+    toggle: toggleRight,
+    openHumanChatPanel,
+    openCoherenceChat,
+  } = useHumanChatPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
     false,
@@ -1256,110 +1261,48 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
-    const isCompletedToolState = (state: unknown) => {
-      if (typeof state !== 'string') return true;
-      return (
-        state === 'output-available' ||
-        state === 'output_available' ||
-        state === 'done' ||
-        state === 'completed'
-      );
-    };
-
-    const findLatestNavigationTarget = () => {
-      for (
-        let messageIndex = messages.length - 1;
-        messageIndex >= 0;
-        messageIndex -= 1
-      ) {
-        const message = messages[messageIndex];
-        if (!message) continue;
-
-        const messageWithToolInvocations = message as {
-          toolInvocations?: unknown;
-        };
-        const toolInvocations = Array.isArray(
-          messageWithToolInvocations.toolInvocations,
-        )
-          ? messageWithToolInvocations.toolInvocations
-          : [];
-        for (
-          let invocationIndex = toolInvocations.length - 1;
-          invocationIndex >= 0;
-          invocationIndex -= 1
-        ) {
-          const invocation = toolInvocations[invocationIndex];
-          if (!invocation || typeof invocation !== 'object') continue;
-          const toolName =
-            (typeof invocation.toolName === 'string' && invocation.toolName) ||
-            (typeof invocation.tool === 'string' && invocation.tool) ||
-            '';
-          if (toolName !== 'mcp_navigation') continue;
-          if (!isCompletedToolState(invocation.state)) continue;
-          const output =
-            (invocation.result as Record<string, unknown> | undefined) ??
-            (invocation.output as Record<string, unknown> | undefined);
-          const navigation = output?.navigation as
-            | { href?: string; open_in_new_tab?: boolean }
-            | undefined;
-          const href = navigation?.href?.trim();
-          if (!href) continue;
-          return {
-            href,
-            openInNewTab: navigation?.open_in_new_tab === true,
-            key: `${message.id}:toolInvocation:${invocationIndex}:${href}`,
-          };
-        }
-
-        const parts = Array.isArray(message.parts) ? message.parts : [];
-        for (let partIndex = parts.length - 1; partIndex >= 0; partIndex -= 1) {
-          const part = parts[partIndex];
-          if (!part || typeof part !== 'object') continue;
-          if (part.type !== 'tool-mcp_navigation') continue;
-          if (!isCompletedToolState((part as { state?: unknown }).state))
-            continue;
-          const toolPart = part as {
-            output?: {
-              ok?: boolean;
-              navigation?: {
-                href?: string;
-                open_in_new_tab?: boolean;
-              };
-            };
-          };
-          const href = toolPart.output?.navigation?.href?.trim();
-          if (!href || toolPart.output?.ok !== true) continue;
-          return {
-            href,
-            openInNewTab: toolPart.output.navigation?.open_in_new_tab === true,
-            key: `${message.id}:part:${partIndex}:${href}`,
-          };
-        }
-      }
-      return null;
-    };
-
-    const navigationTarget = findLatestNavigationTarget();
+    const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
+      'mcp_navigation',
+      'create_human_chat_message',
+    ]);
     const href = navigationTarget?.href;
     if (!href) return;
-    const navigationKey = navigationTarget?.key ?? `unknown:${href}`;
+    const navigationKey = navigationTarget.key;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
     lastAutoNavigationKeyRef.current = navigationKey;
 
-    const openInNewTab = navigationTarget?.openInNewTab === true;
+    const openInNewTab = navigationTarget.openInNewTab === true;
     const isExternal = /^https?:\/\//i.test(href);
     if (openInNewTab || isExternal) {
       window.open(href, '_blank', 'noopener,noreferrer');
       return;
     }
+
     lastMcpNavigationTargetSpaceSlugRef.current =
       getDhoSpaceSlugFromPathname(href) ?? null;
-    // Keep the AI panel expanded when MCP navigation redirects internally.
-    // This prevents perceived panel "close" regressions during route changes.
     openAiPanel();
     setAiOverlayVisible(false);
+
+    if (navigationTarget.openHumanChat) {
+      if (navigationTarget.coherenceChat) {
+        openCoherenceChat(
+          navigationTarget.coherenceChat.roomId,
+          navigationTarget.coherenceChat.title,
+          navigationTarget.coherenceChat.slug,
+        );
+      }
+      openHumanChatPanel();
+    }
+
     router.push(href);
-  }, [messages, openAiPanel, router, setAiOverlayVisible]);
+  }, [
+    messages,
+    openAiPanel,
+    openCoherenceChat,
+    openHumanChatPanel,
+    router,
+    setAiOverlayVisible,
+  ]);
 
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;

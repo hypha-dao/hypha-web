@@ -10,6 +10,7 @@ import { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug
 import { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-space-slug';
 import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
+import { createHumanChatMessageTool } from './create-human-chat-message';
 import { webSearchTool } from './web-search';
 import { createOnboardingToolSet, safeChatTool } from './onboarding-tool-set';
 
@@ -84,6 +85,10 @@ export function createChatTools(
       'ingest_space_call_artifacts',
       createIngestSpaceCallArtifactsTool(authToken),
     ),
+    create_human_chat_message: safeChatTool(
+      'create_human_chat_message',
+      createHumanChatMessageTool(authToken, requestUrlForSessionMatrix),
+    ),
     web_search: safeChatTool('web_search', webSearchTool),
     ...onboardingTools,
   };
@@ -107,6 +112,7 @@ export { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-s
 export { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
 export { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 export { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
+export { createHumanChatMessageTool } from './create-human-chat-message';
 export { createCreateSpaceFromOnboardingTool } from './create-space-from-onboarding';
 export { createUpdateSpaceSettingsTool } from './update-space-settings';
 export { createCreateSpaceSetupProposalTool } from './create-space-setup-proposal';
