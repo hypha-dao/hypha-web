@@ -63,6 +63,7 @@ import {
 } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import { useCompactHeaderMode } from '@hypha-platform/ui';
 import { useConfig } from 'wagmi';
@@ -190,6 +191,7 @@ import {
   buildRecentTranscriptSummaryFromChatMessages,
   toStoredOnboardingChatMessages,
 } from './onboarding-voice-transcript-bridge';
+import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
 function extractAssistantTextFromMessage(
@@ -309,7 +311,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const config = useConfig();
   const { resolvedTheme } = useTheme();
   const { jwt } = useJwt();
-  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const lang = getLocaleFromPath(pathname);
   const isCompactHeader = useCompactHeaderMode();
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
