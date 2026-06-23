@@ -234,6 +234,54 @@ With active governance, a Typical space pays **$0.37/month** on-chain vs **$16.5
 
 ---
 
+## Tokenomics simulator scenario assumptions (Phase II)
+
+Interactive simulators: [`tokenomics-simulator.html`](tokenomics-simulator.html) (Phase II) and [`tokenomics-simulator-phase1.html`](tokenomics-simulator-phase1.html) (Phase I). Deployed at `/tokenomics2` and `/tokenomics1` on the web app.
+
+### Fixed inputs
+
+| Parameter | Value |
+|---|---|
+| Gross revenue per Space | **$44 USDC / month** (unchanged across scenarios) |
+| Simulation horizon | 48 months |
+| Total HYPHA supply | 555,555,555 |
+| Phase I reference price | **$0.20** (fixed; ~$111M FDV) |
+
+### Growth scenarios
+
+Each preset targets an active Space count at month 48. Growth applies from month 2 onward (starting from 4,373 Spaces).
+
+| Scenario | Target Spaces | Monthly growth (M2–M48) | IEX routing % |
+|---|---:|---:|---:|
+| **Low** | ~250k | 9.0% | 8% |
+| **Mid** | ~1M | 12.26% | 10% |
+| **High** | ~10M | 17.9% | 12% |
+
+Only the **IEX routing %** of gross Space contributions enters the on-chain AMM buy path; the remainder models treasury / ops / off-pool rewards. Investor buy/sell pressure on IEX defaults to **5% each** (pool-relative, not dollar-matched).
+
+### Target valuation bands (Month 48, judgment + comps)
+
+Gross ARR at target scale: Low ~$132M · Mid ~$528M · High ~$5.3B.
+
+| Comp | Rough FDV | Revenue / fees | Implied multiple |
+|---|---:|---:|---:|
+| MakerDAO | ~$1–2B | ~$100–200M/yr | ~10–15× |
+| Uniswap | ~$5–15B | ~$500M–1B/yr | ~10–20× |
+| Helium (peak) | ~$1.2B | low on-chain revenue | growth narrative |
+| Bittensor | ~$3–4B | early / low | high narrative multiple |
+
+**Target FDV / FDV-to-ARR** after calibration (sim-verified):
+
+| Scenario | Target FDV | FDV/ARR | Token price (indicative) |
+|---|---:|---:|---:|
+| Low | $1.0–1.5B | ~8–11× | ~$2–3 |
+| Mid | $4–8B | ~8–15× | ~$7–14 |
+| High | $25–45B | ~5–9× | ~$45–$80 |
+
+IEX seed liquidity scales with scenario (`initialHypha` / `initialUsdc` anchor starting price at $0.20–$0.25). Parameters were tuned so emergent IEX price × max supply lands in these bands — not by fixing an end-state price directly.
+
+---
+
 ## Sources
 
 - Composer 2.5 pricing: Cursor (Fast $3/$15, Standard $0.50/$2.50; Composer is

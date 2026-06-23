@@ -70,7 +70,7 @@ const HyphaTokenomicsCalculator = () => {
   const [tokensForSale, setTokensForSale] = useState(10000000);
   const [yieldMultiplier, setYieldMultiplier] = useState(30);
   const [saleMonths, setSaleMonths] = useState(12);
-  const [tokenPrice, setTokenPrice] = useState(0.25);
+  const [tokenPrice, setTokenPrice] = useState(0.20);
   const [totalSupply, setTotalSupply] = useState(555555555);
   const [existingLockedSupply, setExistingLockedSupply] = useState(111111111);
 
@@ -258,7 +258,7 @@ const HyphaTokenomicsCalculator = () => {
     setTokensForSale(10000000);
     setYieldMultiplier(30);
     setSaleMonths(12);
-    setTokenPrice(0.25);
+    setTokenPrice(0.20);
     setTotalSupply(555555555);
     setExistingLockedSupply(111111111);
     setNumberOfAOs(50);
@@ -279,6 +279,7 @@ const HyphaTokenomicsCalculator = () => {
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-1 text-center">HYPHA Tokenomics Simulator (Phase I)</h1>
+      <p className="text-sm text-gray-500 mb-6 text-center">Phase I uses a fixed reference token price; Phase II derives price from IEX dynamics.</p>
       <p className="text-sm text-gray-500 mb-6 text-center">With per-Space AI + Base L2 gas operating cost model — closed-source vs open-source LLMs.</p>
 
       <div className="mb-8 border border-indigo-200 bg-indigo-50 p-4 rounded-lg">

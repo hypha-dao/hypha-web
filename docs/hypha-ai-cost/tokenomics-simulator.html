@@ -73,18 +73,19 @@ const GROWTH_PRESETS = {
     subtitle: '~250k Spaces',
     defaults: {
       orgPayment: 44,
-      investorSelling: 10,
-      additionalPurchase: 10,
-      unlockRate: 5,
-      initialHypha: 3333333,
-      initialUsdc: 1000000,
+      iexAllocationPct: 8,
+      investorSelling: 5,
+      additionalPurchase: 5,
+      unlockRate: 4,
+      initialHypha: 20000000,
+      initialUsdc: 4000000,
       orgCount: 4373,
-      orgGrowthRate: 25,
+      orgGrowthRate: 9,
     },
+    // Target ~250k Spaces at month 48 (~9.0%/mo, months 2–48)
     build: () => {
-      const m = { 1: { orgGrowthRate: 25 } };
-      for (let i = 2; i <= 26; i++) m[i] = { orgGrowthRate: 0 };
-      for (let i = 27; i <= 48; i++) m[i] = { orgGrowthRate: 3 };
+      const m = {};
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 9.0 };
       return m;
     },
   },
@@ -93,45 +94,40 @@ const GROWTH_PRESETS = {
     subtitle: '~1M Spaces',
     defaults: {
       orgPayment: 44,
-      investorSelling: 10,
-      additionalPurchase: 10,
-      unlockRate: 4,
-      initialHypha: 12000000,
-      initialUsdc: 750000,
+      iexAllocationPct: 10,
+      investorSelling: 5,
+      additionalPurchase: 5,
+      unlockRate: 3.5,
+      initialHypha: 40000000,
+      initialUsdc: 8000000,
       orgCount: 4373,
-      orgGrowthRate: 25,
+      orgGrowthRate: 12.26,
     },
-    build: () => ({
-      1: { orgGrowthRate: 25 }, 2: { orgGrowthRate: 1 }, 3: { orgGrowthRate: 2 }, 4: { orgGrowthRate: 2 },
-      5: { orgGrowthRate: 2 }, 6: { orgGrowthRate: 2 }, 7: { orgGrowthRate: 3 }, 8: { orgGrowthRate: 2 },
-      9: { orgGrowthRate: 3 }, 10: { orgGrowthRate: 27 }, 11: { orgGrowthRate: 15 }, 12: { orgGrowthRate: 14 },
-      13: { orgGrowthRate: 13 }, 14: { orgGrowthRate: 12 }, 15: { orgGrowthRate: 25 }, 16: { orgGrowthRate: 10 },
-      17: { orgGrowthRate: 3 }, 18: { orgGrowthRate: 8 }, 19: { orgGrowthRate: 7 }, 20: { orgGrowthRate: 2 },
-      21: { orgGrowthRate: 1 }, 22: { orgGrowthRate: 4 }, 23: { orgGrowthRate: 4 }, 24: { orgGrowthRate: 4 },
-      25: { orgGrowthRate: 4 }, 26: { orgGrowthRate: 4 }, 27: { orgGrowthRate: 3 }, 28: { orgGrowthRate: 3 },
-      29: { orgGrowthRate: 3 }, 30: { orgGrowthRate: 3 }, 31: { orgGrowthRate: 3 }, 32: { orgGrowthRate: 3 },
-      33: { orgGrowthRate: 3 }, 34: { orgGrowthRate: 3 }, 35: { orgGrowthRate: 3 }, 36: { orgGrowthRate: 3 },
-      37: { orgGrowthRate: 3 }, 38: { orgGrowthRate: 3 }, 39: { orgGrowthRate: 3 }, 40: { orgGrowthRate: 3 },
-      41: { orgGrowthRate: 3 }, 42: { orgGrowthRate: 3 }, 43: { orgGrowthRate: 3 }, 44: { orgGrowthRate: 3 },
-      45: { orgGrowthRate: 3 }, 46: { orgGrowthRate: 3 }, 47: { orgGrowthRate: 3 }, 48: { orgGrowthRate: 3 },
-    }),
+    // Target ~1M Spaces at month 48 (~12.26%/mo, months 2–48)
+    build: () => {
+      const m = {};
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 12.26 };
+      return m;
+    },
   },
   high: {
     label: 'High',
     subtitle: '~10M Spaces',
     defaults: {
       orgPayment: 44,
-      investorSelling: 10,
-      additionalPurchase: 10,
-      unlockRate: 4,
-      initialHypha: 20000000,
-      initialUsdc: 1000000,
+      iexAllocationPct: 12,
+      investorSelling: 5,
+      additionalPurchase: 5,
+      unlockRate: 3,
+      initialHypha: 100000000,
+      initialUsdc: 25000000,
       orgCount: 4373,
-      orgGrowthRate: 25,
+      orgGrowthRate: 17.9,
     },
+    // Target ~10M Spaces at month 48 (~17.9%/mo, months 2–48)
     build: () => {
-      const m = { 1: { orgGrowthRate: 25 } };
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 18 };
+      const m = {};
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 17.9 };
       return m;
     },
   },
@@ -151,6 +147,7 @@ const TokenomicsSimulator = () => {
   const [additionalPurchase, setAdditionalPurchase] = useState(GROWTH_PRESETS.low.defaults.additionalPurchase);
   const [orgCount, setOrgCount] = useState(GROWTH_PRESETS.low.defaults.orgCount);
   const [orgPayment, setOrgPayment] = useState(GROWTH_PRESETS.low.defaults.orgPayment);
+  const [iexAllocationPct, setIexAllocationPct] = useState(GROWTH_PRESETS.low.defaults.iexAllocationPct);
   const [orgGrowthRate, setOrgGrowthRate] = useState(GROWTH_PRESETS.low.defaults.orgGrowthRate);
 
   // AI operating cost controls
@@ -169,7 +166,7 @@ const TokenomicsSimulator = () => {
     calculateTokenomics();
   }, [initialHypha, initialUsdc, months, unlockRate, stakingRate, sellRate,
       investorSelling, additionalPurchase, stakingRewards, rewardSplit, maxSupply,
-      orgCount, orgPayment, orgGrowthRate, monthlyParams, aiModelId, aiProfile]);
+      orgCount, orgPayment, iexAllocationPct, orgGrowthRate, monthlyParams, aiModelId, aiProfile]);
 
   const getMonthlyParameter = (paramName, month) => {
     if (monthlyParams[month] && monthlyParams[month][paramName] !== undefined) {
@@ -189,6 +186,7 @@ const TokenomicsSimulator = () => {
       case 'additionalPurchase': return additionalPurchase;
       case 'orgCount': return orgCount;
       case 'orgPayment': return orgPayment;
+      case 'iexAllocationPct': return iexAllocationPct;
       case 'orgGrowthRate': return orgGrowthRate;
       default: return 0;
     }
@@ -246,14 +244,16 @@ const TokenomicsSimulator = () => {
       }
 
       const monthOrgPayment = getMonthlyParameter('orgPayment', month);
-      const orgTotalPurchase = currentOrgCount * monthOrgPayment;
+      const grossContribution = currentOrgCount * monthOrgPayment;
+      const iexPct = getMonthlyParameter('iexAllocationPct', month) / 100;
+      const orgTotalPurchase = grossContribution * iexPct;
 
       // AI operating cost for this month (all active spaces)
       const monthAICost = currentOrgCount * perSpaceAI;
       cumulativeAICost += monthAICost;
       const monthGasCost = currentOrgCount * perSpaceGas;
       cumulativeGasCost += monthGasCost;
-      const netContribution = orgTotalPurchase - monthAICost;
+      const netContribution = grossContribution - monthAICost;
       const netAfterGas = netContribution - monthGasCost;
 
       const dexPrice = dexUsdc / dexHypha;
@@ -360,7 +360,8 @@ const TokenomicsSimulator = () => {
         dexHypha: Math.round(dexHypha), dexUsdc: Math.round(dexUsdc),
         tokenPrice: endOfMonthPrice.toFixed(6), deltaPrice: priceChange.toFixed(2),
         orgCount: currentOrgCount, cumulativeOrgCount,
-        orgUsdcPurchase: orgTotalPurchase,
+        orgUsdcPurchase: grossContribution,
+        iexUsdcPurchase: orgTotalPurchase,
         orgPurchasedTokens: Math.round(actualOrgPurchasedTokens),
         investorPurchasedTokens: Math.round(investorPurchasedTokens),
         totalPurchasedTokens: Math.round(totalPurchasedTokens),
@@ -387,7 +388,8 @@ const TokenomicsSimulator = () => {
         'Price (USDC)': parseFloat(endOfMonthPrice.toFixed(6)),
         'FDV (Million $)': Math.round(fdv / 1000000),
         'Space Purchases': Math.round(actualOrgPurchasedTokens),
-        'Space Contributions (USD)': Math.round(orgTotalPurchase),
+        'Space Contributions (USD)': Math.round(grossContribution),
+        'IEX Buy (USD)': Math.round(orgTotalPurchase),
         'AI Cost (USD)': Math.round(monthAICost),
         'Gas Cost (USD)': Math.round(monthGasCost),
         'Net Contributions (USD)': Math.round(netContribution),
@@ -404,6 +406,7 @@ const TokenomicsSimulator = () => {
   const applyScenarioDefaults = (scenario) => {
     const d = GROWTH_PRESETS[scenario].defaults;
     setOrgPayment(d.orgPayment);
+    setIexAllocationPct(d.iexAllocationPct);
     setInvestorSelling(d.investorSelling);
     setAdditionalPurchase(d.additionalPurchase);
     setUnlockRate(d.unlockRate);
@@ -662,7 +665,16 @@ const TokenomicsSimulator = () => {
               <input type="number" min="0" max="200" value={monthlyParams[selectedMonth]?.orgPayment ?? orgPayment} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgPayment(v) : updateMonthlyParameter('orgPayment', v); }} className="w-20 p-1 border rounded text-right" />
               <span className="ml-1">USDC</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">AI (${perSpaceAI.toFixed(2)}/Space) and gas (${perSpaceGas.toFixed(2)}/Space) tracked separately from IEX purchases.</p>
+            <p className="text-xs text-gray-500 mt-1">Gross revenue per Space. AI (${perSpaceAI.toFixed(2)}/Space) and gas (${perSpaceGas.toFixed(2)}/Space) tracked separately; only a % routes to IEX.</p>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">% routed to IEX (buy pressure)</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="30" step="1" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="30" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Remainder = treasury / ops / rewards off-pool.</p>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Additional Investor Purchases + buybacks (% of USDC on IEX)</label>
@@ -677,8 +689,8 @@ const TokenomicsSimulator = () => {
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Investor Selling (% of HYPHA on IEX)</label>
             <div className="flex items-center">
-              <input type="range" min="10" max="30" step="0.5" value={monthlyParams[selectedMonth]?.investorSelling ?? investorSelling} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setInvestorSelling(v) : updateMonthlyParameter('investorSelling', v); }} className="w-full mr-3" />
-              <input type="number" min="10" max="30" step="0.5" value={monthlyParams[selectedMonth]?.investorSelling ?? investorSelling} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setInvestorSelling(v) : updateMonthlyParameter('investorSelling', v); }} className="w-16 p-1 border rounded text-right" />
+              <input type="range" min="0" max="30" step="0.5" value={monthlyParams[selectedMonth]?.investorSelling ?? investorSelling} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setInvestorSelling(v) : updateMonthlyParameter('investorSelling', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="30" step="0.5" value={monthlyParams[selectedMonth]?.investorSelling ?? investorSelling} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setInvestorSelling(v) : updateMonthlyParameter('investorSelling', v); }} className="w-16 p-1 border rounded text-right" />
               <span className="ml-1">%</span>
             </div>
           </div>
@@ -866,7 +878,7 @@ const TokenomicsSimulator = () => {
           <div className="h-80 bg-white p-4 rounded-lg shadow md:col-span-2">
             <h3 className="text-md font-medium mb-1">Space Contributions vs AI &amp; Gas Cost</h3>
             <p className="text-xs text-gray-500 mb-2">
-              Contributions = Spaces × ${orgPayment} USDC/Space. Flat stretches happen when per-month Space Growth Rate is 0% (default: months 2–26). AI and gas costs scale with the same Space count × selected model/profile rates.
+              Gross contributions = Spaces × ${orgPayment} USDC/Space. Only {iexAllocationPct}% routes to IEX each month; AI and gas costs scale with Space count × selected model/profile rates.
             </p>
             <ResponsiveContainer width="100%" height="85%">
               <LineChart data={chartData} margin={{ top: 5, right: 50, left: 50, bottom: 5 }}>
