@@ -45,24 +45,9 @@ import {
   getPayoutRailEndorsementStatus,
   isBankRailSelectable,
 } from '../banking-ui';
+import { getPayoutMinimum } from '../banking-minimums';
 
 const ADD_PAYOUT_FORM_ID = 'add-payout-account-form';
-
-function getPayoutMinimum(
-  currency: PayoutCurrencyKey,
-  sourceCurrency: 'usdc' | 'eurc',
-): string | null {
-  switch (currency) {
-    case 'usd':
-      return '1 USDC';
-    case 'eur':
-      return sourceCurrency === 'eurc' ? '1 EURC' : '1 USDC';
-    case 'gbp':
-      return '3 USDC';
-    default:
-      return null;
-  }
-}
 
 const ENABLED_PAYOUT_CURRENCIES = getEnabledPayoutCurrencyKeys();
 

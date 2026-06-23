@@ -23,6 +23,7 @@ import {
   BANKING_REFERENCE_WARNING_BANNER_CLASS,
   isTransferDepositInstructionsReadOnly,
 } from '../banking-ui';
+import { DEPOSIT_RAIL_MINIMUMS } from '../banking-minimums';
 import { CopyableInstructionBlock } from './copyable-instruction-block';
 import { TreasuryDestinationCard } from './treasury-destination-card';
 import { TransferReceiptBox } from './transfer-bridge-receipt-section';
@@ -51,17 +52,6 @@ function toPanelSource(props: DepositInstructionsPanelProps) {
   }
   return null;
 }
-
-const DEPOSIT_RAIL_MINIMUMS: Record<string, string> = {
-  ach_push: '1 USD',
-  ach: '1 USD',
-  wire: '1 USD',
-  sepa: '1 EUR',
-  faster_payments: '2 GBP',
-  spei: '50 MXN',
-  pix: '10 BRL',
-  cop: '100 COP',
-};
 
 export const DepositInstructionsPanel: FC<DepositInstructionsPanelProps> = (
   props,

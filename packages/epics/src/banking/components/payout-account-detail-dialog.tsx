@@ -18,6 +18,7 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
+import { PAYOUT_RAIL_MINIMUMS } from '../banking-minimums';
 import type { BankPayoutAccountPublic } from '../hooks/types';
 import {
   BANKING_DIALOG_FOOTER_CLASS,
@@ -27,17 +28,6 @@ import {
 } from './banking-dialog-layout';
 import { CurrencyFlagBadge } from './currency-flag-badge';
 import { InlineCopyRow } from './inline-copy-row';
-
-const PAYOUT_RAIL_MINIMUMS: Record<
-  string,
-  (sourceCurrency: string) => string | null
-> = {
-  ach: () => '1 USDC',
-  ach_push: () => '1 USDC',
-  wire: () => '1 USDC',
-  sepa: (src) => (src === 'eurc' ? '1 EURC' : '1 USDC'),
-  faster_payments: () => '3 USDC',
-};
 
 function statusBadgeClass(status: string): string {
   if (status === 'active') return 'bg-success-9 text-white';

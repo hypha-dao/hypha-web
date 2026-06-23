@@ -11,27 +11,12 @@ import type {
   BankTransferCorridorKey,
 } from '../bank-currency-display';
 import { isBankRailSelectable } from '../banking-ui';
+import {
+  DEPOSIT_CORRIDOR_MINIMUMS,
+  DEPOSIT_CURRENCY_MINIMUMS,
+} from '../banking-minimums';
 import type { BankCurrencyOperationalStatus } from '../hooks/types';
 import { BankDepositRailOptionRow } from './bank-deposit-rail-option-row';
-
-const DEPOSIT_CORRIDOR_MINIMUMS: Record<BankTransferCorridorKey, string> = {
-  'usd-ach': '1 USD',
-  'usd-wire': '1 USD',
-  eur: '1 EUR',
-  gbp: '2 GBP',
-  mxn: '50 MXN',
-  brl: '10 BRL',
-  cop: '100 COP',
-};
-
-const DEPOSIT_CURRENCY_MINIMUMS: Record<BankCurrencyCode, string> = {
-  usd: '1 USD',
-  eur: '1 EUR',
-  gbp: '2 GBP',
-  mxn: '50 MXN',
-  brl: '10 BRL',
-  cop: '100 COP',
-};
 
 export type BankRailPickerOption = {
   id: string;
