@@ -689,21 +689,19 @@ export function getPostOnboardingContinuationPrompt(
   rootSlug?: string,
 ): string | undefined {
   if (setupJourney === 'ecosystem') {
-    // Lazy import avoided — caller may pass pre-built prompt via preparePostRootOnboardingHandoff.
     const pending =
       ecosystemBlueprint?.filter((entry) => entry.status !== 'created') ?? [];
     const rootLabel = rootSlug?.trim() ? `"${rootSlug.trim()}"` : 'is live';
     if (pending.length > 0) {
-      const lines = pending
-        .slice(0, 8)
-        .map(
-          (entry, index) =>
-            `${index + 1}. ${entry.title} (${entry.role.replace(/_/g, ' ')})`,
-        )
-        .join('\n');
-      return `Our root space ${rootLabel}. Continue the ecosystem blueprint we agreed during onboarding. Pending child spaces:\n${lines}\n\nPresent the first pending space, get my confirmation, then create it with create_ecosystem_space under the root. Work through the list one by one—do not restart discovery.`;
+      const first = pending[0]!;
+      return `Our root space ${rootLabel}. Continue the ecosystem blueprint from onboarding in the left panel. Start with the first pending nested space: "${
+        first.title
+      }" (${first.role.replace(
+        /_/g,
+        ' ',
+      )}). Propose it warmly in one short message, get my confirmation, then create it with create_ecosystem_space under the root. Work through remaining nested spaces one by one—do not restart discovery or list every space as a numbered checklist.`;
     }
-    return `Our root space ${rootLabel}. Based on everything we discussed during onboarding, propose 3–4 child spaces that would complete this organisation—each with a clear role and purpose. We'll create them one by one together.`;
+    return `Our root space ${rootLabel}. Propose the first nested space that would complete this organisation based on our onboarding conversation—one clear role and purpose. We'll create nested spaces one at a time in the left panel. Do not list multiple spaces as a numbered checklist.`;
   }
   if (setupJourney === 'single_space') {
     return `Our space is live. Let's finish setup: first help me choose our voting method, then confirm entry method if we skipped it earlier. Use the cards in the panel when available and guide me step by step.`;
