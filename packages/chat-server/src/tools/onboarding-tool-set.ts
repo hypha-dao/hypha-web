@@ -329,6 +329,22 @@ function extractSetupJourneyFromContext(
   return undefined;
 }
 
+function extractEcosystemBlueprintFromContext(
+  conversationContext?: unknown,
+): unknown[] | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const setupPlan = (
+    conversationContext as { setupPlan?: { ecosystemBlueprint?: unknown } }
+  ).setupPlan;
+  const blueprint = setupPlan?.ecosystemBlueprint;
+  if (!Array.isArray(blueprint) || blueprint.length === 0) {
+    return undefined;
+  }
+  return blueprint;
+}
+
 export function safeChatTool(
   toolName: string,
   tool: ChatRouteTool,
@@ -394,6 +410,8 @@ function resolveOnboardingInjectionContext(
     contextSetupJourney: extractSetupJourneyFromContext(conversationContext),
     contextEntryMethod: extractEntryMethodFromContext(conversationContext),
     contextVisualAssets: extractVisualAssetsFromContext(conversationContext),
+    contextEcosystemBlueprint:
+      extractEcosystemBlueprintFromContext(conversationContext),
   };
 }
 
@@ -421,6 +439,7 @@ export function createOnboardingToolSet(
     contextSetupJourney,
     contextEntryMethod,
     contextVisualAssets,
+    contextEcosystemBlueprint,
   } = resolveOnboardingInjectionContext(
     conversationContext,
     lastUserTextFromRequest,
@@ -479,6 +498,12 @@ export function createOnboardingToolSet(
       }
       if (contextEntryMethod && knownAnswers.entry_method == null) {
         knownAnswers.entry_method = contextEntryMethod;
+      }
+      if (contextEcosystemBlueprint?.length) {
+        knownAnswers.ecosystem_blueprint_proposed = true;
+        if (knownAnswers.ecosystem_blueprint == null) {
+          knownAnswers.ecosystem_blueprint = contextEcosystemBlueprint;
+        }
       }
       return onboardingGuidanceTool.execute({
         ...payload,

@@ -167,6 +167,26 @@ function isAnsweredEcosystemBlueprint(value: unknown): boolean {
   );
 }
 
+function isAnsweredFunctionalDomains(value: unknown): boolean {
+  const normalized = normalizeChoice(value);
+  return (
+    isAnsweredText(value, 3) ||
+    normalized.includes('propose') ||
+    normalized.includes('draft') ||
+    normalized.includes('you decide') ||
+    normalized.includes('suggest')
+  );
+}
+
+function isAnsweredEcosystemBlueprintProposed(
+  value: unknown,
+  answers: Record<string, unknown>,
+): boolean {
+  if (value === true) return true;
+  const blueprint = answers.ecosystem_blueprint;
+  return Array.isArray(blueprint) && blueprint.length > 0;
+}
+
 function isAnsweredEntryMethod(value: unknown): boolean {
   const normalized = normalizeChoice(value);
   return (
@@ -278,13 +298,13 @@ function getCreateSpaceGuidance(
         {
           field: 'ecosystem_structure',
           question:
-            'How should the child spaces relate to each other and to the root? Who owns what, and how will members move between spaces?',
+            'How should the nested spaces relate to each other and to the root? Who owns what, and how will members move between spaces?',
           isAnswered: (value) => isAnsweredText(value, 8),
         },
       ]
     : [];
 
-  const sharedSteps: GuidanceStep[] = [
+  const journeyAndDiscoverySteps: GuidanceStep[] = [
     {
       field: 'setup_journey',
       question:
@@ -295,6 +315,9 @@ function getCreateSpaceGuidance(
     purposeStep,
     ...discoverySteps,
     ...ecosystemStructureSteps,
+  ];
+
+  const operationalSteps: GuidanceStep[] = [
     {
       field: 'activation_method',
       question:
@@ -328,27 +351,39 @@ function getCreateSpaceGuidance(
     ...buildVisualAssetsSteps(),
   ];
 
+  const ecosystemBlueprintSteps: GuidanceStep[] = [
+    {
+      field: 'functional_domains',
+      question:
+        'Which areas should nested spaces cover—community, operations, growth, or something else? Share a few, or say "propose for me" and I will draft spaces from network patterns.',
+      isAnswered: (value) => isAnsweredFunctionalDomains(value),
+    },
+    {
+      field: 'ecosystem_blueprint_proposed',
+      question: '',
+      isAnswered: (value, answers) =>
+        isAnsweredEcosystemBlueprintProposed(value, answers),
+    },
+    {
+      field: 'ecosystem_blueprint_confirmed',
+      question:
+        'Does this ecosystem structure feel right, or what would you change before we continue?',
+      isAnswered: (value) => isAnsweredEcosystemBlueprint(value),
+    },
+  ];
+
   if (ecosystem) {
     return {
       steps: [
-        ...sharedSteps,
-        {
-          field: 'functional_domains',
-          question:
-            'Which functional domains matter most (e.g. Finance, Operations, Growth)? Share a few—or say "propose for me" and I will draft spaces from network patterns.',
-        },
-        {
-          field: 'ecosystem_blueprint_confirmed',
-          question:
-            'Review the proposed spaces above. Ready to create the root space and child spaces? (yes/no)',
-          isAnswered: (value) => isAnsweredEcosystemBlueprint(value),
-        },
+        ...journeyAndDiscoverySteps,
+        ...ecosystemBlueprintSteps,
+        ...operationalSteps,
       ],
       validation_steps: [
-        'Call get_network_ecosystem_patterns first (public, non-sandbox examples) then propose_organisation_blueprint before asking for blueprint confirmation.',
+        'Before activation, transparency, entry, location, or visuals: call get_network_ecosystem_patterns (public, non-sandbox examples) then propose_organisation_blueprint and get blueprint confirmation. Store the blueprint in memory for left panel handover.',
         'Complete logo and hero banner (upload or generate_space_visual_assets with user confirmation) before create_space_from_onboarding or wallet signing.',
-        'Create ONLY the root space first with create_space_from_onboarding and wallet signing.',
-        'After the root space exists, continue child spaces with create_ecosystem_space from the left AI panel—propose 3-4 child spaces and keep conversation memory.',
+        'Create ONLY the root space with create_space_from_onboarding and wallet signing—never call create_ecosystem_space during onboarding.',
+        'After the root exists, continue in the left AI panel (execute phase): create each nested space with create_ecosystem_space one at a time—never skip this phase.',
       ],
       suggested_tools: [
         'get_network_ecosystem_patterns',
@@ -363,7 +398,8 @@ function getCreateSpaceGuidance(
 
   return {
     steps: [
-      ...sharedSteps,
+      ...journeyAndDiscoverySteps,
+      ...operationalSteps,
       {
         field: 'link_parent_ecosystem',
         question: 'Should this be linked to a parent ecosystem space? (yes/no)',
@@ -616,6 +652,14 @@ export function createOnboardingGuidanceTool() {
         : nextStep?.field === 'visual_assets_confirmed'
         ? 'Show the generated logo and banner previews if not already visible, then ask only the next_question. Do not proceed to create_space_from_onboarding until they confirm.'
         : null;
+      const ecosystemBlueprintAssistantInstruction =
+        nextStep?.field === 'functional_domains'
+          ? 'Ask only the next_question in one warm sentence. If they say propose for me or similar, accept that and move on—do not ask for a domain list again.'
+          : nextStep?.field === 'ecosystem_blueprint_proposed'
+          ? 'In this turn you MUST call get_network_ecosystem_patterns then propose_organisation_blueprint. Present 3–4 nested spaces as a warm prose overview (not a numbered checklist), then ask if the direction feels right. Plan only—do not call create_ecosystem_space. Pass functional_domains from known_answers when available.'
+          : nextStep?.field === 'ecosystem_blueprint_confirmed'
+          ? 'Ask only the next_question. The user is confirming the proposed nested-space plan before activation and visuals—not creating any spaces yet. Only the root will be created during onboarding; nested spaces wait for the left panel handover.'
+          : null;
       return {
         ok: true,
         process,
@@ -627,6 +671,7 @@ export function createOnboardingGuidanceTool() {
           : principlesAssistantInstruction ??
             orgDiscoveryInstruction ??
             assignedCategoryInstruction ??
+            ecosystemBlueprintAssistantInstruction ??
             visualAssetsAssistantInstruction ??
             locationAssistantInstruction ??
             activationAssistantInstruction ??
