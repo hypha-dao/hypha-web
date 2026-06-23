@@ -68,13 +68,13 @@ const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_M
 
 
 const GROWTH_PRESETS = {
-  min: {
-    label: 'Min',
+  low: {
+    label: 'Low',
     subtitle: '~250k Spaces',
     defaults: {
-      orgPayment: 22,
-      investorSelling: 13.5,
-      additionalPurchase: 7,
+      orgPayment: 44,
+      investorSelling: 10,
+      additionalPurchase: 10,
       unlockRate: 5,
       initialHypha: 3333333,
       initialUsdc: 1000000,
@@ -88,13 +88,13 @@ const GROWTH_PRESETS = {
       return m;
     },
   },
-  medium: {
-    label: 'Medium',
+  mid: {
+    label: 'Mid',
     subtitle: '~1M Spaces',
     defaults: {
-      orgPayment: 22,
-      investorSelling: 26,
-      additionalPurchase: 11,
+      orgPayment: 44,
+      investorSelling: 10,
+      additionalPurchase: 10,
       unlockRate: 4,
       initialHypha: 12000000,
       initialUsdc: 750000,
@@ -116,59 +116,50 @@ const GROWTH_PRESETS = {
       45: { orgGrowthRate: 3 }, 46: { orgGrowthRate: 3 }, 47: { orgGrowthRate: 3 }, 48: { orgGrowthRate: 3 },
     }),
   },
-  max: {
-    label: 'Max',
-    subtitle: '~2M Spaces',
+  high: {
+    label: 'High',
+    subtitle: '~10M Spaces',
     defaults: {
-      orgPayment: 22,
-      investorSelling: 14.5,
-      additionalPurchase: 3,
+      orgPayment: 44,
+      investorSelling: 10,
+      additionalPurchase: 10,
       unlockRate: 4,
       initialHypha: 20000000,
       initialUsdc: 1000000,
       orgCount: 4373,
       orgGrowthRate: 25,
     },
-    build: () => ({
-      1: { orgGrowthRate: 25 }, 2: { orgGrowthRate: 10 }, 3: { orgGrowthRate: 10 }, 4: { orgGrowthRate: 10 },
-      5: { orgGrowthRate: 10 }, 6: { orgGrowthRate: 10 }, 7: { orgGrowthRate: 10 }, 8: { orgGrowthRate: 10 },
-      9: { orgGrowthRate: 10 }, 10: { orgGrowthRate: 27 }, 11: { orgGrowthRate: 15 }, 12: { orgGrowthRate: 14 },
-      13: { orgGrowthRate: 13 }, 14: { orgGrowthRate: 12 }, 15: { orgGrowthRate: 25 }, 16: { orgGrowthRate: 23 },
-      17: { orgGrowthRate: 3 }, 18: { orgGrowthRate: 8 }, 19: { orgGrowthRate: 7 }, 20: { orgGrowthRate: 2 },
-      21: { orgGrowthRate: 1 }, 22: { orgGrowthRate: 4 }, 23: { orgGrowthRate: 4 }, 24: { orgGrowthRate: 4 },
-      25: { orgGrowthRate: 4 }, 26: { orgGrowthRate: 4 }, 27: { orgGrowthRate: 3 }, 28: { orgGrowthRate: 3 },
-      29: { orgGrowthRate: 3 }, 30: { orgGrowthRate: 3 }, 31: { orgGrowthRate: 3 }, 32: { orgGrowthRate: 3 },
-      33: { orgGrowthRate: 3 }, 34: { orgGrowthRate: 3 }, 35: { orgGrowthRate: 3 }, 36: { orgGrowthRate: 3 },
-      37: { orgGrowthRate: 3 }, 38: { orgGrowthRate: 3 }, 39: { orgGrowthRate: 3 }, 40: { orgGrowthRate: 3 },
-      41: { orgGrowthRate: 3 }, 42: { orgGrowthRate: 3 }, 43: { orgGrowthRate: 3 }, 44: { orgGrowthRate: 3 },
-      45: { orgGrowthRate: 3 }, 46: { orgGrowthRate: 3 }, 47: { orgGrowthRate: 3 }, 48: { orgGrowthRate: 3 },
-    }),
+    build: () => {
+      const m = { 1: { orgGrowthRate: 25 } };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 18 };
+      return m;
+    },
   },
 };
 
 const TokenomicsSimulator = () => {
   const [maxSupply, setMaxSupply] = useState(555555555);
-  const [initialHypha, setInitialHypha] = useState(GROWTH_PRESETS.min.defaults.initialHypha);
-  const [initialUsdc, setInitialUsdc] = useState(GROWTH_PRESETS.min.defaults.initialUsdc);
+  const [initialHypha, setInitialHypha] = useState(GROWTH_PRESETS.low.defaults.initialHypha);
+  const [initialUsdc, setInitialUsdc] = useState(GROWTH_PRESETS.low.defaults.initialUsdc);
   const [months, setMonths] = useState(48);
-  const [unlockRate, setUnlockRate] = useState(GROWTH_PRESETS.min.defaults.unlockRate);
+  const [unlockRate, setUnlockRate] = useState(GROWTH_PRESETS.low.defaults.unlockRate);
   const [stakingRewards, setStakingRewards] = useState(30);
   const [rewardSplit, setRewardSplit] = useState(50);
   const [stakingRate, setStakingRate] = useState(75);
   const [sellRate, setSellRate] = useState(30);
-  const [investorSelling, setInvestorSelling] = useState(GROWTH_PRESETS.min.defaults.investorSelling);
-  const [additionalPurchase, setAdditionalPurchase] = useState(GROWTH_PRESETS.min.defaults.additionalPurchase);
-  const [orgCount, setOrgCount] = useState(GROWTH_PRESETS.min.defaults.orgCount);
-  const [orgPayment, setOrgPayment] = useState(GROWTH_PRESETS.min.defaults.orgPayment);
-  const [orgGrowthRate, setOrgGrowthRate] = useState(GROWTH_PRESETS.min.defaults.orgGrowthRate);
+  const [investorSelling, setInvestorSelling] = useState(GROWTH_PRESETS.low.defaults.investorSelling);
+  const [additionalPurchase, setAdditionalPurchase] = useState(GROWTH_PRESETS.low.defaults.additionalPurchase);
+  const [orgCount, setOrgCount] = useState(GROWTH_PRESETS.low.defaults.orgCount);
+  const [orgPayment, setOrgPayment] = useState(GROWTH_PRESETS.low.defaults.orgPayment);
+  const [orgGrowthRate, setOrgGrowthRate] = useState(GROWTH_PRESETS.low.defaults.orgGrowthRate);
 
   // AI operating cost controls
   const [aiModelId, setAiModelId] = useState('kimi-or');
   const [aiProfile, setAiProfile] = useState('typical');
-  const [growthScenario, setGrowthScenario] = useState('min');
+  const [growthScenario, setGrowthScenario] = useState('low');
 
   const [selectedMonth, setSelectedMonth] = useState(1);
-  const [monthlyParams, setMonthlyParams] = useState(GROWTH_PRESETS.min.build());
+  const [monthlyParams, setMonthlyParams] = useState(GROWTH_PRESETS.low.build());
   const [showMonthlyConfig, setShowMonthlyConfig] = useState(false);
 
   const [results, setResults] = useState([]);
