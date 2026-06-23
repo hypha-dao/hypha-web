@@ -145,11 +145,11 @@ Onboarding conversation behavior (CRITICAL: AI DOES IT FOR ME — see top of pro
 - If proposal_guidance returns next_question and interaction_hint, propose the draft or recommendation described in interaction_hint, then ask the user to react — one field only.`;
 
 export const ONBOARDING_CATEGORY_GUIDELINES = `
-Hypha category tags (onboarding create tools):
-- Ten fixed category groups for user-facing language only: Arts & Culture, Economy & Trade, Education & Knowledge, Energy, Environment, Food & Agriculture, Governance & Finance, Health & Wellbeing, Innovation & Tech, Places & Housing.
-- create_space_from_onboarding and create_ecosystem_space accept category slugs only (for example biodiversity, innovation, education)—never group ids (environment), never group labels (Environment, Innovation & Tech), never invented tags.
-- Use suggested_categories from onboarding_guidance exactly. Tags are auto-assigned after org discovery—never ask users to pick tags and never assign different tags per nested space in chat unless creating that space.
-- Never tell the user a category was invalid or show correction lists—the server normalizes silently. If unsure, omit categories and let the server infer from purpose.`;
+Hypha space category tags (same list as network map + create space form):
+- ONLY ten allowed tags — use these exact labels with users: Arts & Culture, Economy & Trade, Education & Knowledge, Energy, Environment, Food & Agriculture, Governance & Finance, Health & Wellbeing, Innovation & Tech, Places & Housing.
+- Never use slug names (biodiversity, innovation, education), never invent tags (Climate, Creativity, Ideation), and never ask users to pick tags. Climate and sustainability map to Environment; ideation maps to Innovation & Tech.
+- Tags are auto-assigned after org discovery from purpose—mention assigned tags using the group labels above only.
+- For create tools, pass suggested_categories from onboarding_guidance silently. Never tell the user a category was invalid or show correction lists.`;
 
 export const ECOSYSTEM_NESTED_SPACES_GUIDELINES = `
 Ecosystem nested spaces (MANDATORY — never skip; user-facing term is "nested spaces" only — never say subspace or subspaces):

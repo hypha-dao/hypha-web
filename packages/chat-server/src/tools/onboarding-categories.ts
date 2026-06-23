@@ -6,7 +6,20 @@ import {
   mergeCategoryGroupsWithExisting,
   type CategoryGroupId,
 } from '../../../core/src/categories/groups';
-import { inferCategoryGroupsFromText } from '../../../core/src/categories/infer-category-groups';
+import {
+  formatCategoryGroupLabels,
+  inferCategoryGroupsFromText,
+} from '../../../core/src/categories/infer-category-groups';
+
+/** Same ten tags as the network map filters and create space form (categoryGroupOptions). */
+export const SPACE_CATEGORY_GROUP_CATALOG = CATEGORY_GROUPS.map((group) => ({
+  id: group.id,
+  label: group.label,
+}));
+
+export const SPACE_CATEGORY_GROUP_LABELS = SPACE_CATEGORY_GROUP_CATALOG.map(
+  (group) => group.label,
+);
 
 /** Category slugs accepted by create_space_from_onboarding and create_ecosystem_space. */
 export const ONBOARDING_CATEGORY_SLUGS = [
@@ -53,6 +66,21 @@ const GROUP_LABEL_TO_ID = new Map<string, CategoryGroupId>(
   ]),
 );
 
+/** Common user/AI wording mapped to canonical category groups — never invent new tags. */
+const GROUP_TOKEN_ALIASES: Record<string, CategoryGroupId> = {
+  climate: 'environment',
+  sustainability: 'environment',
+  ecology: 'environment',
+  tech: 'technology',
+  technology: 'technology',
+  ideation: 'technology',
+  ideas: 'technology',
+  idea: 'technology',
+  agriculture: 'food',
+  finance: 'governance',
+  learning: 'education',
+};
+
 function tokenizeCategoryInput(value: string): string[] {
   return value
     .split(/[,;|/]+/)
@@ -75,6 +103,9 @@ function collectCategoryTokens(input: unknown): string[] {
 function resolveGroupId(token: string): CategoryGroupId | null {
   const lower = token.toLowerCase().trim();
   const slug = lower.replace(/\s+&\s+/g, ' ').replace(/\s+/g, '_');
+
+  const alias = GROUP_TOKEN_ALIASES[lower] ?? GROUP_TOKEN_ALIASES[slug];
+  if (alias) return alias;
 
   if (isCategoryGroupId(slug)) return slug;
   if (isCategoryGroupId(lower)) return lower;
@@ -100,8 +131,16 @@ export function normalizeOnboardingCategories(input: unknown): Category[] {
     const lower = token.toLowerCase().trim();
     const slug = lower.replace(/\s+&\s+/g, ' ').replace(/\s+/g, '_');
 
+    const aliasGroup = GROUP_TOKEN_ALIASES[lower] ?? GROUP_TOKEN_ALIASES[slug];
+    if (aliasGroup) {
+      groupIds.add(aliasGroup);
+      continue;
+    }
+
     if (VALID_CATEGORY_SLUGS.has(lower)) {
       directCategories.add(lower as Category);
+      const groupFromSlug = resolveGroupId(lower);
+      if (groupFromSlug) groupIds.add(groupFromSlug);
       continue;
     }
     if (VALID_CATEGORY_SLUGS.has(slug)) {
@@ -147,9 +186,19 @@ export function createOnboardingCategoriesSchema() {
   );
 }
 
-export const ONBOARDING_CATEGORY_GROUP_LABELS = CATEGORY_GROUPS.map(
-  (group) => group.label,
-);
+export const ONBOARDING_CATEGORY_GROUP_LABELS = SPACE_CATEGORY_GROUP_LABELS;
 
-export const ONBOARDING_CATEGORY_USAGE_INSTRUCTION =
-  'Categories for create_space_from_onboarding and create_ecosystem_space must be category slugs from suggested_categories (for example biodiversity, innovation, education)—never group ids (environment), never group labels (Environment, Innovation & Tech), and never invented tags. If unsure, omit categories and the server will infer from purpose.';
+export const ONBOARDING_CATEGORY_USER_FACING_INSTRUCTION = `Space category tags for users are ONLY the ten labels in space_category_groups from onboarding_guidance—the same list as the Hypha network map and create space form: ${SPACE_CATEGORY_GROUP_LABELS.join(
+  ', ',
+)}. When mentioning categories in chat, use those exact group labels only. Never slug names (biodiversity, innovation), never invented tags (Climate, Creativity, Ideation), and never ask users to pick tags.`;
+
+export const ONBOARDING_CATEGORY_TOOL_INSTRUCTION =
+  'For create_space_from_onboarding and create_ecosystem_space, pass suggested_categories from onboarding_guidance exactly (internal slugs). Do not pass group labels or invented tokens—the server normalizes silently.';
+
+export const ONBOARDING_CATEGORY_USAGE_INSTRUCTION = `${ONBOARDING_CATEGORY_USER_FACING_INSTRUCTION} ${ONBOARDING_CATEGORY_TOOL_INSTRUCTION}`;
+
+export function formatAssignedCategoryGroupLabels(
+  groupIds: CategoryGroupId[],
+): string {
+  return formatCategoryGroupLabels(groupIds);
+}

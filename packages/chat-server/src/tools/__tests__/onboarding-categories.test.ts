@@ -36,6 +36,13 @@ describe('normalizeOnboardingCategories', () => {
     );
   });
 
+  it('maps climate alias to environment group slugs', () => {
+    const normalized = normalizeOnboardingCategories(['Climate']);
+    expect(normalized.length).toBeGreaterThan(0);
+    expect(normalized).not.toContain('climate' as Category);
+    expect(normalized).toEqual(expect.arrayContaining(['biodiversity']));
+  });
+
   it('infers categories from fallback text when input is invalid', () => {
     const resolved = resolveOnboardingCategories(
       ['not-a-valid-tag'],

@@ -8,8 +8,11 @@ import {
 import type { ChatRouteTool } from './types';
 import { createSearchSpacesTool } from './search-spaces';
 import {
+  formatAssignedCategoryGroupLabels,
   ONBOARDING_CATEGORY_GROUP_LABELS,
-  ONBOARDING_CATEGORY_USAGE_INSTRUCTION,
+  ONBOARDING_CATEGORY_TOOL_INSTRUCTION,
+  ONBOARDING_CATEGORY_USER_FACING_INSTRUCTION,
+  SPACE_CATEGORY_GROUP_CATALOG,
 } from './onboarding-categories';
 import { ONBOARDING_CREATION_CONFIRMATION_GUIDELINES } from '../system-prompt';
 import { isAnsweredActivationMethod } from './onboarding-activation-method';
@@ -631,7 +634,7 @@ export function createOnboardingGuidanceTool() {
           : null;
       const orgDiscoveryInstruction =
         nextStep?.field === 'org_discovery'
-          ? `Ask only the next_question. Do NOT invent custom tags (Collaboration, Creativity, Entrepreneurship, etc.) or ask the user to pick tags. Hypha uses exactly these ten fixed category groups: ${HYPHA_CATEGORY_GROUP_LABELS.join(
+          ? `Ask only the next_question. Do NOT invent custom tags (Collaboration, Creativity, Entrepreneurship, Climate, Ideation, etc.) or ask the user to pick tags. Hypha uses exactly these ten space category groups—the same as the network map and create space form: ${HYPHA_CATEGORY_GROUP_LABELS.join(
               ', ',
             )}. Tags are assigned automatically after this answer.`
           : null;
@@ -644,15 +647,9 @@ export function createOnboardingGuidanceTool() {
         assignedCategoryGroups.length > 0 &&
         nextStep?.field !== 'org_discovery' &&
         nextStep?.field !== 'category_groups'
-          ? `Briefly state the Hypha category tag(s) you assigned (${assignedCategoryGroups
-              .map(
-                (groupId) =>
-                  CATEGORY_GROUPS.find((group) => group.id === groupId)?.label,
-              )
-              .filter(Boolean)
-              .join(
-                ', ',
-              )}) in one short phrase—not as a question. ${ONBOARDING_CATEGORY_USAGE_INSTRUCTION} Never tell the user a category was invalid or show correction lists—pass suggested_categories silently.`
+          ? `Briefly state the Hypha category tag(s) you assigned (${formatAssignedCategoryGroupLabels(
+              assignedCategoryGroups,
+            )}) in one short phrase—not as a question. ${ONBOARDING_CATEGORY_USER_FACING_INSTRUCTION} ${ONBOARDING_CATEGORY_TOOL_INSTRUCTION} Never apologize for invalid tags or show adjusted category lists.`
           : null;
       const requiresVisualAssetsPicker =
         nextStep?.field === 'visual_assets_choice' ||
@@ -706,7 +703,11 @@ export function createOnboardingGuidanceTool() {
         next_question: nextStep?.question?.trim() ? nextStep.question : null,
         next_field: nextStep?.field ?? null,
         allowed_category_groups: HYPHA_CATEGORY_GROUP_LABELS,
-        category_usage_instruction: ONBOARDING_CATEGORY_USAGE_INSTRUCTION,
+        space_category_groups: SPACE_CATEGORY_GROUP_CATALOG,
+        category_user_facing_instruction:
+          ONBOARDING_CATEGORY_USER_FACING_INSTRUCTION,
+        category_tool_instruction: ONBOARDING_CATEGORY_TOOL_INSTRUCTION,
+        category_usage_instruction: ONBOARDING_CATEGORY_USER_FACING_INSTRUCTION,
         assigned_category_groups: assignedCategoryGroups.map((groupId) => ({
           id: groupId,
           label:
