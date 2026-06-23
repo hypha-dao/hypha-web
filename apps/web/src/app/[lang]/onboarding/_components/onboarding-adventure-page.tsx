@@ -610,21 +610,19 @@ export function OnboardingAdventurePage({
         />
         <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
           <header className="flex flex-col items-center gap-6 text-center md:gap-8">
-            <div className="flex flex-col items-center gap-2 md:gap-2.5">
-              <p className="inline-block rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm [.dark_&]:border-info-8/30 [.dark_&]:bg-black/35 [.dark_&]:text-white [.dark_&]:shadow-[0_0_32px_-10px_var(--color-info-9)]">
-                {t('heroPill.build')}{' '}
-                <span
-                  key={rotatingHeroTitleWords[heroTitleWordIndex]}
-                  className="font-semibold text-info-10 transition-opacity duration-300"
-                >
-                  {rotatingHeroTitleWords[heroTitleWordIndex]}
-                </span>
-                {t('heroPill.together')}
-              </p>
-              <p className="text-2 font-semibold uppercase tracking-[0.24em] text-accent-11 md:text-3 [.dark_&]:text-info-11">
-                {t('heroEyebrow')}
-              </p>
-            </div>
+            <p className="inline-block rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm [.dark_&]:border-info-8/30 [.dark_&]:bg-black/35 [.dark_&]:text-white [.dark_&]:shadow-[0_0_32px_-10px_var(--color-info-9)]">
+              {t('heroPill.build')}{' '}
+              <span
+                key={rotatingHeroTitleWords[heroTitleWordIndex]}
+                className="font-semibold text-info-10 transition-opacity duration-300"
+              >
+                {rotatingHeroTitleWords[heroTitleWordIndex]}
+              </span>
+              {t('heroPill.together')}
+            </p>
+            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-accent-11 md:text-3 [.dark_&]:text-info-11">
+              {t('heroEyebrow')}
+            </p>
             <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
               <span className="block text-foreground [.dark_&]:text-white">
                 {t('titleLine1')}
