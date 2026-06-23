@@ -117,6 +117,9 @@ type SeedAckEventDetail = {
 };
 
 const ONBOARDING_CONTEXT_STORAGE_KEY = 'hypha:ai-onboarding-context:v1';
+/** Tab-scoped only — coordinates must not persist in localStorage (CodeQL). */
+const ONBOARDING_LOCATION_COORDS_STORAGE_KEY =
+  'hypha:onboarding-space-coordinates:v1';
 
 function parseStoredCoordinate(
   value: unknown,
@@ -162,6 +165,65 @@ function parseStoredSpaceLocation(
         : null,
     skipped: candidate.skipped === true,
   };
+}
+
+function spaceLocationForLocalStorage(
+  location: OnboardingSpaceLocation | undefined,
+): OnboardingSpaceLocation | undefined {
+  if (!location) return undefined;
+  return {
+    ...location,
+    latitude: null,
+    longitude: null,
+  };
+}
+
+function persistOnboardingLocationCoordinates(
+  location: OnboardingSpaceLocation | undefined,
+): void {
+  if (typeof window === 'undefined') return;
+  if (location?.latitude != null && location?.longitude != null) {
+    window.sessionStorage.setItem(
+      ONBOARDING_LOCATION_COORDS_STORAGE_KEY,
+      JSON.stringify({
+        latitude: location.latitude,
+        longitude: location.longitude,
+      }),
+    );
+    return;
+  }
+  window.sessionStorage.removeItem(ONBOARDING_LOCATION_COORDS_STORAGE_KEY);
+}
+
+function readOnboardingLocationCoordinates():
+  | Pick<OnboardingSpaceLocation, 'latitude' | 'longitude'>
+  | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const raw = window.sessionStorage.getItem(
+      ONBOARDING_LOCATION_COORDS_STORAGE_KEY,
+    );
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as {
+      latitude?: unknown;
+      longitude?: unknown;
+    };
+    const latitude = parseStoredCoordinate(parsed.latitude, -90, 90);
+    const longitude = parseStoredCoordinate(parsed.longitude, -180, 180);
+    if (latitude == null || longitude == null) return undefined;
+    return { latitude, longitude };
+  } catch {
+    return undefined;
+  }
+}
+
+function mergeStoredSpaceLocation(
+  location: OnboardingSpaceLocation | undefined,
+): OnboardingSpaceLocation | undefined {
+  if (!location) return undefined;
+  const coords = readOnboardingLocationCoordinates();
+  if (!coords) return location;
+  return { ...location, ...coords };
 }
 
 function parseStoredTransparencyLevel(
@@ -362,7 +424,7 @@ export function readOnboardingConversationContext():
         parsed.setupPlan && typeof parsed.setupPlan === 'object'
           ? (parsed.setupPlan as OnboardingConversationContext['setupPlan'])
           : undefined,
-      spaceLocation: parsedSpaceLocation,
+      spaceLocation: mergeStoredSpaceLocation(parsedSpaceLocation),
       activationMethod: parseStoredActivationMethod(parsed.activationMethod),
       setupJourney: parseStoredSetupJourney(parsed.setupJourney),
       transparencyMatrix: parseStoredTransparencyMatrix(
@@ -401,14 +463,19 @@ export function saveOnboardingConversationContext(
   context: OnboardingConversationContext,
 ): void {
   if (typeof window === 'undefined') return;
+  persistOnboardingLocationCoordinates(context.spaceLocation);
   window.localStorage.setItem(
     ONBOARDING_CONTEXT_STORAGE_KEY,
-    JSON.stringify(context),
+    JSON.stringify({
+      ...context,
+      spaceLocation: spaceLocationForLocalStorage(context.spaceLocation),
+    }),
   );
 }
 
 export function clearOnboardingConversationContext(): void {
   if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(ONBOARDING_LOCATION_COORDS_STORAGE_KEY);
   window.localStorage.removeItem(ONBOARDING_CONTEXT_STORAGE_KEY);
 }
 
