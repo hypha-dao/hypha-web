@@ -66,11 +66,22 @@ const GAS_MONTHLY_BY_PROFILE = { light: 0.06, typical: 0.37, heavy: 3.27 };
 const GAS_SETUP_ONE_TIME = 0.035;
 const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_MONTHLY_BY_PROFILE.typical;
 
+// Phase 0 → Phase I → Phase II continuity (same network, one growth story)
+const PHASE0_ACTIVE_SPACES = 4373;
+const PHASE_I_MONTHS = 12;
+const PHASE_I_MONTHLY_GROWTH = 0.72; // continues into Phase II Low preset
+const phaseIHandoffSpaces = () => {
+  let n = PHASE0_ACTIVE_SPACES;
+  for (let m = 2; m <= PHASE_I_MONTHS; m++) n = Math.round(n * (1 + PHASE_I_MONTHLY_GROWTH / 100));
+  return n;
+};
+const PHASE_II_START_SPACES = phaseIHandoffSpaces(); // ~4,732 after 12 mo Phase I
+
 
 const GROWTH_PRESETS = {
   low: {
     label: 'Low',
-    subtitle: '~250k cumulative',
+    subtitle: '~270k cumulative',
     defaults: {
       orgPayment: 44,
       iexAllocationPct: 25,
@@ -79,10 +90,10 @@ const GROWTH_PRESETS = {
       unlockRate: 4,
       initialHypha: 5000000,
       initialUsdc: 1000000,
-      orgCount: 4373,
+      orgCount: PHASE_II_START_SPACES,
       orgGrowthRate: 0.72,
     },
-    // Target ~250k cumulative Space-months at month 48 (~0.72%/mo, months 2–48)
+    // ~270k cumulative Space-months at month 48 (0.72%/mo from Phase I handoff)
     build: () => {
       const m = {};
       for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 0.72 };
@@ -100,13 +111,13 @@ const GROWTH_PRESETS = {
       unlockRate: 3.5,
       initialHypha: 40000000,
       initialUsdc: 8000000,
-      orgCount: 4373,
-      orgGrowthRate: 5.63,
+      orgCount: PHASE_II_START_SPACES,
+      orgGrowthRate: 5.38,
     },
-    // Target ~1M cumulative Space-months at month 48 (~5.63%/mo, months 2–48)
+    // Target ~1M cumulative Space-months at month 48 (~5.38%/mo from handoff)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 5.63 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 5.38 };
       return m;
     },
   },
@@ -121,13 +132,13 @@ const GROWTH_PRESETS = {
       unlockRate: 3,
       initialHypha: 100000000,
       initialUsdc: 25000000,
-      orgCount: 4373,
-      orgGrowthRate: 12.52,
+      orgCount: PHASE_II_START_SPACES,
+      orgGrowthRate: 12.29,
     },
-    // Target ~10M cumulative Space-months at month 48 (~12.52%/mo, months 2–48)
+    // Target ~10M cumulative Space-months at month 48 (~12.29%/mo from handoff)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 12.52 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 12.29 };
       return m;
     },
   },
@@ -469,7 +480,7 @@ const TokenomicsSimulator = () => {
           </div>
           <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
             <div className="font-semibold">Phase II — After Phase I (this sim)</div>
-            <p className="text-xs text-indigo-100 mt-1">Starts ~4,373 paying Spaces × $44/mo. Month 1 = first month after handoff.</p>
+            <p className="text-xs text-indigo-100 mt-1">Starts ~{PHASE_II_START_SPACES.toLocaleString()} paying Spaces (Phase I handoff) × $44/mo. Month 1 = first month after Phase I.</p>
           </div>
         </div>
       </div>
