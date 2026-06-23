@@ -23,7 +23,7 @@ function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
     case 'voting_method':
       return 'Propose how this space should make decisions (one person one vote, voice-weighted, or token-weighted) with a brief why — ask if that fits. Never say "voting method" or list 1m1v/1v1v/1t1v codes unless confirming.';
     case 'entry_method':
-      return 'Propose how people should join (open, invite-only, or token-gated) with a brief why — ask if that works. Never say "entry method".';
+      return 'Propose how people should join using Open Access, Invite Request, or Token Based (exact card titles) with a brief why — ask if that works. Never say invite-only, request access, or token-based entry. Never say "entry method".';
     case 'title':
       return 'Draft a short name for this proposal from context and offer it conversationally — never say title or proposal title.';
     case 'description':

@@ -132,14 +132,14 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     prepareStrategy: 'prepare_governance_proposal',
     onChain: true,
     discoveryIntro:
-      'Ask open access, invite/request only, or token-based membership.',
+      'Ask which join option fits: Open Access, Invite Request, or Token Based — user picks with the entry method card.',
     requiredFields: [
       {
         key: 'entry_method',
         label: 'Entry method',
         required: true,
         description:
-          'Propose how people should join (open to all, invite-only, or token-gated) with a brief why — ask if that works. Never say "entry method".',
+          'Propose how people should join using the exact card titles Open Access, Invite Request, or Token Based with a brief why — ask if that works. Never say invite-only, request access, or token-based entry. Never say "entry method".',
         fieldType: 'enum',
         enumValues: ['open_access', 'invite_only', 'token_based'],
         formSection: 'entry_method',

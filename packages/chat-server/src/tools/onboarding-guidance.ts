@@ -16,6 +16,12 @@ import {
 } from './onboarding-categories';
 import { ONBOARDING_CREATION_CONFIRMATION_GUIDELINES } from '../system-prompt';
 import { isAnsweredActivationMethod } from './onboarding-activation-method';
+import {
+  buildEntryMethodAssistantInstruction,
+  ONBOARDING_ENTRY_METHOD_GUIDELINES,
+  ONBOARDING_ENTRY_METHOD_LABELS,
+  ONBOARDING_ENTRY_METHOD_OPTIONS,
+} from './onboarding-entry-method';
 import { isAnsweredLocationStep } from './onboarding-location';
 import {
   buildTransparencyActivityAssistantInstruction,
@@ -202,8 +208,10 @@ function isAnsweredEntryMethod(value: unknown): boolean {
     normalized === 'open_access' ||
     normalized.includes('open access') ||
     normalized === 'invite_only' ||
+    normalized.includes('invite request') ||
     normalized.includes('invite') ||
     normalized === 'token_based' ||
+    normalized.includes('token based') ||
     normalized.includes('token')
   );
 }
@@ -348,7 +356,7 @@ function getCreateSpaceGuidance(
     {
       field: 'entry_method',
       question:
-        'How should people join this space? Choose open access, invite/request, or token-based entry (token-based also requires setting up a membership token).',
+        'How should people join this space? Pick one with the entry method card below.',
       isAnswered: (value) => isAnsweredEntryMethod(value),
     },
     {
@@ -612,7 +620,7 @@ export function createOnboardingGuidanceTool() {
         ? 'Ask only the next_question in one short sentence. Direct the user to the location card below: search by address or place name, pick a result, or drop a pin on the map—or skip. Never read latitude/longitude or ask the user to confirm raw coordinates. If they already named a place in chat, tell them to search for it in the address field below.'
         : null;
       const activationAssistantInstruction = requiresActivationPicker
-        ? 'Ask only the next_question in one short sentence. This step is activation mode only (Sandbox Mode, Pilot Mode, or Live Mode)—not entry method. The user picks with the activation cards below; do not ask about open access, invites, or tokens here.'
+        ? 'Ask only the next_question in one short sentence. This step is activation mode only (Sandbox Mode, Pilot Mode, or Live Mode)—not entry method. The user picks with the activation cards below; do not ask about Open Access, Invite Request, or Token Based here.'
         : null;
       const transparencyAssistantInstruction =
         requiresTransparencyDiscoverabilityPicker
@@ -621,12 +629,10 @@ export function createOnboardingGuidanceTool() {
           ? buildTransparencyActivityAssistantInstruction()
           : null;
       const entryMethodAssistantInstruction = requiresEntryMethodPicker
-        ? `Ask only the next_question in one short sentence. The user can choose open access, invite/request, or token-based entry with the entry method cards below—do not list all options as a checklist. Mention that token-based entry requires creating a membership token.${
+        ? buildEntryMethodAssistantInstruction(
             isAnsweredTransparencyLevel(answers.transparency_discoverability) &&
-            answers.transparency_discoverability >= 2
-              ? ' If they pick open access, flag warmly that Organisation or Space discoverability makes it hard for newcomers to find the space—offer Public or Network discoverability or a tighter entry method.'
-              : ''
-          }`
+              answers.transparency_discoverability >= 2,
+          )
         : null;
       const principlesAssistantInstruction =
         nextStep?.field === 'principles_reaction'
@@ -728,6 +734,9 @@ export function createOnboardingGuidanceTool() {
           ? 'discoverability'
           : null,
         requires_entry_method_picker: requiresEntryMethodPicker,
+        allowed_entry_methods: ONBOARDING_ENTRY_METHOD_LABELS,
+        space_entry_methods: ONBOARDING_ENTRY_METHOD_OPTIONS,
+        entry_method_guidelines: ONBOARDING_ENTRY_METHOD_GUIDELINES,
         requires_setup_journey_picker: requiresSetupJourneyPicker,
         setup_journey: isAnsweredSetupJourney(answers.setup_journey)
           ? isEcosystemJourney(answers)

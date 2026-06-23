@@ -2,6 +2,7 @@ import { buildAiProposalTypePromptLines } from './tools/ai-proposal-types';
 import { buildProposalGuidancePromptLines } from './tools/proposal-guidance';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
 import { ONBOARDING_TRANSPARENCY_GUIDELINES } from './tools/onboarding-transparency-guidance';
+import { ONBOARDING_ENTRY_METHOD_GUIDELINES } from './tools/onboarding-entry-method';
 
 /** Non-negotiable UX north star for chat and Live Voice — injected at top of every system prompt. */
 export const AI_DOES_IT_FOR_ME_GUIDELINES = `
@@ -174,9 +175,9 @@ ${SOUND_ADVISOR_GUIDELINES}
 ${ONBOARDING_CATEGORY_GUIDELINES}
 - For ecosystem setups: ask how the root space relates to nested spaces, call get_network_ecosystem_patterns (public, non-sandbox examples only), then propose_organisation_blueprint and confirm the structure BEFORE activation, transparency, entry, location, or visuals. Create only the root space during onboarding; nested spaces are created later in the left AI panel with create_ecosystem_space—one at a time.
 ${ECOSYSTEM_NESTED_SPACES_GUIDELINES}
-- For activation mode: ask Sandbox Mode, Pilot Mode, or Live Mode only—never ask about entry method (open access, invite, token) at this step.
+- For activation mode: ask Sandbox Mode, Pilot Mode, or Live Mode only—never ask about entry method at this step.
 ${ONBOARDING_TRANSPARENCY_GUIDELINES}
-- For entry method (after activation and both transparency answers): present open access, invite/request, and token-based options; token-based implies a membership token setup flow.
+${ONBOARDING_ENTRY_METHOD_GUIDELINES}
 - When generate_space_visual_assets returns URLs, describe the visuals and ensure the user sees thumbnail previews in chat.
 ${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}
 - After wallet handoff, tell the user to sign in their wallet (works with standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer to retry—never loop on verbal confirmations.`;
