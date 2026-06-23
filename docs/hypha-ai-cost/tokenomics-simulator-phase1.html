@@ -275,12 +275,32 @@ const HyphaTokenomicsCalculator = () => {
   const perSpaceGas = perSpaceMonthlyGas(aiProfile);
   const baselinePerSpace = perSpaceMonthlyAICost(getModel('composer-fast'), aiProfile);
   const lastMonth = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1] : null;
+  const phase1RunRateArr = lastMonth ? lastMonth.aoIncome * 12 : 0;
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-1 text-center">HYPHA Tokenomics Simulator (Phase I)</h1>
-      <p className="text-sm text-gray-500 mb-6 text-center">Phase I uses a fixed reference token price; Phase II derives price from IEX dynamics.</p>
-      <p className="text-sm text-gray-500 mb-6 text-center">With per-Space AI + Base L2 gas operating cost model — closed-source vs open-source LLMs.</p>
+      <p className="text-sm text-gray-500 mb-3 text-center">Fixed $0.20 reference price — token sale, locking &amp; yield distribution at Phase I month 0+.</p>
+
+      <div className="mb-6 border border-slate-200 bg-slate-50 p-4 rounded-lg">
+        <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 text-center">Roadmap: Phase 0 → Phase I → Phase II</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-600">Phase 0 — Today</div>
+            <p className="text-xs text-gray-600 mt-1">~4,373 Spaces on Hypha. Tokenomics Phase I begins at month 0. Reference FDV ~$111M at $0.20.</p>
+          </div>
+          <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
+            <div className="font-semibold">Phase I — Month 0+ (this sim)</div>
+            <p className="text-xs text-indigo-100 mt-1">Default: 50 Spaces → ~4,325 by month 12 at 50%/mo growth. Handoff to Phase II at ~4,373 paying Spaces.</p>
+          </div>
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-700">Phase II — After Phase I</div>
+            <p className="text-xs text-gray-600 mt-1">$44/Space/mo, dynamic IEX pricing. <a href="/tokenomics2/" className="text-indigo-600 underline">Phase II simulator →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-500 mb-6 text-center">Per-Space AI + Base L2 gas operating cost model — closed-source vs open-source LLMs.</p>
 
       <div className="mb-8 border border-indigo-200 bg-indigo-50 p-4 rounded-lg">
         <h2 className="text-lg font-semibold mb-1">AI &amp; On-Chain Operating Cost per Space</h2>
@@ -808,6 +828,14 @@ const HyphaTokenomicsCalculator = () => {
 
           {lastMonth && (
             <>
+              <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-400">
+                <div className="text-sm text-green-600">Run-rate ARR (month {saleMonths})</div>
+                <div className="text-2xl font-bold text-green-700">{formatCurrency(phase1RunRateArr)}</div>
+                <div className="text-xs text-green-600 mt-1">
+                  {formatNumber(lastMonth.numberOfAOs)} active Spaces × ${paymentPerAO} × 12
+                </div>
+              </div>
+
               <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-400">
                 <div className="text-sm text-green-600">Cumulated Space Contributions</div>
                 <div className="text-2xl font-bold text-green-700">

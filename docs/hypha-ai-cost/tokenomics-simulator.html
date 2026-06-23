@@ -70,64 +70,64 @@ const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_M
 const GROWTH_PRESETS = {
   low: {
     label: 'Low',
-    subtitle: '~250k Spaces',
+    subtitle: '~250k cumulative',
     defaults: {
       orgPayment: 44,
-      iexAllocationPct: 8,
+      iexAllocationPct: 25,
       investorSelling: 5,
       additionalPurchase: 5,
       unlockRate: 4,
-      initialHypha: 20000000,
-      initialUsdc: 4000000,
+      initialHypha: 5000000,
+      initialUsdc: 1000000,
       orgCount: 4373,
-      orgGrowthRate: 9,
+      orgGrowthRate: 0.72,
     },
-    // Target ~250k Spaces at month 48 (~9.0%/mo, months 2–48)
+    // Target ~250k cumulative Space-months at month 48 (~0.72%/mo, months 2–48)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 9.0 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 0.72 };
       return m;
     },
   },
   mid: {
     label: 'Mid',
-    subtitle: '~1M Spaces',
+    subtitle: '~1M cumulative',
     defaults: {
       orgPayment: 44,
-      iexAllocationPct: 10,
+      iexAllocationPct: 25,
       investorSelling: 5,
-      additionalPurchase: 5,
+      additionalPurchase: 8,
       unlockRate: 3.5,
       initialHypha: 40000000,
       initialUsdc: 8000000,
       orgCount: 4373,
-      orgGrowthRate: 12.26,
+      orgGrowthRate: 5.63,
     },
-    // Target ~1M Spaces at month 48 (~12.26%/mo, months 2–48)
+    // Target ~1M cumulative Space-months at month 48 (~5.63%/mo, months 2–48)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 12.26 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 5.63 };
       return m;
     },
   },
   high: {
     label: 'High',
-    subtitle: '~10M Spaces',
+    subtitle: '~10M cumulative',
     defaults: {
       orgPayment: 44,
-      iexAllocationPct: 12,
-      investorSelling: 5,
-      additionalPurchase: 5,
+      iexAllocationPct: 19,
+      investorSelling: 3,
+      additionalPurchase: 8,
       unlockRate: 3,
       initialHypha: 100000000,
       initialUsdc: 25000000,
       orgCount: 4373,
-      orgGrowthRate: 17.9,
+      orgGrowthRate: 12.52,
     },
-    // Target ~10M Spaces at month 48 (~17.9%/mo, months 2–48)
+    // Target ~10M cumulative Space-months at month 48 (~12.52%/mo, months 2–48)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 17.9 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 12.52 };
       return m;
     },
   },
@@ -222,6 +222,7 @@ const TokenomicsSimulator = () => {
     const perSpaceGas = perSpaceMonthlyGas(aiProfile);
     let cumulativeAICost = 0;
     let cumulativeGasCost = 0;
+    let cumulativeGrossRevenue = 0;
 
     for (let month = 1; month <= months; month++) {
       const monthStakingRate = getMonthlyParameter('stakingRate', month) / 100;
@@ -278,6 +279,8 @@ const TokenomicsSimulator = () => {
 
       cumulativeOrgCountTracker += currentOrgCount;
       const cumulativeOrgCount = cumulativeOrgCountTracker;
+      cumulativeGrossRevenue += grossContribution;
+      const runRateArr = currentOrgCount * monthOrgPayment * 12;
 
       const distributionMultiplier = getMonthlyParameter('unlockRate', month);
       const safeStakingRate = Math.min(monthStakingRate, 0.9);
@@ -367,6 +370,9 @@ const TokenomicsSimulator = () => {
         totalPurchasedTokens: Math.round(totalPurchasedTokens),
         investorSellingUsdc: monthInvestorSelling, tokensSold,
         fdv: Math.round(fdv),
+        runRateArr: Math.round(runRateArr),
+        fdvArr: runRateArr > 0 ? +(fdv / runRateArr).toFixed(1) : null,
+        cumulativeGrossRevenue: Math.round(cumulativeGrossRevenue),
         aiCost: monthAICost, cumulativeAICost,
         gasCost: monthGasCost, cumulativeGasCost,
         netContribution, netAfterGas,
@@ -439,6 +445,8 @@ const TokenomicsSimulator = () => {
   const perSpaceAI = perSpaceMonthlyAICost(aiModel, aiProfile);
   const perSpaceGas = perSpaceMonthlyGas(aiProfile);
   const baselinePerSpace = perSpaceMonthlyAICost(getModel('composer-fast'), aiProfile);
+  const lastResult = results.length > 0 ? results[results.length - 1] : null;
+  const offPoolPct = 100 - (monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct);
 
 
   return (
@@ -446,7 +454,33 @@ const TokenomicsSimulator = () => {
       <div className="flex gap-6">
         <div className="flex-1 min-w-0">
       <h1 className="text-2xl font-bold mb-1">HYPHA Tokenomics Simulator (Phase II)</h1>
-      <p className="text-sm text-gray-500 mb-4">With per-Space AI + Base L2 gas operating cost model — closed-source vs open-source LLMs.</p>
+      <p className="text-sm text-gray-500 mb-3">Dynamic IEX pricing after Phase I handoff — per-Space AI + Base L2 gas operating cost model.</p>
+
+      <div className="mb-4 border border-slate-200 bg-slate-50 p-4 rounded-lg">
+        <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Roadmap: Phase 0 → Phase I → Phase II</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-600">Phase 0 — Today</div>
+            <p className="text-xs text-gray-600 mt-1">~4,373 Spaces live. Phase I at month 0. Reference FDV ~$111M at $0.20.</p>
+          </div>
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-700">Phase I — Month 0+</div>
+            <p className="text-xs text-gray-600 mt-1">Fixed $0.20 price, token sale &amp; locking. <a href="/tokenomics1/" className="text-indigo-600 underline">Phase I simulator →</a></p>
+          </div>
+          <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
+            <div className="font-semibold">Phase II — After Phase I (this sim)</div>
+            <p className="text-xs text-indigo-100 mt-1">Starts ~4,373 paying Spaces × $44/mo. Month 1 = first month after handoff.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-4 border border-teal-200 bg-teal-50 p-3 rounded-lg text-sm">
+        <span className="font-semibold text-teal-800">Revenue split:</span>{' '}
+        <span className="text-teal-900">{iexAllocationPct}% → IEX buy pressure</span>
+        <span className="text-teal-700"> · </span>
+        <span className="text-teal-900">{offPoolPct}% → AI (~${perSpaceAI.toFixed(2)}/Space), gas, ops, rewards, treasury</span>
+        <span className="text-xs text-teal-700 block mt-1">Only active Spaces in each month pay $44. Cumulative totals are Space-months over the horizon, not concurrent payers.</span>
+      </div>
 
       {/* ============ AI OPERATING COST SECTION ============ */}
       <div className="mb-6 border border-indigo-200 bg-indigo-50 p-4 rounded-lg">
@@ -665,16 +699,16 @@ const TokenomicsSimulator = () => {
               <input type="number" min="0" max="200" value={monthlyParams[selectedMonth]?.orgPayment ?? orgPayment} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgPayment(v) : updateMonthlyParameter('orgPayment', v); }} className="w-20 p-1 border rounded text-right" />
               <span className="ml-1">USDC</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Gross revenue per Space. AI (${perSpaceAI.toFixed(2)}/Space) and gas (${perSpaceGas.toFixed(2)}/Space) tracked separately; only a % routes to IEX.</p>
+            <p className="text-xs text-gray-500 mt-1">Gross revenue per Space. Default AI ~${perSpaceAI.toFixed(2)}/Space (open-weight); Composer reference ~${baselinePerSpace.toFixed(2)}/Space. Only {iexAllocationPct}% routes to IEX; {offPoolPct}% off-pool.</p>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">% routed to IEX (buy pressure)</label>
             <div className="flex items-center">
-              <input type="range" min="0" max="30" step="1" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-full mr-3" />
-              <input type="number" min="0" max="30" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-16 p-1 border rounded text-right" />
+              <input type="range" min="0" max="50" step="1" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="50" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-16 p-1 border rounded text-right" />
               <span className="ml-1">%</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Remainder = treasury / ops / rewards off-pool.</p>
+            <p className="text-xs text-gray-500 mt-1">Remainder ({offPoolPct}%) = AI, gas, treasury / ops / off-pool rewards.</p>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Additional Investor Purchases + buybacks (% of USDC on IEX)</label>
@@ -703,9 +737,19 @@ const TokenomicsSimulator = () => {
           <h2 className="text-xl font-bold mb-4">Key Metrics at Month {months}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded shadow">
-              <h3 className="text-sm font-medium text-gray-500">Spaces</h3>
+              <h3 className="text-sm font-medium text-gray-500">Cumulative Spaces</h3>
               <p className="text-2xl font-bold">{results[results.length - 1].cumulativeOrgCount.toLocaleString()}</p>
-              <p className="text-sm text-gray-500">Current Month: {results[results.length - 1].orgCount.toLocaleString()}</p>
+              <p className="text-sm text-gray-500">Active (month {months}): {results[results.length - 1].orgCount.toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-green-500">
+              <h3 className="text-sm font-medium text-gray-500">Run-rate ARR (month {months})</h3>
+              <p className="text-2xl font-bold text-green-700">${lastResult ? lastResult.runRateArr.toLocaleString() : 0}</p>
+              <p className="text-sm text-gray-500">{lastResult ? lastResult.orgCount.toLocaleString() : 0} active Spaces × ${orgPayment} × 12</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-green-500">
+              <h3 className="text-sm font-medium text-gray-500">4-year gross billed</h3>
+              <p className="text-2xl font-bold text-green-700">${lastResult ? lastResult.cumulativeGrossRevenue.toLocaleString() : 0}</p>
+              <p className="text-sm text-gray-500">Sum of all monthly Space contributions</p>
             </div>
             <div className="bg-white p-4 rounded shadow">
               <h3 className="text-sm font-medium text-gray-500">Token Price</h3>
@@ -728,10 +772,6 @@ const TokenomicsSimulator = () => {
               <p className="text-2xl font-bold">${results[results.length - 1].dexUsdc.toLocaleString()}</p>
             </div>
             <div className="bg-white p-4 rounded shadow">
-              <h3 className="text-sm font-medium text-gray-500">Cumulated Space Contributions</h3>
-              <p className="text-2xl font-bold">${results.reduce((s, r) => s + r.orgUsdcPurchase, 0).toLocaleString()}</p>
-            </div>
-            <div className="bg-white p-4 rounded shadow">
               <h3 className="text-sm font-medium text-gray-500">Tokens Purchased by Spaces</h3>
               <p className="text-2xl font-bold">{results.reduce((s, r) => s + r.orgPurchasedTokens, 0).toLocaleString()}</p>
             </div>
@@ -751,6 +791,9 @@ const TokenomicsSimulator = () => {
             <div className="bg-white p-4 rounded shadow">
               <h3 className="text-sm font-medium text-gray-500">FDV (Full Diluted Value)</h3>
               <p className="text-2xl font-bold">${results[results.length - 1].fdv.toLocaleString()}</p>
+              {lastResult && lastResult.fdvArr != null && (
+                <p className="text-sm text-gray-500">FDV / ARR: {lastResult.fdvArr}× (ramp narrative at Low/Mid)</p>
+              )}
             </div>
             <div className="bg-white p-4 rounded shadow border-l-4 border-indigo-400">
               <h3 className="text-sm font-medium text-gray-500">Monthly AI Cost</h3>
@@ -1009,13 +1052,13 @@ const TokenomicsSimulator = () => {
                 </div>
                 {results.length > 0 && growthScenario === key && (
                   <div className="text-xs mt-1 text-indigo-100">
-                    {results[results.length - 1].orgCount.toLocaleString()} Spaces · FDV ${(results[results.length - 1].fdv / 1e6).toFixed(0)}M
+                    {results[results.length - 1].orgCount.toLocaleString()} paying · FDV ${(results[results.length - 1].fdv / 1e6).toFixed(0)}M
                   </div>
                 )}
               </button>
             ))}
             <p className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-200">
-              Sets per-month Space Growth Rate presets. Override individual months via Per-Month Configuration.
+              Targets cumulative Space-months (sum of active Spaces each month) at month 48. Override growth per month via Per-Month Configuration.
             </p>
           </div>
         </div>
