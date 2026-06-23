@@ -22,16 +22,11 @@ export function LiveVoiceMicIcon({
 
   return (
     <span
-      className={cn('relative inline-flex shrink-0 items-center', className)}
+      className={cn('inline-flex shrink-0 items-center gap-0.5', className)}
       aria-hidden
     >
       <Mic className={micClass} />
-      <Sparkles
-        className={cn(
-          'absolute -right-0.5 -top-0.5 text-accent-11',
-          sparkClass,
-        )}
-      />
+      <Sparkles className={cn('text-accent-11', sparkClass)} />
     </span>
   );
 }
