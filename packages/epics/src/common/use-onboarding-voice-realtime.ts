@@ -270,16 +270,26 @@ export function useOnboardingVoiceRealtime({
     void connect();
   }, [connect, phase, stopSpeaking]);
 
+  const connectRef = useRef(connect);
+  connectRef.current = connect;
+
   useEffect(() => {
     if (!enabled) {
       disconnect();
       setLiveTranscript('');
       setVoiceError(null);
+      return;
     }
     return () => {
       disconnect();
     };
   }, [disconnect, enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (connectionRef.current || connectInFlightRef.current) return;
+    void connectRef.current();
+  }, [enabled]);
 
   useEffect(() => {
     const next = activeSpaceSlug?.trim() || undefined;

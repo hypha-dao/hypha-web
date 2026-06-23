@@ -2215,6 +2215,7 @@
     "onboardingVoiceStatusThinking": "A pensar…",
     "onboardingVoiceStatusSpeaking": "A falar…",
     "onboardingVoiceStartListening": "Começar a falar",
+    "onboardingVoiceStartConversation": "Iniciar conversa",
     "onboardingVoiceFinishTurn": "Terminar turno",
     "onboardingVoiceStopSpeaking": "Parar",
     "onboardingVoiceUnsupported": "Voz não suportada neste browser — use o chat ou outro browser.",

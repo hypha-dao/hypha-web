@@ -116,6 +116,16 @@ export function OnboardingVoiceInterviewBar({
       ? t('onboardingVoiceError')
       : null;
 
+  const needsRealtimeConnection =
+    transport === 'realtime' &&
+    !isRealtimeConnected &&
+    !isConnecting &&
+    phase !== 'listening';
+
+  const startButtonLabel = needsRealtimeConnection
+    ? t('onboardingVoiceStartConversation')
+    : t('onboardingVoiceStartListening');
+
   return (
     <div className="border-t border-border/70 bg-background/90 px-4 py-4 md:px-5">
       <div className="mb-1 flex items-center justify-center gap-2">
@@ -180,7 +190,7 @@ export function OnboardingVoiceInterviewBar({
             ) : (
               <>
                 <LiveVoiceMicIcon size="sm" />
-                {t('onboardingVoiceStartListening')}
+                {startButtonLabel}
               </>
             )}
           </Button>

@@ -2741,6 +2741,7 @@
     "onboardingVoiceStatusThinking": "Thinking…",
     "onboardingVoiceStatusSpeaking": "Speaking…",
     "onboardingVoiceStartListening": "Start speaking",
+    "onboardingVoiceStartConversation": "Start Conversation",
     "onboardingVoiceFinishTurn": "Finish turn",
     "onboardingVoiceStopSpeaking": "Stop",
     "onboardingVoiceUnsupported": "Voice isn't supported in this browser — try chat mode or a different browser.",

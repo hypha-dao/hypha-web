@@ -2739,6 +2739,7 @@
     "onboardingVoiceStatusThinking": "Einen Moment…",
     "onboardingVoiceStatusSpeaking": "Ich spreche…",
     "onboardingVoiceStartListening": "Sprechen beginnen",
+    "onboardingVoiceStartConversation": "Gespräch starten",
     "onboardingVoiceFinishTurn": "Beitrag beenden",
     "onboardingVoiceStopSpeaking": "Stoppen",
     "onboardingVoiceUnsupported": "Sprache wird in diesem Browser nicht unterstützt — Chat-Modus oder anderen Browser versuchen.",

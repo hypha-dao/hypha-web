@@ -438,12 +438,17 @@ export function useOnboardingVoiceInterview({
       setPhase('idle');
       return;
     }
-    void ensureMicrophoneAccess();
     return () => {
       stopListening();
       stopSpeaking();
     };
   }, [enabled, stopListening, stopSpeaking]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    void ensureMicrophoneAccess();
+    void startListeningRef.current({ userInitiated: true });
+  }, [enabled]);
 
   useEffect(() => {
     const next = activeSpaceSlug?.trim() || undefined;
