@@ -16,6 +16,7 @@ import { isAnsweredLocationStep } from './onboarding-location';
 import {
   buildTransparencyActivityAssistantInstruction,
   buildTransparencyDiscoverabilityAssistantInstruction,
+  buildOnboardingSetupCoherenceInstruction,
   isAnsweredTransparencyLevel,
   mergeTransparencyAnswers,
 } from './onboarding-transparency-guidance';
@@ -616,7 +617,12 @@ export function createOnboardingGuidanceTool() {
           ? buildTransparencyActivityAssistantInstruction()
           : null;
       const entryMethodAssistantInstruction = requiresEntryMethodPicker
-        ? 'Ask only the next_question in one short sentence. The user can choose open access, invite/request, or token-based entry with the entry method cards below—do not list all options as a checklist. Mention that token-based entry requires creating a membership token.'
+        ? `Ask only the next_question in one short sentence. The user can choose open access, invite/request, or token-based entry with the entry method cards below—do not list all options as a checklist. Mention that token-based entry requires creating a membership token.${
+            isAnsweredTransparencyLevel(answers.transparency_discoverability) &&
+            answers.transparency_discoverability >= 2
+              ? ' If they pick open access, flag warmly that Organisation or Space discoverability makes it hard for newcomers to find the space—offer Public or Network discoverability or a tighter entry method.'
+              : ''
+          }`
         : null;
       const principlesAssistantInstruction =
         nextStep?.field === 'principles_reaction'
@@ -665,6 +671,8 @@ export function createOnboardingGuidanceTool() {
           : nextStep?.field === 'ecosystem_blueprint_confirmed'
           ? 'Ask only the next_question. The user is confirming the proposed nested-space plan before activation and visuals—not creating any spaces yet. Only the root will be created during onboarding; nested spaces wait for the left panel handover.'
           : null;
+      const setupCoherenceInstruction =
+        buildOnboardingSetupCoherenceInstruction(answers);
       return {
         ok: true,
         process,
@@ -676,6 +684,7 @@ export function createOnboardingGuidanceTool() {
           : principlesAssistantInstruction ??
             orgDiscoveryInstruction ??
             assignedCategoryInstruction ??
+            setupCoherenceInstruction ??
             ecosystemBlueprintAssistantInstruction ??
             visualAssetsAssistantInstruction ??
             locationAssistantInstruction ??

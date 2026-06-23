@@ -61,7 +61,8 @@ ${ONBOARDING_TRANSPARENCY_BENEFITS_GUIDELINES}
 - In chat mode: ask one question, then present the matching section of the transparency card below (discoverability first, then activity access).
 - In voice mode: briefly explain the four levels for the current question in plain language, then invite the user to pick on screen or say Public, Network, Organisation, or Space.
 - Never invent a third combined option (for example "open vs private only"). Never skip the official four levels.
-- After both answers are set, briefly confirm both choices in one sentence before moving to entry method.`;
+- After both answers are set, briefly confirm both choices in one sentence before moving to entry method.
+- Soundness: if discoverability is Organisation or Space and the user later chooses open access, proactively flag the tension (hard to join if people cannot find the space) and ask whether to open discoverability or tighten entry—same style when activity access and entry method conflict.`;
 
 function formatLevelOptions(dimension: 'discoverability' | 'activity'): string {
   return ONBOARDING_TRANSPARENCY_LEVELS.map((level) => {
@@ -134,4 +135,56 @@ export function mergeTransparencyAnswers(
   ) {
     answers.transparency_matrix = { discoverability, access };
   }
+}
+
+function isOpenAccessEntryMethod(value: unknown): boolean {
+  const normalized = String(value ?? '')
+    .trim()
+    .toLowerCase();
+  return (
+    normalized === 'open_access' ||
+    (normalized.includes('open') &&
+      normalized.includes('access') &&
+      !normalized.includes('invite') &&
+      !normalized.includes('token'))
+  );
+}
+
+function isRestrictedEntryMethod(value: unknown): boolean {
+  const normalized = String(value ?? '')
+    .trim()
+    .toLowerCase();
+  return (
+    normalized === 'invite_only' ||
+    normalized.includes('invite') ||
+    normalized === 'token_based' ||
+    normalized.includes('token')
+  );
+}
+
+/** Proactive soundness hint when onboarding choices may conflict. */
+export function buildOnboardingSetupCoherenceInstruction(
+  answers: Record<string, unknown>,
+): string | null {
+  const discoverability = answers.transparency_discoverability;
+  const activityAccess = answers.transparency_activity_access;
+  const entryMethod = answers.entry_method;
+
+  if (
+    isAnsweredTransparencyLevel(discoverability) &&
+    discoverability >= 2 &&
+    isOpenAccessEntryMethod(entryMethod)
+  ) {
+    return 'Soundness check: open access with Organisation or Space discoverability is incoherent—newcomers cannot easily find the space to join. Briefly validate the concern if the user raised it; otherwise flag it warmly, explain why, suggest Public or Network discoverability or a tighter entry method, and ask ONE preference question.';
+  }
+
+  if (
+    isAnsweredTransparencyLevel(activityAccess) &&
+    activityAccess === 0 &&
+    isRestrictedEntryMethod(entryMethod)
+  ) {
+    return 'Soundness check: public activity access with invite-only or token-based entry may confuse visitors who can see activity but cannot join. Name the tension briefly and ask which dimension should change—one question only.';
+  }
+
+  return null;
 }
