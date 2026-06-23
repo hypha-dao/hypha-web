@@ -171,6 +171,28 @@ export const updateSpaceConfigurationById = async (
       throw new Error('A space cannot be its own parent');
     }
 
+    if (nextParentId != null) {
+      let currentId: number | null = nextParentId;
+      const visited = new Set<number>();
+      while (currentId != null) {
+        if (currentId === id) {
+          throw new Error(
+            'A space cannot be assigned to one of its descendants',
+          );
+        }
+        if (visited.has(currentId)) {
+          break;
+        }
+        visited.add(currentId);
+        const [row] = await tx
+          .select({ parentId: spaces.parentId })
+          .from(spaces)
+          .where(eq(spaces.id, currentId))
+          .limit(1);
+        currentId = row?.parentId ?? null;
+      }
+    }
+
     if (
       originalSpace.parentId == null &&
       nextParentId != null &&

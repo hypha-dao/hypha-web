@@ -258,8 +258,15 @@ export const SpaceLocationPicker = React.forwardRef<
         }
       }
       hasSyncedSearchQuery.current = true;
+      return;
     }
-  }, [initialSearchQuery, setQueryFromSelection, value.locationLabel]);
+    setQuery(value.locationLabel ?? '');
+  }, [
+    initialSearchQuery,
+    setQuery,
+    setQueryFromSelection,
+    value.locationLabel,
+  ]);
 
   const showNoResults =
     query.trim().length >= 2 && !isSearching && !error && results.length === 0;

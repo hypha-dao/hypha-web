@@ -14,6 +14,8 @@ import {
   UpdateSpaceByIdInput,
   UpdateSpaceBySlugInput,
 } from '../types';
+import { authorizeSpacePanelInteraction } from './authorize-space-panel-interaction';
+import { findSpaceById } from './queries';
 // TODO: #602 Define RLS Policies for Spaces Table
 import { db } from '@hypha-platform/storage-postgres';
 import { revalidatePath } from 'next/cache';
@@ -69,6 +71,20 @@ export async function updateSpaceConfigurationByIdAction(
   if (!authToken) {
     throw new Error('authToken is required to update space configuration');
   }
+
+  const space = await findSpaceById({ id: data.id }, { db });
+  if (!space) {
+    throw new Error('Space not found');
+  }
+
+  const interactionAuth = await authorizeSpacePanelInteraction({
+    spaceSlug: space.slug,
+    authToken,
+  });
+  if (!interactionAuth.authorized) {
+    throw new Error(interactionAuth.message);
+  }
+
   // TODO: #602 switch to getDb({ authToken }) once spaces RLS policies exist.
   const { originalSpace, updatedSpace } = await updateSpaceConfigurationById(
     data,
