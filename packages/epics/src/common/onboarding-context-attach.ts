@@ -91,9 +91,5 @@ export function shouldBypassSpaceMembershipForOnboarding(
   if (options.isOnboardingPath) return true;
 
   const phase = context.setupPhase ?? 'discover';
-  if (phase !== 'discover' && phase !== 'draft' && phase !== 'confirm') {
-    return false;
-  }
-
-  return !normalizeSlug(options.spaceSlug);
+  return phase === 'discover' || phase === 'draft' || phase === 'confirm';
 }

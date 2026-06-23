@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { OnboardingConversationContext } from './ai-onboarding-context';
+import type { VoiceSessionContext } from './space-voice-session-context';
 import {
   connectOpenAiRealtimeCall,
   fetchRealtimeVoiceSession,
@@ -17,7 +17,7 @@ import type {
 type UseOnboardingVoiceRealtimeOptions = {
   enabled: boolean;
   locale?: string;
-  conversationContext?: OnboardingConversationContext;
+  conversationContext?: VoiceSessionContext;
   recentTranscriptSummary?: string;
   getAccessToken?: () => Promise<string | null | undefined>;
   activeSpaceSlug?: string;

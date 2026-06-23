@@ -11,6 +11,9 @@ export type OnboardingGuidancePickerOutput = {
   requires_setup_journey_picker?: boolean;
   requires_activation_picker?: boolean;
   requires_transparency_picker?: boolean;
+  requires_transparency_discoverability_picker?: boolean;
+  requires_transparency_activity_picker?: boolean;
+  transparency_picker_step?: 'discoverability' | 'activity' | null;
   requires_entry_method_picker?: boolean;
   requires_location_picker?: boolean;
 };

@@ -9,6 +9,12 @@ import type { ChatRouteTool } from './types';
 import { createSearchSpacesTool } from './search-spaces';
 import { isAnsweredActivationMethod } from './onboarding-activation-method';
 import { isAnsweredLocationStep } from './onboarding-location';
+import {
+  buildTransparencyActivityAssistantInstruction,
+  buildTransparencyDiscoverabilityAssistantInstruction,
+  isAnsweredTransparencyLevel,
+  mergeTransparencyAnswers,
+} from './onboarding-transparency-guidance';
 
 const processSchema = z.enum([
   'create_space',
@@ -126,22 +132,6 @@ function buildVisualAssetsSteps(): GuidanceStep[] {
       isAnswered: (value) => isAnsweredVisualAssetsConfirmed(value),
     },
   ];
-}
-
-function isAnsweredTransparencyMatrix(value: unknown): boolean {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as {
-    discoverability?: unknown;
-    access?: unknown;
-  };
-  return (
-    typeof candidate.discoverability === 'number' &&
-    candidate.discoverability >= 0 &&
-    candidate.discoverability <= 3 &&
-    typeof candidate.access === 'number' &&
-    candidate.access >= 0 &&
-    candidate.access <= 3
-  );
 }
 
 function isAnsweredSetupJourney(value: unknown): boolean {
@@ -312,10 +302,16 @@ function getCreateSpaceGuidance(
       isAnswered: (value) => isAnsweredActivationMethod(value),
     },
     {
-      field: 'transparency_matrix',
+      field: 'transparency_discoverability',
       question:
-        'Set discoverability (who can find this space) and space activity access (who can view activity) using the transparency matrix below—each dimension has four levels with descriptions.',
-      isAnswered: (value) => isAnsweredTransparencyMatrix(value),
+        'Who should be able to discover this space? Choose Public, Network, Organisation, or Space — the transparency card below shows what each level means for discoverability.',
+      isAnswered: (value) => isAnsweredTransparencyLevel(value),
+    },
+    {
+      field: 'transparency_activity_access',
+      question:
+        "Who should be able to view this space's activity — proposals, treasury, members, and shared work? Choose Public, Network, Organisation, or Space — the transparency card below shows what each level means for activity access.",
+      isAnswered: (value) => isAnsweredTransparencyLevel(value),
     },
     {
       field: 'entry_method',
@@ -509,6 +505,7 @@ export function createOnboardingGuidanceTool() {
       const { process, user_goal, space_slug, known_answers } = parsed.data;
       const answers = { ...(known_answers ?? {}) } as Record<string, unknown>;
       applyInferredCategoryGroups(answers);
+      mergeTransparencyAnswers(answers);
       if (
         process === 'explore_network' &&
         !isFilled(answers.explore_scope) &&
@@ -553,8 +550,13 @@ export function createOnboardingGuidanceTool() {
           : null;
       const requiresLocationPicker = nextStep?.field === 'space_location';
       const requiresActivationPicker = nextStep?.field === 'activation_method';
+      const requiresTransparencyDiscoverabilityPicker =
+        nextStep?.field === 'transparency_discoverability';
+      const requiresTransparencyActivityPicker =
+        nextStep?.field === 'transparency_activity_access';
       const requiresTransparencyPicker =
-        nextStep?.field === 'transparency_matrix';
+        requiresTransparencyDiscoverabilityPicker ||
+        requiresTransparencyActivityPicker;
       const requiresEntryMethodPicker = nextStep?.field === 'entry_method';
       const requiresSetupJourneyPicker = nextStep?.field === 'setup_journey';
       const setupJourneyAssistantInstruction = requiresSetupJourneyPicker
@@ -566,9 +568,12 @@ export function createOnboardingGuidanceTool() {
       const activationAssistantInstruction = requiresActivationPicker
         ? 'Ask only the next_question in one short sentence. This step is activation mode only (Sandbox Mode, Pilot Mode, or Live Mode)—not entry method. The user picks with the activation cards below; do not ask about open access, invites, or tokens here.'
         : null;
-      const transparencyAssistantInstruction = requiresTransparencyPicker
-        ? 'Ask only the next_question in one short sentence. Do NOT list combined transparency options or numbered shortcuts—the user must use the transparency matrix card below, which shows discoverability and activity access separately with four levels each and descriptions.'
-        : null;
+      const transparencyAssistantInstruction =
+        requiresTransparencyDiscoverabilityPicker
+          ? buildTransparencyDiscoverabilityAssistantInstruction()
+          : requiresTransparencyActivityPicker
+          ? buildTransparencyActivityAssistantInstruction()
+          : null;
       const entryMethodAssistantInstruction = requiresEntryMethodPicker
         ? 'Ask only the next_question in one short sentence. The user can choose open access, invite/request, or token-based entry with the entry method cards below—do not list all options as a checklist. Mention that token-based entry requires creating a membership token.'
         : null;
@@ -647,6 +652,15 @@ export function createOnboardingGuidanceTool() {
         requires_location_picker: requiresLocationPicker,
         requires_activation_picker: requiresActivationPicker,
         requires_transparency_picker: requiresTransparencyPicker,
+        requires_transparency_discoverability_picker:
+          requiresTransparencyDiscoverabilityPicker,
+        requires_transparency_activity_picker:
+          requiresTransparencyActivityPicker,
+        transparency_picker_step: requiresTransparencyActivityPicker
+          ? 'activity'
+          : requiresTransparencyDiscoverabilityPicker
+          ? 'discoverability'
+          : null,
         requires_entry_method_picker: requiresEntryMethodPicker,
         requires_setup_journey_picker: requiresSetupJourneyPicker,
         setup_journey: isAnsweredSetupJourney(answers.setup_journey)

@@ -128,6 +128,12 @@ import {
   syncEcosystemBlueprintInContext,
 } from './onboarding-ecosystem-blueprint';
 import {
+  isOnboardingWalletHandoffPayloadHandled,
+  isOnboardingWalletHandoffSlugComplete,
+  markOnboardingWalletHandoffPayloadHandled,
+  markOnboardingWalletHandoffSlugComplete,
+} from './onboarding-wallet-handoff';
+import {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
   onboardingSpaceLocationFromPicker,
@@ -144,7 +150,9 @@ import {
   type OnboardingSetupJourney,
 } from './onboarding-setup-journey-ui';
 import {
+  applyOnboardingDiscoverabilityToContext,
   applyOnboardingTransparencyToContext,
+  formatOnboardingDiscoverabilitySubmitMessage,
   formatOnboardingTransparencySubmitMessage,
   type OnboardingTransparencyMessageLabels,
 } from './onboarding-transparency-ui';
@@ -160,6 +168,14 @@ import {
 } from './onboarding-voting-method-ui';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
+import {
+  loadSpaceDiscoveryMode,
+  saveSpaceDiscoveryMode,
+} from './ai-panel-discovery-mode';
+import {
+  buildSpaceAdvisorVoiceSessionContext,
+  type VoiceSessionContext,
+} from './space-voice-session-context';
 import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
 import {
   appendVoiceTranscriptTurn,
@@ -299,6 +315,22 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }),
     [isOnboardingPath, onboardingContext, spaceSlug],
   );
+  const [spaceDiscoveryMode, setSpaceDiscoveryMode] =
+    useState<OnboardingDiscoveryMode>('chat');
+
+  useEffect(() => {
+    setSpaceDiscoveryMode(loadSpaceDiscoveryMode(spaceSlug));
+  }, [spaceSlug]);
+
+  const isOnboardingSetup = attachOnboardingForActiveSpace;
+  const discoveryMode: OnboardingDiscoveryMode =
+    isOnboardingSetup && onboardingContext?.discoveryMode
+      ? onboardingContext.discoveryMode
+      : spaceDiscoveryMode;
+  const showDiscoveryModeToggle =
+    Boolean(spaceSlug?.trim()) && !blockSpaceAiForActivityAccess;
+  const isVoiceInterview =
+    showDiscoveryModeToggle && discoveryMode === 'voice_interview';
   const bypassOnboardingMembership = useMemo(
     () =>
       shouldBypassSpaceMembershipForOnboarding(onboardingContext, {
@@ -369,9 +401,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const {
     createSpace: createSpaceWithWalletFlow,
     space: walletCreatedSpace,
+    reset: resetCreateSpaceWalletFlow,
     isError: isCreateSpaceWithWalletFlowError,
     errors: createSpaceWithWalletFlowErrors,
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const showCreateSpaceWithWalletFlowError =
+    isCreateSpaceWithWalletFlowError &&
+    !onboardingContext?.createdSpaceSlug?.trim() &&
+    !(
+      spaceSlug?.trim() &&
+      isOnboardingWalletHandoffSlugComplete(spaceSlug.trim())
+    );
   const {
     createAgreement: createAgreementWithWalletFlow,
     isError: isCreateAgreementWithWalletFlowError,
@@ -385,6 +425,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       createAgreementWithWalletFlowErrors,
     );
   }, [createAgreementWithWalletFlowErrors]);
+
+  const completeOnboardingWalletHandoff = useCallback(
+    (slug: string) => {
+      const normalized = slug.trim();
+      if (!normalized) return;
+      markOnboardingWalletHandoffSlugComplete(normalized);
+      resetCreateSpaceWalletFlow();
+    },
+    [resetCreateSpaceWalletFlow],
+  );
+
+  useEffect(() => {
+    const slug = onboardingContext?.createdSpaceSlug?.trim();
+    if (!slug) return;
+    markOnboardingWalletHandoffSlugComplete(slug);
+    resetCreateSpaceWalletFlow();
+  }, [onboardingContext?.createdSpaceSlug, resetCreateSpaceWalletFlow]);
 
   const recentSpaceLookupSlugs = useMemo(
     () =>
@@ -928,13 +985,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         activeSpaceTitle: activeSpaceName,
         onboardingContext: activeContext,
         isOnboardingPath,
+        discoveryMode: isOnboardingSetup ? undefined : discoveryMode,
       });
       return { body, headers: hdrs };
     },
     [
       activeSpaceName,
+      discoveryMode,
       getAccessToken,
       isOnboardingPath,
+      isOnboardingSetup,
       onboardingContext,
       spaceSlug,
     ],
@@ -1114,6 +1174,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (!createdSlug) return;
     if (lastAutoTransitionSpaceSlugRef.current === createdSlug) return;
     lastAutoTransitionSpaceSlugRef.current = createdSlug;
+    completeOnboardingWalletHandoff(createdSlug);
 
     const handoff = preparePostRootOnboardingHandoff(
       onboardingContext,
@@ -1143,6 +1204,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ),
     );
   }, [
+    completeOnboardingWalletHandoff,
     lang,
     messages,
     onboardingContext,
@@ -1266,6 +1328,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (!slug) return;
     if (lastAutoTransitionSpaceSlugRef.current === slug) return;
     lastAutoTransitionSpaceSlugRef.current = slug;
+    completeOnboardingWalletHandoff(slug);
     const handoff = preparePostRootOnboardingHandoff(
       onboardingContext,
       messages,
@@ -1290,6 +1353,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       getPostOnboardingLandingPath(lang, slug, onboardingContext.setupJourney),
     );
   }, [
+    completeOnboardingWalletHandoff,
     lang,
     onboardingContext,
     openAiPanel,
@@ -1326,6 +1390,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;
+    if (onboardingContext.createdSpaceSlug?.trim()) return;
     if (aiWalletCreateInFlightRef.current) return;
 
     const latestWalletCreatePayload = [...messages]
@@ -1388,6 +1453,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         }`
       : null;
     if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
+    if (payloadKey && isOnboardingWalletHandoffPayloadHandled(payloadKey)) {
+      handledWalletPayloadKeyRef.current = payloadKey;
+      return;
+    }
     const payload = mergeVisualAssetsIntoCreatePayload(
       (latestWalletCreatePayload?.part?.output?.create_payload ?? {}) as Record<
         string,
@@ -1397,6 +1466,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       onboardingContext.visualAssets,
     );
     if (!payload?.title || !payload.description) return;
+    const payloadSlug =
+      typeof payload.slug === 'string' ? payload.slug.trim() : '';
+    if (
+      payloadSlug &&
+      (payloadSlug === spaceSlug?.trim() ||
+        payloadSlug === onboardingContext.createdSpaceSlug?.trim() ||
+        payloadSlug === walletCreatedSpace?.slug?.trim() ||
+        isOnboardingWalletHandoffSlugComplete(payloadSlug))
+    ) {
+      if (payloadKey) {
+        handledWalletPayloadKeyRef.current = payloadKey;
+        markOnboardingWalletHandoffPayloadHandled(payloadKey);
+      }
+      return;
+    }
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
     const normalizedDescription =
@@ -1455,7 +1539,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           ...onboardingTransparencyFromCreatePayload(payload),
           ...onboardingJoinMethodFromCreatePayload(payload),
         });
-        if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
+        if (payloadKey) {
+          handledWalletPayloadKeyRef.current = payloadKey;
+          markOnboardingWalletHandoffPayloadHandled(payloadKey);
+        }
+        if (payloadSlug) {
+          completeOnboardingWalletHandoff(payloadSlug);
+        }
       } catch (walletFlowError) {
         console.error(
           '[AiLeftPanel] wallet-based onboarding space creation failed:',
@@ -1465,10 +1555,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         aiWalletCreateInFlightRef.current = false;
       }
     })();
-  }, [createSpaceWithWalletFlow, messages, onboardingContext]);
+  }, [
+    completeOnboardingWalletHandoff,
+    createSpaceWithWalletFlow,
+    messages,
+    onboardingContext,
+    spaceSlug,
+    walletCreatedSpace?.slug,
+  ]);
 
   useEffect(() => {
     if (aiWalletProposalInFlightRef.current) return;
+    if (
+      isPostCreateOnboardingPhase(onboardingContext) &&
+      !onboardingContext?.votingMethod
+    ) {
+      return;
+    }
 
     const latestWalletProposalPayload = [...messages]
       .reverse()
@@ -1562,7 +1665,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         aiWalletProposalInFlightRef.current = false;
       }
     })();
-  }, [createAgreementWithWalletFlow, messages]);
+  }, [createAgreementWithWalletFlow, messages, onboardingContext]);
 
   useEffect(() => {
     if (
@@ -2011,15 +2114,52 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const onboardingTransparencyMessageLabels = useMemo(
-    () => ({
+    (): OnboardingTransparencyMessageLabels => ({
       levelPublic: t('onboardingTransparencyLevelPublic'),
       levelNetwork: t('onboardingTransparencyLevelNetwork'),
       levelOrganisation: t('onboardingTransparencyLevelOrganisation'),
       levelSpace: t('onboardingTransparencyLevelSpace'),
       summary: (discoverability: string, access: string) =>
         t('onboardingTransparencySetSummary', { discoverability, access }),
+      discoverabilitySummary: (discoverability: string) =>
+        t('onboardingTransparencyDiscoverabilitySetSummary', {
+          discoverability,
+        }),
     }),
     [t],
+  );
+
+  const handleOnboardingDiscoverabilityConfirm = useCallback(
+    async (level: OnboardingTransparencyMatrix['discoverability']) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingDiscoverabilitySubmitMessage(
+          level,
+          onboardingTransparencyMessageLabels,
+        );
+        const nextContext = applyOnboardingDiscoverabilityToContext(
+          baseContext,
+          level,
+          message,
+        );
+        await sendOnboardingTransparencyMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] discoverability confirm sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingTransparencyMessageLabels,
+      sendOnboardingTransparencyMessage,
+    ],
   );
 
   const handleOnboardingTransparencyConfirm = useCallback(
@@ -2165,12 +2305,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
-  const isOnboardingSetup = attachOnboardingForActiveSpace;
-  const discoveryMode: OnboardingDiscoveryMode =
-    onboardingContext?.discoveryMode ?? 'chat';
-  const isVoiceInterview =
-    isOnboardingSetup && discoveryMode === 'voice_interview';
-
   const lastAssistantText = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       const text = extractAssistantTextFromMessage(
@@ -2183,35 +2317,44 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleVoiceTranscriptSend = useCallback(
     async (text: string) => {
-      if (blockSpaceAiForInteraction) return;
+      if (blockSpaceAiForInteraction) return 'blocked' as const;
       const normalized = text.trim();
-      if (!normalized || isStreaming) return;
+      if (!normalized || isStreaming) return 'skipped' as const;
       setInput('');
       setDraftAttachments([]);
       try {
         clearError();
-        const nextContext = resolveSetupContextForUserMessage(
-          normalized,
-          onboardingContext,
-          lang,
-        );
+        const nextContext = isOnboardingSetup
+          ? resolveSetupContextForUserMessage(
+              normalized,
+              onboardingContext,
+              lang,
+            )
+          : undefined;
         const options = await buildMessageOptions(nextContext);
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text: normalized }] },
           options,
         );
-        if (nextContext && nextContext !== onboardingContext) {
+        if (
+          nextContext &&
+          isOnboardingSetup &&
+          nextContext !== onboardingContext
+        ) {
           setOnboardingContext(nextContext);
           saveOnboardingConversationContext(nextContext);
         }
+        return 'sent' as const;
       } catch (err) {
         console.error('[AiLeftPanel] voice send failed:', err);
+        return 'failed' as const;
       }
     },
     [
       blockSpaceAiForInteraction,
       buildMessageOptions,
       clearError,
+      isOnboardingSetup,
       isStreaming,
       lang,
       onboardingContext,
@@ -2237,13 +2380,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [isOnboardingSetup, setMessages],
   );
 
+  const voiceSessionContext = useMemo((): VoiceSessionContext | undefined => {
+    if (!isVoiceInterview || !spaceSlug?.trim()) return undefined;
+    if (isOnboardingSetup && onboardingContext) {
+      return onboardingContext;
+    }
+    return buildSpaceAdvisorVoiceSessionContext({
+      spaceSlug,
+      locale: lang,
+    });
+  }, [isOnboardingSetup, isVoiceInterview, lang, onboardingContext, spaceSlug]);
+
   const voiceInterview = useOnboardingVoiceDiscovery({
     enabled: isVoiceInterview,
     isStreaming,
     lastAssistantText,
     locale: lang,
     activeSpaceSlug: spaceSlug,
-    conversationContext: onboardingContext,
+    conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
     onSendTranscript: handleVoiceTranscriptSend,
@@ -2252,26 +2406,33 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleDiscoveryModeChange = useCallback(
     (mode: OnboardingDiscoveryMode) => {
-      if (!isOnboardingSetup || mode === discoveryMode) return;
+      if (!showDiscoveryModeToggle || mode === discoveryMode) return;
       if (mode === 'chat') {
         voiceInterview.stopListening();
         voiceInterview.stopSpeaking();
-        if (messages.length) {
+        if (isOnboardingSetup && messages.length) {
           saveOnboardingChatMessages(toStoredOnboardingChatMessages(messages));
         }
       }
-      setOnboardingContext((prev) => {
-        const base = ensureSpaceSetupContext(prev, lang);
-        const next = { ...base, discoveryMode: mode };
-        saveOnboardingConversationContext(next);
-        return next;
-      });
+      if (isOnboardingSetup) {
+        setOnboardingContext((prev) => {
+          const base = ensureSpaceSetupContext(prev, lang);
+          const next = { ...base, discoveryMode: mode };
+          saveOnboardingConversationContext(next);
+          return next;
+        });
+      } else if (spaceSlug?.trim()) {
+        saveSpaceDiscoveryMode(spaceSlug, mode);
+        setSpaceDiscoveryMode(mode);
+      }
     },
     [
       discoveryMode,
       isOnboardingSetup,
       lang,
       messages,
+      showDiscoveryModeToggle,
+      spaceSlug,
       voiceInterview.stopListening,
       voiceInterview.stopSpeaking,
     ],
@@ -2502,7 +2663,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ) : null}
           </div>
         ) : null}
-        {isCreateSpaceWithWalletFlowError ? (
+        {showCreateSpaceWithWalletFlowError ? (
           <div
             role="alert"
             className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -2570,6 +2731,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
               ? undefined
               : handleOnboardingTransparencyConfirm
           }
+          onOnboardingDiscoverabilityConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingDiscoverabilityConfirm
+          }
           onOnboardingEntryMethodConfirm={
             blockSpaceAiForSubscription
               ? undefined
@@ -2583,7 +2749,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarContent>
       <SidebarFooter className="bg-background-2 p-0">
-        {isOnboardingSetup ? (
+        {showDiscoveryModeToggle ? (
           <div className="flex justify-center border-t border-border/60 px-3 py-2">
             <OnboardingDiscoveryModeToggle
               mode={discoveryMode}

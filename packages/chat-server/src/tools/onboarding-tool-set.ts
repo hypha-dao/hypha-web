@@ -301,6 +301,21 @@ function withInjectedOnboardingVisualAssets<T extends Record<string, unknown>>(
   };
 }
 
+function extractPendingTransparencyDiscoverabilityFromContext(
+  conversationContext?: unknown,
+): number | undefined {
+  if (!conversationContext || typeof conversationContext !== 'object') {
+    return undefined;
+  }
+  const raw = (
+    conversationContext as { pendingTransparencyDiscoverability?: unknown }
+  ).pendingTransparencyDiscoverability;
+  if (typeof raw !== 'number' || raw < 0 || raw > 3) {
+    return undefined;
+  }
+  return raw;
+}
+
 function extractSetupJourneyFromContext(
   conversationContext?: unknown,
 ): 'single_space' | 'ecosystem' | undefined {
@@ -374,6 +389,8 @@ function resolveOnboardingInjectionContext(
       extractActivationMethodFromContext(conversationContext),
     contextTransparencyMatrix:
       extractTransparencyMatrixFromContext(conversationContext),
+    contextPendingTransparencyDiscoverability:
+      extractPendingTransparencyDiscoverabilityFromContext(conversationContext),
     contextSetupJourney: extractSetupJourneyFromContext(conversationContext),
     contextEntryMethod: extractEntryMethodFromContext(conversationContext),
     contextVisualAssets: extractVisualAssetsFromContext(conversationContext),
@@ -400,6 +417,7 @@ export function createOnboardingToolSet(
     contextSpaceLocation,
     contextActivationMethod,
     contextTransparencyMatrix,
+    contextPendingTransparencyDiscoverability,
     contextSetupJourney,
     contextEntryMethod,
     contextVisualAssets,
@@ -437,11 +455,24 @@ export function createOnboardingToolSet(
       if (contextActivationMethod && knownAnswers.activation_method == null) {
         knownAnswers.activation_method = contextActivationMethod;
       }
-      if (
-        contextTransparencyMatrix &&
-        knownAnswers.transparency_matrix == null
+      if (contextTransparencyMatrix) {
+        if (knownAnswers.transparency_discoverability == null) {
+          knownAnswers.transparency_discoverability =
+            contextTransparencyMatrix.discoverability;
+        }
+        if (knownAnswers.transparency_activity_access == null) {
+          knownAnswers.transparency_activity_access =
+            contextTransparencyMatrix.access;
+        }
+        if (knownAnswers.transparency_matrix == null) {
+          knownAnswers.transparency_matrix = contextTransparencyMatrix;
+        }
+      } else if (
+        contextPendingTransparencyDiscoverability != null &&
+        knownAnswers.transparency_discoverability == null
       ) {
-        knownAnswers.transparency_matrix = contextTransparencyMatrix;
+        knownAnswers.transparency_discoverability =
+          contextPendingTransparencyDiscoverability;
       }
       if (contextSpaceLocation && knownAnswers.space_location == null) {
         knownAnswers.space_location = contextSpaceLocation;

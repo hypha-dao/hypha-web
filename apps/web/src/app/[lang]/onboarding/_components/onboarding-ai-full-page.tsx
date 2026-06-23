@@ -17,11 +17,13 @@ import {
   applyOnboardingLocationToContext,
   applyOnboardingActivationToContext,
   applyOnboardingSetupJourneyToContext,
+  applyOnboardingDiscoverabilityToContext,
   applyOnboardingTransparencyToContext,
   applyOnboardingEntryMethodToContext,
   formatOnboardingLocationSubmitMessage,
   formatOnboardingActivationSubmitMessage,
   formatOnboardingSetupJourneySubmitMessage,
+  formatOnboardingDiscoverabilitySubmitMessage,
   formatOnboardingTransparencySubmitMessage,
   formatOnboardingEntryMethodSubmitMessage,
   onboardingLocationFromCreatePayload,
@@ -410,8 +412,43 @@ export function OnboardingAiFullPage({
           discoverability,
           access,
         }),
+      discoverabilitySummary: (discoverability: string) =>
+        t('aiHero.onboardingTransparencyDiscoverabilitySetSummary', {
+          discoverability,
+        }),
     }),
     [t],
+  );
+
+  const handleOnboardingDiscoverabilityConfirm = useCallback(
+    async (level: OnboardingTransparencyMatrix['discoverability']) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const message = formatOnboardingDiscoverabilitySubmitMessage(
+          level,
+          onboardingTransparencyMessageLabels,
+        );
+        const nextContext = applyOnboardingDiscoverabilityToContext(
+          onboardingContext,
+          level,
+          message,
+        );
+        await sendOnboardingTransparencyMessage(message, nextContext);
+      } catch (sendError) {
+        console.error(
+          '[OnboardingAiFullPage] discoverability confirm send failed:',
+          sendError,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      onboardingContext,
+      onboardingTransparencyMessageLabels,
+      sendOnboardingTransparencyMessage,
+    ],
   );
 
   const handleOnboardingTransparencyConfirm = useCallback(
@@ -909,7 +946,7 @@ export function OnboardingAiFullPage({
   const handleVoiceTranscriptSend = useCallback(
     async (text: string) => {
       const normalized = text.trim();
-      if (!normalized || isStreaming) return;
+      if (!normalized || isStreaming) return 'skipped' as const;
       setInput('');
       setDraftAttachments([]);
       try {
@@ -922,8 +959,10 @@ export function OnboardingAiFullPage({
           { role: 'user', parts: [{ type: 'text', text: normalized }] },
           options,
         );
+        return 'sent' as const;
       } catch (sendError) {
         console.error('[OnboardingAiFullPage] voice send failed:', sendError);
+        return 'failed' as const;
       }
     },
     [
@@ -1036,6 +1075,9 @@ export function OnboardingAiFullPage({
               onOnboardingActivationSelect={handleOnboardingActivationSelect}
               onOnboardingTransparencyConfirm={
                 handleOnboardingTransparencyConfirm
+              }
+              onOnboardingDiscoverabilityConfirm={
+                handleOnboardingDiscoverabilityConfirm
               }
               onOnboardingEntryMethodConfirm={
                 handleOnboardingEntryMethodConfirm

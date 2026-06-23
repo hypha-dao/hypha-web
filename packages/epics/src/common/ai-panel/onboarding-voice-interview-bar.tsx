@@ -109,6 +109,8 @@ export function OnboardingVoiceInterviewBar({
       ? t('onboardingVoiceNetworkError')
       : voiceError === 'session'
       ? t('onboardingVoiceSessionError')
+      : voiceError === 'blocked'
+      ? t('onboardingVoiceInteractionBlocked')
       : voiceError
       ? t('onboardingVoiceError')
       : null;

@@ -40,6 +40,8 @@ export type OnboardingTransparencyMatrix = {
   access: 0 | 1 | 2 | 3;
 };
 
+export type OnboardingTransparencyLevel = 0 | 1 | 2 | 3;
+
 export type OnboardingEntryMethod =
   | 'open_access'
   | 'invite_only'
@@ -56,6 +58,8 @@ export type OnboardingConversationContext = {
   activationMethod?: OnboardingActivationMethod;
   setupJourney?: OnboardingSetupJourney;
   transparencyMatrix?: OnboardingTransparencyMatrix;
+  /** Discoverability chosen in step 1 before activity access is confirmed. */
+  pendingTransparencyDiscoverability?: OnboardingTransparencyLevel;
   entryMethod?: OnboardingEntryMethod;
   /** Governance voting model chosen during post-create verify phase. */
   votingMethod?: OnboardingVotingMethod;
@@ -158,6 +162,13 @@ function parseStoredSpaceLocation(
         : null,
     skipped: candidate.skipped === true,
   };
+}
+
+function parseStoredTransparencyLevel(
+  raw: unknown,
+): OnboardingTransparencyLevel | undefined {
+  if (typeof raw !== 'number' || raw < 0 || raw > 3) return undefined;
+  return raw as OnboardingTransparencyLevel;
 }
 
 function parseStoredTransparencyMatrix(
@@ -357,6 +368,9 @@ export function readOnboardingConversationContext():
       transparencyMatrix: parseStoredTransparencyMatrix(
         parsed.transparencyMatrix,
       ),
+      pendingTransparencyDiscoverability: parseStoredTransparencyLevel(
+        parsed.pendingTransparencyDiscoverability,
+      ),
       entryMethod: parseStoredEntryMethod(parsed.entryMethod),
       votingMethod:
         parseStoredVotingMethod(parsed.votingMethod) ??
@@ -407,27 +421,35 @@ export function resolveChatTransportBody({
   activeSpaceTitle,
   onboardingContext,
   isOnboardingPath,
+  discoveryMode,
 }: {
   spaceSlug?: string;
   activeSpaceTitle?: string;
   onboardingContext?: OnboardingConversationContext;
   isOnboardingPath: boolean;
+  discoveryMode?: OnboardingDiscoveryMode;
 }): {
   body: {
     spaceSlug?: string;
     activeSpaceTitle?: string;
     conversationContext?: OnboardingConversationContext;
+    discoveryMode?: OnboardingDiscoveryMode;
   };
   staleOnboardingContext: boolean;
 } {
   const trimmedSlug = spaceSlug?.trim() || undefined;
   const trimmedTitle = activeSpaceTitle?.trim() || undefined;
+  const discoveryModePayload =
+    discoveryMode === 'voice_interview' ? discoveryMode : undefined;
 
   if (!isSpaceSetupContext(onboardingContext)) {
     return {
       body: {
         ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
         ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
+        ...(discoveryModePayload
+          ? { discoveryMode: discoveryModePayload }
+          : {}),
       },
       staleOnboardingContext: false,
     };
@@ -443,6 +465,9 @@ export function resolveChatTransportBody({
       body: {
         ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
         ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
+        ...(discoveryModePayload
+          ? { discoveryMode: discoveryModePayload }
+          : {}),
       },
       staleOnboardingContext: true,
     };

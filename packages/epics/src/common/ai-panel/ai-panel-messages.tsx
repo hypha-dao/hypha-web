@@ -12,7 +12,10 @@ import type { OnboardingConversationContext } from '../ai-onboarding-context';
 import { shouldShowOnboardingLocationPicker } from '../onboarding-location-ui';
 import { shouldShowOnboardingSetupJourneyPicker } from '../onboarding-setup-journey-ui';
 import { shouldShowOnboardingActivationPicker } from '../onboarding-activation-ui';
-import { shouldShowOnboardingTransparencyPicker } from '../onboarding-transparency-ui';
+import {
+  shouldShowOnboardingTransparencyPicker,
+  resolveOnboardingTransparencyPickerStep,
+} from '../onboarding-transparency-ui';
 import { shouldShowOnboardingEntryMethodPicker } from '../onboarding-entry-method-ui';
 import { shouldShowOnboardingVotingMethodPicker } from '../onboarding-voting-method-ui';
 import { isPostCreateOnboardingPhase } from '../ai-onboarding-context';
@@ -59,6 +62,9 @@ type AiPanelMessagesProps = {
   onOnboardingTransparencyConfirm?: (
     matrix: OnboardingTransparencyMatrix,
   ) => void;
+  onOnboardingDiscoverabilityConfirm?: (
+    level: OnboardingTransparencyMatrix['discoverability'],
+  ) => void;
   onOnboardingEntryMethodConfirm?: (method: OnboardingEntryMethod) => void;
   onOnboardingVotingMethodSelect?: (method: OnboardingVotingMethod) => void;
 };
@@ -76,6 +82,7 @@ export function AiPanelMessages({
   onOnboardingSetupJourneySelect,
   onOnboardingActivationSelect,
   onOnboardingTransparencyConfirm,
+  onOnboardingDiscoverabilityConfirm,
   onOnboardingEntryMethodConfirm,
   onOnboardingVotingMethodSelect,
 }: AiPanelMessagesProps) {
@@ -108,6 +115,9 @@ export function AiPanelMessages({
     onboardingContext,
     isStreaming,
   });
+  const transparencyPickerStep = showTransparencyPicker
+    ? resolveOnboardingTransparencyPickerStep(messages, onboardingContext)
+    : null;
   const showEntryMethodPicker =
     shouldShowOnboardingEntryMethodPicker({
       messages,
@@ -205,10 +215,18 @@ export function AiPanelMessages({
           />
         ) : null}
 
-        {showTransparencyPicker && onOnboardingTransparencyConfirm ? (
+        {showTransparencyPicker &&
+        transparencyPickerStep &&
+        onOnboardingTransparencyConfirm ? (
           <OnboardingTransparencyMatrixCard
             disabled={isStreaming}
+            step={transparencyPickerStep}
             activationMethod={onboardingContext?.activationMethod}
+            selectedDiscoverability={
+              onboardingContext?.pendingTransparencyDiscoverability ??
+              onboardingContext?.transparencyMatrix?.discoverability
+            }
+            onConfirmDiscoverability={onOnboardingDiscoverabilityConfirm}
             onConfirm={onOnboardingTransparencyConfirm}
           />
         ) : null}

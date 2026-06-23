@@ -62,6 +62,8 @@ export const chatRequestSchema = z.object({
   /** Client-resolved display title for the active space route (sanity check only). */
   activeSpaceTitle: z.string().trim().min(1).optional(),
   conversationContext: onboardingConversationContextSchema.optional(),
+  /** Chat vs voice in the left AI panel when not in onboarding setup. */
+  discoveryMode: z.enum(['chat', 'voice_interview']).optional(),
 });
 
 export type ChatRequestPayload = z.infer<typeof chatRequestSchema>;

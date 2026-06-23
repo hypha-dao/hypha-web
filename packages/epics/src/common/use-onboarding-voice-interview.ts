@@ -39,7 +39,14 @@ export type VoiceInterviewErrorCode =
   | 'audio-capture'
   | 'network'
   | 'session'
+  | 'blocked'
   | 'error';
+
+export type VoiceTranscriptSendOutcome =
+  | 'sent'
+  | 'blocked'
+  | 'skipped'
+  | 'failed';
 
 const AUTO_RESUME_DELAY_MS = 450;
 const RECOGNITION_RESTART_DELAY_MS = 180;
@@ -151,7 +158,9 @@ type UseOnboardingVoiceInterviewOptions = {
   activeSpaceSlug?: string;
   autoResumeListening?: boolean;
   silenceMsBeforeSend?: number;
-  onSendTranscript: (text: string) => void | Promise<void>;
+  onSendTranscript: (
+    text: string,
+  ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
 };
 
 export function useOnboardingVoiceInterview({
@@ -234,11 +243,22 @@ export function useOnboardingVoiceInterview({
     interimRef.current = '';
     setLiveTranscript('');
     stopListening();
-    if (!text || sendInFlightRef.current) return;
+    if (!text || sendInFlightRef.current) {
+      setPhase('idle');
+      return;
+    }
     sendInFlightRef.current = true;
     setPhase('processing');
     try {
-      await onSendTranscript(text);
+      const outcome = await onSendTranscript(text);
+      if (outcome !== 'sent') {
+        setPhase('idle');
+        if (outcome === 'blocked') {
+          setVoiceError('blocked');
+        } else if (outcome === 'failed') {
+          setVoiceError('error');
+        }
+      }
     } finally {
       sendInFlightRef.current = false;
     }

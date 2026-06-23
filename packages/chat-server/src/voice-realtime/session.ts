@@ -3,6 +3,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 
 import { buildOnboardingRealtimeInstructions } from '../system-prompt';
+import { buildSpaceAdvisorRealtimeInstructions } from '../system-prompt';
 import type { RealtimeVoiceSessionRequest } from './request-schema';
 import { assertVoiceDiscoverySessionContext } from './request-schema';
 
@@ -80,11 +81,18 @@ export async function createRealtimeVoiceSession(
     payload.conversationContext.locale?.trim() ||
     'en';
 
-  const instructions = buildOnboardingRealtimeInstructions({
-    setupPhase: payload.conversationContext.setupPhase,
-    locale,
-    recentTranscriptSummary: payload.recentTranscriptSummary,
-  });
+  const instructions =
+    payload.conversationContext.mode === 'space_advisor'
+      ? buildSpaceAdvisorRealtimeInstructions({
+          spaceSlug: payload.conversationContext.spaceSlug,
+          locale,
+          recentTranscriptSummary: payload.recentTranscriptSummary,
+        })
+      : buildOnboardingRealtimeInstructions({
+          setupPhase: payload.conversationContext.setupPhase,
+          locale,
+          recentTranscriptSummary: payload.recentTranscriptSummary,
+        });
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,

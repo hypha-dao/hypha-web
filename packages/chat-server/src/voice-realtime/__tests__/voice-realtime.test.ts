@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildOnboardingRealtimeInstructions } from '../system-instructions';
+import { buildSpaceAdvisorRealtimeInstructions } from '../system-instructions';
 import {
   assertVoiceDiscoverySessionContext,
   RealtimeVoiceSessionContextError,
@@ -26,9 +27,30 @@ describe('realtimeVoiceSessionRequestSchema', () => {
     });
     expect(parsed.success).toBe(true);
   });
+  it('accepts space advisor voice discovery context', () => {
+    const parsed = realtimeVoiceSessionRequestSchema.safeParse({
+      conversationContext: {
+        mode: 'space_advisor',
+        discoveryMode: 'voice_interview',
+        spaceSlug: 'hypha-platform',
+      },
+      locale: 'en',
+    });
+    expect(parsed.success).toBe(true);
+  });
 });
 
 describe('assertVoiceDiscoverySessionContext', () => {
+  it('allows space advisor voice discovery', () => {
+    expect(() =>
+      assertVoiceDiscoverySessionContext({
+        mode: 'space_advisor',
+        discoveryMode: 'voice_interview',
+        spaceSlug: 'hypha-platform',
+      }),
+    ).not.toThrow();
+  });
+
   it('requires voice_interview discovery mode', () => {
     expect(() =>
       assertVoiceDiscoverySessionContext({
@@ -59,5 +81,19 @@ describe('buildOnboardingRealtimeInstructions', () => {
       locale: 'de',
     });
     expect(instructions).toContain('Respond in German');
+  });
+});
+
+describe('buildSpaceAdvisorRealtimeInstructions', () => {
+  it('includes continuous discovery guidance for a live space', () => {
+    const instructions = buildSpaceAdvisorRealtimeInstructions({
+      spaceSlug: 'hypha-platform',
+      locale: 'en',
+      recentTranscriptSummary: 'User asked about treasury diversification.',
+    });
+    expect(instructions).toContain('hypha-platform');
+    expect(instructions).toContain('Continuous space discovery');
+    expect(instructions).toContain('treasury diversification');
+    expect(instructions).toContain('Do NOT call onboarding_guidance');
   });
 });

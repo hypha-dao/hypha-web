@@ -179,6 +179,7 @@
       "onboardingTransparencyLevelOrganisation": "Organisation",
       "onboardingTransparencyLevelSpace": "Espace",
       "onboardingTransparencySetSummary": "Matrice de transparence définie — découvrabilité : {discoverability}, accès à l'activité : {access}",
+      "onboardingTransparencyDiscoverabilitySetSummary": "Découvrabilité définie sur {discoverability}",
       "onboardingEntryMethodSetOpen": "Méthode d'entrée : Accès ouvert",
       "onboardingEntryMethodSetInvite": "Méthode d'entrée : Invitation / demande d'adhésion",
       "onboardingEntryMethodSetToken": "Méthode d'entrée : Adhésion par token",
@@ -2174,6 +2175,13 @@
     "onboardingSetupJourneySetEcosystem": "Parcours : écosystème complet (plusieurs espaces)",
     "onboardingTransparencyTitle": "Matrice de transparence",
     "onboardingTransparencyHint": "Définissez qui peut découvrir votre espace et qui peut voir son activité.",
+    "onboardingTransparencyDiscoverabilityTitle": "Qui peut découvrir cet espace ?",
+    "onboardingTransparencyDiscoverabilityHint": "Choisissez Public, Réseau, Organisation ou Espace — chaque option explique qui peut trouver votre espace sur Hypha.",
+    "onboardingTransparencyActivityTitle": "Qui peut voir l'activité de cet espace ?",
+    "onboardingTransparencyActivityHint": "Choisissez Public, Réseau, Organisation ou Espace — chaque option explique qui peut voir les propositions, la trésorerie, les membres et le travail partagé.",
+    "onboardingTransparencyDiscoverabilityConfirm": "Continuer",
+    "onboardingTransparencyDiscoverabilitySetSummary": "Découvrabilité définie sur {discoverability}",
+    "onboardingTransparencyDiscoverabilityChosen": "Découvrabilité : {level}",
     "onboardingTransparencyBenefit": "Des espaces plus transparents bénéficient de la pollinisation croisée planétaire — les flux de connaissance, de valeur et d'impact se propagent dans le réseau Hypha lorsque les communautés se rendent visibles les unes aux autres.",
     "onboardingTransparencyConfirm": "Utiliser ces niveaux de transparence",
     "onboardingTransparencyLevelPublic": "Public",
@@ -2220,7 +2228,8 @@
     "onboardingVoiceTransportBrowser": "Voix du navigateur",
     "onboardingVoiceTransportConnecting": "Connexion",
     "onboardingVoiceRealtimeFallback": "Mode voix standard — la voix en direct n'est pas disponible pour le moment.",
-    "onboardingVoiceSessionError": "Impossible de démarrer la voix en direct — réessayez ou passez au chat."
+    "onboardingVoiceSessionError": "Impossible de démarrer la voix en direct — réessayez ou passez au chat.",
+    "onboardingVoiceInteractionBlocked": "La voix est en pause tant que vous ne pouvez pas utiliser l'IA dans cet espace — passez au chat ou réessayez depuis l'onboarding."
   },
   "HumanChatPanel": {
     "title": "Chat",

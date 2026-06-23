@@ -2,16 +2,21 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-import type { OnboardingConversationContext } from './ai-onboarding-context';
+import type { VoiceSessionContext } from './space-voice-session-context';
 import { getClientEnableOnboardingVoiceRealtime } from './onboarding-voice-realtime-flag';
 import {
   useOnboardingVoiceInterview,
   type VoiceInterviewErrorCode,
   type VoiceInterviewPhase,
+  type VoiceTranscriptSendOutcome,
 } from './use-onboarding-voice-interview';
 import { useOnboardingVoiceRealtime } from './use-onboarding-voice-realtime';
 
-export type { VoiceInterviewErrorCode, VoiceInterviewPhase };
+export type {
+  VoiceInterviewErrorCode,
+  VoiceInterviewPhase,
+  VoiceTranscriptSendOutcome,
+};
 
 type UseOnboardingVoiceDiscoveryOptions = {
   enabled: boolean;
@@ -19,10 +24,12 @@ type UseOnboardingVoiceDiscoveryOptions = {
   lastAssistantText: string;
   locale?: string;
   activeSpaceSlug?: string;
-  conversationContext?: OnboardingConversationContext;
+  conversationContext?: VoiceSessionContext;
   recentTranscriptSummary?: string;
   getAccessToken?: () => Promise<string | null | undefined>;
-  onSendTranscript: (text: string) => void | Promise<void>;
+  onSendTranscript: (
+    text: string,
+  ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
   onTranscriptTurn?: (turn: {
     role: 'user' | 'assistant';
     text: string;

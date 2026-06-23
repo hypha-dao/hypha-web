@@ -97,13 +97,13 @@ describe('shouldBypassSpaceMembershipForOnboarding', () => {
     expect(shouldBypassSpaceMembershipForOnboarding(context, {})).toBe(true);
   });
 
-  it('does not bypass discover phase on an unrelated space', () => {
+  it('bypasses discover phase on a space route so voice setup can continue', () => {
     const context = baseContext({ setupPhase: 'discover' });
     expect(
       shouldBypassSpaceMembershipForOnboarding(context, {
         spaceSlug: 'hypha-platform',
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('does not bypass execute phase on the created anchor slug', () => {

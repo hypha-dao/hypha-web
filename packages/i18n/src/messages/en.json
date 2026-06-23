@@ -179,6 +179,7 @@
       "onboardingTransparencyLevelOrganisation": "Organisation",
       "onboardingTransparencyLevelSpace": "Space",
       "onboardingTransparencySetSummary": "Transparency matrix set — discoverability: {discoverability}, activity access: {access}",
+      "onboardingTransparencyDiscoverabilitySetSummary": "Discoverability set to {discoverability}",
       "onboardingEntryMethodSetOpen": "Entry method: Open access",
       "onboardingEntryMethodSetInvite": "Entry method: Invite / request to join",
       "onboardingEntryMethodSetToken": "Entry method: Token-based membership",
@@ -2700,6 +2701,13 @@
     "onboardingSetupJourneySetEcosystem": "Setup journey: Full ecosystem (multiple spaces)",
     "onboardingTransparencyTitle": "Transparency matrix",
     "onboardingTransparencyHint": "Set who can discover your space and who can view its activity.",
+    "onboardingTransparencyDiscoverabilityTitle": "Who can discover this space?",
+    "onboardingTransparencyDiscoverabilityHint": "Choose Public, Network, Organisation, or Space — each option explains who can find your space in Hypha.",
+    "onboardingTransparencyActivityTitle": "Who can view this space's activity?",
+    "onboardingTransparencyActivityHint": "Choose Public, Network, Organisation, or Space — each option explains who can see proposals, treasury, members, and shared work.",
+    "onboardingTransparencyDiscoverabilityConfirm": "Continue",
+    "onboardingTransparencyDiscoverabilitySetSummary": "Discoverability set to {discoverability}",
+    "onboardingTransparencyDiscoverabilityChosen": "Discoverability: {level}",
     "onboardingTransparencyBenefit": "More transparent spaces benefit from planetary cross-pollination—knowledge, value, and impact flows ripple across the Hypha network when communities make themselves legible to one another.",
     "onboardingTransparencyConfirm": "Use these transparency levels",
     "onboardingTransparencyLevelPublic": "Public",
@@ -2746,7 +2754,8 @@
     "onboardingVoiceTransportBrowser": "Browser voice",
     "onboardingVoiceTransportConnecting": "Connecting",
     "onboardingVoiceRealtimeFallback": "Using standard voice mode — live voice is unavailable right now.",
-    "onboardingVoiceSessionError": "Could not start live voice — try again or switch to chat."
+    "onboardingVoiceSessionError": "Could not start live voice — try again or switch to chat.",
+    "onboardingVoiceInteractionBlocked": "Voice is paused until you can use AI in this space — switch to chat or try again from onboarding."
   },
   "HumanChatPanel": {
     "title": "Chat",

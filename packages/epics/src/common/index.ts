@@ -98,10 +98,13 @@ export {
   type EcosystemBlueprintEntry,
 } from './onboarding-ecosystem-blueprint';
 export {
+  applyOnboardingDiscoverabilityToContext,
   applyOnboardingTransparencyToContext,
+  formatOnboardingDiscoverabilitySubmitMessage,
   formatOnboardingTransparencySubmitMessage,
   type OnboardingTransparencyMessageLabels,
   shouldShowOnboardingTransparencyPicker,
+  resolveOnboardingTransparencyPickerStep,
 } from './onboarding-transparency-ui';
 export {
   applyOnboardingEntryMethodToContext,
@@ -116,7 +119,16 @@ export {
   formatOnboardingVotingMethodSubmitMessage,
   type OnboardingVotingMethod,
 } from './onboarding-voting-method-ui';
-export { isPostCreateOnboardingPhase } from './ai-onboarding-context';
+export {
+  loadSpaceDiscoveryMode,
+  saveSpaceDiscoveryMode,
+} from './ai-panel-discovery-mode';
+export {
+  buildSpaceAdvisorVoiceSessionContext,
+  isSpaceAdvisorVoiceSessionContext,
+  type SpaceAdvisorVoiceSessionContext,
+  type VoiceSessionContext,
+} from './space-voice-session-context';
 export {
   isOnboardingDiscoveryMode,
   parseOnboardingDiscoveryMode,

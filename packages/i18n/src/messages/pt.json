@@ -937,6 +937,7 @@
       "onboardingTransparencyLevelOrganisation": "Organização",
       "onboardingTransparencyLevelSpace": "Espaço",
       "onboardingTransparencySetSummary": "Matriz de transparência definida — descoberta: {discoverability}, acesso à atividade: {access}",
+      "onboardingTransparencyDiscoverabilitySetSummary": "Descoberta definida como {discoverability}",
       "onboardingEntryMethodSetOpen": "Método de entrada: Acesso aberto",
       "onboardingEntryMethodSetInvite": "Método de entrada: Convite / pedido para entrar",
       "onboardingEntryMethodSetToken": "Método de entrada: Membresia baseada em token",
@@ -2174,6 +2175,13 @@
     "onboardingSetupJourneySetEcosystem": "Jornada: ecossistema completo (vários espaços)",
     "onboardingTransparencyTitle": "Matriz de transparência",
     "onboardingTransparencyHint": "Defina quem pode descobrir o seu espaço e quem pode ver a sua atividade.",
+    "onboardingTransparencyDiscoverabilityTitle": "Quem pode descobrir este espaço?",
+    "onboardingTransparencyDiscoverabilityHint": "Escolha Público, Rede, Organização ou Espaço — cada opção explica quem pode encontrar o seu espaço na Hypha.",
+    "onboardingTransparencyActivityTitle": "Quem pode ver a atividade deste espaço?",
+    "onboardingTransparencyActivityHint": "Escolha Público, Rede, Organização ou Espaço — cada opção explica quem pode ver propostas, tesouraria, membros e trabalho partilhado.",
+    "onboardingTransparencyDiscoverabilityConfirm": "Continuar",
+    "onboardingTransparencyDiscoverabilitySetSummary": "Descoberta definida como {discoverability}",
+    "onboardingTransparencyDiscoverabilityChosen": "Descoberta: {level}",
     "onboardingTransparencyBenefit": "Espaços mais transparentes beneficiam da cross-pollination planetária — fluxos de conhecimento, valor e impacto propagam-se pela rede Hypha quando as comunidades se tornam legíveis umas às outras.",
     "onboardingTransparencyConfirm": "Usar estes níveis de transparência",
     "onboardingTransparencyLevelPublic": "Público",
@@ -2220,7 +2228,8 @@
     "onboardingVoiceTransportBrowser": "Voz do navegador",
     "onboardingVoiceTransportConnecting": "A conectar",
     "onboardingVoiceRealtimeFallback": "Modo de voz padrão — a voz em direto não está disponível agora.",
-    "onboardingVoiceSessionError": "Não foi possível iniciar a voz em direto — tente novamente ou mude para chat."
+    "onboardingVoiceSessionError": "Não foi possível iniciar a voz em direto — tente novamente ou mude para chat.",
+    "onboardingVoiceInteractionBlocked": "A voz está pausada até poder usar a IA neste espaço — mude para chat ou tente novamente a partir do onboarding."
   },
   "HumanChatPanel": {
     "title": "Chat",

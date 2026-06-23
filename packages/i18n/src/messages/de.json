@@ -179,6 +179,7 @@
       "onboardingTransparencyLevelOrganisation": "Organisation",
       "onboardingTransparencyLevelSpace": "Space",
       "onboardingTransparencySetSummary": "Transparenzmatrix festgelegt — Auffindbarkeit: {discoverability}, Aktivitätszugriff: {access}",
+      "onboardingTransparencyDiscoverabilitySetSummary": "Auffindbarkeit festgelegt auf {discoverability}",
       "onboardingEntryMethodSetOpen": "Beitrittsmethode: Offener Zugang",
       "onboardingEntryMethodSetInvite": "Beitrittsmethode: Einladung / Beitrittsanfrage",
       "onboardingEntryMethodSetToken": "Beitrittsmethode: Token-basierte Mitgliedschaft",
@@ -2698,6 +2699,13 @@
     "onboardingSetupJourneySetEcosystem": "Setup-Reise: Volles Ökosystem (mehrere Spaces)",
     "onboardingTransparencyTitle": "Transparenzmatrix",
     "onboardingTransparencyHint": "Legen Sie fest, wer Ihren Space entdecken und wer dessen Aktivität sehen kann.",
+    "onboardingTransparencyDiscoverabilityTitle": "Wer kann diesen Space entdecken?",
+    "onboardingTransparencyDiscoverabilityHint": "Wählen Sie Öffentlich, Netzwerk, Organisation oder Space — jede Option erklärt, wer Ihren Space in Hypha finden kann.",
+    "onboardingTransparencyActivityTitle": "Wer kann die Aktivität dieses Spaces sehen?",
+    "onboardingTransparencyActivityHint": "Wählen Sie Öffentlich, Netzwerk, Organisation oder Space — jede Option erklärt, wer Vorschläge, Treasury, Mitglieder und gemeinsame Arbeit sehen kann.",
+    "onboardingTransparencyDiscoverabilityConfirm": "Weiter",
+    "onboardingTransparencyDiscoverabilitySetSummary": "Auffindbarkeit festgelegt auf {discoverability}",
+    "onboardingTransparencyDiscoverabilityChosen": "Auffindbarkeit: {level}",
     "onboardingTransparencyBenefit": "Transparentere Spaces profitieren von planetarer Cross-Pollination — Wissens-, Wert- und Impact-Flüsse breiten sich im Hypha-Netzwerk aus, wenn Communities füreinander sichtbar werden.",
     "onboardingTransparencyConfirm": "Diese Transparenzstufen verwenden",
     "onboardingTransparencyLevelPublic": "Öffentlich",
@@ -2744,7 +2752,8 @@
     "onboardingVoiceTransportBrowser": "Browser-Stimme",
     "onboardingVoiceTransportConnecting": "Verbinden",
     "onboardingVoiceRealtimeFallback": "Standard-Sprachmodus — Live-Sprache ist derzeit nicht verfügbar.",
-    "onboardingVoiceSessionError": "Live-Sprache konnte nicht gestartet werden — erneut versuchen oder zum Chat wechseln."
+    "onboardingVoiceSessionError": "Live-Sprache konnte nicht gestartet werden — erneut versuchen oder zum Chat wechseln.",
+    "onboardingVoiceInteractionBlocked": "Sprache ist pausiert, bis Sie KI in diesem Space nutzen können — wechseln Sie zum Chat oder versuchen Sie es erneut über das Onboarding."
   },
   "HumanChatPanel": {
     "title": "Chat",
