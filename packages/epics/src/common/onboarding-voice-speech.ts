@@ -15,6 +15,65 @@ export function stripMarkdownForSpeech(text: string): string {
     .trim();
 }
 
+const FORM_LABEL_LINE =
+  /^(?:\d+[.)]\s*)?(?:\*\*)?(?:proposal\s+)?(?:title|description|entry\s+method|voting\s+method|quorum\s*(?:\(%\))?|unity\s*(?:\(%\))?|required\s+fields?|optional\s+fields?|next\s+step|walkthrough|discovery)(?:\*\*)?\s*[:.\-–—]/i;
+
+function isSpokenNoiseSentence(sentence: string): boolean {
+  const trimmed = sentence.trim();
+  if (!trimmed) return true;
+  if (FORM_LABEL_LINE.test(trimmed)) return true;
+  if (/^\d+[.)]\s/.test(trimmed)) return true;
+  if (/^[-*•]\s/.test(trimmed)) return true;
+  if (/^let'?s start with (?:the )?(?:required|following)/i.test(trimmed)) {
+    return true;
+  }
+  if (/^please provide (?:a|the|your)/i.test(trimmed)) return true;
+  if (/^can you (?:provide|describe|tell)/i.test(trimmed)) return true;
+  if (/^what (?:specific|would you like)/i.test(trimmed)) return true;
+  if (/^a brief explanation/i.test(trimmed)) return true;
+  return false;
+}
+
+/**
+ * Standard voice reads the assistant chat message word-for-word via Web Speech.
+ * Drop form-like lines and keep a short human summary when the model slips.
+ */
+export function prepareAssistantTextForSpeech(text: string): string {
+  const withoutImages = removeMarkdownImageTokens(text)
+    .replace(/https?:\/\/\S+/g, '')
+    .trim();
+  if (!withoutImages) return '';
+
+  const rawLines = withoutImages.split(/\n+/);
+  const lines = rawLines
+    .map((rawLine) => {
+      const trimmedRaw = rawLine.trim();
+      if (/^[-*•]\s/.test(trimmedRaw)) return '';
+      return stripMarkdown(trimmedRaw).replace(/\s+/g, ' ').trim();
+    })
+    .filter(Boolean);
+  const lineFiltered = lines.filter((line) => !isSpokenNoiseSentence(line));
+
+  const collapsed = lineFiltered.join(' ').replace(/\s+/g, ' ').trim();
+  if (!collapsed) return '';
+
+  const sentences = collapsed.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const spoken = sentences.filter(
+    (sentence) => !isSpokenNoiseSentence(sentence),
+  );
+
+  if (spoken.length > 0) {
+    return spoken.slice(0, 4).join(' ').trim();
+  }
+
+  // Don't read bare list fragments left after stripping form labels.
+  if (!/[.!?]/.test(collapsed) && collapsed.split(/\s+/).length < 12) {
+    return '';
+  }
+
+  return collapsed.slice(0, 320).trim();
+}
+
 /** Warm, empathic feminine voices — earlier entries rank higher per locale. */
 const PREFERRED_FEMININE_VOICE_PARTS = [
   'samantha',
@@ -116,7 +175,7 @@ export function speakOnboardingText(
   options?: { lang?: string; rate?: number; onEnd?: () => void },
 ): (() => void) | null {
   if (typeof globalThis.speechSynthesis === 'undefined') return null;
-  const spoken = stripMarkdownForSpeech(text);
+  const spoken = prepareAssistantTextForSpeech(text);
   if (!spoken) return null;
 
   let cancelled = false;
@@ -129,9 +188,9 @@ export function speakOnboardingText(
       options?.lang ?? document.documentElement.lang,
     );
     utterance.lang = lang;
-    utterance.rate = options?.rate ?? 0.92;
-    utterance.pitch = 1.03;
-    utterance.volume = 0.96;
+    utterance.rate = options?.rate ?? 0.96;
+    utterance.pitch = 1.08;
+    utterance.volume = 0.98;
     const voice = pickWarmFeminineVoice(lang);
     if (voice) utterance.voice = voice;
     utterance.onend = () => options?.onEnd?.();

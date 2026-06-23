@@ -71,7 +71,7 @@ export function buildProposalGuidancePromptLines(): string {
   return PREPARE_GOVERNANCE_PROPOSAL_TYPES.map((key) => {
     const entry = PROPOSAL_CATALOG[key]!;
     const required = entry.requiredFields.map((f) => f.key).join(', ');
-    return `- ${key}: ${entry.documentLabel} — ask ${required} → prepare_governance_proposal → Publish`;
+    return `- ${key}: ${entry.documentLabel} — one question at a time via proposal_guidance(collected_fields) → prepare_governance_proposal → Publish`;
   }).join('\n');
 }
 
@@ -309,13 +309,16 @@ export function pickOptionalDiscoveryPrompts(
   entry: ProposalCatalogEntry,
   collectedFields: Record<string, unknown>,
 ): CatalogDiscoveryField[] {
+  /** Optional governance tuning — skip in chat; member can edit on the form. */
+  const deferToForm = new Set([
+    'quorum_percent',
+    'unity_percent',
+    'auto_execution',
+    'voting_duration_seconds',
+  ]);
+
   return entry.optionalFields.filter((field) => {
-    if (
-      field.key === 'auto_execution' ||
-      field.key === 'voting_duration_seconds'
-    ) {
-      return collectedFields[field.key] === undefined;
-    }
+    if (deferToForm.has(field.key)) return false;
     return (
       field.required === false &&
       collectedFields[field.key] === undefined &&
@@ -324,3 +327,28 @@ export function pickOptionalDiscoveryPrompts(
     );
   });
 }
+
+/** Decision fields first; title/description last for conversational discovery. */
+const DISCOVERY_FIELD_ORDER: Record<string, number> = {
+  voting_method: 10,
+  entry_method: 10,
+  space_discoverability: 11,
+  space_activity_access: 12,
+  token_address: 20,
+  title: 90,
+  description: 91,
+};
+
+export function orderFieldsForDiscovery(
+  fields: CatalogDiscoveryField[],
+): CatalogDiscoveryField[] {
+  return [...fields].sort(
+    (a, b) =>
+      (DISCOVERY_FIELD_ORDER[a.key] ?? 50) -
+      (DISCOVERY_FIELD_ORDER[b.key] ?? 50),
+  );
+}
+
+export const PARTIAL_PREPARE_DRAFT_TITLE = 'Governance proposal';
+export const PARTIAL_PREPARE_DRAFT_DESCRIPTION =
+  'Prepared with Hypha AI — review and edit on the form before publishing.';

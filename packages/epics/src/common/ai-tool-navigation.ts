@@ -65,20 +65,29 @@ function parseNavigationTarget(args: {
     };
   }
 
+  const focusField = navigation?.focus_field?.trim() || undefined;
+  const focusSection = navigation?.focus_section?.trim() || undefined;
+  const resubmitPayload =
+    args.toolName === 'prepare_governance_proposal' &&
+    args.output?.resubmit_payload &&
+    typeof args.output.resubmit_payload === 'object'
+      ? (args.output.resubmit_payload as Record<string, unknown>)
+      : undefined;
+  const payloadFingerprint = resubmitPayload
+    ? JSON.stringify(resubmitPayload)
+    : '';
+
   return {
     href,
     openInNewTab: navigation?.open_in_new_tab === true,
     openHumanChat,
-    resubmitPayload:
-      args.toolName === 'prepare_governance_proposal' &&
-      args.output?.resubmit_payload &&
-      typeof args.output.resubmit_payload === 'object'
-        ? (args.output.resubmit_payload as Record<string, unknown>)
-        : undefined,
-    focusField: navigation?.focus_field?.trim() || undefined,
-    focusSection: navigation?.focus_section?.trim() || undefined,
+    resubmitPayload,
+    focusField,
+    focusSection,
     coherenceChat,
-    key: `${args.messageId}:${args.partKey}:${href}`,
+    key: `${args.messageId}:${args.partKey}:${href}:${focusField ?? ''}:${
+      focusSection ?? ''
+    }:${payloadFingerprint.slice(0, 120)}`,
   };
 }
 

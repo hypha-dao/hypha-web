@@ -48,6 +48,19 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
 
       if (
         data.proposal_type === 'collective_agreement' &&
+        /\b(quorum|unity percent|governance setup|membership policy|how (people|members) join|how (decisions|votes)|voting model|1m1v|1v1v|1t1v)\b/i.test(
+          `${data.title} ${data.description}`,
+        )
+      ) {
+        return {
+          ok: false,
+          error:
+            'Typed governance changes require proposal_guidance and prepare_governance_proposal with the correct proposal_type — not collective_agreement.',
+        };
+      }
+
+      if (
+        data.proposal_type === 'collective_agreement' &&
         /\bvoting method\b|change.{0,24}vot(e|ing)|one (member|token|voice)/i.test(
           `${data.title} ${data.description}`,
         )

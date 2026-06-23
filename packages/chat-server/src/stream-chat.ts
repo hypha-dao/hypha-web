@@ -21,6 +21,7 @@ import {
   buildSystemPrompt,
   LEFT_PANEL_NAVIGATION_GUIDELINES,
   POST_CREATE_GOVERNANCE_SETUP_GUIDELINES,
+  STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES,
   sanitizeSlug,
 } from './system-prompt';
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
@@ -32,6 +33,9 @@ import {
   createGetTokenHoldingsBySpaceSlugTool,
   getSpaceBySlugTool,
 } from './tools/index';
+
+const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
+CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — 2–4 natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.`;
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
@@ -1376,12 +1380,12 @@ export async function createChatStreamResult(
             ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'
             : ''
         }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
-          normalizedConversationContext.discoveryMode === 'voice_interview'
-            ? '\n- Voice interview mode is active: speak like a warm human advisor—reflect what you heard, show empathy and enthusiasm, ask one question at a time, keep replies short and conversational (no bullet lists or markdown). Never read chat text or tool output verbatim; summarize the important points in a human way and focus on what matters for the next step. UI cards still appear for structured choices; introduce them naturally without reading every option aloud.'
+          voiceDiscoveryActive
+            ? `\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
       : voiceDiscoveryActive && spaceSlug?.trim()
-      ? `${effectiveSystemPrompt}\n\n- Voice discovery mode is active for this space: speak like a warm human advisor—reflect what you heard, ask one question or propose one next step at a time, keep replies short and conversational (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and propose the next best move toward purpose—not a fixed checklist.`
+      ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.`
       : effectiveSystemPrompt;
 
   if (modelMessages.length === 0) {

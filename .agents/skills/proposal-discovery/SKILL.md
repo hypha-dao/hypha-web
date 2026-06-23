@@ -66,13 +66,15 @@ Derived automatically:
 ## AI flow (standard)
 
 ```
-proposal_guidance(proposal_type)
-  → ask required fields (pass collected_fields as you go)
-  → offer optional fields one at a time
-  → prepare_governance_proposal({ space_slug, proposal_type, title, description, proposal_fields })
-  → client writes sessionStorage + navigates to form
-  → member clicks Publish (no in-chat wallet signing)
+proposal_guidance(proposal_type, collected_fields)
+  → ONE intent-focused recommendation (never field labels)
+  → user reacts (yes / tweak / no)
+  → prepare_governance_proposal(partial: true, focus_field) — form opens/updates + scrolls
+  → repeat until ready_to_publish
+  → prepare_governance_proposal(partial: false) → Publish
 ```
+
+**Conversation rules:** CRITICAL — AI DOES IT FOR ME. Decision fields first; title/description drafted last. One field per turn. No numbered lists. Never collective_agreement for typed proposals. Optional fields (quorum) deferred to form.
 
 **Collective Agreement only:** `create_space_setup_proposal` with `proposal_type: collective_agreement`.
 

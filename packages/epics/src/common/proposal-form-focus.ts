@@ -2,6 +2,9 @@
 
 import { PROPOSAL_FORM_FOCUS_KEY } from '../utils/resubmit-proposal-template';
 
+export const PROPOSAL_FORM_FOCUS_UPDATED_EVENT =
+  'hypha:proposal-form-focus-updated';
+
 export function writeProposalFormFocus(args: {
   focusField?: string;
   focusSection?: string;
@@ -15,6 +18,7 @@ export function writeProposalFormFocus(args: {
       focusSection: args.focusSection,
     }),
   );
+  window.dispatchEvent(new CustomEvent(PROPOSAL_FORM_FOCUS_UPDATED_EVENT));
 }
 
 export function clearProposalFormFocus(): void {

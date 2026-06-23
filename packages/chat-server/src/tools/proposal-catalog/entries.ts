@@ -4,7 +4,8 @@ const titleField: CatalogDiscoveryField = {
   key: 'title',
   label: 'Proposal title',
   required: true,
-  description: 'Short title shown in Agreements.',
+  description:
+    'What short title should appear on this proposal? Propose a draft from context; ask the user to confirm or edit.',
   fieldType: 'string',
   formSection: 'basics',
 };
@@ -13,7 +14,8 @@ const descriptionField: CatalogDiscoveryField = {
   key: 'description',
   label: 'Proposal description',
   required: true,
-  description: 'Plain-language rationale and details.',
+  description:
+    'Propose a plain-language rationale and key details from space context; ask the user to confirm or edit.',
   fieldType: 'string',
   formSection: 'basics',
 };
@@ -85,17 +87,18 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     discoveryIntro:
       'Ask which voting model the space should use, then optional quorum/unity changes.',
     requiredFields: [
-      titleField,
-      descriptionField,
       {
         key: 'voting_method',
         label: 'Voting method',
         required: true,
-        description: '1m1v, 1v1v, or 1t1v.',
+        description:
+          'Propose how decisions should be made (one person one vote, voice-weighted, or token-weighted) with a brief why — ask if that fits. Never say "voting method" or read codes aloud.',
         fieldType: 'enum',
         enumValues: ['1m1v', '1v1v', '1t1v'],
         formSection: 'voting_method',
       },
+      titleField,
+      descriptionField,
     ],
     optionalFields: [
       {
@@ -131,17 +134,18 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     discoveryIntro:
       'Ask open access, invite/request only, or token-based membership.',
     requiredFields: [
-      titleField,
-      descriptionField,
       {
         key: 'entry_method',
         label: 'Entry method',
         required: true,
-        description: 'open_access, invite_only, or token_based.',
+        description:
+          'Propose how people should join (open to all, invite-only, or token-gated) with a brief why — ask if that works. Never say "entry method".',
         fieldType: 'enum',
         enumValues: ['open_access', 'invite_only', 'token_based'],
         formSection: 'entry_method',
       },
+      titleField,
+      descriptionField,
     ],
     optionalFields: [
       {

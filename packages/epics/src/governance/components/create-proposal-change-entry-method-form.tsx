@@ -22,6 +22,7 @@ import { CreateAgreementBaseFields } from '../../agreements';
 import {
   useClearResubmitOnSuccess,
   useResubmitProposalData,
+  useProposalFormSectionFocus,
   useScrollToErrors,
 } from '../../hooks';
 import { useTranslations } from 'next-intl';
@@ -126,6 +127,7 @@ export const CreateProposalChangeEntryMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  useProposalFormSectionFocus(true);
   const { resubmitKey } = useResubmitProposalData(
     form,
     spaceId,
@@ -215,22 +217,24 @@ export const CreateProposalChangeEntryMethodForm = ({
           onSubmit={form.handleSubmit(handleCreate, onInvalid)}
           className="flex flex-col gap-5"
         >
-          <CreateAgreementBaseFields
-            key={resubmitKey}
-            creator={{
-              avatar: person?.avatarUrl || '',
-              name: person?.name || '',
-              surname: person?.surname || '',
-            }}
-            successfulUrl={successfulUrl}
-            backUrl={backUrl}
-            backLabel={tSpaces('backToSettings')}
-            closeUrl={successfulUrl}
-            isLoading={false}
-            label={tAgreementFlow('labels.entryMethod')}
-            progress={progress}
-          />
-          {plugin}
+          <div data-proposal-section="basics">
+            <CreateAgreementBaseFields
+              key={resubmitKey}
+              creator={{
+                avatar: person?.avatarUrl || '',
+                name: person?.name || '',
+                surname: person?.surname || '',
+              }}
+              successfulUrl={successfulUrl}
+              backUrl={backUrl}
+              backLabel={tSpaces('backToSettings')}
+              closeUrl={successfulUrl}
+              isLoading={false}
+              label={tAgreementFlow('labels.entryMethod')}
+              progress={progress}
+            />
+          </div>
+          <div data-proposal-section="entry_method">{plugin}</div>
           <Separator />
           <div className="flex justify-end w-full">
             <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>

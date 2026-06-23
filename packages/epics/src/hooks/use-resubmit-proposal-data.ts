@@ -16,6 +16,7 @@ import {
   inferResubmitTemplateSegmentFromPayload,
   isLegacyGenericResubmitSegment,
 } from '../utils/resubmit-proposal-template';
+import { RESUBMIT_PROPOSAL_UPDATED_EVENT } from '../common/governance-proposal-navigation';
 
 /** Session payload written by resubmit / read by `useResubmitProposalData`. */
 export type ResubmitProposalSessionAttachment =
@@ -880,7 +881,22 @@ export const useResubmitProposalData = <
     const timeoutId = setTimeout(applyResubmitData, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [form, spaceId, creatorId, resubmitTemplateSegment, pathname]);
+  }, [
+    form,
+    spaceId,
+    creatorId,
+    resubmitTemplateSegment,
+    pathname,
+    resubmitKey,
+  ]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onUpdated = () => setResubmitKey((prev) => prev + 1);
+    window.addEventListener(RESUBMIT_PROPOSAL_UPDATED_EVENT, onUpdated);
+    return () =>
+      window.removeEventListener(RESUBMIT_PROPOSAL_UPDATED_EVENT, onUpdated);
+  }, []);
 
   return { resubmitKey };
 };

@@ -135,6 +135,7 @@ export {
   type OnboardingDiscoveryMode,
 } from './onboarding-discovery-mode';
 export {
+  prepareAssistantTextForSpeech,
   speakOnboardingText,
   stopOnboardingSpeech,
   stripMarkdownForSpeech,

@@ -4,6 +4,8 @@ import { sanitizeSlug } from '../system-prompt';
 import { aiCreatableProposalTypeSchema } from './ai-proposal-types';
 import { buildGuidanceResponse } from './proposal-guidance';
 import {
+  PARTIAL_PREPARE_DRAFT_DESCRIPTION,
+  PARTIAL_PREPARE_DRAFT_TITLE,
   PREPARE_GOVERNANCE_PROPOSAL_TYPES,
   buildPrepareNavigation,
   buildResubmitPayload,
@@ -48,7 +50,7 @@ export function createProposalGuidanceTool() {
 
   return {
     description:
-      'Read-only: return the discovery playbook for a governance proposal type — required questions, optional fields, and whether to use prepare_governance_proposal or create_space_setup_proposal. Call before collecting proposal details. Pass collected_fields as you gather answers to get remaining required and optional prompts.',
+      'Read-only: return the next discovery step for a governance proposal. Pass collected_fields as answers arrive. Reply using only next_question + interaction_hint — never list all fields. Call prepare_governance_proposal when form_sync.call_prepare_governance_proposal is true.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -68,8 +70,8 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
     .object({
       space_slug: z.string().trim().min(1),
       proposal_type: prepareProposalTypeSchema,
-      title: z.string().trim().min(3).max(120),
-      description: z.string().trim().min(20).max(4000),
+      title: z.string().trim().max(120).optional(),
+      description: z.string().trim().max(4000).optional(),
       lang: z
         .string()
         .trim()
@@ -77,9 +79,29 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
         .optional(),
       proposal_fields: z.record(z.unknown()).optional(),
       focus_field: z.string().trim().optional(),
+      partial: z.boolean().optional(),
       ...legacyFieldSchema,
     })
     .superRefine((value, ctx) => {
+      if (value.partial) return;
+
+      if (!value.title?.trim() || value.title.trim().length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['title'],
+          message:
+            'title is required (min 3 characters) unless partial is true.',
+        });
+      }
+      if (!value.description?.trim() || value.description.trim().length < 20) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['description'],
+          message:
+            'description is required (min 20 characters) unless partial is true.',
+        });
+      }
+
       const merged = mergeLegacyPrepareFields(
         value as PrepareGovernanceProposalInput,
       );
@@ -98,7 +120,7 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
 
   return {
     description:
-      'Write: prepare a typed governance proposal form in Agreements with all collected fields pre-filled. Use after proposal_guidance discovery. Never wallet-sign in chat — the member clicks Publish in the opened form. Supports all on-chain proposal types from Create proposal and Space settings (except space configuration).',
+      'Write: open or update the typed Agreements form with collected fields. Use partial: true during discovery after each substantive answer — form pre-fills and scrolls to focus_field. Use partial: false when ready_to_publish. Never wallet-sign in chat. Never use for collective_agreement.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -106,9 +128,17 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
         return { ok: false, error: parsed.error.message };
       }
 
-      const data = mergeLegacyPrepareFields(
-        parsed.data as PrepareGovernanceProposalInput,
-      );
+      const isPartial = parsed.data.partial === true;
+      const data = mergeLegacyPrepareFields({
+        ...(parsed.data as PrepareGovernanceProposalInput),
+        title:
+          parsed.data.title?.trim() ||
+          (isPartial ? PARTIAL_PREPARE_DRAFT_TITLE : ''),
+        description:
+          parsed.data.description?.trim() ||
+          (isPartial ? PARTIAL_PREPARE_DRAFT_DESCRIPTION : ''),
+      });
+
       const safe = sanitizeSlug(data.space_slug);
       if (!safe) return { ok: false, error: 'Invalid space slug format.' };
 
@@ -118,6 +148,13 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
           ok: false,
           error: `Proposal type "${data.proposal_type}" is not supported by prepare_governance_proposal.`,
         };
+      }
+
+      if (!isPartial) {
+        const validationError = validatePrepareInput(entry, data);
+        if (validationError) {
+          return { ok: false, error: validationError };
+        }
       }
 
       const host = await findSpaceBySlug({ slug: safe }, { db });
@@ -137,14 +174,16 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
 
       return {
         ok: true,
+        partial: isPartial,
         proposal_type: data.proposal_type,
         document_label: entry.documentLabel,
         resubmit_payload: resubmitPayload,
         navigation,
         focus_field: navigation.focus_field,
         focus_section: navigation.focus_section,
-        next_step:
-          'Tell the user the form is ready with their choices pre-filled. Keep the AI panel open to walk through sections if needed. They should review and click Publish — do not ask for wallet signing in chat.',
+        next_step: isPartial
+          ? 'Form opened/updated — scroll the member to the active section. Reply with ONE intent-focused sentence only (no recap, no field labels). Continue discovery until ready_to_publish, then partial: false.'
+          : 'Form is complete. Tell the user to review and click Publish — one short sentence, no field-by-field recap.',
       };
     },
   } satisfies ChatRouteTool<typeof inputSchema>;
