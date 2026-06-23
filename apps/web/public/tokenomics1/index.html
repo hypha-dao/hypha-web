@@ -66,15 +66,12 @@ const GAS_MONTHLY_BY_PROFILE = { light: 0.06, typical: 0.37, heavy: 3.27 };
 const GAS_SETUP_ONE_TIME = 0.035;
 const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_MONTHLY_BY_PROFILE.typical;
 
-const PHASE0_ACTIVE_SPACES = 4373;
+// Phase I bootstraps from a near-zero seed to ~4,373 paying Spaces over 12 months.
+const PHASE_I_END_SPACES = 4373;
 const PHASE_I_MONTHS = 12;
-const PHASE_I_MONTHLY_GROWTH = 0.72;
-const phaseIHandoffSpaces = () => {
-  let n = PHASE0_ACTIVE_SPACES;
-  for (let m = 2; m <= PHASE_I_MONTHS; m++) n = Math.round(n * (1 + PHASE_I_MONTHLY_GROWTH / 100));
-  return n;
-};
-const PHASE_II_START_SPACES = phaseIHandoffSpaces();
+const PHASE_I_SEED_SPACES = 50;       // month 1 seed (~0 Spaces at month 0)
+const PHASE_I_MONTHLY_GROWTH = 50;    // %/mo → ~4,373 by month 12
+const PHASE_II_START_SPACES = PHASE_I_END_SPACES;
 
 const HyphaTokenomicsCalculator = () => {
   const [tokensForSale, setTokensForSale] = useState(10000000);
@@ -84,7 +81,7 @@ const HyphaTokenomicsCalculator = () => {
   const [totalSupply, setTotalSupply] = useState(555555555);
   const [existingLockedSupply, setExistingLockedSupply] = useState(111111111);
 
-  const [numberOfAOs, setNumberOfAOs] = useState(PHASE0_ACTIVE_SPACES);
+  const [numberOfAOs, setNumberOfAOs] = useState(PHASE_I_SEED_SPACES);
   const [paymentPerAO, setPaymentPerAO] = useState(44);
   const [usdcFromInvestors, setUsdcFromInvestors] = useState(100000);
   const [aoGrowthRate, setAoGrowthRate] = useState(PHASE_I_MONTHLY_GROWTH);
@@ -271,7 +268,7 @@ const HyphaTokenomicsCalculator = () => {
     setTokenPrice(0.20);
     setTotalSupply(555555555);
     setExistingLockedSupply(111111111);
-    setNumberOfAOs(PHASE0_ACTIVE_SPACES);
+    setNumberOfAOs(PHASE_I_SEED_SPACES);
     setPaymentPerAO(44);
     setUsdcFromInvestors(100000);
     setAoGrowthRate(PHASE_I_MONTHLY_GROWTH);
@@ -297,15 +294,15 @@ const HyphaTokenomicsCalculator = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div className="bg-white p-3 rounded border border-slate-200">
             <div className="font-semibold text-slate-600">Phase 0 — Today</div>
-            <p className="text-xs text-gray-600 mt-1">~4,373 Spaces on Hypha. Tokenomics Phase I begins at month 0. Reference FDV ~$111M at $0.20.</p>
+            <p className="text-xs text-gray-600 mt-1">Pre-launch. Reference FDV ~$111M at $0.20 (111M locked supply).</p>
           </div>
           <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
-            <div className="font-semibold">Phase I — Month 0+ (this sim)</div>
-            <p className="text-xs text-indigo-100 mt-1">{PHASE0_ACTIVE_SPACES.toLocaleString()} Spaces at month 0 → ~{PHASE_II_START_SPACES.toLocaleString()} at month {PHASE_I_MONTHS} ({PHASE_I_MONTHLY_GROWTH}%/mo). Same rate continues in Phase II Low.</p>
+            <div className="font-semibold">Phase I — Year 1 (this sim)</div>
+            <p className="text-xs text-indigo-100 mt-1">Bootstrap: ~0 Spaces at month 0 → ~{PHASE_I_END_SPACES.toLocaleString()} by month {PHASE_I_MONTHS} ({PHASE_I_MONTHLY_GROWTH}%/mo from a {PHASE_I_SEED_SPACES}-Space seed). Phase II continues from here.</p>
           </div>
           <div className="bg-white p-3 rounded border border-slate-200">
-            <div className="font-semibold text-slate-700">Phase II — After Phase I</div>
-            <p className="text-xs text-gray-600 mt-1">$44/Space/mo, dynamic IEX pricing. <a href="/tokenomics2/" className="text-indigo-600 underline">Phase II simulator →</a></p>
+            <div className="font-semibold text-slate-700">Phase II — Years 2–5</div>
+            <p className="text-xs text-gray-600 mt-1">$44/Space/mo, dynamic IEX. Year-5 active: Low ~25k · Mid ~250k · High ~2M. <a href="/tokenomics2/" className="text-indigo-600 underline">Phase II →</a></p>
           </div>
         </div>
       </div>

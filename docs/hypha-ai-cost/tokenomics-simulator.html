@@ -67,78 +67,72 @@ const GAS_SETUP_ONE_TIME = 0.035;
 const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_MONTHLY_BY_PROFILE.typical;
 
 // Phase 0 → Phase I → Phase II continuity (same network, one growth story)
-const PHASE0_ACTIVE_SPACES = 4373;
-const PHASE_I_MONTHS = 12;
-const PHASE_I_MONTHLY_GROWTH = 0.72; // continues into Phase II Low preset
-const phaseIHandoffSpaces = () => {
-  let n = PHASE0_ACTIVE_SPACES;
-  for (let m = 2; m <= PHASE_I_MONTHS; m++) n = Math.round(n * (1 + PHASE_I_MONTHLY_GROWTH / 100));
-  return n;
-};
-const PHASE_II_START_SPACES = phaseIHandoffSpaces(); // ~4,732 after 12 mo Phase I
+// Phase I bootstraps 0 → ~4,373 active Spaces over 12 months. Phase II starts there.
+const PHASE_I_END_SPACES = 4373;
+const PHASE_II_START_SPACES = PHASE_I_END_SPACES;
 
-
+// Year-5 (Phase II month 48) ACTIVE Space targets: Low ~25k, Mid ~250k, High ~2M
 const GROWTH_PRESETS = {
   low: {
     label: 'Low',
-    subtitle: '~270k cumulative',
+    subtitle: '~25k active (year 5)',
     defaults: {
       orgPayment: 44,
       iexAllocationPct: 25,
-      investorSelling: 5,
+      investorSelling: 3,
       additionalPurchase: 5,
       unlockRate: 4,
-      initialHypha: 5000000,
-      initialUsdc: 1000000,
+      initialHypha: 40000000,
+      initialUsdc: 8000000,
       orgCount: PHASE_II_START_SPACES,
-      orgGrowthRate: 0.72,
+      orgGrowthRate: 3.78,
     },
-    // ~270k cumulative Space-months at month 48 (0.72%/mo from Phase I handoff)
+    // ~25k active / ~570k cumulative Space-months at Phase II month 48 (~3.78%/mo)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 0.72 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 3.78 };
       return m;
     },
   },
   mid: {
     label: 'Mid',
-    subtitle: '~1M cumulative',
+    subtitle: '~250k active (year 5)',
     defaults: {
       orgPayment: 44,
-      iexAllocationPct: 25,
+      iexAllocationPct: 19,
       investorSelling: 5,
       additionalPurchase: 8,
       unlockRate: 3.5,
-      initialHypha: 40000000,
-      initialUsdc: 8000000,
+      initialHypha: 80000000,
+      initialUsdc: 16000000,
       orgCount: PHASE_II_START_SPACES,
-      orgGrowthRate: 5.38,
+      orgGrowthRate: 8.99,
     },
-    // Target ~1M cumulative Space-months at month 48 (~5.38%/mo from handoff)
+    // ~250k active / ~3M cumulative Space-months at Phase II month 48 (~8.99%/mo)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 5.38 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 8.99 };
       return m;
     },
   },
   high: {
     label: 'High',
-    subtitle: '~10M cumulative',
+    subtitle: '~2M active (year 5)',
     defaults: {
       orgPayment: 44,
       iexAllocationPct: 19,
       investorSelling: 3,
       additionalPurchase: 8,
       unlockRate: 3,
-      initialHypha: 100000000,
-      initialUsdc: 25000000,
+      initialHypha: 150000000,
+      initialUsdc: 30000000,
       orgCount: PHASE_II_START_SPACES,
-      orgGrowthRate: 12.29,
+      orgGrowthRate: 13.92,
     },
-    // Target ~10M cumulative Space-months at month 48 (~12.29%/mo from handoff)
+    // ~2M active / ~16M cumulative Space-months at Phase II month 48 (~13.92%/mo)
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 12.29 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 13.92 };
       return m;
     },
   },
@@ -472,15 +466,15 @@ const TokenomicsSimulator = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div className="bg-white p-3 rounded border border-slate-200">
             <div className="font-semibold text-slate-600">Phase 0 — Today</div>
-            <p className="text-xs text-gray-600 mt-1">~4,373 Spaces live. Phase I at month 0. Reference FDV ~$111M at $0.20.</p>
+            <p className="text-xs text-gray-600 mt-1">Pre-launch. Reference FDV ~$111M at $0.20 (111M locked supply).</p>
           </div>
           <div className="bg-white p-3 rounded border border-slate-200">
-            <div className="font-semibold text-slate-700">Phase I — Month 0+</div>
-            <p className="text-xs text-gray-600 mt-1">Fixed $0.20 price, token sale &amp; locking. <a href="/tokenomics1/" className="text-indigo-600 underline">Phase I simulator →</a></p>
+            <div className="font-semibold text-slate-700">Phase I — Year 1 (months 0–12)</div>
+            <p className="text-xs text-gray-600 mt-1">Bootstrap 0 → ~4,373 paying Spaces, fixed $0.20. <a href="/tokenomics1/" className="text-indigo-600 underline">Phase I simulator →</a></p>
           </div>
           <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
-            <div className="font-semibold">Phase II — After Phase I (this sim)</div>
-            <p className="text-xs text-indigo-100 mt-1">Starts ~{PHASE_II_START_SPACES.toLocaleString()} paying Spaces (Phase I handoff) × $44/mo. Month 1 = first month after Phase I.</p>
+            <div className="font-semibold">Phase II — Years 2–5 (this sim)</div>
+            <p className="text-xs text-indigo-100 mt-1">Starts ~{PHASE_II_START_SPACES.toLocaleString()} paying Spaces × $44/mo. Month 1 = first month of year 2. Year 5 = month 48.</p>
           </div>
         </div>
       </div>
@@ -615,14 +609,14 @@ const TokenomicsSimulator = () => {
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Initial HYPHA on IEX</label>
             <div className="flex items-center">
-              <input type="range" min="1000000" max="50000000" step="1000000" value={initialHypha} onChange={(e) => setInitialHypha(Number(e.target.value))} className="w-full mr-3" />
+              <input type="range" min="1000000" max="200000000" step="1000000" value={initialHypha} onChange={(e) => setInitialHypha(Number(e.target.value))} className="w-full mr-3" />
               <input type="text" value={formatNumber(initialHypha)} onChange={(e) => { const v = Number(e.target.value.replace(/,/g, '')); if (!isNaN(v)) setInitialHypha(v); }} className="w-24 p-1 border rounded text-right" />
             </div>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Initial USDC on IEX</label>
             <div className="flex items-center">
-              <input type="range" min="100000" max="2000000" step="50000" value={initialUsdc} onChange={(e) => setInitialUsdc(Number(e.target.value))} className="w-full mr-3" />
+              <input type="range" min="100000" max="40000000" step="100000" value={initialUsdc} onChange={(e) => setInitialUsdc(Number(e.target.value))} className="w-full mr-3" />
               <input type="text" value={formatNumber(initialUsdc)} onChange={(e) => { const v = Number(e.target.value.replace(/,/g, '')); if (!isNaN(v)) setInitialUsdc(v); }} className="w-24 p-1 border rounded text-right" />
             </div>
           </div>
