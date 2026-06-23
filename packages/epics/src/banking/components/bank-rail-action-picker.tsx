@@ -14,6 +14,25 @@ import { isBankRailSelectable } from '../banking-ui';
 import type { BankCurrencyOperationalStatus } from '../hooks/types';
 import { BankDepositRailOptionRow } from './bank-deposit-rail-option-row';
 
+const DEPOSIT_CORRIDOR_MINIMUMS: Record<BankTransferCorridorKey, string> = {
+  'usd-ach': '1 USD',
+  'usd-wire': '1 USD',
+  eur: '1 EUR',
+  gbp: '2 GBP',
+  mxn: '50 MXN',
+  brl: '10 BRL',
+  cop: '100 COP',
+};
+
+const DEPOSIT_CURRENCY_MINIMUMS: Record<BankCurrencyCode, string> = {
+  usd: '1 USD',
+  eur: '1 EUR',
+  gbp: '2 GBP',
+  mxn: '50 MXN',
+  brl: '10 BRL',
+  cop: '100 COP',
+};
+
 export type BankRailPickerOption = {
   id: string;
   currency: BankCurrencyCode;
@@ -58,6 +77,7 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
   const tOpenAccount = useTranslations('BankingTab.openAccount');
   const tCreateTransfer = useTranslations('BankingTab.createTransfer');
   const tDeposit = useTranslations('BankingTab.depositInstructions');
+  const tMinimums = useTranslations('BankingTab.minimums');
   const radioName = useId();
 
   const selected = options.find((option) => option.id === selectedId);
@@ -154,6 +174,15 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
             })}
           </div>
         </div>
+      ) : null}
+
+      {selected ? (
+        <p className="text-1 text-muted-foreground">
+          {tMinimums('depositNote')}{' '}
+          {selected.corridorKey
+            ? DEPOSIT_CORRIDOR_MINIMUMS[selected.corridorKey]
+            : DEPOSIT_CURRENCY_MINIMUMS[selected.currency]}
+        </p>
       ) : null}
 
       {showPrimaryAction && selected ? (

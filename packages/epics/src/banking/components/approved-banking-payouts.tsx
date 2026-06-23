@@ -40,7 +40,6 @@ export const ApprovedBankingPayouts: FC<ApprovedBankingPayoutsProps> = ({
     return (
       <Empty className="w-full">
         <p>{t('emptyTitle')}</p>
-        <p className="text-muted-foreground">{t('emptyDescription')}</p>
       </Empty>
     );
   }

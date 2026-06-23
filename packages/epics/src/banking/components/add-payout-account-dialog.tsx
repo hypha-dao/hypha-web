@@ -48,6 +48,22 @@ import {
 
 const ADD_PAYOUT_FORM_ID = 'add-payout-account-form';
 
+function getPayoutMinimum(
+  currency: PayoutCurrencyKey,
+  sourceCurrency: 'usdc' | 'eurc',
+): string | null {
+  switch (currency) {
+    case 'usd':
+      return '1 USDC';
+    case 'eur':
+      return sourceCurrency === 'eurc' ? '1 EURC' : '1 USDC';
+    case 'gbp':
+      return '3 USDC';
+    default:
+      return null;
+  }
+}
+
 const ENABLED_PAYOUT_CURRENCIES = getEnabledPayoutCurrencyKeys();
 
 function isValidIban(raw: string): boolean {
@@ -186,6 +202,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   onSuccess,
 }) => {
   const t = useTranslations('BankingTab.payouts.addDialog');
+  const tMinimums = useTranslations('BankingTab.minimums');
   const REQUIRED_MSG = t('fieldRequired');
   const radioName = useId();
 
@@ -663,6 +680,12 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     ),
                   )}
                 </div>
+                {getPayoutMinimum(selectedCurrency, sourceCurrency) ? (
+                  <p className="text-1 text-muted-foreground">
+                    {tMinimums('payoutNote')}{' '}
+                    {getPayoutMinimum(selectedCurrency, sourceCurrency)}
+                  </p>
+                ) : null}
               </FormSection>
 
               {/* Bank account details */}

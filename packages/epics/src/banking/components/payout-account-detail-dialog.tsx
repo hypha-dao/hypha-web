@@ -28,6 +28,17 @@ import {
 import { CurrencyFlagBadge } from './currency-flag-badge';
 import { InlineCopyRow } from './inline-copy-row';
 
+const PAYOUT_RAIL_MINIMUMS: Record<
+  string,
+  (sourceCurrency: string) => string | null
+> = {
+  ach: () => '1 USDC',
+  ach_push: () => '1 USDC',
+  wire: () => '1 USDC',
+  sepa: (src) => (src === 'eurc' ? '1 EURC' : '1 USDC'),
+  faster_payments: () => '3 USDC',
+};
+
 function statusBadgeClass(status: string): string {
   if (status === 'active') return 'bg-success-9 text-white';
   if (status === 'inactive' || status === 'deactivated')
@@ -59,6 +70,7 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
 }) => {
   const t = useTranslations('BankingTab.payouts');
   const tDialog = useTranslations('BankingTab.payouts.addDialog');
+  const tMinimums = useTranslations('BankingTab.minimums');
 
   if (!account) return null;
 
@@ -166,6 +178,17 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
               <p className="text-2 text-muted-foreground">
                 {tDialog('success.howToText')}
               </p>
+              {account.paymentRail &&
+              PAYOUT_RAIL_MINIMUMS[account.paymentRail]?.(
+                account.sourceCurrency.toLowerCase(),
+              ) ? (
+                <p className="text-1 text-muted-foreground">
+                  {tMinimums('payoutNote')}{' '}
+                  {PAYOUT_RAIL_MINIMUMS[account.paymentRail]?.(
+                    account.sourceCurrency.toLowerCase(),
+                  )}
+                </p>
+              ) : null}
             </div>
           </div>
         </BankingDialogBody>

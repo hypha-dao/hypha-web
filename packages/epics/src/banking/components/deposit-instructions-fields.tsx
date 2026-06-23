@@ -52,10 +52,22 @@ function toPanelSource(props: DepositInstructionsPanelProps) {
   return null;
 }
 
+const DEPOSIT_RAIL_MINIMUMS: Record<string, string> = {
+  ach_push: '1 USD',
+  ach: '1 USD',
+  wire: '1 USD',
+  sepa: '1 EUR',
+  faster_payments: '2 GBP',
+  spei: '50 MXN',
+  pix: '10 BRL',
+  cop: '100 COP',
+};
+
 export const DepositInstructionsPanel: FC<DepositInstructionsPanelProps> = (
   props,
 ) => {
   const t = useTranslations('BankingTab.depositInstructions');
+  const tMinimums = useTranslations('BankingTab.minimums');
   const tDetails = useTranslations('BankingTab.transferDetails');
   const source = toPanelSource(props);
 
@@ -158,6 +170,12 @@ export const DepositInstructionsPanel: FC<DepositInstructionsPanelProps> = (
               </Button>
             ) : null}
           </div>
+          {source.paymentRail && DEPOSIT_RAIL_MINIMUMS[source.paymentRail] ? (
+            <p className="text-1 text-muted-foreground">
+              {tMinimums('depositNote')}{' '}
+              {DEPOSIT_RAIL_MINIMUMS[source.paymentRail]}
+            </p>
+          ) : null}
           <div
             className={cn(
               'flex flex-col gap-2',

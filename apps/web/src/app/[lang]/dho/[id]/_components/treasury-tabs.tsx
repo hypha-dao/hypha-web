@@ -71,6 +71,14 @@ export function TreasuryTabs({
                 </span>
               </span>
             </TabsTrigger>
+            <TabsTrigger value="bank-accounts" variant="switch">
+              <span className="inline-flex items-center gap-1">
+                <span>{tTreasury('bankingRoutes')}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({format.number(bankAccountCount)})
+                </span>
+              </span>
+            </TabsTrigger>
             <TabsTrigger value="transactions" variant="switch">
               <span className="inline-flex items-center gap-1">
                 <span>{tTreasury('transactions')}</span>
@@ -87,19 +95,15 @@ export function TreasuryTabs({
                 </span>
               </span>
             </TabsTrigger>
-            <TabsTrigger value="bank-accounts" variant="switch">
-              <span className="inline-flex items-center gap-1">
-                <span>{tTreasury('bankAccounts')}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(bankAccountCount)})
-                </span>
-              </span>
-            </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="balance" className="mt-0">
           <AssetsSection basePath={basePath} web3SpaceId={web3SpaceId} />
+        </TabsContent>
+
+        <TabsContent value="bank-accounts" className="mt-0">
+          <BankingSection spaceSlug={spaceSlug} web3SpaceId={web3SpaceId} />
         </TabsContent>
 
         <TabsContent value="transactions" className="mt-0">
@@ -108,10 +112,6 @@ export function TreasuryTabs({
 
         <TabsContent value="vaults" className="mt-0">
           <VaultsSection />
-        </TabsContent>
-
-        <TabsContent value="bank-accounts" className="mt-0">
-          <BankingSection spaceSlug={spaceSlug} web3SpaceId={web3SpaceId} />
         </TabsContent>
       </Tabs>
     </div>
