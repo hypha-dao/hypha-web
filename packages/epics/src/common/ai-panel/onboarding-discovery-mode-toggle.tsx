@@ -1,11 +1,12 @@
 'use client';
 
-import { MessageSquareText, Mic } from 'lucide-react';
+import { MessageSquareText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
 import type { OnboardingDiscoveryMode } from '../onboarding-discovery-mode';
+import { LiveVoiceMicIcon } from './live-voice-mic-icon';
 
 type OnboardingDiscoveryModeToggleProps = {
   mode: OnboardingDiscoveryMode;
@@ -56,7 +57,7 @@ export function OnboardingDiscoveryModeToggle({
             : 'text-muted-foreground hover:text-foreground',
         )}
       >
-        <Mic className="size-3.5" aria-hidden />
+        <LiveVoiceMicIcon size="sm" />
         {t('onboardingDiscoveryModeVoice')}
       </button>
     </div>

@@ -15,4 +15,5 @@ export { OnboardingTransparencyMatrixCard } from './onboarding-transparency-matr
 export { OnboardingEntryMethodCard } from './onboarding-entry-method-card';
 export { OnboardingDiscoveryModeToggle } from './onboarding-discovery-mode-toggle';
 export { OnboardingVoiceInterviewBar } from './onboarding-voice-interview-bar';
+export { LiveVoiceMicIcon } from './live-voice-mic-icon';
 export * from './mock-data';

@@ -1,12 +1,13 @@
 'use client';
 
-import { Mic, MicOff, Square } from 'lucide-react';
+import { MicOff, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import type { VoiceInterviewPhase } from '../use-onboarding-voice-interview';
+import { LiveVoiceMicIcon } from './live-voice-mic-icon';
 
 type OnboardingVoiceInterviewBarProps = {
   phase: VoiceInterviewPhase;
@@ -56,7 +57,7 @@ function VoiceOrb({ phase }: { phase: VoiceInterviewPhase }) {
             : 'border-border bg-muted text-foreground',
         )}
       >
-        <Mic className="size-5" aria-hidden />
+        <LiveVoiceMicIcon size="md" />
       </span>
     </div>
   );
@@ -178,7 +179,7 @@ export function OnboardingVoiceInterviewBar({
               </>
             ) : (
               <>
-                <Mic className="size-4" aria-hidden />
+                <LiveVoiceMicIcon size="sm" />
                 {t('onboardingVoiceStartListening')}
               </>
             )}
