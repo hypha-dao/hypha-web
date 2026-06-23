@@ -11,6 +11,7 @@ import {
   ONBOARDING_CATEGORY_GROUP_LABELS,
   ONBOARDING_CATEGORY_USAGE_INSTRUCTION,
 } from './onboarding-categories';
+import { ONBOARDING_CREATION_CONFIRMATION_GUIDELINES } from '../system-prompt';
 import { isAnsweredActivationMethod } from './onboarding-activation-method';
 import { isAnsweredLocationStep } from './onboarding-location';
 import {
@@ -673,6 +674,9 @@ export function createOnboardingGuidanceTool() {
           : null;
       const setupCoherenceInstruction =
         buildOnboardingSetupCoherenceInstruction(answers);
+      const creationConfirmationInstruction = readyForValidation
+        ? `${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES} Present a compact recap, ask ONE confirmation question (for example "Ready to create the root space?"), and do NOT call create_space_from_onboarding in this turn unless the user already confirmed in plain language.`
+        : null;
       return {
         ok: true,
         process,
@@ -684,6 +688,7 @@ export function createOnboardingGuidanceTool() {
           : principlesAssistantInstruction ??
             orgDiscoveryInstruction ??
             assignedCategoryInstruction ??
+            creationConfirmationInstruction ??
             setupCoherenceInstruction ??
             ecosystemBlueprintAssistantInstruction ??
             visualAssetsAssistantInstruction ??

@@ -301,7 +301,7 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
           },
           next_step: explicitConfirmation
             ? 'Confirmation received. Re-run this tool without dry_run to start wallet signing.'
-            : 'I need one more confirmation from you before the signing step. Press Confirm and then sign in your wallet to create this space.',
+            : 'Present the preview recap and ask the user to confirm before creation—never say you will proceed or ask them to wait. After they confirm, call this tool again without dry_run.',
         };
       }
 
