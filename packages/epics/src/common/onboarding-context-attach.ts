@@ -44,7 +44,7 @@ export function shouldAttachOnboardingContext(
   const activeSlug = normalizeSlug(options.spaceSlug);
 
   if (phase === 'discover' || phase === 'draft' || phase === 'confirm') {
-    return !activeSlug;
+    return true;
   }
 
   if (phase === 'execute' || phase === 'verify') {

@@ -27,13 +27,13 @@ describe('shouldAttachOnboardingContext', () => {
     ).toBe(true);
   });
 
-  it('does not attach discover phase to an unrelated space', () => {
+  it('attaches discover phase on a space route so voice setup can continue', () => {
     const context = baseContext({ setupPhase: 'discover' });
     expect(
       shouldAttachOnboardingContext(context, {
         spaceSlug: 'hypha-platform',
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('attaches execute phase only on the created anchor slug', () => {
