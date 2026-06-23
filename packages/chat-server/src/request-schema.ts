@@ -47,6 +47,8 @@ export const onboardingConversationContextSchema = z.object({
   setupJourney: z.enum(['single_space', 'ecosystem']).optional(),
   transparencyMatrix: onboardingTransparencyMatrixSchema.optional(),
   entryMethod: z.enum(['open_access', 'invite_only', 'token_based']).optional(),
+  votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).optional(),
+  pendingTransparencyDiscoverability: z.number().int().min(0).max(3).optional(),
   ecosystemRootSlug: z.string().optional(),
   createdSpaceSlug: z.string().optional(),
   visualAssets: onboardingVisualAssetsSchema.optional(),

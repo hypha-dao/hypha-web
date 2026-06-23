@@ -106,6 +106,7 @@ import {
   resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
   clearOnboardingConversationContext,
+  clearOnboardingChatMessages,
   consumeOnboardingOpenAiPanelPending,
   consumeOnboardingContinuationPrompt,
   readOnboardingChatMessages,
@@ -166,6 +167,11 @@ import {
   formatOnboardingVotingMethodSubmitMessage,
   type OnboardingVotingMethod,
 } from './onboarding-voting-method-ui';
+import {
+  buildOnboardingVotingMethodProposalCopy,
+  getChangeVotingMethodProposalPath,
+  writeOnboardingVotingMethodResubmitData,
+} from './onboarding-voting-method-navigation';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import {
@@ -257,6 +263,23 @@ type NavItem = {
   active: boolean;
   disabled?: boolean;
 };
+
+function formatChatStreamErrorMessage(error: unknown): string {
+  const rawMessage =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message.trim()
+      : typeof error === 'string'
+      ? error.trim()
+      : '';
+  if (!rawMessage) return '';
+  if (
+    rawMessage.includes('An error occurred in the Server Components render') ||
+    rawMessage.toLowerCase().includes('digest')
+  ) {
+    return 'The assistant could not respond right now. Please try again in a moment.';
+  }
+  return rawMessage;
+}
 
 export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, getAccessToken } = useAuthentication();
@@ -890,10 +913,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const storedMessages = readOnboardingChatMessages();
     const storedContext = readOnboardingConversationContext();
+    const postCreateHandoff =
+      storedContext && isPostCreateOnboardingPhase(storedContext);
     if (storedContext) {
       setOnboardingContext(storedContext);
     }
-    if (storedMessages?.length) {
+    if (storedMessages?.length && !postCreateHandoff) {
       setMessages(
         storedMessages.map((message) => ({
           id: message.id,
@@ -901,6 +926,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           parts: message.parts ?? [],
         })) as Parameters<typeof setMessages>[0],
       );
+    } else {
+      clearOnboardingChatMessages();
+      setMessages([]);
     }
     openAiPanel();
     setAiOverlayVisible(false);
@@ -985,7 +1013,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         activeSpaceTitle: activeSpaceName,
         onboardingContext: activeContext,
         isOnboardingPath,
-        discoveryMode: isOnboardingSetup ? undefined : discoveryMode,
+        discoveryMode:
+          discoveryMode === 'voice_interview' ? discoveryMode : undefined,
       });
       return { body, headers: hdrs };
     },
@@ -1083,6 +1112,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;
     if (isStreaming) return;
+    if (blockSpaceAiForInteraction) return;
+    if (isAuthenticated && !jwt) return;
     const seededPrompt = pendingSeedPromptRef.current ?? '';
     const seededAttachments = pendingSeedAttachmentsRef.current;
     if (!seededPrompt.trim() && seededAttachments.length === 0) {
@@ -1142,7 +1173,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         });
       }
     })();
-  }, [buildMessageOptions, clearError, isStreaming, sendMessage]);
+  }, [
+    blockSpaceAiForInteraction,
+    buildMessageOptions,
+    clearError,
+    isAuthenticated,
+    isStreaming,
+    jwt,
+    sendMessage,
+  ]);
 
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;
@@ -1181,6 +1220,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       messages,
       createdSlug,
     );
+    clearOnboardingChatMessages();
+    setMessages([]);
     setOnboardingContext(handoff.context);
     saveOnboardingConversationContext(handoff.context);
     transferMobilizedAiAgentsToSpace(createdSlug, {
@@ -1211,6 +1252,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     openAiPanel,
     router,
     setAiOverlayVisible,
+    setMessages,
   ]);
 
   useEffect(() => {
@@ -1329,6 +1371,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (lastAutoTransitionSpaceSlugRef.current === slug) return;
     lastAutoTransitionSpaceSlugRef.current = slug;
     completeOnboardingWalletHandoff(slug);
+    clearOnboardingChatMessages();
+    setMessages([]);
     const handoff = preparePostRootOnboardingHandoff(
       onboardingContext,
       messages,
@@ -1359,6 +1403,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     openAiPanel,
     router,
     setAiOverlayVisible,
+    setMessages,
     walletCreatedSpace?.slug,
   ]);
 
@@ -1566,10 +1611,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (aiWalletProposalInFlightRef.current) return;
-    if (
-      isPostCreateOnboardingPhase(onboardingContext) &&
-      !onboardingContext?.votingMethod
-    ) {
+    // Post-create governance (voting/entry method) uses Agreements Publish — not in-chat wallet signing.
+    if (isPostCreateOnboardingPhase(onboardingContext)) {
       return;
     }
 
@@ -2288,6 +2331,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           message,
         );
         await sendOnboardingVotingMethodMessage(message, nextContext);
+
+        const targetSlug =
+          nextContext.createdSpaceSlug?.trim() ||
+          spaceSlug?.trim() ||
+          onboardingContext?.createdSpaceSlug?.trim();
+        if (targetSlug) {
+          const { title, description } =
+            buildOnboardingVotingMethodProposalCopy(
+              method,
+              onboardingVotingMethodMessageLabels,
+            );
+          writeOnboardingVotingMethodResubmitData({
+            method,
+            title,
+            description,
+          });
+          openAiPanel();
+          router.push(getChangeVotingMethodProposalPath(lang, targetSlug));
+        }
       } catch (err) {
         console.error(
           '[AiLeftPanel] voting method select sendMessage error:',
@@ -2301,7 +2363,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       lang,
       onboardingContext,
       onboardingVotingMethodMessageLabels,
+      openAiPanel,
+      router,
       sendOnboardingVotingMethodMessage,
+      spaceSlug,
     ],
   );
 
@@ -2658,7 +2723,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <div>{t('streamError')}</div>
             {error instanceof Error && error.message ? (
               <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs opacity-90">
-                {error.message}
+                {formatChatStreamErrorMessage(error)}
               </div>
             ) : null}
           </div>

@@ -104,6 +104,14 @@ On-chain governance write integrity (existing spaces):
 - Never tell the user privacy, transparency, discoverability, or activity access was updated unless create_space_setup_proposal returned requires_ui_completion or requires_wallet_signature for that change, or create_space_from_onboarding succeeded during new-space creation.
 - For all other on-chain agreements (treasury moves, investments, contributions, etc.), follow the same rule: no success claims until the matching tool returns a confirmed handoff (requires_wallet_signature or requires_ui_completion with the correct create_path).`;
 
+export const POST_CREATE_GOVERNANCE_SETUP_GUIDELINES = `
+Post-create governance setup (setupPhase execute or verify — space is already live):
+- Wallet signing (including 2FA/MFA) usually happens once during space creation. After that, an active wallet session often completes governance steps with Publish in Agreements — not another in-chat signing prompt.
+- Voting method: NEVER use create_space_setup_proposal with collective_agreement or any generic agreement type. Use proposal_type change_voting_method when you must call the tool, or rely on the voting method card — selecting it opens agreements/create/change-voting-method with the choice pre-filled. Tell the user to review the form and click Publish. Do NOT ask them to sign again in chat.
+- Entry method: NEVER use collective_agreement for join/entry setup. Use proposal_type change_entry_method or the entry method card, then agreements/create/change-entry-method and Publish.
+- If the user says they do not see a wallet prompt, do NOT resubmit or retry create_space_setup_proposal. Explain that Publish in the Agreements form is the next step and offer mcp_navigation to the correct create form.
+- Do not loop on verbal confirmations or repeated proposal creation when the user reports no signing prompt.`;
+
 export const SPACE_CONTINUOUS_ADVISOR_GUIDELINES = `
 Continuous space discovery (left AI panel — weeks and years, not a one-time form):
 - The member journey is ongoing discovery toward the space purpose and its ecosystem—not a fixed checklist you march through once.

@@ -154,8 +154,9 @@ jobs:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
         run: |
           vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
-          # Network map is build-time gated; enable on preview deploys for PR testing.
+          # Build-time feature flags; enable on preview deploys for PR testing.
           echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> .env.local
+          echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> .env.local
           vercel build --token=${{ env.VERCEL_TOKEN }}
 
       - name: Deploy Preview to Vercel

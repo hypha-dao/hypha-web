@@ -20,6 +20,7 @@ import {
   buildQuestionCompetencyDirective,
   buildSystemPrompt,
   LEFT_PANEL_NAVIGATION_GUIDELINES,
+  POST_CREATE_GOVERNANCE_SETUP_GUIDELINES,
   sanitizeSlug,
 } from './system-prompt';
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
@@ -1368,7 +1369,7 @@ export async function createChatStreamResult(
         }${
           normalizedConversationContext.setupPhase === 'execute' ||
           normalizedConversationContext.setupPhase === 'verify'
-            ? '\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Ask voting method first — the user picks with the voting method card in the panel. Then confirm entry method with the entry method card if it was skipped during discover. Use mcp_navigation to agreements/create/change-voting-method when the user is ready to submit the on-chain voting-method proposal. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.'
+            ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Ask voting method first — the user picks with the voting method card in the panel (this opens agreements/create/change-voting-method with Publish). Then confirm entry method with the entry method card if it was skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.`
             : ''
         }${
           normalizedConversationContext.setupPhase === 'confirm'

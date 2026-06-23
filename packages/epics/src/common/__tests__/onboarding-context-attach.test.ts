@@ -106,7 +106,24 @@ describe('shouldBypassSpaceMembershipForOnboarding', () => {
     ).toBe(true);
   });
 
-  it('does not bypass execute phase on the created anchor slug', () => {
+  it('bypasses verify phase on the created anchor slug', () => {
+    const context = baseContext({
+      setupPhase: 'verify',
+      createdSpaceSlug: 'my-root',
+    });
+    expect(
+      shouldBypassSpaceMembershipForOnboarding(context, {
+        spaceSlug: 'my-root',
+      }),
+    ).toBe(true);
+    expect(
+      shouldBypassSpaceMembershipForOnboarding(context, {
+        spaceSlug: 'other-space',
+      }),
+    ).toBe(false);
+  });
+
+  it('bypasses execute phase on the created anchor slug', () => {
     const context = baseContext({
       setupPhase: 'execute',
       createdSpaceSlug: 'my-root',
@@ -115,17 +132,10 @@ describe('shouldBypassSpaceMembershipForOnboarding', () => {
       shouldBypassSpaceMembershipForOnboarding(context, {
         spaceSlug: 'my-root',
       }),
-    ).toBe(false);
-  });
-
-  it('does not bypass verify phase on the created anchor slug', () => {
-    const context = baseContext({
-      setupPhase: 'verify',
-      createdSpaceSlug: 'my-root',
-    });
+    ).toBe(true);
     expect(
       shouldBypassSpaceMembershipForOnboarding(context, {
-        spaceSlug: 'my-root',
+        spaceSlug: 'other-space',
       }),
     ).toBe(false);
   });

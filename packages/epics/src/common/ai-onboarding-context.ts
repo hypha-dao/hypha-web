@@ -415,6 +415,47 @@ export function clearOnboardingConversationContext(): void {
 export { shouldAttachOnboardingContext } from './onboarding-context-attach';
 export { shouldBypassSpaceMembershipForOnboarding } from './onboarding-context-attach';
 
+/** Strip client-only fields and invalid setupPlan entries before POST /api/chat. */
+export function serializeConversationContextForChatApi(
+  context: OnboardingConversationContext,
+  options?: { discoveryMode?: OnboardingDiscoveryMode },
+): OnboardingConversationContext {
+  const discoveryMode = options?.discoveryMode ?? context.discoveryMode;
+  return {
+    mode: ONBOARDING_SETUP_MODE,
+    source: context.source ?? ONBOARDING_HERO_SOURCE,
+    ...(context.setupPhase ? { setupPhase: context.setupPhase } : {}),
+    ...(context.setupPlan ? { setupPlan: context.setupPlan } : {}),
+    ...(context.spaceLocation ? { spaceLocation: context.spaceLocation } : {}),
+    ...(context.activationMethod
+      ? { activationMethod: context.activationMethod }
+      : {}),
+    ...(context.setupJourney ? { setupJourney: context.setupJourney } : {}),
+    ...(context.transparencyMatrix
+      ? { transparencyMatrix: context.transparencyMatrix }
+      : {}),
+    ...(context.pendingTransparencyDiscoverability !== undefined
+      ? {
+          pendingTransparencyDiscoverability:
+            context.pendingTransparencyDiscoverability,
+        }
+      : {}),
+    ...(context.entryMethod ? { entryMethod: context.entryMethod } : {}),
+    ...(context.votingMethod ? { votingMethod: context.votingMethod } : {}),
+    ...(context.ecosystemRootSlug
+      ? { ecosystemRootSlug: context.ecosystemRootSlug }
+      : {}),
+    ...(context.createdSpaceSlug
+      ? { createdSpaceSlug: context.createdSpaceSlug }
+      : {}),
+    ...(context.visualAssets ? { visualAssets: context.visualAssets } : {}),
+    ...(discoveryMode ? { discoveryMode } : {}),
+    ...(context.lastUserText ? { lastUserText: context.lastUserText } : {}),
+    ...(context.locale ? { locale: context.locale } : {}),
+    createdAt: context.createdAt,
+  };
+}
+
 /** Resolve chat API body fields and whether persisted onboarding context is stale. */
 export function resolveChatTransportBody({
   spaceSlug,
@@ -477,7 +518,11 @@ export function resolveChatTransportBody({
     body: {
       ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
       ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
-      conversationContext: onboardingContext,
+      conversationContext: serializeConversationContextForChatApi(
+        onboardingContext,
+        { discoveryMode },
+      ),
+      ...(discoveryModePayload ? { discoveryMode: discoveryModePayload } : {}),
     },
     staleOnboardingContext: false,
   };
@@ -584,12 +629,19 @@ export function handoffOnboardingToAiPanel({
   context: OnboardingConversationContext;
   continuationPrompt?: string;
 }): void {
-  saveOnboardingChatMessages(messages);
+  const postCreateHandoff = isPostCreateOnboardingPhase(context);
+  if (postCreateHandoff) {
+    clearOnboardingChatMessages();
+  } else {
+    saveOnboardingChatMessages(messages);
+  }
   saveOnboardingConversationContext(context);
   const createdSlug =
     context.createdSpaceSlug?.trim() || context.ecosystemRootSlug?.trim();
   if (createdSlug) {
-    transferMobilizedAiAgentsToSpace(createdSlug, { messages });
+    transferMobilizedAiAgentsToSpace(createdSlug, {
+      messages: postCreateHandoff ? [] : messages,
+    });
   }
   markOnboardingOpenAiPanelPending();
   if (continuationPrompt?.trim()) {

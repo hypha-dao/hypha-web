@@ -60,6 +60,20 @@ export const AI_CREATABLE_PROPOSAL_TYPES = {
     aiWalletExecutable: false,
     createPath: 'agreements/create/space-settings-transparency',
   },
+  change_voting_method: {
+    documentLabel: 'Voting Method',
+    summary:
+      'Change how decisions are voted on (one member, one voice token, or one governance token per vote).',
+    aiWalletExecutable: false,
+    createPath: 'agreements/create/change-voting-method',
+  },
+  change_entry_method: {
+    documentLabel: 'Entry Method',
+    summary:
+      'Change how people join the space (open access, invite/request, or token-based).',
+    aiWalletExecutable: false,
+    createPath: 'agreements/create/change-entry-method',
+  },
 } as const;
 
 export type AiCreatableProposalType = keyof typeof AI_CREATABLE_PROPOSAL_TYPES;
@@ -74,6 +88,8 @@ export const aiCreatableProposalTypeSchema = [
   'deploy_funds',
   'airdrop',
   'space_transparency',
+  'change_voting_method',
+  'change_entry_method',
 ] as const;
 
 export function buildAiProposalTypePromptLines(): string {
