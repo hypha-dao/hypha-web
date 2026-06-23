@@ -183,6 +183,7 @@ import {
   type VoiceSessionContext,
 } from './space-voice-session-context';
 import { findLatestAiPanelNavigationTarget } from './ai-tool-navigation';
+import { writeGovernanceProposalResubmitPayload } from './governance-proposal-navigation';
 import {
   appendVoiceTranscriptTurn,
   buildRecentTranscriptSummaryFromChatMessages,
@@ -1264,6 +1265,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
+      'prepare_governance_proposal',
     ]);
     const href = navigationTarget?.href;
     if (!href) return;
@@ -1282,6 +1284,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       getDhoSpaceSlugFromPathname(href) ?? null;
     openAiPanel();
     setAiOverlayVisible(false);
+
+    if (navigationTarget.resubmitPayload) {
+      writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
+    }
 
     if (navigationTarget.openHumanChat) {
       if (navigationTarget.coherenceChat) {

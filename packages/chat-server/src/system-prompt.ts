@@ -1,4 +1,5 @@
 import { buildAiProposalTypePromptLines } from './tools/ai-proposal-types';
+import { buildProposalGuidancePromptLines } from './tools/proposal-guidance';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
 import { ONBOARDING_TRANSPARENCY_GUIDELINES } from './tools/onboarding-transparency-guidance';
 
@@ -100,15 +101,15 @@ On-chain governance write integrity (existing spaces):
 - Database-only metadata (title, description, activation flags) may be changed with update_space_settings or Space Configuration after confirmation. These tools never change discoverability, activity access, join method, treasury, or membership.
 - Discoverability and activity access are on-chain settings. Changing them on an existing space ALWAYS requires a Space Transparency proposal (create_space_setup_proposal with proposal_type space_transparency), member vote, and wallet signing — never update_space_settings, never the onboarding transparency matrix card, and never create_space_from_onboarding.
 - Before answering privacy or transparency questions, call get_space_by_slug and read privacy + onChainTransparency. If privacy.isAlreadyPrivate is true, tell the user warmly that the space is already private — do not ask for confirmation and do not claim anything was updated.
-- When a transparency change is genuinely needed, preview the current vs requested levels, ask for one confirmation, then call create_space_setup_proposal with proposal_type space_transparency. After the tool returns requires_ui_completion, offer mcp_navigation to agreements/create/space-settings-transparency.
+- When a transparency change is genuinely needed, preview the current vs requested levels, ask for one confirmation, then call prepare_governance_proposal with proposal_type space_transparency (or proposal_guidance first).
 - Never tell the user privacy, transparency, discoverability, or activity access was updated unless create_space_setup_proposal returned requires_ui_completion or requires_wallet_signature for that change, or create_space_from_onboarding succeeded during new-space creation.
 - For all other on-chain agreements (treasury moves, investments, contributions, etc.), follow the same rule: no success claims until the matching tool returns a confirmed handoff (requires_wallet_signature or requires_ui_completion with the correct create_path).`;
 
 export const POST_CREATE_GOVERNANCE_SETUP_GUIDELINES = `
 Post-create governance setup (setupPhase execute or verify — space is already live):
 - Wallet signing (including 2FA/MFA) usually happens once during space creation. After that, an active wallet session often completes governance steps with Publish in Agreements — not another in-chat signing prompt.
-- Voting method: NEVER use create_space_setup_proposal with collective_agreement or any generic agreement type. Use proposal_type change_voting_method when you must call the tool, or rely on the voting method card — selecting it opens agreements/create/change-voting-method with the choice pre-filled. Tell the user to review the form and click Publish. Do NOT ask them to sign again in chat.
-- Entry method: NEVER use collective_agreement for join/entry setup. Use proposal_type change_entry_method or the entry method card, then agreements/create/change-entry-method and Publish.
+- Voting method: NEVER use create_space_setup_proposal with collective_agreement or any generic agreement type. Call proposal_guidance(proposal_type: change_voting_method), ask for voting_method (1m1v / 1v1v / 1t1v) and title/description, then prepare_governance_proposal — the form opens pre-filled and the member clicks Publish. Do NOT ask them to sign again in chat.
+- Entry method: same pattern with proposal_type change_entry_method and prepare_governance_proposal.
 - If the user says they do not see a wallet prompt, do NOT resubmit or retry create_space_setup_proposal. Explain that Publish in the Agreements form is the next step and offer mcp_navigation to the correct create form.
 - Do not loop on verbal confirmations or repeated proposal creation when the user reports no signing prompt.`;
 
@@ -420,9 +421,12 @@ Tool choice:
 - generate_space_visual_assets: generate a square space icon/logo and/or wide banner from space name, purpose, and vibe. Use during onboarding when the user has no assets or wants AI-generated placeholders; pass returned logo_url and lead_image_url into create_space_from_onboarding.
 - geocode_space_location: internal fallback only—during onboarding discover phase, direct users to the address search and map card in chat instead; never show latitude or longitude to users.
 - update_space_settings: database-only metadata (title, description, activation flags). Never for discoverability, activity access, or privacy. Use only after showing proposed changes and obtaining explicit confirmation.
-- create_space_setup_proposal: create a governance proposal for the current space. Always set proposal_type to exactly one catalog value below based on user intent — never invent a freeform label. Use space_transparency for privacy/discoverability changes on existing spaces.
+- create_space_setup_proposal: create a governance proposal for the current space. Always set proposal_type to exactly one catalog value below based on user intent — never invent a freeform label. Use only for collective_agreement and legacy flows — typed forms use prepare_governance_proposal instead.
+- proposal_guidance: read-only discovery playbook for a proposal type — required questions and fields. Call before collecting proposal details.
+- prepare_governance_proposal: pre-fill Agreements forms for change_voting_method, change_entry_method, and space_transparency after discovery. Opens the form with typed fields; member clicks Publish. Never wallet-sign in chat for these types.
 ${buildAiProposalTypePromptLines()}
-  Use only after showing title, type, and description in the confirmation preview and obtaining explicit confirmation. Collective Agreement completes with wallet signature in chat; other types return requires_ui_completion — offer mcp_navigation to the matching Agreements create form.
+${buildProposalGuidancePromptLines()}
+  Typed governance proposals (voting method, entry method, transparency): proposal_guidance → collect fields → prepare_governance_proposal → Publish in Agreements. Collective Agreement only: create_space_setup_proposal after confirmation.
 ${ONCHAIN_GOVERNANCE_WRITE_INTEGRITY}
 - generate_ecosystem_blueprint: plan-only tool that drafts ecosystem graph nodes and dependencies from the root space; use this before creating ecosystem spaces.
 - get_network_ecosystem_patterns: read-only organisational guidance — analyze multi-space ecosystems across the Hypha network for common roles and structures.

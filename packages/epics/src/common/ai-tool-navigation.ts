@@ -15,6 +15,7 @@ export type AiPanelNavigationTarget = {
   href: string;
   openInNewTab: boolean;
   openHumanChat: boolean;
+  resubmitPayload?: Record<string, unknown>;
   coherenceChat?: {
     roomId: string | null;
     title: string;
@@ -64,6 +65,12 @@ function parseNavigationTarget(args: {
     href,
     openInNewTab: navigation?.open_in_new_tab === true,
     openHumanChat,
+    resubmitPayload:
+      args.toolName === 'prepare_governance_proposal' &&
+      args.output?.resubmit_payload &&
+      typeof args.output.resubmit_payload === 'object'
+        ? (args.output.resubmit_payload as Record<string, unknown>)
+        : undefined,
     coherenceChat,
     key: `${args.messageId}:${args.partKey}:${href}`,
   };

@@ -11,6 +11,10 @@ import { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-s
 import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 import { createHumanChatMessageTool } from './create-human-chat-message';
+import {
+  createPrepareGovernanceProposalTool,
+  createProposalGuidanceTool,
+} from './prepare-governance-proposal';
 import { webSearchTool } from './web-search';
 import { createOnboardingToolSet, safeChatTool } from './onboarding-tool-set';
 
@@ -88,6 +92,14 @@ export function createChatTools(
     create_human_chat_message: safeChatTool(
       'create_human_chat_message',
       createHumanChatMessageTool(authToken, requestUrlForSessionMatrix),
+    ),
+    proposal_guidance: safeChatTool(
+      'proposal_guidance',
+      createProposalGuidanceTool(),
+    ),
+    prepare_governance_proposal: safeChatTool(
+      'prepare_governance_proposal',
+      createPrepareGovernanceProposalTool(authToken),
     ),
     web_search: safeChatTool('web_search', webSearchTool),
     ...onboardingTools,

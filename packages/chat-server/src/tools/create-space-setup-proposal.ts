@@ -106,6 +106,30 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
         data.proposal_type,
       );
 
+      if (
+        data.proposal_type === 'change_voting_method' ||
+        data.proposal_type === 'change_entry_method'
+      ) {
+        return {
+          ok: false,
+          error:
+            'Use proposal_guidance then prepare_governance_proposal for this proposal type so voting method, entry method, and other required fields are pre-filled before Publish.',
+        };
+      }
+
+      if (
+        data.proposal_type === 'collective_agreement' &&
+        /\bvoting method\b|change.{0,24}vot(e|ing)|one (member|token|voice)/i.test(
+          `${data.title} ${data.description}`,
+        )
+      ) {
+        return {
+          ok: false,
+          error:
+            'Voting method changes require proposal_guidance and prepare_governance_proposal with proposal_type change_voting_method — not collective_agreement.',
+        };
+      }
+
       const safe = sanitizeSlug(data.space_slug);
       if (!safe) return { ok: false, error: 'Invalid space slug format.' };
 
