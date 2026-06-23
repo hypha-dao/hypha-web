@@ -43,8 +43,6 @@ import {
   filesToFileList,
   getLegacyCreateSpacePath,
   ONBOARDING_SETUP_MODE,
-  OnboardingDiscoveryModeToggle,
-  OnboardingVoiceInterviewBar,
   saveOnboardingConversationContext,
   type OnboardingDiscoveryMode,
 } from '@hypha-platform/epics';
@@ -286,8 +284,6 @@ export function OnboardingAdventurePage({
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
   const [isStartingAi, setIsStartingAi] = useState(false);
-  const [heroDiscoveryMode, setHeroDiscoveryMode] =
-    useState<OnboardingDiscoveryMode>('chat');
   const [aiStartError, setAiStartError] = useState<string | null>(null);
   const [onboardingAiConversation, setOnboardingAiConversation] = useState<{
     prompt: string;
@@ -553,7 +549,6 @@ export function OnboardingAdventurePage({
     const context = {
       mode: ONBOARDING_SETUP_MODE,
       source: 'onboarding_hero' as const,
-      discoveryMode: heroDiscoveryMode,
       ...(firstName ? { firstName } : {}),
       locale,
       createdAt: new Date().toISOString(),
@@ -672,13 +667,6 @@ export function OnboardingAdventurePage({
                     </div>
                   </div>
                 ) : null}
-                <div className="flex justify-center px-3 pb-2">
-                  <OnboardingDiscoveryModeToggle
-                    mode={heroDiscoveryMode}
-                    disabled={!aiChatEnabled || isStartingAi}
-                    onChange={setHeroDiscoveryMode}
-                  />
-                </div>
                 <textarea
                   value={aiPrompt}
                   onChange={(event) => setAiPrompt(event.target.value)}
