@@ -14,13 +14,17 @@ import type {
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
-import { buildEcosystemExecutePhaseDirective } from './onboarding-ecosystem-blueprint';
+import {
+  buildEcosystemExecutePhaseDirective,
+  hasPendingEcosystemChildSpaces,
+} from './onboarding-ecosystem-blueprint';
 import { ONBOARDING_TRANSPARENCY_GUIDELINES } from './tools/onboarding-transparency-guidance';
 import {
   buildQuestionCompetencyDirective,
   buildSystemPrompt,
   LEFT_PANEL_NAVIGATION_GUIDELINES,
   POST_CREATE_GOVERNANCE_SETUP_GUIDELINES,
+  ECOSYSTEM_NESTED_SPACES_GUIDELINES,
   STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES,
   sanitizeSlug,
 } from './system-prompt';
@@ -1359,6 +1363,10 @@ export async function createChatStreamResult(
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? buildEcosystemExecutePhaseDirective(normalizedConversationContext)
       : null;
+  const pendingEcosystemChildren =
+    normalizedConversationContext?.mode === 'onboarding_setup'
+      ? hasPendingEcosystemChildSpaces(normalizedConversationContext)
+      : false;
   const voiceDiscoveryActive =
     normalizedConversationContext?.discoveryMode === 'voice_interview' ||
     discoveryMode === 'voice_interview';
@@ -1366,13 +1374,14 @@ export async function createChatStreamResult(
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before any write action, present a concise action plan and request explicit confirmation.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
           normalizedConversationContext.setupPhase ?? 'discover'
-        }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n- Discovery order: (1) journey cards (single space vs ecosystem), (2) name and purpose, (3) propose general principles and get user reaction, (4) org discovery (industry, community size, core team—category tags auto-assigned from the ten fixed Hypha groups, never custom tags), (5) ecosystem structure from public network patterns if applicable, (6) activation mode cards (Sandbox Mode, Pilot Mode, Live Mode only—never entry method here), (7) Space Transparency — ask discoverability first, then activity access (Public, Network, Organisation, Space for each, with official descriptions and the transparency card), (8) entry method cards (open access, invite/request, token-based), (9) location map UI or skip, (10) logo and hero banner—ask upload first; if they have none, offer to generate and call generate_space_visual_assets with user confirmation before any create_space_from_onboarding or wallet signing.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until name, purpose, principles_reaction, org_discovery, and visual assets (logo_url + lead_image_url) are complete.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- For ecosystem onboarding: call get_network_ecosystem_patterns (public, non-sandbox spaces only), ask root-space role, propose_organisation_blueprint, complete visual assets, create the root space first, then continue child spaces from the left AI panel with 3-4 proposed child spaces. After root creation the user lands on the ecosystem navigation view with the AI panel open.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
+        }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time with create_ecosystem_space.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
           resolveLatestVisualGenerationIntent(recentUserTexts)
             ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation.'
             : ''
         }${
-          normalizedConversationContext.setupPhase === 'execute' ||
-          normalizedConversationContext.setupPhase === 'verify'
+          (normalizedConversationContext.setupPhase === 'execute' ||
+            normalizedConversationContext.setupPhase === 'verify') &&
+          !pendingEcosystemChildren
             ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Ask voting method first — the user picks with the voting method card in the panel (this opens agreements/create/change-voting-method with Publish). Or call proposal_guidance + prepare_governance_proposal with voting_method after they answer. Then confirm entry method with the entry method card if it was skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.`
             : ''
         }${

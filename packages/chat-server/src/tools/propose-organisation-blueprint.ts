@@ -21,7 +21,7 @@ const inputSchema = z.object({
 export function createProposeOrganisationBlueprintTool() {
   return {
     description:
-      'Plan-only organisational guidance: propose a multi-space ecosystem blueprint for a new organisation. Learns from network ecosystem patterns and returns draft child spaces for user confirmation. Does not write.',
+      'Plan-only organisational guidance: propose a multi-space ecosystem blueprint for a new organisation. Learns from network ecosystem patterns and returns draft nested spaces for user confirmation. Does not write or create spaces.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -56,7 +56,7 @@ export function createProposeOrganisationBlueprintTool() {
           confirmation_token: 'confirm-ecosystem-blueprint',
           blueprint,
           next_step:
-            'Present the proposed spaces clearly. After confirmation, create the root with create_space_from_onboarding, then child spaces with create_ecosystem_space.',
+            'Present the proposed nested spaces clearly. After confirmation, create ONLY the root with create_space_from_onboarding. Nested spaces are created later in the left AI panel with create_ecosystem_space—one at a time.',
         };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
