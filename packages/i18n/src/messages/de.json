@@ -1,4 +1,4 @@
-{
+﻿{
   "Common": {
     "Assignments": "Zuweisungen",
     "Members": "Mitglieder",
@@ -591,7 +591,7 @@
     "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}"
   },
   "BankingTab": {
-    "title": "Banking Routes",
+    "title": "Bankdienste",
     "loading": "Bankkontostatus wird geladen…",
     "returnBanner": "Willkommen zurück — wir prüfen Ihren Verifizierungsstatus.",
     "errorLoad": "Bankkontostatus konnte nicht geladen werden.",
@@ -672,24 +672,24 @@
       }
     },
     "returnBannerDismiss": "Schließen",
-    "returnBannerApprovedHint": "Verification is complete. Add routing accounts for any remaining currencies.",
+    "returnBannerApprovedHint": "Die Verifizierung ist abgeschlossen. Fügen Sie Routing-Konten für verbleibende Währungen hinzu.",
     "sections": {
       "transfers": {
-        "title": "One-time Transfer Routes",
-        "description": "Single-use bank transfer accounts that automatically route incoming funds to the space USDC or EURC wallets.",
-        "emptyTitle": "No one-time transfer routes yet",
-        "newTransferCta": "Add one-time route",
+        "title": "Einmalige Überweisungsrouten",
+        "description": "Einmalig nutzbare Bankkonten, die eingehende Gelder automatisch zu den USDC- oder EURC-Wallets des Spaces weiterleiten.",
+        "emptyTitle": "Noch keine einmaligen Überweisungsrouten",
+        "newTransferCta": "Einmalige Route hinzufügen",
         "loading": "Überweisungen werden geladen…"
       },
       "accounts": {
-        "title": "Deposit Routing Accounts",
-        "description": "Bank transfer accounts that automatically route incoming funds to the space USDC or EURC wallets.",
-        "emptyTitle": "No deposit routing accounts yet",
+        "title": "Einzahlungs-Routing-Konten",
+        "description": "Bankkonten, die eingehende Gelder automatisch zu den USDC- oder EURC-Wallets des Spaces weiterleiten.",
+        "emptyTitle": "Noch keine Einzahlungs-Routing-Konten",
         "pendingTitle": "Verifizierung läuft",
-        "pendingDescription": "Finish verification in Bridge to activate the currencies you selected. Your routing accounts will be set up automatically once approved.",
+        "pendingDescription": "Schließen Sie die Verifizierung in Bridge ab, um die ausgewählten Währungen zu aktivieren. Ihre Routing-Konten werden nach der Genehmigung automatisch eingerichtet.",
         "continueVerificationCta": "Verifizierung fortsetzen",
         "loadingAccounts": "Bankkonten werden geladen…",
-        "signInHint": "Sign in to manage banking routes."
+        "signInHint": "Melden Sie sich an, um Banking-Routen zu verwalten."
       }
     },
     "payouts": {
@@ -698,14 +698,14 @@
         "payouts": "Auszahlungen"
       },
       "section": {
-        "title": "Payout Bank Accounts",
-        "description": "Register an external bank account to transfer funds from your USDC or EURC wallets through proposals."
+        "title": "Auszahlungsbankkonten",
+        "description": "Registrieren Sie ein externes Bankkonto, um Gelder aus Ihren USDC- oder EURC-Wallets über Anträge zu überweisen."
       },
       "addCta": "Auszahlungskonto hinzufügen",
       "loading": "Auszahlungskonten werden geladen…",
-      "emptyTitle": "No payout bank accounts yet",
+      "emptyTitle": "Noch keine Auszahlungsbankkonten",
       "cardBankFallback": "Bankkonto",
-      "liquidationAddressLabel": "Payout address",
+      "liquidationAddressLabel": "Auszahlungsadresse",
       "payoutAddressLabel": "Auszahlungsadresse",
       "detail": {
         "title": "Auszahlungskonto",
@@ -722,7 +722,7 @@
       "addDialog": {
         "title": "Auszahlungskonto hinzufügen",
         "stepOf": "Schritt {current} von {total}",
-        "step1Description": "Indicate the currency of the destination bank account.",
+        "step1Description": "Geben Sie die Währung des Zielbankontos an.",
         "step2Description": "Geben Sie die Bankdaten des Zielkontos ein.",
         "step3Description": "Geben Sie die Adresse des Begünstigten und die Überweisungsdetails ein.",
         "step4Description": "Überprüfen und bestätigen Sie Ihre Auszahlungskontodaten.",
@@ -783,10 +783,10 @@
         "submitting": "Wird erstellt…",
         "success": {
           "title": "Auszahlungskonto registriert",
-          "subtitle": "The account is active. Copy the payout address to use in proposals.",
-          "liquidationAddressLabel": "Payout address",
+          "subtitle": "Das Konto ist aktiv. Kopieren Sie die Auszahlungsadresse zur Verwendung in Anträgen.",
+          "liquidationAddressLabel": "Auszahlungsadresse",
           "howToTitle": "So führen Sie Auszahlungen durch",
-          "howToText": "Create a Funding or Expenses proposal pointing to this address as the payout destination. Funds will be converted and transferred to your registered bank.",
+          "howToText": "Erstellen Sie einen Funding- oder Expenses-Antrag mit dieser Adresse als Auszahlungsziel. Die Gelder werden umgewandelt und an Ihre registrierte Bank überwiesen.",
           "done": "Fertig"
         },
         "swift": {
@@ -822,22 +822,22 @@
       }
     },
     "openAccount": {
-      "title": "Set up deposit routing accounts",
-      "titleAddCurrency": "Add a deposit routing account",
-      "description": "Tell us about your organization and which currencies you support. You'll verify your space once, and then be able to use deposit and payout banking routes.",
-      "descriptionAddCurrency": "Choose additional currencies to add deposit routing accounts for your space.",
-      "descriptionAddCurrencySingle": "Choose the deposit currency for this routing account. Additional verification from the provider may be required.",
+      "title": "Einzahlungs-Routing-Konten einrichten",
+      "titleAddCurrency": "Einzahlungs-Routing-Konto hinzufügen",
+      "description": "Teilen Sie uns Angaben zu Ihrer Organisation und den unterstützten Währungen mit. Sie verifizieren Ihren Space einmalig und können dann Einzahlungs- und Auszahlungsrouten nutzen.",
+      "descriptionAddCurrency": "Wählen Sie weitere Währungen aus, um Einzahlungs-Routing-Konten für Ihren Space hinzuzufügen.",
+      "descriptionAddCurrencySingle": "Erstellen Sie dauerhafte Einzahlungsanweisungen für eingehende Überweisungen. Die Gelder werden automatisch in USDC oder EURC umgewandelt und in Ihrer Treasury-Wallet verrechnet.",
       "bankAccountDepositLabel": "Einzahlungswährung",
-      "bankAccountDepositHint": "Currency this routing account will receive.",
+      "bankAccountDepositHint": "Währung, die dieses Routing-Konto empfängt.",
       "legalName": "Rechtlicher Name der Organisation",
       "contactEmail": "Kontakt-E-Mail",
       "currenciesLabel": "Währungen",
-      "currenciesHint": "Select every currency you want to receive bank deposits in.",
-      "currenciesHintSingle": "Select a currency you want to receive bank deposits in.",
-      "submit": "Set up routing accounts",
-      "submitAddCurrency": "Add routing account",
+      "currenciesHint": "Wählen Sie alle Währungen aus, in denen Sie Bankeinzahlungen empfangen möchten.",
+      "currenciesHintSingle": "Wählen Sie eine Währung aus, in der Sie Bankeinzahlungen empfangen möchten.",
+      "submit": "Routing-Konten einrichten",
+      "submitAddCurrency": "Routing-Konto hinzufügen",
       "submitting": "Wird bearbeitet…",
-      "noCurrenciesAvailable": "All supported deposit routing accounts are already set up for this space.",
+      "noCurrenciesAvailable": "Alle unterstützten Einzahlungs-Routing-Konten sind für diesen Space bereits eingerichtet.",
       "railLabel": "Zahlungsweg",
       "railPlaceholder": "Zahlungsweg auswählen",
       "requestRail": "Anfordern",
@@ -848,7 +848,7 @@
       "redirectPendingDescription": "Akzeptieren Sie die Bedingungen und schließen Sie die Verifizierung ab, um die ausgewählten Währungen zu aktivieren."
     },
     "toolbar": {
-      "addCurrency": "Add routing account",
+      "addCurrency": "Routing-Konto hinzufügen",
       "finishVerificationFirst": "Schließen Sie zuerst die laufende Verifizierung ab",
       "allCurrenciesCovered": "Für alle unterstützten Währungen existieren bereits Konten",
       "loadingAccounts": "Bankkonten werden geladen…",
@@ -866,8 +866,8 @@
       "openGearForVerification": "Klicken Sie, um Verifizierungsdetails und Bridge-Links zu öffnen."
     },
     "minimums": {
-      "depositNote": "Minimum deposit:",
-      "payoutNote": "Minimum transfer:"
+      "depositNote": "Mindesteinzahlung:",
+      "payoutNote": "Mindestüberweisung:"
     },
     "advanced": {
       "gearLabel": "Banking-Einstellungen",
@@ -1053,7 +1053,7 @@
     },
     "createTransfer": {
       "title": "Neue einmalige Überweisung",
-      "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Mittel werden in einen Stablecoin (USDC oder EURC) in Ihrer Treasury umgewandelt.",
+      "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Gelder werden automatisch in USDC oder EURC umgewandelt und in Ihrer Treasury-Wallet verrechnet.",
       "corridorLabel": "Korridor",
       "corridorHint": "Wählen Sie, wie der Zahler Mittel sendet. Dies bestimmt die Einzahlungsanweisungen.",
       "fixedAmountLabel": "Festen Betrag verlangen",
@@ -1115,7 +1115,7 @@
     }
   },
   "TreasuryTab": {
-    "bankingRoutes": "Banking",
+    "bankingRoutes": "Bankdienste",
     "balance": "Kontostand",
     "wallet": "Wallet",
     "searchTokens": "Tokens suchen",

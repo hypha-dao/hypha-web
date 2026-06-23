@@ -750,7 +750,7 @@
       "titleAddCurrency": "Add a deposit routing account",
       "description": "Tell us about your organization and which currencies you support. You'll verify your space once, and then be able to use deposit and payout banking routes.",
       "descriptionAddCurrency": "Choose additional currencies to add deposit routing accounts for your space.",
-      "descriptionAddCurrencySingle": "Choose the deposit currency for this routing account.",
+      "descriptionAddCurrencySingle": "Create permanent deposit instructions for incoming transfers. Funds are automatically converted to USDC or EURC and settled in your treasury wallet.",
       "bankAccountDepositLabel": "Deposit currency",
       "bankAccountDepositHint": "Currency this routing account will receive.",
       "legalName": "Legal entity name",
