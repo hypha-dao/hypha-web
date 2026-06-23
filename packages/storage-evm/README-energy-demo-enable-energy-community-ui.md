@@ -226,7 +226,7 @@ If you prefer strict parity with empty investor device lists, register investors
 
 ## After deployment: AWS RDS ingestion loop
 
-The script **`scripts/base-mainnet-contracts-scripts/energy-ppav2-rds-loop.ts`** connects to **PostgreSQL on AWS RDS** (using the `pg` client and TLS by default), reads `accounting.interval_readings`, runs the VPP fair-split from `vpp/`, and submits `consumeEnergy` to the PPA proxy. It is the “AWS-facing” piece of the demo: credentials and host come from environment variables, not from the UI.
+- The script **`energy-ppav2-rds-loop.ts`** connects to **PostgreSQL** (Azure Database for PostgreSQL by default; legacy AWS RDS via `ENERGY_RDS_*` aliases), reads `accounting.interval_readings`, runs the VPP fair-split from `vpp/`, and submits `consumeEnergy` to the PPA proxy.
 
 **Run (from `packages/storage-evm`):**
 
@@ -234,7 +234,9 @@ The script **`scripts/base-mainnet-contracts-scripts/energy-ppav2-rds-loop.ts`**
 ENERGY_DEMO_COMMAND=loop npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-rds-loop.ts --network base-mainnet
 ```
 
-**Required / common env vars:** see the table in `README-energy-demo.md` (`ENERGY_RDS_HOST`, `ENERGY_RDS_DATABASE`, `ENERGY_RDS_USER`, `ENERGY_RDS_PASSWORD`, `ENERGY_RDS_COMMUNITY_ID`, checkpoint and poll options). Ensure `energy-ppav2-demo-state.json` (or your state file) points at the same `ppaProxy` you activated.
+**Required / common env vars:** see the table in `README-energy-demo.md` (`ENERGY_DB_*` or legacy `ENERGY_RDS_*`, `ENERGY_API_KEY` for spot prices, checkpoint and poll options). Ensure `energy-ppav2-demo-state.json` (or your state file) points at the same `ppaProxy` you activated.
+
+External API blockers: see [`EXTERNAL-ENERGY-API-BLOCKERS.md`](./EXTERNAL-ENERGY-API-BLOCKERS.md).
 
 ---
 

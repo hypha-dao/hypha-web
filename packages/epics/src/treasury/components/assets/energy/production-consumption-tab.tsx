@@ -1,8 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from '@hypha-platform/ui';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
+import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
 import {
   buildProductionSeries,
@@ -21,6 +28,11 @@ export const ProductionConsumptionTab = ({
   data: SpaceEnergyResponse;
 }) => {
   const [timeframe, setTimeframe] = React.useState<Timeframe>('30d');
+  const {
+    data: telemetry,
+    isLoading: telemetryLoading,
+    error: telemetryError,
+  } = useSpaceEnergyTelemetry(timeframe);
 
   const sourceLabels = React.useMemo(
     () =>
@@ -30,9 +42,7 @@ export const ProductionConsumptionTab = ({
     [data.sources],
   );
 
-  const labels = React.useMemo(() => timeframeLabels(timeframe), [timeframe]);
-
-  const { perSource, consumption } = React.useMemo(
+  const dummy = React.useMemo(
     () =>
       buildProductionSeries(
         sourceLabels.length ? sourceLabels : ['Community grid'],
@@ -41,8 +51,32 @@ export const ProductionConsumptionTab = ({
     [sourceLabels, timeframe],
   );
 
-  const totalProduced = perSource.reduce((acc, s) => acc + sum(s.values), 0);
-  const totalConsumed = sum(consumption);
+  const useLiveTelemetry = Boolean(
+    telemetry?.enabled &&
+      telemetry.configured &&
+      !telemetryError &&
+      telemetry.dataFrom,
+  );
+
+  const labels = useLiveTelemetry
+    ? telemetry!.labels
+    : timeframeLabels(timeframe);
+  const perSource = useLiveTelemetry
+    ? telemetry!.productionBySource.map((s) => ({
+        label: s.label,
+        values: s.valuesKwh,
+      }))
+    : dummy.perSource;
+  const consumption = useLiveTelemetry
+    ? telemetry!.consumptionKwh
+    : dummy.consumption;
+
+  const totalProduced = useLiveTelemetry
+    ? telemetry!.totals.producedKwh
+    : perSource.reduce((acc, s) => acc + sum(s.values), 0);
+  const totalConsumed = useLiveTelemetry
+    ? telemetry!.totals.consumedKwh
+    : sum(consumption);
   const net = totalProduced - totalConsumed;
 
   const productionVsConsumption: ChartSeries[] = [
@@ -69,45 +103,79 @@ export const ProductionConsumptionTab = ({
     values: s.values,
   }));
 
+  const statusMessage = React.useMemo(() => {
+    if (telemetryLoading) return 'Loading interval telemetry…';
+    if (telemetryError) {
+      return 'Could not load telemetry — showing placeholder charts.';
+    }
+    if (!telemetry?.configured) {
+      return 'Azure energy DB is not configured (ENERGY_DB_* env vars). Showing placeholder charts.';
+    }
+    if (useLiveTelemetry && telemetry?.dataFrom && telemetry?.dataTo) {
+      const from = new Date(telemetry.dataFrom).toLocaleDateString();
+      const to = new Date(telemetry.dataTo).toLocaleDateString();
+      return `Live 15-minute interval data (${from} – ${to}). Sparse buckets show zero until more history accumulates.`;
+    }
+    if (telemetry?.enabled && !telemetry?.dataFrom) {
+      return 'No interval readings yet for this community — showing placeholder charts.';
+    }
+    return 'Placeholder telemetry — production & consumption readings will stream from the metering API.';
+  }, [
+    telemetry?.configured,
+    telemetry?.dataFrom,
+    telemetry?.dataTo,
+    telemetry?.enabled,
+    telemetryError,
+    telemetryLoading,
+    useLiveTelemetry,
+  ]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-1 text-neutral-11">
-          Placeholder telemetry — production &amp; consumption readings will
-          stream from the metering API.
-        </p>
+        <p className="text-1 text-neutral-11">{statusMessage}</p>
         <TimeframeToggle value={timeframe} onChange={setTimeframe} />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard
-          label="Total produced"
-          value={`${totalProduced.toLocaleString()} kWh`}
-          accent={ENERGY_PALETTE[0]}
-        />
-        <StatCard
-          label="Total consumed"
-          value={`${totalConsumed.toLocaleString()} kWh`}
-          accent={ENERGY_PALETTE[2]}
-        />
-        <StatCard
-          label="Net surplus"
-          value={`${net >= 0 ? '+' : '−'}${Math.abs(net).toLocaleString()} kWh`}
-          accent={net >= 0 ? ENERGY_PALETTE[1] : ENERGY_PALETTE[4]}
-        />
-      </div>
+      {telemetryLoading ? (
+        <Skeleton className="h-24 w-full rounded-xl" />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatCard
+            label="Total produced"
+            value={`${totalProduced.toLocaleString()} kWh`}
+            accent={ENERGY_PALETTE[0]}
+          />
+          <StatCard
+            label="Total consumed"
+            value={`${totalConsumed.toLocaleString()} kWh`}
+            accent={ENERGY_PALETTE[2]}
+          />
+          <StatCard
+            label="Net surplus"
+            value={`${net >= 0 ? '+' : '−'}${Math.abs(
+              net,
+            ).toLocaleString()} kWh`}
+            accent={net >= 0 ? ENERGY_PALETTE[1] : ENERGY_PALETTE[4]}
+          />
+        </div>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle>Production vs consumption</CardTitle>
         </CardHeader>
         <CardContent>
-          <BarChart
-            series={productionVsConsumption}
-            labels={labels}
-            mode="grouped"
-            valueSuffix=" kWh"
-          />
+          {telemetryLoading ? (
+            <Skeleton className="h-48 w-full rounded-lg" />
+          ) : (
+            <BarChart
+              series={productionVsConsumption}
+              labels={labels}
+              mode="grouped"
+              valueSuffix=" kWh"
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -116,12 +184,16 @@ export const ProductionConsumptionTab = ({
           <CardTitle>Production by source</CardTitle>
         </CardHeader>
         <CardContent>
-          <BarChart
-            series={bySource}
-            labels={labels}
-            mode="stacked"
-            valueSuffix=" kWh"
-          />
+          {telemetryLoading ? (
+            <Skeleton className="h-48 w-full rounded-lg" />
+          ) : (
+            <BarChart
+              series={bySource}
+              labels={labels}
+              mode="stacked"
+              valueSuffix=" kWh"
+            />
+          )}
         </CardContent>
       </Card>
     </div>

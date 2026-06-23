@@ -16,7 +16,8 @@ export interface IntervalReading {
   meter_id: number;
   community_id: number;
   energy_wh: number;
-  direction: 'consumption' | 'production' | 'import';
+  /** Null appears in Azure sandbox rows for household meters; normalize before VPP. */
+  direction: 'consumption' | 'production' | 'import' | null;
 }
 
 // ── On-chain configuration ──────────────────────────────────────────────────

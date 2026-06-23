@@ -1,13 +1,15 @@
 /**
- * EnergyPPAv2 — AWS RDS interval ingestion loop
+ * EnergyPPAv2 — Azure / Postgres interval ingestion loop
  *
  * Polls accounting.interval_readings for new 15-minute rows, converts each
  * interval into ConsumptionReading[], and submits consumeEnergy() on-chain.
  *
+ * Connect via ENERGY_DB_* (preferred) or legacy ENERGY_RDS_* env vars.
+ *
  * Defaults are conservative:
  * - If no checkpoint file exists, it starts from the latest DB interval
  *   (no historical replay).
- * - Set ENERGY_RDS_CATCH_UP=1 to process all existing intervals from oldest.
+ * - Set ENERGY_DB_CATCH_UP=1 (or ENERGY_RDS_CATCH_UP=1) to replay history.
  */
 
 import * as fs from 'fs';
@@ -18,6 +20,12 @@ import dotenv from 'dotenv';
 import { Client } from 'pg';
 
 import { readOnChainConfig } from '../../vpp/on-chain-reader';
+import {
+  logNormalizeStats,
+  normalizeIntervalReadings,
+  DEFAULT_PRODUCTION_METER_IDS,
+} from '../../vpp/normalize-readings';
+import { fetchGridPrices } from '../../vpp/price-fetcher';
 import { runIntervalWithConfig } from '../../vpp/run-interval';
 import type { IntervalReading, VppConfig } from '../../vpp/types';
 
@@ -87,10 +95,9 @@ function getEnv(name: string): string | undefined {
   return v && v.length > 0 ? v : undefined;
 }
 
-function getRequiredEnv(name: string): string {
-  const v = getEnv(name);
-  if (!v) throw new Error(`Missing required env var: ${name}`);
-  return v;
+/** Prefer ENERGY_DB_*; fall back to legacy ENERGY_RDS_* names. */
+function getDbEnv(primary: string, legacy: string): string | undefined {
+  return getEnv(primary) ?? getEnv(legacy);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -121,7 +128,8 @@ function loadState(): DemoState {
 }
 
 function checkpointFilePath(): string {
-  const custom = getEnv('ENERGY_RDS_CHECKPOINT_FILE');
+  const custom =
+    getEnv('ENERGY_DB_CHECKPOINT_FILE') ?? getEnv('ENERGY_RDS_CHECKPOINT_FILE');
   if (custom)
     return path.isAbsolute(custom) ? custom : path.join(process.cwd(), custom);
   return path.join(__dirname, 'energy-ppav2-rds-loop-state.json');
@@ -139,13 +147,28 @@ function writeCheckpoint(state: CheckpointState): void {
 }
 
 function buildDbConfig(): DbConfig {
+  const host = getDbEnv('ENERGY_DB_HOST', 'ENERGY_RDS_HOST');
+  const database = getDbEnv('ENERGY_DB_DATABASE', 'ENERGY_RDS_DATABASE');
+  const user = getDbEnv('ENERGY_DB_USER', 'ENERGY_RDS_USER');
+  const password = getDbEnv('ENERGY_DB_PASSWORD', 'ENERGY_RDS_PASSWORD');
+  if (!host) throw new Error('Missing ENERGY_DB_HOST (or ENERGY_RDS_HOST)');
+  if (!database) {
+    throw new Error('Missing ENERGY_DB_DATABASE (or ENERGY_RDS_DATABASE)');
+  }
+  if (!user) throw new Error('Missing ENERGY_DB_USER (or ENERGY_RDS_USER)');
+  if (!password) {
+    throw new Error('Missing ENERGY_DB_PASSWORD (or ENERGY_RDS_PASSWORD)');
+  }
+  const sslFlag = getEnv('ENERGY_DB_SSL') ?? getEnv('ENERGY_RDS_SSL') ?? '1';
   return {
-    host: getRequiredEnv('ENERGY_RDS_HOST'),
-    port: Number(getEnv('ENERGY_RDS_PORT') ?? '5432'),
-    database: getRequiredEnv('ENERGY_RDS_DATABASE'),
-    user: getRequiredEnv('ENERGY_RDS_USER'),
-    password: getRequiredEnv('ENERGY_RDS_PASSWORD'),
-    ssl: (getEnv('ENERGY_RDS_SSL') ?? '1') !== '0',
+    host,
+    port: Number(
+      getEnv('ENERGY_DB_PORT') ?? getEnv('ENERGY_RDS_PORT') ?? '5432',
+    ),
+    database,
+    user,
+    password,
+    ssl: sslFlag !== '0',
   };
 }
 
@@ -209,6 +232,16 @@ function groupByInterval(
   return grouped;
 }
 
+function buildAllowedMeterIds(
+  deviceToMember: Map<number, string>,
+): Set<number> {
+  const allowed = new Set<number>(DEFAULT_PRODUCTION_METER_IDS);
+  for (const deviceId of deviceToMember.keys()) {
+    allowed.add(deviceId);
+  }
+  return allowed;
+}
+
 async function submitInterval(
   ppa: EnergyPpaContract,
   intervalStart: string,
@@ -220,11 +253,32 @@ async function submitInterval(
     state.ppaProxy,
   );
   const vppConfig = buildVppConfig(state);
+
+  const { readings: normalizedRows, stats } = normalizeIntervalReadings(rows, {
+    allowedMeterIds: buildAllowedMeterIds(onChainConfig.deviceToMember),
+  });
+  logNormalizeStats(intervalStart, stats);
+
+  if (normalizedRows.length === 0) {
+    console.log(
+      `  ${intervalStart} -> no usable rows after normalization, skipping submit`,
+    );
+    return;
+  }
+
+  const gridPrices = await fetchGridPrices({ intervalStart });
+  console.log(
+    `  ${intervalStart} grid prices (${gridPrices.source}): import=${gridPrices.importPricePerKwh} ct/kWh export=${gridPrices.exportPricePerKwh} ct/kWh`,
+  );
+
   const readings = runIntervalWithConfig(
-    rows,
+    normalizedRows,
     onChainConfig,
     vppConfig,
-    { importPricePerKwh: 30n, exportPricePerKwh: 8n },
+    {
+      importPricePerKwh: gridPrices.importPricePerKwh,
+      exportPricePerKwh: gridPrices.exportPricePerKwh,
+    },
     { quantityScale: QUANTITY_SCALE },
   );
 
@@ -255,12 +309,19 @@ async function submitInterval(
 
 async function main(): Promise<void> {
   const command = (getEnv('ENERGY_DEMO_COMMAND') ?? 'loop').toLowerCase();
-  const pollMs = Number(getEnv('ENERGY_RDS_POLL_MS') ?? `${POLL_MS_DEFAULT}`);
-  const catchUp = (getEnv('ENERGY_RDS_CATCH_UP') ?? '0') === '1';
+  const pollMs = Number(
+    getEnv('ENERGY_DB_POLL_MS') ??
+      getEnv('ENERGY_RDS_POLL_MS') ??
+      `${POLL_MS_DEFAULT}`,
+  );
+  const catchUp =
+    (getEnv('ENERGY_DB_CATCH_UP') ?? getEnv('ENERGY_RDS_CATCH_UP') ?? '0') ===
+    '1';
 
   const state = loadState();
   const communityId = Number(
-    getEnv('ENERGY_RDS_COMMUNITY_ID') ??
+    getEnv('ENERGY_DB_COMMUNITY_ID') ??
+      getEnv('ENERGY_RDS_COMMUNITY_ID') ??
       state.communityId ??
       COMMUNITY_ID_DEFAULT,
   );
@@ -285,7 +346,7 @@ async function main(): Promise<void> {
   }
 
   console.log(SEP);
-  console.log('  EnergyPPAv2 — AWS RDS Ingestion Loop');
+  console.log('  EnergyPPAv2 — Postgres Interval Ingestion Loop');
   console.log(SEP);
   console.log(`  Chain               : ${network.chainId}`);
   console.log(`  Contract            : ${state.ppaProxy}`);
