@@ -246,7 +246,7 @@ Interactive simulators: [`tokenomics-simulator.html`](tokenomics-simulator.html)
 |---|---|---|---|
 | **Phase 0** | Today | — | Pre-launch. Reference FDV ~$111M at $0.20 (111M locked supply). |
 | **Phase I** | Year 1 (months 0–12) | Phase I (`/tokenomics1`) | Fixed $0.20. **Bootstrap ~0 → ~4,373** paying Spaces (50-Space seed at 50%/mo). |
-| **Phase II** | Years 2–5 (48 months) | Phase II (`/tokenomics2`) | Starts **~4,373** paying Spaces. $44/Space/mo. Year-5 paying / created: Low ~15k/250k · Mid ~50k/1M · High ~500k/10M. |
+| **Phase II** | Years 2–5 (48 months) | Phase II (`/tokenomics2`) | Starts **~4,373** paying Spaces. $44/Space/mo. Year-5 paying Spaces: Low ~250k · Mid ~1M · High ~10M. |
 
 Phase II month 1 = first month after Phase I (~4,373 active Spaces). Year 5 = Phase II month 48.
 
@@ -263,35 +263,32 @@ Phase II month 1 = first month after Phase I (~4,373 active Spaces). Year 5 = Ph
 
 | Share | Destination |
 |---:|---|
-| **19–25%** (by scenario) | IEX buy pressure |
-| **75–81%** | AI inference, gas, operations, off-pool rewards, treasury |
+| **18–22%** (by scenario) | IEX buy pressure |
+| **78–82%** | AI inference, gas, operations, off-pool rewards, treasury |
 
 Simulator default AI cost uses **open-weight inference (~$4/Space/mo typical)**; Composer Fast reference is **~$16.50/Space/mo** — see [TL;DR](#tldr) above.
 
 ### Growth scenarios
 
-Each preset tracks **two series**, both starting from the ~4,373 Phase I handoff and growing from month 2 onward:
+**Every Space pays $44/mo — no free tier.** Each preset is a single Space-count series starting from the ~4,373 Phase I handoff and growing from month 2 onward to the year-5 (month 48) target. The whole count drives revenue.
 
-- **Active (paying) Spaces** — pay $44/mo and drive all revenue (growth rate `active`).
-- **Cumulative Spaces created** — the full funnel (free + paid; growth rate `created`). Active payers are the **~5–6%** of created Spaces that pay at year 5.
+| Scenario | Year-5 paying Spaces | Space growth / mo | IEX routing % |
+|---|---:|---:|---:|
+| **Low** | ~250k | 8.99% | 22% |
+| **Mid** | ~1M | 12.25% | 20% |
+| **High** | ~10M | 17.89% | 18% |
 
-| Scenario | Year-5 active (paying) | Year-5 created (cumulative) | Paying rate | Active growth / mo | Created growth / mo | IEX routing % |
-|---|---:|---:|---:|---:|---:|---:|
-| **Low** | ~15k | ~250k | ~6% | 2.66% | 8.99% | 25% |
-| **Mid** | ~50k | ~1M | ~5% | 5.32% | 12.25% | 22% |
-| **High** | ~500k | ~10M | ~5% | 10.61% | 17.89% | 19% |
+**ARR** uses **paying Spaces at year 5** × $44 × 12: Low ~$132M · Mid ~$528M · High ~$5.28B.
 
-**ARR** uses **active (paying) Spaces at year 5** × $44 × 12: Low ~$7.9M · Mid ~$26M · High ~$264M.
+**Phase II gross billed** (sum of Spaces × $44 across 48 months): Low ~$0.13B · Mid ~$0.40B · High ~$2.9B.
 
-**Phase II gross billed** (sum of active Spaces × $44 across 48 months): Low ~$18M · Mid ~$40M · High ~$228M.
+Only the **IEX routing %** of gross Space contributions enters the on-chain AMM buy path. Investor buy/sell pressure on IEX defaults to **5–7% buy** and **5–7% sell** (pool-relative, not dollar-matched).
 
-Only the **IEX routing %** of gross Space contributions enters the on-chain AMM buy path. Investor buy/sell pressure on IEX defaults to **4–8% buy** and **4–5% sell** (pool-relative, not dollar-matched).
-
-**Key metrics to show investors:** **active payers at year 5** · cumulative created · run-rate ARR · FDV · **FDV/ARR**.
+**Key metrics to show investors:** **paying Spaces at year 5** · run-rate ARR · FDV · **FDV/ARR**.
 
 ### Target valuation bands (year 5, judgment + comps)
 
-Run-rate ARR at year 5: Low ~$7.9M · Mid ~$26M · High ~$264M. FDV multiples descend as the network matures — High lands near ~30× ARR (growth-stage comps); Low/Mid carry higher multiples as early-network optionality while revenue ramps.
+Run-rate ARR at year 5: Low ~$132M · Mid ~$528M · High ~$5.28B. FDV multiples descend as the network matures — Low ~30× (growth-stage comps), compressing toward ~13× at High mega-scale.
 
 | Comp | Rough FDV | Revenue / fees | Implied multiple |
 |---|---:|---:|---:|
@@ -304,11 +301,11 @@ Run-rate ARR at year 5: Low ~$7.9M · Mid ~$26M · High ~$264M. FDV multiples de
 
 | Scenario | Target FDV | FDV/ARR | Token price (indicative) |
 |---|---:|---:|---:|
-| Low | ~$0.4B | ~51× (early ramp) | ~$0.72 |
-| Mid | ~$1.0B | ~38× | ~$1.82 |
-| High | ~$8.1B | ~31× | ~$14.50 |
+| Low | ~$3.9B | ~30× | ~$7.07 |
+| Mid | ~$12.8B | ~24× | ~$23.04 |
+| High | ~$66B | ~13× | ~$119 |
 
-IEX seed liquidity scales with scenario (`initialHypha` / `initialUsdc` anchor starting price at $0.20): Low 25M HYPHA / $5M USDC, Mid 35M / $7M, High 63M / $12.6M. Parameters were tuned so emergent IEX price × max supply lands in these bands — not by fixing an end-state price directly.
+IEX seed liquidity scales with scenario (`initialHypha` / `initialUsdc` anchor starting price at $0.20): Low 29M HYPHA / $5.8M USDC, Mid 41M / $8.2M, High 111M / $22.2M. Parameters were tuned so emergent IEX price × max supply lands in these bands — not by fixing an end-state price directly.
 
 ---
 

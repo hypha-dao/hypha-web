@@ -12,7 +12,7 @@
 |---|---|---|---|
 | **Phase 0** | **Today** | Pre-launch. Tokenomics not started. | Reference FDV ~**$111M** at **$0.20** |
 | **Phase I** | **Year 1 (months 0–12)** | Bootstrap the network, fixed **$0.20** price, token sale + locking. | **~0 → ~4,373** |
-| **Phase II** | **Years 2–5 (48 months)** | **$44/Space/mo** gross revenue, dynamic IEX pricing. Starts at ~4,373. | Year 5 paying: Low **~15k** · Mid **~50k** · High **~500k** |
+| **Phase II** | **Years 2–5 (48 months)** | **$44/Space/mo** gross revenue, dynamic IEX pricing. Starts at ~4,373. | Year 5 paying: Low **~250k** · Mid **~1M** · High **~10M** |
 
 **Pitch order:** Phase 0 (where we are) → Phase I sim (bootstrap to 4,373) → Phase II sim (scale scenarios).
 
@@ -28,15 +28,12 @@
 
 A **Space** is one organization on Hypha (a DAO, community, or team). Think of it like one customer account on a SaaS platform.
 
-**Phase I bootstraps the network from ~0 to ~4,373 paying Spaces in year 1.** Phase II then runs **48 months (years 2–5)** from that ~4,373 base, with year-5 paying targets of **~15k / ~50k / ~500k** (Low / Mid / High).
+**Phase I bootstraps the network from ~0 to ~4,373 paying Spaces in year 1.** Phase II then runs **48 months (years 2–5)** from that ~4,373 base, with year-5 paying targets of **~250k / ~1M / ~10M** (Low / Mid / High).
 
-**Two numbers to keep straight:**
+**The number to keep straight:**
 
-- **Active (paying) Spaces at year 5 (Phase II month 48)** = organizations **paying that month**: **~15k / ~50k / ~500k**.
-- **Cumulative Spaces created (Phase II)** = total Spaces ever spun up — the full funnel, free + paid: **~250k / ~1M / ~10M**. Paying Spaces are the **~5–6%** that pay at year 5.
-- **ARR** = active Spaces at year 5 × **$44 × 12**: **~$7.9M / ~$26M / ~$264M**.
-
-Only **active (paying) Spaces in a given month** pay that month’s $44 and drive revenue.
+- **Paying Spaces at year 5 (Phase II month 48)** = organizations on the network, **every one paying** $44/mo: **~250k / ~1M / ~10M**. There is **no free tier** — cumulative Spaces and paying Spaces are the same number.
+- **ARR** = paying Spaces at year 5 × **$44 × 12**: **~$132M / ~$528M / ~$5.28B**.
 
 ---
 
@@ -50,20 +47,20 @@ That number anchors all three scenarios. Operating costs (AI inference and block
 
 | Share | Use |
 |---:|---|
-| **19–25%** (by scenario) | IEX buy pressure — supports HYPHA on the exchange |
-| **75–81%** | AI inference, gas, operations, off-pool rewards, treasury |
+| **18–22%** (by scenario) | IEX buy pressure — supports HYPHA on the exchange |
+| **78–82%** | AI inference, gas, operations, off-pool rewards, treasury |
 
 **Year-5 run-rate ARR (who is paying in month 48):**
 
-| Active (paying) Spaces (year 5) | Paying monthly | Annual revenue (ARR) |
+| Paying Spaces (year 5) | Paying monthly | Annual revenue (ARR) |
 |---:|---:|---:|
-| ~15,000 | ~$0.7M/mo | **~$7.9M** |
-| ~50,000 | ~$2.2M/mo | **~$26M** |
-| ~500,000 | ~$22M/mo | **~$264M** |
+| ~250,000 | ~$11M/mo | **~$132M** |
+| ~1,000,000 | ~$44M/mo | **~$528M** |
+| ~10,000,000 | ~$440M/mo | **~$5.28B** |
 
-**Phase II gross billed over 4 years:** Low ~$18M · Mid ~$40M · High ~$228M (sum of active Spaces × $44 each month).
+**Phase II gross billed over 4 years:** Low ~$0.13B · Mid ~$0.40B · High ~$2.9B (sum of Spaces × $44 each month).
 
-Lead with: *“Phase I builds to ~4,373 paying Spaces. By year 5, paying Spaces grow to ~15k / ~50k / ~500k depending on scenario — out of ~250k / ~1M / ~10M created.”*
+Lead with: *“Phase I builds to ~4,373 paying Spaces. By year 5, paying Spaces grow to ~250k / ~1M / ~10M depending on scenario — every Space paying $44/mo.”*
 
 ---
 
@@ -83,13 +80,13 @@ HYPHA is the network token. In the model:
 
 Use the **Phase II simulator** sidebar. Each is a four-year story from the ~4,373 Phase I handoff.
 
-| Scenario | Year-5 active (paying) | Cumulative created | ARR (year 5) | FDV (indicative) | FDV/ARR | Token price |
-|---|---:|---:|---:|---:|---:|---:|
-| **Low** | **~15k** | ~250k | ~$7.9M | **~$0.4B** | ~51× | **~$0.72** |
-| **Mid** | **~50k** | ~1M | ~$26M | **~$1.0B** | ~38× | **~$1.82** |
-| **High** | **~500k** | ~10M | ~$264M | **~$8.1B** | ~31× | **~$14.50** |
+| Scenario | Year-5 paying Spaces | ARR (year 5) | FDV (indicative) | FDV/ARR | Token price |
+|---|---:|---:|---:|---:|---:|
+| **Low** | **~250k** | ~$132M | **~$3.9B** | ~30× | **~$7.07** |
+| **Mid** | **~1M** | ~$528M | **~$12.8B** | ~24× | **~$23.04** |
+| **High** | **~10M** | ~$5.28B | **~$66B** | ~13× | **~$119** |
 
-FDV is **fully diluted** (555M HYPHA). High lands near ~30× run-rate ARR — in range of growth-stage network comps. Low/Mid carry higher multiples because year-5 ARR is still ramping; frame them as **early-network optionality**, not a mature revenue multiple.
+FDV is **fully diluted** (555M HYPHA). Low lands near ~30× run-rate ARR — in range of growth-stage network comps. Multiples **compress as the network matures** (toward ~13× at High mega-scale), reflecting a larger, more proven revenue base.
 
 **Important framing:** Scenario models, not forecasts.
 
@@ -102,15 +99,15 @@ FDV is **fully diluted** (555M HYPHA). High lands near ~30× run-rate ARR — in
 1. **Phase 0:** pre-launch, ~$111M reference FDV at $0.20.
 2. Open [tokenomics1](https://app.hypha.earth/tokenomics1/) — Phase I: **~0 → ~4,373** Spaces over 12 months, fixed $0.20.
 3. Open [tokenomics2](https://app.hypha.earth/tokenomics2/) — starts **~4,373**, **$44/Space**, dynamic IEX.
-4. Click **Low** → **~15k paying** at year 5 (~250k created), ARR ~$7.9M, FDV/ARR, FDV ~$0.4B.
-5. Click **Mid** (~50k paying / ~1M created, ~$1.0B), then **High** (~500k / ~10M, ~$8.1B).
+4. Click **Low** → **~250k paying** at year 5, ARR ~$132M, FDV/ARR, FDV ~$3.9B.
+5. Click **Mid** (~1M paying, ~$12.8B), then **High** (~10M, ~$66B).
 
 ### Option B — Quick demo (Phase II only, ~5 min)
 
 1. Open [tokenomics2](https://app.hypha.earth/tokenomics2/)
 2. **$44/Space** · **~25% to IEX** · **~75% off-pool**
 3. Show **active Spaces at year 5** before citing cumulative totals
-4. Show **FDV/ARR** — High ~30×; Low/Mid (~38–51×) are a ramp narrative
+4. Show **FDV/ARR** — Low ~30×, compressing toward ~13× at High as revenue matures
 
 ---
 
@@ -125,11 +122,11 @@ Working assumption for protocol value capture (AI + governance + treasury). Stre
 **“How does Phase I connect to Phase II?”**  
 Phase I bootstraps from ~0 to **~4,373 paying Spaces** in year 1 at fixed **$0.20** (~$111M FDV). Phase II continues from that ~4,373 base at **$44/Space**; price emerges from the IEX.
 
-**“What does ~250k cumulative mean if ~15k pay at year 5?”**  
-Cumulative = total Spaces ever created over Phase II — the full funnel, free + paid. **~15k pay in the final month** (Low), i.e. ~6% of created Spaces. The cumulative figure is an adoption/funnel metric; only paying Spaces generate revenue.
+**“Is every Space really paying?”**  
+Yes — the model assumes **no free tier**. The cumulative Space count and the paying Space count are the same number: ~250k / ~1M / ~10M at year 5, each paying $44/mo.
 
 **“How does this compare to other tokens?”**  
-High sits near ~30× run-rate ARR — comparable to growth-stage networks (Maker, Uniswap, Bittensor at various points). Low/Mid carry higher multiples (~38–51×) as early-stage optionality (revenue still ramping).
+Low sits near ~30× run-rate ARR — comparable to growth-stage networks (Maker, Uniswap, Bittensor at various points). Multiples compress toward ~13× at High mega-scale, reflecting a larger, more proven revenue base.
 
 **“Is this financial advice?”**  
 No. Internal planning tool. Past comps don’t guarantee future pricing.
@@ -140,7 +137,7 @@ No. Internal planning tool. Past comps don’t guarantee future pricing.
 
 > “We’re at **Phase 0** — pre-launch, **~$111M** reference valuation. **Phase I** bootstraps the network from zero to **~4,373 paying Spaces** in year one at fixed **$0.20**. **Phase II** adds **$44/month per Space** with dynamic exchange pricing.  
 >  
-> Over **four Phase II years**, paying Spaces grow to **~15k, ~50k, or ~500k** by year five (out of ~250k–10M created) — **~$7.9M to ~$264M run-rate ARR**. **~20–25%** of gross supports HYPHA on the IEX; the rest runs the platform. Models imply **~$0.4B to ~$8.1B fully diluted**, roughly **30× revenue** at High.  
+> Over **four Phase II years**, paying Spaces grow to **~250k, ~1M, or ~10M** by year five — every Space paying $44/mo, **~$132M to ~$5.28B run-rate ARR**. **~18–22%** of gross supports HYPHA on the IEX; the rest runs the platform. Models imply **~$3.9B to ~$66B fully diluted**, roughly **30×** revenue at Low compressing toward **~13×** at High.  
 >  
 > Click through both simulators and stress-test the assumptions.”
 
@@ -150,14 +147,12 @@ No. Internal planning tool. Past comps don’t guarantee future pricing.
 
 | | Low | Mid | High |
 |---|---:|---:|---:|
-| **Year-5 active (paying)** | **~15k** | **~50k** | **~500k** |
-| **Cumulative created** | ~250k | ~1M | ~10M |
-| **Paying rate (yr 5)** | ~6% | ~5% | ~5% |
-| **ARR (year 5)** | ~$7.9M | ~$26M | ~$264M |
-| **Phase II gross billed (4yr)** | ~$18M | ~$40M | ~$228M |
-| **FDV (indicative)** | ~$0.4B | ~$1.0B | ~$8.1B |
-| **FDV / ARR** | ~51× | ~38× | ~31× |
-| **IEX routing** | 25% | 22% | 19% |
+| **Year-5 paying Spaces** | **~250k** | **~1M** | **~10M** |
+| **ARR (year 5)** | ~$132M | ~$528M | ~$5.28B |
+| **Phase II gross billed (4yr)** | ~$0.13B | ~$0.40B | ~$2.9B |
+| **FDV (indicative)** | ~$3.9B | ~$12.8B | ~$66B |
+| **FDV / ARR** | ~30× | ~24× | ~13× |
+| **IEX routing** | 22% | 20% | 18% |
 
 ---
 
