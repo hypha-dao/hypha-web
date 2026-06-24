@@ -45,6 +45,16 @@ describe('prepareAssistantTextForSpeech', () => {
     expect(spoken).not.toMatch(/quorum/i);
     expect(spoken).not.toMatch(/voting method/i);
   });
+
+  it('drops discovery narration that sounds like internal planning', () => {
+    const input = `It looks like I need to add a brief title and description for the proposal.
+I've drafted "Issue New Token" — work for you?`;
+
+    const spoken = prepareAssistantTextForSpeech(input);
+
+    expect(spoken).not.toMatch(/it looks like i need/i);
+    expect(spoken).toContain('Issue New Token');
+  });
 });
 
 describe('estimateSpeechDurationMs', () => {

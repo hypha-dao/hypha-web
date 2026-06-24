@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildProposalFormStateResponse } from '../proposal-form-state';
+import {
+  buildProposalFormStateDirective,
+  buildProposalFormStateResponse,
+} from '../proposal-form-state';
 import { buildGuidanceResponse } from '../proposal-guidance';
 
 describe('proposal form state — issue_new_token', () => {
@@ -57,7 +60,33 @@ describe('proposal form state — issue_new_token', () => {
     if (!guidance.ok) return;
     expect(guidance.ready_to_publish).toBe(false);
     expect(guidance.form_state?.form_synced).toBe(false);
-    expect(guidance.step_mode).toBe('one_field_at_a_time');
+    expect(guidance.step_mode).toBe('prepare_now');
+    expect(guidance.form_incomplete).toBe(true);
+  });
+
+  it('flags empty issue-new-token form as incomplete with blocking directive', () => {
+    const state = buildProposalFormStateResponse({
+      snapshot: {
+        templateSegment: 'issue-new-token',
+        formOpen: true,
+        liveFields: {},
+      },
+      proposalType: 'issue_new_token',
+    });
+    expect(state.ok).toBe(true);
+    if (!state.ok || !('missing_on_screen' in state)) return;
+    expect(state.missing_on_screen).toContain('title');
+    expect(state.missing_on_screen).toContain('token_type');
+    expect(state.missing_on_screen).toContain('token_icon_url');
+    expect(state.ready_to_publish).toBe(false);
+
+    const directive = buildProposalFormStateDirective({
+      templateSegment: 'issue-new-token',
+      formOpen: true,
+      liveFields: {},
+    });
+    expect(directive).toMatch(/FORM INCOMPLETE/i);
+    expect(directive).toMatch(/FORBIDDEN.*complete/i);
   });
 
   it('reports ready when required token fields are on screen', () => {

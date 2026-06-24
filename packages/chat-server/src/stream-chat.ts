@@ -36,6 +36,7 @@ import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirma
 import { buildPostCreateVotingMethodDirective } from './tools/onboarding-voting-method-inference';
 import { buildActiveGovernanceProposalDirective } from './tools/active-governance-proposal-directive';
 import { buildProposalFormStateDirective } from './tools/proposal-form-state';
+import { buildProposalAcceptanceDirective } from './tools/proposal-acceptance-directive';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -1425,6 +1426,17 @@ export async function createChatStreamResult(
   const proposalFormStateDirective = buildProposalFormStateDirective(
     activeProposalFormSnapshot,
   );
+  const proposalAcceptanceDirective = buildProposalAcceptanceDirective({
+    userText: lastUserText,
+    assistantText: lastAssistantText,
+    spaceSlug: spaceSlug?.trim() || null,
+    formSnapshot: activeProposalFormSnapshot,
+    activeProposalType:
+      normalizedConversationContext?.activeGovernanceProposal?.proposalType ??
+      null,
+    collectedFields:
+      normalizedConversationContext?.activeGovernanceProposal?.collectedFields,
+  });
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
@@ -1445,6 +1457,10 @@ export async function createChatStreamResult(
                 activeGovernanceProposalDirective
                   ? `\n${activeGovernanceProposalDirective}`
                   : ''
+              }${
+                proposalAcceptanceDirective
+                  ? `\n${proposalAcceptanceDirective}`
+                  : ''
               }`
             : ''
         }${
@@ -1457,9 +1473,17 @@ export async function createChatStreamResult(
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
       : voiceDiscoveryActive && spaceSlug?.trim()
-      ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.`
+      ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
+          proposalAcceptanceDirective
+            ? `\n\n${proposalAcceptanceDirective}`
+            : ''
+        }`
       : `${effectiveSystemPrompt}${
           proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
+        }${
+          proposalAcceptanceDirective
+            ? `\n\n${proposalAcceptanceDirective}`
+            : ''
         }`;
 
   if (modelMessages.length === 0) {

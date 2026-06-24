@@ -53,7 +53,7 @@ export function createProposalGuidanceTool(
 
   return {
     description:
-      'Read-only: return the ONE next field to collect (hand-holding, form order). Pass collected_fields as answers arrive. After title is accepted, call prepare_governance_proposal to open the form, then one field per turn. Call get_proposal_form_state before saying ready. Reply using only next_question + interaction_hint.',
+      'Read-only: return the ONE next field to collect (hand-holding, form order). Pass collected_fields as answers arrive — include entry_method or voting_method as soon as the user accepts your recommendation. When step_mode is prepare_now, call prepare_governance_proposal immediately with effective_collected_fields — do not ask again. Reply using only next_question + interaction_hint unless prepare_now.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -124,7 +124,7 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
 
   return {
     description:
-      'Write: open or update the typed Agreements form. Follow proposal_guidance remaining_field_order — fill LIVE with partial:true after EVERY accepted field so the form shows values before the next question. Merge ALL collected fields plus on-chain defaults for quorum/unity/voting period. Title/description first (top of form), drafted silently. For choice fields list all options before recommending. On yes/named option: call SAME turn — never ask "shall I proceed". Stay on same open form; partial updates merge. partial:false only when ready_to_publish. NEVER tell user to publish if form fields are still empty. Never wallet-sign in chat.',
+      'Write: open or update the typed Agreements form. On yes/sounds good: call partial:true SAME turn — never ask "does that sound good" again. For change_entry_method / change_voting_method after choice acceptance, pass entry_method or voting_method plus auto-drafted title/description from proposal_guidance effective_collected_fields. Merge ALL collected fields plus on-chain defaults. Stay on same open form. partial:false only when ready_to_publish AND form synced. NEVER tell user to publish if form fields are still empty. Never wallet-sign in chat.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);

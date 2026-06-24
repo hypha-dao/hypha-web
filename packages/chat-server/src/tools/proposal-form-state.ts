@@ -5,6 +5,22 @@ import {
 } from './proposal-catalog';
 import type { CatalogDiscoveryField } from './proposal-catalog/types';
 
+/** UI-required fields beyond catalog requiredFields (e.g. token icon on issue-new-token). */
+const UI_REQUIRED_FIELD_KEYS: Partial<
+  Record<AiCreatableProposalType, string[]>
+> = {
+  issue_new_token: ['token_icon_url'],
+};
+
+function getRequiredFieldKeys(
+  proposalType: AiCreatableProposalType,
+  catalogRequired: CatalogDiscoveryField[],
+): string[] {
+  const keys = catalogRequired.map((field) => field.key);
+  const extra = UI_REQUIRED_FIELD_KEYS[proposalType] ?? [];
+  return [...new Set([...keys, ...extra])];
+}
+
 export type ActiveProposalFormSnapshot = {
   templateSegment?: string;
   formOpen?: boolean;
@@ -198,15 +214,18 @@ export function buildProposalFormStateResponse(args: {
   });
 
   const collected = args.collectedFields ?? {};
-  const requiredFields = orderFieldsForDiscovery(entry.requiredFields);
+  const requiredFieldKeys = getRequiredFieldKeys(
+    proposalType,
+    orderFieldsForDiscovery(entry.requiredFields),
+  );
 
-  const filledOnScreen = requiredFields
-    .filter((field) => fieldHasValue(field, onScreen))
-    .map((field) => field.key);
+  const filledOnScreen = requiredFieldKeys.filter((key) =>
+    fieldHasValue({ key } as CatalogDiscoveryField, onScreen),
+  );
 
-  const missingOnScreen = requiredFields
-    .filter((field) => !fieldHasValue(field, onScreen))
-    .map((field) => field.key);
+  const missingOnScreen = requiredFieldKeys.filter(
+    (key) => !fieldHasValue({ key } as CatalogDiscoveryField, onScreen),
+  );
 
   const collectedButNotOnScreen = Object.keys(collected).filter((key) => {
     const collectedValue = collected[key];
@@ -238,15 +257,9 @@ export function buildProposalFormStateResponse(args: {
     collected_fields_claimed: collected,
     collected_but_not_on_screen: collectedButNotOnScreen,
     form_synced: formSynced,
-    ready_to_publish:
-      missingOnScreen.length === 0 &&
-      (proposalType !== 'issue_new_token' ||
-        fieldHasValue(
-          { key: 'token_icon_url' } as CatalogDiscoveryField,
-          onScreen,
-        )),
+    ready_to_publish: missingOnScreen.length === 0,
     handoff_rules:
-      'ONE field at a time: ask or suggest ONLY next_missing_field, on acceptance call prepare_governance_proposal partial:true with that single new value merged. NEVER say ready unless form_synced is true and ready_to_publish is true. If collected_but_not_on_screen is non-empty, call prepare again immediately — do not tell the user to publish.',
+      'ONE field at a time: ask or suggest ONLY next_missing_field, on acceptance call prepare_governance_proposal partial:true with that single new value merged. NEVER say complete/ready/click Publish unless ready_to_publish is true AND form_synced is true. If the member says mandatory fields are empty, believe them — call prepare again. If collected_but_not_on_screen is non-empty, call prepare again immediately.',
   };
 }
 
@@ -257,6 +270,17 @@ export function buildProposalFormStateDirective(
   const response = buildProposalFormStateResponse({ snapshot });
   if (!response.ok || !('fields_on_screen' in response)) return null;
 
+  const incompleteBlock =
+    response.missing_on_screen.length > 0
+      ? [
+          'CRITICAL — PROPOSAL FORM INCOMPLETE (member screen is authoritative).',
+          `missing_on_screen=${JSON.stringify(response.missing_on_screen)}`,
+          `next_missing_field=${response.next_missing_field ?? 'unknown'}`,
+          'FORBIDDEN this turn: "complete", "now complete", "click Publish", "ready to publish", "all set".',
+          'If the member says fields are empty, they are right — call prepare_governance_proposal partial:true to fill next_missing_field.',
+        ].join('\n')
+      : null;
+
   return [
     'OPEN PROPOSAL FORM STATE (authoritative — from the member screen):',
     `proposal_type=${response.proposal_type}`,
@@ -264,11 +288,16 @@ export function buildProposalFormStateDirective(
     `missing_on_screen=${JSON.stringify(response.missing_on_screen)}`,
     `form_synced=${response.form_synced}`,
     `ready_to_publish=${response.ready_to_publish}`,
+    incompleteBlock,
     response.collected_but_not_on_screen &&
     response.collected_but_not_on_screen.length > 0
       ? `SYNC ERROR — AI claimed ${JSON.stringify(
           response.collected_but_not_on_screen,
         )} but form is empty for those fields. Call prepare_governance_proposal again before continuing.`
+      : response.missing_on_screen.length > 0
+      ? null
       : 'Continue one field at a time — ask ONLY next_missing_field, fill via prepare, then move on.',
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }

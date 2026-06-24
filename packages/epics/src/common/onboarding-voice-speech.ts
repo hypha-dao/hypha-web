@@ -31,6 +31,20 @@ function isSpokenNoiseSentence(sentence: string): boolean {
   if (/^can you (?:provide|describe|tell)/i.test(trimmed)) return true;
   if (/^what (?:specific|would you like)/i.test(trimmed)) return true;
   if (/^a brief explanation/i.test(trimmed)) return true;
+  if (
+    /^it looks like (?:i|we) need/i.test(trimmed) ||
+    /^i now need to/i.test(trimmed) ||
+    /^i(?:'ll| will) need to/i.test(trimmed) ||
+    /^i need to (?:add|draft|collect|ask)/i.test(trimmed) ||
+    /^let me add/i.test(trimmed) ||
+    /^first,? i need to/i.test(trimmed) ||
+    /^it seems i need/i.test(trimmed) ||
+    /^looking at this/i.test(trimmed) ||
+    /^the proposal.*(?:now )?complete/i.test(trimmed) ||
+    /^you can review.*click publish/i.test(trimmed)
+  ) {
+    return true;
+  }
   return false;
 }
 

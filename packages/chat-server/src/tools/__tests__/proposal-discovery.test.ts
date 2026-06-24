@@ -62,7 +62,8 @@ describe('proposal discovery — change_voting_method', () => {
     expect(guidance.filled_fields).toContain('title');
     expect(guidance.filled_fields).toContain('voting_method');
     expect(guidance.remaining_field_order).not.toContain('title');
-    expect(guidance.ready_to_publish).toBe(true);
+    expect(guidance.ready_to_publish).toBe(false);
+    expect(guidance.pending_prepare_all_fields).toBe(true);
   });
 
   it('still defers governance tuning for contribution proposals', () => {
@@ -99,6 +100,55 @@ describe('proposal discovery — change_entry_method', () => {
     expect(guidance.interaction_hint).toMatch(/Open Access/i);
     expect(guidance.interaction_hint).toMatch(/Invite Request/i);
     expect(guidance.interaction_hint).toMatch(/Token Based/i);
+  });
+
+  it('fast-paths to prepare when entry method is accepted — no title re-ask', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'change_entry_method',
+      collectedFields: { entry_method: 'open_access' },
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.step_mode).toBe('prepare_now');
+    expect(guidance.next_question_field).toBeNull();
+    expect(guidance.pending_prepare_all_fields).toBe(true);
+    expect(guidance.ready_to_publish).toBe(false);
+    expect(guidance.effective_collected_fields).toMatchObject({
+      entry_method: 'open_access',
+      title: 'Change Entry Method to Open Access',
+    });
+    expect(guidance.walkthrough_hint).toMatch(/prepare_governance_proposal/i);
+    expect(guidance.walkthrough_hint).toMatch(/does that sound good/i);
+    expect(guidance.form_sync?.call_prepare_governance_proposal).toBe(true);
+  });
+
+  it('does not mark ready_to_publish before the form is open', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'change_entry_method',
+      collectedFields: {
+        entry_method: 'open_access',
+        title: 'Change Entry Method to Open Access',
+        description: 'Open membership for everyone.',
+      },
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.ready_to_publish).toBe(false);
+    expect(guidance.pending_prepare_all_fields).toBe(true);
+  });
+
+  it('prepare_now when title accepted before form open (issue new token)', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'issue_new_token',
+      collectedFields: { title: 'Issue New Token' },
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.step_mode).toBe('prepare_now');
+    expect(guidance.prepare_now_reason).toBe('title_accepted');
+    expect(guidance.next_question_field).toBeNull();
+    expect(guidance.walkthrough_hint).toMatch(/Do NOT ask/i);
+    expect(guidance.form_sync?.call_prepare_governance_proposal).toBe(true);
   });
 });
 
@@ -173,7 +223,8 @@ describe('proposal discovery — issue_new_token', () => {
     expect(complete.ok).toBe(true);
     if (!complete.ok) return;
     expect(complete.remaining_field_order).toEqual([]);
-    expect(complete.ready_to_publish).toBe(true);
+    expect(complete.ready_to_publish).toBe(false);
+    expect(complete.pending_prepare_all_fields).toBe(true);
   });
 
   it('maps token fields into issueNewTokenForm resubmit payload', () => {

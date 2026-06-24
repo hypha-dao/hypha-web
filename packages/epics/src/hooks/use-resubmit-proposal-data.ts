@@ -932,12 +932,17 @@ export const useResubmitProposalData = <
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!isProposalAiWalkthroughActive()) return;
+    if (!isProposalCreateFormPath(pathname)) return;
     const segment =
       resubmitTemplateSegment ??
       getProposalTemplateSegmentFromPathname(pathname) ??
       '';
     if (!segment) return;
+
+    writeActiveProposalFormLiveFields(
+      segment,
+      form.getValues() as Record<string, unknown>,
+    );
 
     const subscription = form.watch((values) => {
       writeActiveProposalFormLiveFields(

@@ -72,13 +72,11 @@ export function readActiveProposalFormSnapshot(
     liveFields = undefined;
   }
 
-  if (!resubmitPayload && !liveFields) return undefined;
-
   return {
     templateSegment,
     formOpen: true,
     resubmitPayload,
-    liveFields,
+    liveFields: liveFields ?? {},
     updatedAt: new Date().toISOString(),
   };
 }

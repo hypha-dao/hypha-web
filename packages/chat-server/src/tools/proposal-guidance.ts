@@ -15,6 +15,21 @@ import {
   buildProposalFormStateResponse,
   type ActiveProposalFormSnapshot,
 } from './proposal-form-state';
+import {
+  buildSilentProposalDrafts,
+  hasChoiceFieldAccepted,
+  resolveProposalPrepareNow,
+} from './proposal-auto-drafts';
+import {
+  PROPOSAL_DISCOVERY_NARRATION_FORBIDDEN,
+  PROPOSAL_PREMATURE_COMPLETE_FORBIDDEN,
+} from './proposal-member-voice';
+
+export {
+  buildSilentProposalDrafts,
+  hasChoiceFieldAccepted,
+  resolveProposalPrepareNow,
+};
 
 export type { ProposalGuidancePlaybook };
 export type ProposalGuidanceField =
@@ -151,10 +166,20 @@ export function buildGuidanceResponse(args: {
   }
 
   const collected = args.collectedFields ?? {};
+  const silentDrafts = buildSilentProposalDrafts(args.proposalType, collected);
+  const effectiveCollected = { ...silentDrafts, ...collected };
+  const formIsOpen = Boolean(
+    args.formSnapshot?.formOpen || args.formSnapshot?.resubmitPayload,
+  );
+  const choiceAccepted = hasChoiceFieldAccepted(
+    args.proposalType,
+    effectiveCollected,
+  );
+
   const optionalPrompts = orderFieldsForDiscovery(
-    pickOptionalDiscoveryPrompts(entry, collected).filter((field) => {
+    pickOptionalDiscoveryPrompts(entry, effectiveCollected).filter((field) => {
       if (field.key !== 'voting_duration_seconds') return true;
-      return collected.auto_execution === false;
+      return effectiveCollected.auto_execution === false;
     }),
   );
 
@@ -164,12 +189,12 @@ export function buildGuidanceResponse(args: {
   ]);
 
   const filledFields = allDiscoveryFields
-    .filter((field) => hasCollectedValue(collected, field))
+    .filter((field) => hasCollectedValue(effectiveCollected, field))
     .map((field) => field.key);
 
   const remainingRequired = orderFieldsForDiscovery(
     entry.requiredFields,
-  ).filter((field) => !hasCollectedValue(collected, field));
+  ).filter((field) => !hasCollectedValue(effectiveCollected, field));
 
   const readyToPublish = remainingRequired.length === 0;
 
@@ -180,7 +205,7 @@ export function buildGuidanceResponse(args: {
         ...allDiscoveryFields.filter(
           (field) =>
             !remainingRequired.some((required) => required.key === field.key) &&
-            !hasCollectedValue(collected, field),
+            !hasCollectedValue(effectiveCollected, field),
         ),
       ]);
 
@@ -192,7 +217,7 @@ export function buildGuidanceResponse(args: {
     ? buildInteractionHint(nextQuestionField)
     : null;
 
-  const hasAnyCollected = Object.entries(collected).some(
+  const hasAnyCollected = Object.entries(effectiveCollected).some(
     ([, value]) => value !== undefined && value !== null && value !== '',
   );
 
@@ -212,7 +237,7 @@ export function buildGuidanceResponse(args: {
     ? buildProposalFormStateResponse({
         snapshot: args.formSnapshot,
         proposalType: args.proposalType,
-        collectedFields: collected,
+        collectedFields: effectiveCollected,
       })
     : null;
 
@@ -223,24 +248,55 @@ export function buildGuidanceResponse(args: {
       ? formState.ready_to_publish
       : undefined;
   const effectiveReadyToPublish =
+    formIsOpen &&
     readyToPublish &&
-    (formSynced === undefined || formSynced === true) &&
-    (readyOnScreen === undefined || readyOnScreen === true);
+    formSynced === true &&
+    readyOnScreen === true;
+
+  const pendingPrepareAllFields = readyToPublish && !formIsOpen;
+
+  const prepareNow = resolveProposalPrepareNow({
+    effectiveCollected,
+    formIsOpen,
+    filledFields,
+    readyToPublish,
+    choiceAccepted,
+    formState:
+      formState && 'filled_on_screen' in formState
+        ? {
+            ok: formState.ok,
+            filled_on_screen: formState.filled_on_screen,
+            collected_but_not_on_screen: formState.collected_but_not_on_screen,
+          }
+        : null,
+  });
+
+  const prepareNowHint = prepareNow.hint;
 
   const openFormAfterTitle =
     nextQuestionField?.key === 'title' &&
-    !hasCollectedValue(collected, { key: 'title' } as CatalogDiscoveryField);
+    !hasCollectedValue(effectiveCollected, {
+      key: 'title',
+    } as CatalogDiscoveryField);
 
-  const titleOnlyOpenHint = openFormAfterTitle
-    ? 'STEP 1 — title ONLY: offer a draft title in one line. On yes/tweak: call prepare_governance_proposal partial:true with ONLY title (+ chain defaults) to OPEN the form. Do not ask description or token fields yet.'
-    : null;
+  const titleOnlyOpenHint =
+    openFormAfterTitle && prepareNow.stepMode !== 'prepare_now'
+      ? 'STEP 1 — title ONLY: offer a draft title in one line. On yes/tweak: call prepare_governance_proposal partial:true with ONLY title (+ chain defaults) to OPEN the form. Do not ask description or token fields yet.'
+      : null;
 
   const singleFieldHint =
     nextQuestionField?.key === 'title' && filledFields.includes('title')
       ? null
-      : nextQuestionField
+      : nextQuestionField && prepareNow.stepMode !== 'prepare_now'
       ? `ONE field now (${nextQuestionField.key}): ask or suggest ONLY this field — nothing else. On acceptance call prepare_governance_proposal partial:true with this single field merged, then call get_proposal_form_state before the next question.`
       : null;
+
+  const usePrepareNow = prepareNow.stepMode === 'prepare_now';
+  const formIncomplete = Boolean(
+    formState &&
+      'missing_on_screen' in formState &&
+      formState.missing_on_screen.length > 0,
+  );
 
   return {
     ok: true as const,
@@ -249,13 +305,30 @@ export function buildGuidanceResponse(args: {
     create_path: entry.createPath,
     do_not_use: entry.doNotUse,
     suggested_tool: suggestedTool,
-    step_mode: 'one_field_at_a_time',
-    next_question_field: nextQuestionField?.key ?? null,
-    next_question: nextQuestion,
-    interaction_hint: interactionHint,
+    step_mode: usePrepareNow ? 'prepare_now' : 'one_field_at_a_time',
+    prepare_now_reason: prepareNow.reason,
+    next_question_field: usePrepareNow ? null : nextQuestionField?.key ?? null,
+    next_question: usePrepareNow ? null : nextQuestion,
+    interaction_hint: usePrepareNow ? null : interactionHint,
+    silent_drafts:
+      Object.keys(silentDrafts).length > 0 ? silentDrafts : undefined,
+    effective_collected_fields: effectiveCollected,
     filled_fields: filledFields,
     remaining_field_order: orderedRemaining.map((field) => field.key),
-    ready_to_publish: effectiveReadyToPublish,
+    ready_to_publish: effectiveReadyToPublish && !formIncomplete,
+    form_incomplete: formIncomplete,
+    pending_prepare_all_fields: pendingPrepareAllFields,
+    forbidden_reply_patterns: [
+      'does that sound good',
+      'does that work for you',
+      'does that work',
+      'shall I proceed',
+      'does this sound good',
+      'how about we title',
+      'how about we call',
+      ...PROPOSAL_DISCOVERY_NARRATION_FORBIDDEN,
+      ...(formIncomplete ? PROPOSAL_PREMATURE_COMPLETE_FORBIDDEN : []),
+    ],
     form_state:
       formState && 'fields_on_screen' in formState
         ? {
@@ -269,18 +342,27 @@ export function buildGuidanceResponse(args: {
     form_sync: {
       call_prepare_governance_proposal:
         entry.prepareStrategy === 'prepare_governance_proposal' &&
-        (hasAnyCollected || effectiveReadyToPublish),
+        (hasAnyCollected || effectiveReadyToPublish || pendingPrepareAllFields),
       partial: !effectiveReadyToPublish,
       focus_field: syncFocusField,
       merge_collected_fields_into_proposal_fields: true,
       verify_with: 'get_proposal_form_state',
     },
     user_reply_rules:
-      'Hand-holding: ONE field per turn in form order. Be terse — max 3–4 short sentences. Never skip ahead or re-ask filled_fields. On acceptance: prepare_governance_proposal same turn, then get_proposal_form_state. NEVER say ready/all set unless ready_to_publish is true AND form_state.form_synced is true.',
-    walkthrough_hint: effectiveReadyToPublish
-      ? 'Call get_proposal_form_state — if form_synced and ready_to_publish, prepare partial:false, then one sentence: click Publish.'
-      : [titleOnlyOpenHint, singleFieldHint, interactionHint]
-          .filter(Boolean)
-          .join(' '),
+      'Hand-holding: ONE field per turn in form order unless step_mode is prepare_now. On yes/sounds good/go ahead: that IS acceptance — call prepare_governance_proposal same turn; never ask again. FORBIDDEN after acceptance: "does that sound good", "shall I proceed", re-offering the same title/description. FORBIDDEN discovery narration: "It looks like I need to", "I now need to add" — act done ("I\'ve drafted", "I\'ll open the form"). If form_incomplete is true OR missing_on_screen is non-empty: NEVER say complete/ready/click Publish — fill next_missing_field via prepare. If the member says fields are empty, believe them. NEVER say ready/all set unless ready_to_publish is true AND form_state.form_synced is true.',
+    walkthrough_hint:
+      effectiveReadyToPublish && !formIncomplete
+        ? 'Call get_proposal_form_state — if form_synced and ready_to_publish, prepare partial:false, then one sentence: click Publish.'
+        : formIncomplete
+        ? `FORM INCOMPLETE — missing ${JSON.stringify(
+            formState?.missing_on_screen ?? [],
+          )}. Call prepare partial:true for next_missing_field only. FORBIDDEN: complete, click Publish.`
+        : usePrepareNow && prepareNowHint
+        ? prepareNowHint
+        : prepareNow.hint
+        ? prepareNow.hint
+        : [titleOnlyOpenHint, singleFieldHint, interactionHint]
+            .filter(Boolean)
+            .join(' '),
   };
 }
