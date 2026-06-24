@@ -791,11 +791,28 @@ export function isPlainOnboardingConfirmationReply(text: string): boolean {
     'signed',
     'already did',
     'done',
+    'oui',
+    'ouais',
+    'si',
+    'sí',
+    'sim',
+    'ja',
+    'genau',
+    "d'accord",
+    'dacord',
+    'bien sûr',
+    'bien sur',
+    'parfait',
+    'vale',
+    'claro',
+    'certo',
+    'de acuerdo',
+    'einverstanden',
   ]);
   return (
     affirmatives.has(normalized) ||
     affirmatives.has(normalizedCompact) ||
-    /^(yes|yep|yeah|sure|ok|okay|sounds good|go ahead|proceed|do it)\b/.test(
+    /^(?:yes|yep|yeah|sure|ok|okay|sounds good|go ahead|proceed|do it|oui|ouais|si|sí|sim|ja|genau|d'accord|dacord|bien sûr|bien sur|parfait|vale|claro|certo|de acuerdo|einverstanden)\b/.test(
       normalizedCompact,
     )
   );

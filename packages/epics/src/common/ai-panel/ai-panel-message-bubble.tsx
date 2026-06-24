@@ -2,11 +2,12 @@
 
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Copy, Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
+import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
 type ConfirmationActionResult = {
@@ -477,6 +478,7 @@ export function AiPanelMessageBubble({
   onActionReplySelect,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -493,11 +495,18 @@ export function AiPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = joinTextPartsWithSpacing(textParts);
-  const normalizedTextContent = textContent.trim();
-  const textLines = useMemo(() => textContent.split('\n'), [textContent]);
+  const displayTextContent = useMemo(() => {
+    if (!isUser) return textContent;
+    return localizeOnboardingPickerUserMessage(textContent, locale);
+  }, [isUser, locale, textContent]);
+  const normalizedTextContent = displayTextContent.trim();
+  const textLines = useMemo(
+    () => displayTextContent.split('\n'),
+    [displayTextContent],
+  );
   const markdownBlocks = useMemo(
-    () => parseMarkdownBlocks(textContent),
-    [textContent],
+    () => parseMarkdownBlocks(displayTextContent),
+    [displayTextContent],
   );
   const showMoreLabel = t('showMore');
   const showLessLabel = t('showLess');

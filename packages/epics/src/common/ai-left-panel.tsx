@@ -151,6 +151,7 @@ import {
   formatOnboardingSetupJourneySubmitMessage,
   type OnboardingSetupJourney,
 } from './onboarding-setup-journey-ui';
+import { getOnboardingSetupJourneySubmitLabels } from './onboarding-picker-message-i18n';
 import {
   applyOnboardingDiscoverabilityToContext,
   applyOnboardingTransparencyToContext,
@@ -1335,6 +1336,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, []);
 
   useEffect(() => {
+    if (status === 'streaming' || status === 'submitted') return;
+
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
@@ -1404,6 +1407,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     pathname,
     router,
     setAiOverlayVisible,
+    status,
   ]);
 
   useEffect(() => {
@@ -2122,23 +2126,22 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const onboardingSetupJourneyMessageLabels = useMemo(
-    () => ({
-      singleSpace: t('onboardingSetupJourneySetSingle'),
-      ecosystem: t('onboardingSetupJourneySetEcosystem'),
-    }),
-    [t],
+    () => getOnboardingSetupJourneySubmitLabels(lang),
+    [lang],
   );
 
   const handleOnboardingSetupJourneySelect = useCallback(
-    async (journey: OnboardingSetupJourney) => {
+    async (journey: OnboardingSetupJourney, submitLabel: string) => {
       if (isStreaming) return;
       try {
         clearError();
         const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
-        const message = formatOnboardingSetupJourneySubmitMessage(
-          journey,
-          onboardingSetupJourneyMessageLabels,
-        );
+        const message =
+          submitLabel.trim() ||
+          formatOnboardingSetupJourneySubmitMessage(
+            journey,
+            onboardingSetupJourneyMessageLabels,
+          );
         const nextContext = applyOnboardingSetupJourneyToContext(
           baseContext,
           journey,

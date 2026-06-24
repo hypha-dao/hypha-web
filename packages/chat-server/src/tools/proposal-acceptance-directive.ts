@@ -12,9 +12,12 @@ const TITLE_OFFER_PATTERNS = [
 ];
 
 const ENTRY_METHOD_PATTERNS: Record<string, RegExp> = {
-  open_access: /\bopen access\b/i,
-  invite_only: /\binvite request\b|\binvite[- ]only\b/i,
-  token_based: /\btoken based\b|\btoken-based\b/i,
+  open_access:
+    /\bopen access\b|\bacc[eè]s ouvert\b|\bacesso aberto\b|\bacceso abierto\b|\boffener zugang\b/i,
+  invite_only:
+    /\binvite request\b|\binvite[- ]only\b|\binvitation\b|\bdemande d['']adh[eé]sion\b|\bsolicitud de invitaci[oó]n\b|\bconvite\b|\beinladung\b/i,
+  token_based:
+    /\btoken based\b|\btoken-based\b|\badh[eé]sion par token\b|\bmembres[ií]a por token\b|\bassocia[cç][aã]o por token\b|\btoken-basiert\b/i,
 };
 
 const TOKEN_TYPE_PATTERNS: Record<string, RegExp> = {
@@ -58,14 +61,14 @@ export function inferProposalTypeFromConversation(
     return 'issue_new_token';
   }
   if (
-    /entry method|how people join|join your space|open access|invite request|token based/i.test(
+    /entry method|how people join|join your space|open access|invite request|token based|m[eé]thode d['']entr[eé]e|comment (?:rejoindre|rejoindre l['']espace)|acc[eè]s ouvert|m[eé]todo de entrada|c[oó]mo unirse|beitrittsmethode|zutritt|m[eé]thode d'acc[eè]s/i.test(
       combined,
     )
   ) {
     return 'change_entry_method';
   }
   if (
-    /voting method|one member one vote|one voice|one token one vote|how decisions/i.test(
+    /voting method|one member one vote|one voice|one token one vote|how decisions|m[eé]thode de vote|m[eé]todo de votaci[oó]n|abstimmungsmethode|one member|one voice one vote/i.test(
       combined,
     )
   ) {
@@ -87,6 +90,17 @@ function inferEntryMethodFromText(
   return undefined;
 }
 
+function inferRecommendedEntryMethod(
+  text: string | null | undefined,
+): string | undefined {
+  if (!text?.trim()) return undefined;
+  const recommendationMatch = text.match(
+    /(?:recommend|recommande|suggest|sugg[eè]re|conseille|i(?:'d| would) suggest|je recommande|my recommendation|ma recommandation)[^.!?\n]{0,180}/i,
+  );
+  if (!recommendationMatch) return undefined;
+  return inferEntryMethodFromText(recommendationMatch[0]);
+}
+
 function inferEntryMethodFromConversation(args: {
   userText: string | null | undefined;
   assistantText?: string | null | undefined;
@@ -94,7 +108,10 @@ function inferEntryMethodFromConversation(args: {
   const fromUser = inferEntryMethodFromText(args.userText);
   if (fromUser) return fromUser;
   if (!isPlainConfirmationReply(args.userText)) return undefined;
-  return inferEntryMethodFromText(args.assistantText);
+  return (
+    inferRecommendedEntryMethod(args.assistantText) ??
+    inferEntryMethodFromText(args.assistantText)
+  );
 }
 
 function inferTokenTypeFromText(

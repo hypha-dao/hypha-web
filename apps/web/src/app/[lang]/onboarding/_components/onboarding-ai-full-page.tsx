@@ -23,6 +23,7 @@ import {
   formatOnboardingLocationSubmitMessage,
   formatOnboardingActivationSubmitMessage,
   formatOnboardingSetupJourneySubmitMessage,
+  getOnboardingSetupJourneySubmitLabels,
   formatOnboardingDiscoverabilitySubmitMessage,
   formatOnboardingTransparencySubmitMessage,
   formatOnboardingEntryMethodSubmitMessage,
@@ -311,22 +312,21 @@ export function OnboardingAiFullPage({
   );
 
   const onboardingSetupJourneyMessageLabels = useMemo(
-    () => ({
-      singleSpace: t('aiHero.onboardingSetupJourneySetSingle'),
-      ecosystem: t('aiHero.onboardingSetupJourneySetEcosystem'),
-    }),
-    [t],
+    () => getOnboardingSetupJourneySubmitLabels(routeLocale),
+    [routeLocale],
   );
 
   const handleOnboardingSetupJourneySelect = useCallback(
-    async (journey: OnboardingSetupJourney) => {
+    async (journey: OnboardingSetupJourney, submitLabel: string) => {
       if (isStreaming) return;
       try {
         clearError();
-        const message = formatOnboardingSetupJourneySubmitMessage(
-          journey,
-          onboardingSetupJourneyMessageLabels,
-        );
+        const message =
+          submitLabel.trim() ||
+          formatOnboardingSetupJourneySubmitMessage(
+            journey,
+            onboardingSetupJourneyMessageLabels,
+          );
         const nextContext = applyOnboardingSetupJourneyToContext(
           onboardingContext,
           journey,

@@ -1,4 +1,8 @@
+import { isPlainConfirmationReply } from './confirmation-replies';
+
 export type InferredVotingMethod = '1m1v' | '1v1v' | '1t1v';
+
+export { isPlainConfirmationReply };
 
 const ONE_MEMBER_PATTERN =
   /\b(?:1m1v|one member(?:\s+one vote|\s+1 vote)?|one person one vote|1 member 1 vote|member.{0,12}one vote)\b/i;
@@ -25,26 +29,6 @@ export function isVotingMethodDiscussionText(
 ): boolean {
   if (!text?.trim()) return false;
   return VOTING_METHOD_DISCUSSION_PATTERN.test(text);
-}
-
-export function isPlainConfirmationReply(
-  text: string | null | undefined,
-): boolean {
-  if (!text?.trim()) return false;
-  const normalized = text.trim().toLowerCase();
-  const normalizedCompact = normalized
-    .replace(/[.,!?;:]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (/^confirm\b/.test(normalizedCompact)) return true;
-  if (
-    /^(yes|yep|yeah|sure|ok|okay|sounds good|go ahead|proceed|do it)\b/.test(
-      normalizedCompact,
-    )
-  ) {
-    return true;
-  }
-  return false;
 }
 
 export function inferVotingMethodFromConversation(args: {

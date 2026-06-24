@@ -71,6 +71,12 @@ export {
   shouldShowOnboardingSetupJourneyPicker,
 } from './onboarding-setup-journey-ui';
 export {
+  getOnboardingSetupJourneySubmitLabels,
+  localizeOnboardingPickerUserMessage,
+  localizeOnboardingSetupJourneyUserMessage,
+  matchOnboardingSetupJourneyUserMessage,
+} from './onboarding-picker-message-i18n';
+export {
   applyOnboardingLocationToContext,
   formatOnboardingLocationSubmitMessage,
   type OnboardingLocationMessageLabels,

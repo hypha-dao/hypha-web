@@ -57,7 +57,10 @@ type AiPanelMessagesProps = {
   onboardingContext?: OnboardingConversationContext;
   onOnboardingLocationConfirm?: (value: SpaceLocationValue) => void;
   onOnboardingLocationSkip?: () => void;
-  onOnboardingSetupJourneySelect?: (journey: OnboardingSetupJourney) => void;
+  onOnboardingSetupJourneySelect?: (
+    journey: OnboardingSetupJourney,
+    submitLabel: string,
+  ) => void;
   onOnboardingActivationSelect?: (method: OnboardingActivationMethod) => void;
   onOnboardingTransparencyConfirm?: (
     matrix: OnboardingTransparencyMatrix,

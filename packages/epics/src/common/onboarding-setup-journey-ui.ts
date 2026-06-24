@@ -5,6 +5,7 @@ import {
   type OnboardingSetupJourney,
 } from './ai-onboarding-context';
 import { shouldShowOnboardingGuidancePicker } from './onboarding-guidance-picker-ui';
+import { matchOnboardingSetupJourneyUserMessage } from './onboarding-picker-message-i18n';
 
 type ChatUiMessage = {
   role: string;
@@ -35,7 +36,11 @@ function inferSetupJourneyFromMessages(
 ): OnboardingSetupJourney | undefined {
   for (const message of messages) {
     if (message.role !== 'user') continue;
-    const normalized = extractUserMessageText(message).toLowerCase();
+    const text = extractUserMessageText(message);
+    const matched = matchOnboardingSetupJourneyUserMessage(text);
+    if (matched) return matched;
+
+    const normalized = text.toLowerCase();
     if (
       normalized.includes('full ecosystem') ||
       normalized.includes('multiple spaces') ||

@@ -51,6 +51,19 @@ describe('buildProposalAcceptanceDirective', () => {
     expect(directive).toMatch(/prepare_governance_proposal/i);
   });
 
+  it('forces prepare when user confirms with oui (French UI)', () => {
+    const directive = buildProposalAcceptanceDirective({
+      userText: 'oui',
+      assistantText:
+        'Je recommande Open Access — tout le monde peut rejoindre librement. Quelle option souhaitez-vous ?',
+      spaceSlug: 'titi',
+    });
+
+    expect(directive).toMatch(/entry_method/i);
+    expect(directive).toMatch(/open_access/);
+    expect(directive).toMatch(/prepare_governance_proposal/i);
+  });
+
   it('returns null when user is not confirming', () => {
     const directive = buildProposalAcceptanceDirective({
       userText: 'maybe later',

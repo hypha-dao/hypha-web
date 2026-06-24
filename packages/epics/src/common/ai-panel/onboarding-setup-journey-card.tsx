@@ -10,7 +10,7 @@ import type { OnboardingSetupJourney } from '../onboarding-setup-journey-ui';
 
 type OnboardingSetupJourneyCardProps = {
   disabled?: boolean;
-  onSelect: (journey: OnboardingSetupJourney) => void;
+  onSelect: (journey: OnboardingSetupJourney, submitLabel: string) => void;
 };
 
 export function OnboardingSetupJourneyCard({
@@ -61,7 +61,7 @@ export function OnboardingSetupJourneyCard({
               )}
               onClick={() => {
                 if (disabled) return;
-                onSelect(option.journey);
+                onSelect(option.journey, option.title);
               }}
             >
               <div className="flex items-start gap-3">

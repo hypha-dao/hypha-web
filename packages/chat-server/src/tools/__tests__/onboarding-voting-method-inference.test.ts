@@ -20,6 +20,9 @@ describe('onboarding voting method inference', () => {
     expect(isPlainConfirmationReply('yes')).toBe(true);
     expect(isPlainConfirmationReply('yes so')).toBe(true);
     expect(isPlainConfirmationReply('sounds good!')).toBe(true);
+    expect(isPlainConfirmationReply('oui')).toBe(true);
+    expect(isPlainConfirmationReply("d'accord")).toBe(true);
+    expect(isPlainConfirmationReply('sim')).toBe(true);
   });
 
   it('infers method from assistant recommendation when user confirms', () => {
