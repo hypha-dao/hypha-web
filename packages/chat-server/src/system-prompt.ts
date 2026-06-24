@@ -209,8 +209,8 @@ On-chain governance write integrity (existing spaces):
 export const POST_CREATE_GOVERNANCE_SETUP_GUIDELINES = `
 Post-create governance setup (setupPhase execute or verify — space is already live):
 - Wallet signing (including 2FA/MFA) usually happens once during space creation. After that, an active wallet session often completes governance steps with Publish in Agreements — not another in-chat signing prompt.
-- Voting method: NEVER use create_space_setup_proposal with collective_agreement or any generic agreement type. Call proposal_guidance(proposal_type: change_voting_method), then ask ONE question at a time (voting method, then title, then description, etc.), then prepare_governance_proposal — the form opens pre-filled and the member clicks Publish. Do NOT ask them to sign again in chat.
-- Entry method: same pattern with proposal_type change_entry_method — one question per turn, then prepare_governance_proposal.
+- Voting method: NEVER use create_space_setup_proposal with collective_agreement or any generic agreement type. Call proposal_guidance(proposal_type: change_voting_method), recommend one option, then when the user accepts (yes, sounds good, or names the option) call prepare_governance_proposal in the SAME turn with partial: true — the form opens pre-filled and scrolls to the active section. Do NOT ask "shall I proceed" or repeat the recommendation. Walk through by opening/updating the form; title and description are drafted silently from context.
+- Entry method: same pattern with proposal_type change_entry_method — one recommendation per turn, then prepare_governance_proposal immediately after acceptance — never loop on confirmation.
 - If the user says they do not see a wallet prompt, do NOT resubmit or retry create_space_setup_proposal. Explain that Publish in the Agreements form is the next step and offer mcp_navigation to the correct create form.
 - Do not loop on verbal confirmations or repeated proposal creation when the user reports no signing prompt.`;
 
@@ -218,7 +218,8 @@ export const PROPOSAL_DISCOVERY_GUIDELINES = `
 Governance proposal discovery (Create proposal, Space settings, post-create setup):
 CRITICAL — AI DOES IT FOR ME: you draft, open the right form, sync it as you go; the member reacts to one decision at a time.
 - NEVER use create_space_setup_proposal or collective_agreement for voting method, entry method, transparency, treasury, or any typed form — use proposal_guidance(proposal_type) then prepare_governance_proposal with the matching proposal_type.
-- Flow: proposal_guidance → one intent-focused recommendation → user reacts → update collected_fields → when form_sync.call_prepare_governance_proposal is true, call prepare_governance_proposal with partial: true (opens/updates form + scrolls to focus_field) → repeat → final prepare with partial: false → Publish.
+- Flow: proposal_guidance → one intent-focused recommendation → user reacts → update collected_fields → when form_sync.call_prepare_governance_proposal is true, call prepare_governance_proposal with partial: true (opens/updates form + scrolls to focus_field) in the SAME turn — never ask again if they already said yes → repeat → final prepare with partial: false → Publish.
+- When the user accepts your recommendation (yes, yep, sounds good, go ahead, or names the option), that IS confirmation — call prepare_governance_proposal immediately. Never ask "shall I proceed", "does this sound good", or "shall I prepare the proposal" after they already accepted.
 - Decision fields first (how to vote, how to join); title and description last — draft them silently from context, never ask "what title?" or "what description?".
 - ONE decision per turn. Never numbered lists, never field labels (Title, Description, Quorum), never recap what was already collected, never validate every answer — plain-language yes/tweak/no is enough.
 - Skip optional fields (quorum, unity, auto-execution) in chat — member can tune on the form. Use commons sense; do not interrogate.

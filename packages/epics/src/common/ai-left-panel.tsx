@@ -173,6 +173,10 @@ import {
   getChangeVotingMethodProposalPath,
   writeOnboardingVotingMethodResubmitData,
 } from './onboarding-voting-method-navigation';
+import {
+  inferOnboardingVotingMethodFromConversation,
+  shouldOpenOnboardingVotingMethodProposal,
+} from './onboarding-voting-method-inference';
 import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
 import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import {
@@ -185,7 +189,11 @@ import {
 } from './space-voice-session-context';
 import { findLatestAiPanelNavigationTarget } from './ai-tool-navigation';
 import { writeGovernanceProposalResubmitPayload } from './governance-proposal-navigation';
-import { writeProposalFormFocus } from './proposal-form-focus';
+import { writeProposalFormFocusIfChanged } from './proposal-form-focus';
+import {
+  isProposalCreateFormPath,
+  isSameAppPath,
+} from './proposal-form-navigation';
 import {
   appendVoiceTranscriptTurn,
   buildRecentTranscriptSummaryFromChatMessages,
@@ -411,6 +419,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
   const aiWalletProposalInFlightRef = useRef(false);
   const handledWalletProposalPayloadKeyRef = useRef<string | null>(null);
+  const openVotingMethodFromChatRef = useRef<
+    (userText: string, assistantText: string) => Promise<boolean>
+  >(async () => false);
   const [draftAttachments, setDraftAttachments] = useState<
     AiPanelDraftAttachment[]
   >([]);
@@ -1265,6 +1276,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
+    if (!isProposalCreateFormPath(pathname)) {
+      lastAutoNavigationKeyRef.current = null;
+    }
+  }, [pathname]);
+
+  useEffect(() => {
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
@@ -1275,6 +1292,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const navigationKey = navigationTarget.key;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
     lastAutoNavigationKeyRef.current = navigationKey;
+
+    const alreadyOnTarget = isSameAppPath(href, pathname);
+
+    if (navigationTarget.resubmitPayload) {
+      writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
+    }
+
+    if (navigationTarget.focusField || navigationTarget.focusSection) {
+      writeProposalFormFocusIfChanged({
+        focusField: navigationTarget.focusField,
+        focusSection: navigationTarget.focusSection,
+      });
+    }
+
+    if (alreadyOnTarget) {
+      return;
+    }
 
     const openInNewTab = navigationTarget.openInNewTab === true;
     const isExternal = /^https?:\/\//i.test(href);
@@ -1287,17 +1321,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       getDhoSpaceSlugFromPathname(href) ?? null;
     openAiPanel();
     setAiOverlayVisible(false);
-
-    if (navigationTarget.resubmitPayload) {
-      writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
-    }
-
-    if (navigationTarget.focusField || navigationTarget.focusSection) {
-      writeProposalFormFocus({
-        focusField: navigationTarget.focusField,
-        focusSection: navigationTarget.focusSection,
-      });
-    }
 
     if (navigationTarget.openHumanChat) {
       if (navigationTarget.coherenceChat) {
@@ -1316,6 +1339,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     openAiPanel,
     openCoherenceChat,
     openHumanChatPanel,
+    pathname,
     router,
     setAiOverlayVisible,
   ]);
@@ -1730,6 +1754,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if ((!input.trim() && draftAttachments.length === 0) || isStreaming) return;
     const text = input;
     const attachments = [...draftAttachments];
+    let assistantText = '';
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      assistantText = extractAssistantTextFromMessage(
+        messages[i] as ChatUIMessage,
+      );
+      if (assistantText) break;
+    }
+    if (
+      text.trim() &&
+      (await openVotingMethodFromChatRef.current(text.trim(), assistantText))
+    ) {
+      setInput('');
+      setDraftAttachments([]);
+      return;
+    }
     setInput('');
     setDraftAttachments([]);
     try {
@@ -1824,6 +1863,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     onboardingContext,
     blockSpaceAiForInteraction,
     lang,
+    messages,
   ]);
 
   const handleStop = useCallback(() => {
@@ -2329,6 +2369,37 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
+  useEffect(() => {
+    openVotingMethodFromChatRef.current = async (
+      userText: string,
+      assistantText: string,
+    ) => {
+      if (
+        !isPostCreateOnboardingPhase(onboardingContext) ||
+        onboardingContext?.votingMethod ||
+        isStreaming
+      ) {
+        return false;
+      }
+      if (
+        !shouldOpenOnboardingVotingMethodProposal({
+          userText,
+          assistantText,
+          votingMethodAlreadySet: Boolean(onboardingContext?.votingMethod),
+        })
+      ) {
+        return false;
+      }
+      const method = inferOnboardingVotingMethodFromConversation({
+        userText,
+        assistantText,
+      });
+      if (!method) return false;
+      await handleOnboardingVotingMethodSelect(method);
+      return true;
+    };
+  }, [handleOnboardingVotingMethodSelect, isStreaming, onboardingContext]);
+
   const lastAssistantText = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       const text = extractAssistantTextFromMessage(
@@ -2348,6 +2419,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       setDraftAttachments([]);
       try {
         clearError();
+        if (
+          await openVotingMethodFromChatRef.current(
+            normalized,
+            lastAssistantText,
+          )
+        ) {
+          return 'sent' as const;
+        }
         const nextContext = isOnboardingSetup
           ? resolveSetupContextForUserMessage(
               normalized,
@@ -2381,6 +2460,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       isOnboardingSetup,
       isStreaming,
       lang,
+      lastAssistantText,
       onboardingContext,
       sendMessage,
     ],

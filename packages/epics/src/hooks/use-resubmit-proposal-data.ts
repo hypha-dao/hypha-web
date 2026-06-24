@@ -129,6 +129,9 @@ export const useResubmitProposalData = <
           return;
         }
 
+        const overlayPanel = document.getElementById('proposal-overlay-panel');
+        const preservedScrollTop = overlayPanel?.scrollTop ?? 0;
+
         const parsed = JSON.parse(stored) as ResubmitProposalSessionPayload;
 
         const currentSegment: ResubmitProposalTemplateSegment =
@@ -871,6 +874,12 @@ export const useResubmitProposalData = <
         }
 
         setResubmitKey((prev) => prev + 1);
+
+        if (overlayPanel && preservedScrollTop > 0) {
+          requestAnimationFrame(() => {
+            overlayPanel.scrollTop = preservedScrollTop;
+          });
+        }
       } catch (error) {
         console.error('Error reading resubmit data:', error);
         sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);

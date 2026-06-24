@@ -740,7 +740,13 @@ export function isPlainOnboardingConfirmationReply(text: string): boolean {
     'already did',
     'done',
   ]);
-  return affirmatives.has(normalized) || affirmatives.has(normalizedCompact);
+  return (
+    affirmatives.has(normalized) ||
+    affirmatives.has(normalizedCompact) ||
+    /^(yes|yep|yeah|sure|ok|okay|sounds good|go ahead|proceed|do it)\b/.test(
+      normalizedCompact,
+    )
+  );
 }
 
 function inferSetupJourneyFromUserText(

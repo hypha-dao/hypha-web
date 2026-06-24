@@ -120,7 +120,7 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
 
   return {
     description:
-      'Write: open or update the typed Agreements form with collected fields. Use partial: true during discovery after each substantive answer — form pre-fills and scrolls to focus_field. Use partial: false when ready_to_publish. Never wallet-sign in chat. Never use for collective_agreement.',
+      'Write: open or update the typed Agreements form with collected fields. Use partial: true during discovery after each substantive answer — form pre-fills and scrolls to focus_field. When the user accepts a recommendation (yes, sounds good, or names the option), call this in the SAME turn — never ask for confirmation again. Do NOT call repeatedly on every chat turn once the form is already open — only when the user changes a decision or asks to update the draft. Use partial: false when ready_to_publish. Never wallet-sign in chat. Never use for collective_agreement.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);

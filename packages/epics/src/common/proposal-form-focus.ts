@@ -43,3 +43,44 @@ export function readProposalFormFocus(): {
     return null;
   }
 }
+
+const PROPOSAL_OVERLAY_PANEL_ID = 'proposal-overlay-panel';
+
+/** Scroll within the proposal overlay panel — avoids jumping the main column. */
+export function scrollProposalFormSectionIntoView(target: HTMLElement): void {
+  if (typeof window === 'undefined') return;
+  const panel = document.getElementById(PROPOSAL_OVERLAY_PANEL_ID);
+  if (!panel) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const panelRect = panel.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  const targetTop =
+    targetRect.top -
+    panelRect.top +
+    panel.scrollTop -
+    panel.clientHeight / 2 +
+    targetRect.height / 2;
+
+  panel.scrollTo({
+    top: Math.max(0, targetTop),
+    behavior: 'smooth',
+  });
+}
+
+export function writeProposalFormFocusIfChanged(args: {
+  focusField?: string;
+  focusSection?: string;
+}): void {
+  if (!args.focusField && !args.focusSection) return;
+  const prev = readProposalFormFocus();
+  if (
+    prev?.focusField === args.focusField &&
+    prev?.focusSection === args.focusSection
+  ) {
+    return;
+  }
+  writeProposalFormFocus(args);
+}

@@ -49,13 +49,15 @@ function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
 function buildInteractionHint(field: CatalogDiscoveryField): string {
   const base =
     'ONE short reply only: your recommendation or draft + one reaction ask. No recap, no summary of prior steps, no validation checklist. Never list field names (Title, Description, Quorum). Voice: 2 sentences max.';
+  const acceptanceRule =
+    ' When the user accepts (yes, sounds good, go ahead, or names the option), call prepare_governance_proposal in the SAME turn — never ask "shall I proceed" again.';
   if (field.key === 'title' || field.key === 'description') {
-    return `${base} Offer drafted copy from context; user says yes/tweak/no.`;
+    return `${base} Offer drafted copy from context; user says yes/tweak/no.${acceptanceRule}`;
   }
   if (field.enumValues?.length) {
-    return `${base} Recommend one option with brief why; user confirms or redirects.`;
+    return `${base} Recommend one option with brief why; user confirms or redirects.${acceptanceRule}`;
   }
-  return `${base} Propose a default when sensible.`;
+  return `${base} Propose a default when sensible.${acceptanceRule}`;
 }
 
 function hasCollectedValue(
@@ -148,9 +150,9 @@ export function buildGuidanceResponse(args: {
       merge_collected_fields_into_proposal_fields: true,
     },
     user_reply_rules:
-      'Never output numbered lists, field labels (Title, Description, Quorum), or multi-field checklists. Never use create_space_setup_proposal or collective_agreement for typed proposals — use prepare_governance_proposal with the correct proposal_type. After each user reaction: update collected_fields, call form_sync when true, then ask only the next intent-focused question.',
+      'Never output numbered lists, field labels (Title, Description, Quorum), or multi-field checklists. Never use create_space_setup_proposal or collective_agreement for typed proposals — use prepare_governance_proposal with the correct proposal_type. After each user reaction: update collected_fields, call form_sync when true in the SAME turn — never ask again if they already accepted. Never loop with "shall I proceed" or "does this sound good" after yes.',
     walkthrough_hint: readyToPublish
       ? 'Required fields complete. Call prepare_governance_proposal (partial: false) to open the final form. Tell the user briefly the form is ready to Publish — no field-by-field recap.'
-      : `${interactionHint} After the user reacts, call prepare_governance_proposal with partial: true, collected proposal_fields, focus_field for the section being discussed, and draft title/description if not yet set — the form opens/updates and scrolls. Then ask ONLY the next intent question.`,
+      : `${interactionHint} After the user reacts with yes/acceptance, call prepare_governance_proposal with partial: true, collected proposal_fields, focus_field for the section being discussed, and draft title/description if not yet set — the form opens/updates and scrolls. Then ask ONLY the next intent question (or none if the form is open).`,
   };
 }

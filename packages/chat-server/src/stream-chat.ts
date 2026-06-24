@@ -24,6 +24,7 @@ import {
   buildSystemPrompt,
   LEFT_PANEL_NAVIGATION_GUIDELINES,
   POST_CREATE_GOVERNANCE_SETUP_GUIDELINES,
+  PROPOSAL_DISCOVERY_GUIDELINES,
   ECOSYSTEM_NESTED_SPACES_GUIDELINES,
   ONBOARDING_CATEGORY_GUIDELINES,
   ONBOARDING_CREATION_CONFIRMATION_GUIDELINES,
@@ -32,6 +33,7 @@ import {
   sanitizeSlug,
 } from './system-prompt';
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
+import { buildPostCreateVotingMethodDirective } from './tools/onboarding-voting-method-inference';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -1132,6 +1134,32 @@ function extractLastUserText(
   return null;
 }
 
+function extractLastAssistantText(
+  messages: ChatRequestPayload['messages'],
+): string | null {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== 'assistant') continue;
+    const parts = message.parts ?? [];
+    for (const part of parts) {
+      if (
+        part &&
+        typeof part === 'object' &&
+        part.type === 'text' &&
+        'text' in part &&
+        typeof part.text === 'string'
+      ) {
+        const text = part.text.trim();
+        if (text) return text;
+      }
+    }
+    if (typeof message.content === 'string' && message.content.trim()) {
+      return message.content.trim();
+    }
+  }
+  return null;
+}
+
 function extractRecentUserTexts(
   messages: ChatRequestPayload['messages'],
   limit = 10,
@@ -1373,9 +1401,21 @@ export async function createChatStreamResult(
   const voiceDiscoveryActive =
     normalizedConversationContext?.discoveryMode === 'voice_interview' ||
     discoveryMode === 'voice_interview';
+  const lastAssistantText = extractLastAssistantText(messages);
+  const postCreateVotingMethodDirective = buildPostCreateVotingMethodDirective({
+    userText: lastUserText,
+    assistantText: lastAssistantText,
+    spaceSlug:
+      normalizedConversationContext?.createdSpaceSlug?.trim() ||
+      spaceSlug?.trim() ||
+      null,
+    votingMethodAlreadySet: Boolean(
+      normalizedConversationContext?.votingMethod,
+    ),
+  });
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
-      ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before any write action, present a concise action plan and request explicit confirmation.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
+      ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
           normalizedConversationContext.setupPhase ?? 'discover'
         }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time with create_ecosystem_space.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
           resolveLatestVisualGenerationIntent(recentUserTexts)
@@ -1385,7 +1425,11 @@ export async function createChatStreamResult(
           (normalizedConversationContext.setupPhase === 'execute' ||
             normalizedConversationContext.setupPhase === 'verify') &&
           !pendingEcosystemChildren
-            ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Ask voting method first — the user picks with the voting method card in the panel (this opens agreements/create/change-voting-method with Publish). Or call proposal_guidance + prepare_governance_proposal with voting_method after they answer. Then confirm entry method with the entry method card if it was skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.`
+            ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n${PROPOSAL_DISCOVERY_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Recommend a voting method or use the voting method card — when the user accepts, call prepare_governance_proposal with change_voting_method in the same turn (partial: true opens the form). Then entry method if skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.${
+                postCreateVotingMethodDirective
+                  ? `\n${postCreateVotingMethodDirective}`
+                  : ''
+              }`
             : ''
         }${
           normalizedConversationContext.setupPhase === 'confirm'
