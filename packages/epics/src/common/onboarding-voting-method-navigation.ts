@@ -52,7 +52,6 @@ export function writeOnboardingVotingMethodResubmitData(args: {
       ...(args.description ? { description: args.description } : {}),
       votingMethod: args.method,
       label: 'Voting Method',
-      autoExecution: true,
     }),
   );
   window.dispatchEvent(new CustomEvent(RESUBMIT_PROPOSAL_UPDATED_EVENT));

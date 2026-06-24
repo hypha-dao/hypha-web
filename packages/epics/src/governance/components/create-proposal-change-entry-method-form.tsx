@@ -17,6 +17,7 @@ import { useConfig } from 'wagmi';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import {
@@ -61,6 +62,7 @@ export const CreateProposalChangeEntryMethodForm = ({
 }: CreateProposalChangeEntryMethodFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -136,6 +138,14 @@ export const CreateProposalChangeEntryMethodForm = ({
   );
 
   useClearResubmitOnSuccess(progress === 100 && !isError);
+
+  const hasNavigatedAfterSuccessRef = React.useRef(false);
+  React.useEffect(() => {
+    if (progress < 100 || isError || !successfulUrl) return;
+    if (hasNavigatedAfterSuccessRef.current) return;
+    hasNavigatedAfterSuccessRef.current = true;
+    router.push(successfulUrl);
+  }, [progress, isError, successfulUrl, router]);
 
   React.useEffect(() => {
     if (skipLiveEntrySyncForResubmit) {

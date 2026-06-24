@@ -201,13 +201,22 @@ export function resubmitPayloadMatchesTemplate(
 export function hasResubmitDataForTemplate(
   templateSegment: ResubmitProposalTemplateSegment,
 ): boolean {
-  if (typeof window === 'undefined') return false;
+  return getResubmitPayloadForTemplate(templateSegment) !== null;
+}
+
+/** Parsed resubmit payload when it targets `templateSegment`, else null. */
+export function getResubmitPayloadForTemplate(
+  templateSegment: ResubmitProposalTemplateSegment,
+): Record<string, unknown> | null {
+  if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem(RESUBMIT_PROPOSAL_DATA_KEY);
-    if (!raw) return false;
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return resubmitPayloadMatchesTemplate(parsed, templateSegment);
+    return resubmitPayloadMatchesTemplate(parsed, templateSegment)
+      ? parsed
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }

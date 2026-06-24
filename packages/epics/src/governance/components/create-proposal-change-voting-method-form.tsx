@@ -13,6 +13,7 @@ import {
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useConfig } from 'wagmi';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { VOTING_METHOD_TYPES } from '../hooks';
@@ -24,7 +25,7 @@ import {
 } from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
-import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+import { getResubmitPayloadForTemplate } from '../../utils/resubmit-proposal-template';
 
 const VOTING_RESUBMIT_SEGMENT = 'change-voting-method';
 
@@ -47,6 +48,7 @@ export const CreateProposalChangeVotingMethodForm = ({
 }: CreateProposalChangeVotingMethodFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -71,9 +73,15 @@ export const CreateProposalChangeVotingMethodForm = ({
   });
 
   /** Re-read each render so first paint after sessionStorage write still skips live sync. */
-  const skipLiveVotingSyncForResubmit = hasResubmitDataForTemplate(
+  const resubmitPayload = getResubmitPayloadForTemplate(
     VOTING_RESUBMIT_SEGMENT,
   );
+  const skipVotingMethodChainSync =
+    resubmitPayload?.votingMethod !== undefined &&
+    resubmitPayload.votingMethod !== null;
+  const skipQuorumUnityChainSync =
+    resubmitPayload?.quorumAndUnity !== undefined &&
+    resubmitPayload.quorumAndUnity !== null;
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -110,6 +118,14 @@ export const CreateProposalChangeVotingMethodForm = ({
 
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
+  const hasNavigatedAfterSuccessRef = React.useRef(false);
+  React.useEffect(() => {
+    if (progress < 100 || isError || !successfulUrl) return;
+    if (hasNavigatedAfterSuccessRef.current) return;
+    hasNavigatedAfterSuccessRef.current = true;
+    router.push(successfulUrl);
+  }, [progress, isError, successfulUrl, router]);
+
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
   const getVotingMethod = (
@@ -124,24 +140,26 @@ export const CreateProposalChangeVotingMethodForm = ({
   };
 
   React.useEffect(() => {
-    if (skipLiveVotingSyncForResubmit) {
-      return;
-    }
     if (spaceDetails && !isLoading) {
       const quorum = Number(spaceDetails.quorum ?? 0);
       const unity = Number(spaceDetails.unity ?? 0);
-      const votingMethod = getVotingMethod(
-        Number(spaceDetails.votingPowerSource ?? 0),
-      );
 
-      form.setValue('quorumAndUnity.quorum', quorum);
-      form.setValue('quorumAndUnity.unity', unity);
-      form.setValue('votingMethod', votingMethod);
+      if (!skipQuorumUnityChainSync) {
+        form.setValue('quorumAndUnity.quorum', quorum);
+        form.setValue('quorumAndUnity.unity', unity);
+      }
 
-      if (votingMethod === VOTING_METHOD_TYPES[1]) {
-        form.setValue('token', votingPowerToken);
-      } else if (votingMethod === VOTING_METHOD_TYPES[3]) {
-        form.setValue('token', voicePowerToken);
+      if (!skipVotingMethodChainSync) {
+        const votingMethod = getVotingMethod(
+          Number(spaceDetails.votingPowerSource ?? 0),
+        );
+        form.setValue('votingMethod', votingMethod);
+
+        if (votingMethod === VOTING_METHOD_TYPES[1]) {
+          form.setValue('token', votingPowerToken);
+        } else if (votingMethod === VOTING_METHOD_TYPES[3]) {
+          form.setValue('token', voicePowerToken);
+        }
       }
     }
   }, [
@@ -150,7 +168,8 @@ export const CreateProposalChangeVotingMethodForm = ({
     votingPowerToken,
     voicePowerToken,
     form,
-    skipLiveVotingSyncForResubmit,
+    skipVotingMethodChainSync,
+    skipQuorumUnityChainSync,
   ]);
 
   const handleCreate = async (data: FormValues) => {

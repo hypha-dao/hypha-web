@@ -388,6 +388,7 @@
         "votingPeriod": "Período de votação",
         "autoExecutionWhenConditionsMet": "Execução automática (quando as condições forem atendidas)",
         "autoExecutionDisabled": "A execução automática é desativada quando o quorum está abaixo de 20% para proteger os ativos da tesouraria.",
+        "autoExecutionRequired": "Quando o quorum é de 20% ou superior, as propostas são executadas automaticamente quando as condições são atendidas. A duração mínima de votação não se aplica.",
         "minimumVotingDuration": "Duração mínima de votação",
         "minDurationUnavailableNotConnected": "A duração mínima de votação não está disponível até o espaço estar conectado.",
         "minDurationLoadError": "Não foi possível carregar a duração mínima de votação da rede. Tente novamente mais tarde.",

@@ -2107,6 +2107,7 @@
         "votingPeriod": "Voting Period",
         "autoExecutionWhenConditionsMet": "Auto-execution (when conditions are met)",
         "autoExecutionDisabled": "Auto-execution is disabled when quorum is below 20% to protect treasury assets.",
+        "autoExecutionRequired": "When quorum is 20% or higher, proposals auto-execute when conditions are met. Minimum voting duration does not apply.",
         "minimumVotingDuration": "Minimum Voting Duration",
         "minDurationUnavailableNotConnected": "Minimum voting duration is unavailable until the space is connected.",
         "minDurationLoadError": "Could not load minimum voting duration from the network. Try again later.",

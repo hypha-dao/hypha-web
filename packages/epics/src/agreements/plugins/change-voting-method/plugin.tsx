@@ -156,6 +156,7 @@ export const ChangeVotingMethodPlugin = ({
   });
 
   const isQuorumTooLow = (quorumAndUnity?.quorum ?? 0) < 20;
+  const isQuorumHighEnough = (quorumAndUnity?.quorum ?? 0) >= 20;
 
   React.useEffect(() => {
     if (skipResubmitOverwrite()) return;
@@ -266,7 +267,7 @@ export const ChangeVotingMethodPlugin = ({
                     checked={field.value}
                     onCheckedChange={handleAutoExecutionChange}
                     className="ml-2"
-                    disabled={isQuorumTooLow}
+                    disabled={isQuorumTooLow || isQuorumHighEnough}
                   />
                 </div>
               </FormControl>
@@ -275,6 +276,13 @@ export const ChangeVotingMethodPlugin = ({
                 <span className="text-2 text-neutral-11">
                   {tAgreementFlow(
                     'plugins.quorumAndUnity.autoExecutionDisabled',
+                  )}
+                </span>
+              )}
+              {isQuorumHighEnough && (
+                <span className="text-2 text-neutral-11">
+                  {tAgreementFlow(
+                    'plugins.quorumAndUnity.autoExecutionRequired',
                   )}
                 </span>
               )}
