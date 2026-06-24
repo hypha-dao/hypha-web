@@ -302,6 +302,13 @@ function formatChatStreamErrorMessage(error: unknown): string {
       : '';
   if (!rawMessage) return '';
   if (
+    rawMessage.includes('FUNCTION_PAYLOAD_TOO_LARGE') ||
+    rawMessage.includes('Request Entity Too Large') ||
+    rawMessage.toLowerCase().includes('entity too large')
+  ) {
+    return 'The attachment is too large to send with this message. Use a file under 4 MB or remove other attachments and try again.';
+  }
+  if (
     rawMessage.includes('An error occurred in the Server Components render') ||
     rawMessage.toLowerCase().includes('digest')
   ) {
@@ -1176,7 +1183,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         const options = await buildMessageOptions();
         const attachmentParts =
           seededAttachments.length > 0
-            ? await convertFilesToParts(seededAttachments)
+            ? await convertFilesToParts(seededAttachments, {
+                authorizationToken: jwt ?? undefined,
+              })
             : [];
         const textParts = seededPrompt.trim()
           ? [{ type: 'text' as const, text: seededPrompt }]
@@ -1883,6 +1892,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       } else if (attachments.length > 0) {
         attachmentParts = await convertFilesToParts(
           attachments.map((att) => att.file),
+          { authorizationToken: jwt ?? undefined },
         );
       }
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];

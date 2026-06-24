@@ -2298,6 +2298,7 @@
     "composerAttachGoogleDrive": "Google Drive",
     "composerAttachGoogleDriveUnavailable": "Google Drive n'est pas disponible",
     "composerAttachGoogleDriveError": "Impossible de joindre depuis Google Drive. Réessayez.",
+    "composerAttachmentTooLarge": "Les pièces jointes doivent faire {maxSize} ou moins.",
     "composerDropPrompt": "Déposez des fichiers pour les joindre",
     "mentionNotAvailable": "Mentions (bientôt)",
     "mentionNoMembers": "Membres pas encore chargés — réessayez dans un instant",

@@ -42,6 +42,7 @@ import {
   appendVoiceTranscriptTurn,
   buildRecentTranscriptSummaryFromChatMessages,
   toStoredOnboardingChatMessages,
+  convertFilesToParts,
   getPostOnboardingLandingPath,
   AI_PANEL_SETUP_SOURCE,
   recordMobilizedAiAgentsForOnboarding,
@@ -78,27 +79,6 @@ type ChatMessage = {
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
 };
-
-async function fileToPart(
-  file: File,
-): Promise<{ type: 'file'; mediaType: string; url: string }> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const value = reader.result;
-      if (typeof value === 'string') resolve(value);
-      else reject(new Error('Could not read file data'));
-    };
-    reader.onerror = () =>
-      reject(reader.error ?? new Error('File read failed'));
-    reader.readAsDataURL(file);
-  });
-  return {
-    type: 'file',
-    mediaType: file.type || 'application/octet-stream',
-    url: dataUrl,
-  };
-}
 
 function extractAssistantText(message: ChatMessage | undefined): string {
   if (!message || message.role !== 'assistant') return '';
@@ -545,7 +525,9 @@ export function OnboardingAiFullPage({
         const options = await buildMessageOptions();
         const attachmentParts =
           seedAttachments.length > 0
-            ? await Promise.all(seedAttachments.map(fileToPart))
+            ? await convertFilesToParts(seedAttachments, {
+                authorizationToken: jwt ?? undefined,
+              })
             : [];
         const textParts = seedPrompt.trim()
           ? [{ type: 'text' as const, text: seedPrompt.trim() }]
@@ -565,6 +547,7 @@ export function OnboardingAiFullPage({
     seedAttachments,
     seedPrompt,
     sendMessage,
+    jwt,
   ]);
 
   useEffect(() => {
@@ -857,8 +840,9 @@ export function OnboardingAiFullPage({
       const options = await buildMessageOptions(nextContext);
       const attachmentParts =
         attachments.length > 0
-          ? await Promise.all(
-              attachments.map((attachment) => fileToPart(attachment.file)),
+          ? await convertFilesToParts(
+              attachments.map((attachment) => attachment.file),
+              { authorizationToken: jwt ?? undefined },
             )
           : [];
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
@@ -881,6 +865,7 @@ export function OnboardingAiFullPage({
     draftAttachments,
     input,
     isStreaming,
+    jwt,
     sendMessage,
   ]);
 

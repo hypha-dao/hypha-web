@@ -26,12 +26,17 @@ export const fileRouter: FileRouter = {
   attachmentUploader: f({
     pdf: {
       maxFileSize: '4MB',
-      maxFileCount: 3,
+      maxFileCount: 5,
       contentDisposition: 'attachment',
     },
     image: {
       maxFileSize: '4MB',
-      maxFileCount: 3,
+      maxFileCount: 5,
+      contentDisposition: 'attachment',
+    },
+    blob: {
+      maxFileSize: '4MB',
+      maxFileCount: 5,
       contentDisposition: 'attachment',
     },
   })

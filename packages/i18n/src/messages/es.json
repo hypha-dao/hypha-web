@@ -2298,6 +2298,7 @@
     "composerAttachGoogleDrive": "Google Drive",
     "composerAttachGoogleDriveUnavailable": "Google Drive no está disponible",
     "composerAttachGoogleDriveError": "No se pudo adjuntar desde Google Drive. Inténtalo de nuevo.",
+    "composerAttachmentTooLarge": "Los archivos adjuntos deben ser de {maxSize} o menos.",
     "composerDropPrompt": "Suelta archivos para adjuntarlos",
     "mentionNotAvailable": "Menciones (próximamente)",
     "mentionNoMembers": "Aún no hay miembros cargados — inténtalo en un momento",

@@ -7,6 +7,10 @@ export {
 } from './ai-panel-suggestions';
 export { AiPanelChatBar } from './ai-panel-chat-bar';
 export type { AiPanelDraftAttachment } from './ai-panel-chat-bar';
+export {
+  convertFilesToParts,
+  ChatAttachmentTooLargeError,
+} from './convert-files-to-parts';
 export { AiPanelMessages } from './ai-panel-messages';
 export { OnboardingSpaceLocationCard } from './onboarding-space-location-card';
 export { OnboardingActivationModeCard } from './onboarding-activation-mode-card';

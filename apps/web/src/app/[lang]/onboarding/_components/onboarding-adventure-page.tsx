@@ -491,6 +491,7 @@ export function OnboardingAdventurePage({
             <section className="relative mx-auto w-full max-w-5xl">
               <div className="relative overflow-hidden rounded-[1.5rem] border border-border/55 bg-neutral-2 shadow-[0_10px_40px_-24px_oklch(0.45_0.08_278)] [.dark_&]:border-white/10 [.dark_&]:bg-white/[0.04] [.dark_&]:shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] [.dark_&]:backdrop-blur-md">
                 <AiPanelChatBar
+                  variant="hero"
                   value={aiPrompt}
                   onChange={setAiPrompt}
                   onSend={handleStartAiOnboarding}
@@ -499,6 +500,9 @@ export function OnboardingAdventurePage({
                   placeholder={
                     rotatingHeroPrompts[heroPlaceholderIndex] ??
                     t('aiHero.placeholder')
+                  }
+                  sendAriaLabel={
+                    isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
                   }
                   composerDisabled={!aiChatEnabled || isStartingAi}
                   isStreaming={isStartingAi}
