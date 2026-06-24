@@ -9,13 +9,18 @@ describe('webSearchTool', () => {
       max_results: 3,
     });
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(Array.isArray(result.results)).toBe(true);
+    expect(result).toMatchObject({ ok: true });
+    if (!('results' in result) || !Array.isArray(result.results)) {
+      throw new Error('Expected successful web search results');
+    }
+    expect(result.results.length).toBeGreaterThanOrEqual(0);
   }, 20_000);
 
   it('rejects empty query', async () => {
-    const result = await webSearchTool.execute({ query: '  ' });
-    expect(result.ok).toBe(false);
+    const result = await webSearchTool.execute({
+      query: '  ',
+      max_results: 5,
+    });
+    expect(result).toMatchObject({ ok: false });
   });
 });
