@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { DatabaseInstance } from '../../server';
+import type { DatabaseInstance } from '../../common/server/types';
 import { findTokenByAgreementWeb3Id } from './queries';
 import { updateToken } from './mutations';
 import { extractDeployedTokenFromReceipt } from './extract-deployed-token-from-receipt';

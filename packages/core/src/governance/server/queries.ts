@@ -434,12 +434,22 @@ export const findTokenByAgreementWeb3Id = async (
   { agreementWeb3Id }: { agreementWeb3Id: number },
   { db }: DbConfig,
 ) => {
-  const [token] = await db
+  const matches = await db
     .select()
     .from(tokens)
     .where(eq(tokens.agreementWeb3Id, agreementWeb3Id))
-    .limit(1);
-  return token ?? null;
+    .limit(2);
+
+  if (matches.length === 0) {
+    return null;
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      `Multiple tokens found with agreementWeb3Id: ${agreementWeb3Id}; refusing ambiguous lookup`,
+    );
+  }
+
+  return matches[0] ?? null;
 };
 
 export const findTokenUpdateByDocumentId = async (
