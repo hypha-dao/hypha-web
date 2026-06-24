@@ -1,4 +1,4 @@
-import { DbConfig } from '@hypha-platform/core/server';
+import type { DbConfig } from '../../common/server/types';
 import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
 
 import {
