@@ -48,6 +48,13 @@ export const onboardingConversationContextSchema = z.object({
   transparencyMatrix: onboardingTransparencyMatrixSchema.optional(),
   entryMethod: z.enum(['open_access', 'invite_only', 'token_based']).optional(),
   votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).optional(),
+  activeGovernanceProposal: z
+    .object({
+      proposalType: z.enum(['change_voting_method', 'change_entry_method']),
+      collectedFields: z.record(z.unknown()).optional(),
+      formOpen: z.boolean().optional(),
+    })
+    .optional(),
   pendingTransparencyDiscoverability: z.number().int().min(0).max(3).optional(),
   ecosystemRootSlug: z.string().optional(),
   createdSpaceSlug: z.string().optional(),

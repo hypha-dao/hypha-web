@@ -5,6 +5,7 @@ import {
   RESUBMIT_PROPOSAL_DATA_KEY,
   type ResubmitProposalTemplateSegment,
 } from '../utils/resubmit-proposal-template';
+import { RESUBMIT_PROPOSAL_UPDATED_EVENT } from '../common/governance-proposal-navigation';
 import {
   formatOnboardingVotingMethodSubmitMessage,
   type OnboardingVotingMethod,
@@ -38,8 +39,8 @@ export function buildOnboardingVotingMethodProposalCopy(
 
 export function writeOnboardingVotingMethodResubmitData(args: {
   method: OnboardingVotingMethod;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
 }): void {
   if (typeof window === 'undefined') return;
 
@@ -47,11 +48,12 @@ export function writeOnboardingVotingMethodResubmitData(args: {
     RESUBMIT_PROPOSAL_DATA_KEY,
     JSON.stringify({
       resubmitTemplateSegment: CHANGE_VOTING_METHOD_RESUBMIT_SEGMENT,
-      title: args.title,
-      description: args.description,
+      ...(args.title ? { title: args.title } : {}),
+      ...(args.description ? { description: args.description } : {}),
       votingMethod: args.method,
       label: 'Voting Method',
       autoExecution: true,
     }),
   );
+  window.dispatchEvent(new CustomEvent(RESUBMIT_PROPOSAL_UPDATED_EVENT));
 }

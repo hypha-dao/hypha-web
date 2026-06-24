@@ -91,9 +91,12 @@ export function buildPostCreateVotingMethodDirective(args: {
   if (!explicitChoice && !confirmedAfterDiscussion) return null;
 
   return [
-    'CRITICAL — user accepted a voting method choice.',
-    `Call prepare_governance_proposal in this turn with proposal_type change_voting_method, space_slug "${args.spaceSlug.trim()}", partial: true, voting_method: "${inferredMethod}", focus_field: voting_method, and draft title/description from context.`,
-    'Do NOT ask "shall I proceed", "does this sound good", or any further confirmation.',
-    'Tell them briefly the Agreements form is open — they can review and click Publish.',
+    'CRITICAL — user accepted a voting method choice (step 1 of the walkthrough).',
+    `Call prepare_governance_proposal in this turn with proposal_type change_voting_method, space_slug "${args.spaceSlug.trim()}", partial: true, voting_method: "${inferredMethod}", focus_field: voting_method — do NOT set final title or description yet.`,
+    'Then call proposal_guidance(proposal_type: change_voting_method, collected_fields: { voting_method: "' +
+      inferredMethod +
+      '" }) and ask ONLY the next_question (title draft).',
+    'Do NOT ask "shall I proceed" or tell the user to Publish yet — title and description still remain.',
+    'Never claim the space has no proposals — you are opening the draft form now.',
   ].join(' ');
 }

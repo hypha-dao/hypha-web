@@ -33,7 +33,15 @@ export function shouldShowOnboardingVotingMethodPicker({
   if (isStreaming || !isPostCreateOnboardingPhase(onboardingContext)) {
     return false;
   }
-  return !onboardingContext?.votingMethod;
+  if (onboardingContext?.votingMethod) return false;
+  if (
+    onboardingContext?.activeGovernanceProposal?.proposalType ===
+      'change_voting_method' &&
+    onboardingContext.activeGovernanceProposal.collectedFields.voting_method
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export type OnboardingVotingMethodMessageLabels = {
@@ -63,8 +71,12 @@ export function applyOnboardingVotingMethodToContext(
 ): OnboardingConversationContext {
   return {
     ...context,
-    votingMethod: method,
     lastUserText: userMessage,
+    activeGovernanceProposal: {
+      proposalType: 'change_voting_method',
+      collectedFields: { voting_method: method },
+      formOpen: true,
+    },
     setupPlan: {
       ...context.setupPlan,
       governance: {

@@ -53,6 +53,8 @@ describe('onboarding voting method inference', () => {
     expect(directive).toContain('prepare_governance_proposal');
     expect(directive).toContain('change_voting_method');
     expect(directive).toContain('1m1v');
-    expect(directive).toContain('Do NOT ask');
+    expect(directive).toContain('proposal_guidance');
+    expect(directive).toContain('Do NOT');
+    expect(directive).not.toContain('click Publish');
   });
 });

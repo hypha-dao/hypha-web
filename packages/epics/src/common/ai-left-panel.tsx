@@ -169,10 +169,13 @@ import {
   type OnboardingVotingMethod,
 } from './onboarding-voting-method-ui';
 import {
-  buildOnboardingVotingMethodProposalCopy,
   getChangeVotingMethodProposalPath,
   writeOnboardingVotingMethodResubmitData,
 } from './onboarding-voting-method-navigation';
+import {
+  completeVotingMethodGovernanceWalkthrough,
+  hasActiveVotingMethodDraft,
+} from './onboarding-governance-proposal-walkthrough';
 import {
   inferOnboardingVotingMethodFromConversation,
   shouldOpenOnboardingVotingMethodProposal,
@@ -2292,6 +2295,39 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ],
   );
 
+  useEffect(() => {
+    const active = onboardingContext?.activeGovernanceProposal;
+    if (active?.proposalType !== 'change_voting_method') return;
+
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const message = messages[i];
+      if (!message || message.role !== 'assistant') continue;
+      const parts = message.parts ?? [];
+      for (let j = parts.length - 1; j >= 0; j -= 1) {
+        const part = parts[j] as {
+          type?: string;
+          state?: string;
+          output?: { ok?: boolean; partial?: boolean };
+        };
+        if (part.type !== 'tool-prepare_governance_proposal') continue;
+        if (part.state !== 'output-available') continue;
+        if (part.output?.ok !== true || part.output.partial !== false) continue;
+
+        const method = active.collectedFields.voting_method;
+        if (method !== '1m1v' && method !== '1v1v' && method !== '1t1v') return;
+        if (!onboardingContext) return;
+
+        const next = completeVotingMethodGovernanceWalkthrough(
+          onboardingContext,
+          method,
+        );
+        setOnboardingContext(next);
+        saveOnboardingConversationContext(next);
+        return;
+      }
+    }
+  }, [messages, onboardingContext]);
+
   const sendOnboardingVotingMethodMessage = useCallback(
     async (text: string, nextContext: OnboardingConversationContext) => {
       const options = await buildMessageOptions(nextContext);
@@ -2336,15 +2372,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           spaceSlug?.trim() ||
           onboardingContext?.createdSpaceSlug?.trim();
         if (targetSlug) {
-          const { title, description } =
-            buildOnboardingVotingMethodProposalCopy(
-              method,
-              onboardingVotingMethodMessageLabels,
-            );
-          writeOnboardingVotingMethodResubmitData({
-            method,
-            title,
-            description,
+          writeOnboardingVotingMethodResubmitData({ method });
+          writeProposalFormFocusIfChanged({
+            focusField: 'voting_method',
+            focusSection: 'voting_method',
           });
           openAiPanel();
           router.push(getChangeVotingMethodProposalPath(lang, targetSlug));
@@ -2376,6 +2407,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ) => {
       if (
         !isPostCreateOnboardingPhase(onboardingContext) ||
+        hasActiveVotingMethodDraft(onboardingContext) ||
         onboardingContext?.votingMethod ||
         isStreaming
       ) {

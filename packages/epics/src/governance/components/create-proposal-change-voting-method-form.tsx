@@ -229,7 +229,10 @@ export const CreateProposalChangeVotingMethodForm = ({
               : plugin}
           </div>
           <Separator />
-          <div className="flex justify-end w-full">
+          <div
+            className="flex justify-end w-full"
+            data-proposal-section="publish"
+          >
             <Button type="submit" disabled={isButtonDisabled}>
               {tAgreementFlow('buttons.publish')}
             </Button>

@@ -182,8 +182,8 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
         focus_field: navigation.focus_field,
         focus_section: navigation.focus_section,
         next_step: isPartial
-          ? 'Form opened/updated — scroll the member to the active section. Reply with ONE intent-focused sentence only (no recap, no field labels). Continue discovery until ready_to_publish, then partial: false.'
-          : 'Form is complete. Tell the user to review and click Publish — one short sentence, no field-by-field recap.',
+          ? 'Form opened/updated — continue the walkthrough: call proposal_guidance with updated collected_fields, ask ONLY next_question, and after the user accepts call prepare_governance_proposal again. Do not skip title or description.'
+          : 'Form is complete. Tell the user to review and click Publish — one short sentence, scroll is on the publish section.',
       };
     },
   } satisfies ChatRouteTool<typeof inputSchema>;

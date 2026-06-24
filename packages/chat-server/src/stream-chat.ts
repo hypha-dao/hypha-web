@@ -34,6 +34,7 @@ import {
 } from './system-prompt';
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
 import { buildPostCreateVotingMethodDirective } from './tools/onboarding-voting-method-inference';
+import { buildActiveGovernanceProposalDirective } from './tools/active-governance-proposal-directive';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -1410,9 +1411,13 @@ export async function createChatStreamResult(
       spaceSlug?.trim() ||
       null,
     votingMethodAlreadySet: Boolean(
-      normalizedConversationContext?.votingMethod,
+      normalizedConversationContext?.votingMethod ||
+        normalizedConversationContext?.activeGovernanceProposal
+          ?.proposalType === 'change_voting_method',
     ),
   });
+  const activeGovernanceProposalDirective =
+    buildActiveGovernanceProposalDirective(normalizedConversationContext);
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
@@ -1428,6 +1433,10 @@ export async function createChatStreamResult(
             ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n${PROPOSAL_DISCOVERY_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Recommend a voting method or use the voting method card — when the user accepts, call prepare_governance_proposal with change_voting_method in the same turn (partial: true opens the form). Then entry method if skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.${
                 postCreateVotingMethodDirective
                   ? `\n${postCreateVotingMethodDirective}`
+                  : ''
+              }${
+                activeGovernanceProposalDirective
+                  ? `\n${activeGovernanceProposalDirective}`
                   : ''
               }`
             : ''

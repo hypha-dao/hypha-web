@@ -49,6 +49,16 @@ export type OnboardingEntryMethod =
 
 export type OnboardingVotingMethod = '1m1v' | '1v1v' | '1t1v';
 
+export type ActiveGovernanceProposalType =
+  | 'change_voting_method'
+  | 'change_entry_method';
+
+export type ActiveGovernanceProposal = {
+  proposalType: ActiveGovernanceProposalType;
+  collectedFields: Record<string, unknown>;
+  formOpen?: boolean;
+};
+
 export type OnboardingConversationContext = {
   mode: typeof ONBOARDING_SETUP_MODE;
   source: typeof ONBOARDING_HERO_SOURCE | typeof AI_PANEL_SETUP_SOURCE;
@@ -63,6 +73,8 @@ export type OnboardingConversationContext = {
   entryMethod?: OnboardingEntryMethod;
   /** Governance voting model chosen during post-create verify phase. */
   votingMethod?: OnboardingVotingMethod;
+  /** In-progress governance proposal walkthrough (form may be open). */
+  activeGovernanceProposal?: ActiveGovernanceProposal;
   /** Root space slug after ecosystem onboarding handoff to the left AI panel. */
   ecosystemRootSlug?: string;
   /** Slug of the space created during onboarding (single-space or ecosystem root). */
@@ -339,6 +351,30 @@ export function resolveSetupContextForUserMessage(
   return text.trim() ? applyOnboardingContextForUserText(base, text) : base;
 }
 
+function parseStoredActiveGovernanceProposal(
+  raw: unknown,
+): ActiveGovernanceProposal | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as Partial<ActiveGovernanceProposal>;
+  if (
+    candidate.proposalType !== 'change_voting_method' &&
+    candidate.proposalType !== 'change_entry_method'
+  ) {
+    return undefined;
+  }
+  const collectedFields =
+    candidate.collectedFields &&
+    typeof candidate.collectedFields === 'object' &&
+    !Array.isArray(candidate.collectedFields)
+      ? (candidate.collectedFields as Record<string, unknown>)
+      : {};
+  return {
+    proposalType: candidate.proposalType,
+    collectedFields,
+    formOpen: candidate.formOpen === true,
+  };
+}
+
 export function readOnboardingConversationContext():
   | OnboardingConversationContext
   | undefined {
@@ -386,6 +422,9 @@ export function readOnboardingConversationContext():
       votingMethod:
         parseStoredVotingMethod(parsed.votingMethod) ??
         parseStoredVotingMethod(parsed.setupPlan?.governance?.votingModel),
+      activeGovernanceProposal: parseStoredActiveGovernanceProposal(
+        parsed.activeGovernanceProposal,
+      ),
       ecosystemRootSlug:
         typeof parsed.ecosystemRootSlug === 'string'
           ? parsed.ecosystemRootSlug
@@ -456,6 +495,9 @@ export function serializeConversationContextForChatApi(
       : {}),
     ...(context.entryMethod ? { entryMethod: context.entryMethod } : {}),
     ...(context.votingMethod ? { votingMethod: context.votingMethod } : {}),
+    ...(context.activeGovernanceProposal
+      ? { activeGovernanceProposal: context.activeGovernanceProposal }
+      : {}),
     ...(context.ecosystemRootSlug
       ? { ecosystemRootSlug: context.ecosystemRootSlug }
       : {}),

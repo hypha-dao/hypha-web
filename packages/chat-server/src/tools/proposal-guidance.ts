@@ -152,7 +152,7 @@ export function buildGuidanceResponse(args: {
     user_reply_rules:
       'Never output numbered lists, field labels (Title, Description, Quorum), or multi-field checklists. Never use create_space_setup_proposal or collective_agreement for typed proposals — use prepare_governance_proposal with the correct proposal_type. After each user reaction: update collected_fields, call form_sync when true in the SAME turn — never ask again if they already accepted. Never loop with "shall I proceed" or "does this sound good" after yes.',
     walkthrough_hint: readyToPublish
-      ? 'Required fields complete. Call prepare_governance_proposal (partial: false) to open the final form. Tell the user briefly the form is ready to Publish — no field-by-field recap.'
-      : `${interactionHint} After the user reacts with yes/acceptance, call prepare_governance_proposal with partial: true, collected proposal_fields, focus_field for the section being discussed, and draft title/description if not yet set — the form opens/updates and scrolls. Then ask ONLY the next intent question (or none if the form is open).`,
+      ? 'Required fields complete. Call prepare_governance_proposal (partial: false, focus_field: publish) to scroll to Publish. Tell the user briefly the form is ready — one short sentence.'
+      : `${interactionHint} After the user reacts with yes/acceptance, call prepare_governance_proposal with partial: true, all collected proposal_fields so far, focus_field for the section being discussed, and include title/description only after those steps are reached. Then call proposal_guidance again mentally for the NEXT field and ask ONLY that next_question — never skip title or description.`,
   };
 }
