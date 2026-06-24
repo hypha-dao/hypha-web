@@ -424,6 +424,24 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
   );
 };
 
+/**
+ * Find the single token row linked to an on-chain proposal id
+ * (`agreementWeb3Id`). Used by the server-side token-linking webhook to
+ * backfill `tokens.address` after a deploy proposal executes — independent of
+ * any browser being open.
+ */
+export const findTokenByAgreementWeb3Id = async (
+  { agreementWeb3Id }: { agreementWeb3Id: number },
+  { db }: DbConfig,
+) => {
+  const [token] = await db
+    .select()
+    .from(tokens)
+    .where(eq(tokens.agreementWeb3Id, agreementWeb3Id))
+    .limit(1);
+  return token ?? null;
+};
+
 export const findTokenUpdateByDocumentId = async (
   documentId: number,
   { db }: DbConfig,

@@ -3,6 +3,7 @@ import {
   findDocumentsCreatorsForNotifications,
   findDocumentWithSpaceByIdRaw,
   findPeopleByWeb3Addresses,
+  linkDeployedTokenForProposal,
   web3Client,
 } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@hypha-platform/core/client';
@@ -184,6 +185,44 @@ export const POST = proposalExecutedSigningKey
           .forEach(({ reason }) =>
             console.error(
               'Failed to notify space members about proposal execution:',
+              reason,
+            ),
+          );
+      },
+      async (events) => {
+        // Server-side token-address backfill: deterministically links a
+        // deployed token's address to its DB row when a deploy proposal
+        // executes, independent of any browser being open. No-ops for
+        // non-token proposals.
+        const linking = events.map(async (event) => {
+          const proposalId = event.args.proposalId;
+          if (
+            proposalId > BigInt(Number.MAX_SAFE_INTEGER) ||
+            proposalId < BigInt(Number.MIN_SAFE_INTEGER)
+          ) {
+            return;
+          }
+
+          const result = await linkDeployedTokenForProposal(
+            {
+              proposalId: Number(proposalId),
+              transactionHash: event.transactionHash,
+            },
+            { db },
+          );
+
+          if (result.status === 'linked') {
+            console.info(
+              `Linked deployed token ${result.address} for proposal ${proposalId}.`,
+            );
+          }
+        });
+
+        (await Promise.allSettled(linking))
+          .filter((res) => res.status === 'rejected')
+          .forEach(({ reason }) =>
+            console.error(
+              'Failed to link deployed token for proposal:',
               reason,
             ),
           );
