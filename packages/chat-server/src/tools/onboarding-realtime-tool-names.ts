@@ -3,6 +3,8 @@ import type { ChatRouteTool } from './types';
 /** Tools wired into OpenAI Realtime voice discovery (onboarding setup). */
 export const ONBOARDING_REALTIME_TOOL_NAMES = [
   'onboarding_guidance',
+  'search_spaces',
+  'web_search',
   'get_network_ecosystem_patterns',
   'propose_organisation_blueprint',
   'generate_space_visual_assets',

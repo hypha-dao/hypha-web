@@ -404,6 +404,8 @@ function getCreateSpaceGuidance(
         'After the root exists, continue in the left AI panel (execute phase): create each nested space with create_ecosystem_space one at a time—never skip this phase.',
       ],
       suggested_tools: [
+        'web_search',
+        'search_spaces',
         'get_network_ecosystem_patterns',
         'propose_organisation_blueprint',
         'generate_space_visual_assets',
@@ -642,7 +644,7 @@ export function createOnboardingGuidanceTool() {
         nextStep?.field === 'org_discovery'
           ? `Ask only the next_question. Do NOT invent custom tags (Collaboration, Creativity, Entrepreneurship, Climate, Ideation, etc.) or ask the user to pick tags. Hypha uses exactly these ten space category groups—the same as the network map and create space form: ${HYPHA_CATEGORY_GROUP_LABELS.join(
               ', ',
-            )}. Tags are assigned automatically after this answer.`
+            )}. Tags are assigned automatically after this answer. If the user asked to research similar organisations on the internet or check the web, call web_search and search_spaces in this turn before answering—then share concise findings and continue discovery. Never report a generic technical issue when tools return empty results.`
           : null;
       const assignedCategoryGroups = isAnsweredCategoryGroups(
         answers.category_groups,
@@ -671,7 +673,7 @@ export function createOnboardingGuidanceTool() {
         nextStep?.field === 'functional_domains'
           ? 'Ask only the next_question in one warm sentence. If they say propose for me or similar, accept that and move on—do not ask for a domain list again.'
           : nextStep?.field === 'ecosystem_blueprint_proposed'
-          ? 'In this turn you MUST call get_network_ecosystem_patterns then propose_organisation_blueprint. Present 3–4 nested spaces as a warm prose overview (not a numbered checklist), then ask if the direction feels right. Plan only—do not call create_ecosystem_space. Pass functional_domains from known_answers when available.'
+          ? 'In this turn you MUST call get_network_ecosystem_patterns then propose_organisation_blueprint. If the user asked for internet or external research, call web_search and search_spaces first. Present 3–4 nested spaces as a warm prose overview (not a numbered checklist), then ask if the direction feels right. Plan only—do not call create_ecosystem_space. If network patterns are empty or degraded, still propose a blueprint from purpose and web research—never say technical issue. Pass functional_domains from known_answers when available.'
           : nextStep?.field === 'ecosystem_blueprint_confirmed'
           ? 'Ask only the next_question. The user is confirming the proposed nested-space plan before activation and visuals—not creating any spaces yet. Only the root will be created during onboarding; nested spaces wait for the left panel handover.'
           : null;

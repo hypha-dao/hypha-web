@@ -30,7 +30,17 @@ export function createGetNetworkEcosystemPatternsTool() {
         return { ok: true, ...patterns };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        return { ok: false, error: message };
+        return {
+          ok: true,
+          degraded: true,
+          warning: message,
+          sampled_ecosystem_count: 0,
+          total_ecosystems_with_children: 0,
+          average_child_count: 0,
+          common_role_counts: {},
+          frequent_child_title_keywords: [],
+          samples: [],
+        };
       }
     },
   } satisfies ChatRouteTool<typeof inputSchema>;

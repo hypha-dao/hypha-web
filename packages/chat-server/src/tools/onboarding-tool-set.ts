@@ -8,6 +8,7 @@ import { createProposeOrganisationBlueprintTool } from './propose-organisation-b
 import { createMcpNavigationTool } from './mcp-navigation';
 import { createOnboardingGuidanceTool } from './onboarding-guidance';
 import { createSearchSpacesTool } from './search-spaces';
+import { webSearchTool } from './web-search';
 import { createGenerateSpaceVisualAssetsTool } from './generate-space-visual-assets';
 import { createGeocodeSpaceLocationTool } from './geocode-space-location';
 import { getSpaceBySlugTool } from './get-space-by-slug';
@@ -515,6 +516,7 @@ export function createOnboardingToolSet(
   const tools: Record<string, ChatRouteTool> = {
     get_space_by_slug: safeChatTool('get_space_by_slug', getSpaceBySlugTool),
     search_spaces: safeChatTool('search_spaces', createSearchSpacesTool()),
+    web_search: safeChatTool('web_search', webSearchTool),
     onboarding_guidance: safeChatTool(
       'onboarding_guidance',
       onboardingGuidanceWithContext,

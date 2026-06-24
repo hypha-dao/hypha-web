@@ -60,7 +60,56 @@ export function createProposeOrganisationBlueprintTool() {
         };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        return { ok: false, error: message };
+        const rootSlug =
+          sanitizeSlug(data.root_slug) ||
+          sanitizeSlug(data.organisation_name) ||
+          'organisation';
+        return {
+          ok: true,
+          degraded: true,
+          warning: message,
+          requires_confirmation: true,
+          confirmation_token: 'confirm-ecosystem-blueprint',
+          blueprint: {
+            root_slug: rootSlug,
+            root_title: data.organisation_name.trim(),
+            nodes: [
+              {
+                key: `${rootSlug}-community`,
+                role: 'community_hub',
+                title: 'Community Hub',
+                description:
+                  'Open collaboration space for contributors, members, and public coordination.',
+                status: 'planned',
+              },
+              {
+                key: `${rootSlug}-core-team`,
+                role: 'core_team',
+                title: 'Core Team',
+                description:
+                  'Operator space for day-to-day execution, staffing, and internal decisions.',
+                status: 'planned',
+              },
+              ...(data.functional_domains ?? ['Operations', 'Growth']).map(
+                (domain) => ({
+                  key: `${rootSlug}-${domain
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')}`,
+                  role: 'functional_domain' as const,
+                  title: `${domain} Domain`,
+                  description: `Functional domain for ${domain.toLowerCase()} proposals, agreements, and stewardship.`,
+                  status: 'planned' as const,
+                }),
+              ),
+            ],
+            network_context: {
+              sampled_ecosystem_count: 0,
+              frequent_child_title_keywords: [],
+            },
+          },
+          next_step:
+            'Network pattern lookup was unavailable—propose a sensible default blueprint from purpose and any web research, then ask if the direction feels right.',
+        };
       }
     },
   } satisfies ChatRouteTool<typeof inputSchema>;
