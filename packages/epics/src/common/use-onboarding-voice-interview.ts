@@ -473,6 +473,10 @@ export function useOnboardingVoiceInterview({
       setPhase('processing');
       return;
     }
+  }, [enabled, isStreaming, stopListening, stopSpeaking]);
+
+  useEffect(() => {
+    if (!enabled || isStreaming) return;
     if (!wasStreamingRef.current) return;
     wasStreamingRef.current = false;
 
@@ -506,7 +510,6 @@ export function useOnboardingVoiceInterview({
     lastAssistantText,
     locale,
     stopListening,
-    stopSpeaking,
   ]);
 
   return {

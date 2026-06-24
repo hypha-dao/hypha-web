@@ -16,6 +16,8 @@ import type {
 
 type UseOnboardingVoiceRealtimeOptions = {
   enabled: boolean;
+  /** When true, do not mirror transcript turns into useChat messages. */
+  isChatStreaming?: boolean;
   locale?: string;
   conversationContext?: VoiceSessionContext;
   recentTranscriptSummary?: string;
@@ -62,6 +64,7 @@ function resolveEventPhase(
 
 export function useOnboardingVoiceRealtime({
   enabled,
+  isChatStreaming = false,
   locale,
   conversationContext,
   recentTranscriptSummary,
@@ -78,6 +81,7 @@ export function useOnboardingVoiceRealtime({
   const onFallbackRef = useRef(onFallback);
   const onTranscriptTurnRef = useRef(onTranscriptTurn);
   const recentTranscriptSummaryRef = useRef(recentTranscriptSummary);
+  const isChatStreamingRef = useRef(isChatStreaming);
 
   const [phase, setPhase] = useState<VoiceInterviewPhase>('idle');
   phaseRef.current = phase;
@@ -91,13 +95,22 @@ export function useOnboardingVoiceRealtime({
   onFallbackRef.current = onFallback;
   onTranscriptTurnRef.current = onTranscriptTurn;
   recentTranscriptSummaryRef.current = recentTranscriptSummary;
+  isChatStreamingRef.current = isChatStreaming;
+
+  const publishTranscriptTurn = useCallback(
+    (turn: { role: 'user' | 'assistant'; text: string }) => {
+      if (isChatStreamingRef.current) return;
+      onTranscriptTurnRef.current?.(turn);
+    },
+    [],
+  );
 
   const flushPendingAssistantTranscript = useCallback(() => {
     const text = assistantBufferRef.current.trim();
     if (!text) return;
     assistantBufferRef.current = '';
-    onTranscriptTurnRef.current?.({ role: 'assistant', text });
-  }, []);
+    publishTranscriptTurn({ role: 'assistant', text });
+  }, [publishTranscriptTurn]);
 
   const disconnect = useCallback(() => {
     flushPendingAssistantTranscript();
@@ -126,7 +139,7 @@ export function useOnboardingVoiceRealtime({
           typeof event.transcript === 'string' ? event.transcript.trim() : '';
         if (transcript) {
           setLiveTranscript(transcript);
-          onTranscriptTurnRef.current?.({ role: 'user', text: transcript });
+          publishTranscriptTurn({ role: 'user', text: transcript });
         }
       }
 
@@ -140,7 +153,7 @@ export function useOnboardingVoiceRealtime({
             : assistantBufferRef.current.trim();
         assistantBufferRef.current = '';
         if (transcript) {
-          onTranscriptTurnRef.current?.({
+          publishTranscriptTurn({
             role: 'assistant',
             text: transcript,
           });
@@ -163,7 +176,7 @@ export function useOnboardingVoiceRealtime({
         flushPendingAssistantTranscript();
       }
     },
-    [flushPendingAssistantTranscript],
+    [flushPendingAssistantTranscript, publishTranscriptTurn],
   );
 
   const connect = useCallback(async () => {

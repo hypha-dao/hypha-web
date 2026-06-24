@@ -2327,6 +2327,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         const method = active.collectedFields.voting_method;
         if (method !== '1m1v' && method !== '1v1v' && method !== '1t1v') return;
         if (!onboardingContext) return;
+        if (onboardingContext.votingMethod === method) return;
 
         const next = completeVotingMethodGovernanceWalkthrough(
           onboardingContext,
@@ -2516,6 +2517,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleVoiceTranscriptTurn = useCallback(
     (turn: { role: 'user' | 'assistant'; text: string }) => {
+      if (isStreaming) return;
       setMessages((prev) => {
         const next = appendVoiceTranscriptTurn(prev, turn);
         if (isOnboardingSetup) {
@@ -2524,7 +2526,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         return next;
       });
     },
-    [isOnboardingSetup, setMessages],
+    [isOnboardingSetup, isStreaming, setMessages],
   );
 
   const voiceSessionContext = useMemo((): VoiceSessionContext | undefined => {

@@ -62,6 +62,7 @@ export function useOnboardingVoiceDiscovery(
 
   const realtime = useOnboardingVoiceRealtime({
     enabled: options.enabled && useRealtime,
+    isChatStreaming: options.isStreaming,
     locale: options.locale,
     conversationContext: options.conversationContext,
     recentTranscriptSummary: options.recentTranscriptSummary,

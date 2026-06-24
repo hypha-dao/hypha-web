@@ -884,8 +884,6 @@ export const useResubmitProposalData = <
           );
         }
 
-        setResubmitKey((prev) => prev + 1);
-
         if (
           overlayPanel &&
           preservedScrollTop > 0 &&

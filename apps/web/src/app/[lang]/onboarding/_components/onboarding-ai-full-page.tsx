@@ -981,13 +981,14 @@ export function OnboardingAiFullPage({
 
   const handleVoiceTranscriptTurn = useCallback(
     (turn: { role: 'user' | 'assistant'; text: string }) => {
+      if (isStreaming) return;
       setMessages((prev) => {
         const next = appendVoiceTranscriptTurn(prev, turn);
         saveOnboardingChatMessages(toStoredOnboardingChatMessages(next));
         return next;
       });
     },
-    [setMessages],
+    [isStreaming, setMessages],
   );
 
   const voiceLocale = onboardingContext.locale ?? context.locale ?? routeLocale;
