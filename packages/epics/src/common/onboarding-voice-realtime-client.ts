@@ -1,6 +1,15 @@
 'use client';
 
+import { acquireWarmMicStream, isWarmMicStream } from './onboarding-voice-mic';
+
 const OPENAI_REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
+
+const REALTIME_TURN_DETECTION = {
+  type: 'server_vad',
+  threshold: 0.5,
+  prefix_padding_ms: 300,
+  silence_duration_ms: 450,
+} as const;
 
 export type RealtimeVoiceSessionPayload = {
   clientSecret: string;
@@ -120,9 +129,17 @@ export async function connectOpenAiRealtimeCall(params: {
     };
   }
 
-  const localStream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-  });
+  const warmStream = await acquireWarmMicStream();
+  const localStream =
+    warmStream ??
+    (await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    }));
+  const usesWarmMic = isWarmMicStream(localStream);
   for (const track of localStream.getTracks()) {
     peerConnection.addTrack(track, localStream);
   }
@@ -138,6 +155,20 @@ export async function connectOpenAiRealtimeCall(params: {
       // ignore malformed events
     }
   };
+
+  const sendEvent = (event: Record<string, unknown>) => {
+    if (dataChannel.readyState !== 'open') return;
+    dataChannel.send(JSON.stringify(event));
+  };
+
+  dataChannel.addEventListener('open', () => {
+    sendEvent({
+      type: 'session.update',
+      session: {
+        turn_detection: REALTIME_TURN_DETECTION,
+      },
+    });
+  });
 
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
@@ -166,11 +197,6 @@ export async function connectOpenAiRealtimeCall(params: {
     sdp: answerSdp,
   });
 
-  const sendEvent = (event: Record<string, unknown>) => {
-    if (dataChannel.readyState !== 'open') return;
-    dataChannel.send(JSON.stringify(event));
-  };
-
   const close = () => {
     try {
       dataChannel.close();
@@ -182,8 +208,10 @@ export async function connectOpenAiRealtimeCall(params: {
     } catch {
       // ignore
     }
-    for (const track of localStream.getTracks()) {
-      track.stop();
+    if (!usesWarmMic) {
+      for (const track of localStream.getTracks()) {
+        track.stop();
+      }
     }
     remoteAudio.srcObject = null;
   };

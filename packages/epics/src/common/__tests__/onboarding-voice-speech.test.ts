@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { prepareAssistantTextForSpeech } from '../onboarding-voice-speech';
+import {
+  estimateSpeechDurationMs,
+  prepareAssistantTextForSpeech,
+} from '../onboarding-voice-speech';
 
 describe('prepareAssistantTextForSpeech', () => {
   it('keeps natural spoken lead-ins and drops numbered field labels', () => {
@@ -41,5 +44,20 @@ describe('prepareAssistantTextForSpeech', () => {
     expect(spoken).toContain("I'll help with voting.");
     expect(spoken).not.toMatch(/quorum/i);
     expect(spoken).not.toMatch(/voting method/i);
+  });
+});
+
+describe('estimateSpeechDurationMs', () => {
+  it('returns a positive duration for speakable text', () => {
+    const duration = estimateSpeechDurationMs(
+      'Thanks for sharing that. What would you like to call this proposal?',
+    );
+    expect(duration).toBeGreaterThan(500);
+    expect(duration).toBeLessThan(8000);
+  });
+
+  it('returns zero for empty or stripped text', () => {
+    expect(estimateSpeechDurationMs('')).toBe(0);
+    expect(estimateSpeechDurationMs('**Title:** only labels')).toBe(0);
   });
 });

@@ -9,6 +9,10 @@ import {
   type RealtimeServerEvent,
   type RealtimeVoiceConnection,
 } from './onboarding-voice-realtime-client';
+import {
+  acquireWarmMicStream,
+  releaseWarmMicStream,
+} from './onboarding-voice-mic';
 import type {
   VoiceInterviewErrorCode,
   VoiceInterviewPhase,
@@ -122,6 +126,7 @@ export function useOnboardingVoiceRealtime({
     if (connection) {
       connection.close();
     }
+    releaseWarmMicStream();
     setPhase('idle');
   }, [flushPendingAssistantTranscript]);
 
@@ -200,6 +205,8 @@ export function useOnboardingVoiceRealtime({
         onFallbackRef.current?.();
         return;
       }
+
+      await acquireWarmMicStream();
 
       const session = await fetchRealtimeVoiceSession({
         authToken: token,

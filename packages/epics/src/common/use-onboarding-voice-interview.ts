@@ -5,8 +5,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   stopOnboardingSpeech,
   speakOnboardingText,
+  prepareAssistantTextForSpeech,
+  estimateSpeechDurationMs,
 } from './onboarding-voice-speech';
 import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
+import {
+  acquireWarmMicStream,
+  releaseWarmMicStream,
+} from './onboarding-voice-mic';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -48,9 +54,10 @@ export type VoiceTranscriptSendOutcome =
   | 'skipped'
   | 'failed';
 
-const AUTO_RESUME_DELAY_MS = 450;
-const RECOGNITION_RESTART_DELAY_MS = 180;
-const NETWORK_RETRY_DELAY_MS = 900;
+const RECOGNITION_RESTART_DELAY_MS = 40;
+const NETWORK_RETRY_DELAY_MS = 700;
+const MIC_PREWARM_BEFORE_TTS_END_MS = 400;
+const DEFAULT_SILENCE_MS_BEFORE_SEND = 850;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -128,25 +135,11 @@ async function ensureMicrophoneAccess(): Promise<
   if (!window.isSecureContext) {
     return { ok: false, code: 'not-allowed' };
   }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    return { ok: true };
+  const stream = await acquireWarmMicStream();
+  if (!stream) {
+    return { ok: false, code: 'not-allowed' };
   }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    for (const track of stream.getTracks()) {
-      track.stop();
-    }
-    return { ok: true };
-  } catch (error) {
-    const name = error instanceof DOMException ? error.name : '';
-    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-      return { ok: false, code: 'not-allowed' };
-    }
-    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-      return { ok: false, code: 'audio-capture' };
-    }
-    return { ok: false, code: 'error' };
-  }
+  return { ok: true };
 }
 
 type UseOnboardingVoiceInterviewOptions = {
@@ -170,7 +163,7 @@ export function useOnboardingVoiceInterview({
   locale,
   activeSpaceSlug,
   autoResumeListening = true,
-  silenceMsBeforeSend = 1400,
+  silenceMsBeforeSend = DEFAULT_SILENCE_MS_BEFORE_SEND,
   onSendTranscript,
 }: UseOnboardingVoiceInterviewOptions) {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -186,6 +179,9 @@ export function useOnboardingVoiceInterview({
   const listeningGenerationRef = useRef(0);
   const noSpeechRetryRef = useRef(0);
   const networkRetryRef = useRef(0);
+  const prelistenTimerRef = useRef<number | null>(null);
+  const earlySpeechStartedRef = useRef(false);
+  const earlySpokenPrefixRef = useRef('');
   const startListeningRef = useRef<
     (options?: { userInitiated?: boolean }) => Promise<void>
   >(() => Promise.resolve());
@@ -198,6 +194,13 @@ export function useOnboardingVoiceInterview({
   const [voiceError, setVoiceError] = useState<VoiceInterviewErrorCode | null>(
     null,
   );
+
+  const clearPrelistenTimer = useCallback(() => {
+    if (prelistenTimerRef.current !== null) {
+      window.clearTimeout(prelistenTimerRef.current);
+      prelistenTimerRef.current = null;
+    }
+  }, []);
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
@@ -432,17 +435,22 @@ export function useOnboardingVoiceInterview({
 
   useEffect(() => {
     if (!enabled) {
+      clearPrelistenTimer();
       stopListening();
       stopSpeaking();
+      releaseWarmMicStream();
       userInitiatedListeningRef.current = false;
+      earlySpeechStartedRef.current = false;
       setPhase('idle');
       return;
     }
     return () => {
+      clearPrelistenTimer();
       stopListening();
       stopSpeaking();
+      releaseWarmMicStream();
     };
-  }, [enabled, stopListening, stopSpeaking]);
+  }, [clearPrelistenTimer, enabled, stopListening, stopSpeaking]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -465,15 +473,59 @@ export function useOnboardingVoiceInterview({
   }, [activeSpaceSlug, stopListening, stopSpeaking]);
 
   useEffect(() => {
+    if (!enabled || !isStreaming) return;
+    void acquireWarmMicStream();
+  }, [enabled, isStreaming]);
+
+  useEffect(() => {
+    if (!enabled || !isStreaming) {
+      if (!isStreaming) {
+        earlySpeechStartedRef.current = false;
+        earlySpokenPrefixRef.current = '';
+      }
+      return;
+    }
+    if (earlySpeechStartedRef.current) return;
+
+    const speakable = prepareAssistantTextForSpeech(lastAssistantText);
+    if (speakable.length < 48) return;
+
+    const firstSentence = speakable.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
+    if (!firstSentence || firstSentence.length < 20) return;
+
+    earlySpeechStartedRef.current = true;
+    earlySpokenPrefixRef.current = firstSentence;
+    lastSpokenAssistantRef.current = lastAssistantText.trim();
+    clearPrelistenTimer();
+    stopListening();
+    setPhase('speaking');
+    cancelSpeechRef.current?.();
+    cancelSpeechRef.current = speakOnboardingText(firstSentence, {
+      lang: locale,
+      rate: 1.05,
+    });
+  }, [
+    clearPrelistenTimer,
+    enabled,
+    isStreaming,
+    lastAssistantText,
+    locale,
+    stopListening,
+  ]);
+
+  useEffect(() => {
     if (!enabled) return;
     if (isStreaming) {
       wasStreamingRef.current = true;
+      clearPrelistenTimer();
       stopListening();
-      stopSpeaking();
+      if (!earlySpeechStartedRef.current) {
+        stopSpeaking();
+      }
       setPhase('processing');
       return;
     }
-  }, [enabled, isStreaming, stopListening, stopSpeaking]);
+  }, [clearPrelistenTimer, enabled, isStreaming, stopListening, stopSpeaking]);
 
   useEffect(() => {
     if (!enabled || isStreaming) return;
@@ -481,35 +533,73 @@ export function useOnboardingVoiceInterview({
     wasStreamingRef.current = false;
 
     const spoken = lastAssistantText.trim();
-    if (
-      !spoken ||
-      spoken === lastSpokenAssistantRef.current ||
-      isAssistantFailureText(spoken)
-    ) {
+    if (!spoken || isAssistantFailureText(spoken)) {
+      earlySpeechStartedRef.current = false;
+      earlySpokenPrefixRef.current = '';
       setPhase('idle');
       return;
     }
+
+    const speakable = prepareAssistantTextForSpeech(spoken);
+    const earlyPrefix = earlySpokenPrefixRef.current.trim();
+    earlySpeechStartedRef.current = false;
+    earlySpokenPrefixRef.current = '';
+
+    if (
+      earlyPrefix &&
+      speakable &&
+      speakable.startsWith(earlyPrefix) &&
+      speakable.length - earlyPrefix.length < 48
+    ) {
+      lastSpokenAssistantRef.current = spoken;
+      stopSpeaking();
+      stopListening();
+      setPhase('idle');
+      if (!autoResumeListening) return;
+      void acquireWarmMicStream().then(() => {
+        void startListeningRef.current({ userInitiated: false });
+      });
+      return;
+    }
+
+    if (!speakable || spoken === lastSpokenAssistantRef.current) {
+      setPhase('idle');
+      if (autoResumeListening) {
+        void startListeningRef.current({ userInitiated: false });
+      }
+      return;
+    }
+
     lastSpokenAssistantRef.current = spoken;
     stopListening();
     setPhase('speaking');
+    clearPrelistenTimer();
+
+    const duration = estimateSpeechDurationMs(speakable);
+    prelistenTimerRef.current = window.setTimeout(() => {
+      void acquireWarmMicStream();
+    }, Math.max(0, duration - MIC_PREWARM_BEFORE_TTS_END_MS));
+
     cancelSpeechRef.current = speakOnboardingText(spoken, {
       lang: locale,
+      rate: 1.05,
       onEnd: () => {
         cancelSpeechRef.current = null;
+        clearPrelistenTimer();
         setPhase('idle');
         if (!autoResumeListening || !enabled) return;
-        window.setTimeout(() => {
-          void startListeningRef.current({ userInitiated: false });
-        }, AUTO_RESUME_DELAY_MS);
+        void startListeningRef.current({ userInitiated: false });
       },
     });
   }, [
     autoResumeListening,
+    clearPrelistenTimer,
     enabled,
     isStreaming,
     lastAssistantText,
     locale,
     stopListening,
+    stopSpeaking,
   ]);
 
   return {

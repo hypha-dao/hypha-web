@@ -74,6 +74,15 @@ export function prepareAssistantTextForSpeech(text: string): string {
   return collapsed.slice(0, 320).trim();
 }
 
+/** Rough duration for scheduling mic pre-warm before TTS ends. */
+export function estimateSpeechDurationMs(text: string, rate = 1.02): number {
+  const spoken = prepareAssistantTextForSpeech(text);
+  if (!spoken) return 0;
+  const words = spoken.split(/\s+/).filter(Boolean).length;
+  const wordsPerMinute = 175 * rate;
+  return Math.round((words / wordsPerMinute) * 60_000) + 80;
+}
+
 /** Warm, empathic feminine voices — earlier entries rank higher per locale. */
 const PREFERRED_FEMININE_VOICE_PARTS = [
   'samantha',
@@ -188,7 +197,7 @@ export function speakOnboardingText(
       options?.lang ?? document.documentElement.lang,
     );
     utterance.lang = lang;
-    utterance.rate = options?.rate ?? 0.96;
+    utterance.rate = options?.rate ?? 1.02;
     utterance.pitch = 1.08;
     utterance.volume = 0.98;
     const voice = pickWarmFeminineVoice(lang);
