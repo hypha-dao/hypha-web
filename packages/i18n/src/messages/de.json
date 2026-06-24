@@ -2821,6 +2821,7 @@
     "composerAttachFile": "Datei",
     "composerAttachGoogleDrive": "Google Drive",
     "composerAttachGoogleDriveUnavailable": "Google Drive ist nicht verfügbar",
+    "composerAttachGoogleDriveError": "Anhang aus Google Drive fehlgeschlagen. Bitte erneut versuchen.",
     "composerDropPrompt": "Dateien hier ablegen zum Anhängen",
     "mentionNotAvailable": "Erwähnungen (demnächst)",
     "mentionNoMembers": "Noch keine Mitglieder geladen — kurz später erneut versuchen",

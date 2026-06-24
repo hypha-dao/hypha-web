@@ -73,6 +73,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     ...matrixTurnConnectSourcesFromEnv(),
     OPENAI_REALTIME_CONNECT_SOURCES,
     'https://www.googleapis.com',
+    'https://oauth2.googleapis.com',
+    'https://content.googleapis.com',
     UPLOADTHING_UFS_HOST,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
     process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',

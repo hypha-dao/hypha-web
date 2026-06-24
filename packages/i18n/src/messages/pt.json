@@ -2297,6 +2297,7 @@
     "composerAttachFile": "Arquivo",
     "composerAttachGoogleDrive": "Google Drive",
     "composerAttachGoogleDriveUnavailable": "O Google Drive não está disponível",
+    "composerAttachGoogleDriveError": "Não foi possível anexar do Google Drive. Tente novamente.",
     "composerDropPrompt": "Solte arquivos para anexar",
     "mentionNotAvailable": "Menções (em breve)",
     "mentionNoMembers": "Membros ainda não carregados — tente novamente em instantes",

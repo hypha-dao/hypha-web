@@ -302,6 +302,7 @@ export function AiPanelChatBar({
   const valueRef = useRef(value);
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const isMobile = useIsMobile() ?? false;
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [composerDragDepth, setComposerDragDepth] = useState(0);
@@ -824,9 +825,9 @@ export function AiPanelChatBar({
         />
 
         <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
-          {dictationError && (
+          {(dictationError || attachError) && (
             <p role="alert" className="px-1 text-xs text-destructive">
-              {dictationError}
+              {dictationError ?? attachError}
             </p>
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
@@ -889,9 +890,16 @@ export function AiPanelChatBar({
                     </DropdownMenuItem>
                     <ComposerAttachGoogleDriveMenuItem
                       disabled={!canAttachDrafts}
-                      onPickerOpen={() => setAttachMenuOpen(false)}
+                      onPickerOpen={() => {
+                        setAttachMenuOpen(false);
+                        setAttachError(null);
+                      }}
+                      onError={() =>
+                        setAttachError(tHuman('composerAttachGoogleDriveError'))
+                      }
                       onFilesPicked={(files) => {
                         if (!canAttachDrafts) return;
+                        setAttachError(null);
                         pushDrafts(filesToFileList(files));
                       }}
                     />
