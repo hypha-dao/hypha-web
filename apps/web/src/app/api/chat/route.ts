@@ -103,6 +103,7 @@ export async function POST(req: Request) {
   const activeSpaceTitle = parsed.data.activeSpaceTitle;
   const conversationContext = parsed.data.conversationContext;
   const discoveryMode = parsed.data.discoveryMode;
+  const activeProposalFormSnapshot = parsed.data.activeProposalFormSnapshot;
 
   if (spaceSlug?.trim()) {
     const interactionAuth = await authorizeSpacePanelInteraction({
@@ -132,6 +133,7 @@ export async function POST(req: Request) {
       activeSpaceTitle: activeSpaceTitle ?? null,
       conversationContext,
       discoveryMode,
+      activeProposalFormSnapshot,
       onboardingWriteToolsEnabled,
       ecosystemAutomationEnabled,
     });

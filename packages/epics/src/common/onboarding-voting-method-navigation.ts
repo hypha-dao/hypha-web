@@ -6,7 +6,6 @@ import {
   type ResubmitProposalTemplateSegment,
 } from '../utils/resubmit-proposal-template';
 import { RESUBMIT_PROPOSAL_UPDATED_EVENT } from '../common/governance-proposal-navigation';
-import { enableProposalAiWalkthrough } from '../common/proposal-form-focus';
 import {
   formatOnboardingVotingMethodSubmitMessage,
   type OnboardingVotingMethod,
@@ -44,8 +43,6 @@ export function writeOnboardingVotingMethodResubmitData(args: {
   description?: string;
 }): void {
   if (typeof window === 'undefined') return;
-
-  enableProposalAiWalkthrough();
 
   sessionStorage.setItem(
     RESUBMIT_PROPOSAL_DATA_KEY,

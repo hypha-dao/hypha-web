@@ -73,6 +73,25 @@ export const prepareGovernanceProposalInputSchema = z
     }
   });
 
+export const proposalFormStateOutputSchema = z
+  .object({
+    ok: z.boolean(),
+    error: z.string().optional(),
+    form_open: z.boolean().optional(),
+    proposal_type: z.string().optional(),
+    fields_on_screen: z.record(z.unknown()).optional(),
+    filled_on_screen: z.array(z.string()).optional(),
+    missing_on_screen: z.array(z.string()).optional(),
+    form_synced: z.boolean().optional(),
+    ready_to_publish: z.boolean().optional(),
+  })
+  .passthrough();
+
+export const proposalFormStateInputSchema = z.object({
+  proposal_type: z.string().optional(),
+  collected_fields: z.record(z.unknown()).optional(),
+});
+
 export const prepareGovernanceProposalOutputSchema = z
   .object({
     ok: z.boolean(),

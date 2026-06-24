@@ -3,32 +3,66 @@ import {
   getProposalCatalogEntry,
   pickOptionalDiscoveryPrompts,
   orderFieldsForDiscovery,
+  buildResubmitPayload,
 } from '../proposal-catalog';
 import { buildGuidanceResponse } from '../proposal-guidance';
 
 describe('proposal discovery — change_voting_method', () => {
   const entry = getProposalCatalogEntry('change_voting_method')!;
 
-  it('includes quorum, unity, and voting period in optional discovery prompts', () => {
+  it('defers quorum and voting period to chain defaults in prepare (not chat)', () => {
     const prompts = orderFieldsForDiscovery(
       pickOptionalDiscoveryPrompts(entry, { voting_method: '1m1v' }),
     );
     const keys = prompts.map((field) => field.key);
-    expect(keys).toContain('quorum_percent');
-    expect(keys).toContain('unity_percent');
-    expect(keys).toContain('auto_execution');
-    expect(keys).toContain('voting_duration_seconds');
+    expect(keys).not.toContain('quorum_percent');
+    expect(keys).not.toContain('unity_percent');
+    expect(keys).not.toContain('auto_execution');
+    expect(keys).not.toContain('voting_duration_seconds');
   });
 
-  it('walks quorum before title when voting method is collected', () => {
+  it('starts with title (form order top-to-bottom)', () => {
     const guidance = buildGuidanceResponse({
       proposalType: 'change_voting_method',
-      collectedFields: { voting_method: '1m1v' },
+      collectedFields: {},
     });
     expect(guidance.ok).toBe(true);
     if (!guidance.ok) return;
-    expect(guidance.next_question_field).toBe('quorum_percent');
+    expect(guidance.next_question_field).toBe('title');
+    expect(guidance.remaining_field_order?.[0]).toBe('title');
+  });
+
+  it('asks voting method after title and description', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'change_voting_method',
+      collectedFields: {
+        title: 'Change Voting Method',
+        description: 'Switch to one member one vote.',
+      },
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.next_question_field).toBe('voting_method');
+    expect(guidance.interaction_hint).toMatch(/list EVERY option/i);
     expect(guidance.form_sync?.call_prepare_governance_proposal).toBe(true);
+    expect(guidance.filled_fields).toEqual(['title', 'description']);
+  });
+
+  it('does not re-ask filled fields', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'change_voting_method',
+      collectedFields: {
+        title: 'Change Voting Method',
+        description: 'Switch to one member one vote.',
+        voting_method: '1m1v',
+      },
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.filled_fields).toContain('title');
+    expect(guidance.filled_fields).toContain('voting_method');
+    expect(guidance.remaining_field_order).not.toContain('title');
+    expect(guidance.ready_to_publish).toBe(true);
   });
 
   it('still defers governance tuning for contribution proposals', () => {
@@ -37,5 +71,131 @@ describe('proposal discovery — change_voting_method', () => {
     const keys = prompts.map((field) => field.key);
     expect(keys).not.toContain('quorum_percent');
     expect(keys).not.toContain('voting_duration_seconds');
+  });
+});
+
+describe('proposal discovery — change_entry_method', () => {
+  it('starts with title then entry method', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'change_entry_method',
+      collectedFields: {},
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.next_question_field).toBe('title');
+  });
+
+  it('requires listing all entry options before recommendation', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'change_entry_method',
+      collectedFields: {
+        title: 'Change Entry Method',
+        description: 'Open the space to everyone.',
+      },
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.next_question_field).toBe('entry_method');
+    expect(guidance.interaction_hint).toMatch(/Open Access/i);
+    expect(guidance.interaction_hint).toMatch(/Invite Request/i);
+    expect(guidance.interaction_hint).toMatch(/Token Based/i);
+  });
+});
+
+describe('proposal discovery — issue_new_token', () => {
+  it('follows form order: title, description, token type, name, symbol', () => {
+    const empty = buildGuidanceResponse({
+      proposalType: 'issue_new_token',
+      collectedFields: {},
+    });
+    expect(empty.ok).toBe(true);
+    if (!empty.ok) return;
+    expect(empty.next_question_field).toBe('title');
+    expect(empty.ready_to_publish).toBe(false);
+
+    const afterTitleDesc = buildGuidanceResponse({
+      proposalType: 'issue_new_token',
+      collectedFields: {
+        title: 'Issue New Token',
+        description: 'Create a utility token for the space.',
+      },
+    });
+    expect(afterTitleDesc.ok).toBe(true);
+    if (!afterTitleDesc.ok) return;
+    expect(afterTitleDesc.next_question_field).toBe('token_type');
+    expect(afterTitleDesc.next_question).toMatch(/Never ask about supply/i);
+
+    const afterType = buildGuidanceResponse({
+      proposalType: 'issue_new_token',
+      collectedFields: {
+        title: 'Issue New Token',
+        description: 'Create a utility token.',
+        token_type: 'utility',
+      },
+    });
+    expect(afterType.ok).toBe(true);
+    if (!afterType.ok) return;
+    expect(afterType.next_question_field).toBe('token_name');
+  });
+
+  it('is not ready until token type, name, and symbol are collected', () => {
+    const entry = getProposalCatalogEntry('issue_new_token')!;
+    expect(entry.requiredFields.map((f) => f.key)).toEqual([
+      'title',
+      'description',
+      'token_type',
+      'token_name',
+      'token_symbol',
+    ]);
+
+    const partial = buildGuidanceResponse({
+      proposalType: 'issue_new_token',
+      collectedFields: {
+        title: 'Issue New Token',
+        description: 'Create a token.',
+        token_type: 'utility',
+      },
+    });
+    expect(partial.ok).toBe(true);
+    if (!partial.ok) return;
+    expect(partial.ready_to_publish).toBe(false);
+
+    const complete = buildGuidanceResponse({
+      proposalType: 'issue_new_token',
+      collectedFields: {
+        title: 'Issue New Token',
+        description: 'Create a token.',
+        token_type: 'utility',
+        token_name: 'TOK',
+        token_symbol: 'TOK',
+      },
+    });
+    expect(complete.ok).toBe(true);
+    if (!complete.ok) return;
+    expect(complete.remaining_field_order).toEqual([]);
+    expect(complete.ready_to_publish).toBe(true);
+  });
+
+  it('maps token fields into issueNewTokenForm resubmit payload', () => {
+    const entry = getProposalCatalogEntry('issue_new_token')!;
+    const payload = buildResubmitPayload(entry, {
+      proposal_type: 'issue_new_token',
+      space_slug: 'test-space',
+      title: 'Issue New Token',
+      description: 'Create a utility token for the space.',
+      proposal_fields: {
+        token_type: 'utility',
+        token_name: 'TOK',
+        token_symbol: 'TOK',
+        max_supply: 0,
+      },
+    });
+    expect(payload.issueNewTokenForm).toEqual({
+      type: 'utility',
+      name: 'TOK',
+      symbol: 'TOK',
+      maxSupply: 0,
+      enableLimitedSupply: false,
+    });
   });
 });

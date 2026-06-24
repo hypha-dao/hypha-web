@@ -11,6 +11,10 @@ import {
   type ProposalGuidancePlaybook,
 } from './proposal-catalog';
 import type { CatalogDiscoveryField } from './proposal-catalog/types';
+import {
+  buildProposalFormStateResponse,
+  type ActiveProposalFormSnapshot,
+} from './proposal-form-state';
 
 export type { ProposalGuidancePlaybook };
 export type ProposalGuidanceField =
@@ -18,30 +22,73 @@ export type ProposalGuidanceField =
 
 export { buildProposalGuidancePromptLines };
 
+const ENUM_FIELD_OPTIONS: Record<string, Record<string, string>> = {
+  voting_method: {
+    '1m1v': 'one member, one vote',
+    '1v1v': 'one voice token, one vote',
+    '1t1v': 'one token, one vote',
+  },
+  entry_method: {
+    open_access: 'Open Access',
+    invite_only: 'Invite Request',
+    token_based: 'Token Based',
+  },
+  token_type: {
+    utility: 'Utility Token',
+    credits: 'Credits',
+    ownership: 'Ownership',
+    voice: 'Voice',
+    impact: 'Impact',
+    community_currency: 'Community Currency',
+  },
+};
+
+function formatEnumOptionsList(field: CatalogDiscoveryField): string {
+  if (!field.enumValues?.length) return '';
+  const labels = ENUM_FIELD_OPTIONS[field.key];
+  return field.enumValues.map((value) => labels?.[value] ?? value).join('; ');
+}
+
 function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
   switch (field.key) {
-    case 'voting_method':
-      return 'Propose how this space should make decisions (one person one vote, voice-weighted, or token-weighted) with a brief why — ask if that fits. Never say "voting method" or list 1m1v/1v1v/1t1v codes unless confirming.';
-    case 'entry_method':
-      return 'Propose how people should join using Open Access, Invite Request, or Token Based (exact card titles) with a brief why — ask if that works. Never say invite-only, request access, or token-based entry. Never say "entry method".';
+    case 'voting_method': {
+      const options = formatEnumOptionsList(field);
+      return `List ALL three ways to decide (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never say "voting method" or read 1m1v/1v1v/1t1v codes.`;
+    }
+    case 'entry_method': {
+      const options = formatEnumOptionsList(field);
+      return `List ALL three join options (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never say "entry method".`;
+    }
     case 'title':
-      return 'Draft a short name for this proposal from context and offer it conversationally — never say title or proposal title.';
+      return 'Draft a short name silently from context — offer it in one line; never say title.';
     case 'description':
-      return 'Draft a one-sentence rationale from context and offer it naturally — never say "description".';
+      return 'Draft a one-sentence rationale silently — offer it in one line; never say description.';
     case 'space_discoverability':
     case 'space_activity_access':
       return (
         field.description?.trim() ??
-        'Propose discoverability or activity access levels with a brief why; ask if that works.'
+        'State every level option briefly, then your pick — ask which they want.'
       );
     case 'quorum_percent':
       return 'Propose minimum participation as a percentage (e.g. 30%) from space context — ask if that fits. Never say "quorum".';
     case 'unity_percent':
       return 'Propose minimum alignment as a percentage (e.g. 80%) — ask if that fits. Never say "unity".';
     case 'auto_execution':
-      return 'Propose whether proposals should auto-execute when voting conditions are met (yes = auto, no = fixed minimum voting period). Ask which they prefer.';
+      return 'State both choices (auto when conditions met vs fixed minimum voting period), then your pick — ask which they prefer.';
     case 'voting_duration_seconds':
       return 'Propose a minimum voting period in plain language (e.g. 3 days) — ask if that works. Convert to seconds when calling prepare_governance_proposal (259200 = 3 days).';
+    case 'token_type': {
+      const options = formatEnumOptionsList(field);
+      return `List ALL token types (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never ask about supply before type is set.`;
+    }
+    case 'token_name':
+      return 'Propose a short token name from context in one line — ask if it fits. Never ask name before token type is collected.';
+    case 'token_symbol':
+      return 'Propose an uppercase symbol (2–10 letters) derived from the name — ask if it fits. Never ask symbol before name is collected.';
+    case 'token_icon_url':
+      return 'Optional: ask for an HTTPS icon URL, or say they can upload on the form. Skip if they prefer to upload later.';
+    case 'max_supply':
+      return 'Ask only after type, name, and symbol are set. Propose unlimited (0) or a number — ask which they want.';
     default:
       break;
   }
@@ -49,23 +96,25 @@ function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
     return field.description.trim();
   }
   if (field.enumValues?.length) {
-    return `Recommend the best fit for this space with a brief why, then ask the user to confirm or choose another.`;
+    const options = formatEnumOptionsList(field);
+    return `List ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want.`;
   }
-  return `Propose a sensible value from context and ask the user to confirm or adjust — never use the label "${field.label}" verbatim.`;
+  return `Propose a sensible default from context in one line — never use the label "${field.label}" verbatim.`;
 }
 
 function buildInteractionHint(field: CatalogDiscoveryField): string {
-  const base =
-    'ONE short reply only: your recommendation or draft + one reaction ask. No recap, no summary of prior steps, no validation checklist. Never list field names (Title, Description, Quorum). Voice: 2 sentences max.';
+  const speed =
+    'Max 3–4 short sentences. No preamble, no recap, no numbered lists. Voice: 2 sentences max.';
   const acceptanceRule =
-    ' When the user accepts (yes, sounds good, go ahead, or names the option), call prepare_governance_proposal in the SAME turn — never ask "shall I proceed" again.';
+    ' On yes/named option: call prepare_governance_proposal same turn with ALL merged fields — form must show the value before the next question. Include on-chain defaults for quorum/unity/voting period when opening or updating the form — never ask "shall I proceed".';
   if (field.key === 'title' || field.key === 'description') {
-    return `${base} Offer drafted copy from context; user says yes/tweak/no.${acceptanceRule}`;
+    return `${speed} Offer drafted copy; user says yes/tweak/no.${acceptanceRule}`;
   }
   if (field.enumValues?.length) {
-    return `${base} Recommend one option with brief why; user confirms or redirects.${acceptanceRule}`;
+    const options = formatEnumOptionsList(field);
+    return `${speed} MANDATORY ORDER: (1) list EVERY option (${options}) — all of them; (2) one-line recommendation; (3) ask which they want. Never skip step 1.${acceptanceRule}`;
   }
-  return `${base} Propose a default when sensible.${acceptanceRule}`;
+  return `${speed} Propose a default when sensible.${acceptanceRule}`;
 }
 
 function hasCollectedValue(
@@ -91,6 +140,7 @@ export function getProposalGuidancePlaybook(
 export function buildGuidanceResponse(args: {
   proposalType: AiCreatableProposalType;
   collectedFields?: Record<string, unknown>;
+  formSnapshot?: ActiveProposalFormSnapshot | null;
 }) {
   const entry = getProposalCatalogEntry(args.proposalType);
   if (!entry) {
@@ -101,30 +151,40 @@ export function buildGuidanceResponse(args: {
   }
 
   const collected = args.collectedFields ?? {};
-  const orderedRequired = orderFieldsForDiscovery(entry.requiredFields);
-
-  const remainingRequired = orderedRequired.filter(
-    (field) => !hasCollectedValue(collected, field),
-  );
-
-  const remainingDecisionRequired = remainingRequired.filter(
-    (field) => field.key !== 'title' && field.key !== 'description',
-  );
-  const remainingTitleDescription = remainingRequired.filter(
-    (field) => field.key === 'title' || field.key === 'description',
-  );
-
   const optionalPrompts = orderFieldsForDiscovery(
     pickOptionalDiscoveryPrompts(entry, collected).filter((field) => {
       if (field.key !== 'voting_duration_seconds') return true;
       return collected.auto_execution === false;
     }),
   );
-  const nextQuestionField =
-    remainingDecisionRequired[0] ??
-    optionalPrompts[0] ??
-    remainingTitleDescription[0] ??
-    undefined;
+
+  const allDiscoveryFields = orderFieldsForDiscovery([
+    ...entry.requiredFields,
+    ...optionalPrompts,
+  ]);
+
+  const filledFields = allDiscoveryFields
+    .filter((field) => hasCollectedValue(collected, field))
+    .map((field) => field.key);
+
+  const remainingRequired = orderFieldsForDiscovery(
+    entry.requiredFields,
+  ).filter((field) => !hasCollectedValue(collected, field));
+
+  const readyToPublish = remainingRequired.length === 0;
+
+  const orderedRemaining = readyToPublish
+    ? []
+    : orderFieldsForDiscovery([
+        ...remainingRequired,
+        ...allDiscoveryFields.filter(
+          (field) =>
+            !remainingRequired.some((required) => required.key === field.key) &&
+            !hasCollectedValue(collected, field),
+        ),
+      ]);
+
+  const nextQuestionField = orderedRemaining[0];
   const nextQuestion = nextQuestionField
     ? buildNextProposalQuestion(nextQuestionField)
     : null;
@@ -132,14 +192,9 @@ export function buildGuidanceResponse(args: {
     ? buildInteractionHint(nextQuestionField)
     : null;
 
-  const hasSubstantiveCollected = orderedRequired.some(
-    (field) =>
-      field.key !== 'title' &&
-      field.key !== 'description' &&
-      hasCollectedValue(collected, field),
+  const hasAnyCollected = Object.entries(collected).some(
+    ([, value]) => value !== undefined && value !== null && value !== '',
   );
-
-  const readyToPublish = remainingRequired.length === 0;
 
   const suggestedTool =
     entry.prepareStrategy === 'prepare_governance_proposal'
@@ -150,10 +205,42 @@ export function buildGuidanceResponse(args: {
 
   const syncFocusField =
     nextQuestionField?.key ??
-    remainingDecisionRequired[0]?.key ??
-    optionalPrompts[0]?.key ??
-    remainingTitleDescription[0]?.key ??
-    orderedRequired[0]?.key;
+    orderedRemaining[0]?.key ??
+    allDiscoveryFields[0]?.key;
+
+  const formState = args.formSnapshot
+    ? buildProposalFormStateResponse({
+        snapshot: args.formSnapshot,
+        proposalType: args.proposalType,
+        collectedFields: collected,
+      })
+    : null;
+
+  const formSynced =
+    formState && 'form_synced' in formState ? formState.form_synced : undefined;
+  const readyOnScreen =
+    formState && 'ready_to_publish' in formState
+      ? formState.ready_to_publish
+      : undefined;
+  const effectiveReadyToPublish =
+    readyToPublish &&
+    (formSynced === undefined || formSynced === true) &&
+    (readyOnScreen === undefined || readyOnScreen === true);
+
+  const openFormAfterTitle =
+    nextQuestionField?.key === 'title' &&
+    !hasCollectedValue(collected, { key: 'title' } as CatalogDiscoveryField);
+
+  const titleOnlyOpenHint = openFormAfterTitle
+    ? 'STEP 1 — title ONLY: offer a draft title in one line. On yes/tweak: call prepare_governance_proposal partial:true with ONLY title (+ chain defaults) to OPEN the form. Do not ask description or token fields yet.'
+    : null;
+
+  const singleFieldHint =
+    nextQuestionField?.key === 'title' && filledFields.includes('title')
+      ? null
+      : nextQuestionField
+      ? `ONE field now (${nextQuestionField.key}): ask or suggest ONLY this field — nothing else. On acceptance call prepare_governance_proposal partial:true with this single field merged, then call get_proposal_form_state before the next question.`
+      : null;
 
   return {
     ok: true as const,
@@ -162,22 +249,38 @@ export function buildGuidanceResponse(args: {
     create_path: entry.createPath,
     do_not_use: entry.doNotUse,
     suggested_tool: suggestedTool,
+    step_mode: 'one_field_at_a_time',
     next_question_field: nextQuestionField?.key ?? null,
     next_question: nextQuestion,
     interaction_hint: interactionHint,
-    ready_to_publish: readyToPublish,
+    filled_fields: filledFields,
+    remaining_field_order: orderedRemaining.map((field) => field.key),
+    ready_to_publish: effectiveReadyToPublish,
+    form_state:
+      formState && 'fields_on_screen' in formState
+        ? {
+            filled_on_screen: formState.filled_on_screen,
+            missing_on_screen: formState.missing_on_screen,
+            form_synced: formState.form_synced,
+            collected_but_not_on_screen: formState.collected_but_not_on_screen,
+            next_missing_field: formState.next_missing_field,
+          }
+        : undefined,
     form_sync: {
       call_prepare_governance_proposal:
         entry.prepareStrategy === 'prepare_governance_proposal' &&
-        (hasSubstantiveCollected || readyToPublish),
-      partial: !readyToPublish,
+        (hasAnyCollected || effectiveReadyToPublish),
+      partial: !effectiveReadyToPublish,
       focus_field: syncFocusField,
       merge_collected_fields_into_proposal_fields: true,
+      verify_with: 'get_proposal_form_state',
     },
     user_reply_rules:
-      'Never output numbered lists, field labels (Title, Description, Quorum), or multi-field checklists. Never use create_space_setup_proposal or collective_agreement for typed proposals — use prepare_governance_proposal with the correct proposal_type. After each user reaction: update collected_fields, call form_sync when true in the SAME turn — never ask again if they already accepted. Never loop with "shall I proceed" or "does this sound good" after yes.',
-    walkthrough_hint: readyToPublish
-      ? 'Required fields complete. Call prepare_governance_proposal (partial: false, focus_field: publish) to scroll to Publish. Tell the user briefly the form is ready — one short sentence.'
-      : `${interactionHint} After the user reacts with yes/acceptance, call prepare_governance_proposal with partial: true, ALL collected proposal_fields merged (never drop earlier answers), focus_field for the section being discussed, and include title/description only after those steps are reached. Stay on the same open form — do not reopen. Then ask ONLY next_question for the NEXT field.`,
+      'Hand-holding: ONE field per turn in form order. Be terse — max 3–4 short sentences. Never skip ahead or re-ask filled_fields. On acceptance: prepare_governance_proposal same turn, then get_proposal_form_state. NEVER say ready/all set unless ready_to_publish is true AND form_state.form_synced is true.',
+    walkthrough_hint: effectiveReadyToPublish
+      ? 'Call get_proposal_form_state — if form_synced and ready_to_publish, prepare partial:false, then one sentence: click Publish.'
+      : [titleOnlyOpenHint, singleFieldHint, interactionHint]
+          .filter(Boolean)
+          .join(' '),
   };
 }

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { disableProposalAiWalkthrough } from '../common/proposal-form-focus';
+import { notifyGovernanceProposalPublished } from '../common/governance-proposal-navigation';
 import { clearResubmitProposalSessionStorage } from './use-resubmit-proposal-data';
 
 /**
@@ -14,6 +15,7 @@ export function useClearResubmitOnSuccess(isSuccess: boolean): void {
     if (isSuccess) {
       clearResubmitProposalSessionStorage();
       disableProposalAiWalkthrough();
+      notifyGovernanceProposalPublished();
     }
   }, [isSuccess]);
 }

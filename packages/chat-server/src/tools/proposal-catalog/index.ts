@@ -122,7 +122,38 @@ export function validatePrepareInput(
     return 'voting_duration_seconds is required when auto_execution is false.';
   }
 
+  if (entry.key === 'issue_new_token') {
+    const tokenForm = buildIssueNewTokenFormFromFields(fields);
+    if (!tokenForm?.type) {
+      return 'token_type is required for issue_new_token.';
+    }
+    if (!tokenForm.name) {
+      return 'token_name is required for issue_new_token.';
+    }
+    if (!tokenForm.symbol) {
+      return 'token_symbol is required for issue_new_token.';
+    }
+  }
+
   return null;
+}
+
+function buildIssueNewTokenFormFromFields(
+  fields: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  const form: Record<string, unknown> = {};
+  if (fields.token_type !== undefined) form.type = fields.token_type;
+  if (fields.token_name !== undefined) form.name = fields.token_name;
+  if (fields.token_symbol !== undefined) form.symbol = fields.token_symbol;
+  if (fields.token_icon_url !== undefined) form.iconUrl = fields.token_icon_url;
+  if (fields.max_supply !== undefined) {
+    const supply = Number(fields.max_supply);
+    if (Number.isFinite(supply)) {
+      form.maxSupply = supply;
+      form.enableLimitedSupply = supply > 0;
+    }
+  }
+  return Object.keys(form).length > 0 ? form : undefined;
 }
 
 export function buildResubmitPayload(
@@ -191,6 +222,18 @@ export function buildResubmitPayload(
   }
   if (fields.issue_new_token_form !== undefined) {
     payload.issueNewTokenForm = fields.issue_new_token_form;
+  }
+  if (entry.key === 'issue_new_token') {
+    const tokenForm = buildIssueNewTokenFormFromFields(fields);
+    if (tokenForm && Object.keys(tokenForm).length > 0) {
+      payload.issueNewTokenForm = {
+        ...(typeof payload.issueNewTokenForm === 'object' &&
+        payload.issueNewTokenForm !== null
+          ? (payload.issueNewTokenForm as Record<string, unknown>)
+          : {}),
+        ...tokenForm,
+      };
+    }
   }
   if (fields.space_token_purchase_form !== undefined) {
     payload.spaceTokenPurchaseForm = fields.space_token_purchase_form;
@@ -309,17 +352,16 @@ export function pickOptionalDiscoveryPrompts(
   entry: ProposalCatalogEntry,
   collectedFields: Record<string, unknown>,
 ): CatalogDiscoveryField[] {
-  /** Governance tuning deferred to form for all types except voting method. */
+  /** Governance tuning — fill from on-chain defaults in prepare; skip chat interrogation. */
   const deferToForm = new Set([
     'quorum_percent',
     'unity_percent',
     'auto_execution',
     'voting_duration_seconds',
   ]);
-  const deferGovernanceTuning = entry.key !== 'change_voting_method';
 
   return entry.optionalFields.filter((field) => {
-    if (deferGovernanceTuning && deferToForm.has(field.key)) return false;
+    if (deferToForm.has(field.key)) return false;
     return (
       field.required === false &&
       collectedFields[field.key] === undefined &&
@@ -329,19 +371,24 @@ export function pickOptionalDiscoveryPrompts(
   });
 }
 
-/** Decision fields first; title/description last for conversational discovery. */
+/** Form order: title and description first, then body fields top-to-bottom. */
 const DISCOVERY_FIELD_ORDER: Record<string, number> = {
-  voting_method: 10,
-  entry_method: 10,
+  title: 1,
+  description: 2,
+  token_type: 10,
+  token_name: 11,
+  token_symbol: 12,
+  token_icon_url: 13,
+  max_supply: 14,
   quorum_percent: 15,
   unity_percent: 16,
   auto_execution: 17,
   voting_duration_seconds: 18,
-  space_discoverability: 11,
-  space_activity_access: 12,
-  token_address: 20,
-  title: 90,
-  description: 91,
+  voting_method: 19,
+  entry_method: 19,
+  space_discoverability: 20,
+  space_activity_access: 21,
+  token_address: 22,
 };
 
 export function orderFieldsForDiscovery(

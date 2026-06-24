@@ -6,6 +6,46 @@ import { stableJsonFingerprint } from './proposal-form-navigation';
 export const RESUBMIT_PROPOSAL_UPDATED_EVENT =
   'hypha:resubmit-proposal-updated';
 
+export const GOVERNANCE_PROPOSAL_PUBLISHED_EVENT =
+  'hypha:governance-proposal-published';
+
+const STALE_GOVERNANCE_PREPARE_NAV_KEYS = 'staleGovernancePrepareNavKeys';
+
+export function markGovernancePrepareNavigationKeysStale(keys: string[]): void {
+  if (typeof window === 'undefined' || keys.length === 0) return;
+  try {
+    const prevRaw = sessionStorage.getItem(STALE_GOVERNANCE_PREPARE_NAV_KEYS);
+    const prev = prevRaw ? (JSON.parse(prevRaw) as string[]) : [];
+    const merged = [...new Set([...prev, ...keys])];
+    sessionStorage.setItem(
+      STALE_GOVERNANCE_PREPARE_NAV_KEYS,
+      JSON.stringify(merged),
+    );
+  } catch {
+    sessionStorage.setItem(
+      STALE_GOVERNANCE_PREPARE_NAV_KEYS,
+      JSON.stringify(keys),
+    );
+  }
+}
+
+export function isGovernancePrepareNavigationStale(key: string): boolean {
+  if (typeof window === 'undefined' || !key) return false;
+  try {
+    const raw = sessionStorage.getItem(STALE_GOVERNANCE_PREPARE_NAV_KEYS);
+    if (!raw) return false;
+    const stale = JSON.parse(raw) as string[];
+    return stale.includes(key);
+  } catch {
+    return false;
+  }
+}
+
+export function notifyGovernanceProposalPublished(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(GOVERNANCE_PROPOSAL_PUBLISHED_EVENT));
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -16,11 +16,12 @@ import {
   inferResubmitTemplateSegmentFromPayload,
   isLegacyGenericResubmitSegment,
 } from '../utils/resubmit-proposal-template';
-import { RESUBMIT_PROPOSAL_UPDATED_EVENT } from '../common/governance-proposal-navigation';
+import { writeActiveProposalFormLiveFields } from '../common/active-proposal-form-snapshot';
 import {
   disableProposalAiWalkthrough,
   isProposalAiWalkthroughActive,
 } from '../common/proposal-form-focus';
+import { RESUBMIT_PROPOSAL_UPDATED_EVENT } from '../common/governance-proposal-navigation';
 import { isProposalCreateFormPath } from '../common/proposal-form-navigation';
 
 /** Session payload written by resubmit / read by `useResubmitProposalData`. */
@@ -928,6 +929,25 @@ export const useResubmitProposalData = <
     return () =>
       window.removeEventListener(RESUBMIT_PROPOSAL_UPDATED_EVENT, onUpdated);
   }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isProposalAiWalkthroughActive()) return;
+    const segment =
+      resubmitTemplateSegment ??
+      getProposalTemplateSegmentFromPathname(pathname) ??
+      '';
+    if (!segment) return;
+
+    const subscription = form.watch((values) => {
+      writeActiveProposalFormLiveFields(
+        segment,
+        values as Record<string, unknown>,
+      );
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, pathname, resubmitTemplateSegment]);
 
   return { resubmitKey };
 };

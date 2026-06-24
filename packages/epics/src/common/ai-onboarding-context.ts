@@ -4,6 +4,7 @@ import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { parseOnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { transferMobilizedAiAgentsToSpace } from './ai-agent-competencies';
 import { shouldAttachOnboardingContext } from './onboarding-context-attach';
+import type { ActiveProposalFormSnapshotPayload } from './active-proposal-form-snapshot';
 
 export type { OnboardingDiscoveryMode };
 export const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
@@ -519,18 +520,21 @@ export function resolveChatTransportBody({
   onboardingContext,
   isOnboardingPath,
   discoveryMode,
+  activeProposalFormSnapshot,
 }: {
   spaceSlug?: string;
   activeSpaceTitle?: string;
   onboardingContext?: OnboardingConversationContext;
   isOnboardingPath: boolean;
   discoveryMode?: OnboardingDiscoveryMode;
+  activeProposalFormSnapshot?: ActiveProposalFormSnapshotPayload;
 }): {
   body: {
     spaceSlug?: string;
     activeSpaceTitle?: string;
     conversationContext?: OnboardingConversationContext;
     discoveryMode?: OnboardingDiscoveryMode;
+    activeProposalFormSnapshot?: ActiveProposalFormSnapshotPayload;
   };
   staleOnboardingContext: boolean;
 } {
@@ -538,6 +542,9 @@ export function resolveChatTransportBody({
   const trimmedTitle = activeSpaceTitle?.trim() || undefined;
   const discoveryModePayload =
     discoveryMode === 'voice_interview' ? discoveryMode : undefined;
+  const snapshotPayload = activeProposalFormSnapshot
+    ? { activeProposalFormSnapshot }
+    : {};
 
   if (!isSpaceSetupContext(onboardingContext)) {
     return {
@@ -547,6 +554,7 @@ export function resolveChatTransportBody({
         ...(discoveryModePayload
           ? { discoveryMode: discoveryModePayload }
           : {}),
+        ...snapshotPayload,
       },
       staleOnboardingContext: false,
     };
@@ -565,6 +573,7 @@ export function resolveChatTransportBody({
         ...(discoveryModePayload
           ? { discoveryMode: discoveryModePayload }
           : {}),
+        ...snapshotPayload,
       },
       staleOnboardingContext: true,
     };
@@ -579,6 +588,7 @@ export function resolveChatTransportBody({
         { discoveryMode },
       ),
       ...(discoveryModePayload ? { discoveryMode: discoveryModePayload } : {}),
+      ...snapshotPayload,
     },
     staleOnboardingContext: false,
   };

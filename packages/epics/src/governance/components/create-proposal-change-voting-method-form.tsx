@@ -173,7 +173,8 @@ export const CreateProposalChangeVotingMethodForm = ({
   ]);
 
   const handleCreate = async (data: FormValues) => {
-    if (!web3SpaceId || !data.votingMethod) return;
+    if (!web3SpaceId || !data.votingMethod || isPending || progress === 100)
+      return;
 
     try {
       await createChangeVotingMethod({
@@ -197,6 +198,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   };
 
   const isButtonDisabled = quorum === 0 && unity === 0;
+  const isSubmitLocked = isPending || isLoading || progress === 100;
 
   return (
     <SpaceLoadingBackdrop
@@ -252,7 +254,7 @@ export const CreateProposalChangeVotingMethodForm = ({
             className="flex justify-end w-full"
             data-proposal-section="publish"
           >
-            <Button type="submit" disabled={isButtonDisabled}>
+            <Button type="submit" disabled={isButtonDisabled || isSubmitLocked}>
               {tAgreementFlow('buttons.publish')}
             </Button>
           </div>

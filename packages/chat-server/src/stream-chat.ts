@@ -35,6 +35,7 @@ import {
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
 import { buildPostCreateVotingMethodDirective } from './tools/onboarding-voting-method-inference';
 import { buildActiveGovernanceProposalDirective } from './tools/active-governance-proposal-directive';
+import { buildProposalFormStateDirective } from './tools/proposal-form-state';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -1028,6 +1029,7 @@ export type ChatStreamCallbacks = {
   activeSpaceTitle?: string | null;
   conversationContext?: ChatRequestPayload['conversationContext'];
   discoveryMode?: ChatRequestPayload['discoveryMode'];
+  activeProposalFormSnapshot?: ChatRequestPayload['activeProposalFormSnapshot'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
 };
@@ -1350,6 +1352,7 @@ export async function createChatStreamResult(
     activeSpaceTitle,
     conversationContext,
     discoveryMode,
+    activeProposalFormSnapshot,
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
   }: ChatStreamCallbacks,
@@ -1371,6 +1374,7 @@ export async function createChatStreamResult(
     },
     lastUserText,
     recentUserTexts,
+    activeProposalFormSnapshot,
   );
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
@@ -1418,6 +1422,9 @@ export async function createChatStreamResult(
   });
   const activeGovernanceProposalDirective =
     buildActiveGovernanceProposalDirective(normalizedConversationContext);
+  const proposalFormStateDirective = buildProposalFormStateDirective(
+    activeProposalFormSnapshot,
+  );
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
@@ -1451,7 +1458,9 @@ export async function createChatStreamResult(
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
       : voiceDiscoveryActive && spaceSlug?.trim()
       ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.`
-      : effectiveSystemPrompt;
+      : `${effectiveSystemPrompt}${
+          proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
+        }`;
 
   if (modelMessages.length === 0) {
     console.warn('[chat][empty-model-messages]', {

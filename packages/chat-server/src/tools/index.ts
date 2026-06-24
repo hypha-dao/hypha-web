@@ -16,6 +16,8 @@ import {
   createProposalGuidanceTool,
 } from './prepare-governance-proposal';
 import { webSearchTool } from './web-search';
+import { createGetProposalFormStateTool } from './get-proposal-form-state';
+import type { ActiveProposalFormSnapshot } from './proposal-form-state';
 import { createOnboardingToolSet, safeChatTool } from './onboarding-tool-set';
 
 /**
@@ -32,6 +34,7 @@ export function createChatTools(
   },
   lastUserTextFromRequest?: string | null,
   recentUserTextsFromRequest?: string[],
+  activeProposalFormSnapshot?: ActiveProposalFormSnapshot | null,
 ): Record<string, ChatRouteTool> {
   const onboardingTools = createOnboardingToolSet({
     authToken,
@@ -95,7 +98,11 @@ export function createChatTools(
     ),
     proposal_guidance: safeChatTool(
       'proposal_guidance',
-      createProposalGuidanceTool(),
+      createProposalGuidanceTool(activeProposalFormSnapshot),
+    ),
+    get_proposal_form_state: safeChatTool(
+      'get_proposal_form_state',
+      createGetProposalFormStateTool(activeProposalFormSnapshot),
     ),
     prepare_governance_proposal: safeChatTool(
       'prepare_governance_proposal',
@@ -136,4 +143,13 @@ export { createMcpNavigationTool } from './mcp-navigation';
 export { createOnboardingGuidanceTool } from './onboarding-guidance';
 export { createSearchSpacesTool } from './search-spaces';
 export { webSearchTool } from './web-search';
+export {
+  createPrepareGovernanceProposalTool,
+  createProposalGuidanceTool,
+} from './prepare-governance-proposal';
+export { createGetProposalFormStateTool } from './get-proposal-form-state';
+export {
+  buildProposalFormStateResponse,
+  buildProposalFormStateDirective,
+} from './proposal-form-state';
 export type { ChatRouteTool } from './types';

@@ -3,6 +3,7 @@ import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 import { aiCreatableProposalTypeSchema } from './ai-proposal-types';
 import { buildGuidanceResponse } from './proposal-guidance';
+import type { ActiveProposalFormSnapshot } from './proposal-form-state';
 import {
   PARTIAL_PREPARE_DRAFT_DESCRIPTION,
   PARTIAL_PREPARE_DRAFT_TITLE,
@@ -42,7 +43,9 @@ const legacyFieldSchema = {
   space_activity_access: z.number().int().min(0).max(3).optional(),
 };
 
-export function createProposalGuidanceTool() {
+export function createProposalGuidanceTool(
+  formSnapshot?: ActiveProposalFormSnapshot | null,
+) {
   const inputSchema = z.object({
     proposal_type: z.enum(aiCreatableProposalTypeSchema),
     collected_fields: z.record(z.unknown()).optional(),
@@ -50,7 +53,7 @@ export function createProposalGuidanceTool() {
 
   return {
     description:
-      'Read-only: return the next discovery step for a governance proposal. Pass collected_fields as answers arrive. Reply using only next_question + interaction_hint — never list all fields. Call prepare_governance_proposal when form_sync.call_prepare_governance_proposal is true.',
+      'Read-only: return the ONE next field to collect (hand-holding, form order). Pass collected_fields as answers arrive. After title is accepted, call prepare_governance_proposal to open the form, then one field per turn. Call get_proposal_form_state before saying ready. Reply using only next_question + interaction_hint.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -60,6 +63,7 @@ export function createProposalGuidanceTool() {
       return buildGuidanceResponse({
         proposalType: parsed.data.proposal_type,
         collectedFields: parsed.data.collected_fields,
+        formSnapshot,
       });
     },
   } satisfies ChatRouteTool<typeof inputSchema>;
@@ -120,7 +124,7 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
 
   return {
     description:
-      'Write: open or update the typed Agreements form with collected fields. Use partial: true during discovery after each substantive answer — form pre-fills and scrolls to focus_field. Always pass ALL collected proposal_fields merged — never only the field that changed. When the user accepts a recommendation (yes, sounds good, or names the option), call this in the SAME turn — never ask for confirmation again. Do NOT reopen the form if the same proposal type is already open — partial updates merge into the existing draft. Do NOT call repeatedly on every chat turn once the form is already open — only when the user changes a decision or asks to update the draft. Use partial: false when ready_to_publish. Never wallet-sign in chat. Never use for collective_agreement.',
+      'Write: open or update the typed Agreements form. Follow proposal_guidance remaining_field_order — fill LIVE with partial:true after EVERY accepted field so the form shows values before the next question. Merge ALL collected fields plus on-chain defaults for quorum/unity/voting period. Title/description first (top of form), drafted silently. For choice fields list all options before recommending. On yes/named option: call SAME turn — never ask "shall I proceed". Stay on same open form; partial updates merge. partial:false only when ready_to_publish. NEVER tell user to publish if form fields are still empty. Never wallet-sign in chat.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -182,8 +186,8 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
         focus_field: navigation.focus_field,
         focus_section: navigation.focus_section,
         next_step: isPartial
-          ? 'Form opened/updated — continue the walkthrough: call proposal_guidance with updated collected_fields, ask ONLY next_question, and after the user accepts call prepare_governance_proposal again. Do not skip title or description.'
-          : 'Form is complete. Tell the user to review and click Publish — one short sentence, scroll is on the publish section.',
+          ? 'Form opened/updated — call get_proposal_form_state, then proposal_guidance with updated collected_fields. Ask ONLY the single next field. On acceptance call prepare_governance_proposal partial:true with that one field merged — verify on screen before moving on.'
+          : 'Call get_proposal_form_state — only if form_synced and ready_to_publish tell the user to click Publish (one sentence).',
       };
     },
   } satisfies ChatRouteTool<typeof inputSchema>;

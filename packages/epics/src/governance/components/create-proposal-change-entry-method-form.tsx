@@ -247,7 +247,12 @@ export const CreateProposalChangeEntryMethodForm = ({
           <div data-proposal-section="entry_method">{plugin}</div>
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+            <Button
+              type="submit"
+              disabled={isPending || isLoading || progress === 100}
+            >
+              {tAgreementFlow('buttons.publish')}
+            </Button>
           </div>
         </form>
       </Form>

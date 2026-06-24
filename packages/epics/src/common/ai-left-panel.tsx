@@ -190,11 +190,20 @@ import {
   buildSpaceAdvisorVoiceSessionContext,
   type VoiceSessionContext,
 } from './space-voice-session-context';
-import { findLatestAiPanelNavigationTarget } from './ai-tool-navigation';
-import { writeGovernanceProposalResubmitPayload } from './governance-proposal-navigation';
 import {
-  writeProposalFormFocusIfChanged,
+  collectGovernancePrepareNavigationKeys,
+  findLatestAiPanelNavigationTarget,
+} from './ai-tool-navigation';
+import {
+  GOVERNANCE_PROPOSAL_PUBLISHED_EVENT,
+  isGovernancePrepareNavigationStale,
+  markGovernancePrepareNavigationKeysStale,
+  writeGovernanceProposalResubmitPayload,
+} from './governance-proposal-navigation';
+import { readActiveProposalFormSnapshot } from './active-proposal-form-snapshot';
+import {
   enableProposalAiWalkthrough,
+  writeProposalFormFocusIfChanged,
 } from './proposal-form-focus';
 import {
   isProposalCreateFormPath,
@@ -923,6 +932,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     },
   });
 
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   const isStreaming = status === 'streaming' || status === 'submitted';
 
   const hasUserMessage = useMemo(
@@ -1041,6 +1053,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         isOnboardingPath,
         discoveryMode:
           discoveryMode === 'voice_interview' ? discoveryMode : undefined,
+        activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
       });
       return { body, headers: hdrs };
     },
@@ -1051,6 +1064,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       isOnboardingPath,
       isOnboardingSetup,
       onboardingContext,
+      pathname,
       spaceSlug,
     ],
   );
@@ -1288,6 +1302,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [pathname]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPublished = () => {
+      markGovernancePrepareNavigationKeysStale(
+        collectGovernancePrepareNavigationKeys(messagesRef.current),
+      );
+    };
+    window.addEventListener(GOVERNANCE_PROPOSAL_PUBLISHED_EVENT, onPublished);
+    return () =>
+      window.removeEventListener(
+        GOVERNANCE_PROPOSAL_PUBLISHED_EVENT,
+        onPublished,
+      );
+  }, []);
+
+  useEffect(() => {
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
@@ -1296,21 +1325,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const href = navigationTarget?.href;
     if (!href) return;
 
-    const alreadyOnTarget = isSameAppPath(href, pathname);
-
     if (
-      navigationTarget.resubmitPayload ||
-      navigationTarget.focusField ||
-      navigationTarget.focusSection
+      navigationTarget.toolName === 'prepare_governance_proposal' &&
+      isGovernancePrepareNavigationStale(navigationTarget.key)
     ) {
-      enableProposalAiWalkthrough();
+      return;
     }
+
+    const alreadyOnTarget = isSameAppPath(href, pathname);
 
     if (navigationTarget.resubmitPayload) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
     }
 
-    if (navigationTarget.focusField || navigationTarget.focusSection) {
+    if (navigationTarget.toolName === 'prepare_governance_proposal') {
+      enableProposalAiWalkthrough();
       writeProposalFormFocusIfChanged({
         focusField: navigationTarget.focusField,
         focusSection: navigationTarget.focusSection,
@@ -2386,10 +2415,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           onboardingContext?.createdSpaceSlug?.trim();
         if (targetSlug) {
           writeOnboardingVotingMethodResubmitData({ method });
-          writeProposalFormFocusIfChanged({
-            focusField: 'voting_method',
-            focusSection: 'voting_method',
-          });
           openAiPanel();
           const proposalPath = getChangeVotingMethodProposalPath(
             lang,

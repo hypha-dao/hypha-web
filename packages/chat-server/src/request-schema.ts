@@ -73,6 +73,16 @@ export const chatRequestSchema = z.object({
   conversationContext: onboardingConversationContextSchema.optional(),
   /** Chat vs voice in the left AI panel when not in onboarding setup. */
   discoveryMode: z.enum(['chat', 'voice_interview']).optional(),
+  /** Live proposal form snapshot from the open Agreements create overlay. */
+  activeProposalFormSnapshot: z
+    .object({
+      templateSegment: z.string().optional(),
+      formOpen: z.boolean().optional(),
+      resubmitPayload: z.record(z.unknown()).optional(),
+      liveFields: z.record(z.unknown()).optional(),
+      updatedAt: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type ChatRequestPayload = z.infer<typeof chatRequestSchema>;

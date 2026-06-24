@@ -28,6 +28,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./proposal-catalog": "./src/tools/proposal-catalog/index.ts",
-    "./tools/prepare-governance-proposal": "./src/tools/prepare-governance-proposal.ts"
+    "./tools/prepare-governance-proposal": "./src/tools/prepare-governance-proposal.ts",
+    "./tools/get-proposal-form-state": "./src/tools/get-proposal-form-state.ts"
   }
 }

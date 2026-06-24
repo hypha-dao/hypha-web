@@ -91,12 +91,10 @@ export function buildPostCreateVotingMethodDirective(args: {
   if (!explicitChoice && !confirmedAfterDiscussion) return null;
 
   return [
-    'CRITICAL — user accepted a voting method choice (step 1 of the walkthrough).',
-    `Call prepare_governance_proposal in this turn with proposal_type change_voting_method, space_slug "${args.spaceSlug.trim()}", partial: true, voting_method: "${inferredMethod}", focus_field: voting_method — do NOT set final title or description yet.`,
-    'Then call proposal_guidance(proposal_type: change_voting_method, collected_fields: { voting_method: "' +
-      inferredMethod +
-      '" }) and ask ONLY the next_question (title draft).',
-    'Do NOT ask "shall I proceed" or tell the user to Publish yet — title and description still remain.',
+    'CRITICAL — user accepted a voting method choice during post-create setup.',
+    `Call proposal_guidance(proposal_type: change_voting_method, collected_fields: { voting_method: "${inferredMethod}" }) first — title/description come first in form order.`,
+    `Offer a drafted title silently (next_question). On acceptance call prepare_governance_proposal with partial: true, space_slug "${args.spaceSlug.trim()}", merge all collected fields plus on-chain defaults for quorum/unity/voting period.`,
+    'Do NOT ask "shall I proceed" or tell the user to Publish until ready_to_publish.',
     'Never claim the space has no proposals — you are opening the draft form now.',
   ].join(' ');
 }

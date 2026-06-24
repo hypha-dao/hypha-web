@@ -14,13 +14,13 @@ export function buildActiveGovernanceProposalDirective(
   return [
     `ACTIVE GOVERNANCE PROPOSAL WALKTHROUGH (${active.proposalType}) — form may already be open.`,
     `Collected fields so far: ${collected}.`,
-    'Every turn during this walkthrough: (1) call proposal_guidance(proposal_type, collected_fields), (2) follow next_question and walkthrough_hint exactly.',
-    'When the user accepts the current field: merge it into collected_fields, then call prepare_governance_proposal with partial:true, ALL merged proposal_fields (never drop earlier answers), and focus_field from guidance — in the SAME turn.',
-    'Walk through ALL fields one at a time (decision fields and type-specific fields first, then title, then description). For change_voting_method include quorum, unity, auto-execution, and voting duration when auto-execution is off. Never skip to Publish until proposal_guidance.ready_to_publish is true.',
-    'When ready_to_publish: call prepare_governance_proposal with partial:false and ALL collected fields, then tell the user briefly to review and click Publish.',
-    'Never claim the space has no proposals or documents — a draft agreement form is in progress.',
-    'Do not reopen the same proposal form — stay on the open draft and merge updates until Publish.',
-    'Do not call prepare_governance_proposal on every chat turn unless the user just accepted a field or asked to change one.',
+    'Follow proposal_guidance remaining_field_order — form top-to-bottom. Never re-ask filled_fields. Fill live: prepare partial:true after every acceptance so the form shows values before the next question.',
+    'Be terse — max 3–4 short sentences per turn.',
+    'For choice fields: list EVERY option in plain language FIRST — all of them — THEN one-line recommendation. Never recommend before listing all options.',
+    'On acceptance: prepare_governance_proposal partial:true same turn — merge all fields, fill quorum/unity/voting period from chain defaults.',
+    'NEVER say ready/all set unless proposal_guidance.ready_to_publish is true AND the form displays the collected values.',
+    'When ready_to_publish: prepare partial:false — tell user briefly to click Publish (one sentence).',
+    'Do not reopen the same proposal form after Publish.',
   ].join(' ');
 }
 

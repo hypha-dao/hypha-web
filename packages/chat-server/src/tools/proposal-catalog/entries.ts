@@ -85,20 +85,20 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     prepareStrategy: 'prepare_governance_proposal',
     onChain: true,
     discoveryIntro:
-      'Ask which voting model the space should use, then quorum, unity, and voting period (auto-execution or minimum duration).',
+      'List all three voting models, recommend one, open form with chain defaults for quorum/unity/voting period.',
     requiredFields: [
+      titleField,
+      descriptionField,
       {
         key: 'voting_method',
         label: 'Voting method',
         required: true,
         description:
-          'Propose how decisions should be made (one person one vote, voice-weighted, or token-weighted) with a brief why — ask if that fits. Never say "voting method" or read codes aloud.',
+          'List all three options (one member one vote; one voice token one vote; one token one vote) before recommending. Never say "voting method" or read codes aloud.',
         fieldType: 'enum',
         enumValues: ['1m1v', '1v1v', '1t1v'],
         formSection: 'voting_method',
       },
-      titleField,
-      descriptionField,
     ],
     optionalFields: [
       {
@@ -151,20 +151,20 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     prepareStrategy: 'prepare_governance_proposal',
     onChain: true,
     discoveryIntro:
-      'Ask which join option fits: Open Access, Invite Request, or Token Based — user picks with the entry method card.',
+      'List all three join options (Open Access, Invite Request, Token Based), recommend one, open form immediately on acceptance.',
     requiredFields: [
+      titleField,
+      descriptionField,
       {
         key: 'entry_method',
         label: 'Entry method',
         required: true,
         description:
-          'Propose how people should join using the exact card titles Open Access, Invite Request, or Token Based with a brief why — ask if that works. Never say invite-only, request access, or token-based entry. Never say "entry method".',
+          'List all three options (Open Access, Invite Request, Token Based) before recommending. Never say "entry method".',
         fieldType: 'enum',
         enumValues: ['open_access', 'invite_only', 'token_based'],
         formSection: 'entry_method',
       },
-      titleField,
-      descriptionField,
     ],
     optionalFields: [
       {
@@ -419,14 +419,64 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     prepareStrategy: 'prepare_governance_proposal',
     onChain: true,
     discoveryIntro:
-      'Walk through token type, name, symbol, supply, and utility — use optional field prompts.',
+      'Follow the form top-to-bottom: title, description, token type, name, symbol, then icon. Call prepare after each step so fields fill live.',
+    requiredFields: [
+      titleField,
+      descriptionField,
+      {
+        key: 'token_type',
+        label: 'Token type',
+        required: true,
+        description:
+          'List ALL types before recommending: utility; credits; ownership; voice; impact; community currency.',
+        fieldType: 'enum',
+        enumValues: [
+          'utility',
+          'credits',
+          'ownership',
+          'voice',
+          'impact',
+          'community_currency',
+        ],
+        formSection: 'general',
+      },
+      {
+        key: 'token_name',
+        label: 'Token name',
+        required: true,
+        description:
+          'Propose a short token name from context — ask if it fits.',
+        fieldType: 'string',
+        formSection: 'general',
+      },
+      {
+        key: 'token_symbol',
+        label: 'Token symbol',
+        required: true,
+        description:
+          'Propose an uppercase symbol (2–10 letters) from the name — ask if it fits.',
+        fieldType: 'string',
+        formSection: 'general',
+      },
+    ],
     optionalFields: [
       {
-        key: 'issue_new_token_form',
-        label: 'Token configuration',
+        key: 'token_icon_url',
+        label: 'Token icon URL',
         required: false,
+        description:
+          'Optional HTTPS icon URL — if omitted, member uploads on the form.',
         fieldType: 'string',
-        formSection: 'token_config',
+        formSection: 'general',
+      },
+      {
+        key: 'max_supply',
+        label: 'Max supply',
+        required: false,
+        description:
+          'Ask only after type/name/symbol are set. Use 0 for unlimited supply.',
+        fieldType: 'number',
+        formSection: 'supply',
       },
       ...governancePluginFields,
     ],

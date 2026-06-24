@@ -78,9 +78,12 @@ import {
   createPrepareGovernanceProposalTool,
   createProposalGuidanceTool,
 } from '@hypha-platform/chat-server/tools/prepare-governance-proposal';
+import { createGetProposalFormStateTool } from '@hypha-platform/chat-server/tools/get-proposal-form-state';
 import {
   prepareGovernanceProposalInputSchema,
   prepareGovernanceProposalOutputSchema,
+  proposalFormStateInputSchema,
+  proposalFormStateOutputSchema,
   proposalGuidanceInputSchema,
   proposalGuidanceOutputSchema,
 } from './proposal-tools-schema.js';
@@ -98,7 +101,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance and prepare_governance_proposal for discovery and pre-filled governance proposal forms; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -1227,6 +1230,44 @@ server.registerTool(
     }
     const result = await proposalGuidanceTool.execute(parsed.data);
     const out = proposalGuidanceOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [{ type: 'text', text: JSON.stringify(out.data, null, 2) }],
+      structuredContent: out.data,
+    };
+  },
+);
+
+const getProposalFormStateTool = createGetProposalFormStateTool(null);
+server.registerTool(
+  'get_proposal_form_state',
+  {
+    description: getProposalFormStateTool.description,
+    inputSchema: proposalFormStateInputSchema,
+    outputSchema: proposalFormStateOutputSchema,
+  },
+  async (args) => {
+    const parsed = proposalFormStateInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await getProposalFormStateTool.execute(parsed.data);
+    const out = proposalFormStateOutputSchema.safeParse(result);
     if (!out.success) {
       return {
         content: [

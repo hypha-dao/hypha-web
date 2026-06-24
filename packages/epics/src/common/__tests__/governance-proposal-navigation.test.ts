@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { mergeGovernanceResubmitPayloads } from '../governance-proposal-navigation';
+/**
+ * @vitest-environment jsdom
+ */
+import { describe, expect, it, beforeEach } from 'vitest';
+import {
+  isGovernancePrepareNavigationStale,
+  markGovernancePrepareNavigationKeysStale,
+  mergeGovernanceResubmitPayloads,
+} from '../governance-proposal-navigation';
 
 describe('mergeGovernanceResubmitPayloads', () => {
   it('merges quorum and unity without dropping earlier values', () => {
@@ -35,5 +42,21 @@ describe('mergeGovernanceResubmitPayloads', () => {
     expect(merged.votingDuration).toBe(259200);
     expect(merged.autoExecution).toBe(false);
     expect(merged.quorumAndUnity).toEqual({ unity: 75 });
+  });
+});
+
+describe('governance prepare navigation stale keys', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('marks and detects stale prepare navigation keys', () => {
+    markGovernancePrepareNavigationKeysStale(['msg-1:part:0:/en/dho/x:create']);
+    expect(
+      isGovernancePrepareNavigationStale('msg-1:part:0:/en/dho/x:create'),
+    ).toBe(true);
+    expect(
+      isGovernancePrepareNavigationStale('msg-2:part:0:/en/dho/x:create'),
+    ).toBe(false);
   });
 });
