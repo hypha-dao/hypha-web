@@ -67,72 +67,81 @@ const GAS_SETUP_ONE_TIME = 0.035;
 const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_MONTHLY_BY_PROFILE.typical;
 
 // Phase 0 → Phase I → Phase II continuity (same network, one growth story)
-// Phase I bootstraps 0 → ~4,373 active Spaces over 12 months. Phase II starts there.
+// Phase I bootstraps 0 → ~4,373 active (paying) Spaces over 12 months. Phase II starts there.
 const PHASE_I_END_SPACES = 4373;
 const PHASE_II_START_SPACES = PHASE_I_END_SPACES;
 
-// Year-5 (Phase II month 48) ACTIVE Space targets: Low ~25k, Mid ~250k, High ~2M
+// Two distinct series, both starting from the ~4,373 Phase I handoff:
+//  • ACTIVE (paying) Spaces — grow at orgGrowthRate/mo, pay $44/mo, drive all revenue.
+//  • CUMULATIVE Spaces created (funnel top) — grow at cumulativeGrowthRate/mo (free + paid).
+// Year-5 (Phase II month 48) targets, active / cumulative created (implied paying rate):
+//   Low  — ~15k active / ~250k created (≈6% paying)
+//   Mid  — ~50k active / ~1M created   (≈5% paying)
+//   High — ~500k active / ~10M created (≈5% paying)
 const GROWTH_PRESETS = {
   low: {
     label: 'Low',
-    subtitle: '~25k active (year 5)',
+    subtitle: '~15k paying · ~250k created (yr 5)',
     defaults: {
       orgPayment: 44,
       iexAllocationPct: 25,
-      investorSelling: 3,
-      additionalPurchase: 5,
+      investorSelling: 4,
+      additionalPurchase: 4,
       unlockRate: 4,
-      initialHypha: 40000000,
-      initialUsdc: 8000000,
+      initialHypha: 25000000,
+      initialUsdc: 5000000,
       orgCount: PHASE_II_START_SPACES,
-      orgGrowthRate: 3.78,
+      orgGrowthRate: 2.66,
+      cumulativeGrowthRate: 8.99,
     },
-    // ~25k active / ~570k cumulative Space-months at Phase II month 48 (~3.78%/mo)
+    // active 4,373 → ~15k (2.66%/mo); created 4,373 → ~250k (8.99%/mo) at month 48
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 3.78 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 2.66 };
       return m;
     },
   },
   mid: {
     label: 'Mid',
-    subtitle: '~250k active (year 5)',
+    subtitle: '~50k paying · ~1M created (yr 5)',
     defaults: {
       orgPayment: 44,
-      iexAllocationPct: 19,
+      iexAllocationPct: 22,
       investorSelling: 5,
-      additionalPurchase: 8,
+      additionalPurchase: 6,
       unlockRate: 3.5,
-      initialHypha: 80000000,
-      initialUsdc: 16000000,
+      initialHypha: 35000000,
+      initialUsdc: 7000000,
       orgCount: PHASE_II_START_SPACES,
-      orgGrowthRate: 8.99,
+      orgGrowthRate: 5.32,
+      cumulativeGrowthRate: 12.25,
     },
-    // ~250k active / ~3M cumulative Space-months at Phase II month 48 (~8.99%/mo)
+    // active 4,373 → ~50k (5.32%/mo); created 4,373 → ~1M (12.25%/mo) at month 48
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 8.99 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 5.32 };
       return m;
     },
   },
   high: {
     label: 'High',
-    subtitle: '~2M active (year 5)',
+    subtitle: '~500k paying · ~10M created (yr 5)',
     defaults: {
       orgPayment: 44,
       iexAllocationPct: 19,
-      investorSelling: 3,
+      investorSelling: 5,
       additionalPurchase: 8,
       unlockRate: 3,
-      initialHypha: 150000000,
-      initialUsdc: 30000000,
+      initialHypha: 63000000,
+      initialUsdc: 12600000,
       orgCount: PHASE_II_START_SPACES,
-      orgGrowthRate: 13.92,
+      orgGrowthRate: 10.61,
+      cumulativeGrowthRate: 17.89,
     },
-    // ~2M active / ~16M cumulative Space-months at Phase II month 48 (~13.92%/mo)
+    // active 4,373 → ~500k (10.61%/mo); created 4,373 → ~10M (17.89%/mo) at month 48
     build: () => {
       const m = {};
-      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 13.92 };
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 10.61 };
       return m;
     },
   },
@@ -154,6 +163,7 @@ const TokenomicsSimulator = () => {
   const [orgPayment, setOrgPayment] = useState(GROWTH_PRESETS.low.defaults.orgPayment);
   const [iexAllocationPct, setIexAllocationPct] = useState(GROWTH_PRESETS.low.defaults.iexAllocationPct);
   const [orgGrowthRate, setOrgGrowthRate] = useState(GROWTH_PRESETS.low.defaults.orgGrowthRate);
+  const [cumulativeGrowthRate, setCumulativeGrowthRate] = useState(GROWTH_PRESETS.low.defaults.cumulativeGrowthRate);
 
   // AI operating cost controls
   const [aiModelId, setAiModelId] = useState('kimi-or');
@@ -171,7 +181,7 @@ const TokenomicsSimulator = () => {
     calculateTokenomics();
   }, [initialHypha, initialUsdc, months, unlockRate, stakingRate, sellRate,
       investorSelling, additionalPurchase, stakingRewards, rewardSplit, maxSupply,
-      orgCount, orgPayment, iexAllocationPct, orgGrowthRate, monthlyParams, aiModelId, aiProfile]);
+      orgCount, orgPayment, iexAllocationPct, orgGrowthRate, cumulativeGrowthRate, monthlyParams, aiModelId, aiProfile]);
 
   const getMonthlyParameter = (paramName, month) => {
     if (monthlyParams[month] && monthlyParams[month][paramName] !== undefined) {
@@ -215,7 +225,7 @@ const TokenomicsSimulator = () => {
     let circulatingSupply = 0;
     let cumulativeIssued = 0;
     let prevPrice = dexUsdc / dexHypha;
-    let cumulativeOrgCountTracker = 0;
+    let cumulativeCreated = 0;
     const feeRate = 0.003;
     const tokenResults = [];
     const graphData = [];
@@ -282,8 +292,15 @@ const TokenomicsSimulator = () => {
         }
       }
 
-      cumulativeOrgCountTracker += currentOrgCount;
-      const cumulativeOrgCount = cumulativeOrgCountTracker;
+      // Cumulative Spaces ever created (funnel top: free + paid). Starts at the same
+      // ~4,373 handoff as active payers, then grows faster — so the paying rate
+      // (active / created) declines from 100% toward the year-5 target (~5–6%).
+      if (month === 1) {
+        cumulativeCreated = currentOrgCount;
+      } else {
+        cumulativeCreated = Math.round(cumulativeCreated * (1 + cumulativeGrowthRate / 100));
+      }
+      const cumulativeOrgCount = cumulativeCreated;
       cumulativeGrossRevenue += grossContribution;
       const runRateArr = currentOrgCount * monthOrgPayment * 12;
 
@@ -425,6 +442,7 @@ const TokenomicsSimulator = () => {
     setInitialUsdc(d.initialUsdc);
     setOrgCount(d.orgCount);
     setOrgGrowthRate(d.orgGrowthRate);
+    setCumulativeGrowthRate(d.cumulativeGrowthRate);
   };
 
   const applyGrowthScenario = (scenario) => {
@@ -474,7 +492,7 @@ const TokenomicsSimulator = () => {
           </div>
           <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
             <div className="font-semibold">Phase II — Years 2–5 (this sim)</div>
-            <p className="text-xs text-indigo-100 mt-1">Starts ~{PHASE_II_START_SPACES.toLocaleString()} paying Spaces × $44/mo. Month 1 = first month of year 2. Year 5 = month 48.</p>
+            <p className="text-xs text-indigo-100 mt-1">Starts ~{PHASE_II_START_SPACES.toLocaleString()} paying Spaces × $44/mo. Year-5 paying / created: Low ~15k/250k · Mid ~50k/1M · High ~500k/10M.</p>
           </div>
         </div>
       </div>
@@ -484,7 +502,7 @@ const TokenomicsSimulator = () => {
         <span className="text-teal-900">{iexAllocationPct}% → IEX buy pressure</span>
         <span className="text-teal-700"> · </span>
         <span className="text-teal-900">{offPoolPct}% → AI (~${perSpaceAI.toFixed(2)}/Space), gas, ops, rewards, treasury</span>
-        <span className="text-xs text-teal-700 block mt-1">Only active Spaces in each month pay $44. Cumulative totals are Space-months over the horizon, not concurrent payers.</span>
+        <span className="text-xs text-teal-700 block mt-1">Only active (paying) Spaces pay $44/mo and drive revenue. "Cumulative Spaces" = total Spaces ever created (free + paid funnel); active payers are ~5–6% of created at year 5.</span>
       </div>
 
       {/* ============ AI OPERATING COST SECTION ============ */}
@@ -742,9 +760,14 @@ const TokenomicsSimulator = () => {
           <h2 className="text-xl font-bold mb-4">Key Metrics at Month {months}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded shadow">
-              <h3 className="text-sm font-medium text-gray-500">Cumulative Spaces</h3>
+              <h3 className="text-sm font-medium text-gray-500">Cumulative Spaces Created</h3>
               <p className="text-2xl font-bold">{results[results.length - 1].cumulativeOrgCount.toLocaleString()}</p>
-              <p className="text-sm text-gray-500">Active (month {months}): {results[results.length - 1].orgCount.toLocaleString()}</p>
+              <p className="text-sm text-gray-500">
+                Active payers (month {months}): {results[results.length - 1].orgCount.toLocaleString()}
+                {results[results.length - 1].cumulativeOrgCount > 0
+                  ? ` (${(results[results.length - 1].orgCount / results[results.length - 1].cumulativeOrgCount * 100).toFixed(1)}%)`
+                  : ''}
+              </p>
             </div>
             <div className="bg-white p-4 rounded shadow border-l-4 border-green-500">
               <h3 className="text-sm font-medium text-gray-500">Run-rate ARR (month {months})</h3>
@@ -969,8 +992,8 @@ const TokenomicsSimulator = () => {
                 <th className="py-2 px-4 border text-right">Staking Rewards</th>
                 <th className="py-2 px-4 border text-right">Unlock Rewards</th>
                 <th className="py-2 px-4 border text-right">Actual Rewards</th>
-                <th className="py-2 px-4 border text-right">Spaces (monthly)</th>
-                <th className="py-2 px-4 border text-right">Spaces (cumulative)</th>
+                <th className="py-2 px-4 border text-right">Active Spaces (monthly)</th>
+                <th className="py-2 px-4 border text-right">Cumulative Created</th>
                 <th className="py-2 px-4 border text-right">Staked Tokens (cumulative)</th>
                 <th className="py-2 px-4 border text-right">Circulating Supply</th>
                 <th className="py-2 px-4 border text-right">IEX HYPHA Before</th>
@@ -1063,7 +1086,7 @@ const TokenomicsSimulator = () => {
               </button>
             ))}
             <p className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-200">
-              Targets cumulative Space-months (sum of active Spaces each month) at month 48. Override growth per month via Per-Month Configuration.
+              Targets active (paying) and total created Spaces at year 5 (month 48). Active payers drive revenue; override their growth per month via Per-Month Configuration.
             </p>
           </div>
         </div>
