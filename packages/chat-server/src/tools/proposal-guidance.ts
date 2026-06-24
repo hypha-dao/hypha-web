@@ -295,7 +295,7 @@ export function buildGuidanceResponse(args: {
   const formIncomplete = Boolean(
     formState &&
       'missing_on_screen' in formState &&
-      formState.missing_on_screen.length > 0,
+      (formState.missing_on_screen?.length ?? 0) > 0,
   );
 
   return {

@@ -203,6 +203,7 @@ import {
 import { readActiveProposalFormSnapshot } from './active-proposal-form-snapshot';
 import {
   enableProposalAiWalkthrough,
+  PROPOSAL_AI_WALKTHROUGH_KEY,
   writeProposalFormFocusIfChanged,
 } from './proposal-form-focus';
 import {
@@ -452,6 +453,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const transferredMobilizedAgentsSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  const wasOnProposalCreatePathRef = useRef(false);
   const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
   const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
   const skipNextChatResetRef = useRef(false);
@@ -1296,7 +1298,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
-    if (!isProposalCreateFormPath(pathname)) {
+    const onProposalCreatePath = isProposalCreateFormPath(pathname);
+
+    if (wasOnProposalCreatePathRef.current && !onProposalCreatePath) {
+      const aiOpenedProposal =
+        typeof window !== 'undefined' &&
+        (sessionStorage.getItem(PROPOSAL_AI_WALKTHROUGH_KEY) === 'true' ||
+          Boolean(lastAutoNavigationKeyRef.current));
+      if (aiOpenedProposal) {
+        markGovernancePrepareNavigationKeysStale(
+          collectGovernancePrepareNavigationKeys(messagesRef.current),
+        );
+      }
+    }
+
+    wasOnProposalCreatePathRef.current = onProposalCreatePath;
+
+    if (!onProposalCreatePath) {
       lastAutoNavigationKeyRef.current = null;
     }
   }, [pathname]);

@@ -270,11 +270,13 @@ export function buildProposalFormStateDirective(
   const response = buildProposalFormStateResponse({ snapshot });
   if (!response.ok || !('fields_on_screen' in response)) return null;
 
+  const missingOnScreen = response.missing_on_screen ?? [];
+
   const incompleteBlock =
-    response.missing_on_screen.length > 0
+    missingOnScreen.length > 0
       ? [
           'CRITICAL — PROPOSAL FORM INCOMPLETE (member screen is authoritative).',
-          `missing_on_screen=${JSON.stringify(response.missing_on_screen)}`,
+          `missing_on_screen=${JSON.stringify(missingOnScreen)}`,
           `next_missing_field=${response.next_missing_field ?? 'unknown'}`,
           'FORBIDDEN this turn: "complete", "now complete", "click Publish", "ready to publish", "all set".',
           'If the member says fields are empty, they are right — call prepare_governance_proposal partial:true to fill next_missing_field.',
@@ -285,7 +287,7 @@ export function buildProposalFormStateDirective(
     'OPEN PROPOSAL FORM STATE (authoritative — from the member screen):',
     `proposal_type=${response.proposal_type}`,
     `filled_on_screen=${JSON.stringify(response.filled_on_screen)}`,
-    `missing_on_screen=${JSON.stringify(response.missing_on_screen)}`,
+    `missing_on_screen=${JSON.stringify(missingOnScreen)}`,
     `form_synced=${response.form_synced}`,
     `ready_to_publish=${response.ready_to_publish}`,
     incompleteBlock,
@@ -294,7 +296,7 @@ export function buildProposalFormStateDirective(
       ? `SYNC ERROR — AI claimed ${JSON.stringify(
           response.collected_but_not_on_screen,
         )} but form is empty for those fields. Call prepare_governance_proposal again before continuing.`
-      : response.missing_on_screen.length > 0
+      : missingOnScreen.length > 0
       ? null
       : 'Continue one field at a time — ask ONLY next_missing_field, fill via prepare, then move on.',
   ]
