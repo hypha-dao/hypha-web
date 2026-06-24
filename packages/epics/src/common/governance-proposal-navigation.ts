@@ -6,11 +6,87 @@ import { stableJsonFingerprint } from './proposal-form-navigation';
 export const RESUBMIT_PROPOSAL_UPDATED_EVENT =
   'hypha:resubmit-proposal-updated';
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Deep-merge resubmit payloads so successive AI updates do not drop earlier fields. */
+export function mergeGovernanceResubmitPayloads(
+  previous: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...previous, ...incoming };
+
+  if (
+    isPlainObject(previous.quorumAndUnity) ||
+    isPlainObject(incoming.quorumAndUnity)
+  ) {
+    merged.quorumAndUnity = {
+      ...(isPlainObject(previous.quorumAndUnity)
+        ? previous.quorumAndUnity
+        : {}),
+      ...(isPlainObject(incoming.quorumAndUnity)
+        ? incoming.quorumAndUnity
+        : {}),
+    };
+  }
+
+  if (Array.isArray(previous.members) || Array.isArray(incoming.members)) {
+    merged.members = Array.isArray(incoming.members)
+      ? incoming.members
+      : previous.members;
+  }
+
+  for (const nestedKey of [
+    'proposeContributionForm',
+    'payForExpensesForm',
+    'deployFundsForm',
+    'issueNewTokenForm',
+    'spaceTokenPurchaseForm',
+    'buyHyphaTokensForm',
+    'tokenBackingVault',
+    'redeemResubmit',
+    'mint',
+    'tokenBurning',
+  ] as const) {
+    if (
+      isPlainObject(previous[nestedKey]) ||
+      isPlainObject(incoming[nestedKey])
+    ) {
+      merged[nestedKey] = {
+        ...(isPlainObject(previous[nestedKey]) ? previous[nestedKey] : {}),
+        ...(isPlainObject(incoming[nestedKey]) ? incoming[nestedKey] : {}),
+      };
+    }
+  }
+
+  if (incoming.title === undefined || incoming.title === '') {
+    merged.title = previous.title;
+  }
+  if (incoming.description === undefined || incoming.description === '') {
+    merged.description = previous.description;
+  }
+
+  return merged;
+}
+
 export function writeGovernanceProposalResubmitPayload(
   payload: Record<string, unknown>,
 ): void {
   if (typeof window === 'undefined') return;
-  const next = stableJsonFingerprint(payload);
+
+  let merged = payload;
+  try {
+    const prevRaw = sessionStorage.getItem(RESUBMIT_PROPOSAL_DATA_KEY);
+    if (prevRaw) {
+      const prev = JSON.parse(prevRaw) as Record<string, unknown>;
+      merged = mergeGovernanceResubmitPayloads(prev, payload);
+    }
+  } catch {
+    merged = payload;
+  }
+
+  const next = stableJsonFingerprint(merged);
   const prev = sessionStorage.getItem(RESUBMIT_PROPOSAL_DATA_KEY);
   if (prev === next) return;
   sessionStorage.setItem(RESUBMIT_PROPOSAL_DATA_KEY, next);

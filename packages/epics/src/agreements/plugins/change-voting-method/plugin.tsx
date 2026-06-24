@@ -156,7 +156,6 @@ export const ChangeVotingMethodPlugin = ({
   });
 
   const isQuorumTooLow = (quorumAndUnity?.quorum ?? 0) < 20;
-  const isQuorumHighEnough = (quorumAndUnity?.quorum ?? 0) >= 20;
 
   React.useEffect(() => {
     if (skipResubmitOverwrite()) return;
@@ -238,7 +237,7 @@ export const ChangeVotingMethodPlugin = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5" data-proposal-section="quorum_unity">
         <Label>{tAgreementFlow('plugins.quorumAndUnity.title')}</Label>
         <span className="text-2 text-neutral-11">
           {tAgreementFlow('plugins.quorumAndUnity.description')}
@@ -248,7 +247,7 @@ export const ChangeVotingMethodPlugin = ({
 
       <Separator />
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5" data-proposal-section="voting">
         <Label>{tAgreementFlow('plugins.quorumAndUnity.votingPeriod')}</Label>
 
         <FormField
@@ -267,7 +266,7 @@ export const ChangeVotingMethodPlugin = ({
                     checked={field.value}
                     onCheckedChange={handleAutoExecutionChange}
                     className="ml-2"
-                    disabled={isQuorumTooLow || isQuorumHighEnough}
+                    disabled={isQuorumTooLow}
                   />
                 </div>
               </FormControl>
@@ -276,13 +275,6 @@ export const ChangeVotingMethodPlugin = ({
                 <span className="text-2 text-neutral-11">
                   {tAgreementFlow(
                     'plugins.quorumAndUnity.autoExecutionDisabled',
-                  )}
-                </span>
-              )}
-              {isQuorumHighEnough && (
-                <span className="text-2 text-neutral-11">
-                  {tAgreementFlow(
-                    'plugins.quorumAndUnity.autoExecutionRequired',
                   )}
                 </span>
               )}

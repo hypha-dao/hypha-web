@@ -1295,9 +1295,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ]);
     const href = navigationTarget?.href;
     if (!href) return;
-    const navigationKey = navigationTarget.key;
-    if (lastAutoNavigationKeyRef.current === navigationKey) return;
-    lastAutoNavigationKeyRef.current = navigationKey;
 
     const alreadyOnTarget = isSameAppPath(href, pathname);
 
@@ -1323,6 +1320,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (alreadyOnTarget) {
       return;
     }
+
+    const navigationKey = navigationTarget.key;
+    if (lastAutoNavigationKeyRef.current === navigationKey) return;
+    lastAutoNavigationKeyRef.current = navigationKey;
 
     const openInNewTab = navigationTarget.openInNewTab === true;
     const isExternal = /^https?:\/\//i.test(href);
@@ -2390,7 +2391,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             focusSection: 'voting_method',
           });
           openAiPanel();
-          router.push(getChangeVotingMethodProposalPath(lang, targetSlug));
+          const proposalPath = getChangeVotingMethodProposalPath(
+            lang,
+            targetSlug,
+          );
+          if (!isSameAppPath(proposalPath, pathname)) {
+            router.push(proposalPath);
+          }
         }
       } catch (err) {
         console.error(
@@ -2406,6 +2413,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       onboardingContext,
       onboardingVotingMethodMessageLabels,
       openAiPanel,
+      pathname,
       router,
       sendOnboardingVotingMethodMessage,
       spaceSlug,

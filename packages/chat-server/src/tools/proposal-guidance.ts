@@ -34,6 +34,14 @@ function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
         field.description?.trim() ??
         'Propose discoverability or activity access levels with a brief why; ask if that works.'
       );
+    case 'quorum_percent':
+      return 'Propose minimum participation as a percentage (e.g. 30%) from space context — ask if that fits. Never say "quorum".';
+    case 'unity_percent':
+      return 'Propose minimum alignment as a percentage (e.g. 80%) — ask if that fits. Never say "unity".';
+    case 'auto_execution':
+      return 'Propose whether proposals should auto-execute when voting conditions are met (yes = auto, no = fixed minimum voting period). Ask which they prefer.';
+    case 'voting_duration_seconds':
+      return 'Propose a minimum voting period in plain language (e.g. 3 days) — ask if that works. Convert to seconds when calling prepare_governance_proposal (259200 = 3 days).';
     default:
       break;
   }
@@ -99,9 +107,24 @@ export function buildGuidanceResponse(args: {
     (field) => !hasCollectedValue(collected, field),
   );
 
-  const optionalPrompts = pickOptionalDiscoveryPrompts(entry, collected);
+  const remainingDecisionRequired = remainingRequired.filter(
+    (field) => field.key !== 'title' && field.key !== 'description',
+  );
+  const remainingTitleDescription = remainingRequired.filter(
+    (field) => field.key === 'title' || field.key === 'description',
+  );
+
+  const optionalPrompts = orderFieldsForDiscovery(
+    pickOptionalDiscoveryPrompts(entry, collected).filter((field) => {
+      if (field.key !== 'voting_duration_seconds') return true;
+      return collected.auto_execution === false;
+    }),
+  );
   const nextQuestionField =
-    remainingRequired[0] ?? optionalPrompts[0] ?? undefined;
+    remainingDecisionRequired[0] ??
+    optionalPrompts[0] ??
+    remainingTitleDescription[0] ??
+    undefined;
   const nextQuestion = nextQuestionField
     ? buildNextProposalQuestion(nextQuestionField)
     : null;
@@ -127,7 +150,9 @@ export function buildGuidanceResponse(args: {
 
   const syncFocusField =
     nextQuestionField?.key ??
-    remainingRequired[0]?.key ??
+    remainingDecisionRequired[0]?.key ??
+    optionalPrompts[0]?.key ??
+    remainingTitleDescription[0]?.key ??
     orderedRequired[0]?.key;
 
   return {
@@ -153,6 +178,6 @@ export function buildGuidanceResponse(args: {
       'Never output numbered lists, field labels (Title, Description, Quorum), or multi-field checklists. Never use create_space_setup_proposal or collective_agreement for typed proposals — use prepare_governance_proposal with the correct proposal_type. After each user reaction: update collected_fields, call form_sync when true in the SAME turn — never ask again if they already accepted. Never loop with "shall I proceed" or "does this sound good" after yes.',
     walkthrough_hint: readyToPublish
       ? 'Required fields complete. Call prepare_governance_proposal (partial: false, focus_field: publish) to scroll to Publish. Tell the user briefly the form is ready — one short sentence.'
-      : `${interactionHint} After the user reacts with yes/acceptance, call prepare_governance_proposal with partial: true, all collected proposal_fields so far, focus_field for the section being discussed, and include title/description only after those steps are reached. Then call proposal_guidance again mentally for the NEXT field and ask ONLY that next_question — never skip title or description.`,
+      : `${interactionHint} After the user reacts with yes/acceptance, call prepare_governance_proposal with partial: true, ALL collected proposal_fields merged (never drop earlier answers), focus_field for the section being discussed, and include title/description only after those steps are reached. Stay on the same open form — do not reopen. Then ask ONLY next_question for the NEXT field.`,
   };
 }

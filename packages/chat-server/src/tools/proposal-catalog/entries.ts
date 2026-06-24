@@ -85,7 +85,7 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     prepareStrategy: 'prepare_governance_proposal',
     onChain: true,
     discoveryIntro:
-      'Ask which voting model the space should use, then optional quorum/unity changes.',
+      'Ask which voting model the space should use, then quorum, unity, and voting period (auto-execution or minimum duration).',
     requiredFields: [
       {
         key: 'voting_method',
@@ -105,7 +105,8 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
         key: 'quorum_percent',
         label: 'Quorum (%)',
         required: false,
-        description: 'Omit to keep current on-chain quorum.',
+        description:
+          'Propose minimum participation (e.g. 30%) from space context — ask if that fits. Never say "quorum" aloud in voice.',
         fieldType: 'percent',
         formSection: 'quorum_unity',
       },
@@ -113,11 +114,29 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
         key: 'unity_percent',
         label: 'Unity (%)',
         required: false,
-        description: 'Omit to keep current on-chain unity.',
+        description:
+          'Propose minimum alignment (e.g. 80%) from space context — ask if that fits. Never say "unity" aloud in voice.',
         fieldType: 'percent',
         formSection: 'quorum_unity',
       },
-      ...governancePluginFields,
+      {
+        key: 'auto_execution',
+        label: 'Auto-execution',
+        required: false,
+        description:
+          'When quorum is 20%+, propose whether proposals should auto-execute when conditions are met (yes/no). If no, a minimum voting duration is required.',
+        fieldType: 'boolean',
+        formSection: 'voting',
+      },
+      {
+        key: 'voting_duration_seconds',
+        label: 'Minimum voting duration',
+        required: false,
+        description:
+          'When auto_execution is false, propose a duration (1 day, 3 days, 7 days, etc.) converted to seconds (86400 = 1 day). Common: 259200 = 3 days.',
+        fieldType: 'number',
+        formSection: 'voting',
+      },
     ],
     doNotUse: ['create_space_setup_proposal with collective_agreement'],
   }),

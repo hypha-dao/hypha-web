@@ -309,16 +309,17 @@ export function pickOptionalDiscoveryPrompts(
   entry: ProposalCatalogEntry,
   collectedFields: Record<string, unknown>,
 ): CatalogDiscoveryField[] {
-  /** Optional governance tuning — skip in chat; member can edit on the form. */
+  /** Governance tuning deferred to form for all types except voting method. */
   const deferToForm = new Set([
     'quorum_percent',
     'unity_percent',
     'auto_execution',
     'voting_duration_seconds',
   ]);
+  const deferGovernanceTuning = entry.key !== 'change_voting_method';
 
   return entry.optionalFields.filter((field) => {
-    if (deferToForm.has(field.key)) return false;
+    if (deferGovernanceTuning && deferToForm.has(field.key)) return false;
     return (
       field.required === false &&
       collectedFields[field.key] === undefined &&
@@ -332,6 +333,10 @@ export function pickOptionalDiscoveryPrompts(
 const DISCOVERY_FIELD_ORDER: Record<string, number> = {
   voting_method: 10,
   entry_method: 10,
+  quorum_percent: 15,
+  unity_percent: 16,
+  auto_execution: 17,
+  voting_duration_seconds: 18,
   space_discoverability: 11,
   space_activity_access: 12,
   token_address: 20,

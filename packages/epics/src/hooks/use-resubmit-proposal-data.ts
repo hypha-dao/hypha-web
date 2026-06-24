@@ -213,7 +213,16 @@ export const useResubmitProposalData = <
               ? { votingMethod: parsed.votingMethod }
               : {}),
             ...(parsed.quorumAndUnity
-              ? { quorumAndUnity: parsed.quorumAndUnity }
+              ? {
+                  quorumAndUnity: {
+                    ...(typeof form.getValues('quorumAndUnity' as never) ===
+                      'object' &&
+                    form.getValues('quorumAndUnity' as never) !== null
+                      ? (form.getValues('quorumAndUnity' as never) as object)
+                      : {}),
+                    ...parsed.quorumAndUnity,
+                  },
+                }
               : {}),
             ...(parsed.token !== undefined ? { token: parsed.token } : {}),
             ...(parsed.members !== undefined
