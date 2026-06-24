@@ -2953,7 +2953,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           }
         />
       </SidebarContent>
-      <SidebarFooter className="bg-background-2 p-0">
+      <SidebarFooter className="overflow-visible bg-background-2 p-0">
         {showDiscoveryModeToggle ? (
           <div className="flex justify-center border-t border-border/60 px-3 py-2">
             <OnboardingDiscoveryModeToggle
