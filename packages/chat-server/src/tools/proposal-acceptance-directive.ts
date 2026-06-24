@@ -4,6 +4,7 @@ import {
   inferVotingMethodFromConversation,
   isPlainConfirmationReply,
 } from './onboarding-voting-method-inference';
+import { getEntryMethodInferencePatterns } from '../locale-ui-labels';
 
 const TITLE_OFFER_PATTERNS = [
   /(?:call(?:ing)?|title(?:\s+this)?(?:\s+proposal)?|name(?:\s+this)?(?:\s+proposal)?|suggest(?:ing)?)\s+(?:this\s+proposal\s+)?['"]([^'"]{3,120})['"]/i,
@@ -11,14 +12,7 @@ const TITLE_OFFER_PATTERNS = [
   /proposal\s+['"]([^'"]{3,120})['"]\s*[.?!]/i,
 ];
 
-const ENTRY_METHOD_PATTERNS: Record<string, RegExp> = {
-  open_access:
-    /\bopen access\b|\bacc[eè]s ouvert\b|\bacesso aberto\b|\bacceso abierto\b|\boffener zugang\b/i,
-  invite_only:
-    /\binvite request\b|\binvite[- ]only\b|\binvitation\b|\bdemande d['']adh[eé]sion\b|\bsolicitud de invitaci[oó]n\b|\bconvite\b|\beinladung\b/i,
-  token_based:
-    /\btoken based\b|\btoken-based\b|\badh[eé]sion par token\b|\bmembres[ií]a por token\b|\bassocia[cç][aã]o por token\b|\btoken-basiert\b/i,
-};
+const ENTRY_METHOD_PATTERNS = getEntryMethodInferencePatterns();
 
 const TOKEN_TYPE_PATTERNS: Record<string, RegExp> = {
   utility: /\butility token\b/i,

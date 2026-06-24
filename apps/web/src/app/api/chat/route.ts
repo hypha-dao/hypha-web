@@ -104,6 +104,7 @@ export async function POST(req: Request) {
   const conversationContext = parsed.data.conversationContext;
   const discoveryMode = parsed.data.discoveryMode;
   const activeProposalFormSnapshot = parsed.data.activeProposalFormSnapshot;
+  const locale = parsed.data.locale;
 
   if (spaceSlug?.trim()) {
     const interactionAuth = await authorizeSpacePanelInteraction({
@@ -134,6 +135,7 @@ export async function POST(req: Request) {
       conversationContext,
       discoveryMode,
       activeProposalFormSnapshot,
+      locale,
       onboardingWriteToolsEnabled,
       ecosystemAutomationEnabled,
     });

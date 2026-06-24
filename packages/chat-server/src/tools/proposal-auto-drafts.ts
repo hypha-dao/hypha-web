@@ -1,67 +1,61 @@
 import type { AiCreatableProposalType } from './ai-proposal-types';
+import {
+  buildEntryMethodProposalDraft,
+  buildVotingMethodProposalDraft,
+  type EntryMethodId,
+  type VotingMethodId,
+} from '../locale-ui-labels';
 
-const ENTRY_METHOD_LABELS: Record<string, string> = {
-  open_access: 'Open Access',
-  invite_only: 'Invite Request',
-  token_based: 'Token Based',
-};
+const ENTRY_METHOD_IDS = new Set<EntryMethodId>([
+  'open_access',
+  'invite_only',
+  'token_based',
+]);
 
-const ENTRY_METHOD_DESCRIPTIONS: Record<string, string> = {
-  open_access:
-    'This proposal opens membership so anyone can join the space freely, fostering inclusivity and community growth.',
-  invite_only:
-    'This proposal switches join access to Invite Request so new members join through an invitation and member vote.',
-  token_based:
-    'This proposal sets join access to Token Based so membership follows the space token requirements.',
-};
-
-const VOTING_METHOD_LABELS: Record<string, string> = {
-  '1m1v': 'One Member One Vote',
-  '1v1v': 'One Voice Token One Vote',
-  '1t1v': 'One Token One Vote',
-};
-
-const VOTING_METHOD_DESCRIPTIONS: Record<string, string> = {
-  '1m1v':
-    'This proposal switches decision-making to one member, one vote so each member has equal say.',
-  '1v1v':
-    'This proposal switches decision-making to one voice token, one vote.',
-  '1t1v': 'This proposal switches decision-making to one token, one vote.',
-};
+const VOTING_METHOD_IDS = new Set<VotingMethodId>(['1m1v', '1v1v', '1t1v']);
 
 /** Silent title/description when the member already accepted a choice field. */
 export function buildSilentProposalDrafts(
   proposalType: AiCreatableProposalType,
   collected: Record<string, unknown>,
+  locale?: string | null,
 ): Record<string, unknown> {
   const drafts: Record<string, unknown> = {};
 
   if (proposalType === 'change_entry_method') {
     const method = collected.entry_method;
-    if (typeof method === 'string' && method in ENTRY_METHOD_LABELS) {
-      const label = ENTRY_METHOD_LABELS[method]!;
-      if (!collected.title) {
-        drafts.title = `Change Entry Method to ${label}`;
+    if (
+      typeof method === 'string' &&
+      ENTRY_METHOD_IDS.has(method as EntryMethodId)
+    ) {
+      const draft = buildEntryMethodProposalDraft(
+        locale,
+        method as EntryMethodId,
+      );
+      if (!collected.title && draft.title) {
+        drafts.title = draft.title;
       }
-      if (!collected.description) {
-        drafts.description =
-          ENTRY_METHOD_DESCRIPTIONS[method] ??
-          `This proposal changes how people join the space to ${label}.`;
+      if (!collected.description && draft.description) {
+        drafts.description = draft.description;
       }
     }
   }
 
   if (proposalType === 'change_voting_method') {
     const method = collected.voting_method;
-    if (typeof method === 'string' && method in VOTING_METHOD_LABELS) {
-      const label = VOTING_METHOD_LABELS[method]!;
-      if (!collected.title) {
-        drafts.title = `Change Voting Method to ${label}`;
+    if (
+      typeof method === 'string' &&
+      VOTING_METHOD_IDS.has(method as VotingMethodId)
+    ) {
+      const draft = buildVotingMethodProposalDraft(
+        locale,
+        method as VotingMethodId,
+      );
+      if (!collected.title && draft.title) {
+        drafts.title = draft.title;
       }
-      if (!collected.description) {
-        drafts.description =
-          VOTING_METHOD_DESCRIPTIONS[method] ??
-          `This proposal changes how decisions are made to ${label}.`;
+      if (!collected.description && draft.description) {
+        drafts.description = draft.description;
       }
     }
   }

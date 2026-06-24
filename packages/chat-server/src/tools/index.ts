@@ -19,6 +19,7 @@ import { webSearchTool } from './web-search';
 import { createGetProposalFormStateTool } from './get-proposal-form-state';
 import type { ActiveProposalFormSnapshot } from './proposal-form-state';
 import { createOnboardingToolSet, safeChatTool } from './onboarding-tool-set';
+import { resolveChatLocale } from '../locale-ui-labels';
 
 /**
  * All AI SDK tools exposed by the chat route. Add new tools here and in the
@@ -35,13 +36,19 @@ export function createChatTools(
   lastUserTextFromRequest?: string | null,
   recentUserTextsFromRequest?: string[],
   activeProposalFormSnapshot?: ActiveProposalFormSnapshot | null,
+  chatLocale?: string | null,
 ): Record<string, ChatRouteTool> {
+  const locale = resolveChatLocale({
+    locale: chatLocale,
+    conversationContext,
+  });
   const onboardingTools = createOnboardingToolSet({
     authToken,
     conversationContext,
     featureGates,
     lastUserTextFromRequest,
     recentUserTextsFromRequest,
+    locale,
   });
 
   return {
@@ -98,7 +105,7 @@ export function createChatTools(
     ),
     proposal_guidance: safeChatTool(
       'proposal_guidance',
-      createProposalGuidanceTool(activeProposalFormSnapshot),
+      createProposalGuidanceTool(activeProposalFormSnapshot, locale),
     ),
     get_proposal_form_state: safeChatTool(
       'get_proposal_form_state',

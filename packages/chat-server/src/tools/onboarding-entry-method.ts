@@ -1,66 +1,81 @@
 /** Same three entry options as AgreementFlow / onboarding entry method card. */
 
-export type OnboardingEntryMethodId =
-  | 'open_access'
-  | 'invite_only'
-  | 'token_based';
+import {
+  getAgreementFlowEntryMethodOptions,
+  type EntryMethodId,
+  type LocalizedEntryMethodOption,
+} from '../locale-ui-labels';
 
-export type OnboardingEntryMethodOption = {
-  id: OnboardingEntryMethodId;
-  label: string;
-  description: string;
-};
+export type OnboardingEntryMethodId = EntryMethodId;
+
+export type OnboardingEntryMethodOption = LocalizedEntryMethodOption;
 
 export const ONBOARDING_ENTRY_METHOD_OPTIONS: readonly OnboardingEntryMethodOption[] =
-  [
-    {
-      id: 'open_access',
-      label: 'Open Access',
-      description:
-        'New members can join instantly. Participation is open to everyone and fully transparent.',
-    },
-    {
-      id: 'invite_only',
-      label: 'Invite Request',
-      description:
-        'New members can participate by requesting an invitation to join. Existing members vote on invite requests. Participation is only open to invited members but remains fully transparent to everyone.',
-    },
-    {
-      id: 'token_based',
-      label: 'Token Based',
-      description:
-        'New members can join if they meet token requirements. Participation is only open to eligible members but remains fully transparent to everyone.',
-    },
-  ] as const;
+  getAgreementFlowEntryMethodOptions('en');
 
 export const ONBOARDING_ENTRY_METHOD_LABELS =
   ONBOARDING_ENTRY_METHOD_OPTIONS.map((option) => option.label);
 
-export const ONBOARDING_ENTRY_METHOD_GUIDELINES = `Entry method (onboarding — same options as the entry method card and governance forms):
-- ONLY three allowed choices — use these exact titles with users: Open Access, Invite Request, Token Based.
-- Never say invite-only, request access, token-based entry, token-gated, or generic "open access" without the Open Access title. The middle option is Invite Request (not "invite-only" or "request access").
+export function buildOnboardingEntryMethodGuidelines(
+  locale?: string | null,
+): string {
+  const options = getAgreementFlowEntryMethodOptions(locale);
+  const titles = options.map((option) => option.label).join(', ');
+  const middleOption = options.find((option) => option.id === 'invite_only');
+  const tokenBasedOption = options.find(
+    (option) => option.id === 'token_based',
+  );
+  return `Entry method (onboarding — same options as the entry method card and governance forms):
+- ONLY three allowed choices — use these exact titles with users: ${titles}.
+- Never say invite-only, request access, token-based entry, token-gated, or generic "open access" without the ${
+    options[0]?.label ?? 'Open Access'
+  } title. The middle option is ${
+    middleOption?.label ?? 'Invite Request'
+  } (not "invite-only" or "request access").
 - User picks with the entry method card in the panel—ask one short question; do not invent alternate labels or comma-separated option lists.
-- Token Based requires creating a membership token after the space is created.`;
+- ${
+    tokenBasedOption?.label ?? 'Token Based'
+  } requires creating a membership token after the space is created.`;
+}
 
-export function formatEntryMethodOptionsForAssistant(): string {
-  return ONBOARDING_ENTRY_METHOD_OPTIONS.map(
-    (option) => `- ${option.label}: ${option.description}`,
-  ).join('\n');
+export const ONBOARDING_ENTRY_METHOD_GUIDELINES =
+  buildOnboardingEntryMethodGuidelines('en');
+
+export function formatEntryMethodOptionsForAssistant(
+  locale?: string | null,
+): string {
+  return getAgreementFlowEntryMethodOptions(locale)
+    .map((option) => `- ${option.label}: ${option.description}`)
+    .join('\n');
 }
 
 export function buildEntryMethodAssistantInstruction(
+  locale?: string | null,
   warnOpenAccessWithPrivateDiscoverability = false,
 ): string {
+  const options = getAgreementFlowEntryMethodOptions(locale);
   const lines = [
     'Ask only the next_question in one short sentence.',
-    'The user chooses with the entry method card below. Use ONLY these exact option titles—never invite-only, request access, or token-based entry:',
-    formatEntryMethodOptionsForAssistant(),
+    `The user chooses with the entry method card below. Use ONLY these exact option titles—never invite-only, request access, or token-based entry:`,
+    formatEntryMethodOptionsForAssistant(locale),
     'Do not enumerate options as a comma-separated list in prose. In voice mode, give a one-sentence overview and invite them to use the card on screen.',
-    'Token Based requires creating a membership token after the space is created.',
+    `${
+      options.find((option) => option.id === 'token_based')?.label ??
+      'Token Based'
+    } requires creating a membership token after the space is created.`,
   ];
   if (warnOpenAccessWithPrivateDiscoverability) {
     lines.push(
-      'If they pick Open Access, flag warmly that Organisation or Space discoverability makes it hard for newcomers to find the space—offer Public or Network discoverability or Invite Request / Token Based instead.',
+      `If they pick ${
+        options.find((option) => option.id === 'open_access')?.label ??
+        'Open Access'
+      }, flag warmly that Organisation or Space discoverability makes it hard for newcomers to find the space—offer Public or Network discoverability or ${
+        options.find((option) => option.id === 'invite_only')?.label ??
+        'Invite Request'
+      } / ${
+        options.find((option) => option.id === 'token_based')?.label ??
+        'Token Based'
+      } instead.`,
     );
   }
   return lines.join(' ');

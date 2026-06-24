@@ -18,10 +18,9 @@ import { ONBOARDING_CREATION_CONFIRMATION_GUIDELINES } from '../system-prompt';
 import { isAnsweredActivationMethod } from './onboarding-activation-method';
 import {
   buildEntryMethodAssistantInstruction,
-  ONBOARDING_ENTRY_METHOD_GUIDELINES,
-  ONBOARDING_ENTRY_METHOD_LABELS,
-  ONBOARDING_ENTRY_METHOD_OPTIONS,
+  buildOnboardingEntryMethodGuidelines,
 } from './onboarding-entry-method';
+import { getAgreementFlowEntryMethodOptions } from '../locale-ui-labels';
 import { isAnsweredLocationStep } from './onboarding-location';
 import {
   buildTransparencyActivityAssistantInstruction,
@@ -548,8 +547,9 @@ function isFilled(value: unknown): boolean {
   return value != null;
 }
 
-export function createOnboardingGuidanceTool() {
+export function createOnboardingGuidanceTool(locale?: string | null) {
   const searchSpacesTool = createSearchSpacesTool();
+  const entryMethodOptions = getAgreementFlowEntryMethodOptions(locale);
   return {
     description:
       'Guided onboarding helper. Returns one next question at a time plus progress and validation steps.',
@@ -632,6 +632,7 @@ export function createOnboardingGuidanceTool() {
           : null;
       const entryMethodAssistantInstruction = requiresEntryMethodPicker
         ? buildEntryMethodAssistantInstruction(
+            locale,
             isAnsweredTransparencyLevel(answers.transparency_discoverability) &&
               answers.transparency_discoverability >= 2,
           )
@@ -736,9 +737,9 @@ export function createOnboardingGuidanceTool() {
           ? 'discoverability'
           : null,
         requires_entry_method_picker: requiresEntryMethodPicker,
-        allowed_entry_methods: ONBOARDING_ENTRY_METHOD_LABELS,
-        space_entry_methods: ONBOARDING_ENTRY_METHOD_OPTIONS,
-        entry_method_guidelines: ONBOARDING_ENTRY_METHOD_GUIDELINES,
+        allowed_entry_methods: entryMethodOptions.map((option) => option.label),
+        space_entry_methods: entryMethodOptions,
+        entry_method_guidelines: buildOnboardingEntryMethodGuidelines(locale),
         requires_setup_journey_picker: requiresSetupJourneyPicker,
         setup_journey: isAnsweredSetupJourney(answers.setup_journey)
           ? isEcosystemJourney(answers)

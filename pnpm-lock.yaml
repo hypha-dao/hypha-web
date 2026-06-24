@@ -923,6 +923,9 @@ importers:
       '@hypha-platform/core':
         specifier: workspace:*
         version: link:../core
+      '@hypha-platform/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@hypha-platform/storage-postgres':
         specifier: workspace:*
         version: link:../storage-postgres

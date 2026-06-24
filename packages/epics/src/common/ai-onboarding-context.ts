@@ -521,6 +521,7 @@ export function resolveChatTransportBody({
   isOnboardingPath,
   discoveryMode,
   activeProposalFormSnapshot,
+  locale,
 }: {
   spaceSlug?: string;
   activeSpaceTitle?: string;
@@ -528,6 +529,7 @@ export function resolveChatTransportBody({
   isOnboardingPath: boolean;
   discoveryMode?: OnboardingDiscoveryMode;
   activeProposalFormSnapshot?: ActiveProposalFormSnapshotPayload;
+  locale?: string;
 }): {
   body: {
     spaceSlug?: string;
@@ -535,11 +537,14 @@ export function resolveChatTransportBody({
     conversationContext?: OnboardingConversationContext;
     discoveryMode?: OnboardingDiscoveryMode;
     activeProposalFormSnapshot?: ActiveProposalFormSnapshotPayload;
+    locale?: string;
   };
   staleOnboardingContext: boolean;
 } {
   const trimmedSlug = spaceSlug?.trim() || undefined;
   const trimmedTitle = activeSpaceTitle?.trim() || undefined;
+  const trimmedLocale = locale?.trim() || undefined;
+  const localePayload = trimmedLocale ? { locale: trimmedLocale } : {};
   const discoveryModePayload =
     discoveryMode === 'voice_interview' ? discoveryMode : undefined;
   const snapshotPayload = activeProposalFormSnapshot
@@ -554,6 +559,7 @@ export function resolveChatTransportBody({
         ...(discoveryModePayload
           ? { discoveryMode: discoveryModePayload }
           : {}),
+        ...localePayload,
         ...snapshotPayload,
       },
       staleOnboardingContext: false,
@@ -573,6 +579,7 @@ export function resolveChatTransportBody({
         ...(discoveryModePayload
           ? { discoveryMode: discoveryModePayload }
           : {}),
+        ...localePayload,
         ...snapshotPayload,
       },
       staleOnboardingContext: true,
@@ -588,6 +595,7 @@ export function resolveChatTransportBody({
         { discoveryMode },
       ),
       ...(discoveryModePayload ? { discoveryMode: discoveryModePayload } : {}),
+      ...localePayload,
       ...snapshotPayload,
     },
     staleOnboardingContext: false,

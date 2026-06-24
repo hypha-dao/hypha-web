@@ -24,6 +24,7 @@ import {
   PROPOSAL_DISCOVERY_NARRATION_FORBIDDEN,
   PROPOSAL_PREMATURE_COMPLETE_FORBIDDEN,
 } from './proposal-member-voice';
+import { getEnumFieldOptionsForLocale } from '../locale-ui-labels';
 
 export {
   buildSilentProposalDrafts,
@@ -37,41 +38,26 @@ export type ProposalGuidanceField =
 
 export { buildProposalGuidancePromptLines };
 
-const ENUM_FIELD_OPTIONS: Record<string, Record<string, string>> = {
-  voting_method: {
-    '1m1v': 'one member, one vote',
-    '1v1v': 'one voice token, one vote',
-    '1t1v': 'one token, one vote',
-  },
-  entry_method: {
-    open_access: 'Open Access',
-    invite_only: 'Invite Request',
-    token_based: 'Token Based',
-  },
-  token_type: {
-    utility: 'Utility Token',
-    credits: 'Credits',
-    ownership: 'Ownership',
-    voice: 'Voice',
-    impact: 'Impact',
-    community_currency: 'Community Currency',
-  },
-};
-
-function formatEnumOptionsList(field: CatalogDiscoveryField): string {
+function formatEnumOptionsList(
+  field: CatalogDiscoveryField,
+  locale?: string | null,
+): string {
   if (!field.enumValues?.length) return '';
-  const labels = ENUM_FIELD_OPTIONS[field.key];
+  const labels = getEnumFieldOptionsForLocale(locale)[field.key];
   return field.enumValues.map((value) => labels?.[value] ?? value).join('; ');
 }
 
-function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
+function buildNextProposalQuestion(
+  field: CatalogDiscoveryField,
+  locale?: string | null,
+): string {
   switch (field.key) {
     case 'voting_method': {
-      const options = formatEnumOptionsList(field);
+      const options = formatEnumOptionsList(field, locale);
       return `List ALL three ways to decide (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never say "voting method" or read 1m1v/1v1v/1t1v codes.`;
     }
     case 'entry_method': {
-      const options = formatEnumOptionsList(field);
+      const options = formatEnumOptionsList(field, locale);
       return `List ALL three join options (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never say "entry method".`;
     }
     case 'title':
@@ -93,7 +79,7 @@ function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
     case 'voting_duration_seconds':
       return 'Propose a minimum voting period in plain language (e.g. 3 days) — ask if that works. Convert to seconds when calling prepare_governance_proposal (259200 = 3 days).';
     case 'token_type': {
-      const options = formatEnumOptionsList(field);
+      const options = formatEnumOptionsList(field, locale);
       return `List ALL token types (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never ask about supply before type is set.`;
     }
     case 'token_name':
@@ -111,13 +97,16 @@ function buildNextProposalQuestion(field: CatalogDiscoveryField): string {
     return field.description.trim();
   }
   if (field.enumValues?.length) {
-    const options = formatEnumOptionsList(field);
+    const options = formatEnumOptionsList(field, locale);
     return `List ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want.`;
   }
   return `Propose a sensible default from context in one line — never use the label "${field.label}" verbatim.`;
 }
 
-function buildInteractionHint(field: CatalogDiscoveryField): string {
+function buildInteractionHint(
+  field: CatalogDiscoveryField,
+  locale?: string | null,
+): string {
   const speed =
     'Max 3–4 short sentences. No preamble, no recap, no numbered lists. Voice: 2 sentences max.';
   const acceptanceRule =
@@ -126,7 +115,7 @@ function buildInteractionHint(field: CatalogDiscoveryField): string {
     return `${speed} Offer drafted copy; user says yes/tweak/no.${acceptanceRule}`;
   }
   if (field.enumValues?.length) {
-    const options = formatEnumOptionsList(field);
+    const options = formatEnumOptionsList(field, locale);
     return `${speed} MANDATORY ORDER: (1) list EVERY option (${options}) — all of them; (2) one-line recommendation; (3) ask which they want. Never skip step 1.${acceptanceRule}`;
   }
   return `${speed} Propose a default when sensible.${acceptanceRule}`;
@@ -156,6 +145,7 @@ export function buildGuidanceResponse(args: {
   proposalType: AiCreatableProposalType;
   collectedFields?: Record<string, unknown>;
   formSnapshot?: ActiveProposalFormSnapshot | null;
+  locale?: string | null;
 }) {
   const entry = getProposalCatalogEntry(args.proposalType);
   if (!entry) {
@@ -166,7 +156,11 @@ export function buildGuidanceResponse(args: {
   }
 
   const collected = args.collectedFields ?? {};
-  const silentDrafts = buildSilentProposalDrafts(args.proposalType, collected);
+  const silentDrafts = buildSilentProposalDrafts(
+    args.proposalType,
+    collected,
+    args.locale,
+  );
   const effectiveCollected = { ...silentDrafts, ...collected };
   const formIsOpen = Boolean(
     args.formSnapshot?.formOpen || args.formSnapshot?.resubmitPayload,
@@ -211,10 +205,10 @@ export function buildGuidanceResponse(args: {
 
   const nextQuestionField = orderedRemaining[0];
   const nextQuestion = nextQuestionField
-    ? buildNextProposalQuestion(nextQuestionField)
+    ? buildNextProposalQuestion(nextQuestionField, args.locale)
     : null;
   const interactionHint = nextQuestionField
-    ? buildInteractionHint(nextQuestionField)
+    ? buildInteractionHint(nextQuestionField, args.locale)
     : null;
 
   const hasAnyCollected = Object.entries(effectiveCollected).some(

@@ -45,6 +45,7 @@ const legacyFieldSchema = {
 
 export function createProposalGuidanceTool(
   formSnapshot?: ActiveProposalFormSnapshot | null,
+  locale?: string | null,
 ) {
   const inputSchema = z.object({
     proposal_type: z.enum(aiCreatableProposalTypeSchema),
@@ -64,6 +65,7 @@ export function createProposalGuidanceTool(
         proposalType: parsed.data.proposal_type,
         collectedFields: parsed.data.collected_fields,
         formSnapshot,
+        locale,
       });
     },
   } satisfies ChatRouteTool<typeof inputSchema>;

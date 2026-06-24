@@ -70,6 +70,8 @@ export const chatRequestSchema = z.object({
   spaceSlug: z.string().nullish(),
   /** Client-resolved display title for the active space route (sanity check only). */
   activeSpaceTitle: z.string().trim().min(1).optional(),
+  /** UI locale for localized tool labels (en, fr, pt, es, de). */
+  locale: z.string().trim().min(2).max(16).optional(),
   conversationContext: onboardingConversationContextSchema.optional(),
   /** Chat vs voice in the left AI panel when not in onboarding setup. */
   discoveryMode: z.enum(['chat', 'voice_interview']).optional(),

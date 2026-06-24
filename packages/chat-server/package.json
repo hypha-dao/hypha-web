@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hypha-platform/i18n": "workspace:*",
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",

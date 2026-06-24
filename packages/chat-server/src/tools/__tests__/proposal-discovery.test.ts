@@ -102,6 +102,23 @@ describe('proposal discovery — change_entry_method', () => {
     expect(guidance.interaction_hint).toMatch(/Token Based/i);
   });
 
+  it('uses localized entry option labels for French', () => {
+    const guidance = buildGuidanceResponse({
+      proposalType: 'change_entry_method',
+      collectedFields: {
+        title: "Changer la méthode d'entrée",
+        description: "Ouvrir l'espace à tous.",
+      },
+      locale: 'fr',
+    });
+    expect(guidance.ok).toBe(true);
+    if (!guidance.ok) return;
+    expect(guidance.interaction_hint).toMatch(/Accès ouvert/i);
+    expect(guidance.interaction_hint).toMatch(/Demande d'invitation/i);
+    expect(guidance.interaction_hint).toMatch(/Basé sur des tokens/i);
+    expect(guidance.interaction_hint).not.toMatch(/Open Access/i);
+  });
+
   it('fast-paths to prepare when entry method is accepted — no title re-ask', () => {
     const guidance = buildGuidanceResponse({
       proposalType: 'change_entry_method',

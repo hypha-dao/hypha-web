@@ -13,7 +13,9 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
 import { buildOnboardingLocaleDirective } from './onboarding-locale';
+import { resolveChatLocale } from './locale-ui-labels';
 import {
   buildEcosystemExecutePhaseDirective,
   hasPendingEcosystemChildSpaces,
@@ -1031,6 +1033,7 @@ export type ChatStreamCallbacks = {
   conversationContext?: ChatRequestPayload['conversationContext'];
   discoveryMode?: ChatRequestPayload['discoveryMode'];
   activeProposalFormSnapshot?: ChatRequestPayload['activeProposalFormSnapshot'];
+  locale?: ChatRequestPayload['locale'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
 };
@@ -1356,6 +1359,7 @@ export async function createChatStreamResult(
     activeProposalFormSnapshot,
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
+    locale,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
@@ -1365,6 +1369,10 @@ export async function createChatStreamResult(
     conversationContext,
     lastUserText,
   );
+  const chatLocale = resolveChatLocale({
+    locale,
+    conversationContext: normalizedConversationContext,
+  });
   const tools = createChatTools(
     authToken,
     requestUrlForSessionMatrix,
@@ -1376,6 +1384,7 @@ export async function createChatStreamResult(
     lastUserText,
     recentUserTexts,
     activeProposalFormSnapshot,
+    chatLocale,
   );
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
@@ -1395,6 +1404,12 @@ export async function createChatStreamResult(
   const onboardingLocaleDirective =
     normalizedConversationContext?.mode === 'onboarding_setup'
       ? buildOnboardingLocaleDirective(normalizedConversationContext.locale)
+      : buildOnboardingLocaleDirective(
+          chatLocale !== 'en' ? chatLocale : undefined,
+        );
+  const localizedEntryMethodGuidelines =
+    chatLocale !== 'en'
+      ? buildOnboardingEntryMethodGuidelines(chatLocale)
       : null;
   const ecosystemExecuteDirective =
     normalizedConversationContext?.mode === 'onboarding_setup'
@@ -1471,11 +1486,19 @@ export async function createChatStreamResult(
           voiceDiscoveryActive
             ? `\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
-        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}`
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+          localizedEntryMethodGuidelines
+            ? `\n${localizedEntryMethodGuidelines}`
+            : ''
+        }`
       : voiceDiscoveryActive && spaceSlug?.trim()
       ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
           proposalAcceptanceDirective
             ? `\n\n${proposalAcceptanceDirective}`
+            : ''
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+          localizedEntryMethodGuidelines
+            ? `\n${localizedEntryMethodGuidelines}`
             : ''
         }`
       : `${effectiveSystemPrompt}${
@@ -1483,6 +1506,10 @@ export async function createChatStreamResult(
         }${
           proposalAcceptanceDirective
             ? `\n\n${proposalAcceptanceDirective}`
+            : ''
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+          localizedEntryMethodGuidelines
+            ? `\n${localizedEntryMethodGuidelines}`
             : ''
         }`;
 

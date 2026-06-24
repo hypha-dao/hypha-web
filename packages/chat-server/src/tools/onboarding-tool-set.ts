@@ -26,6 +26,7 @@ export type OnboardingToolConfig = {
   featureGates?: OnboardingToolFeatureGates;
   lastUserTextFromRequest?: string | null;
   recentUserTextsFromRequest?: string[];
+  locale?: string | null;
 };
 
 function withInjectedOnboardingContext<T extends Record<string, unknown>>(
@@ -428,6 +429,7 @@ export function createOnboardingToolSet(
     featureGates,
     lastUserTextFromRequest,
     recentUserTextsFromRequest,
+    locale,
   } = config;
 
   const {
@@ -457,7 +459,7 @@ export function createOnboardingToolSet(
     createCreateSpaceSetupProposalTool(authToken);
   const createEcosystemSpaceTool = createCreateEcosystemSpaceTool(authToken);
   const generateEcosystemBlueprintTool = createGenerateEcosystemBlueprintTool();
-  const onboardingGuidanceTool = createOnboardingGuidanceTool();
+  const onboardingGuidanceTool = createOnboardingGuidanceTool(locale);
   const onboardingGuidanceWithContext = {
     ...onboardingGuidanceTool,
     execute: async (args: unknown) => {

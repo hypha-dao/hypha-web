@@ -1057,6 +1057,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         discoveryMode:
           discoveryMode === 'voice_interview' ? discoveryMode : undefined,
         activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
+        locale: lang,
       });
       return { body, headers: hdrs };
     },
@@ -1066,6 +1067,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       getAccessToken,
       isOnboardingPath,
       isOnboardingSetup,
+      lang,
       onboardingContext,
       pathname,
       spaceSlug,
