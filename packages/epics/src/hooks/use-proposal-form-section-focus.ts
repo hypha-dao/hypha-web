@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   clearProposalFormFocus,
+  isProposalAiWalkthroughActive,
   PROPOSAL_FORM_FOCUS_UPDATED_EVENT,
   readProposalFormFocus,
   scrollProposalFormSectionIntoView,
@@ -11,13 +12,20 @@ import {
 const PROPOSAL_OVERLAY_PANEL_ID = 'proposal-overlay-panel';
 
 /**
- * Scrolls to and briefly highlights a proposal form section after AI navigation.
- * Forms should mark sections with `data-proposal-section="<id>"`.
+ * Scrolls to and briefly highlights a proposal form section during AI walkthrough.
+ * No-op for manual proposal creation. Forms mark sections with `data-proposal-section`.
  */
-export function useProposalFormSectionFocus(enabled = true): void {
+export function useProposalFormSectionFocus(): void {
   const [focusTick, setFocusTick] = React.useState(0);
   const lastAutoFocusedSectionRef = React.useRef<string | null>(null);
   const userAdjustedScrollRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isProposalAiWalkthroughActive()) {
+      clearProposalFormFocus();
+    }
+  }, []);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -32,6 +40,8 @@ export function useProposalFormSectionFocus(enabled = true): void {
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!isProposalAiWalkthroughActive()) return;
+
     const panel = document.getElementById(PROPOSAL_OVERLAY_PANEL_ID);
     if (!panel) return;
 
@@ -61,7 +71,8 @@ export function useProposalFormSectionFocus(enabled = true): void {
   }, [focusTick]);
 
   React.useEffect(() => {
-    if (!enabled || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
+    if (!isProposalAiWalkthroughActive()) return;
 
     const focus = readProposalFormFocus();
     if (!focus?.focusSection && !focus?.focusField) return;
@@ -106,5 +117,5 @@ export function useProposalFormSectionFocus(enabled = true): void {
     }, 350);
 
     return () => window.clearTimeout(timer);
-  }, [enabled, focusTick]);
+  }, [focusTick]);
 }

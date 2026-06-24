@@ -1,9 +1,34 @@
 'use client';
 
+import { readOnboardingConversationContext } from './ai-onboarding-context';
 import { PROPOSAL_FORM_FOCUS_KEY } from '../utils/resubmit-proposal-template';
+
+export const PROPOSAL_AI_WALKTHROUGH_KEY = 'proposalAiWalkthrough';
 
 export const PROPOSAL_FORM_FOCUS_UPDATED_EVENT =
   'hypha:proposal-form-focus-updated';
+
+/** Mark that the open proposal form is being AI-walkthrough guided (not manual). */
+export function enableProposalAiWalkthrough(): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(PROPOSAL_AI_WALKTHROUGH_KEY, 'true');
+}
+
+/** End AI walkthrough scrolling and clear any pending section focus. */
+export function disableProposalAiWalkthrough(): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(PROPOSAL_AI_WALKTHROUGH_KEY);
+  clearProposalFormFocus();
+}
+
+export function isProposalAiWalkthroughActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (sessionStorage.getItem(PROPOSAL_AI_WALKTHROUGH_KEY) === 'true') {
+    return true;
+  }
+  const context = readOnboardingConversationContext();
+  return Boolean(context?.activeGovernanceProposal?.formOpen);
+}
 
 export function writeProposalFormFocus(args: {
   focusField?: string;

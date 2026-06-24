@@ -17,6 +17,11 @@ import {
   isLegacyGenericResubmitSegment,
 } from '../utils/resubmit-proposal-template';
 import { RESUBMIT_PROPOSAL_UPDATED_EVENT } from '../common/governance-proposal-navigation';
+import {
+  disableProposalAiWalkthrough,
+  isProposalAiWalkthroughActive,
+} from '../common/proposal-form-focus';
+import { isProposalCreateFormPath } from '../common/proposal-form-navigation';
 
 /** Session payload written by resubmit / read by `useResubmitProposalData`. */
 export type ResubmitProposalSessionAttachment =
@@ -118,6 +123,12 @@ export const useResubmitProposalData = <
 ) => {
   const [resubmitKey, setResubmitKey] = React.useState(0);
   const pathname = usePathname();
+
+  React.useEffect(() => {
+    if (!isProposalCreateFormPath(pathname)) {
+      disableProposalAiWalkthrough();
+    }
+  }, [pathname]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -875,7 +886,11 @@ export const useResubmitProposalData = <
 
         setResubmitKey((prev) => prev + 1);
 
-        if (overlayPanel && preservedScrollTop > 0) {
+        if (
+          overlayPanel &&
+          preservedScrollTop > 0 &&
+          !isProposalAiWalkthroughActive()
+        ) {
           requestAnimationFrame(() => {
             overlayPanel.scrollTop = preservedScrollTop;
           });

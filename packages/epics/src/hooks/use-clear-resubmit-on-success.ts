@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { disableProposalAiWalkthrough } from '../common/proposal-form-focus';
 import { clearResubmitProposalSessionStorage } from './use-resubmit-proposal-data';
 
 /**
@@ -12,6 +13,7 @@ export function useClearResubmitOnSuccess(isSuccess: boolean): void {
   React.useEffect(() => {
     if (isSuccess) {
       clearResubmitProposalSessionStorage();
+      disableProposalAiWalkthrough();
     }
   }, [isSuccess]);
 }

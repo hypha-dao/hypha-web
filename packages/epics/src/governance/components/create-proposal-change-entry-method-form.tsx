@@ -129,7 +129,7 @@ export const CreateProposalChangeEntryMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  useProposalFormSectionFocus(true);
+  useProposalFormSectionFocus();
   const { resubmitKey } = useResubmitProposalData(
     form,
     spaceId,

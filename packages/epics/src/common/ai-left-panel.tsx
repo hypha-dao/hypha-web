@@ -192,7 +192,10 @@ import {
 } from './space-voice-session-context';
 import { findLatestAiPanelNavigationTarget } from './ai-tool-navigation';
 import { writeGovernanceProposalResubmitPayload } from './governance-proposal-navigation';
-import { writeProposalFormFocusIfChanged } from './proposal-form-focus';
+import {
+  writeProposalFormFocusIfChanged,
+  enableProposalAiWalkthrough,
+} from './proposal-form-focus';
 import {
   isProposalCreateFormPath,
   isSameAppPath,
@@ -1297,6 +1300,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     lastAutoNavigationKeyRef.current = navigationKey;
 
     const alreadyOnTarget = isSameAppPath(href, pathname);
+
+    if (
+      navigationTarget.resubmitPayload ||
+      navigationTarget.focusField ||
+      navigationTarget.focusSection
+    ) {
+      enableProposalAiWalkthrough();
+    }
 
     if (navigationTarget.resubmitPayload) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
