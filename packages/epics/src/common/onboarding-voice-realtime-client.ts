@@ -55,6 +55,24 @@ export type RealtimeVoiceConnection = {
 
 const REALTIME_SPEAK_TEXT_MAX_CHARS = 4000;
 
+function buildRealtimeSpeakInstructions(text: string): string {
+  return [
+    'You are a voice output relay only. Do not call tools or add new information.',
+    'Speak the following assistant reply aloud in a warm, natural conversational tone.',
+    'Do not add, remove, or change words. Do not ask follow-up questions.',
+    '',
+    text,
+  ].join('\n');
+}
+
+export function setRealtimeRemoteAudioMuted(
+  connection: RealtimeVoiceConnection,
+  muted: boolean,
+): void {
+  connection.remoteAudio.muted = muted;
+  connection.remoteAudio.volume = muted ? 0 : 1;
+}
+
 /** Play assistant chat text through the Realtime voice (WebRTC audio), not browser TTS. */
 export function speakAssistantTextViaRealtime(
   connection: RealtimeVoiceConnection,
@@ -65,21 +83,20 @@ export function speakAssistantTextViaRealtime(
     return false;
   }
 
+  const instructions = buildRealtimeSpeakInstructions(speakable);
+
   connection.sendEvent({ type: 'response.cancel' });
+  // GA Realtime accepts output_modalities; keep modalities for older preview models.
   connection.sendEvent({
     type: 'response.create',
     response: {
+      output_modalities: ['audio'],
       modalities: ['audio', 'text'],
-      instructions: [
-        'You are a voice output relay only. Do not call tools or add new information.',
-        'Speak the following assistant reply aloud in a warm, natural conversational tone.',
-        'Do not add, remove, or change words. Do not ask follow-up questions.',
-        '',
-        speakable,
-      ].join('\n'),
+      instructions,
     },
   });
 
+  setRealtimeRemoteAudioMuted(connection, false);
   void connection.remoteAudio.play().catch(() => {
     // Autoplay may be blocked until user gesture; WebRTC track usually still plays.
   });
@@ -157,6 +174,10 @@ export async function connectOpenAiRealtimeCall(params: {
   const remoteAudio = document.createElement('audio');
   remoteAudio.autoplay = true;
   remoteAudio.setAttribute('playsinline', 'true');
+  remoteAudio.muted = true;
+  remoteAudio.volume = 0;
+  remoteAudio.style.display = 'none';
+  document.body.appendChild(remoteAudio);
 
   peerConnection.ontrack = (event) => {
     const [stream] = event.streams;
@@ -261,6 +282,7 @@ export async function connectOpenAiRealtimeCall(params: {
       }
     }
     remoteAudio.srcObject = null;
+    remoteAudio.remove();
   };
 
   return {
