@@ -920,10 +920,13 @@ export const SpaceForm = ({
         <FormLabel>{tSpaces('activationMode')}</FormLabel>
         <div className="flex flex-col gap-2">
           <Card
-            className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30': isSandbox,
-              'hover:border-accent-5': !isSandbox,
-            })}
+            className={clsx(
+              'flex p-6 cursor-pointer space-x-4 items-center border-2',
+              {
+                'border-accent-9': isSandbox,
+                'hover:border-accent-5': !isSandbox,
+              },
+            )}
             onClick={toggleSandbox}
           >
             <div className="flex flex-col">
@@ -936,10 +939,13 @@ export const SpaceForm = ({
             </div>
           </Card>
           <Card
-            className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30': isDemo,
-              'hover:border-accent-5': !isDemo,
-            })}
+            className={clsx(
+              'flex p-6 cursor-pointer space-x-4 items-center border-2',
+              {
+                'border-accent-9': isDemo,
+                'hover:border-accent-5': !isDemo,
+              },
+            )}
             onClick={toggleDemo}
           >
             <div className="flex flex-col">
@@ -950,10 +956,13 @@ export const SpaceForm = ({
             </div>
           </Card>
           <Card
-            className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30': isLive,
-              'hover:border-accent-5': !isLive,
-            })}
+            className={clsx(
+              'flex p-6 cursor-pointer space-x-4 items-center border-2',
+              {
+                'border-accent-9': isLive,
+                'hover:border-accent-5': !isLive,
+              },
+            )}
             onClick={toggleLive}
           >
             <div className="flex flex-col">
@@ -966,10 +975,9 @@ export const SpaceForm = ({
           {label === 'configure' && (
             <Card
               className={clsx(
-                'flex p-6 cursor-pointer space-x-4 items-center',
+                'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30':
-                    isArchived,
+                  'border-accent-9': isArchived,
                   'hover:border-accent-5': !isArchived,
                 },
               )}
