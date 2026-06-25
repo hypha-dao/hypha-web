@@ -287,8 +287,13 @@ function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   if (typeof fn !== 'function') return;
   try {
     fn.call(gc);
-  } catch {
-    /* ignore */
+  } catch (err) {
+    if (isMatrixCallDebugEnabled()) {
+      console.warn(
+        '[hypha.group_call] nudgeGroupCallPlaceOutgoing failed',
+        err,
+      );
+    }
   }
 }
 
@@ -2074,6 +2079,9 @@ export function useSpaceGroupCall(
         /** Local/remote feeds can appear after getUserMedia — re-publish and nudge peers. */
         nudgeGroupCallPlaceOutgoing(gc);
         scheduleLocalMediaBootstrap(gc);
+        if (isMatrixCallDebugEnabled()) {
+          logDevMediaSnapshot();
+        }
       };
       gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
@@ -2131,6 +2139,7 @@ export function useSpaceGroupCall(
       evalRemoteMediaStall,
       syncLocalScreenshareState,
       reconcileLocalScreenshareStop,
+      logDevMediaSnapshot,
     ],
   );
 
