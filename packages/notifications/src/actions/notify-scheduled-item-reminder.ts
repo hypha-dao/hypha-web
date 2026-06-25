@@ -1,9 +1,11 @@
+import 'server-only';
+
 import { format } from 'date-fns';
 import {
   buildScheduledCallJoinPath,
   toAbsoluteAppUrl,
   type ScheduledItem,
-} from '@hypha-platform/core/server';
+} from '@hypha-platform/core/client';
 import { sendEmailNotifications, sendPushNotifications } from '../mutations';
 
 export type NotifyScheduledItemReminderInput = {
