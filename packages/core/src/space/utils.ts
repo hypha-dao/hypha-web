@@ -1,4 +1,13 @@
 /**
+ * True when the space carries the explicit archived flag in the database.
+ */
+export function isSpaceExplicitlyArchived(space: {
+  flags?: string[];
+}): boolean {
+  return space.flags?.includes('archived') === true;
+}
+
+/**
  * Determines if a space should be considered archived.
  * A space is archived if:
  * - It has the 'archived' flag, OR
@@ -9,7 +18,7 @@ export function isSpaceArchived(space: {
   memberCount?: number;
 }): boolean {
   return (
-    space.flags?.includes('archived') === true ||
+    isSpaceExplicitlyArchived(space) ||
     (space.memberCount !== undefined && space.memberCount === 0)
   );
 }

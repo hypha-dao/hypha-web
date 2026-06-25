@@ -1,11 +1,15 @@
 'use client';
 
-import { Empty, SpaceCardContainer } from '@hypha-platform/epics';
+import {
+  Empty,
+  SpaceCardContainer,
+  CreateSpaceButton,
+} from '@hypha-platform/epics';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/server';
 import { Button } from '@hypha-platform/ui';
-import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
+import { GlobeIcon } from '@radix-ui/react-icons';
 import { useSpaceCardList } from '../hooks/use-space-card-list';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { Text } from '@radix-ui/themes';
@@ -33,9 +37,8 @@ export function SpaceCardList({
     spaces,
     pageSize,
   });
-  const { isAuthenticated } = useAuthentication();
   const tCommon = useTranslations('Common');
-  const tSpaces = useTranslations('Spaces');
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <>
@@ -74,17 +77,11 @@ export function SpaceCardList({
                   {tCommon('exploreSpaces')}
                 </Button>
               </Link>
-              <Link
-                className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-                title={!isAuthenticated ? tCommon('signIn') : ''}
-                href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
-                scroll={false}
-              >
-                <Button disabled={!isAuthenticated} className="gap-2">
-                  <PlusIcon />
-                  {tSpaces('createSpace')}
-                </Button>
-              </Link>
+              <CreateSpaceButton
+                lang={lang}
+                isAuthenticated={isAuthenticated}
+                buttonClassName="gap-2"
+              />
             </div>
           </div>
         </Empty>

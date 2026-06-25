@@ -237,7 +237,7 @@ export const ChangeVotingMethodPlugin = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5" data-proposal-section="quorum_unity">
         <Label>{tAgreementFlow('plugins.quorumAndUnity.title')}</Label>
         <span className="text-2 text-neutral-11">
           {tAgreementFlow('plugins.quorumAndUnity.description')}
@@ -247,7 +247,7 @@ export const ChangeVotingMethodPlugin = ({
 
       <Separator />
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5" data-proposal-section="voting">
         <Label>{tAgreementFlow('plugins.quorumAndUnity.votingPeriod')}</Label>
 
         <FormField

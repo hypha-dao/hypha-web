@@ -127,7 +127,10 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
-import { buildHyphaChatMentionDeepLinkUrl } from './human-chat-panel/human-chat-message-link';
+import {
+  buildHyphaChatMentionDeepLinkUrl,
+  setSignalSearchParam,
+} from './human-chat-panel/human-chat-message-link';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 
@@ -1426,6 +1429,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [signalDeepLinkNotice, setSignalDeepLinkNotice] = useState<
     string | null
   >(null);
+  const signalDeepLinkEpochRef = useRef(0);
 
   const pendingCallStartNotifyRef = useRef(false);
   const callStartedNotifyRoomRef = useRef<string | null>(null);
@@ -2471,6 +2475,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
+  const prevChatModeRef = useRef(mode);
+  const lastHumanChatSpaceSlugRef = useRef(spaceSlug?.trim() || null);
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
@@ -2478,6 +2484,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, closeCoherenceChat]);
+
+  // Reset human chat when navigating to a different space (picker, recently visited, etc.)
+  useEffect(() => {
+    const nextSlug = spaceSlug?.trim() || null;
+    const prevSlug = lastHumanChatSpaceSlugRef.current;
+    if (prevSlug === nextSlug) return;
+    lastHumanChatSpaceSlugRef.current = nextSlug;
+    if (!prevSlug) return;
+
+    closeCoherenceChat();
+    setSignalDeepLinkNotice(null);
+    signalDeepLinkEpochRef.current += 1;
+
+    if (searchParams?.get('signal')?.trim()) {
+      const cleaned = setSignalSearchParam(
+        pathname,
+        searchParams?.toString() ?? '',
+        null,
+      );
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(window.history.state, '', cleaned);
+      }
+      router.replace(cleaned, { scroll: false });
+    }
+
+    resetChatStateOnAuthDrop();
+  }, [
+    spaceSlug,
+    closeCoherenceChat,
+    pathname,
+    router,
+    searchParams,
+    resetChatStateOnAuthDrop,
+  ]);
 
   useEffect(() => {
     hasLoadedCoherenceMessagesRef.current = false;
@@ -3489,26 +3529,101 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [mode, roomId, pathname, router, searchParams, openHumanChatPanel]);
 
   useEffect(() => {
-    if (mode !== 'space' || !spaceSlug?.trim()) return;
+    const prevMode = prevChatModeRef.current;
+    prevChatModeRef.current = mode;
+
+    if (mode === 'coherence' && coherenceSlug?.trim()) {
+      const slug = coherenceSlug.trim();
+      const currentSpace = spaceSlug?.trim();
+      if (coherenceRoomId?.trim() && currentSpace) {
+        const session = readRoomToCoherenceSession(coherenceRoomId);
+        if (session.spaceSlug && session.spaceSlug !== currentSpace) {
+          if (searchParams?.get('signal')?.trim()) {
+            signalDeepLinkEpochRef.current += 1;
+            const cleaned = setSignalSearchParam(
+              pathname,
+              searchParams?.toString() ?? '',
+              null,
+            );
+            if (typeof window !== 'undefined') {
+              window.history.replaceState(window.history.state, '', cleaned);
+            }
+            router.replace(cleaned, { scroll: false });
+          }
+          return;
+        }
+      }
+      if (searchParams?.get('signal')?.trim() === slug) return;
+      router.replace(
+        setSignalSearchParam(pathname, searchParams?.toString() ?? '', slug),
+        { scroll: false },
+      );
+      return;
+    }
+
+    if (
+      prevMode === 'coherence' &&
+      mode === 'space' &&
+      searchParams?.get('signal')?.trim()
+    ) {
+      router.replace(
+        setSignalSearchParam(pathname, searchParams?.toString() ?? '', null),
+        { scroll: false },
+      );
+    }
+  }, [
+    coherenceRoomId,
+    coherenceSlug,
+    mode,
+    pathname,
+    router,
+    searchParams,
+    spaceSlug,
+  ]);
+
+  useEffect(() => {
+    if (!searchParams?.get('signal')?.trim()) {
+      setSignalDeepLinkNotice(null);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!spaceSlug?.trim()) return;
     const qpSignal = searchParams?.get('signal')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
     if (!qpSignal) return;
 
-    let cancelled = false;
+    if (
+      mode === 'coherence' &&
+      coherenceSlug?.trim() === qpSignal &&
+      coherenceRoomId?.trim()
+    ) {
+      return;
+    }
 
-    const stripSignalQueryFromUrl = () => {
-      const next = new URLSearchParams(searchParams?.toString() ?? '');
-      next.delete('signal');
-      next.delete('joinCall');
-      if (qpMsg) next.delete('msg');
-      const qs = next.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    if (mode !== 'space') return;
+
+    let cancelled = false;
+    const epochAtStart = signalDeepLinkEpochRef.current;
+    const expectedSpaceSlug = spaceSlug.trim();
+
+    const stripInvalidSignalFromUrl = () => {
+      signalDeepLinkEpochRef.current += 1;
+      const cleaned = setSignalSearchParam(
+        pathname,
+        searchParams?.toString() ?? '',
+        null,
+      );
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(window.history.state, '', cleaned);
+      }
+      router.replace(cleaned, { scroll: false });
     };
 
     void (async () => {
       const result = await resolveSignalDeepLinkWithRetry({
         signalId: qpSignal,
-        expectedSpaceSlug: spaceSlug.trim(),
+        expectedSpaceSlug,
         getAuthToken: () => authTokenRef.current,
         fetchSignal: (signalId, token) => {
           const headers: HeadersInit = {};
@@ -3519,6 +3634,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         },
       });
       if (cancelled) return;
+      if (epochAtStart !== signalDeepLinkEpochRef.current) return;
+      if (spaceSlug?.trim() !== expectedSpaceSlug) return;
+      if (!searchParams?.get('signal')?.trim()) return;
 
       if (!result.ok) {
         const messageKey =
@@ -3528,7 +3646,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ? 'signalDeepLinkNotFound'
             : 'signalDeepLinkNetworkError';
         setSignalDeepLinkNotice(t(messageKey));
-        stripSignalQueryFromUrl();
+        stripInvalidSignalFromUrl();
         return;
       }
 
@@ -3546,7 +3664,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       openHumanChatPanel();
       setActiveTab('chat');
       if (qpMsg) setScrollToEventId(qpMsg);
-      stripSignalQueryFromUrl();
     })();
 
     return () => {
@@ -3555,6 +3672,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     mode,
     spaceSlug,
+    coherenceSlug,
+    coherenceRoomId,
     pathname,
     router,
     searchParams,

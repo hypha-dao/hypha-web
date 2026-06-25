@@ -57,9 +57,8 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   if (isLoading) {
     return (
       <Button
-        variant="default"
-        size="default"
-        colorVariant="accent"
+        variant="outline"
+        colorVariant="neutral"
         className="w-full md:w-auto"
         disabled={true}
         title={t('visibleSpaces.loading')}
@@ -89,9 +88,8 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
       title={t('visibleSpaces.addSpace')}
     >
       <Button
-        variant="default"
-        size="default"
-        colorVariant="accent"
+        variant="outline"
+        colorVariant="neutral"
         className="w-full md:w-auto"
       >
         <PlusIcon className="w-4 h-4" />

@@ -10,6 +10,7 @@
     "dev": "tsx watch src/main.ts"
   },
   "dependencies": {
+    "@hypha-platform/chat-server": "workspace:*",
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.12.0",

@@ -35,7 +35,7 @@ export function createUpdateSpaceSettingsTool(
 ) {
   return {
     description:
-      'Write: update top-level space settings (title, description, links, flags) for onboarding setup. Requires explicit user confirmation token in the latest user turn.',
+      'Write: update database-only space metadata (title, description, activation flags). Does NOT change on-chain discoverability, activity access, join method, treasury, or membership. For privacy/transparency changes on existing spaces, use create_space_setup_proposal with proposal_type space_transparency instead.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -122,8 +122,23 @@ export function createUpdateSpaceSettingsTool(
         dedupeKey: `update_space:${updated.slug}`,
       });
 
+      const changedFields: string[] = [];
+      if (data.title !== undefined) changedFields.push('title');
+      if (data.description !== undefined) changedFields.push('description');
+      if (data.links !== undefined) changedFields.push('links');
+      if (data.flags !== undefined) changedFields.push('flags');
+
       return {
         ok: true,
+        scope: 'database_metadata_only',
+        changed_fields: changedFields,
+        cannot_change_via_this_tool: [
+          'discoverability',
+          'activity_access',
+          'join_method',
+          'treasury',
+          'membership',
+        ],
         space: {
           id: updated.id,
           slug: updated.slug,

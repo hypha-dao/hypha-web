@@ -610,6 +610,7 @@ export function HumanChatPanelChatBar({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   /** When true, `MediaRecorder` stop should add an audio draft; when false (dictation), discard blob. */
   const voiceAsAttachmentRef = useRef(false);
   /** When true, drop the next voice blob from MediaRecorder `onstop` (user sent text instead). */
@@ -2124,9 +2125,9 @@ export function HumanChatPanelChatBar({
         </div>
 
         <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
-          {voiceError && (
+          {(voiceError || attachError) && (
             <p role="alert" className="text-xs text-destructive">
-              {voiceError}
+              {voiceError ?? attachError}
             </p>
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
@@ -2186,8 +2187,17 @@ export function HumanChatPanelChatBar({
                     </DropdownMenuItem>
                     <ComposerAttachGoogleDriveMenuItem
                       disabled={!canAttachDrafts}
-                      onPickerOpen={() => setAttachMenuOpen(false)}
-                      onFilesPicked={(files) => pushDrafts(files, 'file')}
+                      onPickerOpen={() => {
+                        setAttachMenuOpen(false);
+                        setAttachError(null);
+                      }}
+                      onError={() =>
+                        setAttachError(t('composerAttachGoogleDriveError'))
+                      }
+                      onFilesPicked={(files) => {
+                        setAttachError(null);
+                        pushDrafts(files, 'file');
+                      }}
                     />
                   </DropdownMenuContent>
                 </DropdownMenu>

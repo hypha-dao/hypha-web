@@ -70,7 +70,7 @@ function dataURLtoFile(dataUrl: string, filename: string) {
 export const UploadLeadImage = ({
   onChange,
   defaultImage,
-  maxFileSize = 4 * 1024 * 1024,
+  maxFileSize = 16 * 1024 * 1024,
   accept,
   aspectRatio = 762 / 270,
   uploadText,
@@ -238,8 +238,8 @@ export const UploadLeadImage = ({
         className={clsx(
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
-          'rounded-xl bg-accent-2',
-          showEmptyPlaceholder && 'border border-neutral-11 border-dashed',
+          'rounded-xl bg-neutral-3 text-muted-foreground',
+          showEmptyPlaceholder && 'border border-dashed border-neutral-7',
           className,
         )}
       >
@@ -256,7 +256,7 @@ export const UploadLeadImage = ({
                 uploadText
               ) : (
                 <>
-                  <span className="text-accent-11">Upload</span> an image
+                  <span className="text-foreground">Upload</span> an image
                 </>
               )}
             </span>

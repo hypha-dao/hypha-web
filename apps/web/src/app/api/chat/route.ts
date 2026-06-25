@@ -100,7 +100,11 @@ export async function POST(req: Request) {
 
   const messages: ChatRequestPayload['messages'] = parsed.data.messages;
   const spaceSlug = parsed.data.spaceSlug;
+  const activeSpaceTitle = parsed.data.activeSpaceTitle;
   const conversationContext = parsed.data.conversationContext;
+  const discoveryMode = parsed.data.discoveryMode;
+  const activeProposalFormSnapshot = parsed.data.activeProposalFormSnapshot;
+  const locale = parsed.data.locale;
 
   if (spaceSlug?.trim()) {
     const interactionAuth = await authorizeSpacePanelInteraction({
@@ -127,7 +131,11 @@ export async function POST(req: Request) {
     result = await createChatStreamResult(messages, spaceSlug, authToken, {
       debugRequestId,
       requestUrlForSessionMatrix: req.url,
+      activeSpaceTitle: activeSpaceTitle ?? null,
       conversationContext,
+      discoveryMode,
+      activeProposalFormSnapshot,
+      locale,
       onboardingWriteToolsEnabled,
       ecosystemAutomationEnabled,
     });
@@ -150,14 +158,25 @@ export async function POST(req: Request) {
     });
   }
 
-  // Native UI stream: forwards tool rounds, text/reasoning deltas, and errors per AI SDK v6.
-  // Pass through the client message list + stable IDs so the stream `start` chunk includes
-  // `messageId` (useChat / DefaultChatTransport expect this for assistant message correlation).
-  return result.toUIMessageStreamResponse({
-    headers: {
-      'x-hypha-chat-debug-id': debugRequestId,
-    },
-    originalMessages: messages as UIMessage[],
-    generateMessageId: createIdGenerator({ prefix: 'msg', size: 12 }),
-  });
+  try {
+    return result.toUIMessageStreamResponse({
+      headers: {
+        'x-hypha-chat-debug-id': debugRequestId,
+      },
+      originalMessages: messages as UIMessage[],
+      generateMessageId: createIdGenerator({ prefix: 'msg', size: 12 }),
+    });
+  } catch (error) {
+    console.error('[chat][route][stream-response-error]', {
+      debugRequestId,
+      message: error instanceof Error ? error.message : String(error),
+      ...(OPENROUTER_DEBUG && { error }),
+    });
+    return createChatFailureStreamResponse({
+      debugRequestId,
+      errorType: 'stream_response_error',
+      message:
+        'I hit an issue while preparing the response. Please retry in a few seconds.',
+    });
+  }
 }

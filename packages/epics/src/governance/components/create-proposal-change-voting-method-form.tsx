@@ -13,17 +13,19 @@ import {
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useConfig } from 'wagmi';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import {
   useClearResubmitOnSuccess,
+  useProposalFormSectionFocus,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
-import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+import { getResubmitPayloadForTemplate } from '../../utils/resubmit-proposal-template';
 
 const VOTING_RESUBMIT_SEGMENT = 'change-voting-method';
 
@@ -46,6 +48,7 @@ export const CreateProposalChangeVotingMethodForm = ({
 }: CreateProposalChangeVotingMethodFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -70,9 +73,15 @@ export const CreateProposalChangeVotingMethodForm = ({
   });
 
   /** Re-read each render so first paint after sessionStorage write still skips live sync. */
-  const skipLiveVotingSyncForResubmit = hasResubmitDataForTemplate(
+  const resubmitPayload = getResubmitPayloadForTemplate(
     VOTING_RESUBMIT_SEGMENT,
   );
+  const skipVotingMethodChainSync =
+    resubmitPayload?.votingMethod !== undefined &&
+    resubmitPayload.votingMethod !== null;
+  const skipQuorumUnityChainSync =
+    resubmitPayload?.quorumAndUnity !== undefined &&
+    resubmitPayload.quorumAndUnity !== null;
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -99,6 +108,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  useProposalFormSectionFocus();
   const { resubmitKey } = useResubmitProposalData(
     form,
     spaceId,
@@ -107,6 +117,14 @@ export const CreateProposalChangeVotingMethodForm = ({
   );
 
   useClearResubmitOnSuccess(progress === 100 && !isError);
+
+  const hasNavigatedAfterSuccessRef = React.useRef(false);
+  React.useEffect(() => {
+    if (progress < 100 || isError || !successfulUrl) return;
+    if (hasNavigatedAfterSuccessRef.current) return;
+    hasNavigatedAfterSuccessRef.current = true;
+    router.push(successfulUrl);
+  }, [progress, isError, successfulUrl, router]);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
@@ -122,24 +140,26 @@ export const CreateProposalChangeVotingMethodForm = ({
   };
 
   React.useEffect(() => {
-    if (skipLiveVotingSyncForResubmit) {
-      return;
-    }
     if (spaceDetails && !isLoading) {
       const quorum = Number(spaceDetails.quorum ?? 0);
       const unity = Number(spaceDetails.unity ?? 0);
-      const votingMethod = getVotingMethod(
-        Number(spaceDetails.votingPowerSource ?? 0),
-      );
 
-      form.setValue('quorumAndUnity.quorum', quorum);
-      form.setValue('quorumAndUnity.unity', unity);
-      form.setValue('votingMethod', votingMethod);
+      if (!skipQuorumUnityChainSync) {
+        form.setValue('quorumAndUnity.quorum', quorum);
+        form.setValue('quorumAndUnity.unity', unity);
+      }
 
-      if (votingMethod === VOTING_METHOD_TYPES[1]) {
-        form.setValue('token', votingPowerToken);
-      } else if (votingMethod === VOTING_METHOD_TYPES[3]) {
-        form.setValue('token', voicePowerToken);
+      if (!skipVotingMethodChainSync) {
+        const votingMethod = getVotingMethod(
+          Number(spaceDetails.votingPowerSource ?? 0),
+        );
+        form.setValue('votingMethod', votingMethod);
+
+        if (votingMethod === VOTING_METHOD_TYPES[1]) {
+          form.setValue('token', votingPowerToken);
+        } else if (votingMethod === VOTING_METHOD_TYPES[3]) {
+          form.setValue('token', voicePowerToken);
+        }
       }
     }
   }, [
@@ -148,11 +168,13 @@ export const CreateProposalChangeVotingMethodForm = ({
     votingPowerToken,
     voicePowerToken,
     form,
-    skipLiveVotingSyncForResubmit,
+    skipVotingMethodChainSync,
+    skipQuorumUnityChainSync,
   ]);
 
   const handleCreate = async (data: FormValues) => {
-    if (!web3SpaceId || !data.votingMethod) return;
+    if (!web3SpaceId || !data.votingMethod || isPending || progress === 100)
+      return;
 
     try {
       await createChangeVotingMethod({
@@ -176,6 +198,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   };
 
   const isButtonDisabled = quorum === 0 && unity === 0;
+  const isSubmitLocked = isPending || isLoading || progress === 100;
 
   return (
     <SpaceLoadingBackdrop
@@ -201,30 +224,37 @@ export const CreateProposalChangeVotingMethodForm = ({
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >
-          <CreateAgreementBaseFields
-            key={resubmitKey}
-            creator={{
-              avatar: person?.avatarUrl || '',
-              name: person?.name || '',
-              surname: person?.surname || '',
-            }}
-            successfulUrl={successfulUrl}
-            closeUrl={successfulUrl}
-            backUrl={backUrl}
-            backLabel={tSpaces('backToSettings')}
-            isLoading={false}
-            label={tAgreementFlow('labels.votingMethod')}
-            progress={progress}
-          />
-          {React.isValidElement(plugin)
-            ? React.cloneElement(
-                plugin as React.ReactElement<{ resubmitKey?: number }>,
-                { resubmitKey },
-              )
-            : plugin}
+          <div data-proposal-section="basics">
+            <CreateAgreementBaseFields
+              key={resubmitKey}
+              creator={{
+                avatar: person?.avatarUrl || '',
+                name: person?.name || '',
+                surname: person?.surname || '',
+              }}
+              successfulUrl={successfulUrl}
+              closeUrl={successfulUrl}
+              backUrl={backUrl}
+              backLabel={tSpaces('backToSettings')}
+              isLoading={false}
+              label={tAgreementFlow('labels.votingMethod')}
+              progress={progress}
+            />
+          </div>
+          <div data-proposal-section="voting_method">
+            {React.isValidElement(plugin)
+              ? React.cloneElement(
+                  plugin as React.ReactElement<{ resubmitKey?: number }>,
+                  { resubmitKey },
+                )
+              : plugin}
+          </div>
           <Separator />
-          <div className="flex justify-end w-full">
-            <Button type="submit" disabled={isButtonDisabled}>
+          <div
+            className="flex justify-end w-full"
+            data-proposal-section="publish"
+          >
+            <Button type="submit" disabled={isButtonDisabled || isSubmitLocked}>
               {tAgreementFlow('buttons.publish')}
             </Button>
           </div>

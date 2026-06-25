@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { Locale } from '@hypha-platform/i18n';
 import QRCode from 'react-qr-code';
 import {
   Button,
@@ -20,42 +21,27 @@ import {
   AlertTriangle,
   Compass,
   Copy,
-  FileIcon,
   Handshake,
-  ImageIcon,
-  Loader2,
-  Mic,
-  Paperclip,
-  Plus,
   PlusCircle,
-  Send,
-  Square,
-  Video,
   Wallet,
-  X,
 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space, useMe } from '@hypha-platform/core/client';
 import {
-  ComposerAttachGoogleDriveMenuItem,
-  filesToFileList,
+  AiPanelChatBar,
+  getLegacyCreateSpacePath,
   ONBOARDING_SETUP_MODE,
   saveOnboardingConversationContext,
+  type AiPanelDraftAttachment,
+  type OnboardingDiscoveryMode,
 } from '@hypha-platform/epics';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@hypha-platform/ui';
 import { OnboardingAiFullPage } from './onboarding-ai-full-page';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
 
 const getNetworkPath = (lang: string) => `/${lang}/network`;
-const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
 const primaryCtaClass =
@@ -109,30 +95,12 @@ const HERO_TITLE_ROTATING_WORD_KEYS = [
 const normalizeEvmAddress = (value: string | null | undefined) =>
   (value ?? '').replace(/\s+/g, '').trim();
 
-type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
-type SpeechRecognitionLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((ev: { error?: string }) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-};
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
-};
-
-function joinWithSingleSpace(a: string, b: string): string {
-  const left = a.trimEnd();
-  const right = b.trimStart();
-  if (!left) return right;
-  if (!right) return left;
-  if (/\s$/.test(left) || /^\s/.test(right)) return left + right;
-  return `${left} ${right}`;
+function disposeDraftAttachmentUrls(items: AiPanelDraftAttachment[]) {
+  for (const att of items) {
+    if (att.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(att.previewUrl);
+    }
+  }
 }
 
 type SelectorOption = { value: string; label: string; searchText?: string };
@@ -257,7 +225,6 @@ export function OnboardingAdventurePage({
 }) {
   const t = useTranslations('OnboardingAdventure');
   const tCommon = useTranslations('Common');
-  const tHuman = useTranslations('HumanChatPanel');
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -271,16 +238,11 @@ export function OnboardingAdventurePage({
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
   const [aiPrompt, setAiPrompt] = useState('');
   const aiPromptRef = useRef(aiPrompt);
-  const heroFileInputRef = useRef<HTMLInputElement>(null);
-  const heroImageInputRef = useRef<HTMLInputElement>(null);
-  const heroVideoInputRef = useRef<HTMLInputElement>(null);
-  const [heroAttachments, setHeroAttachments] = useState<File[]>([]);
-  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
-  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const dictationPrefixRef = useRef('');
-  const dictationSessionFinalizedRef = useRef(false);
-  const [isDictating, setIsDictating] = useState(false);
-  const [dictationError, setDictationError] = useState<string | null>(null);
+  const [draftAttachments, setDraftAttachments] = useState<
+    AiPanelDraftAttachment[]
+  >([]);
+  const draftAttachmentsRef = useRef(draftAttachments);
+  draftAttachmentsRef.current = draftAttachments;
   const [isStartingAi, setIsStartingAi] = useState(false);
   const [aiStartError, setAiStartError] = useState<string | null>(null);
   const [onboardingAiConversation, setOnboardingAiConversation] = useState<{
@@ -292,6 +254,7 @@ export function OnboardingAdventurePage({
       firstName?: string;
       locale: string;
       createdAt: string;
+      discoveryMode?: OnboardingDiscoveryMode;
     };
   } | null>(null);
 
@@ -415,109 +378,9 @@ export function OnboardingAdventurePage({
     return () => window.clearInterval(intervalId);
   }, [rotatingHeroTitleWords]);
 
-  const stopDictation = () => {
-    const recognition = speechRecognitionRef.current;
-    if (recognition) {
-      try {
-        recognition.abort();
-      } catch {
-        try {
-          recognition.stop();
-        } catch {
-          // ignore stop errors from browser implementation differences
-        }
-      }
-      speechRecognitionRef.current = null;
-    }
-    dictationPrefixRef.current = '';
-    setIsDictating(false);
-  };
-
-  const toggleDictation = () => {
-    setDictationError(null);
-    const SR =
-      (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
-        .SpeechRecognition ??
-      (
-        globalThis as unknown as {
-          webkitSpeechRecognition?: SpeechRecognitionCtor;
-        }
-      ).webkitSpeechRecognition;
-
-    if (!SR) {
-      setDictationError(tHuman('dictationNotSupported'));
-      return;
-    }
-    if (isDictating) {
-      stopDictation();
-      return;
-    }
-
-    dictationSessionFinalizedRef.current = false;
-    dictationPrefixRef.current = aiPromptRef.current.trimEnd();
-    const recognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = document.documentElement.lang || 'en';
-    recognition.onresult = (event) => {
-      let committed = '';
-      let interim = '';
-      for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (!result?.[0]) continue;
-        if (result.isFinal) {
-          committed = joinWithSingleSpace(
-            committed,
-            result[0].transcript.trim(),
-          );
-        } else {
-          interim = joinWithSingleSpace(interim, result[0].transcript);
-        }
-      }
-      const dictated = joinWithSingleSpace(committed, interim.trim());
-      const nextPrompt = joinWithSingleSpace(
-        dictationPrefixRef.current,
-        dictated,
-      );
-      aiPromptRef.current = nextPrompt;
-      setAiPrompt(nextPrompt);
-    };
-    const finalizeDictation = (showError: boolean) => {
-      if (dictationSessionFinalizedRef.current) return;
-      dictationSessionFinalizedRef.current = true;
-      speechRecognitionRef.current = null;
-      dictationPrefixRef.current = '';
-      setIsDictating(false);
-      if (showError) {
-        setDictationError(tHuman('dictationError'));
-      }
-    };
-    recognition.onerror = (event) => {
-      finalizeDictation(event.error !== 'aborted');
-    };
-    recognition.onend = () => {
-      finalizeDictation(false);
-    };
-    speechRecognitionRef.current = recognition;
-    try {
-      recognition.start();
-      setIsDictating(true);
-    } catch {
-      speechRecognitionRef.current = null;
-      setDictationError(tHuman('dictationNotSupported'));
-    }
-  };
-
   useEffect(() => {
     return () => {
-      const recognition = speechRecognitionRef.current;
-      if (!recognition) return;
-      try {
-        recognition.abort();
-      } catch {
-        // ignore
-      }
-      speechRecognitionRef.current = null;
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
     };
   }, []);
 
@@ -541,8 +404,8 @@ export function OnboardingAdventurePage({
 
   const handleStartAiOnboarding = () => {
     const prompt = aiPrompt.trim();
-    if (!prompt && heroAttachments.length === 0) return;
-    stopDictation();
+    if (!prompt && draftAttachments.length === 0) return;
+    const attachmentFiles = draftAttachments.map((att) => att.file);
     const context = {
       mode: ONBOARDING_SETUP_MODE,
       source: 'onboarding_hero' as const,
@@ -555,17 +418,13 @@ export function OnboardingAdventurePage({
     setAiStartError(null);
     setOnboardingAiConversation({
       prompt,
-      attachments: heroAttachments,
+      attachments: attachmentFiles,
       context,
     });
     setAiPrompt('');
-    setHeroAttachments([]);
+    disposeDraftAttachmentUrls(draftAttachments);
+    setDraftAttachments([]);
     setIsStartingAi(false);
-  };
-
-  const pushHeroAttachments = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setHeroAttachments((prev) => [...prev, ...Array.from(files)]);
   };
   if (onboardingAiConversation) {
     return (
@@ -631,188 +490,23 @@ export function OnboardingAdventurePage({
           {onboardingHeroEnabled ? (
             <section className="relative mx-auto w-full max-w-5xl">
               <div className="relative overflow-hidden rounded-[1.5rem] border border-border/55 bg-neutral-2 shadow-[0_10px_40px_-24px_oklch(0.45_0.08_278)] [.dark_&]:border-white/10 [.dark_&]:bg-white/[0.04] [.dark_&]:shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] [.dark_&]:backdrop-blur-md">
-                {heroAttachments.length > 0 ? (
-                  <div className="narrow-scrollbar max-h-24 overflow-x-auto overflow-y-hidden border-b border-border/65 px-3 py-2">
-                    <div className="flex w-max gap-2">
-                      {heroAttachments.map((file, index) => (
-                        <div
-                          key={`${file.name}-${file.lastModified}-${index}`}
-                          className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-1 text-foreground"
-                        >
-                          {file.type.startsWith('image/') ? (
-                            <ImageIcon className="size-3.5 text-muted-foreground" />
-                          ) : file.type.startsWith('video/') ? (
-                            <Video className="size-3.5 text-muted-foreground" />
-                          ) : (
-                            <FileIcon className="size-3.5 text-muted-foreground" />
-                          )}
-                          <span className="max-w-44 truncate">{file.name}</span>
-                          <button
-                            type="button"
-                            className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                            aria-label={tHuman('attachmentRemove')}
-                            onClick={() =>
-                              setHeroAttachments((prev) =>
-                                prev.filter((_, i) => i !== index),
-                              )
-                            }
-                          >
-                            <X className="size-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                <textarea
+                <AiPanelChatBar
+                  variant="hero"
                   value={aiPrompt}
-                  onChange={(event) => setAiPrompt(event.target.value)}
+                  onChange={setAiPrompt}
+                  onSend={handleStartAiOnboarding}
+                  draftAttachments={draftAttachments}
+                  onDraftAttachmentsChange={setDraftAttachments}
                   placeholder={
                     rotatingHeroPrompts[heroPlaceholderIndex] ??
                     t('aiHero.placeholder')
                   }
-                  aria-label={t('aiHero.ariaLabel')}
-                  rows={3}
-                  className="relative min-h-[120px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
+                  sendAriaLabel={
+                    isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
+                  }
+                  composerDisabled={!aiChatEnabled || isStartingAi}
+                  isStreaming={isStartingAi}
                 />
-                <input
-                  ref={heroFileInputRef}
-                  type="file"
-                  className="sr-only"
-                  multiple
-                  onChange={(e) => {
-                    pushHeroAttachments(e.target.files);
-                    e.target.value = '';
-                  }}
-                />
-                <input
-                  ref={heroImageInputRef}
-                  type="file"
-                  className="sr-only"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    pushHeroAttachments(e.target.files);
-                    e.target.value = '';
-                  }}
-                />
-                <input
-                  ref={heroVideoInputRef}
-                  type="file"
-                  className="sr-only"
-                  accept="video/*"
-                  multiple
-                  onChange={(e) => {
-                    pushHeroAttachments(e.target.files);
-                    e.target.value = '';
-                  }}
-                />
-                <div className="flex items-center justify-between gap-2 px-3 pb-2.5">
-                  <div className="flex items-center gap-1">
-                    <DropdownMenu
-                      modal={false}
-                      open={attachMenuOpen}
-                      onOpenChange={setAttachMenuOpen}
-                    >
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
-                          aria-label={tHuman('composerAttachMenu')}
-                          title={tHuman('composerAttachMenu')}
-                        >
-                          <Plus className="size-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="start"
-                        className="min-w-[200px]"
-                      >
-                        <DropdownMenuItem
-                          className="cursor-pointer gap-2"
-                          onSelect={() =>
-                            requestAnimationFrame(() =>
-                              heroImageInputRef.current?.click(),
-                            )
-                          }
-                        >
-                          <ImageIcon className="size-4" aria-hidden />
-                          <span>{tHuman('composerAttachImage')}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="cursor-pointer gap-2"
-                          onSelect={() =>
-                            requestAnimationFrame(() =>
-                              heroVideoInputRef.current?.click(),
-                            )
-                          }
-                        >
-                          <Video className="size-4" aria-hidden />
-                          <span>{tHuman('composerAttachVideo')}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="cursor-pointer gap-2"
-                          onSelect={() =>
-                            requestAnimationFrame(() =>
-                              heroFileInputRef.current?.click(),
-                            )
-                          }
-                        >
-                          <Paperclip className="size-4" aria-hidden />
-                          <span>{tHuman('composerAttachFile')}</span>
-                        </DropdownMenuItem>
-                        <ComposerAttachGoogleDriveMenuItem
-                          disabled={!aiChatEnabled}
-                          onPickerOpen={() => setAttachMenuOpen(false)}
-                          onFilesPicked={(files) => {
-                            pushHeroAttachments(filesToFileList(files));
-                          }}
-                        />
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <button
-                      type="button"
-                      onClick={toggleDictation}
-                      disabled={!aiChatEnabled}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label={
-                        isDictating
-                          ? tHuman('composerStopDictation')
-                          : tHuman('composerDictateMessage')
-                      }
-                      title={
-                        isDictating
-                          ? tHuman('composerStopDictation')
-                          : tHuman('composerDictateMessage')
-                      }
-                    >
-                      {isDictating ? (
-                        <Square className="size-3.5" aria-hidden />
-                      ) : (
-                        <Mic className="size-4" aria-hidden />
-                      )}
-                    </button>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleStartAiOnboarding}
-                    disabled={
-                      (!aiPrompt.trim() && heroAttachments.length === 0) ||
-                      !aiChatEnabled ||
-                      isStartingAi
-                    }
-                    className="h-10 w-10 rounded-full border-0 bg-accent-9 p-0 text-white shadow-[0_8px_20px_-8px_var(--color-accent-9)] transition-all hover:bg-accent-10 hover:brightness-105 [.dark_&]:bg-info-9 [.dark_&]:shadow-[0_8px_20px_-8px_var(--color-info-9)] [.dark_&]:hover:bg-info-10"
-                    aria-label={
-                      isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
-                    }
-                  >
-                    {isStartingAi ? (
-                      <Loader2 className="size-4 animate-spin" aria-hidden />
-                    ) : (
-                      <Send className="size-4" aria-hidden />
-                    )}
-                  </Button>
-                </div>
               </div>
               {aiStartError ? (
                 <div
@@ -826,13 +520,8 @@ export function OnboardingAdventurePage({
                   <span className="text-warning-11">{aiStartError}</span>
                 </div>
               ) : null}
-              {dictationError ? (
-                <p role="alert" className="text-center text-1 text-destructive">
-                  {dictationError}
-                </p>
-              ) : null}
               {!aiChatEnabled ? (
-                <p className="text-center text-1 text-muted-foreground">
+                <p className="mt-2 text-center text-1 text-muted-foreground">
                   {t('aiHero.unavailable')}
                 </p>
               ) : null}
@@ -878,7 +567,9 @@ export function OnboardingAdventurePage({
               <Button
                 type="button"
                 className={primaryCtaClass}
-                onClick={() => router.push(getCreateSpacePath(locale))}
+                onClick={() =>
+                  router.push(getLegacyCreateSpacePath(locale as Locale))
+                }
               >
                 {t('create.cta')}
               </Button>

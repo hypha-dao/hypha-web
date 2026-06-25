@@ -19,6 +19,10 @@ import {
 import { useTranslations } from 'next-intl';
 
 import {
+  CHAT_ATTACHMENT_MAX_BYTES,
+  CHAT_ATTACHMENT_MAX_SIZE_LABEL,
+} from '@hypha-platform/core/client';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -117,6 +121,8 @@ function ComposerRecOnAirIndicator() {
   );
 }
 
+type AiPanelChatBarVariant = 'panel' | 'hero';
+
 type AiPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
@@ -127,6 +133,9 @@ type AiPanelChatBarProps = {
   isStreaming?: boolean;
   placeholder?: string;
   composerDisabled?: boolean;
+  /** `hero` matches onboarding landing composer styling; default `panel` for sidebars. */
+  variant?: AiPanelChatBarVariant;
+  sendAriaLabel?: string;
 };
 
 function formatFileSize(bytes: number): string {
@@ -286,7 +295,10 @@ export function AiPanelChatBar({
   isStreaming = false,
   placeholder,
   composerDisabled = false,
+  variant = 'panel',
+  sendAriaLabel,
 }: AiPanelChatBarProps) {
+  const isHero = variant === 'hero';
   const t = useTranslations('AiPanel');
   const tHuman = useTranslations('HumanChatPanel');
   const fileInputId = useId();
@@ -302,6 +314,7 @@ export function AiPanelChatBar({
   const valueRef = useRef(value);
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const isMobile = useIsMobile() ?? false;
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [composerDragDepth, setComposerDragDepth] = useState(0);
@@ -318,6 +331,7 @@ export function AiPanelChatBar({
   }, []);
 
   useEffect(() => {
+    if (isHero) return;
     const el = textareaRef.current;
     if (!el) return;
     if (!value.trim()) {
@@ -326,7 +340,7 @@ export function AiPanelChatBar({
       return;
     }
     autoResize();
-  }, [value, autoResize]);
+  }, [isHero, value, autoResize]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -501,7 +515,12 @@ export function AiPanelChatBar({
     (files: FileList | null) => {
       if (!files || files.length === 0 || !onDraftAttachmentsChange) return;
       const next = [...draftAttachments];
+      let rejected = false;
       for (const file of Array.from(files)) {
+        if (file.size > CHAT_ATTACHMENT_MAX_BYTES) {
+          rejected = true;
+          continue;
+        }
         const isAudio = looksLikeAudioMimeOrName(file.type, file.name);
         const isVideo =
           !isAudio && looksLikeVideoMimeOrName(file.type, file.name);
@@ -522,9 +541,18 @@ export function AiPanelChatBar({
           spoiler: false,
         });
       }
+      if (rejected) {
+        setAttachError(
+          tHuman('composerAttachmentTooLarge', {
+            maxSize: CHAT_ATTACHMENT_MAX_SIZE_LABEL,
+          }),
+        );
+      } else {
+        setAttachError(null);
+      }
       onDraftAttachmentsChange(next);
     },
-    [draftAttachments, onDraftAttachmentsChange],
+    [draftAttachments, onDraftAttachmentsChange, tHuman],
   );
   const canSendWithAttachments =
     (value.trim().length > 0 || draftAttachments.length > 0) && !isStreaming;
@@ -569,8 +597,11 @@ export function AiPanelChatBar({
     videoInputRef.current?.click();
   };
 
-  const iconButtonClass =
-    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
+  const iconButtonClass = isHero
+    ? 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35'
+    : 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
+  const heroSendButtonClass =
+    'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-accent-9 p-0 text-white shadow-[0_8px_20px_-8px_var(--color-accent-9)] transition-all hover:bg-accent-10 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 [.dark_&]:bg-info-9 [.dark_&]:shadow-[0_8px_20px_-8px_var(--color-info-9)] [.dark_&]:hover:bg-info-10';
 
   useEffect(() => {
     if (!canAttachDrafts && attachMenuOpen) {
@@ -603,12 +634,22 @@ export function AiPanelChatBar({
   );
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-3 pt-3">
+    <div
+      className={cn(
+        'flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent',
+        !isHero && 'px-3 pb-3 pt-3',
+      )}
+    >
       <div
         className={cn(
-          'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
-          'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
-          isComposerDropActive && 'border-primary/50 ring-2 ring-primary/25',
+          'relative flex min-w-0 flex-col',
+          !isHero &&
+            cn(
+              'rounded-lg border border-border bg-muted/50',
+              'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
+              isComposerDropActive &&
+                'border-primary/50 ring-2 ring-primary/25',
+            ),
         )}
         onDragEnter={(e) => {
           if (!e.dataTransfer?.types.includes('Files')) return;
@@ -647,7 +688,14 @@ export function AiPanelChatBar({
           </div>
         )}
         {draftAttachments.length > 0 && (
-          <div className="narrow-scrollbar max-h-[168px] shrink-0 overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2">
+          <div
+            className={cn(
+              'narrow-scrollbar shrink-0 overflow-x-auto overflow-y-hidden border-b px-3 py-2',
+              isHero
+                ? 'max-h-[168px] border-border/65'
+                : 'max-h-[168px] border-border',
+            )}
+          >
             <div className="flex w-max flex-nowrap items-stretch gap-2 pb-1">
               {draftAttachments.map((att, index) => (
                 <div
@@ -769,18 +817,19 @@ export function AiPanelChatBar({
           disabled={composerDisabled}
           onChange={(e) => {
             onChange(e.target.value);
-            autoResize();
+            if (!isHero) autoResize();
           }}
           onKeyDown={handleKeyDown}
           aria-label={placeholder ?? t('placeholder')}
           placeholder={placeholder ?? t('placeholder')}
-          rows={1}
+          rows={isHero ? 3 : 1}
           className={cn(
-            'min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-            'bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground',
-            'placeholder:text-muted-foreground focus:outline-none',
+            'min-w-0 w-full resize-none bg-transparent text-foreground outline-none placeholder:text-muted-foreground focus:outline-none',
+            isHero
+              ? 'relative min-h-[120px] overflow-y-auto px-4 py-3 text-3'
+              : 'min-h-[36px] max-h-[160px] px-3 py-2.5 text-sm leading-relaxed',
           )}
-          style={{ minHeight: '36px', maxHeight: '160px' }}
+          style={isHero ? undefined : { minHeight: '36px', maxHeight: '160px' }}
         />
         <input
           ref={fileInputRef}
@@ -823,10 +872,15 @@ export function AiPanelChatBar({
           }}
         />
 
-        <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
-          {dictationError && (
+        <div
+          className={cn(
+            'flex min-w-0 flex-col gap-1 pt-0',
+            isHero ? 'px-3 pb-2.5' : 'px-2 pb-2.5',
+          )}
+        >
+          {(dictationError || attachError) && (
             <p role="alert" className="px-1 text-xs text-destructive">
-              {dictationError}
+              {dictationError ?? attachError}
             </p>
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
@@ -889,9 +943,16 @@ export function AiPanelChatBar({
                     </DropdownMenuItem>
                     <ComposerAttachGoogleDriveMenuItem
                       disabled={!canAttachDrafts}
-                      onPickerOpen={() => setAttachMenuOpen(false)}
+                      onPickerOpen={() => {
+                        setAttachMenuOpen(false);
+                        setAttachError(null);
+                      }}
+                      onError={() =>
+                        setAttachError(tHuman('composerAttachGoogleDriveError'))
+                      }
                       onFilesPicked={(files) => {
                         if (!canAttachDrafts) return;
+                        setAttachError(null);
                         pushDrafts(filesToFileList(files));
                       }}
                     />
@@ -948,22 +1009,36 @@ export function AiPanelChatBar({
               onClick={isStreaming ? () => onStop?.() : sendMessage}
               disabled={
                 composerDisabled ||
-                (isStreaming ? !canStop : !canSendWithAttachments)
+                (isStreaming ? isHero || !canStop : !canSendWithAttachments)
               }
               className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
-                canSendWithAttachments || canStop
-                  ? 'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18'
-                  : 'cursor-not-allowed text-muted-foreground/50',
+                isHero
+                  ? heroSendButtonClass
+                  : cn(
+                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
+                      canSendWithAttachments || canStop
+                        ? 'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18'
+                        : 'cursor-not-allowed text-muted-foreground/50',
+                    ),
               )}
-              aria-label={isStreaming ? t('stopButton') : t('sendButton')}
-              title={isStreaming ? t('stopButton') : t('sendButton')}
+              aria-label={
+                sendAriaLabel ??
+                (isStreaming ? t('stopButton') : t('sendButton'))
+              }
+              title={
+                sendAriaLabel ??
+                (isStreaming ? t('stopButton') : t('sendButton'))
+              }
             >
               {isStreaming ? (
-                <Square className="h-3.5 w-3.5" />
+                isHero ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <Square className="h-3.5 w-3.5" />
+                )
               ) : (
-                <Send className="h-4 w-4" />
+                <Send className={isHero ? 'size-4' : 'h-4 w-4'} aria-hidden />
               )}
             </button>
           </div>

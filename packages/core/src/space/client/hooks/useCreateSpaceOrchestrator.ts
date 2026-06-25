@@ -284,6 +284,12 @@ export const useCreateSpaceOrchestrator = ({
           completeTask('UPLOAD_FILES');
         }
 
+        if (!uploadedFileUrls.logoUrl || !uploadedFileUrls.leadImage) {
+          throw new Error(
+            'Logo and hero banner are required before creating a space.',
+          );
+        }
+
         startTask('CREATE_WEB3_SPACE');
 
         const isSandbox = flags.includes('sandbox');
@@ -291,7 +297,13 @@ export const useCreateSpaceOrchestrator = ({
         const isLive = !isDemo && !isSandbox;
 
         let discoverability: number;
-        if (isSandbox) {
+        if (
+          typeof arg.discoverability === 'number' &&
+          arg.discoverability >= 0 &&
+          arg.discoverability <= 3
+        ) {
+          discoverability = arg.discoverability;
+        } else if (isSandbox) {
           discoverability = 3;
         } else if (isDemo) {
           discoverability = 1;
@@ -299,13 +311,23 @@ export const useCreateSpaceOrchestrator = ({
           discoverability = 0;
         }
 
-        const access = 2;
+        const access =
+          typeof arg.access === 'number' && arg.access >= 0 && arg.access <= 3
+            ? arg.access
+            : 2;
+
+        const joinMethod =
+          typeof arg.joinMethod === 'number' &&
+          arg.joinMethod >= 0 &&
+          arg.joinMethod <= 3
+            ? arg.joinMethod
+            : 2;
 
         const inputCreateSpaceWeb3 = schemaCreateSpaceWeb3.parse({
           quorum: 50,
           unity: 80,
           votingPowerSource: 2,
-          joinMethod: 2,
+          joinMethod,
           exitMethod: 1,
           access,
           discoverability,

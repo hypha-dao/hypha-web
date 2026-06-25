@@ -17,6 +17,9 @@ import {
   createSpaceDiscussionSummary,
   getSpaceMembersRoster,
   serializeSpaceMembersRosterDatesForJson,
+  getNetworkEcosystemPatterns,
+  proposeOrganisationBlueprint,
+  sendHumanChatMessageForSpace,
 } from '@hypha-platform/core/server';
 import {
   createSpaceSignalBySlugInputSchema,
@@ -58,7 +61,38 @@ import {
   ingestSpaceCallArtifactsInputSchema,
   ingestSpaceCallArtifactsOutputSchema,
 } from './ingest-space-call-artifacts-schema.js';
+import {
+  getNetworkEcosystemPatternsInputSchema,
+  getNetworkEcosystemPatternsOutputSchema,
+} from './get-network-ecosystem-patterns-schema.js';
+import {
+  proposeOrganisationBlueprintInputSchema,
+  proposeOrganisationBlueprintOutputSchema,
+} from './propose-organisation-blueprint-schema.js';
+import {
+  createHumanChatMessageInputSchema,
+  createHumanChatMessageOutputSchema,
+} from './create-human-chat-message-schema.js';
 import { buildMatrixDiagnosticHint } from './build-matrix-diagnostic-hint.js';
+import {
+  createPrepareGovernanceProposalTool,
+  createProposalGuidanceTool,
+} from '@hypha-platform/chat-server/tools/prepare-governance-proposal';
+import { createGetProposalFormStateTool } from '@hypha-platform/chat-server/tools/get-proposal-form-state';
+import {
+  prepareGovernanceProposalInputSchema,
+  prepareGovernanceProposalOutputSchema,
+  proposalFormStateInputSchema,
+  proposalFormStateOutputSchema,
+  proposalGuidanceInputSchema,
+  proposalGuidanceOutputSchema,
+} from './proposal-tools-schema.js';
+
+const mcpMatrixRequestUrl =
+  process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
+  (process.env.VERCEL_URL?.trim()
+    ? `https://${process.env.VERCEL_URL.trim()}`
+    : undefined);
 
 const server = new McpServer(
   {
@@ -67,7 +101,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); create signals in space; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -279,6 +313,67 @@ server.registerTool(
 );
 
 server.registerTool(
+  'create_human_chat_message',
+  {
+    description:
+      'Write: post a message in Human Chat on behalf of the signed-in member. Use target space_chat for the space group room, or signal_chat with signal_slug for a signal thread. Returns navigation metadata to open the right Human Chat panel.',
+    inputSchema: createHumanChatMessageInputSchema,
+    outputSchema: createHumanChatMessageOutputSchema,
+  },
+  async (args) => {
+    const parsed = createHumanChatMessageInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    const result = await sendHumanChatMessageForSpace(
+      {
+        spaceSlug: parsed.data.space_slug,
+        message: parsed.data.message,
+        target: parsed.data.target,
+        signalSlug: parsed.data.signal_slug,
+        roomId: parsed.data.room_id,
+        lang: parsed.data.lang,
+        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        requestUrlForSessionMatrix: mcpMatrixRequestUrl,
+      },
+      { db },
+    );
+
+    const out = createHumanChatMessageOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: out.data.ok
+            ? `Posted Human Chat message in ${parsed.data.space_slug} (${out.data.navigation.chat_target}). Open ${out.data.navigation.href} to review.`
+            : `Failed to post Human Chat message: ${out.data.error}`,
+        },
+      ],
+      structuredContent: out.data,
+      ...(out.data.ok ? {} : { isError: true }),
+    };
+  },
+);
+
+server.registerTool(
   'relay_ecosystem_signal',
   {
     description:
@@ -462,6 +557,160 @@ server.registerTool(
       ],
       structuredContent: out.data,
     };
+  },
+);
+
+server.registerTool(
+  'get_network_ecosystem_patterns',
+  {
+    description:
+      'Read-only organisational guidance: analyze multi-space ecosystems across the Hypha network. Returns role frequency, title keywords, and sample structures to inform organisation setup.',
+    inputSchema: getNetworkEcosystemPatternsInputSchema,
+    outputSchema: getNetworkEcosystemPatternsOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = getNetworkEcosystemPatternsInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const patterns = await getNetworkEcosystemPatterns(
+        {
+          limit: parsed.data.limit,
+          minChildCount: parsed.data.min_child_count,
+        },
+        { db },
+      );
+      const structured = { ok: true, ...patterns };
+      const out = getNetworkEcosystemPatternsOutputSchema.safeParse(structured);
+      if (!out.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${out.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Analyzed ${
+              out.data.sampled_ecosystem_count ?? 0
+            } network ecosystems (avg ${
+              out.data.average_child_count ?? 0
+            } child spaces). Top roles: ${
+              Object.entries(out.data.common_role_counts ?? {})
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([role, count]) => `${role} (${count})`)
+                .join(', ') || 'none yet'
+            }.`,
+          },
+        ],
+        structuredContent: out.data,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return {
+        content: [
+          { type: 'text', text: `Failed to analyze ecosystems: ${message}` },
+        ],
+        structuredContent: { ok: false, error: message },
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'propose_organisation_blueprint',
+  {
+    description:
+      'Plan-only organisational guidance: propose a multi-space blueprint for a new organisation/ecosystem. Uses live network patterns; does not create spaces.',
+    inputSchema: proposeOrganisationBlueprintInputSchema,
+    outputSchema: proposeOrganisationBlueprintOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = proposeOrganisationBlueprintInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const blueprint = await proposeOrganisationBlueprint(
+        {
+          organisation_name: parsed.data.organisation_name,
+          purpose: parsed.data.purpose,
+          root_slug: parsed.data.root_slug,
+          functional_domains: parsed.data.functional_domains,
+          include_liquidity_bridge: parsed.data.include_liquidity_bridge,
+          include_ip_registry: parsed.data.include_ip_registry,
+          include_governance_space: parsed.data.include_governance_space,
+          pattern_limit: parsed.data.pattern_limit,
+        },
+        { db },
+      );
+      const structured = { ok: true, blueprint };
+      const out =
+        proposeOrganisationBlueprintOutputSchema.safeParse(structured);
+      if (!out.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${out.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      const nodeCount = out.data.blueprint?.nodes.length ?? 0;
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Proposed ${nodeCount} child spaces for "${
+              out.data.blueprint?.root_title ?? parsed.data.organisation_name
+            }" based on ${
+              out.data.blueprint?.network_context.sampled_ecosystem_count ?? 0
+            } network ecosystems.`,
+          },
+        ],
+        structuredContent: out.data,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return {
+        content: [
+          { type: 'text', text: `Failed to propose blueprint: ${message}` },
+        ],
+        structuredContent: { ok: false, error: message },
+        isError: true,
+      };
+    }
   },
 );
 
@@ -958,6 +1207,122 @@ server.registerTool(
         isError: true,
       };
     }
+  },
+);
+
+const proposalGuidanceTool = createProposalGuidanceTool();
+server.registerTool(
+  'proposal_guidance',
+  {
+    description: proposalGuidanceTool.description,
+    inputSchema: proposalGuidanceInputSchema,
+    outputSchema: proposalGuidanceOutputSchema,
+  },
+  async (args) => {
+    const parsed = proposalGuidanceInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await proposalGuidanceTool.execute(parsed.data);
+    const out = proposalGuidanceOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [{ type: 'text', text: JSON.stringify(out.data, null, 2) }],
+      structuredContent: out.data,
+    };
+  },
+);
+
+const getProposalFormStateTool = createGetProposalFormStateTool(null);
+server.registerTool(
+  'get_proposal_form_state',
+  {
+    description: getProposalFormStateTool.description,
+    inputSchema: proposalFormStateInputSchema,
+    outputSchema: proposalFormStateOutputSchema,
+  },
+  async (args) => {
+    const parsed = proposalFormStateInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await getProposalFormStateTool.execute(parsed.data);
+    const out = proposalFormStateOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [{ type: 'text', text: JSON.stringify(out.data, null, 2) }],
+      structuredContent: out.data,
+    };
+  },
+);
+
+const prepareGovernanceProposalTool = createPrepareGovernanceProposalTool(
+  process.env.HYPHA_MCP_AUTH_TOKEN ?? '',
+);
+server.registerTool(
+  'prepare_governance_proposal',
+  {
+    description: prepareGovernanceProposalTool.description,
+    inputSchema: prepareGovernanceProposalInputSchema,
+    outputSchema: prepareGovernanceProposalOutputSchema,
+  },
+  async (args) => {
+    const parsed = prepareGovernanceProposalInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await prepareGovernanceProposalTool.execute(parsed.data);
+    const out = prepareGovernanceProposalOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [{ type: 'text', text: JSON.stringify(out.data, null, 2) }],
+      structuredContent: out.data,
+    };
   },
 );
 

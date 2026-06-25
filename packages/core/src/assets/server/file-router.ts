@@ -6,7 +6,11 @@ import { getDb } from '@hypha-platform/core/server';
 import { verifyAuth } from '@hypha-platform/core/server';
 import { CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE } from './call-recording-storage';
 import { logCallRecordingUploadFailure } from './call-recording-upload-log';
-import { ECOSYSTEM_LOGO_IMAGE_ACCEPT } from '../constant';
+import {
+  ECOSYSTEM_LOGO_IMAGE_ACCEPT,
+  UPLOADTHING_STANDARD_MAX_FILE_COUNT,
+  UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+} from '../constant';
 
 const f = createUploadthing();
 
@@ -25,13 +29,18 @@ const SVG_FALLBACK_MIME_TYPES = new Set([
 export const fileRouter: FileRouter = {
   attachmentUploader: f({
     pdf: {
-      maxFileSize: '4MB',
-      maxFileCount: 3,
+      maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+      maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
       contentDisposition: 'attachment',
     },
     image: {
-      maxFileSize: '4MB',
-      maxFileCount: 3,
+      maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+      maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
+      contentDisposition: 'attachment',
+    },
+    blob: {
+      maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+      maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
       contentDisposition: 'attachment',
     },
   })
@@ -50,11 +59,11 @@ export const fileRouter: FileRouter = {
     ),
   imageUploader: f({
     image: {
-      maxFileSize: '4MB',
+      maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
       maxFileCount: 1,
     },
     blob: {
-      maxFileSize: '4MB',
+      maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
       maxFileCount: 1,
     },
   })

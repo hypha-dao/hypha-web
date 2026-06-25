@@ -30,12 +30,17 @@ import clsx from 'clsx';
 import {
   Address,
   ALLOWED_IMAGE_FILE_SIZE,
-  categories,
   Category,
+  categoryGroupOptions,
+  collapseCategoriesToGroups,
   createSpaceFiles,
-  schemaCreateSpace,
+  isCategoryGroupId,
+  mergeCategoryGroupsWithExisting,
+  refineSpaceLocationCoords,
+  schemaCreateSpaceFields,
   Space,
   SpaceFlags,
+  type CategoryGroupId,
   useMe,
   useOrganisationSpacesBySingleSlug,
   useSpaceBySlugExists,
@@ -50,11 +55,16 @@ import {
   ButtonBack,
   ButtonClose,
 } from '@hypha-platform/epics';
+import {
+  SpaceLocationPicker,
+  type SpaceLocationPickerHandle,
+} from './space-location-picker';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
 
-const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
-export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
+const schemaCreateSpaceFormBase =
+  schemaCreateSpaceFields.extend(createSpaceFiles);
+export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceFormBase>;
 
 export type SpaceFormLabel = 'create' | 'add' | 'configure';
 
@@ -77,6 +87,7 @@ export type CreateSpaceFormProps = {
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
   spaceId?: number;
+  enableNetworkMap?: boolean;
   slugIncorrectMessage?: string;
   onSubmit: (
     values: SchemaCreateSpaceForm,
@@ -98,6 +109,10 @@ const DEFAULT_VALUES = {
   parentSpaceSlug: '',
   address: '',
   flags: ['sandbox'] as SpaceFlags[],
+  latitude: null,
+  longitude: null,
+  locationLabel: null,
+  locationSource: null,
 };
 
 export const SpaceForm = ({
@@ -118,6 +133,7 @@ export const SpaceForm = ({
   submitLoadingLabel,
   label = 'create',
   spaceId = -1,
+  enableNetworkMap = false,
   slugIncorrectMessage,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
@@ -140,17 +156,20 @@ export const SpaceForm = ({
     [slugDuplicated],
   );
 
-  const schema = schemaCreateSpaceForm.extend({
-    slug: z
-      .string()
-      .min(1, '')
-      .max(50)
-      .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
-      .optional()
-      .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
-  });
+  const schema = schemaCreateSpaceFormBase
+    .extend({
+      slug: z
+        .string()
+        .min(1, '')
+        .max(50)
+        .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
+        .optional()
+        .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
+    })
+    .superRefine(refineSpaceLocationCoords);
 
   const formRef = React.useRef<HTMLFormElement>(null);
+  const locationPickerRef = React.useRef<SpaceLocationPickerHandle>(null);
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schema),
     defaultValues,
@@ -176,13 +195,7 @@ export const SpaceForm = ({
     isLoading: slugIsChecking,
   } = useSpaceBySlugExists(slug ?? '');
 
-  const categoryOptions = React.useMemo(
-    () =>
-      categories
-        .filter((c) => !c.archive)
-        .map((c) => ({ value: c.value as string, label: c.label })),
-    [],
-  );
+  const categoryOptions = React.useMemo(() => categoryGroupOptions, []);
 
   React.useEffect(() => {
     form.setValue('parentId', parentSpaceId ?? null);
@@ -229,11 +242,19 @@ export const SpaceForm = ({
 
   React.useEffect(() => {
     if (!values) return;
+    const resetOptions =
+      label === 'configure'
+        ? ({ keepDirty: false, keepTouched: false } as const)
+        : ({ keepDirty: true, keepTouched: false } as const);
     form.reset(
-      { ...form.getValues(), ...values },
-      { keepDirty: true, keepTouched: false },
+      {
+        ...DEFAULT_VALUES,
+        parentId: initialParentSpaceId ?? null,
+        ...values,
+      },
+      resetOptions,
     );
-  }, [values, form]);
+  }, [values, form, label, initialParentSpaceId]);
 
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
     useOrganisationSpacesBySingleSlug(values?.slug ?? parentSpaceSlug ?? '');
@@ -326,6 +347,13 @@ export const SpaceForm = ({
     () => !isDemo && !isSandbox && !isArchived,
     [isDemo, isSandbox, isArchived],
   );
+  const showLocationPicker = label === 'configure' && enableNetworkMap;
+  const locationValue = {
+    latitude: form.watch('latitude') ?? null,
+    longitude: form.watch('longitude') ?? null,
+    locationLabel: form.watch('locationLabel') ?? null,
+    locationSource: form.watch('locationSource') ?? null,
+  };
 
   React.useEffect(() => {
     if (!isArchived) {
@@ -411,41 +439,56 @@ export const SpaceForm = ({
     }
   }, [label, tModalAside]);
 
+  const handleFormSubmit = React.useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      locationPickerRef.current?.commitPendingCoordinates();
+      void form.handleSubmit(
+        async (space) => {
+          if (
+            !space.flags?.includes('sandbox') &&
+            !space.flags?.includes('archived') &&
+            space.categories.length === 0
+          ) {
+            showCategoriesError();
+            return;
+          }
+          if (parentSpaceId === -1) {
+            showUnsetParentIdError();
+            return;
+          }
+          await onSubmit(space, organisationSpaces);
+        },
+        () => {
+          const flags = form.getValues()['flags'];
+          const categories = form.getValues()['categories'];
+          if (
+            !flags?.includes('sandbox') &&
+            !flags?.includes('archived') &&
+            categories.length === 0
+          ) {
+            showCategoriesError();
+          }
+          if (parentSpaceId === -1) {
+            showUnsetParentIdError();
+          }
+        },
+      )(event);
+    },
+    [
+      form,
+      onSubmit,
+      organisationSpaces,
+      parentSpaceId,
+      showCategoriesError,
+      showUnsetParentIdError,
+    ],
+  );
+
   return (
     <Form {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(
-          async (space) => {
-            if (
-              !space.flags?.includes('sandbox') &&
-              !space.flags?.includes('archived') &&
-              space.categories.length === 0
-            ) {
-              showCategoriesError();
-              return;
-            }
-            if (parentSpaceId === -1) {
-              showUnsetParentIdError();
-              return;
-            }
-            await onSubmit(space, organisationSpaces);
-          },
-          (e) => {
-            const flags = form.getValues()['flags'];
-            const categories = form.getValues()['categories'];
-            if (
-              !flags?.includes('sandbox') &&
-              !flags?.includes('archived') &&
-              categories.length === 0
-            ) {
-              showCategoriesError();
-            }
-            if (parentSpaceId === -1) {
-              showUnsetParentIdError();
-            }
-          },
-        )}
+        onSubmit={handleFormSubmit}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
         <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
@@ -581,10 +624,13 @@ export const SpaceForm = ({
                   }
                   uploadText={
                     <>
-                      <span className="text-accent-11 gap-1">
+                      <span className="text-foreground">
                         {tSpaces('uploadSpaceBanner')}
                       </span>{' '}
-                      {tSpaces('spaceBanner')} <RequirementMark />
+                      <span className="text-muted-foreground">
+                        {tSpaces('spaceBanner')}
+                      </span>{' '}
+                      <RequirementMark />
                     </>
                   }
                   enableImageResizer={true}
@@ -613,6 +659,33 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        {showLocationPicker ? (
+          <>
+            <Separator />
+            <SpaceLocationPicker
+              ref={locationPickerRef}
+              disabled={isLoading}
+              value={locationValue}
+              onChange={(next) => {
+                form.setValue('latitude', next.latitude, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                form.setValue('longitude', next.longitude, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                form.setValue('locationLabel', next.locationLabel, {
+                  shouldDirty: true,
+                });
+                form.setValue('locationSource', next.locationSource, {
+                  shouldDirty: true,
+                });
+                form.clearErrors(['latitude', 'longitude']);
+              }}
+            />
+          </>
+        ) : null}
         {label === 'configure' && (
           <FormField
             control={form.control}
@@ -779,9 +852,16 @@ export const SpaceForm = ({
                   placeholder={tSpaces('selectOneOrMore')}
                   searchPlaceholder={tSpaces('search')}
                   options={categoryOptions}
-                  value={field.value}
+                  value={collapseCategoriesToGroups(field.value ?? [])}
                   allowToggleAll={false}
-                  onValueChange={field.onChange}
+                  onValueChange={(groupIds) =>
+                    field.onChange(
+                      mergeCategoryGroupsWithExisting(
+                        groupIds.filter(isCategoryGroupId),
+                        field.value ?? [],
+                      ),
+                    )
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -841,7 +921,7 @@ export const SpaceForm = ({
         <div className="flex flex-col gap-2">
           <Card
             className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9': isSandbox,
+              'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30': isSandbox,
               'hover:border-accent-5': !isSandbox,
             })}
             onClick={toggleSandbox}
@@ -857,7 +937,7 @@ export const SpaceForm = ({
           </Card>
           <Card
             className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9': isDemo,
+              'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30': isDemo,
               'hover:border-accent-5': !isDemo,
             })}
             onClick={toggleDemo}
@@ -871,7 +951,7 @@ export const SpaceForm = ({
           </Card>
           <Card
             className={clsx('flex p-6 cursor-pointer space-x-4 items-center', {
-              'border-accent-9': isLive,
+              'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30': isLive,
               'hover:border-accent-5': !isLive,
             })}
             onClick={toggleLive}
@@ -888,7 +968,8 @@ export const SpaceForm = ({
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center',
                 {
-                  'border-accent-9': isArchived,
+                  'border-accent-9 bg-accent-3 ring-1 ring-accent-9/30':
+                    isArchived,
                   'hover:border-accent-5': !isArchived,
                 },
               )}

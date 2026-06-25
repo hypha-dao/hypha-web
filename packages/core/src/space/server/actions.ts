@@ -1,12 +1,12 @@
 'use server';
 
 // TODO: #602 Define RLS Policies for Spaces Table
-// import { getDb } from '@hypha-platform/core/server';
 import {
   createSpace,
   deleteSpaceBySlug,
   updateSpaceById,
   updateSpaceBySlug,
+  updateSpaceConfigurationById,
 } from './mutations';
 import {
   CreateSpaceInput,
@@ -14,6 +14,8 @@ import {
   UpdateSpaceByIdInput,
   UpdateSpaceBySlugInput,
 } from '../types';
+import { authorizeSpacePanelInteraction } from './authorize-space-panel-interaction';
+import { findSpaceById } from './queries';
 // TODO: #602 Define RLS Policies for Spaces Table
 import { db } from '@hypha-platform/storage-postgres';
 import { revalidatePath } from 'next/cache';
@@ -51,6 +53,43 @@ export async function updateSpaceByIdAction(
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   const { originalSpace, updatedSpace } = await updateSpaceById(data, { db });
+
+  const { slug: originalSlug } = originalSpace;
+  revalidatePath(`/[lang]/dho/${originalSlug}`, 'layout');
+  const { slug: updatedSlug } = updatedSpace;
+  if (originalSlug !== updatedSlug) {
+    revalidatePath(`/[lang]/dho/${updatedSlug}`, 'layout');
+  }
+
+  return updatedSpace;
+}
+
+export async function updateSpaceConfigurationByIdAction(
+  data: UpdateSpaceByIdInput,
+  { authToken }: { authToken?: string },
+) {
+  if (!authToken) {
+    throw new Error('authToken is required to update space configuration');
+  }
+
+  const space = await findSpaceById({ id: data.id }, { db });
+  if (!space) {
+    throw new Error('Space not found');
+  }
+
+  const interactionAuth = await authorizeSpacePanelInteraction({
+    spaceSlug: space.slug,
+    authToken,
+  });
+  if (!interactionAuth.authorized) {
+    throw new Error(interactionAuth.message);
+  }
+
+  // TODO: #602 switch to getDb({ authToken }) once spaces RLS policies exist.
+  const { originalSpace, updatedSpace } = await updateSpaceConfigurationById(
+    data,
+    { db },
+  );
 
   const { slug: originalSlug } = originalSpace;
   revalidatePath(`/[lang]/dho/${originalSlug}`, 'layout');

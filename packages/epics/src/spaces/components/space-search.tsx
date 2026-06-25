@@ -3,7 +3,15 @@ import { Input, Button } from '@hypha-platform/ui';
 import { SearchIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { cn } from '@hypha-platform/ui-utils';
+import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+
+import { readClientSearchParams } from '../read-client-search-params';
+import {
+  spaceToolbarInputClassName,
+  spaceToolbarInputRootClassName,
+} from './space-toolbar-styles';
 
 type Suggestion = {
   title: string;
@@ -12,16 +20,21 @@ type Suggestion = {
 type SpaceSearchProps = {
   suggestions?: Suggestion[];
   value?: string;
+  className?: string;
 };
 
-export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
+export const SpaceSearch = ({
+  suggestions,
+  value,
+  className,
+}: SpaceSearchProps) => {
   const t = useTranslations('Network');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
   const handleSearch = useDebouncedCallback((term: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = readClientSearchParams(searchParams);
     if (term) {
       params.set('query', term);
     } else {
@@ -30,14 +43,22 @@ export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
     replace(`${pathname}?${params.toString()}`);
   }, 300);
 
+  React.useEffect(() => {
+    return () => {
+      handleSearch.cancel();
+    };
+  }, [handleSearch]);
+
   return (
-    <div className="flex flex-col flex-grow gap-2">
+    <div className={cn('flex min-w-0 flex-col gap-2', className)}>
       <Input
         type="search"
         placeholder={t('findASpace')}
         leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
         defaultValue={value}
         onChange={(e) => handleSearch(e.target.value)}
+        rootClassName={spaceToolbarInputRootClassName}
+        className={spaceToolbarInputClassName}
       />
       {suggestions && (
         <div className="flex items-center justify-center w-full gap-2">

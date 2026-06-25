@@ -1,86 +1,64 @@
 /**
- * Proposal types exposed in Agreements → New proposal (select-create-action).
- * `documentLabel` must match the `label` stored on governance documents.
+ * AI-facing proposal type metadata — derived from the canonical proposal catalog.
+ * When adding/updating proposal routes, update `proposal-catalog/entries.ts` first.
  */
-export const AI_CREATABLE_PROPOSAL_TYPES = {
-  collective_agreement: {
-    documentLabel: 'Collective Agreement',
-    summary:
-      'Record a collective decision, policy, or general governance agreement.',
-    aiWalletExecutable: true,
-    createPath: 'agreements/create',
-  },
-  contribution: {
-    documentLabel: 'Contribution',
-    summary:
-      'Pay a member for a contribution (requires recipient wallet and token payouts).',
-    aiWalletExecutable: false,
-    createPath: 'agreements/create/propose-contribution',
-  },
-  redeem_tokens: {
-    documentLabel: 'Redeem Tokens',
-    summary: 'Redeem space tokens for backing collateral.',
-    aiWalletExecutable: false,
-    createPath: 'agreements/create/redeem-tokens',
-  },
-  pay_expenses: {
-    documentLabel: 'Expenses',
-    summary: 'Pay an expense from the space treasury.',
-    aiWalletExecutable: false,
-    createPath: 'agreements/create/pay-for-expenses',
-  },
-  accept_investment: {
-    documentLabel: 'Investment',
-    summary: 'Accept an investment into the space on defined terms.',
-    aiWalletExecutable: false,
-    createPath: 'agreements/create/accept-investment',
-  },
-  exchange: {
-    documentLabel: 'Exchange',
-    summary: 'Exchange stakes and tokens between parties.',
-    aiWalletExecutable: false,
-    createPath: 'agreements/create/exchange-stakes-and-tokens',
-  },
-  deploy_funds: {
-    documentLabel: 'Funding',
-    summary: 'Deploy or allocate treasury funds.',
-    aiWalletExecutable: false,
-    createPath: 'agreements/create/deploy-funds',
-  },
-  airdrop: {
-    documentLabel: 'Airdrop',
-    summary: 'Distribute tokens to multiple recipients.',
-    aiWalletExecutable: false,
-    createPath: 'agreements/create/airdrop',
-  },
-} as const;
+import { PROPOSAL_CATALOG, PROPOSAL_CATALOG_KEYS } from './proposal-catalog';
 
-export type AiCreatableProposalType = keyof typeof AI_CREATABLE_PROPOSAL_TYPES;
+export type AiCreatableProposalType = (typeof PROPOSAL_CATALOG_KEYS)[number];
 
-export const aiCreatableProposalTypeSchema = [
-  'collective_agreement',
-  'contribution',
-  'redeem_tokens',
-  'pay_expenses',
-  'accept_investment',
-  'exchange',
-  'deploy_funds',
-  'airdrop',
-] as const;
+export type AiProposalTypeConfig = {
+  documentLabel: string;
+  summary: string;
+  aiWalletExecutable: boolean;
+  createPath: string;
+  prepareStrategy: string;
+  onChain: boolean;
+};
+
+export const AI_CREATABLE_PROPOSAL_TYPES = Object.fromEntries(
+  PROPOSAL_CATALOG_KEYS.map((key) => {
+    const entry = PROPOSAL_CATALOG[key]!;
+    return [
+      key,
+      {
+        documentLabel: entry.documentLabel,
+        summary: entry.summary,
+        aiWalletExecutable:
+          entry.prepareStrategy === 'create_space_setup_proposal',
+        createPath: entry.createPath,
+        prepareStrategy: entry.prepareStrategy,
+        onChain: entry.onChain,
+      },
+    ];
+  }),
+) as Record<AiCreatableProposalType, AiProposalTypeConfig>;
+
+export const aiCreatableProposalTypeSchema = [...PROPOSAL_CATALOG_KEYS] as [
+  AiCreatableProposalType,
+  ...AiCreatableProposalType[],
+];
+
+export const collectiveAgreementOnlySchema = ['collective_agreement'] as const;
 
 export function buildAiProposalTypePromptLines(): string {
-  return Object.entries(AI_CREATABLE_PROPOSAL_TYPES)
-    .map(
-      ([key, config]) =>
-        `- ${key}: ${config.documentLabel} — ${config.summary}${
-          config.aiWalletExecutable
-            ? ' (executable in chat after wallet signature)'
-            : ' (open Agreements form for required fields)'
-        }`,
-    )
-    .join('\n');
+  return PROPOSAL_CATALOG_KEYS.map((key) => {
+    const entry = PROPOSAL_CATALOG[key]!;
+    const flow =
+      entry.prepareStrategy === 'prepare_governance_proposal'
+        ? ' (proposal_guidance → prepare_governance_proposal → Publish in Agreements)'
+        : entry.prepareStrategy === 'create_space_setup_proposal'
+        ? ' (collective agreement — create_space_setup_proposal after confirmation)'
+        : ' (open Agreements form)';
+    return `- ${key}: ${entry.documentLabel} — ${entry.summary}${flow}`;
+  }).join('\n');
 }
 
-export function resolveAiProposalTypeConfig(type: AiCreatableProposalType) {
-  return AI_CREATABLE_PROPOSAL_TYPES[type];
+export function resolveAiProposalTypeConfig(
+  type: AiCreatableProposalType,
+): AiProposalTypeConfig {
+  const config = AI_CREATABLE_PROPOSAL_TYPES[type];
+  if (!config) {
+    throw new Error(`Unknown proposal type: ${type}`);
+  }
+  return config;
 }

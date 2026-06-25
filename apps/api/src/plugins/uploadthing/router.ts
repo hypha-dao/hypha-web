@@ -27,7 +27,7 @@ export interface uploadRouterParams {
    */
   logger: FastifyBaseLogger;
   /**
-   * @default 3
+   * @default 5
    */
   maxAttachmentsCount?: number;
 }
@@ -35,19 +35,24 @@ export interface uploadRouterParams {
 export function newUploadRouter({
   isAllowed,
   logger,
-  maxAttachmentsCount = 3,
+  maxAttachmentsCount = 5,
 }: uploadRouterParams) {
   const f = createUploadthing();
 
   return {
     attachmentUploader: f({
       pdf: {
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
         maxFileCount: maxAttachmentsCount,
         contentDisposition: 'attachment',
       },
       image: {
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
+        maxFileCount: maxAttachmentsCount,
+        contentDisposition: 'attachment',
+      },
+      blob: {
+        maxFileSize: '16MB',
         maxFileCount: maxAttachmentsCount,
         contentDisposition: 'attachment',
       },
@@ -76,11 +81,11 @@ export function newUploadRouter({
     imageUpload: f({
       image: {
         maxFileCount: 1,
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
       },
       blob: {
         maxFileCount: 1,
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
       },
     })
       .middleware(async ({ req, files }) => {

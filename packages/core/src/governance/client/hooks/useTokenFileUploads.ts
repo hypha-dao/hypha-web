@@ -1,6 +1,10 @@
 'use client';
 
-import { useImageUpload } from '@hypha-platform/core/client';
+import {
+  ALLOWED_IMAGE_FILE_SIZE,
+  UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
+  useImageUpload,
+} from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
 
@@ -8,8 +12,8 @@ export const schemaTokenFile = z.object({
   iconUrl: z
     .instanceof(File)
     .refine(
-      (file) => file.size <= 4 * 1024 * 1024, // 4MB
-      'File size must be less than 4 MB',
+      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+      `File size must be less than ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL}`,
     )
     .refine(
       (file) =>
