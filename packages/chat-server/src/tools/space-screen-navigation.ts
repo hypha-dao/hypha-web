@@ -4,6 +4,7 @@ export type SpaceScreen =
   | 'signals'
   | 'agreements'
   | 'members'
+  | 'calendar'
   | 'treasury'
   | 'rewards'
   | 'memory'
@@ -36,6 +37,7 @@ export function resolveSpaceScreenPath(
   if (screen === 'signals') return `/${lang}/dho/${spaceSlug}/coherence`;
   if (screen === 'agreements') return `/${lang}/dho/${spaceSlug}/agreements`;
   if (screen === 'members') return `/${lang}/dho/${spaceSlug}/members`;
+  if (screen === 'calendar') return `/${lang}/dho/${spaceSlug}/calendar`;
   if (screen === 'treasury') return `/${lang}/dho/${spaceSlug}/treasury`;
   if (screen === 'rewards') return `/${lang}/dho/${spaceSlug}/rewards`;
   if (screen === 'memory') return `/${lang}/dho/${spaceSlug}/memory`;

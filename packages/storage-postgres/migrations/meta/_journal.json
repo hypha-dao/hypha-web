@@ -379,6 +379,20 @@
       "when": 1781618688647,
       "tag": "0053_space_geo_location",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1781700000000,
+      "tag": "0054_space_scheduled_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1781800000000,
+      "tag": "0055_scheduled_item_recurrence_reminders",
+      "breakpoints": true
     }
   ]
 }
