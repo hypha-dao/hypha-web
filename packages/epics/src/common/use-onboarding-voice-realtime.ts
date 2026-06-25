@@ -132,7 +132,12 @@ export function useOnboardingVoiceRealtime({
 
   const sendTranscriptToChat = useCallback(async (text: string) => {
     const normalized = text.trim();
-    if (!normalized || sendInFlightRef.current || isChatStreamingRef.current) {
+    if (
+      !normalized ||
+      sendInFlightRef.current ||
+      isChatStreamingRef.current ||
+      phaseRef.current === 'speaking'
+    ) {
       return;
     }
 
@@ -150,6 +155,9 @@ export function useOnboardingVoiceRealtime({
           setVoiceError('error');
         }
       }
+    } catch {
+      setVoiceError('error');
+      setPhase(connectionRef.current ? 'listening' : 'idle');
     } finally {
       sendInFlightRef.current = false;
       setLiveTranscript('');
@@ -184,7 +192,10 @@ export function useOnboardingVoiceRealtime({
         const transcript =
           typeof event.transcript === 'string' ? event.transcript.trim() : '';
         if (transcript) {
-          void sendTranscriptToChat(transcript);
+          void sendTranscriptToChat(transcript).catch(() => {
+            setVoiceError('error');
+            setPhase(connectionRef.current ? 'listening' : 'idle');
+          });
         }
       }
     },
@@ -364,7 +375,7 @@ export function useOnboardingVoiceRealtime({
       void acquireWarmMicStream();
     }, Math.max(0, duration - MIC_PREWARM_BEFORE_TTS_END_MS));
 
-    cancelSpeechRef.current = speakOnboardingText(speakable, {
+    const cancelSpeech = speakOnboardingText(speakable, {
       lang: locale,
       rate: 1.05,
       onEnd: () => {
@@ -373,6 +384,12 @@ export function useOnboardingVoiceRealtime({
         setPhase(connectionRef.current ? 'listening' : 'idle');
       },
     });
+    if (!cancelSpeech) {
+      clearPrelistenTimer();
+      setPhase(connectionRef.current ? 'listening' : 'idle');
+      return;
+    }
+    cancelSpeechRef.current = cancelSpeech;
   }, [
     clearPrelistenTimer,
     enabled,
