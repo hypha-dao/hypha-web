@@ -444,6 +444,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
   const aiWalletProposalInFlightRef = useRef(false);
   const handledWalletProposalPayloadKeyRef = useRef<string | null>(null);
+  const completedVotingMethodToolKeyRef = useRef<string | null>(null);
   const openVotingMethodFromChatRef = useRef<
     (userText: string, assistantText: string) => Promise<boolean>
   >(async () => false);
@@ -1089,6 +1090,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ...onboardingContext,
       locale: lang,
     };
+    if (next.locale === onboardingContext.locale) return;
     setOnboardingContext(next);
     saveOnboardingConversationContext(next);
   }, [lang, onboardingContext]);
@@ -2398,15 +2400,28 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
         const method = active.collectedFields.voting_method;
         if (method !== '1m1v' && method !== '1v1v' && method !== '1t1v') return;
-        if (!onboardingContext) return;
-        if (onboardingContext.votingMethod === method) return;
 
-        const next = completeVotingMethodGovernanceWalkthrough(
-          onboardingContext,
-          method,
-        );
-        setOnboardingContext(next);
-        saveOnboardingConversationContext(next);
+        const toolKey = `${message.id ?? 'm'}:${j}`;
+        if (completedVotingMethodToolKeyRef.current === toolKey) return;
+        if (onboardingContext?.votingMethod === method) {
+          completedVotingMethodToolKeyRef.current = toolKey;
+          return;
+        }
+
+        completedVotingMethodToolKeyRef.current = toolKey;
+        setOnboardingContext((current) => {
+          if (!current || current.votingMethod === method) return current;
+          const currentActive = current.activeGovernanceProposal;
+          if (currentActive?.proposalType !== 'change_voting_method') {
+            return current;
+          }
+          const next = completeVotingMethodGovernanceWalkthrough(
+            current,
+            method,
+          );
+          saveOnboardingConversationContext(next);
+          return next;
+        });
         return;
       }
     }
@@ -2419,8 +2434,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         { role: 'user', parts: [{ type: 'text', text }] },
         options,
       );
-      setOnboardingContext(nextContext);
-      saveOnboardingConversationContext(nextContext);
+      setOnboardingContext((current) => {
+        if (current?.votingMethod) return current;
+        saveOnboardingConversationContext(nextContext);
+        return nextContext;
+      });
     },
     [buildMessageOptions, sendMessage],
   );
