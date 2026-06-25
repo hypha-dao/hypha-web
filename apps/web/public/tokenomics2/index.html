@@ -1,0 +1,1066 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYPHA Tokenomics Simulator</title>
+<link rel="icon" href="https://hypha.earth/wp-content/uploads/2023/07/cropped-favicon-32x32.png" sizes="32x32" />
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "react/jsx-dev-runtime": "https://esm.sh/react@18.3.1/jsx-dev-runtime",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom"
+  }
+}
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style> body { background:#f3f4f6; } </style>
+</head>
+<body>
+<div id="root" class="p-4"></div>
+<script type="text/babel" data-type="module" data-presets="react" data-presets-options='{"react":{"runtime":"classic"}}'>
+import React, { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+// ============================================================
+// AI Operating Cost model (from docs/hypha-ai-cost)
+// Typical Space workload = 4.66M input + 0.17M output tokens / month.
+// Per-space monthly $ = (in_M * inPrice + out_M * outPrice) * profileMult.
+// ============================================================
+const TYPICAL_INPUT_M = 4.66;
+const TYPICAL_OUTPUT_M = 0.17;
+const PROFILE_MULT = { light: 0.33, typical: 1, heavy: 2.73 };
+
+const AI_MODELS = {
+  closed: [
+    { id: 'composer-fast', name: 'Composer 2.5 Fast', input: 3.0, output: 15.0, note: 'IDE default reference / baseline' },
+    { id: 'composer-standard', name: 'Composer 2.5 Standard', input: 0.5, output: 2.5, note: 'Same model, lower throughput' },
+  ],
+  open: [
+    { id: 'kimi-list', name: 'Kimi K2.6 (list)', input: 0.95, output: 4.0, note: 'Leads open quality; Composer lineage' },
+    { id: 'kimi-or', name: 'Kimi K2.6 (OpenRouter low)', input: 0.68, output: 3.41, note: 'Cheapest Kimi host' },
+    { id: 'qwen', name: 'Qwen3.5-397B', input: 0.6, output: 3.6, note: 'Strong open frontier MoE' },
+    { id: 'llama', name: 'Llama 4 Maverick', input: 0.5, output: 2.15, note: '400B MoE (DeepInfra)' },
+    { id: 'deepseek-pro', name: 'DeepSeek V4-Pro', input: 0.44, output: 0.87, note: 'Flagship open reasoning/coding' },
+    { id: 'deepseek-flash', name: 'DeepSeek V4-Flash', input: 0.14, output: 0.28, note: 'Budget leader' },
+  ],
+};
+const ALL_MODELS = [...AI_MODELS.closed, ...AI_MODELS.open];
+const getModel = (id) => ALL_MODELS.find((m) => m.id === id) || ALL_MODELS[0];
+const perSpaceMonthlyAICost = (model, profile) =>
+  (TYPICAL_INPUT_M * model.input + TYPICAL_OUTPUT_M * model.output) * PROFILE_MULT[profile];
+const ONBOARDING_BASELINE = 0.56; // Composer Fast one-time onboarding / space
+const onboardingCost = (model) => ONBOARDING_BASELINE * (model.input / 3.0); // scales with input price
+
+// ============================================================
+// Base L2 gas cost model (from docs/hypha-ai-cost)
+// Active governance · 0.005 Gwei · ETH $1,748 · non-exec vote @ 150k gas
+// ============================================================
+const GAS_MONTHLY_BY_PROFILE = { light: 0.06, typical: 0.37, heavy: 3.27 };
+const GAS_SETUP_ONE_TIME = 0.035;
+const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_MONTHLY_BY_PROFILE.typical;
+
+// Phase 0 → Phase I → Phase II continuity (same network, one growth story)
+// Phase I bootstraps 0 → ~4,373 paying Spaces over 12 months. Phase II starts there.
+const PHASE_I_END_SPACES = 4373;
+const PHASE_II_START_SPACES = PHASE_I_END_SPACES;
+
+// One series only: every Space pays $44/mo (no free tier). The Space count grows from the
+// ~4,373 Phase I handoff to the year-5 (Phase II month 48) target and drives all revenue.
+// Year-5 cumulative Space targets: Low ~250k, Mid ~1M, High ~10M.
+const GROWTH_PRESETS = {
+  low: {
+    label: 'Low',
+    subtitle: '~250k paying Spaces (yr 5)',
+    defaults: {
+      orgPayment: 44,
+      iexAllocationPct: 22,
+      investorSelling: 5,
+      additionalPurchase: 5,
+      unlockRate: 4,
+      initialHypha: 29000000,
+      initialUsdc: 5800000,
+      orgCount: PHASE_II_START_SPACES,
+      orgGrowthRate: 8.99,
+    },
+    // 4,373 → ~250k paying Spaces at month 48 (~8.99%/mo)
+    build: () => {
+      const m = {};
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 8.99 };
+      return m;
+    },
+  },
+  mid: {
+    label: 'Mid',
+    subtitle: '~1M paying Spaces (yr 5)',
+    defaults: {
+      orgPayment: 44,
+      iexAllocationPct: 20,
+      investorSelling: 6,
+      additionalPurchase: 6,
+      unlockRate: 3.5,
+      initialHypha: 41000000,
+      initialUsdc: 8200000,
+      orgCount: PHASE_II_START_SPACES,
+      orgGrowthRate: 12.25,
+    },
+    // 4,373 → ~1M paying Spaces at month 48 (~12.25%/mo)
+    build: () => {
+      const m = {};
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 12.25 };
+      return m;
+    },
+  },
+  high: {
+    label: 'High',
+    subtitle: '~10M paying Spaces (yr 5)',
+    defaults: {
+      orgPayment: 44,
+      iexAllocationPct: 18,
+      investorSelling: 7,
+      additionalPurchase: 7,
+      unlockRate: 3,
+      initialHypha: 111000000,
+      initialUsdc: 22200000,
+      orgCount: PHASE_II_START_SPACES,
+      orgGrowthRate: 17.89,
+    },
+    // 4,373 → ~10M paying Spaces at month 48 (~17.89%/mo)
+    build: () => {
+      const m = {};
+      for (let i = 2; i <= 48; i++) m[i] = { orgGrowthRate: 17.89 };
+      return m;
+    },
+  },
+};
+
+const TokenomicsSimulator = () => {
+  const [maxSupply, setMaxSupply] = useState(555555555);
+  const [initialHypha, setInitialHypha] = useState(GROWTH_PRESETS.low.defaults.initialHypha);
+  const [initialUsdc, setInitialUsdc] = useState(GROWTH_PRESETS.low.defaults.initialUsdc);
+  const [months, setMonths] = useState(48);
+  const [unlockRate, setUnlockRate] = useState(GROWTH_PRESETS.low.defaults.unlockRate);
+  const [stakingRewards, setStakingRewards] = useState(30);
+  const [rewardSplit, setRewardSplit] = useState(50);
+  const [stakingRate, setStakingRate] = useState(75);
+  const [sellRate, setSellRate] = useState(30);
+  const [investorSelling, setInvestorSelling] = useState(GROWTH_PRESETS.low.defaults.investorSelling);
+  const [additionalPurchase, setAdditionalPurchase] = useState(GROWTH_PRESETS.low.defaults.additionalPurchase);
+  const [orgCount, setOrgCount] = useState(GROWTH_PRESETS.low.defaults.orgCount);
+  const [orgPayment, setOrgPayment] = useState(GROWTH_PRESETS.low.defaults.orgPayment);
+  const [iexAllocationPct, setIexAllocationPct] = useState(GROWTH_PRESETS.low.defaults.iexAllocationPct);
+  const [orgGrowthRate, setOrgGrowthRate] = useState(GROWTH_PRESETS.low.defaults.orgGrowthRate);
+
+  // AI operating cost controls
+  const [aiModelId, setAiModelId] = useState('kimi-or');
+  const [aiProfile, setAiProfile] = useState('typical');
+  const [growthScenario, setGrowthScenario] = useState('low');
+
+  const [selectedMonth, setSelectedMonth] = useState(1);
+  const [monthlyParams, setMonthlyParams] = useState(GROWTH_PRESETS.low.build());
+  const [showMonthlyConfig, setShowMonthlyConfig] = useState(false);
+
+  const [results, setResults] = useState([]);
+  const [chartData, setChartData] = useState([]);
+
+  useEffect(() => {
+    calculateTokenomics();
+  }, [initialHypha, initialUsdc, months, unlockRate, stakingRate, sellRate,
+      investorSelling, additionalPurchase, stakingRewards, rewardSplit, maxSupply,
+      orgCount, orgPayment, iexAllocationPct, orgGrowthRate, monthlyParams, aiModelId, aiProfile]);
+
+  const getMonthlyParameter = (paramName, month) => {
+    if (monthlyParams[month] && monthlyParams[month][paramName] !== undefined) {
+      return monthlyParams[month][paramName];
+    }
+    for (let prevMonth = month - 1; prevMonth >= 1; prevMonth--) {
+      if (monthlyParams[prevMonth] && monthlyParams[prevMonth][paramName] !== undefined) {
+        return monthlyParams[prevMonth][paramName];
+      }
+    }
+    switch (paramName) {
+      case 'unlockRate': return unlockRate;
+      case 'rewardSplit': return rewardSplit;
+      case 'stakingRate': return stakingRate;
+      case 'sellRate': return sellRate;
+      case 'investorSelling': return investorSelling;
+      case 'additionalPurchase': return additionalPurchase;
+      case 'orgCount': return orgCount;
+      case 'orgPayment': return orgPayment;
+      case 'iexAllocationPct': return iexAllocationPct;
+      case 'orgGrowthRate': return orgGrowthRate;
+      default: return 0;
+    }
+  };
+
+  const updateMonthlyParameter = (paramName, value) => {
+    setMonthlyParams((prev) => {
+      const newParams = { ...prev };
+      if (!newParams[selectedMonth]) newParams[selectedMonth] = {};
+      newParams[selectedMonth][paramName] = value;
+      return newParams;
+    });
+  };
+
+  const formatNumber = (number) => number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+
+  const calculateTokenomics = () => {
+    let dexHypha = initialHypha;
+    let dexUsdc = initialUsdc;
+    let circulatingSupply = 0;
+    let cumulativeIssued = 0;
+    let prevPrice = dexUsdc / dexHypha;
+    const feeRate = 0.003;
+    const tokenResults = [];
+    const graphData = [];
+    let currentOrgCount = getMonthlyParameter('orgCount', 1);
+    let cumulativeStaked = 0;
+
+    const aiModel = getModel(aiModelId);
+    const perSpaceAI = perSpaceMonthlyAICost(aiModel, aiProfile);
+    const perSpaceGas = perSpaceMonthlyGas(aiProfile);
+    let cumulativeAICost = 0;
+    let cumulativeGasCost = 0;
+    let cumulativeGrossRevenue = 0;
+
+    for (let month = 1; month <= months; month++) {
+      const monthStakingRate = getMonthlyParameter('stakingRate', month) / 100;
+      const monthSellRate = getMonthlyParameter('sellRate', month) / 100;
+      const monthInvestorSelling = getMonthlyParameter('investorSelling', month);
+      const monthPurchase = getMonthlyParameter('additionalPurchase', month);
+
+      const minUnlockRate = 0.02;
+      const actualUnlockRate = minUnlockRate + (monthStakingRate * (unlockRate - minUnlockRate));
+
+      if (month > 1) {
+        if (monthlyParams[month] && monthlyParams[month].orgCount !== undefined) {
+          currentOrgCount = monthlyParams[month].orgCount;
+        } else {
+          const monthOrgGrowthRate = getMonthlyParameter('orgGrowthRate', month) / 100;
+          currentOrgCount = Math.round(currentOrgCount * (1 + monthOrgGrowthRate));
+        }
+      } else {
+        currentOrgCount = getMonthlyParameter('orgCount', month);
+      }
+
+      const monthOrgPayment = getMonthlyParameter('orgPayment', month);
+      const grossContribution = currentOrgCount * monthOrgPayment;
+      const iexPct = getMonthlyParameter('iexAllocationPct', month) / 100;
+      const orgTotalPurchase = grossContribution * iexPct;
+
+      // AI operating cost for this month (all active spaces)
+      const monthAICost = currentOrgCount * perSpaceAI;
+      cumulativeAICost += monthAICost;
+      const monthGasCost = currentOrgCount * perSpaceGas;
+      cumulativeGasCost += monthGasCost;
+      const netContribution = grossContribution - monthAICost;
+      const netAfterGas = netContribution - monthGasCost;
+
+      const dexPrice = dexUsdc / dexHypha;
+      const dexHyphaBefore = dexHypha;
+
+      let actualOrgPurchasedTokens = 0;
+      if (orgTotalPurchase > 0) {
+        const k = dexHypha * dexUsdc;
+        const usdcWithFee = orgTotalPurchase * (1 - feeRate);
+        const newDexUsdc = dexUsdc + usdcWithFee;
+        const newDexHypha = k / newDexUsdc;
+        const hyphaReceived = dexHypha - newDexHypha;
+        if (hyphaReceived > 0) {
+          const limitedHyphaReceived = Math.min(hyphaReceived, dexHypha * 0.25);
+          const limitedNewDexHypha = dexHypha - limitedHyphaReceived;
+          const limitedNewDexUsdc = k / limitedNewDexHypha;
+          dexHypha = limitedNewDexHypha;
+          dexUsdc = limitedNewDexUsdc;
+          actualOrgPurchasedTokens = limitedHyphaReceived;
+        }
+      }
+
+      // Every Space pays — no free tier and no churn — so the running Space count
+      // is itself the cumulative Space total. Both metrics track the same series.
+      const cumulativeOrgCount = currentOrgCount;
+      cumulativeGrossRevenue += grossContribution;
+      const runRateArr = currentOrgCount * monthOrgPayment * 12;
+
+      const distributionMultiplier = getMonthlyParameter('unlockRate', month);
+      const safeStakingRate = Math.min(monthStakingRate, 0.9);
+      const stakingRateModifier = 1 / (1 - safeStakingRate);
+      let totalIssuance = Math.round(actualOrgPurchasedTokens * stakingRateModifier * distributionMultiplier);
+      const maxMonthlyIssuance = 10000000;
+      totalIssuance = Math.min(totalIssuance, maxMonthlyIssuance);
+      if (cumulativeIssued + totalIssuance > maxSupply) {
+        totalIssuance = Math.max(0, maxSupply - cumulativeIssued);
+      }
+      cumulativeIssued += totalIssuance;
+      circulatingSupply = cumulativeIssued;
+
+      const monthlyStakedAmount = circulatingSupply * monthStakingRate;
+      cumulativeStaked = monthlyStakedAmount;
+
+      const initialStakingAllocation = Math.round(totalIssuance * (rewardSplit / 100));
+      const initialUnlockAllocation = totalIssuance - initialStakingAllocation;
+      const monthlyRewardsRate = stakingRewards / 1200;
+      const requiredForStakingRewards = Math.round(monthlyStakedAmount * monthlyRewardsRate);
+
+      let stakingRewardsAmount, unlockRewards;
+      if (requiredForStakingRewards <= initialStakingAllocation) {
+        stakingRewardsAmount = requiredForStakingRewards;
+        unlockRewards = totalIssuance - stakingRewardsAmount;
+      } else {
+        stakingRewardsAmount = initialStakingAllocation;
+        unlockRewards = initialUnlockAllocation;
+      }
+
+      const actualMonthlyRewardsRate = monthlyStakedAmount > 0 ? (stakingRewardsAmount / monthlyStakedAmount) * 100 : 0;
+      const actualRewards = actualMonthlyRewardsRate * 12;
+
+      let investorPurchasedTokens = 0;
+      if (monthPurchase > 0) {
+        const actualPurchaseAmount = (dexUsdc * monthPurchase) / 100;
+        if (actualPurchaseAmount > 0) {
+          const k = dexHypha * dexUsdc;
+          const usdcWithFee = actualPurchaseAmount * (1 - feeRate);
+          const newDexUsdc = dexUsdc + usdcWithFee;
+          const newDexHypha = k / newDexUsdc;
+          const hyphaReceived = dexHypha - newDexHypha;
+          if (hyphaReceived > 0 && hyphaReceived < dexHypha * 0.5) {
+            dexHypha = newDexHypha;
+            dexUsdc = newDexUsdc;
+            investorPurchasedTokens = hyphaReceived;
+            circulatingSupply += investorPurchasedTokens;
+          }
+        }
+      }
+
+      let tokensSold = 0;
+      if (monthInvestorSelling > 0 && dexHypha > 0 && dexUsdc > 0) {
+        const tokensToSell = Math.round((dexHypha * monthInvestorSelling) / 100);
+        if (tokensToSell > 0) {
+          const k = dexHypha * dexUsdc;
+          const newDexHypha = dexHypha + tokensToSell;
+          const newDexUsdc = k / newDexHypha;
+          const usdcReceived = dexUsdc - newDexUsdc;
+          dexHypha = newDexHypha;
+          dexUsdc = newDexUsdc;
+          tokensSold = tokensToSell;
+        }
+      }
+
+      const totalPurchasedTokens = actualOrgPurchasedTokens + investorPurchasedTokens;
+      const endOfMonthPrice = dexUsdc / dexHypha;
+      const priceChange = prevPrice > 0 ? ((endOfMonthPrice / prevPrice) - 1) * 100 : 0;
+      prevPrice = endOfMonthPrice;
+      const fdv = endOfMonthPrice * maxSupply;
+
+      tokenResults.push({
+        month, totalIssuance, cumulativeIssuance: cumulativeIssued,
+        stakingRewards: stakingRewardsAmount, unlockRewards,
+        stakingRewardsPercentage: totalIssuance > 0 ? Math.round((stakingRewardsAmount / totalIssuance) * 100) : 0,
+        actualRewards: actualRewards.toFixed(2),
+        circulatingSupply: Math.round(circulatingSupply),
+        stakedAmount: Math.round(cumulativeStaked),
+        dexHyphaBefore: Math.round(dexHyphaBefore),
+        dexHypha: Math.round(dexHypha), dexUsdc: Math.round(dexUsdc),
+        tokenPrice: endOfMonthPrice.toFixed(6), deltaPrice: priceChange.toFixed(2),
+        orgCount: currentOrgCount, cumulativeOrgCount,
+        orgUsdcPurchase: grossContribution,
+        iexUsdcPurchase: orgTotalPurchase,
+        orgPurchasedTokens: Math.round(actualOrgPurchasedTokens),
+        investorPurchasedTokens: Math.round(investorPurchasedTokens),
+        totalPurchasedTokens: Math.round(totalPurchasedTokens),
+        investorSellingUsdc: monthInvestorSelling, tokensSold,
+        fdv: Math.round(fdv),
+        runRateArr: Math.round(runRateArr),
+        fdvArr: runRateArr > 0 ? +(fdv / runRateArr).toFixed(1) : null,
+        cumulativeGrossRevenue: Math.round(cumulativeGrossRevenue),
+        aiCost: monthAICost, cumulativeAICost,
+        gasCost: monthGasCost, cumulativeGasCost,
+        netContribution, netAfterGas,
+      });
+
+      graphData.push({
+        name: `Month ${month}`,
+        'Circulating Supply': Math.round(circulatingSupply),
+        'Total Unlocked': cumulativeIssued,
+        'IEX HYPHA': Math.round(dexHypha),
+        'IEX USDC': Math.round(dexUsdc),
+        'Monthly Issuance': totalIssuance,
+        'Staking Rewards': stakingRewardsAmount,
+        'Unlock Rewards': unlockRewards,
+        'Investor Selling (% of HYPHA)': monthInvestorSelling,
+        'Total Tokens Sold': tokensSold,
+        'Number of Spaces': currentOrgCount,
+        'Cumulative Spaces': cumulativeOrgCount,
+        'Price (USDC)': parseFloat(endOfMonthPrice.toFixed(6)),
+        'FDV (Million $)': Math.round(fdv / 1000000),
+        'Space Purchases': Math.round(actualOrgPurchasedTokens),
+        'Space Contributions (USD)': Math.round(grossContribution),
+        'IEX Buy (USD)': Math.round(orgTotalPurchase),
+        'AI Cost (USD)': Math.round(monthAICost),
+        'Gas Cost (USD)': Math.round(monthGasCost),
+        'Net Contributions (USD)': Math.round(netContribution),
+        'Net After AI + Gas (USD)': Math.round(netAfterGas),
+        'Cumulative AI Cost (USD)': Math.round(cumulativeAICost),
+        'Cumulative Gas Cost (USD)': Math.round(cumulativeGasCost),
+      });
+    }
+
+    setResults(tokenResults);
+    setChartData(graphData);
+  };
+
+  const applyScenarioDefaults = (scenario) => {
+    const d = GROWTH_PRESETS[scenario].defaults;
+    setOrgPayment(d.orgPayment);
+    setIexAllocationPct(d.iexAllocationPct);
+    setInvestorSelling(d.investorSelling);
+    setAdditionalPurchase(d.additionalPurchase);
+    setUnlockRate(d.unlockRate);
+    setInitialHypha(d.initialHypha);
+    setInitialUsdc(d.initialUsdc);
+    setOrgCount(d.orgCount);
+    setOrgGrowthRate(d.orgGrowthRate);
+  };
+
+  const applyGrowthScenario = (scenario) => {
+    setGrowthScenario(scenario);
+    setMonthlyParams(GROWTH_PRESETS[scenario].build());
+    applyScenarioDefaults(scenario);
+  };
+
+  const resetParameters = () => {
+    setMaxSupply(555555555);
+    setMonths(48);
+    setStakingRewards(30);
+    setRewardSplit(50);
+    setStakingRate(75);
+    setSellRate(30);
+    setAiModelId('kimi-or');
+    setAiProfile('typical');
+    setMonthlyParams(GROWTH_PRESETS[growthScenario].build());
+    applyScenarioDefaults(growthScenario);
+  };
+
+  const aiModel = getModel(aiModelId);
+  const perSpaceAI = perSpaceMonthlyAICost(aiModel, aiProfile);
+  const perSpaceGas = perSpaceMonthlyGas(aiProfile);
+  const baselinePerSpace = perSpaceMonthlyAICost(getModel('composer-fast'), aiProfile);
+  const lastResult = results.length > 0 ? results[results.length - 1] : null;
+  const offPoolPct = 100 - (monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct);
+
+
+  return (
+    <div className="p-4 max-w-7xl mx-auto bg-white rounded-xl shadow-md">
+      <div className="flex gap-6">
+        <div className="flex-1 min-w-0">
+      <h1 className="text-2xl font-bold mb-1">HYPHA Tokenomics Simulator (Phase II)</h1>
+      <p className="text-sm text-gray-500 mb-3">Dynamic IEX pricing after Phase I handoff — per-Space AI + Base L2 gas operating cost model.</p>
+
+      <div className="mb-4 border border-slate-200 bg-slate-50 p-4 rounded-lg">
+        <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Roadmap: Phase 0 → Phase I → Phase II</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-600">Phase 0 — Today</div>
+            <p className="text-xs text-gray-600 mt-1">Pre-launch. Reference FDV ~$111M at $0.20 (111M locked supply).</p>
+          </div>
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-700">Phase I — Year 1 (months 0–12)</div>
+            <p className="text-xs text-gray-600 mt-1">Bootstrap 0 → ~4,373 paying Spaces, fixed $0.20. <a href="/tokenomics1/" className="text-indigo-600 underline">Phase I simulator →</a></p>
+          </div>
+          <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
+            <div className="font-semibold">Phase II — Years 2–5 (this sim)</div>
+            <p className="text-xs text-indigo-100 mt-1">Starts ~{PHASE_II_START_SPACES.toLocaleString()} paying Spaces × $44/mo. Year-5 paying Spaces: Low ~250k · Mid ~1M · High ~10M.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ============ AI OPERATING COST SECTION ============ */}
+      <div className="mb-6 border border-indigo-200 bg-indigo-50 p-4 rounded-lg">
+        <h2 className="text-lg font-semibold mb-1">AI &amp; On-Chain Operating Cost per Space</h2>
+        <p className="text-xs text-gray-600 mb-3">
+          A Space's AI workload (full vision) is ~{TYPICAL_INPUT_M}M input + {TYPICAL_OUTPUT_M}M output tokens/month for a Typical space.
+          Pick the inference model and Space profile; the simulator bills every active Space each month for AI inference and Base L2 gas (active governance).
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Inference Model</label>
+            <select
+              value={aiModelId}
+              onChange={(e) => setAiModelId(e.target.value)}
+              className="w-full p-2 border rounded bg-white"
+            >
+              <optgroup label="Closed source">
+                {AI_MODELS.closed.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name} — ${m.input}/${m.output} per 1M</option>
+                ))}
+              </optgroup>
+              <optgroup label="Open source">
+                {AI_MODELS.open.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name} — ${m.input}/${m.output} per 1M</option>
+                ))}
+              </optgroup>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">{aiModel.note}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Space Profile</label>
+            <select
+              value={aiProfile}
+              onChange={(e) => setAiProfile(e.target.value)}
+              className="w-full p-2 border rounded bg-white"
+            >
+              <option value="light">Light (~5 members · 0.33×)</option>
+              <option value="typical">Typical (~15 members · 1×)</option>
+              <option value="heavy">Heavy (~50 members · 2.73×)</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Scales AI token volume and gas activity (proposals/votes).</p>
+          </div>
+
+          <div className="bg-white border rounded p-3">
+            <div className="text-xs text-gray-500">AI cost / Space / month</div>
+            <div className="text-2xl font-bold text-indigo-700">${perSpaceAI.toFixed(2)}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              One-time onboarding ≈ ${onboardingCost(aiModel).toFixed(2)} / Space
+            </div>
+            <div className="text-xs text-gray-500">
+              vs Composer Fast: {(baselinePerSpace / perSpaceAI).toFixed(1)}× cheaper
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 border border-amber-200 bg-amber-50 rounded p-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-xs text-gray-600 font-medium">Base L2 gas / Space / month ({aiProfile})</div>
+              <div className="text-2xl font-bold text-amber-700">${perSpaceGas.toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">Active governance · 0.005 Gwei · ETH $1,748</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 font-medium">One-time setup / Space</div>
+              <div className="text-2xl font-bold text-amber-700">${GAS_SETUP_ONE_TIME.toFixed(3)}</div>
+              <div className="text-xs text-gray-500 mt-1">Create space + deploy-token proposal + deciding vote</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 font-medium">Combined ops / Space / month</div>
+              <div className="text-2xl font-bold text-gray-800">${(perSpaceAI + perSpaceGas).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">AI ${perSpaceAI.toFixed(2)} + gas ${perSpaceGas.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full bg-white border text-sm">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="py-1 px-3 border text-left">Model</th>
+                <th className="py-1 px-3 border">Type</th>
+                <th className="py-1 px-3 border text-right">In $/1M</th>
+                <th className="py-1 px-3 border text-right">Out $/1M</th>
+                <th className="py-1 px-3 border text-right">$/Space/mo ({aiProfile})</th>
+                <th className="py-1 px-3 border text-right">vs Composer Fast</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ALL_MODELS.map((m) => {
+                const cost = perSpaceMonthlyAICost(m, aiProfile);
+                const isOpen = AI_MODELS.open.some((o) => o.id === m.id);
+                return (
+                  <tr key={m.id} className={m.id === aiModelId ? 'bg-indigo-100 font-semibold' : ''}>
+                    <td className="py-1 px-3 border">{m.name}</td>
+                    <td className="py-1 px-3 border text-center">{isOpen ? 'Open' : 'Closed'}</td>
+                    <td className="py-1 px-3 border text-right">${m.input.toFixed(2)}</td>
+                    <td className="py-1 px-3 border text-right">${m.output.toFixed(2)}</td>
+                    <td className="py-1 px-3 border text-right">${cost.toFixed(2)}</td>
+                    <td className="py-1 px-3 border text-right">
+                      {m.id === 'composer-fast' ? '—' : `${(baselinePerSpace / cost).toFixed(1)}×`}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h2 className="text-lg font-semibold mb-3">Initial Parameters</h2>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Total Supply of HYPHA</label>
+            <div className="flex items-center">
+              <input type="range" min="100000000" max="1000000000" step="10000000" value={maxSupply} onChange={(e) => setMaxSupply(Number(e.target.value))} className="w-full mr-3" />
+              <input type="text" value={formatNumber(maxSupply)} onChange={(e) => { const v = Number(e.target.value.replace(/,/g, '')); if (!isNaN(v)) setMaxSupply(v); }} className="w-32 p-1 border rounded text-right" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Initial HYPHA on IEX</label>
+            <div className="flex items-center">
+              <input type="range" min="1000000" max="200000000" step="1000000" value={initialHypha} onChange={(e) => setInitialHypha(Number(e.target.value))} className="w-full mr-3" />
+              <input type="text" value={formatNumber(initialHypha)} onChange={(e) => { const v = Number(e.target.value.replace(/,/g, '')); if (!isNaN(v)) setInitialHypha(v); }} className="w-24 p-1 border rounded text-right" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Initial USDC on IEX</label>
+            <div className="flex items-center">
+              <input type="range" min="100000" max="40000000" step="100000" value={initialUsdc} onChange={(e) => setInitialUsdc(Number(e.target.value))} className="w-full mr-3" />
+              <input type="text" value={formatNumber(initialUsdc)} onChange={(e) => { const v = Number(e.target.value.replace(/,/g, '')); if (!isNaN(v)) setInitialUsdc(v); }} className="w-24 p-1 border rounded text-right" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Simulation Months</label>
+            <div className="flex items-center">
+              <input type="range" min="6" max="60" step="1" value={months} onChange={(e) => setMonths(Number(e.target.value))} className="w-full mr-3" />
+              <input type="number" value={months} onChange={(e) => setMonths(Number(e.target.value))} className="w-16 p-1 border rounded text-right" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h2 className="text-lg font-semibold mb-3">Monthly Parameters</h2>
+          <div className="mb-4 bg-blue-50 p-3 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-md font-medium">Per-Month Configuration</h3>
+              <button onClick={() => setShowMonthlyConfig(!showMonthlyConfig)} className="px-2 py-1 bg-blue-100 rounded hover:bg-blue-200 text-sm">{showMonthlyConfig ? 'Hide Details' : 'Show Details'}</button>
+            </div>
+            {showMonthlyConfig && (
+              <div className="mb-3">
+                <div className="flex items-center mb-3">
+                  <label className="block text-sm font-medium mr-2">Select Month:</label>
+                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="p-1 border rounded">
+                    {Array.from({length: months}, (_, i) => i + 1).map(month => (<option key={month} value={month}>Month {month}</option>))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <h3 className="text-md font-medium mb-2">Issuance Distribution</h3>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Staking Rate (%)</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="90" step="1" value={monthlyParams[selectedMonth]?.stakingRate ?? stakingRate} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setStakingRate(v) : updateMonthlyParameter('stakingRate', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="90" value={monthlyParams[selectedMonth]?.stakingRate ?? stakingRate} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setStakingRate(v) : updateMonthlyParameter('stakingRate', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Distribution Multiplier</label>
+            <div className="flex items-center">
+              <input type="range" min="0.1" max="10" step="0.1" value={monthlyParams[selectedMonth]?.unlockRate ?? unlockRate} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setUnlockRate(v) : updateMonthlyParameter('unlockRate', v); }} className="w-full mr-3" />
+              <input type="number" min="0.1" max="10" step="0.1" value={monthlyParams[selectedMonth]?.unlockRate ?? unlockRate} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setUnlockRate(v) : updateMonthlyParameter('unlockRate', v); }} className="w-16 p-1 border rounded text-right" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Max. Staking Rewards (Yearly)</label>
+            <div className="flex items-center">
+              <input type="range" min="5" max="30" step="1" value={monthlyParams[selectedMonth]?.stakingRewards ?? stakingRewards} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setStakingRewards(v) : updateMonthlyParameter('stakingRewards', v); }} className="w-full mr-3" />
+              <input type="number" value={monthlyParams[selectedMonth]?.stakingRewards ?? stakingRewards} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setStakingRewards(v) : updateMonthlyParameter('stakingRewards', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Issuance Split (% to Staking)</label>
+            <div className="flex items-center">
+              <input type="range" min="10" max="90" step="5" value={monthlyParams[selectedMonth]?.rewardSplit ?? rewardSplit} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setRewardSplit(v) : updateMonthlyParameter('rewardSplit', v); }} className="w-full mr-3" />
+              <input type="number" value={monthlyParams[selectedMonth]?.rewardSplit ?? rewardSplit} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setRewardSplit(v) : updateMonthlyParameter('rewardSplit', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+          </div>
+
+          <h3 className="text-md font-medium mb-2 mt-4">Buying Pressure on IEX</h3>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Number of Spaces</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="5000" step="10" value={monthlyParams[selectedMonth]?.orgCount ?? orgCount} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgCount(v) : updateMonthlyParameter('orgCount', v); }} className="w-full mr-3" />
+              <input type="number" min="0" value={monthlyParams[selectedMonth]?.orgCount ?? orgCount} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgCount(v) : updateMonthlyParameter('orgCount', v); }} className="w-16 p-1 border rounded text-right" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Space Growth Rate (%)</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="50" step="1" value={monthlyParams[selectedMonth]?.orgGrowthRate ?? orgGrowthRate} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgGrowthRate(v) : updateMonthlyParameter('orgGrowthRate', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="50" value={monthlyParams[selectedMonth]?.orgGrowthRate ?? orgGrowthRate} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgGrowthRate(v) : updateMonthlyParameter('orgGrowthRate', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">USDC Contribution per Space (monthly)</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="200" step="1" value={monthlyParams[selectedMonth]?.orgPayment ?? orgPayment} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgPayment(v) : updateMonthlyParameter('orgPayment', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="200" value={monthlyParams[selectedMonth]?.orgPayment ?? orgPayment} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setOrgPayment(v) : updateMonthlyParameter('orgPayment', v); }} className="w-20 p-1 border rounded text-right" />
+              <span className="ml-1">USDC</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Gross revenue per Space. Default AI ~${perSpaceAI.toFixed(2)}/Space (open-weight); Composer reference ~${baselinePerSpace.toFixed(2)}/Space. Only {iexAllocationPct}% routes to IEX; {offPoolPct}% off-pool.</p>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">% routed to IEX (buy pressure)</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="50" step="1" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="50" value={monthlyParams[selectedMonth]?.iexAllocationPct ?? iexAllocationPct} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setIexAllocationPct(v) : updateMonthlyParameter('iexAllocationPct', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Remainder ({offPoolPct}%) = AI, gas, treasury / ops / off-pool rewards.</p>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Additional Investor Purchases + buybacks (% of USDC on IEX)</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="50" step="1" value={monthlyParams[selectedMonth]?.additionalPurchase ?? additionalPurchase} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setAdditionalPurchase(v) : updateMonthlyParameter('additionalPurchase', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="50" value={monthlyParams[selectedMonth]?.additionalPurchase ?? additionalPurchase} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setAdditionalPurchase(v) : updateMonthlyParameter('additionalPurchase', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+          </div>
+
+          <h3 className="text-md font-medium mb-2 mt-4">Selling Pressure on IEX</h3>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Investor Selling (% of HYPHA on IEX)</label>
+            <div className="flex items-center">
+              <input type="range" min="0" max="30" step="0.5" value={monthlyParams[selectedMonth]?.investorSelling ?? investorSelling} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setInvestorSelling(v) : updateMonthlyParameter('investorSelling', v); }} className="w-full mr-3" />
+              <input type="number" min="0" max="30" step="0.5" value={monthlyParams[selectedMonth]?.investorSelling ?? investorSelling} onChange={(e) => { const v = Number(e.target.value); selectedMonth === 1 ? setInvestorSelling(v) : updateMonthlyParameter('investorSelling', v); }} className="w-16 p-1 border rounded text-right" />
+              <span className="ml-1">%</span>
+            </div>
+          </div>
+          <button onClick={resetParameters} className="mt-2 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Reset All Parameters</button>
+        </div>
+      </div>
+
+      {results.length > 0 && (
+        <div className="mt-4 mb-6 bg-blue-50 p-6 rounded-lg shadow">
+          <h2 className="text-xl font-bold mb-4">Key Metrics at Month {months}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">Cumulative Spaces</h3>
+              <p className="text-2xl font-bold">{results[results.length - 1].cumulativeOrgCount.toLocaleString()}</p>
+              <p className="text-sm text-gray-500">All paying · $44/mo (month {months})</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-green-500">
+              <h3 className="text-sm font-medium text-gray-500">Run-rate ARR (month {months})</h3>
+              <p className="text-2xl font-bold text-green-700">${lastResult ? lastResult.runRateArr.toLocaleString() : 0}</p>
+              <p className="text-sm text-gray-500">{lastResult ? lastResult.orgCount.toLocaleString() : 0} active Spaces × ${orgPayment} × 12</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-green-500">
+              <h3 className="text-sm font-medium text-gray-500">4-year gross billed</h3>
+              <p className="text-2xl font-bold text-green-700">${lastResult ? lastResult.cumulativeGrossRevenue.toLocaleString() : 0}</p>
+              <p className="text-sm text-gray-500">Sum of all monthly Space contributions</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">Token Price</h3>
+              <p className="text-2xl font-bold">${results[results.length - 1].tokenPrice}</p>
+              <p className="text-sm text-gray-500">Last Month Change: {results[results.length - 1].deltaPrice}%</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">Circulating Supply</h3>
+              <p className="text-2xl font-bold">{results[results.length - 1].circulatingSupply.toLocaleString()}</p>
+              <p className="text-sm text-gray-500">
+                Staked: {results[results.length - 1].stakedAmount.toLocaleString()} ({results[results.length - 1].circulatingSupply > 0 ? (results[results.length - 1].stakedAmount / results[results.length - 1].circulatingSupply * 100).toFixed(1) : 0}%)
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">IEX HYPHA Balance</h3>
+              <p className="text-2xl font-bold">{results[results.length - 1].dexHypha.toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">IEX USDC Balance</h3>
+              <p className="text-2xl font-bold">${results[results.length - 1].dexUsdc.toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">Tokens Purchased by Spaces</h3>
+              <p className="text-2xl font-bold">{results.reduce((s, r) => s + r.orgPurchasedTokens, 0).toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">Tokens Purchased by Investors</h3>
+              <p className="text-2xl font-bold">{results.reduce((s, r) => s + r.investorPurchasedTokens, 0).toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">Total Issuance</h3>
+              <p className="text-2xl font-bold">{results[results.length - 1].cumulativeIssuance.toLocaleString()}</p>
+              <p className="text-sm text-gray-500">{(results[results.length - 1].cumulativeIssuance / maxSupply * 100).toFixed(1)}% of Max Supply</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">Average Rewards</h3>
+              <p className="text-2xl font-bold">{(results.reduce((s, r) => s + parseFloat(r.actualRewards), 0) / results.length).toFixed(2)}%</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="text-sm font-medium text-gray-500">FDV (Full Diluted Value)</h3>
+              <p className="text-2xl font-bold">${results[results.length - 1].fdv.toLocaleString()}</p>
+              {lastResult && lastResult.fdvArr != null && (
+                <p className="text-sm text-gray-500">FDV / ARR: {lastResult.fdvArr}× (ramp narrative at Low/Mid)</p>
+              )}
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-indigo-400">
+              <h3 className="text-sm font-medium text-gray-500">Monthly AI Cost</h3>
+              <p className="text-2xl font-bold text-indigo-700">${Math.round(results[results.length - 1].aiCost).toLocaleString()}</p>
+              <p className="text-sm text-gray-500">{aiModel.name} · ${perSpaceAI.toFixed(2)}/Space</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-indigo-400">
+              <h3 className="text-sm font-medium text-gray-500">Cumulative AI Cost</h3>
+              <p className="text-2xl font-bold text-indigo-700">${Math.round(results[results.length - 1].cumulativeAICost).toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-indigo-400">
+              <h3 className="text-sm font-medium text-gray-500">Net After AI (monthly)</h3>
+              <p className={`text-2xl font-bold ${results[results.length - 1].netContribution >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${Math.round(results[results.length - 1].netContribution).toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500">Contributions − AI cost</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-amber-400">
+              <h3 className="text-sm font-medium text-gray-500">Monthly Gas Cost</h3>
+              <p className="text-2xl font-bold text-amber-800">${Math.round(results[results.length - 1].gasCost).toLocaleString()}</p>
+              <p className="text-sm text-gray-500">${perSpaceGas.toFixed(2)}/Space · {aiProfile} profile</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-amber-400">
+              <h3 className="text-sm font-medium text-gray-500">Cumulative Gas Cost</h3>
+              <p className="text-2xl font-bold text-amber-800">${Math.round(results[results.length - 1].cumulativeGasCost).toLocaleString()}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow border-l-4 border-teal-400">
+              <h3 className="text-sm font-medium text-gray-500">Net After AI + Gas (monthly)</h3>
+              <p className={`text-2xl font-bold ${results[results.length - 1].netAfterGas >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${Math.round(results[results.length - 1].netAfterGas).toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500">Contributions − AI − gas</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-3">Simulation Results</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="h-80 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-md font-medium mb-2">Reward Distribution</h3>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={chartData} margin={{ top: 5, right: 50, left: 50, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(v) => v.toLocaleString()} width={60} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
+                <Line type="monotone" dataKey="Staking Rewards" stroke="#8884d8" strokeWidth={2} />
+                <Line type="monotone" dataKey="Unlock Rewards" stroke="#82ca9d" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="h-80 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-md font-medium mb-2">Circulating Supply &amp; Total Unlocked</h3>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={chartData} margin={{ top: 5, right: 40, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(v) => v.toLocaleString()} width={60} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
+                <Line type="monotone" dataKey="Circulating Supply" stroke="#8884d8" activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="Total Unlocked" stroke="#82ca9d" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="h-80 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-md font-medium mb-2">IEX HYPHA Balance &amp; Space Purchases</h3>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={chartData} margin={{ top: 5, right: 50, left: 50, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(v) => v.toLocaleString()} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
+                <Line type="monotone" dataKey="IEX HYPHA" stroke="#82ca9d" strokeWidth={2} activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="Space Purchases" stroke="#8884d8" strokeWidth={1.5} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="h-80 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-md font-medium mb-2">IEX USDC</h3>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={chartData} margin={{ top: 5, right: 40, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(v) => v.toLocaleString()} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Line type="monotone" dataKey="IEX USDC" stroke="#8884d8" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="h-80 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-md font-medium mb-2">Space Growth (all paying)</h3>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 30, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(v) => v.toLocaleString()} width={60} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
+                <Line type="monotone" dataKey="Cumulative Spaces" stroke="#82ca9d" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="h-80 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-md font-medium mb-2">Token Price &amp; FDV</h3>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 30, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis yAxisId="left" tickFormatter={(v) => v.toLocaleString()} width={60} />
+                <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => v.toLocaleString()} width={60} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="Price (USDC)" stroke="#ff7300" />
+                <Line yAxisId="right" type="monotone" dataKey="FDV (Million $)" stroke="#0088FE" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="h-80 bg-white p-4 rounded-lg shadow md:col-span-2">
+            <h3 className="text-md font-medium mb-1">Space Contributions vs AI &amp; Gas Cost</h3>
+            <p className="text-xs text-gray-500 mb-2">
+              Gross contributions = Spaces × ${orgPayment} USDC/Space. Only {iexAllocationPct}% routes to IEX each month; AI and gas costs scale with Space count × selected model/profile rates.
+            </p>
+            <ResponsiveContainer width="100%" height="85%">
+              <LineChart data={chartData} margin={{ top: 5, right: 50, left: 50, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(v) => v.toLocaleString()} width={60} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
+                <Line type="monotone" dataKey="Space Contributions (USD)" stroke="#82ca9d" strokeWidth={2} />
+                <Line type="monotone" dataKey="AI Cost (USD)" stroke="#6366f1" strokeWidth={2} />
+                <Line type="monotone" dataKey="Gas Cost (USD)" stroke="#d97706" strokeWidth={2} />
+                <Line type="monotone" dataKey="Net Contributions (USD)" stroke="#ff7300" strokeWidth={2} />
+                <Line type="monotone" dataKey="Net After AI + Gas (USD)" stroke="#0d9488" strokeWidth={2} strokeDasharray="5 5" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="h-80 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-md font-medium mb-2">Cumulative AI &amp; Gas Cost</h3>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={chartData} margin={{ top: 5, right: 40, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(v) => v.toLocaleString()} width={60} />
+                <Tooltip formatter={(v) => v.toLocaleString()} />
+                <Legend />
+                <Line type="monotone" dataKey="Cumulative AI Cost (USD)" stroke="#6366f1" strokeWidth={2} />
+                <Line type="monotone" dataKey="Cumulative Gas Cost (USD)" stroke="#d97706" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border text-sm">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="py-2 px-4 border">Month</th>
+                <th className="py-2 px-4 border text-right">Total Issuance (monthly)</th>
+                <th className="py-2 px-4 border text-right">Total Unlocked (cumulative)</th>
+                <th className="py-2 px-4 border text-right">Staking Rewards</th>
+                <th className="py-2 px-4 border text-right">Unlock Rewards</th>
+                <th className="py-2 px-4 border text-right">Actual Rewards</th>
+                <th className="py-2 px-4 border text-right">Spaces (monthly)</th>
+                <th className="py-2 px-4 border text-right">Cumulative Spaces</th>
+                <th className="py-2 px-4 border text-right">Staked Tokens (cumulative)</th>
+                <th className="py-2 px-4 border text-right">Circulating Supply</th>
+                <th className="py-2 px-4 border text-right">IEX HYPHA Before</th>
+                <th className="py-2 px-4 border text-right">Space HYPHA Purchased</th>
+                <th className="py-2 px-4 border text-right">Investor HYPHA Purchased</th>
+                <th className="py-2 px-4 border text-right">Tokens Sold on IEX</th>
+                <th className="py-2 px-4 border text-right">IEX HYPHA After</th>
+                <th className="py-2 px-4 border text-right">IEX USDC</th>
+                <th className="py-2 px-4 border text-right">Space Contributions (USD)</th>
+                <th className="py-2 px-4 border text-right">AI Cost (USD)</th>
+                <th className="py-2 px-4 border text-right">Gas Cost (USD)</th>
+                <th className="py-2 px-4 border text-right">Net After AI (USD)</th>
+                <th className="py-2 px-4 border text-right">Net After AI + Gas (USD)</th>
+                <th className="py-2 px-4 border text-right">Cumulative AI Cost (USD)</th>
+                <th className="py-2 px-4 border text-right">Cumulative Gas Cost (USD)</th>
+                <th className="py-2 px-4 border text-right">Token Price</th>
+                <th className="py-2 px-4 border text-right">Price Change</th>
+                <th className="py-2 px-4 border text-right">FDV (USD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((row) => (
+                <tr key={row.month}>
+                  <td className="py-2 px-4 border text-center">{row.month}</td>
+                  <td className="py-2 px-4 border text-right">{row.totalIssuance.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.cumulativeIssuance.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">
+                    {row.stakingRewards.toLocaleString()}
+                    <span className="text-xs text-gray-500 ml-1">({row.stakingRewardsPercentage}%)</span>
+                  </td>
+                  <td className="py-2 px-4 border text-right">{row.unlockRewards.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.actualRewards}%</td>
+                  <td className="py-2 px-4 border text-right">{row.orgCount.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.cumulativeOrgCount.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.stakedAmount.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.circulatingSupply.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.dexHyphaBefore.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.orgPurchasedTokens.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.investorPurchasedTokens.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.tokensSold.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.dexHypha.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">{row.dexUsdc.toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">${Math.round(row.orgUsdcPurchase).toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right text-indigo-700">${Math.round(row.aiCost).toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right text-amber-700">${Math.round(row.gasCost).toLocaleString()}</td>
+                  <td className={`py-2 px-4 border text-right ${row.netContribution >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${Math.round(row.netContribution).toLocaleString()}
+                  </td>
+                  <td className={`py-2 px-4 border text-right ${row.netAfterGas >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${Math.round(row.netAfterGas).toLocaleString()}
+                  </td>
+                  <td className="py-2 px-4 border text-right text-indigo-700">${Math.round(row.cumulativeAICost).toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right text-amber-700">${Math.round(row.cumulativeGasCost).toLocaleString()}</td>
+                  <td className="py-2 px-4 border text-right">${row.tokenPrice}</td>
+                  <td className="py-2 px-4 border text-right">{row.deltaPrice}%</td>
+                  <td className="py-2 px-4 border text-right">${row.fdv.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+        </div>
+
+        <div className="w-48 flex-shrink-0">
+          <div className="sticky top-4 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <div className="bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Growth Scenario
+            </div>
+            {Object.entries(GROWTH_PRESETS).map(([key, preset]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => applyGrowthScenario(key)}
+                className={`w-full text-left px-3 py-3 border-t border-gray-200 transition-colors ${
+                  growthScenario === key
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white hover:bg-indigo-50 text-gray-800'
+                }`}
+              >
+                <div className="font-semibold text-sm">{preset.label}</div>
+                <div className={`text-xs mt-0.5 ${growthScenario === key ? 'text-indigo-100' : 'text-gray-500'}`}>
+                  {preset.subtitle}
+                </div>
+              </button>
+            ))}
+            <p className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-200">
+              Targets total paying Spaces at year 5 (month 48). Every Space pays $44/mo; override Space growth per month via Per-Month Configuration.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const root = createRoot(document.getElementById('root'));
+root.render(<TokenomicsSimulator />);
+</script>
+</body>
+</html>

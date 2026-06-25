@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hypha — AI &amp; On-chain Cost per Space</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161922;
+    --panel-2: #1b1f2a;
+    --stroke: #262b38;
+    --text: #e7e9ee;
+    --text-2: #a7adbd;
+    --text-3: #767d8f;
+    --accent: #5b9cf0;
+    --accent-soft: #1d2a40;
+    --good: #4cc38a;
+    --good-soft: #163026;
+    --warn: #e0a83b;
+    --bar: #3a6ea5;
+    --bar-2: #2f9e74;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 48px 24px 80px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 30px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h2 { font-size: 20px; margin: 44px 0 14px; letter-spacing: -0.01em; }
+  h3 { font-size: 15px; margin: 26px 0 10px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
+  p { color: var(--text-2); margin: 0 0 12px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { background: var(--panel-2); border: 1px solid var(--stroke); border-radius: 4px; padding: 1px 5px; font-size: 0.86em; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .sub { color: var(--text-3); font-size: 13px; }
+  .lede { color: var(--text-2); font-size: 16px; max-width: 760px; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 28px 0 8px; }
+  .stat { background: var(--panel); border: 1px solid var(--stroke); border-radius: 10px; padding: 16px; }
+  .stat .v { font-size: 24px; font-weight: 650; letter-spacing: -0.02em; }
+  .stat .v.accent { color: var(--accent); }
+  .stat .v.warn { color: var(--warn); }
+  .stat .l { color: var(--text-3); font-size: 12px; margin-top: 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--stroke); }
+  th { color: var(--text-3); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:hover { background: var(--panel); }
+  tr.total td { border-top: 2px solid var(--stroke); border-bottom: none; font-weight: 650; color: var(--text); }
+  .frame { border: 1px solid var(--stroke); border-radius: 10px; overflow: hidden; }
+  .frame table { margin: 0; }
+  .frame th, .frame td { padding-left: 16px; padding-right: 16px; }
+
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--stroke); color: var(--text-2); }
+  .tag.live { color: var(--good); border-color: var(--good-soft); background: var(--good-soft); }
+  .tag.heur { color: var(--warn); border-color: #3a2f17; background: #251d0f; }
+  .tag.verified { color: var(--good); border-color: var(--good-soft); background: var(--good-soft); }
+  .tag.est { color: var(--warn); border-color: #3a2f17; background: #251d0f; }
+
+  .callout { background: var(--accent-soft); border: 1px solid #284468; border-radius: 10px; padding: 14px 16px; margin: 16px 0; }
+  .callout .t { font-weight: 650; color: #bcd6f7; margin-bottom: 4px; }
+  .callout p { color: #cdd6e6; margin: 0; }
+
+  .bar-cell { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .bar { height: 8px; border-radius: 3px; background: var(--bar); }
+  .bar.alt { background: var(--bar-2); }
+  .barlabel { min-width: 54px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  ul { color: var(--text-2); margin: 4px 0 12px; padding-left: 20px; }
+  li { margin: 4px 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .muted-card { background: var(--panel); border: 1px solid var(--stroke); border-radius: 10px; padding: 16px; }
+  hr { border: none; border-top: 1px solid var(--stroke); margin: 40px 0; }
+  footer { color: var(--text-3); font-size: 13px; margin-top: 40px; }
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .grid2 { grid-template-columns: 1fr; }
+    body { padding: 28px 14px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Hypha AI — Estimated AI Cost per Space</h1>
+  <p class="lede">Cost model for running Hypha AI features against an LLM, expressed as average spend per Space. Headline numbers use <strong>Cursor Composer 2.5 Fast</strong> ($3.00 / 1M input · $15.00 / 1M output); a dedicated section estimates the same workload on the most capable open-source models.</p>
+  <p class="sub">Last updated June 2026 · Token volumes grounded in the <code>packages/chat-server</code> implementation · Pricing from public rate cards.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v accent">$16.52</div><div class="l">Avg AI cost / month · Typical space</div></div>
+    <div class="stat"><div class="v">319</div><div class="l">AI tasks / month</div></div>
+    <div class="stat"><div class="v">$0.0518</div><div class="l">Blended cost / task</div></div>
+    <div class="stat"><div class="v warn">$0.56</div><div class="l">One-time onboarding / space</div></div>
+  </div>
+
+  <div class="callout">
+    <div class="t">Headline</div>
+    <p>A typical active Space costs <strong>≈ $16.50 / month (≈ $198 / year)</strong> on Composer 2.5 Fast. Swapping in a top open-source model cuts this <strong>3×–24×</strong> — the cheapest credible option (DeepSeek V4-Flash) lands the typical Space at <strong>~$0.70 / month</strong>.</p>
+  </div>
+
+  <h2>Cost by Space size</h2>
+  <p>Two scopes: <strong>Live today</strong> bills only the chat copilot (the only surface calling a model now). <strong>Full AI vision</strong> also bills the background features — Signal Orchestrator, discussion &amp; call summaries — which are heuristic (zero LLM tokens) today, representing the cost ceiling.</p>
+  <div class="frame">
+    <table>
+      <thead><tr>
+        <th>Space profile</th><th>Members</th>
+        <th class="n">Full vision / mo</th><th class="n">Live today / mo</th>
+        <th class="n">Annualized (vision)</th><th class="n">AI tasks / mo</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Light</td><td>~5</td><td class="n">$5.48</td><td class="n">$2.45</td><td class="n">$65.76</td><td class="n">112</td></tr>
+        <tr><td><strong>Typical</strong></td><td>~15</td><td class="n"><strong>$16.52</strong></td><td class="n">$10.13</td><td class="n">$198.24</td><td class="n">319</td></tr>
+        <tr><td>Heavy</td><td>~50</td><td class="n">$45.06</td><td class="n">$31.26</td><td class="n">$540.72</td><td class="n">840</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Per-feature breakdown — Typical Space</h2>
+  <p>Composer 2.5 Fast, full AI vision. Cost per task = input × $3/1M + output × $15/1M, summed over monthly task volume. Bars show share of monthly spend.</p>
+  <div class="frame">
+    <table>
+      <thead><tr>
+        <th>Feature</th><th>Surface</th><th>Status</th>
+        <th class="n">Tasks/mo</th><th class="n">In tok</th><th class="n">Out tok</th>
+        <th class="n">$/task</th><th class="n">Monthly</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Discussion summary (background refresh)</td><td>Space Memory</td><td><span class="tag heur">heuristic today</span></td><td class="n">120</td><td class="n">12k</td><td class="n">400</td><td class="n">$0.042</td><td class="n"><div class="bar-cell"><span class="bar" style="width:120px"></span><span class="barlabel">$5.04</span></div></td></tr>
+        <tr><td>Advisory (multi-tool reads)</td><td>Copilot</td><td><span class="tag live">live</span></td><td class="n">40</td><td class="n">28k</td><td class="n">900</td><td class="n">$0.098</td><td class="n"><div class="bar-cell"><span class="bar" style="width:93px"></span><span class="barlabel">$3.90</span></div></td></tr>
+        <tr><td>Q&amp;A &amp; navigation</td><td>Copilot</td><td><span class="tag live">live</span></td><td class="n">80</td><td class="n">9k</td><td class="n">400</td><td class="n">$0.033</td><td class="n"><div class="bar-cell"><span class="bar" style="width:63px"></span><span class="barlabel">$2.64</span></div></td></tr>
+        <tr><td>Memory deep-dive (read file/PDF)</td><td>Space Memory</td><td><span class="tag live">live</span></td><td class="n">12</td><td class="n">45k</td><td class="n">1.2k</td><td class="n">$0.153</td><td class="n"><div class="bar-cell"><span class="bar" style="width:44px"></span><span class="barlabel">$1.84</span></div></td></tr>
+        <tr><td>Signal Orchestrator (auto signal)</td><td>Signals</td><td><span class="tag heur">heuristic today</span></td><td class="n">30</td><td class="n">10k</td><td class="n">600</td><td class="n">$0.039</td><td class="n"><div class="bar-cell"><span class="bar" style="width:28px"></span><span class="barlabel">$1.17</span></div></td></tr>
+        <tr><td>Signal authoring (member, gated)</td><td>Signals</td><td><span class="tag live">live</span></td><td class="n">8</td><td class="n">30k</td><td class="n">1k</td><td class="n">$0.105</td><td class="n"><div class="bar-cell"><span class="bar" style="width:20px"></span><span class="barlabel">$0.84</span></div></td></tr>
+        <tr><td>Web search assist</td><td>Copilot</td><td><span class="tag live">live</span></td><td class="n">15</td><td class="n">12k</td><td class="n">500</td><td class="n">$0.044</td><td class="n"><div class="bar-cell"><span class="bar" style="width:16px"></span><span class="barlabel">$0.65</span></div></td></tr>
+        <tr><td>Network discovery (search spaces)</td><td>Discovery</td><td><span class="tag live">live</span></td><td class="n">8</td><td class="n">9k</td><td class="n">400</td><td class="n">$0.033</td><td class="n"><div class="bar-cell"><span class="bar" style="width:7px"></span><span class="barlabel">$0.26</span></div></td></tr>
+        <tr><td>Call transcript summary (per call)</td><td>Space Memory</td><td><span class="tag heur">heuristic today</span></td><td class="n">6</td><td class="n">8k</td><td class="n">400</td><td class="n">$0.030</td><td class="n"><div class="bar-cell"><span class="bar" style="width:5px"></span><span class="barlabel">$0.18</span></div></td></tr>
+        <tr class="total"><td>Total</td><td></td><td></td><td class="n">319</td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n">$16.52</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub">Where the money goes: background Space Memory summaries (~31%) and copilot advisory reads (~24%) dominate. The workload totals ≈ 4.66M input + 0.17M output tokens/month — heavily input-bound.</p>
+
+  <h2>Open-source model pricing</h2>
+  <p>The same workload on the most capable open-weight models of 2026. Highly relevant here: <strong>Composer 2.5 is itself post-trained from Moonshot's Kimi K2.5</strong>, so running the open Kimi line directly is the closest like-for-like swap — at a fraction of Composer Fast's interactive premium.</p>
+  <div class="callout">
+    <div class="t">Hosting is already included</div>
+    <p>All rates here are managed / hosted inference (per-token) — the provider runs the model on their GPUs and bills per token (Cursor for Composer; OpenRouter / DeepSeek / DeepInfra for the open models). There is no separate GPU/infra cost to add. Self-hosting the open weights is a different fixed-cost model (e.g. one H100 ≈ $1,400+/month) that is more expensive at per-Space volumes and only pays off when many Spaces share GPUs — so it is out of scope for a per-Space estimate.</p>
+  </div>
+
+  <h3>Representative rates (per 1M tokens)</h3>
+  <div class="frame">
+    <table>
+      <thead><tr><th>Model</th><th>Open weights</th><th class="n">Input $/1M</th><th class="n">Output $/1M</th><th>Why it's here</th></tr></thead>
+      <tbody>
+        <tr><td>Kimi K2.6 (Moonshot)</td><td>Yes</td><td class="n">$0.95</td><td class="n">$4.00</td><td>Leads open-source quality rankings; agentic; same lineage as Composer (OpenRouter low: $0.68 / $3.41)</td></tr>
+        <tr><td>DeepSeek V4-Pro</td><td>Yes (MIT)</td><td class="n">$0.44</td><td class="n">$0.87</td><td>Flagship open reasoning/coding model; first-party API</td></tr>
+        <tr><td>Qwen3.5-397B (Alibaba)</td><td>Yes</td><td class="n">$0.60</td><td class="n">$3.60</td><td>Strong open frontier MoE</td></tr>
+        <tr><td>Llama 4 Maverick (Meta)</td><td>Yes</td><td class="n">$0.50</td><td class="n">$2.15</td><td>400B MoE; DeepInfra-hosted rate</td></tr>
+        <tr><td>DeepSeek V4-Flash</td><td>Yes (MIT)</td><td class="n">$0.14</td><td class="n">$0.28</td><td>Budget leader; near-frontier at a fraction of the cost</td></tr>
+        <tr><td><em>Composer 2.5 Fast (baseline)</em></td><td>No</td><td class="n">$3.00</td><td class="n">$15.00</td><td><em>Reference</em></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Estimated cost — Typical Space (full AI vision)</h3>
+  <p>Applying each model's rate to the typical Space's 4.66M input + 0.17M output tokens/month. Bars are relative to the Composer Fast baseline.</p>
+  <div class="frame">
+    <table>
+      <thead><tr><th>Model</th><th class="n">Monthly / space</th><th class="n">Annualized</th><th class="n">Onboarding</th><th class="n">vs Composer Fast</th></tr></thead>
+      <tbody>
+        <tr><td>Composer 2.5 Fast <span class="sub">(baseline)</span></td><td class="n"><div class="bar-cell"><span class="bar" style="width:160px"></span><span class="barlabel">$16.52</span></div></td><td class="n">$198.24</td><td class="n">$0.56</td><td class="n">—</td></tr>
+        <tr><td>Composer 2.5 Standard</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:27px"></span><span class="barlabel">$2.75</span></div></td><td class="n">$33.05</td><td class="n">$0.09</td><td class="n">6.0× cheaper</td></tr>
+        <tr><td>Kimi K2.6 (list)</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:49px"></span><span class="barlabel">$5.11</span></div></td><td class="n">$61.26</td><td class="n">$0.17</td><td class="n">3.2× cheaper</td></tr>
+        <tr><td>Kimi K2.6 (OpenRouter low)</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:36px"></span><span class="barlabel">$3.75</span></div></td><td class="n">$44.96</td><td class="n">$0.13</td><td class="n">4.4× cheaper</td></tr>
+        <tr><td>Qwen3.5-397B</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:33px"></span><span class="barlabel">$3.41</span></div></td><td class="n">$40.87</td><td class="n">$0.12</td><td class="n">4.8× cheaper</td></tr>
+        <tr><td>Llama 4 Maverick</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:26px"></span><span class="barlabel">$2.69</span></div></td><td class="n">$32.33</td><td class="n">$0.09</td><td class="n">6.1× cheaper</td></tr>
+        <tr><td>DeepSeek V4-Pro</td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:21px"></span><span class="barlabel">$2.17</span></div></td><td class="n">$26.10</td><td class="n">$0.07</td><td class="n">7.6× cheaper</td></tr>
+        <tr><td><strong>DeepSeek V4-Flash</strong></td><td class="n"><div class="bar-cell"><span class="bar alt" style="width:7px"></span><span class="barlabel"><strong>$0.70</strong></span></div></td><td class="n">$8.40</td><td class="n">$0.02</td><td class="n"><strong>23.6× cheaper</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub">Scale to other profiles: Light ≈ 0.33×, Heavy ≈ 2.73× the monthly figure. E.g. a Heavy Space on Kimi K2.6 ≈ $13.9/mo; on DeepSeek V4-Flash ≈ $1.9/mo.</p>
+
+  <h3>Takeaways</h3>
+  <ul>
+    <li><strong>The workload is input-heavy</strong> (~96% of tokens are input — large system prompt + re-sent history + tool results). Output price barely moves the total, so models with cheap input (DeepSeek) win disproportionately.</li>
+    <li><strong>Kimi K2.6</strong> is the natural "same quality, own the stack" choice given Composer's Kimi lineage, at ~3× lower cost than Composer Fast.</li>
+    <li><strong>DeepSeek V4-Flash</strong> makes the AI layer almost free per Space (~$0.70/mo) — a strong default for background features where latency and peak reasoning matter least.</li>
+    <li><strong>Tiered routing</strong> (premium model for interactive copilot, cheap model for background jobs) likely lands a typical Space at <strong>$1–3/month</strong> with no perceptible quality loss.</li>
+  </ul>
+
+  <hr />
+
+  <h2>On-chain (gas) cost per Space — Base</h2>
+  <p>Governance, treasury and membership actions settle on <strong>Base</strong>. Gas units below come from <strong>verified Base mainnet receipts</strong> captured in <code>packages/storage-evm/scripts/base-mainnet-contracts-scripts/gas-cost-analysis-results.json</code> (Aug 2025), re-priced at the conditions below. Unmeasured operations are labeled explicitly and excluded from verified totals.</p>
+  <div class="pill-row">
+    <span class="tag">Gas price: 0.005 Gwei</span>
+    <span class="tag">ETH: $1,748</span>
+    <span class="tag">Verified: 6 mainnet txs</span>
+    <span class="tag est">1 operation estimated (join failed)</span>
+  </div>
+
+  <div class="callout">
+    <div class="t">Two vote types — most votes do not execute</div>
+    <p><strong>Non-executing vote:</strong> a member casts yes/no while the proposal is still open. It records voting power but <strong>does not run the agreement</strong> on-chain.<br />
+    <strong>Deciding vote:</strong> the vote that reaches quorum/unity and <strong>auto-executes</strong> the proposal via the Executor (447k gas verified for a mint-scale agreement — execution bundled in this tx).<br />
+    Every proposal has exactly <strong>1 deciding vote</strong> and typically <strong>many more non-executing votes</strong> before it. The monthly model reflects this: e.g. Typical = 15 deciding vs 195 non-executing (<strong>13:1</strong>). Non-executing votes are modeled at <strong>150k gas each</strong> ($0.0013/vote at 0.005 Gwei) — not yet verified on mainnet.</p>
+  </div>
+
+  <div class="stats" style="margin-top:18px">
+    <div class="stat"><div class="v accent">$0.37</div><div class="l">Gas / month · Typical space</div></div>
+    <div class="stat"><div class="v">$0.12</div><div class="l">Verified-only portion · Typical</div></div>
+    <div class="stat"><div class="v warn">$0.035</div><div class="l">One-time setup (verified)</div></div>
+    <div class="stat"><div class="v">~45×</div><div class="l">AI cost vs gas (Composer Fast)</div></div>
+  </div>
+
+  <h3>Verified on-chain measurements (0.005 Gwei · ETH $1,748)</h3>
+  <div class="frame">
+    <table>
+      <thead><tr><th>Operation</th><th>When</th><th>Status</th><th class="n">Gas units</th><th class="n">Cost (USD)</th><th>Tx / note</th></tr></thead>
+      <tbody>
+        <tr><td>Vote + auto-execute (token deploy)</td><td>Setup</td><td><span class="tag verified">verified</span></td><td class="n">2,549,025</td><td class="n">$0.0223</td><td><code>0x1f7ed7f4…</code></td></tr>
+        <tr><td>Space creation</td><td>Setup</td><td><span class="tag verified">verified</span></td><td class="n">960,285</td><td class="n">$0.0084</td><td><code>0xb6b98a19…</code></td></tr>
+        <tr><td>Proposal creation (token deploy)</td><td>Setup</td><td><span class="tag verified">verified</span></td><td class="n">527,418</td><td class="n">$0.0046</td><td><code>0x64e3d917…</code></td></tr>
+        <tr><td>Vote + auto-execute (token mint)</td><td>Recurring</td><td><span class="tag verified">verified</span></td><td class="n">446,949</td><td class="n">$0.0039</td><td><code>0x3f0d5487…</code> · deciding vote incl. execution</td></tr>
+        <tr><td>Proposal creation (token mint)</td><td>Recurring</td><td><span class="tag verified">verified</span></td><td class="n">378,389</td><td class="n">$0.0033</td><td><code>0xab9a53ae…</code> · typical agreement proposal</td></tr>
+        <tr><td>USDC transfer (ERC-20)</td><td>Recurring</td><td><span class="tag verified">verified</span></td><td class="n">62,135</td><td class="n">$0.0005</td><td><code>0x80e51f14…</code></td></tr>
+        <tr><td>Member join</td><td>Recurring</td><td><span class="tag est">estimated</span></td><td class="n">100,000</td><td class="n">$0.0009</td><td>tx failed in analysis run; not verified</td></tr>
+        <tr><td>Non-executing vote</td><td>Recurring</td><td><span class="tag est">assumed 150k</span></td><td class="n">150,000</td><td class="n">$0.0013</td><td>not yet verified on mainnet</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub"><strong>Verified one-time setup</strong> (create space + deploy-token proposal + deciding vote that deploys token): 4,036,728 gas → <strong>$0.035</strong>. <strong>Verified recurring proposal</strong> (mint-scale agreement): 378,389 create + 446,949 deciding vote = 825,338 gas → <strong>$0.0072</strong> per proposal, before any non-executing member votes.</p>
+
+  <h3>Recurring gas by Space size</h3>
+  <p>Assumes <strong>active governance</strong> with high member participation. Per proposal: 1× verified create + 1× verified deciding vote (includes execution) + <strong>(N−1) non-executing votes at 150k gas each</strong> ($0.0013/vote).</p>
+  <div class="frame">
+    <table>
+      <thead><tr>
+        <th>Profile</th><th class="n">Proposals/mo</th><th class="n">Deciding votes</th><th class="n">Non-exec votes</th><th class="n">Ratio</th>
+        <th class="n">Treasury/mo</th><th class="n">Verified portion</th><th class="n">Monthly total</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Light (~5 members)</td><td class="n">5</td><td class="n">5</td><td class="n">20</td><td class="n">4:1</td><td class="n">3</td><td class="n">$0.038</td><td class="n">$0.06</td></tr>
+        <tr><td><strong>Typical (~15 members)</strong></td><td class="n">15</td><td class="n">15</td><td class="n">195</td><td class="n">13:1</td><td class="n">12</td><td class="n">$0.12</td><td class="n"><strong>$0.37</strong></td></tr>
+        <tr><td>Heavy (~50 members)</td><td class="n">50</td><td class="n">50</td><td class="n">2,200</td><td class="n">44:1</td><td class="n">50</td><td class="n">$0.39</td><td class="n">$3.27</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub">Vote participation: Typical ≈ 14 of 15 members vote per proposal (1 deciding + 13 non-exec). Monthly total = verified portion + (non-exec votes × 150k gas). Non-executing votes contribute ~69% of Typical monthly gas ($0.26 of $0.37).</p>
+
+  <div class="callout">
+    <div class="t">Gas remains negligible vs AI</div>
+    <p>With active governance, a Typical space pays <strong>$0.37/month</strong> on-chain vs <strong>$16.52/month</strong> for AI (Composer 2.5 Fast) — roughly <strong>45× less</strong>. Non-executing votes at 150k gas each are the largest line item. Only Heavy scale (~$3.27/mo) approaches meaningful on-chain spend — still well below AI.</p>
+  </div>
+  <p class="sub"><strong>Caveats.</strong> L2 execution gas only at 0.005 Gwei; Base adds a small L1 data fee per tx (typically sub-cent). Gas scales linearly with gas price. Who pays (member wallets vs. paymaster) is separate from the aggregate cost shown here. Re-run <code>gas-cost-analysis.ts</code> on Base to capture a non-executing vote and a successful join.</p>
+
+  <div class="grid2">
+    <div>
+      <h3>Methodology &amp; assumptions</h3>
+      <ul>
+        <li>In-space system prompt ≈ 5.6k tokens, re-sent on every step.</li>
+        <li>Tool loop capped at 6 steps; full history re-sent each step (no truncation).</li>
+        <li>No <code>max_tokens</code> cap configured → output sizes are conservative estimates.</li>
+        <li>Org-memory reads capped at 48k chars (~12k tokens) per fetch.</li>
+        <li>Orchestrator capped at 3 auto-signals/day/space; discussion refresh ~4 runs/day.</li>
+        <li>Costs scale ~linearly with task volume across profiles.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Levers to reduce cost (any model)</h3>
+      <ul>
+        <li>Trim / cache the system prompt (cached reads 60–80% cheaper on most open hosts).</li>
+        <li>Truncate conversation history instead of re-sending the full transcript.</li>
+        <li>Route background work to a cheap/standard tier.</li>
+        <li>Set a <code>max_tokens</code> cap to bound output.</li>
+        <li>Cap memory deep-dive context below 48k chars for routine summarization.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    <p><strong>Sources.</strong> Composer 2.5 pricing: Cursor (Fast $3/$15, Standard $0.50/$2.50; post-trained from Kimi K2.5). Open-source rates: OpenRouter, DeepSeek first-party, and public LLM price comparators (June 2026) — open-weight rates vary by host; verify on the live provider dashboard. Token volumes &amp; feature inventory: <code>packages/chat-server</code>, <code>packages/core/src/coherence/server/signal-orchestrator.ts</code>, <code>packages/core/src/governance/server/call-artifacts.ts</code>.</p>
+    <p>Estimates only. Task-volume assumptions per profile are modeled; replace with real usage data from the flag-gated rollout to refine the dollar figures.</p>
+  </footer>
+
+</div>
+</body>
+</html>

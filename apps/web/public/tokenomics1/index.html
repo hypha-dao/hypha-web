@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYPHA Tokenomics Simulator (Phase I)</title>
+<link rel="icon" href="https://hypha.earth/wp-content/uploads/2023/07/cropped-favicon-32x32.png" sizes="32x32" />
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "react/jsx-dev-runtime": "https://esm.sh/react@18.3.1/jsx-dev-runtime",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom"
+  }
+}
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style> body { background:#f3f4f6; } </style>
+</head>
+<body>
+<div id="root" class="p-4"></div>
+<script type="text/babel" data-type="module" data-presets="react" data-presets-options='{"react":{"runtime":"classic"}}'>
+import React, { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+
+// ============================================================
+// AI Operating Cost model (from docs/hypha-ai-cost)
+// Typical Space workload = 4.66M input + 0.17M output tokens / month.
+// Per-space monthly $ = (in_M * inPrice + out_M * outPrice) * profileMult.
+// ============================================================
+const TYPICAL_INPUT_M = 4.66;
+const TYPICAL_OUTPUT_M = 0.17;
+const PROFILE_MULT = { light: 0.33, typical: 1, heavy: 2.73 };
+
+const AI_MODELS = {
+  closed: [
+    { id: 'composer-fast', name: 'Composer 2.5 Fast', input: 3.0, output: 15.0, note: 'IDE default reference / baseline' },
+    { id: 'composer-standard', name: 'Composer 2.5 Standard', input: 0.5, output: 2.5, note: 'Same model, lower throughput' },
+  ],
+  open: [
+    { id: 'kimi-list', name: 'Kimi K2.6 (list)', input: 0.95, output: 4.0, note: 'Leads open quality; Composer lineage' },
+    { id: 'kimi-or', name: 'Kimi K2.6 (OpenRouter low)', input: 0.68, output: 3.41, note: 'Cheapest Kimi host' },
+    { id: 'qwen', name: 'Qwen3.5-397B', input: 0.6, output: 3.6, note: 'Strong open frontier MoE' },
+    { id: 'llama', name: 'Llama 4 Maverick', input: 0.5, output: 2.15, note: '400B MoE (DeepInfra)' },
+    { id: 'deepseek-pro', name: 'DeepSeek V4-Pro', input: 0.44, output: 0.87, note: 'Flagship open reasoning/coding' },
+    { id: 'deepseek-flash', name: 'DeepSeek V4-Flash', input: 0.14, output: 0.28, note: 'Budget leader' },
+  ],
+};
+const ALL_MODELS = [...AI_MODELS.closed, ...AI_MODELS.open];
+const getModel = (id) => ALL_MODELS.find((m) => m.id === id) || ALL_MODELS[0];
+const perSpaceMonthlyAICost = (model, profile) =>
+  (TYPICAL_INPUT_M * model.input + TYPICAL_OUTPUT_M * model.output) * PROFILE_MULT[profile];
+const ONBOARDING_BASELINE = 0.56;
+const onboardingCost = (model) => ONBOARDING_BASELINE * (model.input / 3.0);
+
+// ============================================================
+// Base L2 gas cost model (from docs/hypha-ai-cost)
+// Active governance · 0.005 Gwei · ETH $1,748 · non-exec vote @ 150k gas
+// ============================================================
+const GAS_MONTHLY_BY_PROFILE = { light: 0.06, typical: 0.37, heavy: 3.27 };
+const GAS_SETUP_ONE_TIME = 0.035;
+const perSpaceMonthlyGas = (profile) => GAS_MONTHLY_BY_PROFILE[profile] || GAS_MONTHLY_BY_PROFILE.typical;
+
+// Phase I bootstraps from a near-zero seed to ~4,373 paying Spaces over 12 months.
+const PHASE_I_END_SPACES = 4373;
+const PHASE_I_MONTHS = 12;
+const PHASE_I_SEED_SPACES = 50;       // month 1 seed (~0 Spaces at month 0)
+const PHASE_I_MONTHLY_GROWTH = 50;    // %/mo → ~4,373 by month 12
+const PHASE_II_START_SPACES = PHASE_I_END_SPACES;
+
+const HyphaTokenomicsCalculator = () => {
+  const [tokensForSale, setTokensForSale] = useState(10000000);
+  const [yieldMultiplier, setYieldMultiplier] = useState(30);
+  const [saleMonths, setSaleMonths] = useState(PHASE_I_MONTHS);
+  const [tokenPrice, setTokenPrice] = useState(0.20);
+  const [totalSupply, setTotalSupply] = useState(555555555);
+  const [existingLockedSupply, setExistingLockedSupply] = useState(111111111);
+
+  const [numberOfAOs, setNumberOfAOs] = useState(PHASE_I_SEED_SPACES);
+  const [paymentPerAO, setPaymentPerAO] = useState(44);
+  const [usdcFromInvestors, setUsdcFromInvestors] = useState(100000);
+  const [aoGrowthRate, setAoGrowthRate] = useState(PHASE_I_MONTHLY_GROWTH);
+
+  const [aiModelId, setAiModelId] = useState('kimi-or');
+  const [aiProfile, setAiProfile] = useState('typical');
+
+  const [showMonthlyConfig, setShowMonthlyConfig] = useState(false);
+  const [monthlyOverrides, setMonthlyOverrides] = useState({});
+  const [selectedMonth, setSelectedMonth] = useState(1);
+
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [cumulativeData, setCumulativeData] = useState([]);
+  const [fdv, setFdv] = useState(0);
+  const [marketCap, setMarketCap] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
+  const [totalYieldTokens, setTotalYieldTokens] = useState(0);
+  const [totalTokensSold, setTotalTokensSold] = useState(0);
+  const [yieldPerLockedToken, setYieldPerLockedToken] = useState(0);
+  const [totalAICost, setTotalAICost] = useState(0);
+  const [totalGasCost, setTotalGasCost] = useState(0);
+
+  useEffect(() => {
+    calculateTokenomics();
+  }, [
+    tokensForSale, yieldMultiplier, saleMonths, tokenPrice, totalSupply,
+    numberOfAOs, paymentPerAO, usdcFromInvestors, aoGrowthRate,
+    existingLockedSupply, monthlyOverrides, aiModelId, aiProfile
+  ]);
+
+  const getParamForMonth = (month, paramName, defaultValue) => {
+    if (monthlyOverrides[month-1] && monthlyOverrides[month-1][paramName] !== undefined) {
+      return monthlyOverrides[month-1][paramName];
+    }
+    return defaultValue;
+  };
+
+  const calculateTokenomics = () => {
+    const calculatedFdv = totalSupply * tokenPrice;
+    setFdv(calculatedFdv);
+
+    const calculatedMarketCap = existingLockedSupply * tokenPrice;
+    setMarketCap(calculatedMarketCap);
+
+    const monthlyTokenSales = [];
+    const cumulativeTokenSales = [];
+
+    let cumulativeSold = 0;
+    let cumulativeYield = 0;
+    let totalYield = 0;
+    let currentNumberOfAOs = numberOfAOs;
+    let totalUSDC = 0;
+    let calculatedTotalValue = 0;
+
+    const aiModel = getModel(aiModelId);
+    const perSpaceAI = perSpaceMonthlyAICost(aiModel, aiProfile);
+    const perSpaceGas = perSpaceMonthlyGas(aiProfile);
+    let cumulativeAICost = 0;
+    let cumulativeGasCost = 0;
+
+    for (let month = 1; month <= saleMonths; month++) {
+      const monthTokenPrice = tokenPrice;
+      const monthYieldMultiplier = getParamForMonth(month, 'yieldMultiplier', yieldMultiplier);
+
+      if (month > 1) {
+        if (monthlyOverrides[month-1] && monthlyOverrides[month-1]['numberOfAOs'] !== undefined) {
+          currentNumberOfAOs = monthlyOverrides[month-1]['numberOfAOs'];
+        } else {
+          const monthAoGrowthRate = getParamForMonth(month, 'aoGrowthRate', aoGrowthRate) / 100;
+          currentNumberOfAOs = Math.round(currentNumberOfAOs * (1 + monthAoGrowthRate));
+        }
+      } else {
+        currentNumberOfAOs = numberOfAOs;
+      }
+
+      const monthPaymentPerAO = getParamForMonth(month, 'paymentPerAO', paymentPerAO);
+      const monthInvestorUSDC = getParamForMonth(month, 'usdcFromInvestors', usdcFromInvestors);
+
+      const aoIncome = currentNumberOfAOs * monthPaymentPerAO;
+      const monthAICost = currentNumberOfAOs * perSpaceAI;
+      cumulativeAICost += monthAICost;
+      const monthGasCost = currentNumberOfAOs * perSpaceGas;
+      cumulativeGasCost += monthGasCost;
+      const netContribution = aoIncome - monthAICost;
+      const netAfterGas = netContribution - monthGasCost;
+      const monthlyUSDC = aoIncome + monthInvestorUSDC;
+      totalUSDC += monthlyUSDC;
+
+      const tokensSold = monthlyUSDC / monthTokenPrice;
+      cumulativeSold += tokensSold;
+      calculatedTotalValue += monthlyUSDC;
+
+      const monthlyYield = (aoIncome * monthYieldMultiplier) / monthTokenPrice;
+      cumulativeYield += monthlyYield;
+      totalYield += monthlyYield;
+
+      monthlyTokenSales.push({
+        month,
+        tokensSold,
+        yield: monthlyYield,
+        yieldMultiplier: monthYieldMultiplier,
+        tokenPrice: monthTokenPrice,
+        numberOfAOs: currentNumberOfAOs,
+        aoIncome,
+        investorUSDC: monthInvestorUSDC,
+        totalMonthlyUSDC: monthlyUSDC,
+        totalUSDC,
+        aoPaymentYield: aoIncome * monthYieldMultiplier,
+        aiCost: monthAICost,
+        cumulativeAICost,
+        gasCost: monthGasCost,
+        cumulativeGasCost,
+        netContribution,
+        netAfterGas,
+      });
+
+      cumulativeTokenSales.push({
+        month,
+        cumulativeSold,
+        cumulativeYield,
+        initialLockedSupply: existingLockedSupply,
+        totalEarningTokens: cumulativeSold + existingLockedSupply,
+        tokenPrice: monthTokenPrice,
+        fdv: totalSupply * monthTokenPrice,
+        totalUSDC
+      });
+    }
+
+    const totalLockedTokens = existingLockedSupply + cumulativeSold;
+    const calculatedYieldPerLockedToken = totalLockedTokens > 0 ? totalYield / totalLockedTokens : 0;
+
+    setMonthlyData(monthlyTokenSales);
+    setCumulativeData(cumulativeTokenSales);
+    setTotalYieldTokens(totalYield);
+    setTotalValue(calculatedTotalValue);
+    setTotalTokensSold(cumulativeSold);
+    setYieldPerLockedToken(calculatedYieldPerLockedToken);
+    setTotalAICost(cumulativeAICost);
+    setTotalGasCost(cumulativeGasCost);
+  };
+
+  const handleMonthlyOverride = (paramName, value) => {
+    const newOverrides = { ...monthlyOverrides };
+
+    if (!newOverrides[selectedMonth-1]) {
+      newOverrides[selectedMonth-1] = {};
+    }
+
+    newOverrides[selectedMonth-1][paramName] = value;
+    setMonthlyOverrides(newOverrides);
+  };
+
+  const removeMonthlyOverride = (month, paramName) => {
+    const newOverrides = { ...monthlyOverrides };
+
+    if (newOverrides[month-1] && newOverrides[month-1][paramName] !== undefined) {
+      delete newOverrides[month-1][paramName];
+
+      if (Object.keys(newOverrides[month-1]).length === 0) {
+        delete newOverrides[month-1];
+      }
+
+      setMonthlyOverrides(newOverrides);
+    }
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: value < 1 ? 3 : 0,
+      maximumFractionDigits: value < 1 ? 3 : 0,
+    }).format(value);
+  };
+
+  const formatNumber = (value) => {
+    return new Intl.NumberFormat('en-US').format(Math.round(value));
+  };
+
+  const resetParameters = () => {
+    setTokensForSale(10000000);
+    setYieldMultiplier(30);
+    setSaleMonths(PHASE_I_MONTHS);
+    setTokenPrice(0.20);
+    setTotalSupply(555555555);
+    setExistingLockedSupply(111111111);
+    setNumberOfAOs(PHASE_I_SEED_SPACES);
+    setPaymentPerAO(44);
+    setUsdcFromInvestors(100000);
+    setAoGrowthRate(PHASE_I_MONTHLY_GROWTH);
+    setMonthlyOverrides({});
+    setAiModelId('kimi-or');
+    setAiProfile('typical');
+  };
+
+  const aiModel = getModel(aiModelId);
+  const perSpaceAI = perSpaceMonthlyAICost(aiModel, aiProfile);
+  const perSpaceGas = perSpaceMonthlyGas(aiProfile);
+  const baselinePerSpace = perSpaceMonthlyAICost(getModel('composer-fast'), aiProfile);
+  const lastMonth = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1] : null;
+  const phase1RunRateArr = lastMonth ? lastMonth.aoIncome * 12 : 0;
+
+  return (
+    <div className="p-6 bg-gray-50 rounded-lg shadow-lg">
+      <h1 className="text-2xl font-bold mb-1 text-center">HYPHA Tokenomics Simulator (Phase I)</h1>
+      <p className="text-sm text-gray-500 mb-3 text-center">Fixed $0.20 reference price — token sale, locking &amp; yield distribution at Phase I month 0+.</p>
+
+      <div className="mb-6 border border-slate-200 bg-slate-50 p-4 rounded-lg">
+        <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 text-center">Roadmap: Phase 0 → Phase I → Phase II</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-600">Phase 0 — Today</div>
+            <p className="text-xs text-gray-600 mt-1">Pre-launch. Reference FDV ~$111M at $0.20 (111M locked supply).</p>
+          </div>
+          <div className="bg-indigo-600 text-white p-3 rounded border border-indigo-700">
+            <div className="font-semibold">Phase I — Year 1 (this sim)</div>
+            <p className="text-xs text-indigo-100 mt-1">Bootstrap: ~0 Spaces at month 0 → ~{PHASE_I_END_SPACES.toLocaleString()} by month {PHASE_I_MONTHS} ({PHASE_I_MONTHLY_GROWTH}%/mo from a {PHASE_I_SEED_SPACES}-Space seed). Phase II continues from here.</p>
+          </div>
+          <div className="bg-white p-3 rounded border border-slate-200">
+            <div className="font-semibold text-slate-700">Phase II — Years 2–5</div>
+            <p className="text-xs text-gray-600 mt-1">$44/Space/mo, dynamic IEX. Year-5 paying Spaces: Low ~250k · Mid ~1M · High ~10M. <a href="/tokenomics2/" className="text-indigo-600 underline">Phase II →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-500 mb-6 text-center">Per-Space AI + Base L2 gas operating cost model — closed-source vs open-source LLMs.</p>
+
+      <div className="mb-8 border border-indigo-200 bg-indigo-50 p-4 rounded-lg">
+        <h2 className="text-lg font-semibold mb-1">AI &amp; On-Chain Operating Cost per Space</h2>
+        <p className="text-xs text-gray-600 mb-3">
+          A Space&apos;s AI workload (full vision) is ~{TYPICAL_INPUT_M}M input + {TYPICAL_OUTPUT_M}M output tokens/month for a Typical space.
+          Pick the inference model and Space profile; the simulator bills every active Space each month for AI inference and Base L2 gas (active governance).
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Inference Model</label>
+            <select
+              value={aiModelId}
+              onChange={(e) => setAiModelId(e.target.value)}
+              className="w-full p-2 border rounded bg-white"
+            >
+              <optgroup label="Closed source">
+                {AI_MODELS.closed.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name} — ${m.input}/${m.output} per 1M</option>
+                ))}
+              </optgroup>
+              <optgroup label="Open source">
+                {AI_MODELS.open.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name} — ${m.input}/${m.output} per 1M</option>
+                ))}
+              </optgroup>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">{aiModel.note}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Space Profile</label>
+            <select
+              value={aiProfile}
+              onChange={(e) => setAiProfile(e.target.value)}
+              className="w-full p-2 border rounded bg-white"
+            >
+              <option value="light">Light (~5 members · 0.33×)</option>
+              <option value="typical">Typical (~15 members · 1×)</option>
+              <option value="heavy">Heavy (~50 members · 2.73×)</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Scales AI token volume and gas activity (proposals/votes).</p>
+          </div>
+
+          <div className="bg-white border rounded p-3">
+            <div className="text-xs text-gray-500">AI cost / Space / month</div>
+            <div className="text-2xl font-bold text-indigo-700">${perSpaceAI.toFixed(2)}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              One-time onboarding ≈ ${onboardingCost(aiModel).toFixed(2)} / Space
+            </div>
+            <div className="text-xs text-gray-500">
+              vs Composer Fast: {(baselinePerSpace / perSpaceAI).toFixed(1)}× cheaper
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 border border-amber-200 bg-amber-50 rounded p-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-xs text-gray-600 font-medium">Base L2 gas / Space / month ({aiProfile})</div>
+              <div className="text-2xl font-bold text-amber-700">${perSpaceGas.toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">Active governance · 0.005 Gwei · ETH $1,748</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 font-medium">One-time setup / Space</div>
+              <div className="text-2xl font-bold text-amber-700">${GAS_SETUP_ONE_TIME.toFixed(3)}</div>
+              <div className="text-xs text-gray-500 mt-1">Create space + deploy-token proposal + deciding vote</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-600 font-medium">Combined ops / Space / month</div>
+              <div className="text-2xl font-bold text-gray-800">${(perSpaceAI + perSpaceGas).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">AI ${perSpaceAI.toFixed(2)} + gas ${perSpaceGas.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full bg-white border text-sm">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="py-1 px-3 border text-left">Model</th>
+                <th className="py-1 px-3 border">Type</th>
+                <th className="py-1 px-3 border text-right">In $/1M</th>
+                <th className="py-1 px-3 border text-right">Out $/1M</th>
+                <th className="py-1 px-3 border text-right">$/Space/mo ({aiProfile})</th>
+                <th className="py-1 px-3 border text-right">vs Composer Fast</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ALL_MODELS.map((m) => {
+                const cost = perSpaceMonthlyAICost(m, aiProfile);
+                const isOpen = AI_MODELS.open.some((o) => o.id === m.id);
+                return (
+                  <tr key={m.id} className={m.id === aiModelId ? 'bg-indigo-100 font-semibold' : ''}>
+                    <td className="py-1 px-3 border">{m.name}</td>
+                    <td className="py-1 px-3 border text-center">{isOpen ? 'Open' : 'Closed'}</td>
+                    <td className="py-1 px-3 border text-right">${m.input.toFixed(2)}</td>
+                    <td className="py-1 px-3 border text-right">${m.output.toFixed(2)}</td>
+                    <td className="py-1 px-3 border text-right">${cost.toFixed(2)}</td>
+                    <td className="py-1 px-3 border text-right">
+                      {m.id === 'composer-fast' ? '—' : `${(baselinePerSpace / cost).toFixed(1)}×`}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Initial Parameters</h2>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Total Supply of HYPHA</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="100000000"
+                max="1000000000"
+                step="10000000"
+                value={totalSupply}
+                onChange={(e) => setTotalSupply(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="text"
+                value={totalSupply.toLocaleString('en-US')}
+                onChange={(e) => setTotalSupply(Number(e.target.value.replace(/,/g, '')))}
+                className="w-32 p-1 border rounded text-right"
+                min="1"
+                step="1000000"
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Existing Locked Tokens Allocation</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="100000000"
+                step="1000000"
+                value={existingLockedSupply}
+                onChange={(e) => setExistingLockedSupply(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="text"
+                value={existingLockedSupply.toLocaleString('en-US')}
+                onChange={(e) => setExistingLockedSupply(Number(e.target.value.replace(/,/g, '')))}
+                className="w-32 p-1 border rounded text-right"
+                min="0"
+                step="1000"
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">HYPHA Token Price (USD)</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="0.001"
+                max="0.5"
+                step="0.001"
+                value={tokenPrice}
+                onChange={(e) => setTokenPrice(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="number"
+                value={tokenPrice}
+                onChange={(e) => setTokenPrice(Number(e.target.value))}
+                className="w-24 p-1 border rounded text-right"
+                min="0.0001"
+                step="0.001"
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Sale Duration (Months)</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="1"
+                max="60"
+                step="1"
+                value={saleMonths}
+                onChange={(e) => setSaleMonths(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="number"
+                value={saleMonths}
+                onChange={(e) => setSaleMonths(Number(e.target.value))}
+                className="w-16 p-1 border rounded text-right"
+                min="1"
+                max="60"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Monthly Parameters</h2>
+            <button
+              onClick={() => setShowMonthlyConfig(!showMonthlyConfig)}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+            >
+              {showMonthlyConfig ? 'Hide' : 'Show'} Configuration
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Initial Number of Spaces</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={numberOfAOs}
+                onChange={(e) => setNumberOfAOs(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="number"
+                value={numberOfAOs}
+                onChange={(e) => setNumberOfAOs(Number(e.target.value))}
+                className="w-16 p-1 border rounded text-right"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Spaces Growth Rate (%)</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={aoGrowthRate}
+                onChange={(e) => setAoGrowthRate(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="number"
+                value={aoGrowthRate}
+                onChange={(e) => setAoGrowthRate(Number(e.target.value))}
+                className="w-16 p-1 border rounded text-right"
+                min="0"
+                max="100"
+              />
+              <span className="ml-1">%</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Monthly growth rate of Spaces (if not explicitly set per month)</p>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Space&apos;s contribution to Hypha Network (USDC)</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="130"
+                step="10"
+                value={paymentPerAO}
+                onChange={(e) => setPaymentPerAO(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="number"
+                value={paymentPerAO}
+                onChange={(e) => setPaymentPerAO(Number(e.target.value))}
+                className="w-20 p-1 border rounded text-right"
+                min="0"
+                max="130"
+                step="1"
+              />
+              <span className="ml-1">USDC</span>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Distribution Multiplier</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="0.1"
+                value={yieldMultiplier}
+                onChange={(e) => setYieldMultiplier(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="number"
+                value={yieldMultiplier}
+                onChange={(e) => setYieldMultiplier(Number(e.target.value))}
+                className="w-16 p-1 border rounded text-right"
+                min="0"
+                step="0.1"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Tokens distributed = Spaces&apos; contributions to Hypha Network (HYPHA) × Distribution Multiplier</p>
+            <p className="text-xs text-gray-500">AI cost (${perSpaceAI.toFixed(2)}/Space) is tracked separately from token sales.</p>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Initial HYPHA purchases from investors (USDC)</label>
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="150000"
+                step="1000"
+                value={usdcFromInvestors}
+                onChange={(e) => setUsdcFromInvestors(Number(e.target.value))}
+                className="w-full mr-3"
+              />
+              <input
+                type="text"
+                value={usdcFromInvestors.toLocaleString('en-US')}
+                onChange={(e) => setUsdcFromInvestors(Number(e.target.value.replace(/,/g, '')))}
+                className="w-24 p-1 border rounded text-right"
+                min="0"
+                step="1000"
+              />
+              <span className="ml-1">USDC</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">This value is used for all months unless customized per month.</p>
+          </div>
+
+          {showMonthlyConfig && (
+            <div className="border rounded p-4 mt-4">
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Select Month</label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="w-full p-2 border rounded"
+                >
+                  {Array.from({ length: saleMonths }, (_, i) => (
+                    <option key={i+1} value={i+1}>
+                      Month {i+1} {monthlyOverrides[i] ? '(Custom)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <h3 className="font-semibold text-sm mb-2">Month {selectedMonth} Parameters</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium mb-1">Distribution Multiplier</label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      value={monthlyOverrides[selectedMonth-1]?.yieldMultiplier !== undefined
+                        ? monthlyOverrides[selectedMonth-1].yieldMultiplier
+                        : ''}
+                      onChange={(e) => handleMonthlyOverride('yieldMultiplier', Number(e.target.value))}
+                      placeholder={yieldMultiplier}
+                      className="w-full p-1 border rounded text-sm"
+                      min="0"
+                      step="0.1"
+                    />
+                    {monthlyOverrides[selectedMonth-1]?.yieldMultiplier !== undefined && (
+                      <button
+                        onClick={() => removeMonthlyOverride(selectedMonth, 'yieldMultiplier')}
+                        className="ml-1 text-red-500 text-lg"
+                        title="Reset to global value"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1">Payment per AO</label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      value={monthlyOverrides[selectedMonth-1]?.paymentPerAO !== undefined
+                        ? monthlyOverrides[selectedMonth-1].paymentPerAO
+                        : ''}
+                      onChange={(e) => handleMonthlyOverride('paymentPerAO', Number(e.target.value))}
+                      placeholder={paymentPerAO}
+                      className="w-full p-1 border rounded text-sm"
+                      min="0"
+                      step="1"
+                    />
+                    {monthlyOverrides[selectedMonth-1]?.paymentPerAO !== undefined && (
+                      <button
+                        onClick={() => removeMonthlyOverride(selectedMonth, 'paymentPerAO')}
+                        className="ml-1 text-red-500 text-lg"
+                        title="Reset to global value"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1">Investor USDC</label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      value={monthlyOverrides[selectedMonth-1]?.usdcFromInvestors !== undefined
+                        ? monthlyOverrides[selectedMonth-1].usdcFromInvestors
+                        : ''}
+                      onChange={(e) => handleMonthlyOverride('usdcFromInvestors', Number(e.target.value))}
+                      placeholder={usdcFromInvestors}
+                      className="w-full p-1 border rounded text-sm"
+                      min="0"
+                      step="1000"
+                    />
+                    {monthlyOverrides[selectedMonth-1]?.usdcFromInvestors !== undefined && (
+                      <button
+                        onClick={() => removeMonthlyOverride(selectedMonth, 'usdcFromInvestors')}
+                        className="ml-1 text-red-500 text-lg"
+                        title="Reset to global value"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {selectedMonth > 1 && (
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Spaces Growth Rate (%)</label>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        value={monthlyOverrides[selectedMonth-1]?.aoGrowthRate !== undefined
+                          ? monthlyOverrides[selectedMonth-1].aoGrowthRate
+                          : ''}
+                        onChange={(e) => handleMonthlyOverride('aoGrowthRate', Number(e.target.value))}
+                        placeholder={aoGrowthRate}
+                        className="w-full p-1 border rounded text-sm"
+                        min="0"
+                        max="100"
+                        step="1"
+                      />
+                      {monthlyOverrides[selectedMonth-1]?.aoGrowthRate !== undefined && (
+                        <button
+                          onClick={() => removeMonthlyOverride(selectedMonth, 'aoGrowthRate')}
+                          className="ml-1 text-red-500 text-lg"
+                          title="Reset to global value"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-3 text-xs text-gray-500">
+                Empty fields use the global values. For Number of Spaces after month 1, the value is calculated based on growth rate if not explicitly set.
+              </div>
+            </div>
+          )}
+
+          {Object.keys(monthlyOverrides).length > 0 && (
+            <div className="mt-2 text-sm text-gray-500">
+              Customized months: {Object.keys(monthlyOverrides).map(m => Number(m) + 1).sort((a, b) => a - b).join(', ')}
+            </div>
+          )}
+
+          <button
+            onClick={resetParameters}
+            className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            Reset All Parameters
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow mb-8">
+        <h2 className="text-lg font-semibold mb-4">Key Metrics at Month {saleMonths}</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 bg-indigo-50 rounded-lg">
+            <div className="text-sm text-indigo-600">Current Valuation (Market Cap.)</div>
+            <div className="text-2xl font-bold">{formatCurrency(marketCap)}</div>
+            <div className="text-xs text-indigo-600 mt-1">At month {saleMonths} token price</div>
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <div className="text-sm text-blue-600">Fully Diluted Valuation (FDV)</div>
+            <div className="text-2xl font-bold">{formatCurrency(fdv)}</div>
+            <div className="text-xs text-blue-600 mt-1">At month {saleMonths} token price</div>
+          </div>
+
+          <div className="p-4 bg-green-50 rounded-lg">
+            <div className="text-sm text-green-600">Total Dollar Value Sold</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
+            <div className="text-xs text-green-600 mt-1">Cumulative over {saleMonths} months</div>
+          </div>
+
+          <div className="p-4 bg-purple-50 rounded-lg">
+            <div className="text-sm text-purple-600">Total Tokens Locked</div>
+            <div className="text-2xl font-bold">{formatNumber(totalTokensSold)}</div>
+            <div className="text-xs text-purple-600 mt-1">Cumulative through month {saleMonths}</div>
+          </div>
+
+          <div className="p-4 bg-amber-50 rounded-lg">
+            <div className="text-sm text-amber-600">Total Tokens Distributed</div>
+            <div className="text-2xl font-bold">{formatNumber(totalYieldTokens)}</div>
+            <div className="text-sm text-amber-600 mt-2">Reward per Locked Token</div>
+            <div className="text-xl font-bold">{yieldPerLockedToken.toFixed(4)}</div>
+            <div className="text-xs text-amber-600 mt-1">Cumulative through month {saleMonths}</div>
+          </div>
+
+          {lastMonth && (
+            <>
+              <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-slate-400">
+                <div className="text-sm text-slate-600">Phase II handoff (month {saleMonths})</div>
+                <div className="text-2xl font-bold text-slate-800">{formatNumber(lastMonth.numberOfAOs)} active Spaces</div>
+                <div className="text-xs text-slate-600 mt-1">Phase II sim starts here — <a href="/tokenomics2/" className="text-indigo-600 underline">open Phase II →</a></div>
+              </div>
+
+              <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-400">
+                <div className="text-sm text-green-600">Run-rate ARR (month {saleMonths})</div>
+                <div className="text-2xl font-bold text-green-700">{formatCurrency(phase1RunRateArr)}</div>
+                <div className="text-xs text-green-600 mt-1">
+                  {formatNumber(lastMonth.numberOfAOs)} active Spaces × ${paymentPerAO} × 12
+                </div>
+              </div>
+
+              <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-400">
+                <div className="text-sm text-green-600">Cumulated Space Contributions</div>
+                <div className="text-2xl font-bold text-green-700">
+                  {formatCurrency(monthlyData.reduce((s, m) => s + m.aoIncome, 0))}
+                </div>
+                <div className="text-xs text-green-600 mt-1">
+                  Month {saleMonths}: {formatCurrency(lastMonth.aoIncome)} from {formatNumber(lastMonth.numberOfAOs)} Spaces
+                </div>
+              </div>
+
+              <div className="p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-400">
+                <div className="text-sm text-indigo-600">Monthly AI Cost</div>
+                <div className="text-2xl font-bold text-indigo-700">{formatCurrency(lastMonth.aiCost)}</div>
+                <div className="text-xs text-indigo-600 mt-1">{aiModel.name} · ${perSpaceAI.toFixed(2)}/Space</div>
+              </div>
+
+              <div className="p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-400">
+                <div className="text-sm text-indigo-600">Cumulative AI Cost</div>
+                <div className="text-2xl font-bold text-indigo-700">{formatCurrency(totalAICost)}</div>
+                <div className="text-xs text-indigo-600 mt-1">Total inference spend over {saleMonths} months</div>
+              </div>
+
+              <div className="p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-400">
+                <div className="text-sm text-indigo-600">Net After AI (monthly)</div>
+                <div className={`text-2xl font-bold ${lastMonth.netContribution >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(lastMonth.netContribution)}
+                </div>
+                <div className="text-xs text-indigo-600 mt-1">Space contributions − AI cost (month {saleMonths})</div>
+              </div>
+
+              <div className="p-4 bg-amber-50 rounded-lg border-l-4 border-amber-400">
+                <div className="text-sm text-amber-700">Monthly Gas Cost</div>
+                <div className="text-2xl font-bold text-amber-800">{formatCurrency(lastMonth.gasCost)}</div>
+                <div className="text-xs text-amber-700 mt-1">${perSpaceGas.toFixed(2)}/Space · {aiProfile} profile</div>
+              </div>
+
+              <div className="p-4 bg-amber-50 rounded-lg border-l-4 border-amber-400">
+                <div className="text-sm text-amber-700">Cumulative Gas Cost</div>
+                <div className="text-2xl font-bold text-amber-800">{formatCurrency(totalGasCost)}</div>
+                <div className="text-xs text-amber-700 mt-1">Base L2 governance gas over {saleMonths} months</div>
+              </div>
+
+              <div className="p-4 bg-teal-50 rounded-lg border-l-4 border-teal-400">
+                <div className="text-sm text-teal-700">Net After AI + Gas (monthly)</div>
+                <div className={`text-2xl font-bold ${lastMonth.netAfterGas >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(lastMonth.netAfterGas)}
+                </div>
+                <div className="text-xs text-teal-700 mt-1">Contributions − AI − gas (month {saleMonths})</div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow mb-8">
+        <h2 className="text-lg font-semibold mb-4">Token Distribution Over Time</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart
+            data={cumulativeData}
+            margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" label={{ value: 'Month', position: 'insideBottom', offset: -5 }} />
+            <YAxis
+              tickFormatter={(value) => new Intl.NumberFormat('en-US').format(value)}
+            />
+            <Tooltip
+              formatter={(value, name) => {
+                if (name === "cumulativeSold") {
+                  return [formatNumber(value), "Tokens Locked"];
+                } else if (name === "cumulativeYield") {
+                  return [formatNumber(value), "Tokens Distributed"];
+                } else if (name === "initialLockedSupply") {
+                  return [formatNumber(value), "Existing Locked Tokens Allocation"];
+                }
+                return [formatNumber(value), name];
+              }}
+            />
+            <Legend />
+            <Area type="monotone" dataKey="initialLockedSupply" name="Existing Locked Tokens Allocation" stackId="1" stroke="#ff8c00" fill="#ffcc80" />
+            <Area type="monotone" dataKey="cumulativeSold" name="Tokens Locked" stackId="1" stroke="#8884d8" fill="#8884d8" />
+            <Area type="monotone" dataKey="cumulativeYield" name="Tokens Distributed" stackId="2" stroke="#82ca9d" fill="#82ca9d" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow mb-8">
+        <h2 className="text-lg font-semibold mb-4">Spaces Growth Over Time</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart
+            data={monthlyData}
+            margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" label={{ value: 'Month', position: 'insideBottom', offset: -5 }} />
+            <YAxis
+              tickFormatter={(value) => new Intl.NumberFormat('en-US').format(value)}
+            />
+            <Tooltip formatter={(value) => [formatNumber(value)]} />
+            <Legend />
+            <Line type="monotone" dataKey="numberOfAOs" name="Number of Spaces" stroke="#8884d8" activeDot={{ r: 8 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow mb-8">
+        <h2 className="text-lg font-semibold mb-1">Space Contributions vs AI &amp; Gas Cost</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Space contributions = Spaces × ${paymentPerAO} USDC/Space. AI and gas costs scale with the same Space count × selected model/profile rates.
+        </p>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart
+            data={monthlyData}
+            margin={{ top: 5, right: 30, left: 50, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" label={{ value: 'Month', position: 'insideBottom', offset: -5 }} />
+            <YAxis tickFormatter={(value) => formatCurrency(value)} width={70} />
+            <Tooltip formatter={(value, name) => [formatCurrency(value), name]} />
+            <Legend />
+            <Line type="monotone" dataKey="aoIncome" name="Space Contributions (USD)" stroke="#82ca9d" strokeWidth={2} />
+            <Line type="monotone" dataKey="aiCost" name="AI Cost (USD)" stroke="#6366f1" strokeWidth={2} />
+            <Line type="monotone" dataKey="gasCost" name="Gas Cost (USD)" stroke="#d97706" strokeWidth={2} />
+            <Line type="monotone" dataKey="netContribution" name="Net Contributions (USD)" stroke="#ff7300" strokeWidth={2} />
+            <Line type="monotone" dataKey="netAfterGas" name="Net After AI + Gas (USD)" stroke="#0d9488" strokeWidth={2} strokeDasharray="5 5" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow mb-8">
+        <h2 className="text-lg font-semibold mb-4">Cumulative AI &amp; Gas Cost</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart
+            data={monthlyData}
+            margin={{ top: 5, right: 30, left: 50, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" label={{ value: 'Month', position: 'insideBottom', offset: -5 }} />
+            <YAxis tickFormatter={(value) => formatCurrency(value)} width={70} />
+            <Tooltip formatter={(value, name) => [formatCurrency(value), name]} />
+            <Legend />
+            <Line type="monotone" dataKey="cumulativeAICost" name="Cumulative AI Cost (USD)" stroke="#6366f1" strokeWidth={2} />
+            <Line type="monotone" dataKey="cumulativeGasCost" name="Cumulative Gas Cost (USD)" stroke="#d97706" strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-4">Monthly Breakdown</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Month</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">USDC Income</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Token Price</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Tokens Locked</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Tokens Distributed</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Total Tokens Locked</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Number of Spaces</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Space Contributions (USD)</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">AI Cost (USD)</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Gas Cost (USD)</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Net After AI (USD)</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Net After AI + Gas (USD)</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Cumulative AI Cost (USD)</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Cumulative Gas Cost (USD)</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Distribution Multiplier</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthlyData.map((month, index) => (
+                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-4 py-3 text-center font-medium">{month.month}</td>
+                  <td className="px-4 py-3 text-center">{formatCurrency(month.totalMonthlyUSDC)}</td>
+                  <td className="px-4 py-3 text-center">{formatCurrency(month.tokenPrice)}</td>
+                  <td className="px-4 py-3 text-center">{formatNumber(month.tokensSold)}</td>
+                  <td className="px-4 py-3 text-center">{formatNumber(month.yield)}</td>
+                  <td className="px-4 py-3 text-center">
+                    {formatNumber(cumulativeData[index].cumulativeSold + cumulativeData[index].cumulativeYield + existingLockedSupply)}
+                  </td>
+                  <td className="px-4 py-3 text-center">{formatNumber(month.numberOfAOs)}</td>
+                  <td className="px-4 py-3 text-center">{formatCurrency(month.aoIncome)}</td>
+                  <td className="px-4 py-3 text-center text-indigo-700">{formatCurrency(month.aiCost)}</td>
+                  <td className="px-4 py-3 text-center text-amber-700">{formatCurrency(month.gasCost)}</td>
+                  <td className={`px-4 py-3 text-center ${month.netContribution >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(month.netContribution)}
+                  </td>
+                  <td className={`px-4 py-3 text-center ${month.netAfterGas >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(month.netAfterGas)}
+                  </td>
+                  <td className="px-4 py-3 text-center text-indigo-700">{formatCurrency(month.cumulativeAICost)}</td>
+                  <td className="px-4 py-3 text-center text-amber-700">{formatCurrency(month.cumulativeGasCost)}</td>
+                  <td className="px-4 py-3 text-center">{month.yieldMultiplier}x</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const root = createRoot(document.getElementById('root'));
+root.render(<HyphaTokenomicsCalculator />);
+</script>
+</body>
+</html>

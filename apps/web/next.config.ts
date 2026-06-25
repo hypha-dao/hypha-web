@@ -90,6 +90,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  rewrites: async () => {
+    return [
+      {
+        source: '/tokenomics1',
+        destination: '/tokenomics1/index.html',
+      },
+      {
+        source: '/tokenomics2',
+        destination: '/tokenomics2/index.html',
+      },
+    ];
+  },
 };
 
 const withVercelToolbar = createWithVercelToolbar();
