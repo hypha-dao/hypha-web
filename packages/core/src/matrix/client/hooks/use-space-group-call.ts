@@ -361,7 +361,7 @@ async function waitForPublishableLocalVideoTrack(
 
 /** Matrix SDK can leave a stale or missing track after camera off→on. */
 async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
-  if (gc.isLocalVideoMuted()) return;
+  if (gc.isLocalVideoMuted?.() ?? true) return;
   if (getPublishableLocalVideoTrack(gc)) return;
   if (getLocalVideoTrackPresence(gc)) {
     if (await waitForPublishableLocalVideoTrack(gc, 1200)) return;
@@ -452,7 +452,7 @@ async function waitForLiveLocalAudioTrack(
 async function recoverLocalMicrophoneFeed(
   gc: MatrixSdk.GroupCall,
 ): Promise<void> {
-  if (gc.isMicrophoneMuted()) return;
+  if (gc.isMicrophoneMuted?.() ?? true) return;
   if (getLiveLocalAudioTrack(gc)) return;
 
   await gc.setMicrophoneMuted(true);
@@ -469,10 +469,10 @@ async function ensureLocalCallMediaPublished(
   kind: 'audio' | 'video',
 ): Promise<void> {
   try {
-    if (!gc.isMicrophoneMuted()) {
+    if (!(gc.isMicrophoneMuted?.() ?? true)) {
       await recoverLocalMicrophoneFeed(gc);
     }
-    if (kind === 'video' && !gc.isLocalVideoMuted()) {
+    if (kind === 'video' && !(gc.isLocalVideoMuted?.() ?? true)) {
       await recoverLocalCameraFeed(gc);
     }
   } catch {
