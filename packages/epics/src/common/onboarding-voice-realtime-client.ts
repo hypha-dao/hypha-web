@@ -53,6 +53,40 @@ export type RealtimeVoiceConnection = {
   close: () => void;
 };
 
+const REALTIME_SPEAK_TEXT_MAX_CHARS = 4000;
+
+/** Play assistant chat text through the Realtime voice (WebRTC audio), not browser TTS. */
+export function speakAssistantTextViaRealtime(
+  connection: RealtimeVoiceConnection,
+  text: string,
+): boolean {
+  const speakable = text.trim().slice(0, REALTIME_SPEAK_TEXT_MAX_CHARS);
+  if (!speakable || connection.dataChannel.readyState !== 'open') {
+    return false;
+  }
+
+  connection.sendEvent({ type: 'response.cancel' });
+  connection.sendEvent({
+    type: 'response.create',
+    response: {
+      modalities: ['audio', 'text'],
+      instructions: [
+        'You are a voice output relay only. Do not call tools or add new information.',
+        'Speak the following assistant reply aloud in a warm, natural conversational tone.',
+        'Do not add, remove, or change words. Do not ask follow-up questions.',
+        '',
+        speakable,
+      ].join('\n'),
+    },
+  });
+
+  void connection.remoteAudio.play().catch(() => {
+    // Autoplay may be blocked until user gesture; WebRTC track usually still plays.
+  });
+
+  return true;
+}
+
 export async function fetchRealtimeVoiceSession(params: {
   authToken: string;
   conversationContext: Record<string, unknown>;
