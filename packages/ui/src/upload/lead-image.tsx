@@ -70,7 +70,7 @@ function dataURLtoFile(dataUrl: string, filename: string) {
 export const UploadLeadImage = ({
   onChange,
   defaultImage,
-  maxFileSize = 4 * 1024 * 1024,
+  maxFileSize = 16 * 1024 * 1024,
   accept,
   aspectRatio = 762 / 270,
   uploadText,

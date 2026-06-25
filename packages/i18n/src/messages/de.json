@@ -51,12 +51,12 @@
     "Signals": "Signale",
     "uploadLeadImage": {
       "cropTitle": "Ein Bild hochladen",
-      "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 4 MB).",
+      "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 16 MB).",
       "cancel": "Abbrechen",
       "confirm": "Zuschneiden & Speichern",
       "dropHere": "Bild hier ablegen",
       "genericUploadFallback": "<accent>Hochladen</accent> eines Bildes",
-      "fileTooLarge": "Ihr Bild ist zu groß (max. 4 MB) und konnte nicht hochgeladen werden. Bitte verkleinern Sie es und versuchen Sie es erneut.",
+      "fileTooLarge": "Ihr Bild ist zu groß (max. 16 MB) und konnte nicht hochgeladen werden. Bitte verkleinern Sie es und versuchen Sie es erneut.",
       "uploadFailed": "Die Datei konnte nicht hochgeladen werden."
     }
   },
@@ -1261,7 +1261,7 @@
         "urlInvalid": "Bitte geben Sie eine gültige URL ein (z. B. https://example.com)",
         "avatarUrlInvalid": "Die Avatar-URL muss eine gültige URL sein",
         "leadImageUrlInvalid": "Die Lead-Image-URL muss eine gültige URL sein",
-        "fileTooLarge": "Ihre Datei ist zu groß und überschreitet das 4MB-Limit. Bitte laden Sie eine kleinere Datei hoch",
+        "fileTooLarge": "Ihre Datei ist zu groß und überschreitet das 16MB-Limit. Bitte laden Sie eine kleinere Datei hoch",
         "fileMustBeImage": "Die Datei muss ein Bild sein (JPEG, PNG, GIF, WEBP)"
       }
     }
@@ -1748,14 +1748,14 @@
         "descriptionRequired": "Bitte fügen Sie Inhalt zu Ihrem Vorschlag hinzu",
         "slugFormat": "Der Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
         "uploadValidFile": "Bitte laden Sie eine gültige Datei hoch",
-        "fileTooLarge": "Ihre Datei ist zu groß und überschreitet das 4MB-Limit. Bitte laden Sie eine kleinere Datei hoch.",
+        "fileTooLarge": "Ihre Datei ist zu groß und überschreitet das 16MB-Limit. Bitte laden Sie eine kleinere Datei hoch.",
         "imageFileType": "Die Datei muss ein Bild sein (JPEG, PNG, GIF, WEBP).",
         "leadImageUrlInvalid": "Die Lead-Image-URL muss eine gültige URL sein",
         "attachmentUrlInvalid": "Die Anhang-URL muss eine gültige URL sein",
         "attachmentNameRequired": "Der Name des Anhangs ist erforderlich",
         "attachmentsLimit": "Sie können bis zu 3 Dateien anhängen. Bitte entfernen Sie die zusätzlichen Anhänge.",
-        "attachmentFileTooLarge": "Ihre Datei \"{fileName}\" ist zu groß und überschreitet das 4MB-Limit. Bitte laden Sie eine kleinere Datei hoch.",
-        "attachmentFileTypeUnsupported": "Das Format der Datei \"{fileName}\" wird nicht unterstützt. Bitte laden Sie eine JPEG-, PNG-, WebP- oder PDF-Datei hoch (bis zu 4MB).",
+        "attachmentFileTooLarge": "Ihre Datei \"{fileName}\" ist zu groß und überschreitet das 16MB-Limit. Bitte laden Sie eine kleinere Datei hoch.",
+        "attachmentFileTypeUnsupported": "Das Format der Datei \"{fileName}\" wird nicht unterstützt. Bitte laden Sie eine JPEG-, PNG-, WebP- oder PDF-Datei hoch (bis zu 16MB).",
         "tokenNameMin": "Bitte geben Sie einen Token-Namen ein (min. 2 Zeichen)",
         "tokenNameMax": "Der Token-Name darf höchstens 100 Zeichen lang sein",
         "tokenNameInvalidContent": "Der Token-Name darf keine Emojis oder Links enthalten",
@@ -1798,7 +1798,7 @@
       "unityLabel": "Einheit",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Bild</accent> hochladen",
-      "addAttachmentLabel": "Anhang hinzufügen (JPEG, PNG, WebP oder PDF — max. 4 MB)",
+      "addAttachmentLabel": "Anhang hinzufügen (JPEG, PNG, WebP oder PDF — max. 16 MB)",
       "proposalContent": "Vorschlagsinhalt",
       "proposalContentPlaceholder": "Geben Sie hier Ihren Vorschlagsinhalt ein...",
       "editor": {

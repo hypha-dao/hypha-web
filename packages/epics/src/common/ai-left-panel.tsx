@@ -68,6 +68,7 @@ import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import { useCompactHeaderMode } from '@hypha-platform/ui';
 import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
+import { CHAT_ATTACHMENT_MAX_SIZE_LABEL } from '@hypha-platform/core/client';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import {
   UserSpaceState,
@@ -306,7 +307,7 @@ function formatChatStreamErrorMessage(error: unknown): string {
     rawMessage.includes('Request Entity Too Large') ||
     rawMessage.toLowerCase().includes('entity too large')
   ) {
-    return 'The attachment is too large to send with this message. Use a file under 4 MB or remove other attachments and try again.';
+    return `The attachment is too large to send with this message. Use a file under ${CHAT_ATTACHMENT_MAX_SIZE_LABEL} or remove other attachments and try again.`;
   }
   if (
     rawMessage.includes('An error occurred in the Server Components render') ||

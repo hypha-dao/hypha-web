@@ -51,12 +51,12 @@
     "Signals": "Signaux",
     "uploadLeadImage": {
       "cropTitle": "Téléverser une image",
-      "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 4 Mo).",
+      "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 16 Mo).",
       "cancel": "Annuler",
       "confirm": "Recadrer et enregistrer",
       "dropHere": "Déposez l’image ici",
       "genericUploadFallback": "<accent>Téléverser</accent> une image",
-      "fileTooLarge": "Votre image est trop volumineuse (max. 4 Mo) et n’a pas pu être téléversée. Réduisez-la et réessayez.",
+      "fileTooLarge": "Votre image est trop volumineuse (max. 16 Mo) et n’a pas pu être téléversée. Réduisez-la et réessayez.",
       "uploadFailed": "Le fichier n’a pas pu être téléversé."
     }
   },
@@ -737,7 +737,7 @@
         "urlInvalid": "Veuillez saisir une URL valide (ex. : https://example.com)",
         "avatarUrlInvalid": "L’URL de l’avatar doit être une URL valide",
         "leadImageUrlInvalid": "L’URL de l’image principale doit être une URL valide",
-        "fileTooLarge": "Votre fichier est trop volumineux et dépasse la limite de 4 Mo. Veuillez téléverser un fichier plus petit",
+        "fileTooLarge": "Votre fichier est trop volumineux et dépasse la limite de 16 Mo. Veuillez téléverser un fichier plus petit",
         "fileMustBeImage": "Le fichier doit être une image (JPEG, PNG, GIF, WEBP)"
       }
     }
@@ -1224,14 +1224,14 @@
         "descriptionRequired": "Veuillez ajouter du contenu à votre proposition",
         "slugFormat": "Le slug ne doit contenir que des lettres minuscules, des chiffres et des tirets",
         "uploadValidFile": "Veuillez téléverser un fichier valide",
-        "fileTooLarge": "Votre fichier est trop volumineux et dépasse la limite de 4 Mo. Veuillez téléverser un fichier plus petit.",
+        "fileTooLarge": "Votre fichier est trop volumineux et dépasse la limite de 16 Mo. Veuillez téléverser un fichier plus petit.",
         "imageFileType": "Le fichier doit être une image (JPEG, PNG, GIF, WEBP).",
         "leadImageUrlInvalid": "L’URL de l’image principale doit être une URL valide",
         "attachmentUrlInvalid": "L’URL de la pièce jointe doit être une URL valide",
         "attachmentNameRequired": "Le nom de la pièce jointe est requis",
         "attachmentsLimit": "Vous pouvez joindre jusqu’à 3 fichiers. Veuillez retirer les pièces jointes en trop.",
-        "attachmentFileTooLarge": "Votre fichier \"{fileName}\" est trop volumineux et dépasse la limite de 4 Mo. Veuillez téléverser un fichier plus petit.",
-        "attachmentFileTypeUnsupported": "Le format du fichier \"{fileName}\" n’est pas pris en charge. Veuillez téléverser un fichier JPEG, PNG, WebP ou PDF (jusqu’à 4 Mo).",
+        "attachmentFileTooLarge": "Votre fichier \"{fileName}\" est trop volumineux et dépasse la limite de 16 Mo. Veuillez téléverser un fichier plus petit.",
+        "attachmentFileTypeUnsupported": "Le format du fichier \"{fileName}\" n’est pas pris en charge. Veuillez téléverser un fichier JPEG, PNG, WebP ou PDF (jusqu’à 16 Mo).",
         "tokenNameMin": "Veuillez saisir un nom de token (min. 2 caractères)",
         "tokenNameMax": "Le nom du token doit contenir au maximum 100 caractères",
         "tokenNameInvalidContent": "Le nom du token ne peut pas contenir d’emojis ni de liens",
@@ -1274,7 +1274,7 @@
       "unityLabel": "Unité",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Téléverser</accent> une image",
-      "addAttachmentLabel": "Ajouter une pièce jointe (JPEG, PNG, WebP ou PDF — max 4 Mo)",
+      "addAttachmentLabel": "Ajouter une pièce jointe (JPEG, PNG, WebP ou PDF — max 16 Mo)",
       "proposalContent": "Contenu de la proposition",
       "proposalContentPlaceholder": "Saisissez ici le contenu de votre proposition...",
       "editor": {

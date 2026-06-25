@@ -2,6 +2,7 @@ import {
   ALLOWED_IMAGE_FILE_SIZE,
   DEFAULT_IMAGE_ACCEPT,
   ECOSYSTEM_LOGO_IMAGE_ACCEPT,
+  UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
 } from '../assets/constant';
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
@@ -167,7 +168,7 @@ export const createSpaceFiles = {
       .instanceof(File)
       .refine(
         (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-        'File size must be less than 4MB',
+        `File size must be less than ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL}`,
       )
       .refine(
         (file) => isAcceptedSpaceLogoFile(file),
@@ -180,7 +181,7 @@ export const createSpaceFiles = {
       .instanceof(File)
       .refine(
         (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-        'File size must be less than 4MB',
+        `File size must be less than ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL}`,
       )
       .refine(
         (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -194,7 +195,7 @@ export const createSpaceFiles = {
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 4MB',
+          `File size must be less than ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL}`,
         )
         .refine(
           (file) => isAcceptedEcosystemLogoFile(file),
@@ -209,7 +210,7 @@ export const createSpaceFiles = {
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 4MB',
+          `File size must be less than ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL}`,
         )
         .refine(
           (file) => isAcceptedEcosystemLogoFile(file),

@@ -3,6 +3,7 @@ import {
   ALLOWED_IMAGE_FILE_SIZE,
   DEFAULT_FILE_ACCEPT,
   DEFAULT_IMAGE_ACCEPT,
+  UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
 } from '../assets/constant';
 import { isBefore } from 'date-fns';
 import {
@@ -159,12 +160,11 @@ export const schemaCreateAgreementWeb2FileUrls = z.object(
 const isBrowserFile = (v: unknown): v is File =>
   typeof File !== 'undefined' && v instanceof File;
 
+const fileTooLargeMessage = `Your file is too large and exceeds the ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL} limit. Please upload a smaller file.`;
+
 const leadImageFileSchema = z
   .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
-  .refine(
-    (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-    'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
-  )
+  .refine((file) => file.size <= ALLOWED_IMAGE_FILE_SIZE, fileTooLargeMessage)
   .refine(
     (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
     'File must be an image (JPEG, PNG, GIF, WEBP).',
@@ -175,13 +175,13 @@ const attachmentFileSchema = z
   .refine(
     (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
     (file) => ({
-      message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
+      message: `Your file "${file.name}" is too large and exceeds the ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL} limit. Please upload a smaller file.`,
     }),
   )
   .refine(
     (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
     (file) => ({
-      message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
+      message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL}).`,
     }),
   );
 
@@ -605,7 +605,7 @@ export const baseSchemaIssueNewToken = z.object({
         .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
+          fileTooLargeMessage,
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),

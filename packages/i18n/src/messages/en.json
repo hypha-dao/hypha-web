@@ -51,12 +51,12 @@
     "Signals": "Signals",
     "uploadLeadImage": {
       "cropTitle": "Upload an image",
-      "cropDescription": "Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 4 MB).",
+      "cropDescription": "Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 16 MB).",
       "cancel": "Cancel",
       "confirm": "Crop & Save",
       "dropHere": "Drop the image here",
       "genericUploadFallback": "<accent>Upload</accent> an image",
-      "fileTooLarge": "Your image is too large (max 4 MB) and could not be uploaded. Resize it and try again.",
+      "fileTooLarge": "Your image is too large (max 16 MB) and could not be uploaded. Resize it and try again.",
       "uploadFailed": "File could not be uploaded."
     }
   },
@@ -1260,7 +1260,7 @@
         "urlInvalid": "Please enter a valid URL (e.g., https://example.com)",
         "avatarUrlInvalid": "Avatar URL must be a valid URL",
         "leadImageUrlInvalid": "Lead Image URL must be a valid URL",
-        "fileTooLarge": "Your file is too large and exceeds the 4MB limit. Please upload a smaller file",
+        "fileTooLarge": "Your file is too large and exceeds the 16 MB limit. Please upload a smaller file",
         "fileMustBeImage": "File must be an image (JPEG, PNG, GIF, WEBP)"
       }
     }
@@ -1747,14 +1747,14 @@
         "descriptionRequired": "Please add content to your proposal",
         "slugFormat": "Slug must contain only lowercase letters, numbers, and hyphens",
         "uploadValidFile": "Please upload a valid file",
-        "fileTooLarge": "Your file is too large and exceeds the 4MB limit. Please upload a smaller file.",
+        "fileTooLarge": "Your file is too large and exceeds the 16 MB limit. Please upload a smaller file.",
         "imageFileType": "File must be an image (JPEG, PNG, GIF, WEBP).",
         "leadImageUrlInvalid": "Lead Image URL must be a valid URL",
         "attachmentUrlInvalid": "Attachment URL must be a valid URL",
         "attachmentNameRequired": "Attachment name is required",
         "attachmentsLimit": "You can attach up to 3 files. Please remove the extra attachments.",
-        "attachmentFileTooLarge": "Your file \"{fileName}\" is too large and exceeds the 4MB limit. Please upload a smaller file.",
-        "attachmentFileTypeUnsupported": "This file \"{fileName}\" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).",
+        "attachmentFileTooLarge": "Your file \"{fileName}\" is too large and exceeds the 16 MB limit. Please upload a smaller file.",
+        "attachmentFileTypeUnsupported": "This file \"{fileName}\" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 16 MB).",
         "tokenNameMin": "Please enter a token name (min. 2 characters)",
         "tokenNameMax": "Token name must be at most 100 characters long",
         "tokenNameInvalidContent": "Token name cannot contain emojis or links",
@@ -1797,7 +1797,7 @@
       "unityLabel": "Unity",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Upload</accent> an image",
-      "addAttachmentLabel": "Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)",
+      "addAttachmentLabel": "Add Attachment (JPEG, PNG, WebP, or PDF — max 16MB)",
       "proposalContent": "Proposal Content",
       "proposalContentPlaceholder": "Type your proposal content here...",
       "errors": {

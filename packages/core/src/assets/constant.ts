@@ -13,7 +13,16 @@ export const ECOSYSTEM_LOGO_IMAGE_ACCEPT = [
 
 export const DEFAULT_DOCUMENT_ACCEPT = ['application/pdf'];
 
-export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
+/** Standard max upload size for UploadThing routes (pdf/image/blob) and client validation. */
+export const UPLOADTHING_STANDARD_MAX_BYTES = 16 * 1024 * 1024;
+
+export const UPLOADTHING_STANDARD_MAX_SIZE_LABEL = '16 MB';
+
+/** UploadThing `maxFileSize` route config string. */
+export const UPLOADTHING_STANDARD_MAX_FILE_SIZE = '16MB' as const;
+
+/** @deprecated Prefer UPLOADTHING_STANDARD_MAX_BYTES */
+export const ALLOWED_IMAGE_FILE_SIZE = UPLOADTHING_STANDARD_MAX_BYTES;
 
 export const DEFAULT_FILE_ACCEPT = ([] as string[]).concat(
   ...DEFAULT_IMAGE_ACCEPT,

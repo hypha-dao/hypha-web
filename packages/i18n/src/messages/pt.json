@@ -51,12 +51,12 @@
     "Signals": "Sinais",
     "uploadLeadImage": {
       "cropTitle": "Carregar uma imagem",
-      "cropDescription": "Ajuste o enquadramento e salve. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 4 MB).",
+      "cropDescription": "Ajuste o enquadramento e salve. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 16 MB).",
       "cancel": "Cancelar",
       "confirm": "Recortar e salvar",
       "dropHere": "Solte a imagem aqui",
       "genericUploadFallback": "<accent>Carregar</accent> uma imagem",
-      "fileTooLarge": "Sua imagem é muito grande (máx. 4 MB) e não foi possível carregá-la. Reduza o tamanho e tente novamente.",
+      "fileTooLarge": "Sua imagem é muito grande (máx. 16 MB) e não foi possível carregá-la. Reduza o tamanho e tente novamente.",
       "uploadFailed": "Não foi possível carregar o arquivo."
     }
   },
@@ -726,14 +726,14 @@
         "descriptionRequired": "Adicione conteúdo à sua proposta",
         "slugFormat": "Slug deve conter apenas letras minúsculas, números e hifens",
         "uploadValidFile": "Por favor carregue um arquivo válido",
-        "fileTooLarge": "Seu arquivo é muito grande e excede o limite de 4 MB. Faça upload de um arquivo menor.",
+        "fileTooLarge": "Seu arquivo é muito grande e excede o limite de 16 MB. Faça upload de um arquivo menor.",
         "imageFileType": "O arquivo deve ser uma imagem (JPEG, PNG, GIF, WEBP).",
         "leadImageUrlInvalid": "O URL da imagem principal deve ser um URL válido",
         "attachmentUrlInvalid": "O URL do anexo precisa ser um URL válido",
         "attachmentNameRequired": "O nome do anexo é obrigatório",
         "attachmentsLimit": "Você pode anexar até 3 arquivos. Remova os anexos extras.",
-        "attachmentFileTooLarge": "Seu arquivo \"{fileName}\" é muito grande e excede o limite de 4 MB. Faça upload de um arquivo menor.",
-        "attachmentFileTypeUnsupported": "Este formato de arquivo \"{fileName}\" não é compatível. Faça upload de um arquivo JPEG, PNG, WebP ou PDF (até 4 MB).",
+        "attachmentFileTooLarge": "Seu arquivo \"{fileName}\" é muito grande e excede o limite de 16 MB. Faça upload de um arquivo menor.",
+        "attachmentFileTypeUnsupported": "Este formato de arquivo \"{fileName}\" não é compatível. Faça upload de um arquivo JPEG, PNG, WebP ou PDF (até 16 MB).",
         "tokenNameMin": "Insira um nome de token (mín. 2 caracteres)",
         "tokenNameMax": "O nome do token deve ter no máximo 100 caracteres",
         "tokenNameInvalidContent": "O nome do token não pode conter emojis ou links",
@@ -776,7 +776,7 @@
       "unityLabel": "Unidade",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Carregar</accent> uma imagem",
-      "addAttachmentLabel": "Adicionar anexo (JPEG, PNG, WebP ou PDF — máximo 4 MB)",
+      "addAttachmentLabel": "Adicionar anexo (JPEG, PNG, WebP ou PDF — máximo 16 MB)",
       "proposalContent": "Conteúdo da proposta",
       "proposalContentPlaceholder": "Digite o conteúdo da sua proposta aqui...",
       "editor": {
@@ -1496,7 +1496,7 @@
         "urlInvalid": "Insira um URL válido (por exemplo, https://example.com)",
         "avatarUrlInvalid": "O URL do avatar deve ser um URL válido",
         "leadImageUrlInvalid": "O URL da imagem principal deve ser um URL válido",
-        "fileTooLarge": "Seu arquivo é muito grande e excede o limite de 4 MB. Por favor carregue um arquivo menor",
+        "fileTooLarge": "Seu arquivo é muito grande e excede o limite de 16 MB. Por favor carregue um arquivo menor",
         "fileMustBeImage": "O arquivo deve ser uma imagem (JPEG, PNG, GIF, WEBP)"
       }
     }

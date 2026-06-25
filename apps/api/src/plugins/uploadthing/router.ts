@@ -42,12 +42,17 @@ export function newUploadRouter({
   return {
     attachmentUploader: f({
       pdf: {
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
         maxFileCount: maxAttachmentsCount,
         contentDisposition: 'attachment',
       },
       image: {
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
+        maxFileCount: maxAttachmentsCount,
+        contentDisposition: 'attachment',
+      },
+      blob: {
+        maxFileSize: '16MB',
         maxFileCount: maxAttachmentsCount,
         contentDisposition: 'attachment',
       },
@@ -76,11 +81,11 @@ export function newUploadRouter({
     imageUpload: f({
       image: {
         maxFileCount: 1,
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
       },
       blob: {
         maxFileCount: 1,
-        maxFileSize: '4MB',
+        maxFileSize: '16MB',
       },
     })
       .middleware(async ({ req, files }) => {
