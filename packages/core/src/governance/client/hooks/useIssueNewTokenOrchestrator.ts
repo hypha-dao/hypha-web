@@ -210,8 +210,11 @@ export const useCreateIssueTokenOrchestrator = ({
   const { trigger: createIssueToken } = useSWRMutation(
     'createIssueTokenOrchestration',
     async (_: string, { arg }: { arg: CreateIssueTokenArg }) => {
-      startTask('CREATE_WEB2_AGREEMENT');
+      // Validate before marking CREATE_WEB2_AGREEMENT pending; otherwise a parse
+      // failure leaves a stuck task, progress stays < 100, and the loading
+      // overlay blocks the publish button (see hypha-web#1647).
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      startTask('CREATE_WEB2_AGREEMENT');
       const createdAgreement = await web2.createAgreement(inputWeb2);
       completeTask('CREATE_WEB2_AGREEMENT');
 
