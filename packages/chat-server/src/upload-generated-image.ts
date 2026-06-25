@@ -37,25 +37,33 @@ function extensionForMime(mimeType: string): string {
   return 'png';
 }
 
+function readUrlField(record: Record<string, unknown>): string | null {
+  for (const key of ['ufsUrl', 'url', 'fileUrl', 'appUrl'] as const) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return null;
+}
+
 function resolveUploadUrl(result: unknown): string | null {
   if (!result || typeof result !== 'object') return null;
 
   const envelope = result as {
     error?: unknown;
-    data?: { ufsUrl?: unknown; url?: unknown };
-    ufsUrl?: unknown;
-    url?: unknown;
+    data?: unknown;
   };
 
   if (envelope.error) return null;
 
-  const fileData = envelope.data ?? envelope;
-  if (typeof fileData.ufsUrl === 'string' && fileData.ufsUrl.trim()) {
-    return fileData.ufsUrl.trim();
+  const candidates: unknown[] = [envelope.data, result];
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== 'object') continue;
+    const url = readUrlField(candidate as Record<string, unknown>);
+    if (url) return url;
   }
-  if (typeof fileData.url === 'string' && fileData.url.trim()) {
-    return fileData.url.trim();
-  }
+
   return null;
 }
 
