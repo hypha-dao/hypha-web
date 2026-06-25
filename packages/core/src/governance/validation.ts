@@ -3,6 +3,8 @@ import {
   ALLOWED_IMAGE_FILE_SIZE,
   DEFAULT_FILE_ACCEPT,
   DEFAULT_IMAGE_ACCEPT,
+  UPLOADTHING_ATTACHMENTS_LIMIT_MESSAGE,
+  UPLOADTHING_STANDARD_MAX_FILE_COUNT,
   UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
 } from '../assets/constant';
 import { isBefore } from 'date-fns';
@@ -203,9 +205,8 @@ export const createAgreementFiles = {
         }),
       ]),
     )
-    .max(3, {
-      message:
-        'You can attach up to 3 files. Please remove the extra attachments.',
+    .max(UPLOADTHING_STANDARD_MAX_FILE_COUNT, {
+      message: UPLOADTHING_ATTACHMENTS_LIMIT_MESSAGE,
     })
     .optional(),
 };
@@ -843,7 +844,10 @@ export const schemaCreateProposalChangeVotingMethod = z
       })
       .optional(),
     leadImage: z.custom<File>().optional(),
-    attachments: z.array(z.custom<File>()).max(3).optional(),
+    attachments: z
+      .array(z.custom<File>())
+      .max(UPLOADTHING_STANDARD_MAX_FILE_COUNT)
+      .optional(),
   })
   .refine(
     (data) => {

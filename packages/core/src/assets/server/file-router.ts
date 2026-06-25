@@ -8,6 +8,7 @@ import { CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE } from './call-recording-stora
 import { logCallRecordingUploadFailure } from './call-recording-upload-log';
 import {
   ECOSYSTEM_LOGO_IMAGE_ACCEPT,
+  UPLOADTHING_STANDARD_MAX_FILE_COUNT,
   UPLOADTHING_STANDARD_MAX_FILE_SIZE,
 } from '../constant';
 
@@ -29,17 +30,17 @@ export const fileRouter: FileRouter = {
   attachmentUploader: f({
     pdf: {
       maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
-      maxFileCount: 5,
+      maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
       contentDisposition: 'attachment',
     },
     image: {
       maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
-      maxFileCount: 5,
+      maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
       contentDisposition: 'attachment',
     },
     blob: {
       maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
-      maxFileCount: 5,
+      maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
       contentDisposition: 'attachment',
     },
   })

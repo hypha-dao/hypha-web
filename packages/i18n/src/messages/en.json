@@ -1752,7 +1752,7 @@
         "leadImageUrlInvalid": "Lead Image URL must be a valid URL",
         "attachmentUrlInvalid": "Attachment URL must be a valid URL",
         "attachmentNameRequired": "Attachment name is required",
-        "attachmentsLimit": "You can attach up to 3 files. Please remove the extra attachments.",
+        "attachmentsLimit": "You can attach up to 5 files. Please remove the extra attachments.",
         "attachmentFileTooLarge": "Your file \"{fileName}\" is too large and exceeds the 16 MB limit. Please upload a smaller file.",
         "attachmentFileTypeUnsupported": "This file \"{fileName}\" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 16 MB).",
         "tokenNameMin": "Please enter a token name (min. 2 characters)",

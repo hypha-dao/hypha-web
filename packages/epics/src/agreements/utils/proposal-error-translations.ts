@@ -29,6 +29,8 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'issueNewTokenForm.errors.attachmentUrlInvalid',
   'Attachment name is required':
     'issueNewTokenForm.errors.attachmentNameRequired',
+  'You can attach up to 5 files. Please remove the extra attachments.':
+    'issueNewTokenForm.errors.attachmentsLimit',
   'You can attach up to 3 files. Please remove the extra attachments.':
     'issueNewTokenForm.errors.attachmentsLimit',
   'Please add a recipient or wallet address':
@@ -136,6 +138,14 @@ export const resolveProposalErrorTranslation = (
       key: 'issueNewTokenForm.errors.attachmentFileTypeUnsupported',
       values: { fileName: unsupportedFormatMatch[1] },
     };
+  }
+
+  if (
+    /^You can attach up to \d+ files\. Please remove the extra attachments\.?$/.test(
+      trimmedMessage,
+    )
+  ) {
+    return { key: 'issueNewTokenForm.errors.attachmentsLimit' };
   }
 
   const milestoneOrderMatch = trimmedMessage.match(

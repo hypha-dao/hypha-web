@@ -1229,7 +1229,7 @@
         "leadImageUrlInvalid": "L’URL de l’image principale doit être une URL valide",
         "attachmentUrlInvalid": "L’URL de la pièce jointe doit être une URL valide",
         "attachmentNameRequired": "Le nom de la pièce jointe est requis",
-        "attachmentsLimit": "Vous pouvez joindre jusqu’à 3 fichiers. Veuillez retirer les pièces jointes en trop.",
+        "attachmentsLimit": "Vous pouvez joindre jusqu’à 5 fichiers. Veuillez retirer les pièces jointes en trop.",
         "attachmentFileTooLarge": "Votre fichier \"{fileName}\" est trop volumineux et dépasse la limite de 16 Mo. Veuillez téléverser un fichier plus petit.",
         "attachmentFileTypeUnsupported": "Le format du fichier \"{fileName}\" n’est pas pris en charge. Veuillez téléverser un fichier JPEG, PNG, WebP ou PDF (jusqu’à 16 Mo).",
         "tokenNameMin": "Veuillez saisir un nom de token (min. 2 caractères)",

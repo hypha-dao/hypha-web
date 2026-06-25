@@ -1753,7 +1753,7 @@
         "leadImageUrlInvalid": "Die Lead-Image-URL muss eine gültige URL sein",
         "attachmentUrlInvalid": "Die Anhang-URL muss eine gültige URL sein",
         "attachmentNameRequired": "Der Name des Anhangs ist erforderlich",
-        "attachmentsLimit": "Sie können bis zu 3 Dateien anhängen. Bitte entfernen Sie die zusätzlichen Anhänge.",
+        "attachmentsLimit": "Sie können bis zu 5 Dateien anhängen. Bitte entfernen Sie die zusätzlichen Anhänge.",
         "attachmentFileTooLarge": "Ihre Datei \"{fileName}\" ist zu groß und überschreitet das 16MB-Limit. Bitte laden Sie eine kleinere Datei hoch.",
         "attachmentFileTypeUnsupported": "Das Format der Datei \"{fileName}\" wird nicht unterstützt. Bitte laden Sie eine JPEG-, PNG-, WebP- oder PDF-Datei hoch (bis zu 16MB).",
         "tokenNameMin": "Bitte geben Sie einen Token-Namen ein (min. 2 Zeichen)",

@@ -57,6 +57,8 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.attachmentUrlInvalid',
   'Attachment name is required':
     'issueNewTokenForm.errors.attachmentNameRequired',
+  'You can attach up to 5 files. Please remove the extra attachments.':
+    'issueNewTokenForm.errors.attachmentsLimit',
   'You can attach up to 3 files. Please remove the extra attachments.':
     'issueNewTokenForm.errors.attachmentsLimit',
   'Please enter a token name (min. 2 characters)':

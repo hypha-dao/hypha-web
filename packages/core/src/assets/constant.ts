@@ -21,6 +21,12 @@ export const UPLOADTHING_STANDARD_MAX_SIZE_LABEL = '16 MB';
 /** UploadThing `maxFileSize` route config string. */
 export const UPLOADTHING_STANDARD_MAX_FILE_SIZE = '16MB' as const;
 
+/** Standard max files per attachment upload (proposals, chat, profile images). */
+export const UPLOADTHING_STANDARD_MAX_FILE_COUNT = 5;
+
+export const UPLOADTHING_ATTACHMENTS_LIMIT_MESSAGE =
+  `You can attach up to ${UPLOADTHING_STANDARD_MAX_FILE_COUNT} files. Please remove the extra attachments.` as const;
+
 /** @deprecated Prefer UPLOADTHING_STANDARD_MAX_BYTES */
 export const ALLOWED_IMAGE_FILE_SIZE = UPLOADTHING_STANDARD_MAX_BYTES;
 

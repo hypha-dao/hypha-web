@@ -731,7 +731,7 @@
         "leadImageUrlInvalid": "La URL de la imagen principal debe ser una URL válida",
         "attachmentUrlInvalid": "La URL del archivo adjunto debe ser una URL válida",
         "attachmentNameRequired": "El nombre del archivo adjunto es obligatorio",
-        "attachmentsLimit": "Puede adjuntar hasta 3 archivos. Retire los archivos adjuntos adicionales.",
+        "attachmentsLimit": "Puede adjuntar hasta 5 archivos. Retire los archivos adjuntos adicionales.",
         "attachmentFileTooLarge": "Su archivo \"{fileName}\" es demasiado grande y excede el límite de 16 MB. Sube un archivo más pequeño.",
         "attachmentFileTypeUnsupported": "Este archivo con formato \"{fileName}\" no es compatible. Cargue un archivo JPEG, PNG, WebP o PDF (hasta 16 MB).",
         "tokenNameMin": "Introduzca un nombre de token (mínimo 2 caracteres)",

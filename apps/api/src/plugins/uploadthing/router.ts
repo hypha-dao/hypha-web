@@ -27,7 +27,7 @@ export interface uploadRouterParams {
    */
   logger: FastifyBaseLogger;
   /**
-   * @default 3
+   * @default 5
    */
   maxAttachmentsCount?: number;
 }
@@ -35,7 +35,7 @@ export interface uploadRouterParams {
 export function newUploadRouter({
   isAllowed,
   logger,
-  maxAttachmentsCount = 3,
+  maxAttachmentsCount = 5,
 }: uploadRouterParams) {
   const f = createUploadthing();
 
