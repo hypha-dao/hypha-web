@@ -14,6 +14,11 @@ export const REALTIME_TURN_DETECTION = {
   interrupt_response: false,
 } as const;
 
+/** Required for `conversation.item.input_audio_transcription.completed` events. */
+export const REALTIME_INPUT_TRANSCRIPTION = {
+  model: 'gpt-4o-mini-transcribe',
+} as const;
+
 export type RealtimeVoiceSessionPayload = {
   clientSecret: string;
   sessionId: string | null;
@@ -170,6 +175,7 @@ export async function connectOpenAiRealtimeCall(params: {
       session: {
         audio: {
           input: {
+            transcription: REALTIME_INPUT_TRANSCRIPTION,
             turn_detection: REALTIME_TURN_DETECTION,
           },
         },
