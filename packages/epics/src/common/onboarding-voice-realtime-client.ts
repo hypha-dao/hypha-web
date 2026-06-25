@@ -4,11 +4,14 @@ import { acquireWarmMicStream, isWarmMicStream } from './onboarding-voice-mic';
 
 const OPENAI_REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
 
-const REALTIME_TURN_DETECTION = {
+/** STT-only VAD — Hypha chat (/api/chat) handles tools and MCP, not Realtime. */
+export const REALTIME_TURN_DETECTION = {
   type: 'server_vad',
   threshold: 0.5,
   prefix_padding_ms: 300,
   silence_duration_ms: 450,
+  create_response: false,
+  interrupt_response: false,
 } as const;
 
 export type RealtimeVoiceSessionPayload = {
@@ -165,7 +168,11 @@ export async function connectOpenAiRealtimeCall(params: {
     sendEvent({
       type: 'session.update',
       session: {
-        turn_detection: REALTIME_TURN_DETECTION,
+        audio: {
+          input: {
+            turn_detection: REALTIME_TURN_DETECTION,
+          },
+        },
       },
     });
   });
