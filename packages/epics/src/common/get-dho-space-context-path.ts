@@ -6,6 +6,7 @@ const VALID_DHO_TABS = new Set([
   'coherence',
   'agreements',
   'members',
+  'calendar',
   'treasury',
   'banking',
   'rewards',
