@@ -723,6 +723,8 @@
       "errors": {
         "titleRequired": "Por favor agregue un título para su propuesta",
         "descriptionRequired": "Por favor agregue contenido a su propuesta",
+        "titleMaxLength": "El título no puede superar 50 caracteres (incluidos los espacios)",
+        "descriptionMaxLength": "La descripción no puede superar 4000 caracteres (incluidos los espacios)",
         "slugFormat": "Slug debe contener solo letras minúsculas, números y guiones.",
         "uploadValidFile": "Por favor sube un archivo válido",
         "fileTooLarge": "Su archivo es demasiado grande y excede el límite de 4 MB. Sube un archivo más pequeño.",

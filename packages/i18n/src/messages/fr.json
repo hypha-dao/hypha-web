@@ -1204,6 +1204,8 @@
       "errors": {
         "titleRequired": "Veuillez ajouter un titre à votre proposition",
         "descriptionRequired": "Veuillez ajouter du contenu à votre proposition",
+        "titleMaxLength": "Le titre ne peut pas dépasser 50 caractères (espaces inclus)",
+        "descriptionMaxLength": "La description ne peut pas dépasser 4000 caractères (espaces inclus)",
         "slugFormat": "Le slug ne doit contenir que des lettres minuscules, des chiffres et des tirets",
         "uploadValidFile": "Veuillez téléverser un fichier valide",
         "fileTooLarge": "Votre fichier est trop volumineux et dépasse la limite de 4 Mo. Veuillez téléverser un fichier plus petit.",

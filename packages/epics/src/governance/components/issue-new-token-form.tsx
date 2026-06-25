@@ -36,6 +36,10 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.titleRequired',
   'Please add content to your proposal':
     'issueNewTokenForm.errors.descriptionRequired',
+  'Title cannot exceed 50 characters (including spaces)':
+    'issueNewTokenForm.errors.titleMaxLength',
+  'Description cannot exceed 4000 characters (including spaces)':
+    'issueNewTokenForm.errors.descriptionMaxLength',
   'Slug must contain only lowercase letters, numbers, and hyphens':
     'issueNewTokenForm.errors.slugFormat',
   'Please upload a valid file': 'issueNewTokenForm.errors.uploadValidFile',

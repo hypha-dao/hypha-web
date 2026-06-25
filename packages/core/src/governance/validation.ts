@@ -117,12 +117,16 @@ const createAgreementWeb2Props = {
     .string()
     .trim()
     .min(1, { message: 'Please add a title for your proposal' })
-    .max(50),
+    .max(50, {
+      message: 'Title cannot exceed 50 characters (including spaces)',
+    }),
   description: z
     .string()
     .trim()
     .min(1, { message: 'Please add content to your proposal' })
-    .max(4000),
+    .max(4000, {
+      message: 'Description cannot exceed 4000 characters (including spaces)',
+    }),
   slug: z
     .string()
     .min(1)
@@ -808,12 +812,16 @@ export const schemaCreateProposalChangeVotingMethod = z
       .string()
       .trim()
       .min(1, { message: 'Please add a title for your proposal' })
-      .max(50),
+      .max(50, {
+        message: 'Title cannot exceed 50 characters (including spaces)',
+      }),
     description: z
       .string()
       .trim()
       .min(1, { message: 'Please add content to your proposal' })
-      .max(4000),
+      .max(4000, {
+        message: 'Description cannot exceed 4000 characters (including spaces)',
+      }),
     slug: z
       .string()
       .min(1)

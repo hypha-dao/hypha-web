@@ -8,6 +8,10 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'createAgreementBaseFields.errors.memoryAttachmentsRequired',
   'Please add content to your proposal':
     'issueNewTokenForm.errors.descriptionRequired',
+  'Title cannot exceed 50 characters (including spaces)':
+    'issueNewTokenForm.errors.titleMaxLength',
+  'Description cannot exceed 4000 characters (including spaces)':
+    'issueNewTokenForm.errors.descriptionMaxLength',
   'Slug must contain only lowercase letters, numbers, and hyphens':
     'issueNewTokenForm.errors.slugFormat',
   'Please upload a valid file': 'issueNewTokenForm.errors.uploadValidFile',
