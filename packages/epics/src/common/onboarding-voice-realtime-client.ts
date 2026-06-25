@@ -77,6 +77,7 @@ export function setRealtimeRemoteAudioMuted(
 export function speakAssistantTextViaRealtime(
   connection: RealtimeVoiceConnection,
   text: string,
+  options?: { cancelActiveResponse?: boolean },
 ): boolean {
   const speakable = text.trim().slice(0, REALTIME_SPEAK_TEXT_MAX_CHARS);
   if (!speakable || connection.dataChannel.readyState !== 'open') {
@@ -85,13 +86,13 @@ export function speakAssistantTextViaRealtime(
 
   const instructions = buildRealtimeSpeakInstructions(speakable);
 
-  connection.sendEvent({ type: 'response.cancel' });
-  // GA Realtime accepts output_modalities; keep modalities for older preview models.
+  if (options?.cancelActiveResponse) {
+    connection.sendEvent({ type: 'response.cancel' });
+  }
   connection.sendEvent({
     type: 'response.create',
     response: {
       output_modalities: ['audio'],
-      modalities: ['audio', 'text'],
       instructions,
     },
   });
@@ -177,7 +178,7 @@ export async function connectOpenAiRealtimeCall(params: {
   remoteAudio.muted = true;
   remoteAudio.volume = 0;
   remoteAudio.style.display = 'none';
-  document.body.appendChild(remoteAudio);
+  document.body?.appendChild(remoteAudio);
 
   peerConnection.ontrack = (event) => {
     const [stream] = event.streams;
