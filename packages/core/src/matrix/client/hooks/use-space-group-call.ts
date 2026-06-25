@@ -287,8 +287,13 @@ function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   if (typeof fn !== 'function') return;
   try {
     fn.call(gc);
-  } catch {
-    /* ignore */
+  } catch (err) {
+    if (isMatrixCallDebugEnabled()) {
+      console.warn(
+        '[hypha.group_call] nudgeGroupCallPlaceOutgoing failed',
+        err,
+      );
+    }
   }
 }
 
@@ -356,7 +361,7 @@ async function waitForPublishableLocalVideoTrack(
 
 /** Matrix SDK can leave a stale or missing track after camera off→on. */
 async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
-  if (gc.isLocalVideoMuted()) return;
+  if (gc.isLocalVideoMuted?.() ?? true) return;
   if (getPublishableLocalVideoTrack(gc)) return;
   if (getLocalVideoTrackPresence(gc)) {
     if (await waitForPublishableLocalVideoTrack(gc, 1200)) return;
@@ -447,7 +452,7 @@ async function waitForLiveLocalAudioTrack(
 async function recoverLocalMicrophoneFeed(
   gc: MatrixSdk.GroupCall,
 ): Promise<void> {
-  if (gc.isMicrophoneMuted()) return;
+  if (gc.isMicrophoneMuted?.() ?? true) return;
   if (getLiveLocalAudioTrack(gc)) return;
 
   await gc.setMicrophoneMuted(true);
@@ -464,10 +469,10 @@ async function ensureLocalCallMediaPublished(
   kind: 'audio' | 'video',
 ): Promise<void> {
   try {
-    if (!gc.isMicrophoneMuted()) {
+    if (!(gc.isMicrophoneMuted?.() ?? true)) {
       await recoverLocalMicrophoneFeed(gc);
     }
-    if (kind === 'video' && !gc.isLocalVideoMuted()) {
+    if (kind === 'video' && !(gc.isLocalVideoMuted?.() ?? true)) {
       await recoverLocalCameraFeed(gc);
     }
   } catch {
@@ -1825,6 +1830,21 @@ export function useSpaceGroupCall(
       (id) => !remoteIdsWithFeed.has(id),
     ).length;
 
+    // DEBUG-TEMP(#2322): verbose stall-check — revert after investigation
+    if (isMatrixCallDebugEnabled() && othersInCall.length > 0) {
+      console.debug('[hypha.group_call] stall-check', {
+        othersInCall,
+        remoteIdsWithFeed: [...remoteIdsWithFeed],
+        missingRemoteFeedCount,
+        allFeedUserIds: gc.userMediaFeeds.map((f) => ({
+          userId: f.userId,
+          local: f.isLocal(),
+          audioMuted: f.isAudioMuted?.(),
+        })),
+        participantMapSize: gc.participants.size,
+      });
+    }
+
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
       if (remoteMediaRepairNudgeIntervalRef.current == null) {
@@ -2074,6 +2094,9 @@ export function useSpaceGroupCall(
         /** Local/remote feeds can appear after getUserMedia — re-publish and nudge peers. */
         nudgeGroupCallPlaceOutgoing(gc);
         scheduleLocalMediaBootstrap(gc);
+        if (isMatrixCallDebugEnabled()) {
+          logDevMediaSnapshot();
+        }
       };
       gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
@@ -2131,6 +2154,7 @@ export function useSpaceGroupCall(
       evalRemoteMediaStall,
       syncLocalScreenshareState,
       reconcileLocalScreenshareStop,
+      logDevMediaSnapshot,
     ],
   );
 
