@@ -66,11 +66,11 @@ export function createChatTools(
     ),
     create_space_signal_by_slug: safeChatTool(
       'create_space_signal_by_slug',
-      createCreateSpaceSignalBySlugTool(authToken),
+      createCreateSpaceSignalBySlugTool(authToken, locale),
     ),
     relay_ecosystem_signal: safeChatTool(
       'relay_ecosystem_signal',
-      createRelayEcosystemSignalTool(authToken),
+      createRelayEcosystemSignalTool(authToken, locale),
     ),
     get_org_memory_by_space_slug: safeChatTool(
       'get_org_memory_by_space_slug',

@@ -1353,6 +1353,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
+      'create_space_signal_by_slug',
+      'relay_ecosystem_signal',
       'prepare_governance_proposal',
     ]);
     const href = navigationTarget?.href;
@@ -1365,7 +1367,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
 
-    const alreadyOnTarget = isSameAppPath(href, pathname);
+    const alreadyOnTarget =
+      !navigationTarget.coherenceChat &&
+      !/[?&]signal=/.test(href) &&
+      isSameAppPath(href, pathname);
 
     if (navigationTarget.resubmitPayload) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);

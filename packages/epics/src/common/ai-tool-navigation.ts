@@ -52,13 +52,39 @@ function parseNavigationTarget(args: {
   messageId: string;
   partKey: string;
 }): AiPanelNavigationTarget | null {
+  if (args.output?.ok !== true) return null;
+
   const navigation = args.output?.navigation as ChatToolNavigation | undefined;
-  const href = navigation?.href?.trim();
-  if (!href || args.output?.ok !== true) return null;
+  let href = navigation?.href?.trim();
+
+  if (
+    !href &&
+    (args.toolName === 'create_space_signal_by_slug' ||
+      args.toolName === 'relay_ecosystem_signal')
+  ) {
+    const spaceSlug =
+      (typeof args.output.spaceSlug === 'string' && args.output.spaceSlug) ||
+      (typeof args.output.targetSpaceSlug === 'string' &&
+        args.output.targetSpaceSlug) ||
+      '';
+    const signalSlug =
+      typeof args.output.signalSlug === 'string'
+        ? args.output.signalSlug.trim()
+        : '';
+    if (spaceSlug && signalSlug) {
+      const params = new URLSearchParams();
+      params.set('signal', signalSlug);
+      href = `/en/dho/${spaceSlug}/coherence?${params.toString()}`;
+    }
+  }
+
+  if (!href) return null;
 
   const openHumanChat =
     navigation?.open_human_chat === true ||
-    args.toolName === 'create_human_chat_message';
+    args.toolName === 'create_human_chat_message' ||
+    args.toolName === 'create_space_signal_by_slug' ||
+    args.toolName === 'relay_ecosystem_signal';
 
   let coherenceChat: AiPanelNavigationTarget['coherenceChat'];
   if (
@@ -71,6 +97,26 @@ function parseNavigationTarget(args: {
       title: navigation.signal_title?.trim() || navigation.signal_slug.trim(),
       slug: navigation.signal_slug.trim(),
     };
+  } else if (
+    openHumanChat &&
+    (args.toolName === 'create_space_signal_by_slug' ||
+      args.toolName === 'relay_ecosystem_signal')
+  ) {
+    const signalSlug =
+      typeof args.output.signalSlug === 'string'
+        ? args.output.signalSlug.trim()
+        : navigation?.signal_slug?.trim() || '';
+    const signalTitle =
+      typeof args.output.title === 'string'
+        ? args.output.title.trim()
+        : navigation?.signal_title?.trim() || signalSlug;
+    if (signalSlug) {
+      coherenceChat = {
+        roomId: navigation?.room_id?.trim() || null,
+        title: signalTitle,
+        slug: signalSlug,
+      };
+    }
   }
 
   const focusField = navigation?.focus_field?.trim() || undefined;
