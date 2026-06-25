@@ -88,18 +88,57 @@ function isHttpImageUrl(value: unknown): value is string {
   return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
 }
 
+function readVisualAssetUrlsFromOutput(output: unknown): {
+  logoUrl: string | null;
+  bannerUrl: string | null;
+} {
+  if (!output || typeof output !== 'object') {
+    return { logoUrl: null, bannerUrl: null };
+  }
+
+  const roots: Record<string, unknown>[] = [output as Record<string, unknown>];
+  const preview = (output as { preview?: unknown }).preview;
+  const createPayload = (output as { create_payload?: unknown }).create_payload;
+  if (preview && typeof preview === 'object') {
+    roots.push(preview as Record<string, unknown>);
+  }
+  if (createPayload && typeof createPayload === 'object') {
+    roots.push(createPayload as Record<string, unknown>);
+  }
+
+  let logoUrl: string | null = null;
+  let bannerUrl: string | null = null;
+  for (const root of roots) {
+    if (!logoUrl) {
+      for (const key of ['logo_url', 'logoUrl'] as const) {
+        if (isHttpImageUrl(root[key])) {
+          logoUrl = String(root[key]).trim();
+          break;
+        }
+      }
+    }
+    if (!bannerUrl) {
+      for (const key of [
+        'lead_image_url',
+        'leadImageUrl',
+        'leadImage',
+      ] as const) {
+        if (isHttpImageUrl(root[key])) {
+          bannerUrl = String(root[key]).trim();
+          break;
+        }
+      }
+    }
+  }
+
+  return { logoUrl, bannerUrl };
+}
+
 function renderVisualAssetsCard(output: unknown) {
   if (!output || typeof output !== 'object') return null;
-  const value = output as {
-    ok?: boolean;
-    logo_url?: string | null;
-    lead_image_url?: string | null;
-  };
-  if (!value.ok) return null;
-  const logoUrl = isHttpImageUrl(value.logo_url) ? value.logo_url.trim() : null;
-  const bannerUrl = isHttpImageUrl(value.lead_image_url)
-    ? value.lead_image_url.trim()
-    : null;
+  const value = output as { ok?: boolean };
+  if (value.ok === false) return null;
+  const { logoUrl, bannerUrl } = readVisualAssetUrlsFromOutput(output);
   if (!logoUrl && !bannerUrl) return null;
 
   return (
@@ -549,6 +588,8 @@ export function AiPanelMessageBubble({
       part.type === 'tool-generate_space_visual_assets' &&
       part.state === 'output-available'
     ) {
+      const { logoUrl, bannerUrl } = readVisualAssetUrlsFromOutput(part.output);
+      if (logoUrl || bannerUrl) return false;
       const output = part.output as { ok?: boolean } | undefined;
       return output?.ok !== true;
     }
@@ -586,18 +627,40 @@ export function AiPanelMessageBubble({
   const renderedToolParts = visibleToolParts.filter(
     (part) => !shouldHideToolPart(part),
   );
+  const generatedVisualsCard = (() => {
+    for (let index = toolParts.length - 1; index >= 0; index -= 1) {
+      const part = toolParts[index];
+      if (!part || part.state !== 'output-available') continue;
+      if (
+        part.type !== 'tool-generate_space_visual_assets' &&
+        part.type !== 'tool-create_space_from_onboarding'
+      ) {
+        continue;
+      }
+      const card = renderVisualAssetsCard(part.output);
+      if (card) {
+        return {
+          key: part.toolCallId ?? `${part.type}-${index}`,
+          node: card,
+        };
+      }
+    }
+    return null;
+  })();
   const isTypingOnly =
     !isUser &&
     isStreaming &&
     !hasVisibleText &&
     fileParts.length === 0 &&
-    renderedToolParts.length === 0;
+    renderedToolParts.length === 0 &&
+    !generatedVisualsCard;
   const isSingleLineAssistantText =
     !isUser &&
     !isStreaming &&
     hasVisibleText &&
     fileParts.length === 0 &&
     renderedToolParts.length === 0 &&
+    !generatedVisualsCard &&
     markdownBlocks.length === 1 &&
     markdownBlocks[0]?.type === 'paragraph' &&
     markdownBlocks[0].lines.length === 1 &&
@@ -882,17 +945,21 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
+          {generatedVisualsCard ? (
+            <div className="flex flex-col gap-1.5">
+              <div key={generatedVisualsCard.key}>
+                {generatedVisualsCard.node}
+              </div>
+            </div>
+          ) : null}
           {renderedToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
               {renderedToolParts.map((part) => {
                 if (
-                  part.type === 'tool-generate_space_visual_assets' &&
-                  part.state === 'output-available'
+                  part.type === 'tool-generate_space_visual_assets' ||
+                  part.type === 'tool-create_space_from_onboarding'
                 ) {
-                  const visualCard = renderVisualAssetsCard(part.output);
-                  if (visualCard) {
-                    return <div key={part.toolCallId}>{visualCard}</div>;
-                  }
+                  return null;
                 }
                 const confirmationCard =
                   part.state === 'output-available'
