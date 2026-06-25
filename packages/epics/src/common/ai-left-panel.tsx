@@ -1355,6 +1355,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       'create_human_chat_message',
       'create_space_signal_by_slug',
       'relay_ecosystem_signal',
+      'create_ecosystem_space',
+      'summarize_space_discussion_by_slug',
+      'ingest_space_call_artifacts',
       'prepare_governance_proposal',
     ]);
     const href = navigationTarget?.href;

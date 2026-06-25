@@ -19,6 +19,7 @@ import {
   createOnboardingCategoriesSchema,
   resolveOnboardingCategories,
 } from './onboarding-categories';
+import { buildSpaceScreenNavigation } from './space-screen-navigation';
 
 const inputSchema = z.object({
   parent_space_slug: z.string().trim().min(1),
@@ -50,6 +51,11 @@ const inputSchema = z.object({
     .optional()
     .default('confirm-ecosystem-space'),
   dry_run: z.boolean().optional().default(false),
+  lang: z
+    .string()
+    .trim()
+    .regex(/^[a-z]{2}(?:-[A-Z]{2})?$/)
+    .optional(),
 });
 
 const roleLabels: Record<
@@ -65,10 +71,13 @@ const roleLabels: Record<
   other: 'ecosystem space',
 };
 
-export function createCreateEcosystemSpaceTool(authToken: string) {
+export function createCreateEcosystemSpaceTool(
+  authToken: string,
+  defaultLocale?: string | null,
+) {
   return {
     description:
-      'Write: create a new nested space under a parent as part of ecosystem scaffolding. Requires explicit confirmation token.',
+      'Write: create a new nested space under a parent as part of ecosystem scaffolding. Requires explicit confirmation token. Returns navigation metadata so the app opens the new space after creation.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -198,6 +207,12 @@ export function createCreateEcosystemSpaceTool(authToken: string) {
           role_in_ecosystem: data.role_in_ecosystem,
           role_label: roleLabels[data.role_in_ecosystem],
         },
+        navigation: buildSpaceScreenNavigation({
+          lang: data.lang ?? defaultLocale ?? undefined,
+          spaceSlug: createdSlug,
+          screen: 'overview',
+          label: `Open ${created.title}`,
+        }),
         audit: {
           actor_person_id: person.id,
           actor_sub: privyUserId,

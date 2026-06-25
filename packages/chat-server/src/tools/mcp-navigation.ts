@@ -8,6 +8,10 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
+import {
+  resolveSpaceScreenPath,
+  type SpaceScreen,
+} from './space-screen-navigation';
 
 const destinationTypeSchema = z.enum([
   'space',
@@ -27,7 +31,7 @@ const spaceScreenSchema = z.enum([
   'rewards',
   'memory',
   'space_configuration',
-]);
+] satisfies [SpaceScreen, ...SpaceScreen[]]);
 
 const appScreenSchema = z.enum([
   'onboarding',
@@ -205,23 +209,6 @@ function inferScreenFromIntent(
     return 'overview';
   }
   return null;
-}
-
-function resolveSpaceScreenPath(
-  lang: string,
-  spaceSlug: string,
-  screen: z.infer<typeof spaceScreenSchema>,
-): string {
-  if (screen === 'overview') return `/${lang}/dho/${spaceSlug}/overview`;
-  if (screen === 'ecosystem_navigation')
-    return `/${lang}/dho/${spaceSlug}/ecosystem-navigation`;
-  if (screen === 'signals') return `/${lang}/dho/${spaceSlug}/coherence`;
-  if (screen === 'agreements') return `/${lang}/dho/${spaceSlug}/agreements`;
-  if (screen === 'members') return `/${lang}/dho/${spaceSlug}/members`;
-  if (screen === 'treasury') return `/${lang}/dho/${spaceSlug}/treasury`;
-  if (screen === 'rewards') return `/${lang}/dho/${spaceSlug}/rewards`;
-  if (screen === 'memory') return `/${lang}/dho/${spaceSlug}/memory`;
-  return `/${lang}/dho/${spaceSlug}/agreements/space-configuration`;
 }
 
 function resolveAppScreenPath(

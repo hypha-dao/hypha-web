@@ -3,18 +3,25 @@ import { createSpaceDiscussionSummary } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
+import { buildSpaceScreenNavigation } from './space-screen-navigation';
 
 export function createSummarizeSpaceDiscussionTool(
   authToken: string,
   requestUrlForSessionMatrix?: string,
+  defaultLocale?: string | null,
 ) {
   const inputSchema = z.object({
     space_slug: z.string().trim().min(1),
+    lang: z
+      .string()
+      .trim()
+      .regex(/^[a-z]{2}(?:-[A-Z]{2})?$/)
+      .optional(),
   });
 
   return {
     description:
-      'Generate and persist a summary of recent space chat discussion. Use when user asks to summarize current discussion or produce a memory snapshot.',
+      'Generate and persist a summary of recent space chat discussion. Use when user asks to summarize current discussion or produce a memory snapshot. Returns navigation metadata so the app opens Space Memory.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -50,6 +57,13 @@ export function createSummarizeSpaceDiscussionTool(
         summary_id: result.summaryId,
         message_count: result.messageCount,
         participant_count: result.participantCount,
+        space_slug: safe,
+        navigation: buildSpaceScreenNavigation({
+          lang: parsed.data.lang ?? defaultLocale ?? undefined,
+          spaceSlug: safe,
+          screen: 'memory',
+          label: 'Open Space Memory',
+        }),
       };
     },
   } satisfies ChatRouteTool<typeof inputSchema>;

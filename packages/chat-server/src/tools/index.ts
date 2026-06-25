@@ -93,11 +93,15 @@ export function createChatTools(
     ),
     summarize_space_discussion_by_slug: safeChatTool(
       'summarize_space_discussion_by_slug',
-      createSummarizeSpaceDiscussionTool(authToken, requestUrlForSessionMatrix),
+      createSummarizeSpaceDiscussionTool(
+        authToken,
+        requestUrlForSessionMatrix,
+        locale,
+      ),
     ),
     ingest_space_call_artifacts: safeChatTool(
       'ingest_space_call_artifacts',
-      createIngestSpaceCallArtifactsTool(authToken),
+      createIngestSpaceCallArtifactsTool(authToken, locale),
     ),
     create_human_chat_message: safeChatTool(
       'create_human_chat_message',

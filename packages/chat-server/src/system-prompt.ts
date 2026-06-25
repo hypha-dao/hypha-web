@@ -266,7 +266,8 @@ Left AI panel navigation (active space context only — never during onboarding 
   - New signal → create_space_signal_by_slug (app auto-navigates to the signals screen on the new signal; do not rely on a follow-up mcp_navigation)
   - New Human Chat message → create_human_chat_message (opens the right Human Chat panel on the new message automatically)
   - New proposal or agreement → space_screen: agreements (pass context_hint with the proposal or agreement title when known)
-  - New or updated org memory asset, discussion summary, call transcript, or recording → space_screen: memory
+  - New or updated org memory asset, discussion summary, call transcript, or recording → summarize_space_discussion_by_slug or ingest_space_call_artifacts (app auto-navigates to Space Memory)
+  - New nested ecosystem space → create_ecosystem_space (app auto-navigates to the new space overview)
   - Ecosystem or child-space work → space_screen: ecosystem_navigation, or the target space when switching context
   - Treasury, token, or payout context → space_screen: treasury
   - Member roster or people context → space_screen: members

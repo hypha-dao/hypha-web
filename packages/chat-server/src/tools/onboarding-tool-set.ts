@@ -457,7 +457,10 @@ export function createOnboardingToolSet(
   );
   const createSpaceSetupProposalTool =
     createCreateSpaceSetupProposalTool(authToken);
-  const createEcosystemSpaceTool = createCreateEcosystemSpaceTool(authToken);
+  const createEcosystemSpaceTool = createCreateEcosystemSpaceTool(
+    authToken,
+    locale,
+  );
   const generateEcosystemBlueprintTool = createGenerateEcosystemBlueprintTool();
   const onboardingGuidanceTool = createOnboardingGuidanceTool(locale);
   const onboardingGuidanceWithContext = {

@@ -78,6 +78,36 @@ function parseNavigationTarget(args: {
     }
   }
 
+  if (
+    !href &&
+    args.output?.ok === true &&
+    (args.toolName === 'summarize_space_discussion_by_slug' ||
+      args.toolName === 'ingest_space_call_artifacts')
+  ) {
+    const spaceSlug =
+      typeof args.output.space_slug === 'string'
+        ? args.output.space_slug.trim()
+        : '';
+    if (spaceSlug) {
+      href = `/en/dho/${spaceSlug}/memory`;
+    }
+  }
+
+  if (
+    !href &&
+    args.output?.ok === true &&
+    args.toolName === 'create_ecosystem_space' &&
+    args.output.requires_confirmation !== true &&
+    args.output.space &&
+    typeof args.output.space === 'object'
+  ) {
+    const space = args.output.space as { slug?: string };
+    const spaceSlug = space.slug?.trim();
+    if (spaceSlug) {
+      href = `/en/dho/${spaceSlug}/overview`;
+    }
+  }
+
   if (!href) return null;
 
   const openHumanChat =
