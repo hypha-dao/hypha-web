@@ -6,6 +6,7 @@ import type { VoiceSessionContext } from './space-voice-session-context';
 import {
   connectOpenAiRealtimeCall,
   fetchRealtimeVoiceSession,
+  setLocalMicEnabled,
   setRealtimeRemoteAudioMuted,
   speakAssistantTextViaRealtime,
   type RealtimeServerEvent,
@@ -377,6 +378,7 @@ export function useOnboardingVoiceRealtime({
 
       const connection = await connectOpenAiRealtimeCall({
         clientSecret: session.clientSecret,
+        audioInput: session.audioInput,
         onEvent: handleServerEvent,
         onConnectionStateChange: (state) => {
           if (state === 'connected') {
@@ -467,6 +469,17 @@ export function useOnboardingVoiceRealtime({
 
   const connectRef = useRef(connect);
   connectRef.current = connect;
+
+  const localMicEnabledRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    const connection = connectionRef.current;
+    if (!connection) return;
+    const micEnabled = phase === 'listening';
+    if (localMicEnabledRef.current === micEnabled) return;
+    localMicEnabledRef.current = micEnabled;
+    setLocalMicEnabled(connection, micEnabled);
+  }, [phase]);
 
   useEffect(() => {
     if (!enabled) {

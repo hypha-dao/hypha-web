@@ -22,7 +22,7 @@ export async function acquireWarmMicStream(): Promise<MediaStream | null> {
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true,
+        autoGainControl: false,
       },
     })
     .then((stream) => {

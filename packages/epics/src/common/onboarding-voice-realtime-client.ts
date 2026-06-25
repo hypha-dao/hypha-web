@@ -5,19 +5,34 @@ import { acquireWarmMicStream, isWarmMicStream } from './onboarding-voice-mic';
 const OPENAI_REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
 
 /** STT-only VAD — Hypha chat (/api/chat) handles tools and MCP, not Realtime. */
-export const REALTIME_TURN_DETECTION = {
-  type: 'server_vad',
-  threshold: 0.5,
-  prefix_padding_ms: 300,
-  silence_duration_ms: 450,
-  create_response: false,
-  interrupt_response: false,
-} as const;
+export type RealtimeTurnDetectionConfig = {
+  type: 'server_vad';
+  threshold: number;
+  prefix_padding_ms: number;
+  silence_duration_ms: number;
+  create_response: false;
+  interrupt_response: false;
+};
 
-/** Required for `conversation.item.input_audio_transcription.completed` events. */
-export const REALTIME_INPUT_TRANSCRIPTION = {
-  model: 'gpt-4o-mini-transcribe',
-} as const;
+export type RealtimeAudioInputConfig = {
+  turnDetection: RealtimeTurnDetectionConfig;
+  noiseReduction: { type: 'near_field' | 'far_field' };
+  transcription: { model: string };
+};
+
+/** Fallback when session API omits audioInput (older deployments). */
+export const DEFAULT_REALTIME_AUDIO_INPUT: RealtimeAudioInputConfig = {
+  turnDetection: {
+    type: 'server_vad',
+    threshold: 0.72,
+    prefix_padding_ms: 300,
+    silence_duration_ms: 700,
+    create_response: false,
+    interrupt_response: false,
+  },
+  noiseReduction: { type: 'near_field' },
+  transcription: { model: 'gpt-4o-mini-transcribe' },
+};
 
 export type RealtimeVoiceSessionPayload = {
   clientSecret: string;
@@ -25,6 +40,7 @@ export type RealtimeVoiceSessionPayload = {
   expiresAt: number | null;
   model: string;
   voice: string;
+  audioInput: RealtimeAudioInputConfig;
 };
 
 export type RealtimeServerEvent = {
@@ -63,6 +79,15 @@ function buildRealtimeSpeakInstructions(text: string): string {
     '',
     text,
   ].join('\n');
+}
+
+export function setLocalMicEnabled(
+  connection: RealtimeVoiceConnection,
+  enabled: boolean,
+): void {
+  for (const track of connection.localStream.getAudioTracks()) {
+    track.enabled = enabled;
+  }
 }
 
 export function setRealtimeRemoteAudioMuted(
@@ -131,6 +156,7 @@ export async function fetchRealtimeVoiceSession(params: {
     expiresAt?: number | null;
     model?: string;
     voice?: string;
+    audioInput?: RealtimeAudioInputConfig;
   };
 
   if (!response.ok) {
@@ -153,11 +179,13 @@ export async function fetchRealtimeVoiceSession(params: {
     expiresAt: payload.expiresAt ?? null,
     model: payload.model ?? '',
     voice: payload.voice ?? '',
+    audioInput: payload.audioInput ?? DEFAULT_REALTIME_AUDIO_INPUT,
   };
 }
 
 export async function connectOpenAiRealtimeCall(params: {
   clientSecret: string;
+  audioInput?: RealtimeAudioInputConfig;
   onEvent: (event: RealtimeServerEvent) => void;
   onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
 }): Promise<RealtimeVoiceConnection> {
@@ -200,7 +228,7 @@ export async function connectOpenAiRealtimeCall(params: {
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true,
+        autoGainControl: false,
       },
     }));
   const usesWarmMic = isWarmMicStream(localStream);
@@ -225,14 +253,17 @@ export async function connectOpenAiRealtimeCall(params: {
     dataChannel.send(JSON.stringify(event));
   };
 
+  const audioInput = params.audioInput ?? DEFAULT_REALTIME_AUDIO_INPUT;
+
   dataChannel.addEventListener('open', () => {
     sendEvent({
       type: 'session.update',
       session: {
         audio: {
           input: {
-            transcription: REALTIME_INPUT_TRANSCRIPTION,
-            turn_detection: REALTIME_TURN_DETECTION,
+            noise_reduction: audioInput.noiseReduction,
+            transcription: audioInput.transcription,
+            turn_detection: audioInput.turnDetection,
           },
         },
       },

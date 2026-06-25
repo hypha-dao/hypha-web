@@ -6,6 +6,10 @@ import { buildOnboardingRealtimeInstructions } from '../system-prompt';
 import { buildSpaceAdvisorRealtimeInstructions } from '../system-prompt';
 import type { RealtimeVoiceSessionRequest } from './request-schema';
 import { assertVoiceDiscoverySessionContext } from './request-schema';
+import {
+  resolveRealtimeAudioInputConfig,
+  type RealtimeAudioInputConfig,
+} from './audio-input-config';
 
 export const MISSING_OPENAI_KEY_MESSAGE =
   'Hypha voice Realtime is not configured: OPENAI_API_KEY is missing.';
@@ -20,6 +24,7 @@ export type RealtimeVoiceSessionResult = {
   expiresAt: number | null;
   model: string;
   voice: string;
+  audioInput: RealtimeAudioInputConfig;
 };
 
 export type RealtimeVoiceSessionErrorCode =
@@ -84,6 +89,8 @@ export async function createRealtimeVoiceSession(
 
   const model = resolveOpenAiRealtimeModel();
   const voice = resolveOpenAiRealtimeVoice();
+  const transcriptionModel = resolveOpenAiRealtimeTranscriptionModel();
+  const audioInput = resolveRealtimeAudioInputConfig(transcriptionModel);
   const locale =
     payload.locale?.trim() ||
     payload.conversationContext.locale?.trim() ||
@@ -124,17 +131,9 @@ export async function createRealtimeVoiceSession(
           instructions,
           audio: {
             input: {
-              transcription: {
-                model: resolveOpenAiRealtimeTranscriptionModel(),
-              },
-              turn_detection: {
-                type: 'server_vad',
-                threshold: 0.5,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 450,
-                create_response: false,
-                interrupt_response: false,
-              },
+              noise_reduction: audioInput.noiseReduction,
+              transcription: audioInput.transcription,
+              turn_detection: audioInput.turnDetection,
             },
             output: {
               voice,
@@ -179,5 +178,6 @@ export async function createRealtimeVoiceSession(
     expiresAt: typeof data.expires_at === 'number' ? data.expires_at : null,
     model,
     voice,
+    audioInput,
   };
 }
