@@ -89,6 +89,11 @@ export function NavigationTabs({
         ]
       : []),
     {
+      title: t('Calendar'),
+      name: 'calendar',
+      href: getDhoPathCalendar(lang as Locale, id as string),
+    },
+    {
       title: t('Agreements'),
       name: 'agreements',
       href: getDhoPathAgreements(lang, id),
@@ -97,11 +102,6 @@ export function NavigationTabs({
       title: t('Members'),
       name: 'members',
       href: getDhoPathMembers(lang as Locale, id as string),
-    },
-    {
-      title: t('Calendar'),
-      name: 'calendar',
-      href: getDhoPathCalendar(lang as Locale, id as string),
     },
     {
       title: t('Treasury'),
