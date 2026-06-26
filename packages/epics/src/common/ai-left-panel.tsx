@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -138,7 +138,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
-  const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -533,34 +532,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     },
     [sendMessage, buildMessageOptions],
   );
-  const handleHeaderIconMouseEnter = useCallback(() => {
-    if (isHoverOpenLocked) return;
-    if (!overlayVisible) {
-      showAiOverlay();
-    }
-  }, [isHoverOpenLocked, overlayVisible, showAiOverlay]);
-
-  const handleExpandedRegionMouseEnter = useCallback(() => {
-    if (isHoverOpenLocked) return;
-    if (overlayVisible) {
-      showAiOverlay();
-    }
-  }, [isHoverOpenLocked, overlayVisible, showAiOverlay]);
-
-  const handleCollapsedRegionMouseEnter = useCallback(() => {
-    if (isHoverOpenLocked) return;
-    showAiOverlay();
-  }, [isHoverOpenLocked, showAiOverlay]);
-
-  const handleOverlayMouseLeave = useCallback(() => {
-    setIsHoverOpenLocked(false);
-    hideAiOverlay();
-  }, [hideAiOverlay]);
-
   const handleOverlayClose = useCallback(() => {
-    setIsHoverOpenLocked(true);
+    hideAiOverlay();
     closeAiPanel();
-  }, [closeAiPanel]);
+  }, [closeAiPanel, hideAiOverlay]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
@@ -599,8 +574,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         <>
           <SidebarHeader
             className="bg-background-2 p-0"
-            onMouseEnter={handleExpandedRegionMouseEnter}
-            onMouseLeave={handleOverlayMouseLeave}
           >
             <AiPanelHeader
               showCloseButton={false}
@@ -610,8 +583,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           </SidebarHeader>
           <SidebarContent
             className="bg-background-2"
-            onMouseEnter={handleExpandedRegionMouseEnter}
-            onMouseLeave={handleOverlayMouseLeave}
           >
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
@@ -653,8 +624,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarHeader>
         <SidebarContent
           className="relative overflow-visible bg-background-2"
-          onMouseEnter={handleCollapsedRegionMouseEnter}
-          onMouseLeave={handleOverlayMouseLeave}
         >
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
