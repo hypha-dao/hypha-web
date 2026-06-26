@@ -20,6 +20,7 @@ export type AiPanelNavigationTarget = {
   openInNewTab: boolean;
   openHumanChat: boolean;
   toolName: string;
+  proposalType?: string;
   resubmitPayload?: Record<string, unknown>;
   focusField?: string;
   focusSection?: string;
@@ -220,6 +221,11 @@ function parseNavigationTarget(args: {
     typeof args.output.resubmit_payload === 'object'
       ? (args.output.resubmit_payload as Record<string, unknown>)
       : undefined;
+  const proposalType =
+    args.toolName === 'prepare_governance_proposal' &&
+    typeof args.output?.proposal_type === 'string'
+      ? args.output.proposal_type.trim()
+      : undefined;
   const payloadFingerprint = resubmitPayload
     ? JSON.stringify(resubmitPayload)
     : '';
@@ -229,6 +235,7 @@ function parseNavigationTarget(args: {
     openInNewTab: navigation?.open_in_new_tab === true,
     openHumanChat,
     toolName: args.toolName,
+    proposalType,
     resubmitPayload,
     focusField,
     focusSection,
@@ -306,6 +313,14 @@ function collectNavigationTargetsFromMessage(
   }
 
   return targets;
+}
+
+export function findLatestPrepareGovernanceProposalUpdate(
+  messages: ChatMessageForNavigation[],
+): AiPanelNavigationTarget | null {
+  return findLatestAiPanelNavigationTarget(messages, [
+    'prepare_governance_proposal',
+  ]);
 }
 
 export function findLatestAiPanelNavigationTarget(

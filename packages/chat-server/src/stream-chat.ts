@@ -1441,8 +1441,21 @@ export async function createChatStreamResult(
           ?.proposalType === 'change_voting_method',
     ),
   });
+  const snapshotWalkthrough =
+    activeProposalFormSnapshot?.activeGovernanceProposal;
   const activeGovernanceProposalDirective =
-    buildActiveGovernanceProposalDirective(normalizedConversationContext);
+    buildActiveGovernanceProposalDirective(normalizedConversationContext) ||
+    buildActiveGovernanceProposalDirective(
+      snapshotWalkthrough
+        ? {
+            activeGovernanceProposal: {
+              proposalType: snapshotWalkthrough.proposalType,
+              collectedFields: snapshotWalkthrough.collectedFields ?? {},
+              formOpen: snapshotWalkthrough.formOpen,
+            },
+          }
+        : null,
+    );
   const proposalFormStateDirective = buildProposalFormStateDirective(
     activeProposalFormSnapshot,
   );
@@ -1453,9 +1466,11 @@ export async function createChatStreamResult(
     formSnapshot: activeProposalFormSnapshot,
     activeProposalType:
       normalizedConversationContext?.activeGovernanceProposal?.proposalType ??
+      snapshotWalkthrough?.proposalType ??
       null,
     collectedFields:
-      normalizedConversationContext?.activeGovernanceProposal?.collectedFields,
+      normalizedConversationContext?.activeGovernanceProposal
+        ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
@@ -1508,6 +1523,10 @@ export async function createChatStreamResult(
         }`
       : `${effectiveSystemPrompt}${
           proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
+        }${
+          activeGovernanceProposalDirective
+            ? `\n\n${activeGovernanceProposalDirective}`
+            : ''
         }${
           proposalAcceptanceDirective
             ? `\n\n${proposalAcceptanceDirective}`

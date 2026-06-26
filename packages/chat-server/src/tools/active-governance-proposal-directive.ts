@@ -5,7 +5,15 @@ import { VOICE_SPOKEN_SENTENCE_LIMIT } from '../system-prompt';
 type OnboardingContext = z.infer<typeof onboardingConversationContextSchema>;
 
 export function buildActiveGovernanceProposalDirective(
-  context: OnboardingContext | null | undefined,
+  context:
+    | {
+        activeGovernanceProposal?: {
+          proposalType: string;
+          collectedFields?: Record<string, unknown>;
+        };
+      }
+    | null
+    | undefined,
 ): string | null {
   const active = context?.activeGovernanceProposal;
   if (!active?.proposalType) return null;

@@ -26,6 +26,11 @@ export type ActiveProposalFormSnapshot = {
   formOpen?: boolean;
   resubmitPayload?: Record<string, unknown>;
   liveFields?: Record<string, unknown>;
+  activeGovernanceProposal?: {
+    proposalType: string;
+    collectedFields?: Record<string, unknown>;
+    formOpen?: boolean;
+  };
 };
 
 const TEMPLATE_SEGMENT_TO_PROPOSAL_TYPE: Record<

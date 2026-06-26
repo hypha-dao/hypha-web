@@ -195,8 +195,10 @@ import {
 import {
   collectGovernancePrepareNavigationKeys,
   findLatestAiPanelNavigationTarget,
+  findLatestPrepareGovernanceProposalUpdate,
   IMMEDIATE_AUTO_NAVIGATION_TOOLS,
   isAtNavigationTarget,
+  type AiPanelNavigationTarget,
 } from './ai-tool-navigation';
 import {
   GOVERNANCE_PROPOSAL_PUBLISHED_EVENT,
@@ -207,9 +209,11 @@ import {
 import { readActiveProposalFormSnapshot } from './active-proposal-form-snapshot';
 import {
   enableProposalAiWalkthrough,
+  isProposalAiWalkthroughActive,
   PROPOSAL_AI_WALKTHROUGH_KEY,
   writeProposalFormFocusIfChanged,
 } from './proposal-form-focus';
+import { mergeActiveGovernanceProposalFromPrepareOutput } from './governance-proposal-walkthrough-session';
 import {
   isProposalCreateFormPath,
   isSameAppPath,
@@ -465,6 +469,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const transferredMobilizedAgentsSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  const lastPrepareGovernanceResubmitKeyRef = useRef<string | null>(null);
   const wasOnProposalCreatePathRef = useRef(false);
   const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
   const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
@@ -1331,10 +1336,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     wasOnProposalCreatePathRef.current = onProposalCreatePath;
 
+    if (onProposalCreatePath && isProposalAiWalkthroughActive()) {
+      openAiPanel();
+    }
+
     if (!onProposalCreatePath) {
       lastAutoNavigationKeyRef.current = null;
+      lastPrepareGovernanceResubmitKeyRef.current = null;
     }
-  }, [pathname]);
+  }, [openAiPanel, pathname]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1351,6 +1361,63 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
   }, []);
 
+  const applyPrepareGovernanceUpdate = useCallback(
+    (prepareUpdate: AiPanelNavigationTarget) => {
+      if (!prepareUpdate.resubmitPayload) return;
+      if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
+
+      writeGovernanceProposalResubmitPayload(prepareUpdate.resubmitPayload);
+      enableProposalAiWalkthrough();
+
+      if (prepareUpdate.proposalType) {
+        mergeActiveGovernanceProposalFromPrepareOutput({
+          proposalType: prepareUpdate.proposalType,
+          resubmitPayload: prepareUpdate.resubmitPayload,
+          spaceSlug:
+            getDhoSpaceSlugFromPathname(prepareUpdate.href) ??
+            spaceSlug ??
+            undefined,
+        });
+      }
+
+      writeProposalFormFocusIfChanged({
+        focusField: prepareUpdate.focusField,
+        focusSection: prepareUpdate.focusSection,
+      });
+
+      openAiPanel();
+      setAiOverlayVisible(false);
+    },
+    [openAiPanel, setAiOverlayVisible, spaceSlug],
+  );
+
+  useEffect(() => {
+    const prepareUpdate = findLatestPrepareGovernanceProposalUpdate(messages);
+    if (!prepareUpdate?.resubmitPayload) return;
+    if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
+    if (lastPrepareGovernanceResubmitKeyRef.current === prepareUpdate.key) {
+      return;
+    }
+
+    lastPrepareGovernanceResubmitKeyRef.current = prepareUpdate.key;
+    applyPrepareGovernanceUpdate(prepareUpdate);
+
+    const href = prepareUpdate.href;
+    if (!href) return;
+
+    const alreadyOnTarget =
+      !prepareUpdate.coherenceChat &&
+      !/[?&]signal=/.test(href) &&
+      isSameAppPath(href, pathname);
+    if (alreadyOnTarget) return;
+    if (lastAutoNavigationKeyRef.current === prepareUpdate.key) return;
+
+    lastAutoNavigationKeyRef.current = prepareUpdate.key;
+    lastMcpNavigationTargetSpaceSlugRef.current =
+      getDhoSpaceSlugFromPathname(href) ?? null;
+    router.push(href);
+  }, [applyPrepareGovernanceUpdate, messages, pathname, router]);
+
   useEffect(() => {
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
@@ -1360,7 +1427,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       'create_ecosystem_space',
       'summarize_space_discussion_by_slug',
       'ingest_space_call_artifacts',
-      'prepare_governance_proposal',
     ]);
     const href = navigationTarget?.href;
     if (!href) return;
@@ -1375,13 +1441,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
 
-    if (
-      navigationTarget.toolName === 'prepare_governance_proposal' &&
-      isGovernancePrepareNavigationStale(navigationTarget.key)
-    ) {
-      return;
-    }
-
     const currentSearch =
       typeof window !== 'undefined' ? window.location.search : '';
     if (isAtNavigationTarget(href, pathname, currentSearch)) {
@@ -1390,14 +1449,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     if (navigationTarget.resubmitPayload) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
-    }
-
-    if (navigationTarget.toolName === 'prepare_governance_proposal') {
-      enableProposalAiWalkthrough();
-      writeProposalFormFocusIfChanged({
-        focusField: navigationTarget.focusField,
-        focusSection: navigationTarget.focusSection,
-      });
     }
 
     const navigationKey = navigationTarget.key;

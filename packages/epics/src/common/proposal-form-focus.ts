@@ -1,6 +1,7 @@
 'use client';
 
 import { readOnboardingConversationContext } from './ai-onboarding-context';
+import { clearActiveGovernanceProposalSession } from './governance-proposal-walkthrough-session';
 import { PROPOSAL_FORM_FOCUS_KEY } from '../utils/resubmit-proposal-template';
 
 export const PROPOSAL_AI_WALKTHROUGH_KEY = 'proposalAiWalkthrough';
@@ -18,6 +19,7 @@ export function enableProposalAiWalkthrough(): void {
 export function disableProposalAiWalkthrough(): void {
   if (typeof window === 'undefined') return;
   sessionStorage.removeItem(PROPOSAL_AI_WALKTHROUGH_KEY);
+  clearActiveGovernanceProposalSession();
   clearProposalFormFocus();
 }
 
