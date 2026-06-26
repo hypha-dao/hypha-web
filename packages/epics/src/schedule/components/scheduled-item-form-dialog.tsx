@@ -4,22 +4,19 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import {
+  revalidateScheduledItems,
+  useScheduledItemMutations,
+  type RecurrencePreset,
   RECURRENCE_PRESETS,
   REMINDER_MINUTES_OPTIONS,
   detectRecurrencePreset,
-  type RecurrencePreset,
   SCHEDULED_ITEM_TYPES,
   type ScheduledItem,
   type ScheduledItemType,
 } from '@hypha-platform/core/client';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -32,6 +29,10 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ButtonBack } from '../../common/button-back';
+import { ButtonClose } from '../../common/button-close';
 
 const DATETIME_LOCAL_STEP_SECONDS = 900;
 const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
@@ -240,34 +241,59 @@ export type ScheduledItemFormValues = {
   reminderMinutesBefore?: number | null;
 };
 
-export type ScheduledItemFormDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+export type ScheduledItemFormProps = {
   mode: 'create' | 'edit';
+  spaceId: number;
+  spaceSlug: string;
+  lang?: string;
+  successfulUrl: string;
+  closeUrl: string;
+  backUrl: string;
   initialItem?: ScheduledItem | null;
   draftRange?: {
     startsAt: Date;
     endsAt: Date;
     allDay: boolean;
   } | null;
-  isSubmitting?: boolean;
-  isDeleting?: boolean;
-  onSubmit: (values: ScheduledItemFormValues) => Promise<void>;
-  onDelete?: () => Promise<void>;
 };
 
-export function ScheduledItemFormDialog({
-  open,
-  onOpenChange,
+/** @deprecated Use {@link ScheduledItemForm} */
+export type ScheduledItemFormDialogProps = ScheduledItemFormProps;
+
+function asDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
+export function ScheduledItemForm({
   mode,
+  spaceId,
+  spaceSlug,
+  lang = 'en',
+  successfulUrl,
+  closeUrl,
+  backUrl,
   initialItem,
   draftRange,
-  isSubmitting,
-  isDeleting,
-  onSubmit,
-  onDelete,
-}: ScheduledItemFormDialogProps) {
+}: ScheduledItemFormProps) {
   const t = useTranslations('Calendar');
+  const router = useRouter();
+  const { getAccessToken } = useAuthentication();
+  const [authToken, setAuthToken] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    void getAccessToken().then(setAuthToken);
+  }, [getAccessToken]);
+
+  const {
+    createScheduledItem,
+    updateScheduledItem,
+    deleteScheduledItem,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = useScheduledItemMutations(authToken, spaceSlug, lang);
+
+  const isSubmitting = isCreating || isUpdating;
 
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
@@ -310,15 +336,13 @@ export function ScheduledItemFormDialog({
   }, []);
 
   React.useEffect(() => {
-    if (!open) return;
-
     if (mode === 'edit' && initialItem) {
       setTitle(initialItem.title);
       setDescription(initialItem.description ?? '');
       setType(initialItem.type);
       const normalized = normalizeLocalRange(
-        toDatetimeLocalValue(initialItem.startsAt),
-        toDatetimeLocalValue(initialItem.endsAt),
+        toDatetimeLocalValue(asDate(initialItem.startsAt)),
+        toDatetimeLocalValue(asDate(initialItem.endsAt)),
         initialItem.allDay,
       );
       setStartsAtLocal(normalized.startsAtLocal);
@@ -330,7 +354,10 @@ export function ScheduledItemFormDialog({
       setRecurrencePreset(detectRecurrencePreset(initialItem.recurrenceRule));
       setRecurrenceUntilLocal(
         initialItem.recurrenceUntil
-          ? toDatetimeLocalValue(initialItem.recurrenceUntil).slice(0, 10)
+          ? toDatetimeLocalValue(asDate(initialItem.recurrenceUntil)).slice(
+              0,
+              10,
+            )
           : '',
       );
       setMatrixAutoLink(initialItem.matrixAutoLink);
@@ -353,15 +380,33 @@ export function ScheduledItemFormDialog({
       setLocation('');
       setMeetingUrl('');
       resetExtendedFields();
+    } else if (mode === 'create') {
+      const now = new Date();
+      const end = new Date(now.getTime() + DEFAULT_TIMED_DURATION_MS);
+      const normalized = normalizeLocalRange(
+        toDatetimeLocalValue(now),
+        toDatetimeLocalValue(end),
+        false,
+      );
+      setTitle('');
+      setDescription('');
+      setType('event');
+      setStartsAtLocal(normalized.startsAtLocal);
+      setEndsAtLocal(normalized.endsAtLocal);
+      durationMsRef.current = normalized.durationMs;
+      setAllDay(false);
+      setLocation('');
+      setMeetingUrl('');
+      resetExtendedFields();
     }
     setFieldErrors({});
-  }, [open, mode, initialItem, draftRange, resetExtendedFields]);
+  }, [mode, initialItem, draftRange, resetExtendedFields]);
 
   React.useEffect(() => {
-    if ((type === 'call' || type === 'meeting') && mode === 'create' && open) {
+    if ((type === 'call' || type === 'meeting') && mode === 'create') {
       setMatrixAutoLink(true);
     }
-  }, [type, mode, open]);
+  }, [type, mode]);
 
   const handleStartsAtChange = (value: string) => {
     const nextStartsAtLocal = allDay
@@ -449,7 +494,7 @@ export function ScheduledItemFormDialog({
     }
 
     try {
-      await onSubmit({
+      const values = {
         title: trimmedTitle,
         description: description.trim() || null,
         type,
@@ -468,7 +513,31 @@ export function ScheduledItemFormDialog({
         remindPush,
         reminderMinutesBefore:
           remindEmail || remindPush ? reminderMinutesBefore : null,
+      };
+
+      if (mode === 'create') {
+        await createScheduledItem({ spaceId, ...values });
+      } else if (initialItem) {
+        await updateScheduledItem({ id: initialItem.id, ...values });
+      }
+
+      await revalidateScheduledItems(spaceSlug);
+      router.push(successfulUrl);
+    } catch {
+      const saveError = { _form: t('saveFailed') };
+      setFieldErrors(saveError);
+      requestAnimationFrame(() => {
+        scrollToFirstFieldError(formRef.current, saveError);
       });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialItem) return;
+    try {
+      await deleteScheduledItem({ id: initialItem.id });
+      await revalidateScheduledItems(spaceSlug);
+      router.push(successfulUrl);
     } catch {
       const saveError = { _form: t('saveFailed') };
       setFieldErrors(saveError);
@@ -479,24 +548,34 @@ export function ScheduledItemFormDialog({
   };
 
   const showCallFields = type === 'call' || type === 'meeting';
+  const panelTitle = mode === 'create' ? t('createTitle') : t('editTitle');
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? t('createTitle') : t('editTitle')}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'create' ? t('createDescription') : t('editDescription')}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+        <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
+          <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
+            {panelTitle}
+          </h2>
+          <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
+            <ButtonBack
+              label={t('backToCalendar')}
+              backUrl={backUrl}
+              className="px-0 md:px-3 align-top"
+            />
+            <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+          </div>
+        </div>
+        <p className="px-4 pb-4 pt-3 text-sm text-muted-foreground lg:px-7">
+          {mode === 'create' ? t('createDescription') : t('editDescription')}
+        </p>
+      </div>
 
-        <form
-          ref={formRef}
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit}
-        >
+      <form
+        ref={formRef}
+        className="flex flex-col gap-4"
+        onSubmit={handleSubmit}
+      >
           <div className="flex flex-col gap-2">
             <Label htmlFor="scheduled-item-title">{t('fieldTitle')}</Label>
             <Input
@@ -789,7 +868,7 @@ export function ScheduledItemFormDialog({
           {initialItem ? (
             <p className="text-xs text-muted-foreground">
               {t('createdAt', {
-                date: format(initialItem.createdAt, 'PPp'),
+                date: format(asDate(initialItem.createdAt), 'PPp'),
               })}
             </p>
           ) : null}
@@ -801,37 +880,41 @@ export function ScheduledItemFormDialog({
             />
           ) : null}
 
-          <DialogFooter className="gap-2 sm:justify-between">
-            {mode === 'edit' && onDelete ? (
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="error"
-                disabled={isSubmitting || isDeleting}
-                onClick={() => void onDelete()}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {isDeleting ? t('deleting') : t('delete')}
-              </Button>
-            ) : (
-              <span />
-            )}
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="neutral"
-                onClick={() => onOpenChange(false)}
-              >
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+          {mode === 'edit' && initialItem ? (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="error"
+              disabled={isSubmitting || isDeleting}
+              onClick={() => void handleDelete()}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {isDeleting ? t('deleting') : t('delete')}
+            </Button>
+          ) : (
+            <span />
+          )}
+          <div className="ml-auto flex gap-2">
+            <Button
+              asChild
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+            >
+              <Link href={closeUrl} scroll={false}>
                 {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting || isDeleting}>
-                {isSubmitting ? t('saving') : t('save')}
-              </Button>
-            </div>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+              </Link>
+            </Button>
+            <Button type="submit" disabled={isSubmitting || isDeleting}>
+              {isSubmitting ? t('saving') : t('save')}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </>
   );
 }
+
+/** @deprecated Use {@link ScheduledItemForm} in a {@link ProposalOverlayShell} aside route */
+export const ScheduledItemFormDialog = ScheduledItemForm;

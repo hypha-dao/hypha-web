@@ -3549,6 +3549,7 @@
     "previous": "Zurück",
     "next": "Weiter",
     "createTitle": "Termin planen",
+    "backToCalendar": "Zurück zum Kalender",
     "createDescription": "Füge einen Anruf, ein Event oder etwas anderes zum Kalender hinzu.",
     "editTitle": "Termin bearbeiten",
     "editDescription": "Details aktualisieren oder neu planen.",

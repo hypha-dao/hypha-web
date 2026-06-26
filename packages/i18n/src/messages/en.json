@@ -3592,6 +3592,7 @@
     "previous": "Previous",
     "next": "Next",
     "createTitle": "Schedule something",
+    "backToCalendar": "Back to Calendar",
     "createDescription": "Add a call, event, or anything else your space needs on the calendar.",
     "editTitle": "Edit scheduled item",
     "editDescription": "Update details or reschedule this item.",

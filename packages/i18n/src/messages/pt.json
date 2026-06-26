@@ -3547,6 +3547,7 @@
     "previous": "Anterior",
     "next": "Próximo",
     "createTitle": "Agendar",
+    "backToCalendar": "Voltar ao calendário",
     "createDescription": "Adicione uma chamada, evento ou outro item ao calendário.",
     "editTitle": "Editar item agendado",
     "editDescription": "Atualize os detalhes ou reagende este item.",
