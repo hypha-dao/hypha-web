@@ -31,7 +31,6 @@ type UseOnboardingVoiceDiscoveryOptions = {
   onSendTranscript: (
     text: string,
   ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
-  onStopChat?: () => void;
   onTranscriptTurn?: (turn: {
     role: 'user' | 'assistant';
     text: string;
