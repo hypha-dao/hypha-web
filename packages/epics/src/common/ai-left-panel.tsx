@@ -195,6 +195,8 @@ import {
 import {
   collectGovernancePrepareNavigationKeys,
   findLatestAiPanelNavigationTarget,
+  IMMEDIATE_AUTO_NAVIGATION_TOOLS,
+  isAtNavigationTarget,
 } from './ai-tool-navigation';
 import {
   GOVERNANCE_PROPOSAL_PUBLISHED_EVENT,
@@ -1350,8 +1352,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, []);
 
   useEffect(() => {
-    if (status === 'streaming' || status === 'submitted') return;
-
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
@@ -1365,6 +1365,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const href = navigationTarget?.href;
     if (!href) return;
 
+    const allowWhileStreaming =
+      navigationTarget &&
+      IMMEDIATE_AUTO_NAVIGATION_TOOLS.has(navigationTarget.toolName);
+    if (
+      (status === 'streaming' || status === 'submitted') &&
+      !allowWhileStreaming
+    ) {
+      return;
+    }
+
     if (
       navigationTarget.toolName === 'prepare_governance_proposal' &&
       isGovernancePrepareNavigationStale(navigationTarget.key)
@@ -1372,10 +1382,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
 
-    const alreadyOnTarget =
-      !navigationTarget.coherenceChat &&
-      !/[?&]signal=/.test(href) &&
-      isSameAppPath(href, pathname);
+    const currentSearch =
+      typeof window !== 'undefined' ? window.location.search : '';
+    if (isAtNavigationTarget(href, pathname, currentSearch)) {
+      return;
+    }
 
     if (navigationTarget.resubmitPayload) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
@@ -1387,10 +1398,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         focusField: navigationTarget.focusField,
         focusSection: navigationTarget.focusSection,
       });
-    }
-
-    if (alreadyOnTarget) {
-      return;
     }
 
     const navigationKey = navigationTarget.key;

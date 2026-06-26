@@ -1,5 +1,7 @@
 'use client';
 
+import { normalizeAppPath } from './proposal-form-navigation';
+
 type ChatToolNavigation = {
   href?: string;
   open_in_new_tab?: boolean;
@@ -28,6 +30,67 @@ export type AiPanelNavigationTarget = {
   };
   key: string;
 };
+
+/** Prefer signal-create navigation over generic mcp_navigation in the same turn. */
+const NAVIGATION_TOOL_PRIORITY = [
+  'create_space_signal_by_slug',
+  'relay_ecosystem_signal',
+  'create_human_chat_message',
+  'create_ecosystem_space',
+  'summarize_space_discussion_by_slug',
+  'ingest_space_call_artifacts',
+  'prepare_governance_proposal',
+  'mcp_navigation',
+] as const;
+
+export const IMMEDIATE_AUTO_NAVIGATION_TOOLS = new Set<string>([
+  'create_space_signal_by_slug',
+  'relay_ecosystem_signal',
+  'create_human_chat_message',
+]);
+
+function navigationToolPriority(toolName: string): number {
+  const index = NAVIGATION_TOOL_PRIORITY.indexOf(
+    toolName as (typeof NAVIGATION_TOOL_PRIORITY)[number],
+  );
+  return index === -1 ? NAVIGATION_TOOL_PRIORITY.length : index;
+}
+
+export function pickBestNavigationTarget(
+  targets: AiPanelNavigationTarget[],
+): AiPanelNavigationTarget | null {
+  if (targets.length === 0) return null;
+  return (
+    [...targets].sort(
+      (a, b) =>
+        navigationToolPriority(a.toolName) - navigationToolPriority(b.toolName),
+    )[0] ?? null
+  );
+}
+
+export function isAtNavigationTarget(
+  href: string,
+  pathname: string,
+  search: string,
+): boolean {
+  try {
+    const target = new URL(href, 'http://localhost');
+    if (normalizeAppPath(pathname) !== normalizeAppPath(target.pathname)) {
+      return false;
+    }
+
+    const targetSignal = target.searchParams.get('signal')?.trim();
+    if (!targetSignal) return true;
+
+    const normalizedSearch = search.startsWith('?') ? search.slice(1) : search;
+    const currentSignal = new URLSearchParams(normalizedSearch)
+      .get('signal')
+      ?.trim();
+    return currentSignal === targetSignal;
+  } catch {
+    return false;
+  }
+}
 
 type ChatMessageForNavigation = {
   id?: string;
@@ -264,7 +327,8 @@ export function findLatestAiPanelNavigationTarget(
       messageIndex,
       allowed,
     );
-    if (targets[0]) return targets[0];
+    const best = pickBestNavigationTarget(targets);
+    if (best) return best;
   }
 
   return null;
