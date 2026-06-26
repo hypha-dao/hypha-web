@@ -98,7 +98,7 @@ function resolveRecurrenceRule(data: {
   if (data.recurrencePreset === 'none') {
     return null;
   }
-  if (data.recurrencePreset && data.recurrencePreset !== 'none') {
+  if (data.recurrencePreset) {
     return buildRecurrenceRuleFromPreset(data.recurrencePreset, data.startsAt);
   }
   return data.recurrenceRule ?? null;

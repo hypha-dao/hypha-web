@@ -82,9 +82,7 @@ type ScheduledItemFormField =
   | 'reminderMinutesBefore'
   | '_form';
 
-type ScheduledItemFieldErrors = Partial<
-  Record<ScheduledItemFormField, string>
->;
+type ScheduledItemFieldErrors = Partial<Record<ScheduledItemFormField, string>>;
 
 function ScheduledItemFieldError({
   message,
@@ -151,11 +149,7 @@ function toAllDayEndLocalValue(date: Date): string {
   )}T23:59`;
 }
 
-function resolveDurationMs(
-  start: Date,
-  end: Date,
-  allDay: boolean,
-): number {
+function resolveDurationMs(start: Date, end: Date, allDay: boolean): number {
   const delta = end.getTime() - start.getTime();
   const minimum = allDay ? 0 : MIN_TIMED_DURATION_MS;
   if (delta >= minimum) return delta;
@@ -417,11 +411,7 @@ export function ScheduledItemForm({
     const start = allDay
       ? fromAllDayStartLocalValue(nextStartsAtLocal)
       : fromDatetimeLocalValue(nextStartsAtLocal);
-    const end = computeEndFromStart(
-      start,
-      durationMsRef.current,
-      allDay,
-    );
+    const end = computeEndFromStart(start, durationMsRef.current, allDay);
     const nextEndsAtLocal = allDay
       ? toAllDayEndLocalValue(end)
       : toDatetimeLocalValue(end);
@@ -454,11 +444,7 @@ export function ScheduledItemForm({
       return;
     }
 
-    durationMsRef.current = resolveDurationMs(
-      range.start,
-      range.end,
-      allDay,
-    );
+    durationMsRef.current = resolveDurationMs(range.start, range.end, allDay);
     setEndsAtLocal(nextEndsAtLocal);
   };
 
@@ -575,7 +561,10 @@ export function ScheduledItemForm({
               backUrl={backUrl}
               className="px-0 md:px-3 align-top"
             />
-            <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+            <ButtonClose
+              closeUrl={closeUrl}
+              className="px-0 md:px-3 align-top"
+            />
           </div>
         </div>
         <p className="px-4 pb-4 pt-3 text-sm text-muted-foreground lg:px-7">
@@ -588,315 +577,308 @@ export function ScheduledItemForm({
         className="flex flex-col gap-4"
         onSubmit={handleSubmit}
       >
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="scheduled-item-title">{t('fieldTitle')}</Label>
-            <Input
-              id="scheduled-item-title"
-              name="title"
-              value={title}
-              onChange={(e) => {
-                clearFieldError('title');
-                setTitle(e.target.value);
-              }}
-              placeholder={t('fieldTitlePlaceholder')}
-              maxLength={200}
-              autoFocus
-              aria-invalid={fieldErrors.title ? true : undefined}
-            />
-            <ScheduledItemFieldError message={fieldErrors.title} />
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="scheduled-item-title">{t('fieldTitle')}</Label>
+          <Input
+            id="scheduled-item-title"
+            name="title"
+            value={title}
+            onChange={(e) => {
+              clearFieldError('title');
+              setTitle(e.target.value);
+            }}
+            placeholder={t('fieldTitlePlaceholder')}
+            maxLength={200}
+            autoFocus
+            aria-invalid={fieldErrors.title ? true : undefined}
+          />
+          <ScheduledItemFieldError message={fieldErrors.title} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>{t('fieldType')}</Label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {SCHEDULED_ITEM_TYPES.map((itemType) => (
+              <button
+                key={itemType}
+                type="button"
+                className={cn(
+                  'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                  type === itemType
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground',
+                )}
+                onClick={() => setType(itemType)}
+              >
+                <span aria-hidden>{TYPE_EMOJI[itemType]}</span>
+                <span>{t(`type_${itemType}`)}</span>
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>{t('fieldType')}</Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {SCHEDULED_ITEM_TYPES.map((itemType) => (
-                <button
-                  key={itemType}
-                  type="button"
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-                    type === itemType
-                      ? 'border-primary bg-primary/10 text-foreground'
-                      : 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground',
-                  )}
-                  onClick={() => setType(itemType)}
-                >
-                  <span aria-hidden>{TYPE_EMOJI[itemType]}</span>
-                  <span>{t(`type_${itemType}`)}</span>
-                </button>
-              ))}
-            </div>
+        <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
+          <div>
+            <Label htmlFor="scheduled-item-all-day">{t('fieldAllDay')}</Label>
+            <p className="text-xs text-muted-foreground">
+              {t('fieldAllDayHint')}
+            </p>
           </div>
+          <Switch
+            id="scheduled-item-all-day"
+            checked={allDay}
+            onCheckedChange={(checked) => {
+              const range = readLocalRange(startsAtLocal, endsAtLocal, allDay);
+              setAllDay(checked);
+              if (!range) return;
 
-          <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
-            <div>
-              <Label htmlFor="scheduled-item-all-day">{t('fieldAllDay')}</Label>
-              <p className="text-xs text-muted-foreground">
-                {t('fieldAllDayHint')}
-              </p>
-            </div>
-            <Switch
-              id="scheduled-item-all-day"
-              checked={allDay}
-              onCheckedChange={(checked) => {
-                const range = readLocalRange(startsAtLocal, endsAtLocal, allDay);
-                setAllDay(checked);
-                if (!range) return;
-
-                if (checked) {
-                  const nextStartsAtLocal = `${startsAtLocal.slice(0, 10)}T00:00`;
-                  const end = computeEndFromStart(
-                    fromAllDayStartLocalValue(nextStartsAtLocal),
-                    durationMsRef.current,
-                    true,
-                  );
-                  const nextEndsAtLocal = toAllDayEndLocalValue(end);
-                  setStartsAtLocal(nextStartsAtLocal);
-                  setEndsAtLocal(nextEndsAtLocal);
-                  durationMsRef.current = resolveDurationMs(
-                    fromAllDayStartLocalValue(nextStartsAtLocal),
-                    fromAllDayEndLocalValue(nextEndsAtLocal),
-                    true,
-                  );
-                  return;
-                }
-
-                const nextStartsAtLocal = toDatetimeLocalValue(range.start);
+              if (checked) {
+                const nextStartsAtLocal = `${startsAtLocal.slice(0, 10)}T00:00`;
                 const end = computeEndFromStart(
-                  fromDatetimeLocalValue(nextStartsAtLocal),
+                  fromAllDayStartLocalValue(nextStartsAtLocal),
                   durationMsRef.current,
-                  false,
+                  true,
                 );
-                const nextEndsAtLocal = toDatetimeLocalValue(end);
+                const nextEndsAtLocal = toAllDayEndLocalValue(end);
                 setStartsAtLocal(nextStartsAtLocal);
                 setEndsAtLocal(nextEndsAtLocal);
                 durationMsRef.current = resolveDurationMs(
-                  fromDatetimeLocalValue(nextStartsAtLocal),
-                  fromDatetimeLocalValue(nextEndsAtLocal),
-                  false,
+                  fromAllDayStartLocalValue(nextStartsAtLocal),
+                  fromAllDayEndLocalValue(nextEndsAtLocal),
+                  true,
                 );
+                return;
+              }
+
+              const nextStartsAtLocal = toDatetimeLocalValue(range.start);
+              const end = computeEndFromStart(
+                fromDatetimeLocalValue(nextStartsAtLocal),
+                durationMsRef.current,
+                false,
+              );
+              const nextEndsAtLocal = toDatetimeLocalValue(end);
+              setStartsAtLocal(nextStartsAtLocal);
+              setEndsAtLocal(nextEndsAtLocal);
+              durationMsRef.current = resolveDurationMs(
+                fromDatetimeLocalValue(nextStartsAtLocal),
+                fromDatetimeLocalValue(nextEndsAtLocal),
+                false,
+              );
+            }}
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="scheduled-item-starts">{t('fieldStarts')}</Label>
+            <Input
+              id="scheduled-item-starts"
+              name="startsAt"
+              type={allDay ? 'date' : 'datetime-local'}
+              step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
+              value={
+                allDay && startsAtLocal
+                  ? startsAtLocal.slice(0, 10)
+                  : startsAtLocal
+              }
+              onChange={(e) => {
+                clearFieldError('startsAt');
+                handleStartsAtChange(e.target.value);
               }}
+              aria-invalid={fieldErrors.startsAt ? true : undefined}
+            />
+            <ScheduledItemFieldError message={fieldErrors.startsAt} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="scheduled-item-ends">{t('fieldEnds')}</Label>
+            <Input
+              id="scheduled-item-ends"
+              name="endsAt"
+              type={allDay ? 'date' : 'datetime-local'}
+              step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
+              value={
+                allDay && endsAtLocal ? endsAtLocal.slice(0, 10) : endsAtLocal
+              }
+              onChange={(e) => {
+                clearFieldError('endsAt');
+                handleEndsAtChange(e.target.value);
+              }}
+              aria-invalid={fieldErrors.endsAt ? true : undefined}
+            />
+            <ScheduledItemFieldError message={fieldErrors.endsAt} />
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label>{t('fieldRecurrence')}</Label>
+            <Select
+              value={recurrencePreset}
+              onValueChange={(value) =>
+                setRecurrencePreset(value as RecurrencePreset)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('fieldRecurrenceNone')} />
+              </SelectTrigger>
+              <SelectContent>
+                {RECURRENCE_PRESETS.map((preset) => (
+                  <SelectItem key={preset} value={preset}>
+                    {t(`recurrence_${preset}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {recurrencePreset !== 'none' ? (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="scheduled-item-recurrence-until">
+                {t('fieldRecurrenceUntil')}
+              </Label>
+              <Input
+                id="scheduled-item-recurrence-until"
+                type="date"
+                value={recurrenceUntilLocal}
+                onChange={(e) => setRecurrenceUntilLocal(e.target.value)}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {showCallFields ? (
+          <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
+            <div>
+              <Label htmlFor="scheduled-item-matrix-auto-link">
+                {t('fieldMatrixAutoLink')}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t('fieldMatrixAutoLinkHint')}
+              </p>
+            </div>
+            <Switch
+              id="scheduled-item-matrix-auto-link"
+              checked={matrixAutoLink}
+              onCheckedChange={setMatrixAutoLink}
             />
           </div>
+        ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="scheduled-item-starts">{t('fieldStarts')}</Label>
-              <Input
-                id="scheduled-item-starts"
-                name="startsAt"
-                type={allDay ? 'date' : 'datetime-local'}
-                step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
-                value={
-                  allDay && startsAtLocal
-                    ? startsAtLocal.slice(0, 10)
-                    : startsAtLocal
-                }
-                onChange={(e) => {
-                  clearFieldError('startsAt');
-                  handleStartsAtChange(e.target.value);
-                }}
-                aria-invalid={fieldErrors.startsAt ? true : undefined}
-              />
-              <ScheduledItemFieldError message={fieldErrors.startsAt} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="scheduled-item-ends">{t('fieldEnds')}</Label>
-              <Input
-                id="scheduled-item-ends"
-                name="endsAt"
-                type={allDay ? 'date' : 'datetime-local'}
-                step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
-                value={
-                  allDay && endsAtLocal ? endsAtLocal.slice(0, 10) : endsAtLocal
-                }
-                onChange={(e) => {
-                  clearFieldError('endsAt');
-                  handleEndsAtChange(e.target.value);
-                }}
-                aria-invalid={fieldErrors.endsAt ? true : undefined}
-              />
-              <ScheduledItemFieldError message={fieldErrors.endsAt} />
-            </div>
+        {showCallFields && !matrixAutoLink ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="scheduled-item-meeting-url">
+              {t('fieldMeetingUrl')}
+            </Label>
+            <Input
+              id="scheduled-item-meeting-url"
+              type="url"
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+              placeholder={t('fieldMeetingUrlPlaceholder')}
+            />
           </div>
+        ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label>{t('fieldRecurrence')}</Label>
-              <Select
-                value={recurrencePreset}
-                onValueChange={(value) =>
-                  setRecurrencePreset(value as RecurrencePreset)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('fieldRecurrenceNone')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {RECURRENCE_PRESETS.map((preset) => (
-                    <SelectItem key={preset} value={preset}>
-                      {t(`recurrence_${preset}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {showCallFields && matrixAutoLink && initialItem?.meetingUrl ? (
+          <p className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            {t('matrixLinkPreview', { url: initialItem.meetingUrl })}
+          </p>
+        ) : null}
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="scheduled-item-location">{t('fieldLocation')}</Label>
+          <Input
+            id="scheduled-item-location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder={t('fieldLocationPlaceholder')}
+          />
+        </div>
+
+        <div className="rounded-lg border border-border/60 p-3">
+          <p className="mb-3 text-sm font-medium">{t('fieldReminders')}</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="scheduled-item-remind-email">
+                {t('fieldRemindEmail')}
+              </Label>
+              <Switch
+                id="scheduled-item-remind-email"
+                checked={remindEmail}
+                onCheckedChange={setRemindEmail}
+              />
             </div>
-            {recurrencePreset !== 'none' ? (
+            <div className="flex items-center justify-between">
+              <Label htmlFor="scheduled-item-remind-push">
+                {t('fieldRemindPush')}
+              </Label>
+              <Switch
+                id="scheduled-item-remind-push"
+                checked={remindPush}
+                onCheckedChange={setRemindPush}
+              />
+            </div>
+            {remindEmail || remindPush ? (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="scheduled-item-recurrence-until">
-                  {t('fieldRecurrenceUntil')}
-                </Label>
-                <Input
-                  id="scheduled-item-recurrence-until"
-                  type="date"
-                  value={recurrenceUntilLocal}
-                  onChange={(e) => setRecurrenceUntilLocal(e.target.value)}
+                <Label>{t('fieldReminderMinutesBefore')}</Label>
+                <Select
+                  value={
+                    reminderMinutesBefore != null
+                      ? String(reminderMinutesBefore)
+                      : ''
+                  }
+                  onValueChange={(value) => {
+                    clearFieldError('reminderMinutesBefore');
+                    setReminderMinutesBefore(Number.parseInt(value, 10));
+                  }}
+                >
+                  <SelectTrigger
+                    name="reminderMinutesBefore"
+                    aria-invalid={
+                      fieldErrors.reminderMinutesBefore ? true : undefined
+                    }
+                  >
+                    <SelectValue placeholder={t('fieldReminderPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REMINDER_MINUTES_OPTIONS.map((minutes) => (
+                      <SelectItem key={minutes} value={String(minutes)}>
+                        {t(`reminderMinutes_${minutes}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <ScheduledItemFieldError
+                  message={fieldErrors.reminderMinutesBefore}
                 />
               </div>
             ) : null}
           </div>
+        </div>
 
-          {showCallFields ? (
-            <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
-              <div>
-                <Label htmlFor="scheduled-item-matrix-auto-link">
-                  {t('fieldMatrixAutoLink')}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t('fieldMatrixAutoLinkHint')}
-                </p>
-              </div>
-              <Switch
-                id="scheduled-item-matrix-auto-link"
-                checked={matrixAutoLink}
-                onCheckedChange={setMatrixAutoLink}
-              />
-            </div>
-          ) : null}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="scheduled-item-description">
+            {t('fieldDescription')}
+          </Label>
+          <Textarea
+            id="scheduled-item-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t('fieldDescriptionPlaceholder')}
+            rows={3}
+          />
+        </div>
 
-          {showCallFields && !matrixAutoLink ? (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="scheduled-item-meeting-url">
-                {t('fieldMeetingUrl')}
-              </Label>
-              <Input
-                id="scheduled-item-meeting-url"
-                type="url"
-                value={meetingUrl}
-                onChange={(e) => setMeetingUrl(e.target.value)}
-                placeholder={t('fieldMeetingUrlPlaceholder')}
-              />
-            </div>
-          ) : null}
+        {initialItem ? (
+          <p className="text-xs text-muted-foreground">
+            {t('createdAt', {
+              date: format(asDate(initialItem.createdAt), 'PPp'),
+            })}
+          </p>
+        ) : null}
 
-          {showCallFields && matrixAutoLink && initialItem?.meetingUrl ? (
-            <p className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-              {t('matrixLinkPreview', { url: initialItem.meetingUrl })}
-            </p>
-          ) : null}
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="scheduled-item-location">
-              {t('fieldLocation')}
-            </Label>
-            <Input
-              id="scheduled-item-location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder={t('fieldLocationPlaceholder')}
-            />
-          </div>
-
-          <div className="rounded-lg border border-border/60 p-3">
-            <p className="mb-3 text-sm font-medium">{t('fieldReminders')}</p>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="scheduled-item-remind-email">
-                  {t('fieldRemindEmail')}
-                </Label>
-                <Switch
-                  id="scheduled-item-remind-email"
-                  checked={remindEmail}
-                  onCheckedChange={setRemindEmail}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="scheduled-item-remind-push">
-                  {t('fieldRemindPush')}
-                </Label>
-                <Switch
-                  id="scheduled-item-remind-push"
-                  checked={remindPush}
-                  onCheckedChange={setRemindPush}
-                />
-              </div>
-              {remindEmail || remindPush ? (
-                <div className="flex flex-col gap-2">
-                  <Label>{t('fieldReminderMinutesBefore')}</Label>
-                  <Select
-                    value={
-                      reminderMinutesBefore != null
-                        ? String(reminderMinutesBefore)
-                        : ''
-                    }
-                    onValueChange={(value) => {
-                      clearFieldError('reminderMinutesBefore');
-                      setReminderMinutesBefore(Number.parseInt(value, 10));
-                    }}
-                  >
-                    <SelectTrigger
-                      name="reminderMinutesBefore"
-                      aria-invalid={
-                        fieldErrors.reminderMinutesBefore ? true : undefined
-                      }
-                    >
-                      <SelectValue
-                        placeholder={t('fieldReminderPlaceholder')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REMINDER_MINUTES_OPTIONS.map((minutes) => (
-                        <SelectItem key={minutes} value={String(minutes)}>
-                          {t(`reminderMinutes_${minutes}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <ScheduledItemFieldError
-                    message={fieldErrors.reminderMinutesBefore}
-                  />
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="scheduled-item-description">
-              {t('fieldDescription')}
-            </Label>
-            <Textarea
-              id="scheduled-item-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('fieldDescriptionPlaceholder')}
-              rows={3}
-            />
-          </div>
-
-          {initialItem ? (
-            <p className="text-xs text-muted-foreground">
-              {t('createdAt', {
-                date: format(asDate(initialItem.createdAt), 'PPp'),
-              })}
-            </p>
-          ) : null}
-
-          {fieldErrors._form ? (
-            <ScheduledItemFieldError
-              message={fieldErrors._form}
-              dataFormError
-            />
-          ) : null}
+        {fieldErrors._form ? (
+          <ScheduledItemFieldError message={fieldErrors._form} dataFormError />
+        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
           {mode === 'edit' && initialItem ? (

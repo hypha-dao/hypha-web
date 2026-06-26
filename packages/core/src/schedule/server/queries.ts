@@ -264,7 +264,7 @@ export async function tryClaimScheduledReminderDispatch(
         spaceScheduledItemReminderDispatches.channel,
       ],
     })
-    .returning({ id: spaceScheduledItemReminderDispatches.id });
+    .returning();
 
   return Boolean(row);
 }
