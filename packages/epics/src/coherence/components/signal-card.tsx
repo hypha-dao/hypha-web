@@ -277,10 +277,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       icon: (coherenceType?.icon ?? 'ArrowUpRight') as LucideReactIcon,
       iconClassName: BADGE_ICON_COLOR_CLASS_MAP[typeColorVariant],
       label: typeLabel,
-      variant: 'surface',
-      colorVariant: typeColorVariant,
+      variant: 'outline',
+      colorVariant: 'neutral',
       className:
-        'rounded-md border-none shadow-none font-medium text-foreground',
+        'rounded-md border-border/60 bg-transparent shadow-none font-medium text-foreground',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -291,10 +291,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       icon: (priorityMeta.icon ?? 'CircleDot') as LucideReactIcon,
       iconClassName: BADGE_ICON_COLOR_CLASS_MAP[priorityColorVariant],
       label: priorityLabel,
-      variant: 'surface',
-      colorVariant: priorityColorVariant,
+      variant: 'outline',
+      colorVariant: 'neutral',
       className:
-        'rounded-md border-none shadow-none font-medium text-foreground',
+        'rounded-md border-border/60 bg-transparent shadow-none font-medium text-foreground',
     };
     return [typeBadge, priorityBadge];
   }, [
@@ -472,9 +472,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 height="20px"
                 loading={isLoading}
               >
-                <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
-                  {title}
-                </CardTitle>
+                <CardTitle className="line-clamp-2">{title}</CardTitle>
               </Skeleton>
             </div>
             {isCreator && slug ? (
