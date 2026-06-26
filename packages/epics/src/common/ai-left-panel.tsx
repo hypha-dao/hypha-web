@@ -598,6 +598,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         active: isSectionActive('coherence'),
       },
       {
+        key: 'calendar',
+        label: tCommon('Calendar'),
+        icon: CalendarDays,
+        href: `/${lang}/dho/${spaceSlug}/calendar`,
+        active: isSectionActive('calendar'),
+      },
+      {
         key: 'agreements',
         label: tCommon('Agreements'),
         icon: FileCheck2,
@@ -610,13 +617,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         icon: UsersRound,
         href: `/${lang}/dho/${spaceSlug}/members`,
         active: isSectionActive('members'),
-      },
-      {
-        key: 'calendar',
-        label: tCommon('Calendar'),
-        icon: CalendarDays,
-        href: `/${lang}/dho/${spaceSlug}/calendar`,
-        active: isSectionActive('calendar'),
       },
       {
         key: 'treasury',
