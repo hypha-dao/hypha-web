@@ -41,7 +41,6 @@ type UseOnboardingVoiceRealtimeOptions = {
   ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
 };
 
-
 function mapSessionErrorToVoiceCode(status: number): VoiceInterviewErrorCode {
   if (status === 401 || status === 403) return 'error';
   if (status === 404 || status === 502 || status === 503) return 'session';
@@ -477,11 +476,15 @@ export function useOnboardingVoiceRealtime({
   useEffect(() => {
     if (!enabled || !isChatStreaming) return;
     wasStreamingRef.current = true;
+    stopBrowserSpeech();
+    connectionRef.current?.sendEvent({ type: 'response.cancel' });
     realtimeSpeakInFlightRef.current = false;
     realtimeAudioHeardRef.current = false;
-    stopBrowserSpeech();
+    if (connectionRef.current) {
+      setRealtimeRemoteAudioMuted(connectionRef.current, true);
+    }
     setPhase('processing');
-  }, [clearPrelistenTimer, enabled, isChatStreaming, stopBrowserSpeech]);
+  }, [enabled, isChatStreaming, stopBrowserSpeech]);
 
   useEffect(() => {
     if (!enabled || isChatStreaming) return;
@@ -494,43 +497,8 @@ export function useOnboardingVoiceRealtime({
       return;
     }
 
-    const speakable = prepareAssistantTextForSpeech(spoken);
-    if (!speakable || spoken === lastSpokenAssistantRef.current) {
-      setPhase(connectionRef.current ? 'listening' : 'idle');
-      return;
-    }
-
-    lastSpokenAssistantRef.current = spoken;
-    setPhase('speaking');
-    clearPrelistenTimer();
-
-    const duration = estimateSpeechDurationMs(speakable);
-    prelistenTimerRef.current = window.setTimeout(() => {
-      void acquireWarmMicStream();
-    }, Math.max(0, duration - MIC_PREWARM_BEFORE_TTS_END_MS));
-
-    const cancelSpeech = speakOnboardingText(speakable, {
-      lang: locale,
-      rate: 1.05,
-      onEnd: () => {
-        cancelSpeechRef.current = null;
-        clearPrelistenTimer();
-        setPhase(connectionRef.current ? 'listening' : 'idle');
-      },
-    });
-    if (!cancelSpeech) {
-      clearPrelistenTimer();
-      setPhase(connectionRef.current ? 'listening' : 'idle');
-      return;
-    }
-    cancelSpeechRef.current = cancelSpeech;
-  }, [
-    clearPrelistenTimer,
-    enabled,
-    isChatStreaming,
-    lastAssistantText,
-    locale,
-  ]);
+    speakAssistantReply(spoken);
+  }, [enabled, isChatStreaming, lastAssistantText, speakAssistantReply]);
 
   return {
     phase,

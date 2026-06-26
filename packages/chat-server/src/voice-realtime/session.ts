@@ -10,7 +10,7 @@ import { assertVoiceDiscoverySessionContext } from './request-schema';
 export const MISSING_OPENAI_KEY_MESSAGE =
   'Hypha voice Realtime is not configured: OPENAI_API_KEY is missing.';
 
-const DEFAULT_OPENAI_REALTIME_MODEL = 'gpt-4o-realtime-preview-2024-12-17';
+const DEFAULT_OPENAI_REALTIME_MODEL = 'gpt-realtime';
 const DEFAULT_OPENAI_REALTIME_VOICE = 'marin';
 const DEFAULT_OPENAI_REALTIME_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 

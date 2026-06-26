@@ -126,7 +126,7 @@ export function setRealtimeRemoteAudioMuted(
   connection.remoteAudio.volume = muted ? 0 : 1;
 }
 
-/** @deprecated Live Voice uses browser TTS only — Realtime is STT-only. Kept for experiments. */
+/** Speak assistant text via Realtime audio (marin). Browser TTS is fallback only. */
 export function speakAssistantTextViaRealtime(
   connection: RealtimeVoiceConnection,
   text: string,
