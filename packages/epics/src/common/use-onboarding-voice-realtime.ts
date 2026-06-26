@@ -678,12 +678,22 @@ export function useOnboardingVoiceRealtime({
 
       interimAckSpokenRef.current = true;
       stopBrowserSpeech();
-      const cancelSpeech = speakOnboardingText(pickVoiceInterimAckPhrase(), {
-        lang: locale,
-      });
+      muteMicDuringAssistantSpeech(connectionRef.current);
+      const cancelSpeech = speakOnboardingText(
+        pickVoiceInterimAckPhrase(locale),
+        {
+          lang: locale,
+          onEnd: () => {
+            cancelSpeechRef.current = null;
+            restoreMicForListening(connectionRef.current);
+          },
+        },
+      );
       if (cancelSpeech) {
         cancelSpeechRef.current = cancelSpeech;
         setPhase('processing');
+      } else {
+        restoreMicForListening(connectionRef.current);
       }
     }, VOICE_INTERIM_ACK_DELAY_MS);
 

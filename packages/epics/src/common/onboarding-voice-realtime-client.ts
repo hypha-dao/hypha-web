@@ -136,14 +136,38 @@ function buildRealtimeSpeakInstructions(text: string): string {
   ].join('\n');
 }
 
-const NOISE_TRANSCRIPT_PATTERN =
-  /^(?:uh+|um+|hm+|hmm+|ah+|oh+|mm+|mhm+|eh+|er+|\.+|,+\s*)+$/i;
+const NOISE_FILLER_TOKEN_PATTERNS = [
+  /^u+h+$/,
+  /^u+m+$/,
+  /^h+m+$/,
+  /^a+h+$/,
+  /^o+h+$/,
+  /^m+$/,
+  /^m+h+m+$/,
+  /^e+h+$/,
+  /^e+r+$/,
+] as const;
+
+function isNoiseFillerToken(token: string): boolean {
+  const letters = token.toLowerCase().replace(/[^a-z]/g, '');
+  if (!letters) return true;
+  return NOISE_FILLER_TOKEN_PATTERNS.some((pattern) => pattern.test(letters));
+}
+
+function isNoiseOnlyTranscript(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  if (/^[.,\s]+$/.test(trimmed)) return true;
+  const tokens = trimmed.split(/[\s.,]+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  return tokens.every(isNoiseFillerToken);
+}
 
 /** Ignore VAD false positives — barge-in and /api/chat only on real user speech. */
 export function isSubstantiveUserTranscript(text: string): boolean {
   const normalized = text.trim();
   if (normalized.length < 2) return false;
-  if (NOISE_TRANSCRIPT_PATTERN.test(normalized)) return false;
+  if (isNoiseOnlyTranscript(normalized)) return false;
   return /\p{L}/u.test(normalized);
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   estimateSpeechDurationMs,
+  pickVoiceInterimAckPhrase,
   prepareAssistantTextForSpeech,
 } from '../onboarding-voice-speech';
 
@@ -62,6 +63,15 @@ I've drafted "Issue New Token" — work for you?`;
     const spoken = prepareAssistantTextForSpeech(input);
 
     expect(spoken).toBe('One. Two. Three. Four.');
+  });
+});
+
+describe('pickVoiceInterimAckPhrase', () => {
+  it('returns localized interim ack phrases', () => {
+    expect(pickVoiceInterimAckPhrase('fr')).toMatch(
+      /instant|seconde|consulte/i,
+    );
+    expect(pickVoiceInterimAckPhrase('en')).toMatch(/moment|second|pull/i);
   });
 });
 

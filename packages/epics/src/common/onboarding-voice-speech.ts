@@ -10,16 +10,46 @@ import {
 /** Spoken voice replies are capped to this many sentences (matches server prompts). */
 export const MAX_VOICE_SPOKEN_SENTENCES = 4;
 
-const VOICE_INTERIM_ACK_PHRASES = [
-  'One moment, let me check that for you.',
-  'Give me a second to look into that.',
-  'Let me pull that up for you.',
-] as const;
+const VOICE_INTERIM_ACK_PHRASES_BY_LOCALE: Record<string, readonly string[]> = {
+  en: [
+    'One moment, let me check that for you.',
+    'Give me a second to look into that.',
+    'Let me pull that up for you.',
+  ],
+  fr: [
+    'Un instant, je vérifie ça pour vous.',
+    'Laissez-moi une seconde pour regarder.',
+    'Je consulte ça tout de suite.',
+  ],
+  pt: [
+    'Um momento, vou verificar isso para você.',
+    'Me dê um segundo para consultar.',
+    'Deixa eu buscar isso para você.',
+  ],
+  es: [
+    'Un momento, déjame revisar eso por ti.',
+    'Dame un segundo para consultarlo.',
+    'Voy a buscar eso ahora mismo.',
+  ],
+  de: [
+    'Einen Moment, ich schaue das für Sie nach.',
+    'Geben Sie mir eine Sekunde, ich prüfe das.',
+    'Ich rufe das gleich für Sie ab.',
+  ],
+};
+
+function resolveInterimAckLocale(locale?: string): string {
+  const normalized = locale?.trim().toLowerCase().split('-')[0] ?? 'en';
+  return normalized in VOICE_INTERIM_ACK_PHRASES_BY_LOCALE ? normalized : 'en';
+}
 
 /** Short filler when tools run before the model emits speakable text. */
-export function pickVoiceInterimAckPhrase(): string {
-  const index = Math.floor(Math.random() * VOICE_INTERIM_ACK_PHRASES.length);
-  return VOICE_INTERIM_ACK_PHRASES[index] ?? VOICE_INTERIM_ACK_PHRASES[0];
+export function pickVoiceInterimAckPhrase(locale?: string): string {
+  const phrases =
+    VOICE_INTERIM_ACK_PHRASES_BY_LOCALE[resolveInterimAckLocale(locale)] ??
+    VOICE_INTERIM_ACK_PHRASES_BY_LOCALE.en!;
+  const index = Math.floor(Math.random() * phrases.length);
+  return phrases[index] ?? phrases[0]!;
 }
 
 /** Strip markdown and URLs so browser TTS reads naturally. */
