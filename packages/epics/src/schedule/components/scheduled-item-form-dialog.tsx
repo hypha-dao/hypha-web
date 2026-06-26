@@ -74,6 +74,73 @@ function snapDatetimeLocalValue(value: string): string {
   return toDatetimeLocalValue(new Date(value));
 }
 
+type ScheduledItemFormField =
+  | 'title'
+  | 'endsAt'
+  | 'reminderMinutesBefore'
+  | '_form';
+
+type ScheduledItemFieldErrors = Partial<
+  Record<ScheduledItemFormField, string>
+>;
+
+function ScheduledItemFieldError({
+  message,
+  dataFormError,
+}: {
+  message?: string;
+  dataFormError?: boolean;
+}) {
+  if (!message) return null;
+  return (
+    <p
+      className="text-sm font-medium text-destructive"
+      role="alert"
+      {...(dataFormError ? { 'data-form-error': 'true' } : {})}
+    >
+      {message}
+    </p>
+  );
+}
+
+function scrollToFirstFieldError(
+  formEl: HTMLFormElement | null,
+  fieldErrors: ScheduledItemFieldErrors,
+) {
+  if (!formEl) return;
+
+  const fieldOrder: ScheduledItemFormField[] = [
+    'title',
+    'endsAt',
+    'reminderMinutesBefore',
+    '_form',
+  ];
+
+  for (const name of fieldOrder) {
+    if (!fieldErrors[name]) continue;
+
+    if (name === '_form') {
+      const formError = formEl.querySelector<HTMLElement>(
+        '[data-form-error="true"]',
+      );
+      if (formError) {
+        formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      continue;
+    }
+
+    const fieldEl = formEl.querySelector<HTMLElement>(
+      `[name="${CSS.escape(name)}"]`,
+    );
+    if (fieldEl) {
+      fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      fieldEl.focus({ preventScroll: true });
+      return;
+    }
+  }
+}
+
 function toAllDayEndLocalValue(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
@@ -219,8 +286,19 @@ export function ScheduledItemFormDialog({
   const [reminderMinutesBefore, setReminderMinutesBefore] = React.useState<
     number | null
   >(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] =
+    React.useState<ScheduledItemFieldErrors>({});
+  const formRef = React.useRef<HTMLFormElement>(null);
   const durationMsRef = React.useRef(DEFAULT_TIMED_DURATION_MS);
+
+  const clearFieldError = React.useCallback((field: ScheduledItemFormField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }, []);
 
   const resetExtendedFields = React.useCallback(() => {
     setRecurrencePreset('none');
@@ -276,7 +354,7 @@ export function ScheduledItemFormDialog({
       setMeetingUrl('');
       resetExtendedFields();
     }
-    setError(null);
+    setFieldErrors({});
   }, [open, mode, initialItem, draftRange, resetExtendedFields]);
 
   React.useEffect(() => {
@@ -339,12 +417,13 @@ export function ScheduledItemFormDialog({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
+    setFieldErrors({});
 
     const trimmedTitle = title.trim();
+    const nextErrors: ScheduledItemFieldErrors = {};
+
     if (!trimmedTitle) {
-      setError(t('validationTitleRequired'));
-      return;
+      nextErrors.title = t('validationTitleRequired');
     }
 
     const startsAt = allDay
@@ -354,12 +433,18 @@ export function ScheduledItemFormDialog({
       ? fromAllDayEndLocalValue(endsAtLocal)
       : fromDatetimeLocalValue(endsAtLocal);
     if (endsAt.getTime() < startsAt.getTime()) {
-      setError(t('validationEndAfterStart'));
-      return;
+      nextErrors.endsAt = t('validationEndAfterStart');
     }
 
     if ((remindEmail || remindPush) && reminderMinutesBefore == null) {
-      setError(t('validationReminderRequired'));
+      nextErrors.reminderMinutesBefore = t('validationReminderRequired');
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      requestAnimationFrame(() => {
+        scrollToFirstFieldError(formRef.current, nextErrors);
+      });
       return;
     }
 
@@ -385,7 +470,11 @@ export function ScheduledItemFormDialog({
           remindEmail || remindPush ? reminderMinutesBefore : null,
       });
     } catch {
-      setError(t('saveFailed'));
+      const saveError = { _form: t('saveFailed') };
+      setFieldErrors(saveError);
+      requestAnimationFrame(() => {
+        scrollToFirstFieldError(formRef.current, saveError);
+      });
     }
   };
 
@@ -403,17 +492,27 @@ export function ScheduledItemFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <form
+          ref={formRef}
+          className="flex flex-col gap-4"
+          onSubmit={handleSubmit}
+        >
           <div className="flex flex-col gap-2">
             <Label htmlFor="scheduled-item-title">{t('fieldTitle')}</Label>
             <Input
               id="scheduled-item-title"
+              name="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                clearFieldError('title');
+                setTitle(e.target.value);
+              }}
               placeholder={t('fieldTitlePlaceholder')}
               maxLength={200}
               autoFocus
+              aria-invalid={fieldErrors.title ? true : undefined}
             />
+            <ScheduledItemFieldError message={fieldErrors.title} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -508,13 +607,19 @@ export function ScheduledItemFormDialog({
               <Label htmlFor="scheduled-item-ends">{t('fieldEnds')}</Label>
               <Input
                 id="scheduled-item-ends"
+                name="endsAt"
                 type={allDay ? 'date' : 'datetime-local'}
                 step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
                 value={
                   allDay && endsAtLocal ? endsAtLocal.slice(0, 10) : endsAtLocal
                 }
-                onChange={(e) => handleEndsAtChange(e.target.value)}
+                onChange={(e) => {
+                  clearFieldError('endsAt');
+                  handleEndsAtChange(e.target.value);
+                }}
+                aria-invalid={fieldErrors.endsAt ? true : undefined}
               />
+              <ScheduledItemFieldError message={fieldErrors.endsAt} />
             </div>
           </div>
 
@@ -637,11 +742,17 @@ export function ScheduledItemFormDialog({
                         ? String(reminderMinutesBefore)
                         : ''
                     }
-                    onValueChange={(value) =>
-                      setReminderMinutesBefore(Number.parseInt(value, 10))
-                    }
+                    onValueChange={(value) => {
+                      clearFieldError('reminderMinutesBefore');
+                      setReminderMinutesBefore(Number.parseInt(value, 10));
+                    }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      name="reminderMinutesBefore"
+                      aria-invalid={
+                        fieldErrors.reminderMinutesBefore ? true : undefined
+                      }
+                    >
                       <SelectValue
                         placeholder={t('fieldReminderPlaceholder')}
                       />
@@ -654,6 +765,9 @@ export function ScheduledItemFormDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                  <ScheduledItemFieldError
+                    message={fieldErrors.reminderMinutesBefore}
+                  />
                 </div>
               ) : null}
             </div>
@@ -680,10 +794,11 @@ export function ScheduledItemFormDialog({
             </p>
           ) : null}
 
-          {error ? (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
+          {fieldErrors._form ? (
+            <ScheduledItemFieldError
+              message={fieldErrors._form}
+              dataFormError
+            />
           ) : null}
 
           <DialogFooter className="gap-2 sm:justify-between">
