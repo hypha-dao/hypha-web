@@ -96,15 +96,22 @@ function readVisualAssetUrlsFromOutput(output: unknown): {
     return { logoUrl: null, bannerUrl: null };
   }
 
-  const roots: Record<string, unknown>[] = [output as Record<string, unknown>];
-  const preview = (output as { preview?: unknown }).preview;
+  const roots: Record<string, unknown>[] = [];
+  const addRoot = (candidate: unknown) => {
+    if (candidate && typeof candidate === 'object') {
+      roots.push(candidate as Record<string, unknown>);
+    }
+  };
+  const addPreviewRoot = (candidate: unknown) => {
+    if (!candidate || typeof candidate !== 'object') return;
+    addRoot((candidate as { preview?: unknown }).preview);
+  };
+
+  addRoot(output);
+  addPreviewRoot(output);
   const createPayload = (output as { create_payload?: unknown }).create_payload;
-  if (preview && typeof preview === 'object') {
-    roots.push(preview as Record<string, unknown>);
-  }
-  if (createPayload && typeof createPayload === 'object') {
-    roots.push(createPayload as Record<string, unknown>);
-  }
+  addRoot(createPayload);
+  addPreviewRoot(createPayload);
 
   let logoUrl: string | null = null;
   let bannerUrl: string | null = null;
@@ -955,18 +962,18 @@ export function AiPanelMessageBubble({
           {renderedToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
               {renderedToolParts.map((part) => {
-                if (
-                  part.type === 'tool-generate_space_visual_assets' ||
-                  part.type === 'tool-create_space_from_onboarding'
-                ) {
-                  return null;
-                }
                 const confirmationCard =
                   part.state === 'output-available'
                     ? renderConfirmationCard(part.output, part.type)
                     : null;
                 if (confirmationCard) {
                   return <div key={part.toolCallId}>{confirmationCard}</div>;
+                }
+                if (
+                  part.type === 'tool-generate_space_visual_assets' ||
+                  part.type === 'tool-create_space_from_onboarding'
+                ) {
+                  return null;
                 }
                 return null;
               })}

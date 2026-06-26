@@ -37,12 +37,26 @@ function extensionForMime(mimeType: string): string {
   return 'png';
 }
 
+function normalizePublicUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 function readUrlField(record: Record<string, unknown>): string | null {
   for (const key of ['ufsUrl', 'url', 'fileUrl', 'appUrl'] as const) {
-    const value = record[key];
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim();
-    }
+    const url = normalizePublicUrl(record[key]);
+    if (url) return url;
   }
   return null;
 }
