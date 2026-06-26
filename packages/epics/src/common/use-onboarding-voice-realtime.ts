@@ -376,6 +376,14 @@ export function useOnboardingVoiceRealtime({
         return;
       }
 
+      if (
+        Boolean(speechPlaybackRef.current) &&
+        phaseRef.current === 'speaking' &&
+        !hasClearInterruptIntentFromTranscript(normalized)
+      ) {
+        return;
+      }
+
       if (!isSubstantiveUserTranscript(normalized)) {
         restoreMicForListening(connectionRef.current);
         restoreListeningIfConnected(connectionRef.current, setPhase);

@@ -644,6 +644,14 @@ export function AiPanelMessageBubble({
       ) {
         continue;
       }
+      if (part.type === 'tool-create_space_from_onboarding') {
+        const output = part.output as
+          | { requires_confirmation?: boolean; dry_run?: boolean }
+          | undefined;
+        if (output?.requires_confirmation || output?.dry_run) {
+          continue;
+        }
+      }
       const card = renderVisualAssetsCard(part.output);
       if (card) {
         return {

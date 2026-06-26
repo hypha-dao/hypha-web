@@ -57,6 +57,12 @@ CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS r
 - ${VOICE_TOOL_ACK_GUIDELINE}
 - When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
 
+const VOICE_MODE_PROPOSAL_WALKTHROUGH_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
+CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
+- ${VOICE_BREVITY_GUIDELINE}
+- During an active proposal walkthrough: call prepare_governance_proposal first in the same turn — no spoken preamble about opening the form. Other read tools may use one brief acknowledgment before the tool call.
+- When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
+
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
 /** Thrown before `streamText` when deployment is missing OpenRouter credentials (matches provider default env). */
@@ -1456,6 +1462,16 @@ export async function createChatStreamResult(
           }
         : null,
     );
+  const postCreateGovernanceVoiceActive =
+    voiceDiscoveryActive &&
+    normalizedConversationContext?.mode === 'onboarding_setup' &&
+    (normalizedConversationContext.setupPhase === 'execute' ||
+      normalizedConversationContext.setupPhase === 'verify') &&
+    !pendingEcosystemChildren;
+  const onboardingVoiceModeDirectives =
+    postCreateGovernanceVoiceActive || activeGovernanceProposalDirective
+      ? VOICE_MODE_PROPOSAL_WALKTHROUGH_DIRECTIVES
+      : VOICE_MODE_ACTIVE_DIRECTIVES;
   const proposalFormStateDirective = buildProposalFormStateDirective(
     activeProposalFormSnapshot,
   );
@@ -1504,7 +1520,7 @@ export async function createChatStreamResult(
             : ''
         }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
           voiceDiscoveryActive
-            ? `\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
           localizedEntryMethodGuidelines
