@@ -3560,6 +3560,7 @@
     "type_meeting": "Meeting",
     "type_deadline": "Frist",
     "type_reminder": "Erinnerung",
+    "type_booking": "Buchung",
     "fieldAllDay": "Ganztägig",
     "fieldAllDayHint": "Ohne konkrete Uhrzeit im Kalender anzeigen",
     "fieldStarts": "Beginn",

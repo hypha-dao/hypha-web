@@ -3560,6 +3560,7 @@
     "type_meeting": "Reunión",
     "type_deadline": "Plazo",
     "type_reminder": "Recordatorio",
+    "type_booking": "Reserva",
     "fieldAllDay": "Todo el día",
     "fieldAllDayHint": "Mostrar en el calendario sin hora específica",
     "fieldStarts": "Inicio",

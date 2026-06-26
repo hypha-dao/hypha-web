@@ -3603,6 +3603,7 @@
     "type_meeting": "Meeting",
     "type_deadline": "Deadline",
     "type_reminder": "Reminder",
+    "type_booking": "Booking",
     "fieldAllDay": "All day",
     "fieldAllDayHint": "Show on the calendar without specific times",
     "fieldStarts": "Starts",

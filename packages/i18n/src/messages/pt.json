@@ -3558,6 +3558,7 @@
     "type_meeting": "Reunião",
     "type_deadline": "Prazo",
     "type_reminder": "Lembrete",
+    "type_booking": "Reserva",
     "fieldAllDay": "Dia inteiro",
     "fieldAllDayHint": "Mostrar no calendário sem horário específico",
     "fieldStarts": "Início",
