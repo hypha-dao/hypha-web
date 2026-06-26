@@ -43,6 +43,16 @@ describe('mergeGovernanceResubmitPayloads', () => {
     expect(merged.autoExecution).toBe(false);
     expect(merged.quorumAndUnity).toEqual({ unity: 75 });
   });
+
+  it('preserves real title when a partial update sends placeholder draft title', () => {
+    const merged = mergeGovernanceResubmitPayloads(
+      { title: 'Change Voting Method to 1m1v' },
+      { title: 'Governance proposal', votingMethod: '1m1v' },
+    );
+
+    expect(merged.title).toBe('Change Voting Method to 1m1v');
+    expect(merged.votingMethod).toBe('1m1v');
+  });
 });
 
 describe('governance prepare navigation stale keys', () => {

@@ -102,9 +102,38 @@ export function mergeGovernanceResubmitPayloads(
 
   if (incoming.title === undefined || incoming.title === '') {
     merged.title = previous.title;
+  } else if (
+    incoming.title === 'Governance proposal' &&
+    typeof previous.title === 'string' &&
+    previous.title.trim() !== '' &&
+    previous.title !== 'Governance proposal'
+  ) {
+    merged.title = previous.title;
   }
   if (incoming.description === undefined || incoming.description === '') {
     merged.description = previous.description;
+  } else if (
+    incoming.description ===
+      'Prepared with Hypha AI — review and edit on the form before publishing.' &&
+    typeof previous.description === 'string' &&
+    previous.description.trim() !== '' &&
+    previous.description !==
+      'Prepared with Hypha AI — review and edit on the form before publishing.'
+  ) {
+    merged.description = previous.description;
+  }
+
+  if (
+    incoming.autoExecution === undefined &&
+    previous.autoExecution !== undefined
+  ) {
+    merged.autoExecution = previous.autoExecution;
+  }
+  if (
+    incoming.votingDuration === undefined &&
+    previous.votingDuration !== undefined
+  ) {
+    merged.votingDuration = previous.votingDuration;
   }
 
   return merged;

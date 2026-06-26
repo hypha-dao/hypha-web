@@ -1,4 +1,5 @@
 import type { AiCreatableProposalType } from './ai-proposal-types';
+import { truncateProposalTitle } from '../proposal-title-limits';
 import {
   buildEntryMethodProposalDraft,
   buildVotingMethodProposalDraft,
@@ -33,7 +34,7 @@ export function buildSilentProposalDrafts(
         method as EntryMethodId,
       );
       if (!collected.title && draft.title) {
-        drafts.title = draft.title;
+        drafts.title = truncateProposalTitle(draft.title);
       }
       if (!collected.description && draft.description) {
         drafts.description = draft.description;
@@ -52,7 +53,7 @@ export function buildSilentProposalDrafts(
         method as VotingMethodId,
       );
       if (!collected.title && draft.title) {
-        drafts.title = draft.title;
+        drafts.title = truncateProposalTitle(draft.title);
       }
       if (!collected.description && draft.description) {
         drafts.description = draft.description;

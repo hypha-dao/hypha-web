@@ -8,6 +8,7 @@ import {
   PROPOSAL_CATALOG,
   PROPOSAL_CATALOG_KEYS,
 } from './entries';
+import { normalizeVotingDurationSeconds } from '../../voting-duration-options';
 
 export * from './types';
 export {
@@ -159,15 +160,33 @@ function buildIssueNewTokenFormFromFields(
 export function buildResubmitPayload(
   entry: ProposalCatalogEntry,
   input: PrepareGovernanceProposalInput,
+  options?: { isPartial?: boolean },
 ): Record<string, unknown> {
   const fields = input.proposal_fields ?? {};
+  const isPartial = options?.isPartial === true;
   const payload: Record<string, unknown> = {
     resubmitTemplateSegment: entry.templateSegment,
-    title: input.title,
-    description: input.description,
     label: entry.documentLabel,
-    autoExecution: fields.auto_execution ?? input.auto_execution ?? true,
   };
+
+  const title = input.title?.trim();
+  const description = input.description?.trim();
+  if (title && (!isPartial || title !== PARTIAL_PREPARE_DRAFT_TITLE)) {
+    payload.title = title;
+  }
+  if (
+    description &&
+    (!isPartial || description !== PARTIAL_PREPARE_DRAFT_DESCRIPTION)
+  ) {
+    payload.description = description;
+  }
+
+  if (
+    fields.auto_execution !== undefined ||
+    input.auto_execution !== undefined
+  ) {
+    payload.autoExecution = fields.auto_execution ?? input.auto_execution;
+  }
 
   if (entry.key === 'change_voting_method') {
     if (fields.voting_method !== undefined) {
@@ -187,7 +206,9 @@ export function buildResubmitPayload(
       };
     }
     if (fields.voting_duration_seconds !== undefined) {
-      payload.votingDuration = fields.voting_duration_seconds;
+      payload.votingDuration = normalizeVotingDurationSeconds(
+        Number(fields.voting_duration_seconds),
+      );
     }
   }
 

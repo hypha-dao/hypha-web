@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
+import {
+  PROPOSAL_TITLE_MAX_LENGTH,
+  truncateProposalTitle,
+} from '../proposal-title-limits';
 import { aiCreatableProposalTypeSchema } from './ai-proposal-types';
 import { buildGuidanceResponse } from './proposal-guidance';
 import type { ActiveProposalFormSnapshot } from './proposal-form-state';
@@ -76,7 +80,7 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
     .object({
       space_slug: z.string().trim().min(1),
       proposal_type: prepareProposalTypeSchema,
-      title: z.string().trim().max(120).optional(),
+      title: z.string().trim().max(PROPOSAL_TITLE_MAX_LENGTH).optional(),
       description: z.string().trim().max(4000).optional(),
       lang: z
         .string()
@@ -135,13 +139,15 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
       }
 
       const isPartial = parsed.data.partial === true;
+      const rawTitle = parsed.data.title?.trim();
+      const rawDescription = parsed.data.description?.trim();
       const data = mergeLegacyPrepareFields({
         ...(parsed.data as PrepareGovernanceProposalInput),
         title:
-          parsed.data.title?.trim() ||
+          (rawTitle ? truncateProposalTitle(rawTitle) : '') ||
           (isPartial ? PARTIAL_PREPARE_DRAFT_TITLE : ''),
         description:
-          parsed.data.description?.trim() ||
+          rawDescription ||
           (isPartial ? PARTIAL_PREPARE_DRAFT_DESCRIPTION : ''),
       });
 
@@ -170,7 +176,7 @@ export function createPrepareGovernanceProposalTool(authToken: string) {
       if (!access.hasAccess) return { ok: false, error: access.message };
 
       const lang = data.lang?.trim() || 'en';
-      const resubmitPayload = buildResubmitPayload(entry, data);
+      const resubmitPayload = buildResubmitPayload(entry, data, { isPartial });
       const navigation = buildPrepareNavigation({
         entry,
         lang,

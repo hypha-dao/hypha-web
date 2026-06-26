@@ -20,7 +20,7 @@ function buildLogoPrompt(args: z.infer<typeof inputSchema>): string {
     `Space name: ${args.space_name}.`,
     `Purpose: ${args.space_purpose}.`,
     `Mood / vibe: ${args.visual_vibe}.`,
-    'Minimal flat vector style, strong silhouette, no text, no watermark, centered subject, solid or soft gradient background, high contrast, professional community branding.',
+    'Minimal flat vector style, strong silhouette, no text, no letters, no words, no typography, no watermark, centered subject, solid or soft gradient background, high contrast, professional community branding.',
   ].join(' ');
 }
 
@@ -30,7 +30,7 @@ function buildBannerPrompt(args: z.infer<typeof inputSchema>): string {
     `Space name: ${args.space_name}.`,
     `Purpose: ${args.space_purpose}.`,
     `Mood / vibe: ${args.visual_vibe}.`,
-    'Landscape composition, atmospheric depth, no text, no watermark, abstract or symbolic imagery that fits the purpose, polished and inviting.',
+    'Landscape composition, atmospheric depth, no text, no letters, no words, no typography, no watermark, abstract or symbolic imagery that fits the purpose, polished and inviting.',
   ].join(' ');
 }
 
@@ -122,7 +122,7 @@ export async function generateSpaceVisualAssets(
 export function createGenerateSpaceVisualAssetsTool() {
   return {
     description:
-      'Generate Hypha space visual assets (square icon/logo and/or wide banner) from the space name, purpose, and desired vibe. Returns hosted https URLs suitable for create_space_from_onboarding. Always use this when the user asks to generate images, logos, banners, or placeholders — never say images must wait until after creation.',
+      'Generate Hypha space visual assets (square icon/logo and/or wide banner) from the space name, purpose, and desired vibe. Text-free by default — no words or typography in the image unless the user explicitly requests on-image text. Returns hosted https URLs suitable for create_space_from_onboarding. Always use this when the user asks to generate images, logos, banners, or placeholders — never say images must wait until after creation.',
     inputSchema,
     execute: async (args) => generateSpaceVisualAssets(args),
   } satisfies ChatRouteTool<typeof inputSchema>;

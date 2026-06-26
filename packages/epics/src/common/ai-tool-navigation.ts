@@ -242,7 +242,7 @@ function parseNavigationTarget(args: {
     coherenceChat,
     key: `${args.messageId}:${args.partKey}:${href}:${focusField ?? ''}:${
       focusSection ?? ''
-    }:${payloadFingerprint.slice(0, 120)}`,
+    }:${payloadFingerprint}`,
   };
 }
 

@@ -13,6 +13,10 @@ import {
 import type { CatalogDiscoveryField } from './proposal-catalog/types';
 import { VOICE_SPOKEN_SENTENCE_LIMIT } from '../system-prompt';
 import {
+  PROPOSAL_TITLE_MAX_LENGTH,
+  truncateProposalTitle,
+} from '../proposal-title-limits';
+import {
   buildProposalFormStateResponse,
   type ActiveProposalFormSnapshot,
 } from './proposal-form-state';
@@ -62,7 +66,7 @@ function buildNextProposalQuestion(
       return `List ALL three join options (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never say "entry method".`;
     }
     case 'title':
-      return 'Draft a short name silently from context — offer it in one line; never say title.';
+      return `Draft a short name silently from context (max ${PROPOSAL_TITLE_MAX_LENGTH} characters) — offer it in one line; never say title.`;
     case 'description':
       return 'Draft a one-sentence rationale silently — offer it in one line; never say description.';
     case 'space_discoverability':
@@ -78,7 +82,7 @@ function buildNextProposalQuestion(
     case 'auto_execution':
       return 'State both choices (auto when conditions met vs fixed minimum voting period), then your pick — ask which they prefer.';
     case 'voting_duration_seconds':
-      return 'Propose a minimum voting period in plain language (e.g. 3 days) — ask if that works. Convert to seconds when calling prepare_governance_proposal (259200 = 3 days).';
+      return `When auto-execution is off, propose a minimum voting period in plain language only (e.g. "3 days", "1 week") — NEVER mention seconds or raw numbers in chat. On acceptance call prepare_governance_proposal with voting_duration_seconds set to a dropdown option (86400=1 day, 259200=3 days, 604800=7 days). Tell the member to check the duration dropdown on the form.`;
     case 'token_type': {
       const options = formatEnumOptionsList(field, locale);
       return `List ALL token types (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never ask about supply before type is set.`;
@@ -162,6 +166,9 @@ export function buildGuidanceResponse(args: {
     args.locale,
   );
   const effectiveCollected = { ...silentDrafts, ...collected };
+  if (typeof effectiveCollected.title === 'string') {
+    effectiveCollected.title = truncateProposalTitle(effectiveCollected.title);
+  }
   const formIsOpen = Boolean(
     args.formSnapshot?.formOpen || args.formSnapshot?.resubmitPayload,
   );

@@ -283,3 +283,40 @@ describe('proposal discovery — issue_new_token', () => {
     });
   });
 });
+
+describe('buildResubmitPayload partial updates', () => {
+  it('omits placeholder title/description and default autoExecution on partial prepare', () => {
+    const entry = getProposalCatalogEntry('change_voting_method')!;
+    const payload = buildResubmitPayload(
+      entry,
+      {
+        proposal_type: 'change_voting_method',
+        space_slug: 'test-space',
+        title: 'Governance proposal',
+        description:
+          'Prepared with Hypha AI — review and edit on the form before publishing.',
+        proposal_fields: { voting_method: '1m1v' },
+      },
+      { isPartial: true },
+    );
+    expect(payload.title).toBeUndefined();
+    expect(payload.description).toBeUndefined();
+    expect(payload.autoExecution).toBeUndefined();
+    expect(payload.votingMethod).toBe('1m1v');
+  });
+
+  it('normalizes voting duration to dropdown options', () => {
+    const entry = getProposalCatalogEntry('change_voting_method')!;
+    const payload = buildResubmitPayload(entry, {
+      proposal_type: 'change_voting_method',
+      space_slug: 'test-space',
+      title: 'Voting change',
+      description: 'Update voting duration for the space.',
+      proposal_fields: {
+        auto_execution: false,
+        voting_duration_seconds: 250000,
+      },
+    });
+    expect(payload.votingDuration).toBe(259200);
+  });
+});
