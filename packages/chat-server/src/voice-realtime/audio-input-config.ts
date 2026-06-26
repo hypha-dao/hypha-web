@@ -11,13 +11,13 @@ export type RealtimeTurnDetectionConfig = {
 
 export type RealtimeAudioInputConfig = {
   turnDetection: RealtimeTurnDetectionConfig;
-  noiseReduction: { type: RealtimeNoiseReductionType };
+  noiseReduction: { type: RealtimeNoiseReductionType } | null;
   transcription: { model: string };
 };
 
-const DEFAULT_VAD_THRESHOLD = 0.72;
-const DEFAULT_VAD_SILENCE_MS = 700;
-const DEFAULT_NOISE_REDUCTION: RealtimeNoiseReductionType = 'near_field';
+/** Match production Live Voice VAD — same as pre chat-bridge Realtime sessions. */
+const DEFAULT_VAD_THRESHOLD = 0.5;
+const DEFAULT_VAD_SILENCE_MS = 450;
 
 function clampVadThreshold(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_VAD_THRESHOLD;
@@ -30,10 +30,13 @@ function parseVadSilenceMs(value: string | undefined): number {
   return parsed;
 }
 
-function resolveNoiseReductionType(): RealtimeNoiseReductionType {
+function resolveNoiseReductionType(): {
+  type: RealtimeNoiseReductionType;
+} | null {
   const raw = process.env.OPENAI_REALTIME_NOISE_REDUCTION?.trim().toLowerCase();
-  if (raw === 'far_field') return 'far_field';
-  return DEFAULT_NOISE_REDUCTION;
+  if (raw === 'far_field') return { type: 'far_field' };
+  if (raw === 'near_field') return { type: 'near_field' };
+  return null;
 }
 
 export function resolveRealtimeAudioInputConfig(
@@ -54,9 +57,7 @@ export function resolveRealtimeAudioInputConfig(
       create_response: false,
       interrupt_response: false,
     },
-    noiseReduction: {
-      type: resolveNoiseReductionType(),
-    },
+    noiseReduction: resolveNoiseReductionType(),
     transcription: {
       model: transcriptionModel,
     },

@@ -131,9 +131,11 @@ export async function createRealtimeVoiceSession(
           instructions,
           audio: {
             input: {
-              noise_reduction: audioInput.noiseReduction,
               transcription: audioInput.transcription,
               turn_detection: audioInput.turnDetection,
+              ...(audioInput.noiseReduction
+                ? { noise_reduction: audioInput.noiseReduction }
+                : {}),
             },
             output: {
               voice,

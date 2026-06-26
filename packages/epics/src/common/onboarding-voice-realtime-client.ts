@@ -16,21 +16,21 @@ export type RealtimeTurnDetectionConfig = {
 
 export type RealtimeAudioInputConfig = {
   turnDetection: RealtimeTurnDetectionConfig;
-  noiseReduction: { type: 'near_field' | 'far_field' };
+  noiseReduction: { type: 'near_field' | 'far_field' } | null;
   transcription: { model: string };
 };
 
-/** Fallback when session API omits audioInput (older deployments). */
+/** Match production Live Voice VAD defaults. */
 export const DEFAULT_REALTIME_AUDIO_INPUT: RealtimeAudioInputConfig = {
   turnDetection: {
     type: 'server_vad',
-    threshold: 0.72,
+    threshold: 0.5,
     prefix_padding_ms: 300,
-    silence_duration_ms: 700,
+    silence_duration_ms: 450,
     create_response: false,
     interrupt_response: false,
   },
-  noiseReduction: { type: 'near_field' },
+  noiseReduction: null,
   transcription: { model: 'gpt-4o-mini-transcribe' },
 };
 
@@ -82,12 +82,20 @@ function buildRealtimeSpeakInstructions(text: string): string {
 }
 
 export function setLocalMicEnabled(
-  connection: RealtimeVoiceConnection,
+  connection: RealtimeVoiceConnection | null,
   enabled: boolean,
 ): void {
+  if (!connection) return;
   for (const track of connection.localStream.getAudioTracks()) {
     track.enabled = enabled;
   }
+}
+
+/** Drop buffered mic audio so ambient noise cannot start a turn during assistant speech. */
+export function clearRealtimeInputAudioBuffer(
+  connection: RealtimeVoiceConnection | null,
+): void {
+  connection?.sendEvent({ type: 'input_audio_buffer.clear' });
 }
 
 export function setRealtimeRemoteAudioMuted(
@@ -228,7 +236,7 @@ export async function connectOpenAiRealtimeCall(params: {
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: false,
+        autoGainControl: true,
       },
     }));
   const usesWarmMic = isWarmMicStream(localStream);
@@ -261,9 +269,11 @@ export async function connectOpenAiRealtimeCall(params: {
       session: {
         audio: {
           input: {
-            noise_reduction: audioInput.noiseReduction,
             transcription: audioInput.transcription,
             turn_detection: audioInput.turnDetection,
+            ...(audioInput.noiseReduction
+              ? { noise_reduction: audioInput.noiseReduction }
+              : {}),
           },
         },
       },

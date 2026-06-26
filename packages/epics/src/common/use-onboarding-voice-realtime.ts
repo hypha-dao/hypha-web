@@ -6,7 +6,6 @@ import type { VoiceSessionContext } from './space-voice-session-context';
 import {
   connectOpenAiRealtimeCall,
   fetchRealtimeVoiceSession,
-  setLocalMicEnabled,
   setRealtimeRemoteAudioMuted,
   speakAssistantTextViaRealtime,
   type RealtimeServerEvent,
@@ -37,6 +36,8 @@ type UseOnboardingVoiceRealtimeOptions = {
   getAccessToken?: () => Promise<string | null | undefined>;
   activeSpaceSlug?: string;
   onFallback?: () => void;
+  /** Stop an in-flight /api/chat stream so the user can barge in with new speech. */
+  onStopChat?: () => void;
   onSendTranscript: (
     text: string,
   ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
@@ -67,7 +68,6 @@ function resolveEventPhase(
 ): VoiceInterviewPhase | null {
   switch (event.type) {
     case 'input_audio_buffer.speech_started':
-      if (current === 'speaking') return null;
       return 'listening';
     case 'output_audio_buffer.started':
     case 'response.output_audio.delta':
@@ -82,6 +82,19 @@ function resolveEventPhase(
     default:
       return null;
   }
+}
+
+function shouldBargeInOnUserSpeech(
+  phase: VoiceInterviewPhase,
+  options: {
+    isChatStreaming: boolean;
+    sendInFlight: boolean;
+    realtimeSpeakInFlight: boolean;
+  },
+): boolean {
+  if (options.realtimeSpeakInFlight || phase === 'speaking') return true;
+  if (options.isChatStreaming && !options.sendInFlight) return true;
+  return false;
 }
 
 function restoreListeningIfConnected(
@@ -103,6 +116,7 @@ export function useOnboardingVoiceRealtime({
   getAccessToken,
   activeSpaceSlug,
   onFallback,
+  onStopChat,
   onSendTranscript,
 }: UseOnboardingVoiceRealtimeOptions) {
   const connectionRef = useRef<RealtimeVoiceConnection | null>(null);
@@ -119,6 +133,7 @@ export function useOnboardingVoiceRealtime({
   const lastAssistantTextRef = useRef(lastAssistantText);
   lastAssistantTextRef.current = lastAssistantText;
   const onFallbackRef = useRef(onFallback);
+  const onStopChatRef = useRef(onStopChat);
   const onSendTranscriptRef = useRef(onSendTranscript);
   const recentTranscriptSummaryRef = useRef(recentTranscriptSummary);
   const isChatStreamingRef = useRef(isChatStreaming);
@@ -133,6 +148,7 @@ export function useOnboardingVoiceRealtime({
   const [isConnecting, setIsConnecting] = useState(false);
 
   onFallbackRef.current = onFallback;
+  onStopChatRef.current = onStopChat;
   onSendTranscriptRef.current = onSendTranscript;
   recentTranscriptSummaryRef.current = recentTranscriptSummary;
   isChatStreamingRef.current = isChatStreaming;
@@ -142,6 +158,22 @@ export function useOnboardingVoiceRealtime({
     cancelSpeechRef.current = null;
     stopOnboardingSpeech();
   }, []);
+
+  const interruptForUserBargeIn = useCallback(() => {
+    onStopChatRef.current?.();
+    stopBrowserSpeech();
+    if (realtimeSpeakInFlightRef.current) {
+      connectionRef.current?.sendEvent({ type: 'response.cancel' });
+    }
+    realtimeSpeakInFlightRef.current = false;
+    realtimeAudioHeardRef.current = false;
+    awaitingAssistantSpeakRef.current = false;
+    wasStreamingRef.current = false;
+    if (connectionRef.current) {
+      setRealtimeRemoteAudioMuted(connectionRef.current, true);
+      connectionRef.current.sendEvent({ type: 'input_audio_buffer.clear' });
+    }
+  }, [stopBrowserSpeech]);
 
   const speakWithBrowserFallback = useCallback(
     (speakable: string) => {
@@ -196,45 +228,52 @@ export function useOnboardingVoiceRealtime({
     [speakWithBrowserFallback],
   );
 
-  const sendTranscriptToChat = useCallback(async (text: string) => {
-    const normalized = text.trim();
-    if (
-      !normalized ||
-      sendInFlightRef.current ||
-      isChatStreamingRef.current ||
-      phaseRef.current === 'speaking' ||
-      realtimeSpeakInFlightRef.current
-    ) {
-      restoreListeningIfConnected(connectionRef.current, setPhase);
-      return;
-    }
-
-    sendInFlightRef.current = true;
-    setPhase('processing');
-    setLiveTranscript(normalized);
-
-    try {
-      const outcome = await onSendTranscriptRef.current(normalized);
-      if (outcome === 'sent') {
-        awaitingAssistantSpeakRef.current = true;
-      } else {
-        awaitingAssistantSpeakRef.current = false;
-        setPhase(connectionRef.current ? 'listening' : 'idle');
-        if (outcome === 'blocked') {
-          setVoiceError('blocked');
-        } else if (outcome === 'failed') {
-          setVoiceError('error');
-        }
+  const sendTranscriptToChat = useCallback(
+    async (text: string) => {
+      const normalized = text.trim();
+      if (!normalized || sendInFlightRef.current) {
+        return;
       }
-    } catch {
-      awaitingAssistantSpeakRef.current = false;
-      setVoiceError('error');
-      setPhase(connectionRef.current ? 'listening' : 'idle');
-    } finally {
-      sendInFlightRef.current = false;
-      setLiveTranscript('');
-    }
-  }, []);
+
+      if (
+        shouldBargeInOnUserSpeech(phaseRef.current, {
+          isChatStreaming: isChatStreamingRef.current,
+          sendInFlight: sendInFlightRef.current,
+          realtimeSpeakInFlight: realtimeSpeakInFlightRef.current,
+        })
+      ) {
+        interruptForUserBargeIn();
+        lastSpokenAssistantRef.current = '';
+      }
+
+      sendInFlightRef.current = true;
+      setPhase('processing');
+      setLiveTranscript(normalized);
+
+      try {
+        const outcome = await onSendTranscriptRef.current(normalized);
+        if (outcome === 'sent') {
+          awaitingAssistantSpeakRef.current = true;
+        } else {
+          awaitingAssistantSpeakRef.current = false;
+          setPhase(connectionRef.current ? 'listening' : 'idle');
+          if (outcome === 'blocked') {
+            setVoiceError('blocked');
+          } else if (outcome === 'failed') {
+            setVoiceError('error');
+          }
+        }
+      } catch {
+        awaitingAssistantSpeakRef.current = false;
+        setVoiceError('error');
+        setPhase(connectionRef.current ? 'listening' : 'idle');
+      } finally {
+        sendInFlightRef.current = false;
+        setLiveTranscript('');
+      }
+    },
+    [interruptForUserBargeIn],
+  );
 
   const disconnect = useCallback(() => {
     connectInFlightRef.current = false;
@@ -256,6 +295,18 @@ export function useOnboardingVoiceRealtime({
 
   const handleServerEvent = useCallback(
     (event: RealtimeServerEvent) => {
+      if (event.type === 'input_audio_buffer.speech_started') {
+        if (
+          shouldBargeInOnUserSpeech(phaseRef.current, {
+            isChatStreaming: isChatStreamingRef.current,
+            sendInFlight: sendInFlightRef.current,
+            realtimeSpeakInFlight: realtimeSpeakInFlightRef.current,
+          })
+        ) {
+          interruptForUserBargeIn();
+        }
+      }
+
       if (
         event.type === 'output_audio_buffer.started' ||
         event.type === 'response.output_audio.delta' ||
@@ -342,7 +393,7 @@ export function useOnboardingVoiceRealtime({
         }
       }
     },
-    [sendTranscriptToChat, speakWithBrowserFallback],
+    [interruptForUserBargeIn, sendTranscriptToChat, speakWithBrowserFallback],
   );
 
   const connect = useCallback(async () => {
@@ -469,17 +520,6 @@ export function useOnboardingVoiceRealtime({
 
   const connectRef = useRef(connect);
   connectRef.current = connect;
-
-  const localMicEnabledRef = useRef<boolean | null>(null);
-
-  useEffect(() => {
-    const connection = connectionRef.current;
-    if (!connection) return;
-    const micEnabled = phase === 'listening';
-    if (localMicEnabledRef.current === micEnabled) return;
-    localMicEnabledRef.current = micEnabled;
-    setLocalMicEnabled(connection, micEnabled);
-  }, [phase]);
 
   useEffect(() => {
     if (!enabled) {

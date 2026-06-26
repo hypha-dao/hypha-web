@@ -2642,6 +2642,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
+    onStopChat: stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
   });

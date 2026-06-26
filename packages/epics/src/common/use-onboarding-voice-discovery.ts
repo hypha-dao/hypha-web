@@ -27,6 +27,7 @@ type UseOnboardingVoiceDiscoveryOptions = {
   conversationContext?: VoiceSessionContext;
   recentTranscriptSummary?: string;
   getAccessToken?: () => Promise<string | null | undefined>;
+  onStopChat?: () => void;
   onSendTranscript: (
     text: string,
   ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
@@ -70,6 +71,7 @@ export function useOnboardingVoiceDiscovery(
     getAccessToken: options.getAccessToken,
     activeSpaceSlug: options.activeSpaceSlug,
     onFallback: handleFallback,
+    onStopChat: options.onStopChat,
     onSendTranscript: options.onSendTranscript,
   });
 
