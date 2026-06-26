@@ -28,6 +28,7 @@ import {
 } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
+import { useRouter } from 'next/navigation';
 import {
   CalendarDays,
   ChevronLeft,
@@ -42,16 +43,13 @@ import {
   toFullCalendarRruleInput,
   useScheduledItemMutations,
   useScheduledItems,
-  type RecurrencePreset,
   type ScheduledItem,
-  type ScheduledItemType,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { resolveFullCalendarLocale } from '../utils/fullcalendar-locale';
-import { ScheduledItemFormDialog } from './scheduled-item-form-dialog';
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
   ssr: false,
@@ -127,12 +125,41 @@ export type SpaceCalendarProps = {
   lang?: string;
 };
 
+function buildCalendarPath(lang: string, spaceSlug: string, suffix = '') {
+  return `/${lang}/dho/${spaceSlug}/calendar${suffix}`;
+}
+
+function buildNewScheduledItemPath(
+  lang: string,
+  spaceSlug: string,
+  draft: { startsAt: Date; endsAt: Date; allDay: boolean },
+) {
+  const params = new URLSearchParams({
+    startsAt: draft.startsAt.toISOString(),
+    endsAt: draft.endsAt.toISOString(),
+    allDay: draft.allDay ? '1' : '0',
+  });
+  return `${buildCalendarPath(lang, spaceSlug, '/new-scheduled-item')}?${params.toString()}`;
+}
+
+function buildEditScheduledItemPath(
+  lang: string,
+  spaceSlug: string,
+  itemId: number,
+) {
+  return buildCalendarPath(
+    lang,
+    spaceSlug,
+    `/edit-scheduled-item/${itemId}`,
+  );
+}
+
 export function SpaceCalendar({
   spaceSlug,
-  spaceId,
   lang = 'en',
 }: SpaceCalendarProps) {
   const t = useTranslations('Calendar');
+  const router = useRouter();
   const { resolvedTheme } = useTheme();
   const { getAccessToken, isAuthenticated } = useAuthentication();
   const [authToken, setAuthToken] = React.useState<string | null>(null);
@@ -147,33 +174,17 @@ export function SpaceCalendar({
     defaultRangeForView('dayGridMonth', new Date()),
   );
 
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [dialogMode, setDialogMode] = React.useState<'create' | 'edit'>(
-    'create',
-  );
-  const [selectedItem, setSelectedItem] = React.useState<ScheduledItem | null>(
-    null,
-  );
-  const [draftRange, setDraftRange] = React.useState<{
-    startsAt: Date;
-    endsAt: Date;
-    allDay: boolean;
-  } | null>(null);
-
   const { scheduledItems, isLoading, refresh } = useScheduledItems({
     spaceSlug,
     from: range.from,
     to: range.to,
   });
 
-  const {
-    createScheduledItem,
-    updateScheduledItem,
-    deleteScheduledItem,
-    isCreating,
-    isUpdating,
-    isDeleting,
-  } = useScheduledItemMutations(authToken, spaceSlug, lang);
+  const { updateScheduledItem } = useScheduledItemMutations(
+    authToken,
+    spaceSlug,
+    lang,
+  );
 
   const calendarEvents = React.useMemo(
     () => (scheduledItems ?? []).map(toCalendarEvent),
@@ -187,17 +198,16 @@ export function SpaceCalendar({
   );
 
   const openCreate = (startsAt: Date, endsAt: Date, allDay: boolean) => {
-    setDialogMode('create');
-    setSelectedItem(null);
-    setDraftRange({ startsAt, endsAt, allDay });
-    setDialogOpen(true);
+    router.push(
+      buildNewScheduledItemPath(lang, spaceSlug, { startsAt, endsAt, allDay }),
+      { scroll: false },
+    );
   };
 
   const openEdit = (item: ScheduledItem) => {
-    setDialogMode('edit');
-    setSelectedItem(item);
-    setDraftRange(null);
-    setDialogOpen(true);
+    router.push(buildEditScheduledItemPath(lang, spaceSlug, item.id), {
+      scroll: false,
+    });
   };
 
   const handleDatesSet = (arg: DatesSetArg) => {
@@ -278,44 +288,6 @@ export function SpaceCalendar({
     } catch {
       resizeInfo.revert();
     }
-  };
-
-  const handleSubmit = async (values: {
-    title: string;
-    description?: string | null;
-    type: ScheduledItemType;
-    startsAt: Date;
-    endsAt: Date;
-    allDay: boolean;
-    location?: string | null;
-    meetingUrl?: string | null;
-    recurrencePreset?: RecurrencePreset;
-    recurrenceUntil?: Date | null;
-    matrixAutoLink?: boolean;
-    remindEmail?: boolean;
-    remindPush?: boolean;
-    reminderMinutesBefore?: number | null;
-  }) => {
-    if (dialogMode === 'create') {
-      await createScheduledItem({
-        spaceId,
-        ...values,
-      });
-    } else if (selectedItem) {
-      await updateScheduledItem({
-        id: selectedItem.id,
-        ...values,
-      });
-    }
-    setDialogOpen(false);
-    await persistAfterMutation();
-  };
-
-  const handleDelete = async () => {
-    if (!selectedItem) return;
-    await deleteScheduledItem({ id: selectedItem.id });
-    setDialogOpen(false);
-    await persistAfterMutation();
   };
 
   const shiftAnchor = (direction: -1 | 1) => {
@@ -486,18 +458,6 @@ export function SpaceCalendar({
           />
         </div>
       </div>
-
-      <ScheduledItemFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        mode={dialogMode}
-        initialItem={selectedItem}
-        draftRange={draftRange}
-        isSubmitting={isCreating || isUpdating}
-        isDeleting={isDeleting}
-        onSubmit={handleSubmit}
-        onDelete={dialogMode === 'edit' ? handleDelete : undefined}
-      />
     </div>
   );
 }
