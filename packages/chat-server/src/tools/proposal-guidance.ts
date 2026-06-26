@@ -98,7 +98,7 @@ function buildNextProposalQuestion(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `List ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want.`;
+    return `Typed chat: list ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want. Voice/Live Voice: point to on-screen options with one recommendation.`;
   }
   return `Propose a sensible default from context in one line — never use the label "${field.label}" verbatim.`;
 }
@@ -116,7 +116,7 @@ function buildInteractionHint(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `${speed} MANDATORY ORDER: (1) list EVERY option (${options}) — all of them; (2) one-line recommendation; (3) ask which they want. Never skip step 1.${acceptanceRule}`;
+    return `${speed} Typed chat: list EVERY option (${options}) before recommending. Voice/Live Voice: point to on-screen options with one-line recommendation — do not read every option aloud.${acceptanceRule}`;
   }
   return `${speed} Propose a default when sensible.${acceptanceRule}`;
 }
