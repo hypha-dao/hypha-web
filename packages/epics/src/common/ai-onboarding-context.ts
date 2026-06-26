@@ -591,7 +591,9 @@ export function resolveChatTransportBody({
       ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
       ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
       conversationContext: serializeConversationContextForChatApi(
-        onboardingContext,
+        trimmedLocale && !onboardingContext.locale?.trim()
+          ? { ...onboardingContext, locale: trimmedLocale }
+          : onboardingContext,
         { discoveryMode },
       ),
       ...(discoveryModePayload ? { discoveryMode: discoveryModePayload } : {}),

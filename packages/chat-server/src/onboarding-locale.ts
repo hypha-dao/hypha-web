@@ -30,5 +30,5 @@ export function buildOnboardingLocaleDirective(locale?: string): string | null {
       ? LANGUAGE_NAME_BY_LOCALE[code as z.infer<typeof localeCodeSchema>]
       : code;
 
-  return `- Respond in ${languageName} (locale: ${code}). Use natural spoken language for voice turns; keep chat replies in the same language unless the user switches.`;
+  return `- Respond in ${languageName} (locale: ${code}). Use natural spoken language for voice turns; keep chat replies in the same language unless the user clearly switches to another language for the rest of the conversation.`;
 }

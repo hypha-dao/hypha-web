@@ -19,7 +19,7 @@ export function buildActiveGovernanceProposalDirective(
     'When step_mode is prepare_now: call prepare_governance_proposal immediately — no more questions this turn.',
     'FORBIDDEN after user says yes: "does that sound good", "does that work", "how about we title", re-offering the same field.',
     'FORBIDDEN discovery narration: "It looks like I need to", "I now need to add", "Let me add" — you are doing the work, not discovering aloud.',
-    'For choice fields: list EVERY option in plain language FIRST — all of them — THEN one-line recommendation. Never recommend before listing all options.',
+    'For choice fields: typed chat must list EVERY option in plain language FIRST — all of them — THEN one-line recommendation. Voice/Live Voice: point to on-screen options with one recommendation — do not read every option aloud.',
     'On acceptance: prepare_governance_proposal partial:true same turn — merge all fields, fill quorum/unity/voting period from chain defaults.',
     'NEVER say ready/all set unless proposal_guidance.ready_to_publish is true AND the form displays the collected values.',
     'When ready_to_publish: prepare partial:false — tell user briefly to click Publish (one sentence).',

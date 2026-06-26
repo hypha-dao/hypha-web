@@ -88,18 +88,64 @@ function isHttpImageUrl(value: unknown): value is string {
   return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
 }
 
+function readVisualAssetUrlsFromOutput(output: unknown): {
+  logoUrl: string | null;
+  bannerUrl: string | null;
+} {
+  if (!output || typeof output !== 'object') {
+    return { logoUrl: null, bannerUrl: null };
+  }
+
+  const roots: Record<string, unknown>[] = [];
+  const addRoot = (candidate: unknown) => {
+    if (candidate && typeof candidate === 'object') {
+      roots.push(candidate as Record<string, unknown>);
+    }
+  };
+  const addPreviewRoot = (candidate: unknown) => {
+    if (!candidate || typeof candidate !== 'object') return;
+    addRoot((candidate as { preview?: unknown }).preview);
+  };
+
+  addRoot(output);
+  addPreviewRoot(output);
+  const createPayload = (output as { create_payload?: unknown }).create_payload;
+  addRoot(createPayload);
+  addPreviewRoot(createPayload);
+
+  let logoUrl: string | null = null;
+  let bannerUrl: string | null = null;
+  for (const root of roots) {
+    if (!logoUrl) {
+      for (const key of ['logo_url', 'logoUrl'] as const) {
+        if (isHttpImageUrl(root[key])) {
+          logoUrl = String(root[key]).trim();
+          break;
+        }
+      }
+    }
+    if (!bannerUrl) {
+      for (const key of [
+        'lead_image_url',
+        'leadImageUrl',
+        'leadImage',
+      ] as const) {
+        if (isHttpImageUrl(root[key])) {
+          bannerUrl = String(root[key]).trim();
+          break;
+        }
+      }
+    }
+  }
+
+  return { logoUrl, bannerUrl };
+}
+
 function renderVisualAssetsCard(output: unknown) {
   if (!output || typeof output !== 'object') return null;
-  const value = output as {
-    ok?: boolean;
-    logo_url?: string | null;
-    lead_image_url?: string | null;
-  };
-  if (!value.ok) return null;
-  const logoUrl = isHttpImageUrl(value.logo_url) ? value.logo_url.trim() : null;
-  const bannerUrl = isHttpImageUrl(value.lead_image_url)
-    ? value.lead_image_url.trim()
-    : null;
+  const value = output as { ok?: boolean };
+  if (value.ok === false) return null;
+  const { logoUrl, bannerUrl } = readVisualAssetUrlsFromOutput(output);
   if (!logoUrl && !bannerUrl) return null;
 
   return (
@@ -533,13 +579,6 @@ export function AiPanelMessageBubble({
     ) ?? [];
   const visibleToolParts = toolParts;
   const shouldHideToolPart = (part: ToolPart) => {
-    // Keep tool cards only for actionable confirmation steps.
-    if (part.state === 'output-available') {
-      const output = part.output as ConfirmationActionResult | undefined;
-      const isActionableConfirmation =
-        output?.requires_confirmation === true || output?.dry_run === true;
-      if (!isActionableConfirmation) return true;
-    }
     // Never surface raw tool errors in chat cards.
     if (part.state === 'output-error') return true;
     // Hide low-level tool state cards from the conversation flow.
@@ -556,8 +595,15 @@ export function AiPanelMessageBubble({
       part.type === 'tool-generate_space_visual_assets' &&
       part.state === 'output-available'
     ) {
-      const output = part.output as { ok?: boolean } | undefined;
-      if (output?.ok === true) return false;
+      const { logoUrl, bannerUrl } = readVisualAssetUrlsFromOutput(part.output);
+      return !(logoUrl || bannerUrl);
+    }
+    // Keep tool cards only for actionable confirmation steps.
+    if (part.state === 'output-available') {
+      const output = part.output as ConfirmationActionResult | undefined;
+      const isActionableConfirmation =
+        output?.requires_confirmation === true || output?.dry_run === true;
+      if (!isActionableConfirmation) return true;
     }
     if (
       part.type === 'tool-create_space_from_onboarding' &&
@@ -586,18 +632,40 @@ export function AiPanelMessageBubble({
   const renderedToolParts = visibleToolParts.filter(
     (part) => !shouldHideToolPart(part),
   );
+  const generatedVisualsCard = (() => {
+    for (let index = toolParts.length - 1; index >= 0; index -= 1) {
+      const part = toolParts[index];
+      if (!part || part.state !== 'output-available') continue;
+      if (
+        part.type !== 'tool-generate_space_visual_assets' &&
+        part.type !== 'tool-create_space_from_onboarding'
+      ) {
+        continue;
+      }
+      const card = renderVisualAssetsCard(part.output);
+      if (card) {
+        return {
+          key: part.toolCallId ?? `${part.type}-${index}`,
+          node: card,
+        };
+      }
+    }
+    return null;
+  })();
   const isTypingOnly =
     !isUser &&
     isStreaming &&
     !hasVisibleText &&
     fileParts.length === 0 &&
-    renderedToolParts.length === 0;
+    renderedToolParts.length === 0 &&
+    !generatedVisualsCard;
   const isSingleLineAssistantText =
     !isUser &&
     !isStreaming &&
     hasVisibleText &&
     fileParts.length === 0 &&
     renderedToolParts.length === 0 &&
+    !generatedVisualsCard &&
     markdownBlocks.length === 1 &&
     markdownBlocks[0]?.type === 'paragraph' &&
     markdownBlocks[0].lines.length === 1 &&
@@ -882,24 +950,28 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
+          {generatedVisualsCard ? (
+            <div className="flex flex-col gap-1.5">
+              <div key={generatedVisualsCard.key}>
+                {generatedVisualsCard.node}
+              </div>
+            </div>
+          ) : null}
           {renderedToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
               {renderedToolParts.map((part) => {
-                if (
-                  part.type === 'tool-generate_space_visual_assets' &&
-                  part.state === 'output-available'
-                ) {
-                  const visualCard = renderVisualAssetsCard(part.output);
-                  if (visualCard) {
-                    return <div key={part.toolCallId}>{visualCard}</div>;
-                  }
-                }
                 const confirmationCard =
                   part.state === 'output-available'
                     ? renderConfirmationCard(part.output, part.type)
                     : null;
                 if (confirmationCard) {
                   return <div key={part.toolCallId}>{confirmationCard}</div>;
+                }
+                if (
+                  part.type === 'tool-generate_space_visual_assets' ||
+                  part.type === 'tool-create_space_from_onboarding'
+                ) {
+                  return null;
                 }
                 return null;
               })}

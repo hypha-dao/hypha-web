@@ -83,6 +83,8 @@ export async function POST(req: Request) {
         expiresAt: session.expiresAt,
         model: session.model,
         voice: session.voice,
+        transcriptionModel: session.transcriptionModel,
+        turnDetection: session.turnDetection,
       },
       { headers: { 'x-hypha-voice-debug-id': debugRequestId } },
     );

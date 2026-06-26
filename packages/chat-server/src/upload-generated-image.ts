@@ -1,6 +1,8 @@
 import 'server-only';
 import { UTApi } from 'uploadthing/server';
 
+import { resolveUploadUrl } from './upload-generated-image-url';
+
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
   'image/png',
   'image/webp',
@@ -35,28 +37,6 @@ function extensionForMime(mimeType: string): string {
   if (mimeType.includes('webp')) return 'webp';
   if (mimeType.includes('jpeg') || mimeType.includes('jpg')) return 'jpg';
   return 'png';
-}
-
-function resolveUploadUrl(result: unknown): string | null {
-  if (!result || typeof result !== 'object') return null;
-
-  const envelope = result as {
-    error?: unknown;
-    data?: { ufsUrl?: unknown; url?: unknown };
-    ufsUrl?: unknown;
-    url?: unknown;
-  };
-
-  if (envelope.error) return null;
-
-  const fileData = envelope.data ?? envelope;
-  if (typeof fileData.ufsUrl === 'string' && fileData.ufsUrl.trim()) {
-    return fileData.ufsUrl.trim();
-  }
-  if (typeof fileData.url === 'string' && fileData.url.trim()) {
-    return fileData.url.trim();
-  }
-  return null;
 }
 
 export async function uploadGeneratedImageDataUrl(

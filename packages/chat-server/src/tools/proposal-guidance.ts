@@ -89,7 +89,7 @@ function buildNextProposalQuestion(
     case 'token_icon_url':
       return 'Optional: ask for an HTTPS icon URL, or say they can upload on the form. Skip if they prefer to upload later.';
     case 'max_supply':
-      return 'Ask only after type, name, and symbol are set. Propose unlimited (0) or a number — ask which they want.';
+      return 'Never ask — limited supply is Advanced on the form. Use 0 (unlimited) in prepare unless the member enables it on screen.';
     default:
       break;
   }
@@ -98,7 +98,7 @@ function buildNextProposalQuestion(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `List ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want.`;
+    return `Typed chat: list ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want. Voice/Live Voice: point to on-screen options with one recommendation.`;
   }
   return `Propose a sensible default from context in one line — never use the label "${field.label}" verbatim.`;
 }
@@ -116,7 +116,7 @@ function buildInteractionHint(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `${speed} MANDATORY ORDER: (1) list EVERY option (${options}) — all of them; (2) one-line recommendation; (3) ask which they want. Never skip step 1.${acceptanceRule}`;
+    return `${speed} Typed chat: list EVERY option (${options}) before recommending. Voice/Live Voice: point to on-screen options with one-line recommendation — do not read every option aloud.${acceptanceRule}`;
   }
   return `${speed} Propose a default when sensible.${acceptanceRule}`;
 }

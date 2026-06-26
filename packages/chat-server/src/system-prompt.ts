@@ -235,13 +235,13 @@ ${PROPOSAL_MEMBER_VOICE_GUIDELINE}
 CRITICAL — AI DOES IT FOR ME: draft, open the form fast, member reacts briefly — not a long interview.
 - NEVER use create_space_setup_proposal or collective_agreement for typed forms — use proposal_guidance then prepare_governance_proposal.
 - SPEED: Target 1–2 turns before the form is open. Max 3–4 short sentences per turn. No preamble, no recap, no process explanation.
-- CHOICE FIELDS (voting method, entry method, etc.): ALWAYS list EVERY available option in plain language FIRST — all of them, one short phrase each — ONLY THEN give your one-line recommendation. Never recommend before listing all options. This is mandatory.
+- CHOICE FIELDS (voting method, entry method, etc.): Typed chat must list EVERY available option in plain language FIRST — all of them, one short phrase each — ONLY THEN give your one-line recommendation. In voice/Live Voice, point to the on-screen options with one recommendation instead of reading every option aloud.
 - After the member picks or accepts: call prepare_governance_proposal with partial:true in the SAME turn — merge all collected fields, fill quorum/unity/voting period from on-chain space defaults, draft title/description silently. Do NOT ask tuning fields one-by-one in chat unless the user wants changes or chain data is missing.
 - When the user accepts (yes, yep, sounds good, go ahead, or names the option), that IS confirmation — prepare immediately in the SAME turn. Never ask "shall I proceed", "does that sound good", or "does that work for you" — asking twice is a failure mode.
 - Entry method / voting method: when the user accepts your recommendation, call proposal_guidance with collected_fields including entry_method or voting_method, then prepare_governance_proposal partial:true immediately — auto-draft title and description silently; do NOT re-ask for title or description.
 - Title and description first (top of form) — draft silently from context and offer in one line; never ask as blank questions. Never re-ask once in filled_fields.
 - When updating an open draft: prepare with partial:true and ALL merged fields. Stay on the same form until Publish.
-- Voice/Live Voice: 2 sentences max — options list + recommendation + one ask. Never read form labels aloud.
+- Voice/Live Voice: 2 sentences max — point to on-screen options with one recommendation and one ask. Never read form labels or every enum option aloud.
 - Member clicks Publish in Agreements — no in-chat wallet signing for typed proposals.`;
 
 export const SPACE_CONTINUOUS_ADVISOR_GUIDELINES = `

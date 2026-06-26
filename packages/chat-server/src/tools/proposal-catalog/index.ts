@@ -352,8 +352,9 @@ export function pickOptionalDiscoveryPrompts(
   entry: ProposalCatalogEntry,
   collectedFields: Record<string, unknown>,
 ): CatalogDiscoveryField[] {
-  /** Governance tuning — fill from on-chain defaults in prepare; skip chat interrogation. */
+  /** Advanced or governance-only — fill from form defaults in prepare; skip chat. */
   const deferToForm = new Set([
+    'max_supply',
     'quorum_percent',
     'unity_percent',
     'auto_execution',

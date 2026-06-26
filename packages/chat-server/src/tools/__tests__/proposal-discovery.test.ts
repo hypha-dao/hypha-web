@@ -244,6 +244,22 @@ describe('proposal discovery — issue_new_token', () => {
     expect(complete.pending_prepare_all_fields).toBe(true);
   });
 
+  it('defers max supply to the form (Advanced toggle — not basic fields)', () => {
+    const entry = getProposalCatalogEntry('issue_new_token')!;
+    const prompts = orderFieldsForDiscovery(
+      pickOptionalDiscoveryPrompts(entry, {
+        title: 'Issue New Token',
+        description: 'Create a token.',
+        token_type: 'utility',
+        token_name: 'TOK',
+        token_symbol: 'TOK',
+      }),
+    );
+    const keys = prompts.map((field) => field.key);
+    expect(keys).not.toContain('max_supply');
+    expect(keys).not.toContain('quorum_percent');
+  });
+
   it('maps token fields into issueNewTokenForm resubmit payload', () => {
     const entry = getProposalCatalogEntry('issue_new_token')!;
     const payload = buildResubmitPayload(entry, {
