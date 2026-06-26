@@ -400,6 +400,13 @@
       "when": 1781900000000,
       "tag": "0056_scheduled_item_type_channel_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1782000000000,
+      "tag": "0057_scheduled_item_booking_type",
+      "breakpoints": true
     }
   ]
 }
