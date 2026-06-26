@@ -99,7 +99,7 @@ function buildNextProposalQuestion(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `List ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want.`;
+    return `Typed chat: list ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want. Voice/Live Voice: point to on-screen options with one recommendation.`;
   }
   return `Propose a sensible default from context in one line — never use the label "${field.label}" verbatim.`;
 }
