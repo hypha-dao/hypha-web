@@ -9,8 +9,6 @@ import {
   fetchRealtimeVoiceSession,
   isSubstantiveUserTranscript,
   setLocalMicEnabled,
-  setRealtimeRemoteAudioMuted,
-  speakAssistantTextViaRealtime,
   type RealtimeServerEvent,
   type RealtimeVoiceConnection,
 } from './onboarding-voice-realtime-client';
@@ -69,17 +67,8 @@ function resolveEventPhase(
 ): VoiceInterviewPhase | null {
   switch (event.type) {
     case 'input_audio_buffer.speech_started':
-      if (current === 'speaking') return null;
+      if (current === 'speaking' || current === 'processing') return null;
       return 'listening';
-    case 'output_audio_buffer.started':
-    case 'response.output_audio.delta':
-    case 'response.audio.delta':
-      return 'speaking';
-    case 'output_audio_buffer.stopped':
-      return null;
-    case 'response.done':
-    case 'response.completed':
-      return null;
     case 'error':
       return current;
     default:
@@ -96,9 +85,24 @@ function restoreListeningIfConnected(
   }
 }
 
+/** Delay before reopening mic after browser TTS — avoids echo tail retriggering STT. */
+const MIC_UNMUTE_DELAY_MS = 450;
+
 function restoreMicForListening(connection: RealtimeVoiceConnection | null) {
   clearRealtimeInputAudioBuffer(connection);
   setLocalMicEnabled(connection, true);
+}
+
+function scheduleMicRestoreForUserTurn(
+  connection: RealtimeVoiceConnection | null,
+  setPhase: (phase: VoiceInterviewPhase) => void,
+) {
+  window.setTimeout(() => {
+    restoreMicForListening(connection);
+    if (connection) {
+      setPhase('listening');
+    }
+  }, MIC_UNMUTE_DELAY_MS);
 }
 
 function muteMicDuringAssistantSpeech(
@@ -112,9 +116,7 @@ function shouldAcceptUserTranscript(options: {
   phase: VoiceInterviewPhase;
   isChatStreaming: boolean;
   sendInFlight: boolean;
-  realtimeSpeakInFlight: boolean;
 }): boolean {
-  if (options.realtimeSpeakInFlight) return false;
   if (options.isChatStreaming) return false;
   if (options.sendInFlight) return false;
   if (options.phase === 'speaking' || options.phase === 'processing') {
@@ -142,9 +144,9 @@ export function useOnboardingVoiceRealtime({
   const lastActiveSpaceSlugRef = useRef(activeSpaceSlug?.trim() || undefined);
   const lastSpokenAssistantRef = useRef('');
   const wasStreamingRef = useRef(false);
+  const awaitingAssistantSpeakRef = useRef(false);
   const cancelSpeechRef = useRef<(() => void) | null>(null);
-  const realtimeSpeakInFlightRef = useRef(false);
-  const realtimeAudioHeardRef = useRef(false);
+  const micRestoreTimerRef = useRef<number | null>(null);
   const onFallbackRef = useRef(onFallback);
   const onSendTranscriptRef = useRef(onSendTranscript);
   const recentTranscriptSummaryRef = useRef(recentTranscriptSummary);
@@ -164,6 +166,13 @@ export function useOnboardingVoiceRealtime({
   recentTranscriptSummaryRef.current = recentTranscriptSummary;
   isChatStreamingRef.current = isChatStreaming;
 
+  const clearMicRestoreTimer = useCallback(() => {
+    if (micRestoreTimerRef.current !== null) {
+      window.clearTimeout(micRestoreTimerRef.current);
+      micRestoreTimerRef.current = null;
+    }
+  }, []);
+
   const stopBrowserSpeech = useCallback(() => {
     cancelSpeechRef.current?.();
     cancelSpeechRef.current = null;
@@ -176,52 +185,43 @@ export function useOnboardingVoiceRealtime({
       setPhase('speaking');
       const cancelSpeech = speakOnboardingText(speakable, {
         lang: locale,
-        rate: 1.05,
+        rate: 1.02,
         onEnd: () => {
           cancelSpeechRef.current = null;
-          restoreMicForListening(connectionRef.current);
-          setPhase(connectionRef.current ? 'listening' : 'idle');
+          clearMicRestoreTimer();
+          micRestoreTimerRef.current = window.setTimeout(() => {
+            micRestoreTimerRef.current = null;
+            restoreMicForListening(connectionRef.current);
+            setPhase(connectionRef.current ? 'listening' : 'idle');
+          }, MIC_UNMUTE_DELAY_MS);
         },
       });
       if (!cancelSpeech) {
-        restoreMicForListening(connectionRef.current);
-        setPhase(connectionRef.current ? 'listening' : 'idle');
+        scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
         return;
       }
       cancelSpeechRef.current = cancelSpeech;
     },
-    [locale],
+    [clearMicRestoreTimer, locale],
   );
 
   const speakAssistantReply = useCallback(
     (spoken: string) => {
       if (!spoken || isAssistantFailureText(spoken)) {
-        setPhase(connectionRef.current ? 'listening' : 'idle');
+        scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
         return;
       }
 
-      stopBrowserSpeech();
-
       const speakable = prepareAssistantTextForSpeech(spoken);
       if (!speakable || spoken === lastSpokenAssistantRef.current) {
-        setPhase(connectionRef.current ? 'listening' : 'idle');
+        scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
         return;
       }
 
       lastSpokenAssistantRef.current = spoken;
-      realtimeAudioHeardRef.current = false;
-
-      const connection = connectionRef.current;
-      if (connection && speakAssistantTextViaRealtime(connection, speakable)) {
-        muteMicDuringAssistantSpeech(connection);
-        realtimeSpeakInFlightRef.current = true;
-        setPhase('speaking');
-        return;
-      }
-
       speakWithBrowserFallback(speakable);
     },
-    [speakWithBrowserFallback, stopBrowserSpeech],
+    [speakWithBrowserFallback],
   );
 
   const sendTranscriptToChat = useCallback(async (text: string) => {
@@ -232,12 +232,10 @@ export function useOnboardingVoiceRealtime({
       sendInFlightRef.current ||
       isChatStreamingRef.current ||
       phaseRef.current === 'speaking' ||
-      realtimeSpeakInFlightRef.current ||
       !shouldAcceptUserTranscript({
         phase: phaseRef.current,
         isChatStreaming: isChatStreamingRef.current,
         sendInFlight: sendInFlightRef.current,
-        realtimeSpeakInFlight: realtimeSpeakInFlightRef.current,
       })
     ) {
       clearRealtimeInputAudioBuffer(connectionRef.current);
@@ -252,7 +250,11 @@ export function useOnboardingVoiceRealtime({
 
     try {
       const outcome = await onSendTranscriptRef.current(normalized);
-      if (outcome !== 'sent') {
+      if (outcome === 'sent') {
+        awaitingAssistantSpeakRef.current = true;
+      } else {
+        awaitingAssistantSpeakRef.current = false;
+        restoreMicForListening(connectionRef.current);
         setPhase(connectionRef.current ? 'listening' : 'idle');
         if (outcome === 'blocked') {
           setVoiceError('blocked');
@@ -261,6 +263,8 @@ export function useOnboardingVoiceRealtime({
         }
       }
     } catch {
+      awaitingAssistantSpeakRef.current = false;
+      restoreMicForListening(connectionRef.current);
       setVoiceError('error');
       setPhase(connectionRef.current ? 'listening' : 'idle');
     } finally {
@@ -273,8 +277,9 @@ export function useOnboardingVoiceRealtime({
     connectInFlightRef.current = false;
     setIsConnecting(false);
     setIsRealtimeConnected(false);
-    realtimeSpeakInFlightRef.current = false;
-    realtimeAudioHeardRef.current = false;
+    awaitingAssistantSpeakRef.current = false;
+    wasStreamingRef.current = false;
+    clearMicRestoreTimer();
     stopBrowserSpeech();
     const connection = connectionRef.current;
     connectionRef.current = null;
@@ -283,28 +288,10 @@ export function useOnboardingVoiceRealtime({
     }
     releaseWarmMicStream();
     setPhase('idle');
-  }, [stopBrowserSpeech]);
+  }, [clearMicRestoreTimer, stopBrowserSpeech]);
 
   const handleServerEvent = useCallback(
     (event: RealtimeServerEvent) => {
-      if (
-        event.type === 'output_audio_buffer.started' ||
-        event.type === 'response.output_audio.delta' ||
-        event.type === 'response.audio.delta'
-      ) {
-        realtimeAudioHeardRef.current = true;
-        if (connectionRef.current) {
-          setRealtimeRemoteAudioMuted(connectionRef.current, false);
-        }
-      }
-
-      if (
-        event.type === 'output_audio_buffer.stopped' &&
-        connectionRef.current
-      ) {
-        setRealtimeRemoteAudioMuted(connectionRef.current, true);
-      }
-
       const nextPhase = resolveEventPhase(event, phaseRef.current);
       if (nextPhase) {
         setPhase(nextPhase);
@@ -321,7 +308,6 @@ export function useOnboardingVoiceRealtime({
             phase: phaseRef.current,
             isChatStreaming: isChatStreamingRef.current,
             sendInFlight: sendInFlightRef.current,
-            realtimeSpeakInFlight: realtimeSpeakInFlightRef.current,
           })
         ) {
           clearRealtimeInputAudioBuffer(connectionRef.current);
@@ -332,6 +318,7 @@ export function useOnboardingVoiceRealtime({
         }
 
         void sendTranscriptToChat(transcript).catch(() => {
+          restoreMicForListening(connectionRef.current);
           setVoiceError('error');
           setPhase(connectionRef.current ? 'listening' : 'idle');
         });
@@ -344,38 +331,8 @@ export function useOnboardingVoiceRealtime({
       ) {
         restoreListeningIfConnected(connectionRef.current, setPhase);
       }
-
-      if (
-        event.type === 'response.done' ||
-        event.type === 'response.completed' ||
-        event.type === 'response.cancelled'
-      ) {
-        if (realtimeSpeakInFlightRef.current) {
-          const heardAudio = realtimeAudioHeardRef.current;
-          realtimeSpeakInFlightRef.current = false;
-          realtimeAudioHeardRef.current = false;
-          if (connectionRef.current) {
-            setRealtimeRemoteAudioMuted(connectionRef.current, true);
-          }
-          if (!heardAudio) {
-            const speakable = prepareAssistantTextForSpeech(
-              lastSpokenAssistantRef.current,
-            );
-            if (speakable) {
-              speakWithBrowserFallback(speakable);
-            } else {
-              restoreMicForListening(connectionRef.current);
-              setPhase(connectionRef.current ? 'listening' : 'idle');
-            }
-          } else {
-            restoreMicForListening(connectionRef.current);
-            void acquireWarmMicStream();
-            setPhase(connectionRef.current ? 'listening' : 'idle');
-          }
-        }
-      }
     },
-    [sendTranscriptToChat, speakWithBrowserFallback],
+    [sendTranscriptToChat],
   );
 
   const connect = useCallback(async () => {
@@ -461,20 +418,11 @@ export function useOnboardingVoiceRealtime({
   ]);
 
   const stopSpeaking = useCallback(() => {
-    connectionRef.current?.sendEvent({ type: 'response.cancel' });
-    realtimeSpeakInFlightRef.current = false;
-    realtimeAudioHeardRef.current = false;
-    if (connectionRef.current) {
-      setRealtimeRemoteAudioMuted(connectionRef.current, true);
-    }
     stopBrowserSpeech();
+    clearMicRestoreTimer();
     restoreMicForListening(connectionRef.current);
-    if (connectionRef.current) {
-      setPhase('listening');
-    } else {
-      setPhase('idle');
-    }
-  }, [stopBrowserSpeech]);
+    setPhase(connectionRef.current ? 'listening' : 'idle');
+  }, [clearMicRestoreTimer, stopBrowserSpeech]);
 
   const stopListening = useCallback(() => {
     disconnect();
@@ -529,34 +477,22 @@ export function useOnboardingVoiceRealtime({
   }, [activeSpaceSlug, stopListening]);
 
   useEffect(() => {
-    if (!enabled || isChatStreaming) return;
-    if (wasStreamingRef.current || sendInFlightRef.current) return;
-    if (phaseRef.current !== 'processing') return;
-    restoreListeningIfConnected(connectionRef.current, setPhase);
+    if (!enabled || !isChatStreaming) return;
+    wasStreamingRef.current = true;
+    muteMicDuringAssistantSpeech(connectionRef.current);
+    setPhase('processing');
   }, [enabled, isChatStreaming]);
 
   useEffect(() => {
-    if (!enabled || !isChatStreaming) return;
-    wasStreamingRef.current = true;
-    stopBrowserSpeech();
-    connectionRef.current?.sendEvent({ type: 'response.cancel' });
-    realtimeSpeakInFlightRef.current = false;
-    realtimeAudioHeardRef.current = false;
-    muteMicDuringAssistantSpeech(connectionRef.current);
-    if (connectionRef.current) {
-      setRealtimeRemoteAudioMuted(connectionRef.current, true);
-    }
-    setPhase('processing');
-  }, [enabled, isChatStreaming, stopBrowserSpeech]);
-
-  useEffect(() => {
     if (!enabled || isChatStreaming) return;
-    if (!wasStreamingRef.current) return;
-    wasStreamingRef.current = false;
+    if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) return;
 
     const spoken = lastAssistantText.trim();
-    if (!spoken || isAssistantFailureText(spoken)) {
-      setPhase(connectionRef.current ? 'listening' : 'idle');
+    awaitingAssistantSpeakRef.current = false;
+    wasStreamingRef.current = false;
+
+    if (!spoken) {
+      scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
       return;
     }
 
