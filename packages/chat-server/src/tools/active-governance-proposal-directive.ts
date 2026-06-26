@@ -10,6 +10,7 @@ export function buildActiveGovernanceProposalDirective(
         activeGovernanceProposal?: {
           proposalType: string;
           collectedFields?: Record<string, unknown>;
+          formOpen?: boolean;
         };
       }
     | null
