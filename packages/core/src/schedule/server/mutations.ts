@@ -8,7 +8,7 @@ import type {
   CreateScheduledItemInput,
   UpdateScheduledItemInput,
 } from '../types';
-import { applyMatrixAutoLink } from '../matrix-link';
+import { applyMatrixAutoLink } from './matrix-link';
 
 function stripPreset<
   T extends CreateScheduledItemInput | UpdateScheduledItemInput,

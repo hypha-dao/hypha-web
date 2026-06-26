@@ -77,6 +77,7 @@ function snapDatetimeLocalValue(value: string): string {
 
 type ScheduledItemFormField =
   | 'title'
+  | 'startsAt'
   | 'endsAt'
   | 'reminderMinutesBefore'
   | '_form';
@@ -112,6 +113,7 @@ function scrollToFirstFieldError(
 
   const fieldOrder: ScheduledItemFormField[] = [
     'title',
+    'startsAt',
     'endsAt',
     'reminderMinutesBefore',
     '_form',
@@ -471,13 +473,23 @@ export function ScheduledItemForm({
       nextErrors.title = t('validationTitleRequired');
     }
 
+    if (!startsAtLocal.trim()) {
+      nextErrors.startsAt = t('validationEndAfterStart');
+    } else if (!endsAtLocal.trim()) {
+      nextErrors.endsAt = t('validationEndAfterStart');
+    }
+
     const startsAt = allDay
       ? fromAllDayStartLocalValue(startsAtLocal)
       : fromDatetimeLocalValue(startsAtLocal);
     const endsAt = allDay
       ? fromAllDayEndLocalValue(endsAtLocal)
       : fromDatetimeLocalValue(endsAtLocal);
-    if (endsAt.getTime() < startsAt.getTime()) {
+    if (
+      startsAtLocal.trim() &&
+      endsAtLocal.trim() &&
+      endsAt.getTime() < startsAt.getTime()
+    ) {
       nextErrors.endsAt = t('validationEndAfterStart');
     }
 
@@ -672,6 +684,7 @@ export function ScheduledItemForm({
               <Label htmlFor="scheduled-item-starts">{t('fieldStarts')}</Label>
               <Input
                 id="scheduled-item-starts"
+                name="startsAt"
                 type={allDay ? 'date' : 'datetime-local'}
                 step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
                 value={
@@ -679,8 +692,13 @@ export function ScheduledItemForm({
                     ? startsAtLocal.slice(0, 10)
                     : startsAtLocal
                 }
-                onChange={(e) => handleStartsAtChange(e.target.value)}
+                onChange={(e) => {
+                  clearFieldError('startsAt');
+                  handleStartsAtChange(e.target.value);
+                }}
+                aria-invalid={fieldErrors.startsAt ? true : undefined}
               />
+              <ScheduledItemFieldError message={fieldErrors.startsAt} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="scheduled-item-ends">{t('fieldEnds')}</Label>

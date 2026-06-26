@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findDueScheduledReminders,
   findSpaceMemberSlugsBySpaceId,
-  hasScheduledReminderBeenDispatched,
-  recordScheduledReminderDispatch,
+  tryClaimScheduledReminderDispatch,
 } from '@hypha-platform/core/server';
 import { notifyScheduledItemReminder } from '@hypha-platform/notifications/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -33,9 +32,9 @@ export async function POST(request: NextRequest) {
 
     for (const reminder of due) {
       try {
-        const pendingChannels: Array<'email' | 'push'> = [];
+        const claimedChannels: Array<'email' | 'push'> = [];
         for (const channel of reminder.channels) {
-          const alreadySent = await hasScheduledReminderBeenDispatched(
+          const claimed = await tryClaimScheduledReminderDispatch(
             {
               scheduledItemId: reminder.item.id,
               occurrenceStartsAt: reminder.occurrenceStartsAt,
@@ -43,10 +42,10 @@ export async function POST(request: NextRequest) {
             },
             { db },
           );
-          if (!alreadySent) pendingChannels.push(channel);
+          if (claimed) claimedChannels.push(channel);
         }
 
-        if (pendingChannels.length === 0) {
+        if (claimedChannels.length === 0) {
           skipped += 1;
           continue;
         }
@@ -66,19 +65,8 @@ export async function POST(request: NextRequest) {
           spaceSlug: reminder.spaceSlug,
           spaceTitle: reminder.spaceTitle,
           memberSlugs,
-          channels: pendingChannels,
+          channels: claimedChannels,
         });
-
-        for (const channel of pendingChannels) {
-          await recordScheduledReminderDispatch(
-            {
-              scheduledItemId: reminder.item.id,
-              occurrenceStartsAt: reminder.occurrenceStartsAt,
-              channel,
-            },
-            { db },
-          );
-        }
 
         dispatched += 1;
       } catch (error) {

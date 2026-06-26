@@ -9,6 +9,7 @@ import {
   getDb,
   schemaCreateScheduledItem,
   schemaScheduledItemsRangeQuery,
+  type PaginatedResponse,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -135,7 +136,19 @@ export async function GET(
       { db },
     );
 
-    return NextResponse.json({ data: items });
+    const response: PaginatedResponse<(typeof items)[number]> = {
+      data: items,
+      pagination: {
+        total: items.length,
+        page: 1,
+        pageSize: items.length,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch scheduled items:', error);
     return NextResponse.json(
@@ -185,7 +198,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (body == null) {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const parsed = schemaCreateScheduledItem.safeParse({
       ...body,
       spaceId: space.id,
