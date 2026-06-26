@@ -3,7 +3,7 @@
 import useSWR, { mutate } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useAuthentication } from '@hypha-platform/authentication';
-import type { PaginatedResponse } from '../../common/types';
+import type { PaginatedResponse } from '../../../common/types';
 import type { ScheduledItem } from '../../types';
 import {
   createScheduledItemAction,
@@ -125,9 +125,8 @@ export function useScheduledItemMutations(
   spaceSlug?: string,
   lang?: string,
 ) {
-  const mutationBase =
-    spaceSlug?.trim() ?
-      (['scheduled-item-mutations', spaceSlug.trim(), lang ?? 'en'] as const)
+  const mutationBase = spaceSlug?.trim()
+    ? (['scheduled-item-mutations', spaceSlug.trim(), lang ?? 'en'] as const)
     : null;
 
   const {
