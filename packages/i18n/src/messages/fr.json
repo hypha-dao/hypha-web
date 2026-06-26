@@ -3556,6 +3556,7 @@
     "type_meeting": "Réunion",
     "type_deadline": "Échéance",
     "type_reminder": "Rappel",
+    "type_booking": "Réservation",
     "fieldAllDay": "Toute la journée",
     "fieldAllDayHint": "Afficher sans heure précise",
     "fieldStarts": "Début",

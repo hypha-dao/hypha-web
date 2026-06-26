@@ -33,15 +33,118 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { Trash2 } from 'lucide-react';
 
+const DATETIME_LOCAL_STEP_SECONDS = 900;
+const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
+const MIN_TIMED_DURATION_MS = 15 * 60 * 1000;
+
+function snapMinuteToQuarterHour(date: Date): Date {
+  const snapped = new Date(date);
+  const minutes = snapped.getMinutes();
+  const rounded = Math.round(minutes / 15) * 15;
+  if (rounded === 60) {
+    snapped.setHours(snapped.getHours() + 1, 0, 0, 0);
+  } else {
+    snapped.setMinutes(rounded, 0, 0);
+  }
+  return snapped;
+}
+
 function toDatetimeLocalValue(date: Date): string {
+  const snapped = snapMinuteToQuarterHour(date);
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${snapped.getFullYear()}-${pad(snapped.getMonth() + 1)}-${pad(
+    snapped.getDate(),
+  )}T${pad(snapped.getHours())}:${pad(snapped.getMinutes())}`;
 }
 
 function fromDatetimeLocalValue(value: string): Date {
-  return new Date(value);
+  return snapMinuteToQuarterHour(new Date(value));
+}
+
+function fromAllDayStartLocalValue(value: string): Date {
+  return new Date(`${value.slice(0, 10)}T00:00:00`);
+}
+
+function fromAllDayEndLocalValue(value: string): Date {
+  return new Date(`${value.slice(0, 10)}T23:59:59`);
+}
+
+function snapDatetimeLocalValue(value: string): string {
+  if (!value.includes('T')) return value;
+  return toDatetimeLocalValue(new Date(value));
+}
+
+function toAllDayEndLocalValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}T23:59`;
+}
+
+function resolveDurationMs(
+  start: Date,
+  end: Date,
+  allDay: boolean,
+): number {
+  const delta = end.getTime() - start.getTime();
+  const minimum = allDay ? 0 : MIN_TIMED_DURATION_MS;
+  if (delta >= minimum) return delta;
+  return allDay ? 0 : DEFAULT_TIMED_DURATION_MS;
+}
+
+function computeEndFromStart(
+  start: Date,
+  durationMs: number,
+  allDay: boolean,
+): Date {
+  const end = new Date(start.getTime() + durationMs);
+  if (allDay) {
+    return fromAllDayEndLocalValue(toAllDayEndLocalValue(end));
+  }
+  return snapMinuteToQuarterHour(end);
+}
+
+function readLocalRange(
+  startsAtLocal: string,
+  endsAtLocal: string,
+  allDay: boolean,
+): { start: Date; end: Date } | null {
+  if (!startsAtLocal) return null;
+  const start = allDay
+    ? fromAllDayStartLocalValue(startsAtLocal)
+    : fromDatetimeLocalValue(startsAtLocal);
+  const endSource = endsAtLocal || startsAtLocal;
+  const end = allDay
+    ? fromAllDayEndLocalValue(endSource)
+    : fromDatetimeLocalValue(endSource);
+  return { start, end };
+}
+
+function normalizeLocalRange(
+  startsAtLocal: string,
+  endsAtLocal: string,
+  allDay: boolean,
+): { startsAtLocal: string; endsAtLocal: string; durationMs: number } {
+  const range = readLocalRange(startsAtLocal, endsAtLocal, allDay);
+  if (!range) {
+    return {
+      startsAtLocal,
+      endsAtLocal,
+      durationMs: allDay ? 0 : DEFAULT_TIMED_DURATION_MS,
+    };
+  }
+
+  const durationMs = resolveDurationMs(range.start, range.end, allDay);
+  const normalizedEnd = computeEndFromStart(range.start, durationMs, allDay);
+  return {
+    startsAtLocal: allDay
+      ? `${startsAtLocal.slice(0, 10)}T00:00`
+      : toDatetimeLocalValue(range.start),
+    endsAtLocal: allDay
+      ? toAllDayEndLocalValue(normalizedEnd)
+      : toDatetimeLocalValue(normalizedEnd),
+    durationMs,
+  };
 }
 
 const TYPE_EMOJI: Record<ScheduledItemType, string> = {
@@ -50,6 +153,7 @@ const TYPE_EMOJI: Record<ScheduledItemType, string> = {
   meeting: '👥',
   deadline: '⏰',
   reminder: '🔔',
+  booking: '📋',
 };
 
 export type ScheduledItemFormValues = {
@@ -116,6 +220,7 @@ export function ScheduledItemFormDialog({
     number | null
   >(null);
   const [error, setError] = React.useState<string | null>(null);
+  const durationMsRef = React.useRef(DEFAULT_TIMED_DURATION_MS);
 
   const resetExtendedFields = React.useCallback(() => {
     setRecurrencePreset('none');
@@ -133,8 +238,14 @@ export function ScheduledItemFormDialog({
       setTitle(initialItem.title);
       setDescription(initialItem.description ?? '');
       setType(initialItem.type);
-      setStartsAtLocal(toDatetimeLocalValue(initialItem.startsAt));
-      setEndsAtLocal(toDatetimeLocalValue(initialItem.endsAt));
+      const normalized = normalizeLocalRange(
+        toDatetimeLocalValue(initialItem.startsAt),
+        toDatetimeLocalValue(initialItem.endsAt),
+        initialItem.allDay,
+      );
+      setStartsAtLocal(normalized.startsAtLocal);
+      setEndsAtLocal(normalized.endsAtLocal);
+      durationMsRef.current = normalized.durationMs;
       setAllDay(initialItem.allDay);
       setLocation(initialItem.location ?? '');
       setMeetingUrl(initialItem.meetingUrl ?? '');
@@ -152,8 +263,14 @@ export function ScheduledItemFormDialog({
       setTitle('');
       setDescription('');
       setType('event');
-      setStartsAtLocal(toDatetimeLocalValue(draftRange.startsAt));
-      setEndsAtLocal(toDatetimeLocalValue(draftRange.endsAt));
+      const normalized = normalizeLocalRange(
+        toDatetimeLocalValue(draftRange.startsAt),
+        toDatetimeLocalValue(draftRange.endsAt),
+        draftRange.allDay,
+      );
+      setStartsAtLocal(normalized.startsAtLocal);
+      setEndsAtLocal(normalized.endsAtLocal);
+      durationMsRef.current = normalized.durationMs;
       setAllDay(draftRange.allDay);
       setLocation('');
       setMeetingUrl('');
@@ -168,6 +285,58 @@ export function ScheduledItemFormDialog({
     }
   }, [type, mode, open]);
 
+  const handleStartsAtChange = (value: string) => {
+    const nextStartsAtLocal = allDay
+      ? `${value}T00:00`
+      : snapDatetimeLocalValue(value);
+    const start = allDay
+      ? fromAllDayStartLocalValue(nextStartsAtLocal)
+      : fromDatetimeLocalValue(nextStartsAtLocal);
+    const end = computeEndFromStart(
+      start,
+      durationMsRef.current,
+      allDay,
+    );
+    const nextEndsAtLocal = allDay
+      ? toAllDayEndLocalValue(end)
+      : toDatetimeLocalValue(end);
+
+    setStartsAtLocal(nextStartsAtLocal);
+    setEndsAtLocal(nextEndsAtLocal);
+  };
+
+  const handleEndsAtChange = (value: string) => {
+    const nextEndsAtLocal = allDay
+      ? `${value}T23:59`
+      : snapDatetimeLocalValue(value);
+    const range = readLocalRange(startsAtLocal, nextEndsAtLocal, allDay);
+    if (!range) {
+      setEndsAtLocal(nextEndsAtLocal);
+      return;
+    }
+
+    if (range.end.getTime() < range.start.getTime()) {
+      const clampedEnd = computeEndFromStart(
+        range.start,
+        allDay ? 0 : MIN_TIMED_DURATION_MS,
+        allDay,
+      );
+      const clampedEndsAtLocal = allDay
+        ? toAllDayEndLocalValue(clampedEnd)
+        : toDatetimeLocalValue(clampedEnd);
+      durationMsRef.current = allDay ? 0 : MIN_TIMED_DURATION_MS;
+      setEndsAtLocal(clampedEndsAtLocal);
+      return;
+    }
+
+    durationMsRef.current = resolveDurationMs(
+      range.start,
+      range.end,
+      allDay,
+    );
+    setEndsAtLocal(nextEndsAtLocal);
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -178,8 +347,12 @@ export function ScheduledItemFormDialog({
       return;
     }
 
-    const startsAt = fromDatetimeLocalValue(startsAtLocal);
-    const endsAt = fromDatetimeLocalValue(endsAtLocal);
+    const startsAt = allDay
+      ? fromAllDayStartLocalValue(startsAtLocal)
+      : fromDatetimeLocalValue(startsAtLocal);
+    const endsAt = allDay
+      ? fromAllDayEndLocalValue(endsAtLocal)
+      : fromDatetimeLocalValue(endsAtLocal);
     if (endsAt.getTime() < startsAt.getTime()) {
       setError(t('validationEndAfterStart'));
       return;
@@ -276,15 +449,42 @@ export function ScheduledItemFormDialog({
               id="scheduled-item-all-day"
               checked={allDay}
               onCheckedChange={(checked) => {
+                const range = readLocalRange(startsAtLocal, endsAtLocal, allDay);
                 setAllDay(checked);
-                if (!checked) return;
-                if (startsAtLocal) {
-                  setStartsAtLocal(`${startsAtLocal.slice(0, 10)}T00:00`);
+                if (!range) return;
+
+                if (checked) {
+                  const nextStartsAtLocal = `${startsAtLocal.slice(0, 10)}T00:00`;
+                  const end = computeEndFromStart(
+                    fromAllDayStartLocalValue(nextStartsAtLocal),
+                    durationMsRef.current,
+                    true,
+                  );
+                  const nextEndsAtLocal = toAllDayEndLocalValue(end);
+                  setStartsAtLocal(nextStartsAtLocal);
+                  setEndsAtLocal(nextEndsAtLocal);
+                  durationMsRef.current = resolveDurationMs(
+                    fromAllDayStartLocalValue(nextStartsAtLocal),
+                    fromAllDayEndLocalValue(nextEndsAtLocal),
+                    true,
+                  );
+                  return;
                 }
-                const endDate = (endsAtLocal || startsAtLocal).slice(0, 10);
-                if (endDate) {
-                  setEndsAtLocal(`${endDate}T23:59`);
-                }
+
+                const nextStartsAtLocal = toDatetimeLocalValue(range.start);
+                const end = computeEndFromStart(
+                  fromDatetimeLocalValue(nextStartsAtLocal),
+                  durationMsRef.current,
+                  false,
+                );
+                const nextEndsAtLocal = toDatetimeLocalValue(end);
+                setStartsAtLocal(nextStartsAtLocal);
+                setEndsAtLocal(nextEndsAtLocal);
+                durationMsRef.current = resolveDurationMs(
+                  fromDatetimeLocalValue(nextStartsAtLocal),
+                  fromDatetimeLocalValue(nextEndsAtLocal),
+                  false,
+                );
               }}
             />
           </div>
@@ -295,19 +495,13 @@ export function ScheduledItemFormDialog({
               <Input
                 id="scheduled-item-starts"
                 type={allDay ? 'date' : 'datetime-local'}
+                step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
                 value={
                   allDay && startsAtLocal
                     ? startsAtLocal.slice(0, 10)
                     : startsAtLocal
                 }
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (allDay) {
-                    setStartsAtLocal(`${value}T00:00`);
-                  } else {
-                    setStartsAtLocal(value);
-                  }
-                }}
+                onChange={(e) => handleStartsAtChange(e.target.value)}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -315,17 +509,11 @@ export function ScheduledItemFormDialog({
               <Input
                 id="scheduled-item-ends"
                 type={allDay ? 'date' : 'datetime-local'}
+                step={allDay ? undefined : DATETIME_LOCAL_STEP_SECONDS}
                 value={
                   allDay && endsAtLocal ? endsAtLocal.slice(0, 10) : endsAtLocal
                 }
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (allDay) {
-                    setEndsAtLocal(`${value}T23:59`);
-                  } else {
-                    setEndsAtLocal(value);
-                  }
-                }}
+                onChange={(e) => handleEndsAtChange(e.target.value)}
               />
             </div>
           </div>
