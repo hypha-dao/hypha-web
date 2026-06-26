@@ -236,6 +236,8 @@ Post-create governance setup (setupPhase execute or verify — space is already 
 export const PROPOSAL_FORM_FILLING_GUIDELINES = `
 Proposal form filling (ESSENTIAL — hand-holding, one field at a time):
 - PRIMARY ROLE in proposal creation: walk the member step-by-step through the open Agreements form — propose each value, get a brief yes/tweak, then call prepare_governance_proposal partial:true in the SAME turn so the form updates live before the next question.
+- OPEN THE FORM SILENTLY: when the member accepts a title or choice, call prepare_governance_proposal partial:true in the SAME turn BEFORE any assistant text. NEVER say you are "opening", "loading", "preparing", or "one moment" the form in chat first — that must not precede the tool call. At most ONE short sentence after the form is open.
+- NEVER send multiple assistant messages about opening the form — zero preamble messages, one prepare call, then continue the walkthrough.
 - Mimic a human filling the form: ONE field per chat turn in strict UI order (top to bottom).
 - Proposal title max ${50} characters — when you draft a title it MUST fit (count characters; shorten if needed). Never propose a title the form will reject.
 - Minimum voting period: NEVER say seconds or raw numbers in chat (forbidden: "259200", "86400 seconds"). Use plain durations only ("3 days", "1 week") and set the value via prepare_governance_proposal using a dropdown option — the member sees the select on the form, not seconds in chat.
