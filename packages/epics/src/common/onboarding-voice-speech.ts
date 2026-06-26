@@ -7,6 +7,51 @@ import {
   stripMarkdown,
 } from '@hypha-platform/ui-utils';
 
+/** Spoken voice replies are capped to this many sentences (matches server prompts). */
+export const MAX_VOICE_SPOKEN_SENTENCES = 4;
+
+const VOICE_INTERIM_ACK_PHRASES_BY_LOCALE: Record<string, readonly string[]> = {
+  en: [
+    'One moment, let me check that for you.',
+    'Give me a second to look into that.',
+    'Let me pull that up for you.',
+  ],
+  fr: [
+    'Un instant, je vérifie ça pour vous.',
+    'Laissez-moi une seconde pour regarder.',
+    'Je consulte ça tout de suite.',
+  ],
+  pt: [
+    'Um momento, vou verificar isso para você.',
+    'Me dê um segundo para consultar.',
+    'Deixa eu buscar isso para você.',
+  ],
+  es: [
+    'Un momento, déjame revisar eso por ti.',
+    'Dame un segundo para consultarlo.',
+    'Voy a buscar eso ahora mismo.',
+  ],
+  de: [
+    'Einen Moment, ich schaue das für Sie nach.',
+    'Geben Sie mir eine Sekunde, ich prüfe das.',
+    'Ich rufe das gleich für Sie ab.',
+  ],
+};
+
+function resolveInterimAckLocale(locale?: string): string {
+  const normalized = locale?.trim().toLowerCase().split('-')[0] ?? 'en';
+  return normalized in VOICE_INTERIM_ACK_PHRASES_BY_LOCALE ? normalized : 'en';
+}
+
+/** Short filler when tools run before the model emits speakable text. */
+export function pickVoiceInterimAckPhrase(locale?: string): string {
+  const phrases =
+    VOICE_INTERIM_ACK_PHRASES_BY_LOCALE[resolveInterimAckLocale(locale)] ??
+    VOICE_INTERIM_ACK_PHRASES_BY_LOCALE.en!;
+  const index = Math.floor(Math.random() * phrases.length);
+  return phrases[index] ?? phrases[0]!;
+}
+
 /** Strip markdown and URLs so browser TTS reads naturally. */
 export function stripMarkdownForSpeech(text: string): string {
   return stripMarkdown(removeMarkdownImageTokens(text))
@@ -77,7 +122,7 @@ export function prepareAssistantTextForSpeech(text: string): string {
   );
 
   if (spoken.length > 0) {
-    return spoken.slice(0, 4).join(' ').trim();
+    return spoken.slice(0, MAX_VOICE_SPOKEN_SENTENCES).join(' ').trim();
   }
 
   // Don't read bare list fragments left after stripping form labels.
@@ -85,7 +130,16 @@ export function prepareAssistantTextForSpeech(text: string): string {
     return '';
   }
 
-  return collapsed.slice(0, 320).trim();
+  return collapsed.slice(0, 240).trim();
+}
+
+/** Sentence-sized chunks for graceful interrupt (finish current sentence, skip the rest). */
+export function prepareAssistantSpeechSentences(text: string): string[] {
+  const speakable = prepareAssistantTextForSpeech(text);
+  if (!speakable) return [];
+  const sentences = speakable.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length > 0) return sentences;
+  return [speakable];
 }
 
 /** Rough duration for scheduling mic pre-warm before TTS ends. */
@@ -193,44 +247,54 @@ function pickWarmFeminineVoice(lang: string): SpeechSynthesisVoice | undefined {
   return best ?? ranked[0];
 }
 
-export function speakOnboardingText(
+export type SpeechPlaybackController = {
+  /** Stop immediately (disconnect / mode switch). */
+  cancel: () => void;
+  /** Finish the current sentence, then stop before any following sentences. */
+  requestGracefulStop: () => void;
+};
+
+function speakSingleUtterance(
   text: string,
-  options?: { lang?: string; rate?: number; onEnd?: () => void },
+  options: { lang?: string; rate?: number; onEnd?: () => void },
 ): (() => void) | null {
   if (typeof globalThis.speechSynthesis === 'undefined') return null;
-  const spoken = prepareAssistantTextForSpeech(text);
+  const spoken = text.trim();
   if (!spoken) return null;
 
   let cancelled = false;
 
-  const speak = () => {
+  const run = () => {
     if (cancelled) return;
-    globalThis.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(spoken);
     const lang = resolveOnboardingSpeechLocale(
-      options?.lang ?? document.documentElement.lang,
+      options.lang ?? document.documentElement.lang,
     );
     utterance.lang = lang;
-    utterance.rate = options?.rate ?? 1.02;
+    utterance.rate = options.rate ?? 1.02;
     utterance.pitch = 1.08;
     utterance.volume = 0.98;
     const voice = pickWarmFeminineVoice(lang);
     if (voice) utterance.voice = voice;
-    utterance.onend = () => options?.onEnd?.();
-    utterance.onerror = () => options?.onEnd?.();
+    utterance.onend = () => {
+      if (!cancelled) options.onEnd?.();
+    };
+    utterance.onerror = () => {
+      if (!cancelled) options.onEnd?.();
+    };
     globalThis.speechSynthesis.speak(utterance);
   };
 
   const voices = globalThis.speechSynthesis.getVoices();
   if (voices.length > 0) {
-    speak();
+    run();
   } else {
     const onVoicesChanged = () => {
       globalThis.speechSynthesis.removeEventListener(
         'voiceschanged',
         onVoicesChanged,
       );
-      speak();
+      run();
     };
     globalThis.speechSynthesis.addEventListener(
       'voiceschanged',
@@ -242,6 +306,70 @@ export function speakOnboardingText(
     cancelled = true;
     globalThis.speechSynthesis.cancel();
   };
+}
+
+export function speakOnboardingTextControlled(
+  text: string,
+  options?: { lang?: string; rate?: number; onEnd?: () => void },
+): SpeechPlaybackController | null {
+  if (typeof globalThis.speechSynthesis === 'undefined') return null;
+  const sentences = prepareAssistantSpeechSentences(text);
+  if (sentences.length === 0) return null;
+
+  let cancelled = false;
+  let gracefulStop = false;
+  let sentenceIndex = 0;
+  let currentCancel: (() => void) | null = null;
+
+  const finish = () => {
+    currentCancel = null;
+    if (!cancelled) options?.onEnd?.();
+  };
+
+  const speakNext = () => {
+    if (cancelled) return;
+    if (gracefulStop || sentenceIndex >= sentences.length) {
+      finish();
+      return;
+    }
+
+    globalThis.speechSynthesis.cancel();
+    const sentence = sentences[sentenceIndex]!;
+    sentenceIndex += 1;
+    currentCancel = speakSingleUtterance(sentence, {
+      lang: options?.lang,
+      rate: options?.rate,
+      onEnd: () => {
+        currentCancel = null;
+        speakNext();
+      },
+    });
+    if (!currentCancel) {
+      finish();
+    }
+  };
+
+  speakNext();
+
+  return {
+    cancel: () => {
+      cancelled = true;
+      currentCancel?.();
+      currentCancel = null;
+      stopOnboardingSpeech();
+    },
+    requestGracefulStop: () => {
+      gracefulStop = true;
+    },
+  };
+}
+
+export function speakOnboardingText(
+  text: string,
+  options?: { lang?: string; rate?: number; onEnd?: () => void },
+): (() => void) | null {
+  const controller = speakOnboardingTextControlled(text, options);
+  return controller?.cancel ?? null;
 }
 
 export function stopOnboardingSpeech(): void {

@@ -5,6 +5,7 @@ import {
   getProposalTemplateSegmentFromPathname,
 } from '../utils/resubmit-proposal-template';
 import { isProposalCreateFormPath } from './proposal-form-navigation';
+import { readActiveGovernanceProposalSession } from './governance-proposal-walkthrough-session';
 
 export const ACTIVE_PROPOSAL_FORM_LIVE_KEY =
   'hypha:active-proposal-form-live:v1';
@@ -14,6 +15,11 @@ export type ActiveProposalFormSnapshotPayload = {
   formOpen: boolean;
   resubmitPayload?: Record<string, unknown>;
   liveFields?: Record<string, unknown>;
+  activeGovernanceProposal?: {
+    proposalType: string;
+    collectedFields: Record<string, unknown>;
+    formOpen?: boolean;
+  };
   updatedAt: string;
 };
 
@@ -77,6 +83,15 @@ export function readActiveProposalFormSnapshot(
     formOpen: true,
     resubmitPayload,
     liveFields: liveFields ?? {},
+    activeGovernanceProposal: (() => {
+      const session = readActiveGovernanceProposalSession();
+      if (!session) return undefined;
+      return {
+        proposalType: session.proposalType,
+        collectedFields: session.collectedFields,
+        formOpen: session.formOpen ?? true,
+      };
+    })(),
     updatedAt: new Date().toISOString(),
   };
 }

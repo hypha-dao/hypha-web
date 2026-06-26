@@ -4,8 +4,7 @@ const titleField: CatalogDiscoveryField = {
   key: 'title',
   label: 'Proposal title',
   required: true,
-  description:
-    'What short title should appear on this proposal? Propose a draft from context; ask the user to confirm or edit.',
+  description: `What short title should appear on this proposal (max 50 characters)? Propose a draft from context that fits; ask the user to confirm or edit.`,
   fieldType: 'string',
   formSection: 'basics',
 };
@@ -133,7 +132,7 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
         label: 'Minimum voting duration',
         required: false,
         description:
-          'When auto_execution is false, propose a duration (1 day, 3 days, 7 days, etc.) converted to seconds (86400 = 1 day). Common: 259200 = 3 days.',
+          'When auto_execution is false, propose a duration in plain language (1 day, 3 days, 7 days) — never seconds in chat. Set voting_duration_seconds to a dropdown option when calling prepare.',
         fieldType: 'number',
         formSection: 'voting',
       },
@@ -474,7 +473,7 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
         label: 'Max supply',
         required: false,
         description:
-          'Ask only after type/name/symbol are set. Use 0 for unlimited supply.',
+          'Advanced form only (Limited supply toggle). Never ask in chat — prepare uses 0 (unlimited) unless the member sets it on screen.',
         fieldType: 'number',
         formSection: 'supply',
       },

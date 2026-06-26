@@ -82,6 +82,13 @@ export const chatRequestSchema = z.object({
       formOpen: z.boolean().optional(),
       resubmitPayload: z.record(z.unknown()).optional(),
       liveFields: z.record(z.unknown()).optional(),
+      activeGovernanceProposal: z
+        .object({
+          proposalType: z.string(),
+          collectedFields: z.record(z.unknown()).optional(),
+          formOpen: z.boolean().optional(),
+        })
+        .optional(),
       updatedAt: z.string().optional(),
     })
     .optional(),

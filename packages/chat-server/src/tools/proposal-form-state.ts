@@ -21,11 +21,37 @@ function getRequiredFieldKeys(
   return [...new Set([...keys, ...extra])];
 }
 
+/** Fields that must appear on screen when collected or implied by governance forms. */
+function getOnScreenVerificationFieldKeys(
+  proposalType: AiCreatableProposalType,
+  catalogRequired: CatalogDiscoveryField[],
+  collected: Record<string, unknown>,
+): string[] {
+  const keys = new Set(getRequiredFieldKeys(proposalType, catalogRequired));
+
+  if (collected.quorum_percent !== undefined) keys.add('quorum_percent');
+  if (collected.unity_percent !== undefined) keys.add('unity_percent');
+  if (collected.auto_execution !== undefined) keys.add('auto_execution');
+  if (
+    collected.auto_execution === false ||
+    collected.voting_duration_seconds !== undefined
+  ) {
+    keys.add('voting_duration_seconds');
+  }
+
+  return [...keys];
+}
+
 export type ActiveProposalFormSnapshot = {
   templateSegment?: string;
   formOpen?: boolean;
   resubmitPayload?: Record<string, unknown>;
   liveFields?: Record<string, unknown>;
+  activeGovernanceProposal?: {
+    proposalType: string;
+    collectedFields?: Record<string, unknown>;
+    formOpen?: boolean;
+  };
 };
 
 const TEMPLATE_SEGMENT_TO_PROPOSAL_TYPE: Record<
@@ -214,16 +240,17 @@ export function buildProposalFormStateResponse(args: {
   });
 
   const collected = args.collectedFields ?? {};
-  const requiredFieldKeys = getRequiredFieldKeys(
+  const verificationFieldKeys = getOnScreenVerificationFieldKeys(
     proposalType,
     orderFieldsForDiscovery(entry.requiredFields),
+    collected,
   );
 
-  const filledOnScreen = requiredFieldKeys.filter((key) =>
+  const filledOnScreen = verificationFieldKeys.filter((key) =>
     fieldHasValue({ key } as CatalogDiscoveryField, onScreen),
   );
 
-  const missingOnScreen = requiredFieldKeys.filter(
+  const missingOnScreen = verificationFieldKeys.filter(
     (key) => !fieldHasValue({ key } as CatalogDiscoveryField, onScreen),
   );
 

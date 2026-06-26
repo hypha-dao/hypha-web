@@ -6,12 +6,17 @@ import { buildOnboardingRealtimeInstructions } from '../system-prompt';
 import { buildSpaceAdvisorRealtimeInstructions } from '../system-prompt';
 import type { RealtimeVoiceSessionRequest } from './request-schema';
 import { assertVoiceDiscoverySessionContext } from './request-schema';
+import {
+  resolveRealtimeAudioInputConfig,
+  type RealtimeAudioInputConfig,
+} from './audio-input-config';
 
 export const MISSING_OPENAI_KEY_MESSAGE =
   'Hypha voice Realtime is not configured: OPENAI_API_KEY is missing.';
 
-const DEFAULT_OPENAI_REALTIME_MODEL = 'gpt-4o-realtime-preview-2024-12-17';
+const DEFAULT_OPENAI_REALTIME_MODEL = 'gpt-realtime';
 const DEFAULT_OPENAI_REALTIME_VOICE = 'marin';
+const DEFAULT_OPENAI_REALTIME_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
 export type RealtimeVoiceSessionResult = {
   clientSecret: string;
@@ -19,6 +24,7 @@ export type RealtimeVoiceSessionResult = {
   expiresAt: number | null;
   model: string;
   voice: string;
+  audioInput: RealtimeAudioInputConfig;
 };
 
 export type RealtimeVoiceSessionErrorCode =
@@ -45,6 +51,13 @@ function resolveOpenAiRealtimeModel(): string {
 function resolveOpenAiRealtimeVoice(): string {
   return (
     process.env.OPENAI_REALTIME_VOICE?.trim() || DEFAULT_OPENAI_REALTIME_VOICE
+  );
+}
+
+function resolveOpenAiRealtimeTranscriptionModel(): string {
+  return (
+    process.env.OPENAI_REALTIME_TRANSCRIPTION_MODEL?.trim() ||
+    DEFAULT_OPENAI_REALTIME_TRANSCRIPTION_MODEL
   );
 }
 
@@ -76,6 +89,8 @@ export async function createRealtimeVoiceSession(
 
   const model = resolveOpenAiRealtimeModel();
   const voice = resolveOpenAiRealtimeVoice();
+  const transcriptionModel = resolveOpenAiRealtimeTranscriptionModel();
+  const audioInput = resolveRealtimeAudioInputConfig(transcriptionModel);
   const locale =
     payload.locale?.trim() ||
     payload.conversationContext.locale?.trim() ||
@@ -116,12 +131,11 @@ export async function createRealtimeVoiceSession(
           instructions,
           audio: {
             input: {
-              turn_detection: {
-                type: 'server_vad',
-                threshold: 0.5,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 450,
-              },
+              transcription: audioInput.transcription,
+              turn_detection: audioInput.turnDetection,
+              ...(audioInput.noiseReduction
+                ? { noise_reduction: audioInput.noiseReduction }
+                : {}),
             },
             output: {
               voice,
@@ -166,5 +180,6 @@ export async function createRealtimeVoiceSession(
     expiresAt: typeof data.expires_at === 'number' ? data.expires_at : null,
     model,
     voice,
+    audioInput,
   };
 }

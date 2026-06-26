@@ -195,6 +195,11 @@ import {
 import {
   collectGovernancePrepareNavigationKeys,
   findLatestAiPanelNavigationTarget,
+  findLatestPrepareGovernanceProposalUpdate,
+  IMMEDIATE_AUTO_NAVIGATION_TOOLS,
+  isAtNavigationTarget,
+  shouldSkipStaleOverviewAutoNavigation,
+  type AiPanelNavigationTarget,
 } from './ai-tool-navigation';
 import {
   GOVERNANCE_PROPOSAL_PUBLISHED_EVENT,
@@ -205,9 +210,11 @@ import {
 import { readActiveProposalFormSnapshot } from './active-proposal-form-snapshot';
 import {
   enableProposalAiWalkthrough,
+  isProposalAiWalkthroughActive,
   PROPOSAL_AI_WALKTHROUGH_KEY,
   writeProposalFormFocusIfChanged,
 } from './proposal-form-focus';
+import { mergeActiveGovernanceProposalFromPrepareOutput } from './governance-proposal-walkthrough-session';
 import {
   isProposalCreateFormPath,
   isSameAppPath,
@@ -217,6 +224,15 @@ import {
   buildRecentTranscriptSummaryFromChatMessages,
   toStoredOnboardingChatMessages,
 } from './onboarding-voice-transcript-bridge';
+import {
+  consumeKeepAiPanelOpen,
+  markKeepAiPanelOpen,
+} from './ai-panel-session';
+import {
+  clearSpaceAiChatMessages,
+  readSpaceAiChatMessages,
+  saveSpaceAiChatMessages,
+} from './space-ai-chat-persistence';
 import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
 import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
 
@@ -444,6 +460,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
   const aiWalletProposalInFlightRef = useRef(false);
   const handledWalletProposalPayloadKeyRef = useRef<string | null>(null);
+  const completedVotingMethodToolKeyRef = useRef<string | null>(null);
   const openVotingMethodFromChatRef = useRef<
     (userText: string, assistantText: string) => Promise<boolean>
   >(async () => false);
@@ -462,11 +479,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const transferredMobilizedAgentsSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  const lastPrepareGovernanceResubmitKeyRef = useRef<string | null>(null);
   const wasOnProposalCreatePathRef = useRef(false);
   const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
   const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
   const skipNextChatResetRef = useRef(false);
   const onboardingHandoffHydratedRef = useRef(false);
+  const chatHydratedForSlugRef = useRef<string | null>(null);
+  const spaceChatId = spaceSlug?.trim()
+    ? `space-ai-${spaceSlug.trim()}`
+    : 'space-ai-global';
   const {
     createSpace: createSpaceWithWalletFlow,
     space: walletCreatedSpace,
@@ -937,6 +959,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     clearError,
     setMessages,
   } = useChat({
+    id: spaceChatId,
     transport,
     onError: (chatError) => {
       console.error('[AiLeftPanel][useChat]', chatError);
@@ -1009,6 +1032,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (skipNextChatResetRef.current) {
       skipNextChatResetRef.current = false;
       lastChatSpaceSlugRef.current = nextSlug;
+      chatHydratedForSlugRef.current = nextSlug;
       return;
     }
 
@@ -1025,6 +1049,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }
     }
 
+    if (previousSlug) {
+      clearSpaceAiChatMessages(previousSlug);
+    }
+    chatHydratedForSlugRef.current = null;
+
     lastChatSpaceSlugRef.current = nextSlug;
     lastMcpNavigationTargetSpaceSlugRef.current = null;
     lastAutoNavigationKeyRef.current = null;
@@ -1040,6 +1069,54 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     spaceSlug,
     stop,
   ]);
+
+  useEffect(() => {
+    const slug = spaceSlug?.trim();
+    if (!slug || chatHydratedForSlugRef.current === slug) return;
+
+    if (messages.length > 0) {
+      chatHydratedForSlugRef.current = slug;
+      return;
+    }
+
+    chatHydratedForSlugRef.current = slug;
+
+    if (isOnboardingSetup) {
+      const storedOnboarding = readOnboardingChatMessages();
+      if (storedOnboarding?.length) {
+        setMessages(
+          storedOnboarding.map((message) => ({
+            id: message.id,
+            role: message.role,
+            parts: message.parts ?? [],
+          })) as Parameters<typeof setMessages>[0],
+        );
+      }
+      return;
+    }
+
+    const stored = readSpaceAiChatMessages(slug);
+    if (stored?.length) {
+      setMessages(
+        stored.map((message) => ({
+          id: message.id,
+          role: message.role,
+          parts: message.parts ?? [],
+        })) as Parameters<typeof setMessages>[0],
+      );
+    }
+  }, [isOnboardingSetup, messages.length, setMessages, spaceSlug]);
+
+  useEffect(() => {
+    const slug = spaceSlug?.trim();
+    if (!slug || !messages.length) return;
+    const stored = toStoredOnboardingChatMessages(messages);
+    if (isOnboardingSetup) {
+      saveOnboardingChatMessages(stored);
+      return;
+    }
+    saveSpaceAiChatMessages(slug, stored);
+  }, [isOnboardingSetup, messages, spaceSlug]);
 
   const buildMessageOptions = useCallback(
     async (contextOverride?: OnboardingConversationContext | undefined) => {
@@ -1089,6 +1166,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ...onboardingContext,
       locale: lang,
     };
+    if (next.locale === onboardingContext.locale) return;
     setOnboardingContext(next);
     saveOnboardingConversationContext(next);
   }, [lang, onboardingContext]);
@@ -1266,6 +1344,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const createdSlug = latestCreatedSpaceSlug?.output?.space?.slug?.trim();
     if (!createdSlug) return;
+    if (
+      isPostCreateOnboardingPhase(onboardingContext) &&
+      (onboardingContext.createdSpaceSlug?.trim() === createdSlug ||
+        spaceSlug?.trim() === createdSlug)
+    ) {
+      lastAutoTransitionSpaceSlugRef.current = createdSlug;
+      return;
+    }
     if (lastAutoTransitionSpaceSlugRef.current === createdSlug) return;
     lastAutoTransitionSpaceSlugRef.current = createdSlug;
     completeOnboardingWalletHandoff(createdSlug);
@@ -1308,6 +1394,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     router,
     setAiOverlayVisible,
     setMessages,
+    spaceSlug,
   ]);
 
   useEffect(() => {
@@ -1327,10 +1414,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     wasOnProposalCreatePathRef.current = onProposalCreatePath;
 
-    if (!onProposalCreatePath) {
-      lastAutoNavigationKeyRef.current = null;
+    if (onProposalCreatePath && isProposalAiWalkthroughActive()) {
+      openAiPanel();
     }
-  }, [pathname]);
+
+    if (onProposalCreatePath && consumeKeepAiPanelOpen()) {
+      openAiPanel();
+      setAiOverlayVisible(false);
+    }
+  }, [openAiPanel, pathname, setAiOverlayVisible]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1347,9 +1439,67 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
   }, []);
 
-  useEffect(() => {
-    if (status === 'streaming' || status === 'submitted') return;
+  const applyPrepareGovernanceUpdate = useCallback(
+    (prepareUpdate: AiPanelNavigationTarget) => {
+      if (!prepareUpdate.resubmitPayload) return;
+      if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
 
+      writeGovernanceProposalResubmitPayload(prepareUpdate.resubmitPayload);
+      enableProposalAiWalkthrough();
+
+      if (prepareUpdate.proposalType) {
+        mergeActiveGovernanceProposalFromPrepareOutput({
+          proposalType: prepareUpdate.proposalType,
+          resubmitPayload: prepareUpdate.resubmitPayload,
+          spaceSlug:
+            getDhoSpaceSlugFromPathname(prepareUpdate.href) ??
+            spaceSlug ??
+            undefined,
+        });
+      }
+
+      writeProposalFormFocusIfChanged({
+        focusField: prepareUpdate.focusField,
+        focusSection: prepareUpdate.focusSection,
+      });
+
+      markKeepAiPanelOpen();
+      openAiPanel();
+      setAiOverlayVisible(false);
+    },
+    [openAiPanel, setAiOverlayVisible, spaceSlug],
+  );
+
+  useEffect(() => {
+    const prepareUpdate = findLatestPrepareGovernanceProposalUpdate(messages);
+    if (!prepareUpdate?.resubmitPayload) return;
+    if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
+    if (lastPrepareGovernanceResubmitKeyRef.current === prepareUpdate.key) {
+      return;
+    }
+
+    lastPrepareGovernanceResubmitKeyRef.current = prepareUpdate.key;
+    applyPrepareGovernanceUpdate(prepareUpdate);
+
+    const href = prepareUpdate.href;
+    if (!href) return;
+
+    const alreadyOnTarget =
+      !prepareUpdate.coherenceChat &&
+      !/[?&]signal=/.test(href) &&
+      isSameAppPath(href, pathname);
+    if (alreadyOnTarget) return;
+    if (lastAutoNavigationKeyRef.current === prepareUpdate.key) return;
+    if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
+
+    lastAutoNavigationKeyRef.current = prepareUpdate.key;
+    markKeepAiPanelOpen();
+    lastMcpNavigationTargetSpaceSlugRef.current =
+      getDhoSpaceSlugFromPathname(href) ?? null;
+    router.push(href);
+  }, [applyPrepareGovernanceUpdate, messages, pathname, router]);
+
+  useEffect(() => {
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
@@ -1358,41 +1508,33 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       'create_ecosystem_space',
       'summarize_space_discussion_by_slug',
       'ingest_space_call_artifacts',
-      'prepare_governance_proposal',
     ]);
     const href = navigationTarget?.href;
     if (!href) return;
 
+    const allowWhileStreaming =
+      navigationTarget &&
+      IMMEDIATE_AUTO_NAVIGATION_TOOLS.has(navigationTarget.toolName);
     if (
-      navigationTarget.toolName === 'prepare_governance_proposal' &&
-      isGovernancePrepareNavigationStale(navigationTarget.key)
+      (status === 'streaming' || status === 'submitted') &&
+      !allowWhileStreaming
     ) {
       return;
     }
 
-    const alreadyOnTarget =
-      !navigationTarget.coherenceChat &&
-      !/[?&]signal=/.test(href) &&
-      isSameAppPath(href, pathname);
+    const currentSearch =
+      typeof window !== 'undefined' ? window.location.search : '';
+    if (isAtNavigationTarget(href, pathname, currentSearch)) {
+      return;
+    }
 
     if (navigationTarget.resubmitPayload) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
     }
 
-    if (navigationTarget.toolName === 'prepare_governance_proposal') {
-      enableProposalAiWalkthrough();
-      writeProposalFormFocusIfChanged({
-        focusField: navigationTarget.focusField,
-        focusSection: navigationTarget.focusSection,
-      });
-    }
-
-    if (alreadyOnTarget) {
-      return;
-    }
-
     const navigationKey = navigationTarget.key;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
+    if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
     lastAutoNavigationKeyRef.current = navigationKey;
 
     const openInNewTab = navigationTarget.openInNewTab === true;
@@ -1437,6 +1579,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         ? walletCreatedSpace.slug.trim()
         : '';
     if (!slug) return;
+    if (
+      isPostCreateOnboardingPhase(onboardingContext) &&
+      (onboardingContext.createdSpaceSlug?.trim() === slug ||
+        spaceSlug?.trim() === slug)
+    ) {
+      lastAutoTransitionSpaceSlugRef.current = slug;
+      return;
+    }
     if (lastAutoTransitionSpaceSlugRef.current === slug) return;
     lastAutoTransitionSpaceSlugRef.current = slug;
     completeOnboardingWalletHandoff(slug);
@@ -1473,6 +1623,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     router,
     setAiOverlayVisible,
     setMessages,
+    spaceSlug,
     walletCreatedSpace?.slug,
   ]);
 
@@ -2398,15 +2549,28 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
         const method = active.collectedFields.voting_method;
         if (method !== '1m1v' && method !== '1v1v' && method !== '1t1v') return;
-        if (!onboardingContext) return;
-        if (onboardingContext.votingMethod === method) return;
 
-        const next = completeVotingMethodGovernanceWalkthrough(
-          onboardingContext,
-          method,
-        );
-        setOnboardingContext(next);
-        saveOnboardingConversationContext(next);
+        const toolKey = `${message.id ?? 'm'}:${j}`;
+        if (completedVotingMethodToolKeyRef.current === toolKey) return;
+        if (onboardingContext?.votingMethod) {
+          completedVotingMethodToolKeyRef.current = toolKey;
+          return;
+        }
+
+        completedVotingMethodToolKeyRef.current = toolKey;
+        setOnboardingContext((current) => {
+          if (!current || current.votingMethod) return current;
+          const currentActive = current.activeGovernanceProposal;
+          if (currentActive?.proposalType !== 'change_voting_method') {
+            return current;
+          }
+          const next = completeVotingMethodGovernanceWalkthrough(
+            current,
+            method,
+          );
+          saveOnboardingConversationContext(next);
+          return next;
+        });
         return;
       }
     }
@@ -2419,8 +2583,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         { role: 'user', parts: [{ type: 'text', text }] },
         options,
       );
-      setOnboardingContext(nextContext);
-      saveOnboardingConversationContext(nextContext);
+      setOnboardingContext((current) => {
+        if (current?.votingMethod) return current;
+        saveOnboardingConversationContext(nextContext);
+        return nextContext;
+      });
     },
     [buildMessageOptions, sendMessage],
   );
@@ -2624,6 +2791,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     conversationContext: voiceSessionContext,
     recentTranscriptSummary,
     getAccessToken,
+    onStopChat: stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
   });
@@ -3001,7 +3169,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
             usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
             onToggleListening={voiceInterview.toggleListening}
-            onStopSpeaking={voiceInterview.stopSpeaking}
           />
         ) : (
           <AiPanelChatBar

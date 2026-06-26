@@ -11,6 +11,11 @@ import {
   type ProposalGuidancePlaybook,
 } from './proposal-catalog';
 import type { CatalogDiscoveryField } from './proposal-catalog/types';
+import { VOICE_SPOKEN_SENTENCE_LIMIT } from '../system-prompt';
+import {
+  PROPOSAL_TITLE_MAX_LENGTH,
+  truncateProposalTitle,
+} from '../proposal-title-limits';
 import {
   buildProposalFormStateResponse,
   type ActiveProposalFormSnapshot,
@@ -61,7 +66,7 @@ function buildNextProposalQuestion(
       return `List ALL three join options (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never say "entry method".`;
     }
     case 'title':
-      return 'Draft a short name silently from context — offer it in one line; never say title.';
+      return `Draft a short name silently from context (max ${PROPOSAL_TITLE_MAX_LENGTH} characters) — offer it in one line; never say title.`;
     case 'description':
       return 'Draft a one-sentence rationale silently — offer it in one line; never say description.';
     case 'space_discoverability':
@@ -77,7 +82,7 @@ function buildNextProposalQuestion(
     case 'auto_execution':
       return 'State both choices (auto when conditions met vs fixed minimum voting period), then your pick — ask which they prefer.';
     case 'voting_duration_seconds':
-      return 'Propose a minimum voting period in plain language (e.g. 3 days) — ask if that works. Convert to seconds when calling prepare_governance_proposal (259200 = 3 days).';
+      return `When auto-execution is off, propose a minimum voting period in plain language only (e.g. "3 days", "1 week") — NEVER mention seconds or raw numbers in chat. On acceptance call prepare_governance_proposal with voting_duration_seconds set to a dropdown option (86400=1 day, 259200=3 days, 604800=7 days). Tell the member to check the duration dropdown on the form.`;
     case 'token_type': {
       const options = formatEnumOptionsList(field, locale);
       return `List ALL token types (${options}) — every option, one short phrase — THEN your one-line pick and ask which they want. Never recommend before listing all options. Never ask about supply before type is set.`;
@@ -89,7 +94,7 @@ function buildNextProposalQuestion(
     case 'token_icon_url':
       return 'Optional: ask for an HTTPS icon URL, or say they can upload on the form. Skip if they prefer to upload later.';
     case 'max_supply':
-      return 'Ask only after type, name, and symbol are set. Propose unlimited (0) or a number — ask which they want.';
+      return 'Never ask — limited supply is Advanced on the form. Use 0 (unlimited) in prepare unless the member enables it on screen.';
     default:
       break;
   }
@@ -98,7 +103,7 @@ function buildNextProposalQuestion(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `List ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want.`;
+    return `Typed chat: list ALL options first (${options}) — mandatory — then one-line recommendation and ask which they want. Voice/Live Voice: point to on-screen options with one recommendation.`;
   }
   return `Propose a sensible default from context in one line — never use the label "${field.label}" verbatim.`;
 }
@@ -107,8 +112,7 @@ function buildInteractionHint(
   field: CatalogDiscoveryField,
   locale?: string | null,
 ): string {
-  const speed =
-    'Max 3–4 short sentences. No preamble, no recap, no numbered lists. Voice: 2 sentences max.';
+  const speed = `Voice/Live Voice: ${VOICE_SPOKEN_SENTENCE_LIMIT} short sentences max. Typed chat: max 3–4 short sentences. No preamble, no recap, no numbered lists.`;
   const acceptanceRule =
     ' On yes/named option: call prepare_governance_proposal same turn with ALL merged fields — form must show the value before the next question. Include on-chain defaults for quorum/unity/voting period when opening or updating the form — never ask "shall I proceed".';
   if (field.key === 'title' || field.key === 'description') {
@@ -116,7 +120,7 @@ function buildInteractionHint(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `${speed} MANDATORY ORDER: (1) list EVERY option (${options}) — all of them; (2) one-line recommendation; (3) ask which they want. Never skip step 1.${acceptanceRule}`;
+    return `${speed} Typed chat: list EVERY option (${options}) before recommending. Voice: point to on-screen options with one-line recommendation — do not read every option aloud.${acceptanceRule}`;
   }
   return `${speed} Propose a default when sensible.${acceptanceRule}`;
 }
@@ -162,6 +166,9 @@ export function buildGuidanceResponse(args: {
     args.locale,
   );
   const effectiveCollected = { ...silentDrafts, ...collected };
+  if (typeof effectiveCollected.title === 'string') {
+    effectiveCollected.title = truncateProposalTitle(effectiveCollected.title);
+  }
   const formIsOpen = Boolean(
     args.formSnapshot?.formOpen || args.formSnapshot?.resubmitPayload,
   );

@@ -44,7 +44,9 @@ export function shouldAttachOnboardingContext(
   const activeSlug = normalizeSlug(options.spaceSlug);
 
   if (phase === 'discover' || phase === 'draft' || phase === 'confirm') {
-    return true;
+    // Pre-create setup applies before any space is open — not on unrelated existing spaces.
+    if (!activeSlug) return true;
+    return false;
   }
 
   if (phase === 'execute' || phase === 'verify') {
@@ -91,15 +93,17 @@ export function shouldBypassSpaceMembershipForOnboarding(
   if (options.isOnboardingPath) return true;
 
   const phase = context.setupPhase ?? 'discover';
+  const activeSlug = normalizeSlug(options.spaceSlug);
+
   if (phase === 'discover' || phase === 'draft' || phase === 'confirm') {
-    return true;
+    if (!activeSlug) return true;
+    return false;
   }
 
   if (phase === 'execute' || phase === 'verify') {
     const anchorSlug = normalizeSlug(
       context.createdSpaceSlug ?? context.ecosystemRootSlug,
     );
-    const activeSlug = normalizeSlug(options.spaceSlug);
     return Boolean(anchorSlug && activeSlug && activeSlug === anchorSlug);
   }
 

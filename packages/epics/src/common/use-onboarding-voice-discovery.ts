@@ -27,6 +27,7 @@ type UseOnboardingVoiceDiscoveryOptions = {
   conversationContext?: VoiceSessionContext;
   recentTranscriptSummary?: string;
   getAccessToken?: () => Promise<string | null | undefined>;
+  onStopChat?: () => void;
   onSendTranscript: (
     text: string,
   ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
@@ -63,13 +64,15 @@ export function useOnboardingVoiceDiscovery(
   const realtime = useOnboardingVoiceRealtime({
     enabled: options.enabled && useRealtime,
     isChatStreaming: options.isStreaming,
+    lastAssistantText: options.lastAssistantText,
     locale: options.locale,
     conversationContext: options.conversationContext,
     recentTranscriptSummary: options.recentTranscriptSummary,
     getAccessToken: options.getAccessToken,
     activeSpaceSlug: options.activeSpaceSlug,
     onFallback: handleFallback,
-    onTranscriptTurn: options.onTranscriptTurn,
+    onStopChat: options.onStopChat,
+    onSendTranscript: options.onSendTranscript,
   });
 
   const voice = useRealtime ? realtime : webSpeech;

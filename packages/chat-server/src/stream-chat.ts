@@ -32,6 +32,9 @@ import {
   ONBOARDING_CREATION_CONFIRMATION_GUIDELINES,
   SOUND_ADVISOR_GUIDELINES,
   STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES,
+  VOICE_BREVITY_GUIDELINE,
+  VOICE_SPOKEN_SENTENCE_LIMIT,
+  VOICE_TOOL_ACK_GUIDELINE,
   sanitizeSlug,
 } from './system-prompt';
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
@@ -49,7 +52,16 @@ import {
 } from './tools/index';
 
 const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
-CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — 2–4 natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.`;
+CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
+- ${VOICE_BREVITY_GUIDELINE}
+- ${VOICE_TOOL_ACK_GUIDELINE}
+- When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
+
+const VOICE_MODE_PROPOSAL_WALKTHROUGH_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
+CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
+- ${VOICE_BREVITY_GUIDELINE}
+- During an active proposal walkthrough: call prepare_governance_proposal first in the same turn — no spoken preamble about opening the form. Other read tools may use one brief acknowledgment before the tool call.
+- When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
@@ -1401,12 +1413,11 @@ export async function createChatStreamResult(
     normalizedConversationContext,
     spaceContextSnapshot,
   );
-  const onboardingLocaleDirective =
+  const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
-      ? buildOnboardingLocaleDirective(normalizedConversationContext.locale)
-      : buildOnboardingLocaleDirective(
-          chatLocale !== 'en' ? chatLocale : undefined,
-        );
+      ? normalizedConversationContext.locale
+      : chatLocale,
+  );
   const localizedEntryMethodGuidelines =
     chatLocale !== 'en'
       ? buildOnboardingEntryMethodGuidelines(chatLocale)
@@ -1436,8 +1447,31 @@ export async function createChatStreamResult(
           ?.proposalType === 'change_voting_method',
     ),
   });
+  const snapshotWalkthrough =
+    activeProposalFormSnapshot?.activeGovernanceProposal;
   const activeGovernanceProposalDirective =
-    buildActiveGovernanceProposalDirective(normalizedConversationContext);
+    buildActiveGovernanceProposalDirective(normalizedConversationContext) ||
+    buildActiveGovernanceProposalDirective(
+      snapshotWalkthrough
+        ? {
+            activeGovernanceProposal: {
+              proposalType: snapshotWalkthrough.proposalType,
+              collectedFields: snapshotWalkthrough.collectedFields ?? {},
+              formOpen: snapshotWalkthrough.formOpen,
+            },
+          }
+        : null,
+    );
+  const postCreateGovernanceVoiceActive =
+    voiceDiscoveryActive &&
+    normalizedConversationContext?.mode === 'onboarding_setup' &&
+    (normalizedConversationContext.setupPhase === 'execute' ||
+      normalizedConversationContext.setupPhase === 'verify') &&
+    !pendingEcosystemChildren;
+  const onboardingVoiceModeDirectives =
+    postCreateGovernanceVoiceActive || activeGovernanceProposalDirective
+      ? VOICE_MODE_PROPOSAL_WALKTHROUGH_DIRECTIVES
+      : VOICE_MODE_ACTIVE_DIRECTIVES;
   const proposalFormStateDirective = buildProposalFormStateDirective(
     activeProposalFormSnapshot,
   );
@@ -1448,9 +1482,11 @@ export async function createChatStreamResult(
     formSnapshot: activeProposalFormSnapshot,
     activeProposalType:
       normalizedConversationContext?.activeGovernanceProposal?.proposalType ??
+      snapshotWalkthrough?.proposalType ??
       null,
     collectedFields:
-      normalizedConversationContext?.activeGovernanceProposal?.collectedFields,
+      normalizedConversationContext?.activeGovernanceProposal
+        ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
   });
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
@@ -1458,7 +1494,7 @@ export async function createChatStreamResult(
           normalizedConversationContext.setupPhase ?? 'discover'
         }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time with create_ecosystem_space.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
           resolveLatestVisualGenerationIntent(recentUserTexts)
-            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation.'
+            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. Default to text-free images — no words or typography unless the user explicitly requests on-image text.'
             : ''
         }${
           (normalizedConversationContext.setupPhase === 'execute' ||
@@ -1484,7 +1520,7 @@ export async function createChatStreamResult(
             : ''
         }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
           voiceDiscoveryActive
-            ? `\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
             : ''
         }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
           localizedEntryMethodGuidelines
@@ -1503,6 +1539,10 @@ export async function createChatStreamResult(
         }`
       : `${effectiveSystemPrompt}${
           proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
+        }${
+          activeGovernanceProposalDirective
+            ? `\n\n${activeGovernanceProposalDirective}`
+            : ''
         }${
           proposalAcceptanceDirective
             ? `\n\n${proposalAcceptanceDirective}`

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   estimateSpeechDurationMs,
+  pickVoiceInterimAckPhrase,
   prepareAssistantTextForSpeech,
 } from '../onboarding-voice-speech';
 
@@ -55,6 +56,23 @@ I've drafted "Issue New Token" — work for you?`;
     expect(spoken).not.toMatch(/it looks like i need/i);
     expect(spoken).toContain('Issue New Token');
   });
+
+  it('caps spoken output at four sentences', () => {
+    const input = 'One. Two. Three. Four. Five should be dropped. Six gone.';
+
+    const spoken = prepareAssistantTextForSpeech(input);
+
+    expect(spoken).toBe('One. Two. Three. Four.');
+  });
+});
+
+describe('pickVoiceInterimAckPhrase', () => {
+  it('returns localized interim ack phrases', () => {
+    expect(pickVoiceInterimAckPhrase('fr')).toMatch(
+      /instant|seconde|consulte/i,
+    );
+    expect(pickVoiceInterimAckPhrase('en')).toMatch(/moment|second|pull/i);
+  });
 });
 
 describe('estimateSpeechDurationMs', () => {
@@ -69,5 +87,17 @@ describe('estimateSpeechDurationMs', () => {
   it('returns zero for empty or stripped text', () => {
     expect(estimateSpeechDurationMs('')).toBe(0);
     expect(estimateSpeechDurationMs('**Title:** only labels')).toBe(0);
+  });
+});
+
+describe('prepareAssistantSpeechSentences', () => {
+  it('splits speakable text into sentence chunks', async () => {
+    const { prepareAssistantSpeechSentences } = await import(
+      '../onboarding-voice-speech'
+    );
+    const sentences = prepareAssistantSpeechSentences(
+      'First point here. Second point follows! Third one?',
+    );
+    expect(sentences).toHaveLength(3);
   });
 });

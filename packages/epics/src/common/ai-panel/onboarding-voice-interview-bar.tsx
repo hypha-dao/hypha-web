@@ -1,6 +1,6 @@
 'use client';
 
-import { MicOff, Square } from 'lucide-react';
+import { MicOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@hypha-platform/ui';
@@ -20,7 +20,6 @@ type OnboardingVoiceInterviewBarProps = {
   realtimeFeatureEnabled?: boolean;
   usingWebSpeechFallback?: boolean;
   onToggleListening: () => void;
-  onStopSpeaking: () => void;
 };
 
 function VoiceOrb({ phase }: { phase: VoiceInterviewPhase }) {
@@ -74,7 +73,6 @@ export function OnboardingVoiceInterviewBar({
   realtimeFeatureEnabled = false,
   usingWebSpeechFallback = false,
   onToggleListening,
-  onStopSpeaking,
 }: OnboardingVoiceInterviewBarProps) {
   const t = useTranslations('AiPanel');
 
@@ -125,6 +123,9 @@ export function OnboardingVoiceInterviewBar({
   const startButtonLabel = needsRealtimeConnection
     ? t('onboardingVoiceStartConversation')
     : t('onboardingVoiceStartListening');
+
+  const realtimeMicAlwaysOn =
+    transport === 'realtime' && (isRealtimeConnected || isConnecting);
 
   return (
     <div className="border-t border-border/70 bg-background/90 px-4 py-4 md:px-5">
@@ -177,7 +178,7 @@ export function OnboardingVoiceInterviewBar({
               disabled ||
               isConnecting ||
               phase === 'processing' ||
-              phase === 'speaking'
+              (realtimeMicAlwaysOn && phase === 'speaking')
             }
             onClick={onToggleListening}
             className="min-w-[140px]"
@@ -194,17 +195,6 @@ export function OnboardingVoiceInterviewBar({
               </>
             )}
           </Button>
-          {phase === 'speaking' ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onStopSpeaking}
-              className="min-w-[120px]"
-            >
-              <Square className="size-4" aria-hidden />
-              {t('onboardingVoiceStopSpeaking')}
-            </Button>
-          ) : null}
         </div>
       </div>
     </div>

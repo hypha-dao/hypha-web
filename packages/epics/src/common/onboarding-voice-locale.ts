@@ -31,7 +31,6 @@ export function resolveOnboardingSpeechLocale(locale?: string): string {
       if (documentBase && isSupportedAppLocale(documentBase)) {
         return SPEECH_LOCALE_BY_APP_LOCALE[documentBase];
       }
-      return documentLang;
     }
   }
 

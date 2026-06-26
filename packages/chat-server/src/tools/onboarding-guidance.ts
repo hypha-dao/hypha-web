@@ -666,7 +666,7 @@ export function createOnboardingGuidanceTool(locale?: string | null) {
       const visualAssetsAssistantInstruction = requiresVisualAssetsPicker
         ? 'Ask only the next_question in one warm sentence. First ask whether they have a logo and hero banner to upload—if not, reassure them you can generate both. Never trigger wallet signing or create_space_from_onboarding until logo_url and lead_image_url are set.'
         : nextStep?.field === 'visual_vibe'
-        ? 'Ask only the next_question. After they share the vibe, call generate_space_visual_assets in the same or next turn and show thumbnail previews before asking for confirmation.'
+        ? 'Ask only the next_question. After they share the vibe, call generate_space_visual_assets in the same or next turn and show thumbnail previews before asking for confirmation. Keep generated images text-free by default — describe mood and symbols in visual_vibe, not words to render in the image.'
         : nextStep?.field === 'visual_assets_confirmed'
         ? 'Show the generated logo and banner previews if not already visible, then ask only the next_question. Do not proceed to create_space_from_onboarding until they confirm.'
         : null;

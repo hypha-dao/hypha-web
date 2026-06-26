@@ -17,6 +17,7 @@ import {
   isLegacyGenericResubmitSegment,
 } from '../utils/resubmit-proposal-template';
 import { writeActiveProposalFormLiveFields } from '../common/active-proposal-form-snapshot';
+import { normalizeVotingDurationForResubmitSelect } from '../agreements/plugins/change-voting-method/voting-duration-resubmit';
 import {
   disableProposalAiWalkthrough,
   isProposalAiWalkthroughActive,
@@ -437,10 +438,17 @@ export const useResubmitProposalData = <
         }
 
         if (parsed.votingDuration !== undefined) {
-          form.setValue('votingDuration' as any, parsed.votingDuration as any, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
+          const normalizedDuration = normalizeVotingDurationForResubmitSelect(
+            parsed.votingDuration,
+          );
+          form.setValue(
+            'votingDuration' as any,
+            (normalizedDuration ?? parsed.votingDuration) as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
         }
 
         if (typeof parsed.autoExecution === 'boolean') {
@@ -910,7 +918,7 @@ export const useResubmitProposalData = <
       }
     };
 
-    const timeoutId = setTimeout(applyResubmitData, 300);
+    const timeoutId = setTimeout(applyResubmitData, 0);
 
     return () => clearTimeout(timeoutId);
   }, [

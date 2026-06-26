@@ -3,6 +3,7 @@ import {
   resolveLocale,
 } from '@hypha-platform/i18n/messages';
 import type { Locale } from '@hypha-platform/i18n/routing';
+import { truncateProposalTitle } from './proposal-title-limits';
 
 export type EntryMethodId = 'open_access' | 'invite_only' | 'token_based';
 export type VotingMethodId = '1m1v' | '1v1v' | '1t1v';
@@ -110,7 +111,7 @@ function formatLocalizedProposalTitle(
   label: string,
 ): string {
   const code = resolveLocale(locale);
-  return (templates[code] ?? templates.en)(label);
+  return truncateProposalTitle((templates[code] ?? templates.en)(label));
 }
 
 function readAgreementFlowPlugins(
