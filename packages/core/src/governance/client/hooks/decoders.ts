@@ -522,6 +522,77 @@ function decodeDecayingSpaceTokenAdminProposal(
   }
 }
 
+/**
+ * Shape of the single `DeployParams` struct arg used by the `deploy*WithMinters`
+ * factory functions. Fields are a superset across regular/ownership/decaying:
+ * ownership has no `transferable`, only decaying carries decay fields, and only
+ * regular carries the mutual-credit fields. Optional members are simply absent
+ * for token types that don't define them.
+ */
+type DeployWithMintersParams = {
+  spaceId: bigint;
+  name: string;
+  symbol: string;
+  maxSupply: bigint;
+  transferable?: boolean;
+  fixedMaxSupply: boolean;
+  autoMinting: boolean;
+  tokenPrice: bigint;
+  priceCurrencyFeed: `0x${string}`;
+  useTransferWhitelist: boolean;
+  useReceiveWhitelist: boolean;
+  initialTransferWhitelist: readonly `0x${string}`[];
+  initialReceiveWhitelist: readonly `0x${string}`[];
+  initialTransferWhitelistSpaceIds: readonly bigint[];
+  initialReceiveWhitelistSpaceIds: readonly bigint[];
+  defaultCreditLimit?: bigint;
+  initialCreditWhitelistSpaceIds?: readonly bigint[];
+  decayPercentage?: bigint;
+  decayInterval?: bigint;
+};
+
+/**
+ * Maps a `deploy*WithMinters` struct arg to the same `token` payload the plain
+ * `deploy*Token` handlers produce, so the proposal card renders token info for
+ * minter-based deployments too.
+ */
+const tokenPayloadFromWithMintersParams = (
+  p: DeployWithMintersParams,
+  tokenType: 'regular' | 'ownership' | 'voice',
+): DecodedPayload => ({
+  type: 'token',
+  data: {
+    tokenType,
+    spaceId: p.spaceId,
+    name: p.name,
+    symbol: p.symbol,
+    maxSupply: p.maxSupply,
+    ...(p.transferable !== undefined && { transferable: p.transferable }),
+    fixedMaxSupply: p.fixedMaxSupply,
+    autoMinting: p.autoMinting,
+    priceInUSD: p.tokenPrice,
+    priceCurrencyFeed: p.priceCurrencyFeed,
+    useTransferWhitelist: p.useTransferWhitelist,
+    useReceiveWhitelist: p.useReceiveWhitelist,
+    initialTransferWhitelist: p.initialTransferWhitelist,
+    initialReceiveWhitelist: p.initialReceiveWhitelist,
+    initialTransferWhitelistSpaceIds: p.initialTransferWhitelistSpaceIds,
+    initialReceiveWhitelistSpaceIds: p.initialReceiveWhitelistSpaceIds,
+    ...(p.defaultCreditLimit !== undefined && {
+      defaultCreditLimit: p.defaultCreditLimit,
+    }),
+    ...(p.initialCreditWhitelistSpaceIds !== undefined && {
+      initialCreditWhitelistSpaceIds: p.initialCreditWhitelistSpaceIds,
+    }),
+    ...(p.decayPercentage !== undefined && {
+      decayPercentage: BigInt(
+        decayBasisPointsToFormPercent(Number(p.decayPercentage)),
+      ),
+    }),
+    ...(p.decayInterval !== undefined && { decayInterval: p.decayInterval }),
+  },
+});
+
 export function decodeTransaction(tx: Tx) {
   const decoders: TransactionDecoder[] = [
     {
@@ -676,6 +747,41 @@ export function decodeTransaction(tx: Tx) {
                 decayInterval: decoded.args[16],
               },
             }
+          : null,
+    },
+    /**
+     * `deploy*WithMinters` variants take a single `DeployParams` struct arg.
+     * They live on the same generated factory ABIs, so the plain `deploy*Token`
+     * handlers above return null for them and decoding falls through to here.
+     */
+    {
+      abi: regularTokenFactoryAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployTokenWithMinters'
+          ? tokenPayloadFromWithMintersParams(
+              decoded.args[0] as DeployWithMintersParams,
+              'regular',
+            )
+          : null,
+    },
+    {
+      abi: ownershipTokenFactoryAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployOwnershipTokenWithMinters'
+          ? tokenPayloadFromWithMintersParams(
+              decoded.args[0] as DeployWithMintersParams,
+              'ownership',
+            )
+          : null,
+    },
+    {
+      abi: decayingTokenFactoryAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployDecayingTokenWithMinters'
+          ? tokenPayloadFromWithMintersParams(
+              decoded.args[0] as DeployWithMintersParams,
+              'voice',
+            )
           : null,
     },
     /**
