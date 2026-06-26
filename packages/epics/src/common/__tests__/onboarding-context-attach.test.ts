@@ -27,13 +27,18 @@ describe('shouldAttachOnboardingContext', () => {
     ).toBe(true);
   });
 
-  it('attaches discover phase on a space route so voice setup can continue', () => {
+  it('does not attach discover phase on an unrelated existing space route', () => {
     const context = baseContext({ setupPhase: 'discover' });
     expect(
       shouldAttachOnboardingContext(context, {
         spaceSlug: 'hypha-platform',
       }),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('attaches discover phase when no active space slug (global setup)', () => {
+    const context = baseContext({ setupPhase: 'discover' });
+    expect(shouldAttachOnboardingContext(context, {})).toBe(true);
   });
 
   it('attaches execute phase only on the created anchor slug', () => {
@@ -97,13 +102,18 @@ describe('shouldBypassSpaceMembershipForOnboarding', () => {
     expect(shouldBypassSpaceMembershipForOnboarding(context, {})).toBe(true);
   });
 
-  it('bypasses discover phase on a space route so voice setup can continue', () => {
+  it('does not bypass membership on an unrelated space during discover', () => {
     const context = baseContext({ setupPhase: 'discover' });
     expect(
       shouldBypassSpaceMembershipForOnboarding(context, {
         spaceSlug: 'hypha-platform',
       }),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('bypasses discover phase when no active space slug', () => {
+    const context = baseContext({ setupPhase: 'discover' });
+    expect(shouldBypassSpaceMembershipForOnboarding(context, {})).toBe(true);
   });
 
   it('bypasses verify phase on the created anchor slug', () => {

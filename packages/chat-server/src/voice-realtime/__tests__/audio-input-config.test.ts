@@ -18,6 +18,7 @@ describe('resolveRealtimeAudioInputConfig', () => {
 
     expect(config.turnDetection.threshold).toBe(0.5);
     expect(config.turnDetection.silence_duration_ms).toBe(450);
+    expect(config.turnDetection.interrupt_response).toBe(false);
     expect(config.noiseReduction).toBeNull();
     expect(config.transcription.model).toBe('gpt-4o-mini-transcribe');
   });

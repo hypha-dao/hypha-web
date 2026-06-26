@@ -56,13 +56,12 @@ I've drafted "Issue New Token" — work for you?`;
     expect(spoken).toContain('Issue New Token');
   });
 
-  it('caps spoken output at two sentences', () => {
-    const input =
-      'First sentence here. Second sentence follows. Third should be dropped. Fourth definitely gone.';
+  it('caps spoken output at four sentences', () => {
+    const input = 'One. Two. Three. Four. Five should be dropped. Six gone.';
 
     const spoken = prepareAssistantTextForSpeech(input);
 
-    expect(spoken).toBe('First sentence here. Second sentence follows.');
+    expect(spoken).toBe('One. Two. Three. Four.');
   });
 });
 

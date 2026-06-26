@@ -11,7 +11,8 @@ export type RealtimeTurnDetectionConfig = {
   prefix_padding_ms: number;
   silence_duration_ms: number;
   create_response: false;
-  interrupt_response: true;
+  /** Hypha cancels TTS client-side on confirmed user transcripts — keep false to avoid noise/echo cuts. */
+  interrupt_response: false;
 };
 
 export type RealtimeAudioInputConfig = {
@@ -28,7 +29,7 @@ export const DEFAULT_REALTIME_AUDIO_INPUT: RealtimeAudioInputConfig = {
     prefix_padding_ms: 300,
     silence_duration_ms: 450,
     create_response: false,
-    interrupt_response: true,
+    interrupt_response: false,
   },
   noiseReduction: null,
   transcription: { model: 'gpt-4o-mini-transcribe' },
@@ -133,6 +134,17 @@ function buildRealtimeSpeakInstructions(text: string): string {
     '',
     text,
   ].join('\n');
+}
+
+const NOISE_TRANSCRIPT_PATTERN =
+  /^(?:uh+|um+|hm+|hmm+|ah+|oh+|mm+|mhm+|eh+|er+|\.+|,+\s*)+$/i;
+
+/** Ignore VAD false positives — barge-in and /api/chat only on real user speech. */
+export function isSubstantiveUserTranscript(text: string): boolean {
+  const normalized = text.trim();
+  if (normalized.length < 2) return false;
+  if (NOISE_TRANSCRIPT_PATTERN.test(normalized)) return false;
+  return /\p{L}/u.test(normalized);
 }
 
 export function setLocalMicEnabled(

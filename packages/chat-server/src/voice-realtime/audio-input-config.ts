@@ -6,7 +6,8 @@ export type RealtimeTurnDetectionConfig = {
   prefix_padding_ms: number;
   silence_duration_ms: number;
   create_response: false;
-  interrupt_response: true;
+  /** Client-side barge-in on confirmed transcripts — avoid server VAD echo/noise cuts. */
+  interrupt_response: false;
 };
 
 export type RealtimeAudioInputConfig = {
@@ -55,7 +56,7 @@ export function resolveRealtimeAudioInputConfig(
         process.env.OPENAI_REALTIME_VAD_SILENCE_MS,
       ),
       create_response: false,
-      interrupt_response: true,
+      interrupt_response: false,
     },
     noiseReduction: resolveNoiseReductionType(),
     transcription: {

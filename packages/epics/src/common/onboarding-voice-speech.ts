@@ -8,7 +8,7 @@ import {
 } from '@hypha-platform/ui-utils';
 
 /** Spoken voice replies are capped to this many sentences (matches server prompts). */
-export const MAX_VOICE_SPOKEN_SENTENCES = 2;
+export const MAX_VOICE_SPOKEN_SENTENCES = 4;
 
 const VOICE_INTERIM_ACK_PHRASES = [
   'One moment, let me check that for you.',

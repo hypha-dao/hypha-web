@@ -11,6 +11,8 @@ import {
   extractRealtimeErrorInfo,
   fetchRealtimeVoiceSession,
   isIgnorableRealtimeError,
+  isSubstantiveUserTranscript,
+  setLocalMicEnabled,
   setRealtimeRemoteAudioMuted,
   speakAssistantTextViaRealtime,
   type RealtimeServerEvent,
@@ -115,6 +117,17 @@ function restoreListeningIfConnected(
 /** Speak a filler if MCP/tools run before the model emits text. */
 const VOICE_INTERIM_ACK_DELAY_MS = 2000;
 
+function restoreMicForListening(connection: RealtimeVoiceConnection | null) {
+  setLocalMicEnabled(connection, true);
+}
+
+function muteMicDuringAssistantSpeech(
+  connection: RealtimeVoiceConnection | null,
+) {
+  setLocalMicEnabled(connection, false);
+  clearRealtimeInputAudioBuffer(connection);
+}
+
 export function useOnboardingVoiceRealtime({
   enabled,
   isChatStreaming = false,
@@ -175,6 +188,7 @@ export function useOnboardingVoiceRealtime({
     onStopChatRef.current?.();
     stopBrowserSpeech();
     interimAckSpokenRef.current = false;
+    restoreMicForListening(connectionRef.current);
     if (realtimeSpeakInFlightRef.current) {
       const connection = connectionRef.current;
       cancelActiveRealtimeResponse(
@@ -190,22 +204,24 @@ export function useOnboardingVoiceRealtime({
     wasStreamingRef.current = false;
     if (connectionRef.current) {
       setRealtimeRemoteAudioMuted(connectionRef.current, true);
-      clearRealtimeInputAudioBuffer(connectionRef.current);
     }
   }, [stopBrowserSpeech]);
 
   const speakWithBrowserFallback = useCallback(
     (speakable: string) => {
+      muteMicDuringAssistantSpeech(connectionRef.current);
       setPhase('speaking');
       const cancelSpeech = speakOnboardingText(speakable, {
         lang: locale,
         rate: 1.05,
         onEnd: () => {
           cancelSpeechRef.current = null;
+          restoreMicForListening(connectionRef.current);
           setPhase(connectionRef.current ? 'listening' : 'idle');
         },
       });
       if (!cancelSpeech) {
+        restoreMicForListening(connectionRef.current);
         setPhase(connectionRef.current ? 'listening' : 'idle');
         return;
       }
@@ -240,6 +256,7 @@ export function useOnboardingVoiceRealtime({
           activeResponseId: activeRealtimeResponseIdRef.current,
         })
       ) {
+        muteMicDuringAssistantSpeech(connection);
         realtimeSpeakInFlightRef.current = true;
         setPhase('speaking');
         return;
@@ -254,6 +271,12 @@ export function useOnboardingVoiceRealtime({
     async (text: string) => {
       const normalized = text.trim();
       if (!normalized || sendInFlightRef.current) {
+        return;
+      }
+
+      if (!isSubstantiveUserTranscript(normalized)) {
+        restoreMicForListening(connectionRef.current);
+        restoreListeningIfConnected(connectionRef.current, setPhase);
         return;
       }
 
@@ -328,18 +351,6 @@ export function useOnboardingVoiceRealtime({
 
   const handleServerEvent = useCallback(
     (event: RealtimeServerEvent) => {
-      if (event.type === 'input_audio_buffer.speech_started') {
-        if (
-          shouldBargeInOnUserSpeech(phaseRef.current, {
-            isChatStreaming: isChatStreamingRef.current,
-            sendInFlight: sendInFlightRef.current,
-            realtimeSpeakInFlight: realtimeSpeakInFlightRef.current,
-          })
-        ) {
-          interruptForUserBargeIn();
-        }
-      }
-
       if (
         event.type === 'output_audio_buffer.started' ||
         event.type === 'response.output_audio.delta' ||
@@ -443,8 +454,11 @@ export function useOnboardingVoiceRealtime({
             const speakable = prepareAssistantTextForSpeech(spoken);
             if (speakable) {
               speakWithBrowserFallback(speakable);
+            } else {
+              restoreMicForListening(connectionRef.current);
             }
           } else {
+            restoreMicForListening(connectionRef.current);
             void acquireWarmMicStream();
           }
         }
@@ -491,6 +505,7 @@ export function useOnboardingVoiceRealtime({
         onConnectionStateChange: (state) => {
           if (state === 'connected') {
             setIsRealtimeConnected(true);
+            restoreMicForListening(connection);
             setPhase('listening');
           }
           if (
@@ -509,6 +524,7 @@ export function useOnboardingVoiceRealtime({
 
       connectionRef.current = connection;
       setIsRealtimeConnected(true);
+      restoreMicForListening(connection);
       setPhase('listening');
       console.info('[VoiceRealtime] connected', {
         model: session.model,
@@ -550,6 +566,7 @@ export function useOnboardingVoiceRealtime({
       setRealtimeRemoteAudioMuted(connectionRef.current, true);
     }
     stopBrowserSpeech();
+    restoreMicForListening(connectionRef.current);
     if (connectionRef.current) {
       setPhase('listening');
     } else {

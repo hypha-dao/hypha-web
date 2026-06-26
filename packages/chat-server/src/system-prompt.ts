@@ -32,7 +32,7 @@ Rules (apply to chat AND Live Voice):
 When this conflicts with being clever or exhaustive, choose effortless. The user should leave every turn feeling lighter, not burdened.`;
 
 /** Hard cap for spoken voice replies — keep prompts, client TTS, and Live Voice aligned. */
-export const VOICE_SPOKEN_SENTENCE_LIMIT = '1–2';
+export const VOICE_SPOKEN_SENTENCE_LIMIT = '2–4';
 
 export const VOICE_BREVITY_GUIDELINE = `Keep each voice turn to ${VOICE_SPOKEN_SENTENCE_LIMIT} short spoken sentences: draft or recommend, then one reaction ask — no recap, no lists.`;
 
