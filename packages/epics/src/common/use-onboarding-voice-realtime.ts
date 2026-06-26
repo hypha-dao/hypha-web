@@ -28,6 +28,7 @@ import {
   speakOnboardingText,
   stopOnboardingSpeech,
 } from './onboarding-voice-speech';
+import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
 import type {
   VoiceInterviewErrorCode,
   VoiceInterviewPhase,
@@ -267,7 +268,7 @@ export function useOnboardingVoiceRealtime({
       muteMicDuringAssistantSpeech(connectionRef.current);
       setPhase('speaking');
       const cancelSpeech = speakOnboardingText(speakable, {
-        lang: locale,
+        lang: resolveOnboardingSpeechLocale(locale),
         rate: 1.05,
         onEnd: () => {
           cancelSpeechRef.current = null;
@@ -307,6 +308,7 @@ export function useOnboardingVoiceRealtime({
         connection &&
         speakAssistantTextViaRealtime(connection, speakable, {
           activeResponseId: activeRealtimeResponseIdRef.current,
+          locale,
         })
       ) {
         muteMicDuringAssistantSpeech(connection);
@@ -317,7 +319,7 @@ export function useOnboardingVoiceRealtime({
 
       speakWithBrowserFallback(speakable);
     },
-    [speakWithBrowserFallback],
+    [locale, speakWithBrowserFallback],
   );
 
   const sendTranscriptToChat = useCallback(
@@ -762,7 +764,7 @@ export function useOnboardingVoiceRealtime({
       const cancelSpeech = speakOnboardingText(
         pickVoiceInterimAckPhrase(locale),
         {
-          lang: locale,
+          lang: resolveOnboardingSpeechLocale(locale),
           onEnd: () => {
             cancelSpeechRef.current = null;
             restoreMicForListening(connectionRef.current);

@@ -1,6 +1,7 @@
 'use client';
 
 import { acquireWarmMicStream, isWarmMicStream } from './onboarding-voice-mic';
+import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
 
 const OPENAI_REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
 
@@ -126,11 +127,27 @@ export type RealtimeVoiceConnection = {
 
 const REALTIME_SPEAK_TEXT_MAX_CHARS = 4000;
 
-function buildRealtimeSpeakInstructions(text: string): string {
+const LANGUAGE_NAME_BY_APP_LOCALE: Record<string, string> = {
+  en: 'English',
+  pt: 'Portuguese',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+};
+
+function buildRealtimeSpeakLanguageDirective(locale?: string): string {
+  const bcp47 = resolveOnboardingSpeechLocale(locale);
+  const code = bcp47.split('-')[0]?.toLowerCase() ?? 'en';
+  const languageName = LANGUAGE_NAME_BY_APP_LOCALE[code] ?? 'English';
+  return `Speak ONLY in ${languageName} (${bcp47}). Hypha supports English, Portuguese, Spanish, French, and German only—do not use any other language.`;
+}
+
+function buildRealtimeSpeakInstructions(text: string, locale?: string): string {
   return [
     'You are a voice output relay only. Do not call tools or add new information.',
     'Speak the following assistant reply aloud in a warm, natural conversational tone.',
     'Do not add, remove, or change words. Do not ask follow-up questions.',
+    buildRealtimeSpeakLanguageDirective(locale),
     '',
     text,
   ].join('\n');
@@ -200,14 +217,17 @@ export function setRealtimeRemoteAudioMuted(
 export function speakAssistantTextViaRealtime(
   connection: RealtimeVoiceConnection,
   text: string,
-  options?: { activeResponseId?: string | null },
+  options?: { activeResponseId?: string | null; locale?: string },
 ): boolean {
   const speakable = text.trim().slice(0, REALTIME_SPEAK_TEXT_MAX_CHARS);
   if (!speakable || connection.dataChannel.readyState !== 'open') {
     return false;
   }
 
-  const instructions = buildRealtimeSpeakInstructions(speakable);
+  const instructions = buildRealtimeSpeakInstructions(
+    speakable,
+    options?.locale,
+  );
 
   cancelActiveRealtimeResponse(connection, options?.activeResponseId);
 
