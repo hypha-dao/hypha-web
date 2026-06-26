@@ -49,6 +49,7 @@ export const IMMEDIATE_AUTO_NAVIGATION_TOOLS = new Set<string>([
   'create_space_signal_by_slug',
   'relay_ecosystem_signal',
   'create_human_chat_message',
+  'prepare_governance_proposal',
 ]);
 
 function navigationToolPriority(toolName: string): number {
