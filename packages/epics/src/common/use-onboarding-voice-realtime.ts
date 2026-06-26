@@ -687,9 +687,11 @@ export function useOnboardingVoiceRealtime({
         audioInput: session.audioInput,
         onEvent: handleServerEvent,
         onConnectionStateChange: (state) => {
+          const activeConnection = connectionRef.current;
           if (state === 'connected') {
+            if (!activeConnection) return;
             setIsRealtimeConnected(true);
-            restoreMicForListening(connection);
+            restoreMicForListening(activeConnection);
             setPhase('listening');
           }
           if (
@@ -698,7 +700,10 @@ export function useOnboardingVoiceRealtime({
             state === 'disconnected'
           ) {
             setIsRealtimeConnected(false);
-            if (connectionRef.current === connection) {
+            if (
+              activeConnection &&
+              connectionRef.current === activeConnection
+            ) {
               connectionRef.current = null;
             }
             setPhase('idle');

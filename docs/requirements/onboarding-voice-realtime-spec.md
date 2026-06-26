@@ -147,7 +147,7 @@ Realtime-specific additions:
 
 - Instruct model to **never read URLs, coordinates, or markdown** aloud
 - On tool results that trigger UI cards (`onboarding_guidance`, picker payloads), emit a **short spoken bridge** ("I'll put a few options on your screen")
-- Keep responses **1–2 sentences** unless user asks for detail
+- Keep responses **2–4 sentences** unless user asks for detail
 
 ### 4.4 Tool surface (onboarding Realtime subset)
 
