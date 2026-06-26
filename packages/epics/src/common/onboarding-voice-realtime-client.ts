@@ -5,20 +5,15 @@ import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
 
 const OPENAI_REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
 
-/** STT-only VAD — Hypha chat (/api/chat) handles tools and MCP, not Realtime. */
-export const REALTIME_TURN_DETECTION = {
-  type: 'server_vad',
-  threshold: 0.5,
-  prefix_padding_ms: 300,
-  silence_duration_ms: 750,
-  create_response: false,
-  interrupt_response: false,
-} as const;
-
-/** Required for `conversation.item.input_audio_transcription.completed` events. */
-export const REALTIME_INPUT_TRANSCRIPTION = {
-  model: 'gpt-4o-mini-transcribe',
-} as const;
+/** STT-only VAD shape — values come from the Realtime session API (server source of truth). */
+export type RealtimeTurnDetection = {
+  type: 'server_vad';
+  threshold: number;
+  prefix_padding_ms: number;
+  silence_duration_ms: number;
+  create_response: boolean;
+  interrupt_response: boolean;
+};
 
 export type RealtimeVoiceSessionPayload = {
   clientSecret: string;
@@ -26,6 +21,8 @@ export type RealtimeVoiceSessionPayload = {
   expiresAt: number | null;
   model: string;
   voice: string;
+  transcriptionModel: string;
+  turnDetection: RealtimeTurnDetection;
 };
 
 export type RealtimeServerEvent = {
@@ -203,6 +200,7 @@ export async function fetchRealtimeVoiceSession(params: {
     expiresAt?: number | null;
     model?: string;
     voice?: string;
+    transcriptionModel?: string;
   };
 
   if (!response.ok) {
@@ -225,11 +223,14 @@ export async function fetchRealtimeVoiceSession(params: {
     expiresAt: payload.expiresAt ?? null,
     model: payload.model ?? '',
     voice: payload.voice ?? '',
+    transcriptionModel:
+      payload.transcriptionModel?.trim() || 'gpt-4o-mini-transcribe',
   };
 }
 
 export async function connectOpenAiRealtimeCall(params: {
   clientSecret: string;
+  transcriptionModel: string;
   onEvent: (event: RealtimeServerEvent) => void;
   onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
 }): Promise<RealtimeVoiceConnection> {
@@ -303,7 +304,7 @@ export async function connectOpenAiRealtimeCall(params: {
       session: {
         audio: {
           input: {
-            transcription: REALTIME_INPUT_TRANSCRIPTION,
+            transcription: { model: params.transcriptionModel },
             turn_detection: REALTIME_TURN_DETECTION,
           },
         },

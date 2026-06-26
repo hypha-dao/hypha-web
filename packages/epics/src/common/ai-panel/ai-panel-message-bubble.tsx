@@ -596,9 +596,7 @@ export function AiPanelMessageBubble({
       part.state === 'output-available'
     ) {
       const { logoUrl, bannerUrl } = readVisualAssetUrlsFromOutput(part.output);
-      if (logoUrl || bannerUrl) return false;
-      const output = part.output as { ok?: boolean } | undefined;
-      return output?.ok !== true;
+      return !(logoUrl || bannerUrl);
     }
     // Keep tool cards only for actionable confirmation steps.
     if (part.state === 'output-available') {

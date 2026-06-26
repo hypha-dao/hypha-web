@@ -215,7 +215,7 @@ jobs:
       - name: Comment custom preview URL on PR
         if: github.event_name == 'pull_request'
         continue-on-error: true
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           PREVIEW_CUSTOM_URL: ${{ steps.alias.outputs.preview_custom_url }}
         with:

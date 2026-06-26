@@ -95,18 +95,6 @@ function restoreMicForListening(connection: RealtimeVoiceConnection | null) {
   setLocalMicEnabled(connection, true);
 }
 
-function scheduleMicRestoreForUserTurn(
-  connection: RealtimeVoiceConnection | null,
-  setPhase: (phase: VoiceInterviewPhase) => void,
-) {
-  window.setTimeout(() => {
-    restoreMicForListening(connection);
-    if (connection) {
-      setPhase('listening');
-    }
-  }, MIC_UNMUTE_DELAY_MS);
-}
-
 function muteMicDuringAssistantSpeech(
   connection: RealtimeVoiceConnection | null,
 ) {
@@ -179,6 +167,17 @@ export function useOnboardingVoiceRealtime({
     }
   }, []);
 
+  const scheduleMicRestoreForUserTurn = useCallback(() => {
+    clearMicRestoreTimer();
+    micRestoreTimerRef.current = window.setTimeout(() => {
+      micRestoreTimerRef.current = null;
+      restoreMicForListening(connectionRef.current);
+      if (connectionRef.current) {
+        setPhase('listening');
+      }
+    }, MIC_UNMUTE_DELAY_MS);
+  }, [clearMicRestoreTimer]);
+
   const stopBrowserSpeech = useCallback(() => {
     cancelSpeechRef.current?.();
     cancelSpeechRef.current = null;
@@ -203,24 +202,24 @@ export function useOnboardingVoiceRealtime({
         },
       });
       if (!cancelSpeech) {
-        scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
+        scheduleMicRestoreForUserTurn();
         return;
       }
       cancelSpeechRef.current = cancelSpeech;
     },
-    [clearMicRestoreTimer, locale],
+    [clearMicRestoreTimer, locale, scheduleMicRestoreForUserTurn],
   );
 
   const speakAssistantReply = useCallback(
     (spoken: string) => {
       if (!spoken || isAssistantFailureText(spoken)) {
-        scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
+        scheduleMicRestoreForUserTurn();
         return;
       }
 
       const speakable = prepareAssistantTextForSpeech(spoken);
       if (!speakable || spoken === lastSpokenAssistantRef.current) {
-        scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
+        scheduleMicRestoreForUserTurn();
         return;
       }
 
@@ -241,7 +240,12 @@ export function useOnboardingVoiceRealtime({
 
       speakWithBrowserFallback(speakable);
     },
-    [locale, speakWithBrowserFallback, stopBrowserSpeech],
+    [
+      locale,
+      scheduleMicRestoreForUserTurn,
+      speakWithBrowserFallback,
+      stopBrowserSpeech,
+    ],
   );
 
   const sendTranscriptToChat = useCallback(async (text: string) => {
@@ -394,15 +398,19 @@ export function useOnboardingVoiceRealtime({
             if (speakable) {
               speakWithBrowserFallback(speakable);
             } else {
-              scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
+              scheduleMicRestoreForUserTurn();
             }
           } else {
-            scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
+            scheduleMicRestoreForUserTurn();
           }
         }
       }
     },
-    [sendTranscriptToChat, speakWithBrowserFallback],
+    [
+      scheduleMicRestoreForUserTurn,
+      sendTranscriptToChat,
+      speakWithBrowserFallback,
+    ],
   );
 
   const connect = useCallback(async () => {
@@ -438,6 +446,8 @@ export function useOnboardingVoiceRealtime({
 
       const connection = await connectOpenAiRealtimeCall({
         clientSecret: session.clientSecret,
+        transcriptionModel: session.transcriptionModel,
+        turnDetection: session.turnDetection,
         onEvent: handleServerEvent,
         onConnectionStateChange: (state) => {
           if (state === 'connected') {
@@ -574,7 +584,7 @@ export function useOnboardingVoiceRealtime({
     wasStreamingRef.current = false;
 
     if (!spoken) {
-      scheduleMicRestoreForUserTurn(connectionRef.current, setPhase);
+      scheduleMicRestoreForUserTurn();
       return;
     }
 

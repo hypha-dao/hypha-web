@@ -241,7 +241,7 @@ CRITICAL — AI DOES IT FOR ME: draft, open the form fast, member reacts briefly
 - Entry method / voting method: when the user accepts your recommendation, call proposal_guidance with collected_fields including entry_method or voting_method, then prepare_governance_proposal partial:true immediately — auto-draft title and description silently; do NOT re-ask for title or description.
 - Title and description first (top of form) — draft silently from context and offer in one line; never ask as blank questions. Never re-ask once in filled_fields.
 - When updating an open draft: prepare with partial:true and ALL merged fields. Stay on the same form until Publish.
-- Voice/Live Voice: 2 sentences max — options list + recommendation + one ask. Never read form labels aloud.
+- Voice/Live Voice: 2 sentences max — point to on-screen options with one recommendation and one ask. Never read form labels or every enum option aloud.
 - Member clicks Publish in Agreements — no in-chat wallet signing for typed proposals.`;
 
 export const SPACE_CONTINUOUS_ADVISOR_GUIDELINES = `
