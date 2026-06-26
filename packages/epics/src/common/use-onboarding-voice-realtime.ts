@@ -193,12 +193,7 @@ export function useOnboardingVoiceRealtime({
         rate: 1.02,
         onEnd: () => {
           cancelSpeechRef.current = null;
-          clearMicRestoreTimer();
-          micRestoreTimerRef.current = window.setTimeout(() => {
-            micRestoreTimerRef.current = null;
-            restoreMicForListening(connectionRef.current);
-            setPhase(connectionRef.current ? 'listening' : 'idle');
-          }, MIC_UNMUTE_DELAY_MS);
+          scheduleMicRestoreForUserTurn();
         },
       });
       if (!cancelSpeech) {
@@ -207,7 +202,7 @@ export function useOnboardingVoiceRealtime({
       }
       cancelSpeechRef.current = cancelSpeech;
     },
-    [clearMicRestoreTimer, locale, scheduleMicRestoreForUserTurn],
+    [locale, scheduleMicRestoreForUserTurn],
   );
 
   const speakAssistantReply = useCallback(
