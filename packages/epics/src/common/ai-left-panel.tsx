@@ -2403,14 +2403,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
         const toolKey = `${message.id ?? 'm'}:${j}`;
         if (completedVotingMethodToolKeyRef.current === toolKey) return;
-        if (onboardingContext?.votingMethod === method) {
+        if (onboardingContext?.votingMethod) {
           completedVotingMethodToolKeyRef.current = toolKey;
           return;
         }
 
         completedVotingMethodToolKeyRef.current = toolKey;
         setOnboardingContext((current) => {
-          if (!current || current.votingMethod === method) return current;
+          if (!current || current.votingMethod) return current;
           const currentActive = current.activeGovernanceProposal;
           if (currentActive?.proposalType !== 'change_voting_method') {
             return current;

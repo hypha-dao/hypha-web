@@ -140,6 +140,7 @@ export function useOnboardingVoiceRealtime({
   const cancelSpeechRef = useRef<(() => void) | null>(null);
   const realtimeSpeakInFlightRef = useRef(false);
   const activeRealtimeResponseIdRef = useRef<string | null>(null);
+  const pendingBargeInTranscriptRef = useRef<string | null>(null);
   const interimAckSpokenRef = useRef(false);
   const lastAssistantTextRef = useRef(lastAssistantText);
   lastAssistantTextRef.current = lastAssistantText;
@@ -265,6 +266,13 @@ export function useOnboardingVoiceRealtime({
       ) {
         interruptForUserBargeIn();
         lastSpokenAssistantRef.current = '';
+        if (isChatStreamingRef.current) {
+          pendingBargeInTranscriptRef.current = normalized;
+          interimAckSpokenRef.current = false;
+          setPhase('processing');
+          setLiveTranscript(normalized);
+          return;
+        }
       }
 
       interimAckSpokenRef.current = false;
@@ -304,6 +312,7 @@ export function useOnboardingVoiceRealtime({
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
     interimAckSpokenRef.current = false;
+    pendingBargeInTranscriptRef.current = null;
     activeRealtimeResponseIdRef.current = null;
     realtimeSpeakInFlightRef.current = false;
     realtimeAudioHeardRef.current = false;
@@ -599,6 +608,14 @@ export function useOnboardingVoiceRealtime({
     lastSpokenAssistantRef.current = '';
     stopListening();
   }, [activeSpaceSlug, stopListening]);
+
+  useEffect(() => {
+    if (!enabled || isChatStreaming) return;
+    const pending = pendingBargeInTranscriptRef.current?.trim();
+    if (!pending) return;
+    pendingBargeInTranscriptRef.current = null;
+    void sendTranscriptToChat(pending);
+  }, [enabled, isChatStreaming, sendTranscriptToChat]);
 
   useEffect(() => {
     if (!enabled || !isChatStreaming) return;
