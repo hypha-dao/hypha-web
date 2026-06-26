@@ -3,9 +3,9 @@ import 'server-only';
 import { format } from 'date-fns';
 import {
   buildScheduledCallJoinPath,
-  toAbsoluteAppUrl,
   type ScheduledItem,
 } from '@hypha-platform/core/client';
+import { toAbsoluteAppUrl } from '@hypha-platform/core/server';
 import { sendEmailNotifications, sendPushNotifications } from '../mutations';
 
 export type NotifyScheduledItemReminderInput = {
@@ -43,7 +43,11 @@ function escapeHtml(value: string): string {
 
 function sanitizeReminderUrl(url: string): string {
   try {
-    return encodeURI(url);
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '#';
+    }
+    return parsed.toString();
   } catch {
     return '#';
   }
@@ -61,6 +65,7 @@ export async function notifyScheduledItemReminder(
   const safeTitle = escapeHtml(title);
   const safeSpaceTitle = escapeHtml(spaceTitle);
   const safeUrl = sanitizeReminderUrl(url);
+  const pushUrl = safeUrl === '#' ? undefined : safeUrl;
   const heading = `${title} starts soon`;
   const body = `<p><strong>${safeTitle}</strong> in <strong>${safeSpaceTitle}</strong> starts at ${whenLabel}.</p><p><a href="${safeUrl}">Open in Hypha</a></p>`;
   const textBody = `${title} in ${spaceTitle} starts at ${whenLabel}. Open: ${url}`;
@@ -72,7 +77,7 @@ export async function notifyScheduledItemReminder(
       usernames: input.memberSlugs,
       headings: { en: heading },
       contents: { en: `${title} starts at ${whenLabel}` },
-      url,
+      url: pushUrl,
     });
     sent += 1;
   }

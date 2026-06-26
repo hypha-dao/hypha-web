@@ -95,10 +95,34 @@ function resolveRecurrenceRule(data: {
   recurrenceRule?: string | null;
   startsAt: Date;
 }) {
+  if (data.recurrencePreset === 'none') {
+    return null;
+  }
   if (data.recurrencePreset && data.recurrencePreset !== 'none') {
     return buildRecurrenceRuleFromPreset(data.recurrencePreset, data.startsAt);
   }
   return data.recurrenceRule ?? null;
+}
+
+function validateRecurrenceUntil(
+  data: {
+    startsAt?: Date;
+    recurrenceUntil?: Date | null;
+    recurrencePreset?: z.infer<typeof recurrencePresetSchema>;
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (
+    data.recurrenceUntil &&
+    data.startsAt &&
+    data.recurrenceUntil.getTime() < data.startsAt.getTime()
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Repeat-until must be on or after the start time',
+      path: ['recurrenceUntil'],
+    });
+  }
 }
 
 function validateReminderSettings(
@@ -137,6 +161,7 @@ export const schemaCreateScheduledItem = z
       });
     }
     validateReminderSettings(data, ctx);
+    validateRecurrenceUntil(data, ctx);
   });
 
 export const schemaUpdateScheduledItem = z
@@ -193,6 +218,7 @@ export const schemaUpdateScheduledItem = z
       });
     }
     validateReminderSettings(data, ctx);
+    validateRecurrenceUntil(data, ctx);
   });
 
 export const schemaScheduledItemsRangeQuery = z

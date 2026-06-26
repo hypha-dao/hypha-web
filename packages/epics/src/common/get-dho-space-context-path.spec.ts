@@ -32,6 +32,16 @@ describe('getDhoSpaceContextPath', () => {
     ).toBe('/en/dho/next-space/treasury');
   });
 
+  it('preserves calendar when switching spaces from the calendar tab', () => {
+    expect(
+      getDhoSpaceContextPath({
+        pathname: '/en/dho/current-space/calendar/new-scheduled-item',
+        lang: 'en',
+        spaceSlug: 'next-space',
+      }),
+    ).toBe('/en/dho/next-space/calendar');
+  });
+
   it('falls back to agreements for non-tab overlay routes', () => {
     expect(
       getDhoSpaceContextPath({

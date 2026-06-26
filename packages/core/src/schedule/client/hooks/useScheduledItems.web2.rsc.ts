@@ -3,12 +3,13 @@
 import useSWR, { mutate } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useAuthentication } from '@hypha-platform/authentication';
+import type { PaginatedResponse } from '../../common/types';
 import type { ScheduledItem } from '../../types';
 import {
   createScheduledItemAction,
   deleteScheduledItemAction,
   updateScheduledItemAction,
-} from '../../server/actions';
+} from '../index';
 
 export const SCHEDULED_ITEMS_SWR_KEY = 'scheduled-items' as const;
 
@@ -57,7 +58,7 @@ async function fetchScheduledItems(
     throw new Error(`Failed to fetch scheduled items: ${response.status}`);
   }
 
-  const payload = (await response.json()) as { data: ScheduledItem[] };
+  const payload = (await response.json()) as PaginatedResponse<ScheduledItem>;
   return payload.data.map((item) => ({
     ...item,
     startsAt: new Date(item.startsAt),
@@ -124,18 +125,27 @@ export function useScheduledItemMutations(
   spaceSlug?: string,
   lang?: string,
 ) {
+  const mutationBase =
+    spaceSlug?.trim() ?
+      (['scheduled-item-mutations', spaceSlug.trim(), lang ?? 'en'] as const)
+    : null;
+
   const {
     trigger: createScheduledItem,
     isMutating: isCreating,
     error: createError,
   } = useSWRMutation(
-    authToken ? [authToken, 'createScheduledItem', spaceSlug, lang] : null,
-    async ([token], { arg }: { arg: unknown }) =>
-      createScheduledItemAction(arg, {
-        authToken: token,
+    mutationBase ? ([...mutationBase, 'create'] as const) : null,
+    async (_key, { arg }: { arg: unknown }) => {
+      if (!authToken) {
+        throw new Error('authToken is required to create a scheduled item');
+      }
+      return createScheduledItemAction(arg, {
+        authToken,
         spaceSlug,
         lang,
-      }),
+      });
+    },
   );
 
   const {
@@ -143,13 +153,17 @@ export function useScheduledItemMutations(
     isMutating: isUpdating,
     error: updateError,
   } = useSWRMutation(
-    authToken ? [authToken, 'updateScheduledItem', spaceSlug, lang] : null,
-    async ([token], { arg }: { arg: unknown }) =>
-      updateScheduledItemAction(arg, {
-        authToken: token,
+    mutationBase ? ([...mutationBase, 'update'] as const) : null,
+    async (_key, { arg }: { arg: unknown }) => {
+      if (!authToken) {
+        throw new Error('authToken is required to update a scheduled item');
+      }
+      return updateScheduledItemAction(arg, {
+        authToken,
         spaceSlug,
         lang,
-      }),
+      });
+    },
   );
 
   const {
@@ -157,9 +171,13 @@ export function useScheduledItemMutations(
     isMutating: isDeleting,
     error: deleteError,
   } = useSWRMutation(
-    authToken ? [authToken, 'deleteScheduledItem', spaceSlug] : null,
-    async ([token], { arg }: { arg: { id: number } }) =>
-      deleteScheduledItemAction(arg, { authToken: token, spaceSlug }),
+    mutationBase ? ([...mutationBase, 'delete'] as const) : null,
+    async (_key, { arg }: { arg: { id: number } }) => {
+      if (!authToken) {
+        throw new Error('authToken is required to delete a scheduled item');
+      }
+      return deleteScheduledItemAction(arg, { authToken, spaceSlug });
+    },
   );
 
   return {

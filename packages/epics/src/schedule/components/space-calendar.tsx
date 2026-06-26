@@ -154,6 +154,23 @@ function buildEditScheduledItemPath(
   );
 }
 
+function normalizeCalendarEventRange(
+  start: Date,
+  end: Date | null,
+  allDay: boolean,
+): { startsAt: Date; endsAt: Date; allDay: boolean } {
+  const startsAt = new Date(start);
+  let endsAt = end ? new Date(end) : new Date(startsAt);
+
+  if (allDay) {
+    startsAt.setHours(0, 0, 0, 0);
+    endsAt = new Date(endsAt.getTime() - 86_400_000);
+    endsAt.setHours(23, 59, 59, 999);
+  }
+
+  return { startsAt, endsAt, allDay };
+}
+
 export function SpaceCalendar({
   spaceSlug,
   lang = 'en',
@@ -254,11 +271,14 @@ export function SpaceCalendar({
       return;
     }
     try {
+      const normalized = normalizeCalendarEventRange(
+        dropInfo.event.start ?? item.startsAt,
+        dropInfo.event.end ?? item.endsAt,
+        dropInfo.event.allDay,
+      );
       await updateScheduledItem({
         id: item.id,
-        startsAt: dropInfo.event.start ?? item.startsAt,
-        endsAt: dropInfo.event.end ?? item.endsAt,
-        allDay: dropInfo.event.allDay,
+        ...normalized,
       });
       await persistAfterMutation();
     } catch {
@@ -279,10 +299,15 @@ export function SpaceCalendar({
       return;
     }
     try {
+      const normalized = normalizeCalendarEventRange(
+        resizeInfo.event.start ?? item.startsAt,
+        resizeInfo.event.end ?? item.endsAt,
+        resizeInfo.event.allDay,
+      );
       await updateScheduledItem({
         id: item.id,
-        startsAt: resizeInfo.event.start ?? item.startsAt,
-        endsAt: resizeInfo.event.end ?? item.endsAt,
+        startsAt: normalized.startsAt,
+        endsAt: normalized.endsAt,
       });
       await persistAfterMutation();
     } catch {
