@@ -3,6 +3,7 @@ import {
   findLatestAiPanelNavigationTarget,
   isAtNavigationTarget,
   pickBestNavigationTarget,
+  shouldSkipStaleOverviewAutoNavigation,
 } from '../ai-tool-navigation';
 
 describe('findLatestAiPanelNavigationTarget', () => {
@@ -196,5 +197,34 @@ describe('findLatestAiPanelNavigationTarget', () => {
     );
 
     expect(target?.href).toBe('/en/dho/youth-program/overview');
+  });
+});
+
+describe('shouldSkipStaleOverviewAutoNavigation', () => {
+  it('blocks stale overview auto-navigation when the member opened signals', () => {
+    expect(
+      shouldSkipStaleOverviewAutoNavigation(
+        '/en/dho/treetop/coherence',
+        '/en/dho/treetop/overview',
+      ),
+    ).toBe(true);
+  });
+
+  it('allows AI navigation to overview from overview', () => {
+    expect(
+      shouldSkipStaleOverviewAutoNavigation(
+        '/en/dho/treetop/overview',
+        '/en/dho/treetop/overview',
+      ),
+    ).toBe(false);
+  });
+
+  it('allows AI navigation to non-overview targets from signals', () => {
+    expect(
+      shouldSkipStaleOverviewAutoNavigation(
+        '/en/dho/treetop/coherence',
+        '/en/dho/treetop/agreements/create/pay-for-expenses',
+      ),
+    ).toBe(false);
   });
 });

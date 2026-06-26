@@ -198,6 +198,7 @@ import {
   findLatestPrepareGovernanceProposalUpdate,
   IMMEDIATE_AUTO_NAVIGATION_TOOLS,
   isAtNavigationTarget,
+  shouldSkipStaleOverviewAutoNavigation,
   type AiPanelNavigationTarget,
 } from './ai-tool-navigation';
 import {
@@ -1339,11 +1340,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (onProposalCreatePath && isProposalAiWalkthroughActive()) {
       openAiPanel();
     }
-
-    if (!onProposalCreatePath) {
-      lastAutoNavigationKeyRef.current = null;
-      lastPrepareGovernanceResubmitKeyRef.current = null;
-    }
   }, [openAiPanel, pathname]);
 
   useEffect(() => {
@@ -1411,6 +1407,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       isSameAppPath(href, pathname);
     if (alreadyOnTarget) return;
     if (lastAutoNavigationKeyRef.current === prepareUpdate.key) return;
+    if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
 
     lastAutoNavigationKeyRef.current = prepareUpdate.key;
     lastMcpNavigationTargetSpaceSlugRef.current =
@@ -1453,6 +1450,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const navigationKey = navigationTarget.key;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
+    if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
     lastAutoNavigationKeyRef.current = navigationKey;
 
     const openInNewTab = navigationTarget.openInNewTab === true;

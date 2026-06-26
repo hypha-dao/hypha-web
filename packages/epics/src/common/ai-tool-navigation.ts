@@ -1,5 +1,6 @@
 'use client';
 
+import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { normalizeAppPath } from './proposal-form-navigation';
 
 type ChatToolNavigation = {
@@ -67,6 +68,34 @@ export function pickBestNavigationTarget(
         navigationToolPriority(a.toolName) - navigationToolPriority(b.toolName),
     )[0] ?? null
   );
+}
+
+function getSpaceTabSection(pathname: string): string | null {
+  const match = pathname.match(/\/dho\/[^/]+\/([^/?]+)/);
+  return match?.[1] ?? null;
+}
+
+/** Do not replay stale AI overview navigation after the member opened another space tab. */
+export function shouldSkipStaleOverviewAutoNavigation(
+  currentPathname: string,
+  targetHref: string,
+): boolean {
+  try {
+    const target = new URL(targetHref, 'http://localhost');
+    const targetSection = getSpaceTabSection(target.pathname);
+    if (targetSection !== 'overview') return false;
+
+    const currentSpace = getDhoSpaceSlugFromPathname(currentPathname);
+    const targetSpace = getDhoSpaceSlugFromPathname(target.pathname);
+    if (!currentSpace || !targetSpace || currentSpace !== targetSpace) {
+      return false;
+    }
+
+    const currentSection = getSpaceTabSection(currentPathname);
+    return Boolean(currentSection && currentSection !== 'overview');
+  } catch {
+    return false;
+  }
 }
 
 export function isAtNavigationTarget(
