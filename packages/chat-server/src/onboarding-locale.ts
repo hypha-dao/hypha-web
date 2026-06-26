@@ -35,5 +35,5 @@ export function buildOnboardingLocaleDirective(locale?: string): string | null {
 
   const languageName = LANGUAGE_NAME_BY_LOCALE[code];
 
-  return `- UI locale: ${languageName} (${code}). Hypha supports ONLY these five languages: ${SUPPORTED_LANGUAGE_LIST}. Always write and speak in ${languageName} for this session—even if the user speaks another language, reply in ${languageName}. Use natural spoken language for voice turns.`;
+  return `- Default UI locale: ${languageName} (${code}). Hypha supports ONLY these five languages: ${SUPPORTED_LANGUAGE_LIST}. The user may speak or switch among any of them—match their language and reply in whichever of these five they are using. Never use any language outside this set. Use natural spoken language for voice turns.`;
 }

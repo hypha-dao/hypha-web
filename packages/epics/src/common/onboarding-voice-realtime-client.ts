@@ -1,7 +1,6 @@
 'use client';
 
 import { acquireWarmMicStream, isWarmMicStream } from './onboarding-voice-mic';
-import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
 
 const OPENAI_REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
 
@@ -127,27 +126,16 @@ export type RealtimeVoiceConnection = {
 
 const REALTIME_SPEAK_TEXT_MAX_CHARS = 4000;
 
-const LANGUAGE_NAME_BY_APP_LOCALE: Record<string, string> = {
-  en: 'English',
-  pt: 'Portuguese',
-  es: 'Spanish',
-  fr: 'French',
-  de: 'German',
-};
-
-function buildRealtimeSpeakLanguageDirective(locale?: string): string {
-  const bcp47 = resolveOnboardingSpeechLocale(locale);
-  const code = bcp47.split('-')[0]?.toLowerCase() ?? 'en';
-  const languageName = LANGUAGE_NAME_BY_APP_LOCALE[code] ?? 'English';
-  return `Speak ONLY in ${languageName} (${bcp47}). Hypha supports English, Portuguese, Spanish, French, and German only—do not use any other language.`;
+function buildRealtimeSpeakLanguageDirective(): string {
+  return 'Speak the text below in the same language it is written in. Hypha supports only English, Portuguese, Spanish, French, and German—never any other language.';
 }
 
-function buildRealtimeSpeakInstructions(text: string, locale?: string): string {
+function buildRealtimeSpeakInstructions(text: string): string {
   return [
     'You are a voice output relay only. Do not call tools or add new information.',
     'Speak the following assistant reply aloud in a warm, natural conversational tone.',
     'Do not add, remove, or change words. Do not ask follow-up questions.',
-    buildRealtimeSpeakLanguageDirective(locale),
+    buildRealtimeSpeakLanguageDirective(),
     '',
     text,
   ].join('\n');
@@ -224,10 +212,7 @@ export function speakAssistantTextViaRealtime(
     return false;
   }
 
-  const instructions = buildRealtimeSpeakInstructions(
-    speakable,
-    options?.locale,
-  );
+  const instructions = buildRealtimeSpeakInstructions(speakable);
 
   cancelActiveRealtimeResponse(connection, options?.activeResponseId);
 

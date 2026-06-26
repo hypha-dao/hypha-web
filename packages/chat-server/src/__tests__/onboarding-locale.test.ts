@@ -35,6 +35,13 @@ describe('buildOnboardingLocaleDirective', () => {
     expect(directive).toContain('ONLY these five languages');
   });
 
+  it('allows switching among the five supported languages', () => {
+    const directive = buildOnboardingLocaleDirective('en');
+    expect(directive).toContain('match their language');
+    expect(directive).toContain('switch among any of them');
+    expect(directive).not.toContain('even if the user speaks another language');
+  });
+
   it('returns null when locale is missing or unsupported', () => {
     expect(buildOnboardingLocaleDirective(undefined)).toBeNull();
     expect(buildOnboardingLocaleDirective('')).toBeNull();
