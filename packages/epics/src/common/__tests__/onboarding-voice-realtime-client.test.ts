@@ -1,6 +1,26 @@
 import { describe, expect, it } from 'vitest';
 
-import { isSubstantiveUserTranscript } from '../onboarding-voice-realtime-client';
+import {
+  buildRealtimeSpeakInstructions,
+  isSubstantiveUserTranscript,
+} from '../onboarding-voice-realtime-client';
+
+describe('buildRealtimeSpeakInstructions', () => {
+  it('includes native French pronunciation directive for fr locale', () => {
+    const instructions = buildRealtimeSpeakInstructions(
+      'Bonjour, comment puis-je vous aider ?',
+      'fr',
+    );
+    expect(instructions).toContain('French (fr-FR)');
+    expect(instructions).toContain('native pronunciation');
+    expect(instructions).toContain('Bonjour, comment puis-je vous aider ?');
+  });
+
+  it('defaults to English locale when none is provided', () => {
+    const instructions = buildRealtimeSpeakInstructions('Hello there.');
+    expect(instructions).toContain('English (en-US)');
+  });
+});
 
 describe('isSubstantiveUserTranscript', () => {
   it('accepts normal user phrases', () => {

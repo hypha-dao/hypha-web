@@ -184,7 +184,13 @@ function pickWarmFeminineVoice(lang: string): SpeechSynthesisVoice | undefined {
   const langMatches = voices.filter((voice) =>
     voiceMatchesLanguage(voice, lang),
   );
-  const pool = langMatches.length > 0 ? langMatches : voices;
+  const langPrefix = lang.toLowerCase().split('-')[0] ?? lang;
+  const pool =
+    langMatches.length > 0
+      ? langMatches
+      : langPrefix === 'en'
+      ? voices
+      : langMatches;
   const ranked = [...pool].sort(
     (a, b) => scoreFeminineVoice(b) - scoreFeminineVoice(a),
   );
