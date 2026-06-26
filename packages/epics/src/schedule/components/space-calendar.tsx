@@ -139,7 +139,11 @@ function buildNewScheduledItemPath(
     endsAt: draft.endsAt.toISOString(),
     allDay: draft.allDay ? '1' : '0',
   });
-  return `${buildCalendarPath(lang, spaceSlug, '/new-scheduled-item')}?${params.toString()}`;
+  return `${buildCalendarPath(
+    lang,
+    spaceSlug,
+    '/new-scheduled-item',
+  )}?${params.toString()}`;
 }
 
 function buildEditScheduledItemPath(
@@ -147,11 +151,7 @@ function buildEditScheduledItemPath(
   spaceSlug: string,
   itemId: number,
 ) {
-  return buildCalendarPath(
-    lang,
-    spaceSlug,
-    `/edit-scheduled-item/${itemId}`,
-  );
+  return buildCalendarPath(lang, spaceSlug, `/edit-scheduled-item/${itemId}`);
 }
 
 function normalizeCalendarEventRange(
@@ -171,10 +171,7 @@ function normalizeCalendarEventRange(
   return { startsAt, endsAt, allDay };
 }
 
-export function SpaceCalendar({
-  spaceSlug,
-  lang = 'en',
-}: SpaceCalendarProps) {
+export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const t = useTranslations('Calendar');
   const router = useRouter();
   const { resolvedTheme } = useTheme();
