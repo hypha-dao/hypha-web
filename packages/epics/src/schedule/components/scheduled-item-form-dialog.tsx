@@ -275,7 +275,17 @@ export function ScheduledItemFormDialog({
             <Switch
               id="scheduled-item-all-day"
               checked={allDay}
-              onCheckedChange={setAllDay}
+              onCheckedChange={(checked) => {
+                setAllDay(checked);
+                if (!checked) return;
+                if (startsAtLocal) {
+                  setStartsAtLocal(`${startsAtLocal.slice(0, 10)}T00:00`);
+                }
+                const endDate = (endsAtLocal || startsAtLocal).slice(0, 10);
+                if (endDate) {
+                  setEndsAtLocal(`${endDate}T23:59`);
+                }
+              }}
             />
           </div>
 
@@ -384,7 +394,7 @@ export function ScheduledItemFormDialog({
                 type="url"
                 value={meetingUrl}
                 onChange={(e) => setMeetingUrl(e.target.value)}
-                placeholder="https://..."
+                placeholder={t('fieldMeetingUrlPlaceholder')}
               />
             </div>
           ) : null}

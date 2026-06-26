@@ -165,6 +165,9 @@ export const schemaUpdateScheduledItem = z
     reminderMinutesBefore: true,
   })
   .transform((data) => {
+    if (data.recurrencePreset === 'none') {
+      return { ...data, recurrenceRule: null };
+    }
     if (data.recurrencePreset && data.startsAt) {
       return {
         ...data,
@@ -192,7 +195,12 @@ export const schemaUpdateScheduledItem = z
     validateReminderSettings(data, ctx);
   });
 
-export const schemaScheduledItemsRangeQuery = z.object({
-  from: scheduledItemDateSchema,
-  to: scheduledItemDateSchema,
-});
+export const schemaScheduledItemsRangeQuery = z
+  .object({
+    from: scheduledItemDateSchema,
+    to: scheduledItemDateSchema,
+  })
+  .refine((data) => data.from.getTime() <= data.to.getTime(), {
+    message: '"from" must be before or equal to "to"',
+    path: ['to'],
+  });

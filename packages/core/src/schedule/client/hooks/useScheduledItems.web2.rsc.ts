@@ -157,9 +157,9 @@ export function useScheduledItemMutations(
     isMutating: isDeleting,
     error: deleteError,
   } = useSWRMutation(
-    authToken ? [authToken, 'deleteScheduledItem'] : null,
+    authToken ? [authToken, 'deleteScheduledItem', spaceSlug] : null,
     async ([token], { arg }: { arg: { id: number } }) =>
-      deleteScheduledItemAction(arg, { authToken: token }),
+      deleteScheduledItemAction(arg, { authToken: token, spaceSlug }),
   );
 
   return {

@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
+import { authorizeSpacePanelInteraction } from '../../space/server/authorize-space-panel-interaction';
 import { findSelf } from '../../people/server/queries';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { getDb } from '../../common/server/get-db';
@@ -9,10 +10,30 @@ import {
   deleteScheduledItemById,
   updateScheduledItemById,
 } from './mutations';
+import { findScheduledItemById } from './queries';
+import { mergeScheduledItemUpdateInput } from './merge-scheduled-item-update';
 import {
   schemaCreateScheduledItem,
   schemaUpdateScheduledItem,
 } from '../validation';
+
+async function assertScheduledItemSpaceAccess(
+  authToken: string,
+  spaceSlug?: string,
+) {
+  const slug = spaceSlug?.trim();
+  if (!slug) {
+    throw new Error('spaceSlug is required to modify scheduled items');
+  }
+
+  const interactionAuth = await authorizeSpacePanelInteraction({
+    spaceSlug: slug,
+    authToken,
+  });
+  if (!interactionAuth.authorized) {
+    throw new Error(interactionAuth.message);
+  }
+}
 
 export async function createScheduledItemAction(
   data: unknown,
@@ -26,6 +47,8 @@ export async function createScheduledItemAction(
     throw new Error('authToken is required to create a scheduled item');
   }
 
+  await assertScheduledItemSpaceAccess(authToken, spaceSlug);
+
   const validated = schemaCreateScheduledItem.parse(data);
   const authDb = getDb({ authToken });
   const self = await findSelf({ db: authDb });
@@ -36,6 +59,9 @@ export async function createScheduledItemAction(
   const space = spaceSlug?.trim()
     ? await findSpaceBySlug({ slug: spaceSlug.trim() }, { db })
     : null;
+  if (space && validated.spaceId !== space.id) {
+    throw new Error('Scheduled item space does not match the requested space');
+  }
 
   return createScheduledItem(
     {
@@ -64,15 +90,32 @@ export async function updateScheduledItemAction(
     throw new Error('authToken is required to update a scheduled item');
   }
 
-  const validated = schemaUpdateScheduledItem.parse(data);
-  const { id, ...updates } = validated;
+  await assertScheduledItemSpaceAccess(authToken, spaceSlug);
+
+  if (typeof data !== 'object' || data == null || !('id' in data)) {
+    throw new Error('Scheduled item id is required');
+  }
+
+  const incoming = data as Record<string, unknown> & { id: number };
+  const existing = await findScheduledItemById({ id: incoming.id }, { db });
+  if (!existing) {
+    throw new Error('Scheduled item not found');
+  }
 
   const space = spaceSlug?.trim()
     ? await findSpaceBySlug({ slug: spaceSlug.trim() }, { db })
     : null;
+  if (space && existing.spaceId !== space.id) {
+    throw new Error('Scheduled item not found in this space');
+  }
+
+  const validated = schemaUpdateScheduledItem.parse(
+    mergeScheduledItemUpdateInput(existing, incoming, incoming.id),
+  );
+  const { id, ...mergedUpdates } = validated;
 
   return updateScheduledItemById(
-    { id, ...updates },
+    { id, ...mergedUpdates },
     {
       db,
       space: space
@@ -85,10 +128,24 @@ export async function updateScheduledItemAction(
 
 export async function deleteScheduledItemAction(
   { id }: { id: number },
-  { authToken }: { authToken?: string },
+  { authToken, spaceSlug }: { authToken?: string; spaceSlug?: string },
 ) {
   if (!authToken) {
     throw new Error('authToken is required to delete a scheduled item');
+  }
+
+  await assertScheduledItemSpaceAccess(authToken, spaceSlug);
+
+  const existing = await findScheduledItemById({ id }, { db });
+  if (!existing) {
+    throw new Error('Scheduled item not found');
+  }
+
+  const space = spaceSlug?.trim()
+    ? await findSpaceBySlug({ slug: spaceSlug.trim() }, { db })
+    : null;
+  if (space && existing.spaceId !== space.id) {
+    throw new Error('Scheduled item not found in this space');
   }
 
   return deleteScheduledItemById({ id }, { db });

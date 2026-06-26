@@ -393,6 +393,13 @@
       "when": 1781800000000,
       "tag": "0055_scheduled_item_recurrence_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1781900000000,
+      "tag": "0056_scheduled_item_type_channel_checks",
+      "breakpoints": true
     }
   ]
 }
