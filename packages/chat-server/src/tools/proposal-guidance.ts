@@ -89,7 +89,7 @@ function buildNextProposalQuestion(
     case 'token_icon_url':
       return 'Optional: ask for an HTTPS icon URL, or say they can upload on the form. Skip if they prefer to upload later.';
     case 'max_supply':
-      return 'Ask only after type, name, and symbol are set. Propose unlimited (0) or a number — ask which they want.';
+      return 'Never ask — limited supply is Advanced on the form. Use 0 (unlimited) in prepare unless the member enables it on screen.';
     default:
       break;
   }
