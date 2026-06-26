@@ -29,62 +29,77 @@ export async function POST(request: NextRequest) {
     const memberSlugsBySpace = new Map<number, string[]>();
     let dispatched = 0;
     let skipped = 0;
+    let failed = 0;
 
     for (const reminder of due) {
-      const pendingChannels: Array<'email' | 'push'> = [];
-      for (const channel of reminder.channels) {
-        const alreadySent = await hasScheduledReminderBeenDispatched(
+      try {
+        const pendingChannels: Array<'email' | 'push'> = [];
+        for (const channel of reminder.channels) {
+          const alreadySent = await hasScheduledReminderBeenDispatched(
+            {
+              scheduledItemId: reminder.item.id,
+              occurrenceStartsAt: reminder.occurrenceStartsAt,
+              channel,
+            },
+            { db },
+          );
+          if (!alreadySent) pendingChannels.push(channel);
+        }
+
+        if (pendingChannels.length === 0) {
+          skipped += 1;
+          continue;
+        }
+
+        let memberSlugs = memberSlugsBySpace.get(reminder.item.spaceId);
+        if (!memberSlugs) {
+          memberSlugs = await findSpaceMemberSlugsBySpaceId(
+            { spaceId: reminder.item.spaceId },
+            { db },
+          );
+          memberSlugsBySpace.set(reminder.item.spaceId, memberSlugs);
+        }
+
+        await notifyScheduledItemReminder({
+          item: reminder.item,
+          occurrenceStartsAt: reminder.occurrenceStartsAt,
+          spaceSlug: reminder.spaceSlug,
+          spaceTitle: reminder.spaceTitle,
+          memberSlugs,
+          channels: pendingChannels,
+        });
+
+        for (const channel of pendingChannels) {
+          await recordScheduledReminderDispatch(
+            {
+              scheduledItemId: reminder.item.id,
+              occurrenceStartsAt: reminder.occurrenceStartsAt,
+              channel,
+            },
+            { db },
+          );
+        }
+
+        dispatched += 1;
+      } catch (error) {
+        failed += 1;
+        console.error(
+          'Failed to dispatch scheduled item reminder:',
           {
             scheduledItemId: reminder.item.id,
-            occurrenceStartsAt: reminder.occurrenceStartsAt,
-            channel,
+            occurrenceStartsAt: reminder.occurrenceStartsAt.toISOString(),
+            channels: reminder.channels,
           },
-          { db },
-        );
-        if (!alreadySent) pendingChannels.push(channel);
-      }
-
-      if (pendingChannels.length === 0) {
-        skipped += 1;
-        continue;
-      }
-
-      let memberSlugs = memberSlugsBySpace.get(reminder.item.spaceId);
-      if (!memberSlugs) {
-        memberSlugs = await findSpaceMemberSlugsBySpaceId(
-          { spaceId: reminder.item.spaceId },
-          { db },
-        );
-        memberSlugsBySpace.set(reminder.item.spaceId, memberSlugs);
-      }
-
-      await notifyScheduledItemReminder({
-        item: reminder.item,
-        occurrenceStartsAt: reminder.occurrenceStartsAt,
-        spaceSlug: reminder.spaceSlug,
-        spaceTitle: reminder.spaceTitle,
-        memberSlugs,
-        channels: pendingChannels,
-      });
-
-      for (const channel of pendingChannels) {
-        await recordScheduledReminderDispatch(
-          {
-            scheduledItemId: reminder.item.id,
-            occurrenceStartsAt: reminder.occurrenceStartsAt,
-            channel,
-          },
-          { db },
+          error,
         );
       }
-
-      dispatched += 1;
     }
 
     return NextResponse.json({
       due: due.length,
       dispatched,
       skipped,
+      failed,
     });
   } catch (error) {
     console.error('Failed to dispatch scheduled item reminders:', error);

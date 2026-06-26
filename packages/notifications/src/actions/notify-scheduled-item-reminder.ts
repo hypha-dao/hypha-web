@@ -32,6 +32,23 @@ function buildReminderUrl(input: NotifyScheduledItemReminderInput): string {
   return toAbsoluteAppUrl(`/${lang}/dho/${input.spaceSlug}/calendar`);
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeReminderUrl(url: string): string {
+  try {
+    return encodeURI(url);
+  } catch {
+    return '#';
+  }
+}
+
 export async function notifyScheduledItemReminder(
   input: NotifyScheduledItemReminderInput,
 ) {
@@ -41,8 +58,11 @@ export async function notifyScheduledItemReminder(
   const title = input.item.title.trim();
   const spaceTitle = input.spaceTitle.trim();
   const url = buildReminderUrl(input);
+  const safeTitle = escapeHtml(title);
+  const safeSpaceTitle = escapeHtml(spaceTitle);
+  const safeUrl = sanitizeReminderUrl(url);
   const heading = `${title} starts soon`;
-  const body = `<p><strong>${title}</strong> in <strong>${spaceTitle}</strong> starts at ${whenLabel}.</p><p><a href="${url}">Open in Hypha</a></p>`;
+  const body = `<p><strong>${safeTitle}</strong> in <strong>${safeSpaceTitle}</strong> starts at ${whenLabel}.</p><p><a href="${safeUrl}">Open in Hypha</a></p>`;
   const textBody = `${title} in ${spaceTitle} starts at ${whenLabel}. Open: ${url}`;
 
   let sent = 0;

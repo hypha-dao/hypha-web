@@ -9,7 +9,7 @@ export function buildRecurrenceRuleFromPreset(
 ): string | null {
   if (preset === 'none') return null;
 
-  const day = WEEKDAY_MAP[startsAt.getDay()];
+  const day = WEEKDAY_MAP[startsAt.getUTCDay()];
   switch (preset) {
     case 'daily':
       return 'FREQ=DAILY';

@@ -9,6 +9,7 @@ import {
 import type { DbConfig } from '@hypha-platform/core/server';
 import type { DueScheduledReminder, ScheduledItem } from '../types';
 import { expandScheduledOccurrenceStarts } from '../recurrence';
+import { REMINDER_MINUTES_OPTIONS } from '../recurrence-presets';
 
 function mapRow(row: typeof spaceScheduledItems.$inferSelect): ScheduledItem {
   return {
@@ -126,6 +127,9 @@ export async function findDueScheduledReminders(
   { db }: DbConfig,
 ): Promise<DueScheduledReminder[]> {
   const horizon = new Date(now.getTime() + lookaheadMinutes * 60_000);
+  const maxReminderMs = Math.max(...REMINDER_MINUTES_OPTIONS) * 60_000;
+  const latestOccurrenceStart = new Date(horizon.getTime() + maxReminderMs);
+  const earliestOccurrenceStart = new Date(now.getTime() - maxReminderMs);
 
   const rows = await db
     .select({
@@ -142,6 +146,20 @@ export async function findDueScheduledReminders(
           eq(spaceScheduledItems.remindPush, true),
         ),
         isNotNull(spaceScheduledItems.reminderMinutesBefore),
+        lte(spaceScheduledItems.startsAt, latestOccurrenceStart),
+        or(
+          and(
+            isNull(spaceScheduledItems.recurrenceRule),
+            gte(spaceScheduledItems.startsAt, earliestOccurrenceStart),
+          ),
+          and(
+            isNotNull(spaceScheduledItems.recurrenceRule),
+            or(
+              isNull(spaceScheduledItems.recurrenceUntil),
+              gte(spaceScheduledItems.recurrenceUntil, now),
+            ),
+          ),
+        ),
       ),
     );
 
