@@ -9,7 +9,7 @@ export function buildRecurrenceRuleFromPreset(
 ): string | null {
   if (preset === 'none') return null;
 
-  const day = WEEKDAY_MAP[startsAt.getUTCDay()];
+  const day = WEEKDAY_MAP[startsAt.getDay()];
   switch (preset) {
     case 'daily':
       return 'FREQ=DAILY';
@@ -69,12 +69,8 @@ export function expandScheduledOccurrenceStarts({
 export function toRruleDtstart(date: Date): string {
   const pad = (value: number, len = 2) => String(value).padStart(len, '0');
   return (
-    `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(
-      date.getUTCDate(),
-    )}` +
-    `T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(
-      date.getUTCSeconds(),
-    )}Z`
+    `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}` +
+    `T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
   );
 }
 

@@ -407,6 +407,13 @@
       "when": 1782000000000,
       "tag": "0057_scheduled_item_booking_type",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1782100000000,
+      "tag": "0058_scheduled_item_integrity_checks",
+      "breakpoints": true
     }
   ]
 }

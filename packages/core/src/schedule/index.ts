@@ -20,13 +20,12 @@ export {
   toFullCalendarRruleInput,
 } from './recurrence';
 export {
-  applyMatrixAutoLink,
   buildScheduledCallJoinPath,
   buildScheduledCalendarEventPath,
   isMatrixLinkedCall,
-  resolveAppOrigin,
-  toAbsoluteAppUrl,
+  type MatrixAutoLinkInput,
 } from './matrix-link';
+export { parseScheduledItemId } from './parse-scheduled-item-id';
 export type {
   ScheduledItem,
   CreateScheduledItemInput,

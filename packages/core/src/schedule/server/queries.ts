@@ -238,6 +238,37 @@ export async function hasScheduledReminderBeenDispatched(
   return Boolean(row);
 }
 
+export async function tryClaimScheduledReminderDispatch(
+  {
+    scheduledItemId,
+    occurrenceStartsAt,
+    channel,
+  }: {
+    scheduledItemId: number;
+    occurrenceStartsAt: Date;
+    channel: 'email' | 'push';
+  },
+  { db }: DbConfig,
+): Promise<boolean> {
+  const [row] = await db
+    .insert(spaceScheduledItemReminderDispatches)
+    .values({
+      scheduledItemId,
+      occurrenceStartsAt,
+      channel,
+    })
+    .onConflictDoNothing({
+      target: [
+        spaceScheduledItemReminderDispatches.scheduledItemId,
+        spaceScheduledItemReminderDispatches.occurrenceStartsAt,
+        spaceScheduledItemReminderDispatches.channel,
+      ],
+    })
+    .returning({ id: spaceScheduledItemReminderDispatches.id });
+
+  return Boolean(row);
+}
+
 export async function recordScheduledReminderDispatch(
   {
     scheduledItemId,

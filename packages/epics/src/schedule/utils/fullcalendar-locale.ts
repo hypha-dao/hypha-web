@@ -6,12 +6,12 @@ import frLocale from '@fullcalendar/core/locales/fr';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
 const FULLCALENDAR_LOCALES: Record<string, LocaleInput> = {
-  en: enGbLocale,
   de: deLocale,
   es: esLocale,
   fr: frLocale,
   pt: ptBrLocale,
   'pt-br': ptBrLocale,
+  'en-gb': enGbLocale,
 };
 
 export function resolveFullCalendarLocale(locale: string): LocaleInput {
