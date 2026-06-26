@@ -1401,12 +1401,11 @@ export async function createChatStreamResult(
     normalizedConversationContext,
     spaceContextSnapshot,
   );
-  const onboardingLocaleDirective =
+  const onboardingLocaleDirective = buildOnboardingLocaleDirective(
     normalizedConversationContext?.mode === 'onboarding_setup'
-      ? buildOnboardingLocaleDirective(normalizedConversationContext.locale)
-      : buildOnboardingLocaleDirective(
-          chatLocale !== 'en' ? chatLocale : undefined,
-        );
+      ? normalizedConversationContext.locale?.trim() || chatLocale
+      : chatLocale,
+  );
   const localizedEntryMethodGuidelines =
     chatLocale !== 'en'
       ? buildOnboardingEntryMethodGuidelines(chatLocale)
