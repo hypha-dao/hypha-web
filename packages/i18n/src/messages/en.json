@@ -3608,6 +3608,7 @@
     "fieldStarts": "Starts",
     "fieldEnds": "Ends",
     "fieldMeetingUrl": "Meeting link",
+    "fieldMeetingUrlPlaceholder": "https://meet.example.com/room",
     "fieldLocation": "Location",
     "fieldLocationPlaceholder": "Room, city, or online",
     "fieldDescription": "Notes",

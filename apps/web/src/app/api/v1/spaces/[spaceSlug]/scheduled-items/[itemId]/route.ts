@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  authorizeSpacePanelInteraction,
   deleteScheduledItemById,
   findScheduledItemById,
   findSelf,
   findSpaceBySlug,
   getDb,
+  mergeScheduledItemUpdateInput,
   schemaUpdateScheduledItem,
   updateScheduledItemById,
 } from '@hypha-platform/core/server';
@@ -18,12 +20,36 @@ type Params = { spaceSlug: string; itemId: string };
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
-async function authorizeRequest(request: NextRequest) {
+async function authorizeRequest(request: NextRequest, spaceSlug: string) {
   const authToken = request.headers.get('Authorization')?.split(' ')[1];
   if (!authToken) {
     return {
       error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
+  }
+
+  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (space?.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+    const { hasAccess, response } = await checkSpaceAccess(
+      request,
+      space.web3SpaceId as number,
+    );
+    if (!hasAccess && response) {
+      return { error: response };
+    }
+  } else {
+    const interactionAuth = await authorizeSpacePanelInteraction({
+      spaceSlug,
+      authToken,
+    });
+    if (!interactionAuth.authorized) {
+      return {
+        error: NextResponse.json(
+          { error: interactionAuth.message },
+          { status: 403 },
+        ),
+      };
+    }
   }
 
   const privy = new PrivyClient({
@@ -56,7 +82,7 @@ export async function PATCH(
   }
 
   try {
-    const auth = await authorizeRequest(request);
+    const auth = await authorizeRequest(request, spaceSlug);
     if ('error' in auth && auth.error) return auth.error;
 
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
@@ -72,20 +98,18 @@ export async function PATCH(
       );
     }
 
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
+    const body = await request.json();
+    const parsed = schemaUpdateScheduledItem.safeParse(
+      mergeScheduledItemUpdateInput(existing, body, id),
+    );
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body', details: parsed.error.flatten() },
+        { status: 400 },
       );
-      if (!hasAccess && response) {
-        return response;
-      }
     }
 
-    const body = await request.json();
-    const validated = schemaUpdateScheduledItem.parse({ ...body, id });
-    const { id: _id, ...updates } = validated;
-
+    const { id: _id, ...updates } = parsed.data;
     const updated = await updateScheduledItemById(
       { id, ...updates },
       {
@@ -115,7 +139,7 @@ export async function DELETE(
   }
 
   try {
-    const auth = await authorizeRequest(request);
+    const auth = await authorizeRequest(request, spaceSlug);
     if ('error' in auth && auth.error) return auth.error;
 
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
@@ -129,16 +153,6 @@ export async function DELETE(
         { error: 'Scheduled item not found' },
         { status: 404 },
       );
-    }
-
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) {
-        return response;
-      }
     }
 
     await deleteScheduledItemById({ id }, { db });

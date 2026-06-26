@@ -3565,6 +3565,7 @@
     "fieldStarts": "Inicio",
     "fieldEnds": "Fin",
     "fieldMeetingUrl": "Enlace de reunión",
+    "fieldMeetingUrlPlaceholder": "https://meet.example.com/sala",
     "fieldLocation": "Ubicación",
     "fieldLocationPlaceholder": "Sala, ciudad u online",
     "fieldDescription": "Notas",

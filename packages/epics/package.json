@@ -28,6 +28,7 @@
     "@fullcalendar/react": "^6.1.21",
     "@fullcalendar/rrule": "^6.1.21",
     "@fullcalendar/timegrid": "^6.1.21",
+    "rrule": "^2.8.1",
     "@hypha-platform/authentication": "workspace:*",
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",

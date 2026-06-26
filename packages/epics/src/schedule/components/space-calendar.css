@@ -8,6 +8,7 @@
   --fc-today-bg-color: hsl(var(--primary) / 0.08);
   --fc-event-border-color: transparent;
   --fc-now-indicator-color: hsl(var(--primary));
+
   font-family: inherit;
 }
 

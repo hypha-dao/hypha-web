@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  authorizeSpacePanelInteraction,
+  checkSpaceAccessForSpace,
   createScheduledItem,
   findScheduledItemsBySpaceId,
   findSelf,
@@ -30,6 +32,66 @@ function parseRange(url: URL) {
   });
 }
 
+async function assertScheduledItemsReadAccess(
+  request: NextRequest,
+  space: NonNullable<Awaited<ReturnType<typeof findSpaceBySlug>>>,
+) {
+  if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+    const { hasAccess, response } = await checkSpaceAccess(
+      request,
+      space.web3SpaceId as number,
+    );
+    if (!hasAccess && response) {
+      return response;
+    }
+    return null;
+  }
+
+  const authToken = request.headers.get('Authorization')?.split(' ')[1];
+  const gate = await checkSpaceAccessForSpace(space, authToken, {
+    requireMembershipWhenOffChain: true,
+  });
+  if (!gate.hasAccess) {
+    return NextResponse.json(
+      { error: gate.message ?? 'Forbidden' },
+      { status: gate.httpStatus ?? 403 },
+    );
+  }
+
+  return null;
+}
+
+async function assertScheduledItemsWriteAccess(
+  request: NextRequest,
+  spaceSlug: string,
+  authToken: string,
+) {
+  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (space?.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+    const { hasAccess, response } = await checkSpaceAccess(
+      request,
+      space.web3SpaceId as number,
+    );
+    if (!hasAccess && response) {
+      return response;
+    }
+    return null;
+  }
+
+  const interactionAuth = await authorizeSpacePanelInteraction({
+    spaceSlug,
+    authToken,
+  });
+  if (!interactionAuth.authorized) {
+    return NextResponse.json(
+      { error: interactionAuth.message },
+      { status: 403 },
+    );
+  }
+
+  return null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<Params> },
@@ -42,20 +104,24 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) {
-        return response;
-      }
+    const accessResponse = await assertScheduledItemsReadAccess(request, space);
+    if (accessResponse) {
+      return accessResponse;
     }
 
     const range = parseRange(new URL(request.url));
-    if (!range?.success) {
+    if (!range) {
       return NextResponse.json(
         { error: 'Query params "from" and "to" (ISO dates) are required' },
+        { status: 400 },
+      );
+    }
+    if (!range.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid date range',
+          details: range.error.flatten(),
+        },
         { status: 400 },
       );
     }
@@ -96,14 +162,13 @@ export async function POST(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) {
-        return response;
-      }
+    const accessResponse = await assertScheduledItemsWriteAccess(
+      request,
+      spaceSlug,
+      authToken,
+    );
+    if (accessResponse) {
+      return accessResponse;
     }
 
     const privy = new PrivyClient({
@@ -121,14 +186,20 @@ export async function POST(
     }
 
     const body = await request.json();
-    const validated = schemaCreateScheduledItem.parse({
+    const parsed = schemaCreateScheduledItem.safeParse({
       ...body,
       spaceId: space.id,
     });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
 
     const created = await createScheduledItem(
       {
-        ...validated,
+        ...parsed.data,
         creatorId: self.id,
       },
       {

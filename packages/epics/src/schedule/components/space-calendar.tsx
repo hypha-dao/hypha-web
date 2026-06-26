@@ -49,6 +49,8 @@ import {
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { resolveFullCalendarLocale } from '../utils/fullcalendar-locale';
 import { ScheduledItemFormDialog } from './scheduled-item-form-dialog';
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
@@ -178,6 +180,12 @@ export function SpaceCalendar({
     [scheduledItems],
   );
 
+  const dateFnsLocale = React.useMemo(() => resolveDateFnsLocale(lang), [lang]);
+  const fullCalendarLocale = React.useMemo(
+    () => resolveFullCalendarLocale(lang),
+    [lang],
+  );
+
   const openCreate = (startsAt: Date, endsAt: Date, allDay: boolean) => {
     setDialogMode('create');
     setSelectedItem(null);
@@ -199,11 +207,19 @@ export function SpaceCalendar({
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     if (!isAuthenticated) return;
-    openCreate(selectInfo.start, selectInfo.end, selectInfo.allDay);
+    const start = new Date(selectInfo.start);
+    let end = new Date(selectInfo.end);
+    if (selectInfo.allDay) {
+      start.setHours(0, 0, 0, 0);
+      end = new Date(end.getTime() - 86_400_000);
+      end.setHours(23, 59, 59, 999);
+    }
+    openCreate(start, end, selectInfo.allDay);
     selectInfo.view.calendar.unselect();
   };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
+    if (!isAuthenticated) return;
     const item = clickInfo.event.extendedProps.scheduledItem as
       | ScheduledItem
       | undefined;
@@ -326,10 +342,14 @@ export function SpaceCalendar({
 
   const headerLabel =
     view === 'dayGridMonth'
-      ? format(anchorDate, 'MMMM yyyy')
+      ? format(anchorDate, 'MMMM yyyy', { locale: dateFnsLocale })
       : view === 'timeGridDay'
-      ? format(anchorDate, 'EEEE, MMMM d, yyyy')
-      : `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d, yyyy')}`;
+      ? format(anchorDate, 'EEEE, MMMM d, yyyy', { locale: dateFnsLocale })
+      : `${format(range.from, 'MMM d', { locale: dateFnsLocale })} – ${format(
+          range.to,
+          'MMM d, yyyy',
+          { locale: dateFnsLocale },
+        )}`;
 
   return (
     <div className="flex flex-col gap-4">
@@ -457,7 +477,7 @@ export function SpaceCalendar({
             eventClick={handleEventClick}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
-            locale={undefined}
+            locale={fullCalendarLocale}
             eventTimeFormat={{
               hour: 'numeric',
               minute: '2-digit',
