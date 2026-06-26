@@ -474,7 +474,7 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
         label: 'Max supply',
         required: false,
         description:
-          'Ask only after type/name/symbol are set. Use 0 for unlimited supply.',
+          'Advanced form only (Limited supply toggle). Never ask in chat — prepare uses 0 (unlimited) unless the member sets it on screen.',
         fieldType: 'number',
         formSection: 'supply',
       },
