@@ -12,6 +12,7 @@ export const MISSING_OPENAI_KEY_MESSAGE =
 
 const DEFAULT_OPENAI_REALTIME_MODEL = 'gpt-4o-realtime-preview-2024-12-17';
 const DEFAULT_OPENAI_REALTIME_VOICE = 'marin';
+const DEFAULT_OPENAI_REALTIME_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
 export type RealtimeVoiceSessionResult = {
   clientSecret: string;
@@ -45,6 +46,13 @@ function resolveOpenAiRealtimeModel(): string {
 function resolveOpenAiRealtimeVoice(): string {
   return (
     process.env.OPENAI_REALTIME_VOICE?.trim() || DEFAULT_OPENAI_REALTIME_VOICE
+  );
+}
+
+function resolveOpenAiRealtimeTranscriptionModel(): string {
+  return (
+    process.env.OPENAI_REALTIME_TRANSCRIPTION_MODEL?.trim() ||
+    DEFAULT_OPENAI_REALTIME_TRANSCRIPTION_MODEL
   );
 }
 
@@ -116,6 +124,9 @@ export async function createRealtimeVoiceSession(
           instructions,
           audio: {
             input: {
+              transcription: {
+                model: resolveOpenAiRealtimeTranscriptionModel(),
+              },
               turn_detection: {
                 type: 'server_vad',
                 threshold: 0.5,

@@ -68,12 +68,19 @@ function resolveEventPhase(
   switch (event.type) {
     case 'input_audio_buffer.speech_started':
       return 'listening';
-    case 'input_audio_buffer.speech_stopped':
-      return 'processing';
     case 'error':
       return current;
     default:
       return null;
+  }
+}
+
+function restoreListeningIfConnected(
+  connection: RealtimeVoiceConnection | null,
+  setPhase: (phase: VoiceInterviewPhase) => void,
+) {
+  if (connection) {
+    setPhase('listening');
   }
 }
 
@@ -138,6 +145,7 @@ export function useOnboardingVoiceRealtime({
       isChatStreamingRef.current ||
       phaseRef.current === 'speaking'
     ) {
+      restoreListeningIfConnected(connectionRef.current, setPhase);
       return;
     }
 
@@ -196,7 +204,16 @@ export function useOnboardingVoiceRealtime({
             setVoiceError('error');
             setPhase(connectionRef.current ? 'listening' : 'idle');
           });
+        } else {
+          restoreListeningIfConnected(connectionRef.current, setPhase);
         }
+      }
+
+      if (
+        event.type === 'conversation.item.input_audio_transcription.failed' ||
+        event.type === 'input_audio_transcription.failed'
+      ) {
+        restoreListeningIfConnected(connectionRef.current, setPhase);
       }
     },
     [sendTranscriptToChat],
@@ -212,13 +229,14 @@ export function useOnboardingVoiceRealtime({
     connectInFlightRef.current = true;
     setIsConnecting(true);
     setVoiceError(null);
-    setPhase('processing');
+    setPhase('idle');
     setLiveTranscript('');
 
     try {
       const token = (await getAccessToken?.())?.trim();
       if (!token) {
         setVoiceError('error');
+        setPhase('idle');
         onFallbackRef.current?.();
         return;
       }
@@ -340,6 +358,13 @@ export function useOnboardingVoiceRealtime({
     lastSpokenAssistantRef.current = '';
     stopListening();
   }, [activeSpaceSlug, stopListening]);
+
+  useEffect(() => {
+    if (!enabled || isChatStreaming) return;
+    if (wasStreamingRef.current || sendInFlightRef.current) return;
+    if (phaseRef.current !== 'processing') return;
+    restoreListeningIfConnected(connectionRef.current, setPhase);
+  }, [enabled, isChatStreaming]);
 
   useEffect(() => {
     if (!enabled || !isChatStreaming) return;
