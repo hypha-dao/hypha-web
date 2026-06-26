@@ -26,8 +26,15 @@ import {
   prepareAssistantTextForSpeech,
   pickVoiceInterimAckPhrase,
   speakOnboardingText,
+  speakOnboardingTextControlled,
   stopOnboardingSpeech,
+  type SpeechPlaybackController,
 } from './onboarding-voice-speech';
+import {
+  GRACEFUL_INTERRUPT_MIN_SPEECH_MS,
+  hasClearInterruptIntentFromTranscript,
+  shouldGracefullyInterruptAssistant,
+} from './onboarding-voice-interrupt';
 import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
 import type {
   VoiceInterviewErrorCode,
@@ -151,6 +158,10 @@ export function useOnboardingVoiceRealtime({
   const awaitingAssistantSpeakRef = useRef(false);
   const realtimeAudioHeardRef = useRef(false);
   const cancelSpeechRef = useRef<(() => void) | null>(null);
+  const speechPlaybackRef = useRef<SpeechPlaybackController | null>(null);
+  const gracefulInterruptPendingRef = useRef(false);
+  const interruptSpeechStartedAtRef = useRef<number | null>(null);
+  const interruptTimerRef = useRef<number | null>(null);
   const micRestoreTimerRef = useRef<number | null>(null);
   const playbackFallbackTimerRef = useRef<number | null>(null);
   const realtimeSpeakInFlightRef = useRef(false);
@@ -183,7 +194,16 @@ export function useOnboardingVoiceRealtime({
   const stopBrowserSpeech = useCallback(() => {
     cancelSpeechRef.current?.();
     cancelSpeechRef.current = null;
+    speechPlaybackRef.current?.cancel();
+    speechPlaybackRef.current = null;
     stopOnboardingSpeech();
+  }, []);
+
+  const clearInterruptTimer = useCallback(() => {
+    if (interruptTimerRef.current !== null) {
+      window.clearTimeout(interruptTimerRef.current);
+      interruptTimerRef.current = null;
+    }
   }, []);
 
   const clearMicRestoreTimer = useCallback(() => {
@@ -238,10 +258,12 @@ export function useOnboardingVoiceRealtime({
     [clearPlaybackFallbackTimer, finishRealtimeSpeakPlayback],
   );
 
-  const interruptForUserBargeIn = useCallback(() => {
+  const completeUserBargeInInterrupt = useCallback(() => {
+    gracefulInterruptPendingRef.current = false;
+    clearInterruptTimer();
+    interruptSpeechStartedAtRef.current = null;
     clearMicRestoreTimer();
     clearPlaybackFallbackTimer();
-    onStopChatRef.current?.();
     stopBrowserSpeech();
     interimAckSpokenRef.current = false;
     restoreMicForListening(connectionRef.current);
@@ -261,27 +283,52 @@ export function useOnboardingVoiceRealtime({
     if (connectionRef.current) {
       setRealtimeRemoteAudioMuted(connectionRef.current, true);
     }
-  }, [clearMicRestoreTimer, clearPlaybackFallbackTimer, stopBrowserSpeech]);
+  }, [
+    clearInterruptTimer,
+    clearMicRestoreTimer,
+    clearPlaybackFallbackTimer,
+    stopBrowserSpeech,
+  ]);
+
+  const interruptForUserBargeIn = useCallback(() => {
+    onStopChatRef.current?.();
+    completeUserBargeInInterrupt();
+  }, [completeUserBargeInInterrupt]);
+
+  const beginGracefulUserBargeIn = useCallback(() => {
+    onStopChatRef.current?.();
+    gracefulInterruptPendingRef.current = true;
+    speechPlaybackRef.current?.requestGracefulStop();
+    restoreMicForListening(connectionRef.current);
+    setPhase('listening');
+  }, []);
 
   const speakWithBrowserFallback = useCallback(
     (speakable: string) => {
-      muteMicDuringAssistantSpeech(connectionRef.current);
+      restoreMicForListening(connectionRef.current);
       setPhase('speaking');
-      const cancelSpeech = speakOnboardingText(speakable, {
+      speechPlaybackRef.current?.cancel();
+      const controller = speakOnboardingTextControlled(speakable, {
         lang: resolveOnboardingSpeechLocale(locale),
         rate: 1.05,
         onEnd: () => {
+          speechPlaybackRef.current = null;
           cancelSpeechRef.current = null;
+          if (gracefulInterruptPendingRef.current) {
+            completeUserBargeInInterrupt();
+            return;
+          }
           scheduleMicRestoreForUserTurn();
         },
       });
-      if (!cancelSpeech) {
+      if (!controller) {
         scheduleMicRestoreForUserTurn();
         return;
       }
-      cancelSpeechRef.current = cancelSpeech;
+      speechPlaybackRef.current = controller;
+      cancelSpeechRef.current = controller.cancel;
     },
-    [locale, scheduleMicRestoreForUserTurn],
+    [completeUserBargeInInterrupt, locale, scheduleMicRestoreForUserTurn],
   );
 
   const speakAssistantReply = useCallback(
@@ -311,7 +358,7 @@ export function useOnboardingVoiceRealtime({
           locale,
         })
       ) {
-        muteMicDuringAssistantSpeech(connection);
+        restoreMicForListening(connection);
         realtimeSpeakInFlightRef.current = true;
         setPhase('speaking');
         return;
@@ -342,7 +389,22 @@ export function useOnboardingVoiceRealtime({
           realtimeSpeakInFlight: realtimeSpeakInFlightRef.current,
         })
       ) {
-        interruptForUserBargeIn();
+        const useGraceful = shouldGracefullyInterruptAssistant({
+          phase: phaseRef.current,
+          isChatStreaming: isChatStreamingRef.current,
+          sendInFlight: sendInFlightRef.current,
+          assistantSpeechActive:
+            realtimeSpeakInFlightRef.current ||
+            Boolean(speechPlaybackRef.current) ||
+            phaseRef.current === 'speaking',
+          speechStartedAt: interruptSpeechStartedAtRef.current,
+          transcript: normalized,
+        });
+        if (useGraceful) {
+          beginGracefulUserBargeIn();
+        } else {
+          interruptForUserBargeIn();
+        }
         lastSpokenAssistantRef.current = '';
         if (isChatStreamingRef.current) {
           pendingBargeInTranscriptRef.current = normalized;
@@ -380,7 +442,7 @@ export function useOnboardingVoiceRealtime({
         setLiveTranscript('');
       }
     },
-    [interruptForUserBargeIn],
+    [beginGracefulUserBargeIn, interruptForUserBargeIn],
   );
 
   const disconnect = useCallback(() => {
@@ -424,9 +486,48 @@ export function useOnboardingVoiceRealtime({
         connectionRef.current
       ) {
         setRealtimeRemoteAudioMuted(connectionRef.current, true);
-        if (realtimeSpeakInFlightRef.current) {
+        if (gracefulInterruptPendingRef.current) {
+          completeUserBargeInInterrupt();
+        } else if (realtimeSpeakInFlightRef.current) {
           finishRealtimeSpeakPlayback();
         }
+      }
+
+      if (event.type === 'input_audio_buffer.speech_started') {
+        const assistantBusy =
+          phaseRef.current === 'speaking' ||
+          realtimeSpeakInFlightRef.current ||
+          Boolean(speechPlaybackRef.current) ||
+          (phaseRef.current === 'processing' &&
+            isChatStreamingRef.current &&
+            !sendInFlightRef.current);
+        if (assistantBusy) {
+          if (interruptSpeechStartedAtRef.current === null) {
+            interruptSpeechStartedAtRef.current = Date.now();
+          }
+          clearInterruptTimer();
+          interruptTimerRef.current = window.setTimeout(() => {
+            if (
+              shouldGracefullyInterruptAssistant({
+                phase: phaseRef.current,
+                isChatStreaming: isChatStreamingRef.current,
+                sendInFlight: sendInFlightRef.current,
+                assistantSpeechActive:
+                  realtimeSpeakInFlightRef.current ||
+                  Boolean(speechPlaybackRef.current) ||
+                  phaseRef.current === 'speaking',
+                speechStartedAt: interruptSpeechStartedAtRef.current,
+              })
+            ) {
+              beginGracefulUserBargeIn();
+            }
+          }, GRACEFUL_INTERRUPT_MIN_SPEECH_MS);
+        }
+      }
+
+      if (event.type === 'input_audio_buffer.speech_stopped') {
+        clearInterruptTimer();
+        interruptSpeechStartedAtRef.current = null;
       }
 
       const nextPhase = resolveEventPhase(event, phaseRef.current);
@@ -539,11 +640,14 @@ export function useOnboardingVoiceRealtime({
       }
     },
     [
+      beginGracefulUserBargeIn,
+      completeUserBargeInInterrupt,
       finishRealtimeSpeakPlayback,
       scheduleMicRestoreForUserTurn,
       schedulePlaybackEndFallback,
       sendTranscriptToChat,
       speakWithBrowserFallback,
+      clearInterruptTimer,
     ],
   );
 
@@ -668,16 +772,12 @@ export function useOnboardingVoiceRealtime({
 
   const toggleListening = useCallback(() => {
     if (connectionRef.current) {
-      if (phase === 'speaking') {
-        stopSpeaking();
-        return;
-      }
       connectionRef.current.sendEvent({ type: 'input_audio_buffer.commit' });
       setPhase('processing');
       return;
     }
     void connect();
-  }, [connect, phase, stopSpeaking]);
+  }, [connect]);
 
   const connectRef = useRef(connect);
   connectRef.current = connect;

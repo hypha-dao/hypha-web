@@ -89,3 +89,15 @@ describe('estimateSpeechDurationMs', () => {
     expect(estimateSpeechDurationMs('**Title:** only labels')).toBe(0);
   });
 });
+
+describe('prepareAssistantSpeechSentences', () => {
+  it('splits speakable text into sentence chunks', async () => {
+    const { prepareAssistantSpeechSentences } = await import(
+      '../onboarding-voice-speech'
+    );
+    const sentences = prepareAssistantSpeechSentences(
+      'First point here. Second point follows! Third one?',
+    );
+    expect(sentences).toHaveLength(3);
+  });
+});

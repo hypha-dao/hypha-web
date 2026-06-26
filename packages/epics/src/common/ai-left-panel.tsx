@@ -3078,7 +3078,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
             usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
             onToggleListening={voiceInterview.toggleListening}
-            onStopSpeaking={voiceInterview.stopSpeaking}
           />
         ) : (
           <AiPanelChatBar

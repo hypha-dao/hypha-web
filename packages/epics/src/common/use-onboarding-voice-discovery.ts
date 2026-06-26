@@ -31,6 +31,7 @@ type UseOnboardingVoiceDiscoveryOptions = {
   onSendTranscript: (
     text: string,
   ) => VoiceTranscriptSendOutcome | Promise<VoiceTranscriptSendOutcome>;
+  onStopChat?: () => void;
   onTranscriptTurn?: (turn: {
     role: 'user' | 'assistant';
     text: string;
@@ -70,6 +71,7 @@ export function useOnboardingVoiceDiscovery(
     recentTranscriptSummary: options.recentTranscriptSummary,
     getAccessToken: options.getAccessToken,
     activeSpaceSlug: options.activeSpaceSlug,
+    routeAssistantThroughChat: true,
     onFallback: handleFallback,
     onStopChat: options.onStopChat,
     onSendTranscript: options.onSendTranscript,

@@ -986,6 +986,7 @@ export function OnboardingAiFullPage({
     conversationContext: onboardingContext,
     recentTranscriptSummary,
     getAccessToken,
+    onStopChat: stop,
     onSendTranscript: handleVoiceTranscriptSend,
     onTranscriptTurn: handleVoiceTranscriptTurn,
   });
@@ -1081,7 +1082,6 @@ export function OnboardingAiFullPage({
                 realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
                 usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
                 onToggleListening={voiceInterview.toggleListening}
-                onStopSpeaking={voiceInterview.stopSpeaking}
               />
             ) : (
               <AiPanelChatBar

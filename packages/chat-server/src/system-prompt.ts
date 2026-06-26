@@ -723,17 +723,27 @@ export function buildSpaceAdvisorRealtimeInstructions(
   input: SpaceAdvisorRealtimeInstructionsInput,
 ): string {
   const localeDirective = buildOnboardingLocaleDirective(input.locale);
+  const lastUserLine = input.recentTranscriptSummary
+    ?.split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.toLowerCase().startsWith('user:'))
+    .at(-1)
+    ?.replace(/^user:\s*/i, '');
+  const competencyDirective = buildQuestionCompetencyDirective(lastUserLine);
   const sections = [
-    BASE_SYSTEM_PROMPT,
+    buildSystemPrompt(input.spaceSlug),
     SPACE_CONTINUOUS_ADVISOR_GUIDELINES,
     ONBOARDING_VOICE_INTERVIEW_GUIDELINES,
     ONCHAIN_GOVERNANCE_WRITE_INTEGRITY,
     LEFT_PANEL_NAVIGATION_GUIDELINES,
     `Space advisor voice mode is active for space "${input.spaceSlug}".
 - This is continuous discovery for a live space—not a one-time onboarding wizard. Do NOT call onboarding_guidance unless the user is explicitly creating a new space or ecosystem.
-- Use get_space_by_slug and other Hypha tools to learn the space before advising. Propose the next best step toward purpose based on evidence and what the user just said.
+- Voice turns MUST stay aligned with the same Hypha MCP tools and evidence as text chat in this panel. Use get_space_by_slug and other Hypha tools before advising; never guess from general world knowledge alone.
+- "Blind spot" / blindspot in this product means organisational gaps the space may not see yet (coordination, governance, signals, treasury)—NEVER automotive, driving, or literal physical blind spots.
+- Suggestion prompts (space health, blind spot, next signal, etc.) are Hypha advisor intents—interpret them in space governance context using tools, not as unrelated everyday topics.
 - CRITICAL — LIVE VOICE (AI DOES IT FOR ME): every spoken turn must feel effortless. You draft, recommend, and move things forward; the user reacts in plain language. Reflect what you heard, then one small ask. ${VOICE_BREVITY_GUIDELINE} No markdown, bullet lists, URLs, or coordinates read aloud.
 - ${VOICE_TOOL_ACK_GUIDELINE}`,
+    ...(competencyDirective ? [competencyDirective] : []),
     ...(localeDirective ? [localeDirective] : []),
   ];
 

@@ -292,6 +292,8 @@ export async function connectOpenAiRealtimeCall(params: {
   audioInput?: RealtimeAudioInputConfig;
   onEvent: (event: RealtimeServerEvent) => void;
   onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
+  /** Suppress Realtime model audio when assistant replies come from /api/chat. */
+  muteRemoteAudio?: boolean;
 }): Promise<RealtimeVoiceConnection> {
   if (typeof window === 'undefined') {
     throw new Error('Realtime voice is only available in the browser.');

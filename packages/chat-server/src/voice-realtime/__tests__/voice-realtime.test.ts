@@ -72,7 +72,7 @@ describe('buildOnboardingRealtimeInstructions', () => {
     expect(instructions).toContain('discover');
     expect(instructions).toContain('User wants a bioregion DAO.');
     expect(instructions).toContain('onboarding_guidance');
-    expect(instructions).toContain('Respond in English');
+    expect(instructions).toContain('English');
   });
 
   it('includes locale language for non-English onboarding', () => {
@@ -80,7 +80,7 @@ describe('buildOnboardingRealtimeInstructions', () => {
       setupPhase: 'discover',
       locale: 'de',
     });
-    expect(instructions).toContain('Respond in German');
+    expect(instructions).toContain('German');
   });
 });
 
@@ -95,5 +95,7 @@ describe('buildSpaceAdvisorRealtimeInstructions', () => {
     expect(instructions).toContain('Continuous space discovery');
     expect(instructions).toContain('treasury diversification');
     expect(instructions).toContain('Do NOT call onboarding_guidance');
+    expect(instructions).toContain('organisational gaps');
+    expect(instructions).toContain('get_space_by_slug');
   });
 });
