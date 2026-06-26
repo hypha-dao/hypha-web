@@ -3549,6 +3549,7 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "createTitle": "Programar algo",
+    "backToCalendar": "Volver al calendario",
     "createDescription": "Añade una llamada, evento o cualquier otra cosa al calendario.",
     "editTitle": "Editar elemento programado",
     "editDescription": "Actualiza los detalles o reprograma este elemento.",

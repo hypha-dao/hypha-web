@@ -3545,6 +3545,7 @@
     "previous": "Précédent",
     "next": "Suivant",
     "createTitle": "Planifier",
+    "backToCalendar": "Retour au calendrier",
     "createDescription": "Ajoutez un appel, un événement ou autre chose au calendrier.",
     "editTitle": "Modifier l'élément planifié",
     "editDescription": "Mettez à jour les détails ou reprogrammez cet élément.",
