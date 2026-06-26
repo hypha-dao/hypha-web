@@ -32,6 +32,9 @@ import {
   ONBOARDING_CREATION_CONFIRMATION_GUIDELINES,
   SOUND_ADVISOR_GUIDELINES,
   STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES,
+  VOICE_BREVITY_GUIDELINE,
+  VOICE_SPOKEN_SENTENCE_LIMIT,
+  VOICE_TOOL_ACK_GUIDELINE,
   sanitizeSlug,
 } from './system-prompt';
 import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
@@ -49,7 +52,10 @@ import {
 } from './tools/index';
 
 const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
-CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — 2–4 natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.`;
+CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
+- ${VOICE_BREVITY_GUIDELINE}
+- ${VOICE_TOOL_ACK_GUIDELINE}
+- When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 

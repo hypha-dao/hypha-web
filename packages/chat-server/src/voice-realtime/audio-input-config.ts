@@ -6,7 +6,7 @@ export type RealtimeTurnDetectionConfig = {
   prefix_padding_ms: number;
   silence_duration_ms: number;
   create_response: false;
-  interrupt_response: false;
+  interrupt_response: true;
 };
 
 export type RealtimeAudioInputConfig = {
@@ -55,7 +55,7 @@ export function resolveRealtimeAudioInputConfig(
         process.env.OPENAI_REALTIME_VAD_SILENCE_MS,
       ),
       create_response: false,
-      interrupt_response: false,
+      interrupt_response: true,
     },
     noiseReduction: resolveNoiseReductionType(),
     transcription: {

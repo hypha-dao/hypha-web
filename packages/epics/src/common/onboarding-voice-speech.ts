@@ -7,6 +7,21 @@ import {
   stripMarkdown,
 } from '@hypha-platform/ui-utils';
 
+/** Spoken voice replies are capped to this many sentences (matches server prompts). */
+export const MAX_VOICE_SPOKEN_SENTENCES = 2;
+
+const VOICE_INTERIM_ACK_PHRASES = [
+  'One moment, let me check that for you.',
+  'Give me a second to look into that.',
+  'Let me pull that up for you.',
+] as const;
+
+/** Short filler when tools run before the model emits speakable text. */
+export function pickVoiceInterimAckPhrase(): string {
+  const index = Math.floor(Math.random() * VOICE_INTERIM_ACK_PHRASES.length);
+  return VOICE_INTERIM_ACK_PHRASES[index] ?? VOICE_INTERIM_ACK_PHRASES[0];
+}
+
 /** Strip markdown and URLs so browser TTS reads naturally. */
 export function stripMarkdownForSpeech(text: string): string {
   return stripMarkdown(removeMarkdownImageTokens(text))
@@ -77,7 +92,7 @@ export function prepareAssistantTextForSpeech(text: string): string {
   );
 
   if (spoken.length > 0) {
-    return spoken.slice(0, 4).join(' ').trim();
+    return spoken.slice(0, MAX_VOICE_SPOKEN_SENTENCES).join(' ').trim();
   }
 
   // Don't read bare list fragments left after stripping form labels.
@@ -85,7 +100,7 @@ export function prepareAssistantTextForSpeech(text: string): string {
     return '';
   }
 
-  return collapsed.slice(0, 320).trim();
+  return collapsed.slice(0, 240).trim();
 }
 
 /** Rough duration for scheduling mic pre-warm before TTS ends. */

@@ -11,7 +11,7 @@ export type RealtimeTurnDetectionConfig = {
   prefix_padding_ms: number;
   silence_duration_ms: number;
   create_response: false;
-  interrupt_response: false;
+  interrupt_response: true;
 };
 
 export type RealtimeAudioInputConfig = {
@@ -28,7 +28,7 @@ export const DEFAULT_REALTIME_AUDIO_INPUT: RealtimeAudioInputConfig = {
     prefix_padding_ms: 300,
     silence_duration_ms: 450,
     create_response: false,
-    interrupt_response: false,
+    interrupt_response: true,
   },
   noiseReduction: null,
   transcription: { model: 'gpt-4o-mini-transcribe' },
@@ -47,8 +47,62 @@ export type RealtimeServerEvent = {
   type?: string;
   transcript?: string;
   delta?: string;
+  response?: { id?: string; status?: string };
+  error?: {
+    type?: string;
+    code?: string | null;
+    message?: string;
+  };
   [key: string]: unknown;
 };
+
+export type RealtimeErrorInfo = {
+  code?: string | null;
+  message?: string;
+};
+
+export function extractRealtimeErrorInfo(
+  event: RealtimeServerEvent,
+): RealtimeErrorInfo | null {
+  if (
+    event.type !== 'error' ||
+    !event.error ||
+    typeof event.error !== 'object'
+  ) {
+    return null;
+  }
+  return {
+    code: event.error.code ?? undefined,
+    message: event.error.message,
+  };
+}
+
+/** OpenAI emits these when cancel races completion — safe to ignore. */
+export function isIgnorableRealtimeError(error: RealtimeErrorInfo): boolean {
+  if (error.code === 'response_cancel_not_active') return true;
+  const message = error.message?.toLowerCase() ?? '';
+  return (
+    message.includes('no active response') ||
+    message.includes('cancellation failed')
+  );
+}
+
+export function cancelActiveRealtimeResponse(
+  connection: RealtimeVoiceConnection | null,
+  responseId: string | null | undefined,
+): void {
+  if (!connection || !responseId?.trim()) return;
+  connection.sendEvent({
+    type: 'response.cancel',
+    response_id: responseId.trim(),
+  });
+}
+
+export function clearRealtimeOutputAudioBuffer(
+  connection: RealtimeVoiceConnection | null,
+): void {
+  connection?.sendEvent({ type: 'output_audio_buffer.clear' });
+}
 
 export class RealtimeVoiceSessionRequestError extends Error {
   readonly status: number;
@@ -110,7 +164,7 @@ export function setRealtimeRemoteAudioMuted(
 export function speakAssistantTextViaRealtime(
   connection: RealtimeVoiceConnection,
   text: string,
-  options?: { cancelActiveResponse?: boolean },
+  options?: { activeResponseId?: string | null },
 ): boolean {
   const speakable = text.trim().slice(0, REALTIME_SPEAK_TEXT_MAX_CHARS);
   if (!speakable || connection.dataChannel.readyState !== 'open') {
@@ -119,14 +173,15 @@ export function speakAssistantTextViaRealtime(
 
   const instructions = buildRealtimeSpeakInstructions(speakable);
 
-  if (options?.cancelActiveResponse) {
-    connection.sendEvent({ type: 'response.cancel' });
-  }
+  cancelActiveRealtimeResponse(connection, options?.activeResponseId);
+
   connection.sendEvent({
     type: 'response.create',
     response: {
+      conversation: 'none',
       output_modalities: ['audio'],
       instructions,
+      metadata: { purpose: 'hypha_assistant_speak' },
     },
   });
 
@@ -267,6 +322,7 @@ export async function connectOpenAiRealtimeCall(params: {
     sendEvent({
       type: 'session.update',
       session: {
+        type: 'realtime',
         audio: {
           input: {
             transcription: audioInput.transcription,

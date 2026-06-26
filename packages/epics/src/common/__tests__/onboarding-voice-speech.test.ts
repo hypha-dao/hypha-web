@@ -55,6 +55,15 @@ I've drafted "Issue New Token" — work for you?`;
     expect(spoken).not.toMatch(/it looks like i need/i);
     expect(spoken).toContain('Issue New Token');
   });
+
+  it('caps spoken output at two sentences', () => {
+    const input =
+      'First sentence here. Second sentence follows. Third should be dropped. Fourth definitely gone.';
+
+    const spoken = prepareAssistantTextForSpeech(input);
+
+    expect(spoken).toBe('First sentence here. Second sentence follows.');
+  });
 });
 
 describe('estimateSpeechDurationMs', () => {

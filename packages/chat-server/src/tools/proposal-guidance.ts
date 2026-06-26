@@ -11,6 +11,7 @@ import {
   type ProposalGuidancePlaybook,
 } from './proposal-catalog';
 import type { CatalogDiscoveryField } from './proposal-catalog/types';
+import { VOICE_SPOKEN_SENTENCE_LIMIT } from '../system-prompt';
 import {
   buildProposalFormStateResponse,
   type ActiveProposalFormSnapshot,
@@ -107,8 +108,7 @@ function buildInteractionHint(
   field: CatalogDiscoveryField,
   locale?: string | null,
 ): string {
-  const speed =
-    'Max 3–4 short sentences. No preamble, no recap, no numbered lists. Voice: 2 sentences max.';
+  const speed = `Voice/Live Voice: ${VOICE_SPOKEN_SENTENCE_LIMIT} short sentences max. Typed chat: max 3–4 short sentences. No preamble, no recap, no numbered lists.`;
   const acceptanceRule =
     ' On yes/named option: call prepare_governance_proposal same turn with ALL merged fields — form must show the value before the next question. Include on-chain defaults for quorum/unity/voting period when opening or updating the form — never ask "shall I proceed".';
   if (field.key === 'title' || field.key === 'description') {
@@ -116,7 +116,7 @@ function buildInteractionHint(
   }
   if (field.enumValues?.length) {
     const options = formatEnumOptionsList(field, locale);
-    return `${speed} MANDATORY ORDER: (1) list EVERY option (${options}) — all of them; (2) one-line recommendation; (3) ask which they want. Never skip step 1.${acceptanceRule}`;
+    return `${speed} Typed chat: list EVERY option (${options}) before recommending. Voice: point to on-screen options with one-line recommendation — do not read every option aloud.${acceptanceRule}`;
   }
   return `${speed} Propose a default when sensible.${acceptanceRule}`;
 }

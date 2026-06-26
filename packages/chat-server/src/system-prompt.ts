@@ -31,6 +31,13 @@ Rules (apply to chat AND Live Voice):
 
 When this conflicts with being clever or exhaustive, choose effortless. The user should leave every turn feeling lighter, not burdened.`;
 
+/** Hard cap for spoken voice replies — keep prompts, client TTS, and Live Voice aligned. */
+export const VOICE_SPOKEN_SENTENCE_LIMIT = '1–2';
+
+export const VOICE_BREVITY_GUIDELINE = `Keep each voice turn to ${VOICE_SPOKEN_SENTENCE_LIMIT} short spoken sentences: draft or recommend, then one reaction ask — no recap, no lists.`;
+
+export const VOICE_TOOL_ACK_GUIDELINE = `Before ANY tool call during voice mode, output one short acknowledgment sentence FIRST in the same turn (for example: "Let me check that for you." or "One moment while I look at your space."). Never start a voice turn with only tool calls and no member-facing text — the user must hear you immediately while tools run.`;
+
 /** When voice mode is active, chat replies are read aloud verbatim by browser TTS (standard voice). */
 export const STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES = `
 ================================================================================
@@ -41,7 +48,7 @@ Applies whenever discoveryMode is voice_interview — including standard voice (
 
 YOUR CHAT REPLY IS THE SPOKEN SCRIPT.
 - In standard voice mode, the browser reads your chat message WORD FOR WORD. There is no separate spoken track.
-- Write exactly what a warm human would say in 2–4 short sentences. The user must hear a natural summary, never a screen reader.
+- Write exactly what a warm human would say in ${VOICE_SPOKEN_SENTENCE_LIMIT} short sentences. The user must hear a natural summary, never a screen reader.
 
 NEVER WRITE THESE IN VOICE MODE (they will be read aloud robotically):
 - Field or form labels: "Title", "Description", "Proposal title", "Entry method", "Voting method", "Required fields"
@@ -146,7 +153,7 @@ Onboarding conversation behavior (CRITICAL: AI DOES IT FOR ME — see top of pro
 - Keep discover-phase replies to one short lead-in plus one clear question, then wait.
 - If the user already confirmed in plain language (for example: "yes", "yep", "ready", "go ahead"), do not ask for the same confirmation again. Proceed to the next step.
 - If onboarding_guidance returns next_question, ask only that question and nothing else.
-- If proposal_guidance returns next_question and interaction_hint, follow interaction_hint — for choice fields list ALL options before recommending, then ask the user to react. Be terse (max 3–4 sentences).`;
+- If proposal_guidance returns next_question and interaction_hint, follow interaction_hint — for choice fields list ALL options before recommending in typed chat; in voice mode point to on-screen options with one recommendation instead. Be terse (${VOICE_SPOKEN_SENTENCE_LIMIT} sentences in voice).`;
 
 export const ONBOARDING_CATEGORY_GUIDELINES = `
 Hypha space category tags (same list as network map + create space form):
@@ -234,14 +241,14 @@ ${PROPOSAL_FORM_FILLING_GUIDELINES}
 ${PROPOSAL_MEMBER_VOICE_GUIDELINE}
 CRITICAL — AI DOES IT FOR ME: draft, open the form fast, member reacts briefly — not a long interview.
 - NEVER use create_space_setup_proposal or collective_agreement for typed forms — use proposal_guidance then prepare_governance_proposal.
-- SPEED: Target 1–2 turns before the form is open. Max 3–4 short sentences per turn. No preamble, no recap, no process explanation.
+- SPEED: Target 1–2 turns before the form is open. Voice/Live Voice: ${VOICE_SPOKEN_SENTENCE_LIMIT} short sentences per turn. Typed chat: max 3–4 short sentences. No preamble, no recap, no process explanation.
 - CHOICE FIELDS (voting method, entry method, etc.): ALWAYS list EVERY available option in plain language FIRST — all of them, one short phrase each — ONLY THEN give your one-line recommendation. Never recommend before listing all options. This is mandatory.
 - After the member picks or accepts: call prepare_governance_proposal with partial:true in the SAME turn — merge all collected fields, fill quorum/unity/voting period from on-chain space defaults, draft title/description silently. Do NOT ask tuning fields one-by-one in chat unless the user wants changes or chain data is missing.
 - When the user accepts (yes, yep, sounds good, go ahead, or names the option), that IS confirmation — prepare immediately in the SAME turn. Never ask "shall I proceed", "does that sound good", or "does that work for you" — asking twice is a failure mode.
 - Entry method / voting method: when the user accepts your recommendation, call proposal_guidance with collected_fields including entry_method or voting_method, then prepare_governance_proposal partial:true immediately — auto-draft title and description silently; do NOT re-ask for title or description.
 - Title and description first (top of form) — draft silently from context and offer in one line; never ask as blank questions. Never re-ask once in filled_fields.
 - When updating an open draft: prepare with partial:true and ALL merged fields. Stay on the same form until Publish.
-- Voice/Live Voice: 2 sentences max — options list + recommendation + one ask. Never read form labels aloud.
+- Voice/Live Voice: ${VOICE_SPOKEN_SENTENCE_LIMIT} sentences max — one-line recommendation and point to on-screen options; never read every enum or form labels aloud.
 - Member clicks Publish in Agreements — no in-chat wallet signing for typed proposals.`;
 
 export const SPACE_CONTINUOUS_ADVISOR_GUIDELINES = `
@@ -688,7 +695,8 @@ export function buildOnboardingRealtimeInstructions(
 - Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.
 - Discovery order (full ecosystem): same through (4), then root-space role, ecosystem structure, functional domains and propose_organisation_blueprint (confirm nested-space plan before activation), then activation, transparency, entry, location, visuals, root creation only, then left panel execute—nested spaces one at a time.
 - Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including ecosystem blueprint confirmation before operational settings.
-- CRITICAL — LIVE VOICE (AI DOES IT FOR ME): every spoken turn must feel effortless. You draft, recommend, and move things forward; the user reacts in plain language. Reflect what you heard, then one small ask. 2–4 spoken sentences; no markdown, bullet lists, URLs, or coordinates read aloud; never read chat or tool text verbatim—summarize what matters in human, conversational language.
+- CRITICAL — LIVE VOICE (AI DOES IT FOR ME): every spoken turn must feel effortless. You draft, recommend, and move things forward; the user reacts in plain language. Reflect what you heard, then one small ask. ${VOICE_BREVITY_GUIDELINE} No markdown, bullet lists, URLs, or coordinates read aloud; never read chat or tool text verbatim—summarize what matters in human, conversational language.
+- ${VOICE_TOOL_ACK_GUIDELINE}
 - UI cards still appear for structured choices—introduce them naturally ("I'll show you a few options on screen").`,
     ...(localeDirective ? [localeDirective] : []),
   ];
@@ -723,7 +731,8 @@ export function buildSpaceAdvisorRealtimeInstructions(
     `Space advisor voice mode is active for space "${input.spaceSlug}".
 - This is continuous discovery for a live space—not a one-time onboarding wizard. Do NOT call onboarding_guidance unless the user is explicitly creating a new space or ecosystem.
 - Use get_space_by_slug and other Hypha tools to learn the space before advising. Propose the next best step toward purpose based on evidence and what the user just said.
-- CRITICAL — LIVE VOICE (AI DOES IT FOR ME): every spoken turn must feel effortless. You draft, recommend, and move things forward; the user reacts in plain language. Reflect what you heard, then one small ask. 2–4 spoken sentences; no markdown, bullet lists, URLs, or coordinates read aloud.`,
+- CRITICAL — LIVE VOICE (AI DOES IT FOR ME): every spoken turn must feel effortless. You draft, recommend, and move things forward; the user reacts in plain language. Reflect what you heard, then one small ask. ${VOICE_BREVITY_GUIDELINE} No markdown, bullet lists, URLs, or coordinates read aloud.
+- ${VOICE_TOOL_ACK_GUIDELINE}`,
     ...(localeDirective ? [localeDirective] : []),
   ];
 

@@ -29,6 +29,7 @@ export const PROPOSAL_PREMATURE_COMPLETE_FORBIDDEN = [
 
 export const PROPOSAL_MEMBER_VOICE_GUIDELINE = `
 Member-facing voice during proposals (chat and Live Voice):
+- Keep replies to 1–2 short spoken sentences per turn — recommend, then one reaction ask.
 - You are DOING the work — not discovering requirements aloud. Never narrate your internal checklist.
 - FORBIDDEN: "It looks like I need to…", "I now need to add…", "I'll need to…", "Let me add…", "First I need to ask…", "It seems I need to draft…"
 - FORBIDDEN until every mandatory field is on the form AND get_proposal_form_state.ready_to_publish is true: "complete", "now complete", "click Publish", "ready to publish", "all set"
