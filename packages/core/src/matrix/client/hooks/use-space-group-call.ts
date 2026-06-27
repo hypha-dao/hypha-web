@@ -1875,10 +1875,17 @@ export function useSpaceGroupCall(
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
       if (remoteMediaRepairNudgeIntervalRef.current == null) {
+        // Randomise the interval period so peers that detected the missing feed
+        // simultaneously (e.g. two people joining at the same time) don't fire
+        // repair nudges in lockstep — persistent lockstep causes every retry to
+        // glare and the B↔C pairwise call never establishes.
+        const jitteredMs =
+          REMOTE_MEDIA_REPAIR_NUDGE_MS +
+          Math.floor(Math.random() * REMOTE_MEDIA_REPAIR_NUDGE_MS);
         remoteMediaRepairNudgeIntervalRef.current = setInterval(() => {
           if (groupCallRef.current !== gc) return;
           nudgeGroupCallPlaceOutgoing(gc);
-        }, REMOTE_MEDIA_REPAIR_NUDGE_MS);
+        }, jitteredMs);
       }
       /**
        * The SDK can know the remote participant from group-call member state
