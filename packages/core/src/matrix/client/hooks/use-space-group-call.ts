@@ -1848,6 +1848,28 @@ export function useSpaceGroupCall(
         })),
         participantMapSize: gc.participants.size,
       });
+      // TEMP-DEBUG #2322 Bug#3: detect call-glare (ringing-state race).
+      // activePairwiseCallCount > 0 but missingRemoteFeedCount > 0 → calls placed but
+      // ICE/glare blocked them. activePairwiseCallCount === 0 but participants present →
+      // call invite was dropped (classic glare: both sides placed outgoing simultaneously).
+      if (missingRemoteFeedCount > 0) {
+        const gcAny = gc as unknown as Record<string, unknown>;
+        const callsMap = gcAny['calls'] as
+          | Map<string, Map<string, unknown>>
+          | undefined;
+        let activePairwiseCallCount = 0;
+        if (callsMap) {
+          for (const [, deviceCalls] of callsMap) {
+            activePairwiseCallCount += deviceCalls.size;
+          }
+        }
+        console.warn('[hypha.group_call] stall-missing-feeds', {
+          missingRemoteFeedCount,
+          activePairwiseCallCount,
+          participantDeviceCount: countGroupCallParticipantDevices(gc),
+          gcState: gc.state,
+        });
+      }
     }
 
     const now = Date.now();
