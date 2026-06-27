@@ -282,6 +282,11 @@ async function tryRepairRoomCallPermissions(
 }
 
 function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
+  // Don't call placeOutgoingCalls before the GroupCall has entered — localCallFeed
+  // isn't initialized yet (set inside enter() after initLocalCallFeed completes) and
+  // the SDK's onCallStateChanged will crash reading it. enter() calls placeOutgoingCalls
+  // itself at the end, so nothing is lost by skipping the nudge here.
+  if (gc.state !== GroupCallState.Entered) return;
   const fn = (gc as unknown as { placeOutgoingCalls?: () => void })
     .placeOutgoingCalls;
   if (typeof fn !== 'function') return;

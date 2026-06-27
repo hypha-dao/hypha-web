@@ -1920,8 +1920,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const resolvedId = joined.roomId;
         await ensureRoomCallPowerLevels(client, resolvedId);
         // `joinRoom` resolves before the lazy room store always exposes `getRoom`
-        // (race with sync / canonical id). Wait briefly for `getRoom` parity with listeners.
-        for (let i = 0; i < 40; i++) {
+        // (race with sync / canonical id). On hard page reload the SDK must re-sync
+        // all room state from scratch, which can take several seconds — wait up to 10s.
+        for (let i = 0; i < 200; i++) {
           if (client.getRoom(resolvedId)) {
             return resolvedId;
           }
