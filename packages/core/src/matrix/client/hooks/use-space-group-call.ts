@@ -3700,6 +3700,27 @@ export function useSpaceGroupCall(
     };
   }, [emitCallSessionEnd]);
 
+  // Best-effort member-state cleanup on tab/browser close. The normal leave
+  // and unmount paths already call runCleanup(); this only fires when the page
+  // is torn down before React cleanup runs (e.g. closing the tab mid-call).
+  // cleanMemberState() removes our device entry from m.call.member room state
+  // so other participants don't see a ghost "device connected" indicator.
+  // Limitation: if the network is already down at close time the HTTP call
+  // will fail silently — a LiveKit/MatrixRTC-level fix is needed for that case.
+  useEffect(() => {
+    const handleBeforeUnload = (): void => {
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      void (
+        gc as MatrixSdk.GroupCall & { cleanMemberState?: () => void }
+      ).cleanMemberState?.();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   useEffect(() => {
     if (!remoteMediaRecoverRequestedRef.current) return;
     if (callState !== 'connected' && callState !== 'awaiting_media') return;
