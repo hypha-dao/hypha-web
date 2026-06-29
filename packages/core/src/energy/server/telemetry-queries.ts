@@ -13,7 +13,7 @@ import {
 
 type AggregateRow = {
   bucket: string;
-  kind: 'consumption' | 'production';
+  kind: 'consumption' | 'production' | 'import' | 'export';
   meter_id: number;
   total_wh: string;
 };
@@ -119,7 +119,15 @@ function emptyResponse(
     labels,
     consumptionKwh: keys.map(() => 0),
     productionBySource: [],
-    totals: { producedKwh: 0, consumedKwh: 0, netKwh: 0 },
+    gridImportKwh: keys.map(() => 0),
+    gridExportKwh: keys.map(() => 0),
+    totals: {
+      producedKwh: 0,
+      consumedKwh: 0,
+      netKwh: 0,
+      gridImportedKwh: 0,
+      gridExportedKwh: 0,
+    },
     dataFrom: null,
     dataTo: null,
     communityId,
@@ -183,6 +191,8 @@ export async function fetchEnergyTelemetry(input: {
           when direction = 'consumption'
             or (direction is null and meter_id between 1 and 5)
             then 'consumption'
+          when direction = 'import' then 'import'
+          when direction = 'export' then 'export'
           else null
         end as kind,
         meter_id,
@@ -191,7 +201,7 @@ export async function fetchEnergyTelemetry(input: {
       where community_id = $1
         and interval_start >= (now() at time zone 'utc') - ${cfg.intervalSql}
         and (
-          direction in ('consumption', 'production', 'import')
+          direction in ('consumption', 'production', 'import', 'export')
           or direction is null
         )
       group by 1, 2, 3
@@ -202,6 +212,8 @@ export async function fetchEnergyTelemetry(input: {
           when direction = 'consumption'
             or (direction is null and meter_id between 1 and 5)
             then 'consumption'
+          when direction = 'import' then 'import'
+          when direction = 'export' then 'export'
           else null
         end is not null
       order by 1 asc
@@ -214,6 +226,8 @@ export async function fetchEnergyTelemetry(input: {
     const { keys, labels } = buildBucketKeys(period, minT, maxT);
     const keyIndex = new Map(keys.map((k, i) => [k, i]));
     const consumptionWh = keys.map(() => 0);
+    const gridImportWh = keys.map(() => 0);
+    const gridExportWh = keys.map(() => 0);
     const productionByMeter = new Map<number, number[]>();
 
     for (const row of aggResult.rows) {
@@ -228,6 +242,27 @@ export async function fetchEnergyTelemetry(input: {
         const series = productionByMeter.get(row.meter_id) ?? keys.map(() => 0);
         series[idx] = (series[idx] ?? 0) + wh;
         productionByMeter.set(row.meter_id, series);
+      } else if (row.kind === 'import') {
+        gridImportWh[idx] = (gridImportWh[idx] ?? 0) + wh;
+      } else if (row.kind === 'export') {
+        gridExportWh[idx] = (gridExportWh[idx] ?? 0) + wh;
+      }
+    }
+
+    for (let i = 0; i < keys.length; i++) {
+      if (gridImportWh[i]! > 0 || gridExportWh[i]! > 0) continue;
+
+      let producedWh = 0;
+      for (const values of productionByMeter.values()) {
+        producedWh += values[i] ?? 0;
+      }
+      const consumedWh = consumptionWh[i] ?? 0;
+      if (consumedWh === 0 && producedWh === 0) continue;
+
+      if (consumedWh > producedWh) {
+        gridImportWh[i] = consumedWh - producedWh;
+      } else if (producedWh > consumedWh) {
+        gridExportWh[i] = producedWh - consumedWh;
       }
     }
 
@@ -245,11 +280,15 @@ export async function fetchEnergyTelemetry(input: {
       }));
 
     const consumptionKwh = consumptionWh.map((wh) => whToKwh(wh));
+    const gridImportKwh = gridImportWh.map((wh) => whToKwh(wh));
+    const gridExportKwh = gridExportWh.map((wh) => whToKwh(wh));
     const producedKwh = productionBySource.reduce(
       (acc, s) => acc + s.valuesKwh.reduce((a, b) => a + b, 0),
       0,
     );
     const consumedKwh = consumptionKwh.reduce((a, b) => a + b, 0);
+    const gridImportedKwh = gridImportKwh.reduce((a, b) => a + b, 0);
+    const gridExportedKwh = gridExportKwh.reduce((a, b) => a + b, 0);
 
     return {
       enabled: true,
@@ -258,10 +297,14 @@ export async function fetchEnergyTelemetry(input: {
       labels,
       consumptionKwh,
       productionBySource,
+      gridImportKwh,
+      gridExportKwh,
       totals: {
         producedKwh: Math.round(producedKwh * 100) / 100,
         consumedKwh: Math.round(consumedKwh * 100) / 100,
         netKwh: Math.round((producedKwh - consumedKwh) * 100) / 100,
+        gridImportedKwh: Math.round(gridImportedKwh * 100) / 100,
+        gridExportedKwh: Math.round(gridExportedKwh * 100) / 100,
       },
       dataFrom: minT.toISOString(),
       dataTo: maxT.toISOString(),

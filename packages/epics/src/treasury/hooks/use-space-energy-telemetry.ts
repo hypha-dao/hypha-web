@@ -20,10 +20,14 @@ export type SpaceEnergyTelemetryResponse = {
   labels: string[];
   consumptionKwh: number[];
   productionBySource: EnergyTelemetrySourceSeries[];
+  gridImportKwh: number[];
+  gridExportKwh: number[];
   totals: {
     producedKwh: number;
     consumedKwh: number;
     netKwh: number;
+    gridImportedKwh: number;
+    gridExportedKwh: number;
   };
   dataFrom: string | null;
   dataTo: string | null;

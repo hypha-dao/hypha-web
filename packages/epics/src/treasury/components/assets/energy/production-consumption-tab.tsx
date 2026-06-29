@@ -13,6 +13,7 @@ import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemet
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
 import {
   buildProductionSeries,
+  buildGridFlowSeries,
   timeframeLabels,
   type Timeframe,
 } from './dummy-data';
@@ -71,6 +72,18 @@ export const ProductionConsumptionTab = ({
     ? telemetry!.consumptionKwh
     : dummy.consumption;
 
+  const dummyGrid = React.useMemo(
+    () => buildGridFlowSeries(dummy.perSource, dummy.consumption),
+    [dummy.consumption, dummy.perSource],
+  );
+
+  const gridImport = useLiveTelemetry
+    ? telemetry!.gridImportKwh
+    : dummyGrid.gridImport;
+  const gridExport = useLiveTelemetry
+    ? telemetry!.gridExportKwh
+    : dummyGrid.gridExport;
+
   const totalProduced = useLiveTelemetry
     ? telemetry!.totals.producedKwh
     : perSource.reduce((acc, s) => acc + sum(s.values), 0);
@@ -78,6 +91,12 @@ export const ProductionConsumptionTab = ({
     ? telemetry!.totals.consumedKwh
     : sum(consumption);
   const net = totalProduced - totalConsumed;
+  const totalGridImport = useLiveTelemetry
+    ? telemetry!.totals.gridImportedKwh
+    : sum(gridImport);
+  const totalGridExport = useLiveTelemetry
+    ? telemetry!.totals.gridExportedKwh
+    : sum(gridExport);
 
   const productionVsConsumption: ChartSeries[] = [
     {
@@ -102,6 +121,21 @@ export const ProductionConsumptionTab = ({
     color: ENERGY_PALETTE[i % ENERGY_PALETTE.length]!,
     values: s.values,
   }));
+
+  const gridImportExport: ChartSeries[] = [
+    {
+      key: 'grid-import',
+      label: 'Grid import',
+      color: ENERGY_PALETTE[4]!,
+      values: gridImport,
+    },
+    {
+      key: 'grid-export',
+      label: 'Grid export',
+      color: ENERGY_PALETTE[1]!,
+      values: gridExport,
+    },
+  ];
 
   const statusMessage = React.useMemo(() => {
     if (telemetryLoading) return 'Loading interval telemetry…';
@@ -193,6 +227,43 @@ export const ProductionConsumptionTab = ({
               mode="stacked"
               valueSuffix=" kWh"
             />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Grid import vs export</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {telemetryLoading ? (
+            <Skeleton className="h-48 w-full rounded-lg" />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <StatCard
+                  label="Total grid import"
+                  value={`${totalGridImport.toLocaleString()} kWh`}
+                  accent={ENERGY_PALETTE[4]}
+                />
+                <StatCard
+                  label="Total grid export"
+                  value={`${totalGridExport.toLocaleString()} kWh`}
+                  accent={ENERGY_PALETTE[1]}
+                />
+              </div>
+              <BarChart
+                series={gridImportExport}
+                labels={labels}
+                mode="grouped"
+                valueSuffix=" kWh"
+              />
+              <p className="text-1 text-neutral-11">
+                Grid flows use explicit import/export meter readings when present;
+                otherwise they are estimated as the community net deficit or
+                surplus (consumption minus local production).
+              </p>
+            </>
           )}
         </CardContent>
       </Card>

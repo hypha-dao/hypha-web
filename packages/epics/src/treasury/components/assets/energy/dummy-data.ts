@@ -109,6 +109,26 @@ export const buildProductionSeries = (
   return { perSource, consumption };
 };
 
+/** Community grid import/export derived from production vs consumption per bucket. */
+export const buildGridFlowSeries = (
+  perSource: { values: number[] }[],
+  consumption: number[],
+) => {
+  const len = consumption.length;
+  const gridImport: number[] = [];
+  const gridExport: number[] = [];
+
+  for (let i = 0; i < len; i++) {
+    const produced = perSource.reduce((acc, s) => acc + (s.values[i] ?? 0), 0);
+    const consumed = consumption[i] ?? 0;
+    const deficit = consumed - produced;
+    gridImport.push(Math.max(0, deficit));
+    gridExport.push(Math.max(0, -deficit));
+  }
+
+  return { gridImport, gridExport };
+};
+
 /** Settled energy (kWh equivalent reconciled) per period. */
 export const buildSettlementSeries = (timeframe: Timeframe) => {
   const tf = TIMEFRAMES.find((t) => t.id === timeframe) ?? TIMEFRAMES[1]!;

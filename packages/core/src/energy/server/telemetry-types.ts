@@ -13,10 +13,16 @@ export type EnergyTelemetryResponse = {
   labels: string[];
   consumptionKwh: number[];
   productionBySource: EnergyTelemetrySourceSeries[];
+  /** Grid energy bought from the external grid per bucket (kWh). */
+  gridImportKwh: number[];
+  /** Surplus grid energy exported per bucket (kWh). */
+  gridExportKwh: number[];
   totals: {
     producedKwh: number;
     consumedKwh: number;
     netKwh: number;
+    gridImportedKwh: number;
+    gridExportedKwh: number;
   };
   dataFrom: string | null;
   dataTo: string | null;
