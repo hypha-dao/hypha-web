@@ -59,6 +59,7 @@ export const POST = proposalRejectedSigningKey
             'Failed to delete undeployed draft tokens for rejected proposals:',
             error,
           );
+          throw error;
         }
 
         const creatorsToNotify = await findDocumentsCreatorsForNotifications(

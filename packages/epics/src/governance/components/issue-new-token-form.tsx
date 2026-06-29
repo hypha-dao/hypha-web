@@ -399,12 +399,40 @@ export const IssueNewTokenForm = ({
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
-  const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({
+  const {
+    spaceProposalsIds,
+    isLoading: isLoadingSpaceProposals,
+    error: spaceProposalsError,
+  } = useSpaceProposalsWeb3Rpc({
     spaceId: web3SpaceId ?? 0,
   });
-  const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
+  const {
+    withdrawnProposalsIds,
+    isLoading: isLoadingWithdrawnProposals,
+    error: withdrawnProposalsError,
+  } = useWithdrawnProposalsWeb3Rpc({
     spaceId: web3SpaceId ?? 0,
   });
+
+  const needsProposalStatusForDuplicateCheck =
+    typeof web3SpaceId === 'number' &&
+    Number.isInteger(web3SpaceId) &&
+    web3SpaceId > 0;
+
+  const isProposalStatusLoading =
+    needsProposalStatusForDuplicateCheck &&
+    (isLoadingSpaceProposals || isLoadingWithdrawnProposals);
+
+  const hasProposalStatusError =
+    needsProposalStatusForDuplicateCheck &&
+    Boolean(spaceProposalsError || withdrawnProposalsError);
+
+  const isProposalStatusReady =
+    !needsProposalStatusForDuplicateCheck ||
+    (!isProposalStatusLoading &&
+      !hasProposalStatusError &&
+      spaceProposalsIds !== undefined &&
+      withdrawnProposalsIds !== undefined);
 
   const rejectedProposalIds = React.useMemo(
     () =>
@@ -434,6 +462,10 @@ export const IssueNewTokenForm = ({
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
+
+    if (!isProposalStatusReady) {
+      return;
+    }
 
     const duplicateToken = findBlockingDuplicateIssueToken(dbTokens, {
       spaceId: spaceId as number,
@@ -538,7 +570,14 @@ export const IssueNewTokenForm = ({
               </div>
             )}
             <div className="flex justify-end w-full">
-              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+              <Button
+                type="submit"
+                disabled={
+                  isPending || isProposalStatusLoading || hasProposalStatusError
+                }
+              >
+                {tAgreementFlow('buttons.publish')}
+              </Button>
             </div>
           </div>
         </form>
