@@ -164,36 +164,16 @@ export const schemaCreateScheduledItem = z
     validateRecurrenceUntil(data, ctx);
   });
 
-export const schemaUpdateScheduledItem = z
+export const schemaMergedScheduledItemUpdate = z
   .object({
     id: z.number().int().positive(),
     ...scheduledItemBaseFields,
-  })
-  .partial({
-    title: true,
-    description: true,
-    type: true,
-    startsAt: true,
-    endsAt: true,
-    allDay: true,
-    timezone: true,
-    location: true,
-    meetingUrl: true,
-    color: true,
-    recurrenceRule: true,
-    recurrenceUntil: true,
-    recurrencePreset: true,
-    matrixRoomId: true,
-    matrixAutoLink: true,
-    remindEmail: true,
-    remindPush: true,
-    reminderMinutesBefore: true,
   })
   .transform((data) => {
     if (data.recurrencePreset === 'none') {
       return { ...data, recurrenceRule: null };
     }
-    if (data.recurrencePreset && data.startsAt) {
+    if (data.recurrencePreset) {
       return {
         ...data,
         recurrenceRule: resolveRecurrenceRule({
@@ -206,11 +186,7 @@ export const schemaUpdateScheduledItem = z
     return data;
   })
   .superRefine((data, ctx) => {
-    if (
-      data.startsAt &&
-      data.endsAt &&
-      data.endsAt.getTime() < data.startsAt.getTime()
-    ) {
+    if (data.endsAt.getTime() < data.startsAt.getTime()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'End time must be after start time',
@@ -220,6 +196,9 @@ export const schemaUpdateScheduledItem = z
     validateReminderSettings(data, ctx);
     validateRecurrenceUntil(data, ctx);
   });
+
+/** Validated only after {@link mergeScheduledItemUpdateInput} merges a patch. */
+export const schemaUpdateScheduledItem = schemaMergedScheduledItemUpdate;
 
 export const schemaScheduledItemsRangeQuery = z
   .object({

@@ -1,7 +1,17 @@
-import { RRule } from 'rrule';
+import { RRule, type Weekday } from 'rrule';
 import type { RecurrencePreset } from './recurrence-presets';
 
 const WEEKDAY_MAP = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
+
+const RRULE_WEEKDAY: Record<(typeof WEEKDAY_MAP)[number], Weekday> = {
+  SU: RRule.SU,
+  MO: RRule.MO,
+  TU: RRule.TU,
+  WE: RRule.WE,
+  TH: RRule.TH,
+  FR: RRule.FR,
+  SA: RRule.SA,
+};
 
 export function buildRecurrenceRuleFromPreset(
   preset: RecurrencePreset,
@@ -36,6 +46,44 @@ export function detectRecurrencePreset(
   return 'none';
 }
 
+function parseBydayTokens(value: string): Weekday[] {
+  return value
+    .split(',')
+    .map((token) => token.trim().toUpperCase())
+    .filter((token): token is (typeof WEEKDAY_MAP)[number] =>
+      (WEEKDAY_MAP as readonly string[]).includes(token),
+    )
+    .map((token) => RRULE_WEEKDAY[token]);
+}
+
+function createRecurrenceRule(startsAt: Date, recurrenceRule: string): RRule {
+  const normalized = recurrenceRule.trim().toUpperCase();
+  const dtstart = new Date(startsAt);
+
+  if (normalized === 'FREQ=DAILY') {
+    return new RRule({ freq: RRule.DAILY, dtstart });
+  }
+
+  if (normalized.startsWith('FREQ=WEEKLY')) {
+    const bydayMatch = normalized.match(/BYDAY=([A-Z,]+)/);
+    const byweekday =
+      bydayMatch && bydayMatch[1]
+        ? parseBydayTokens(bydayMatch[1])
+        : [RRULE_WEEKDAY[WEEKDAY_MAP[dtstart.getDay()]]];
+    return new RRule({ freq: RRule.WEEKLY, dtstart, byweekday });
+  }
+
+  if (normalized === 'FREQ=MONTHLY') {
+    return new RRule({ freq: RRule.MONTHLY, dtstart });
+  }
+
+  if (normalized === 'FREQ=YEARLY') {
+    return new RRule({ freq: RRule.YEARLY, dtstart });
+  }
+
+  throw new Error(`Unsupported recurrence rule: ${recurrenceRule}`);
+}
+
 export function expandScheduledOccurrenceStarts({
   startsAt,
   recurrenceRule,
@@ -55,9 +103,7 @@ export function expandScheduledOccurrenceStarts({
   }
 
   try {
-    const rule = RRule.fromString(
-      `DTSTART:${toRruleDtstart(startsAt)}\nRRULE:${recurrenceRule.trim()}`,
-    );
+    const rule = createRecurrenceRule(startsAt, recurrenceRule);
     const until = recurrenceUntil ?? to;
     return rule.between(from, until > to ? to : until, true);
   } catch {

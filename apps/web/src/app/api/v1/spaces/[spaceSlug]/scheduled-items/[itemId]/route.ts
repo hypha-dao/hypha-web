@@ -6,9 +6,8 @@ import {
   findSelf,
   findSpaceBySlug,
   getDb,
-  mergeScheduledItemUpdateInput,
+  safeParseMergedScheduledItemUpdate,
   parseScheduledItemId,
-  schemaUpdateScheduledItem,
   updateScheduledItemById,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -103,9 +102,7 @@ export async function PATCH(
     if (body == null) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    const parsed = schemaUpdateScheduledItem.safeParse(
-      mergeScheduledItemUpdateInput(existing, body, id),
-    );
+    const parsed = safeParseMergedScheduledItemUpdate(existing, body, id);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
