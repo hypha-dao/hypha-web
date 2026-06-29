@@ -52,7 +52,8 @@ function stateFilePath(): string {
 function resolvePpaProxy(): string {
   const direct = getEnv('ENERGY_PPAV2_PPA_PROXY');
   if (direct) {
-    if (!ethers.isAddress(direct)) throw new Error(`Invalid PPA proxy: ${direct}`);
+    if (!ethers.isAddress(direct))
+      throw new Error(`Invalid PPA proxy: ${direct}`);
     return direct;
   }
 
@@ -69,10 +70,7 @@ function resolvePpaProxy(): string {
   return state.ppaProxy;
 }
 
-function buildUpdateWhitelistCalldata(
-  target: string,
-  status: boolean,
-): string {
+function buildUpdateWhitelistCalldata(target: string, status: boolean): string {
   const iface = new ethers.Interface([
     'function updateWhitelist(address account, bool isWhitelisted)',
   ]);
@@ -94,10 +92,14 @@ async function printProposalInstructions(
   };
 
   console.log('\n  PPA owner is a contract (space Executor), not an EOA.');
-  console.log('  There is no private key — whitelist via governance proposal.\n');
+  console.log(
+    '  There is no private key — whitelist via governance proposal.\n',
+  );
   console.log('  Flow:');
   console.log('    1. Create a proposal in energy3000 (any proposal type that');
-  console.log('       supports extra on-chain transactions, or add a dedicated');
+  console.log(
+    '       supports extra on-chain transactions, or add a dedicated',
+  );
   console.log('       “Whitelist settlement bot” proposal in the UI).');
   console.log('    2. Attach this as an extraTransactions entry (executed by');
   console.log(`       Executor ${owner} when the proposal passes):`);
@@ -136,10 +138,16 @@ async function main(): Promise<void> {
   console.log('EnergyPPAv2 — updateWhitelist');
   console.log(`  Chain             : ${network.chainId}`);
   console.log(`  PPA proxy         : ${ppaProxy}`);
-  console.log(`  PPA owner         : ${owner}${ownerIsContract ? ' (contract)' : ' (EOA)'}`);
+  console.log(
+    `  PPA owner         : ${owner}${
+      ownerIsContract ? ' (contract)' : ' (EOA)'
+    }`,
+  );
   console.log(`  Target            : ${target}`);
   console.log(`  Whitelist         : ${status}`);
-  console.log(`  Current status    : ${before ? 'whitelisted' : 'not whitelisted'}`);
+  console.log(
+    `  Current status    : ${before ? 'whitelisted' : 'not whitelisted'}`,
+  );
 
   if (before === status) {
     console.log('\n  No change needed.');
@@ -151,8 +159,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const adminKey =
-    getEnv('ENERGY_ADMIN_PRIVATE_KEY') ?? getEnv('PRIVATE_KEY');
+  const adminKey = getEnv('ENERGY_ADMIN_PRIVATE_KEY') ?? getEnv('PRIVATE_KEY');
   if (!adminKey) {
     throw new Error(
       'PPA owner is an EOA. Set PRIVATE_KEY or ENERGY_ADMIN_PRIVATE_KEY to the owner wallet.',
@@ -165,9 +172,7 @@ async function main(): Promise<void> {
 
   if (owner.toLowerCase() !== signerAddress.toLowerCase()) {
     await printProposalInstructions(ppaProxy, owner, target, status, before);
-    throw new Error(
-      `Signer ${signerAddress} is not the PPA owner (${owner}).`,
-    );
+    throw new Error(`Signer ${signerAddress} is not the PPA owner (${owner}).`);
   }
 
   const ppa = await ethers.getContractAt('EnergyPPAv2', ppaProxy, signer);
@@ -178,7 +183,9 @@ async function main(): Promise<void> {
   console.log(`  Gas used          : ${receipt?.gasUsed.toString()}`);
 
   const after = await ppa.isAddressWhitelisted(target);
-  console.log(`  After             : ${after ? 'whitelisted' : 'not whitelisted'}`);
+  console.log(
+    `  After             : ${after ? 'whitelisted' : 'not whitelisted'}`,
+  );
 
   if (after !== status) {
     throw new Error('Whitelist update did not take effect');

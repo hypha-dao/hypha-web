@@ -215,7 +215,7 @@ export async function GET(
       try {
         mapping = await syncEnergyCommunityFromFactory({
           spaceId: space.id,
-          spaceAddress: space.address,
+          spaceAddress: space.address ?? null,
           web3SpaceId: space.web3SpaceId,
           persistDb: db,
         });

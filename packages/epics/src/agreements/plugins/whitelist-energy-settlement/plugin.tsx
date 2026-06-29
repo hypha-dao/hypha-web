@@ -48,7 +48,10 @@ export const WhitelistEnergySettlementPlugin = () => {
               </FormDescription>
             </div>
             <FormControl>
-              <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
+              <Switch
+                checked={field.value ?? true}
+                onCheckedChange={field.onChange}
+              />
             </FormControl>
           </FormItem>
         )}

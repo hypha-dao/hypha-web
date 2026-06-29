@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import {
-  encodeContractQuantityPrice,
-  WH_PER_KWH,
-} from './build-readings';
+import { encodeContractQuantityPrice, WH_PER_KWH } from './build-readings';
 
 describe('encodeContractQuantityPrice', () => {
   it('encodes exact whole-kWh amounts with kWh quantity', () => {
