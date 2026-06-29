@@ -118,7 +118,8 @@ function isPinVisibleOnProjection(
   latitude: number,
 ): boolean {
   const clipAngle = projection.clipAngle?.();
-  if (clipAngle == null || clipAngle >= 180) {
+  // Equirectangular uses clipAngle(0) for antimeridian cuts, not back-face culling.
+  if (clipAngle == null || clipAngle >= 180 || clipAngle <= 0) {
     return true;
   }
 
