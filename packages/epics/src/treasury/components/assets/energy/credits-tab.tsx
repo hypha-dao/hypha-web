@@ -7,17 +7,10 @@ import { EnergyPersonCard } from './shared';
 import { useEnergyPeople } from './use-energy-people';
 import { ENERGY_PALETTE } from './charts';
 import { formatStablecoinMicro } from './format';
-import {
-  dummySettledMicro,
-  dummyToSettleMicro,
-  isEurcDummyCommunity,
-} from './dummy-data';
-import { useCommunitySlug } from './use-community-slug';
 
 type Row = {
   address: string;
   toSettleMicro: bigint;
-  settledMicro: bigint;
 };
 
 const toBigInt = (value: string | null | undefined) => {
@@ -29,49 +22,20 @@ const toBigInt = (value: string | null | undefined) => {
   }
 };
 
-const SettleProgress = ({
-  settled,
-  toSettle,
-}: {
-  settled: bigint;
-  toSettle: bigint;
-}) => {
-  const total = settled + toSettle;
-  const pct = total > 0n ? Number((settled * 100n) / total) : 100;
-  return (
-    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-4">
-      <div
-        className="h-full rounded-full"
-        style={{
-          width: `${Math.min(100, Math.max(0, pct))}%`,
-          backgroundColor: ENERGY_PALETTE[1],
-        }}
-      />
-    </div>
-  );
-};
-
 const eurc = (micro: bigint) =>
   `${formatStablecoinMicro(micro.toString())} EURC`;
 
 export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const details = data.memberDetails ?? [];
-  const slug = useCommunitySlug();
-  const dummyEurc = isEurcDummyCommunity(slug);
 
   const { rows, addresses } = React.useMemo(() => {
     const rows: Row[] = details.map((member) => ({
       address: member.address,
-      toSettleMicro: dummyEurc
-        ? toBigInt(dummyToSettleMicro(member.address))
-        : toBigInt(member.debtInStablecoin),
-      settledMicro: dummyEurc
-        ? toBigInt(dummySettledMicro(member.address))
-        : 0n,
+      toSettleMicro: toBigInt(member.debtInStablecoin),
     }));
     rows.sort((a, b) => (b.toSettleMicro > a.toSettleMicro ? 1 : -1));
     return { rows, addresses: details.map((m) => m.address.toLowerCase()) };
-  }, [details, dummyEurc]);
+  }, [details]);
 
   const { people, isLoading } = useEnergyPeople(addresses);
 
@@ -84,7 +48,7 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
   }
 
   const totalToSettle = rows.reduce((acc, r) => acc + r.toSettleMicro, 0n);
-  const totalSettled = rows.reduce((acc, r) => acc + r.settledMicro, 0n);
+  const totalSettled = toBigInt(data.overview?.contractStablecoinBalance);
 
   return (
     <div className="flex flex-col gap-4">
@@ -121,29 +85,20 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
                 person={people[row.address.toLowerCase()]}
                 isLoading={isLoading}
                 right={
-                  <div className="text-right">
-                    <p
-                      className="font-medium"
-                      style={{ color: ENERGY_PALETTE[4] }}
-                    >
-                      {eurc(row.toSettleMicro)} to settle
-                    </p>
-                    <p className="text-1 text-neutral-11">
-                      {eurc(row.settledMicro)} settled
-                    </p>
-                  </div>
+                  <p
+                    className="font-medium text-right"
+                    style={{ color: ENERGY_PALETTE[4] }}
+                  >
+                    {eurc(row.toSettleMicro)} to settle
+                  </p>
                 }
-              />
-              <SettleProgress
-                settled={row.settledMicro}
-                toSettle={row.toSettleMicro}
               />
             </div>
           ))}
           <p className="text-1 text-neutral-11">
-            {dummyEurc
-              ? 'EURC settlement figures are placeholder demo data pending the settlement indexer.'
-              : '“Already settled” totals are placeholder pending the settlement indexer; “to settle” reflects live on-chain debt.'}
+            “To settle” reflects live on-chain debt from the PPA contract. Per-member
+            settled history is not shown yet; the “Already settled” total is EURC held
+            by the contract.
           </p>
         </CardContent>
       </Card>

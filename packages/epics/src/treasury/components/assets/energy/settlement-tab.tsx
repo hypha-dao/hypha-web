@@ -7,20 +7,15 @@ import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
 import {
   buildSettlementSeries,
-  dummySettledMicro,
-  isEurcDummyCommunity,
   timeframeLabels,
   type Timeframe,
 } from './dummy-data';
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
 import { formatStablecoinMicro } from './format';
-import { useCommunitySlug } from './use-community-slug';
 
 export const SettlementTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const [timeframe, setTimeframe] = React.useState<Timeframe>('30d');
-  const slug = useCommunitySlug();
-  const dummyEurc = isEurcDummyCommunity(slug);
 
   const labels = React.useMemo(() => timeframeLabels(timeframe), [timeframe]);
   const settlementSeries = React.useMemo(
@@ -28,16 +23,9 @@ export const SettlementTab = ({ data }: { data: SpaceEnergyResponse }) => {
     [timeframe],
   );
 
-  const totalSettledEurc = React.useMemo(() => {
-    if (dummyEurc) {
-      const total = (data.memberDetails ?? []).reduce(
-        (acc, m) => acc + BigInt(dummySettledMicro(m.address)),
-        0n,
-      );
-      return formatStablecoinMicro(total.toString());
-    }
-    return formatStablecoinMicro(data.overview?.contractStablecoinBalance);
-  }, [dummyEurc, data.memberDetails, data.overview?.contractStablecoinBalance]);
+  const totalSettledEurc = formatStablecoinMicro(
+    data.overview?.contractStablecoinBalance,
+  );
 
   const settledKwh = settlementSeries.reduce((acc, d) => acc + d.value, 0);
 

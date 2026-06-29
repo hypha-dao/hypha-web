@@ -13,8 +13,6 @@ import { useSpaceEnergy } from '../../hooks/use-space-energy';
 import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/charts';
 import { formatStablecoinMicro } from './energy/format';
-import { dummySettledMicro, isEurcDummyCommunity } from './energy/dummy-data';
-import { useCommunitySlug } from './energy/use-community-slug';
 import { EnergyOverviewTab } from './energy/overview-tab';
 import { ProductionConsumptionTab } from './energy/production-consumption-tab';
 import { SettlementTab } from './energy/settlement-tab';
@@ -31,7 +29,6 @@ const TAB_DEFS = [
 
 export const SpaceEnergySection = () => {
   const { data, isLoading } = useSpaceEnergy();
-  const slug = useCommunitySlug();
   const [tab, setTab] = React.useState<string>('overview');
 
   if (isLoading) {
@@ -54,13 +51,9 @@ export const SpaceEnergySection = () => {
 
   const overview = data.overview;
 
-  const totalSettledEurc = isEurcDummyCommunity(slug)
-    ? formatStablecoinMicro(
-        (data.memberDetails ?? [])
-          .reduce((acc, m) => acc + BigInt(dummySettledMicro(m.address)), 0n)
-          .toString(),
-      )
-    : formatStablecoinMicro(overview.contractStablecoinBalance);
+  const totalSettledEurc = formatStablecoinMicro(
+    overview.contractStablecoinBalance,
+  );
 
   return (
     <div className="flex flex-col gap-6">
