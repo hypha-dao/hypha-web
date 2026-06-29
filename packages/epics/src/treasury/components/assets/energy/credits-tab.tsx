@@ -96,9 +96,9 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
             </div>
           ))}
           <p className="text-1 text-neutral-11">
-            “To settle” reflects live on-chain debt from the PPA contract. Per-member
-            settled history is not shown yet; the “Already settled” total is EURC held
-            by the contract.
+            “To settle” reflects live on-chain debt from the PPA contract.
+            Per-member settled history is not shown yet; the “Already settled”
+            total is EURC held by the contract.
           </p>
         </CardContent>
       </Card>
