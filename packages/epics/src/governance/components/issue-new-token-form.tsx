@@ -39,6 +39,10 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
   'Slug must contain only lowercase letters, numbers, and hyphens':
     'issueNewTokenForm.errors.slugFormat',
   'Please upload a valid file': 'issueNewTokenForm.errors.uploadValidFile',
+  'Your file is too large and exceeds the 16 MB limit. Please upload a smaller file.':
+    'issueNewTokenForm.errors.fileTooLarge',
+  'Your file is too large and exceeds the 16 MB limit. Please upload a smaller file':
+    'issueNewTokenForm.errors.fileTooLarge',
   'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.':
     'issueNewTokenForm.errors.fileTooLarge',
   'Your file is too large and exceeds the 4MB limit. Please upload a smaller file':
@@ -53,6 +57,8 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.attachmentUrlInvalid',
   'Attachment name is required':
     'issueNewTokenForm.errors.attachmentNameRequired',
+  'You can attach up to 5 files. Please remove the extra attachments.':
+    'issueNewTokenForm.errors.attachmentsLimit',
   'You can attach up to 3 files. Please remove the extra attachments.':
     'issueNewTokenForm.errors.attachmentsLimit',
   'Please enter a token name (min. 2 characters)':
@@ -240,7 +246,7 @@ export const IssueNewTokenForm = ({
   const translateIssueNewTokenError = React.useCallback(
     (message: string) => {
       const tooLargeMatch = message.match(
-        /^Your file "(.+)" is too large and exceeds the 4MB limit\. Please upload a smaller file\.?$/,
+        /^Your file "(.+)" is too large and exceeds the \d+ ?MB limit\. Please upload a smaller file\.?$/,
       );
       if (tooLargeMatch?.[1]) {
         return tAgreementFlow(
@@ -252,7 +258,7 @@ export const IssueNewTokenForm = ({
       }
 
       const unsupportedFormatMatch = message.match(
-        /^This file "(.+)" format isn[’']t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to 4MB\)\.?$/,
+        /^This file "(.+)" format isn[’']t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to \d+ ?MB\)\.?$/,
       );
       if (unsupportedFormatMatch?.[1]) {
         return tAgreementFlow(

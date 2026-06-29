@@ -39,7 +39,6 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
   hideListLoadingState = false,
 }) => {
   const t = useTranslations('BankingTab.sections.transfers');
-  const tNotStarted = useTranslations('BankingTab.notStarted');
   const tToolbar = useTranslations('BankingTab.toolbar');
   const [detailsTransfer, setDetailsTransfer] =
     useState<BankTransferPublic | null>(null);
@@ -103,11 +102,6 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
       ) : transfers.length === 0 ? (
         <Empty className="w-full">
           <p>{t('emptyTitle')}</p>
-          <p className="text-muted-foreground">
-            {hasBankCustomer
-              ? t('emptyDescription')
-              : tNotStarted('description')}
-          </p>
         </Empty>
       ) : (
         <div className="w-full">

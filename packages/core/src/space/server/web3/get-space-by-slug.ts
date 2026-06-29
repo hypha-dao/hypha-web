@@ -8,6 +8,7 @@ import {
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
 import { readWithWarmupRetry } from './internal';
+import { mapDbSpaceToSpace } from '../map-db-space';
 
 interface GetSpaceBySlugProps {
   slug: string;
@@ -28,7 +29,7 @@ export async function getSpaceBySlug({
         ? BigInt(space.web3SpaceId)
         : 0n;
     if (web3SpaceId === 0n) {
-      return space;
+      return mapDbSpaceToSpace(space);
     }
 
     const web3SpaceIds = [web3SpaceId];
@@ -69,7 +70,7 @@ export async function getSpaceBySlug({
     const [spaceProposals] = web3proposalsIds;
 
     return {
-      ...space,
+      ...mapDbSpaceToSpace(space),
       memberCount: spaceDetails?.members?.length ?? 0,
       memberAddresses: Array.isArray(spaceDetails?.members)
         ? spaceDetails.members

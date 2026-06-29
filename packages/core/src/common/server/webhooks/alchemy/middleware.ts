@@ -19,6 +19,6 @@ export function newMiddleware(signingKey: string): Middleware {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     if (!timingSafeEqual(theirSignature, ourSignature))
-      NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   };
 }

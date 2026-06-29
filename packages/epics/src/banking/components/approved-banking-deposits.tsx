@@ -52,7 +52,6 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
     return (
       <Empty className="w-full">
         <p>{tAccounts('emptyTitle')}</p>
-        <p className="text-muted-foreground">{tAccounts('emptyDescription')}</p>
       </Empty>
     );
   }

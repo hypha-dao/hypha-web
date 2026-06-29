@@ -1,16 +1,18 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
+
+import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 
 /**
  * Returns true when the current route is inside a space context
  * (i.e. /[lang]/dho/[id]/...).
  *
- * The `id` param is only defined when Next.js matches the
- * `[lang]/dho/[id]` route segment, so its presence is a reliable
- * indicator that side panels should be rendered.
+ * Prefer pathname when `useParams().id` is missing — the AI panel mounts in
+ * the root layout where nested dynamic params are not always populated.
  */
 export function useIsSpaceContext(): boolean {
   const params = useParams<{ id?: string }>();
-  return !!params?.id;
+  const pathname = usePathname();
+  return Boolean(params?.id ?? getDhoSpaceSlugFromPathname(pathname));
 }

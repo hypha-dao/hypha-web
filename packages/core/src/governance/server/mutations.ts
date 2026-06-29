@@ -16,7 +16,8 @@ import {
   TokenUpdateData,
   isTokenUpdateData,
 } from '../types';
-import { DatabaseInstance, findTokenUpdateByDocumentId } from '../../server';
+import type { DatabaseInstance } from '../../common/server/types';
+import { findTokenUpdateByDocumentId } from './queries';
 import { CreateTokenInput, DeleteTokenInput } from '../types';
 import {
   buildUpdateTokenInputPatchFromTokenUpdateData,

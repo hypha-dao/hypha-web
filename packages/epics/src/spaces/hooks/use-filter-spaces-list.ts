@@ -32,7 +32,7 @@ export function filterSpacesByDiscoverability(
   userState: UserSpaceState,
 ): Space[] {
   return spaces.filter((space) => {
-    if (!space.web3SpaceId) return true;
+    if (!space.web3SpaceId) return false;
     const discoverability = discoverabilityMap.get(space.web3SpaceId);
     return shouldShowSpace(space, discoverability, userState);
   });

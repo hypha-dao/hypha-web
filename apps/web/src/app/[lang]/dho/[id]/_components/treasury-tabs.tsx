@@ -11,6 +11,7 @@ import {
   useBankCustomerStatus,
   useTransfers,
   useVaults,
+  useVirtualAccounts,
 } from '@hypha-platform/epics';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -43,16 +44,14 @@ export function TreasuryTabs({
   const { transfers } = useTransfers({ spaceSlug });
   const { vaults } = useVaults({ spaceSlug });
   const { status: bankCustomerStatus } = useBankCustomerStatus({ spaceSlug });
+  const { accounts: virtualAccounts } = useVirtualAccounts({
+    spaceSlug,
+    enabled: Boolean(bankCustomerStatus),
+  });
   const walletCount = assets.filter((asset) => asset.value > 0).length;
   const transactionCount = transfers.length;
   const vaultCount = vaults.length;
-  // Count currencies usable for banking (approved/active) — derived from the
-  // already-loaded status; counting actual virtual accounts would need an
-  // extra Bridge list call just to render this badge.
-  const supportedCurrencyCount =
-    bankCustomerStatus?.currencyStatuses?.filter(
-      (currency) => currency.isApproved,
-    ).length ?? 0;
+  const bankAccountCount = virtualAccounts.length;
 
   return (
     <div className="flex w-full flex-col gap-4 py-4">
@@ -72,6 +71,14 @@ export function TreasuryTabs({
                 </span>
               </span>
             </TabsTrigger>
+            <TabsTrigger value="bank-accounts" variant="switch">
+              <span className="inline-flex items-center gap-1">
+                <span>{tTreasury('bankingRoutes')}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({format.number(bankAccountCount)})
+                </span>
+              </span>
+            </TabsTrigger>
             <TabsTrigger value="transactions" variant="switch">
               <span className="inline-flex items-center gap-1">
                 <span>{tTreasury('transactions')}</span>
@@ -88,19 +95,15 @@ export function TreasuryTabs({
                 </span>
               </span>
             </TabsTrigger>
-            <TabsTrigger value="bank-accounts" variant="switch">
-              <span className="inline-flex items-center gap-1">
-                <span>{tTreasury('bankAccounts')}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(supportedCurrencyCount)})
-                </span>
-              </span>
-            </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="balance" className="mt-0">
           <AssetsSection basePath={basePath} web3SpaceId={web3SpaceId} />
+        </TabsContent>
+
+        <TabsContent value="bank-accounts" className="mt-0">
+          <BankingSection spaceSlug={spaceSlug} web3SpaceId={web3SpaceId} />
         </TabsContent>
 
         <TabsContent value="transactions" className="mt-0">
@@ -109,10 +112,6 @@ export function TreasuryTabs({
 
         <TabsContent value="vaults" className="mt-0">
           <VaultsSection />
-        </TabsContent>
-
-        <TabsContent value="bank-accounts" className="mt-0">
-          <BankingSection spaceSlug={spaceSlug} web3SpaceId={web3SpaceId} />
         </TabsContent>
       </Tabs>
     </div>

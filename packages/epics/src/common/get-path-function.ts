@@ -40,3 +40,11 @@ export const getDhoPathEnergy = (lang: Locale, id: string) => {
 
 /** Default tab when opening a space from lists, maps, or bare `/dho/[slug]` URLs. */
 export const getDhoPathDefaultLanding = getDhoPathOverview;
+
+export const getOnboardingPath = (lang: Locale) => {
+  return `/${lang}/onboarding`;
+};
+
+export const getLegacyCreateSpacePath = (lang: Locale) => {
+  return `/${lang}/my-spaces/create`;
+};

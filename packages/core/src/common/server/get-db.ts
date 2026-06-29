@@ -10,6 +10,9 @@ export type getDbConfig = {
   authToken?: string;
 };
 export const getDb = ({ authToken }: getDbConfig) => {
+  // Authenticated routes (/me, profile create, etc.) must use the Neon JWT
+  // endpoint — preview BRANCH_DB_URL pooler URLs do not substitute for it.
+  // Preview schema/data for migrations uses `db` from storage-postgres instead.
   const url = authToken ? AUTHENTICATED : ANONYMOUS;
   console.debug('getDb', { url, hasAuthToken: Boolean(authToken) });
 

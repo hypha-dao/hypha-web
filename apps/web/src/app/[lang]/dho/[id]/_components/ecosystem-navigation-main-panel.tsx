@@ -52,13 +52,6 @@ function toRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function getContrastColor(hex: string): string {
-  const rgb = parseHex(hex);
-  if (!rgb) return '#ffffff';
-  const [r, g, b] = rgb;
-  const luminance = (r * 299 + g * 587 + b * 114) / 1000;
-  return luminance > 160 ? '#0f172a' : '#ffffff';
-}
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
   const spaces = Array.isArray(allSpaces) ? allSpaces : [];
@@ -281,15 +274,6 @@ export function EcosystemNavigationMainPanel({
     [selectedSpaceAccent, resolvedTheme],
   );
 
-  const iconFilledStyle = useMemo(
-    () => ({
-      backgroundColor: selectedSpaceAccent,
-      borderColor: selectedSpaceAccent,
-      color: getContrastColor(selectedSpaceAccent),
-    }),
-    [selectedSpaceAccent],
-  );
-
   const tabs = useMemo(
     () => [
       {
@@ -333,10 +317,10 @@ export function EcosystemNavigationMainPanel({
                             <TooltipTrigger asChild>
                               <Button
                                 asChild
-                                variant="default"
-                                colorVariant="accent"
+                                variant="outline"
+                                colorVariant="neutral"
                                 className="h-7 w-7 p-0"
-                                style={iconFilledStyle}
+                                style={iconOutlineStyle}
                                 aria-label={t('visibleSpaces.addSpace')}
                               >
                                 <Link href={addSpaceHref}>
@@ -397,7 +381,6 @@ export function EcosystemNavigationMainPanel({
       hierarchyData,
       selectedSpaceTitle,
       iconOutlineStyle,
-      iconFilledStyle,
       t,
       visitSpaceHref,
     ],

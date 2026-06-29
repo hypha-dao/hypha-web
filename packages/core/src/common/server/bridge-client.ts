@@ -454,6 +454,11 @@ export async function bridgeCreateKycLink(
     if (response.status === 400) {
       const existing = extractExistingKycLinkFromErrorBody(parsed);
       if (existing) {
+        if (!existing.customer_id) {
+          throw new Error(
+            'Bridge API returned existing_kyc_link with no customer_id',
+          );
+        }
         return existing;
       }
     }

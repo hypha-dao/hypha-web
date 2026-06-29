@@ -13,11 +13,7 @@ import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
 import { requireSpaceTreasuryAddress } from './require-space-treasury-address';
-import {
-  resolveCustomerApproved,
-  syncProviderCustomerIdFromKycLink,
-} from './providers/bridge/banking-provider-state';
-import { updateBankCustomer } from './mutations';
+import { resolveCustomerApproved } from './providers/bridge/banking-provider-state';
 
 function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -100,16 +96,7 @@ export async function executeBridgeBankTransfer(
     );
   }
 
-  let customerId = customer.providerCustomerId;
-  if (!customerId) {
-    customerId = await syncProviderCustomerIdFromKycLink(customer);
-    if (customerId) {
-      await updateBankCustomer(
-        { id: customer.id, providerCustomerId: customerId },
-        { db },
-      );
-    }
-  }
+  const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     throw new BankOnboardingError(

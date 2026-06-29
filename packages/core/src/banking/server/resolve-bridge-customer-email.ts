@@ -7,7 +7,6 @@ import {
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
 
 import { BankOnboardingError } from './errors';
-import { syncProviderCustomerIdFromKycLink } from './providers/bridge/banking-provider-state';
 
 function readEmailFromRecord(value: unknown): string | null {
   if (typeof value !== 'object' || value === null) {
@@ -33,12 +32,7 @@ export async function resolveBridgeCustomerEmail(
     return fromLink;
   }
 
-  let customerId = customer.providerCustomerId ?? kycLink.customer_id ?? null;
-  if (!customerId) {
-    customerId = await syncProviderCustomerIdFromKycLink(
-      customer as BankCustomer,
-    );
-  }
+  const customerId = customer.providerCustomerId ?? kycLink.customer_id ?? null;
 
   if (customerId) {
     const bridgeCustomer = await bridgeGetCustomer(customerId);

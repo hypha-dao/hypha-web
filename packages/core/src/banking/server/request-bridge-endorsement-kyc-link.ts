@@ -9,7 +9,6 @@ import { BankOnboardingError } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
 import { parseBridgeEndorsements } from './providers/bridge/endorsements';
 import { updateBankCustomer } from './mutations';
-import { syncProviderCustomerIdFromKycLink } from './providers/bridge/banking-provider-state';
 import { resolveBridgeCustomerEmail } from './resolve-bridge-customer-email';
 
 export type RequestBridgeEndorsementKycLinkResult = {
@@ -27,10 +26,7 @@ export async function requestBridgeEndorsementKycLink(
     throw new BankOnboardingError('Unsupported endorsement', 400);
   }
 
-  let providerCustomerId = customer.providerCustomerId;
-  if (!providerCustomerId) {
-    providerCustomerId = await syncProviderCustomerIdFromKycLink(customer);
-  }
+  const providerCustomerId = customer.providerCustomerId;
 
   if (!providerCustomerId) {
     throw new BankOnboardingError(

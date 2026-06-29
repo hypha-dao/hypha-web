@@ -82,6 +82,25 @@ export function isHyphaDhoChatMessageUrl(href: string): boolean {
   }
 }
 
+/** Add, update, or remove the `signal` query param on the current DHO path. */
+export function setSignalSearchParam(
+  pathname: string,
+  searchParams: URLSearchParams | string,
+  signalSlug: string | null | undefined,
+): string {
+  const next = new URLSearchParams(
+    typeof searchParams === 'string' ? searchParams : searchParams.toString(),
+  );
+  const slug = signalSlug?.trim();
+  if (slug) {
+    next.set('signal', slug);
+  } else {
+    next.delete('signal');
+  }
+  const qs = next.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
 /** Space slug from a Hypha DHO URL path (`/en/dho/treespace/...` → `treespace`). */
 export function hyphaDhoSlugFromUrl(href: string): string | null {
   try {

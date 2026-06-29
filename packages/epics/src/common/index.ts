@@ -25,12 +25,145 @@ export {
   AI_ONBOARDING_SEED_ACK_EVENT,
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
+  ONBOARDING_HERO_SOURCE,
+  AI_PANEL_SETUP_SOURCE,
+  applyOnboardingContextForUserText,
   clearOnboardingConversationContext,
+  resolveChatTransportBody,
+  shouldAttachOnboardingContext,
+  shouldBypassSpaceMembershipForOnboarding,
+  createAiPanelSetupContext,
   dispatchAiOnboardingSeed,
   dispatchAiOnboardingSeedAck,
+  ensureSpaceSetupContext,
+  isPlainOnboardingConfirmationReply,
+  isSpaceSetupContext,
   readOnboardingConversationContext,
+  resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
+  shouldEnterSpaceSetupFromUserText,
+  handoffOnboardingToAiPanel,
+  consumeOnboardingOpenAiPanelPending,
+  consumeOnboardingContinuationPrompt,
+  readOnboardingChatMessages,
+  saveOnboardingChatMessages,
+  clearOnboardingChatMessages,
+  getPostOnboardingLandingPath,
+  getPostOnboardingContinuationPrompt,
+  type StoredOnboardingChatMessage,
+  type OnboardingConversationContext,
+  type OnboardingSpaceLocation,
+  type OnboardingActivationMethod,
+  type OnboardingSetupJourney,
+  type OnboardingTransparencyMatrix,
 } from './ai-onboarding-context';
+export {
+  applyOnboardingActivationToContext,
+  activationMethodToFlags,
+  formatOnboardingActivationSubmitMessage,
+  type OnboardingActivationMessageLabels,
+  shouldShowOnboardingActivationPicker,
+} from './onboarding-activation-ui';
+export {
+  applyOnboardingSetupJourneyToContext,
+  formatOnboardingSetupJourneySubmitMessage,
+  type OnboardingSetupJourneyMessageLabels,
+  shouldShowOnboardingSetupJourneyPicker,
+} from './onboarding-setup-journey-ui';
+export {
+  getOnboardingSetupJourneySubmitLabels,
+  localizeOnboardingPickerUserMessage,
+  localizeOnboardingSetupJourneyUserMessage,
+  matchOnboardingSetupJourneyUserMessage,
+} from './onboarding-picker-message-i18n';
+export {
+  applyOnboardingLocationToContext,
+  formatOnboardingLocationSubmitMessage,
+  type OnboardingLocationMessageLabels,
+  onboardingSpaceLocationFromPicker,
+  getClientEnableNetworkMap,
+  shouldShowOnboardingLocationPicker,
+  skippedOnboardingSpaceLocation,
+} from './onboarding-location-ui';
+export {
+  onboardingLocationFromCreatePayload,
+  onboardingTransparencyFromCreatePayload,
+  onboardingJoinMethodFromCreatePayload,
+} from './onboarding-create-payload';
+export {
+  extractOnboardingVisualAssetsFromMessages,
+  mergeVisualAssetsIntoCreatePayload,
+  type OnboardingVisualAssets,
+} from './onboarding-visual-assets';
+export {
+  extractEcosystemBlueprintFromMessages,
+  mergeEcosystemBlueprintWithCreatedSpaces,
+  preparePostRootOnboardingHandoff,
+  resolveEcosystemBlueprintForContext,
+  syncEcosystemBlueprintInContext,
+  type EcosystemBlueprintEntry,
+} from './onboarding-ecosystem-blueprint';
+export {
+  applyOnboardingDiscoverabilityToContext,
+  applyOnboardingTransparencyToContext,
+  formatOnboardingDiscoverabilitySubmitMessage,
+  formatOnboardingTransparencySubmitMessage,
+  type OnboardingTransparencyMessageLabels,
+  shouldShowOnboardingTransparencyPicker,
+  resolveOnboardingTransparencyPickerStep,
+} from './onboarding-transparency-ui';
+export {
+  applyOnboardingEntryMethodToContext,
+  formatOnboardingEntryMethodSubmitMessage,
+  type OnboardingEntryMethodMessageLabels,
+  shouldShowOnboardingEntryMethodPicker,
+  type OnboardingEntryMethod,
+} from './onboarding-entry-method-ui';
+export {
+  shouldShowOnboardingVotingMethodPicker,
+  applyOnboardingVotingMethodToContext,
+  formatOnboardingVotingMethodSubmitMessage,
+  type OnboardingVotingMethod,
+} from './onboarding-voting-method-ui';
+export {
+  loadSpaceDiscoveryMode,
+  saveSpaceDiscoveryMode,
+} from './ai-panel-discovery-mode';
+export {
+  buildSpaceAdvisorVoiceSessionContext,
+  isSpaceAdvisorVoiceSessionContext,
+  type SpaceAdvisorVoiceSessionContext,
+  type VoiceSessionContext,
+} from './space-voice-session-context';
+export {
+  isOnboardingDiscoveryMode,
+  parseOnboardingDiscoveryMode,
+  type OnboardingDiscoveryMode,
+} from './onboarding-discovery-mode';
+export {
+  prepareAssistantTextForSpeech,
+  speakOnboardingText,
+  stopOnboardingSpeech,
+  stripMarkdownForSpeech,
+} from './onboarding-voice-speech';
+export {
+  useOnboardingVoiceInterview,
+  type VoiceInterviewPhase,
+  type VoiceInterviewErrorCode,
+} from './use-onboarding-voice-interview';
+export { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
+export { getClientEnableOnboardingVoiceRealtime } from './onboarding-voice-realtime-flag';
+export {
+  appendVoiceTranscriptTurn,
+  buildRecentTranscriptSummaryFromChatMessages,
+  toStoredOnboardingChatMessages,
+  type VoiceTranscriptTurn,
+} from './onboarding-voice-transcript-bridge';
+export {
+  ONBOARDING_MOBILIZED_SCOPE,
+  recordMobilizedAiAgentsForOnboarding,
+  transferMobilizedAiAgentsToSpace,
+} from './ai-agent-competencies';
 export {
   PanelProviders,
   PanelWrapLayout,

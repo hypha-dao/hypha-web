@@ -12,7 +12,7 @@ import {
 } from './onboarding-actor';
 import { logOnboardingToolEvent } from './onboarding-observability';
 import {
-  aiCreatableProposalTypeSchema,
+  collectiveAgreementOnlySchema,
   resolveAiProposalTypeConfig,
 } from './ai-proposal-types';
 
@@ -21,7 +21,7 @@ const inputSchema = z.object({
   title: z.string().trim().min(3).max(120),
   description: z.string().trim().min(20).max(4000),
   proposal_type: z
-    .enum(aiCreatableProposalTypeSchema)
+    .enum(collectiveAgreementOnlySchema)
     .default('collective_agreement'),
   onboarding_last_user_text: z.string().optional(),
   require_confirmation_token: z
@@ -36,15 +36,67 @@ const inputSchema = z.object({
 export function createCreateSpaceSetupProposalTool(authToken: string) {
   return {
     description:
-      'Write: create a governance proposal for a space. Pick proposal_type from the supported Hypha proposal catalog (Collective Agreement, Contribution, etc.). Requires explicit user confirmation before wallet signing or UI handoff.',
+      'Write: create a Collective Agreement proposal for a space. Requires explicit user confirmation before wallet signing. For all other proposal types (voting method, entry method, transparency, treasury, tokens, etc.) use proposal_guidance then prepare_governance_proposal instead.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
       if (!parsed.success) return { ok: false, error: parsed.error.message };
       const data = parsed.data;
       const proposalTypeConfig = resolveAiProposalTypeConfig(
-        data.proposal_type,
+        'collective_agreement',
       );
+
+      if (
+        data.proposal_type === 'collective_agreement' &&
+        /\b(quorum|unity percent|governance setup|membership policy|how (people|members) join|how (decisions|votes)|voting model|1m1v|1v1v|1t1v)\b/i.test(
+          `${data.title} ${data.description}`,
+        )
+      ) {
+        return {
+          ok: false,
+          error:
+            'Typed governance changes require proposal_guidance and prepare_governance_proposal with the correct proposal_type — not collective_agreement.',
+        };
+      }
+
+      if (
+        data.proposal_type === 'collective_agreement' &&
+        /\bvoting method\b|change.{0,24}vot(e|ing)|one (member|token|voice)/i.test(
+          `${data.title} ${data.description}`,
+        )
+      ) {
+        return {
+          ok: false,
+          error:
+            'Voting method changes require proposal_guidance and prepare_governance_proposal with proposal_type change_voting_method — not collective_agreement.',
+        };
+      }
+
+      if (
+        data.proposal_type === 'collective_agreement' &&
+        /\bentry method\b|join (method|policy)|open access|invite.?only|token.?based membership/i.test(
+          `${data.title} ${data.description}`,
+        )
+      ) {
+        return {
+          ok: false,
+          error:
+            'Entry method changes require proposal_guidance and prepare_governance_proposal with proposal_type change_entry_method — not collective_agreement.',
+        };
+      }
+
+      if (
+        data.proposal_type === 'collective_agreement' &&
+        /\b(transparency|discoverability|activity access|private space)\b/i.test(
+          `${data.title} ${data.description}`,
+        )
+      ) {
+        return {
+          ok: false,
+          error:
+            'Transparency changes require proposal_guidance and prepare_governance_proposal with proposal_type space_transparency — not collective_agreement.',
+        };
+      }
 
       const safe = sanitizeSlug(data.space_slug);
       if (!safe) return { ok: false, error: 'Invalid space slug format.' };
@@ -79,9 +131,8 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
             proposal_type: proposalTypeConfig.documentLabel,
             description: data.description,
           },
-          next_step: proposalTypeConfig.aiWalletExecutable
-            ? 'I need one more confirmation from you before the signing step. Press Confirm and then sign in your wallet to publish this proposal.'
-            : `After confirmation I will guide you to the ${proposalTypeConfig.documentLabel} form to add the required details.`,
+          next_step:
+            'I need one more confirmation from you before the signing step. Press Confirm and then sign in your wallet to publish this Collective Agreement.',
         };
       }
 
@@ -100,17 +151,6 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
         spaceSlug: safe,
         dedupeKey: `proposal:${safe}:${data.title.toLowerCase()}`,
       });
-
-      if (!proposalTypeConfig.aiWalletExecutable) {
-        return {
-          ok: true,
-          requires_ui_completion: true,
-          proposal_type: data.proposal_type,
-          document_label: proposalTypeConfig.documentLabel,
-          create_path: proposalTypeConfig.createPath,
-          next_step: `This ${proposalTypeConfig.documentLabel} proposal needs extra fields in Agreements. Offer to open ${proposalTypeConfig.createPath} for the user.`,
-        };
-      }
 
       return {
         ok: true,

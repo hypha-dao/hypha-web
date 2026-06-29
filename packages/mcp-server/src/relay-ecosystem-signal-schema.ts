@@ -24,12 +24,27 @@ export const relayEcosystemSignalInputSchema = z
     path: ['target_space_slug'],
   });
 
-export const relayEcosystemSignalOutputSchema = z.object({
-  ok: z.boolean(),
-  signalId: z.number().optional(),
-  signalSlug: z.string().nullable().optional(),
-  sourceSpaceSlug: z.string().optional(),
-  targetSpaceSlug: z.string().optional(),
-  creatorId: z.number().optional(),
-  error: z.string().optional(),
-});
+export const relayEcosystemSignalOutputSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    signalId: z.number(),
+    signalSlug: z.string(),
+    sourceSpaceSlug: z.string(),
+    targetSpaceSlug: z.string(),
+    creatorId: z.number(),
+    navigation: z.object({
+      kind: z.literal('internal'),
+      href: z.string(),
+      open_human_chat: z.literal(true),
+      chat_target: z.literal('signal_chat'),
+      signal_slug: z.string(),
+      signal_title: z.string(),
+      room_id: z.string().optional(),
+      label: z.string(),
+    }),
+  }),
+  z.object({
+    ok: z.literal(false),
+    error: z.string(),
+  }),
+]);

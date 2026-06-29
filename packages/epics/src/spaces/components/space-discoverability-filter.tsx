@@ -24,7 +24,7 @@ export function SpaceDiscoverabilityFilter({
 
   const filteredSpaces = useMemo(() => {
     return spaces.filter((space) => {
-      if (!space.web3SpaceId) return true; // Show spaces without web3SpaceId
+      if (!space.web3SpaceId) return false;
       const discoverability = spaceDiscoverabilityMap.get(space.web3SpaceId);
       return shouldShowSpace(space, discoverability, userState);
     });

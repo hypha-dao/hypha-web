@@ -10,10 +10,11 @@ import type {
   BankCurrencyCode,
   BankTransferCorridorKey,
 } from '../bank-currency-display';
+import { isBankRailSelectable } from '../banking-ui';
 import {
-  bankRailNeedsEndorsementRequest,
-  isBankRailSelectable,
-} from '../banking-ui';
+  DEPOSIT_CORRIDOR_MINIMUMS,
+  DEPOSIT_CURRENCY_MINIMUMS,
+} from '../banking-minimums';
 import type { BankCurrencyOperationalStatus } from '../hooks/types';
 import { BankDepositRailOptionRow } from './bank-deposit-rail-option-row';
 
@@ -39,12 +40,8 @@ type BankRailActionPickerProps = {
   primaryActionLoading?: boolean;
   primaryActionDisabled?: boolean;
   onPrimaryAction: () => void;
-  requestEndorsementLoading?: boolean;
-  onRequestEndorsement: (endorsement: string) => Promise<void>;
   disabled?: boolean;
   showPrimaryAction?: boolean;
-  /** Gear dialog uses compact; add-account / transfer dialogs match rail row height. */
-  endorsementActionSize?: 'row' | 'compact';
 };
 
 export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
@@ -59,15 +56,13 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
   primaryActionLoading = false,
   primaryActionDisabled = false,
   onPrimaryAction,
-  requestEndorsementLoading = false,
-  onRequestEndorsement,
   disabled = false,
   showPrimaryAction = true,
-  endorsementActionSize = 'row',
 }) => {
   const tOpenAccount = useTranslations('BankingTab.openAccount');
   const tCreateTransfer = useTranslations('BankingTab.createTransfer');
   const tDeposit = useTranslations('BankingTab.depositInstructions');
+  const tMinimums = useTranslations('BankingTab.minimums');
   const radioName = useId();
 
   const selected = options.find((option) => option.id === selectedId);
@@ -118,43 +113,16 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
               !isBankRailSelectable(option.operationalStatus);
 
             return (
-              <div key={option.id} className="flex items-stretch gap-2">
-                <div className="min-w-0 flex-1">
-                  <BankDepositRailOptionRow
-                    mode={mode}
-                    currency={option.currency}
-                    corridorKey={option.corridorKey}
-                    selected={selectedId === option.id}
-                    disabled={rowDisabled}
-                    radioName={radioName}
-                    onSelect={() => onSelectedIdChange(option.id)}
-                  />
-                </div>
-                {bankRailNeedsEndorsementRequest(option.operationalStatus) ? (
-                  <div className="flex shrink-0 items-stretch self-stretch">
-                    <Button
-                      type="button"
-                      size="sm"
-                      colorVariant="accent"
-                      className={
-                        endorsementActionSize === 'row'
-                          ? '!min-h-0 h-full shrink-0 rounded-lg px-3 py-0 text-2'
-                          : 'h-auto !min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight'
-                      }
-                      disabled={requestEndorsementLoading || disabled}
-                      onClick={() =>
-                        void onRequestEndorsement(option.endorsement)
-                      }
-                    >
-                      {requestEndorsementLoading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        tOpenAccount('requestRail')
-                      )}
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
+              <BankDepositRailOptionRow
+                key={option.id}
+                mode={mode}
+                currency={option.currency}
+                corridorKey={option.corridorKey}
+                selected={selectedId === option.id}
+                disabled={rowDisabled}
+                radioName={radioName}
+                onSelect={() => onSelectedIdChange(option.id)}
+              />
             );
           })}
         </div>
@@ -192,6 +160,19 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
           </div>
         </div>
       ) : null}
+
+      {selected
+        ? (() => {
+            const minimum = selected.corridorKey
+              ? DEPOSIT_CORRIDOR_MINIMUMS[selected.corridorKey]
+              : DEPOSIT_CURRENCY_MINIMUMS[selected.currency];
+            return minimum ? (
+              <p className="text-1 text-muted-foreground">
+                {tMinimums('depositNote')} {minimum}
+              </p>
+            ) : null;
+          })()
+        : null}
 
       {showPrimaryAction && selected ? (
         <Button

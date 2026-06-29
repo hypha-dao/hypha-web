@@ -22,8 +22,11 @@ export const useProposalActions = () => {
             abi: regularTokenFactoryAbi,
             data: tx.data,
           });
-          if (decodedRegular.functionName === 'deployToken') {
-            actions.push('deployToken');
+          if (
+            decodedRegular.functionName === 'deployToken' ||
+            decodedRegular.functionName === 'deployTokenWithMinters'
+          ) {
+            actions.push(decodedRegular.functionName);
             return;
           }
         } catch {}
@@ -33,8 +36,11 @@ export const useProposalActions = () => {
             abi: ownershipTokenFactoryAbi,
             data: tx.data,
           });
-          if (decodedOwnership.functionName === 'deployOwnershipToken') {
-            actions.push('deployOwnershipToken');
+          if (
+            decodedOwnership.functionName === 'deployOwnershipToken' ||
+            decodedOwnership.functionName === 'deployOwnershipTokenWithMinters'
+          ) {
+            actions.push(decodedOwnership.functionName);
             return;
           }
         } catch {}
@@ -44,8 +50,11 @@ export const useProposalActions = () => {
             abi: decayingTokenFactoryAbi,
             data: tx.data,
           });
-          if (decodedDecaying.functionName === 'deployDecayingToken') {
-            actions.push('deployDecayingToken');
+          if (
+            decodedDecaying.functionName === 'deployDecayingToken' ||
+            decodedDecaying.functionName === 'deployDecayingTokenWithMinters'
+          ) {
+            actions.push(decodedDecaying.functionName);
             return;
           }
         } catch {}
@@ -63,6 +72,9 @@ export const useProposalActions = () => {
       'deployToken',
       'deployOwnershipToken',
       'deployDecayingToken',
+      'deployTokenWithMinters',
+      'deployOwnershipTokenWithMinters',
+      'deployDecayingTokenWithMinters',
     ];
     return (
       actions.length > 0 &&

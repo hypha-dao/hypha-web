@@ -40,9 +40,9 @@ export type BankVerificationProcedurePublic = {
 };
 
 export type BankCurrencyOperationalStatus =
-  | 'active'
   | 'approved'
   | 'pending'
+  | 'rejected'
   | 'not_approved'
   | 'not_requested'
   | 'not_opened';

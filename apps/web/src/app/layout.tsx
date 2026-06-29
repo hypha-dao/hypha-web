@@ -4,12 +4,13 @@ import { extractRouterConfig } from 'uploadthing/server';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
 
-import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
+import { Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
@@ -20,6 +21,7 @@ import {
   PanelWrapLayout,
   HumanSidebarTrigger,
 } from '@hypha-platform/epics';
+import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
@@ -358,17 +360,19 @@ export default async function RootLayout({
                             <div className="w-full h-full">{children}</div>
                           </div>
                         </div>
-                        <Footer
-                          networkLabel={footerNetworkLabel}
-                          legalLabel={footerLegalLabel}
-                          hyphaServicesLabel={footerHyphaServicesLabel}
-                          hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
-                          licensingPolicyLabel={footerLicensingPolicyLabel}
-                          termsAndConditionsLabel={
-                            footerTermsAndConditionsLabel
-                          }
-                          privacyPolicyLabel={footerPrivacyPolicyLabel}
-                        />
+                        <Suspense fallback={null}>
+                          <DeferredFooter
+                            networkLabel={footerNetworkLabel}
+                            legalLabel={footerLegalLabel}
+                            hyphaServicesLabel={footerHyphaServicesLabel}
+                            hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
+                            licensingPolicyLabel={footerLicensingPolicyLabel}
+                            termsAndConditionsLabel={
+                              footerTermsAndConditionsLabel
+                            }
+                            privacyPolicyLabel={footerPrivacyPolicyLabel}
+                          />
+                        </Suspense>
                       </PanelWrapLayout>
                       {/* Outside capture root so tab screen share excludes the floating dock. */}
                       {humanChatEnabled && <ConnectedGlobalCallDock />}

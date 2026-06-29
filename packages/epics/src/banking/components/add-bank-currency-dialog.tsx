@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Dialog,
@@ -16,7 +16,6 @@ import {
   getAvailableAddAccountRailOptions,
   isBankRailSelectable,
 } from '../banking-ui';
-import { useRequestEndorsementKyc } from '../hooks/use-request-endorsement-kyc';
 import type {
   BankCustomerPublicStatus,
   BankVirtualAccountPublic,
@@ -41,7 +40,6 @@ type AddBankCurrencyDialogProps = {
   submittingCurrency: BankCurrencyCode | null;
   error: string | null;
   onOpenGear: () => void;
-  onRefreshStatus?: () => Promise<unknown>;
   onAddCurrency: (input: {
     currency: BankCurrencyCode;
     destinationCurrency?: string;
@@ -57,13 +55,10 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
   submittingCurrency,
   error,
   onOpenGear,
-  onRefreshStatus,
   onAddCurrency,
 }) => {
   const t = useTranslations('BankingTab.openAccount');
   const tOp = useTranslations('BankingTab.operationStatus');
-  const { requestEndorsementKyc, isLoading: isRequestingEndorsement } =
-    useRequestEndorsementKyc(spaceSlug);
 
   const options = useMemo(
     () =>
@@ -111,17 +106,6 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
     (option) => option.railKey === selectedId,
   );
   const isSubmitting = submittingCurrency != null;
-
-  const handleRequestEndorsement = useCallback(
-    async (endorsement: string) => {
-      const { kycLinkUrl } = await requestEndorsementKyc(endorsement);
-      window.open(kycLinkUrl, '_blank', 'noopener,noreferrer');
-      onOpenChange(false);
-      onOpenGear();
-      void onRefreshStatus?.();
-    },
-    [onOpenChange, onOpenGear, onRefreshStatus, requestEndorsementKyc],
-  );
 
   const handleAdd = async () => {
     if (
@@ -187,8 +171,6 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
                 onOpenChange(false);
                 onOpenGear();
               }}
-              requestEndorsementLoading={isRequestingEndorsement}
-              onRequestEndorsement={handleRequestEndorsement}
               disabled={isSubmitting}
             />
           )}

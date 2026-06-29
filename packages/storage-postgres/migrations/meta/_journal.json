@@ -376,15 +376,22 @@
     {
       "idx": 53,
       "version": "7",
-      "when": 1779214317323,
-      "tag": "0053_energy_communities",
+      "when": 1781618688647,
+      "tag": "0053_space_geo_location",
       "breakpoints": true
     },
     {
       "idx": 54,
       "version": "7",
+      "when": 1779214317323,
+      "tag": "0054_energy_communities",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
       "when": 1779214317324,
-      "tag": "0054_energy_communities_authenticated_grants",
+      "tag": "0055_energy_communities_authenticated_grants",
       "breakpoints": true
     }
   ]

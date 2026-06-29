@@ -45,6 +45,7 @@ import {
   getPayoutRailEndorsementStatus,
   isBankRailSelectable,
 } from '../banking-ui';
+import { getPayoutMinimum } from '../banking-minimums';
 
 const ADD_PAYOUT_FORM_ID = 'add-payout-account-form';
 
@@ -186,6 +187,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   onSuccess,
 }) => {
   const t = useTranslations('BankingTab.payouts.addDialog');
+  const tMinimums = useTranslations('BankingTab.minimums');
   const REQUIRED_MSG = t('fieldRequired');
   const radioName = useId();
 
@@ -663,6 +665,12 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     ),
                   )}
                 </div>
+                {getPayoutMinimum(selectedCurrency, sourceCurrency) ? (
+                  <p className="text-1 text-muted-foreground">
+                    {tMinimums('payoutNote')}{' '}
+                    {getPayoutMinimum(selectedCurrency, sourceCurrency)}
+                  </p>
+                ) : null}
               </FormSection>
 
               {/* Bank account details */}

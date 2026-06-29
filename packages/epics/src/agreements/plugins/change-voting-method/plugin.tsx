@@ -35,6 +35,9 @@ import {
   VOTING_DURATION_OPTION_VALUES,
   normalizeVotingDurationForResubmitSelect,
 } from './voting-duration-resubmit';
+import { getResubmitPayloadForTemplate } from '../../../utils/resubmit-proposal-template';
+
+const VOTING_RESUBMIT_SEGMENT = 'change-voting-method';
 
 const votingDurationOptions = [
   { labelKey: 'h6', value: 6 * 3600 },
@@ -79,6 +82,14 @@ export const ChangeVotingMethodPlugin = ({
   resubmitKey?: number;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const resubmitPayload = getResubmitPayloadForTemplate(
+    VOTING_RESUBMIT_SEGMENT,
+  );
+  const skipAutoExecutionChainSync =
+    typeof resubmitPayload?.autoExecution === 'boolean';
+  const skipVotingDurationChainSync =
+    resubmitPayload?.votingDuration !== undefined &&
+    resubmitPayload.votingDuration !== null;
   const chainReadEnabled = typeof web3SpaceId === 'number';
 
   const {
@@ -127,18 +138,21 @@ export const ChangeVotingMethodPlugin = ({
 
   const votingDurationUserEdited = React.useRef(false);
 
-  /** True for one frame after `resubmitKey` bumps — skip quorum/duration auto-overrides that would clear hydrated resubmit data. */
+  /** Skip chain auto-overrides briefly after resubmit hydration so AI-filled toggles/dropdowns stick. */
   const resubmitHydrationRef = React.useRef(false);
   React.useEffect(() => {
     if (resubmitKey === undefined || resubmitKey <= 0) return;
     resubmitHydrationRef.current = true;
-    const id = requestAnimationFrame(() => {
+    const timeoutId = window.setTimeout(() => {
       resubmitHydrationRef.current = false;
-    });
-    return () => cancelAnimationFrame(id);
+    }, 500);
+    return () => window.clearTimeout(timeoutId);
   }, [resubmitKey]);
 
-  const skipResubmitOverwrite = () => resubmitHydrationRef.current;
+  const skipResubmitOverwrite = () =>
+    resubmitHydrationRef.current ||
+    skipAutoExecutionChainSync ||
+    skipVotingDurationChainSync;
 
   const quorumAndUnity = useWatch({
     control,
@@ -159,6 +173,7 @@ export const ChangeVotingMethodPlugin = ({
 
   React.useEffect(() => {
     if (skipResubmitOverwrite()) return;
+    if (skipVotingDurationChainSync && skipAutoExecutionChainSync) return;
     if (autoExecution !== false) return;
     if (chainSelectDuration === undefined) return;
     const current = getValues('votingDuration');
@@ -174,6 +189,7 @@ export const ChangeVotingMethodPlugin = ({
 
   React.useEffect(() => {
     if (skipResubmitOverwrite()) return;
+    if (skipAutoExecutionChainSync) return;
     const currentQuorum = quorumAndUnity?.quorum ?? 0;
     const currentAutoExecution = getValues('autoExecution');
     const currentVotingDuration = getValues('votingDuration');
@@ -237,7 +253,7 @@ export const ChangeVotingMethodPlugin = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5" data-proposal-section="quorum_unity">
         <Label>{tAgreementFlow('plugins.quorumAndUnity.title')}</Label>
         <span className="text-2 text-neutral-11">
           {tAgreementFlow('plugins.quorumAndUnity.description')}
@@ -247,7 +263,7 @@ export const ChangeVotingMethodPlugin = ({
 
       <Separator />
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5" data-proposal-section="voting">
         <Label>{tAgreementFlow('plugins.quorumAndUnity.votingPeriod')}</Label>
 
         <FormField

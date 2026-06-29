@@ -144,6 +144,9 @@ jobs:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
         run: |
           vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
+          # Build-time feature flags; enable on preview deploys for PR testing.
+          echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> .env.local
+          echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> .env.local
           vercel build --token=${{ env.VERCEL_TOKEN }}
 
       # Run after `vercel build`: Neon’s schema-diff API often returns HTTP 408 when
@@ -221,10 +224,13 @@ jobs:
 
       - name: Comment custom preview URL on PR
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         uses: actions/github-script@v7
         env:
           PREVIEW_CUSTOM_URL: ${{ steps.alias.outputs.preview_custom_url }}
         with:
+          retries: 3
+          retry-exempt-status-codes: 400,401,403,404,422
           script: |
             const marker = '<!-- custom-preview-domain -->';
             const body = `${marker}

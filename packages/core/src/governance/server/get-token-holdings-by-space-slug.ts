@@ -81,8 +81,6 @@ type HolderDescriptor = {
 
 const HYPHA_SHARED_TOKEN_ADDRESS =
   '0x8b93862835c36e9689e9bb1ab21de3982e266cd3' as const;
-const HVOICE_SHARED_TOKEN_ADDRESS =
-  '0x24e0b2bfee025d57a19f9dae4c3849a4a6bf9626' as const;
 const BALANCE_MULTICALL_CHUNK_SIZE = 200;
 const TOKEN_PROCESS_CONCURRENCY = 4;
 
@@ -144,13 +142,9 @@ function shouldIncludeHyphaSharedToken(input: {
   );
 }
 
-function shouldIncludeHyphaPlatformSharedTokens(input: {
-  spaceSlug: string;
-  spaceTitle: string;
-}): boolean {
-  const slug = input.spaceSlug.toLowerCase();
-  const title = input.spaceTitle.toLowerCase();
-  return slug === 'hypha-platform' || title === 'hypha platform';
+function isVoiceTokenSymbol(symbol: string): boolean {
+  const normalized = symbol.trim().toUpperCase();
+  return normalized === 'HVOICE' || normalized === 'EVOICE';
 }
 
 async function readTokenContractInfo(tokenAddress: `0x${string}`): Promise<{
@@ -332,6 +326,11 @@ export async function getTokenHoldingsBySpaceSlug(
 
   if (tokenAddresses.length === 0) {
     tokenAddresses = Array.from(dbTokenByAddress.keys());
+  } else {
+    tokenAddresses = dedupeAddresses([
+      ...tokenAddresses,
+      ...Array.from(dbTokenByAddress.keys()),
+    ]);
   }
 
   if (
@@ -343,18 +342,6 @@ export async function getTokenHoldingsBySpaceSlug(
     tokenAddresses = dedupeAddresses([
       ...tokenAddresses,
       normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS),
-    ]);
-  }
-
-  if (
-    shouldIncludeHyphaPlatformSharedTokens({
-      spaceSlug: host.slug,
-      spaceTitle: host.title,
-    })
-  ) {
-    tokenAddresses = dedupeAddresses([
-      ...tokenAddresses,
-      normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS),
     ]);
   }
 
@@ -409,8 +396,8 @@ export async function getTokenHoldingsBySpaceSlug(
     const tokenMeta = dbTokenByAddress.get(tokenAddress);
     const isHyphaSharedToken =
       tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS);
-    const isHyphaVoiceSharedToken =
-      tokenAddress === normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS);
+    const isVoiceToken =
+      tokenMeta?.type === 'voice' || isVoiceTokenSymbol(contractInfo.symbol);
     const decimals = contractInfo.decimals;
     const totalSupplyRaw = contractInfo.totalSupplyRaw;
 
@@ -537,14 +524,10 @@ export async function getTokenHoldingsBySpaceSlug(
     return {
       token_id: tokenMeta?.id ?? null,
       token_address: tokenAddress,
-      name:
-        tokenMeta?.name ??
-        (isHyphaVoiceSharedToken ? 'Hypha Voice' : contractInfo.name),
-      symbol:
-        tokenMeta?.symbol ??
-        (isHyphaVoiceSharedToken ? 'HVOICE' : contractInfo.symbol),
+      name: tokenMeta?.name ?? contractInfo.name,
+      symbol: tokenMeta?.symbol ?? contractInfo.symbol,
       icon_url: tokenMeta?.iconUrl ?? null,
-      type: isHyphaVoiceSharedToken
+      type: isVoiceToken
         ? 'voice'
         : tokenMeta?.type ?? (isHyphaSharedToken ? 'utility' : 'unknown'),
       decimals,

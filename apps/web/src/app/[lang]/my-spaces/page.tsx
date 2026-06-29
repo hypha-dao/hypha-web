@@ -1,8 +1,7 @@
 import {
   SpaceCard,
   MyFilteredSpaces,
-  SpaceSearch,
-  AuthenticatedLinkButton,
+  MySpacesControls,
 } from '@hypha-platform/epics';
 import { isSpaceArchived } from '@hypha-platform/core/client';
 import Link from 'next/link';
@@ -15,16 +14,22 @@ import {
 } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { getAllSpaces } from '@hypha-platform/core/server';
+import {
+  getAllSpaces,
+  SPACE_ORDERS,
+  Space,
+  SpaceOrder,
+} from '@hypha-platform/core/server';
 import { getDhoPathOverview } from '../dho/[id]/@tab/overview/constants';
-import { PlusIcon } from '@radix-ui/react-icons';
 import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{
     query?: string;
+    order?: string;
   }>;
 };
 
@@ -32,14 +37,38 @@ export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
+  const orderRaw = searchParams?.order;
+  const order: SpaceOrder =
+    orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
+      ? (orderRaw as SpaceOrder)
+      : SPACE_ORDERS[0];
 
   const { lang } = params;
 
-  const [allSpaces, mySpaces, t] = await Promise.all([
+  let allSpaces: Space[] = [];
+  let mySpaces: Space[] = [];
+  const [allSpacesResult, mySpacesResult] = await Promise.allSettled([
     getAllSpaces({ parentOnly: false, omitSandbox: true }),
     getAllSpaces({ search: query, parentOnly: false }),
-    getTranslations('Spaces'),
   ]);
+  if (allSpacesResult.status === 'fulfilled') {
+    allSpaces = allSpacesResult.value;
+  } else {
+    console.error(
+      '[my-spaces/page] Failed to fetch all spaces',
+      allSpacesResult.reason,
+    );
+  }
+  if (mySpacesResult.status === 'fulfilled') {
+    mySpaces = mySpacesResult.value;
+  } else {
+    console.error(
+      '[my-spaces/page] Failed to fetch filtered spaces',
+      mySpacesResult.reason,
+    );
+  }
+
+  const t = await getTranslations('Spaces');
 
   return (
     <div className="w-full overflow-auto">
@@ -54,19 +83,20 @@ export default async function Index(props: PageProps) {
           <span>{t('allYourSpaces')}</span>
           <span> {t('inOnePlace')}</span>
         </Heading>
-        <div className="flex justify-center">
-          <SpaceSearch />
-          {mySpaces?.length > 0 ? (
-            <AuthenticatedLinkButton
-              hideInsteadDisabled
-              href={`/${lang}/my-spaces/create`}
-            >
-              <PlusIcon />
-              {t('createSpace')}
-            </AuthenticatedLinkButton>
-          ) : null}
-        </div>
-        <MyFilteredSpaces lang={lang} spaces={mySpaces} showLoadMore={false} />
+        <Suspense fallback={null}>
+          <MySpacesControls
+            lang={lang}
+            query={query}
+            order={order}
+            showCreateButton={(mySpaces?.length ?? 0) > 0}
+          />
+        </Suspense>
+        <MyFilteredSpaces
+          lang={lang}
+          spaces={mySpaces}
+          order={order}
+          showLoadMore={false}
+        />
         <div
           data-testid="recommended-spaces-container"
           className="w-full space-y-6"

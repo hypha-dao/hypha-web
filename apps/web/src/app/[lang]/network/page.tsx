@@ -1,13 +1,16 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
-import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import {
-  CATEGORIES,
-  Category,
+  extractUniqueCategoryGroups,
+  getAllSpaces,
+  parseCategoryGroupFilterParam,
   SPACE_ORDERS,
+  Space,
   SpaceOrder,
-} from '@hypha-platform/core/client';
+} from '@hypha-platform/core/server';
+import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
 import { ExploreSpaces } from '@hypha-platform/epics';
+import { redirect } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -15,32 +18,34 @@ type PageProps = {
     query?: string;
     category?: string;
     order?: string;
+    view?: string;
   }>;
 };
 
-function extractUniqueCategories(spaces: Space[]): Category[] {
-  const categoriesSet = new Set<Category>();
-
-  spaces.forEach((space) => {
-    if (space.categories) {
-      space.categories.forEach((category) => categoriesSet.add(category));
-    }
-  });
-
-  return Array.from(categoriesSet);
+function buildNetworkPageSearchParams({
+  query,
+  category,
+  order,
+  view,
+}: {
+  query?: string;
+  category?: string;
+  order?: string;
+  view?: string;
+}): URLSearchParams {
+  const params = new URLSearchParams();
+  if (query?.trim()) params.set('query', query.trim());
+  if (category) params.set('category', category);
+  if (order) params.set('order', order);
+  if (view) params.set('view', view);
+  return params;
 }
 
 export default async function Index(props: PageProps) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const query = searchParams?.query;
-  const categoriesRaw = searchParams?.category;
-  const categories: Category[] | undefined = categoriesRaw
-    ?.split(',')
-    .map((category) => category.trim() as Category)
-    .filter((category): category is Category => {
-      return CATEGORIES.includes(category);
-    });
+  const categoryGroups = parseCategoryGroupFilterParam(searchParams?.category);
   const orderRaw = searchParams?.order;
   const order: SpaceOrder =
     orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
@@ -48,6 +53,19 @@ export default async function Index(props: PageProps) {
       : SPACE_ORDERS[0];
 
   const { lang } = params;
+  const enableNetworkMap = await getEnableNetworkMapAsync();
+  const viewParam = searchParams?.view;
+
+  if (enableNetworkMap && viewParam !== 'list' && viewParam !== 'map') {
+    const nextParams = buildNetworkPageSearchParams({
+      query,
+      category: searchParams?.category,
+      order: orderRaw,
+      view: 'map',
+    });
+    const queryString = nextParams.toString();
+    redirect(`/${lang}/network${queryString ? `?${queryString}` : ''}`);
+  }
 
   let spaces: Space[] = [];
   try {
@@ -56,14 +74,11 @@ export default async function Index(props: PageProps) {
       parentOnly: false,
       omitArchived: true,
     });
-  } catch (error) {
-    console.error('[network/page] Failed to load spaces', {
-      error,
-      query: query?.trim() || undefined,
-    });
+  } catch (err) {
+    console.error('Failed to fetch spaces:', err);
   }
 
-  const uniqueCategories = extractUniqueCategories(spaces);
+  const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
 
   return (
     <Container className="flex flex-col gap-9 py-9">
@@ -71,9 +86,10 @@ export default async function Index(props: PageProps) {
         lang={lang}
         query={query}
         spaces={spaces}
-        categories={categories}
+        categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
         order={order}
-        uniqueCategories={uniqueCategories}
+        uniqueCategoryGroups={uniqueCategoryGroups}
+        enableNetworkMap={enableNetworkMap}
       />
     </Container>
   );

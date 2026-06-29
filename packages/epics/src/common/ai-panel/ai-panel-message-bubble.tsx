@@ -2,11 +2,12 @@
 
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Copy, Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
+import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
 type ConfirmationActionResult = {
@@ -81,6 +82,103 @@ function joinTextPartsWithSpacing(parts: Array<{ text: string }>): string {
     joined += needsSpacer ? ` ${next}` : next;
   }
   return joined;
+}
+
+function isHttpImageUrl(value: unknown): value is string {
+  return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+}
+
+function readVisualAssetUrlsFromOutput(output: unknown): {
+  logoUrl: string | null;
+  bannerUrl: string | null;
+} {
+  if (!output || typeof output !== 'object') {
+    return { logoUrl: null, bannerUrl: null };
+  }
+
+  const roots: Record<string, unknown>[] = [];
+  const addRoot = (candidate: unknown) => {
+    if (candidate && typeof candidate === 'object') {
+      roots.push(candidate as Record<string, unknown>);
+    }
+  };
+  const addPreviewRoot = (candidate: unknown) => {
+    if (!candidate || typeof candidate !== 'object') return;
+    addRoot((candidate as { preview?: unknown }).preview);
+  };
+
+  addRoot(output);
+  addPreviewRoot(output);
+  const createPayload = (output as { create_payload?: unknown }).create_payload;
+  addRoot(createPayload);
+  addPreviewRoot(createPayload);
+
+  let logoUrl: string | null = null;
+  let bannerUrl: string | null = null;
+  for (const root of roots) {
+    if (!logoUrl) {
+      for (const key of ['logo_url', 'logoUrl'] as const) {
+        if (isHttpImageUrl(root[key])) {
+          logoUrl = String(root[key]).trim();
+          break;
+        }
+      }
+    }
+    if (!bannerUrl) {
+      for (const key of [
+        'lead_image_url',
+        'leadImageUrl',
+        'leadImage',
+      ] as const) {
+        if (isHttpImageUrl(root[key])) {
+          bannerUrl = String(root[key]).trim();
+          break;
+        }
+      }
+    }
+  }
+
+  return { logoUrl, bannerUrl };
+}
+
+function renderVisualAssetsCard(output: unknown) {
+  if (!output || typeof output !== 'object') return null;
+  const value = output as { ok?: boolean };
+  if (value.ok === false) return null;
+  const { logoUrl, bannerUrl } = readVisualAssetUrlsFromOutput(output);
+  if (!logoUrl && !bannerUrl) return null;
+
+  return (
+    <div className="rounded-xl border border-border/70 bg-background/80 px-3 py-3 text-xs shadow-sm">
+      <div className="font-semibold text-foreground">Generated visuals</div>
+      <div className="mt-3 flex flex-wrap items-start gap-4">
+        {logoUrl ? (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Logo
+            </span>
+            <img
+              src={logoUrl}
+              alt="Generated space logo"
+              className="h-24 w-24 rounded-xl border border-border/60 object-cover shadow-sm"
+            />
+          </div>
+        ) : null}
+        {bannerUrl ? (
+          <div className="min-w-[12rem] flex-1 flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Banner
+            </span>
+            <img
+              src={bannerUrl}
+              alt="Generated space banner"
+              className="max-h-36 w-full max-w-md rounded-xl border border-border/60 object-cover shadow-sm"
+            />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 const confirmationPreviewLabels: Record<string, string> = {
@@ -273,40 +371,47 @@ function formatConfidenceDisplay(text: string): string {
 function renderInlineMarkdown(text: string): React.ReactNode {
   const displayText = formatConfidenceDisplay(text);
   const nodes: React.ReactNode[] = [];
-  const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
-  let lastIndex = 0;
   let partIndex = 0;
-  let match: RegExpExecArray | null;
 
-  while ((match = tokenRegex.exec(displayText)) !== null) {
-    const token = match[0];
-    const start = match.index;
-    if (start > lastIndex) {
-      nodes.push(displayText.slice(lastIndex, start));
+  for (const token of tokenizeInlineMarkdown(displayText)) {
+    if (token.type === 'text') {
+      if (token.value) {
+        nodes.push(token.value);
+      }
+      continue;
     }
-    if (token.startsWith('**') && token.endsWith('**')) {
+
+    if (token.type === 'image' && /^https?:\/\//i.test(token.url.trim())) {
+      nodes.push(
+        <img
+          key={`md-inline-${partIndex++}`}
+          src={token.url.trim()}
+          alt={token.alt.trim() || 'Generated visual'}
+          className="my-2 max-h-48 max-w-full rounded-lg border border-border/60 object-contain"
+        />,
+      );
+      continue;
+    }
+
+    if (token.type === 'bold') {
       nodes.push(
         <strong key={`md-inline-${partIndex++}`} className="font-semibold">
-          {token.slice(2, -2)}
+          {token.value}
         </strong>,
       );
-    } else if (token.startsWith('`') && token.endsWith('`')) {
+      continue;
+    }
+
+    if (token.type === 'inlineCode') {
       nodes.push(
         <code
           key={`md-inline-${partIndex++}`}
           className="rounded bg-muted px-1.5 py-0.5 text-[0.8em] text-foreground"
         >
-          {token.slice(1, -1)}
+          {token.value}
         </code>,
       );
-    } else {
-      nodes.push(token);
     }
-    lastIndex = tokenRegex.lastIndex;
-  }
-
-  if (lastIndex < displayText.length) {
-    nodes.push(displayText.slice(lastIndex));
   }
 
   return nodes.length > 0 ? nodes : displayText;
@@ -419,6 +524,7 @@ export function AiPanelMessageBubble({
   onActionReplySelect,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -435,11 +541,18 @@ export function AiPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = joinTextPartsWithSpacing(textParts);
-  const normalizedTextContent = textContent.trim();
-  const textLines = useMemo(() => textContent.split('\n'), [textContent]);
+  const displayTextContent = useMemo(() => {
+    if (!isUser) return textContent;
+    return localizeOnboardingPickerUserMessage(textContent, locale);
+  }, [isUser, locale, textContent]);
+  const normalizedTextContent = displayTextContent.trim();
+  const textLines = useMemo(
+    () => displayTextContent.split('\n'),
+    [displayTextContent],
+  );
   const markdownBlocks = useMemo(
-    () => parseMarkdownBlocks(textContent),
-    [textContent],
+    () => parseMarkdownBlocks(displayTextContent),
+    [displayTextContent],
   );
   const showMoreLabel = t('showMore');
   const showLessLabel = t('showLess');
@@ -466,13 +579,6 @@ export function AiPanelMessageBubble({
     ) ?? [];
   const visibleToolParts = toolParts;
   const shouldHideToolPart = (part: ToolPart) => {
-    // Keep tool cards only for actionable confirmation steps.
-    if (part.state === 'output-available') {
-      const output = part.output as ConfirmationActionResult | undefined;
-      const isActionableConfirmation =
-        output?.requires_confirmation === true || output?.dry_run === true;
-      if (!isActionableConfirmation) return true;
-    }
     // Never surface raw tool errors in chat cards.
     if (part.state === 'output-error') return true;
     // Hide low-level tool state cards from the conversation flow.
@@ -484,6 +590,22 @@ export function AiPanelMessageBubble({
       part.state === 'output-available'
     ) {
       return true;
+    }
+    if (
+      part.type === 'tool-generate_space_visual_assets' &&
+      part.state === 'output-available'
+    ) {
+      const { logoUrl, bannerUrl } = readVisualAssetUrlsFromOutput(part.output);
+      if (logoUrl || bannerUrl) return false;
+      const output = part.output as { ok?: boolean } | undefined;
+      return output?.ok !== true;
+    }
+    // Keep tool cards only for actionable confirmation steps.
+    if (part.state === 'output-available') {
+      const output = part.output as ConfirmationActionResult | undefined;
+      const isActionableConfirmation =
+        output?.requires_confirmation === true || output?.dry_run === true;
+      if (!isActionableConfirmation) return true;
     }
     if (
       part.type === 'tool-create_space_from_onboarding' &&
@@ -512,18 +634,48 @@ export function AiPanelMessageBubble({
   const renderedToolParts = visibleToolParts.filter(
     (part) => !shouldHideToolPart(part),
   );
+  const generatedVisualsCard = (() => {
+    for (let index = toolParts.length - 1; index >= 0; index -= 1) {
+      const part = toolParts[index];
+      if (!part || part.state !== 'output-available') continue;
+      if (
+        part.type !== 'tool-generate_space_visual_assets' &&
+        part.type !== 'tool-create_space_from_onboarding'
+      ) {
+        continue;
+      }
+      if (part.type === 'tool-create_space_from_onboarding') {
+        const output = part.output as
+          | { requires_confirmation?: boolean; dry_run?: boolean }
+          | undefined;
+        if (output?.requires_confirmation || output?.dry_run) {
+          continue;
+        }
+      }
+      const card = renderVisualAssetsCard(part.output);
+      if (card) {
+        return {
+          key: part.toolCallId ?? `${part.type}-${index}`,
+          node: card,
+        };
+      }
+    }
+    return null;
+  })();
   const isTypingOnly =
     !isUser &&
     isStreaming &&
     !hasVisibleText &&
     fileParts.length === 0 &&
-    renderedToolParts.length === 0;
+    renderedToolParts.length === 0 &&
+    !generatedVisualsCard;
   const isSingleLineAssistantText =
     !isUser &&
     !isStreaming &&
     hasVisibleText &&
     fileParts.length === 0 &&
     renderedToolParts.length === 0 &&
+    !generatedVisualsCard &&
     markdownBlocks.length === 1 &&
     markdownBlocks[0]?.type === 'paragraph' &&
     markdownBlocks[0].lines.length === 1 &&
@@ -546,10 +698,18 @@ export function AiPanelMessageBubble({
       if (!output || typeof output !== 'object') return null;
       const value = output as ConfirmationActionResult;
       if (!value.dry_run && !value.requires_confirmation) return null;
-      const entries = value.preview
-        ? Object.entries(value.preview)
+      const preview = value.preview as Record<string, unknown> | undefined;
+      const logoUrl = isHttpImageUrl(preview?.logo_url)
+        ? preview.logo_url.trim()
+        : null;
+      const bannerUrl = isHttpImageUrl(preview?.lead_image_url)
+        ? preview.lead_image_url.trim()
+        : null;
+      const entries = preview
+        ? Object.entries(preview)
             .map(([key, raw]) => {
               if (key.includes('slug')) return null;
+              if (key === 'logo_url' || key === 'lead_image_url') return null;
               const displayValue = formatConfirmationPreviewValue(raw);
               if (!displayValue) return null;
               return {
@@ -581,6 +741,24 @@ export function AiPanelMessageBubble({
                   {entry.value}
                 </div>
               ))}
+            </div>
+          ) : null}
+          {logoUrl || bannerUrl ? (
+            <div className="mt-3 flex flex-wrap items-start gap-3">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Space logo preview"
+                  className="h-20 w-20 rounded-lg border border-border/60 object-cover"
+                />
+              ) : null}
+              {bannerUrl ? (
+                <img
+                  src={bannerUrl}
+                  alt="Space banner preview"
+                  className="max-h-24 max-w-xs rounded-lg border border-border/60 object-cover"
+                />
+              ) : null}
             </div>
           ) : null}
           {!hasQuickActions && confirmationToken ? (
@@ -615,6 +793,15 @@ export function AiPanelMessageBubble({
     },
     [onActionReplySelect, t],
   );
+
+  const walletSignaturePending = toolParts.some((part) => {
+    if (part.type !== 'tool-create_space_from_onboarding') return false;
+    if (part.state !== 'output-available') return false;
+    const output = part.output as
+      | { ok?: boolean; requires_wallet_signature?: boolean }
+      | undefined;
+    return output?.ok === true && output.requires_wallet_signature === true;
+  });
 
   return (
     <div
@@ -773,6 +960,13 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
+          {generatedVisualsCard ? (
+            <div className="flex flex-col gap-1.5">
+              <div key={generatedVisualsCard.key}>
+                {generatedVisualsCard.node}
+              </div>
+            </div>
+          ) : null}
           {renderedToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
               {renderedToolParts.map((part) => {
@@ -783,10 +977,21 @@ export function AiPanelMessageBubble({
                 if (confirmationCard) {
                   return <div key={part.toolCallId}>{confirmationCard}</div>;
                 }
+                if (
+                  part.type === 'tool-generate_space_visual_assets' ||
+                  part.type === 'tool-create_space_from_onboarding'
+                ) {
+                  return null;
+                }
                 return null;
               })}
             </div>
           )}
+          {walletSignaturePending ? (
+            <div className="rounded-xl border border-accent-8/40 bg-accent-2/40 px-3 py-2 text-xs text-foreground">
+              {t('walletSignaturePending')}
+            </div>
+          ) : null}
           {isStreaming && (
             <span
               className={cn(

@@ -17,12 +17,10 @@ import {
   buildRailStatuses,
   loadBankingProviderState,
   resolveCustomerApproved,
-  syncProviderCustomerIdFromKycLink,
 } from './providers/bridge/banking-provider-state';
 import { buildBridgeSofUrl } from './providers/bridge/kyc-link-urls';
 import { extractCustomerMissingFlags } from './bridge-customer-endorsements';
 import { findBankCustomerBySpaceAndProvider } from './queries';
-import { updateBankCustomer } from './mutations';
 
 export type BankVerificationProcedurePublic = BankValidationRequirement;
 
@@ -63,9 +61,7 @@ function mapCurrencyStatuses(
       endorsement: entry.endorsement,
       endorsementStatus: entry.endorsementStatus,
       virtualAccountId: primary.hasVirtualAccount ? primary.railKey : null,
-      isApproved:
-        entry.operationalStatus === 'approved' ||
-        entry.operationalStatus === 'active',
+      isApproved: entry.operationalStatus === 'approved',
       operationalStatus: entry.operationalStatus,
       validation: entry.validation,
     };
@@ -92,17 +88,6 @@ export async function buildPublicStatusFromCustomer(
   customer: BankCustomer,
   { db }: { db: DatabaseInstance },
 ): Promise<SpaceBankCustomerPublicStatus> {
-  const providerCustomerId = await syncProviderCustomerIdFromKycLink(customer);
-  if (
-    providerCustomerId &&
-    providerCustomerId !== customer.providerCustomerId
-  ) {
-    customer = await updateBankCustomer(
-      { id: customer.id, providerCustomerId },
-      { db },
-    );
-  }
-
   const state = await loadBankingProviderState(customer);
   const validations = buildCustomerValidations(state.kycLink);
   const railStatuses = buildRailStatuses({ customer, state });

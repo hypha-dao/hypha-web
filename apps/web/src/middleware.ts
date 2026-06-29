@@ -13,6 +13,18 @@ const CONNECT_SOURCES =
  * - object-src: `<object type="application/pdf">` fallback when canvas render fails
  */
 const UPLOADTHING_UFS_HOST = 'https://*.ufs.sh';
+/**
+ * UploadThing v7 uploads go to a region-prefixed ingest host
+ * (`<region>.ingest.uploadthing.com`), which is distinct from the `*.ufs.sh`
+ * serving CDN. Without it in `connect-src`, the upload PUT is blocked by CSP and
+ * the client hangs (e.g. "Uploading token icon..." never completes). Hardcoded
+ * (like `*.ufs.sh`) so uploads work regardless of per-env `NEXT_PUBLIC_CONNECT_SOURCES`.
+ */
+const UPLOADTHING_INGEST_HOST = 'https://*.ingest.uploadthing.com';
+
+/** OpenAI Realtime API (WebRTC / client secrets) — onboarding voice discovery Phase 2. */
+const OPENAI_REALTIME_CONNECT_SOURCES =
+  'https://api.openai.com wss://api.openai.com';
 
 /** Origin of `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` for CSP (timeline MXC → HTTP). */
 function matrixHomeserverImgSrc(): string {
@@ -67,8 +79,12 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   const connectSrc = [
     ...CONNECT_SOURCES,
     ...matrixTurnConnectSourcesFromEnv(),
+    OPENAI_REALTIME_CONNECT_SOURCES,
     'https://www.googleapis.com',
+    'https://oauth2.googleapis.com',
+    'https://content.googleapis.com',
     UPLOADTHING_UFS_HOST,
+    UPLOADTHING_INGEST_HOST,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
     process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
     localChainRpc,
@@ -119,6 +135,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|signin|placeholder|icon|onesignal|.well-known|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|signin|placeholder|icon|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };

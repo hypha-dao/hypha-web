@@ -14,7 +14,10 @@ const coherenceTypeSchema = z.enum([
 ]);
 const coherencePrioritySchema = z.enum(['critical', 'high', 'medium', 'low']);
 
-export function createCreateSpaceSignalBySlugTool(authToken: string) {
+export function createCreateSpaceSignalBySlugTool(
+  authToken: string,
+  defaultLocale?: string | null,
+) {
   const inputSchema = z.object({
     space_slug: z.string().trim().min(1),
     title: z.string().trim().min(3).max(160),
@@ -22,11 +25,16 @@ export function createCreateSpaceSignalBySlugTool(authToken: string) {
     type: coherenceTypeSchema.default('Insight'),
     priority: coherencePrioritySchema.default('medium'),
     tags: z.array(z.string().trim().min(1)).optional().default([]),
+    lang: z
+      .string()
+      .trim()
+      .regex(/^[a-z]{2}(?:-[A-Z]{2})?$/)
+      .optional(),
   });
 
   return {
     description:
-      'Write: create a new signal in a space when the recommendation is relevant and evidence-backed. Allowed for active paid spaces only.',
+      'Write: create a new signal in a space when the recommendation is relevant and evidence-backed. Allowed for active paid spaces only. Always returns navigation metadata so the app opens the signals screen on the new signal.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -46,6 +54,7 @@ export function createCreateSpaceSignalBySlugTool(authToken: string) {
           type: parsed.data.type,
           priority: parsed.data.priority,
           tags: parsed.data.tags,
+          lang: parsed.data.lang ?? defaultLocale ?? undefined,
         },
         { db },
       );

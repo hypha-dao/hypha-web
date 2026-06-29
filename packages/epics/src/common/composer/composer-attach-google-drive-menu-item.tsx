@@ -12,18 +12,21 @@ type ComposerAttachGoogleDriveMenuItemProps = {
   onFilesPicked: (files: File[]) => void;
   disabled?: boolean;
   onPickerOpen?: () => void;
+  onError?: (message: string) => void;
 };
 
 export function ComposerAttachGoogleDriveMenuItem({
   onFilesPicked,
   disabled = false,
   onPickerOpen,
+  onError,
 }: ComposerAttachGoogleDriveMenuItemProps) {
   const t = useTranslations('HumanChatPanel');
   const { openPicker, configured, available, isOpening } = useGoogleDrivePicker(
     {
       onFilesPicked,
       disabled,
+      onError,
     },
   );
 

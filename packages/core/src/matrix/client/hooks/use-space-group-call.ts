@@ -282,13 +282,23 @@ async function tryRepairRoomCallPermissions(
 }
 
 function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
+  // Don't call placeOutgoingCalls before the GroupCall has entered — localCallFeed
+  // isn't initialized yet (set inside enter() after initLocalCallFeed completes) and
+  // the SDK's onCallStateChanged will crash reading it. enter() calls placeOutgoingCalls
+  // itself at the end, so nothing is lost by skipping the nudge here.
+  if (gc.state !== GroupCallState.Entered) return;
   const fn = (gc as unknown as { placeOutgoingCalls?: () => void })
     .placeOutgoingCalls;
   if (typeof fn !== 'function') return;
   try {
     fn.call(gc);
-  } catch {
-    /* ignore */
+  } catch (err) {
+    if (isMatrixCallDebugEnabled()) {
+      console.warn(
+        '[hypha.group_call] nudgeGroupCallPlaceOutgoing failed',
+        err,
+      );
+    }
   }
 }
 
@@ -356,7 +366,7 @@ async function waitForPublishableLocalVideoTrack(
 
 /** Matrix SDK can leave a stale or missing track after camera off→on. */
 async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
-  if (gc.isLocalVideoMuted()) return;
+  if (gc.isLocalVideoMuted?.() ?? true) return;
   if (getPublishableLocalVideoTrack(gc)) return;
   if (getLocalVideoTrackPresence(gc)) {
     if (await waitForPublishableLocalVideoTrack(gc, 1200)) return;
@@ -447,7 +457,7 @@ async function waitForLiveLocalAudioTrack(
 async function recoverLocalMicrophoneFeed(
   gc: MatrixSdk.GroupCall,
 ): Promise<void> {
-  if (gc.isMicrophoneMuted()) return;
+  if (gc.isMicrophoneMuted?.() ?? true) return;
   if (getLiveLocalAudioTrack(gc)) return;
 
   await gc.setMicrophoneMuted(true);
@@ -464,10 +474,10 @@ async function ensureLocalCallMediaPublished(
   kind: 'audio' | 'video',
 ): Promise<void> {
   try {
-    if (!gc.isMicrophoneMuted()) {
+    if (!(gc.isMicrophoneMuted?.() ?? true)) {
       await recoverLocalMicrophoneFeed(gc);
     }
-    if (kind === 'video' && !gc.isLocalVideoMuted()) {
+    if (kind === 'video' && !(gc.isLocalVideoMuted?.() ?? true)) {
       await recoverLocalCameraFeed(gc);
     }
   } catch {
@@ -1825,13 +1835,57 @@ export function useSpaceGroupCall(
       (id) => !remoteIdsWithFeed.has(id),
     ).length;
 
+    // DEBUG-TEMP(#2322): verbose stall-check — revert after investigation
+    if (isMatrixCallDebugEnabled() && othersInCall.length > 0) {
+      console.debug('[hypha.group_call] stall-check', {
+        othersInCall,
+        remoteIdsWithFeed: [...remoteIdsWithFeed],
+        missingRemoteFeedCount,
+        allFeedUserIds: gc.userMediaFeeds.map((f) => ({
+          userId: f.userId,
+          local: f.isLocal(),
+          audioMuted: f.isAudioMuted?.(),
+        })),
+        participantMapSize: gc.participants.size,
+      });
+      // TEMP-DEBUG #2322 Bug#3: detect call-glare (ringing-state race).
+      // activePairwiseCallCount > 0 but missingRemoteFeedCount > 0 → calls placed but
+      // ICE/glare blocked them. activePairwiseCallCount === 0 but participants present →
+      // call invite was dropped (classic glare: both sides placed outgoing simultaneously).
+      if (missingRemoteFeedCount > 0) {
+        const gcAny = gc as unknown as Record<string, unknown>;
+        const callsMap = gcAny['calls'] as
+          | Map<string, Map<string, unknown>>
+          | undefined;
+        let activePairwiseCallCount = 0;
+        if (callsMap) {
+          for (const [, deviceCalls] of callsMap) {
+            activePairwiseCallCount += deviceCalls.size;
+          }
+        }
+        console.warn('[hypha.group_call] stall-missing-feeds', {
+          missingRemoteFeedCount,
+          activePairwiseCallCount,
+          participantDeviceCount: countGroupCallParticipantDevices(gc),
+          gcState: gc.state,
+        });
+      }
+    }
+
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
       if (remoteMediaRepairNudgeIntervalRef.current == null) {
+        // Randomise the interval period so peers that detected the missing feed
+        // simultaneously (e.g. two people joining at the same time) don't fire
+        // repair nudges in lockstep — persistent lockstep causes every retry to
+        // glare and the B↔C pairwise call never establishes.
+        const jitteredMs =
+          REMOTE_MEDIA_REPAIR_NUDGE_MS +
+          Math.floor(Math.random() * REMOTE_MEDIA_REPAIR_NUDGE_MS);
         remoteMediaRepairNudgeIntervalRef.current = setInterval(() => {
           if (groupCallRef.current !== gc) return;
           nudgeGroupCallPlaceOutgoing(gc);
-        }, REMOTE_MEDIA_REPAIR_NUDGE_MS);
+        }, jitteredMs);
       }
       /**
        * The SDK can know the remote participant from group-call member state
@@ -2074,6 +2128,9 @@ export function useSpaceGroupCall(
         /** Local/remote feeds can appear after getUserMedia — re-publish and nudge peers. */
         nudgeGroupCallPlaceOutgoing(gc);
         scheduleLocalMediaBootstrap(gc);
+        if (isMatrixCallDebugEnabled()) {
+          logDevMediaSnapshot();
+        }
       };
       gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
@@ -2131,6 +2188,7 @@ export function useSpaceGroupCall(
       evalRemoteMediaStall,
       syncLocalScreenshareState,
       reconcileLocalScreenshareStop,
+      logDevMediaSnapshot,
     ],
   );
 
@@ -3641,6 +3699,27 @@ export function useSpaceGroupCall(
       runCleanupRef.current();
     };
   }, [emitCallSessionEnd]);
+
+  // Best-effort member-state cleanup on tab/browser close. The normal leave
+  // and unmount paths already call runCleanup(); this only fires when the page
+  // is torn down before React cleanup runs (e.g. closing the tab mid-call).
+  // cleanMemberState() removes our device entry from m.call.member room state
+  // so other participants don't see a ghost "device connected" indicator.
+  // Limitation: if the network is already down at close time the HTTP call
+  // will fail silently — a LiveKit/MatrixRTC-level fix is needed for that case.
+  useEffect(() => {
+    const handleBeforeUnload = (): void => {
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      void (
+        gc as MatrixSdk.GroupCall & { cleanMemberState?: () => void }
+      ).cleanMemberState?.();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   useEffect(() => {
     if (!remoteMediaRecoverRequestedRef.current) return;

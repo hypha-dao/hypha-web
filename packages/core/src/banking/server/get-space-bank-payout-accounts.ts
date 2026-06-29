@@ -11,7 +11,6 @@ import type {
 } from '../types';
 import { findBankCustomerBySpaceAndProvider } from './queries';
 import { mapBridgePayoutAccountToPublic } from './map-bridge-resources';
-import { syncProviderCustomerIdFromKycLink } from './providers/bridge/banking-provider-state';
 
 export async function getSpaceBankPayoutAccounts(
   space: Pick<Space, 'id'>,
@@ -27,9 +26,7 @@ export async function getSpaceBankPayoutAccounts(
     return { accounts: [], hasMore: false, nextCursor: null };
   }
 
-  const customerId =
-    customer.providerCustomerId ??
-    (await syncProviderCustomerIdFromKycLink(customer));
+  const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     return { accounts: [], hasMore: false, nextCursor: null };

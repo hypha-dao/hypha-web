@@ -1,7 +1,18 @@
+import { z } from 'zod';
 import { schemaCreateSpaceWeb2 } from '@hypha-platform/core/client';
 import { createSpace } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextResponse } from 'next/server';
+
+const schemaCreateSpaceApi = z.intersection(
+  schemaCreateSpaceWeb2,
+  z.object({
+    logoUrl: z.string().url().optional(),
+    leadImage: z.string().url().optional(),
+    ecosystemLogoUrlLight: z.string().url().optional(),
+    ecosystemLogoUrlDark: z.string().url().optional(),
+  }),
+);
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +23,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    const validationResult = schemaCreateSpaceWeb2.safeParse(body);
+    const validationResult = schemaCreateSpaceApi.safeParse(body);
 
     if (!validationResult.success) {
       const errors = validationResult.error.format();

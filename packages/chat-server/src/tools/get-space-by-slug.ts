@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
 import type { ChatRouteTool } from './types';
+import { buildSpaceTransparencySnapshot } from './space-transparency-policy';
 
 const getSpaceBySlugInputSchema = z.object({
   slug: z
@@ -12,7 +13,7 @@ const getSpaceBySlugInputSchema = z.object({
 
 export const getSpaceBySlugTool = {
   description:
-    'Returns one Hypha space record: title, description, and aggregate counts (member count, document count, subspace count). Use for overview or "tell me about this space". Do not use for listing who the members are, names, roster, or join dates — use get_people_by_space_slug for any question about the member list or individuals.',
+    'Returns one Hypha space record: title, description, activation flags, on-chain transparency (discoverability + activity access), privacy assessment, and aggregate counts. Use for overview, privacy questions, or "tell me about this space". Do not use for listing who the members are — use get_people_by_space_slug for roster questions.',
   inputSchema: getSpaceBySlugInputSchema,
   execute: async (args) => {
     const parsed = getSpaceBySlugInputSchema.safeParse(args);
@@ -36,6 +37,11 @@ export const getSpaceBySlugTool = {
       return { found: false, slug, space: null };
     }
 
+    const transparencySnapshot = await buildSpaceTransparencySnapshot({
+      web3SpaceId: space.web3SpaceId ?? null,
+      flags: space.flags ?? [],
+    });
+
     const result = {
       found: true,
       slug,
@@ -46,6 +52,11 @@ export const getSpaceBySlugTool = {
         description: space.description ?? null,
         parentId: space.parentId ? String(space.parentId) : null,
         web3SpaceId: space.web3SpaceId ?? null,
+        flags: space.flags ?? [],
+        activationMode: transparencySnapshot.activationMode,
+        onChainTransparency: transparencySnapshot.onChainTransparency,
+        privacy: transparencySnapshot.privacy,
+        transparencyGovernance: transparencySnapshot.governance,
         memberCount:
           typeof space.memberCount === 'number'
             ? space.memberCount
