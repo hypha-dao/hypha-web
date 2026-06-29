@@ -45,26 +45,46 @@ export function eurKwhToCtPerKwh(pricePerKwh: number): bigint {
   return BigInt(Math.round(pricePerKwh * 100));
 }
 
+function readNumberField(
+  record: Record<string, unknown>,
+  snake: string,
+  camel: string,
+): number | undefined {
+  const snakeVal = record[snake];
+  if (typeof snakeVal === 'number') return snakeVal;
+  const camelVal = record[camel];
+  if (typeof camelVal === 'number') return camelVal;
+  return undefined;
+}
+
+function readStringField(
+  record: Record<string, unknown>,
+  ...keys: string[]
+): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.length > 0) return value;
+  }
+  return undefined;
+}
+
 function pickLatestPrice(body: unknown): SpotPriceRecord | null {
   if (!body || typeof body !== 'object') return null;
 
   const record = body as Record<string, unknown>;
+  const pricePerKwh = readNumberField(record, 'price_per_kwh', 'pricePerKwh');
 
-  if (typeof record.price_per_kwh === 'number') {
+  if (pricePerKwh !== undefined) {
     return {
-      pricePerKwh: record.price_per_kwh,
-      pricePerMwh:
-        typeof record.price_per_mwh === 'number'
-          ? record.price_per_mwh
-          : undefined,
-      slotStart:
-        typeof record.slot_start_utc === 'string'
-          ? record.slot_start_utc
-          : undefined,
-      countryPriceArea:
-        typeof record.country_price_area === 'string'
-          ? record.country_price_area
-          : undefined,
+      pricePerKwh,
+      pricePerMwh: readNumberField(record, 'price_per_mwh', 'pricePerMwh'),
+      slotStart: readStringField(record, 'slot_start_utc', 'time'),
+      countryPriceArea: readStringField(
+        record,
+        'country_price_area',
+        'marketCode',
+        'market',
+      ),
     };
   }
 
@@ -96,6 +116,7 @@ async function fetchSpotFromApi(
   const fetchImpl = options.fetchFn ?? fetch;
 
   const paths = [
+    '/v1/prices/latest',
     `/v1/prices/latest?market=${encodeURIComponent(market)}`,
     `/v1/prices/latest?country_price_area=${encodeURIComponent(market)}`,
   ];

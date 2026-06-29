@@ -1,6 +1,11 @@
 export { fairSplit } from './fair-split';
 export { readOnChainConfig } from './on-chain-reader';
-export { buildConsumptionReadings, IMPORT_SOURCE_ID } from './build-readings';
+export {
+  buildConsumptionReadings,
+  encodeContractQuantityPrice,
+  IMPORT_SOURCE_ID,
+  WH_PER_KWH,
+} from './build-readings';
 export { runInterval, runIntervalWithConfig } from './run-interval';
 export {
   normalizeIntervalReadings,

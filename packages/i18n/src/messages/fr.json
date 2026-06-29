@@ -1123,7 +1123,8 @@
       "energySharing": "Partage d'énergie",
       "registerEnergySource": "Enregistrer une source d'énergie",
       "addEnergyMember": "Ajouter un membre énergie",
-      "changeEnergyOptimization": "Modifier l'optimisation énergétique"
+      "changeEnergyOptimization": "Modifier l'optimisation énergétique",
+      "whitelistEnergySettlement": "Autoriser la liquidation énergétique"
     },
     "documentBadges": {
       "invite": "Invitation",

@@ -74,7 +74,8 @@ function isEnergyProposalLabel(label: string | undefined): boolean {
     label === 'Energy Sharing' ||
     label === 'Register Energy Source' ||
     label === 'Add Energy Member' ||
-    label === 'Change Energy Optimization'
+    label === 'Change Energy Optimization' ||
+    label === 'Whitelist Energy Settlement'
   );
 }
 

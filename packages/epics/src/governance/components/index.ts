@@ -5,6 +5,7 @@ export * from './create-energy-sharing-form';
 export * from './create-register-energy-source-form';
 export * from './create-add-energy-member-form';
 export * from './create-change-energy-optimization-form';
+export * from './create-whitelist-energy-settlement-form';
 export * from './create-deploy-funds-form';
 export * from './create-redeem-tokens-form';
 export * from './create-pay-for-expenses-form';

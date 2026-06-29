@@ -45,6 +45,8 @@ export function getCreateRouteSegmentForProposalLabel(
     'Energy Sharing': 'energy-sharing',
     'Register Energy Source': 'register-energy-source',
     'Add Energy Member': 'add-energy-member',
+    'Change Energy Optimization': 'change-energy-optimization',
+    'Whitelist Energy Settlement': 'whitelist-energy-settlement',
   };
 
   return labelToRoute[label] ?? '';

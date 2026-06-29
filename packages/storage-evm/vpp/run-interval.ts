@@ -17,8 +17,8 @@ export interface GridPrices {
 
 export interface RunIntervalOptions {
   /**
-   * Divisor for converting Wh to contract quantity units.
-   * Default 1 (pass Wh). Set to 1000 for kWh-based contracts.
+   * Wh per kWh used when converting meter Wh to contract charge.
+   * Default 1000 (standard). Passed through to `buildConsumptionReadings`.
    */
   quantityScale?: number;
 }
@@ -37,7 +37,7 @@ export async function runInterval(
   gridPrices: GridPrices,
   options: RunIntervalOptions = {},
 ): Promise<ConsumptionReading[]> {
-  const { quantityScale = 1 } = options;
+  const { quantityScale = 1000 } = options;
 
   const onChainConfig = await readOnChainConfig(provider, contractAddress);
 
@@ -61,7 +61,7 @@ export function runIntervalWithConfig(
   gridPrices: GridPrices,
   options: RunIntervalOptions = {},
 ): ConsumptionReading[] {
-  const { quantityScale = 1 } = options;
+  const { quantityScale = 1000 } = options;
   const { sources, members, exportDeviceId } = onChainConfig;
 
   const { consumption, production } = parseIntervalReadings(

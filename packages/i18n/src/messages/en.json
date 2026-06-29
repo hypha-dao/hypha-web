@@ -1650,7 +1650,8 @@
       "energySharing": "Energy Sharing",
       "registerEnergySource": "Register Energy Source",
       "addEnergyMember": "Add Energy Member",
-      "changeEnergyOptimization": "Change Energy Optimization"
+      "changeEnergyOptimization": "Change Energy Optimization",
+      "whitelistEnergySettlement": "Whitelist Energy Settlement"
     },
     "documentBadges": {
       "invite": "Invite",

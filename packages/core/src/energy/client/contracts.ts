@@ -507,6 +507,16 @@ export const energyPpaV2Abi = [
   },
   {
     type: 'function',
+    name: 'updateWhitelist',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'account', type: 'address' },
+      { name: 'isWhitelisted', type: 'bool' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
     name: 'getOptimizationConfig',
     stateMutability: 'view',
     inputs: [],
@@ -594,6 +604,37 @@ export const buildSetOptimizationTransactions = (
     { target: proxy, value: 0n, data: configData },
     { target: proxy, value: 0n, data: walletData },
   ];
+};
+
+export type EnergyUpdateWhitelistInput = {
+  proxy: string;
+  account: string;
+  whitelisted?: boolean;
+};
+
+/**
+ * Build calldata for `updateWhitelist` on a community proxy. Executed by the
+ * space executor (proxy owner) when the proposal passes.
+ */
+export const buildUpdateWhitelistTransaction = (
+  input: EnergyUpdateWhitelistInput,
+): { target: `0x${string}`; value: bigint; data: `0x${string}` } => {
+  const proxy = toAddress(input.proxy);
+  const account = toAddress(input.account);
+  if (proxy === ZERO_ADDRESS) {
+    throw new Error('Community proxy address is required');
+  }
+  if (account === ZERO_ADDRESS) {
+    throw new Error('Settlement address is required');
+  }
+
+  const data = encodeFunctionData({
+    abi: energyPpaV2Abi,
+    functionName: 'updateWhitelist',
+    args: [account, input.whitelisted !== false],
+  });
+
+  return { target: proxy, value: 0n, data };
 };
 
 /**

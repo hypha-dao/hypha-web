@@ -9,7 +9,7 @@ describe('price-fetcher', () => {
     assert.equal(eurKwhToCtPerKwh(0.305), 31n);
   });
 
-  it('fetchGridPrices uses API spot when available', async () => {
+  it('fetchGridPrices uses API spot when available (snake_case)', async () => {
     const prices = await fetchGridPrices({
       apiKey: 'test',
       market: 'AT',
@@ -23,6 +23,27 @@ describe('price-fetcher', () => {
     assert.equal(prices.source, 'api');
     assert.equal(prices.importPricePerKwh, 9n);
     assert.equal(prices.exportPricePerKwh, 8n);
+  });
+
+  it('fetchGridPrices uses API spot when available (camelCase)', async () => {
+    const prices = await fetchGridPrices({
+      apiKey: 'test',
+      fetchFn: async () =>
+        ({
+          ok: true,
+          json: async () => ({
+            time: '2026-06-29T21:45:00+00:00',
+            marketCode: 'NO3',
+            pricePerKwh: 0.08114,
+            pricePerMwh: 81.14,
+            currency: 'EUR',
+          }),
+        } as Response),
+    });
+
+    assert.equal(prices.source, 'api');
+    assert.equal(prices.importPricePerKwh, 8n);
+    assert.equal(prices.spot?.countryPriceArea, 'NO3');
   });
 
   it('fetchGridPrices falls back to defaults when API returns 404', async () => {

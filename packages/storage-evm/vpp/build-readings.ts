@@ -8,6 +8,44 @@ import type {
 
 export const IMPORT_SOURCE_ID = keccak256(toUtf8Bytes('IMPORT'));
 
+/** Wh per kWh — used when converting meter Wh to contract charge (ct). */
+export const WH_PER_KWH = 1000n;
+
+/**
+ * Map meter Wh + ct/kWh price to contract `{ quantity, pricePerKwh }`.
+ *
+ * Contract charge is always `quantity * pricePerKwh` (euro cents). Meter data
+ * is in Wh, prices in ct/kWh, so the target charge is `floor(wh * price / 1000)`.
+ *
+ * - Exact whole-kWh amounts use kWh encoding (`quantity=kWh`, `price=ct/kWh`).
+ * - Other positive charges use `{ quantity: 1, pricePerKwh: chargeCt }`.
+ * - Sub-cent slices round up to 1 ct so small intervals (e.g. 20 Wh) still settle.
+ */
+export function encodeContractQuantityPrice(
+  usedWh: number,
+  pricePerKwhCt: bigint,
+  whPerKwh: bigint = WH_PER_KWH,
+): { quantity: bigint; pricePerKwh: bigint } | null {
+  if (usedWh <= 0) return null;
+  if (pricePerKwhCt <= 0n) {
+    throw new Error('pricePerKwh must be > 0');
+  }
+
+  const wh = BigInt(usedWh);
+  let chargeCt = (wh * pricePerKwhCt) / whPerKwh;
+  if (chargeCt === 0n) {
+    chargeCt = (wh * pricePerKwhCt + whPerKwh - 1n) / whPerKwh;
+  }
+  if (chargeCt === 0n) return null;
+
+  const wholeKwh = wh / whPerKwh;
+  if (wholeKwh > 0n && wh % whPerKwh === 0n) {
+    return { quantity: wholeKwh, pricePerKwh: pricePerKwhCt };
+  }
+
+  return { quantity: 1n, pricePerKwh: chargeCt };
+}
+
 /**
  * Transform the fair-split algorithm output into a flat ConsumptionReading[]
  * suitable for the EnergyPPAv2.consumeEnergy() contract call.
@@ -16,9 +54,9 @@ export const IMPORT_SOURCE_ID = keccak256(toUtf8Bytes('IMPORT'));
  * plus one reading per member for grid import (if any), plus one reading
  * per source for export (if any).
  *
- * @param quantityScale  Divisor applied to Wh quantities before passing to the
- *                       contract. Default 1 (pass Wh directly). Set to 1000 to
- *                       convert Wh → kWh for contracts using kWh-based pricing.
+ * @param quantityScale  Wh per kWh divisor for charge math (default 1000).
+ *                       Kept for backwards compatibility with callers that
+ *                       previously passed `QUANTITY_SCALE = 1000`.
  */
 export function buildConsumptionReadings(
   result: FairSplitResult,
@@ -27,8 +65,9 @@ export function buildConsumptionReadings(
   exportDeviceId: number,
   gridImportPrice: bigint,
   gridExportPrice: bigint,
-  quantityScale: number = 1,
+  quantityScale: number = 1000,
 ): ConsumptionReading[] {
+  const whPerKwh = BigInt(quantityScale > 0 ? quantityScale : 1000);
   const sourceMap = new Map(sources.map((s) => [s.sourceId, s]));
   const memberDeviceMap = buildMemberDeviceMap(members);
 
@@ -46,24 +85,32 @@ export function buildConsumptionReadings(
         throw new Error(`Unknown source ${sa.sourceId}`);
       }
 
-      const quantity = scaleQuantity(sa.usedWh, quantityScale);
-      if (quantity > 0n) {
+      const encoded = encodeContractQuantityPrice(
+        sa.usedWh,
+        source.basePricePerKwh,
+        whPerKwh,
+      );
+      if (encoded) {
         readings.push({
           deviceId: BigInt(deviceId),
-          quantity,
-          pricePerKwh: source.basePricePerKwh,
+          quantity: encoded.quantity,
+          pricePerKwh: encoded.pricePerKwh,
           sourceId: sa.sourceId,
         });
       }
     }
 
     if (alloc.gridImportWh > 0) {
-      const quantity = scaleQuantity(alloc.gridImportWh, quantityScale);
-      if (quantity > 0n) {
+      const encoded = encodeContractQuantityPrice(
+        alloc.gridImportWh,
+        gridImportPrice,
+        whPerKwh,
+      );
+      if (encoded) {
         readings.push({
           deviceId: BigInt(deviceId),
-          quantity,
-          pricePerKwh: gridImportPrice,
+          quantity: encoded.quantity,
+          pricePerKwh: encoded.pricePerKwh,
           sourceId: IMPORT_SOURCE_ID,
         });
       }
@@ -76,23 +123,22 @@ export function buildConsumptionReadings(
       throw new Error(`Unknown export source ${exp.sourceId}`);
     }
 
-    const quantity = scaleQuantity(exp.exportWh, quantityScale);
-    if (quantity > 0n) {
+    const encoded = encodeContractQuantityPrice(
+      exp.exportWh,
+      gridExportPrice,
+      whPerKwh,
+    );
+    if (encoded) {
       readings.push({
         deviceId: BigInt(exportDeviceId),
-        quantity,
-        pricePerKwh: gridExportPrice,
+        quantity: encoded.quantity,
+        pricePerKwh: encoded.pricePerKwh,
         sourceId: exp.sourceId,
       });
     }
   }
 
   return readings;
-}
-
-function scaleQuantity(wh: number, scale: number): bigint {
-  if (scale === 1) return BigInt(wh);
-  return BigInt(Math.floor(wh / scale));
 }
 
 /**

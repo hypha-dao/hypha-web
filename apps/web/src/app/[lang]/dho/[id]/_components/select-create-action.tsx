@@ -95,6 +95,15 @@ export const SelectCreateAction = ({
             icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
+          {
+            defaultDurationDays: 5,
+            title: 'Whitelist Energy Settlement',
+            description:
+              'Allow a backend wallet to submit consumeEnergy interval settlements on the community PPA.',
+            href: 'agreements/create/whitelist-energy-settlement',
+            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            disabled: isPaymentExpired,
+          },
         ]
       : []),
     {
