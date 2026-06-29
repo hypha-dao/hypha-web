@@ -1,4 +1,5 @@
 import type { ScheduledItem } from '../types';
+import { schemaMergedScheduledItemUpdate } from '../validation';
 
 export function mergeScheduledItemUpdateInput(
   existing: ScheduledItem,
@@ -26,4 +27,14 @@ export function mergeScheduledItemUpdateInput(
     ...patch,
     id,
   };
+}
+
+export function safeParseMergedScheduledItemUpdate(
+  existing: ScheduledItem,
+  patch: Record<string, unknown>,
+  id: number,
+) {
+  return schemaMergedScheduledItemUpdate.safeParse(
+    mergeScheduledItemUpdateInput(existing, patch, id),
+  );
 }

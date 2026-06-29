@@ -11,11 +11,8 @@ import {
   updateScheduledItemById,
 } from './mutations';
 import { findScheduledItemById } from './queries';
-import { mergeScheduledItemUpdateInput } from './merge-scheduled-item-update';
-import {
-  schemaCreateScheduledItem,
-  schemaUpdateScheduledItem,
-} from '../validation';
+import { safeParseMergedScheduledItemUpdate } from './merge-scheduled-item-update';
+import { schemaCreateScheduledItem } from '../validation';
 
 async function assertScheduledItemSpaceAccess(
   authToken: string,
@@ -109,10 +106,17 @@ export async function updateScheduledItemAction(
     throw new Error('Scheduled item not found in this space');
   }
 
-  const validated = schemaUpdateScheduledItem.parse(
-    mergeScheduledItemUpdateInput(existing, incoming, incoming.id),
+  const parsed = safeParseMergedScheduledItemUpdate(
+    existing,
+    incoming,
+    incoming.id,
   );
-  const { id, ...mergedUpdates } = validated;
+  if (!parsed.success) {
+    throw new Error(
+      parsed.error.issues.map((issue) => issue.message).join('; '),
+    );
+  }
+  const { id, ...mergedUpdates } = parsed.data;
 
   return updateScheduledItemById(
     { id, ...mergedUpdates },
