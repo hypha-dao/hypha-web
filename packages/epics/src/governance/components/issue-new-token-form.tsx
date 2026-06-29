@@ -8,10 +8,12 @@ import {
   createAgreementFiles,
   useMe,
   useCreateIssueTokenOrchestrator,
-  DbToken,
   useJwt,
   WHITELIST_DUPLICATE_ENTRY_MESSAGE,
   type Space,
+  findBlockingDuplicateIssueToken,
+  useSpaceProposalsWeb3Rpc,
+  useWithdrawnProposalsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -397,6 +399,25 @@ export const IssueNewTokenForm = ({
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
+  const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({
+    spaceId: web3SpaceId ?? 0,
+  });
+  const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
+    spaceId: web3SpaceId ?? 0,
+  });
+
+  const rejectedProposalIds = React.useMemo(
+    () =>
+      new Set(
+        Array.from(spaceProposalsIds?.rejected ?? []).map((id) => Number(id)),
+      ),
+    [spaceProposalsIds?.rejected],
+  );
+  const withdrawnProposalIds = React.useMemo(
+    () =>
+      new Set(Array.from(withdrawnProposalsIds ?? []).map((id) => Number(id))),
+    [withdrawnProposalsIds],
+  );
 
   const tokenType = form.watch('type');
 
@@ -414,16 +435,15 @@ export const IssueNewTokenForm = ({
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
 
-    const duplicateToken = dbTokens?.find((token: DbToken) => {
-      const isNameEqual =
-        token.name?.toLowerCase() === data.name?.toLowerCase();
-      const isSymbolEqual =
-        token.symbol?.toLowerCase() === data.symbol?.toLowerCase();
-      const isSpaceEqual = token.spaceId === spaceId;
-      return isNameEqual && isSymbolEqual && isSpaceEqual;
+    const duplicateToken = findBlockingDuplicateIssueToken(dbTokens, {
+      spaceId: spaceId as number,
+      name: data.name,
+      symbol: data.symbol,
+      rejectedProposalIds,
+      withdrawnProposalIds,
     });
 
-    if (dbTokens?.length && duplicateToken) {
+    if (duplicateToken) {
       setFormError(tAgreementFlow('issueNewTokenForm.duplicateToken'));
       return;
     }

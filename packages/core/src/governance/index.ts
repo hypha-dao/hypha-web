@@ -6,3 +6,4 @@ export * from './exchange-deposit-marker';
 export * from './types';
 export * from './validation';
 export * from './voice-decay-units';
+export * from './issue-token-duplicate';
