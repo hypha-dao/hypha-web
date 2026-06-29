@@ -224,6 +224,28 @@ export const deleteUndeployedTokensByAgreementWeb3Ids = async (
     .returning();
 };
 
+/** Delete undeployed draft rows for a space, optionally scoped to one symbol. */
+export const deleteUndeployedDraftTokensForSpace = async (
+  {
+    spaceId,
+    symbol,
+  }: {
+    spaceId: number;
+    symbol?: string;
+  },
+  { db }: { db: DatabaseInstance },
+) => {
+  const conditions = [eq(tokens.spaceId, spaceId), isNull(tokens.address)];
+  if (symbol?.trim()) {
+    conditions.push(sql`lower(${tokens.symbol}) = lower(${symbol.trim()})`);
+  }
+
+  return db
+    .delete(tokens)
+    .where(and(...conditions))
+    .returning();
+};
+
 export const createTokenUpdate = async (
   input: CreateTokenUpdateInput,
   { db }: { db: DatabaseInstance },
