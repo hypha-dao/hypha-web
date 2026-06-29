@@ -237,9 +237,10 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
               </div>
             ))}
             <p className="text-1 text-neutral-11">
-              Balances reflect live on-chain energy credits from the PPA contract.
-              “To settle” is outstanding debt; “credit” is claimable once EURC is
-              deposited. “EURC in contract” is stablecoin held by the PPA today.
+              Balances reflect live on-chain energy credits from the PPA
+              contract. “To settle” is outstanding debt; “credit” is claimable
+              once EURC is deposited. “EURC in contract” is stablecoin held by
+              the PPA today.
             </p>
           </CardContent>
         </Card>

@@ -259,9 +259,9 @@ export const ProductionConsumptionTab = ({
                 valueSuffix=" kWh"
               />
               <p className="text-1 text-neutral-11">
-                Grid flows use explicit import/export meter readings when present;
-                otherwise they are estimated as the community net deficit or
-                surplus (consumption minus local production).
+                Grid flows use explicit import/export meter readings when
+                present; otherwise they are estimated as the community net
+                deficit or surplus (consumption minus local production).
               </p>
             </>
           )}
