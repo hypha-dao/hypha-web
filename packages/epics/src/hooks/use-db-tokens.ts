@@ -25,6 +25,7 @@ type Token = {
   createdAt: Date;
   documentCount: number;
   address?: string;
+  agreementWeb3Id?: number;
   referenceCurrency?: string | null;
   referencePrice?: number | null;
   archived: boolean;
