@@ -81,9 +81,7 @@ describe('findBlockingDuplicateIssueToken', () => {
       baseToken({ address: '0xabc' }),
     ];
 
-    expect(findBlockingDuplicateIssueToken(tokens, options)).toEqual(
-      tokens[1],
-    );
+    expect(findBlockingDuplicateIssueToken(tokens, options)).toEqual(tokens[1]);
   });
 
   it('returns undefined when only rejected drafts match', () => {

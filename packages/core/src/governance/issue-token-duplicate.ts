@@ -26,8 +26,7 @@ const isRejectedOrWithdrawnDraft = (
     return false;
   }
   return (
-    rejectedProposalIds.has(proposalId) ||
-    withdrawnProposalIds.has(proposalId)
+    rejectedProposalIds.has(proposalId) || withdrawnProposalIds.has(proposalId)
   );
 };
 
@@ -58,11 +57,7 @@ export const isBlockingDuplicateIssueToken = (
     return true;
   }
   if (
-    isRejectedOrWithdrawnDraft(
-      token,
-      rejectedProposalIds,
-      withdrawnProposalIds,
-    )
+    isRejectedOrWithdrawnDraft(token, rejectedProposalIds, withdrawnProposalIds)
   ) {
     return false;
   }

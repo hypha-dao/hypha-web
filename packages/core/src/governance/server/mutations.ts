@@ -219,10 +219,7 @@ export const deleteUndeployedTokensByAgreementWeb3Ids = async (
   return db
     .delete(tokens)
     .where(
-      and(
-        inArray(tokens.agreementWeb3Id, proposalIds),
-        isNull(tokens.address),
-      ),
+      and(inArray(tokens.agreementWeb3Id, proposalIds), isNull(tokens.address)),
     )
     .returning();
 };
