@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
-import { EnergyPersonCard } from './shared';
+import { EnergyPersonCard, GridOperatorCard } from './shared';
 import { useEnergyPeople } from './use-energy-people';
 import { ENERGY_PALETTE } from './charts';
 import { formatStablecoinMicro } from './format';
@@ -61,44 +61,28 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const gridOperator = data.roles?.gridOperator ?? null;
   const gridBalanceInternal = toSignedBigInt(data.overview?.gridBalance);
 
-  const { rows, addresses, gridOperatorAddresses } = React.useMemo(() => {
+  const { rows, addresses } = React.useMemo(() => {
     const rows: Row[] = details.map((member) => ({
       address: member.address,
       toSettleMicro: toBigInt(member.debtInStablecoin),
       creditMicro: toBigInt(member.creditInStablecoin),
     }));
     rows.sort(sortRows);
-    const memberAddresses = details.map((m) => m.address.toLowerCase());
-    const gridOperatorAddresses = gridOperator
-      ? [
-          gridOperator.toLowerCase(),
-          ...memberAddresses.filter((a) => a !== gridOperator.toLowerCase()),
-        ]
-      : memberAddresses;
     return {
       rows,
-      addresses: memberAddresses,
-      gridOperatorAddresses,
+      addresses: details.map((m) => m.address.toLowerCase()),
     };
-  }, [details, gridOperator]);
+  }, [details]);
 
-  const { people, isLoading } = useEnergyPeople(gridOperatorAddresses);
+  const { people, isLoading } = useEnergyPeople(addresses);
 
-  const gridOperatorMember = React.useMemo(() => {
-    if (!gridOperator) return null;
-    return details.find(
-      (member) => member.address.toLowerCase() === gridOperator.toLowerCase(),
-    );
-  }, [details, gridOperator]);
-
-  const gridOperatorPersonalCredit = toBigInt(
-    gridOperatorMember?.creditInStablecoin,
-  );
-  const gridCreditMicro =
+  /** Community exported surplus → grid operator purchased it and owes settlement. */
+  const gridToSettleMicro =
     gridBalanceInternal > 0n
       ? internalToStablecoinMicro(gridBalanceInternal)
       : 0n;
-  const gridDebtMicro =
+  /** Community net import → grid supplied energy and is owed payment. */
+  const gridReceivableMicro =
     gridBalanceInternal < 0n
       ? internalToStablecoinMicro(gridBalanceInternal)
       : 0n;
@@ -153,46 +137,35 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
             <CardTitle>Grid operator</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <EnergyPersonCard
-              address={gridOperator}
-              person={people[gridOperator.toLowerCase()]}
-              isLoading={isLoading}
+            <GridOperatorCard
               right={
                 <div className="text-right">
-                  {gridCreditMicro > 0n ? (
-                    <p
-                      className="font-medium"
-                      style={{ color: ENERGY_PALETTE[1] }}
-                    >
-                      {eurc(gridCreditMicro)} grid credit
-                    </p>
-                  ) : null}
-                  {gridDebtMicro > 0n ? (
+                  {gridToSettleMicro > 0n ? (
                     <p
                       className="font-medium"
                       style={{ color: ENERGY_PALETTE[4] }}
                     >
-                      {eurc(gridDebtMicro)} grid debt
+                      {eurc(gridToSettleMicro)} to settle
                     </p>
                   ) : null}
-                  {gridCreditMicro === 0n && gridDebtMicro === 0n ? (
-                    <p className="font-medium text-neutral-11">Balanced grid</p>
-                  ) : null}
-                  {gridOperatorPersonalCredit > 0n ? (
-                    <p className="text-1 text-neutral-11">
-                      {eurc(gridOperatorPersonalCredit)} personal credit
+                  {gridReceivableMicro > 0n ? (
+                    <p
+                      className="font-medium"
+                      style={{ color: ENERGY_PALETTE[1] }}
+                    >
+                      {eurc(gridReceivableMicro)} receivable
                     </p>
+                  ) : null}
+                  {gridToSettleMicro === 0n && gridReceivableMicro === 0n ? (
+                    <p className="font-medium text-neutral-11">Balanced</p>
                   ) : null}
                 </div>
               }
             />
             <p className="text-1 text-neutral-11">
-              Grid credit means the community exported more energy than it
-              imported; grid debt means the opposite. Only the grid operator can
-              claim grid credit or arrange grid debt settlement on-chain.
-              {gridOperatorPersonalCredit > 0n
-                ? ' Personal credit is separate revenue the operator earned as a community member or source owner.'
-                : null}
+              When the community exports surplus energy, the grid operator buys
+              it and must settle that amount. When the community imports from
+              the grid, the operator is owed for the energy supplied.
             </p>
           </CardContent>
         </Card>

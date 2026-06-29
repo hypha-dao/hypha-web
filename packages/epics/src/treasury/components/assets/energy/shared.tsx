@@ -1,10 +1,39 @@
 'use client';
 
 import * as React from 'react';
+import { UtilityPoleIcon } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyPerson } from './use-energy-people';
 import { personDisplayName, shortAddr } from './format';
+import { ENERGY_PALETTE } from './charts';
+
+/** Placeholder until grid-operator profiles are wired to on-chain roles. */
+export const GRID_OPERATOR_DISPLAY_NAME = 'Local grid operator';
+export const GRID_OPERATOR_SUBTITLE = 'External energy supplier';
+
+export const GridOperatorCard = ({ right }: { right?: React.ReactNode }) => (
+  <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
+    <span
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+      style={{
+        backgroundColor: `${ENERGY_PALETTE[2]}22`,
+        color: ENERGY_PALETTE[2],
+      }}
+    >
+      <UtilityPoleIcon className="h-5 w-5" aria-hidden />
+    </span>
+    <div className="min-w-0 flex-1">
+      <p className="truncate font-medium text-foreground">
+        {GRID_OPERATOR_DISPLAY_NAME}
+      </p>
+      <p className="truncate text-1 text-neutral-11">
+        {GRID_OPERATOR_SUBTITLE}
+      </p>
+    </div>
+    {right ? <div className="shrink-0 text-right">{right}</div> : null}
+  </div>
+);
 
 export const StatCard = ({
   label,
