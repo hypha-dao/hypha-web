@@ -51,6 +51,33 @@ const formatTick = (v: number) => {
   return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
 };
 
+const MAX_X_LABELS = 8;
+
+/** Evenly spaced x-axis ticks; always includes the last bucket unless it would overlap. */
+const computeLabelIndices = (count: number): number[] => {
+  if (count <= 0) return [];
+  if (count <= MAX_X_LABELS) {
+    return Array.from({ length: count }, (_, i) => i);
+  }
+
+  const step = Math.ceil(count / MAX_X_LABELS);
+  const indices: number[] = [];
+  for (let i = 0; i < count; i += step) {
+    indices.push(i);
+  }
+
+  const last = count - 1;
+  const prev = indices.at(-1)!;
+  if (prev !== last) {
+    if (last - prev < step) {
+      indices.pop();
+    }
+    indices.push(last);
+  }
+
+  return indices;
+};
+
 const Legend = ({ series }: { series: ChartSeries[] }) => (
   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
     {series.map((s) => (
@@ -137,7 +164,10 @@ export const BarChart = ({
   const max = niceMax(rawMax);
 
   const yFor = (v: number) => PAD_T + INNER_H - (INNER_H * v) / max;
-  const labelStep = Math.ceil(count / 8);
+  const labelIndices = React.useMemo(
+    () => new Set(computeLabelIndices(count)),
+    [count],
+  );
 
   // Bar geometry within each category slot.
   const groupW = Math.min(slot * 0.72, mode === 'stacked' ? 40 : 56);
@@ -254,7 +284,7 @@ export const BarChart = ({
 
           {/* X labels */}
           {labels.map((label, i) => {
-            if (i % labelStep !== 0 && i !== count - 1) return null;
+            if (!labelIndices.has(i)) return null;
             return (
               <text
                 key={`${label}-${i}`}
