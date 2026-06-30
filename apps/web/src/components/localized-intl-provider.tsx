@@ -12,25 +12,22 @@ type LocalizedIntlProviderProps = {
 };
 
 const TIMEZONE_COOKIE_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
-
-function resolveClientTimeZone(): string {
-  const fromCookie = getCookie(HYPHA_TIMEZONE);
-  if (isValidTimeZone(fromCookie)) {
-    return fromCookie;
-  }
-
-  return getBrowserTimeZone();
-}
+const SSR_FALLBACK_TIME_ZONE = 'UTC';
 
 export function LocalizedIntlProvider({
   children,
   locale,
   messages,
 }: LocalizedIntlProviderProps) {
-  const [timeZone, setTimeZone] = useState(resolveClientTimeZone);
+  // SSR-safe default — never read document/cookies during render.
+  const [timeZone, setTimeZone] = useState(SSR_FALLBACK_TIME_ZONE);
 
   useEffect(() => {
-    const browserTimeZone = getBrowserTimeZone();
+    const fromCookie = getCookie(HYPHA_TIMEZONE);
+    const browserTimeZone = isValidTimeZone(fromCookie)
+      ? fromCookie
+      : getBrowserTimeZone();
+
     setTimeZone(browserTimeZone);
     setCookie(
       HYPHA_TIMEZONE,
