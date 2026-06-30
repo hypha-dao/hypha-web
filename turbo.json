@@ -1,11 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalDependencies": [".env"],
+  "globalDependencies": [".env", "apps/web/.env*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "apps/web/.env*"],
       "env": [
         "NEON_DATABASE_USERNAME",
         "NEON_DATABASE_NAME",

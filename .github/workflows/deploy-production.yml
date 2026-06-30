@@ -43,7 +43,8 @@ jobs:
 
       - name: Build Project Artifacts
         run: |
-          vercel env pull --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          # Next.js loads env from apps/web — root .env.local is not picked up by the web build.
+          vercel env pull apps/web/.env.local --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
