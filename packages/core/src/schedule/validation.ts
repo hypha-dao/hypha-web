@@ -94,12 +94,17 @@ function resolveRecurrenceRule(data: {
   recurrencePreset?: z.infer<typeof recurrencePresetSchema>;
   recurrenceRule?: string | null;
   startsAt: Date;
+  timezone?: string | null;
 }) {
   if (data.recurrencePreset === 'none') {
     return null;
   }
   if (data.recurrencePreset) {
-    return buildRecurrenceRuleFromPreset(data.recurrencePreset, data.startsAt);
+    return buildRecurrenceRuleFromPreset(
+      data.recurrencePreset,
+      data.startsAt,
+      data.timezone,
+    );
   }
   return data.recurrenceRule ?? null;
 }
@@ -180,6 +185,7 @@ export const schemaMergedScheduledItemUpdate = z
           recurrencePreset: data.recurrencePreset,
           recurrenceRule: data.recurrenceRule,
           startsAt: data.startsAt,
+          timezone: data.timezone,
         }),
       };
     }
