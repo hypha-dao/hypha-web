@@ -153,10 +153,11 @@ jobs:
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
         run: |
-          vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
+          # Next.js loads env from apps/web — root .env.local is not picked up by the web build.
+          vercel env pull apps/web/.env.local --environment=preview --token=${{ env.VERCEL_TOKEN }}
           # Build-time feature flags; enable on preview deploys for PR testing.
-          echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> .env.local
-          echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> .env.local
+          echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> apps/web/.env.local
+          echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> apps/web/.env.local
           vercel build --token=${{ env.VERCEL_TOKEN }}
 
       - name: Deploy Preview to Vercel
