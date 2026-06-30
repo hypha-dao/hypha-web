@@ -61,7 +61,7 @@ export default async function Index(props: PageProps) {
       query,
       category: searchParams?.category,
       order: orderRaw,
-      view: 'map',
+      view: 'list',
     });
     const queryString = nextParams.toString();
     redirect(`/${lang}/network${queryString ? `?${queryString}` : ''}`);
