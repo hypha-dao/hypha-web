@@ -17,7 +17,9 @@ export const LOCAL_DATE_FORMAT_OPTIONS = {
 const FALLBACK_TIME_ZONE = 'UTC';
 
 /** Returns true when `value` looks like a valid IANA timezone identifier. */
-export function isValidTimeZone(value: string | null | undefined): value is string {
+export function isValidTimeZone(
+  value: string | null | undefined,
+): value is string {
   if (!value) return false;
   try {
     Intl.DateTimeFormat(undefined, { timeZone: value });
@@ -37,9 +39,7 @@ export function getBrowserTimeZone(): string {
   return isValidTimeZone(resolved) ? resolved : FALLBACK_TIME_ZONE;
 }
 
-export function parseDateInput(
-  dateInput: string | number | Date,
-): Date | null {
+export function parseDateInput(dateInput: string | number | Date): Date | null {
   const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   return Number.isNaN(date.getTime()) ? null : date;
 }

@@ -2,29 +2,32 @@
 
 import { NextIntlClientProvider, type AbstractIntlMessages } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { HYPHA_TIMEZONE } from '@hypha-platform/cookie';
-import { setCookie } from '@hypha-platform/cookie';
-import { getBrowserTimeZone } from '@hypha-platform/ui-utils';
+import { HYPHA_TIMEZONE, getCookie, setCookie } from '@hypha-platform/cookie';
+import { getBrowserTimeZone, isValidTimeZone } from '@hypha-platform/ui-utils';
 
 type LocalizedIntlProviderProps = {
   children: React.ReactNode;
   locale: string;
   messages: Record<string, unknown>;
-  /** Timezone resolved on the server from the persisted cookie, if any. */
-  timeZone?: string;
 };
 
 const TIMEZONE_COOKIE_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+
+function resolveClientTimeZone(): string {
+  const fromCookie = getCookie(HYPHA_TIMEZONE);
+  if (isValidTimeZone(fromCookie)) {
+    return fromCookie;
+  }
+
+  return getBrowserTimeZone();
+}
 
 export function LocalizedIntlProvider({
   children,
   locale,
   messages,
-  timeZone: serverTimeZone,
 }: LocalizedIntlProviderProps) {
-  const [timeZone, setTimeZone] = useState(
-    () => serverTimeZone ?? getBrowserTimeZone(),
-  );
+  const [timeZone, setTimeZone] = useState(resolveClientTimeZone);
 
   useEffect(() => {
     const browserTimeZone = getBrowserTimeZone();

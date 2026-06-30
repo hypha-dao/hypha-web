@@ -8,7 +8,6 @@ import { Suspense } from 'react';
 
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
-import { resolveRequestTimeZone } from '@hypha-platform/i18n/local-date-time';
 
 import { Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -115,7 +114,6 @@ export default async function RootLayout({
   let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
-  let timeZone = 'UTC';
 
   let navMySpacesLabel = 'My Spaces';
   let navNetworkLabel = 'Network';
@@ -139,7 +137,6 @@ export default async function RootLayout({
     aiChatEnabledResult,
     spaceMemoryEnabledResult,
     humanChatEnabledResult,
-    timeZoneResult,
   ] = await Promise.allSettled([
     getShowLanguageSelect(),
     getLocale(),
@@ -149,7 +146,6 @@ export default async function RootLayout({
     getEnableAiChat(),
     getEnableSpaceMemory(),
     getEnableHumanChat(),
-    resolveRequestTimeZone(),
   ]);
 
   if (languageSelectResult.status === 'fulfilled') {
@@ -233,15 +229,6 @@ export default async function RootLayout({
     );
   }
 
-  if (timeZoneResult.status === 'fulfilled') {
-    timeZone = timeZoneResult.value;
-  } else {
-    console.error(
-      '[app/layout] Failed to resolve request timeZone',
-      timeZoneResult.reason,
-    );
-  }
-
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
       <ScrollUp />
@@ -260,11 +247,7 @@ export default async function RootLayout({
         >
           <ThemeStorageNormalize />
           <AppNavigationSessionCounter />
-          <LocalizedIntlProvider
-            locale={locale}
-            messages={messages}
-            timeZone={timeZone}
-          >
+          <LocalizedIntlProvider locale={locale} messages={messages}>
             <TooltipProvider>
               <NotificationSubscriber
                 appId={notificationAppId}
