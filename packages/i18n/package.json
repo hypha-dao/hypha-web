@@ -15,6 +15,8 @@
     "globals": "^15.15.0"
   },
   "dependencies": {
+    "@hypha-platform/cookie": "workspace:*",
+    "@hypha-platform/ui-utils": "workspace:*",
     "next-intl": "^4.8.3"
   },
   "exports": {
@@ -23,6 +25,7 @@
     "./request": "./src/request.ts",
     "./messages": "./src/messages.ts",
     "./routing": "./src/routing.ts",
-    "./navigation": "./src/navigation.ts"
+    "./navigation": "./src/navigation.ts",
+    "./local-date-time": "./src/local-date-time.ts"
   }
 }

@@ -6,9 +6,9 @@ import clsx from 'clsx';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
+import { resolveRequestTimeZone } from '@hypha-platform/i18n/local-date-time';
 
 import { Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -45,6 +45,7 @@ import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 import { AppNavigationSessionCounter } from '@web/components/app-navigation-session-counter';
 import { ConnectedMenuTop } from '@web/components/connected-menu-top';
+import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import '@web/utils/initialize-proxy';
 
 const lato = Lato({
@@ -114,6 +115,7 @@ export default async function RootLayout({
   let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
+  let timeZone = 'UTC';
 
   let navMySpacesLabel = 'My Spaces';
   let navNetworkLabel = 'Network';
@@ -137,6 +139,7 @@ export default async function RootLayout({
     aiChatEnabledResult,
     spaceMemoryEnabledResult,
     humanChatEnabledResult,
+    timeZoneResult,
   ] = await Promise.allSettled([
     getShowLanguageSelect(),
     getLocale(),
@@ -146,6 +149,7 @@ export default async function RootLayout({
     getEnableAiChat(),
     getEnableSpaceMemory(),
     getEnableHumanChat(),
+    resolveRequestTimeZone(),
   ]);
 
   if (languageSelectResult.status === 'fulfilled') {
@@ -229,6 +233,15 @@ export default async function RootLayout({
     );
   }
 
+  if (timeZoneResult.status === 'fulfilled') {
+    timeZone = timeZoneResult.value;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve request timeZone',
+      timeZoneResult.reason,
+    );
+  }
+
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
       <ScrollUp />
@@ -247,7 +260,11 @@ export default async function RootLayout({
         >
           <ThemeStorageNormalize />
           <AppNavigationSessionCounter />
-          <NextIntlClientProvider locale={locale} messages={messages}>
+          <LocalizedIntlProvider
+            locale={locale}
+            messages={messages}
+            timeZone={timeZone}
+          >
             <TooltipProvider>
               <NotificationSubscriber
                 appId={notificationAppId}
@@ -381,7 +398,7 @@ export default async function RootLayout({
                 </ConditionalMatrixProvider>
               </NotificationSubscriber>
             </TooltipProvider>
-          </NextIntlClientProvider>
+          </LocalizedIntlProvider>
         </ThemeProvider>
       </AuthProvider>
       {shouldInjectToolbar && <VercelToolbar />}

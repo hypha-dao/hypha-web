@@ -7,6 +7,7 @@ import {
   CompactSpaceBanner,
   SpaceAccentFromImages,
   SpaceAccentPortalBridge,
+  SpaceCreatedOnText,
   isSafeImageUrl,
 } from '@hypha-platform/epics';
 import '../../_shared/space-accent.css';
@@ -21,7 +22,7 @@ import {
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 import { SpaceMembershipCtaUnderHero } from './_components/space-membership-cta-under-hero';
 
@@ -148,9 +149,9 @@ export default async function DhoLayout({
               defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
               memberCount={spaceMembers}
               agreementCount={spaceAgreements}
-              createdOnText={tCommon('createdOn', {
-                date: formatDate(spaceFromDb.createdAt, true),
-              })}
+              createdOnText={
+                <SpaceCreatedOnText createdAt={spaceFromDb.createdAt} />
+              }
               membersLabel={tCommon('Members')}
               agreementsLabel={tCommon('Agreements')}
               descriptionLabel={tCommon('spaceBannerDescriptionAria', {
