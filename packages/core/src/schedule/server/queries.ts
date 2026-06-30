@@ -179,6 +179,7 @@ export async function findDueScheduledReminders(
       recurrenceUntil: item.recurrenceUntil,
       from: occurrenceFrom,
       to: occurrenceTo,
+      timezone: item.timezone,
     });
 
     for (const occurrenceStartsAt of occurrenceStarts) {
