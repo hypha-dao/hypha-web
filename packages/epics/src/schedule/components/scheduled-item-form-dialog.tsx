@@ -79,6 +79,7 @@ type ScheduledItemFormField =
   | 'title'
   | 'startsAt'
   | 'endsAt'
+  | 'recurrenceUntil'
   | 'reminderMinutesBefore'
   | '_form';
 
@@ -103,6 +104,27 @@ function ScheduledItemFieldError({
   );
 }
 
+function scrollFieldIntoOverlayView(fieldEl: HTMLElement) {
+  const panel =
+    fieldEl.closest('#proposal-overlay-panel') ??
+    document.getElementById('proposal-overlay-panel');
+  if (!panel) {
+    fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const stickyHeaderOffset = 112;
+  const panelRect = panel.getBoundingClientRect();
+  const fieldRect = fieldEl.getBoundingClientRect();
+  const targetScrollTop =
+    panel.scrollTop + (fieldRect.top - panelRect.top) - stickyHeaderOffset;
+
+  panel.scrollTo({
+    top: Math.max(0, targetScrollTop),
+    behavior: 'smooth',
+  });
+}
+
 function scrollToFirstFieldError(
   formEl: HTMLFormElement | null,
   fieldErrors: ScheduledItemFieldErrors,
@@ -113,6 +135,7 @@ function scrollToFirstFieldError(
     'title',
     'startsAt',
     'endsAt',
+    'recurrenceUntil',
     'reminderMinutesBefore',
     '_form',
   ];
@@ -125,7 +148,7 @@ function scrollToFirstFieldError(
         '[data-form-error="true"]',
       );
       if (formError) {
-        formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        scrollFieldIntoOverlayView(formError);
         return;
       }
       continue;
@@ -135,11 +158,24 @@ function scrollToFirstFieldError(
       `[name="${CSS.escape(name)}"]`,
     );
     if (fieldEl) {
-      fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      scrollFieldIntoOverlayView(fieldEl);
       fieldEl.focus({ preventScroll: true });
       return;
     }
   }
+}
+
+function formatSaveError(error: unknown, fallback: string): string {
+  if (!(error instanceof Error)) return fallback;
+  const message = error.message.trim();
+  if (!message) return fallback;
+  if (message.includes('authToken is required')) {
+    return fallback;
+  }
+  if (message.length > 180) {
+    return fallback;
+  }
+  return message;
 }
 
 function toAllDayEndLocalValue(date: Date): string {
@@ -460,9 +496,9 @@ export function ScheduledItemForm({
     }
 
     if (!startsAtLocal.trim()) {
-      nextErrors.startsAt = t('validationEndAfterStart');
+      nextErrors.startsAt = t('validationStartRequired');
     } else if (!endsAtLocal.trim()) {
-      nextErrors.endsAt = t('validationEndAfterStart');
+      nextErrors.endsAt = t('validationEndRequired');
     }
 
     const startsAt = allDay
@@ -471,7 +507,12 @@ export function ScheduledItemForm({
     const endsAt = allDay
       ? fromAllDayEndLocalValue(endsAtLocal)
       : fromDatetimeLocalValue(endsAtLocal);
-    if (
+
+    if (startsAtLocal.trim() && Number.isNaN(startsAt.getTime())) {
+      nextErrors.startsAt = t('validationInvalidDates');
+    } else if (endsAtLocal.trim() && Number.isNaN(endsAt.getTime())) {
+      nextErrors.endsAt = t('validationInvalidDates');
+    } else if (
       startsAtLocal.trim() &&
       endsAtLocal.trim() &&
       endsAt.getTime() < startsAt.getTime()
@@ -481,6 +522,19 @@ export function ScheduledItemForm({
 
     if ((remindEmail || remindPush) && reminderMinutesBefore == null) {
       nextErrors.reminderMinutesBefore = t('validationReminderRequired');
+    }
+
+    if (
+      recurrencePreset !== 'none' &&
+      recurrenceUntilLocal &&
+      !Number.isNaN(startsAt.getTime())
+    ) {
+      const recurrenceUntil = fromDatetimeLocalValue(
+        `${recurrenceUntilLocal}T23:59`,
+      );
+      if (recurrenceUntil.getTime() < startsAt.getTime()) {
+        nextErrors.recurrenceUntil = t('validationRecurrenceUntilBeforeStart');
+      }
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -521,8 +575,10 @@ export function ScheduledItemForm({
 
       await revalidateScheduledItems(spaceSlug);
       router.push(successfulUrl);
-    } catch {
-      const saveError = { _form: t('saveFailed') };
+    } catch (error) {
+      const saveError = {
+        _form: formatSaveError(error, t('saveFailed')),
+      };
       setFieldErrors(saveError);
       requestAnimationFrame(() => {
         scrollToFirstFieldError(formRef.current, saveError);
@@ -536,8 +592,10 @@ export function ScheduledItemForm({
       await deleteScheduledItem({ id: initialItem.id });
       await revalidateScheduledItems(spaceSlug);
       router.push(successfulUrl);
-    } catch {
-      const saveError = { _form: t('saveFailed') };
+    } catch (error) {
+      const saveError = {
+        _form: formatSaveError(error, t('saveFailed')),
+      };
       setFieldErrors(saveError);
       requestAnimationFrame(() => {
         scrollToFirstFieldError(formRef.current, saveError);
@@ -737,10 +795,16 @@ export function ScheduledItemForm({
               </Label>
               <Input
                 id="scheduled-item-recurrence-until"
+                name="recurrenceUntil"
                 type="date"
                 value={recurrenceUntilLocal}
-                onChange={(e) => setRecurrenceUntilLocal(e.target.value)}
+                onChange={(e) => {
+                  clearFieldError('recurrenceUntil');
+                  setRecurrenceUntilLocal(e.target.value);
+                }}
+                aria-invalid={fieldErrors.recurrenceUntil ? true : undefined}
               />
+              <ScheduledItemFieldError message={fieldErrors.recurrenceUntil} />
             </div>
           ) : null}
         </div>
@@ -876,11 +940,17 @@ export function ScheduledItemForm({
           </p>
         ) : null}
 
-        {fieldErrors._form ? (
-          <ScheduledItemFieldError message={fieldErrors._form} dataFormError />
+        {Object.keys(fieldErrors).length > 0 ? (
+          <div
+            className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            role="alert"
+            data-form-error="true"
+          >
+            {fieldErrors._form ?? t('validationSummary')}
+          </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+        <div className="sticky bottom-0 z-[1] -mx-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/80 bg-background-2/95 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7 lg:px-7">
           {mode === 'edit' && initialItem ? (
             <Button
               type="button"
@@ -906,7 +976,10 @@ export function ScheduledItemForm({
                 {t('cancel')}
               </Link>
             </Button>
-            <Button type="submit" disabled={isSubmitting || isDeleting}>
+            <Button
+              type="submit"
+              disabled={!authToken || isSubmitting || isDeleting}
+            >
               {isSubmitting ? t('saving') : t('save')}
             </Button>
           </div>
