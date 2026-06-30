@@ -34,14 +34,14 @@ import { useRouter } from 'next/navigation';
 import { ButtonBack } from '../../common/button-back';
 import { ButtonClose } from '../../common/button-close';
 
-const DATETIME_LOCAL_STEP_SECONDS = 900;
+const DATETIME_LOCAL_STEP_SECONDS = 300;
 const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
-const MIN_TIMED_DURATION_MS = 15 * 60 * 1000;
+const MIN_TIMED_DURATION_MS = 5 * 60 * 1000;
 
-function snapMinuteToQuarterHour(date: Date): Date {
+function snapMinuteToFiveMinuteStep(date: Date): Date {
   const snapped = new Date(date);
   const minutes = snapped.getMinutes();
-  const rounded = Math.round(minutes / 15) * 15;
+  const rounded = Math.round(minutes / 5) * 5;
   if (rounded === 60) {
     snapped.setHours(snapped.getHours() + 1, 0, 0, 0);
   } else {
@@ -51,7 +51,7 @@ function snapMinuteToQuarterHour(date: Date): Date {
 }
 
 function toDatetimeLocalValue(date: Date): string {
-  const snapped = snapMinuteToQuarterHour(date);
+  const snapped = snapMinuteToFiveMinuteStep(date);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${snapped.getFullYear()}-${pad(snapped.getMonth() + 1)}-${pad(
     snapped.getDate(),
@@ -59,7 +59,7 @@ function toDatetimeLocalValue(date: Date): string {
 }
 
 function fromDatetimeLocalValue(value: string): Date {
-  return snapMinuteToQuarterHour(new Date(value));
+  return snapMinuteToFiveMinuteStep(new Date(value));
 }
 
 function fromAllDayStartLocalValue(value: string): Date {
@@ -201,7 +201,7 @@ function computeEndFromStart(
   if (allDay) {
     return fromAllDayEndLocalValue(toAllDayEndLocalValue(end));
   }
-  return snapMinuteToQuarterHour(end);
+  return snapMinuteToFiveMinuteStep(end);
 }
 
 function readLocalRange(
