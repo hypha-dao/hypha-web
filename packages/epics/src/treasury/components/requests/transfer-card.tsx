@@ -15,7 +15,7 @@ type TransferCardProps = {
   tokenIcon?: string;
   value?: number;
   symbol?: string;
-  date?: string;
+  date?: string | number;
   isLoading?: boolean;
   direction?: 'incoming' | 'outgoing';
   counterparty?: 'from' | 'to';

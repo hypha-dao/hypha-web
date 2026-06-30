@@ -4,7 +4,7 @@ export interface TransferWithEntity {
   to: string;
   value: number;
   symbol: string;
-  timestamp: string;
+  timestamp: string | number;
   contractAddress?: `0x${string}`;
   person?: {
     name?: string;

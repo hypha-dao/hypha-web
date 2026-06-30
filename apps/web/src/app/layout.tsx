@@ -6,7 +6,6 @@ import clsx from 'clsx';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
 
@@ -45,6 +44,7 @@ import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 import { AppNavigationSessionCounter } from '@web/components/app-navigation-session-counter';
 import { ConnectedMenuTop } from '@web/components/connected-menu-top';
+import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import '@web/utils/initialize-proxy';
 
 const lato = Lato({
@@ -247,7 +247,7 @@ export default async function RootLayout({
         >
           <ThemeStorageNormalize />
           <AppNavigationSessionCounter />
-          <NextIntlClientProvider locale={locale} messages={messages}>
+          <LocalizedIntlProvider locale={locale} messages={messages}>
             <TooltipProvider>
               <NotificationSubscriber
                 appId={notificationAppId}
@@ -381,7 +381,7 @@ export default async function RootLayout({
                 </ConditionalMatrixProvider>
               </NotificationSubscriber>
             </TooltipProvider>
-          </NextIntlClientProvider>
+          </LocalizedIntlProvider>
         </ThemeProvider>
       </AuthProvider>
       {shouldInjectToolbar && <VercelToolbar />}
