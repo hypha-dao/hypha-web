@@ -3502,6 +3502,7 @@
     "boardAll": "All signals",
     "boardDelete": "Delete board {boardName}",
     "signalViewBoard": "Kanban Board",
+    "signalWorkflowSettings": "Configure statuses and boards",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "List",
     "signalViewGrid": "Grid",

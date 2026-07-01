@@ -2939,6 +2939,7 @@
     "boardAll": "Todas las señales",
     "boardDelete": "Eliminar tablero {boardName}",
     "signalViewBoard": "Tablero Kanban",
+    "signalWorkflowSettings": "Configurar estados y tableros",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Lista",
     "signalViewGrid": "Cuadrícula",

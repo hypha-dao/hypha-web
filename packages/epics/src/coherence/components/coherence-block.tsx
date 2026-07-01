@@ -16,9 +16,11 @@ import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
+import { buildSignalWorkflowConfigurationPath } from '../lib/signal-workflow-configuration-return';
 import { SignalSection, type SignalViewMode } from './signal-section';
 import { SignalViewControls } from './signal-view-controls';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -110,6 +112,15 @@ export function CoherenceBlock({
     }
   }, []);
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
+  const { canMutate } = useCanMutateInSpace({
+    spaceSlug,
+    spaceId: space?.web3SpaceId ?? undefined,
+  });
+  const workflowSettingsHref = React.useMemo(
+    () =>
+      canMutate ? buildSignalWorkflowConfigurationPath(lang, spaceSlug) : null,
+    [canMutate, lang, spaceSlug],
+  );
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
@@ -210,6 +221,7 @@ export function CoherenceBlock({
             onViewModeChange={setViewMode}
             hideArchived={hideArchived}
             onHideArchivedChange={setHideArchived}
+            workflowSettingsHref={workflowSettingsHref}
           />
         </div>
       </div>

@@ -2937,6 +2937,7 @@
     "boardAll": "Todos os sinais",
     "boardDelete": "Excluir quadro {boardName}",
     "signalViewBoard": "Quadro Kanban",
+    "signalWorkflowSettings": "Configurar estados e quadros",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Lista",
     "signalViewGrid": "Grade",
