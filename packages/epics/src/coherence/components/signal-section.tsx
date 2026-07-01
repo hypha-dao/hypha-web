@@ -26,6 +26,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Empty } from '../../common';
 import { useSignalsSection } from '../hooks';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
+import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
 import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
@@ -73,7 +74,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const { workflow, isLoading: isWorkflowLoading } =
     useSignalWorkflow(spaceSlug);
   const { patchTask } = usePatchCoherenceTask(spaceSlug);
-  const { canMutate } = useCanMutateInSpace({ spaceId: web3SpaceId });
+  const { canMutate } = useCanMutateInSpace({
+    spaceId: web3SpaceId || undefined,
+    spaceSlug,
+  });
+  const { canUpdateTasks } = useCanUpdateSignalTasks({
+    spaceSlug,
+    web3SpaceId,
+  });
 
   const createSignalHref = `/${lang}/dho/${spaceSlug}/coherence/new-signal`;
   const resolvedWorkflow = workflow ?? DEFAULT_SIGNAL_WORKFLOW;
@@ -211,7 +219,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
           signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
-          readOnly={!canMutate}
+          readOnly={!canUpdateTasks}
+          refresh={refresh}
           onMoveStatus={(signal, progressStatus) =>
             patchAndRefresh(signal, { progressStatus })
           }
@@ -221,7 +230,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
           signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
-          readOnly={!canMutate}
+          readOnly={!canUpdateTasks}
+          refresh={refresh}
           onPatch={patchAndRefresh}
         />
       ) : viewMode === 'list' ? (
@@ -229,7 +239,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
           signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
-          readOnly={!canMutate}
+          readOnly={!canUpdateTasks}
+          refresh={refresh}
           onPatch={patchAndRefresh}
         />
       ) : (
