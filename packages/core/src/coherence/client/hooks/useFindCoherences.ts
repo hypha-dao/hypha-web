@@ -68,8 +68,7 @@ function fieldsMatchPending(
   const statusOk =
     pending.progressStatus === undefined ||
     item.progressStatus === pending.progressStatus;
-  const boardOk =
-    pending.board === undefined || item.board === pending.board;
+  const boardOk = pending.board === undefined || item.board === pending.board;
   return statusOk && boardOk;
 }
 
