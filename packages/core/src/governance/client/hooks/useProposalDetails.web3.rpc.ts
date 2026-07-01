@@ -49,7 +49,11 @@ export const useProposalDetailsWeb3Rpc = ({
       ),
     {
       revalidateOnFocus: true,
-      refreshInterval: 10000,
+      // Only poll while the proposal is still live. Once it is executed
+      // (index 3) or expired (index 4) its on-chain state is immutable, so
+      // there is nothing to poll for - stop hitting the RPC every 10s.
+      refreshInterval: (latest) =>
+        latest && (latest[3] || latest[4]) ? 0 : 10000,
     },
   );
 

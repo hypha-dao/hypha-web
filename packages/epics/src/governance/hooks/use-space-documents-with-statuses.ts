@@ -136,7 +136,11 @@ export const useSpaceDocumentsWithStatuses = ({
     },
     {
       revalidateOnFocus: true,
-      refreshInterval: 10000,
+      // The `/documents/all` endpoint returns the full (unpaginated) document
+      // set, so polling it every 10s is expensive. New documents are rare and
+      // user-driven changes (create/vote/withdraw) call `update()` for instant
+      // reflection, so a slower background poll is enough.
+      refreshInterval: 30000,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     },

@@ -45,6 +45,7 @@ import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 import { AppNavigationSessionCounter } from '@web/components/app-navigation-session-counter';
 import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
+import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
 
 const lato = Lato({
@@ -238,151 +239,153 @@ export default async function RootLayout({
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
         }}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          storageKey="theme"
-          disableTransitionOnChange
-        >
-          <ThemeStorageNormalize />
-          <AppNavigationSessionCounter />
-          <LocalizedIntlProvider locale={locale} messages={messages}>
-            <TooltipProvider>
-              <NotificationSubscriber
-                appId={notificationAppId}
-                safariWebId={safariWebId}
-                serviceWorkerPath={serviceWorkerPath}
-              >
-                <ConditionalMatrixProvider enabled={humanChatEnabled}>
-                  <PanelProviders>
-                    <GlobalCallDockProvider>
-                      <PanelWrapLayout
-                        left={
-                          aiChatEnabled
-                            ? {
-                                content: (
-                                  <AiLeftPanel
-                                    enableSpaceMemory={spaceMemoryEnabled}
-                                  />
-                                ),
-                              }
-                            : undefined
-                        }
-                        right={
-                          humanChatEnabled
-                            ? { content: <ConnectedHumanRightPanel /> }
-                            : undefined
-                        }
-                      >
-                        {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                        <div className="sticky top-0 z-30 shrink-0">
-                          <ConnectedMenuTop
-                            aiChatEnabled={aiChatEnabled}
-                            logoHref={ROOT_URL}
-                            openMenuLabel={navOpenMenuLabel}
-                            closeMenuLabel={navCloseMenuLabel}
-                            leadingAction={
-                              aiChatEnabled ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="md:hidden">
-                                    <AiSidebarTrigger />
+        <SwrProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={false}
+            storageKey="theme"
+            disableTransitionOnChange
+          >
+            <ThemeStorageNormalize />
+            <AppNavigationSessionCounter />
+            <LocalizedIntlProvider locale={locale} messages={messages}>
+              <TooltipProvider>
+                <NotificationSubscriber
+                  appId={notificationAppId}
+                  safariWebId={safariWebId}
+                  serviceWorkerPath={serviceWorkerPath}
+                >
+                  <ConditionalMatrixProvider enabled={humanChatEnabled}>
+                    <PanelProviders>
+                      <GlobalCallDockProvider>
+                        <PanelWrapLayout
+                          left={
+                            aiChatEnabled
+                              ? {
+                                  content: (
+                                    <AiLeftPanel
+                                      enableSpaceMemory={spaceMemoryEnabled}
+                                    />
+                                  ),
+                                }
+                              : undefined
+                          }
+                          right={
+                            humanChatEnabled
+                              ? { content: <ConnectedHumanRightPanel /> }
+                              : undefined
+                          }
+                        >
+                          {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                          <div className="sticky top-0 z-30 shrink-0">
+                            <ConnectedMenuTop
+                              aiChatEnabled={aiChatEnabled}
+                              logoHref={ROOT_URL}
+                              openMenuLabel={navOpenMenuLabel}
+                              closeMenuLabel={navCloseMenuLabel}
+                              leadingAction={
+                                aiChatEnabled ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="md:hidden">
+                                      <AiSidebarTrigger />
+                                    </div>
+                                    <AiPanelTrigger />
                                   </div>
-                                  <AiPanelTrigger />
-                                </div>
-                              ) : undefined
-                            }
-                            trailingAction={
-                              humanChatEnabled ? (
-                                <HumanSidebarTrigger />
-                              ) : undefined
-                            }
-                            mobileAction={
-                              <ConnectedButtonProfile
-                                newUserRedirectPath="/profile/signup"
-                                baseRedirectPath="/my-spaces"
-                                navItems={[
-                                  {
-                                    label: navMySpacesLabel,
-                                    href: `/${locale}/my-spaces`,
-                                  },
-                                  {
-                                    label: navNetworkLabel,
-                                    href: `/${locale}/network`,
-                                  },
-                                ]}
-                                trailingBeforeProfile={
-                                  isLanguageSelectVisible ? (
-                                    <ConnectedLanguageSelect
-                                      selectLanguageLabel={
-                                        navSelectLanguageLabel
-                                      }
-                                    />
-                                  ) : undefined
-                                }
-                                compact
-                              />
-                            }
-                          >
-                            <div className="hidden md:flex">
-                              <ConnectedButtonProfile
-                                newUserRedirectPath="/profile/signup"
-                                baseRedirectPath="/my-spaces"
-                                navItems={[
-                                  {
-                                    label: navMySpacesLabel,
-                                    href: `/${locale}/my-spaces`,
-                                  },
-                                  {
-                                    label: navNetworkLabel,
-                                    href: `/${locale}/network`,
-                                  },
-                                ]}
-                                trailingBeforeProfile={
-                                  isLanguageSelectVisible ? (
-                                    <ConnectedLanguageSelect
-                                      selectLanguageLabel={
-                                        navSelectLanguageLabel
-                                      }
-                                    />
-                                  ) : undefined
-                                }
-                              />
-                            </div>
-                          </ConnectedMenuTop>
-                        </div>
-                        {/* Scrollable content area */}
-                        <NextSSRPlugin
-                          routerConfig={extractRouterConfig(fileRouter)}
-                        />
-                        <div className="mb-auto pb-8">
-                          <div className="flex h-full justify-normal pt-4 md:pt-5">
-                            <div className="w-full h-full">{children}</div>
+                                ) : undefined
+                              }
+                              trailingAction={
+                                humanChatEnabled ? (
+                                  <HumanSidebarTrigger />
+                                ) : undefined
+                              }
+                              mobileAction={
+                                <ConnectedButtonProfile
+                                  newUserRedirectPath="/profile/signup"
+                                  baseRedirectPath="/my-spaces"
+                                  navItems={[
+                                    {
+                                      label: navMySpacesLabel,
+                                      href: `/${locale}/my-spaces`,
+                                    },
+                                    {
+                                      label: navNetworkLabel,
+                                      href: `/${locale}/network`,
+                                    },
+                                  ]}
+                                  trailingBeforeProfile={
+                                    isLanguageSelectVisible ? (
+                                      <ConnectedLanguageSelect
+                                        selectLanguageLabel={
+                                          navSelectLanguageLabel
+                                        }
+                                      />
+                                    ) : undefined
+                                  }
+                                  compact
+                                />
+                              }
+                            >
+                              <div className="hidden md:flex">
+                                <ConnectedButtonProfile
+                                  newUserRedirectPath="/profile/signup"
+                                  baseRedirectPath="/my-spaces"
+                                  navItems={[
+                                    {
+                                      label: navMySpacesLabel,
+                                      href: `/${locale}/my-spaces`,
+                                    },
+                                    {
+                                      label: navNetworkLabel,
+                                      href: `/${locale}/network`,
+                                    },
+                                  ]}
+                                  trailingBeforeProfile={
+                                    isLanguageSelectVisible ? (
+                                      <ConnectedLanguageSelect
+                                        selectLanguageLabel={
+                                          navSelectLanguageLabel
+                                        }
+                                      />
+                                    ) : undefined
+                                  }
+                                />
+                              </div>
+                            </ConnectedMenuTop>
                           </div>
-                        </div>
-                        <Suspense fallback={null}>
-                          <DeferredFooter
-                            networkLabel={footerNetworkLabel}
-                            legalLabel={footerLegalLabel}
-                            hyphaServicesLabel={footerHyphaServicesLabel}
-                            hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
-                            licensingPolicyLabel={footerLicensingPolicyLabel}
-                            termsAndConditionsLabel={
-                              footerTermsAndConditionsLabel
-                            }
-                            privacyPolicyLabel={footerPrivacyPolicyLabel}
+                          {/* Scrollable content area */}
+                          <NextSSRPlugin
+                            routerConfig={extractRouterConfig(fileRouter)}
                           />
-                        </Suspense>
-                      </PanelWrapLayout>
-                      {/* Outside capture root so tab screen share excludes the floating dock. */}
-                      {humanChatEnabled && <ConnectedGlobalCallDock />}
-                    </GlobalCallDockProvider>
-                  </PanelProviders>
-                </ConditionalMatrixProvider>
-              </NotificationSubscriber>
-            </TooltipProvider>
-          </LocalizedIntlProvider>
-        </ThemeProvider>
+                          <div className="mb-auto pb-8">
+                            <div className="flex h-full justify-normal pt-4 md:pt-5">
+                              <div className="w-full h-full">{children}</div>
+                            </div>
+                          </div>
+                          <Suspense fallback={null}>
+                            <DeferredFooter
+                              networkLabel={footerNetworkLabel}
+                              legalLabel={footerLegalLabel}
+                              hyphaServicesLabel={footerHyphaServicesLabel}
+                              hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
+                              licensingPolicyLabel={footerLicensingPolicyLabel}
+                              termsAndConditionsLabel={
+                                footerTermsAndConditionsLabel
+                              }
+                              privacyPolicyLabel={footerPrivacyPolicyLabel}
+                            />
+                          </Suspense>
+                        </PanelWrapLayout>
+                        {/* Outside capture root so tab screen share excludes the floating dock. */}
+                        {humanChatEnabled && <ConnectedGlobalCallDock />}
+                      </GlobalCallDockProvider>
+                    </PanelProviders>
+                  </ConditionalMatrixProvider>
+                </NotificationSubscriber>
+              </TooltipProvider>
+            </LocalizedIntlProvider>
+          </ThemeProvider>
+        </SwrProvider>
       </AuthProvider>
       {shouldInjectToolbar && <VercelToolbar />}
     </Html>
