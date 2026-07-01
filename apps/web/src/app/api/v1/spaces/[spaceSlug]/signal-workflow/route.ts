@@ -92,7 +92,10 @@ export async function PUT(
     }
 
     if (!body || typeof body !== 'object') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 },
+      );
     }
 
     const candidate = body as SignalWorkflowConfig;

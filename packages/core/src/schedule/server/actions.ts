@@ -107,11 +107,11 @@ export async function updateScheduledItemAction(
   }
 
   const incoming = data as Record<string, unknown>;
-  const id = parseScheduledItemId(String(incoming.id ?? ''));
-  if (id == null) {
+  const scheduledItemId = parseScheduledItemId(String(incoming.id ?? ''));
+  if (scheduledItemId == null) {
     throw new Error('Scheduled item id is invalid');
   }
-  const existing = await findScheduledItemById({ id }, { db });
+  const existing = await findScheduledItemById({ id: scheduledItemId }, { db });
   if (!existing) {
     throw new Error('Scheduled item not found');
   }
@@ -126,7 +126,7 @@ export async function updateScheduledItemAction(
   const parsed = safeParseMergedScheduledItemUpdate(
     existing,
     incoming,
-    id,
+    scheduledItemId,
   );
   if (!parsed.success) {
     throw new Error(

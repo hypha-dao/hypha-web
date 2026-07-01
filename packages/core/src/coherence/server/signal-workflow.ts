@@ -3,6 +3,7 @@ import { coherences, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
 import {
   DEFAULT_SIGNAL_PROGRESS_STATUS,
+  DEFAULT_SIGNAL_WORKFLOW,
   normalizeSignalWorkflowConfig,
   sanitizeSignalWorkflowConfig,
   type SignalWorkflowConfig,
@@ -76,7 +77,9 @@ export async function updateSignalWorkflowConfig(
   const previous = await readSignalWorkflowConfig({ spaceId }, { db });
   const normalized = sanitizeSignalWorkflowConfig(config);
 
-  const nextStatusSlugs = new Set(normalized.statuses.map((status) => status.slug));
+  const nextStatusSlugs = new Set(
+    normalized.statuses.map((status) => status.slug),
+  );
   const removedStatusSlugs = previous.statuses
     .map((status) => status.slug)
     .filter((slug) => !nextStatusSlugs.has(slug));

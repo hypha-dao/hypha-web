@@ -274,7 +274,10 @@ export async function POST(
         { db },
       );
     } catch (inviteError) {
-      console.error('Failed to dispatch scheduled item invitation:', inviteError);
+      console.error(
+        'Failed to dispatch scheduled item invitation:',
+        inviteError,
+      );
     }
 
     return NextResponse.json({ data: created }, { status: 201 });

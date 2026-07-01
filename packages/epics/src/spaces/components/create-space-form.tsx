@@ -176,8 +176,7 @@ export const SpaceForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const locationPickerRef = React.useRef<SpaceLocationPickerHandle>(null);
-  const workflowSettingsRef =
-    React.useRef<SignalWorkflowSettingsHandle>(null);
+  const workflowSettingsRef = React.useRef<SignalWorkflowSettingsHandle>(null);
   const [isSavingWorkflow, setIsSavingWorkflow] = React.useState(false);
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schema),
@@ -517,540 +516,552 @@ export const SpaceForm = ({
           onSubmit={handleFormSubmit}
           className={clsx('flex flex-col gap-5', isSubmitting && 'opacity-50')}
         >
-        <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
-          <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
-            <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
-              {modalContextTitle}
-            </h2>
-            <div className="flex shrink-0 items-center justify-end gap-1">
-              {backUrl ? (
-                <ButtonBack
-                  label={backLabel ?? tCommon('back')}
-                  backUrl={backUrl}
+          <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+            <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
+              <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
+                {modalContextTitle}
+              </h2>
+              <div className="flex shrink-0 items-center justify-end gap-1">
+                {backUrl ? (
+                  <ButtonBack
+                    label={backLabel ?? tCommon('back')}
+                    backUrl={backUrl}
+                    className="px-0 md:px-3 align-top"
+                  />
+                ) : null}
+                <ButtonClose
+                  closeUrl={closeUrl}
+                  preferBack={true}
                   className="px-0 md:px-3 align-top"
                 />
-              ) : null}
-              <ButtonClose
-                closeUrl={closeUrl}
-                preferBack={true}
-                className="px-0 md:px-3 align-top"
-              />
+              </div>
             </div>
-          </div>
-          <div className="px-4 pb-3 pt-3 lg:px-7">
-            <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
-              <div className="flex flex-grow gap-3">
-                <FormField
-                  control={form.control}
-                  name="logoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <UploadAvatar
-                          {...field}
-                          maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                          accept={{
-                            'image/gif': [],
-                            'image/png': [],
-                            'image/jpg': [],
-                            'image/jpeg': [],
-                            'image/webp': [],
-                            'image/svg+xml': [],
-                          }}
-                          defaultImage={
-                            typeof values?.logoUrl === 'string'
-                              ? values?.logoUrl
-                              : typeof defaultValues?.logoUrl === 'string'
-                              ? defaultValues?.logoUrl
-                              : undefined
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex min-w-0 flex-1 flex-col w-full">
+            <div className="px-4 pb-3 pt-3 lg:px-7">
+              <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
+                <div className="flex flex-grow gap-3">
                   <FormField
                     control={form.control}
-                    name="title"
+                    name="logoUrl"
                     render={({ field }) => (
-                      <FormItem className="gap-0">
+                      <FormItem>
                         <FormControl>
-                          <Input
-                            rootClassName="h-auto min-h-10 w-full sm:min-h-11"
-                            rightIcon={!field.value && <RequirementMark />}
-                            placeholder={tSpaces('nameYourSpace')}
-                            className="h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:text-lg"
-                            disabled={isLoading}
+                          <UploadAvatar
                             {...field}
-                            onChange={(
-                              event: React.ChangeEvent<HTMLInputElement>,
-                            ) => {
-                              field.onChange(event);
-                              updateSlug(event.target.value);
+                            maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                            accept={{
+                              'image/gif': [],
+                              'image/png': [],
+                              'image/jpg': [],
+                              'image/jpeg': [],
+                              'image/webp': [],
+                              'image/svg+xml': [],
                             }}
+                            defaultImage={
+                              typeof values?.logoUrl === 'string'
+                                ? values?.logoUrl
+                                : typeof defaultValues?.logoUrl === 'string'
+                                ? defaultValues?.logoUrl
+                                : undefined
+                            }
                           />
                         </FormControl>
-                        <FormMessage className="mt-1" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
-                  {spaceId === -1 && (
+                  <div className="flex min-w-0 flex-1 flex-col w-full">
                     <FormField
                       control={form.control}
-                      name="slug"
+                      name="title"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="gap-0">
+                          <FormControl>
+                            <Input
+                              rootClassName="h-auto min-h-10 w-full sm:min-h-11"
+                              rightIcon={!field.value && <RequirementMark />}
+                              placeholder={tSpaces('nameYourSpace')}
+                              className="h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:text-lg"
+                              disabled={isLoading}
+                              {...field}
+                              onChange={(
+                                event: React.ChangeEvent<HTMLInputElement>,
+                              ) => {
+                                field.onChange(event);
+                                updateSlug(event.target.value);
+                              }}
+                            />
+                          </FormControl>
                           <FormMessage className="mt-1" />
                         </FormItem>
                       )}
                     />
-                  )}
-                  <span className="flex items-center mt-1">
-                    <Text className="text-1 text-foreground mr-1">
-                      {tSpaces('createdBy')}
-                    </Text>
-                    <Text className="text-1 text-neutral-11">
-                      {creator?.name} {creator?.surname}
-                    </Text>
-                  </span>
+                    {spaceId === -1 && (
+                      <FormField
+                        control={form.control}
+                        name="slug"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormMessage className="mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    <span className="flex items-center mt-1">
+                      <Text className="text-1 text-foreground mr-1">
+                        {tSpaces('createdBy')}
+                      </Text>
+                      <Text className="text-1 text-neutral-11">
+                        {creator?.name} {creator?.surname}
+                      </Text>
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <Separator />
-        </div>
-        <FormField
-          control={form.control}
-          name="leadImage"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <UploadLeadImage
-                  {...field}
-                  maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                  cropDialogLabels={{
-                    title: tCommon('uploadLeadImage.cropTitle'),
-                    description: tCommon('uploadLeadImage.cropDescription'),
-                    cancel: tCommon('uploadLeadImage.cancel'),
-                    confirm: tCommon('uploadLeadImage.confirm'),
-                  }}
-                  messages={{
-                    dropHere: tCommon('uploadLeadImage.dropHere'),
-                    fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
-                    uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
-                  }}
-                  defaultImage={
-                    typeof values?.leadImage === 'string'
-                      ? values?.leadImage
-                      : typeof defaultValues?.leadImage === 'string'
-                      ? defaultValues?.leadImage
-                      : undefined
-                  }
-                  uploadText={
-                    <>
-                      <span className="text-foreground">
-                        {tSpaces('uploadSpaceBanner')}
-                      </span>{' '}
-                      <span className="text-muted-foreground">
-                        {tSpaces('spaceBanner')}
-                      </span>{' '}
-                      <RequirementMark />
-                    </>
-                  }
-                  enableImageResizer={true}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-foreground gap-1">
-                {tSpaces('purpose')} <RequirementMark />
-              </FormLabel>
-              <FormControl>
-                <Textarea
-                  disabled={isLoading}
-                  placeholder={tSpaces('purposePlaceholder')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {showLocationPicker ? (
-          <>
             <Separator />
-            <SpaceLocationPicker
-              ref={locationPickerRef}
-              disabled={isLoading}
-              value={locationValue}
-              onChange={(next) => {
-                form.setValue('latitude', next.latitude, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-                form.setValue('longitude', next.longitude, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-                form.setValue('locationLabel', next.locationLabel, {
-                  shouldDirty: true,
-                });
-                form.setValue('locationSource', next.locationSource, {
-                  shouldDirty: true,
-                });
-                form.clearErrors(['latitude', 'longitude']);
-              }}
-            />
-          </>
-        ) : null}
-        {label === 'configure' && (
+          </div>
           <FormField
             control={form.control}
-            name="parentId"
+            name="leadImage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-foreground">
-                  {tSpaces('organisationLevel')}
-                </FormLabel>
                 <FormControl>
-                  <ParentSpaceSelector
-                    options={parentOptions}
-                    isLoading={isOrganisationLoading || isMyLoading}
-                    isReadOnly={isArchived}
-                    parentSpaceId={field.value}
-                    setParentSpaceId={(parentId) => {
-                      form.setValue('parentId', parentId ?? null, {
-                        shouldDirty: true,
-                      });
-                      form.clearErrors('parentId');
+                  <UploadLeadImage
+                    {...field}
+                    maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                    cropDialogLabels={{
+                      title: tCommon('uploadLeadImage.cropTitle'),
+                      description: tCommon('uploadLeadImage.cropDescription'),
+                      cancel: tCommon('uploadLeadImage.cancel'),
+                      confirm: tCommon('uploadLeadImage.confirm'),
                     }}
-                    className="w-full"
+                    messages={{
+                      dropHere: tCommon('uploadLeadImage.dropHere'),
+                      fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                      uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                    }}
+                    defaultImage={
+                      typeof values?.leadImage === 'string'
+                        ? values?.leadImage
+                        : typeof defaultValues?.leadImage === 'string'
+                        ? defaultValues?.leadImage
+                        : undefined
+                    }
+                    uploadText={
+                      <>
+                        <span className="text-foreground">
+                          {tSpaces('uploadSpaceBanner')}
+                        </span>{' '}
+                        <span className="text-muted-foreground">
+                          {tSpaces('spaceBanner')}
+                        </span>{' '}
+                        <RequirementMark />
+                      </>
+                    }
+                    enableImageResizer={true}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
-        {isRootConfiguration ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="ecosystemLogoUrlLight"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-foreground">
-                    {tSpaces('uploadEcosystemLogoLight')}
-                  </FormLabel>
-                  <FormControl>
-                    <UploadLeadImage
-                      {...field}
-                      maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                      aspectRatio={12 / 3}
-                      outputMimeType="image/png"
-                      enableImageResizer
-                      cropDialogLabels={{
-                        title: tCommon('uploadLeadImage.cropTitle'),
-                        description: tCommon('uploadLeadImage.cropDescription'),
-                        cancel: tCommon('uploadLeadImage.cancel'),
-                        confirm: tCommon('uploadLeadImage.confirm'),
-                      }}
-                      messages={{
-                        dropHere: tCommon('uploadLeadImage.dropHere'),
-                        fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
-                        uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
-                      }}
-                      accept={{
-                        'image/gif': [],
-                        'image/png': [],
-                        'image/jpg': [],
-                        'image/jpeg': [],
-                        'image/webp': [],
-                        'image/svg+xml': [],
-                      }}
-                      className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
-                      imageClassName="object-contain bg-white p-2"
-                      defaultImage={
-                        typeof values?.ecosystemLogoUrlLight === 'string'
-                          ? values?.ecosystemLogoUrlLight
-                          : typeof defaultValues?.ecosystemLogoUrlLight ===
-                            'string'
-                          ? defaultValues?.ecosystemLogoUrlLight
-                          : undefined
-                      }
-                      uploadText={
-                        <span className="text-1 text-muted-foreground">
-                          {tSpaces('ecosystemLogoPlaceholder', {
-                            spaceName: spaceTitleForPlaceholder,
-                          })}
-                        </span>
-                      }
-                    />
-                  </FormControl>
-                  <p className="text-1 text-neutral-11">
-                    {tSpaces('ecosystemLogoLightDescription')}
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="ecosystemLogoUrlDark"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-foreground">
-                    {tSpaces('uploadEcosystemLogoDark')}
-                  </FormLabel>
-                  <FormControl>
-                    <UploadLeadImage
-                      {...field}
-                      maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                      aspectRatio={12 / 3}
-                      outputMimeType="image/png"
-                      enableImageResizer
-                      cropDialogLabels={{
-                        title: tCommon('uploadLeadImage.cropTitle'),
-                        description: tCommon('uploadLeadImage.cropDescription'),
-                        cancel: tCommon('uploadLeadImage.cancel'),
-                        confirm: tCommon('uploadLeadImage.confirm'),
-                      }}
-                      messages={{
-                        dropHere: tCommon('uploadLeadImage.dropHere'),
-                        fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
-                        uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
-                      }}
-                      accept={{
-                        'image/gif': [],
-                        'image/png': [],
-                        'image/jpg': [],
-                        'image/jpeg': [],
-                        'image/webp': [],
-                        'image/svg+xml': [],
-                      }}
-                      className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
-                      imageClassName="object-contain bg-white p-2"
-                      defaultImage={
-                        typeof values?.ecosystemLogoUrlDark === 'string'
-                          ? values?.ecosystemLogoUrlDark
-                          : typeof defaultValues?.ecosystemLogoUrlDark ===
-                            'string'
-                          ? defaultValues?.ecosystemLogoUrlDark
-                          : undefined
-                      }
-                      uploadText={
-                        <span className="text-1 text-muted-foreground">
-                          {tSpaces('ecosystemLogoPlaceholder', {
-                            spaceName: spaceTitleForPlaceholder,
-                          })}
-                        </span>
-                      }
-                    />
-                  </FormControl>
-                  <p className="text-1 text-neutral-11">
-                    {tSpaces('ecosystemLogoDarkDescription')}
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        ) : null}
-        <FormField
-          control={form.control}
-          name="categories"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-foreground">
-                {tSpaces('tags')}
-              </FormLabel>
-              <FormControl>
-                <MultiSelect
-                  placeholder={tSpaces('selectOneOrMore')}
-                  searchPlaceholder={tSpaces('search')}
-                  options={categoryOptions}
-                  value={collapseCategoriesToGroups(field.value ?? [])}
-                  allowToggleAll={false}
-                  onValueChange={(groupIds) =>
-                    field.onChange(
-                      mergeCategoryGroupsWithExisting(
-                        groupIds.filter(isCategoryGroupId),
-                        field.value ?? [],
-                      ),
-                    )
-                  }
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {spaceId !== -1 && (
           <FormField
             control={form.control}
-            name="slug"
-            render={({ field, fieldState: { error } }) => (
+            name="description"
+            render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-foreground">
-                  {tSpaces('spaceUniqueLink')}
+                <FormLabel className="text-foreground gap-1">
+                  {tSpaces('purpose')} <RequirementMark />
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    leftIcon={<div className="text-2">/</div>}
-                    rightIcon={!field.value && <RequirementMark />}
-                    placeholder={tSpaces('spaceUniqueLink')}
-                    className={cn(
-                      'text-2 pl-4',
-                      error &&
-                        'border-destructive focus-visible:ring-destructive',
-                    )}
+                  <Textarea
                     disabled={isLoading}
+                    placeholder={tSpaces('purposePlaceholder')}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="mt-1" />
-                <span className="text-1 text-neutral-11">
-                  <span>{tSpaces('spaceLinkDescription')}</span>
-                </span>
+                <FormMessage />
               </FormItem>
             )}
           />
-        )}
-        <FormField
-          control={form.control}
-          name="links"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{tSpaces('channels')}</FormLabel>
-              <FormControl>
-                <Links
-                  links={field.value}
-                  onChange={field.onChange}
-                  errors={form.formState.errors.links}
-                  placeholder={tSpaces('addYourUrl')}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormLabel>{tSpaces('activationMode')}</FormLabel>
-        <div className="flex flex-col gap-2">
-          <Card
-            className={clsx(
-              'flex p-6 cursor-pointer space-x-4 items-center border-2',
-              {
-                'border-accent-9': isSandbox,
-                'hover:border-accent-5': !isSandbox,
-              },
-            )}
-            onClick={toggleSandbox}
-          >
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">
-                {tSpaces('sandboxMode')}
-              </span>
-              <span className="text-1 text-neutral-11">
-                <span>{tSpaces('sandboxDescription')}</span>
-              </span>
-            </div>
-          </Card>
-          <Card
-            className={clsx(
-              'flex p-6 cursor-pointer space-x-4 items-center border-2',
-              {
-                'border-accent-9': isDemo,
-                'hover:border-accent-5': !isDemo,
-              },
-            )}
-            onClick={toggleDemo}
-          >
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">{tSpaces('pilotMode')}</span>
-              <span className="text-1 text-neutral-11">
-                <span>{tSpaces('pilotDescription')}</span>
-              </span>
-            </div>
-          </Card>
-          <Card
-            className={clsx(
-              'flex p-6 cursor-pointer space-x-4 items-center border-2',
-              {
-                'border-accent-9': isLive,
-                'hover:border-accent-5': !isLive,
-              },
-            )}
-            onClick={toggleLive}
-          >
-            <div className="flex flex-col">
-              <span className="text-2 font-medium">{tSpaces('liveMode')}</span>
-              <span className="text-1 text-neutral-11">
-                <span>{tSpaces('liveDescription')}</span>
-              </span>
-            </div>
-          </Card>
+          {showLocationPicker ? (
+            <>
+              <Separator />
+              <SpaceLocationPicker
+                ref={locationPickerRef}
+                disabled={isLoading}
+                value={locationValue}
+                onChange={(next) => {
+                  form.setValue('latitude', next.latitude, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  form.setValue('longitude', next.longitude, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  form.setValue('locationLabel', next.locationLabel, {
+                    shouldDirty: true,
+                  });
+                  form.setValue('locationSource', next.locationSource, {
+                    shouldDirty: true,
+                  });
+                  form.clearErrors(['latitude', 'longitude']);
+                }}
+              />
+            </>
+          ) : null}
           {label === 'configure' && (
+            <FormField
+              control={form.control}
+              name="parentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">
+                    {tSpaces('organisationLevel')}
+                  </FormLabel>
+                  <FormControl>
+                    <ParentSpaceSelector
+                      options={parentOptions}
+                      isLoading={isOrganisationLoading || isMyLoading}
+                      isReadOnly={isArchived}
+                      parentSpaceId={field.value}
+                      setParentSpaceId={(parentId) => {
+                        form.setValue('parentId', parentId ?? null, {
+                          shouldDirty: true,
+                        });
+                        form.clearErrors('parentId');
+                      }}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          {isRootConfiguration ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="ecosystemLogoUrlLight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">
+                      {tSpaces('uploadEcosystemLogoLight')}
+                    </FormLabel>
+                    <FormControl>
+                      <UploadLeadImage
+                        {...field}
+                        maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                        aspectRatio={12 / 3}
+                        outputMimeType="image/png"
+                        enableImageResizer
+                        cropDialogLabels={{
+                          title: tCommon('uploadLeadImage.cropTitle'),
+                          description: tCommon(
+                            'uploadLeadImage.cropDescription',
+                          ),
+                          cancel: tCommon('uploadLeadImage.cancel'),
+                          confirm: tCommon('uploadLeadImage.confirm'),
+                        }}
+                        messages={{
+                          dropHere: tCommon('uploadLeadImage.dropHere'),
+                          fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                          uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                        }}
+                        accept={{
+                          'image/gif': [],
+                          'image/png': [],
+                          'image/jpg': [],
+                          'image/jpeg': [],
+                          'image/webp': [],
+                          'image/svg+xml': [],
+                        }}
+                        className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
+                        imageClassName="object-contain bg-white p-2"
+                        defaultImage={
+                          typeof values?.ecosystemLogoUrlLight === 'string'
+                            ? values?.ecosystemLogoUrlLight
+                            : typeof defaultValues?.ecosystemLogoUrlLight ===
+                              'string'
+                            ? defaultValues?.ecosystemLogoUrlLight
+                            : undefined
+                        }
+                        uploadText={
+                          <span className="text-1 text-muted-foreground">
+                            {tSpaces('ecosystemLogoPlaceholder', {
+                              spaceName: spaceTitleForPlaceholder,
+                            })}
+                          </span>
+                        }
+                      />
+                    </FormControl>
+                    <p className="text-1 text-neutral-11">
+                      {tSpaces('ecosystemLogoLightDescription')}
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ecosystemLogoUrlDark"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">
+                      {tSpaces('uploadEcosystemLogoDark')}
+                    </FormLabel>
+                    <FormControl>
+                      <UploadLeadImage
+                        {...field}
+                        maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                        aspectRatio={12 / 3}
+                        outputMimeType="image/png"
+                        enableImageResizer
+                        cropDialogLabels={{
+                          title: tCommon('uploadLeadImage.cropTitle'),
+                          description: tCommon(
+                            'uploadLeadImage.cropDescription',
+                          ),
+                          cancel: tCommon('uploadLeadImage.cancel'),
+                          confirm: tCommon('uploadLeadImage.confirm'),
+                        }}
+                        messages={{
+                          dropHere: tCommon('uploadLeadImage.dropHere'),
+                          fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                          uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                        }}
+                        accept={{
+                          'image/gif': [],
+                          'image/png': [],
+                          'image/jpg': [],
+                          'image/jpeg': [],
+                          'image/webp': [],
+                          'image/svg+xml': [],
+                        }}
+                        className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
+                        imageClassName="object-contain bg-white p-2"
+                        defaultImage={
+                          typeof values?.ecosystemLogoUrlDark === 'string'
+                            ? values?.ecosystemLogoUrlDark
+                            : typeof defaultValues?.ecosystemLogoUrlDark ===
+                              'string'
+                            ? defaultValues?.ecosystemLogoUrlDark
+                            : undefined
+                        }
+                        uploadText={
+                          <span className="text-1 text-muted-foreground">
+                            {tSpaces('ecosystemLogoPlaceholder', {
+                              spaceName: spaceTitleForPlaceholder,
+                            })}
+                          </span>
+                        }
+                      />
+                    </FormControl>
+                    <p className="text-1 text-neutral-11">
+                      {tSpaces('ecosystemLogoDarkDescription')}
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          ) : null}
+          <FormField
+            control={form.control}
+            name="categories"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">
+                  {tSpaces('tags')}
+                </FormLabel>
+                <FormControl>
+                  <MultiSelect
+                    placeholder={tSpaces('selectOneOrMore')}
+                    searchPlaceholder={tSpaces('search')}
+                    options={categoryOptions}
+                    value={collapseCategoriesToGroups(field.value ?? [])}
+                    allowToggleAll={false}
+                    onValueChange={(groupIds) =>
+                      field.onChange(
+                        mergeCategoryGroupsWithExisting(
+                          groupIds.filter(isCategoryGroupId),
+                          field.value ?? [],
+                        ),
+                      )
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {spaceId !== -1 && (
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field, fieldState: { error } }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">
+                    {tSpaces('spaceUniqueLink')}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      leftIcon={<div className="text-2">/</div>}
+                      rightIcon={!field.value && <RequirementMark />}
+                      placeholder={tSpaces('spaceUniqueLink')}
+                      className={cn(
+                        'text-2 pl-4',
+                        error &&
+                          'border-destructive focus-visible:ring-destructive',
+                      )}
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="mt-1" />
+                  <span className="text-1 text-neutral-11">
+                    <span>{tSpaces('spaceLinkDescription')}</span>
+                  </span>
+                </FormItem>
+              )}
+            />
+          )}
+          <FormField
+            control={form.control}
+            name="links"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{tSpaces('channels')}</FormLabel>
+                <FormControl>
+                  <Links
+                    links={field.value}
+                    onChange={field.onChange}
+                    errors={form.formState.errors.links}
+                    placeholder={tSpaces('addYourUrl')}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormLabel>{tSpaces('activationMode')}</FormLabel>
+          <div className="flex flex-col gap-2">
             <Card
               className={clsx(
                 'flex p-6 cursor-pointer space-x-4 items-center border-2',
                 {
-                  'border-accent-9': isArchived,
-                  'hover:border-accent-5': !isArchived,
+                  'border-accent-9': isSandbox,
+                  'hover:border-accent-5': !isSandbox,
                 },
               )}
-              onClick={toggleArchived}
+              onClick={toggleSandbox}
             >
               <div className="flex flex-col">
                 <span className="text-2 font-medium">
-                  {tSpaces('archiveMode')}
+                  {tSpaces('sandboxMode')}
                 </span>
                 <span className="text-1 text-neutral-11">
-                  <span>{tSpaces('archiveDescription')}</span>
+                  <span>{tSpaces('sandboxDescription')}</span>
                 </span>
               </div>
             </Card>
-          )}
-        </div>
-        {label !== 'configure' ? (
-          <div className="flex justify-end w-full">
-            <Button
-              type="submit"
-              variant={isSubmitting ? 'outline' : 'default'}
-              disabled={isSubmitting}
+            <Card
+              className={clsx(
+                'flex p-6 cursor-pointer space-x-4 items-center border-2',
+                {
+                  'border-accent-9': isDemo,
+                  'hover:border-accent-5': !isDemo,
+                },
+              )}
+              onClick={toggleDemo}
             >
-              {isSubmitting ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
-            </Button>
+              <div className="flex flex-col">
+                <span className="text-2 font-medium">
+                  {tSpaces('pilotMode')}
+                </span>
+                <span className="text-1 text-neutral-11">
+                  <span>{tSpaces('pilotDescription')}</span>
+                </span>
+              </div>
+            </Card>
+            <Card
+              className={clsx(
+                'flex p-6 cursor-pointer space-x-4 items-center border-2',
+                {
+                  'border-accent-9': isLive,
+                  'hover:border-accent-5': !isLive,
+                },
+              )}
+              onClick={toggleLive}
+            >
+              <div className="flex flex-col">
+                <span className="text-2 font-medium">
+                  {tSpaces('liveMode')}
+                </span>
+                <span className="text-1 text-neutral-11">
+                  <span>{tSpaces('liveDescription')}</span>
+                </span>
+              </div>
+            </Card>
+            {label === 'configure' && (
+              <Card
+                className={clsx(
+                  'flex p-6 cursor-pointer space-x-4 items-center border-2',
+                  {
+                    'border-accent-9': isArchived,
+                    'hover:border-accent-5': !isArchived,
+                  },
+                )}
+                onClick={toggleArchived}
+              >
+                <div className="flex flex-col">
+                  <span className="text-2 font-medium">
+                    {tSpaces('archiveMode')}
+                  </span>
+                  <span className="text-1 text-neutral-11">
+                    <span>{tSpaces('archiveDescription')}</span>
+                  </span>
+                </div>
+              </Card>
+            )}
           </div>
+          {label !== 'configure' ? (
+            <div className="flex justify-end w-full">
+              <Button
+                type="submit"
+                variant={isSubmitting ? 'outline' : 'default'}
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? resolvedSubmitLoadingLabel
+                  : resolvedSubmitLabel}
+              </Button>
+            </div>
+          ) : null}
+        </form>
+        {label === 'configure' && spaceSlug ? (
+          <>
+            <Separator />
+            <SignalWorkflowSettings
+              ref={workflowSettingsRef}
+              spaceSlug={spaceSlug}
+            />
+            <div className="flex justify-end w-full">
+              <Button
+                type="submit"
+                form={spaceConfigurationFormId}
+                variant={isSubmitting ? 'outline' : 'default'}
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? resolvedSubmitLoadingLabel
+                  : resolvedSubmitLabel}
+              </Button>
+            </div>
+          </>
         ) : null}
-      </form>
-      {label === 'configure' && spaceSlug ? (
-        <>
-          <Separator />
-          <SignalWorkflowSettings
-            ref={workflowSettingsRef}
-            spaceSlug={spaceSlug}
-          />
-          <div className="flex justify-end w-full">
-            <Button
-              type="submit"
-              form={spaceConfigurationFormId}
-              variant={isSubmitting ? 'outline' : 'default'}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
-            </Button>
-          </div>
-        </>
-      ) : null}
       </div>
     </Form>
   );

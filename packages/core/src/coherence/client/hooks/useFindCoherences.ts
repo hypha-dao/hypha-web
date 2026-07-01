@@ -55,7 +55,7 @@ export async function upsertCoherenceInSpaceCache(
     (current) => {
       if (!current?.length) return current;
       let found = false;
-      const next = current.map((item) => {
+      const next = current.map((item: Coherence) => {
         const itemSlug = item.slug?.trim();
         if (itemSlug !== updatedSlug) return item;
         found = true;

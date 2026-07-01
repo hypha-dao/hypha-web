@@ -36,7 +36,10 @@ async function findSlugByPersonId(
   return row?.slug?.trim() || null;
 }
 
-function excludeSlug(slugs: string[], excludeSlugValue?: string | null): string[] {
+function excludeSlug(
+  slugs: string[],
+  excludeSlugValue?: string | null,
+): string[] {
   if (!excludeSlugValue) return slugs;
   return slugs.filter((slug) => slug !== excludeSlugValue);
 }
@@ -66,7 +69,10 @@ export async function resolveScheduledItemRecipientSlugs(
 
     const assigneeIds = normalizeAssigneeIds(coherence?.assigneeIds);
     if (assigneeIds.length > 0) {
-      const slugs = await findSlugsByPersonIds({ personIds: assigneeIds }, { db });
+      const slugs = await findSlugsByPersonIds(
+        { personIds: assigneeIds },
+        { db },
+      );
       const filtered = excludeSlug(slugs, excludeSlugValue);
       if (filtered.length > 0) return filtered;
     }

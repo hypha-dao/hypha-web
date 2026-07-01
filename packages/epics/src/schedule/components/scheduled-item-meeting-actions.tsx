@@ -100,7 +100,10 @@ export function ScheduledItemMeetingActions({
         </Button>
       </div>
 
-      <p className="mt-3 truncate text-xs text-muted-foreground" title={joinUrl}>
+      <p
+        className="mt-3 truncate text-xs text-muted-foreground"
+        title={joinUrl}
+      >
         {joinUrl}
       </p>
     </div>

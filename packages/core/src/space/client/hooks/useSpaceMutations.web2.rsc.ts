@@ -14,9 +14,16 @@ import {
   updateSpaceBySlugAction,
 } from '@hypha-platform/core/space/server/actions';
 
-function readApiError(payload: {
-  error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[] | undefined> };
-} | null): string | undefined {
+function readApiError(
+  payload: {
+    error?:
+      | string
+      | {
+          formErrors?: string[];
+          fieldErrors?: Record<string, string[] | undefined>;
+        };
+  } | null,
+): string | undefined {
   if (!payload?.error) return undefined;
   if (typeof payload.error === 'string') return payload.error;
   const fieldMessage = Object.values(payload.error.fieldErrors ?? {})
@@ -40,7 +47,12 @@ async function patchSpaceViaApi(
   });
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
-      error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[] | undefined> };
+      error?:
+        | string
+        | {
+            formErrors?: string[];
+            fieldErrors?: Record<string, string[] | undefined>;
+          };
     } | null;
     throw new Error(
       readApiError(payload) ?? `Failed to update space (${response.status})`,
