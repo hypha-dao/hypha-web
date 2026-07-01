@@ -53,16 +53,29 @@ export function useUserSpaceState({
     userAddress: user?.wallet?.address,
   });
 
+  const shouldCheckMemberSpaceParticipant =
+    isAuthenticated &&
+    !!user?.wallet?.address &&
+    !!effectiveSpaceId &&
+    !isMemberLoading &&
+    !isDelegateLoading &&
+    !isMember &&
+    !isDelegate;
+
   const {
     web3SpaceIds: userMemberWeb3SpaceIds,
     isLoading: isUserMemberWeb3SpaceIdsLoading,
-  } = useMemberWeb3SpaceIds({ personAddress: user?.wallet?.address });
+  } = useMemberWeb3SpaceIds({
+    personAddress: shouldCheckMemberSpaceParticipant
+      ? user?.wallet?.address
+      : undefined,
+  });
 
   const {
     spaceDetails: hostSpaceDetails,
     isLoading: isHostSpaceDetailsLoading,
   } = useSpaceDetailsWeb3Rpc({
-    spaceId: effectiveSpaceId ?? undefined,
+    spaceId: shouldCheckMemberSpaceParticipant ? effectiveSpaceId : undefined,
   });
 
   const hostMemberAddressesKey = useMemo(() => {
@@ -86,9 +99,7 @@ export function useUserSpaceState({
     data: isMemberSpaceParticipant,
     isLoading: isMemberSpaceParticipantLoading,
   } = useSWR(
-    isAuthenticated &&
-      user?.wallet?.address &&
-      effectiveSpaceId &&
+    shouldCheckMemberSpaceParticipant &&
       hostMemberAddressesKey &&
       userMemberSpaceIdsKey
       ? [
@@ -103,28 +114,27 @@ export function useUserSpaceState({
         hostSpaceDetails!.members.map((member: string) => member.toLowerCase()),
       );
 
-      const checks = await Promise.all(
-        userMemberWeb3SpaceIds!.map(async (spaceId) => {
-          try {
-            const details = await publicClient.readContract(
-              getSpaceDetails({ spaceId }),
-            );
-            const executor = details[9] as string | undefined;
-            return (
-              typeof executor === 'string' &&
-              hostMembersLower.has(executor.toLowerCase())
-            );
-          } catch (error) {
-            console.error(
-              `Error checking member-space access for space ${spaceId}:`,
-              error,
-            );
-            return false;
+      for (const spaceId of userMemberWeb3SpaceIds!) {
+        try {
+          const details = await publicClient.readContract(
+            getSpaceDetails({ spaceId }),
+          );
+          const executor = details[9] as string | undefined;
+          if (
+            typeof executor === 'string' &&
+            hostMembersLower.has(executor.toLowerCase())
+          ) {
+            return true;
           }
-        }),
-      );
+        } catch (error) {
+          console.error(
+            `Error checking member-space access for space ${spaceId}:`,
+            error,
+          );
+        }
+      }
 
-      return checks.some(Boolean);
+      return false;
     },
   );
 
@@ -248,12 +258,16 @@ export function useUserSpaceState({
     isOrgDelegate,
   ]);
 
+  const isMemberSpaceParticipantPathLoading =
+    shouldCheckMemberSpaceParticipant &&
+    (isUserMemberWeb3SpaceIdsLoading ||
+      isHostSpaceDetailsLoading ||
+      isMemberSpaceParticipantLoading);
+
   const isLoading =
     isMemberLoading ||
     isDelegateLoading ||
-    isUserMemberWeb3SpaceIdsLoading ||
-    isHostSpaceDetailsLoading ||
-    isMemberSpaceParticipantLoading ||
+    isMemberSpaceParticipantPathLoading ||
     isOrganisationSpacesLoading ||
     isOrgMembershipLoading ||
     spaceFromHook.isLoading;

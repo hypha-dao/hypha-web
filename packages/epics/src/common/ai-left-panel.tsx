@@ -73,7 +73,7 @@ import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-displa
 import {
   UserSpaceState,
   useUserSpaceState,
-} from '../spaces/hooks/use-user-space-state';
+} from '../spaces/hooks/use-user-space-state.web3.rpc';
 import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
 import {
   checkAccess,

@@ -1,5 +1,5 @@
 import { TransparencyLevel } from '../components/transparency-level';
-import { UserSpaceState } from '../hooks/use-user-space-state';
+import { UserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 
 export function checkDiscoverability(
   discoverabilityLevel: TransparencyLevel | undefined,
