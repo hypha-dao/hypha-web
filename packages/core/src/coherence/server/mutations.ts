@@ -250,7 +250,7 @@ export const patchCoherenceTaskBySlug = async (
 
   const updated = await db
     .update(coherences)
-    .set(patch)
+    .set({ ...patch, updatedAt: new Date() })
     .where(eq(coherences.id, row.id))
     .returning();
 
