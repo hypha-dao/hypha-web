@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, ReactNode } from 'react';
+import { FC } from 'react';
 import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -44,7 +44,6 @@ type SignalSectionProps = {
   web3SpaceId: number;
   signals: Coherence[];
   leadImage?: string;
-  toolbarLeft?: ReactNode;
   isLoading: boolean;
   hideArchived: boolean;
   setHideArchived: (checked: boolean) => void;
@@ -58,7 +57,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   web3SpaceId,
   signals,
   leadImage,
-  toolbarLeft,
   isLoading,
   hideArchived,
   setHideArchived,
@@ -151,44 +149,52 @@ export const SignalSection: FC<SignalSectionProps> = ({
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {toolbarLeft}
-        <div className="relative min-w-[12rem] flex-1">
-          <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder={t('searchSignals')}
-            onChange={(event) => onUpdateSearch(event.target.value)}
-            defaultValue={searchTerm}
-          />
+      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+        <Input
+          type="search"
+          placeholder={t('searchSignals')}
+          onChange={(event) => onUpdateSearch(event.target.value)}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          className="w-full lg:min-w-0 lg:flex-1"
+          defaultValue={searchTerm}
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) => setViewMode(value as SignalViewMode)}
+          >
+            <TabsList triggerVariant="switch" className="w-fit">
+              <TabsTrigger value="board" variant="switch">
+                {t('signalViewBoard')}
+              </TabsTrigger>
+              <TabsTrigger value="swimlane" variant="switch">
+                {t('signalViewSwimlane')}
+              </TabsTrigger>
+              <TabsTrigger value="list" variant="switch">
+                {t('signalViewList')}
+              </TabsTrigger>
+              <TabsTrigger value="grid" variant="switch">
+                {t('signalViewGrid')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Checkbox
+              checked={hideArchived}
+              onCheckedChange={(checked) => setHideArchived(checked === true)}
+            />
+            {t('hideArchived')}
+          </label>
         </div>
-        <Tabs
-          value={viewMode}
-          onValueChange={(value) => setViewMode(value as SignalViewMode)}
-        >
-          <TabsList>
-            <TabsTrigger value="board">{t('signalViewBoard')}</TabsTrigger>
-            <TabsTrigger value="swimlane">
-              {t('signalViewSwimlane')}
-            </TabsTrigger>
-            <TabsTrigger value="list">{t('signalViewList')}</TabsTrigger>
-            <TabsTrigger value="grid">{t('signalViewGrid')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Checkbox
-            checked={hideArchived}
-            onCheckedChange={(checked) => setHideArchived(checked === true)}
-          />
-          {t('hideArchived')}
-        </label>
         {canMutate ? (
-          <Button asChild colorVariant="accent" className="ml-auto">
-            <Link href={createSignalHref}>
-              <PlusIcon />
-              {t('newSignal')}
-            </Link>
-          </Button>
+          <div className="flex w-full items-center justify-end gap-2 lg:w-auto lg:shrink-0">
+            <Button asChild colorVariant="accent">
+              <Link href={createSignalHref}>
+                <PlusIcon />
+                {t('newSignal')}
+              </Link>
+            </Button>
+          </div>
         ) : null}
       </div>
 
