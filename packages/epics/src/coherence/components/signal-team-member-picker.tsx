@@ -10,13 +10,10 @@ import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { UseMembers } from '../../spaces';
 import { useResolvedMentionCandidateLabel } from '../../common/human-chat-panel/use-resolved-mention-candidate-label';
-
-function personRosterLabel(p: Person, unknownLabel: string): string {
-  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
-  if (full) return full;
-  if (p.nickname?.trim()) return p.nickname.trim();
-  return unknownLabel;
-}
+import {
+  buildSpaceRosterMentionCandidates,
+  personRosterDisplayLabel,
+} from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 
 function normalizeMatrixUserIds(ids: string[]): string[] {
   const seen = new Set<string>();
@@ -136,43 +133,33 @@ export function SignalTeamMemberPicker({
   }, [ownerMatrixUserId, spaceMembers, subToMatrixUserId]);
 
   const selectableMembers = React.useMemo(() => {
-    const rows: Array<{
-      userId: string;
-      displayLabel: string;
-      privySub?: string;
-      avatarUrl?: string | null;
-    }> = [];
+    const extraCandidates = ownerMatrixUserId
+      ? [
+          {
+            userId: ownerMatrixUserId,
+            displayLabel: ownerPerson
+              ? personRosterDisplayLabel(ownerPerson, t('unknownMember'))
+              : t('createSignalTeamOwner'),
+            privySub: ownerPerson?.sub?.trim(),
+            avatarUrl: ownerPerson?.avatarUrl ?? undefined,
+          },
+        ]
+      : [];
 
-    if (ownerMatrixUserId) {
-      rows.push({
-        userId: ownerMatrixUserId,
-        displayLabel: ownerPerson
-          ? personRosterLabel(ownerPerson, t('unknownMember'))
-          : t('createSignalTeamOwner'),
-        privySub: ownerPerson?.sub?.trim(),
-        avatarUrl: ownerPerson?.avatarUrl,
-      });
-    }
+    const rosterSpaceMembers = ownerMatrixUserId
+      ? spaceMembers.filter((member) => {
+          const sub = member.sub?.trim();
+          if (!sub) return true;
+          return subToMatrixUserId[sub] !== ownerMatrixUserId;
+        })
+      : spaceMembers;
 
-    for (const member of spaceMembers) {
-      const sub = member.sub?.trim();
-      if (!sub) continue;
-      const matrixUserId = subToMatrixUserId[sub];
-      if (!matrixUserId) continue;
-      if (ownerMatrixUserId && matrixUserId === ownerMatrixUserId) continue;
-      rows.push({
-        userId: matrixUserId,
-        displayLabel: personRosterLabel(member, t('unknownMember')),
-        privySub: sub,
-        avatarUrl: member.avatarUrl,
-      });
-    }
-
-    return rows.sort((a, b) =>
-      a.displayLabel.localeCompare(b.displayLabel, undefined, {
-        sensitivity: 'base',
-      }),
-    );
+    return buildSpaceRosterMentionCandidates({
+      spaceMembers: rosterSpaceMembers,
+      subToMatrixUserId,
+      unknownLabel: t('unknownMember'),
+      extraCandidates,
+    });
   }, [ownerMatrixUserId, ownerPerson, spaceMembers, subToMatrixUserId, t]);
 
   const effectiveSelectedIds = React.useMemo(() => {

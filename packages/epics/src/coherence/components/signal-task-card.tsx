@@ -5,7 +5,6 @@ import { format, isValid } from 'date-fns';
 import { CalendarDays, MessageSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
-  COHERENCE_TAGS,
   Coherence,
   SignalBoardDefinition,
   SignalStatusDefinition,
@@ -21,9 +20,7 @@ import {
   priorityLeftBorderClass,
   statusColorDotClass,
 } from '../utils/signal-priority-styles';
-import {
-  SIGNAL_TAG_BADGE_CLASS,
-} from '../utils/signal-tag-badge-styles';
+import { SignalTagBadges } from './signal-tag-badges';
 
 type SignalTaskCardProps = {
   signal: Coherence;
@@ -110,16 +107,6 @@ export function SignalTaskCard({
     typeof signal.messages === 'number' && signal.messages > 0
       ? signal.messages
       : 0;
-  const visibleTags = (signal.tags ?? []).slice(0, 2);
-
-  const tagDisplayLabel = (tag: string) => {
-    const translationKey = `tagLabels.${tag}`;
-    return (COHERENCE_TAGS as readonly string[]).includes(tag) &&
-      t.has(translationKey as never)
-      ? t(translationKey as never)
-      : tag;
-  };
-
   const priorityLabel = t(
     `priorities.${signal.priority}` as
       | 'priorities.critical'
@@ -239,16 +226,7 @@ export function SignalTaskCard({
                 {board.name}
               </Badge>
             ) : null}
-            {visibleTags.map((tag) => (
-              <Badge
-                key={tag}
-                colorVariant="accent"
-                variant="soft"
-                className={cn(SIGNAL_TAG_BADGE_CLASS, 'text-[10px]')}
-              >
-                {tagDisplayLabel(tag)}
-              </Badge>
-            ))}
+            <SignalTagBadges tags={signal.tags} maxVisible={2} />
             {messageCount > 0 ? (
               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                 <MessageSquare className="h-3 w-3" aria-hidden />

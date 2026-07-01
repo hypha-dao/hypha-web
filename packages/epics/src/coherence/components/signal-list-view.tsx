@@ -15,6 +15,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalCreatorMeta } from './signal-creator-meta';
+import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -175,6 +176,11 @@ export function SignalListView({
                           | 'types.Proposal',
                       )}
                     </span>
+                    <SignalTagBadges
+                      tags={signal.tags}
+                      maxVisible={3}
+                      className="mt-1"
+                    />
                     <SignalListCreatorMeta signal={signal} />
                   </button>
                   {signal.assigneeIds.length > 0 ? (
