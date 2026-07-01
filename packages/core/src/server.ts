@@ -16,10 +16,22 @@ export {
 export * from './events/server';
 export * from './transaction/server';
 export * from './coherence/server';
+export {
+  patchCoherenceTaskBySlugAction,
+  getSignalWorkflowConfigAction,
+  updateSignalWorkflowConfigAction,
+} from './coherence/server/actions';
+export { normalizeCoherence } from './coherence/server/web3/normalize-coherence';
+export { findCoherencesWithDueDatesInRange } from './coherence/server/queries';
 export * from './coherence/coherence-tags';
 export * from './coherence/coherence-types';
 export * from './coherence/coherence-tags';
 export * from './coherence/types';
+export * from './coherence/signal-workflow';
+export {
+  schemaPatchCoherenceTaskBySlug,
+  schemaSignalWorkflowConfig,
+} from './coherence/validation';
 export * from './schedule/server';
 export * from './schedule';
 export * from './matrix/server';

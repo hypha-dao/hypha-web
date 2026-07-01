@@ -22,6 +22,7 @@ export interface ScheduledItem {
   remindEmail: boolean;
   remindPush: boolean;
   reminderMinutesBefore: number | null;
+  coherenceId: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -4,7 +4,7 @@ import {
   spaces,
 } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
-import { and, arrayOverlaps, desc, eq, SQL, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, desc, eq, gte, isNotNull, lte, SQL, sql } from 'drizzle-orm';
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
 import { CoherencePriority } from '../coherence-priorities';
@@ -17,6 +17,17 @@ type FindAllCoherencesInput = {
   priority?: CoherencePriority;
   includeArchived?: boolean;
   orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  progressStatus?: string;
+  board?: string;
+  assigneeId?: number;
+  overdue?: boolean;
+};
+
+type FindCoherencesWithDueDatesInput = {
+  spaceId: number;
+  from: Date;
+  to: Date;
+  includeArchived?: boolean;
 };
 
 export const findAllCoherences = async (
@@ -29,6 +40,10 @@ export const findAllCoherences = async (
     priority,
     includeArchived = false,
     orderBy,
+    progressStatus,
+    board,
+    assigneeId,
+    overdue,
   }: FindAllCoherencesInput,
 ) => {
   if (spaceId === undefined) {
@@ -71,11 +86,48 @@ export const findAllCoherences = async (
           ? arrayOverlaps(coherences.tags, tags)
           : undefined,
         priority ? eq(coherences.priority, priority) : undefined,
+        progressStatus
+          ? eq(coherences.progressStatus, progressStatus)
+          : undefined,
+        board ? eq(coherences.board, board) : undefined,
+        assigneeId
+          ? sql`${coherences.assigneeIds} @> ${JSON.stringify([assigneeId])}::jsonb`
+          : undefined,
+        overdue
+          ? and(
+              isNotNull(coherences.dueAt),
+              lte(coherences.dueAt, new Date()),
+            )
+          : undefined,
       ),
     )
     .orderBy(order);
 
   return results;
+};
+
+export const findCoherencesWithDueDatesInRange = async (
+  { db }: DbConfig,
+  {
+    spaceId,
+    from,
+    to,
+    includeArchived = false,
+  }: FindCoherencesWithDueDatesInput,
+) => {
+  return db
+    .select()
+    .from(coherences)
+    .where(
+      and(
+        eq(coherences.spaceId, spaceId),
+        includeArchived ? undefined : eq(coherences.archived, false),
+        isNotNull(coherences.dueAt),
+        gte(coherences.dueAt, from),
+        lte(coherences.dueAt, to),
+      ),
+    )
+    .orderBy(coherences.dueAt);
 };
 
 export const findCoherenceById = async (

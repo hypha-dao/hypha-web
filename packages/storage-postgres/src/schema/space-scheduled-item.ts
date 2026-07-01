@@ -12,6 +12,7 @@ import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
 import { people } from './people';
+import { coherences } from './coherence';
 
 export const SCHEDULED_ITEM_TYPES = [
   'call',
@@ -51,6 +52,9 @@ export const spaceScheduledItems = pgTable(
     remindEmail: boolean('remind_email').notNull().default(false),
     remindPush: boolean('remind_push').notNull().default(false),
     reminderMinutesBefore: integer('reminder_minutes_before'),
+    coherenceId: integer('coherence_id').references(() => coherences.id, {
+      onDelete: 'set null',
+    }),
     ...commonDateFields,
   },
   (table) => [
@@ -66,6 +70,7 @@ export const spaceScheduledItems = pgTable(
       table.remindPush,
       table.reminderMinutesBefore,
     ),
+    index('space_scheduled_items_coherence_id_idx').on(table.coherenceId),
   ],
 );
 

@@ -2930,6 +2930,16 @@
     "boardCancelAction": "Annuler",
     "boardAll": "Tous les signaux",
     "boardDelete": "Supprimer le tableau {boardName}",
+    "signalViewBoard": "Tableau",
+    "signalViewSwimlane": "Swimlane",
+    "signalViewList": "Liste",
+    "signalViewGrid": "Grille",
+    "signalBoardUncategorized": "Non classé",
+    "signalListTitle": "Titre",
+    "signalListStatus": "Statut",
+    "signalListDue": "Échéance",
+    "signalListPriority": "Priorité",
+    "signalListBoard": "Tableau",
     "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace"
   },
   "GlobalCallDock": {

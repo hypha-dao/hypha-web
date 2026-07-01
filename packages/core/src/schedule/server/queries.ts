@@ -33,6 +33,7 @@ function mapRow(row: typeof spaceScheduledItems.$inferSelect): ScheduledItem {
     remindEmail: row.remindEmail,
     remindPush: row.remindPush,
     reminderMinutesBefore: row.reminderMinutesBefore,
+    coherenceId: row.coherenceId ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

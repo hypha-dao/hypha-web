@@ -3497,6 +3497,16 @@
     "boardCancelAction": "Cancel",
     "boardAll": "All signals",
     "boardDelete": "Delete board {boardName}",
+    "signalViewBoard": "Board",
+    "signalViewSwimlane": "Swimlane",
+    "signalViewList": "List",
+    "signalViewGrid": "Grid",
+    "signalBoardUncategorized": "Uncategorized",
+    "signalListTitle": "Title",
+    "signalListStatus": "Status",
+    "signalListDue": "Due",
+    "signalListPriority": "Priority",
+    "signalListBoard": "Board",
     "spaceMemoryTimelineLabel": "Space memory history"
   },
   "GlobalCallDock": {
