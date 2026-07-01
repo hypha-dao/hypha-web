@@ -608,6 +608,25 @@ export const ProposalDetail = ({
     [proposalDetails?.endTime],
   );
 
+  // The description is rendered through MarkdownSuspense, which compiles MDX
+  // asynchronously and therefore re-suspends (flashing its "Loading..."
+  // fallback) whenever this subtree re-renders. After voting, unrelated state
+  // (vote counts, voters, isVoting) changes and would otherwise re-render the
+  // markdown and reload the description. Memoizing the element by its actual
+  // inputs keeps the reference stable so React skips re-rendering it.
+  const descriptionMarkdown = useMemo(
+    () => (
+      <MarkdownSuspense>
+        {label === 'Investment'
+          ? stripHyphaInvestmentFormMarker(content ?? '')
+          : label === 'Exchange'
+          ? stripExchangeDetailsBlock(content ?? '')
+          : content}
+      </MarkdownSuspense>
+    ),
+    [content, label],
+  );
+
   const findDocumentStatus = (
     documentsArrays: DocumentsArrays,
     proposalId: number | null | undefined,
@@ -1178,13 +1197,7 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
-      <MarkdownSuspense>
-        {label === 'Investment'
-          ? stripHyphaInvestmentFormMarker(content ?? '')
-          : label === 'Exchange'
-          ? stripExchangeDetailsBlock(content ?? '')
-          : content}
-      </MarkdownSuspense>
+      {descriptionMarkdown}
       <AttachmentList attachments={attachments || []} />
       {label === 'Investment' ? (
         <ProposalAcceptInvestmentData
