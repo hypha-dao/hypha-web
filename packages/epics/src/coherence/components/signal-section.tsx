@@ -77,7 +77,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const { patchTask } = usePatchCoherenceTask(spaceSlug);
   const { canMutate } = useCanMutateInSpace({ spaceId: web3SpaceId });
 
-  const createSignalHref = `/${lang}/dho/${spaceSlug}/coherence/create-signal`;
+  const createSignalHref = `/${lang}/dho/${spaceSlug}/coherence/new-signal`;
   const resolvedWorkflow = workflow ?? DEFAULT_SIGNAL_WORKFLOW;
 
   const { onUpdateSearch, searchTerm, filteredSignals } = useSignalsSection({
