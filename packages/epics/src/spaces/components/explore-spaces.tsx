@@ -8,6 +8,7 @@ import {
   getCategoryGroupLabel,
   hasSpaceMapLocation,
   isSpaceArchived,
+  sortSpacesByOrder,
   spaceMatchesCategoryGroups,
 } from '@hypha-platform/core/client';
 import {
@@ -228,32 +229,10 @@ export function ExploreSpaces({
     },
   );
 
-  const compareMembers = (a: Space, b: Space) => {
-    const aCount = a.memberAddresses?.length ?? a.memberCount ?? 0;
-    const bCount = b.memberAddresses?.length ?? b.memberCount ?? 0;
-    return bCount - aCount;
-  };
-  const compareAgreements = (a: Space, b: Space) => {
-    return (b.documentCount ?? 0) - (a.documentCount ?? 0);
-  };
-  const compareRecent = (a: Space, b: Space) => {
-    return b.id - a.id;
-  };
-
-  const sortedSpaces = React.useMemo(() => {
-    return [...selectedSpaces].sort((a, b) => {
-      switch (order) {
-        case 'mostmembers':
-          return compareMembers(a, b);
-        case 'mostagreements':
-          return compareAgreements(a, b);
-        case 'mostrecent':
-          return compareRecent(a, b);
-        default:
-          return 0;
-      }
-    });
-  }, [selectedSpaces, order]);
+  const sortedSpaces = React.useMemo(
+    () => sortSpacesByOrder(selectedSpaces, order ?? 'mostmembers'),
+    [selectedSpaces, order],
+  );
 
   const mapSpaces = React.useMemo(
     () => selectedSpaces.filter(hasSpaceMapLocation),
