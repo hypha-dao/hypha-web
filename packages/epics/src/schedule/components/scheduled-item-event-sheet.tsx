@@ -50,8 +50,8 @@ export function ScheduledItemEventSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md gap-0 overflow-hidden p-0">
-        <DialogHeader className="space-y-2 border-b border-border/60 px-5 py-4 text-left">
+      <DialogContent className="gap-0 p-0">
+        <DialogHeader className="space-y-2 border-b border-border/60 px-5 py-4 pr-12 text-left">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-accent-11">
             <CalendarClock className="size-3.5" aria-hidden />
             {t(`type_${item.type}` as 'type_call')}
@@ -64,7 +64,7 @@ export function ScheduledItemEventSheet({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 px-5 py-4">
+        <div className="flex min-w-0 flex-col gap-4 px-5 py-4">
           {isJoinableScheduledItem(item) ? (
             <ScheduledItemMeetingActions
               item={item}
@@ -94,12 +94,12 @@ export function ScheduledItemEventSheet({
             </div>
           ) : null}
 
-          <p className="text-xs text-muted-foreground">
+          <p className="min-w-0 text-xs text-muted-foreground">
             {t('invitationSentHint')}
           </p>
         </div>
 
-        <DialogFooter className="border-t border-border/60 px-5 py-4 sm:justify-between">
+        <DialogFooter className="min-w-0 flex-wrap gap-2 border-t border-border/60 px-5 py-4 sm:justify-between">
           <Button
             type="button"
             variant="ghost"
