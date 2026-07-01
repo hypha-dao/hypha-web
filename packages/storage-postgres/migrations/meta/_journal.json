@@ -414,6 +414,13 @@
       "when": 1782100000000,
       "tag": "0058_scheduled_item_integrity_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1782200000000,
+      "tag": "0059_signal_task_fields",
+      "breakpoints": true
     }
   ]
 }

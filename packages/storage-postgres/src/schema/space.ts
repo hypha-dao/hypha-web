@@ -51,6 +51,10 @@ export const spaces = pgTable(
     locationLabel: text('location_label'),
     locationSource: text('location_source'),
     locatedAt: timestamp('located_at'),
+    signalWorkflow: jsonb('signal_workflow')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
     ...commonDateFields,
   },
   (table) => [

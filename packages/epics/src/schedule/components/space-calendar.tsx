@@ -43,6 +43,8 @@ import {
   toFullCalendarRruleInput,
   useScheduledItemMutations,
   useScheduledItems,
+  useSignalDeadlines,
+  type Coherence,
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -96,6 +98,32 @@ function toCalendarEvent(item: ScheduledItem): EventInput {
     start: item.startsAt,
     end: item.endsAt,
     allDay: item.allDay,
+  };
+}
+
+const SIGNAL_DEADLINE_COLOR = '#7c3aed';
+
+function toSignalDeadlineEvent(
+  signal: Coherence,
+  lang: string,
+  spaceSlug: string,
+): EventInput {
+  const dueAt = signal.dueAt!;
+  const end = new Date(dueAt);
+  end.setHours(23, 59, 59, 999);
+  return {
+    id: `signal-deadline-${signal.id}`,
+    title: signal.title,
+    start: dueAt,
+    end,
+    allDay: true,
+    editable: false,
+    backgroundColor: SIGNAL_DEADLINE_COLOR,
+    borderColor: SIGNAL_DEADLINE_COLOR,
+    extendedProps: {
+      signalDeadline: signal,
+      signalHref: `/${lang}/dho/${spaceSlug}/coherence/${signal.slug}`,
+    },
   };
 }
 
@@ -194,15 +222,23 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     to: range.to,
   });
 
+  const { deadlines: signalDeadlines } = useSignalDeadlines(spaceSlug, {
+    from: range.from.toISOString(),
+    to: range.to.toISOString(),
+  });
+
+  const calendarEvents = React.useMemo(() => {
+    const scheduled = (scheduledItems ?? []).map(toCalendarEvent);
+    const signalEvents = signalDeadlines.map((signal) =>
+      toSignalDeadlineEvent(signal, lang, spaceSlug),
+    );
+    return [...scheduled, ...signalEvents];
+  }, [scheduledItems, signalDeadlines, lang, spaceSlug]);
+
   const { updateScheduledItem } = useScheduledItemMutations(
     authToken,
     spaceSlug,
     lang,
-  );
-
-  const calendarEvents = React.useMemo(
-    () => (scheduledItems ?? []).map(toCalendarEvent),
-    [scheduledItems],
   );
 
   const dateFnsLocale = React.useMemo(() => resolveDateFnsLocale(lang), [lang]);
@@ -243,6 +279,13 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
+    const signalHref = clickInfo.event.extendedProps.signalHref as
+      | string
+      | undefined;
+    if (signalHref) {
+      router.push(signalHref, { scroll: false });
+      return;
+    }
     if (!isAuthenticated) return;
     const item = clickInfo.event.extendedProps.scheduledItem as
       | ScheduledItem
