@@ -17,6 +17,11 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { buildSignalWorkflowConfigurationPath } from '../lib/signal-workflow-configuration-return';
+import {
+  isDefaultSignalViewMode,
+  parseSignalViewMode,
+  SIGNAL_VIEW_QUERY_KEY,
+} from '../lib/signal-view-mode';
 import { SignalSection, type SignalViewMode } from './signal-section';
 import { SignalViewControls } from './signal-view-controls';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -100,17 +105,45 @@ export function CoherenceBlock({
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [hideArchived, setHideArchived] = React.useState(true);
-  const [viewMode, setViewMode] = React.useState<SignalViewMode>('board');
-  const hasInitializedViewMode = React.useRef(false);
+  const viewMode = React.useMemo(() => {
+    const parsed = parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY));
+    return parsed ?? 'board';
+  }, [searchParams]);
+  const hasAppliedMobileDefault = React.useRef(false);
 
   React.useEffect(() => {
-    if (hasInitializedViewMode.current) return;
-    hasInitializedViewMode.current = true;
-    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
-      setViewMode('list');
+    if (hasAppliedMobileDefault.current) return;
+    if (parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY))) {
+      hasAppliedMobileDefault.current = true;
+      return;
     }
-  }, []);
+    hasAppliedMobileDefault.current = true;
+    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set(SIGNAL_VIEW_QUERY_KEY, 'list');
+      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+    }
+  }, [pathname, router, searchParams]);
+
+  const handleViewModeChange = React.useCallback(
+    (nextValue: SignalViewMode) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      if (isDefaultSignalViewMode(nextValue)) {
+        nextParams.delete(SIGNAL_VIEW_QUERY_KEY);
+      } else {
+        nextParams.set(SIGNAL_VIEW_QUERY_KEY, nextValue);
+      }
+      const query = nextParams.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({
     spaceSlug,
@@ -118,8 +151,10 @@ export function CoherenceBlock({
   });
   const workflowSettingsHref = React.useMemo(
     () =>
-      canMutate ? buildSignalWorkflowConfigurationPath(lang, spaceSlug) : null,
-    [canMutate, lang, spaceSlug],
+      canMutate
+        ? buildSignalWorkflowConfigurationPath(lang, spaceSlug, searchParams)
+        : null,
+    [canMutate, lang, searchParams, spaceSlug],
   );
   const {
     coherences: signals,
@@ -218,7 +253,7 @@ export function CoherenceBlock({
         <div className="flex flex-wrap items-center justify-start gap-3 sm:justify-end">
           <SignalViewControls
             viewMode={viewMode}
-            onViewModeChange={setViewMode}
+            onViewModeChange={handleViewModeChange}
             hideArchived={hideArchived}
             onHideArchivedChange={setHideArchived}
             workflowSettingsHref={workflowSettingsHref}

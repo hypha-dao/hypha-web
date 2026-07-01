@@ -68,7 +68,13 @@ export function SpaceConfigurationClient({
         return;
       }
       if (returnToSignals) {
-        router.push(getSignalWorkflowReturnPath(lang as Locale, newSpaceSlug));
+        router.push(
+          getSignalWorkflowReturnPath(
+            lang as Locale,
+            newSpaceSlug,
+            searchParams,
+          ),
+        );
         return;
       }
       router.push(getDhoPathAgreements(lang as Locale, newSpaceSlug));
@@ -81,6 +87,7 @@ export function SpaceConfigurationClient({
     router,
     returnToNetworkMap,
     returnToSignals,
+    searchParams,
   ]);
 
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
@@ -102,17 +109,17 @@ export function SpaceConfigurationClient({
 
   const resolvedCloseUrl = React.useMemo(() => {
     if (returnToSignals) {
-      return getSignalWorkflowReturnPath(lang as Locale, spaceSlug);
+      return getSignalWorkflowReturnPath(lang as Locale, spaceSlug, searchParams);
     }
     return closeUrl;
-  }, [closeUrl, lang, returnToSignals, spaceSlug]);
+  }, [closeUrl, lang, returnToSignals, searchParams, spaceSlug]);
 
   const resolvedBackUrl = React.useMemo(() => {
     if (returnToSignals) {
-      return getSignalWorkflowReturnPath(lang as Locale, spaceSlug);
+      return getSignalWorkflowReturnPath(lang as Locale, spaceSlug, searchParams);
     }
     return `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
-  }, [closeUrl, lang, returnToSignals, spaceSlug]);
+  }, [closeUrl, lang, returnToSignals, searchParams, spaceSlug]);
 
   const resolvedBackLabel = returnToSignals
     ? tCoherence('backToCoherence')
