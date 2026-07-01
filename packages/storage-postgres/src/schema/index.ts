@@ -24,8 +24,11 @@ import {
   signalOrchestratorDispatches,
   signalOrchestratorQueue,
 } from './signal-orchestrator';
-import { spaceScheduledItems } from './space-scheduled-item';
-import { spaceScheduledItemReminderDispatches } from './space-scheduled-item';
+import {
+  spaceScheduledItems,
+  spaceScheduledItemReminderDispatches,
+  spaceScheduledItemInvitationDispatches,
+} from './space-scheduled-item';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -74,4 +77,5 @@ export const schema = {
   signalOrchestratorDispatches,
   spaceScheduledItems,
   spaceScheduledItemReminderDispatches,
+  spaceScheduledItemInvitationDispatches,
 };

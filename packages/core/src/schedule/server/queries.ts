@@ -21,7 +21,9 @@ import type { DueScheduledReminder, ScheduledItem } from '../types';
 import { expandScheduledOccurrenceStarts } from '../recurrence';
 import { REMINDER_MINUTES_OPTIONS } from '../recurrence-presets';
 
-function mapRow(row: typeof spaceScheduledItems.$inferSelect): ScheduledItem {
+export function mapScheduledItemRow(
+  row: typeof spaceScheduledItems.$inferSelect,
+): ScheduledItem {
   return {
     id: row.id,
     spaceId: row.spaceId,
@@ -114,7 +116,7 @@ export async function findScheduledItemsBySpaceId(
     .offset(offset);
 
   return {
-    items: rows.map(mapRow),
+    items: rows.map(mapScheduledItemRow),
     total: countRow?.count ?? 0,
     page: safePage,
     pageSize: safePageSize,
@@ -162,7 +164,7 @@ export async function findScheduledItemsByCoherenceId(
     .offset(offset);
 
   return {
-    items: rows.map(mapRow),
+    items: rows.map(mapScheduledItemRow),
     total: countRow?.count ?? 0,
     page: safePage,
     pageSize: safePageSize,
@@ -179,7 +181,7 @@ export async function findScheduledItemById(
     .where(eq(spaceScheduledItems.id, id))
     .limit(1);
 
-  return row ? mapRow(row) : null;
+  return row ? mapScheduledItemRow(row) : null;
 }
 
 export async function findSpaceMemberSlugsBySpaceId(
@@ -243,7 +245,7 @@ export async function findDueScheduledReminders(
   const due: DueScheduledReminder[] = [];
 
   for (const row of rows) {
-    const item = mapRow(row.item);
+    const item = mapScheduledItemRow(row.item);
     const minutes = item.reminderMinutesBefore;
     if (minutes == null) continue;
 

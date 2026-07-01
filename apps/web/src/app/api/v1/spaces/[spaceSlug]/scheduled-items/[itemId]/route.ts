@@ -6,12 +6,14 @@ import {
   findSelf,
   findSpaceBySlug,
   getDb,
+  mapScheduledItemRow,
   safeParseMergedScheduledItemUpdate,
   parseScheduledItemId,
   updateScheduledItemById,
   assertCoherenceInSpace,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { dispatchScheduledItemInvitation } from '@hypha-platform/notifications/server';
 import { PrivyClient } from '@privy-io/node';
 import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
@@ -125,6 +127,22 @@ export async function PATCH(
         lang: request.headers.get('x-hypha-locale')?.trim() || 'en',
       },
     );
+
+    const lang = request.headers.get('x-hypha-locale')?.trim() || 'en';
+    try {
+      await dispatchScheduledItemInvitation(
+        {
+          item: mapScheduledItemRow(updated),
+          spaceSlug: space.slug,
+          spaceTitle: space.title,
+          lang,
+        },
+        { db },
+      );
+    } catch (inviteError) {
+      console.error('Failed to dispatch scheduled item invitation:', inviteError);
+    }
+
     return NextResponse.json({ data: updated });
   } catch (error) {
     console.error('Failed to update scheduled item:', error);

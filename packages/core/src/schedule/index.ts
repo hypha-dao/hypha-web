@@ -25,6 +25,11 @@ export {
   isMatrixLinkedCall,
   type MatrixAutoLinkInput,
 } from './matrix-link';
+export {
+  buildScheduledItemJoinPath,
+  isJoinableScheduledItem,
+  resolveScheduledItemJoinUrl,
+} from './meeting-url';
 export { parseScheduledItemId } from './parse-scheduled-item-id';
 export type {
   ScheduledItem,
