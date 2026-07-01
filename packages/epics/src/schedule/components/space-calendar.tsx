@@ -164,21 +164,22 @@ function buildEditScheduledItemPath(
   return buildCalendarPath(lang, spaceSlug, `/edit-scheduled-item/${itemId}`);
 }
 
+import {
+  normalizeAllDayEventRange,
+} from '../utils/all-day-event-range';
+
 function normalizeCalendarEventRange(
   start: Date,
   end: Date | null,
   allDay: boolean,
 ): { startsAt: Date; endsAt: Date; allDay: boolean } {
-  const startsAt = new Date(start);
-  let endsAt = end ? new Date(end) : new Date(startsAt);
-
-  if (allDay) {
-    startsAt.setHours(0, 0, 0, 0);
-    endsAt = new Date(endsAt.getTime() - 86_400_000);
-    endsAt.setHours(23, 59, 59, 999);
+  if (!allDay) {
+    const startsAt = new Date(start);
+    const endsAt = end ? new Date(end) : new Date(startsAt);
+    return { startsAt, endsAt, allDay };
   }
-
-  return { startsAt, endsAt, allDay };
+  const normalized = normalizeAllDayEventRange(start, end);
+  return { ...normalized, allDay };
 }
 
 export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {

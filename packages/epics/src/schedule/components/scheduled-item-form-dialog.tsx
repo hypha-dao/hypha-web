@@ -39,6 +39,11 @@ import {
   createAsideOverlayCloseHandler,
 } from '../../common/button-close';
 import { ScheduledItemMeetingActions } from './scheduled-item-meeting-actions';
+import {
+  fromAllDayEndLocalValue,
+  fromAllDayStartLocalValue,
+  toAllDayEndLocalValue,
+} from '../utils/all-day-event-range';
 
 const DATETIME_LOCAL_STEP_SECONDS = 300;
 const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
@@ -81,14 +86,6 @@ function toDatetimeLocalValue(date: Date): string {
 
 function fromDatetimeLocalValue(value: string): Date {
   return snapMinuteToFiveMinuteStep(new Date(value));
-}
-
-function fromAllDayStartLocalValue(value: string): Date {
-  return new Date(`${value.slice(0, 10)}T00:00:00`);
-}
-
-function fromAllDayEndLocalValue(value: string): Date {
-  return new Date(`${value.slice(0, 10)}T23:59:59`);
 }
 
 function snapDatetimeLocalValue(value: string): string {
@@ -195,13 +192,6 @@ function formatSaveError(error: unknown, fallback: string): string {
     return fallback;
   }
   return message;
-}
-
-function toAllDayEndLocalValue(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
-  )}T23:59`;
 }
 
 function resolveDurationMs(start: Date, end: Date, allDay: boolean): number {

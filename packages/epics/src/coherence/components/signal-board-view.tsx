@@ -318,6 +318,24 @@ export function SignalBoardView({
                     onClick={
                       onSignalClick ? () => onSignalClick(signal) : undefined
                     }
+                    statusOptions={readOnly ? undefined : statuses}
+                    onStatusChange={
+                      readOnly
+                        ? undefined
+                        : (progressStatus) => {
+                            if (signal.progressStatus === progressStatus) {
+                              return;
+                            }
+                            void onMoveStatus(signal, progressStatus).catch(
+                              (error) => {
+                                console.error(
+                                  '[SignalBoardView] Failed to move signal',
+                                  error,
+                                );
+                              },
+                            );
+                          }
+                    }
                     className={cn(
                       draggingSignal?.slug === signal.slug &&
                         'opacity-40 scale-[0.98]',
