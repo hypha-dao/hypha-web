@@ -29,7 +29,10 @@ export async function PATCH(request: NextRequest) {
 
   const parsed = schemaPatchSpaceRecord.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const { id, ...rest } = parsed.data;

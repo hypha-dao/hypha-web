@@ -4,9 +4,16 @@ import useSWRMutation from 'swr/mutation';
 import type { SignalWorkflowConfig } from '../../signal-workflow';
 import { useJwt } from '../../../people/client/hooks/useJwt';
 
-function readWorkflowUpdateError(payload: {
-  error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[] | undefined> };
-} | null): string | undefined {
+function readWorkflowUpdateError(
+  payload: {
+    error?:
+      | string
+      | {
+          formErrors?: string[];
+          fieldErrors?: Record<string, string[] | undefined>;
+        };
+  } | null,
+): string | undefined {
   if (!payload?.error) return undefined;
   if (typeof payload.error === 'string') return payload.error;
   const fieldMessage = Object.values(payload.error.fieldErrors ?? {})
@@ -36,7 +43,12 @@ export function useUpdateSignalWorkflow(spaceSlug?: string) {
       );
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as {
-          error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[] | undefined> };
+          error?:
+            | string
+            | {
+                formErrors?: string[];
+                fieldErrors?: Record<string, string[] | undefined>;
+              };
         } | null;
         throw new Error(
           readWorkflowUpdateError(payload) ??

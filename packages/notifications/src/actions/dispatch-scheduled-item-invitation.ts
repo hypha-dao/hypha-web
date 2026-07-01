@@ -30,9 +30,13 @@ export async function dispatchScheduledItemInvitation(
   }
 
   const inviteRevision = buildScheduledItemInviteRevision(item);
-  const memberSlugs = await resolveScheduledItemRecipientSlugs(item, { db }, {
-    excludeCreator: true,
-  });
+  const memberSlugs = await resolveScheduledItemRecipientSlugs(
+    item,
+    { db },
+    {
+      excludeCreator: true,
+    },
+  );
   if (memberSlugs.length === 0) {
     return { sent: false, recipientCount: 0 };
   }

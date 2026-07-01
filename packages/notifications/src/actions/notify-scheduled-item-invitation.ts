@@ -67,7 +67,9 @@ function buildInvitationEmailBody(input: {
   const safeWhen = escapeHtml(input.whenLabel);
   const safeUrl = sanitizeUrl(input.joinUrl);
   const safeDescription = input.description?.trim()
-    ? `<p style="margin:16px 0 0;color:#555;">${escapeHtml(input.description.trim())}</p>`
+    ? `<p style="margin:16px 0 0;color:#555;">${escapeHtml(
+        input.description.trim(),
+      )}</p>`
     : '';
 
   return `<div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;">

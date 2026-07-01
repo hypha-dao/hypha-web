@@ -56,7 +56,9 @@ export function ScheduledItemEventSheet({
             <CalendarClock className="size-3.5" aria-hidden />
             {t(`type_${item.type}` as 'type_call')}
           </div>
-          <DialogTitle className="text-xl leading-tight">{item.title}</DialogTitle>
+          <DialogTitle className="text-xl leading-tight">
+            {item.title}
+          </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {whenLabel}
           </DialogDescription>
@@ -98,7 +100,11 @@ export function ScheduledItemEventSheet({
         </div>
 
         <DialogFooter className="border-t border-border/60 px-5 py-4 sm:justify-between">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+          >
             {t('close')}
           </Button>
           <Button

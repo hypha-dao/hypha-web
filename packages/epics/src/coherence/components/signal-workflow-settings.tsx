@@ -387,9 +387,7 @@ export const SignalWorkflowSettings = React.forwardRef<
         </div>
       </div>
 
-      {saveError ? (
-        <p className="text-1 text-error-11">{saveError}</p>
-      ) : null}
+      {saveError ? <p className="text-1 text-error-11">{saveError}</p> : null}
     </div>
   );
 });
