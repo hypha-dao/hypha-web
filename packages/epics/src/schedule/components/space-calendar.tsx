@@ -10,6 +10,7 @@ import type {
   EventClickArg,
   EventDropArg,
   EventInput,
+  EventMountArg,
   CalendarApi,
 } from '@fullcalendar/core';
 import type { EventResizeDoneArg } from '@fullcalendar/interaction';
@@ -68,14 +69,16 @@ type CalendarView =
   | 'listWeek';
 
 function toCalendarEvent(item: ScheduledItem): EventInput {
-  const color = getScheduledItemTypeColor(item.type, item.color);
+  const accentColor = getScheduledItemTypeColor(item.type, item.color);
   const base: EventInput = {
     id: String(item.id),
     title: item.title,
-    backgroundColor: color,
-    borderColor: color,
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    classNames: ['hypha-cal-event', `hypha-cal-event--${item.type}`],
     extendedProps: {
       scheduledItem: item,
+      accentColor,
     },
   };
 
@@ -278,6 +281,18 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     if (item) openEdit(item);
   };
 
+  const handleEventDidMount = React.useCallback((info: EventMountArg) => {
+    const accent =
+      typeof info.event.extendedProps.accentColor === 'string'
+        ? info.event.extendedProps.accentColor
+        : null;
+    if (accent) {
+      info.el.style.setProperty('--hypha-cal-accent', accent);
+    }
+    info.el.style.backgroundColor = 'transparent';
+    info.el.style.borderColor = 'transparent';
+  }, []);
+
   const persistAfterMutation = async () => {
     await refresh();
     await revalidateScheduledItems(spaceSlug);
@@ -393,7 +408,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         ) : null}
       </div>
 
-      <div className="hypha-space-calendar rounded-xl border border-border/60 bg-card/40 p-3 shadow-sm backdrop-blur-sm md:p-4">
+      <div className="hypha-space-calendar rounded-2xl border border-border/50 bg-gradient-to-b from-card via-card/98 to-muted/15 p-3 shadow-sm md:p-4">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-2">
             <Button
@@ -428,22 +443,22 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <div className="ml-2 flex items-center gap-2 text-base font-medium">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <div className="ml-2 flex items-center gap-2 text-base font-semibold tracking-tight">
+              <CalendarDays className="h-4 w-4 text-accent-11" />
               <span>{headerLabel}</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-lg bg-muted/40 p-1">
+          <div className="flex flex-wrap gap-1 rounded-xl border border-border/40 bg-muted/30 p-1">
             {viewButtons.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'rounded-lg px-3 py-1.5 text-sm font-medium transition-all',
                   view === id
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground',
+                    ? 'bg-accent-3 text-accent-11 shadow-sm ring-1 ring-accent-8/35'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 )}
                 onClick={() => {
                   setView(id);
@@ -458,7 +473,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
         <div
           className={cn(
-            'relative min-h-[520px] overflow-hidden rounded-lg',
+            'relative min-h-[520px] overflow-hidden rounded-xl border border-border/35 bg-card/20',
             resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
           )}
         >
@@ -497,6 +512,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
             datesSet={handleDatesSet}
             select={handleDateSelect}
             eventClick={handleEventClick}
+            eventDidMount={handleEventDidMount}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             locale={fullCalendarLocale}
