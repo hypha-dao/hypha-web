@@ -44,7 +44,8 @@ Exact YAML keys evolve with Synapse releases — always verify against **[Synaps
   - **UDP** on your TURN ports (default often **3478**, plus relay port range you configure).
   - **TCP** **3478** (and **5349** if using TLS TURN).
   - **Relay port range** (e.g. **49152–65535** UDP) as documented in coturn config — this is where media often flows.
-- Configure **`realm`**, **`listening-ip`**, **`external-ip`** (if behind NAT), and **`use-auth-secret`** + **`static-auth-secret`** matching the homeserver TURN shared secret.
+- Configure **`realm`**, **`listening-ip=0.0.0.0`** (bind all interfaces — omitting this often leaves coturn on loopback only), **`external-ip`** (if behind NAT), and **`use-auth-secret`** + **`static-auth-secret`** matching the homeserver TURN shared secret.
+- Example file: [docs/operations/coturn.example.conf](../operations/coturn.example.conf).
 
 ### 2.2 Synapse
 
@@ -72,7 +73,7 @@ client_api:
     turn_password: ""
 ```
 
-After editing, **restart Dendrite**.
+After editing, **restart Dendrite**. Example fragment: [docs/operations/dendrite-turn.example.yaml](../operations/dendrite-turn.example.yaml).
 
 ### 2.4 Permissions
 
@@ -111,6 +112,8 @@ After login in Hypha (devtools console, filter **`hypha.group_call`** if telemet
 ## 4. Hypha Web client (reference only)
 
 - **`MatrixProvider`** → `createClient({ disableVoip: false, … })` — VoIP **enabled**.
+- **`apps/web/.env.template`** — Matrix homeserver, registration secrets, optional **`NEXT_PUBLIC_MATRIX_TURN_CONNECT_SOURCES`** (CSP when TURN host ≠ homeserver), and **`NEXT_PUBLIC_MATRIX_WEBRTC_*`** knobs.
+- Production **CSP** (`apps/web/src/middleware.ts`) includes **`NEXT_PUBLIC_MATRIX_HOMESERVER_URL`** and any **`NEXT_PUBLIC_MATRIX_TURN_CONNECT_SOURCES`** in **`connect-src`**.
 - **`NEXT_PUBLIC_MATRIX_WEBRTC_FORCE_TURN`**, **`NEXT_PUBLIC_MATRIX_WEBRTC_FALLBACK_ICE_ALLOWED`**, **`NEXT_PUBLIC_MATRIX_WEBRTC_ICE_POOL_SIZE`** — optional **browser** tuning; **not** a substitute for server TURN.
 
 ---
@@ -121,3 +124,4 @@ After login in Hypha (devtools console, filter **`hypha.group_call`** if telemet
 - [Matrix Client-Server API — `/voip/turnServer`](https://spec.matrix.org/latest/client-server-api/#get_matrixclientv3voipturnserver)
 - [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) — checklist table
 - [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md) — SDK options overview
+- [matrix-turn-hostinger-runbook.md](../operations/matrix-turn-hostinger-runbook.md) — production Hostinger VPS (Dendrite + coturn)

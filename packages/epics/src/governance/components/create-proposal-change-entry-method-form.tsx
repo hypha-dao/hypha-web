@@ -17,11 +17,13 @@ import { useConfig } from 'wagmi';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import {
   useClearResubmitOnSuccess,
   useResubmitProposalData,
+  useProposalFormSectionFocus,
   useScrollToErrors,
 } from '../../hooks';
 import { useTranslations } from 'next-intl';
@@ -60,6 +62,7 @@ export const CreateProposalChangeEntryMethodForm = ({
 }: CreateProposalChangeEntryMethodFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -126,6 +129,7 @@ export const CreateProposalChangeEntryMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
+  useProposalFormSectionFocus();
   const { resubmitKey } = useResubmitProposalData(
     form,
     spaceId,
@@ -134,6 +138,14 @@ export const CreateProposalChangeEntryMethodForm = ({
   );
 
   useClearResubmitOnSuccess(progress === 100 && !isError);
+
+  const hasNavigatedAfterSuccessRef = React.useRef(false);
+  React.useEffect(() => {
+    if (progress < 100 || isError || !successfulUrl) return;
+    if (hasNavigatedAfterSuccessRef.current) return;
+    hasNavigatedAfterSuccessRef.current = true;
+    router.push(successfulUrl);
+  }, [progress, isError, successfulUrl, router]);
 
   React.useEffect(() => {
     if (skipLiveEntrySyncForResubmit) {
@@ -215,25 +227,32 @@ export const CreateProposalChangeEntryMethodForm = ({
           onSubmit={form.handleSubmit(handleCreate, onInvalid)}
           className="flex flex-col gap-5"
         >
-          <CreateAgreementBaseFields
-            key={resubmitKey}
-            creator={{
-              avatar: person?.avatarUrl || '',
-              name: person?.name || '',
-              surname: person?.surname || '',
-            }}
-            successfulUrl={successfulUrl}
-            backUrl={backUrl}
-            backLabel={tSpaces('backToSettings')}
-            closeUrl={successfulUrl}
-            isLoading={false}
-            label={tAgreementFlow('labels.entryMethod')}
-            progress={progress}
-          />
-          {plugin}
+          <div data-proposal-section="basics">
+            <CreateAgreementBaseFields
+              key={resubmitKey}
+              creator={{
+                avatar: person?.avatarUrl || '',
+                name: person?.name || '',
+                surname: person?.surname || '',
+              }}
+              successfulUrl={successfulUrl}
+              backUrl={backUrl}
+              backLabel={tSpaces('backToSettings')}
+              closeUrl={successfulUrl}
+              isLoading={false}
+              label={tAgreementFlow('labels.entryMethod')}
+              progress={progress}
+            />
+          </div>
+          <div data-proposal-section="entry_method">{plugin}</div>
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+            <Button
+              type="submit"
+              disabled={isPending || isLoading || progress === 100}
+            >
+              {tAgreementFlow('buttons.publish')}
+            </Button>
           </div>
         </form>
       </Form>

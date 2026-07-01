@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
-    "postinstall": "if [ ! -f .env ]; then cp .env.template .env; fi"
+    "postinstall": "if [ ! -f .env ] && [ -z \"$CI\" ]; then cp .env.template .env; fi"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.107",

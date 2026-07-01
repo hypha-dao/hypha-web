@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "lint": "pnpm run verify:messages && eslint .",
-    "verify:messages": "node scripts/verify-modal-aside-parity.mjs"
+    "verify:messages": "node scripts/verify-modal-aside-parity.mjs && node scripts/verify-banking-tab-parity.mjs",
+    "sync:banking-tab": "node scripts/sync-banking-tab-from-en.mjs",
+    "apply:banking-tab-translations": "node scripts/apply-banking-tab-translations.mjs"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",

@@ -1,14 +1,21 @@
 'use client';
 
 import { Locale } from '@hypha-platform/i18n';
-import { Address, Space, isSpaceArchived } from '@hypha-platform/core/client';
-import { SpaceCardList, useMemberWeb3SpaceIds } from '@hypha-platform/epics';
+import {
+  Address,
+  Space,
+  SpaceOrder,
+  isSpaceArchived,
+} from '@hypha-platform/core/client';
+import { SpaceCardList } from './space-card-list';
+import { useMemberWeb3SpaceIds } from '../hooks/use-member-web3-space-ids';
 import { useMe } from '@hypha-platform/core/client';
 import React from 'react';
 import { Text } from '@radix-ui/themes';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { SectionFilter, Input } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { SpaceOrderCombobox } from './space-order-combobox';
 
 export function filterSpaces(
   spaces: Space[],
@@ -25,13 +32,39 @@ export function filterSpaces(
   return userSpaces;
 }
 
+function sortSpacesByOrder(spaces: Space[], order?: SpaceOrder): Space[] {
+  const compareMembers = (a: Space, b: Space) => {
+    const aCount = a.memberAddresses?.length ?? a.memberCount ?? 0;
+    const bCount = b.memberAddresses?.length ?? b.memberCount ?? 0;
+    return bCount - aCount;
+  };
+  const compareAgreements = (a: Space, b: Space) =>
+    (b.documentCount ?? 0) - (a.documentCount ?? 0);
+  const compareRecent = (a: Space, b: Space) => b.id - a.id;
+
+  return [...spaces].sort((a, b) => {
+    switch (order) {
+      case 'mostmembers':
+        return compareMembers(a, b);
+      case 'mostagreements':
+        return compareAgreements(a, b);
+      case 'mostrecent':
+        return compareRecent(a, b);
+      default:
+        return compareMembers(a, b);
+    }
+  });
+}
+
 export function MyFilteredSpaces({
   lang,
   spaces,
+  order,
   showLoadMore = true,
 }: {
   lang: Locale;
   spaces: Space[];
+  order?: SpaceOrder;
   showLoadMore?: boolean;
 }) {
   const { person, isLoading: isLoadingPerson } = useMe();
@@ -60,11 +93,11 @@ export function MyFilteredSpaces({
     isDiscoverabilityLoading;
 
   const displayedSpaces = React.useMemo(() => {
-    if (hideArchivedSpaces) {
-      return filteredSpaces.filter((space) => !isSpaceArchived(space));
-    }
-    return filteredSpaces;
-  }, [filteredSpaces, hideArchivedSpaces]);
+    const visibleSpaces = hideArchivedSpaces
+      ? filteredSpaces.filter((space) => !isSpaceArchived(space))
+      : filteredSpaces;
+    return sortSpacesByOrder(visibleSpaces, order);
+  }, [filteredSpaces, hideArchivedSpaces, order]);
 
   return (
     <div className="space-y-6">
@@ -72,19 +105,24 @@ export function MyFilteredSpaces({
         count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         label={tSpaces('mySpacesLabel')}
       >
-        <label
-          htmlFor="hide-archived-spaces"
-          className="flex items-center gap-1"
-        >
-          <Input
-            id="hide-archived-spaces"
-            type="checkbox"
-            checked={hideArchivedSpaces}
-            onChange={(e) => setHideArchivedSpaces(e.target.checked)}
-            className="h-4 w-4"
-          />
-          <span>{tSpaces('hideArchivedSpaces')}</span>
-        </label>
+        <div className="flex items-center gap-4">
+          <label
+            htmlFor="hide-archived-spaces"
+            className="flex items-center gap-1"
+          >
+            <Input
+              id="hide-archived-spaces"
+              type="checkbox"
+              checked={hideArchivedSpaces}
+              onChange={(e) => setHideArchivedSpaces(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <span className="text-2 font-normal text-neutral-11">
+              {tSpaces('hideArchivedSpaces')}
+            </span>
+          </label>
+          <SpaceOrderCombobox order={order} />
+        </div>
       </SectionFilter>
       {isLoadingSpaces ? (
         <Text className="text-3 text-muted-foreground">

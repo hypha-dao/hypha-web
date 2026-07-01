@@ -93,6 +93,9 @@ export const EditPersonSection = ({
         'Avatar URL must be a valid URL': 'editForm.errors.avatarUrlInvalid',
         'Lead Image URL must be a valid URL':
           'editForm.errors.leadImageUrlInvalid',
+        'Your file is too large and exceeds the 16 MB limit. Please upload a smaller file':
+          'editForm.errors.fileTooLarge',
+        'File size must be less than 16 MB': 'editForm.errors.fileTooLarge',
         'Your file is too large and exceeds the 4MB limit. Please upload a smaller file':
           'editForm.errors.fileTooLarge',
         'File size must be less than 4MB': 'editForm.errors.fileTooLarge',

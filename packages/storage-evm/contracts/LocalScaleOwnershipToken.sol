@@ -25,7 +25,9 @@ contract LocalScaleOwnershipToken is OwnershipSpaceToken {
    */
   function mint(address to, uint256 amount) public override {
     require(
-      msg.sender == executor || msg.sender == owner(),
+      msg.sender == executor ||
+        msg.sender == owner() ||
+        isAuthorizedMinter[msg.sender],
       'Only executor or owner can mint'
     );
     require(!archived, 'Token is archived');

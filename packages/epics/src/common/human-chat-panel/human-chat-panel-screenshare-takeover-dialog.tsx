@@ -14,7 +14,10 @@ import {
 import type { ScreenshareTakeoverIncoming } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 
+import { useResolvedMatrixMemberLabel } from './use-resolved-matrix-member-label';
+
 type HumanChatPanelScreenshareTakeoverDialogProps = {
+  roomId?: string | null;
   incoming: ScreenshareTakeoverIncoming | null;
   pending: boolean;
   denied: boolean;
@@ -24,7 +27,30 @@ type HumanChatPanelScreenshareTakeoverDialogProps = {
   onDismissDenied: () => void;
 };
 
+function ScreenshareTakeoverIncomingDescription({
+  incoming,
+  roomId,
+}: {
+  incoming: ScreenshareTakeoverIncoming;
+  roomId?: string | null;
+}) {
+  const t = useTranslations('HumanChatPanel');
+  const name = useResolvedMatrixMemberLabel({
+    matrixUserId: incoming.requesterUserId,
+    roomId,
+    fallbackLabel: incoming.requesterLabel,
+  });
+  return (
+    <AlertDialogDescription>
+      {t('callScreenshareTakeoverIncomingBody', {
+        name: name || t('unknownMember'),
+      })}
+    </AlertDialogDescription>
+  );
+}
+
 export function HumanChatPanelScreenshareTakeoverDialog({
+  roomId = null,
   incoming,
   pending,
   denied,
@@ -43,11 +69,18 @@ export function HumanChatPanelScreenshareTakeoverDialog({
             <AlertDialogTitle>
               {t('callScreenshareTakeoverIncomingTitle')}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('callScreenshareTakeoverIncomingBody', {
-                name: incoming?.requesterLabel ?? t('unknownMember'),
-              })}
-            </AlertDialogDescription>
+            {incoming ? (
+              <ScreenshareTakeoverIncomingDescription
+                incoming={incoming}
+                roomId={roomId}
+              />
+            ) : (
+              <AlertDialogDescription>
+                {t('callScreenshareTakeoverIncomingBody', {
+                  name: t('unknownMember'),
+                })}
+              </AlertDialogDescription>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel

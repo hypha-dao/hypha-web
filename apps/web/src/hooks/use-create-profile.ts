@@ -13,6 +13,7 @@ import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import type { ProfileFormData } from './profile-form-data';
 import { useSWRConfig } from 'swr';
+import { resolvePostAuthRedirectPath } from '@hypha-platform/authentication';
 
 export const useCreateProfile = (
   endpoint = '/api/v1/people/create-profile',
@@ -79,6 +80,18 @@ export const useCreateProfile = (
           throw new Error('Profile was created but missing from response');
         }
 
+        const lang = params?.lang;
+        // Resolve before mutating SWR — ConnectedButtonProfile reacts to person.id
+        // on the signup page and would consume the stored DHO path first.
+        const spaceContextReturnPath = resolvePostAuthRedirectPath({
+          pathname:
+            typeof window !== 'undefined' ? window.location.pathname : '',
+          lang: typeof lang === 'string' ? lang : undefined,
+          baseRedirectPath: lang ? `/${lang}/onboarding` : '/en/profile',
+        });
+        const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
+        const nextPath = spaceContextReturnPath ?? onboardingPath;
+
         // Prevent post-signup redirect guards from briefly treating the user
         // as profile-less on the next route transition.
         if (jwt) {
@@ -86,18 +99,17 @@ export const useCreateProfile = (
             revalidate: false,
           });
         }
-
-        const lang = params?.lang;
-        const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
-        try {
-          window.sessionStorage.setItem(
-            'hypha:onboarding-adventure:just-signed-up:v1',
-            'true',
-          );
-        } catch {
-          // Ignore storage failures; onboarding falls back to existing logic.
+        if (!spaceContextReturnPath) {
+          try {
+            window.sessionStorage.setItem(
+              'hypha:onboarding-adventure:just-signed-up:v1',
+              'true',
+            );
+          } catch {
+            // Ignore storage failures; onboarding falls back to existing logic.
+          }
         }
-        router.replace(onboardingPath);
+        router.replace(nextPath);
         return createdProfile;
       } catch (err) {
         console.error('Profile creation error:', err);

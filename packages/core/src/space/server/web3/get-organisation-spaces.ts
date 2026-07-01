@@ -8,6 +8,7 @@ import {
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
 import { formMap } from './internal';
+import { mapDbSpaceToSpace } from '../map-db-space';
 import { isAddress } from 'ethers';
 
 interface GetAllOrganizationSpacesForNodeByIdProps {
@@ -38,8 +39,10 @@ export async function getAllOrganizationSpacesForNodeById(
     const proposalsIds = formMap(web3proposalsIds);
 
     return spaces.map((space) => {
+      const mappedSpace = mapDbSpaceToSpace(space);
+
       if (!Number.isSafeInteger(space.web3SpaceId)) {
-        return space;
+        return mappedSpace;
       }
 
       const spaceDetails = details.get(BigInt(space.web3SpaceId as number));
@@ -48,7 +51,7 @@ export async function getAllOrganizationSpacesForNodeById(
       );
 
       return {
-        ...space,
+        ...mappedSpace,
         memberCount: spaceDetails?.members?.length ?? 0,
         memberAddresses: Array.isArray(spaceDetails?.members)
           ? spaceDetails!.members

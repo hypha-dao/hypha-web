@@ -64,7 +64,7 @@ export type CompactSpaceBannerWithStatsProps = CompactSpaceBannerCommon & {
   showSpaceStats?: true;
   memberCount: number | null;
   agreementCount: number | null;
-  createdOnText: string;
+  createdOnText: React.ReactNode;
   membersLabel: string;
   agreementsLabel: string;
 };

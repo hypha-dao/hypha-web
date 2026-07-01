@@ -1,6 +1,10 @@
 'use server';
 
 import slugify from 'slugify';
+import {
+  buildLocatedAtPatch,
+  normalizeSpaceLocationFields,
+} from '../../geo/location';
 import { CreateSpaceInput, UpdateSpaceInput } from '../types';
 import { eq } from 'drizzle-orm';
 import { DatabaseInstance } from '@hypha-platform/core/server';
@@ -11,6 +15,16 @@ export const createSpace = async (
   { db }: { db: DatabaseInstance },
 ) => {
   const slug = maybeSlug || slugify(title, { lower: true });
+  const normalizedLocation = normalizeSpaceLocationFields({
+    latitude: rest.latitude,
+    longitude: rest.longitude,
+    locationLabel: rest.locationLabel,
+    locationSource: rest.locationSource,
+  });
+  const locatedAtPatch = buildLocatedAtPatch({
+    latitude: normalizedLocation.latitude,
+    longitude: normalizedLocation.longitude,
+  });
 
   const [newSpace] = await db
     .insert(spaces)
@@ -18,6 +32,8 @@ export const createSpace = async (
       title,
       slug,
       ...rest,
+      ...normalizedLocation,
+      ...locatedAtPatch,
     })
     .returning();
 
@@ -28,13 +44,51 @@ export const createSpace = async (
   return newSpace;
 };
 
+function updateIncludesLocationFields(input: UpdateSpaceInput): boolean {
+  return (
+    input.latitude !== undefined ||
+    input.longitude !== undefined ||
+    input.locationLabel !== undefined ||
+    input.locationSource !== undefined
+  );
+}
+
+function withLocationTimestamp<T extends UpdateSpaceInput>(
+  input: T,
+): T & { locatedAt?: Date | null } {
+  const normalizedLocation = normalizeSpaceLocationFields({
+    latitude: input.latitude,
+    longitude: input.longitude,
+    locationLabel: input.locationLabel,
+    locationSource: input.locationSource,
+  });
+  const locatedAtPatch = buildLocatedAtPatch({
+    latitude: normalizedLocation.latitude,
+    longitude: normalizedLocation.longitude,
+  });
+  return {
+    ...input,
+    ...normalizedLocation,
+    ...locatedAtPatch,
+  };
+}
+
+function applyLocationFieldsIfPresent<T extends UpdateSpaceInput>(
+  input: T,
+): T & { locatedAt?: Date | null } {
+  if (!updateIncludesLocationFields(input)) {
+    return input;
+  }
+  return withLocationTimestamp(input);
+}
+
 export const updateSpaceBySlug = async (
   { slug, ...rest }: { slug: string } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const [updatedSpace] = await db
     .update(spaces)
-    .set(rest)
+    .set(applyLocationFieldsIfPresent(rest))
     .where(eq(spaces.slug, slug))
     .returning();
 
@@ -63,7 +117,96 @@ export const updateSpaceById = async (
 
     const [updatedSpace] = await tx
       .update(spaces)
-      .set(rest)
+      .set(applyLocationFieldsIfPresent(rest))
+      .where(eq(spaces.id, id))
+      .returning();
+
+    if (!updatedSpace) {
+      throw new Error('Failed to update space');
+    }
+
+    return { originalSpace, updatedSpace };
+  });
+};
+
+function hasArchivedSpaceFlag(flags: unknown): boolean {
+  return Array.isArray(flags) && flags.includes('archived');
+}
+
+/** Atomically archive/reparent children and update space configuration. */
+export const updateSpaceConfigurationById = async (
+  { id, ...rest }: { id: number } & UpdateSpaceInput,
+  { db }: { db: DatabaseInstance },
+) => {
+  return db.transaction(async (tx) => {
+    const [originalSpace] = await tx
+      .select()
+      .from(spaces)
+      .where(eq(spaces.id, id))
+      .limit(1);
+
+    if (!originalSpace) {
+      throw new Error('Failed to update space: not found');
+    }
+
+    const nextFlags = rest.flags ?? originalSpace.flags;
+    const wasArchived = hasArchivedSpaceFlag(originalSpace.flags);
+    const willBeArchived = hasArchivedSpaceFlag(nextFlags);
+    const normalizedRest = willBeArchived ? { ...rest, parentId: null } : rest;
+
+    if (!wasArchived && willBeArchived) {
+      const reparentTo = originalSpace.parentId ?? null;
+      await tx
+        .update(spaces)
+        .set({ parentId: reparentTo })
+        .where(eq(spaces.parentId, id));
+    }
+
+    const nextParentId =
+      normalizedRest.parentId !== undefined
+        ? normalizedRest.parentId
+        : originalSpace.parentId;
+
+    if (nextParentId != null && nextParentId === id) {
+      throw new Error('A space cannot be its own parent');
+    }
+
+    if (nextParentId != null) {
+      let currentId: number | null = nextParentId;
+      const visited = new Set<number>();
+      while (currentId != null) {
+        if (currentId === id) {
+          throw new Error(
+            'A space cannot be assigned to one of its descendants',
+          );
+        }
+        if (visited.has(currentId)) {
+          break;
+        }
+        visited.add(currentId);
+        const [row] = await tx
+          .select({ parentId: spaces.parentId })
+          .from(spaces)
+          .where(eq(spaces.id, currentId))
+          .limit(1);
+        currentId = row?.parentId ?? null;
+      }
+    }
+
+    if (
+      originalSpace.parentId == null &&
+      nextParentId != null &&
+      nextParentId !== originalSpace.parentId
+    ) {
+      await tx
+        .update(spaces)
+        .set({ parentId: null })
+        .where(eq(spaces.id, nextParentId));
+    }
+
+    const [updatedSpace] = await tx
+      .update(spaces)
+      .set(applyLocationFieldsIfPresent(normalizedRest))
       .where(eq(spaces.id, id))
       .returning();
 

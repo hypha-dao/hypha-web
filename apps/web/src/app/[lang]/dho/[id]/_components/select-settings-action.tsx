@@ -3,6 +3,7 @@
 import {
   SelectAction,
   useActionGating,
+  useCanMutateInSpace,
   type ActionProps,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -20,6 +21,7 @@ import {
   LayoutDashboard,
   Link2,
   LogOut,
+  UserRound,
   Puzzle,
   Rocket,
   ShoppingBag,
@@ -46,7 +48,13 @@ export const SelectSettingsAction = ({
   children,
 }: SelectSettingsActionProps) => {
   const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
+    spaceSlug: daoSlug,
+    space,
+    spaceId: space?.web3SpaceId ?? undefined,
+  });
   const t = useTranslations('SpaceSettingsAction');
+  const isActionDisabled = isMutateLoading || !canMutate;
 
   const SETTINGS_ACTIONS = [
     {
@@ -126,6 +134,15 @@ export const SelectSettingsAction = ({
       description: t('actions.spaceToSpaceMembership.description'),
       href: 'create/space-to-space-membership',
       icon: <Link2 className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      baseTab: 'agreements',
+      disabled: isPaymentExpired,
+    },
+    {
+      group: t('groups.members'),
+      title: t('actions.changeSpaceDelegate.title'),
+      description: t('actions.changeSpaceDelegate.description'),
+      href: 'create/change-space-delegate',
+      icon: <UserRound className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
@@ -268,6 +285,9 @@ export const SelectSettingsAction = ({
         return {
           ...action,
           href,
+          disabled:
+            action.disabled ||
+            (isActionDisabled && action.href !== 'https://hypha.energy'),
         };
       })}
     >

@@ -1,50 +1,12 @@
-import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
+import { verifyPrivyAuthToken as verifyPrivyAuthTokenCore } from '@hypha-platform/core/server';
 
-let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
-
-function getPrivyJwks() {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  if (!appId) {
-    throw new Error('Missing required env var: NEXT_PUBLIC_PRIVY_APP_ID');
-  }
-  if (!jwks) {
-    const jwksUrl = new URL(
-      `/api/v1/apps/${appId}/jwks.json`,
-      'https://auth.privy.io',
-    );
-    jwks = createRemoteJWKSet(jwksUrl);
-  }
-  return jwks;
-}
-
+/** Privy access-token verification — uses `@privy-io/node` (same as matrix/token route). */
 export async function verifyPrivyAuthToken(
   token: string,
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
-  let keyset: ReturnType<typeof createRemoteJWKSet>;
-  try {
-    keyset = getPrivyJwks();
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Configuration error';
-    return { valid: false, reason: message };
-  }
-
-  try {
-    await jwtVerify(token, keyset);
+  const result = await verifyPrivyAuthTokenCore(token);
+  if (result.ok) {
     return { valid: true };
-  } catch (error) {
-    if (error instanceof joseErrors.JWTExpired) {
-      return { valid: false, reason: 'Token expired' };
-    }
-    if (error instanceof joseErrors.JWSSignatureVerificationFailed) {
-      return { valid: false, reason: 'Invalid token signature' };
-    }
-    if (error instanceof joseErrors.JWKSNoMatchingKey) {
-      return { valid: false, reason: 'No matching key found' };
-    }
-    return {
-      valid: false,
-      reason: 'Token verification failed',
-    };
   }
+  return { valid: false, reason: result.reason };
 }

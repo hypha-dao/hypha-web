@@ -33,6 +33,7 @@ import {
   Space,
   SpaceFlags,
   useCreateSpaceOrchestrator,
+  useCreateAgreementOrchestrator,
   useJwt,
   useMatrix,
   useSpaceBySlug,
@@ -56,22 +57,28 @@ import {
   AiPanelMessages,
   AiPanelSuggestions,
   AiPanelChatBar,
+  OnboardingDiscoveryModeToggle,
+  OnboardingVoiceInterviewBar,
   type AiPanelDraftAttachment,
 } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import { useCompactHeaderMode } from '@hypha-platform/ui';
 import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
-import { Empty } from './empty';
+import { CHAT_ATTACHMENT_MAX_SIZE_LABEL } from '@hypha-platform/core/client';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import {
   UserSpaceState,
   useUserSpaceState,
-} from '../spaces/hooks/use-user-space-state';
+} from '../spaces/hooks/use-user-space-state.web3.rpc';
 import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
-import { checkAccess } from '../spaces/utils/transparency-access';
+import {
+  checkAccess,
+  canInteractInSpace,
+} from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { AiPanelSubscriptionBanner } from '../spaces/components/ai-panel-subscription-banner';
 import { useSalesBanner } from '../spaces/hooks/use-sales-banner';
@@ -82,15 +89,166 @@ import {
   subscribeRecentSpaceSlugs,
   syncRecentSpacesForActiveSlug,
 } from './recent-space-history';
-import { recordMobilizedAiAgentsForQuestion } from './ai-agent-competencies';
+import {
+  recordMobilizedAiAgentsForQuestion,
+  transferMobilizedAiAgentsToSpace,
+} from './ai-agent-competencies';
 import {
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
+  applyOnboardingContextForUserText,
   dispatchAiOnboardingSeedAck,
+  ensureSpaceSetupContext,
+  isSpaceSetupContext,
+  isPostCreateOnboardingPhase,
   readOnboardingConversationContext,
+  resolveChatTransportBody,
+  shouldAttachOnboardingContext,
+  shouldBypassSpaceMembershipForOnboarding,
+  resolveSetupContextForUserMessage,
   saveOnboardingConversationContext,
+  clearOnboardingConversationContext,
+  clearOnboardingChatMessages,
+  consumeOnboardingOpenAiPanelPending,
+  consumeOnboardingContinuationPrompt,
+  readOnboardingChatMessages,
+  saveOnboardingChatMessages,
+  getPostOnboardingLandingPath,
+  getPostOnboardingContinuationPrompt,
   type OnboardingConversationContext,
 } from './ai-onboarding-context';
+import {
+  onboardingLocationFromCreatePayload,
+  onboardingTransparencyFromCreatePayload,
+  onboardingJoinMethodFromCreatePayload,
+} from './onboarding-create-payload';
+import {
+  extractOnboardingVisualAssetsFromMessages,
+  mergeVisualAssetsIntoCreatePayload,
+} from './onboarding-visual-assets';
+import {
+  preparePostRootOnboardingHandoff,
+  syncEcosystemBlueprintInContext,
+} from './onboarding-ecosystem-blueprint';
+import {
+  isOnboardingWalletHandoffPayloadHandled,
+  isOnboardingWalletHandoffSlugComplete,
+  markOnboardingWalletHandoffPayloadHandled,
+  markOnboardingWalletHandoffSlugComplete,
+} from './onboarding-wallet-handoff';
+import {
+  applyOnboardingLocationToContext,
+  formatOnboardingLocationSubmitMessage,
+  onboardingSpaceLocationFromPicker,
+  skippedOnboardingSpaceLocation,
+} from './onboarding-location-ui';
+import {
+  applyOnboardingActivationToContext,
+  formatOnboardingActivationSubmitMessage,
+  type OnboardingActivationMethod,
+} from './onboarding-activation-ui';
+import {
+  applyOnboardingSetupJourneyToContext,
+  formatOnboardingSetupJourneySubmitMessage,
+  type OnboardingSetupJourney,
+} from './onboarding-setup-journey-ui';
+import { getOnboardingSetupJourneySubmitLabels } from './onboarding-picker-message-i18n';
+import {
+  applyOnboardingDiscoverabilityToContext,
+  applyOnboardingTransparencyToContext,
+  formatOnboardingDiscoverabilitySubmitMessage,
+  formatOnboardingTransparencySubmitMessage,
+  type OnboardingTransparencyMessageLabels,
+} from './onboarding-transparency-ui';
+import {
+  applyOnboardingEntryMethodToContext,
+  formatOnboardingEntryMethodSubmitMessage,
+  type OnboardingEntryMethod,
+} from './onboarding-entry-method-ui';
+import {
+  applyOnboardingVotingMethodToContext,
+  formatOnboardingVotingMethodSubmitMessage,
+  type OnboardingVotingMethod,
+} from './onboarding-voting-method-ui';
+import {
+  getChangeVotingMethodProposalPath,
+  writeOnboardingVotingMethodResubmitData,
+} from './onboarding-voting-method-navigation';
+import {
+  completeVotingMethodGovernanceWalkthrough,
+  hasActiveVotingMethodDraft,
+} from './onboarding-governance-proposal-walkthrough';
+import {
+  inferOnboardingVotingMethodFromConversation,
+  shouldOpenOnboardingVotingMethodProposal,
+} from './onboarding-voting-method-inference';
+import type { OnboardingTransparencyMatrix } from './ai-onboarding-context';
+import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
+import {
+  loadSpaceDiscoveryMode,
+  saveSpaceDiscoveryMode,
+} from './ai-panel-discovery-mode';
+import {
+  buildSpaceAdvisorVoiceSessionContext,
+  type VoiceSessionContext,
+} from './space-voice-session-context';
+import {
+  collectGovernancePrepareNavigationKeys,
+  findLatestAiPanelNavigationTarget,
+  findLatestPrepareGovernanceProposalUpdate,
+  IMMEDIATE_AUTO_NAVIGATION_TOOLS,
+  isAtNavigationTarget,
+  shouldSkipStaleOverviewAutoNavigation,
+  type AiPanelNavigationTarget,
+} from './ai-tool-navigation';
+import {
+  GOVERNANCE_PROPOSAL_PUBLISHED_EVENT,
+  isGovernancePrepareNavigationStale,
+  markGovernancePrepareNavigationKeysStale,
+  writeGovernanceProposalResubmitPayload,
+} from './governance-proposal-navigation';
+import { readActiveProposalFormSnapshot } from './active-proposal-form-snapshot';
+import {
+  enableProposalAiWalkthrough,
+  isProposalAiWalkthroughActive,
+  PROPOSAL_AI_WALKTHROUGH_KEY,
+  writeProposalFormFocusIfChanged,
+} from './proposal-form-focus';
+import { mergeActiveGovernanceProposalFromPrepareOutput } from './governance-proposal-walkthrough-session';
+import {
+  isProposalCreateFormPath,
+  isSameAppPath,
+} from './proposal-form-navigation';
+import {
+  appendVoiceTranscriptTurn,
+  buildRecentTranscriptSummaryFromChatMessages,
+  toStoredOnboardingChatMessages,
+} from './onboarding-voice-transcript-bridge';
+import {
+  consumeKeepAiPanelOpen,
+  markKeepAiPanelOpen,
+} from './ai-panel-session';
+import {
+  clearSpaceAiChatMessages,
+  readSpaceAiChatMessages,
+  saveSpaceAiChatMessages,
+} from './space-ai-chat-persistence';
+import { useOnboardingVoiceDiscovery } from './use-onboarding-voice-discovery';
+import type { SpaceLocationValue } from '../spaces/components/space-location-picker';
+
+function extractAssistantTextFromMessage(
+  message: ChatUIMessage | undefined,
+): string {
+  if (!message || message.role !== 'assistant') return '';
+  const parts = message.parts ?? [];
+  return parts
+    .filter(
+      (part): part is { type: 'text'; text: string } => part.type === 'text',
+    )
+    .map((part) => part.text)
+    .join('\n')
+    .trim();
+}
 
 type ChatUIMessage = {
   id: string;
@@ -152,13 +310,39 @@ type NavItem = {
   disabled?: boolean;
 };
 
+function formatChatStreamErrorMessage(error: unknown): string {
+  const rawMessage =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message.trim()
+      : typeof error === 'string'
+      ? error.trim()
+      : '';
+  if (!rawMessage) return '';
+  if (
+    rawMessage.includes('FUNCTION_PAYLOAD_TOO_LARGE') ||
+    rawMessage.includes('Request Entity Too Large') ||
+    rawMessage.toLowerCase().includes('entity too large')
+  ) {
+    return `The attachment is too large to send with this message. Use a file under ${CHAT_ATTACHMENT_MAX_SIZE_LABEL} or remove other attachments and try again.`;
+  }
+  if (
+    rawMessage.includes('An error occurred in the Server Components render') ||
+    rawMessage.toLowerCase().includes('digest')
+  ) {
+    return 'The assistant could not respond right now. Please try again in a moment.';
+  }
+  return rawMessage;
+}
+
 export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
-  const { isAuthenticated, isLoading, login, getAccessToken } =
-    useAuthentication();
+  const { isAuthenticated, isLoading, getAccessToken } = useAuthentication();
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
   const isOnboardingPath = pathname.includes('/onboarding');
+  const [onboardingContext, setOnboardingContext] = useState<
+    OnboardingConversationContext | undefined
+  >(() => readOnboardingConversationContext());
   const spaceSlugFromPath = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
@@ -176,7 +360,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const config = useConfig();
   const { resolvedTheme } = useTheme();
   const { jwt } = useJwt();
-  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const lang = getLocaleFromPath(pathname);
   const isCompactHeader = useCompactHeaderMode();
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
@@ -199,6 +383,44 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
+  const attachOnboardingForActiveSpace = useMemo(
+    () =>
+      shouldAttachOnboardingContext(onboardingContext, {
+        spaceSlug,
+        isOnboardingPath,
+      }),
+    [isOnboardingPath, onboardingContext, spaceSlug],
+  );
+  const [spaceDiscoveryMode, setSpaceDiscoveryMode] =
+    useState<OnboardingDiscoveryMode>('chat');
+
+  useEffect(() => {
+    setSpaceDiscoveryMode(loadSpaceDiscoveryMode(spaceSlug));
+  }, [spaceSlug]);
+
+  const isOnboardingSetup = attachOnboardingForActiveSpace;
+  const discoveryMode: OnboardingDiscoveryMode =
+    isOnboardingSetup && onboardingContext?.discoveryMode
+      ? onboardingContext.discoveryMode
+      : spaceDiscoveryMode;
+  const showDiscoveryModeToggle =
+    Boolean(spaceSlug?.trim()) && !blockSpaceAiForActivityAccess;
+  const isVoiceInterview =
+    showDiscoveryModeToggle && discoveryMode === 'voice_interview';
+  const bypassOnboardingMembership = useMemo(
+    () =>
+      shouldBypassSpaceMembershipForOnboarding(onboardingContext, {
+        spaceSlug,
+        isOnboardingPath,
+      }),
+    [isOnboardingPath, onboardingContext, spaceSlug],
+  );
+  const blockSpaceAiForMembership =
+    Boolean(spaceSlug) &&
+    !isOnboardingPath &&
+    !bypassOnboardingMembership &&
+    !isUserSpaceStateLoading &&
+    !canInteractInSpace(userSpaceState);
   const { status: spacePaymentStatus, isLoading: isSpacePaymentStatusLoading } =
     useSalesBanner({
       spaceId: effectiveSpaceWeb3Id,
@@ -206,8 +428,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const blockSpaceAiForSubscription =
     Boolean(spaceSlug) &&
     Boolean(effectiveSpaceWeb3Id) &&
+    !bypassOnboardingMembership &&
     !isSpacePaymentStatusLoading &&
     spacePaymentStatus === 'expired';
+  const blockSpaceAiForInteraction =
+    blockSpaceAiForMembership || blockSpaceAiForSubscription;
   const {
     open: isAiOpen,
     overlayVisible,
@@ -217,7 +442,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
-  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const {
+    open: rightOpen,
+    toggle: toggleRight,
+    openHumanChatPanel,
+    openCoherenceChat,
+  } = useHumanChatPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
     false,
@@ -228,6 +458,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [input, setInput] = useState('');
   const aiWalletCreateInFlightRef = useRef(false);
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
+  const aiWalletProposalInFlightRef = useRef(false);
+  const handledWalletProposalPayloadKeyRef = useRef<string | null>(null);
+  const completedVotingMethodToolKeyRef = useRef<string | null>(null);
+  const openVotingMethodFromChatRef = useRef<
+    (userText: string, assistantText: string) => Promise<boolean>
+  >(async () => false);
   const [draftAttachments, setDraftAttachments] = useState<
     AiPanelDraftAttachment[]
   >([]);
@@ -238,21 +474,66 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
-  const [onboardingContext, setOnboardingContext] = useState<
-    OnboardingConversationContext | undefined
-  >(() => readOnboardingConversationContext());
   const pendingSeedPromptRef = useRef<string | null>(null);
   const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
+  const transferredMobilizedAgentsSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  const lastPrepareGovernanceResubmitKeyRef = useRef<string | null>(null);
+  const wasOnProposalCreatePathRef = useRef(false);
   const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
   const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
+  const skipNextChatResetRef = useRef(false);
+  const onboardingHandoffHydratedRef = useRef(false);
+  const chatHydratedForSlugRef = useRef<string | null>(null);
+  const spaceChatId = spaceSlug?.trim()
+    ? `space-ai-${spaceSlug.trim()}`
+    : 'space-ai-global';
   const {
     createSpace: createSpaceWithWalletFlow,
     space: walletCreatedSpace,
+    reset: resetCreateSpaceWalletFlow,
     isError: isCreateSpaceWithWalletFlowError,
     errors: createSpaceWithWalletFlowErrors,
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const showCreateSpaceWithWalletFlowError =
+    isCreateSpaceWithWalletFlowError &&
+    !onboardingContext?.createdSpaceSlug?.trim() &&
+    !(
+      spaceSlug?.trim() &&
+      isOnboardingWalletHandoffSlugComplete(spaceSlug.trim())
+    );
+  const {
+    createAgreement: createAgreementWithWalletFlow,
+    isError: isCreateAgreementWithWalletFlowError,
+    errors: createAgreementWithWalletFlowErrors,
+  } = useCreateAgreementOrchestrator({ authToken: jwt, config });
+
+  useEffect(() => {
+    if (createAgreementWithWalletFlowErrors.length === 0) return;
+    console.error(
+      '[AiLeftPanel] wallet agreement flow errors:',
+      createAgreementWithWalletFlowErrors,
+    );
+  }, [createAgreementWithWalletFlowErrors]);
+
+  const completeOnboardingWalletHandoff = useCallback(
+    (slug: string) => {
+      const normalized = slug.trim();
+      if (!normalized) return;
+      markOnboardingWalletHandoffSlugComplete(normalized);
+      resetCreateSpaceWalletFlow();
+    },
+    [resetCreateSpaceWalletFlow],
+  );
+
+  useEffect(() => {
+    const slug = onboardingContext?.createdSpaceSlug?.trim();
+    if (!slug) return;
+    markOnboardingWalletHandoffSlugComplete(slug);
+    resetCreateSpaceWalletFlow();
+  }, [onboardingContext?.createdSpaceSlug, resetCreateSpaceWalletFlow]);
+
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -428,6 +709,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const suggestionItems = useMemo(
     () =>
       [
+        ...(!spaceSlug
+          ? ([
+              {
+                id: 'createSpace',
+                prompt: t('suggestions.createSpace'),
+                tagLabel: t('suggestionTags.createSpace'),
+              },
+              {
+                id: 'createEcosystem',
+                prompt: t('suggestions.createEcosystem'),
+                tagLabel: t('suggestionTags.createEcosystem'),
+              },
+            ] as const)
+          : []),
         {
           id: 'spaceHealth',
           prompt: t('suggestions.spaceHealth'),
@@ -459,7 +754,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           tagLabel: t('suggestionTags.valueFlows'),
         },
       ] as const,
-    [t],
+    [spaceSlug, t],
   );
 
   const handleOverlayClose = useCallback(() => {
@@ -648,14 +943,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           }
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: {
-          ...(spaceSlug && { spaceSlug }),
-          ...(onboardingContext
-            ? { conversationContext: onboardingContext }
-            : {}),
-        },
+        // Per-request body comes from buildMessageOptions — keep transport stable
+        // so useChat does not reinitialize when onboarding context updates.
+        body: {},
       }),
-    [getAccessToken, onboardingContext, spaceSlug],
+    [getAccessToken],
   );
 
   const {
@@ -667,11 +959,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     clearError,
     setMessages,
   } = useChat({
+    id: spaceChatId,
     transport,
     onError: (chatError) => {
       console.error('[AiLeftPanel][useChat]', chatError);
     },
   });
+
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
@@ -682,38 +978,212 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   useEffect(() => {
+    if (onboardingHandoffHydratedRef.current) return;
+    if (!consumeOnboardingOpenAiPanelPending()) return;
+    onboardingHandoffHydratedRef.current = true;
+    skipNextChatResetRef.current = true;
+
+    const storedMessages = readOnboardingChatMessages();
+    const storedContext = readOnboardingConversationContext();
+    const postCreateHandoff =
+      storedContext && isPostCreateOnboardingPhase(storedContext);
+    if (storedContext) {
+      setOnboardingContext(storedContext);
+    }
+    if (storedMessages?.length && !postCreateHandoff) {
+      setMessages(
+        storedMessages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          parts: message.parts ?? [],
+        })) as Parameters<typeof setMessages>[0],
+      );
+    } else {
+      clearOnboardingChatMessages();
+      setMessages([]);
+    }
+    openAiPanel();
+    setAiOverlayVisible(false);
+
+    const continuationPrompt = consumeOnboardingContinuationPrompt();
+    if (continuationPrompt) {
+      pendingSeedPromptRef.current = continuationPrompt;
+    }
+  }, [openAiPanel, setAiOverlayVisible, setMessages]);
+
+  useEffect(() => {
+    const slug = spaceSlug?.trim();
+    if (!slug || transferredMobilizedAgentsSlugRef.current === slug) return;
+    if (!isPostCreateOnboardingPhase(onboardingContext)) return;
+    transferMobilizedAiAgentsToSpace(slug, {
+      messages: messages as Array<{
+        role: string;
+        parts?: Array<{ type: string; text?: string }>;
+      }>,
+    });
+    transferredMobilizedAgentsSlugRef.current = slug;
+  }, [messages, onboardingContext, spaceSlug]);
+
+  useEffect(() => {
     const nextSlug = spaceSlug?.trim() || null;
     const previousSlug = lastChatSpaceSlugRef.current;
     if (previousSlug === nextSlug) return;
-    lastChatSpaceSlugRef.current = nextSlug;
-    const fromMcpNavigation =
-      !!nextSlug && lastMcpNavigationTargetSpaceSlugRef.current === nextSlug;
-    // Keep context for AI-directed space hops, but reset on manual space changes
-    // (space picker / direct nav) to avoid stale answers from prior space history.
-    if (!fromMcpNavigation) {
-      setMessages([]);
-      lastAutoNavigationKeyRef.current = null;
-    }
-    lastMcpNavigationTargetSpaceSlugRef.current = null;
-  }, [setMessages, spaceSlug]);
 
-  const buildMessageOptions = useCallback(async () => {
-    let token: string | undefined;
-    try {
-      token = (await getAccessToken?.()) ?? undefined;
-    } catch (error) {
-      console.error('[AiLeftPanel] getAccessToken failed for message options', {
-        error,
-      });
+    if (skipNextChatResetRef.current) {
+      skipNextChatResetRef.current = false;
+      lastChatSpaceSlugRef.current = nextSlug;
+      chatHydratedForSlugRef.current = nextSlug;
+      return;
     }
-    const hdrs: Record<string, string> = {};
-    if (token) hdrs['Authorization'] = `Bearer ${token}`;
-    const body: Record<string, unknown> = {
-      ...(spaceSlug && { spaceSlug }),
-      ...(onboardingContext ? { conversationContext: onboardingContext } : {}),
+
+    if (previousSlug && isSpaceSetupContext(onboardingContext)) {
+      const { staleOnboardingContext } = resolveChatTransportBody({
+        spaceSlug: nextSlug ?? undefined,
+        activeSpaceTitle: activeSpaceName,
+        onboardingContext,
+        isOnboardingPath,
+      });
+      if (staleOnboardingContext) {
+        clearOnboardingConversationContext();
+        setOnboardingContext(undefined);
+      }
+    }
+
+    if (previousSlug) {
+      clearSpaceAiChatMessages(previousSlug);
+    }
+    chatHydratedForSlugRef.current = null;
+
+    lastChatSpaceSlugRef.current = nextSlug;
+    lastMcpNavigationTargetSpaceSlugRef.current = null;
+    lastAutoNavigationKeyRef.current = null;
+    stop();
+    clearError();
+    setMessages([]);
+  }, [
+    activeSpaceName,
+    clearError,
+    isOnboardingPath,
+    onboardingContext,
+    setMessages,
+    spaceSlug,
+    stop,
+  ]);
+
+  useEffect(() => {
+    const slug = spaceSlug?.trim();
+    if (!slug || chatHydratedForSlugRef.current === slug) return;
+
+    if (messages.length > 0) {
+      chatHydratedForSlugRef.current = slug;
+      return;
+    }
+
+    chatHydratedForSlugRef.current = slug;
+
+    if (isOnboardingSetup) {
+      const storedOnboarding = readOnboardingChatMessages();
+      if (storedOnboarding?.length) {
+        setMessages(
+          storedOnboarding.map((message) => ({
+            id: message.id,
+            role: message.role,
+            parts: message.parts ?? [],
+          })) as Parameters<typeof setMessages>[0],
+        );
+      }
+      return;
+    }
+
+    const stored = readSpaceAiChatMessages(slug);
+    if (stored?.length) {
+      setMessages(
+        stored.map((message) => ({
+          id: message.id,
+          role: message.role,
+          parts: message.parts ?? [],
+        })) as Parameters<typeof setMessages>[0],
+      );
+    }
+  }, [isOnboardingSetup, messages.length, setMessages, spaceSlug]);
+
+  useEffect(() => {
+    const slug = spaceSlug?.trim();
+    if (!slug || !messages.length) return;
+    const stored = toStoredOnboardingChatMessages(messages);
+    if (isOnboardingSetup) {
+      saveOnboardingChatMessages(stored);
+      return;
+    }
+    saveSpaceAiChatMessages(slug, stored);
+  }, [isOnboardingSetup, messages, spaceSlug]);
+
+  const buildMessageOptions = useCallback(
+    async (contextOverride?: OnboardingConversationContext | undefined) => {
+      let token: string | undefined;
+      try {
+        token = (await getAccessToken?.()) ?? undefined;
+      } catch (error) {
+        console.error(
+          '[AiLeftPanel] getAccessToken failed for message options',
+          {
+            error,
+          },
+        );
+      }
+      const hdrs: Record<string, string> = {};
+      if (token) hdrs['Authorization'] = `Bearer ${token}`;
+      const activeContext = contextOverride ?? onboardingContext;
+      const { body } = resolveChatTransportBody({
+        spaceSlug,
+        activeSpaceTitle: activeSpaceName,
+        onboardingContext: activeContext,
+        isOnboardingPath,
+        discoveryMode:
+          discoveryMode === 'voice_interview' ? discoveryMode : undefined,
+        activeProposalFormSnapshot: readActiveProposalFormSnapshot(pathname),
+        locale: lang,
+      });
+      return { body, headers: hdrs };
+    },
+    [
+      activeSpaceName,
+      discoveryMode,
+      getAccessToken,
+      isOnboardingPath,
+      isOnboardingSetup,
+      lang,
+      onboardingContext,
+      pathname,
+      spaceSlug,
+    ],
+  );
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
+    if (onboardingContext.locale?.trim()) return;
+    const next: OnboardingConversationContext = {
+      ...onboardingContext,
+      locale: lang,
     };
-    return { body, headers: hdrs };
-  }, [getAccessToken, onboardingContext, spaceSlug]);
+    if (next.locale === onboardingContext.locale) return;
+    setOnboardingContext(next);
+    saveOnboardingConversationContext(next);
+  }, [lang, onboardingContext]);
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
+    const { staleOnboardingContext } = resolveChatTransportBody({
+      spaceSlug,
+      activeSpaceTitle: activeSpaceName,
+      onboardingContext,
+      isOnboardingPath,
+    });
+    if (!staleOnboardingContext) return;
+
+    clearOnboardingConversationContext();
+    setOnboardingContext(undefined);
+  }, [activeSpaceName, isOnboardingPath, onboardingContext, spaceSlug]);
 
   useEffect(() => {
     const onSeed = (event: Event) => {
@@ -773,6 +1243,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;
     if (isStreaming) return;
+    if (blockSpaceAiForInteraction) return;
+    if (isAuthenticated && !jwt) return;
     const seededPrompt = pendingSeedPromptRef.current ?? '';
     const seededAttachments = pendingSeedAttachmentsRef.current;
     if (!seededPrompt.trim() && seededAttachments.length === 0) {
@@ -790,7 +1262,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         const options = await buildMessageOptions();
         const attachmentParts =
           seededAttachments.length > 0
-            ? await convertFilesToParts(seededAttachments)
+            ? await convertFilesToParts(seededAttachments, {
+                authorizationToken: jwt ?? undefined,
+              })
             : [];
         const textParts = seededPrompt.trim()
           ? [{ type: 'text' as const, text: seededPrompt }]
@@ -832,17 +1306,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         });
       }
     })();
-  }, [buildMessageOptions, clearError, isStreaming, sendMessage]);
+  }, [
+    blockSpaceAiForInteraction,
+    buildMessageOptions,
+    clearError,
+    isAuthenticated,
+    isStreaming,
+    jwt,
+    sendMessage,
+  ]);
 
   useEffect(() => {
-    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
-    if (!pathname.includes('/onboarding')) return;
+    if (!isSpaceSetupContext(onboardingContext)) return;
 
     const latestCreatedSpaceSlug = [...messages]
       .reverse()
       .flatMap((message) => message.parts ?? [])
       .find((part) => {
-        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+        if (part.type !== 'tool-create_space_from_onboarding') {
           return false;
         }
         const toolPart = part as {
@@ -863,166 +1344,318 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const createdSlug = latestCreatedSpaceSlug?.output?.space?.slug?.trim();
     if (!createdSlug) return;
+    if (
+      isPostCreateOnboardingPhase(onboardingContext) &&
+      (onboardingContext.createdSpaceSlug?.trim() === createdSlug ||
+        spaceSlug?.trim() === createdSlug)
+    ) {
+      lastAutoTransitionSpaceSlugRef.current = createdSlug;
+      return;
+    }
     if (lastAutoTransitionSpaceSlugRef.current === createdSlug) return;
     lastAutoTransitionSpaceSlugRef.current = createdSlug;
+    completeOnboardingWalletHandoff(createdSlug);
 
-    const nextContext: OnboardingConversationContext = {
-      ...onboardingContext,
-      setupPhase: 'verify',
-    };
-    setOnboardingContext(nextContext);
-    saveOnboardingConversationContext(nextContext);
+    const handoff = preparePostRootOnboardingHandoff(
+      onboardingContext,
+      messages,
+      createdSlug,
+    );
+    clearOnboardingChatMessages();
+    setMessages([]);
+    setOnboardingContext(handoff.context);
+    saveOnboardingConversationContext(handoff.context);
+    transferMobilizedAiAgentsToSpace(createdSlug, {
+      messages: messages as Array<{
+        role: string;
+        parts?: Array<{ type: string; text?: string }>;
+      }>,
+    });
+    transferredMobilizedAgentsSlugRef.current = createdSlug;
     openAiPanel();
     setAiOverlayVisible(false);
-    router.push(`/${lang}/dho/${createdSlug}/agreements`);
+    const continuationPrompt = handoff.continuationPrompt;
+    if (continuationPrompt) {
+      pendingSeedPromptRef.current = continuationPrompt;
+    }
+    router.push(
+      getPostOnboardingLandingPath(
+        lang,
+        createdSlug,
+        onboardingContext.setupJourney,
+      ),
+    );
   }, [
+    completeOnboardingWalletHandoff,
     lang,
     messages,
     onboardingContext,
     openAiPanel,
-    pathname,
     router,
     setAiOverlayVisible,
+    setMessages,
+    spaceSlug,
   ]);
 
   useEffect(() => {
-    const isCompletedToolState = (state: unknown) => {
-      if (typeof state !== 'string') return true;
-      return (
-        state === 'output-available' ||
-        state === 'output_available' ||
-        state === 'done' ||
-        state === 'completed'
+    const onProposalCreatePath = isProposalCreateFormPath(pathname);
+
+    if (wasOnProposalCreatePathRef.current && !onProposalCreatePath) {
+      const aiOpenedProposal =
+        typeof window !== 'undefined' &&
+        (sessionStorage.getItem(PROPOSAL_AI_WALKTHROUGH_KEY) === 'true' ||
+          Boolean(lastAutoNavigationKeyRef.current));
+      if (aiOpenedProposal) {
+        markGovernancePrepareNavigationKeysStale(
+          collectGovernancePrepareNavigationKeys(messagesRef.current),
+        );
+      }
+    }
+
+    wasOnProposalCreatePathRef.current = onProposalCreatePath;
+
+    if (onProposalCreatePath && isProposalAiWalkthroughActive()) {
+      openAiPanel();
+    }
+
+    if (onProposalCreatePath && consumeKeepAiPanelOpen()) {
+      openAiPanel();
+      setAiOverlayVisible(false);
+    }
+  }, [openAiPanel, pathname, setAiOverlayVisible]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPublished = () => {
+      markGovernancePrepareNavigationKeysStale(
+        collectGovernancePrepareNavigationKeys(messagesRef.current),
       );
     };
+    window.addEventListener(GOVERNANCE_PROPOSAL_PUBLISHED_EVENT, onPublished);
+    return () =>
+      window.removeEventListener(
+        GOVERNANCE_PROPOSAL_PUBLISHED_EVENT,
+        onPublished,
+      );
+  }, []);
 
-    const findLatestNavigationTarget = () => {
-      for (
-        let messageIndex = messages.length - 1;
-        messageIndex >= 0;
-        messageIndex -= 1
-      ) {
-        const message = messages[messageIndex];
-        if (!message) continue;
+  const applyPrepareGovernanceUpdate = useCallback(
+    (prepareUpdate: AiPanelNavigationTarget) => {
+      if (!prepareUpdate.resubmitPayload) return;
+      if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
 
-        const messageWithToolInvocations = message as {
-          toolInvocations?: unknown;
-        };
-        const toolInvocations = Array.isArray(
-          messageWithToolInvocations.toolInvocations,
-        )
-          ? messageWithToolInvocations.toolInvocations
-          : [];
-        for (
-          let invocationIndex = toolInvocations.length - 1;
-          invocationIndex >= 0;
-          invocationIndex -= 1
-        ) {
-          const invocation = toolInvocations[invocationIndex];
-          if (!invocation || typeof invocation !== 'object') continue;
-          const toolName =
-            (typeof invocation.toolName === 'string' && invocation.toolName) ||
-            (typeof invocation.tool === 'string' && invocation.tool) ||
-            '';
-          if (toolName !== 'mcp_navigation') continue;
-          if (!isCompletedToolState(invocation.state)) continue;
-          const output =
-            (invocation.result as Record<string, unknown> | undefined) ??
-            (invocation.output as Record<string, unknown> | undefined);
-          const navigation = output?.navigation as
-            | { href?: string; open_in_new_tab?: boolean }
-            | undefined;
-          const href = navigation?.href?.trim();
-          if (!href) continue;
-          return {
-            href,
-            openInNewTab: navigation?.open_in_new_tab === true,
-            key: `${message.id}:toolInvocation:${invocationIndex}:${href}`,
-          };
-        }
+      writeGovernanceProposalResubmitPayload(prepareUpdate.resubmitPayload);
+      enableProposalAiWalkthrough();
 
-        const parts = Array.isArray(message.parts) ? message.parts : [];
-        for (let partIndex = parts.length - 1; partIndex >= 0; partIndex -= 1) {
-          const part = parts[partIndex];
-          if (!part || typeof part !== 'object') continue;
-          if (part.type !== 'tool-mcp_navigation') continue;
-          if (!isCompletedToolState((part as { state?: unknown }).state))
-            continue;
-          const toolPart = part as {
-            output?: {
-              ok?: boolean;
-              navigation?: {
-                href?: string;
-                open_in_new_tab?: boolean;
-              };
-            };
-          };
-          const href = toolPart.output?.navigation?.href?.trim();
-          if (!href || toolPart.output?.ok !== true) continue;
-          return {
-            href,
-            openInNewTab: toolPart.output.navigation?.open_in_new_tab === true,
-            key: `${message.id}:part:${partIndex}:${href}`,
-          };
-        }
+      if (prepareUpdate.proposalType) {
+        mergeActiveGovernanceProposalFromPrepareOutput({
+          proposalType: prepareUpdate.proposalType,
+          resubmitPayload: prepareUpdate.resubmitPayload,
+          spaceSlug:
+            getDhoSpaceSlugFromPathname(prepareUpdate.href) ??
+            spaceSlug ??
+            undefined,
+        });
       }
-      return null;
-    };
 
-    const navigationTarget = findLatestNavigationTarget();
+      writeProposalFormFocusIfChanged({
+        focusField: prepareUpdate.focusField,
+        focusSection: prepareUpdate.focusSection,
+      });
+
+      markKeepAiPanelOpen();
+      openAiPanel();
+      setAiOverlayVisible(false);
+    },
+    [openAiPanel, setAiOverlayVisible, spaceSlug],
+  );
+
+  useEffect(() => {
+    const prepareUpdate = findLatestPrepareGovernanceProposalUpdate(messages);
+    if (!prepareUpdate?.resubmitPayload) return;
+    if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
+    if (lastPrepareGovernanceResubmitKeyRef.current === prepareUpdate.key) {
+      return;
+    }
+
+    lastPrepareGovernanceResubmitKeyRef.current = prepareUpdate.key;
+    applyPrepareGovernanceUpdate(prepareUpdate);
+
+    const href = prepareUpdate.href;
+    if (!href) return;
+
+    const alreadyOnTarget =
+      !prepareUpdate.coherenceChat &&
+      !/[?&]signal=/.test(href) &&
+      isSameAppPath(href, pathname);
+    if (alreadyOnTarget) return;
+    if (lastAutoNavigationKeyRef.current === prepareUpdate.key) return;
+    if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
+
+    lastAutoNavigationKeyRef.current = prepareUpdate.key;
+    markKeepAiPanelOpen();
+    lastMcpNavigationTargetSpaceSlugRef.current =
+      getDhoSpaceSlugFromPathname(href) ?? null;
+    router.push(href);
+  }, [applyPrepareGovernanceUpdate, messages, pathname, router]);
+
+  useEffect(() => {
+    const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
+      'mcp_navigation',
+      'create_human_chat_message',
+      'create_space_signal_by_slug',
+      'relay_ecosystem_signal',
+      'create_ecosystem_space',
+      'summarize_space_discussion_by_slug',
+      'ingest_space_call_artifacts',
+    ]);
     const href = navigationTarget?.href;
     if (!href) return;
-    const navigationKey = navigationTarget?.key ?? `unknown:${href}`;
+
+    const allowWhileStreaming =
+      navigationTarget &&
+      IMMEDIATE_AUTO_NAVIGATION_TOOLS.has(navigationTarget.toolName);
+    if (
+      (status === 'streaming' || status === 'submitted') &&
+      !allowWhileStreaming
+    ) {
+      return;
+    }
+
+    const currentSearch =
+      typeof window !== 'undefined' ? window.location.search : '';
+    if (isAtNavigationTarget(href, pathname, currentSearch)) {
+      return;
+    }
+
+    if (navigationTarget.resubmitPayload) {
+      writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
+    }
+
+    const navigationKey = navigationTarget.key;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
+    if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
     lastAutoNavigationKeyRef.current = navigationKey;
 
-    const openInNewTab = navigationTarget?.openInNewTab === true;
+    const openInNewTab = navigationTarget.openInNewTab === true;
     const isExternal = /^https?:\/\//i.test(href);
     if (openInNewTab || isExternal) {
       window.open(href, '_blank', 'noopener,noreferrer');
       return;
     }
+
     lastMcpNavigationTargetSpaceSlugRef.current =
       getDhoSpaceSlugFromPathname(href) ?? null;
-    // Keep the AI panel expanded when MCP navigation redirects internally.
-    // This prevents perceived panel "close" regressions during route changes.
     openAiPanel();
     setAiOverlayVisible(false);
+
+    if (navigationTarget.openHumanChat) {
+      if (navigationTarget.coherenceChat) {
+        openCoherenceChat(
+          navigationTarget.coherenceChat.roomId,
+          navigationTarget.coherenceChat.title,
+          navigationTarget.coherenceChat.slug,
+        );
+      }
+      openHumanChatPanel();
+    }
+
     router.push(href);
-  }, [messages, openAiPanel, router, setAiOverlayVisible]);
+  }, [
+    messages,
+    openAiPanel,
+    openCoherenceChat,
+    openHumanChatPanel,
+    pathname,
+    router,
+    setAiOverlayVisible,
+    status,
+  ]);
 
   useEffect(() => {
-    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
-    if (!pathname.includes('/onboarding')) return;
+    if (!isSpaceSetupContext(onboardingContext)) return;
     const slug =
       typeof walletCreatedSpace?.slug === 'string'
         ? walletCreatedSpace.slug.trim()
         : '';
     if (!slug) return;
+    if (
+      isPostCreateOnboardingPhase(onboardingContext) &&
+      (onboardingContext.createdSpaceSlug?.trim() === slug ||
+        spaceSlug?.trim() === slug)
+    ) {
+      lastAutoTransitionSpaceSlugRef.current = slug;
+      return;
+    }
     if (lastAutoTransitionSpaceSlugRef.current === slug) return;
     lastAutoTransitionSpaceSlugRef.current = slug;
-    const nextContext: OnboardingConversationContext = {
-      ...onboardingContext,
-      setupPhase: 'verify',
-    };
-    setOnboardingContext(nextContext);
-    saveOnboardingConversationContext(nextContext);
+    completeOnboardingWalletHandoff(slug);
+    clearOnboardingChatMessages();
+    setMessages([]);
+    const handoff = preparePostRootOnboardingHandoff(
+      onboardingContext,
+      messages,
+      slug,
+    );
+    setOnboardingContext(handoff.context);
+    saveOnboardingConversationContext(handoff.context);
+    transferMobilizedAiAgentsToSpace(slug, {
+      messages: messages as Array<{
+        role: string;
+        parts?: Array<{ type: string; text?: string }>;
+      }>,
+    });
+    transferredMobilizedAgentsSlugRef.current = slug;
     openAiPanel();
     setAiOverlayVisible(false);
-    router.push(`/${lang}/dho/${slug}/agreements`);
+    const continuationPrompt = handoff.continuationPrompt;
+    if (continuationPrompt) {
+      pendingSeedPromptRef.current = continuationPrompt;
+    }
+    router.push(
+      getPostOnboardingLandingPath(lang, slug, onboardingContext.setupJourney),
+    );
   }, [
+    completeOnboardingWalletHandoff,
     lang,
     onboardingContext,
     openAiPanel,
-    pathname,
     router,
     setAiOverlayVisible,
+    setMessages,
+    spaceSlug,
     walletCreatedSpace?.slug,
   ]);
 
   useEffect(() => {
-    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
-    if (!pathname.includes('/onboarding')) return;
+    if (!isSpaceSetupContext(onboardingContext)) return;
+    const resolved = extractOnboardingVisualAssetsFromMessages(messages);
+    if (!resolved) return;
+    if (
+      onboardingContext.visualAssets?.logoUrl === resolved.logoUrl &&
+      onboardingContext.visualAssets?.leadImageUrl === resolved.leadImageUrl
+    ) {
+      return;
+    }
+    const nextContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      visualAssets: resolved,
+    };
+    setOnboardingContext(nextContext);
+    saveOnboardingConversationContext(nextContext);
+  }, [messages, onboardingContext]);
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
+    const synced = syncEcosystemBlueprintInContext(onboardingContext, messages);
+    if (!synced) return;
+    setOnboardingContext(synced);
+    saveOnboardingConversationContext(synced);
+  }, [messages, onboardingContext]);
+
+  useEffect(() => {
+    if (!isSpaceSetupContext(onboardingContext)) return;
+    if (onboardingContext.createdSpaceSlug?.trim()) return;
     if (aiWalletCreateInFlightRef.current) return;
 
     const latestWalletCreatePayload = [...messages]
@@ -1036,6 +1669,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       )
       .find(({ part }) => {
         if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+          return false;
+        }
+        if (part.type !== 'tool-create_space_from_onboarding') {
           return false;
         }
         const toolPart = part as {
@@ -1082,14 +1718,52 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         }`
       : null;
     if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
-    const payload = latestWalletCreatePayload?.part?.output?.create_payload;
+    if (payloadKey && isOnboardingWalletHandoffPayloadHandled(payloadKey)) {
+      handledWalletPayloadKeyRef.current = payloadKey;
+      return;
+    }
+    const payload = mergeVisualAssetsIntoCreatePayload(
+      (latestWalletCreatePayload?.part?.output?.create_payload ?? {}) as Record<
+        string,
+        unknown
+      >,
+      messages,
+      onboardingContext.visualAssets,
+    );
     if (!payload?.title || !payload.description) return;
-    if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
+    const payloadSlug =
+      typeof payload.slug === 'string' ? payload.slug.trim() : '';
+    if (
+      payloadSlug &&
+      (payloadSlug === spaceSlug?.trim() ||
+        payloadSlug === onboardingContext.createdSpaceSlug?.trim() ||
+        payloadSlug === walletCreatedSpace?.slug?.trim() ||
+        isOnboardingWalletHandoffSlugComplete(payloadSlug))
+    ) {
+      if (payloadKey) {
+        handledWalletPayloadKeyRef.current = payloadKey;
+        markOnboardingWalletHandoffPayloadHandled(payloadKey);
+      }
+      return;
+    }
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
     const normalizedDescription =
       typeof payload.description === 'string' ? payload.description.trim() : '';
     if (!normalizedTitle || !normalizedDescription) return;
+    const logoUrl =
+      typeof payload.logo_url === 'string' ? payload.logo_url.trim() : '';
+    const leadImageUrl =
+      typeof payload.lead_image_url === 'string'
+        ? payload.lead_image_url.trim()
+        : '';
+    if (!logoUrl || !leadImageUrl) {
+      console.warn(
+        '[AiLeftPanel] Skipping wallet create — logo and banner URLs are required.',
+        { title: payload.title },
+      );
+      return;
+    }
     const normalizedFlags: SpaceFlags[] = Array.isArray(payload.flags)
       ? (payload.flags as SpaceFlags[])
       : [];
@@ -1097,27 +1771,46 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ? (payload.categories as Category[])
       : [];
 
+    if (onboardingContext) {
+      const executeContext: OnboardingConversationContext = {
+        ...onboardingContext,
+        setupPhase: 'execute',
+      };
+      setOnboardingContext(executeContext);
+      saveOnboardingConversationContext(executeContext);
+    }
+
     aiWalletCreateInFlightRef.current = true;
     void (async () => {
       try {
         await createSpaceWithWalletFlow({
           title: normalizedTitle,
           description: normalizedDescription,
-          slug: payload.slug ?? '',
+          slug: typeof payload.slug === 'string' ? payload.slug : '',
           parentId:
             typeof payload.parent_id === 'number' ? payload.parent_id : null,
           flags: normalizedFlags,
           links: Array.isArray(payload.links) ? payload.links : [],
           categories: normalizedCategories,
-          logoUrl: payload.logo_url ?? '',
-          leadImage: payload.lead_image_url ?? '',
-          ...(payload.ecosystem_logo_light_url
+          logoUrl,
+          leadImage: leadImageUrl,
+          ...(typeof payload.ecosystem_logo_light_url === 'string'
             ? { ecosystemLogoUrlLight: payload.ecosystem_logo_light_url }
             : {}),
-          ...(payload.ecosystem_logo_dark_url
+          ...(typeof payload.ecosystem_logo_dark_url === 'string'
             ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
             : {}),
+          ...onboardingLocationFromCreatePayload(payload),
+          ...onboardingTransparencyFromCreatePayload(payload),
+          ...onboardingJoinMethodFromCreatePayload(payload),
         });
+        if (payloadKey) {
+          handledWalletPayloadKeyRef.current = payloadKey;
+          markOnboardingWalletHandoffPayloadHandled(payloadKey);
+        }
+        if (payloadSlug) {
+          completeOnboardingWalletHandoff(payloadSlug);
+        }
       } catch (walletFlowError) {
         console.error(
           '[AiLeftPanel] wallet-based onboarding space creation failed:',
@@ -1127,11 +1820,119 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         aiWalletCreateInFlightRef.current = false;
       }
     })();
-  }, [createSpaceWithWalletFlow, messages, onboardingContext, pathname]);
+  }, [
+    completeOnboardingWalletHandoff,
+    createSpaceWithWalletFlow,
+    messages,
+    onboardingContext,
+    spaceSlug,
+    walletCreatedSpace?.slug,
+  ]);
+
+  useEffect(() => {
+    if (aiWalletProposalInFlightRef.current) return;
+    // Post-create governance (voting/entry method) uses Agreements Publish — not in-chat wallet signing.
+    if (isPostCreateOnboardingPhase(onboardingContext)) {
+      return;
+    }
+
+    const latestWalletProposalPayload = [...messages]
+      .reverse()
+      .flatMap((message) =>
+        (message.parts ?? []).map((part, index) => ({
+          messageId: message.id,
+          index,
+          part,
+        })),
+      )
+      .find(({ part }) => {
+        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+          return false;
+        }
+        if (part.type !== 'tool-create_space_setup_proposal') {
+          return false;
+        }
+        const toolPart = part as {
+          state?: string;
+          output?: {
+            ok?: boolean;
+            requires_wallet_signature?: boolean;
+            create_payload?: Record<string, unknown>;
+          };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          toolPart.output?.requires_wallet_signature === true &&
+          typeof toolPart.output?.create_payload === 'object'
+        );
+      }) as
+      | {
+          messageId?: string;
+          index?: number;
+          part?: {
+            output?: {
+              create_payload?: {
+                title?: string;
+                description?: string;
+                space_id?: number;
+                web3_space_id?: number;
+                creator_id?: number;
+                label?: string;
+              };
+            };
+          };
+        }
+      | undefined;
+
+    const payloadKey = latestWalletProposalPayload
+      ? `${latestWalletProposalPayload.messageId ?? 'm'}:${
+          latestWalletProposalPayload.index ?? 0
+        }`
+      : null;
+    if (
+      payloadKey &&
+      handledWalletProposalPayloadKeyRef.current === payloadKey
+    ) {
+      return;
+    }
+    const payload = latestWalletProposalPayload?.part?.output?.create_payload;
+    if (
+      !payload?.title ||
+      !payload.description ||
+      typeof payload.space_id !== 'number' ||
+      typeof payload.web3_space_id !== 'number' ||
+      typeof payload.creator_id !== 'number'
+    ) {
+      return;
+    }
+    if (payloadKey) handledWalletProposalPayloadKeyRef.current = payloadKey;
+
+    aiWalletProposalInFlightRef.current = true;
+    void (async () => {
+      try {
+        await createAgreementWithWalletFlow({
+          title: payload.title!.trim(),
+          description: payload.description!.trim(),
+          spaceId: payload.space_id!,
+          creatorId: payload.creator_id!,
+          label: payload.label ?? 'space setup',
+          web3SpaceId: payload.web3_space_id!,
+        });
+      } catch (walletFlowError) {
+        console.error(
+          '[AiLeftPanel] wallet-based proposal creation failed:',
+          walletFlowError,
+        );
+      } finally {
+        aiWalletProposalInFlightRef.current = false;
+      }
+    })();
+  }, [createAgreementWithWalletFlow, messages, onboardingContext]);
 
   useEffect(() => {
     if (
-      blockSpaceAiForSubscription ||
+      blockSpaceAiForInteraction ||
       !error ||
       status !== 'error' ||
       autoRetryingRef.current
@@ -1168,7 +1969,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }
     })();
   }, [
-    blockSpaceAiForSubscription,
+    blockSpaceAiForInteraction,
     buildMessageOptions,
     clearError,
     error,
@@ -1178,21 +1979,43 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
-    if (blockSpaceAiForSubscription) {
+    if (blockSpaceAiForInteraction) {
       clearError();
     }
-  }, [blockSpaceAiForSubscription, clearError]);
+    // clearError identity from useChat is unstable — only react to block toggles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [blockSpaceAiForInteraction]);
 
   const handleSend = useCallback(async () => {
-    if (blockSpaceAiForSubscription) return;
+    if (blockSpaceAiForInteraction) return;
     if ((!input.trim() && draftAttachments.length === 0) || isStreaming) return;
     const text = input;
     const attachments = [...draftAttachments];
+    let assistantText = '';
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      assistantText = extractAssistantTextFromMessage(
+        messages[i] as ChatUIMessage,
+      );
+      if (assistantText) break;
+    }
+    if (
+      text.trim() &&
+      (await openVotingMethodFromChatRef.current(text.trim(), assistantText))
+    ) {
+      setInput('');
+      setDraftAttachments([]);
+      return;
+    }
     setInput('');
     setDraftAttachments([]);
     try {
       clearError();
-      const options = await buildMessageOptions();
+      const nextContext = resolveSetupContextForUserMessage(
+        text,
+        onboardingContext,
+        lang,
+      );
+      const options = await buildMessageOptions(nextContext);
       let attachmentParts: Array<
         | { type: 'text'; text: string }
         | { type: 'file'; mediaType: string; url: string }
@@ -1229,21 +2052,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       } else if (attachments.length > 0) {
         attachmentParts = await convertFilesToParts(
           attachments.map((att) => att.file),
+          { authorizationToken: jwt ?? undefined },
         );
       }
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
-      if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-        const nextContext: OnboardingConversationContext = {
-          ...onboardingContext,
-          lastUserText: text.trim(),
-          setupPhase:
-            onboardingContext.setupPhase === 'discover'
-              ? 'draft'
-              : onboardingContext.setupPhase,
-        };
-        setOnboardingContext(nextContext);
-        saveOnboardingConversationContext(nextContext);
-      }
       if (spaceSlug && text.trim()) {
         recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
       }
@@ -1263,6 +2075,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         { role: 'user', parts: [...textParts, ...attachmentParts] },
         options,
       );
+      if (nextContext && nextContext !== onboardingContext) {
+        setOnboardingContext(nextContext);
+        saveOnboardingConversationContext(nextContext);
+      }
       for (const att of attachments) {
         if (att.previewUrl.startsWith('blob:')) {
           URL.revokeObjectURL(att.previewUrl);
@@ -1283,7 +2099,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     activeSpaceChatRoomId,
     matrix,
     onboardingContext,
-    blockSpaceAiForSubscription,
+    blockSpaceAiForInteraction,
+    lang,
+    messages,
   ]);
 
   const handleStop = useCallback(() => {
@@ -1302,40 +2120,41 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
-      if (blockSpaceAiForSubscription) return;
+      if (blockSpaceAiForInteraction) return;
       try {
         clearError();
         if (spaceSlug && text.trim()) {
           recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
         }
-        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-          const nextContext: OnboardingConversationContext = {
-            ...onboardingContext,
-            lastUserText: text.trim(),
-            setupPhase:
-              onboardingContext.setupPhase === 'discover'
-                ? 'draft'
-                : onboardingContext.setupPhase,
-          };
-          setOnboardingContext(nextContext);
-          saveOnboardingConversationContext(nextContext);
-        }
-        const options = await buildMessageOptions();
+        const nextContext = resolveSetupContextForUserMessage(
+          text,
+          onboardingContext,
+          lang,
+        );
+        const options = await buildMessageOptions(nextContext);
         if (DEBUG)
-          console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
+          console.log('[AiLeftPanel] suggestion selected', {
+            text,
+            spaceSlug,
+          });
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text }] },
           options,
         );
+        if (nextContext && nextContext !== onboardingContext) {
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
       } catch (err) {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
     },
     [
-      blockSpaceAiForSubscription,
+      blockSpaceAiForInteraction,
       sendMessage,
       buildMessageOptions,
       clearError,
+      lang,
       onboardingContext,
       spaceSlug,
     ],
@@ -1343,27 +2162,672 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleActionReplySelect = useCallback(
     async (text: string) => {
+      if (blockSpaceAiForInteraction) return;
       try {
         clearError();
-        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
-          const nextContext: OnboardingConversationContext = {
-            ...onboardingContext,
-            lastUserText: text.trim(),
-            setupPhase: 'confirm',
-          };
-          setOnboardingContext(nextContext);
-          saveOnboardingConversationContext(nextContext);
-        }
-        const options = await buildMessageOptions();
+        const nextContext = resolveSetupContextForUserMessage(
+          text,
+          onboardingContext,
+          lang,
+        );
+        const options = await buildMessageOptions(nextContext);
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text }] },
           options,
         );
+        if (nextContext && nextContext !== onboardingContext) {
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
       } catch (err) {
         console.error('[AiLeftPanel] action reply sendMessage error:', err);
       }
     },
-    [buildMessageOptions, clearError, onboardingContext, sendMessage],
+    [
+      blockSpaceAiForInteraction,
+      buildMessageOptions,
+      clearError,
+      lang,
+      onboardingContext,
+      sendMessage,
+    ],
+  );
+
+  const sendOnboardingLocationMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingLocationMessageLabels = useMemo(
+    () => ({
+      withLabel: (label: string) =>
+        t('onboardingLocationSetWithLabel', { label }),
+      withCoordinates: (latitude: number, longitude: number) =>
+        t('onboardingLocationSetWithCoordinates', { latitude, longitude }),
+      fallback: t('onboardingLocationSetFallback'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingLocationConfirm = useCallback(
+    async (value: SpaceLocationValue) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingLocationSubmitMessage(
+          value,
+          onboardingLocationMessageLabels,
+        );
+        const nextContext = applyOnboardingLocationToContext(
+          baseContext,
+          onboardingSpaceLocationFromPicker(value),
+          message,
+        );
+        await sendOnboardingLocationMessage(message, nextContext);
+      } catch (err) {
+        console.error('[AiLeftPanel] location confirm sendMessage error:', err);
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingLocationMessageLabels,
+      sendOnboardingLocationMessage,
+    ],
+  );
+
+  const handleOnboardingLocationSkip = useCallback(async () => {
+    if (isStreaming) return;
+    try {
+      clearError();
+      const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+      const message = t('onboardingLocationSkipMessage');
+      const nextContext = applyOnboardingLocationToContext(
+        baseContext,
+        skippedOnboardingSpaceLocation(),
+        message,
+      );
+      await sendOnboardingLocationMessage(message, nextContext);
+    } catch (err) {
+      console.error('[AiLeftPanel] location skip sendMessage error:', err);
+    }
+  }, [
+    clearError,
+    isStreaming,
+    lang,
+    onboardingContext,
+    sendOnboardingLocationMessage,
+    t,
+  ]);
+
+  const sendOnboardingActivationMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const sendOnboardingSetupJourneyMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingSetupJourneyMessageLabels = useMemo(
+    () => getOnboardingSetupJourneySubmitLabels(lang),
+    [lang],
+  );
+
+  const handleOnboardingSetupJourneySelect = useCallback(
+    async (journey: OnboardingSetupJourney, submitLabel: string) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message =
+          submitLabel.trim() ||
+          formatOnboardingSetupJourneySubmitMessage(
+            journey,
+            onboardingSetupJourneyMessageLabels,
+          );
+        const nextContext = applyOnboardingSetupJourneyToContext(
+          baseContext,
+          journey,
+          message,
+        );
+        await sendOnboardingSetupJourneyMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] setup journey select sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingSetupJourneyMessageLabels,
+      sendOnboardingSetupJourneyMessage,
+    ],
+  );
+
+  const onboardingActivationMessageLabels = useMemo(
+    () => ({
+      sandbox: t('onboardingActivationSetSandbox'),
+      pilot: t('onboardingActivationSetPilot'),
+      deployment: t('onboardingActivationSetDeployment'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingActivationSelect = useCallback(
+    async (method: OnboardingActivationMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingActivationSubmitMessage(
+          method,
+          onboardingActivationMessageLabels,
+        );
+        const nextContext = applyOnboardingActivationToContext(
+          baseContext,
+          method,
+          message,
+        );
+        await sendOnboardingActivationMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] activation select sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingActivationMessageLabels,
+      onboardingContext,
+      sendOnboardingActivationMessage,
+    ],
+  );
+
+  const sendOnboardingTransparencyMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingTransparencyMessageLabels = useMemo(
+    (): OnboardingTransparencyMessageLabels => ({
+      levelPublic: t('onboardingTransparencyLevelPublic'),
+      levelNetwork: t('onboardingTransparencyLevelNetwork'),
+      levelOrganisation: t('onboardingTransparencyLevelOrganisation'),
+      levelSpace: t('onboardingTransparencyLevelSpace'),
+      summary: (discoverability: string, access: string) =>
+        t('onboardingTransparencySetSummary', { discoverability, access }),
+      discoverabilitySummary: (discoverability: string) =>
+        t('onboardingTransparencyDiscoverabilitySetSummary', {
+          discoverability,
+        }),
+    }),
+    [t],
+  );
+
+  const handleOnboardingDiscoverabilityConfirm = useCallback(
+    async (level: OnboardingTransparencyMatrix['discoverability']) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingDiscoverabilitySubmitMessage(
+          level,
+          onboardingTransparencyMessageLabels,
+        );
+        const nextContext = applyOnboardingDiscoverabilityToContext(
+          baseContext,
+          level,
+          message,
+        );
+        await sendOnboardingTransparencyMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] discoverability confirm sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingTransparencyMessageLabels,
+      sendOnboardingTransparencyMessage,
+    ],
+  );
+
+  const handleOnboardingTransparencyConfirm = useCallback(
+    async (matrix: OnboardingTransparencyMatrix) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingTransparencySubmitMessage(
+          matrix,
+          onboardingTransparencyMessageLabels,
+        );
+        const nextContext = applyOnboardingTransparencyToContext(
+          baseContext,
+          matrix,
+          message,
+        );
+        await sendOnboardingTransparencyMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] transparency confirm sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingTransparencyMessageLabels,
+      sendOnboardingTransparencyMessage,
+    ],
+  );
+
+  const sendOnboardingEntryMethodMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext(nextContext);
+      saveOnboardingConversationContext(nextContext);
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingEntryMethodMessageLabels = useMemo(
+    () => ({
+      openAccess: t('onboardingEntryMethodSetOpen'),
+      inviteOnly: t('onboardingEntryMethodSetInvite'),
+      tokenBased: t('onboardingEntryMethodSetToken'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingEntryMethodConfirm = useCallback(
+    async (method: OnboardingEntryMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingEntryMethodSubmitMessage(
+          method,
+          onboardingEntryMethodMessageLabels,
+        );
+        const nextContext = applyOnboardingEntryMethodToContext(
+          baseContext,
+          method,
+          message,
+        );
+        await sendOnboardingEntryMethodMessage(message, nextContext);
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] entry method confirm sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingEntryMethodMessageLabels,
+      sendOnboardingEntryMethodMessage,
+    ],
+  );
+
+  useEffect(() => {
+    const active = onboardingContext?.activeGovernanceProposal;
+    if (active?.proposalType !== 'change_voting_method') return;
+
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const message = messages[i];
+      if (!message || message.role !== 'assistant') continue;
+      const parts = message.parts ?? [];
+      for (let j = parts.length - 1; j >= 0; j -= 1) {
+        const part = parts[j] as {
+          type?: string;
+          state?: string;
+          output?: { ok?: boolean; partial?: boolean };
+        };
+        if (part.type !== 'tool-prepare_governance_proposal') continue;
+        if (part.state !== 'output-available') continue;
+        if (part.output?.ok !== true || part.output.partial !== false) continue;
+
+        const method = active.collectedFields.voting_method;
+        if (method !== '1m1v' && method !== '1v1v' && method !== '1t1v') return;
+
+        const toolKey = `${message.id ?? 'm'}:${j}`;
+        if (completedVotingMethodToolKeyRef.current === toolKey) return;
+        if (onboardingContext?.votingMethod) {
+          completedVotingMethodToolKeyRef.current = toolKey;
+          return;
+        }
+
+        completedVotingMethodToolKeyRef.current = toolKey;
+        setOnboardingContext((current) => {
+          if (!current || current.votingMethod) return current;
+          const currentActive = current.activeGovernanceProposal;
+          if (currentActive?.proposalType !== 'change_voting_method') {
+            return current;
+          }
+          const next = completeVotingMethodGovernanceWalkthrough(
+            current,
+            method,
+          );
+          saveOnboardingConversationContext(next);
+          return next;
+        });
+        return;
+      }
+    }
+  }, [messages, onboardingContext]);
+
+  const sendOnboardingVotingMethodMessage = useCallback(
+    async (text: string, nextContext: OnboardingConversationContext) => {
+      const options = await buildMessageOptions(nextContext);
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+      setOnboardingContext((current) => {
+        if (current?.votingMethod) return current;
+        saveOnboardingConversationContext(nextContext);
+        return nextContext;
+      });
+    },
+    [buildMessageOptions, sendMessage],
+  );
+
+  const onboardingVotingMethodMessageLabels = useMemo(
+    () => ({
+      oneMemberOneVote: t('onboardingVotingMethodSetOneMemberOneVote'),
+      oneVoiceOneVote: t('onboardingVotingMethodSetOneVoiceOneVote'),
+      oneTokenOneVote: t('onboardingVotingMethodSetOneTokenOneVote'),
+    }),
+    [t],
+  );
+
+  const handleOnboardingVotingMethodSelect = useCallback(
+    async (method: OnboardingVotingMethod) => {
+      if (isStreaming) return;
+      try {
+        clearError();
+        const baseContext = ensureSpaceSetupContext(onboardingContext, lang);
+        const message = formatOnboardingVotingMethodSubmitMessage(
+          method,
+          onboardingVotingMethodMessageLabels,
+        );
+        const nextContext = applyOnboardingVotingMethodToContext(
+          baseContext,
+          method,
+          message,
+        );
+        await sendOnboardingVotingMethodMessage(message, nextContext);
+
+        const targetSlug =
+          nextContext.createdSpaceSlug?.trim() ||
+          spaceSlug?.trim() ||
+          onboardingContext?.createdSpaceSlug?.trim();
+        if (targetSlug) {
+          writeOnboardingVotingMethodResubmitData({ method });
+          openAiPanel();
+          const proposalPath = getChangeVotingMethodProposalPath(
+            lang,
+            targetSlug,
+          );
+          if (!isSameAppPath(proposalPath, pathname)) {
+            router.push(proposalPath);
+          }
+        }
+      } catch (err) {
+        console.error(
+          '[AiLeftPanel] voting method select sendMessage error:',
+          err,
+        );
+      }
+    },
+    [
+      clearError,
+      isStreaming,
+      lang,
+      onboardingContext,
+      onboardingVotingMethodMessageLabels,
+      openAiPanel,
+      pathname,
+      router,
+      sendOnboardingVotingMethodMessage,
+      spaceSlug,
+    ],
+  );
+
+  useEffect(() => {
+    openVotingMethodFromChatRef.current = async (
+      userText: string,
+      assistantText: string,
+    ) => {
+      if (
+        !isPostCreateOnboardingPhase(onboardingContext) ||
+        hasActiveVotingMethodDraft(onboardingContext) ||
+        onboardingContext?.votingMethod ||
+        isStreaming
+      ) {
+        return false;
+      }
+      if (
+        !shouldOpenOnboardingVotingMethodProposal({
+          userText,
+          assistantText,
+          votingMethodAlreadySet: Boolean(onboardingContext?.votingMethod),
+        })
+      ) {
+        return false;
+      }
+      const method = inferOnboardingVotingMethodFromConversation({
+        userText,
+        assistantText,
+      });
+      if (!method) return false;
+      await handleOnboardingVotingMethodSelect(method);
+      return true;
+    };
+  }, [handleOnboardingVotingMethodSelect, isStreaming, onboardingContext]);
+
+  const lastAssistantText = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const text = extractAssistantTextFromMessage(
+        messages[i] as ChatUIMessage,
+      );
+      if (text) return text;
+    }
+    return '';
+  }, [messages]);
+
+  const handleVoiceTranscriptSend = useCallback(
+    async (text: string) => {
+      if (blockSpaceAiForInteraction) return 'blocked' as const;
+      const normalized = text.trim();
+      if (!normalized || isStreaming) return 'skipped' as const;
+      setInput('');
+      setDraftAttachments([]);
+      try {
+        clearError();
+        if (
+          await openVotingMethodFromChatRef.current(
+            normalized,
+            lastAssistantText,
+          )
+        ) {
+          return 'sent' as const;
+        }
+        const nextContext = isOnboardingSetup
+          ? resolveSetupContextForUserMessage(
+              normalized,
+              onboardingContext,
+              lang,
+            )
+          : undefined;
+        const options = await buildMessageOptions(nextContext);
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text: normalized }] },
+          options,
+        );
+        if (
+          nextContext &&
+          isOnboardingSetup &&
+          nextContext !== onboardingContext
+        ) {
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
+        return 'sent' as const;
+      } catch (err) {
+        console.error('[AiLeftPanel] voice send failed:', err);
+        return 'failed' as const;
+      }
+    },
+    [
+      blockSpaceAiForInteraction,
+      buildMessageOptions,
+      clearError,
+      isOnboardingSetup,
+      isStreaming,
+      lang,
+      lastAssistantText,
+      onboardingContext,
+      sendMessage,
+    ],
+  );
+
+  const recentTranscriptSummary = useMemo(
+    () => buildRecentTranscriptSummaryFromChatMessages(messages),
+    [messages],
+  );
+
+  const handleVoiceTranscriptTurn = useCallback(
+    (turn: { role: 'user' | 'assistant'; text: string }) => {
+      if (isStreaming) return;
+      setMessages((prev) => {
+        const next = appendVoiceTranscriptTurn(prev, turn);
+        if (isOnboardingSetup) {
+          saveOnboardingChatMessages(toStoredOnboardingChatMessages(next));
+        }
+        return next;
+      });
+    },
+    [isOnboardingSetup, isStreaming, setMessages],
+  );
+
+  const voiceSessionContext = useMemo((): VoiceSessionContext | undefined => {
+    if (!isVoiceInterview || !spaceSlug?.trim()) return undefined;
+    if (isOnboardingSetup && onboardingContext) {
+      return onboardingContext;
+    }
+    return buildSpaceAdvisorVoiceSessionContext({
+      spaceSlug,
+      locale: lang,
+    });
+  }, [isOnboardingSetup, isVoiceInterview, lang, onboardingContext, spaceSlug]);
+
+  const voiceInterview = useOnboardingVoiceDiscovery({
+    enabled: isVoiceInterview,
+    isStreaming,
+    lastAssistantText,
+    locale: lang,
+    activeSpaceSlug: spaceSlug,
+    conversationContext: voiceSessionContext,
+    recentTranscriptSummary,
+    getAccessToken,
+    onStopChat: stop,
+    onSendTranscript: handleVoiceTranscriptSend,
+    onTranscriptTurn: handleVoiceTranscriptTurn,
+  });
+
+  const handleDiscoveryModeChange = useCallback(
+    (mode: OnboardingDiscoveryMode) => {
+      if (!showDiscoveryModeToggle || mode === discoveryMode) return;
+      if (mode === 'chat') {
+        voiceInterview.stopListening();
+        voiceInterview.stopSpeaking();
+        if (isOnboardingSetup && messages.length) {
+          saveOnboardingChatMessages(toStoredOnboardingChatMessages(messages));
+        }
+      }
+      if (isOnboardingSetup) {
+        setOnboardingContext((prev) => {
+          const base = ensureSpaceSetupContext(prev, lang);
+          const next = { ...base, discoveryMode: mode };
+          saveOnboardingConversationContext(next);
+          return next;
+        });
+      } else if (spaceSlug?.trim()) {
+        saveSpaceDiscoveryMode(spaceSlug, mode);
+        setSpaceDiscoveryMode(mode);
+      }
+    },
+    [
+      discoveryMode,
+      isOnboardingSetup,
+      lang,
+      messages,
+      showDiscoveryModeToggle,
+      spaceSlug,
+      voiceInterview.stopListening,
+      voiceInterview.stopSpeaking,
+    ],
   );
 
   const handleTriggerClick = useCallback(() => {
@@ -1507,7 +2971,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (blockSpaceAiForActivityAccess) {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
@@ -1518,23 +2982,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center px-6">
-          <Empty>
-            <div className="flex flex-col gap-7">
-              <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
-              <div className="flex gap-4 items-center justify-center">
-                <Button variant="outline" onClick={login}>
-                  {tSpaces('signIn')}
-                </Button>
-                <Button onClick={login}>{tSpaces('getStarted')}</Button>
-              </div>
-            </div>
-          </Empty>
+          <SpaceAccessDenied
+            userState={userSpaceState}
+            spaceId={effectiveSpaceWeb3Id}
+            spaceSlug={spaceSlug ?? undefined}
+          />
         </SidebarContent>
       </>
     );
   }
 
-  if (blockSpaceAiForActivityAccess) {
+  if (!isAuthenticated) {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
@@ -1570,7 +3028,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
           </div>
         ) : null}
-        {error && !blockSpaceAiForSubscription ? (
+        {spaceSlug &&
+        blockSpaceAiForMembership &&
+        hasSpaceActivityAccess &&
+        isAuthenticated &&
+        !isUserSpaceStateLoading ? (
+          <div className="mx-3 mt-3 shrink-0">
+            <SpaceAccessDenied
+              userState={userSpaceState}
+              spaceId={effectiveSpaceWeb3Id}
+              spaceSlug={spaceSlug}
+              className="py-4"
+            />
+          </div>
+        ) : null}
+        {error && !blockSpaceAiForInteraction ? (
           <div
             role="alert"
             className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -1578,12 +3050,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <div>{t('streamError')}</div>
             {error instanceof Error && error.message ? (
               <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs opacity-90">
-                {error.message}
+                {formatChatStreamErrorMessage(error)}
               </div>
             ) : null}
           </div>
         ) : null}
-        {isCreateSpaceWithWalletFlowError ? (
+        {showCreateSpaceWithWalletFlowError ? (
           <div
             role="alert"
             className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -1600,40 +3072,116 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ) : null}
           </div>
         ) : null}
+        {isCreateAgreementWithWalletFlowError ? (
+          <div
+            role="alert"
+            className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            <div>{t('streamError')}</div>
+            {createAgreementWithWalletFlowErrors.length > 0 ? (
+              <div className="mt-1 text-xs opacity-90">
+                {t('walletAgreementError')}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestionItems={suggestionItems}
-          showInlineSuggestions={
-            !hasUserMessage && !blockSpaceAiForSubscription
-          }
+          showInlineSuggestions={!hasUserMessage && !blockSpaceAiForInteraction}
           onSuggestionSelect={
-            blockSpaceAiForSubscription ? undefined : handleSuggestionSelect
+            blockSpaceAiForInteraction ? undefined : handleSuggestionSelect
           }
           onActionReplySelect={
-            blockSpaceAiForSubscription ? undefined : handleActionReplySelect
+            blockSpaceAiForInteraction ? undefined : handleActionReplySelect
           }
           activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
+          onboardingContext={onboardingContext}
+          onOnboardingLocationConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingLocationConfirm
+          }
+          onOnboardingLocationSkip={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingLocationSkip
+          }
+          onOnboardingSetupJourneySelect={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingSetupJourneySelect
+          }
+          onOnboardingActivationSelect={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingActivationSelect
+          }
+          onOnboardingTransparencyConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingTransparencyConfirm
+          }
+          onOnboardingDiscoverabilityConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingDiscoverabilityConfirm
+          }
+          onOnboardingEntryMethodConfirm={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingEntryMethodConfirm
+          }
+          onOnboardingVotingMethodSelect={
+            blockSpaceAiForSubscription
+              ? undefined
+              : handleOnboardingVotingMethodSelect
+          }
         />
       </SidebarContent>
-      <SidebarFooter className="bg-background-2 p-0">
-        {hasUserMessage && !blockSpaceAiForSubscription ? (
+      <SidebarFooter className="overflow-visible bg-background-2 p-0">
+        {showDiscoveryModeToggle ? (
+          <div className="flex justify-center border-t border-border/60 px-3 py-2">
+            <OnboardingDiscoveryModeToggle
+              mode={discoveryMode}
+              disabled={blockSpaceAiForInteraction || isStreaming}
+              onChange={handleDiscoveryModeChange}
+            />
+          </div>
+        ) : null}
+        {hasUserMessage && !blockSpaceAiForInteraction ? (
           <AiPanelSuggestions
             items={suggestionItems}
             onSelect={handleSuggestionSelect}
             variant="tags"
           />
         ) : null}
-        <AiPanelChatBar
-          value={input}
-          onChange={setInput}
-          onSend={handleSend}
-          draftAttachments={draftAttachments}
-          onDraftAttachmentsChange={setDraftAttachments}
-          onStop={handleStop}
-          isStreaming={isStreaming}
-          composerDisabled={blockSpaceAiForSubscription}
-        />
+        {isVoiceInterview ? (
+          <OnboardingVoiceInterviewBar
+            phase={voiceInterview.phase}
+            liveTranscript={voiceInterview.liveTranscript}
+            voiceError={voiceInterview.voiceError}
+            disabled={blockSpaceAiForInteraction || isStreaming}
+            isConnecting={voiceInterview.isConnecting}
+            isRealtimeConnected={voiceInterview.isRealtimeConnected}
+            transport={voiceInterview.transport}
+            realtimeFeatureEnabled={voiceInterview.realtimeFeatureEnabled}
+            usingWebSpeechFallback={voiceInterview.usingWebSpeechFallback}
+            onToggleListening={voiceInterview.toggleListening}
+          />
+        ) : (
+          <AiPanelChatBar
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+            draftAttachments={draftAttachments}
+            onDraftAttachmentsChange={setDraftAttachments}
+            onStop={handleStop}
+            isStreaming={isStreaming}
+            composerDisabled={blockSpaceAiForInteraction}
+          />
+        )}
       </SidebarFooter>
     </>
   );

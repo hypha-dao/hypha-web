@@ -2,7 +2,10 @@
 
 import { Space } from '@hypha-platform/core/client';
 import { useSpaceDiscoverability } from './use-space-discoverability';
-import { useUserSpaceState, UserSpaceState } from './use-user-space-state';
+import {
+  useUserSpaceState,
+  UserSpaceState,
+} from './use-user-space-state.web3.rpc';
 import { shouldShowSpace } from './use-filter-spaces-by-discoverability';
 import { useMemo } from 'react';
 
@@ -32,7 +35,7 @@ export function filterSpacesByDiscoverability(
   userState: UserSpaceState,
 ): Space[] {
   return spaces.filter((space) => {
-    if (!space.web3SpaceId) return true;
+    if (!space.web3SpaceId) return false;
     const discoverability = discoverabilityMap.get(space.web3SpaceId);
     return shouldShowSpace(space, discoverability, userState);
   });

@@ -44,18 +44,19 @@
     "errorLoadMembersTab": "Ups, algo salió mal. No se pudo cargar la pestaña de miembros.",
     "errorLoadAgreementsTab": "Ups, algo salió mal. No se pudo cargar la pestaña de acuerdos.",
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
+    "errorLoadBankingTab": "Ups, algo salió mal. No se pudo cargar la pestaña de banca.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
     "Coherence": "Señales",
     "Signals": "Señales",
     "uploadLeadImage": {
       "cropTitle": "Subir una imagen",
-      "cropDescription": "Ajusta el encuadre y guarda. Arrastra para reposicionar y usa el zoom para el área del banner (JPEG, PNG o WebP — máx. 4 MB).",
+      "cropDescription": "Ajusta el encuadre y guarda. Arrastra para reposicionar y usa el zoom para el área del banner (JPEG, PNG o WebP — máx. 16 MB).",
       "cancel": "Cancelar",
       "confirm": "Recortar y guardar",
       "dropHere": "Suelta la imagen aquí",
       "genericUploadFallback": "<accent>Subir</accent> una imagen",
-      "fileTooLarge": "Tu imagen es demasiado grande (máx. 4 MB) y no se pudo subir. Reduce el tamaño e inténtalo de nuevo.",
+      "fileTooLarge": "Tu imagen es demasiado grande (máx. 16 MB) y no se pudo subir. Reduce el tamaño e inténtalo de nuevo.",
       "uploadFailed": "No se pudo subir el archivo."
     }
   },
@@ -88,10 +89,13 @@
       "enterAmountPrompt": "Por favor, introduce una cantidad.",
       "tokenRequired": "Selecciona un token",
       "atLeastOnePayoutRequired": "Se requiere al menos un pago",
+      "atLeastOneAirdropRecipient": "Se requiere al menos un destinatario del airdrop",
+      "tooManyAirdropRecipients": "Demasiados destinatarios para una propuesta de airdrop.",
       "purchaseAmountRequired": "Ingresa un monto de compra.",
       "selectSpaceToActivate": "Selecciona un espacio para activar.",
       "monthsToActivateRequired": "Ingresa la cantidad de meses para activar.",
       "selectSpaceToJoin": "Selecciona un espacio para unirte",
+      "selectGovernanceSpace": "Selecciona un espacio de gobernanza",
       "selectDelegatedVotingMember": "Selecciona un miembro delegado para votar",
       "selectSpaceToExit": "Selecciona un espacio para salir.",
       "selectMemberToRemove": "Selecciona un miembro para eliminar",
@@ -120,6 +124,34 @@
       "acceptInvestmentExactReceiveRows": "Se requiere exactamente una fila de token en « El miembro inversor recibirá »."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribuye tokens a uno o varios destinatarios. Elige transferir tokens que ya están en la tesorería de tu espacio o acuñar nuevos tokens creados por tu espacio.",
+        "recipientsLabel": "Destinatarios",
+        "methodLabel": "Método",
+        "tokenLabel": "Token",
+        "amountLabel": "Cantidad",
+        "transfer": "Transferir",
+        "mint": "Acuñar",
+        "noMintableTokens": "Tu espacio aún no ha creado tokens acuñables. Emite un token primero o usa el método Transferir.",
+        "add": "Añadir destinatario",
+        "remove": "Eliminar",
+        "entryManual": "Manual",
+        "entryCsv": "Subir CSV",
+        "csvFormatDescription": "Sube un archivo CSV con un destinatario por línea: una dirección de cartera y una cantidad, separadas por coma (también funcionan punto y coma o tabulación). La línea de encabezado es opcional, los decimales usan punto y el archivo puede contener hasta {max} destinatarios.",
+        "csvChooseFile": "Elegir archivo CSV",
+        "csvDownloadTemplate": "Descargar plantilla",
+        "csvLoadedSummary": "{count} destinatarios cargados desde {fileName} — cantidad total: {total}",
+        "csvCurrentRecipients": "{count} destinatarios actualmente en la lista.",
+        "csvClear": "Borrar",
+        "csvErrorRead": "No se pudo leer el archivo. Compruébalo e inténtalo de nuevo.",
+        "csvErrorEmpty": "No se encontraron destinatarios en el archivo.",
+        "csvErrorTooMany": "El archivo contiene {count} destinatarios; el máximo es {max}.",
+        "csvErrorColumns": "Línea {line}: se esperaba una dirección de cartera y una cantidad.",
+        "csvErrorInvalidAddress": "Línea {line}: dirección de cartera no válida.",
+        "csvErrorInvalidAmount": "Línea {line}: cantidad no válida.",
+        "csvErrorMore": "…y {count} problemas más.",
+        "csvInvalidRecipients": "Algunos destinatarios de la lista no son válidos. Sube un archivo corregido o cambia a la entrada manual."
+      },
       "paymentSchedule": {
         "errors": {
           "milestonesEmpty": "Los hitos no pueden estar vacíos",
@@ -334,6 +366,20 @@
           "currentSpaceTag": "espacio emisor",
           "addSpacePlaceholder": "Agregar un espacio…",
           "removeSpace": "Eliminar espacio"
+        },
+        "authorizedMinters": {
+          "title": "Emisores Autorizados",
+          "description": "Otorga a direcciones de billetera específicas el derecho de acuñar, quemar y gestionar la lista de crédito de este token, además del ejecutor del espacio.",
+          "listLabel": "Direcciones de Emisores",
+          "listDescription": "Estas billeteras pueden acuñar, quemar y gestionar la lista de crédito de este token.",
+          "grantLabel": "Otorgar Derechos de Emisión",
+          "revokeLabel": "Revocar Derechos de Emisión",
+          "revokeDescription": "A estas billeteras se les retirarán los derechos de emisión.",
+          "placeholder": "0x… dirección de blockchain",
+          "add": "Agregar dirección",
+          "remove": "Eliminar dirección",
+          "invalid": "Introduce una dirección de blockchain válida",
+          "duplicate": "Esta dirección ya fue agregada"
         }
       },
       "quorumAndUnity": {
@@ -342,6 +388,7 @@
         "votingPeriod": "Período de votación",
         "autoExecutionWhenConditionsMet": "Ejecución automática (cuando se cumplen las condiciones)",
         "autoExecutionDisabled": "La ejecución automática se desactiva cuando el quórum es inferior al 20 % para proteger los activos de tesorería.",
+        "autoExecutionRequired": "Cuando el quórum es del 20 % o superior, las propuestas se ejecutan automáticamente al cumplirse las condiciones. No aplica una duración mínima de votación.",
         "minimumVotingDuration": "Duración mínima de la votación",
         "minDurationUnavailableNotConnected": "La duración mínima de votación no está disponible hasta que el espacio esté conectado.",
         "minDurationLoadError": "No se pudo cargar la duración mínima de votación desde la red. Inténtelo de nuevo más tarde.",
@@ -426,6 +473,14 @@
         "space": "Espacio",
         "delegationRules": "Reglas de delegación",
         "delegatedVotingMemberDescription": "El miembro votante delegado es la persona de su espacio que está formalmente autorizada para emitir votos en nombre de su espacio dentro del espacio para unirse."
+      },
+      "changeSpaceDelegate": {
+        "governanceSpace": "Espacio de gobernanza",
+        "delegationRules": "Reglas de delegación",
+        "delegatedVotingMemberDescription": "Selecciona el miembro de tu espacio que debe recibir el poder de voto delegado de tu espacio en el espacio de gobernanza elegido."
+      },
+      "changeSpaceDelegateSelector": {
+        "governanceSpace": "Espacio de gobernanza"
       },
       "spaceTransparencySettings": {
         "title": "Transparencia espacial",
@@ -609,6 +664,7 @@
       "membershipExit": "Salida de membresía",
       "spaceMemory": "Space Memory",
       "spaceToSpace": "Espacio al espacio",
+      "changeDelegate": "Cambiar delegado",
       "issueNewToken": "Emitir nuevo token",
       "treasuryMinting": "Acuñación del Tesoro",
       "tokenBurning": "Quema de tokens",
@@ -621,6 +677,7 @@
       "contribution": "Contribución",
       "expenses": "Gastos",
       "funding": "Fondos",
+      "airdrop": "Airdrop",
       "investment": "Inversión",
       "exchange": "Intercambio"
     },
@@ -669,14 +726,14 @@
         "descriptionRequired": "Por favor agregue contenido a su propuesta",
         "slugFormat": "Slug debe contener solo letras minúsculas, números y guiones.",
         "uploadValidFile": "Por favor sube un archivo válido",
-        "fileTooLarge": "Su archivo es demasiado grande y excede el límite de 4 MB. Sube un archivo más pequeño.",
+        "fileTooLarge": "Su archivo es demasiado grande y excede el límite de 16 MB. Sube un archivo más pequeño.",
         "imageFileType": "El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP).",
         "leadImageUrlInvalid": "La URL de la imagen principal debe ser una URL válida",
         "attachmentUrlInvalid": "La URL del archivo adjunto debe ser una URL válida",
         "attachmentNameRequired": "El nombre del archivo adjunto es obligatorio",
-        "attachmentsLimit": "Puede adjuntar hasta 3 archivos. Retire los archivos adjuntos adicionales.",
-        "attachmentFileTooLarge": "Su archivo \"{fileName}\" es demasiado grande y excede el límite de 4 MB. Sube un archivo más pequeño.",
-        "attachmentFileTypeUnsupported": "Este archivo con formato \"{fileName}\" no es compatible. Cargue un archivo JPEG, PNG, WebP o PDF (hasta 4 MB).",
+        "attachmentsLimit": "Puede adjuntar hasta 5 archivos. Retire los archivos adjuntos adicionales.",
+        "attachmentFileTooLarge": "Su archivo \"{fileName}\" es demasiado grande y excede el límite de 16 MB. Sube un archivo más pequeño.",
+        "attachmentFileTypeUnsupported": "Este archivo con formato \"{fileName}\" no es compatible. Cargue un archivo JPEG, PNG, WebP o PDF (hasta 16 MB).",
         "tokenNameMin": "Introduzca un nombre de token (mínimo 2 caracteres)",
         "tokenNameMax": "El nombre del token debe tener como máximo 100 caracteres.",
         "tokenNameInvalidContent": "El nombre del token no puede contener emojis ni enlaces",
@@ -719,7 +776,7 @@
       "unityLabel": "Unidad",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Subir</accent> una imagen",
-      "addAttachmentLabel": "Agregar archivo adjunto (JPEG, PNG, WebP o PDF, máximo 4 MB)",
+      "addAttachmentLabel": "Agregar archivo adjunto (JPEG, PNG, WebP o PDF, máximo 16 MB)",
       "proposalContent": "Contenido de la propuesta",
       "proposalContentPlaceholder": "Escriba el contenido de su propuesta aquí...",
       "editor": {
@@ -751,6 +808,18 @@
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
       "CREATE_WEB3_PROPOSAL": "Creando propuesta Web3...",
+      "UPLOAD_FILES": "Subiendo archivos...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
+    },
+    "changeSpaceDelegateProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
+      "CREATE_WEB3_AGREEMENT": "Creando acuerdo Web3...",
+      "UPLOAD_FILES": "Subiendo archivos...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
+    },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
+      "CREATE_WEB3_AGREEMENT": "Creando acuerdo Web3...",
       "UPLOAD_FILES": "Subiendo archivos...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
     },
@@ -793,17 +862,56 @@
     "continueAdventure": "Continuar tu aventura"
   },
   "OnboardingAdventure": {
-    "title": "Tu aventura empieza aquí.",
-    "continueAdventure": "Tu aventura continúa aquí",
-    "subtitle": "Tienes una visión poderosa para el mundo; nosotros te damos las herramientas para hacerla realidad.",
+    "heroEyebrow": "LA ORGANIZACIÓN INTELIGENTE",
+    "title": "Tienes una visión poderosa para el mundo.",
+    "titleLine1": "Tienes una",
+    "titleLine2": "visión poderosa para el mundo.",
+    "continueAdventure": "Bienvenido de nuevo",
+    "subtitle": "Conviértela en una organización inteligente y audaz que actúa.",
+    "returnSubtitle": "Sigue tu camino — o pídele a Hypha AI qué hacer ahora.",
+    "heroPill": {
+      "build": "Construye",
+      "together": ", juntos.",
+      "rotating": {
+        "anything": "Todo",
+        "projects": "Proyectos",
+        "startUps": "Start-ups",
+        "ventures": "Ventures",
+        "companies": "Empresas",
+        "studios": "Estudios",
+        "games": "Juegos",
+        "clubs": "Clubes",
+        "guilds": "Gremios",
+        "associations": "Asociaciones",
+        "schools": "Escuelas",
+        "cooperatives": "Cooperativas",
+        "collectives": "Colectivos",
+        "communities": "Comunidades",
+        "networks": "Redes",
+        "hubs": "Hubs",
+        "coalitions": "Coaliciones",
+        "movements": "Movimientos",
+        "ecosystems": "Ecosistemas",
+        "daos": "DAOs",
+        "ngos": "ONG",
+        "funds": "Fondos",
+        "villages": "Aldeas",
+        "farms": "Granjas",
+        "festivals": "Festivales",
+        "solidarity": "Solidaridad",
+        "livelihoods": "Medios de vida"
+      }
+    },
     "aiHero": {
       "title": "Build Anything, Together",
-      "description": "Cuéntale a Hypha AI lo que quieres construir y te guiará paso a paso en la configuración.",
-      "placeholder": "Crear un espacio, unirte a uno existente, explorar la red o financiar una tesorería: describe tu objetivo y la AI te guía.",
+      "description": "Cuéntale a Hypha AI lo que quieres construir — te guía paso a paso.",
+      "placeholder": "Crear un espacio, unirte a uno, explorar la red o financiar una tesorería — describe tu objetivo y la AI te guía.",
       "rotating": {
+        "launchCooperative": "Pídele a Hypha AI lanzar una cooperativa con propiedad compartida...",
+        "tokenEconomy": "Pídele a Hypha AI diseñar una economía de tokens para tu red...",
         "createSpace": "Pídele a Hypha AI crear un espacio para tu misión...",
-        "governance": "Pídele a Hypha AI diseñar la gobernanza de tu comunidad...",
-        "joinSpace": "Pídele a Hypha AI ayudarte a unirte al espacio correcto...",
+        "governance": "Pídele a Hypha AI redactar la gobernanza de tu comunidad...",
+        "joinSpace": "Pídele a Hypha AI encontrar el espacio adecuado...",
         "treasury": "Pídele a Hypha AI preparar un espacio listo para tesorería...",
         "explore": "Pídele a Hypha AI encontrar oportunidades en la red..."
       },
@@ -816,6 +924,24 @@
       "sendFailed": "No se pudo enviar el prompt a la AI. Reintenta.",
       "helper": "La AI propondrá cada acción y pedirá confirmación antes de crear o actualizar cualquier cosa.",
       "unavailable": "El onboarding con AI no está disponible temporalmente en este despliegue.",
+      "skipLocationMessage": "Omitir ubicación",
+      "onboardingLocationSetWithLabel": "Ubicación establecida: {label}",
+      "onboardingLocationSetWithCoordinates": "Ubicación establecida: {latitude}, {longitude}",
+      "onboardingLocationSetFallback": "Ubicación establecida",
+      "onboardingActivationSetSandbox": "Modo de activación: Sandbox",
+      "onboardingActivationSetPilot": "Modo de activación: Piloto",
+      "onboardingActivationSetDeployment": "Modo de activación: Implementación",
+      "onboardingSetupJourneySetSingle": "Espacio único",
+      "onboardingSetupJourneySetEcosystem": "Ecosistema completo (varios espacios)",
+      "onboardingTransparencyLevelPublic": "Público",
+      "onboardingTransparencyLevelNetwork": "Red",
+      "onboardingTransparencyLevelOrganisation": "Organización",
+      "onboardingTransparencyLevelSpace": "Espacio",
+      "onboardingTransparencySetSummary": "Matriz de transparencia definida — descubrimiento: {discoverability}, acceso a la actividad: {access}",
+      "onboardingTransparencyDiscoverabilitySetSummary": "Descubrimiento definido como {discoverability}",
+      "onboardingEntryMethodSetOpen": "Método de entrada: Acceso abierto",
+      "onboardingEntryMethodSetInvite": "Método de entrada: Invitación / solicitud para unirse",
+      "onboardingEntryMethodSetToken": "Método de entrada: Membresía basada en token",
       "ariaLabel": "Prompt de onboarding con AI",
       "flow": {
         "badge": "Simple. Powerful. By design.",
@@ -911,8 +1037,8 @@
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentionOnChatMessage": {
-        "title": "Se te menciona en un mensaje de chat",
-        "description": "En cualquier hilo o chat donde las menciones estén habilitadas para ti."
+        "title": "Menciones @ y alertas de llamada",
+        "description": "Cuando alguien te @menciona o inicia una llamada en un espacio o hilo de señal al que perteneces."
       }
     },
     "actions": {
@@ -1057,6 +1183,10 @@
         "title": "Membresía espacio-espacio",
         "description": "Permite que tu espacio se una a otro espacio como miembro, obteniendo la capacidad de participar en la gobernanza y votar propuestas."
       },
+      "changeSpaceDelegate": {
+        "title": "Cambiar delegado",
+        "description": "Actualiza el miembro que vota en nombre de tu espacio en un espacio al que ya te has unido."
+      },
       "issueNewToken": {
         "title": "Emitir nuevo token",
         "description": "Cree un nuevo token de utilidad, propiedad, impacto, créditos en efectivo, voz o moneda comunitaria dentro de su espacio."
@@ -1134,6 +1264,10 @@
       "deployFunds": {
         "title": "Implementar fondos",
         "description": "Asigne fondos de tesorería para inversiones en otros espacios de la red o para distribuir recursos entre espacios dentro de su organización."
+      },
+      "airdrop": {
+        "title": "Distribuir Tokens (Airdrop)",
+        "description": "Distribuye tokens a uno o varios destinatarios transfiriéndolos desde la tesorería de tu espacio o acuñando tokens creados por tu espacio."
       },
       "depositFunds": {
         "title": "Depositar fondos",
@@ -1234,7 +1368,8 @@
     "aiAgentsMobilizedCount": "Movilizado {count, plural, one {# vez} other {# veces}}"
   },
   "TreasuryTab": {
-    "balance": "Balance",
+    "bankingRoutes": "Banca",
+    "balance": "Saldo",
     "wallet": "Billetera",
     "searchTokens": "Buscar tokens",
     "hideSmall": "Ocultar pequeños",
@@ -1361,7 +1496,7 @@
         "urlInvalid": "Ingrese una URL válida (por ejemplo, https://example.com)",
         "avatarUrlInvalid": "La URL del avatar debe ser una URL válida",
         "leadImageUrlInvalid": "La URL de la imagen principal debe ser una URL válida",
-        "fileTooLarge": "Su archivo es demasiado grande y excede el límite de 4 MB. Por favor sube un archivo más pequeño",
+        "fileTooLarge": "Su archivo es demasiado grande y excede el límite de 16 MB. Por favor sube un archivo más pequeño",
         "fileMustBeImage": "El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP)"
       }
     }
@@ -1784,6 +1919,7 @@
       "usdcAmount": "USDC Monto",
       "hyphaAmount": "HYPHA Monto",
       "joiningSpace": "Unirse al espacio",
+      "governanceSpace": "Espacio de gobernanza",
       "delegatedVotingMember": "Miembro delegado con derecho a voto",
       "exitingMember": "Miembro saliente",
       "exitFrom": "Salir de",
@@ -1965,6 +2101,8 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
+      "createSpace": "Ayúdame a crear un nuevo espacio en Hypha",
+      "createEcosystem": "Ayúdame a configurar una organización completa con varios espacios",
       "spaceHealth": "¿Cómo va nuestro espacio en general?",
       "nextSignal": "¿Qué señal deberíamos crear o compartir a continuación?",
       "blindSpot": "¿Cuál es nuestro mayor punto ciego?",
@@ -1973,6 +2111,8 @@
       "valueFlows": "¿Cómo fluye el valor a través de nuestros tokens?"
     },
     "suggestionTags": {
+      "createSpace": "Crear espacio",
+      "createEcosystem": "Crear ecosistema",
       "spaceHealth": "Salud del espacio",
       "nextSignal": "Próxima señal",
       "blindSpot": "Punto ciego",
@@ -2006,6 +2146,7 @@
     "toolTokens": "{count} token(s) obtenido(s) para el espacio \"{slug}\".",
     "toolError": "Error: {message}",
     "streamError": "Ocurrió un error al generar la respuesta.",
+    "walletAgreementError": "No pudimos publicar la propuesta on-chain. Comprueba tu wallet e inténtalo de nuevo.",
     "assistantExpiredSubtitle": "Su contribución a la red Hypha expiró hace {expiredElapsed}. Reactive su espacio antes de usar Hypha AI.",
     "attachment": "Adjunto",
     "pendingAction": "Acción pendiente",
@@ -2014,7 +2155,83 @@
     "cancel": "Cancelar",
     "showMore": "Leer más",
     "showLess": "Mostrar menos",
-    "welcomeSpecialistsHint": "Los especialistas activos también aparecen en Miembros > Agentes de IA."
+    "welcomeSpecialistsHint": "Los especialistas activos también aparecen en Miembros > Agentes de IA.",
+    "onboardingLocationTitle": "Ubicación en el mapa",
+    "onboardingLocationHint": "Busca una dirección o haz clic en el mapa para colocar un pin. Puedes omitir si prefieres no mostrar una ubicación.",
+    "onboardingLocationConfirm": "Usar esta ubicación",
+    "onboardingLocationSkip": "Omitir ubicación",
+    "onboardingLocationSkipMessage": "Omitir ubicación",
+    "onboardingActivationTitle": "Modo de activación",
+    "onboardingActivationHint": "Elige cómo debe empezar este espacio: Sandbox para pruebas privadas, Piloto para demos y validación, o Implementación para un espacio activo y públicamente visible.",
+    "onboardingActivationSetSandbox": "Modo de activación: Sandbox",
+    "onboardingActivationSetPilot": "Modo de activación: Piloto",
+    "onboardingActivationSetDeployment": "Modo de activación: Implementación",
+    "onboardingSetupJourneyTitle": "Espacio único o ecosistema",
+    "onboardingSetupJourneyHint": "Empieza con un espacio o configura una organización completa con varios espacios coordinados. El modo ecosistema propone espacios según patrones de la red Hypha.",
+    "onboardingSetupJourneySingleTitle": "Espacio único",
+    "onboardingSetupJourneySingleDescription": "Un espacio para tu equipo, proyecto o comunidad — puedes vincularlo a un ecosistema padre más adelante.",
+    "onboardingSetupJourneyEcosystemTitle": "Ecosistema completo",
+    "onboardingSetupJourneyEcosystemDescription": "Organización raíz más espacios hijos coordinados (comunidad, equipo núcleo, dominios, tesorería, gobernanza) — propuestos desde patrones de la red Hypha.",
+    "onboardingSetupJourneySetSingle": "Espacio único",
+    "onboardingSetupJourneySetEcosystem": "Ecosistema completo (varios espacios)",
+    "onboardingTransparencyTitle": "Matriz de transparencia",
+    "onboardingTransparencyHint": "Define quién puede descubrir tu espacio y quién puede ver su actividad.",
+    "onboardingTransparencyDiscoverabilityTitle": "¿Quién puede descubrir este espacio?",
+    "onboardingTransparencyDiscoverabilityHint": "Elige Público, Red, Organización o Espacio — cada opción explica quién puede encontrar tu espacio en Hypha.",
+    "onboardingTransparencyActivityTitle": "¿Quién puede ver la actividad de este espacio?",
+    "onboardingTransparencyActivityHint": "Elige Público, Red, Organización o Espacio — cada opción explica quién puede ver propuestas, tesorería, miembros y trabajo compartido.",
+    "onboardingTransparencyDiscoverabilityConfirm": "Continuar",
+    "onboardingTransparencyDiscoverabilitySetSummary": "Descubrimiento definido como {discoverability}",
+    "onboardingTransparencyDiscoverabilityChosen": "Descubrimiento: {level}",
+    "onboardingTransparencyBenefit": "Los espacios más transparentes se benefician de la polinización cruzada planetaria: los flujos de conocimiento, valor e impacto se propagan por la red Hypha cuando las comunidades se hacen legibles entre sí.",
+    "onboardingTransparencyConfirm": "Usar estos niveles de transparencia",
+    "onboardingTransparencyLevelPublic": "Público",
+    "onboardingTransparencyLevelNetwork": "Red",
+    "onboardingTransparencyLevelOrganisation": "Organización",
+    "onboardingTransparencyLevelSpace": "Espacio",
+    "onboardingTransparencySetSummary": "Matriz de transparencia definida — descubrimiento: {discoverability}, acceso a la actividad: {access}",
+    "onboardingLocationSetWithLabel": "Ubicación establecida: {label}",
+    "onboardingLocationSetWithCoordinates": "Ubicación establecida: {latitude}, {longitude}",
+    "onboardingLocationSetFallback": "Ubicación establecida",
+    "walletSignaturePending": "Revisa tu wallet para firmar la transacción. Funciona con wallets estándar y configuraciones 2FA/MFA.",
+    "onboardingEntryMethodTitle": "Método de entrada",
+    "onboardingEntryMethodHint": "Elige cómo pueden unirse las personas a tu espacio: abierto a todos, solo por invitación/solicitud, o membresía basada en token.",
+    "onboardingEntryMethodConfirm": "Usar este método de entrada",
+    "onboardingEntryMethodTokenNote": "La membresía basada en token requiere crear un token de membresía — te guiaremos en ese proceso después de crear el espacio.",
+    "onboardingEntryMethodSetOpen": "Método de entrada: Acceso abierto",
+    "onboardingEntryMethodSetInvite": "Método de entrada: Invitación / solicitud para unirse",
+    "onboardingEntryMethodSetToken": "Método de entrada: Membresía basada en token",
+    "onboardingVotingMethodTitle": "Método de votación",
+    "onboardingVotingMethodHint": "Elige cómo se toman las decisiones en este espacio: un voto por miembro, por token de voz o por token de gobernanza.",
+    "onboardingVotingMethodSetOneMemberOneVote": "Método de votación: Un miembro, un voto",
+    "onboardingVotingMethodSetOneVoiceOneVote": "Método de votación: Un token de voz, un voto",
+    "onboardingVotingMethodSetOneTokenOneVote": "Método de votación: Un token, un voto",
+    "onboardingDiscoveryModeLabel": "Modo de descubrimiento",
+    "onboardingDiscoveryModeChat": "Chat",
+    "onboardingDiscoveryModeVoice": "Voz en vivo",
+    "onboardingVoiceInterviewTitle": "Hablemos",
+    "onboardingVoiceInterviewHint": "Habla con naturalidad — escucho, reflejo lo que entiendo y hago preguntas de seguimiento. Cambia al chat cuando quieras.",
+    "onboardingVoiceStatusReady": "Toca el micrófono cuando estés listo",
+    "onboardingVoiceStatusListening": "Escuchando…",
+    "onboardingVoiceStatusThinking": "Pensando…",
+    "onboardingVoiceStatusSpeaking": "Hablando…",
+    "onboardingVoiceStartListening": "Empezar a hablar",
+    "onboardingVoiceStartConversation": "Iniciar conversación",
+    "onboardingVoiceFinishTurn": "Terminar turno",
+    "onboardingVoiceStopSpeaking": "Detener",
+    "onboardingVoiceUnsupported": "La voz no es compatible con este navegador — prueba el chat u otro navegador.",
+    "onboardingVoicePermissionDenied": "El acceso al micrófono está bloqueado — permite el micrófono en la configuración del navegador e inténtalo de nuevo.",
+    "onboardingVoiceMicUnavailable": "No se encontró micrófono — conecta uno o cambia al chat.",
+    "onboardingVoiceNetworkError": "El reconocimiento de voz necesita conexión a internet — comprueba tu conexión e inténtalo de nuevo.",
+    "onboardingVoiceError": "Error de entrada de voz — inténtalo de nuevo o cambia al chat.",
+    "onboardingVoiceStatusConnecting": "Conectando voz en directo…",
+    "onboardingVoiceRealtimeLive": "En directo",
+    "onboardingVoiceTransportRealtime": "Voz en vivo",
+    "onboardingVoiceTransportBrowser": "Voz del navegador",
+    "onboardingVoiceTransportConnecting": "Conectando",
+    "onboardingVoiceRealtimeFallback": "Modo de voz estándar — la voz en directo no está disponible ahora.",
+    "onboardingVoiceSessionError": "No se pudo iniciar la voz en directo — inténtalo de nuevo o cambia al chat.",
+    "onboardingVoiceInteractionBlocked": "La voz está en pausa hasta que puedas usar la IA en este espacio — cambia al chat o inténtalo de nuevo desde el onboarding."
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -2024,9 +2241,14 @@
     "sendButton": "Enviar",
     "newlineHint": "Enter para enviar · Shift+Enter para nueva línea · :emoji:",
     "loading": "Cargando...",
+    "loadOlderMessages": "Cargar mensajes anteriores",
+    "loadingOlderMessages": "Cargando mensajes anteriores…",
+    "historyStartReached": "Inicio del chat",
     "connectionLostTitle": "Conexión perdida",
     "connectionLostDescription": "La sincronización del chat se pausó por un fallo de red. Reintenta cuando vuelvas a estar en línea.",
     "connectionReconnectingDescription": "Reconectando el chat…",
+    "connectionRetryFailedDescription": "No se pudo reconectar. Comprueba tu red e inténtalo de nuevo.",
+    "connectionRetryingLabel": "Reintentando…",
     "connectionLostRetry": "Reintentar",
     "connectionFollowerTitle": "El chat está abierto en otra pestaña",
     "connectionFollowerDescription": "Human Chat se sincroniza en una pestaña del navegador a la vez para mantener las llamadas estables.",
@@ -2073,6 +2295,10 @@
     "composerAttachImage": "Foto o imagen",
     "composerAttachVideo": "Vídeo",
     "composerAttachFile": "Archivo",
+    "composerAttachGoogleDrive": "Google Drive",
+    "composerAttachGoogleDriveUnavailable": "Google Drive no está disponible",
+    "composerAttachGoogleDriveError": "No se pudo adjuntar desde Google Drive. Inténtalo de nuevo.",
+    "composerAttachmentTooLarge": "Los archivos adjuntos deben ser de {maxSize} o menos.",
     "composerDropPrompt": "Suelta archivos para adjuntarlos",
     "mentionNotAvailable": "Menciones (próximamente)",
     "mentionNoMembers": "Aún no hay miembros cargados — inténtalo en un momento",
@@ -2161,6 +2387,11 @@
     "markAsRead": "Marcar como leído",
     "callToolbarLabel": "Llamada de voz y vídeo",
     "callJoinStripLine": "Llamada en curso — {count, plural, one {1 miembro} other {# miembros}}",
+    "callJoinStripTitle": "Llamada en curso",
+    "callJoinStripMemberCount": "{count, plural, one {1 miembro} other {# miembros}}",
+    "callActiveInAnotherTabTitle": "Llamada activa en otra pestaña",
+    "callFollowerSyncPausedDescription": "Sincronización en pausa — cambia de pestaña para la llamada en vivo.",
+    "callActiveInAnotherTabSwitch": "Cambiar a esta pestaña",
     "callJoinInProgressCta": "Unirse | En curso",
     "callJoinInProgressCtaTitle": "Unirse a la llamada del espacio (en curso)",
     "callJoinCallAlerts": "Avisos de llamada",
@@ -2182,6 +2413,11 @@
     "callStartWithVideoShort": "Iniciar video",
     "callJoinNotificationTitle": "Llamada del espacio en curso",
     "callJoinNotificationBody": "{count, plural, one {Alguien en este espacio inició una llamada (# dispositivo en la llamada).} other {Alguien en este espacio inició una llamada (# dispositivos en la llamada).}}",
+    "callJoinInviteTitle": "¿Unirse a la llamada del espacio?",
+    "callJoinInviteDescription": "{count, plural, one {Alguien está en una llamada en este espacio (# dispositivo conectado). ¿Unirse ahora?} other {Alguien está en una llamada en este espacio (# dispositivos conectados). ¿Unirse ahora?}}",
+    "callJoinInviteDismiss": "Ahora no",
+    "callJoinInviteJoinAudio": "Unirse con audio",
+    "callJoinInviteJoinVideo": "Unirse con video",
     "callJoinControlsGroup": "Iniciar o unirse a la llamada",
     "callBannerInCallSoloLine1": "En la llamada — {count, plural, one {1 miembro} other {# miembros}}",
     "callBannerInCallSoloLine2": "Solo tú",
@@ -2200,6 +2436,13 @@
     "callConnecting": "Conectando…",
     "callRemoteParticipantMediaStalled": "Esperando audio/vídeo — comprueba la red o sal y vuelve a unirte.",
     "callRemoteMediaStallHint": "Hay otras personas en la llamada pero no llega su audio/vídeo; suele ser red o navegador. Sal y vuelve a unirte o cambia de red.",
+    "callTurnServerUnavailableHint": "Voz, vídeo y pantalla compartida pueden ser inestables: el servidor Matrix no proporciona servidores TURN relay. Pide al administrador que verifique coturn y la configuración turn de Dendrite.",
+    "callRemoteMediaWarmingHint": "Esperando la conexión del audio y vídeo de los demás…",
+    "callRemoteMediaStallRetry": "Reintentar conexión",
+    "callScaleWarningMessage": "Esta llamada tiene muchos participantes. La calidad puede reducirse.",
+    "signalDeepLinkAuthNotReady": "Inicia sesión para abrir este enlace de señal e inténtalo de nuevo.",
+    "signalDeepLinkNotFound": "No se encontró este enlace de señal en este espacio.",
+    "signalDeepLinkNetworkError": "No se pudo cargar este enlace de señal. Comprueba tu conexión e inténtalo de nuevo.",
     "callDisconnecting": "Saliendo de la llamada…",
     "callLeave": "Salir",
     "callMute": "Silenciar micrófono",
@@ -2217,11 +2460,14 @@
     "callVoiceProcessingStandard": "Voz",
     "callVoiceProcessingIsolation": "Aislamiento",
     "callVoiceProcessingMusic": "Música",
+    "callVoiceBoostWhilePresenting": "Refuerzo de voz activo mientras presentas",
     "callCameraOn": "Encender cámara",
     "callCameraOff": "Apagar cámara",
     "callErrorPermission": "Se denegó el acceso a la cámara o al micrófono. Revisa la configuración del navegador.",
     "callErrorPermissionGuidance": "Actualiza los permisos de cámara y micrófono de este sitio en la configuración del navegador e inténtalo de nuevo aquí.",
     "callErrorGeneric": "No se pudo iniciar la llamada. Inténtalo de nuevo.",
+    "callSessionRefreshFailedDescription": "Tu sesión de llamada expiró. Reconéctate para seguir en la reunión.",
+    "callSessionRefreshFailedReconnect": "Reconectar",
     "callErrorConnectStall": "La llamada no pudo conectarse. A menudo se debe a que falta la configuración del servidor TURN de Matrix o a una red restrictiva.",
     "callErrorNotReady": "El servidor de llamadas aún no está listo. Espera un momento e inténtalo de nuevo.",
     "callErrorNoClient": "No estás conectado al chat. Revisa la conexión e inténtalo de nuevo.",
@@ -2233,12 +2479,34 @@
     "callScreenshareStart": "Compartir pantalla",
     "callScreenshareStop": "Dejar de compartir",
     "callScreenshareDismiss": "Cerrar",
+    "callScreenshareRequestTakeover": "Otra persona está compartiendo — haz clic para solicitar compartir pantalla.",
+    "callScreenshareTakeoverIncomingTitle": "¿Permitir el traspaso de pantalla compartida?",
+    "callScreenshareTakeoverIncomingBody": "{name} quiere compartir su pantalla. Si apruebas, tu compartición se detendrá y comenzará la suya.",
+    "callScreenshareTakeoverApprove": "Permitir",
+    "callScreenshareTakeoverDeny": "Rechazar",
+    "callScreenshareTakeoverPendingTitle": "Esperando aprobación",
+    "callScreenshareTakeoverPendingBody": "La persona que comparte ahora debe aprobar antes de que puedas compartir.",
+    "callScreenshareTakeoverCancelRequest": "Cancelar solicitud",
+    "callScreenshareTakeoverDeniedTitle": "Pantalla compartida no aprobada",
+    "callScreenshareTakeoverDeniedBody": "La persona que presenta rechazó tu solicitud de compartir pantalla.",
     "callParticipantCount": " · {count, plural, one {# en la llamada} other {# en la llamada}}",
     "callStageLabel": "Vídeo y pantalla compartida en la llamada",
     "callYou": "Tú",
     "callRemoteParticipant": "Participante",
     "callScreenShare": "Pantalla compartida",
     "callScreenShareActive": "Compartir pantalla activo",
+    "callShareTabAudioNotShared": "Audio de la pestaña no compartido — es posible que los demás no oigan el sonido de la pestaña o ventana compartida.",
+    "callShareTabAudioPickerHint": "Activa «Compartir audio de la pestaña» en el selector del navegador.",
+    "callShareTabAudioRetry": "Compartir con audio de pestaña",
+    "callShareTabAudioPromptTitle": "Compartir audio de la pestaña",
+    "callShareTabAudioPromptDescription": "Cuando el navegador pregunte qué compartir, activa «Compartir audio de la pestaña» (para una pestaña o ventana) para que los demás oigan el sonido. Hypha no puede añadir audio después de empezar a compartir.",
+    "callShareTabAudioPromptContinue": "Continuar para compartir",
+    "callShareTabAudioPromptCancel": "Cancelar",
+    "callShareModeMenuLabel": "Compartir pantalla",
+    "callShareModeTab": "Pestaña de Hypha",
+    "callShareModeWindow": "Ventana",
+    "callShareModeScreen": "Pantalla completa",
+    "callScreenshareBlockedRemoteActive": "Otra persona está compartiendo — pídele que pare antes de compartir tú.",
     "callYouAreSharingScreen": "Estás compartiendo tu pantalla",
     "callYouAreSharingScreenHint": "Los demás pueden ver tu pantalla. Aquí no verás tu propia compartición.",
     "callFullView": "Vista ampliada",
@@ -2249,6 +2517,27 @@
     "callLayoutSideBySide": "Pantalla y personas en paralelo",
     "callLayoutSpeakerOnTop": "Orador arriba, pantalla abajo",
     "callLayoutPip": "Vídeo sobre la pantalla",
+    "callReactButton": "Reacciones",
+    "callReactButtonAria": "Abrir menú de reacciones y levantar la mano",
+    "callReactBackToMenu": "Volver a reacciones",
+    "callReactMoreEmoji": "Elegir emoji",
+    "callReactSendWithEffect": "Enviar con efecto",
+    "callReactSendWithEffectHint": "Envía una reacción animada más grande en el vídeo de todos",
+    "callReactSendEmoji": "Enviar {emoji}",
+    "callReactMore": "Más emojis",
+    "callReactReactionsSection": "Reacciones",
+    "callReactFeedbackSection": "Comentarios de la reunión",
+    "callReactFeedback_yes": "Sí",
+    "callReactFeedback_no": "No",
+    "callReactFeedback_slower": "Más despacio",
+    "callReactFeedback_faster": "Más rápido",
+    "callReactFeedback_away": "Ausente",
+    "callRaiseHand": "Levantar la mano",
+    "callLowerHand": "Bajar la mano",
+    "callReactBeRightBack": "Vuelvo enseguida",
+    "callRaiseHandBadge": "Mano levantada",
+    "callRaiseHandBadgeOrder": "Mano levantada (#{order})",
+    "callRaisedHandsTitle": "Manos levantadas",
     "callParticipantMuted": "Silenciado",
     "callParticipantMicOff": "Micrófono desactivado",
     "callLeftAudio": "Has salido de la llamada de voz.",
@@ -2286,6 +2575,11 @@
     "callCaptureConfirmStopTranscriptAction": "Detener transcripción",
     "callCaptureConfirmCancel": "Cancelar",
     "callCaptureStatusError": "Error de captura",
+    "callCaptureLimitDurationWarn": "La grabación se acerca al límite de 90 minutos (quedan {minutes} min). Considera detenerla pronto para que termine la subida.",
+    "callCaptureLimitDurationCritical": "La grabación está cerca del límite de 90 minutos (quedan {minutes} min). Detén la captura pronto para no perder el archivo.",
+    "callCaptureLimitSizeWarn": "El tamaño de la grabación se acerca al límite de subida (~{sizeMb} MB restantes).",
+    "callCaptureLimitSizeCritical": "La grabación está cerca del límite de tamaño de subida (~{sizeMb} MB restantes). Detén la captura pronto.",
+    "callCaptureRetryUpload": "Reintentar subida",
     "messageReadMore": "Leer más",
     "messageShowLess": "Mostrar menos",
     "callCaptureOffHint": "La captura está desactivada. No se guardarán grabación ni transcripción de esta llamada.",
@@ -2657,6 +2951,54 @@
     "openFloatingWindowLabel": "Abrir ventana flotante de llamada",
     "closeFloatingWindowLabel": "Cerrar ventana flotante de llamada"
   },
+  "SpaceLocation": {
+    "sectionTitle": "Ubicación en el mapa",
+    "privacyNote": "Una ubicación aproximada puede mostrarse en el mapa público de la red Hypha.",
+    "searchLabel": "Buscar un lugar",
+    "searchPlaceholder": "Ciudad, dirección o región…",
+    "searchError": "No se pudo buscar esa ubicación. Inténtalo de nuevo.",
+    "searchNoResults": "No se encontraron lugares. Prueba con una dirección más simple o marca el mapa manualmente.",
+    "manualCoordinateInvalid": "Introduce valores válidos de latitud y longitud.",
+    "manualCoordinateOutOfRange": "La latitud debe estar entre -90 y 90, y la longitud entre -180 y 180.",
+    "resultsLabel": "Resultados de búsqueda de ubicación",
+    "mapLabel": "Marcar en el mapa",
+    "mapAriaLabel": "Mapa del mundo. Seleccione un punto para colocar un pin.",
+    "mapHint": "Haz clic en el mapa para establecer coordenadas o usa la búsqueda de arriba.",
+    "mapClickLabel": "{latitude}, {longitude}",
+    "manualLabel": "{latitude}, {longitude}",
+    "latitudeLabel": "Latitud",
+    "longitudeLabel": "Longitud",
+    "latitudePlaceholder": "p. ej. 52.52",
+    "longitudePlaceholder": "p. ej. 13.405",
+    "applyCoordinates": "Aplicar coordenadas",
+    "clearLocation": "Borrar ubicación"
+  },
+  "NetworkMap": {
+    "mapView": "Mapa",
+    "listView": "Lista",
+    "globeView": "Globo",
+    "flatView": "Mapa plano",
+    "landLayer": "Tierra",
+    "waterLayer": "Agua",
+    "gridLayer": "Cuadrícula",
+    "noSpacesWithLocation": "Aún no hay espacios con ubicación",
+    "noSpacesWithLocationHint": "Los espacios aparecen en el mapa cuando un administrador define la ubicación en la configuración.",
+    "loadingMap": "Cargando mapa…",
+    "mapLoadError": "No se pudo cargar el mapa. Actualiza la página e inténtalo de nuevo.",
+    "mapAriaLabel": "Mapa interactivo de la red Hypha",
+    "viewToggleLabel": "Vista de red",
+    "layerControlsLabel": "Opciones de mapa",
+    "layersLabel": "Capas",
+    "addLocation": "Añadir ubicación",
+    "addLocationTitle": "Añadir ubicación a tu espacio",
+    "addLocationDescription": "Selecciona uno de tus espacios para definir su ubicación en el mapa de la red.",
+    "addLocationSelectPlaceholder": "Seleccionar un espacio",
+    "addLocationContinue": "Continuar a la configuración",
+    "addLocationLoading": "Cargando tus espacios…",
+    "addLocationNoSpaces": "Aún no eres miembro de ningún espacio.",
+    "clusterExpandTitle": "{count} espacios en esta ubicación",
+    "clusterZoomOut": "Alejar"
+  },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",
     "readMore": "Leer más",
@@ -2669,5 +3011,529 @@
     "deleteMenu": "Eliminar",
     "deleteConfirmAction": "Eliminar señal",
     "deleteFailed": "No se pudo eliminar esta señal. Inténtalo de nuevo."
+  },
+  "BankingTab": {
+    "title": "Banca",
+    "loading": "Cargando el estado de la cuenta bancaria…",
+    "returnBanner": "Bienvenido de nuevo — estamos comprobando su estado de verificación.",
+    "returnBannerDismiss": "Descartar",
+    "returnBannerApprovedHint": "La verificación ha sido completada. Añada cuentas de enrutamiento para las monedas restantes.",
+    "errorLoad": "No se pudo cargar el estado de la cuenta bancaria.",
+    "errorFetchStatus": "Hubo un problema al recuperar su información bancaria. Por favor, inténtelo de nuevo más tarde.",
+    "sections": {
+      "transfers": {
+        "title": "Rutas de Transferencia Única",
+        "description": "Cuentas de transferencia bancaria de un solo uso que enrutan automáticamente los fondos entrantes a las billeteras USDC o EURC del space.",
+        "emptyTitle": "Aún no hay rutas de transferencia única",
+        "newTransferCta": "Añadir ruta única",
+        "loading": "Cargando transferencias…"
+      },
+      "accounts": {
+        "title": "Cuentas de Enrutamiento de Depósito",
+        "description": "Cuentas de transferencia bancaria que enrutan automáticamente los fondos entrantes a las billeteras USDC o EURC del space.",
+        "emptyTitle": "Aún no hay cuentas de enrutamiento de depósito",
+        "pendingTitle": "Verificación en curso",
+        "pendingDescription": "Complete la verificación en Bridge para activar las monedas seleccionadas. Las cuentas de enrutamiento se configurarán automáticamente una vez aprobadas.",
+        "continueVerificationCta": "Continuar verificación",
+        "loadingAccounts": "Cargando cuentas bancarias…",
+        "signInHint": "Inicie sesión para gestionar las rutas bancarias."
+      }
+    },
+    "payouts": {
+      "tabs": {
+        "deposits": "Depósitos",
+        "payouts": "Pagos"
+      },
+      "section": {
+        "title": "Cuentas Bancarias de Pago",
+        "description": "Registre una cuenta bancaria externa para transferir fondos desde sus billeteras USDC o EURC a través de propuestas."
+      },
+      "addCta": "Añadir cuenta de pago",
+      "loading": "Cargando cuentas de pago…",
+      "emptyTitle": "Aún no hay cuentas bancarias de pago",
+      "cardBankFallback": "Cuenta bancaria",
+      "liquidationAddressLabel": "Dirección de pago",
+      "payoutAddressLabel": "Dirección de pago",
+      "detail": {
+        "title": "Cuenta de pago",
+        "titleFallback": "Cuenta de pago",
+        "sourceToken": "Token de tesorería",
+        "close": "Cerrar",
+        "openAriaLabel": "Abrir detalles de cuenta"
+      },
+      "status": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "pending": "Pendiente"
+      },
+      "addDialog": {
+        "title": "Añadir cuenta de pago",
+        "stepOf": "Paso {current} de {total}",
+        "step1Description": "Indique la moneda de la cuenta bancaria de destino.",
+        "step2Description": "Introduzca los datos bancarios de la cuenta de destino.",
+        "step3Description": "Introduzca la dirección del beneficiario y los detalles de la transferencia.",
+        "step4Description": "Revise y confirme los detalles de su cuenta de pago.",
+        "formHasErrors": "Por favor, corrija los errores anteriores para continuar.",
+        "reviewHint": "Revise los detalles a continuación. Regrese para realizar cambios antes de enviar.",
+        "confirm": "Enviar",
+        "currencyLabel": "Moneda de destino",
+        "currencyHint": "Moneda que recibirá esta cuenta externa.",
+        "continue": "Continuar",
+        "back": "Volver",
+        "cancel": "Cancelar",
+        "sourceCurrencyLabel": "Token del tesoro",
+        "sourceCurrencySection": "Token del tesoro",
+        "sourceCurrencyHint": "Seleccione qué token enviará el tesoro a esta cuenta.",
+        "bankAccountSection": "Cuenta bancaria",
+        "accountHolderSection": "Titular de la cuenta",
+        "addressSection": "Dirección del beneficiario",
+        "bankName": "Nombre del banco",
+        "bankNamePlaceholder": "Ej. Chase, Barclays",
+        "accountName": "Alias",
+        "accountNamePlaceholder": "Ej. Operaciones USD",
+        "accountNameHint": "Etiqueta interna para su equipo — no se envía al banco.",
+        "ownerTypeLabel": "Tipo de cuenta",
+        "ownerTypeBusiness": "Empresa",
+        "ownerTypeIndividual": "Particular",
+        "accountOwnerName": "Nombre del titular",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "businessName": "Razón social",
+        "checkingOrSavings": "Tipo de cuenta",
+        "checkingOrSavingsChecking": "Corriente",
+        "checkingOrSavingsSavings": "Ahorro",
+        "routingNumber": "Número de routing",
+        "routingNumberPlaceholder": "021000021 (9 dígitos)",
+        "accountNumber": "Número de cuenta",
+        "accountNumberPlaceholder": "1234567890",
+        "gbpAccountNumberPlaceholder": "12345678",
+        "sortCode": "Sort code",
+        "sortCodePlaceholder": "200000",
+        "iban": "IBAN",
+        "ibanPlaceholder": "DE89 3704 0044 0532 0130 00",
+        "bic": "BIC / código SWIFT",
+        "bicPlaceholder": "AAAADEBBXXX",
+        "street": "Dirección",
+        "streetPlaceholder": "Calle Mayor 123",
+        "street2": "Dirección línea 2",
+        "street2Placeholder": "Apto, piso (opcional)",
+        "city": "Ciudad",
+        "subdivision": "Estado / Provincia",
+        "subdivisionUs": "Estado",
+        "subdivisionUsPlaceholder": "Seleccionar estado…",
+        "postalCode": "Código postal",
+        "country": "País",
+        "countryPlaceholder": "Seleccione un país…",
+        "fieldRequired": "Este campo es obligatorio",
+        "invalidIban": "IBAN no válido — compruebe el número e inténtelo de nuevo",
+        "submit": "Añadir cuenta de pago",
+        "submitting": "Creando…",
+        "success": {
+          "title": "Cuenta de pago registrada",
+          "subtitle": "La cuenta está activa. Copie la dirección de pago para usarla en propuestas.",
+          "liquidationAddressLabel": "Dirección de pago",
+          "howToTitle": "Cómo realizar pagos",
+          "howToText": "Cree una propuesta de Funding o Expenses apuntando a esta dirección como destino de pago. Los fondos serán convertidos y transferidos a su banco registrado.",
+          "done": "Listo"
+        },
+        "swift": {
+          "code": "SWIFT (USD)",
+          "hint": "Transferencia internacional vía BIC/SWIFT",
+          "accountFormatLabel": "Formato de cuenta",
+          "accountFormatIban": "IBAN",
+          "accountFormatOther": "Otro número de cuenta",
+          "accountNumber": "Número de cuenta",
+          "accountNumberPlaceholder": "12345678",
+          "bankAddressSection": "Dirección del banco",
+          "complianceSection": "Detalles de la transferencia",
+          "categoryLabel": "Relación con el destinatario",
+          "categoryPlaceholder": "Seleccione una relación…",
+          "categoryClient": "Cliente",
+          "categoryParentCompany": "Empresa matriz",
+          "categorySubsidiary": "Filial",
+          "categorySupplier": "Proveedor",
+          "purposeLabel": "Propósito de los fondos",
+          "purposeIntraGroup": "Transferencia intragrupo",
+          "purposeInvoice": "Factura por bienes y servicios",
+          "businessDescription": "Descripción del negocio",
+          "businessDescriptionPlaceholder": "Describa cómo se utilizarán estos fondos",
+          "businessDescriptionHint": "Breve descripción de la relación comercial y el propósito de la transferencia."
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT internacional"
+        }
+      }
+    },
+    "openAccount": {
+      "title": "Configurar cuentas de enrutamiento de depósito",
+      "titleAddCurrency": "Añadir una cuenta de enrutamiento de depósito",
+      "description": "Cuéntenos sobre su organización y las monedas que admite. Verificará su space una sola vez y luego podrá usar rutas bancarias de depósito y pago.",
+      "descriptionAddCurrency": "Elija monedas adicionales para añadir cuentas de enrutamiento de depósito para su space.",
+      "descriptionAddCurrencySingle": "Cree instrucciones de depósito permanentes para transferencias entrantes. Los fondos se convierten automáticamente a USDC o EURC y se liquidan en su billetera de tesorería.",
+      "bankAccountDepositLabel": "Moneda de depósito",
+      "bankAccountDepositHint": "Moneda que recibirá esta cuenta de enrutamiento.",
+      "legalName": "Nombre legal de la entidad",
+      "contactEmail": "Correo de contacto",
+      "currenciesLabel": "Monedas",
+      "currenciesHint": "Seleccione todas las monedas en las que desea recibir depósitos bancarios.",
+      "currenciesHintSingle": "Seleccione una moneda en la que desea recibir depósitos bancarios.",
+      "submit": "Configurar cuentas de enrutamiento",
+      "submitAddCurrency": "Añadir cuenta de enrutamiento",
+      "submitting": "Procesando…",
+      "noCurrenciesAvailable": "Todas las cuentas de enrutamiento de depósito compatibles ya están configuradas para este space.",
+      "railLabel": "Vía de pago",
+      "railPlaceholder": "Seleccionar vía",
+      "requestRail": "Solicitar",
+      "loadingOptions": "Cargando…",
+      "railsNeedVerificationHint": "Estas vías requieren verificación del proveedor antes de poder usarlas.",
+      "provisioningProgress": "Creando cuenta en {currency}…",
+      "redirectPendingTitle": "Continuar en Bridge",
+      "redirectPendingDescription": "Acepte los términos y complete la verificación para activar las monedas seleccionadas."
+    },
+    "toolbar": {
+      "addCurrency": "Añadir cuenta de enrutamiento",
+      "finishVerificationFirst": "Complete primero la verificación en curso",
+      "allCurrenciesCovered": "Todas las monedas compatibles ya tienen cuentas",
+      "loadingAccounts": "Cargando cuentas bancarias…",
+      "loadingTransfers": "Cargando transferencias…"
+    },
+    "operationStatus": {
+      "pendingKyb": "Verificación pendiente",
+      "pendingActivation": "Lista para activar",
+      "pendingKybHint": "Complete la verificación empresarial en Bridge para activar esta solicitud.",
+      "pendingActivationHint": "La verificación está completa. Active para generar instrucciones de depósito.",
+      "continueVerification": "Continuar verificación",
+      "completeSetup": "Activar",
+      "activating": "Activando…",
+      "activateFailed": "No pudimos completar la configuración. Inténtelo de nuevo más tarde. Si el problema persiste, contáctenos.",
+      "openGearForVerification": "Haga clic para abrir los detalles de verificación y los enlaces de Bridge."
+    },
+    "minimums": {
+      "depositNote": "Depósito mínimo:",
+      "payoutNote": "Transferencia mínima:"
+    },
+    "advanced": {
+      "gearLabel": "Configuración bancaria",
+      "dialogTitle": "Configuración bancaria",
+      "dialogDescription": "Información detallada y configuraciones técnicas.",
+      "dataMinimizationNotice": "Los datos de depósito y verificación se cargan desde nuestro socio bancario y no se guardan en los servidores de Hypha.",
+      "noCustomer": "Aún no hay registro de cliente bancario para este space.",
+      "approvedSummary": "La verificación está aprobada. Gestione sus monedas admitidas en la sección a continuación.",
+      "providerValidationsTitle": "Validaciones del proveedor",
+      "legalNameLabel": "Nombre legal de la entidad",
+      "contactEmailLabel": "Correo de contacto",
+      "stepCompleted": "Completado",
+      "tosProcedure": "Términos del servicio",
+      "kybProcedure": "Verificación empresarial (KYB)",
+      "approvedOnBridgePendingRecord": "Bridge muestra la verificación como aprobada. Active una solicitud pendiente a continuación para registrar la aprobación y completar la configuración.",
+      "currencyValidationsTitle": "Validaciones de moneda",
+      "currencyStatusesTitle": "Corredores de moneda",
+      "currencyStatusesDescription": "Estado de respaldo por moneda de Bridge y progreso de configuración de cuenta.",
+      "currencyStatusesDescriptionAdd": "Añada soporte para un corredor de moneda. Bridge puede requerir verificación adicional para algunas regiones.",
+      "addCurrencySupport": "Abrir cuenta en {currency}",
+      "currencyStatus": {
+        "approved": "Aprobada",
+        "pending": "Verificación pendiente",
+        "rejected": "Rechazada",
+        "not_approved": "No aprobada",
+        "not_requested": "No solicitada",
+        "not_opened": "No abierta"
+      },
+      "syncStatus": "Sincronizar estado",
+      "syncingStatus": "Sincronizando…",
+      "procedureHints": {
+        "fallback": "No se requiere ninguna acción adicional para este paso en Bridge por ahora.",
+        "tos": {
+          "complete": "Se han aceptado los términos del servicio. No se requiere ninguna acción adicional aquí.",
+          "pending": "Los términos siguen pendientes en Bridge."
+        },
+        "kyb": {
+          "complete": "La verificación empresarial está completa. No se requiere ninguna acción adicional aquí.",
+          "not_started": "Abra el enlace de verificación para iniciar la verificación de su organización.",
+          "incomplete": "Complete y envíe el formulario de verificación en Bridge para continuar.",
+          "awaiting_questionnaire": "Bridge requiere información adicional. Revise su correo o el portal de verificación para el cuestionario.",
+          "awaiting_ubo": "En espera de que los beneficiarios finales (UBO) indicados en el formulario KYB completen la verificación enviada por correo.",
+          "under_review": "Su envío está en revisión con Bridge. Esto puede tardar desde unas horas hasta varios días.",
+          "approved": "La verificación empresarial está completa. No se requiere ninguna acción adicional aquí.",
+          "rejected": "La verificación fue rechazada. Contacte con soporte si cree que se trata de un error.",
+          "paused": "La verificación está en pausa. Contacte con soporte.",
+          "offboarded": "La verificación bancaria ya no está disponible para este cliente. Contacte con soporte."
+        }
+      },
+      "requestRailDisabledInitialSetup": "Complete su verificación actual antes de solicitar corredores de moneda adicionales",
+      "sofProcedure": "Cuestionario sobre el origen de los fondos",
+      "sofProcedureLink": "Completar cuestionario",
+      "sofProcedureHint": "Este paso requiere un cuestionario sobre el origen de los fondos. Haga clic en el enlace para completarlo en el portal de verificación de Bridge.",
+      "uboPendingTitle": "Verificación UBO pendiente",
+      "uboPendingDescription": "{count, plural, one {# persona asociada aún necesita} other {# personas asociadas aún necesitan}} proporcionar información adicional.",
+      "uboPendingTooltip": "Bridge envía correos de verificación directamente a las personas asociadas. Pídales que revisen su bandeja de entrada (y spam) para encontrar un correo de Bridge o Persona.",
+      "uboPendingEmailsLabel": "Pendiente:"
+    },
+    "tosStatus": {
+      "pending": {
+        "title": "Términos no aceptados",
+        "description": "Acepte los términos del servicio para continuar."
+      },
+      "approved": {
+        "title": "Términos aceptados",
+        "description": "Se han aceptado los términos del servicio."
+      }
+    },
+    "currencies": {
+      "eur": {
+        "code": "EUR",
+        "name": "Euro",
+        "payoutMethod": "IBAN (SEPA)"
+      },
+      "usd": {
+        "code": "USD",
+        "name": "Dólar estadounidense",
+        "payoutMethod": "Número de ruta ACH y de cuenta"
+      },
+      "gbp": {
+        "code": "GBP",
+        "name": "Libra esterlina",
+        "payoutMethod": "Sort code y número de cuenta"
+      },
+      "mxn": {
+        "code": "MXN",
+        "name": "Peso mexicano",
+        "payoutMethod": "Transferencia bancaria CLABE"
+      },
+      "brl": {
+        "code": "BRL",
+        "name": "Real brasileño",
+        "payoutMethod": "PIX"
+      },
+      "cop": {
+        "code": "COP",
+        "name": "Peso colombiano",
+        "payoutMethod": "Bre-B"
+      }
+    },
+    "initialSetup": {
+      "organizationLegend": "Datos de la organización",
+      "organizationHint": "Los datos de la organización se envían a nuestro socio bancario para verificación y no se almacenan en Hypha.",
+      "currenciesTitle": "Monedas que desea utilizar",
+      "currenciesDescription": "Seleccione las monedas que este space utilizará para depósitos y pagos bancarios. Su organización será verificada una vez con nuestro socio bancario.",
+      "currenciesHint": "Puede añadir más monedas más tarde desde la configuración bancaria.",
+      "submit": "Continuar"
+    },
+    "notStarted": {
+      "description": "La banca aún no está configurada para este space.",
+      "enableCta": "Continuar"
+    },
+    "blockers": {
+      "notOnChain": "Este space debe estar desplegado on-chain antes de poder configurar una cuenta bancaria vinculada.",
+      "noTreasury": "Este space debe tener una dirección de tesorería on-chain antes de poder configurar una cuenta bancaria vinculada."
+    },
+    "verificationInProgress": "La verificación está en curso. Suele tardar desde unas horas hasta varios días. Si necesita actuar, use el enlace a continuación.",
+    "actions": {
+      "openVerificationForm": "Abrir formulario de verificación",
+      "viewTerms": "Ver términos del servicio",
+      "refreshStatus": "Actualizar estado",
+      "refreshingStatus": "Comprobando estado…"
+    },
+    "corridors": {
+      "provisioning": "Configurando…",
+      "allActive": "Todas las monedas compatibles están activas.",
+      "addDisabledNotManager": "Solo los miembros del space con acceso a la tesorería pueden gestionar cuentas bancarias."
+    },
+    "accountCard": {
+      "viewDetails": "Ver detalles"
+    },
+    "transferCard": {
+      "viewDetails": "Ver detalles",
+      "flexibleAmount": "Cualquier importe",
+      "feeHint": "Comisión de desarrollador: 0 % · Pueden aplicarse comisiones del proveedor"
+    },
+    "transferDetails": {
+      "title": "Transferencia única",
+      "description": "El pagador debe incluir el mensaje de referencia en su transferencia bancaria para que Bridge pueda identificar el depósito.",
+      "referenceWarning": "El remitente debe incluir la referencia de pago a continuación en el memo del wire, la descripción ACH o la referencia SEPA. Sin ella, el proveedor no puede identificar el depósito.",
+      "amountLabel": "Importe",
+      "flexibleAmount": "Cualquier importe",
+      "receiptHeading": "Recibo de pago",
+      "finalAmount": "Recibido en tesorería",
+      "gasFee": "Comisión de red (gas)",
+      "exchangeFee": "Comisión de cambio",
+      "destinationTx": "Transacción de tesorería",
+      "viewProviderReceipt": "Ver recibo del proveedor",
+      "receiptFields": {
+        "transferId": "ID de transferencia",
+        "state": "Estado",
+        "amount": "Importe",
+        "developerFee": "Comisión de desarrollador",
+        "source": "Origen",
+        "createdAt": "Creado",
+        "updatedAt": "Actualizado",
+        "destinationRail": "Destino",
+        "destinationAddress": "Dirección de tesorería",
+        "initialAmount": "Importe inicial",
+        "subtotalAmount": "Subtotal",
+        "finalAmount": "Importe final",
+        "exchangeFee": "Comisión de cambio",
+        "gasFee": "Comisión de red (gas)",
+        "receiptDeveloperFee": "Comisión de desarrollador del recibo",
+        "destinationTx": "Transacción de tesorería",
+        "receiptUrl": "URL del recibo del proveedor"
+      }
+    },
+    "transferCorridors": {
+      "usd-ach": {
+        "label": "USD — local (ACH)",
+        "hint": "Transferencias bancarias nacionales en EE. UU. vía ACH"
+      },
+      "usd-wire": {
+        "label": "USD — internacional (wire)",
+        "hint": "Transferencias wire internacionales en dólares estadounidenses"
+      },
+      "eur": {
+        "label": "EUR",
+        "hint": "Transferencias bancarias SEPA en euros"
+      },
+      "gbp": {
+        "label": "GBP",
+        "hint": "Faster Payments en libras esterlinas"
+      },
+      "mxn": {
+        "label": "MXN",
+        "hint": "Transferencias SPEI en pesos mexicanos"
+      },
+      "brl": {
+        "label": "BRL",
+        "hint": "Transferencias PIX en reales brasileños"
+      },
+      "cop": {
+        "label": "COP (beta)",
+        "hint": "Transferencias Bre-B en pesos colombianos"
+      }
+    },
+    "createTransfer": {
+      "title": "Nueva transferencia única",
+      "description": "Cree instrucciones de depósito para una sola transferencia entrante. Los fondos se convierten automáticamente a USDC o EURC y se liquidan en su billetera de tesorería.",
+      "corridorLabel": "Corredor",
+      "corridorHint": "Seleccione cómo enviará fondos el pagador. Esto determina las instrucciones de depósito.",
+      "fixedAmountLabel": "Exigir un importe fijo",
+      "amountPlaceholder": "p. ej. 1000,00",
+      "flexibleAmountHint": "El pagador puede enviar cualquier importe.",
+      "cancel": "Cancelar",
+      "submit": "Crear transferencia",
+      "submitting": "Creando…",
+      "loadingOptions": "Cargando corredores…",
+      "noCorridorsAvailable": "No hay corredores de transferencia disponibles para este space."
+    },
+    "transferStatus": {
+      "awaiting_funds": "Pago pendiente",
+      "funds_received": "Recibido",
+      "payment_processed": "Completado",
+      "canceled": "Cancelado",
+      "cancelled": "Cancelado",
+      "failed": "Fallido",
+      "returned": "Devuelto",
+      "in_review": "En revisión",
+      "undeliverable": "No entregable"
+    },
+    "accountDetails": {},
+    "depositInstructions": {
+      "iban": "IBAN",
+      "bic": "BIC / SWIFT",
+      "bicInternational": "BIC / SWIFT (para transferencias internacionales)",
+      "routingNumber": "Número de ruta",
+      "accountNumber": "Número de cuenta",
+      "sortCode": "Sort code",
+      "bankName": "Nombre del banco",
+      "accountHolder": "Titular de la cuenta",
+      "bankNameAndAddress": "Nombre y dirección del banco",
+      "beneficiaryNameAndAddress": "Nombre y dirección del beneficiario",
+      "activeBadge": "Activa",
+      "depositMessage": "Mensaje de referencia (obligatorio)",
+      "bankInstructionsSection": "Instrucciones de transferencia bancaria",
+      "treasurySection": "Destino de tesorería",
+      "destinationCurrency": "Moneda de destino",
+      "destinationRail": "Vía de pago",
+      "destinationAddress": "Dirección de tesorería",
+      "hyphaFees": "Comisiones de Hypha",
+      "feesUnavailable": "No especificado por el proveedor",
+      "providerFeesNote": "*El proveedor puede cobrar comisiones adicionales en las operaciones.",
+      "copyInstructions": "Copiar instrucciones",
+      "copyInstructionsCopied": "Copiado",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "beneficiaryName": "Nombre del beneficiario"
+    },
+    "sandboxDemo": {
+      "title": "Sandbox / Dev — Simulación KYB",
+      "description": "KYB es un paso manual, por lo que debe simularse en sandbox. Esto también puede omitir por completo el relleno del formulario.",
+      "infoTooltipAria": "Acerca de la simulación KYB en sandbox",
+      "simulateFillingKybRequiredData": "Simular relleno de datos KYB requeridos",
+      "cta": "Simular aprobación KYB",
+      "simulating": "Simulando…",
+      "refreshing": "Actualizando estado…"
+    },
+    "endorsements": {
+      "base": "USD (ACH / transferencia wire)",
+      "cop": "COP (Bre-B, Colombia)",
+      "faster_payments": "GBP (Faster Payments, Reino Unido)",
+      "pix": "BRL (PIX, Brasil)",
+      "sepa": "EUR (transferencia bancaria SEPA)",
+      "spei": "MXN (SPEI, México)"
+    },
+    "onboardingDialog": {
+      "title": "Activar depósitos bancarios",
+      "description": "Usamos esta información para verificar su organización. Una vez aprobada, su space estará configurado para recibir transferencias bancarias.",
+      "legalName": "Nombre legal de la entidad",
+      "contactEmail": "Correo de contacto",
+      "endorsementsLabel": "Corredores de pago",
+      "endorsementsHint": "Estos son respaldos KYB de Bridge (p. ej., base para USD, sepa para EUR). Cada corredor seleccionado se incluye en el enlace de verificación.",
+      "submit": "Iniciar verificación",
+      "submitting": "Iniciando…"
+    },
+    "status": {
+      "not_started": {
+        "title": "Verificación no iniciada",
+        "description": "Abra el enlace de verificación para proporcionar los datos de su organización."
+      },
+      "incomplete": {
+        "title": "Verificación incompleta",
+        "description": "Su formulario de verificación aún no ha sido enviado."
+      },
+      "awaiting_questionnaire": {
+        "title": "Información adicional requerida",
+        "description": "Complete el cuestionario adicional para continuar la verificación."
+      },
+      "awaiting_ubo": {
+        "title": "Verificación UBO pendiente",
+        "description": "En espera de que los beneficiarios finales (UBO) indicados en el formulario KYB completen la verificación enviada por correo."
+      },
+      "under_review": {
+        "title": "En revisión",
+        "description": "Su verificación ha sido enviada y está en revisión. Esto puede tardar desde unas horas hasta varios días."
+      },
+      "approved": {
+        "title": "Verificación aprobada",
+        "description": "Su organización está verificada. Añada monedas a continuación para abrir cuentas de depósito."
+      },
+      "rejected": {
+        "title": "Verificación rechazada",
+        "description": "Su organización no pudo ser verificada. Contacte con soporte si cree que se trata de un error."
+      },
+      "paused": {
+        "title": "Verificación en pausa",
+        "description": "La verificación está temporalmente en pausa. Contacte con soporte."
+      },
+      "offboarded": {
+        "title": "Cuenta bancaria vinculada no disponible",
+        "description": "Las cuentas bancarias vinculadas ya no están disponibles para este space. Contacte con soporte."
+      },
+      "unknown": {
+        "title": "Estado no disponible",
+        "description": "No pudimos determinar el estado de verificación actual. Intente actualizar."
+      }
+    }
   }
 }

@@ -1,11 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalDependencies": [".env"],
+  "globalDependencies": [".env", "apps/web/.env*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "apps/web/.env*"],
       "env": [
         "NEON_DATABASE_USERNAME",
         "NEON_DATABASE_NAME",
@@ -15,7 +15,10 @@
         "DEFAULT_DB_URL",
         "PRIVATE_KEY",
         "DEFAULT_DB_AUTHENTICATED_URL",
-        "DEFAULT_DB_ANONYMOUS_URL"
+        "DEFAULT_DB_ANONYMOUS_URL",
+        "NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID",
+        "NEXT_PUBLIC_GOOGLE_DRIVE_API_KEY",
+        "NEXT_PUBLIC_GOOGLE_DRIVE_APP_ID"
       ],
       "outputs": [".next/**", "!.next/cache/**"]
     },

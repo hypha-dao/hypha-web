@@ -2,6 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import {
+  NotifyCallStartedInput,
   NotifyChatMentionInput,
   NotifyProposalAcceptedInput,
   NotifyProposalCreatedInput,
@@ -11,6 +12,7 @@ import {
   UseSendNotificationsReturn,
 } from '@hypha-platform/core/client';
 import {
+  notifyCallStartedAction,
   notifyChatMentionAction,
   notifyProposalAcceptedAction,
   notifyProposalCreatedAction,
@@ -54,10 +56,17 @@ export const useSendNotifications: UseSendNotificationsHook = ({
       notifyChatMentionAction(arg, { authToken }),
   );
 
+  const { trigger: notifyCallStarted } = useSWRMutation(
+    authToken ? [authToken, 'notifyCallStarted'] : null,
+    async ([authToken], { arg }: { arg: NotifyCallStartedInput }) =>
+      notifyCallStartedAction(arg, { authToken }),
+  );
+
   return {
     notifyProposalCreated: authToken ? notifyProposalCreated : noOp,
     notifyProposalAccepted: authToken ? notifyProposalAccepted : noOp,
     notifyProposalRejected: authToken ? notifyProposalRejected : noOp,
     notifyChatMention: authToken ? notifyChatMention : noOp,
+    notifyCallStarted: authToken ? notifyCallStarted : noOp,
   };
 };

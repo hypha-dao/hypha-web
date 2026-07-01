@@ -30,6 +30,10 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
   const { spaces, members } = await fetchMembersAndSpaces({
     activeSpaceId: spaceId,
   });
+  const spacesWithActiveSpace =
+    spaceFromDb.address && spaceFromDb.address.trim() !== ''
+      ? [spaceFromDb, ...spaces.filter((space) => space.id !== spaceFromDb.id)]
+      : spaces;
 
   return (
     <ProposalOverlayShell>
@@ -42,7 +46,7 @@ export default async function CreatePayForExpensesPage({ params }: PageProps) {
           <Plugin
             name="pay-for-expenses"
             spaceSlug={spaceSlug}
-            spaces={spaces}
+            spaces={spacesWithActiveSpace}
             members={members}
           />
         }

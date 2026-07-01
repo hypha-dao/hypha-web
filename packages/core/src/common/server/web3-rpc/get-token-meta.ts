@@ -11,6 +11,7 @@ function getIconForHyphaTokens(symbol: string, fallback: string): string {
     case 'HYPHA':
       return '/placeholder/hypha-token-icon.svg';
     case 'HVOICE':
+    case 'EVOICE':
       return '/placeholder/voice-token-icon.svg';
     case 'HCREDITS':
       return '/placeholder/credits-token-icon.svg';
@@ -24,6 +25,7 @@ function getHyphaTokensType(symbol: string): TokenType | null {
     case 'HYPHA':
       return 'utility';
     case 'HVOICE':
+    case 'EVOICE':
       return 'voice';
     case 'HCREDITS':
       return 'credits';

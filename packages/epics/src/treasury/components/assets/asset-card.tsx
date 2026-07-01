@@ -3,7 +3,7 @@
 import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
-import { getDhoPathAgreements } from '@hypha-platform/epics';
+import { getDhoPathDefaultLanding } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -122,7 +122,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
               </span>
               {space?.title ? (
                 <Link
-                  href={getDhoPathAgreements(lang as Locale, space.slug)}
+                  href={getDhoPathDefaultLanding(lang as Locale, space.slug)}
                   className="min-w-0 max-w-full truncate text-1 text-accent-11 hover:underline"
                 >
                   {tTreasury('assetCard.fromSpace', {

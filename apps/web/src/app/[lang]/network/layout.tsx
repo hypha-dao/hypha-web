@@ -11,9 +11,17 @@ export default async function RootLayout({
   aside: React.ReactNode;
 }) {
   return (
-    <div className="w-full h-full flex">
-      {children}
-      {aside}
-    </div>
+    <>
+      <link
+        rel="preload"
+        href="/geo/land-110m.json"
+        as="fetch"
+        crossOrigin="anonymous"
+      />
+      <div className="w-full h-full flex">
+        {children}
+        {aside}
+      </div>
+    </>
   );
 }

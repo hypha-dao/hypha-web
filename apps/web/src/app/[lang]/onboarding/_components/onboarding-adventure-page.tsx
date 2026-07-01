@@ -1,8 +1,9 @@
 'use client';
 
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { Locale } from '@hypha-platform/i18n';
 import QRCode from 'react-qr-code';
 import {
   Button,
@@ -12,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
   Container,
-  Heading,
   Input,
 } from '@hypha-platform/ui';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
@@ -21,39 +21,27 @@ import {
   AlertTriangle,
   Compass,
   Copy,
-  FileIcon,
   Handshake,
-  ImageIcon,
-  Loader2,
-  Mic,
-  Paperclip,
-  Plus,
   PlusCircle,
-  Send,
-  Square,
-  Video,
   Wallet,
-  X,
 } from 'lucide-react';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space, useMe } from '@hypha-platform/core/client';
 import {
+  AiPanelChatBar,
+  getLegacyCreateSpacePath,
   ONBOARDING_SETUP_MODE,
   saveOnboardingConversationContext,
+  type AiPanelDraftAttachment,
+  type OnboardingDiscoveryMode,
 } from '@hypha-platform/epics';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@hypha-platform/ui';
 import { OnboardingAiFullPage } from './onboarding-ai-full-page';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
 
 const getNetworkPath = (lang: string) => `/${lang}/network`;
-const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
 const primaryCtaClass =
@@ -74,63 +62,45 @@ const exchangeBrandStyles = {
     'border border-transparent bg-[#6C3BFF] text-white hover:bg-[#5a30d6]',
 } as const;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
-const HERO_TITLE_ROTATING_WORDS = [
-  'Anything',
-  'Projects',
-  'Start-ups',
-  'Ventures',
-  'Companies',
-  'Studios',
-  'Games',
-  'Clubs',
-  'Guilds',
-  'Associations',
-  'Schools',
-  'Cooperatives',
-  'Collectives',
-  'Communities',
-  'Networks',
-  'Hubs',
-  'Coalitions',
-  'Movements',
-  'Ecosystems',
-  'DAOs',
-  'NGOs',
-  'Funds',
-  'Villages',
-  'Farms',
-  'Festivals',
-  'Solidarity',
-  'Livelihoods',
+const HERO_TITLE_ROTATING_WORD_KEYS = [
+  'anything',
+  'projects',
+  'startUps',
+  'ventures',
+  'companies',
+  'studios',
+  'games',
+  'clubs',
+  'guilds',
+  'associations',
+  'schools',
+  'cooperatives',
+  'collectives',
+  'communities',
+  'networks',
+  'hubs',
+  'coalitions',
+  'movements',
+  'ecosystems',
+  'daos',
+  'ngos',
+  'funds',
+  'villages',
+  'farms',
+  'festivals',
+  'solidarity',
+  'livelihoods',
 ] as const;
 
 const normalizeEvmAddress = (value: string | null | undefined) =>
   (value ?? '').replace(/\s+/g, '').trim();
 
-type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
-type SpeechRecognitionLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((ev: { error?: string }) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-};
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
-};
-
-function joinWithSingleSpace(a: string, b: string): string {
-  const left = a.trimEnd();
-  const right = b.trimStart();
-  if (!left) return right;
-  if (!right) return left;
-  if (/\s$/.test(left) || /^\s/.test(right)) return left + right;
-  return `${left} ${right}`;
+function disposeDraftAttachmentUrls(items: AiPanelDraftAttachment[]) {
+  for (const att of items) {
+    if (att.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(att.previewUrl);
+    }
+  }
 }
 
 type SelectorOption = { value: string; label: string; searchText?: string };
@@ -255,23 +225,24 @@ export function OnboardingAdventurePage({
 }) {
   const t = useTranslations('OnboardingAdventure');
   const tCommon = useTranslations('Common');
-  const tHuman = useTranslations('HumanChatPanel');
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const {
+    isAuthenticated,
+    isLoading: isAuthLoading,
+    isModalOpen,
+    openLoginModal,
+  } = useAuthentication();
   const { person } = useMe();
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
   const [aiPrompt, setAiPrompt] = useState('');
   const aiPromptRef = useRef(aiPrompt);
-  const heroFileInputRef = useRef<HTMLInputElement>(null);
-  const heroImageInputRef = useRef<HTMLInputElement>(null);
-  const heroVideoInputRef = useRef<HTMLInputElement>(null);
-  const [heroAttachments, setHeroAttachments] = useState<File[]>([]);
-  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
-  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const dictationPrefixRef = useRef('');
-  const dictationSessionFinalizedRef = useRef(false);
-  const [isDictating, setIsDictating] = useState(false);
-  const [dictationError, setDictationError] = useState<string | null>(null);
+  const [draftAttachments, setDraftAttachments] = useState<
+    AiPanelDraftAttachment[]
+  >([]);
+  const draftAttachmentsRef = useRef(draftAttachments);
+  draftAttachmentsRef.current = draftAttachments;
   const [isStartingAi, setIsStartingAi] = useState(false);
   const [aiStartError, setAiStartError] = useState<string | null>(null);
   const [onboardingAiConversation, setOnboardingAiConversation] = useState<{
@@ -283,6 +254,7 @@ export function OnboardingAdventurePage({
       firstName?: string;
       locale: string;
       createdAt: string;
+      discoveryMode?: OnboardingDiscoveryMode;
     };
   } | null>(null);
 
@@ -293,9 +265,10 @@ export function OnboardingAdventurePage({
   const [depositDetailsSpaceSlug, setDepositDetailsSpaceSlug] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
-  const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
   const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
   const [heroTitleWordIndex, setHeroTitleWordIndex] = useState(0);
+  const seededPromptFromUrlRef = useRef(false);
+  const hasPromptedLoginRef = useRef(false);
 
   const firstName = useMemo(() => {
     const rawName = person?.name?.trim();
@@ -341,12 +314,19 @@ export function OnboardingAdventurePage({
   const hasDepositChoices = depositOptions.length > 0;
   const rotatingHeroPrompts = useMemo(
     () => [
+      t('aiHero.rotating.launchCooperative'),
+      t('aiHero.rotating.tokenEconomy'),
       t('aiHero.rotating.createSpace'),
       t('aiHero.rotating.governance'),
       t('aiHero.rotating.joinSpace'),
       t('aiHero.rotating.treasury'),
       t('aiHero.rotating.explore'),
     ],
+    [t],
+  );
+  const rotatingHeroTitleWords = useMemo(
+    () =>
+      HERO_TITLE_ROTATING_WORD_KEYS.map((key) => t(`heroPill.rotating.${key}`)),
     [t],
   );
   useEffect(
@@ -359,28 +339,20 @@ export function OnboardingAdventurePage({
   );
 
   useEffect(() => {
-    const storageKey = 'hypha:onboarding-adventure:visited:v1';
-    const justSignedUpKey = 'hypha:onboarding-adventure:just-signed-up:v1';
-    try {
-      const justSignedUp =
-        window.sessionStorage.getItem(justSignedUpKey) === 'true';
-      if (justSignedUp) {
-        setHasVisitedAdventure(false);
-        window.sessionStorage.removeItem(justSignedUpKey);
-        window.localStorage.setItem(storageKey, 'true');
-        return;
-      }
+    if (seededPromptFromUrlRef.current) return;
+    const promptFromUrl = searchParams.get('prompt')?.trim();
+    if (!promptFromUrl) return;
+    seededPromptFromUrlRef.current = true;
+    aiPromptRef.current = promptFromUrl;
+    setAiPrompt(promptFromUrl);
+  }, [searchParams]);
 
-      const alreadyVisited = window.localStorage.getItem(storageKey) === 'true';
-      if (alreadyVisited) {
-        setHasVisitedAdventure(true);
-      } else {
-        window.localStorage.setItem(storageKey, 'true');
-      }
-    } catch {
-      // localStorage unavailable; keep first-visit title fallback
-    }
-  }, []);
+  useEffect(() => {
+    if (isAuthLoading || isAuthenticated || isModalOpen) return;
+    if (hasPromptedLoginRef.current) return;
+    hasPromptedLoginRef.current = true;
+    openLoginModal();
+  }, [isAuthLoading, isAuthenticated, isModalOpen, openLoginModal]);
 
   useEffect(() => {
     aiPromptRef.current = aiPrompt;
@@ -397,118 +369,18 @@ export function OnboardingAdventurePage({
   }, [rotatingHeroPrompts]);
 
   useEffect(() => {
-    if (HERO_TITLE_ROTATING_WORDS.length < 2) return;
+    if (rotatingHeroTitleWords.length < 2) return;
     const intervalId = window.setInterval(() => {
       setHeroTitleWordIndex((current) =>
-        current + 1 >= HERO_TITLE_ROTATING_WORDS.length ? 0 : current + 1,
+        current + 1 >= rotatingHeroTitleWords.length ? 0 : current + 1,
       );
     }, 2500);
     return () => window.clearInterval(intervalId);
-  }, []);
-
-  const stopDictation = () => {
-    const recognition = speechRecognitionRef.current;
-    if (recognition) {
-      try {
-        recognition.abort();
-      } catch {
-        try {
-          recognition.stop();
-        } catch {
-          // ignore stop errors from browser implementation differences
-        }
-      }
-      speechRecognitionRef.current = null;
-    }
-    dictationPrefixRef.current = '';
-    setIsDictating(false);
-  };
-
-  const toggleDictation = () => {
-    setDictationError(null);
-    const SR =
-      (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
-        .SpeechRecognition ??
-      (
-        globalThis as unknown as {
-          webkitSpeechRecognition?: SpeechRecognitionCtor;
-        }
-      ).webkitSpeechRecognition;
-
-    if (!SR) {
-      setDictationError(tHuman('dictationNotSupported'));
-      return;
-    }
-    if (isDictating) {
-      stopDictation();
-      return;
-    }
-
-    dictationSessionFinalizedRef.current = false;
-    dictationPrefixRef.current = aiPromptRef.current.trimEnd();
-    const recognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = document.documentElement.lang || 'en';
-    recognition.onresult = (event) => {
-      let committed = '';
-      let interim = '';
-      for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (!result?.[0]) continue;
-        if (result.isFinal) {
-          committed = joinWithSingleSpace(
-            committed,
-            result[0].transcript.trim(),
-          );
-        } else {
-          interim = joinWithSingleSpace(interim, result[0].transcript);
-        }
-      }
-      const dictated = joinWithSingleSpace(committed, interim.trim());
-      const nextPrompt = joinWithSingleSpace(
-        dictationPrefixRef.current,
-        dictated,
-      );
-      aiPromptRef.current = nextPrompt;
-      setAiPrompt(nextPrompt);
-    };
-    const finalizeDictation = (showError: boolean) => {
-      if (dictationSessionFinalizedRef.current) return;
-      dictationSessionFinalizedRef.current = true;
-      speechRecognitionRef.current = null;
-      dictationPrefixRef.current = '';
-      setIsDictating(false);
-      if (showError) {
-        setDictationError(tHuman('dictationError'));
-      }
-    };
-    recognition.onerror = (event) => {
-      finalizeDictation(event.error !== 'aborted');
-    };
-    recognition.onend = () => {
-      finalizeDictation(false);
-    };
-    speechRecognitionRef.current = recognition;
-    try {
-      recognition.start();
-      setIsDictating(true);
-    } catch {
-      speechRecognitionRef.current = null;
-      setDictationError(tHuman('dictationNotSupported'));
-    }
-  };
+  }, [rotatingHeroTitleWords]);
 
   useEffect(() => {
     return () => {
-      const recognition = speechRecognitionRef.current;
-      if (!recognition) return;
-      try {
-        recognition.abort();
-      } catch {
-        // ignore
-      }
-      speechRecognitionRef.current = null;
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
     };
   }, []);
 
@@ -532,8 +404,8 @@ export function OnboardingAdventurePage({
 
   const handleStartAiOnboarding = () => {
     const prompt = aiPrompt.trim();
-    if (!prompt && heroAttachments.length === 0) return;
-    stopDictation();
+    if (!prompt && draftAttachments.length === 0) return;
+    const attachmentFiles = draftAttachments.map((att) => att.file);
     const context = {
       mode: ONBOARDING_SETUP_MODE,
       source: 'onboarding_hero' as const,
@@ -546,21 +418,14 @@ export function OnboardingAdventurePage({
     setAiStartError(null);
     setOnboardingAiConversation({
       prompt,
-      attachments: heroAttachments,
+      attachments: attachmentFiles,
       context,
     });
     setAiPrompt('');
-    setHeroAttachments([]);
+    disposeDraftAttachmentUrls(draftAttachments);
+    setDraftAttachments([]);
     setIsStartingAi(false);
   };
-
-  const pushHeroAttachments = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setHeroAttachments((prev) => [...prev, ...Array.from(files)]);
-  };
-  const adventureTitle = hasVisitedAdventure
-    ? t('continueAdventure')
-    : t('title');
   if (onboardingAiConversation) {
     return (
       <OnboardingAiFullPage
@@ -572,357 +437,215 @@ export function OnboardingAdventurePage({
     );
   }
   return (
-    <Container className="flex flex-col gap-14 py-10 md:py-12">
-      <header className="space-y-3 pt-3 text-center md:pt-4">
-        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-foreground shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
-          Build
-          <span
-            key={HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
-            className="ml-1 inline-block font-semibold text-accent-10 transition-all duration-300"
-          >
-            {HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
-          </span>
-          , Together.
-        </p>
-        <Heading
-          size="9"
-          color="secondary"
-          weight="medium"
-          align="center"
-          className="mx-auto max-w-4xl"
-        >
-          <span className="bg-gradient-to-r from-foreground via-accent-11 to-foreground bg-clip-text text-transparent">
-            {adventureTitle}
-          </span>
-        </Heading>
-        <p className="text-4 font-medium tracking-tight text-muted-foreground">
-          {t('subtitle')}
-        </p>
-      </header>
+    <div className="flex flex-col">
+      <section className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 md:pb-20 md:pt-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent-2/50 via-background to-background [.dark_&]:hidden"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-35 [background-image:radial-gradient(circle,oklch(0.55_0.12_278_/_0.1)_1px,transparent_1px)] [background-size:36px_36px] [.dark_&]:hidden"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,oklch(0.24_0.08_280),oklch(0.08_0.03_265)_72%)] [.dark_&]:block"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,oklch(0.2_0.07_292_/_0.55),transparent_68%)] [.dark_&]:block"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 hidden opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px] [.dark_&]:block"
+        />
+        <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
+          <header className="flex flex-col items-center gap-6 text-center md:gap-8">
+            <p className="inline-block rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm [.dark_&]:border-info-8/30 [.dark_&]:bg-black/35 [.dark_&]:text-white [.dark_&]:shadow-[0_0_32px_-10px_var(--color-info-9)]">
+              {t('heroPill.build')}{' '}
+              <span
+                key={rotatingHeroTitleWords[heroTitleWordIndex]}
+                className="font-semibold text-info-10 transition-opacity duration-300"
+              >
+                {rotatingHeroTitleWords[heroTitleWordIndex]}
+              </span>
+              {t('heroPill.together')}
+            </p>
+            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-accent-11 md:text-3 [.dark_&]:text-info-11">
+              {t('heroEyebrow')}
+            </p>
+            <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
+              <span className="block text-foreground [.dark_&]:text-white">
+                {t('titleLine1')}
+              </span>
+              <span className="mt-1 block bg-gradient-to-r from-foreground via-accent-10 to-info-10 bg-clip-text text-transparent [.dark_&]:from-white [.dark_&]:via-info-9 [.dark_&]:to-accent-10">
+                {t('titleLine2')}
+              </span>
+            </h1>
+            <p className="mx-auto max-w-2xl text-4 font-normal leading-relaxed text-foreground/75 md:text-5 [.dark_&]:text-white/90">
+              {t('subtitle')}
+            </p>
+          </header>
 
-      {onboardingHeroEnabled ? (
-        <section className="relative mx-auto w-full max-w-5xl">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-8 -top-8 h-48 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.62_0.14_290_/_0.14),transparent_72%)] blur-2xl"
-          />
-          <div className="relative p-1 md:p-2">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.12_278_/_0.12),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.64_0.11_292_/_0.09),transparent_38%)]"
-            />
-            <div className="relative mt-1 rounded-[1.5rem] border border-border/70 bg-background/75 shadow-inner">
-              {heroAttachments.length > 0 ? (
-                <div className="narrow-scrollbar max-h-24 overflow-x-auto overflow-y-hidden border-b border-border/65 px-3 py-2">
-                  <div className="flex w-max gap-2">
-                    {heroAttachments.map((file, index) => (
-                      <div
-                        key={`${file.name}-${file.lastModified}-${index}`}
-                        className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-1 text-foreground"
-                      >
-                        {file.type.startsWith('image/') ? (
-                          <ImageIcon className="size-3.5 text-muted-foreground" />
-                        ) : file.type.startsWith('video/') ? (
-                          <Video className="size-3.5 text-muted-foreground" />
-                        ) : (
-                          <FileIcon className="size-3.5 text-muted-foreground" />
-                        )}
-                        <span className="max-w-44 truncate">{file.name}</span>
-                        <button
-                          type="button"
-                          className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                          aria-label={tHuman('attachmentRemove')}
-                          onClick={() =>
-                            setHeroAttachments((prev) =>
-                              prev.filter((_, i) => i !== index),
-                            )
-                          }
-                        >
-                          <X className="size-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <textarea
-                value={aiPrompt}
-                onChange={(event) => setAiPrompt(event.target.value)}
-                placeholder={
-                  rotatingHeroPrompts[heroPlaceholderIndex] ??
-                  t('aiHero.placeholder')
-                }
-                aria-label={t('aiHero.ariaLabel')}
-                rows={3}
-                className="relative min-h-[120px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <input
-                ref={heroFileInputRef}
-                type="file"
-                className="sr-only"
-                multiple
-                onChange={(e) => {
-                  pushHeroAttachments(e.target.files);
-                  e.target.value = '';
-                }}
-              />
-              <input
-                ref={heroImageInputRef}
-                type="file"
-                className="sr-only"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  pushHeroAttachments(e.target.files);
-                  e.target.value = '';
-                }}
-              />
-              <input
-                ref={heroVideoInputRef}
-                type="file"
-                className="sr-only"
-                accept="video/*"
-                multiple
-                onChange={(e) => {
-                  pushHeroAttachments(e.target.files);
-                  e.target.value = '';
-                }}
-              />
-              <div className="flex items-center justify-between gap-2 px-3 pb-2.5">
-                <div className="flex items-center gap-1">
-                  <DropdownMenu
-                    modal={false}
-                    open={attachMenuOpen}
-                    onOpenChange={setAttachMenuOpen}
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
-                        aria-label={tHuman('composerAttachMenu')}
-                        title={tHuman('composerAttachMenu')}
-                      >
-                        <Plus className="size-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="min-w-[200px]"
-                    >
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2"
-                        onSelect={() =>
-                          requestAnimationFrame(() =>
-                            heroImageInputRef.current?.click(),
-                          )
-                        }
-                      >
-                        <ImageIcon className="size-4" aria-hidden />
-                        <span>{tHuman('composerAttachImage')}</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2"
-                        onSelect={() =>
-                          requestAnimationFrame(() =>
-                            heroVideoInputRef.current?.click(),
-                          )
-                        }
-                      >
-                        <Video className="size-4" aria-hidden />
-                        <span>{tHuman('composerAttachVideo')}</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2"
-                        onSelect={() =>
-                          requestAnimationFrame(() =>
-                            heroFileInputRef.current?.click(),
-                          )
-                        }
-                      >
-                        <Paperclip className="size-4" aria-hidden />
-                        <span>{tHuman('composerAttachFile')}</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <button
-                    type="button"
-                    onClick={toggleDictation}
-                    disabled={!aiChatEnabled}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label={
-                      isDictating
-                        ? tHuman('composerStopDictation')
-                        : tHuman('composerDictateMessage')
-                    }
-                    title={
-                      isDictating
-                        ? tHuman('composerStopDictation')
-                        : tHuman('composerDictateMessage')
-                    }
-                  >
-                    {isDictating ? (
-                      <Square className="size-3.5" aria-hidden />
-                    ) : (
-                      <Mic className="size-4" aria-hidden />
-                    )}
-                  </button>
-                </div>
-                <Button
-                  type="button"
-                  onClick={handleStartAiOnboarding}
-                  disabled={
-                    (!aiPrompt.trim() && heroAttachments.length === 0) ||
-                    !aiChatEnabled ||
-                    isStartingAi
+          {onboardingHeroEnabled ? (
+            <section className="relative mx-auto w-full max-w-5xl">
+              <div className="relative overflow-hidden rounded-[1.5rem] border border-border/55 bg-neutral-2 shadow-[0_10px_40px_-24px_oklch(0.45_0.08_278)] [.dark_&]:border-white/10 [.dark_&]:bg-white/[0.04] [.dark_&]:shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] [.dark_&]:backdrop-blur-md">
+                <AiPanelChatBar
+                  variant="hero"
+                  value={aiPrompt}
+                  onChange={setAiPrompt}
+                  onSend={handleStartAiOnboarding}
+                  draftAttachments={draftAttachments}
+                  onDraftAttachmentsChange={setDraftAttachments}
+                  placeholder={
+                    rotatingHeroPrompts[heroPlaceholderIndex] ??
+                    t('aiHero.placeholder')
                   }
-                  className="h-10 w-10 rounded-full border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 p-0 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
-                  aria-label={
+                  sendAriaLabel={
                     isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
                   }
-                >
-                  {isStartingAi ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                  ) : (
-                    <Send className="size-4" aria-hidden />
-                  )}
-                </Button>
+                  composerDisabled={!aiChatEnabled || isStartingAi}
+                  isStreaming={isStartingAi}
+                />
               </div>
-            </div>
-          </div>
-          {aiStartError ? (
-            <div
-              className="mt-2 flex items-center justify-center gap-2 text-1"
-              role="alert"
-            >
-              <AlertTriangle className="size-3.5 text-warning-10" aria-hidden />
-              <span className="text-warning-11">{aiStartError}</span>
-            </div>
+              {aiStartError ? (
+                <div
+                  className="mt-2 flex items-center justify-center gap-2 text-1"
+                  role="alert"
+                >
+                  <AlertTriangle
+                    className="size-3.5 text-warning-10"
+                    aria-hidden
+                  />
+                  <span className="text-warning-11">{aiStartError}</span>
+                </div>
+              ) : null}
+              {!aiChatEnabled ? (
+                <p className="mt-2 text-center text-1 text-muted-foreground">
+                  {t('aiHero.unavailable')}
+                </p>
+              ) : null}
+            </section>
           ) : null}
-          {dictationError ? (
-            <p role="alert" className="text-center text-1 text-destructive">
-              {dictationError}
-            </p>
-          ) : null}
-          {!aiChatEnabled ? (
-            <p className="text-center text-1 text-muted-foreground">
-              {t('aiHero.unavailable')}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className={onboardingCardClass}>
-          <CardHeader className="space-y-2">
-            <CardTitle className="flex items-center gap-2 text-5">
-              <Compass className="size-5 text-accent-11" aria-hidden />
-              {t('explore.title')}
-            </CardTitle>
-            <CardDescription className="text-2 text-muted-foreground/90">
-              {t('explore.description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-1">
-            <Button
-              type="button"
-              className={primaryCtaClass}
-              onClick={() => router.push(getNetworkPath(locale))}
-            >
-              {t('explore.cta')}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className={onboardingCardClass}>
-          <CardHeader className="space-y-2">
-            <CardTitle className="flex items-center gap-2 text-5">
-              <PlusCircle className="size-5 text-accent-11" aria-hidden />
-              {t('create.title')}
-            </CardTitle>
-            <CardDescription className="text-2 text-muted-foreground/90">
-              {t('create.description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-1">
-            <Button
-              type="button"
-              className={primaryCtaClass}
-              onClick={() => router.push(getCreateSpacePath(locale))}
-            >
-              {t('create.cta')}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <SelectorCard
-          icon={<Handshake className="size-5" aria-hidden />}
-          title={t('join.title')}
-          description={t('join.description')}
-          options={spaceOptions}
-          query={joinQuery}
-          onQueryChange={(next) => {
-            setJoinQuery(next);
-            setJoinSpaceSlug('');
-          }}
-          value={joinSpaceSlug}
-          onChange={setJoinSpaceSlug}
-          actionLabel={t('join.cta')}
-          onAction={() => {
-            if (!joinSpaceSlug) return;
-            router.push(getSpacePath(locale, joinSpaceSlug));
-          }}
-          disabled={isLoading || !hasJoinChoices}
-          unavailableText={
-            isLoading
-              ? t('loadingSpaces')
-              : spacesError?.message
-              ? spacesError.message
-              : t('join.unavailable')
-          }
-          t={t}
-        />
-
-        <SelectorCard
-          icon={<Wallet className="size-5" aria-hidden />}
-          title={t('deposit.title')}
-          description={t('deposit.description')}
-          options={depositOptions}
-          query={depositQuery}
-          onQueryChange={(next) => {
-            setDepositQuery(next);
-            setDepositSpaceSlug('');
-            setDepositDetailsSpaceSlug('');
-            setCopiedAddress(false);
-          }}
-          value={depositSpaceSlug}
-          onChange={handleDepositSpaceChange}
-          actionLabel={t('deposit.cta')}
-          onAction={() => {
-            if (!depositSpaceSlug) return;
-            setCopiedAddress(false);
-            setDepositDetailsSpaceSlug(depositSpaceSlug);
-          }}
-          disabled={isLoading || !hasDepositChoices}
-          unavailableText={
-            isLoading
-              ? t('loadingSpaces')
-              : spacesError?.message
-              ? spacesError.message
-              : t('deposit.unavailable')
-          }
-          t={t}
-        />
+        </Container>
       </section>
 
-      {selectedDepositSpace?.address ? (
-        <DepositDetailsCard
-          t={t}
-          space={selectedDepositSpace}
-          copiedAddress={copiedAddress}
-          onCopyAddress={handleCopyAddress}
-        />
-      ) : null}
-    </Container>
+      <Container className="flex flex-col gap-14 py-10 md:py-12">
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card className={onboardingCardClass}>
+            <CardHeader className="space-y-2">
+              <CardTitle className="flex items-center gap-2 text-5">
+                <Compass className="size-5 text-accent-11" aria-hidden />
+                {t('explore.title')}
+              </CardTitle>
+              <CardDescription className="text-2 text-muted-foreground/90">
+                {t('explore.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-1">
+              <Button
+                type="button"
+                className={primaryCtaClass}
+                onClick={() => router.push(getNetworkPath(locale))}
+              >
+                {t('explore.cta')}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className={onboardingCardClass}>
+            <CardHeader className="space-y-2">
+              <CardTitle className="flex items-center gap-2 text-5">
+                <PlusCircle className="size-5 text-accent-11" aria-hidden />
+                {t('create.title')}
+              </CardTitle>
+              <CardDescription className="text-2 text-muted-foreground/90">
+                {t('create.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-1">
+              <Button
+                type="button"
+                className={primaryCtaClass}
+                onClick={() =>
+                  router.push(getLegacyCreateSpacePath(locale as Locale))
+                }
+              >
+                {t('create.cta')}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <SelectorCard
+            icon={<Handshake className="size-5" aria-hidden />}
+            title={t('join.title')}
+            description={t('join.description')}
+            options={spaceOptions}
+            query={joinQuery}
+            onQueryChange={(next) => {
+              setJoinQuery(next);
+              setJoinSpaceSlug('');
+            }}
+            value={joinSpaceSlug}
+            onChange={setJoinSpaceSlug}
+            actionLabel={t('join.cta')}
+            onAction={() => {
+              if (!joinSpaceSlug) return;
+              router.push(getSpacePath(locale, joinSpaceSlug));
+            }}
+            disabled={isLoading || !hasJoinChoices}
+            unavailableText={
+              isLoading
+                ? t('loadingSpaces')
+                : spacesError?.message
+                ? spacesError.message
+                : t('join.unavailable')
+            }
+            t={t}
+          />
+
+          <SelectorCard
+            icon={<Wallet className="size-5" aria-hidden />}
+            title={t('deposit.title')}
+            description={t('deposit.description')}
+            options={depositOptions}
+            query={depositQuery}
+            onQueryChange={(next) => {
+              setDepositQuery(next);
+              setDepositSpaceSlug('');
+              setDepositDetailsSpaceSlug('');
+              setCopiedAddress(false);
+            }}
+            value={depositSpaceSlug}
+            onChange={handleDepositSpaceChange}
+            actionLabel={t('deposit.cta')}
+            onAction={() => {
+              if (!depositSpaceSlug) return;
+              setCopiedAddress(false);
+              setDepositDetailsSpaceSlug(depositSpaceSlug);
+            }}
+            disabled={isLoading || !hasDepositChoices}
+            unavailableText={
+              isLoading
+                ? t('loadingSpaces')
+                : spacesError?.message
+                ? spacesError.message
+                : t('deposit.unavailable')
+            }
+            t={t}
+          />
+        </section>
+
+        {selectedDepositSpace?.address ? (
+          <DepositDetailsCard
+            t={t}
+            space={selectedDepositSpace}
+            copiedAddress={copiedAddress}
+            onCopyAddress={handleCopyAddress}
+          />
+        ) : null}
+      </Container>
+    </div>
   );
 }
 

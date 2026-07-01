@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { OnboardingAdventurePage } from './_components/onboarding-adventure-page';
 import {
   getEnableAiChat,
@@ -10,9 +11,11 @@ export default async function OnboardingPage() {
     getEnableOnboardingAiHero(),
   ]);
   return (
-    <OnboardingAdventurePage
-      aiChatEnabled={aiChatEnabled}
-      onboardingHeroEnabled={onboardingHeroEnabled}
-    />
+    <Suspense fallback={null}>
+      <OnboardingAdventurePage
+        aiChatEnabled={aiChatEnabled}
+        onboardingHeroEnabled={onboardingHeroEnabled}
+      />
+    </Suspense>
   );
 }

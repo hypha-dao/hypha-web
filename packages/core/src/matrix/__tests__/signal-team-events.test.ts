@@ -3,6 +3,7 @@ import {
   formatSignalTeamUpdateDisplayBody,
   parseSignalTeamNoticeFromWireContent,
   resolveSignalTeamUpdateDisplayBody,
+  shouldIncludeSignalTeamNoticeInChatTimeline,
 } from '../signal-team-events';
 
 describe('signal-team-events', () => {
@@ -57,5 +58,23 @@ describe('signal-team-events', () => {
       addedMemberMatrixUserIds: [],
       removedMemberMatrixUserIds: [],
     });
+  });
+
+  it('excludes roster snapshot notices from chat timeline', () => {
+    const notice = parseSignalTeamNoticeFromWireContent(
+      {
+        memberMatrixUserIds: ['@alice:example.org'],
+      },
+      '[hypha:signal-team]',
+    );
+    expect(notice?.kind).toBe('members_updated');
+    expect(shouldIncludeSignalTeamNoticeInChatTimeline(notice)).toBe(false);
+    expect(
+      shouldIncludeSignalTeamNoticeInChatTimeline({
+        kind: 'access_requested',
+        addedMemberMatrixUserIds: [],
+        removedMemberMatrixUserIds: [],
+      }),
+    ).toBe(true);
   });
 });

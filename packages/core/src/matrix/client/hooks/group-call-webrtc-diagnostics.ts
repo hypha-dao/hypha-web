@@ -6,6 +6,10 @@ import {
   type MatrixClient,
 } from 'matrix-js-sdk';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
+import { evaluateMatrixTurnReadiness } from './matrix-turn-readiness';
+import { summarizeMatrixIceServers } from './matrix-ice-summary';
+
+export { summarizeMatrixIceServers } from './matrix-ice-summary';
 
 /** Fields we log from Matrix SDK summary stats (avoid deep imports Next cannot bundle). */
 type GroupCallSummaryStatsReport = {
@@ -22,78 +26,6 @@ type GroupCallSummaryStatsReport = {
 };
 
 const TURN_PROBE_LOG_THROTTLE_MS = 60_000;
-
-type IceUrlKind = 'stun' | 'turn' | 'turns' | 'unknown';
-
-function iceUrlKind(url: string): IceUrlKind {
-  const u = url.trim().toLowerCase();
-  if (u.startsWith('stun:') || u.startsWith('stuns:')) return 'stun';
-  if (u.startsWith('turns:')) return 'turns';
-  if (u.startsWith('turn:')) return 'turn';
-  return 'unknown';
-}
-
-/** One object per RTCPeerConnection `iceServers` entry — no secrets. */
-export function summarizeMatrixIceServers(raw: RTCIceServer[] | undefined): {
-  /** Count of `iceServers` objects. */
-  entryCount: number;
-  /** Total URL strings across all entries. */
-  urlCount: number;
-  hasStun: boolean;
-  hasTurn: boolean;
-  hasTurns: boolean;
-  /** Sample of hostname-like segments (first label of host), not full URLs. */
-  hostHints: string[];
-} {
-  if (!raw?.length) {
-    return {
-      entryCount: 0,
-      urlCount: 0,
-      hasStun: false,
-      hasTurn: false,
-      hasTurns: false,
-      hostHints: [],
-    };
-  }
-  let urlCount = 0;
-  let hasStun = false;
-  let hasTurn = false;
-  let hasTurns = false;
-  const hostHints: string[] = [];
-
-  for (const e of raw) {
-    const urls = Array.isArray(e.urls) ? e.urls : e.urls ? [e.urls] : [];
-    urlCount += urls.length;
-    for (const url of urls) {
-      const k = iceUrlKind(String(url));
-      if (k === 'stun') hasStun = true;
-      if (k === 'turn') hasTurn = true;
-      if (k === 'turns') hasTurns = true;
-      try {
-        const u = new URL(
-          String(url)
-            .replace(/^stun[s]?:/i, 'https:')
-            .replace(/^turn[s]?:/i, 'https:'),
-        );
-        const h = u.hostname.split('.')[0];
-        if (h && !hostHints.includes(h) && hostHints.length < 6) {
-          hostHints.push(h);
-        }
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }
-
-  return {
-    entryCount: raw.length,
-    urlCount,
-    hasStun,
-    hasTurn,
-    hasTurns,
-    hostHints,
-  };
-}
 
 let lastTurnProbeAt = 0;
 
@@ -112,22 +44,8 @@ export async function probeMatrixTurnServerReadiness(options: {
   if (now - lastTurnProbeAt < TURN_PROBE_LOG_THROTTLE_MS) return;
   lastTurnProbeAt = now;
 
-  let turnCredsOk = false;
-  try {
-    const r = await client.checkTurnServers();
-    turnCredsOk = r === true;
-  } catch {
-    turnCredsOk = false;
-  }
-
-  const expiry = client.getTurnServersExpiry();
-  const ttlSecApprox =
-    Number.isFinite(expiry) && expiry > 0
-      ? Math.max(0, Math.round((expiry - now) / 1000))
-      : 0;
-
+  const readiness = await evaluateMatrixTurnReadiness(client);
   const raw = client.getTurnServers() as RTCIceServer[];
-  const iceSummary = summarizeMatrixIceServers(raw);
   const forceTurn = Boolean(
     (client as { forceTURN?: boolean }).forceTURN ?? false,
   );
@@ -139,21 +57,21 @@ export async function probeMatrixTurnServerReadiness(options: {
     name: 'hypha.group_call.turn_probe',
     roomId,
     kind,
-    turnCredsOk,
-    turnTtlSecApprox: ttlSecApprox,
-    iceEntryCount: iceSummary.entryCount,
-    iceUrlCount: iceSummary.urlCount,
-    iceHasStun: iceSummary.hasStun,
-    iceHasTurn: iceSummary.hasTurn,
-    iceHasTurns: iceSummary.hasTurns,
-    iceHostHints: iceSummary.hostHints.length
-      ? iceSummary.hostHints
+    turnCredsOk: readiness.turnCredsOk,
+    turnTtlSecApprox: readiness.turnTtlSecApprox,
+    iceEntryCount: readiness.iceEntryCount,
+    iceUrlCount: readiness.iceUrlCount,
+    iceHasStun: readiness.iceHasStun,
+    iceHasTurn: readiness.iceHasTurn,
+    iceHasTurns: readiness.iceHasTurns,
+    iceHostHints: readiness.iceHostHints.length
+      ? readiness.iceHostHints
       : undefined,
     forceTurn,
     fallbackIceAllowed: fallbackAllowed,
   });
 
-  if (!iceSummary.hasTurn && !iceSummary.hasTurns && !fallbackAllowed) {
+  if (!readiness.iceHasTurn && !readiness.iceHasTurns && !fallbackAllowed) {
     /** Quick gather sanity check — confirms browser can reach at least STUN if configured. */
     let gatherState: RTCIceGatheringState | 'unsupported' | 'timeout' =
       'unsupported';
@@ -208,6 +126,224 @@ export async function probeMatrixTurnServerReadiness(options: {
 
 export type GroupCallDiagnosticsCleanup = () => void;
 
+type InboundRtpVideoStats = {
+  frameWidth?: number;
+  frameHeight?: number;
+  ssrc?: number;
+};
+
+type IceTransportSummary = {
+  iceConnectionState: RTCIceConnectionState;
+  iceGatheringState: RTCIceGatheringState;
+  connectionState: RTCPeerConnectionState;
+  localCandidateType?: string;
+  remoteCandidateType?: string;
+  pairState?: string;
+  inboundAudioBytes?: number;
+  inboundVideoBytes?: number;
+};
+
+function readIceTransportSummary(
+  peerConnection: RTCPeerConnection,
+  stats: RTCStatsReport,
+): IceTransportSummary {
+  const candidates = new Map<string, string>();
+  let selectedPairId: string | undefined;
+  let nominatedPairId: string | undefined;
+  let nominatedLocalCandidateId: string | undefined;
+  let nominatedRemoteCandidateId: string | undefined;
+
+  for (const report of stats.values()) {
+    if (
+      report.type === 'local-candidate' ||
+      report.type === 'remote-candidate'
+    ) {
+      const candidateType = report.candidateType;
+      if (typeof candidateType === 'string') {
+        candidates.set(report.id, candidateType);
+      }
+      continue;
+    }
+    if (report.type === 'transport' && 'selectedCandidatePairId' in report) {
+      const id = report.selectedCandidatePairId;
+      if (typeof id === 'string' && id.length > 0) {
+        selectedPairId = id;
+      }
+      continue;
+    }
+    if (report.type !== 'candidate-pair') continue;
+    if (report.nominated === true && report.state === 'succeeded') {
+      nominatedPairId = report.id;
+      nominatedLocalCandidateId =
+        typeof report.localCandidateId === 'string'
+          ? report.localCandidateId
+          : undefined;
+      nominatedRemoteCandidateId =
+        typeof report.remoteCandidateId === 'string'
+          ? report.remoteCandidateId
+          : undefined;
+    }
+  }
+
+  const pairId = selectedPairId ?? nominatedPairId;
+  let localCandidateType: string | undefined;
+  let remoteCandidateType: string | undefined;
+  let pairState: string | undefined;
+
+  if (pairId) {
+    const pair = stats.get(pairId);
+    if (pair?.type === 'candidate-pair') {
+      pairState = typeof pair.state === 'string' ? pair.state : undefined;
+      const localId =
+        typeof pair.localCandidateId === 'string'
+          ? pair.localCandidateId
+          : nominatedLocalCandidateId;
+      const remoteId =
+        typeof pair.remoteCandidateId === 'string'
+          ? pair.remoteCandidateId
+          : nominatedRemoteCandidateId;
+      if (localId) localCandidateType = candidates.get(localId);
+      if (remoteId) remoteCandidateType = candidates.get(remoteId);
+    }
+  }
+
+  let inboundAudioBytes = 0;
+  let inboundVideoBytes = 0;
+  stats.forEach((report) => {
+    if (report.type !== 'inbound-rtp') return;
+    const bytes = report.bytesReceived;
+    if (typeof bytes !== 'number' || bytes <= 0) return;
+    if (report.kind === 'audio') inboundAudioBytes += bytes;
+    if (report.kind === 'video') inboundVideoBytes += bytes;
+  });
+
+  return {
+    iceConnectionState: peerConnection.iceConnectionState,
+    iceGatheringState: peerConnection.iceGatheringState,
+    connectionState: peerConnection.connectionState,
+    localCandidateType,
+    remoteCandidateType,
+    pairState,
+    inboundAudioBytes: inboundAudioBytes || undefined,
+    inboundVideoBytes: inboundVideoBytes || undefined,
+  };
+}
+
+function logIceTransportFromStats(options: {
+  roomId: string;
+  groupCallId: string;
+  userId: string | null;
+  peerConnection: RTCPeerConnection;
+  stats: RTCStatsReport;
+}): void {
+  const { roomId, groupCallId, userId, peerConnection, stats } = options;
+  const transport = readIceTransportSummary(peerConnection, stats);
+  logSpaceGroupCallEvent({
+    name: 'hypha.group_call.ice_transport',
+    roomId,
+    groupCallId,
+    remoteUserId: userId ?? undefined,
+    iceConnectionState: transport.iceConnectionState,
+    iceGatherState: transport.iceGatheringState,
+    connectionState: transport.connectionState,
+    localCandidateType: transport.localCandidateType,
+    remoteCandidateType: transport.remoteCandidateType,
+    pairState: transport.pairState,
+    inboundAudioBytes: transport.inboundAudioBytes,
+    inboundVideoBytes: transport.inboundVideoBytes,
+  });
+}
+
+export function readInboundRtpVideoFrameSizes(
+  stats: RTCStatsReport,
+): InboundRtpVideoStats[] {
+  const rows: InboundRtpVideoStats[] = [];
+  stats.forEach((report) => {
+    if (report.type !== 'inbound-rtp' || report.kind !== 'video') return;
+    const frameWidth = report.frameWidth;
+    const frameHeight = report.frameHeight;
+    if (
+      typeof frameWidth !== 'number' ||
+      typeof frameHeight !== 'number' ||
+      frameWidth <= 0 ||
+      frameHeight <= 0
+    ) {
+      return;
+    }
+    rows.push({
+      frameWidth,
+      frameHeight,
+      ssrc: typeof report.ssrc === 'number' ? report.ssrc : undefined,
+    });
+  });
+  return rows;
+}
+
+function logInboundRtpFrameSizesFromStats(options: {
+  roomId: string;
+  groupCallId: string;
+  userId: string | null;
+  activeSpeakerUserId: string | null;
+  stats: RTCStatsReport;
+}): void {
+  const { roomId, groupCallId, userId, activeSpeakerUserId, stats } = options;
+  const frames = readInboundRtpVideoFrameSizes(stats);
+  for (const frame of frames) {
+    logSpaceGroupCallEvent({
+      name: 'hypha.group_call.inbound_rtp_frame_size',
+      roomId,
+      groupCallId,
+      remoteUserId: userId ?? undefined,
+      activeSpeaker:
+        userId != null &&
+        activeSpeakerUserId != null &&
+        userId === activeSpeakerUserId,
+      frameWidth: frame.frameWidth,
+      frameHeight: frame.frameHeight,
+      ssrc: frame.ssrc,
+    });
+  }
+}
+
+async function logPeerConnectionDiagnostics(options: {
+  roomId: string;
+  groupCallId: string;
+  userId: string | null;
+  peerConnection: RTCPeerConnection;
+  activeSpeakerUserId: string | null;
+  includeFrameSizes: boolean;
+}): Promise<void> {
+  const {
+    roomId,
+    groupCallId,
+    userId,
+    peerConnection,
+    activeSpeakerUserId,
+    includeFrameSizes,
+  } = options;
+  try {
+    const stats = await peerConnection.getStats();
+    if (includeFrameSizes) {
+      logInboundRtpFrameSizesFromStats({
+        roomId,
+        groupCallId,
+        userId,
+        activeSpeakerUserId,
+        stats,
+      });
+    }
+    logIceTransportFromStats({
+      roomId,
+      groupCallId,
+      userId,
+      peerConnection,
+      stats,
+    });
+  } catch {
+    // Peer connection may close between interval ticks; ignore transient diagnostics failure.
+  }
+}
+
 /**
  * Enables Matrix SDK summary stats on the group call and forwards a privacy-safe subset to console telemetry.
  */
@@ -215,8 +351,20 @@ export function attachGroupCallWebRtcDiagnostics(options: {
   gc: GroupCall;
   roomId: string;
   summaryStatsIntervalMs: number;
+  inboundRtpFrameLogIntervalMs?: number;
+  resolveActiveSpeakerUserId?: () => string | null;
+  enumeratePeerConnections?: (
+    gc: GroupCall,
+  ) => Array<{ userId: string | null; peerConnection: RTCPeerConnection }>;
 }): GroupCallDiagnosticsCleanup {
-  const { gc, roomId, summaryStatsIntervalMs } = options;
+  const {
+    gc,
+    roomId,
+    summaryStatsIntervalMs,
+    inboundRtpFrameLogIntervalMs = 0,
+    resolveActiveSpeakerUserId,
+    enumeratePeerConnections,
+  } = options;
 
   if (summaryStatsIntervalMs > 0) {
     gc.setGroupCallStatsInterval(summaryStatsIntervalMs);
@@ -243,10 +391,44 @@ export function attachGroupCallWebRtcDiagnostics(options: {
 
   gc.on(GroupCallStatsReportEvent.SummaryStats, onSummary);
 
+  let frameLogInterval: ReturnType<typeof setInterval> | null = null;
+  const logPeerDiagnostics = (includeFrameSizes: boolean) => {
+    if (!enumeratePeerConnections) return;
+    const activeSpeakerUserId = resolveActiveSpeakerUserId?.() ?? null;
+    for (const { userId, peerConnection } of enumeratePeerConnections(gc)) {
+      void logPeerConnectionDiagnostics({
+        roomId,
+        groupCallId: gc.groupCallId,
+        userId,
+        peerConnection,
+        activeSpeakerUserId,
+        includeFrameSizes,
+      });
+    }
+  };
+
+  if (inboundRtpFrameLogIntervalMs > 0 && enumeratePeerConnections) {
+    logPeerDiagnostics(true);
+    frameLogInterval = setInterval(
+      () => logPeerDiagnostics(true),
+      inboundRtpFrameLogIntervalMs,
+    );
+  } else if (summaryStatsIntervalMs > 0 && enumeratePeerConnections) {
+    logPeerDiagnostics(false);
+    frameLogInterval = setInterval(
+      () => logPeerDiagnostics(false),
+      summaryStatsIntervalMs,
+    );
+  }
+
   return () => {
     gc.removeListener(GroupCallStatsReportEvent.SummaryStats, onSummary);
     if (summaryStatsIntervalMs > 0) {
       gc.setGroupCallStatsInterval(0);
+    }
+    if (frameLogInterval != null) {
+      clearInterval(frameLogInterval);
+      frameLogInterval = null;
     }
   };
 }

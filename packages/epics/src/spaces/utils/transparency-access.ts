@@ -1,5 +1,5 @@
 import { TransparencyLevel } from '../components/transparency-level';
-import { UserSpaceState } from '../hooks/use-user-space-state';
+import { UserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 
 export function checkDiscoverability(
   discoverabilityLevel: TransparencyLevel | undefined,
@@ -32,6 +32,11 @@ export function checkDiscoverability(
     default:
       return false;
   }
+}
+
+/** Write/interact gates (chat composer, AI prompts) — members and delegates only. */
+export function canInteractInSpace(userState: UserSpaceState): boolean {
+  return userState === UserSpaceState.LOGGED_IN_SPACE;
 }
 
 export function checkAccess(

@@ -11,6 +11,10 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Slug must contain only lowercase letters, numbers, and hyphens':
     'issueNewTokenForm.errors.slugFormat',
   'Please upload a valid file': 'issueNewTokenForm.errors.uploadValidFile',
+  'Your file is too large and exceeds the 16 MB limit. Please upload a smaller file.':
+    'issueNewTokenForm.errors.fileTooLarge',
+  'Your file is too large and exceeds the 16 MB limit. Please upload a smaller file':
+    'issueNewTokenForm.errors.fileTooLarge',
   'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.':
     'issueNewTokenForm.errors.fileTooLarge',
   'Your file is too large and exceeds the 4MB limit. Please upload a smaller file':
@@ -25,6 +29,8 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'issueNewTokenForm.errors.attachmentUrlInvalid',
   'Attachment name is required':
     'issueNewTokenForm.errors.attachmentNameRequired',
+  'You can attach up to 5 files. Please remove the extra attachments.':
+    'issueNewTokenForm.errors.attachmentsLimit',
   'You can attach up to 3 files. Please remove the extra attachments.':
     'issueNewTokenForm.errors.attachmentsLimit',
   'Please add a recipient or wallet address':
@@ -38,11 +44,16 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Please select a token': 'proposalErrors.tokenRequired',
   'Token is required': 'proposalErrors.tokenRequired',
   'At least one payout is required': 'proposalErrors.atLeastOnePayoutRequired',
+  'At least one airdrop recipient is required':
+    'proposalErrors.atLeastOneAirdropRecipient',
+  'Too many recipients for one airdrop proposal.':
+    'proposalErrors.tooManyAirdropRecipients',
   'Please enter a purchase amount.': 'proposalErrors.purchaseAmountRequired',
   'Please select a space to activate.': 'proposalErrors.selectSpaceToActivate',
   'Please enter the number of months to activate.':
     'proposalErrors.monthsToActivateRequired',
   'Please select a space to join': 'proposalErrors.selectSpaceToJoin',
+  'Please select a governance space': 'proposalErrors.selectGovernanceSpace',
   'Please select a delegated voting member':
     'proposalErrors.selectDelegatedVotingMember',
   'Please select a space to exit.': 'proposalErrors.selectSpaceToExit',
@@ -96,13 +107,21 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'proposalErrors.acceptInvestmentExactReceiveRows',
 };
 
+/**
+ * Maps a raw (English) proposal validation error to a translatable
+ * {@link ProposalErrorTranslation}. Handles parameterized messages (file name,
+ * milestone order) via regex first, then falls back to the static key map.
+ *
+ * @param message - The raw error message to resolve.
+ * @returns A `{ key, values? }` translation descriptor, or `null` when unknown.
+ */
 export const resolveProposalErrorTranslation = (
   message: string,
 ): ProposalErrorTranslation | null => {
   const trimmedMessage = message.trim();
 
   const tooLargeMatch = trimmedMessage.match(
-    /^Your file "(.+)" is too large and exceeds the 4MB limit\. Please upload a smaller file\.$/,
+    /^Your file "(.+)" is too large and exceeds the \d+ ?MB limit\. Please upload a smaller file\.?$/,
   );
   if (tooLargeMatch?.[1]) {
     return {
@@ -112,13 +131,21 @@ export const resolveProposalErrorTranslation = (
   }
 
   const unsupportedFormatMatch = trimmedMessage.match(
-    /^This file "(.+)" format isn’t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to 4MB\)\.$/,
+    /^This file "(.+)" format isn[’']t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to \d+ ?MB\)\.?$/,
   );
   if (unsupportedFormatMatch?.[1]) {
     return {
       key: 'issueNewTokenForm.errors.attachmentFileTypeUnsupported',
       values: { fileName: unsupportedFormatMatch[1] },
     };
+  }
+
+  if (
+    /^You can attach up to \d+ files\. Please remove the extra attachments\.?$/.test(
+      trimmedMessage,
+    )
+  ) {
+    return { key: 'issueNewTokenForm.errors.attachmentsLimit' };
   }
 
   const milestoneOrderMatch = trimmedMessage.match(

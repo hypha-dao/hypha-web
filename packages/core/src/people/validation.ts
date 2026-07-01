@@ -1,4 +1,8 @@
-import { ALLOWED_IMAGE_FILE_SIZE, DEFAULT_IMAGE_ACCEPT } from '../assets';
+import {
+  ALLOWED_IMAGE_FILE_SIZE,
+  DEFAULT_IMAGE_ACCEPT,
+  UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
+} from '../assets';
 
 import { z } from 'zod';
 import { isAddress } from 'viem';
@@ -93,7 +97,7 @@ export const editPersonFiles = z.object({
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
+          `Your file is too large and exceeds the ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL} limit. Please upload a smaller file`,
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -112,7 +116,7 @@ export const editPersonFiles = z.object({
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 4MB',
+          `File size must be less than ${UPLOADTHING_STANDARD_MAX_SIZE_LABEL}`,
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),

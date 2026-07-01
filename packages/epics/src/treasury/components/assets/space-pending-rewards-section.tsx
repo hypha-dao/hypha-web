@@ -165,12 +165,12 @@ export const SpacePendingRewardsSection: FC<
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
-      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex w-full flex-wrap items-center justify-between gap-2">
         <SectionFilter
           label={tTreasury('rewardsSection.title')}
           count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
         />
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
           {toolbarActions}
           <Button
             title={
@@ -195,10 +195,6 @@ export const SpacePendingRewardsSection: FC<
           <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <AssetCard isLoading />
           </div>
-        ) : !isAuthenticated ? (
-          <Empty>
-            <p>{tTreasury('rewardsSection.signInToViewSpaceRewards')}</p>
-          </Empty>
         ) : (
           <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <AssetCard

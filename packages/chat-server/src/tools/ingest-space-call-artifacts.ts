@@ -7,12 +7,21 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
+import { buildSpaceScreenNavigation } from './space-screen-navigation';
 
-export function createIngestSpaceCallArtifactsTool(authToken: string) {
+export function createIngestSpaceCallArtifactsTool(
+  authToken: string,
+  defaultLocale?: string | null,
+) {
   const inputSchema = z
     .object({
       space_slug: z.string().trim().min(1),
       call_session_id: z.string().trim().min(1),
+      lang: z
+        .string()
+        .trim()
+        .regex(/^[a-z]{2}(?:-[A-Z]{2})?$/)
+        .optional(),
       recording: z
         .object({
           media_uri: z.string().trim().min(1),
@@ -45,7 +54,7 @@ export function createIngestSpaceCallArtifactsTool(authToken: string) {
 
   return {
     description:
-      'Persist call recording and transcript artifacts into space memory for a call session. Use when external workers provide recording URLs or transcript text.',
+      'Persist call recording and transcript artifacts into space memory for a call session. Use when external workers provide recording URLs or transcript text. Returns navigation metadata so the app opens Space Memory.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -95,6 +104,13 @@ export function createIngestSpaceCallArtifactsTool(authToken: string) {
           ok: true,
           call_session_id: result.callSessionId,
           space_id: result.spaceId,
+          space_slug: safe,
+          navigation: buildSpaceScreenNavigation({
+            lang: parsed.data.lang ?? defaultLocale ?? undefined,
+            spaceSlug: safe,
+            screen: 'memory',
+            label: 'Open Space Memory',
+          }),
         };
       } catch (error) {
         console.error('[chat-tool][ingest-space-call-artifacts]', error);

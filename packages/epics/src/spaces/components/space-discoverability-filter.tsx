@@ -1,7 +1,7 @@
 'use client';
 
 import { Space } from '@hypha-platform/core/client';
-import { useUserSpaceState } from '../hooks/use-user-space-state';
+import { useUserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 import { shouldShowSpace } from '../hooks/use-filter-spaces-by-discoverability';
 import { useMemo } from 'react';
 
@@ -24,7 +24,7 @@ export function SpaceDiscoverabilityFilter({
 
   const filteredSpaces = useMemo(() => {
     return spaces.filter((space) => {
-      if (!space.web3SpaceId) return true; // Show spaces without web3SpaceId
+      if (!space.web3SpaceId) return false;
       const discoverability = spaceDiscoverabilityMap.get(space.web3SpaceId);
       return shouldShowSpace(space, discoverability, userState);
     });

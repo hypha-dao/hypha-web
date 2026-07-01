@@ -2,14 +2,7 @@ import {
   getVercelToolbarFlagOverrides,
   readBooleanOverride,
 } from './vercel-toolbar-overrides';
-
-const parseBoolean = (value: string | undefined): boolean | undefined => {
-  if (!value) return undefined;
-  const normalized = value.trim().toLowerCase();
-  if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
-  if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
-  return undefined;
-};
+import { parseBoolean } from './parse-boolean';
 
 /**
  * Default feature exposure:
@@ -105,6 +98,25 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableNetworkMap: {
+    key: 'enable-network-map',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_NETWORK_MAP) ?? false,
+    description:
+      'Space location picker and network globe map. Opt in: NEXT_PUBLIC_ENABLE_NETWORK_MAP=true',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableOnboardingVoiceRealtime: {
+    key: 'enable-onboarding-voice-realtime',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME) ??
+      false,
+    description:
+      'OpenAI Realtime transport for onboarding voice discovery. Opt in: NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -195,3 +207,24 @@ export async function getEnableEcosystemAutomation(): Promise<boolean> {
     false,
   );
 }
+
+export async function getEnableNetworkMapAsync(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-network-map',
+    process.env.NEXT_PUBLIC_ENABLE_NETWORK_MAP,
+    false,
+  );
+}
+
+export async function getEnableOnboardingVoiceRealtimeAsync(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-onboarding-voice-realtime',
+    process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME,
+    false,
+  );
+}
+
+export {
+  getEnableNetworkMap,
+  getEnableOnboardingVoiceRealtime,
+} from './client';

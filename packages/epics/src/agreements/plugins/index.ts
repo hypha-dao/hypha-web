@@ -1,6 +1,7 @@
 export * from './propose-contribution/plugin';
 export * from './pay-for-expenses/plugin';
 export * from './deploy-funds/plugin';
+export * from './airdrop/plugin';
 export * from './change-voting-method/plugin';
 export * from './change-entry-method/plugin';
 export * from './buy-hypha-tokens/plugin';
@@ -10,6 +11,7 @@ export * from './components/common/token-percentage-field-array';
 export * from './components/common/token-percentage-field';
 export * from './activate-spaces/plugin';
 export * from './space-to-space-membership/plugin';
+export * from './change-space-delegate/plugin';
 export * from './membership-exit/plugin';
 export * from './space-transparency-settings/plugin';
 export * from './redeem-tokens/plugin';

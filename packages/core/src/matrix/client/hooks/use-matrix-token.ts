@@ -9,6 +9,8 @@ export interface MatrixTokenData {
   userId: string;
   homeserverUrl: string;
   deviceId?: string;
+  /** Seconds until access token expiry when returned by `/api/matrix/token`. */
+  expiresInSec?: number;
   elementConfig: {
     defaultRoomId?: string;
     theme: string;
@@ -59,10 +61,11 @@ export const useMatrixToken = () => {
           typeof data.homeserverUrl !== 'string' ||
           !data.elementConfig ||
           typeof data.elementConfig !== 'object' ||
-          typeof data.elementConfig.theme !== 'string'
+          typeof data.elementConfig.theme !== 'string' ||
+          (data.expiresInSec != null && typeof data.expiresInSec !== 'number')
         ) {
           throw new Error(
-            'Invalid Matrix token response: missing required fields or elementConfig',
+            'Invalid Matrix token response: missing required fields, invalid elementConfig, or invalid expiresInSec',
           );
         }
         return data as MatrixTokenData;

@@ -7,6 +7,44 @@
 /** Match `/en/dho/my-space/...` — captures locale + space slug. */
 const DHO_SPACE_PATH_RE = /^\/([^/]+)\/dho\/([^/]+)/;
 
+export type HyphaChatMentionDeepLinkInput = {
+  lang: string;
+  spaceSlug: string;
+  messageId: string;
+  /** When set, opens the signal thread before scrolling to the message. */
+  signalSlug?: string | null;
+  /** Legacy cross-room pointer when no signal slug is available. */
+  roomId?: string | null;
+  origin?: string;
+};
+
+/**
+ * Canonical deep link for mention push/email notifications.
+ * Signal threads: `?signal=<slug>&msg=<eventId>`.
+ * Space chat: `?msg=<eventId>` (or `?chat=<roomId>&msg=` when room differs).
+ */
+export function buildHyphaChatMentionDeepLinkUrl({
+  lang,
+  spaceSlug,
+  messageId,
+  signalSlug,
+  roomId,
+  origin,
+}: HyphaChatMentionDeepLinkInput): string {
+  const params = new URLSearchParams();
+  const signal = signalSlug?.trim();
+  const chatRoom = roomId?.trim();
+  if (signal) {
+    params.set('signal', signal);
+  } else if (chatRoom) {
+    params.set('chat', chatRoom);
+  }
+  params.set('msg', messageId);
+  const path = `/${lang}/dho/${spaceSlug}?${params.toString()}`;
+  const base = origin?.replace(/\/$/, '');
+  return base ? `${base}${path}` : path;
+}
+
 /**
  * Shareable link to highlight one chat message. Uses **short** query (`msg` only)
  * so copied URLs are smaller; HumanRightPanel resolves using the active space room.
@@ -42,6 +80,25 @@ export function isHyphaDhoChatMessageUrl(href: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Add, update, or remove the `signal` query param on the current DHO path. */
+export function setSignalSearchParam(
+  pathname: string,
+  searchParams: URLSearchParams | string,
+  signalSlug: string | null | undefined,
+): string {
+  const next = new URLSearchParams(
+    typeof searchParams === 'string' ? searchParams : searchParams.toString(),
+  );
+  const slug = signalSlug?.trim();
+  if (slug) {
+    next.set('signal', slug);
+  } else {
+    next.delete('signal');
+  }
+  const qs = next.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
 }
 
 /** Space slug from a Hypha DHO URL path (`/en/dho/treespace/...` → `treespace`). */

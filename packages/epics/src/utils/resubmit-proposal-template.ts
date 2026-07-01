@@ -6,8 +6,15 @@ export type ResubmitProposalTemplateSegment = string;
 
 export const RESUBMIT_PROPOSAL_DATA_KEY = 'resubmitProposalData';
 export const RESUBMIT_FORM_DATA_KEY = 'resubmitFormData';
+/** AI walkthrough: scroll target after prepare_governance_proposal navigation. */
+export const PROPOSAL_FORM_FOCUS_KEY = 'proposalFormFocus';
 
-/** Same mapping as create routes under `agreements/create/{segment}`. */
+/**
+ * Map a human-readable proposal label to its create-route URL segment.
+ *
+ * @param label - The proposal label to map; may be undefined or falsy
+ * @returns The corresponding URL segment (the part after `/agreements/create/`), or `''` when `label` is falsy or has no known mapping
+ */
 export function getCreateRouteSegmentForProposalLabel(
   label: string | undefined,
 ): ResubmitProposalTemplateSegment {
@@ -18,12 +25,14 @@ export function getCreateRouteSegmentForProposalLabel(
     'Collective Agreement': '',
     Expenses: 'pay-for-expenses',
     Funding: 'deploy-funds',
+    Airdrop: 'airdrop',
     'Voting Method': 'change-voting-method',
     'Entry Method': 'change-entry-method',
     'Issue New Token': 'issue-new-token',
     'Buy Hypha Tokens': 'buy-hypha-tokens',
     'Activate Spaces': 'activate-spaces',
     'Space To Space': 'space-to-space-membership',
+    'Change Delegate': 'change-space-delegate',
     'Treasury Minting': 'mint-tokens-to-space-treasury',
     'Redeem Tokens': 'redeem-tokens',
     'Token Burning': 'token-burning',
@@ -57,7 +66,15 @@ export function getProposalTemplateSegmentFromPathname(
   return tail.split('/')[0] ?? '';
 }
 
-/** For session payloads saved before template scoping was added. */
+/**
+ * Infers a resubmit proposal template segment from a legacy session payload.
+ *
+ * Examines properties commonly present in pre-scoped resubmit payloads and returns
+ * the matching create-route segment string when a recognizable shape is found.
+ *
+ * @param parsed - The parsed session payload object to inspect for identifying fields
+ * @returns A template segment string such as `"mint-tokens-to-space-treasury"`, `"change-space-delegate"`, `"space-to-space-membership"`, etc., or `undefined` if no match is found
+ */
 export function inferResubmitTemplateSegmentFromPayload(
   parsed: Record<string, unknown>,
 ): ResubmitProposalTemplateSegment | undefined {
@@ -89,6 +106,12 @@ export function inferResubmitTemplateSegmentFromPayload(
   }
   if (parsed.spaceToSpaceTargetAddress || parsed.spaceToSpaceMemberAddress) {
     return 'space-to-space-membership';
+  }
+  if (
+    parsed.changeDelegateTargetAddress ||
+    parsed.changeDelegateMemberAddress
+  ) {
+    return 'change-space-delegate';
   }
   if (
     parsed.issueNewTokenForm &&
@@ -178,13 +201,22 @@ export function resubmitPayloadMatchesTemplate(
 export function hasResubmitDataForTemplate(
   templateSegment: ResubmitProposalTemplateSegment,
 ): boolean {
-  if (typeof window === 'undefined') return false;
+  return getResubmitPayloadForTemplate(templateSegment) !== null;
+}
+
+/** Parsed resubmit payload when it targets `templateSegment`, else null. */
+export function getResubmitPayloadForTemplate(
+  templateSegment: ResubmitProposalTemplateSegment,
+): Record<string, unknown> | null {
+  if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem(RESUBMIT_PROPOSAL_DATA_KEY);
-    if (!raw) return false;
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return resubmitPayloadMatchesTemplate(parsed, templateSegment);
+    return resubmitPayloadMatchesTemplate(parsed, templateSegment)
+      ? parsed
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }

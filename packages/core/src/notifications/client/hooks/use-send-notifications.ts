@@ -16,6 +16,20 @@ export interface NotifyChatMentionInput {
   actorDisplayName?: string;
   mentionMatrixUserIds: string[];
   messagePreview?: string;
+  /** Human-readable context, e.g. signal title or space name — used in email copy. */
+  contextLabel?: string;
+  url: string;
+}
+
+export type NotifyCallStartedScope = 'space_members' | 'signal_team';
+
+export interface NotifyCallStartedInput {
+  actorSlug?: string;
+  actorDisplayName?: string;
+  spaceSlug: string;
+  contextLabel?: string;
+  scope: NotifyCallStartedScope;
+  targetMatrixUserIds?: string[];
   url: string;
 }
 
@@ -29,6 +43,7 @@ export interface UseSendNotificationsReturn {
   notifyProposalAccepted: (arg: NotifyProposalAcceptedInput) => Promise<void>;
   notifyProposalRejected: (arg: NotifyProposalRejectedInput) => Promise<void>;
   notifyChatMention: (arg: NotifyChatMentionInput) => Promise<void>;
+  notifyCallStarted: (arg: NotifyCallStartedInput) => Promise<void>;
 }
 
 export interface UseSendNotificationsInput {

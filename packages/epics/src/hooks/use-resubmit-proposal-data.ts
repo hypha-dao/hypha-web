@@ -16,6 +16,14 @@ import {
   inferResubmitTemplateSegmentFromPayload,
   isLegacyGenericResubmitSegment,
 } from '../utils/resubmit-proposal-template';
+import { writeActiveProposalFormLiveFields } from '../common/active-proposal-form-snapshot';
+import { normalizeVotingDurationForResubmitSelect } from '../agreements/plugins/change-voting-method/voting-duration-resubmit';
+import {
+  disableProposalAiWalkthrough,
+  isProposalAiWalkthroughActive,
+} from '../common/proposal-form-focus';
+import { RESUBMIT_PROPOSAL_UPDATED_EVENT } from '../common/governance-proposal-navigation';
+import { isProposalCreateFormPath } from '../common/proposal-form-navigation';
 
 /** Session payload written by resubmit / read by `useResubmitProposalData`. */
 export type ResubmitProposalSessionAttachment =
@@ -53,6 +61,8 @@ export type ResubmitProposalSessionPayload = {
   member?: string;
   spaceToSpaceTargetAddress?: string;
   spaceToSpaceMemberAddress?: string;
+  changeDelegateTargetAddress?: string;
+  changeDelegateMemberAddress?: string;
   issueNewTokenForm?: Record<string, unknown>;
   tokenBackingVault?: Record<string, unknown>;
   spaceTokenPurchaseForm?: Record<string, unknown>;
@@ -117,6 +127,12 @@ export const useResubmitProposalData = <
   const pathname = usePathname();
 
   React.useEffect(() => {
+    if (!isProposalCreateFormPath(pathname)) {
+      disableProposalAiWalkthrough();
+    }
+  }, [pathname]);
+
+  React.useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const applyResubmitData = () => {
@@ -125,6 +141,9 @@ export const useResubmitProposalData = <
         if (!stored) {
           return;
         }
+
+        const overlayPanel = document.getElementById('proposal-overlay-panel');
+        const preservedScrollTop = overlayPanel?.scrollTop ?? 0;
 
         const parsed = JSON.parse(stored) as ResubmitProposalSessionPayload;
 
@@ -196,7 +215,16 @@ export const useResubmitProposalData = <
               ? { votingMethod: parsed.votingMethod }
               : {}),
             ...(parsed.quorumAndUnity
-              ? { quorumAndUnity: parsed.quorumAndUnity }
+              ? {
+                  quorumAndUnity: {
+                    ...(typeof form.getValues('quorumAndUnity' as never) ===
+                      'object' &&
+                    form.getValues('quorumAndUnity' as never) !== null
+                      ? (form.getValues('quorumAndUnity' as never) as object)
+                      : {}),
+                    ...parsed.quorumAndUnity,
+                  },
+                }
               : {}),
             ...(parsed.token !== undefined ? { token: parsed.token } : {}),
             ...(parsed.members !== undefined
@@ -410,10 +438,17 @@ export const useResubmitProposalData = <
         }
 
         if (parsed.votingDuration !== undefined) {
-          form.setValue('votingDuration' as any, parsed.votingDuration as any, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
+          const normalizedDuration = normalizeVotingDurationForResubmitSelect(
+            parsed.votingDuration,
+          );
+          form.setValue(
+            'votingDuration' as any,
+            (normalizedDuration ?? parsed.votingDuration) as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
         }
 
         if (typeof parsed.autoExecution === 'boolean') {
@@ -446,6 +481,19 @@ export const useResubmitProposalData = <
               shouldValidate: true,
             },
           );
+        } else if (parsed.changeDelegateTargetAddress !== undefined) {
+          const spacePath = 'space' as Path<T>;
+          form.setValue(
+            spacePath,
+            parsed.changeDelegateTargetAddress as PathValue<
+              T,
+              typeof spacePath
+            >,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
         } else if (typeof parsed.space === 'number') {
           form.setValue('space' as any, parsed.space as any, {
             shouldDirty: true,
@@ -457,6 +505,19 @@ export const useResubmitProposalData = <
           form.setValue(
             'member' as any,
             parsed.spaceToSpaceMemberAddress as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        } else if (parsed.changeDelegateMemberAddress !== undefined) {
+          const memberPath = 'member' as Path<T>;
+          form.setValue(
+            memberPath,
+            parsed.changeDelegateMemberAddress as PathValue<
+              T,
+              typeof memberPath
+            >,
             {
               shouldDirty: true,
               shouldValidate: true,
@@ -716,6 +777,8 @@ export const useResubmitProposalData = <
         }
         if (parsed.spaceToSpaceTargetAddress !== undefined) {
           fieldsToTrigger.push('space', 'member');
+        } else if (parsed.changeDelegateTargetAddress !== undefined) {
+          fieldsToTrigger.push('space', 'member');
         } else {
           if (typeof parsed.space === 'number') {
             fieldsToTrigger.push('space');
@@ -839,7 +902,15 @@ export const useResubmitProposalData = <
           );
         }
 
-        setResubmitKey((prev) => prev + 1);
+        if (
+          overlayPanel &&
+          preservedScrollTop > 0 &&
+          !isProposalAiWalkthroughActive()
+        ) {
+          requestAnimationFrame(() => {
+            overlayPanel.scrollTop = preservedScrollTop;
+          });
+        }
       } catch (error) {
         console.error('Error reading resubmit data:', error);
         sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);
@@ -847,10 +918,49 @@ export const useResubmitProposalData = <
       }
     };
 
-    const timeoutId = setTimeout(applyResubmitData, 300);
+    const timeoutId = setTimeout(applyResubmitData, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [form, spaceId, creatorId, resubmitTemplateSegment, pathname]);
+  }, [
+    form,
+    spaceId,
+    creatorId,
+    resubmitTemplateSegment,
+    pathname,
+    resubmitKey,
+  ]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onUpdated = () => setResubmitKey((prev) => prev + 1);
+    window.addEventListener(RESUBMIT_PROPOSAL_UPDATED_EVENT, onUpdated);
+    return () =>
+      window.removeEventListener(RESUBMIT_PROPOSAL_UPDATED_EVENT, onUpdated);
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isProposalCreateFormPath(pathname)) return;
+    const segment =
+      resubmitTemplateSegment ??
+      getProposalTemplateSegmentFromPathname(pathname) ??
+      '';
+    if (!segment) return;
+
+    writeActiveProposalFormLiveFields(
+      segment,
+      form.getValues() as Record<string, unknown>,
+    );
+
+    const subscription = form.watch((values) => {
+      writeActiveProposalFormLiveFields(
+        segment,
+        values as Record<string, unknown>,
+      );
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, pathname, resubmitTemplateSegment]);
 
   return { resubmitKey };
 };

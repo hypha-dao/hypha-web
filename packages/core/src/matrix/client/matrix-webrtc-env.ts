@@ -48,14 +48,15 @@ export function matrixWebRtcFallbackIceAllowedFromEnv(): boolean {
 }
 
 /**
- * ICE candidate pre-gather pool for faster first connect; 0 keeps SDK default.
+ * ICE candidate pre-gather pool for faster first connect.
+ * Default 4 when unset — improves time-to-first-media on NAT-heavy networks.
  */
 export function matrixWebRtcIceCandidatePoolSizeFromEnv(): number {
-  if (typeof process === 'undefined') return 0;
+  if (typeof process === 'undefined') return 4;
   return Math.min(
     parseNonNegativeInt(
       process.env['NEXT_PUBLIC_MATRIX_WEBRTC_ICE_POOL_SIZE'],
-      0,
+      4,
     ),
     255,
   );
@@ -71,4 +72,54 @@ export function matrixGroupCallSummaryStatsMsFromEnv(): number {
     process.env['NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS'],
     0,
   );
+}
+
+/** Thumbnail receiver downscale when N ≥ 5 — default true (WCUX-QUALITY-4). */
+export function callThumbnailDownscaleFromEnv(): boolean {
+  if (typeof process === 'undefined') return true;
+  return parseBool(process.env['NEXT_PUBLIC_CALL_THUMBNAIL_DOWNSCALE'], true);
+}
+
+/** Support-session and legacy console keys for call diagnostics (row 9 / CSH-QA-2). */
+export const MATRIX_CALL_DEBUG_LOCAL_STORAGE_KEYS = [
+  'hypha.callDebug',
+  'hypha.group_call.debug',
+] as const;
+
+export function isMatrixCallDebugLocalStorageEnabled(
+  storage: Pick<Storage, 'getItem'> | null | undefined = typeof window !==
+  'undefined'
+    ? window.localStorage
+    : null,
+): boolean {
+  if (!storage) return false;
+  try {
+    return MATRIX_CALL_DEBUG_LOCAL_STORAGE_KEYS.some(
+      (key) => storage.getItem(key) === '1',
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Build flag or support-session localStorage — overlay + inbound RTP frame logs. */
+export function isMatrixCallSupportDebugEnabled(
+  storage?: Pick<Storage, 'getItem'> | null,
+): boolean {
+  return (
+    matrixWebRtcDebugFromEnv() || isMatrixCallDebugLocalStorageEnabled(storage)
+  );
+}
+
+/** Console telemetry, media snapshots, and support-session diagnostics. */
+export function isMatrixCallDebugEnabled(
+  storage?: Pick<Storage, 'getItem'> | null,
+): boolean {
+  if (
+    typeof process !== 'undefined' &&
+    process.env.NODE_ENV === 'development'
+  ) {
+    return true;
+  }
+  return isMatrixCallSupportDebugEnabled(storage);
 }

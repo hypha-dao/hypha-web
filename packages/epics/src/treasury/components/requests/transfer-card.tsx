@@ -15,7 +15,7 @@ type TransferCardProps = {
   tokenIcon?: string;
   value?: number;
   symbol?: string;
-  date?: string;
+  date?: string | number;
   isLoading?: boolean;
   direction?: 'incoming' | 'outgoing';
   counterparty?: 'from' | 'to';
@@ -55,6 +55,13 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   const isBurn = () => {
     return to === ZeroAddress && counterparty === 'to';
   };
+
+  // Show the counterparty line whenever it's a real account: covers regular
+  // transfers and mints to other accounts (recipient), while hiding the
+  // meaningless zero address on mints to the space and burns.
+  const counterpartyAddress = counterparty === 'from' ? from : to;
+  const hasCounterparty =
+    !!counterpartyAddress && counterpartyAddress !== ZeroAddress;
 
   const parsedDate = date ? new Date(date) : null;
   const hasValidDate =
@@ -120,7 +127,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                 </Badge>
               </div>
               <Amount isLoading={isLoading} value={value} />
-              {!isMint && !isBurn() && (
+              {hasCounterparty && (
                 <Skeleton loading={isLoading} width="80px" height="16px">
                   <Text className="text-1 text-neutral-11">
                     {displayName

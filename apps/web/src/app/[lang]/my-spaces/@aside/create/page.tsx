@@ -3,7 +3,7 @@
 import {
   SpaceForm,
   ProposalOverlayShell,
-  getDhoPathAgreements,
+  getDhoPathDefaultLanding,
 } from '@hypha-platform/epics';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import React from 'react';
@@ -37,7 +37,7 @@ export default function AsideCreateSpacePage() {
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
+      router.push(getDhoPathDefaultLanding(lang as Locale, spaceSlug));
     }
   }, [progress, spaceSlug]);
 

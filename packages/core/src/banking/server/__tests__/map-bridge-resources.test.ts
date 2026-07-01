@@ -1,0 +1,201 @@
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+
+import {
+  bridgeTransferTargetsSpace,
+  bridgeVirtualAccountTargetsSpace,
+  mapBridgePayoutAccountToPublic,
+  mapBridgeTransferToPublic,
+  mapBridgeVirtualAccountToPublic,
+} from '../map-bridge-resources';
+
+const SPACE_TREASURY = '0x1111111111111111111111111111111111111111';
+const OTHER_TREASURY = '0x2222222222222222222222222222222222222222';
+
+describe('mapBridgeVirtualAccountToPublic', () => {
+  it('maps Bridge virtual account to public shape', () => {
+    const result = mapBridgeVirtualAccountToPublic(
+      {
+        id: 'va_1',
+        status: 'activated',
+        source_deposit_instructions: {
+          currency: 'eur',
+          iban: 'DE89370400440532013000',
+        },
+        source: { currency: 'eur', payment_rail: 'sepa' },
+      },
+      '0xtreasury',
+      'sepa',
+    );
+
+    expect(result.id).toBe('va_1');
+    expect(result.currency).toBe('eur');
+    expect(result.paymentRail).toBe('sepa');
+    expect(result.depositInstructions.iban).toBe('DE89370400440532013000');
+  });
+});
+
+describe('bridgeTransferTargetsSpace', () => {
+  it('matches transfer destination to space treasury (case-insensitive)', () => {
+    expect(
+      bridgeTransferTargetsSpace(
+        {
+          id: 'tr_1',
+          state: 'awaiting_funds',
+          source_deposit_instructions: {},
+          destination: {
+            to_address: '0x1111111111111111111111111111111111111111',
+          },
+        },
+        SPACE_TREASURY,
+      ),
+    ).toBe(true);
+  });
+
+  it('excludes transfers for another treasury', () => {
+    expect(
+      bridgeTransferTargetsSpace(
+        {
+          id: 'tr_2',
+          state: 'awaiting_funds',
+          source_deposit_instructions: {},
+          destination: { to_address: OTHER_TREASURY },
+        },
+        SPACE_TREASURY,
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('bridgeVirtualAccountTargetsSpace', () => {
+  it('matches virtual account destination to space treasury', () => {
+    expect(
+      bridgeVirtualAccountTargetsSpace(
+        {
+          id: 'va_1',
+          status: 'activated',
+          source_deposit_instructions: { currency: 'usd' },
+          destination: {
+            address: SPACE_TREASURY,
+            currency: 'usdc',
+            payment_rail: 'base',
+          },
+        },
+        SPACE_TREASURY,
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('mapBridgeTransferToPublic', () => {
+  it('maps Bridge transfer to public shape', () => {
+    const result = mapBridgeTransferToPublic(
+      {
+        id: 'tr_1',
+        state: 'awaiting_funds',
+        amount: '100.00',
+        currency: 'eur',
+        source: { payment_rail: 'sepa', currency: 'eur' },
+        source_deposit_instructions: {
+          iban: 'DE89370400440532013000',
+          deposit_message: 'ref-1',
+        },
+        destination: { to_address: '0xtreasury' },
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      '0xtreasury',
+    );
+
+    expect(result.id).toBe('tr_1');
+    expect(result.status).toBe('awaiting_funds');
+    expect(result.depositMessage).toBe('ref-1');
+  });
+});
+
+describe('mapBridgePayoutAccountToPublic', () => {
+  it('joins liquidation address with external account display fields', () => {
+    const result = mapBridgePayoutAccountToPublic({
+      liquidationAddress: {
+        id: 'la_1',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation',
+        external_account_id: 'ext_1',
+        destination_payment_rail: 'sepa',
+        destination_currency: 'eur',
+        state: 'active',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      externalAccount: {
+        id: 'ext_1',
+        active: true,
+        currency: 'eur',
+        bank_name: 'Deutsche Bank',
+        account_owner_name: 'Acme DAO',
+        last_4: '1234',
+      },
+    });
+
+    expect(result.evmAddress).toBe('0xliquidation');
+    expect(result.destinationCurrency).toBe('eur');
+    expect(result.accountLast4).toBe('1234');
+    expect(result.status).toBe('active');
+  });
+
+  it('extracts last 4 from iban.last_4 when account.last_4 is absent (SEPA)', () => {
+    const result = mapBridgePayoutAccountToPublic({
+      liquidationAddress: {
+        id: 'la_2',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation2',
+        external_account_id: 'ext_2',
+        destination_payment_rail: 'sepa',
+        destination_currency: 'eur',
+        state: 'active',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      externalAccount: {
+        id: 'ext_2',
+        active: true,
+        currency: 'eur',
+        bank_name: 'ING',
+        account_owner_name: 'Acme DAO',
+        iban: { last_4: '3000', country: 'DEU' },
+      },
+    });
+
+    expect(result.accountLast4).toBe('3000');
+  });
+
+  it('extracts checkingOrSavings for USD accounts', () => {
+    const result = mapBridgePayoutAccountToPublic({
+      liquidationAddress: {
+        id: 'la_3',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation3',
+        external_account_id: 'ext_3',
+        destination_payment_rail: 'ach',
+        destination_currency: 'usd',
+        state: 'active',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      externalAccount: {
+        id: 'ext_3',
+        active: true,
+        currency: 'usd',
+        last_4: '7890',
+        account: {
+          last_4: '7890',
+          routing_number: '021000021',
+          checking_or_savings: 'checking',
+        },
+      },
+    });
+
+    expect(result.accountLast4).toBe('7890');
+    expect(result.checkingOrSavings).toBe('checking');
+  });
+});

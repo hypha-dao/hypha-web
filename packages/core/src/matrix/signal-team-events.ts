@@ -191,3 +191,17 @@ export function resolveSignalTeamUpdateDisplayBody(
   if (!changes) return null;
   return formatSignalTeamUpdateDisplayBody(changes.added, changes.removed);
 }
+
+/** Only meaningful team changes belong in chat; roster snapshots are call-only noise. */
+export function shouldIncludeSignalTeamNoticeInChatTimeline(
+  notice: SignalTeamNotice | null | undefined,
+): boolean {
+  if (!notice) return true;
+  if (notice.kind === 'access_requested' || notice.kind === 'access_approved') {
+    return true;
+  }
+  return (
+    notice.addedMemberMatrixUserIds.length > 0 ||
+    notice.removedMemberMatrixUserIds.length > 0
+  );
+}

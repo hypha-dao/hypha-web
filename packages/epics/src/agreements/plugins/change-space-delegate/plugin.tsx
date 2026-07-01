@@ -1,0 +1,84 @@
+'use client';
+
+import { Person, type Space } from '@hypha-platform/core/client';
+import { useFormContext } from 'react-hook-form';
+import {
+  Separator,
+  FormField,
+  FormItem,
+  FormControl,
+  FormLabel,
+  FormMessage,
+  RequirementMark,
+} from '@hypha-platform/ui';
+import { SpaceToSpaceMembershipSelector } from '../components/common/space-to-space-membership-selector';
+import { useTranslations } from 'next-intl';
+
+export interface ChangeSpaceDelegatePluginProps {
+  spaces?: Space[];
+  members?: Person[];
+}
+
+export const ChangeSpaceDelegatePlugin = ({
+  spaces,
+  members,
+}: ChangeSpaceDelegatePluginProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const { control } = useFormContext();
+
+  return (
+    <div className="flex flex-col gap-5 w-full">
+      <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+        {tAgreementFlow('plugins.changeSpaceDelegate.governanceSpace')}{' '}
+        <RequirementMark className="text-2" />
+      </FormLabel>
+      <FormField
+        control={control}
+        name="space"
+        render={({ field: { value, onChange } }) => (
+          <FormItem>
+            <FormControl>
+              <SpaceToSpaceMembershipSelector
+                value={value}
+                onChange={(space) => {
+                  onChange(space?.address);
+                }}
+                spaceOptions={spaces}
+                variant="changeDelegate"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <Separator />
+      <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+        {tAgreementFlow('plugins.changeSpaceDelegate.delegationRules')}{' '}
+        <RequirementMark className="text-2" />
+      </FormLabel>
+      <FormField
+        control={control}
+        name="member"
+        render={({ field: { value, onChange } }) => (
+          <FormItem>
+            <FormControl>
+              <SpaceToSpaceMembershipSelector
+                value={value}
+                onChange={(member) => {
+                  onChange(member?.address);
+                }}
+                memberOptions={members}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <span className="text-neutral-11 text-2">
+        {tAgreementFlow(
+          'plugins.changeSpaceDelegate.delegatedVotingMemberDescription',
+        )}
+      </span>
+    </div>
+  );
+};

@@ -1,6 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
 import { SpaceTabAccessWrapper } from '@hypha-platform/epics';
-import { HomeTokenHoldingsDashboard } from './_components/home-token-holdings-dashboard';
+import { HomeTokenHoldingsDashboardLazy } from './_components/home-token-holdings-dashboard-lazy';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -13,7 +13,7 @@ export default async function OrganisationPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <HomeTokenHoldingsDashboard spaceSlug={id} />
+      <HomeTokenHoldingsDashboardLazy spaceSlug={id} />
     </SpaceTabAccessWrapper>
   );
 }

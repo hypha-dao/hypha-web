@@ -4,14 +4,13 @@ import { extractRouterConfig } from 'uploadthing/server';
 import { Lato, Source_Sans_3 } from 'next/font/google';
 import clsx from 'clsx';
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
-import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
 
-import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
+import { Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
   AiPanelTrigger,
@@ -20,11 +19,11 @@ import {
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
-  ConnectedButtonProfile,
 } from '@hypha-platform/epics';
+import { DeferredFooter } from '@web/components/deferred-footer';
+import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
-import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
 import { TooltipProvider } from '@hypha-platform/ui';
@@ -45,6 +44,8 @@ import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 import { AppNavigationSessionCounter } from '@web/components/app-navigation-session-counter';
 import { ConnectedMenuTop } from '@web/components/connected-menu-top';
+import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
+import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
 
 const lato = Lato({
@@ -240,160 +241,161 @@ export default async function RootLayout({
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
         }}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          storageKey="theme"
-          disableTransitionOnChange
-        >
-          <ThemeStorageNormalize />
-          <AppNavigationSessionCounter />
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            <TooltipProvider>
-              <NotificationSubscriber
-                appId={notificationAppId}
-                safariWebId={safariWebId}
-                serviceWorkerPath={serviceWorkerPath}
-              >
-                <ConditionalMatrixProvider enabled={humanChatEnabled}>
-                  <PanelProviders>
-                    <GlobalCallDockProvider>
-                      <PanelWrapLayout
-                        left={
-                          aiChatEnabled
-                            ? {
-                                content: (
-                                  <AiLeftPanel
-                                    enableSpaceMemory={spaceMemoryEnabled}
-                                  />
-                                ),
-                              }
-                            : undefined
-                        }
-                        right={
-                          humanChatEnabled
-                            ? { content: <ConnectedHumanRightPanel /> }
-                            : undefined
-                        }
-                      >
-                        {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                        <div className="sticky top-0 z-30 shrink-0">
-                          <ConnectedMenuTop
-                            aiChatEnabled={aiChatEnabled}
-                            logoHref={ROOT_URL}
-                            openMenuLabel={navOpenMenuLabel}
-                            closeMenuLabel={navCloseMenuLabel}
-                            leadingAction={
-                              aiChatEnabled ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="md:hidden">
-                                    <AiSidebarTrigger />
-                                  </div>
-                                  <AiPanelTrigger />
-                                </div>
-                              ) : undefined
-                            }
-                            trailingAction={
-                              humanChatEnabled ? (
-                                <HumanSidebarTrigger />
-                              ) : undefined
-                            }
-                            mobileAction={
-                              <ConnectedButtonProfile
-                                useAuthentication={useAuthentication}
-                                useMe={useMe}
-                                newUserRedirectPath="/profile/signup"
-                                baseRedirectPath="/my-spaces"
-                                navItems={[
-                                  {
-                                    label: navMySpacesLabel,
-                                    href: `/${locale}/my-spaces`,
-                                  },
-                                  {
-                                    label: navMyWalletLabel,
-                                    href: `/${locale}/my-wallet`,
-                                  },
-                                  {
-                                    label: navNetworkLabel,
-                                    href: `/${locale}/network`,
-                                  },
-                                ]}
-                                trailingBeforeProfile={
-                                  isLanguageSelectVisible ? (
-                                    <ConnectedLanguageSelect
-                                      selectLanguageLabel={
-                                        navSelectLanguageLabel
-                                      }
+        <SwrProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={false}
+            storageKey="theme"
+            disableTransitionOnChange
+          >
+            <ThemeStorageNormalize />
+            <AppNavigationSessionCounter />
+            <LocalizedIntlProvider locale={locale} messages={messages}>
+              <TooltipProvider>
+                <NotificationSubscriber
+                  appId={notificationAppId}
+                  safariWebId={safariWebId}
+                  serviceWorkerPath={serviceWorkerPath}
+                >
+                  <ConditionalMatrixProvider enabled={humanChatEnabled}>
+                    <PanelProviders>
+                      <GlobalCallDockProvider>
+                        <PanelWrapLayout
+                          left={
+                            aiChatEnabled
+                              ? {
+                                  content: (
+                                    <AiLeftPanel
+                                      enableSpaceMemory={spaceMemoryEnabled}
                                     />
-                                  ) : undefined
+                                  ),
                                 }
-                                compact
-                              />
-                            }
-                          >
-                            <div className="hidden md:flex">
-                              <ConnectedButtonProfile
-                                useAuthentication={useAuthentication}
-                                useMe={useMe}
-                                newUserRedirectPath="/profile/signup"
-                                baseRedirectPath="/my-spaces"
-                                navItems={[
-                                  {
-                                    label: navMySpacesLabel,
-                                    href: `/${locale}/my-spaces`,
-                                  },
-                                  {
-                                    label: navMyWalletLabel,
-                                    href: `/${locale}/my-wallet`,
-                                  },
-                                  {
-                                    label: navNetworkLabel,
-                                    href: `/${locale}/network`,
-                                  },
-                                ]}
-                                trailingBeforeProfile={
-                                  isLanguageSelectVisible ? (
-                                    <ConnectedLanguageSelect
-                                      selectLanguageLabel={
-                                        navSelectLanguageLabel
-                                      }
-                                    />
-                                  ) : undefined
-                                }
-                              />
-                            </div>
-                          </ConnectedMenuTop>
-                        </div>
-                        {/* Scrollable content area */}
-                        <NextSSRPlugin
-                          routerConfig={extractRouterConfig(fileRouter)}
-                        />
-                        <div className="mb-auto pb-8">
-                          <div className="flex h-full justify-normal pt-4 md:pt-5">
-                            <div className="w-full h-full">{children}</div>
-                          </div>
-                        </div>
-                        <Footer
-                          networkLabel={footerNetworkLabel}
-                          legalLabel={footerLegalLabel}
-                          hyphaServicesLabel={footerHyphaServicesLabel}
-                          hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
-                          licensingPolicyLabel={footerLicensingPolicyLabel}
-                          termsAndConditionsLabel={
-                            footerTermsAndConditionsLabel
+                              : undefined
                           }
-                          privacyPolicyLabel={footerPrivacyPolicyLabel}
-                        />
-                      </PanelWrapLayout>
-                      {humanChatEnabled && <ConnectedGlobalCallDock />}
-                    </GlobalCallDockProvider>
-                  </PanelProviders>
-                </ConditionalMatrixProvider>
-              </NotificationSubscriber>
-            </TooltipProvider>
-          </NextIntlClientProvider>
-        </ThemeProvider>
+                          right={
+                            humanChatEnabled
+                              ? { content: <ConnectedHumanRightPanel /> }
+                              : undefined
+                          }
+                        >
+                          {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                          <div className="sticky top-0 z-30 shrink-0">
+                            <ConnectedMenuTop
+                              aiChatEnabled={aiChatEnabled}
+                              logoHref={ROOT_URL}
+                              openMenuLabel={navOpenMenuLabel}
+                              closeMenuLabel={navCloseMenuLabel}
+                              leadingAction={
+                                aiChatEnabled ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="md:hidden">
+                                      <AiSidebarTrigger />
+                                    </div>
+                                    <AiPanelTrigger />
+                                  </div>
+                                ) : undefined
+                              }
+                              trailingAction={
+                                humanChatEnabled ? (
+                                  <HumanSidebarTrigger />
+                                ) : undefined
+                              }
+                              mobileAction={
+                                <ConnectedButtonProfile
+                                  newUserRedirectPath="/profile/signup"
+                                  baseRedirectPath="/my-spaces"
+                                  navItems={[
+                                    {
+                                      label: navMySpacesLabel,
+                                      href: `/${locale}/my-spaces`,
+                                    },
+                                    {
+                                      label: navMyWalletLabel,
+                                      href: `/${locale}/my-wallet`,
+                                    },
+                                    {
+                                      label: navNetworkLabel,
+                                      href: `/${locale}/network`,
+                                    },
+                                  ]}
+                                  trailingBeforeProfile={
+                                    isLanguageSelectVisible ? (
+                                      <ConnectedLanguageSelect
+                                        selectLanguageLabel={
+                                          navSelectLanguageLabel
+                                        }
+                                      />
+                                    ) : undefined
+                                  }
+                                  compact
+                                />
+                              }
+                            >
+                              <div className="hidden md:flex">
+                                <ConnectedButtonProfile
+                                  newUserRedirectPath="/profile/signup"
+                                  baseRedirectPath="/my-spaces"
+                                  navItems={[
+                                    {
+                                      label: navMySpacesLabel,
+                                      href: `/${locale}/my-spaces`,
+                                    },
+                                    {
+                                      label: navMyWalletLabel,
+                                      href: `/${locale}/my-wallet`,
+                                    },
+                                    {
+                                      label: navNetworkLabel,
+                                      href: `/${locale}/network`,
+                                    },
+                                  ]}
+                                  trailingBeforeProfile={
+                                    isLanguageSelectVisible ? (
+                                      <ConnectedLanguageSelect
+                                        selectLanguageLabel={
+                                          navSelectLanguageLabel
+                                        }
+                                      />
+                                    ) : undefined
+                                  }
+                                />
+                              </div>
+                            </ConnectedMenuTop>
+                          </div>
+                          {/* Scrollable content area */}
+                          <NextSSRPlugin
+                            routerConfig={extractRouterConfig(fileRouter)}
+                          />
+                          <div className="mb-auto pb-8">
+                            <div className="flex h-full justify-normal pt-4 md:pt-5">
+                              <div className="w-full h-full">{children}</div>
+                            </div>
+                          </div>
+                          <Suspense fallback={null}>
+                            <DeferredFooter
+                              networkLabel={footerNetworkLabel}
+                              legalLabel={footerLegalLabel}
+                              hyphaServicesLabel={footerHyphaServicesLabel}
+                              hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
+                              licensingPolicyLabel={footerLicensingPolicyLabel}
+                              termsAndConditionsLabel={
+                                footerTermsAndConditionsLabel
+                              }
+                              privacyPolicyLabel={footerPrivacyPolicyLabel}
+                            />
+                          </Suspense>
+                        </PanelWrapLayout>
+                        {/* Outside capture root so tab screen share excludes the floating dock. */}
+                        {humanChatEnabled && <ConnectedGlobalCallDock />}
+                      </GlobalCallDockProvider>
+                    </PanelProviders>
+                  </ConditionalMatrixProvider>
+                </NotificationSubscriber>
+              </TooltipProvider>
+            </LocalizedIntlProvider>
+          </ThemeProvider>
+        </SwrProvider>
       </AuthProvider>
       {shouldInjectToolbar && <VercelToolbar />}
     </Html>

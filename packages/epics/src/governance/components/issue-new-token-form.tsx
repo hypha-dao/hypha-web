@@ -8,10 +8,12 @@ import {
   createAgreementFiles,
   useMe,
   useCreateIssueTokenOrchestrator,
-  DbToken,
   useJwt,
   WHITELIST_DUPLICATE_ENTRY_MESSAGE,
   type Space,
+  findBlockingDuplicateIssueToken,
+  useSpaceProposalsWeb3Rpc,
+  useWithdrawnProposalsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -39,6 +41,10 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
   'Slug must contain only lowercase letters, numbers, and hyphens':
     'issueNewTokenForm.errors.slugFormat',
   'Please upload a valid file': 'issueNewTokenForm.errors.uploadValidFile',
+  'Your file is too large and exceeds the 16 MB limit. Please upload a smaller file.':
+    'issueNewTokenForm.errors.fileTooLarge',
+  'Your file is too large and exceeds the 16 MB limit. Please upload a smaller file':
+    'issueNewTokenForm.errors.fileTooLarge',
   'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.':
     'issueNewTokenForm.errors.fileTooLarge',
   'Your file is too large and exceeds the 4MB limit. Please upload a smaller file':
@@ -53,6 +59,8 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.attachmentUrlInvalid',
   'Attachment name is required':
     'issueNewTokenForm.errors.attachmentNameRequired',
+  'You can attach up to 5 files. Please remove the extra attachments.':
+    'issueNewTokenForm.errors.attachmentsLimit',
   'You can attach up to 3 files. Please remove the extra attachments.':
     'issueNewTokenForm.errors.attachmentsLimit',
   'Please enter a token name (min. 2 characters)':
@@ -240,7 +248,7 @@ export const IssueNewTokenForm = ({
   const translateIssueNewTokenError = React.useCallback(
     (message: string) => {
       const tooLargeMatch = message.match(
-        /^Your file "(.+)" is too large and exceeds the 4MB limit\. Please upload a smaller file\.?$/,
+        /^Your file "(.+)" is too large and exceeds the \d+ ?MB limit\. Please upload a smaller file\.?$/,
       );
       if (tooLargeMatch?.[1]) {
         return tAgreementFlow(
@@ -252,7 +260,7 @@ export const IssueNewTokenForm = ({
       }
 
       const unsupportedFormatMatch = message.match(
-        /^This file "(.+)" format isn[’']t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to 4MB\)\.?$/,
+        /^This file "(.+)" format isn[’']t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to \d+ ?MB\)\.?$/,
       );
       if (unsupportedFormatMatch?.[1]) {
         return tAgreementFlow(
@@ -373,6 +381,7 @@ export const IssueNewTokenForm = ({
       enableMutualCredit: false,
       defaultCreditLimit: undefined,
       creditWhitelistedSpaceIds: [],
+      authorizedMinters: [],
       spacesForWhitelistResolution: undefined,
       label: tAgreementFlow('labels.issueNewToken'),
     },
@@ -390,6 +399,53 @@ export const IssueNewTokenForm = ({
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
+  const {
+    spaceProposalsIds,
+    isLoading: isLoadingSpaceProposals,
+    error: spaceProposalsError,
+  } = useSpaceProposalsWeb3Rpc({
+    spaceId: web3SpaceId ?? 0,
+  });
+  const {
+    withdrawnProposalsIds,
+    isLoading: isLoadingWithdrawnProposals,
+    error: withdrawnProposalsError,
+  } = useWithdrawnProposalsWeb3Rpc({
+    spaceId: web3SpaceId ?? 0,
+  });
+
+  const needsProposalStatusForDuplicateCheck =
+    typeof web3SpaceId === 'number' &&
+    Number.isInteger(web3SpaceId) &&
+    web3SpaceId > 0;
+
+  const isProposalStatusLoading =
+    needsProposalStatusForDuplicateCheck &&
+    (isLoadingSpaceProposals || isLoadingWithdrawnProposals);
+
+  const hasProposalStatusError =
+    needsProposalStatusForDuplicateCheck &&
+    Boolean(spaceProposalsError || withdrawnProposalsError);
+
+  const isProposalStatusReady =
+    !needsProposalStatusForDuplicateCheck ||
+    (!isProposalStatusLoading &&
+      !hasProposalStatusError &&
+      spaceProposalsIds !== undefined &&
+      withdrawnProposalsIds !== undefined);
+
+  const rejectedProposalIds = React.useMemo(
+    () =>
+      new Set(
+        Array.from(spaceProposalsIds?.rejected ?? []).map((id) => Number(id)),
+      ),
+    [spaceProposalsIds?.rejected],
+  );
+  const withdrawnProposalIds = React.useMemo(
+    () =>
+      new Set(Array.from(withdrawnProposalsIds ?? []).map((id) => Number(id))),
+    [withdrawnProposalsIds],
+  );
 
   const tokenType = form.watch('type');
 
@@ -407,16 +463,19 @@ export const IssueNewTokenForm = ({
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
 
-    const duplicateToken = dbTokens?.find((token: DbToken) => {
-      const isNameEqual =
-        token.name?.toLowerCase() === data.name?.toLowerCase();
-      const isSymbolEqual =
-        token.symbol?.toLowerCase() === data.symbol?.toLowerCase();
-      const isSpaceEqual = token.spaceId === spaceId;
-      return isNameEqual && isSymbolEqual && isSpaceEqual;
+    if (!isProposalStatusReady) {
+      return;
+    }
+
+    const duplicateToken = findBlockingDuplicateIssueToken(dbTokens, {
+      spaceId: spaceId as number,
+      name: data.name,
+      symbol: data.symbol,
+      rejectedProposalIds,
+      withdrawnProposalIds,
     });
 
-    if (dbTokens?.length && duplicateToken) {
+    if (duplicateToken) {
       setFormError(tAgreementFlow('issueNewTokenForm.duplicateToken'));
       return;
     }
@@ -511,7 +570,14 @@ export const IssueNewTokenForm = ({
               </div>
             )}
             <div className="flex justify-end w-full">
-              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+              <Button
+                type="submit"
+                disabled={
+                  isPending || isProposalStatusLoading || hasProposalStatusError
+                }
+              >
+                {tAgreementFlow('buttons.publish')}
+              </Button>
             </div>
           </div>
         </form>

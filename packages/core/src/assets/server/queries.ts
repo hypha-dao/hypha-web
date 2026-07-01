@@ -1,6 +1,7 @@
 import { asc, eq, sql, and } from 'drizzle-orm';
 import { documents, tokens } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
+import { isHiddenToken } from '../../common/web3/tokens';
 
 type FindAllTokensProps = {
   search?: string;
@@ -73,5 +74,22 @@ export const findAllTokens = async (
     )
     .orderBy(asc(tokens.name));
 
-  return results;
+  // Exclude retired/hidden token deployments from every DB-token-driven surface.
+  return results.filter((token) => !isHiddenToken(token.address));
+};
+
+export const findTokenByAddress = async (address: string, { db }: DbConfig) => {
+  const [token] = await db
+    .select({
+      id: tokens.id,
+      name: tokens.name,
+      symbol: tokens.symbol,
+      address: tokens.address,
+      iconUrl: tokens.iconUrl,
+    })
+    .from(tokens)
+    .where(sql`lower(${tokens.address}) = lower(${address})`)
+    .limit(1);
+
+  return token ?? null;
 };

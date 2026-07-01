@@ -88,8 +88,31 @@ const computeProgress = (tasks: TaskState): number => {
 
 const toNullableString = (
   value: string | File | null | undefined,
-): string | null | undefined =>
-  typeof value === 'string' ? value : value === null ? null : undefined;
+): string | null | undefined => {
+  if (value instanceof File) {
+    return undefined;
+  }
+  if (value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return value.trim() === '' ? null : value;
+  }
+  return undefined;
+};
+
+type UpdateSpaceMutationArg = {
+  id: number;
+  data: Omit<
+    z.infer<typeof schemaUpdateSpace>,
+    'logoUrl' | 'leadImage' | 'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
+  > & {
+    logoUrl?: string | File | null;
+    leadImage?: string | File | null;
+    ecosystemLogoUrlLight?: string | File | null;
+    ecosystemLogoUrlDark?: string | File | null;
+  };
+};
 
 export const useUpdateSpaceOrchestrator = ({
   authToken,
@@ -144,33 +167,15 @@ export const useUpdateSpaceOrchestrator = ({
 
   const resetTasks = useCallback(() => dispatch({ type: 'RESET' }), []);
 
-  const { trigger: updateSpace, isMutating } = useSWRMutation(
-    'updateSpaceMutation',
+  const runSpaceUpdate = useCallback(
     async (
-      _,
-      {
-        arg,
-      }: {
-        arg: {
-          id: number;
-          data: Omit<
-            z.infer<typeof schemaUpdateSpace>,
-            | 'logoUrl'
-            | 'leadImage'
-            | 'ecosystemLogoUrlLight'
-            | 'ecosystemLogoUrlDark'
-          > & {
-            logoUrl?: string | File | null;
-            leadImage?: string | File | null;
-            ecosystemLogoUrlLight?: string | File | null;
-            ecosystemLogoUrlDark?: string | File | null;
-          };
-        };
-      },
+      arg: UpdateSpaceMutationArg,
+      applyUpdate: (
+        input: { id: number } & z.infer<typeof schemaUpdateSpace>,
+      ) => Promise<unknown> | unknown,
     ) => {
       let activeTask: TaskName | null = null;
       try {
-        console.debug('updateSpaceMutation called with arg:', arg);
         const { id, data } = arg;
         invariant(Number.isFinite(id) && id > 0, 'valid id is required');
 
@@ -206,38 +211,71 @@ export const useUpdateSpaceOrchestrator = ({
           ecosystemLogoUrlLight: toNullableString(data.ecosystemLogoUrlLight),
           ecosystemLogoUrlDark: toNullableString(data.ecosystemLogoUrlDark),
         });
-        const result = await web2.updateSpaceById({
+        const result = await applyUpdate({
           ...updateInput,
           id,
         });
 
-        console.debug('updateSpaceById result:', result);
         completeTask('UPDATE_WEB2_SPACE');
         activeTask = null;
 
         return result;
       } catch (error) {
         console.error('updateSpaceMutation error:', error);
-        if (error instanceof Error && activeTask) {
-          errorTask(activeTask, error.message);
+        const message =
+          error instanceof z.ZodError
+            ? error.issues.map((issue) => issue.message).join(', ')
+            : error instanceof Error
+            ? error.message
+            : 'Unknown error';
+        if (activeTask) {
+          errorTask(activeTask, message);
         }
         throw error;
       }
     },
+    [completeTask, errorTask, files, startTask],
   );
 
+  const { trigger: updateSpace, isMutating: isMutatingSpace } = useSWRMutation(
+    'updateSpaceMutation',
+    async (_, { arg }: { arg: UpdateSpaceMutationArg }) =>
+      runSpaceUpdate(arg, web2.updateSpaceById),
+  );
+
+  const {
+    trigger: updateSpaceConfiguration,
+    isMutating: isMutatingSpaceConfiguration,
+  } = useSWRMutation(
+    'updateSpaceConfigurationMutation',
+    async (_, { arg }: { arg: UpdateSpaceMutationArg }) =>
+      runSpaceUpdate(arg, web2.updateSpaceConfigurationById),
+  );
+
+  const isMutating = isMutatingSpace || isMutatingSpaceConfiguration;
+
   const errors = useMemo(() => {
-    return [web2.errorUpdateSpaceByIdMutation, files.error].filter(Boolean);
-  }, [web2.errorUpdateSpaceByIdMutation, files.error]);
+    return [
+      web2.errorUpdateSpaceByIdMutation,
+      web2.errorUpdateSpaceConfigurationByIdMutation,
+      files.error,
+    ].filter(Boolean);
+  }, [
+    web2.errorUpdateSpaceByIdMutation,
+    web2.errorUpdateSpaceConfigurationByIdMutation,
+    files.error,
+  ]);
 
   const reset = useCallback(() => {
     resetTasks();
     web2.resetUpdateSpaceByIdMutation();
+    web2.resetUpdateSpaceConfigurationByIdMutation();
     files.reset();
   }, [resetTasks, web2, files]);
 
   return {
     updateSpace,
+    updateSpaceConfiguration,
     isMutating,
     taskState,
     currentAction,

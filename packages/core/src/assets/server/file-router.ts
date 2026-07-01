@@ -6,7 +6,11 @@ import { getDb } from '@hypha-platform/core/server';
 import { verifyAuth } from '@hypha-platform/core/server';
 import { CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE } from './call-recording-storage';
 import { logCallRecordingUploadFailure } from './call-recording-upload-log';
-import { ECOSYSTEM_LOGO_IMAGE_ACCEPT } from '../constant';
+import {
+  ECOSYSTEM_LOGO_IMAGE_ACCEPT,
+  UPLOADTHING_STANDARD_MAX_FILE_COUNT,
+  UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+} from '../constant';
 
 const f = createUploadthing();
 
@@ -23,18 +27,33 @@ const SVG_FALLBACK_MIME_TYPES = new Set([
 ]);
 
 export const fileRouter: FileRouter = {
-  attachmentUploader: f({
-    pdf: {
-      maxFileSize: '4MB',
-      maxFileCount: 3,
-      contentDisposition: 'attachment',
+  attachmentUploader: f(
+    {
+      pdf: {
+        maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+        maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
+        contentDisposition: 'attachment',
+      },
+      image: {
+        maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+        maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
+        contentDisposition: 'attachment',
+      },
+      blob: {
+        maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+        maxFileCount: UPLOADTHING_STANDARD_MAX_FILE_COUNT,
+        contentDisposition: 'attachment',
+      },
     },
-    image: {
-      maxFileSize: '4MB',
-      maxFileCount: 3,
-      contentDisposition: 'attachment',
-    },
-  })
+    /**
+     * Do not block the browser on the server `onUploadComplete` webhook.
+     * Preview deployments sit behind Vercel Deployment Protection, so
+     * UploadThing's server-to-server callback to `/api/uploadthing` cannot
+     * authenticate; with the default `awaitServerData: true` the client polls
+     * forever after the ingest PUT succeeds.
+     */
+    { awaitServerData: false },
+  )
     .middleware(async ({ req }) => {
       const isValidAuthToken = await getAuthenticatedUser(req);
 
@@ -48,16 +67,19 @@ export const fileRouter: FileRouter = {
     .onUploadComplete(({ file }) =>
       console.debug(`Attachment "${file.key}" was successfully uploaded`),
     ),
-  imageUploader: f({
-    image: {
-      maxFileSize: '4MB',
-      maxFileCount: 1,
+  imageUploader: f(
+    {
+      image: {
+        maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+        maxFileCount: 1,
+      },
+      blob: {
+        maxFileSize: UPLOADTHING_STANDARD_MAX_FILE_SIZE,
+        maxFileCount: 1,
+      },
     },
-    blob: {
-      maxFileSize: '4MB',
-      maxFileCount: 1,
-    },
-  })
+    { awaitServerData: false },
+  )
     .middleware(async ({ req, files }) => {
       const isValidAuthToken = await getAuthenticatedUser(req);
 
@@ -89,18 +111,21 @@ export const fileRouter: FileRouter = {
       console.debug('ourFileRouter.onUploadComplete', { metadata, file });
       return;
     }),
-  callRecordingUploader: f({
-    video: {
-      maxFileSize: CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE,
-      maxFileCount: 1,
-      contentDisposition: 'inline',
+  callRecordingUploader: f(
+    {
+      video: {
+        maxFileSize: CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE,
+        maxFileCount: 1,
+        contentDisposition: 'inline',
+      },
+      blob: {
+        maxFileSize: CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE,
+        maxFileCount: 1,
+        contentDisposition: 'inline',
+      },
     },
-    blob: {
-      maxFileSize: CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE,
-      maxFileCount: 1,
-      contentDisposition: 'inline',
-    },
-  })
+    { awaitServerData: false },
+  )
     .middleware(async ({ req, files }) => {
       const isValidAuthToken = await getAuthenticatedUser(req);
       if (!isValidAuthToken) {

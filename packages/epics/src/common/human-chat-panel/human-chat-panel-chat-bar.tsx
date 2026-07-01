@@ -76,6 +76,7 @@ import {
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
+import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -609,6 +610,7 @@ export function HumanChatPanelChatBar({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   /** When true, `MediaRecorder` stop should add an audio draft; when false (dictation), discard blob. */
   const voiceAsAttachmentRef = useRef(false);
   /** When true, drop the next voice blob from MediaRecorder `onstop` (user sent text instead). */
@@ -1035,6 +1037,11 @@ export function HumanChatPanelChatBar({
     !composerLocked &&
     (value.trim().length > 0 || draftAttachments.length > 0) &&
     (!editMediaMode || draftAttachments.length > 0);
+  const canAttachDrafts =
+    !composerLocked && typeof onDraftAttachmentsChange === 'function';
+  const attachButtonTitle = composerLocked
+    ? composerLockedMessage || t('composerLockedPlaceholder')
+    : t('composerAttachMenu');
 
   const focusComposerTextarea = useCallback(() => {
     requestAnimationFrame(() => {
@@ -1390,6 +1397,11 @@ export function HumanChatPanelChatBar({
     stopDictation();
     stopVoiceRecording();
   }, [composerLocked, stopDictation, stopVoiceRecording]);
+
+  useEffect(() => {
+    if (canAttachDrafts || !attachMenuOpen) return;
+    setAttachMenuOpen(false);
+  }, [attachMenuOpen, canAttachDrafts]);
 
   const handleAttachMenuContentEnter = useCallback(
     (e: React.KeyboardEvent) => {
@@ -2113,68 +2125,97 @@ export function HumanChatPanelChatBar({
         </div>
 
         <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
-          {voiceError && (
+          {(voiceError || attachError) && (
             <p role="alert" className="text-xs text-destructive">
-              {voiceError}
+              {voiceError ?? attachError}
             </p>
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
-              <DropdownMenu
-                modal={isMobile}
-                open={attachMenuOpen}
-                onOpenChange={setAttachMenuOpen}
-              >
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={composerLocked}
-                    className={cn(
-                      iconButtonClass,
-                      composerLocked && 'cursor-not-allowed opacity-50',
-                    )}
-                    aria-label={t('composerAttachMenu')}
-                    title={t('composerAttachMenu')}
-                    aria-expanded={attachMenuOpen}
-                  >
-                    <Plus className="h-4 w-4" strokeWidth={2} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  side={isMobile ? 'top' : 'bottom'}
-                  className="z-[100] min-w-[200px]"
-                  onKeyDownCapture={handleAttachMenuContentEnter}
+              {canAttachDrafts ? (
+                <DropdownMenu
+                  modal={isMobile}
+                  open={attachMenuOpen}
+                  onOpenChange={(open) => {
+                    if (!canAttachDrafts) return;
+                    setAttachMenuOpen(open);
+                  }}
                 >
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    onSelect={() => {
-                      requestAnimationFrame(() => handleAttachImage());
-                    }}
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={iconButtonClass}
+                      aria-label={t('composerAttachMenu')}
+                      title={attachButtonTitle}
+                      aria-expanded={attachMenuOpen}
+                    >
+                      <Plus className="h-4 w-4" strokeWidth={2} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    side={isMobile ? 'top' : 'bottom'}
+                    className="z-[100] min-w-[200px]"
+                    onKeyDownCapture={handleAttachMenuContentEnter}
                   >
-                    <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{t('composerAttachImage')}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    onSelect={() => {
-                      requestAnimationFrame(() => handleAttachVideo());
-                    }}
-                  >
-                    <Video className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{t('composerAttachVideo')}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    onSelect={() => {
-                      requestAnimationFrame(() => handleAttachFile());
-                    }}
-                  >
-                    <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{t('composerAttachFile')}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      onSelect={() => {
+                        requestAnimationFrame(() => handleAttachImage());
+                      }}
+                    >
+                      <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{t('composerAttachImage')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      onSelect={() => {
+                        requestAnimationFrame(() => handleAttachVideo());
+                      }}
+                    >
+                      <Video className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{t('composerAttachVideo')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      onSelect={() => {
+                        requestAnimationFrame(() => handleAttachFile());
+                      }}
+                    >
+                      <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{t('composerAttachFile')}</span>
+                    </DropdownMenuItem>
+                    <ComposerAttachGoogleDriveMenuItem
+                      disabled={!canAttachDrafts}
+                      onPickerOpen={() => {
+                        setAttachMenuOpen(false);
+                        setAttachError(null);
+                      }}
+                      onError={() =>
+                        setAttachError(t('composerAttachGoogleDriveError'))
+                      }
+                      onFilesPicked={(files) => {
+                        setAttachError(null);
+                        pushDrafts(files, 'file');
+                      }}
+                    />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <button
+                  type="button"
+                  className={cn(
+                    iconButtonClass,
+                    'cursor-not-allowed opacity-50',
+                  )}
+                  aria-label={t('composerAttachMenu')}
+                  title={attachButtonTitle}
+                  aria-disabled="true"
+                  disabled
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2} />
+                </button>
+              )}
               <HumanChatPanelEmojiPicker
                 modal={false}
                 open={emojiPickerOpen}

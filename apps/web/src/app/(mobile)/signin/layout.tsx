@@ -31,6 +31,10 @@ export const metadata = {
   title: 'Hypha - Sign in',
 };
 
+// This route reads request headers (user-agent) and mounts its own
+// AuthProvider, so it must never be statically prerendered.
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: {

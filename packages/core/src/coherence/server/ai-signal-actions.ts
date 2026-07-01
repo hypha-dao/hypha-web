@@ -36,6 +36,7 @@ type CreateAiSignalInput = {
   type: SignalType;
   priority: SignalPriority;
   tags?: string[];
+  lang?: string;
 };
 
 type RelayAiSignalInput = {
@@ -50,7 +51,53 @@ type RelayAiSignalInput = {
   priority: SignalPriority;
   tags?: string[];
   sourceAssetKeys?: string[];
+  lang?: string;
 };
+
+export type AiSignalNavigationPayload = {
+  kind: 'internal';
+  href: string;
+  open_human_chat: true;
+  chat_target: 'signal_chat';
+  signal_slug: string;
+  signal_title: string;
+  room_id?: string;
+  label: string;
+};
+
+function resolveSignalNavigationLang(lang?: string): string {
+  const trimmed = lang?.trim();
+  if (trimmed && /^[a-z]{2}(?:-[A-Z]{2})?$/i.test(trimmed)) {
+    return trimmed.split('-')[0]?.toLowerCase() ?? 'en';
+  }
+  return 'en';
+}
+
+export function buildAiSignalNavigation(args: {
+  lang?: string;
+  spaceSlug: string;
+  signalSlug: string;
+  signalTitle: string;
+  roomId?: string | null;
+}): AiSignalNavigationPayload {
+  const lang = resolveSignalNavigationLang(args.lang);
+  const signalSlug = args.signalSlug.trim();
+  const signalTitle = args.signalTitle.trim() || signalSlug;
+  const params = new URLSearchParams();
+  params.set('signal', signalSlug);
+  const href = `/${lang}/dho/${args.spaceSlug.trim()}/coherence?${params.toString()}`;
+
+  return {
+    kind: 'internal',
+    href,
+    open_human_chat: true,
+    chat_target: 'signal_chat',
+    signal_slug: signalSlug,
+    signal_title: signalTitle,
+    ...(args.roomId?.trim() ? { room_id: args.roomId.trim() } : {}),
+    label: signalTitle,
+  };
+}
 
 const AI_SIGNAL_TAG = 'AI Signal';
 
@@ -198,6 +245,7 @@ export async function createAiSignalForSpaceBySlug(
     type,
     priority,
     tags,
+    lang,
   }: CreateAiSignalInput,
   { db }: DbConfig,
 ) {
@@ -242,12 +290,27 @@ export async function createAiSignalForSpaceBySlug(
     { db },
   );
 
+  const signalSlug = created.slug?.trim();
+  if (!signalSlug) {
+    return {
+      ok: false as const,
+      error: 'Signal was created but slug is missing.',
+    };
+  }
+
   return {
     ok: true as const,
     signalId: created.id,
-    signalSlug: created.slug,
+    signalSlug,
     spaceSlug: host.slug,
     creatorId: actorId,
+    navigation: buildAiSignalNavigation({
+      lang,
+      spaceSlug: host.slug,
+      signalSlug,
+      signalTitle: title,
+      roomId: created.roomId,
+    }),
   };
 }
 
@@ -264,6 +327,7 @@ export async function relayAiSignalToEcosystemSpace(
     priority,
     tags,
     sourceAssetKeys,
+    lang,
   }: RelayAiSignalInput,
   { db }: DbConfig,
 ) {
@@ -363,12 +427,27 @@ export async function relayAiSignalToEcosystemSpace(
     { db },
   );
 
+  const signalSlug = created.slug?.trim();
+  if (!signalSlug) {
+    return {
+      ok: false as const,
+      error: 'Signal was created but slug is missing.',
+    };
+  }
+
   return {
     ok: true as const,
     signalId: created.id,
-    signalSlug: created.slug,
+    signalSlug,
     sourceSpaceSlug: source.slug,
     targetSpaceSlug: target.slug,
     creatorId: actorId,
+    navigation: buildAiSignalNavigation({
+      lang,
+      spaceSlug: target.slug,
+      signalSlug,
+      signalTitle: title,
+      roomId: created.roomId,
+    }),
   };
 }

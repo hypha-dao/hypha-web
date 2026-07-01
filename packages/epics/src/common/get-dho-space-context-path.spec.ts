@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 
 describe('getDhoSpaceContextPath', () => {
@@ -19,6 +20,16 @@ describe('getDhoSpaceContextPath', () => {
         spaceSlug: 'next-space',
       }),
     ).toBe('/en/dho/next-space/members');
+  });
+
+  it('preserves treasury when switching spaces from treasury create overlay', () => {
+    expect(
+      getDhoSpaceContextPath({
+        pathname: '/en/dho/current-space/treasury/create/issue-new-token',
+        lang: 'en',
+        spaceSlug: 'next-space',
+      }),
+    ).toBe('/en/dho/next-space/treasury');
   });
 
   it('falls back to agreements for non-tab overlay routes', () => {

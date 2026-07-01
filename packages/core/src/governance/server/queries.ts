@@ -1,4 +1,4 @@
-import { DbConfig } from '@hypha-platform/core/server';
+import type { DbConfig } from '../../common/server/types';
 import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
 
 import {
@@ -422,6 +422,34 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
       result.spaceCreator ?? undefined,
     ),
   );
+};
+
+/**
+ * Find the single token row linked to an on-chain proposal id
+ * (`agreementWeb3Id`). Used by the server-side token-linking webhook to
+ * backfill `tokens.address` after a deploy proposal executes — independent of
+ * any browser being open.
+ */
+export const findTokenByAgreementWeb3Id = async (
+  { agreementWeb3Id }: { agreementWeb3Id: number },
+  { db }: DbConfig,
+) => {
+  const matches = await db
+    .select()
+    .from(tokens)
+    .where(eq(tokens.agreementWeb3Id, agreementWeb3Id))
+    .limit(2);
+
+  if (matches.length === 0) {
+    return null;
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      `Multiple tokens found with agreementWeb3Id: ${agreementWeb3Id}; refusing ambiguous lookup`,
+    );
+  }
+
+  return matches[0] ?? null;
 };
 
 export const findTokenUpdateByDocumentId = async (

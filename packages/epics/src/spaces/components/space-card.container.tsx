@@ -2,7 +2,7 @@
 
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
-import { getDhoPathAgreements } from '../../common';
+import { getDhoPathDefaultLanding } from '../../common';
 import { SpaceCardWithDiscoverability } from './space-card-with-discoverability';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -19,16 +19,19 @@ export const SpaceCardContainer = ({
   showExitButton,
   gridClassName,
 }: SpaceCardContainerProps) => {
-  const getHref = (slug: string) => getDhoPathAgreements(lang, slug);
+  const getHref = (slug: string) => getDhoPathDefaultLanding(lang, slug);
 
   return (
     <div
       data-testid="member-spaces-container"
-      className={cn('grid grid-cols-1 gap-2 sm:grid-cols-3', gridClassName)}
+      className={cn(
+        'grid grid-cols-1 gap-2 sm:grid-cols-3 auto-rows-fr items-stretch',
+        gridClassName,
+      )}
     >
       {spaces.map((space) =>
         space.slug ? (
-          <div key={space.id}>
+          <div key={space.id} className="flex flex-col h-full">
             <SpaceCardWithDiscoverability
               space={space}
               getHref={getHref}

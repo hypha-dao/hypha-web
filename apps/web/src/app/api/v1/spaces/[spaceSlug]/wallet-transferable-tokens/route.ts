@@ -6,7 +6,12 @@ import {
   getTokenMeta,
   findAllTokens,
 } from '@hypha-platform/core/server';
-import { Token, validTokenTypes, TokenType } from '@hypha-platform/core/client';
+import {
+  Token,
+  validTokenTypes,
+  TokenType,
+  isHiddenToken,
+} from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -99,7 +104,9 @@ export async function GET(
       addressMap.set(token.address.toLowerCase(), token);
     });
 
-    const allTokens: Token[] = Array.from(addressMap.values());
+    const allTokens: Token[] = Array.from(addressMap.values()).filter(
+      (token) => !isHiddenToken(token.address),
+    );
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {

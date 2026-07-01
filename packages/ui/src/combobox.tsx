@@ -36,6 +36,9 @@ type ComboboxProps = {
   className?: string;
   disabled?: boolean;
   emptyListMessage?: string;
+  /** Set false when the combobox is rendered inside a modal dialog. */
+  popoverModal?: boolean;
+  triggerVariant?: React.ComponentProps<typeof Button>['variant'];
 };
 
 export const COMBOBOX_TITLE = '===';
@@ -53,6 +56,8 @@ export function Combobox({
   className,
   disabled = false,
   emptyListMessage = 'No options found.',
+  popoverModal = true,
+  triggerVariant = 'outline',
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(initialValue);
@@ -87,12 +92,13 @@ export function Combobox({
 
   return (
     <Popover
+      modal={popoverModal}
       open={open && !disabled}
       onOpenChange={(isOpen) => !disabled && setOpen(isOpen)}
     >
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant={triggerVariant}
           colorVariant="neutral"
           role="combobox"
           aria-expanded={open && !disabled}
@@ -111,7 +117,7 @@ export function Combobox({
           <ChevronDownIcon className="size-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full md:w-72 p-0" align="end">
+      <PopoverContent className="z-[100] w-full md:w-72 p-0" align="end">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
@@ -136,8 +142,11 @@ export function Combobox({
                   ) : (
                     <CommandItem
                       key={`${option.value}-${index}`}
-                      value={option.value}
-                      onSelect={handleSelect}
+                      value={option.searchText ?? option.label ?? option.value}
+                      onSelect={() => handleSelect(option.value)}
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                      }}
                       disabled={disabled}
                     >
                       <div className="flex items-center gap-2 w-full">

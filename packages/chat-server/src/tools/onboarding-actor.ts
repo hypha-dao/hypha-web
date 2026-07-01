@@ -30,48 +30,4 @@ export async function resolveActorPerson(authToken: string) {
   return { person, privyUserId };
 }
 
-export function hasExplicitConfirmation(
-  lastUserText: string | null | undefined,
-  token: string,
-): boolean {
-  if (!lastUserText) return false;
-  const normalized = lastUserText.trim().toLowerCase();
-  const normalizedCompact = normalized
-    .replace(/[.,!?;:]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const normalizedToken = token.trim().toLowerCase();
-  if (!normalizedToken) return false;
-  const escapedToken = normalizedToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const confirmationPattern = new RegExp(`^confirm\\s+${escapedToken}$`, 'i');
-  if (
-    confirmationPattern.test(normalized) ||
-    confirmationPattern.test(normalizedCompact)
-  ) {
-    return true;
-  }
-
-  // Accept natural-language confirmations to avoid repetitive loops
-  // when users reply with plain confirmations like "yes" or "yep".
-  const plainAffirmatives = new Set([
-    'yes',
-    'y',
-    'yep',
-    'yeah',
-    'sure',
-    'ok',
-    'okay',
-    'confirm',
-    'confirmed',
-    'ready',
-    'go ahead',
-    'proceed',
-    'yes proceed',
-    'do it',
-    'sounds good',
-  ]);
-  return (
-    plainAffirmatives.has(normalized) ||
-    plainAffirmatives.has(normalizedCompact)
-  );
-}
+export { hasExplicitConfirmation } from './onboarding-confirmation';

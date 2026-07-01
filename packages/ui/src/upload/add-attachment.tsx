@@ -25,7 +25,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   onExistingAttachmentsChange,
   value,
   defaultAttachments,
-  label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)',
+  label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 16MB)',
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<File[]>([]);

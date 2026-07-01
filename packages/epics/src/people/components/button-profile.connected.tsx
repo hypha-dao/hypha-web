@@ -2,16 +2,21 @@
 
 import { ButtonProfile } from './button-profile';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { UseAuthentication } from '@hypha-platform/authentication';
-import { UseMe } from '../hooks/types';
+import {
+  ProfileUseAuthentication,
+  ResolvePostAuthRedirectPathOrDefault,
+  UseMe,
+} from '../hooks/types';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
+
 type ConnectedButtonProfileProps = {
-  useAuthentication: UseAuthentication;
+  useAuthentication: ProfileUseAuthentication;
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
+  resolvePostAuthRedirectPathOrDefault: ResolvePostAuthRedirectPathOrDefault;
   navItems: ButtonNavItemProps[];
   trailingBeforeProfile?: ReactNode;
   compact?: boolean;
@@ -21,8 +26,13 @@ type ErrorUser = {
   error: string;
 };
 
-const isErrorUser = (obj: any): obj is ErrorUser => {
-  return obj && typeof obj === 'object' && 'error' in obj;
+const isErrorUser = (obj: unknown): obj is ErrorUser => {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'error' in obj &&
+    typeof (obj as { error?: unknown }).error === 'string'
+  );
 };
 
 export const ConnectedButtonProfile = ({
@@ -30,6 +40,7 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
+  resolvePostAuthRedirectPathOrDefault,
   navItems,
   trailingBeforeProfile,
   compact = false,
@@ -51,6 +62,8 @@ export const ConnectedButtonProfile = ({
   const { resolvedTheme, setTheme } = useTheme();
   const onboardingUrl =
     typeof lang === 'string' ? `/${lang}/onboarding` : undefined;
+  const localizedSignupPath =
+    typeof lang === 'string' ? `/${lang}/profile/signup` : newUserRedirectPath;
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
@@ -76,13 +89,22 @@ export const ConnectedButtonProfile = ({
       if (person) {
         if (isErrorUser(person)) {
           if (person.error !== 'Internal Server Error') {
-            router.push(newUserRedirectPath);
+            router.push(localizedSignupPath);
           }
         } else if (
-          (person?.id && pathname === newUserRedirectPath) ||
-          isLoggingIn
+          isLoggingIn &&
+          pathname !== newUserRedirectPath &&
+          pathname !== localizedSignupPath
         ) {
-          router.push(baseRedirectPath);
+          if (!pathname.includes('/onboarding')) {
+            router.push(
+              resolvePostAuthRedirectPathOrDefault({
+                pathname,
+                lang: typeof lang === 'string' ? lang : undefined,
+                baseRedirectPath,
+              }),
+            );
+          }
           setLoggingIn(false);
         }
       } else {
@@ -100,6 +122,10 @@ export const ConnectedButtonProfile = ({
     newUserRedirectPath,
     isLoggingIn,
     setLoggingIn,
+    pathname,
+    localizedSignupPath,
+    lang,
+    resolvePostAuthRedirectPathOrDefault,
   ]);
 
   const handleThemeChange = () => {

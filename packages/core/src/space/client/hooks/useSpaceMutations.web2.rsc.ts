@@ -13,6 +13,7 @@ import {
   deleteSpaceBySlugAction,
   updateSpaceByIdAction,
   updateSpaceBySlugAction,
+  updateSpaceConfigurationByIdAction,
 } from '@hypha-platform/core/space/server/actions';
 
 export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
@@ -24,8 +25,36 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
     data: createdSpace,
   } = useSWRMutation(
     authToken ? [authToken, 'createSpace'] : null,
-    async ([authToken], { arg }: { arg: CreateSpaceInput }) =>
-      await createSpaceAction(arg, { authToken }),
+    async ([authToken], { arg }: { arg: CreateSpaceInput }) => {
+      try {
+        return await createSpaceAction(arg, { authToken });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          message.includes('Server Action') &&
+          message.includes('was not found')
+        ) {
+          const response = await fetch('/api/v1/spaces/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify(arg),
+          });
+          if (!response.ok) {
+            const body = (await response.json().catch(() => null)) as {
+              error?: string;
+            } | null;
+            throw new Error(
+              body?.error ?? `Failed to create space (${response.status})`,
+            );
+          }
+          return response.json();
+        }
+        throw error;
+      }
+    },
   );
 
   const {
@@ -50,6 +79,18 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
     authToken ? [authToken, 'updateSpaceById'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
       await updateSpaceByIdAction(arg, { authToken }),
+  );
+
+  const {
+    trigger: updateConfigurationByIdMutation,
+    reset: resetUpdateSpaceConfigurationByIdMutation,
+    isMutating: isUpdatingSpaceConfigurationById,
+    error: errorUpdateSpaceConfigurationByIdMutation,
+    data: updatedSpaceConfigurationById,
+  } = useSWRMutation(
+    authToken ? [authToken, 'updateSpaceConfigurationById'] : null,
+    async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
+      await updateSpaceConfigurationByIdAction(arg, { authToken }),
   );
 
   const {
@@ -82,6 +123,12 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
     isUpdatingSpaceById,
     errorUpdateSpaceByIdMutation,
     updatedSpaceById,
+
+    updateSpaceConfigurationById: updateConfigurationByIdMutation,
+    resetUpdateSpaceConfigurationByIdMutation,
+    isUpdatingSpaceConfigurationById,
+    errorUpdateSpaceConfigurationByIdMutation,
+    updatedSpaceConfigurationById,
 
     deleteSpaceBySlug: deleteSpaceBySlugMutation,
     resetDeleteSpaceBySlugMutation,

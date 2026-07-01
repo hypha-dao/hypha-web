@@ -4,7 +4,7 @@ import {
   tokens,
   tokenUpdates,
 } from '@hypha-platform/storage-postgres';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and, inArray, isNull } from 'drizzle-orm';
 import type { InferInsertModel } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,7 +16,8 @@ import {
   TokenUpdateData,
   isTokenUpdateData,
 } from '../types';
-import { DatabaseInstance, findTokenUpdateByDocumentId } from '../../server';
+import type { DatabaseInstance } from '../../common/server/types';
+import { findTokenUpdateByDocumentId } from './queries';
 import { CreateTokenInput, DeleteTokenInput } from '../types';
 import {
   buildUpdateTokenInputPatchFromTokenUpdateData,
@@ -204,6 +205,45 @@ export const deleteToken = async (
     .where(eq(tokens.id, Number(input.id)))
     .returning();
   return deleted;
+};
+
+/** Remove draft token rows left behind when issue-token proposals fail on-chain. */
+export const deleteUndeployedTokensByAgreementWeb3Ids = async (
+  proposalIds: number[],
+  { db }: { db: DatabaseInstance },
+) => {
+  if (proposalIds.length === 0) {
+    return [];
+  }
+
+  return db
+    .delete(tokens)
+    .where(
+      and(inArray(tokens.agreementWeb3Id, proposalIds), isNull(tokens.address)),
+    )
+    .returning();
+};
+
+/** Delete undeployed draft rows for a space, optionally scoped to one symbol. */
+export const deleteUndeployedDraftTokensForSpace = async (
+  {
+    spaceId,
+    symbol,
+  }: {
+    spaceId: number;
+    symbol?: string;
+  },
+  { db }: { db: DatabaseInstance },
+) => {
+  const conditions = [eq(tokens.spaceId, spaceId), isNull(tokens.address)];
+  if (symbol?.trim()) {
+    conditions.push(sql`lower(${tokens.symbol}) = lower(${symbol.trim()})`);
+  }
+
+  return db
+    .delete(tokens)
+    .where(and(...conditions))
+    .returning();
 };
 
 export const createTokenUpdate = async (

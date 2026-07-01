@@ -17,7 +17,10 @@ export const useProposalVoters = (documentSlug?: string) => {
         .then((res) => res.json())
         .then((data) => data.voters as Voter[]),
     {
-      refreshInterval: 10000,
+      // The voter's own vote is reflected immediately via `mutate()` after
+      // voting; this background poll only needs to pick up other members'
+      // votes, so a slightly slower cadence is fine.
+      refreshInterval: 15000,
     },
   );
 

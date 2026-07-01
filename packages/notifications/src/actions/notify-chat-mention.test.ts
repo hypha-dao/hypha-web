@@ -25,22 +25,26 @@ describe('buildMentionEmailBody', () => {
       actorDisplayName: 'Alice <script> "x"',
       messagePreview: "Hello <b>team</b> & 'all'",
       url: 'https://app.hypha.earth/en/dho/test?msg=1',
+      contextLabel: 'Hypha Energy',
     });
 
     expect(html).toContain('Alice &lt;script&gt;');
     expect(html).toContain('&quot;x&quot;');
     expect(html).toContain('Hello &lt;b&gt;team&lt;/b&gt; &amp; &#39;all&#39;');
+    expect(html).toContain('mentioned you in Hypha Energy');
     expect(html).not.toContain('<script>');
   });
 
-  it('renders fallback copy when preview is empty', () => {
+  it('renders styled layout without preview block when preview is empty', () => {
     const html = buildMentionEmailBody({
       actorDisplayName: 'Alice',
       messagePreview: '',
       url: 'https://app.hypha.earth/en/dho/test?msg=1',
     });
 
-    expect(html).toContain('Open chat to view the message.');
+    expect(html).toContain('Hypha &mdash; Growing Together');
+    expect(html).toContain('View Mention');
+    expect(html).not.toContain('background:#f4f4f5;border-radius:8px');
   });
 
   it('uses safe fallback link for non-http protocols', () => {
@@ -50,6 +54,6 @@ describe('buildMentionEmailBody', () => {
       url: 'javascript:alert(1)',
     });
 
-    expect(html).toContain('<a href="#">Open mention</a>');
+    expect(html).toContain('href="#"');
   });
 });

@@ -1,7 +1,9 @@
-import type { Alias, Segment } from './audience';
+import type { Alias, Filter, Segment } from './audience';
 import type { Template } from './template';
 
-export type EmailAlias = Alias & {
+/** `email_to` alone is valid for OneSignal; `include_aliases` is used for subscribed Hypha users. */
+export type EmailAlias = Filter & {
+  include_aliases?: Alias['include_aliases'];
   email_to?: string[];
 };
 

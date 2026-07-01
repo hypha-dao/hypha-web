@@ -13,11 +13,35 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
+import { buildOnboardingEntryMethodGuidelines } from './tools/onboarding-entry-method';
+import { buildOnboardingLocaleDirective } from './onboarding-locale';
+import { resolveChatLocale } from './locale-ui-labels';
+import {
+  buildEcosystemExecutePhaseDirective,
+  hasPendingEcosystemChildSpaces,
+} from './onboarding-ecosystem-blueprint';
+import { ONBOARDING_TRANSPARENCY_GUIDELINES } from './tools/onboarding-transparency-guidance';
 import {
   buildQuestionCompetencyDirective,
   buildSystemPrompt,
+  LEFT_PANEL_NAVIGATION_GUIDELINES,
+  POST_CREATE_GOVERNANCE_SETUP_GUIDELINES,
+  PROPOSAL_DISCOVERY_GUIDELINES,
+  ECOSYSTEM_NESTED_SPACES_GUIDELINES,
+  ONBOARDING_CATEGORY_GUIDELINES,
+  ONBOARDING_CREATION_CONFIRMATION_GUIDELINES,
+  SOUND_ADVISOR_GUIDELINES,
+  STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES,
+  VOICE_BREVITY_GUIDELINE,
+  VOICE_SPOKEN_SENTENCE_LIMIT,
+  VOICE_TOOL_ACK_GUIDELINE,
   sanitizeSlug,
 } from './system-prompt';
+import { resolveLatestVisualGenerationIntent } from './tools/onboarding-confirmation';
+import { buildPostCreateVotingMethodDirective } from './tools/onboarding-voting-method-inference';
+import { buildActiveGovernanceProposalDirective } from './tools/active-governance-proposal-directive';
+import { buildProposalFormStateDirective } from './tools/proposal-form-state';
+import { buildProposalAcceptanceDirective } from './tools/proposal-acceptance-directive';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -26,6 +50,18 @@ import {
   createGetTokenHoldingsBySpaceSlugTool,
   getSpaceBySlugTool,
 } from './tools/index';
+
+const VOICE_MODE_ACTIVE_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
+CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
+- ${VOICE_BREVITY_GUIDELINE}
+- ${VOICE_TOOL_ACK_GUIDELINE}
+- When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
+
+const VOICE_MODE_PROPOSAL_WALKTHROUGH_DIRECTIVES = `${STANDARD_VOICE_CHAT_OUTPUT_GUIDELINES}
+CRITICAL — VOICE MODE ACTIVE: chat reply = spoken script (standard voice TTS reads it word for word). Human summary only — ${VOICE_SPOKEN_SENTENCE_LIMIT} natural sentences, no Title/Description/field labels, no numbered lists, no form structure. Draft first, one small reaction ask.
+- ${VOICE_BREVITY_GUIDELINE}
+- During an active proposal walkthrough: call prepare_governance_proposal first in the same turn — no spoken preamble about opening the form. Other read tools may use one brief acknowledgment before the tool call.
+- When proposal_guidance or UI cards show choice options on screen, point to the screen with one recommendation — do NOT enumerate every option in the spoken reply.`;
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
@@ -283,6 +319,7 @@ const OPENROUTER_TEMP_UNAVAILABLE_REPLY =
 type DeterministicFallbackContext = {
   text: string;
   kind:
+    | 'current_space'
     | 'space_overview'
     | 'documents'
     | 'ecosystem'
@@ -399,6 +436,21 @@ function isSignalRecommendationQuestion(text: string): boolean {
   );
 }
 
+function isCurrentSpaceQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    /\b(which|what)\s+space\b/.test(t) ||
+    /\bon which space\b/.test(t) ||
+    /\bin which space\b/.test(t) ||
+    /\bwhere am i\b/.test(t) ||
+    /\bwhich space am i\b/.test(t) ||
+    /\bwhat space am i\b/.test(t) ||
+    (/\bcurrent space\b/.test(t) &&
+      /\b(which|what|where|am i|are we)\b/.test(t))
+  );
+}
+
 function isBlindspotQuestion(text: string): boolean {
   const t = text.trim().toLowerCase();
   if (!t) return false;
@@ -429,6 +481,47 @@ async function buildDeterministicSpaceFallback({
   if (!safe) return null;
 
   try {
+    if (isCurrentSpaceQuestion(lastUserText)) {
+      const spaceResult = await getSpaceBySlugTool.execute({ slug: safe });
+      if (
+        spaceResult &&
+        typeof spaceResult === 'object' &&
+        'found' in spaceResult &&
+        spaceResult.found === true &&
+        'space' in spaceResult &&
+        spaceResult.space &&
+        typeof spaceResult.space === 'object'
+      ) {
+        const space = spaceResult.space as {
+          title?: string;
+          description?: string | null;
+          memberCount?: number;
+        };
+        const title =
+          typeof space.title === 'string' && space.title.trim()
+            ? space.title.trim()
+            : safe;
+        const description =
+          typeof space.description === 'string' && space.description.trim()
+            ? space.description.trim()
+            : null;
+        const memberLine =
+          typeof space.memberCount === 'number'
+            ? `${space.memberCount} member${
+                space.memberCount === 1 ? '' : 's'
+              }.`
+            : null;
+        const text = [
+          `You are currently in **${title}**.`,
+          description,
+          memberLine,
+        ]
+          .filter((line): line is string => Boolean(line?.trim()))
+          .join('\n\n');
+        return { kind: 'current_space', text };
+      }
+    }
+
     if (isBlindspotQuestion(lastUserText)) {
       const signalsTool = createGetSignalsBySpaceSlugTool(authToken);
       const signalsResult = await signalsTool.execute({
@@ -948,7 +1041,11 @@ export type ChatStreamCallbacks = {
   debugRequestId: string;
   /** Lets org memory resolve the viewer's Matrix token (same as Space Memory API). */
   requestUrlForSessionMatrix?: string;
+  activeSpaceTitle?: string | null;
   conversationContext?: ChatRequestPayload['conversationContext'];
+  discoveryMode?: ChatRequestPayload['discoveryMode'];
+  activeProposalFormSnapshot?: ChatRequestPayload['activeProposalFormSnapshot'];
+  locale?: ChatRequestPayload['locale'];
   onboardingWriteToolsEnabled?: boolean;
   ecosystemAutomationEnabled?: boolean;
 };
@@ -1056,6 +1153,69 @@ function extractLastUserText(
   return null;
 }
 
+function extractLastAssistantText(
+  messages: ChatRequestPayload['messages'],
+): string | null {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== 'assistant') continue;
+    const parts = message.parts ?? [];
+    for (const part of parts) {
+      if (
+        part &&
+        typeof part === 'object' &&
+        part.type === 'text' &&
+        'text' in part &&
+        typeof part.text === 'string'
+      ) {
+        const text = part.text.trim();
+        if (text) return text;
+      }
+    }
+    if (typeof message.content === 'string' && message.content.trim()) {
+      return message.content.trim();
+    }
+  }
+  return null;
+}
+
+function extractRecentUserTexts(
+  messages: ChatRequestPayload['messages'],
+  limit = 10,
+): string[] {
+  const texts: string[] = [];
+  for (let i = messages.length - 1; i >= 0 && texts.length < limit; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== 'user') continue;
+    const parts = message.parts ?? [];
+    let found = false;
+    for (const part of parts) {
+      if (
+        part &&
+        typeof part === 'object' &&
+        part.type === 'text' &&
+        'text' in part &&
+        typeof part.text === 'string'
+      ) {
+        const text = part.text.trim();
+        if (text) {
+          texts.push(text);
+          found = true;
+          break;
+        }
+      }
+    }
+    if (
+      !found &&
+      typeof message.content === 'string' &&
+      message.content.trim()
+    ) {
+      texts.push(message.content.trim());
+    }
+  }
+  return texts;
+}
+
 function normalizeConversationContext(
   context: ChatRequestPayload['conversationContext'],
   lastUserText: string | null,
@@ -1071,11 +1231,99 @@ function normalizeConversationContext(
 function buildEffectiveSystemPrompt(
   spaceSlug: string | null | undefined,
   lastUserText: string | null,
+  conversationContext: ChatRequestPayload['conversationContext'],
+  spaceContextSnapshot: string | null,
 ): string {
   const basePrompt = buildSystemPrompt(spaceSlug);
+  const parts = [basePrompt];
+  if (spaceContextSnapshot) {
+    parts.push(`\n\n${spaceContextSnapshot}`);
+  }
+  const inOnboarding = conversationContext?.mode === 'onboarding_setup';
+  const postCreateOnboardingPhase =
+    conversationContext?.setupPhase === 'execute' ||
+    conversationContext?.setupPhase === 'verify';
+  if (spaceSlug?.trim() && (!inOnboarding || postCreateOnboardingPhase)) {
+    parts.push(LEFT_PANEL_NAVIGATION_GUIDELINES);
+  }
   const competencyDirective = buildQuestionCompetencyDirective(lastUserText);
-  if (!competencyDirective) return basePrompt;
-  return `${basePrompt}\n\n${competencyDirective}`;
+  if (competencyDirective) {
+    parts.push(`\n\n${competencyDirective}`);
+  }
+  return parts.join('');
+}
+
+async function buildSpaceContextSnapshot(
+  spaceSlug: string,
+  clientTitle?: string | null,
+): Promise<string | null> {
+  const safe = sanitizeSlug(spaceSlug);
+  if (!safe) return null;
+
+  try {
+    const result = await getSpaceBySlugTool.execute({ slug: safe });
+    if (
+      !result ||
+      typeof result !== 'object' ||
+      !('found' in result) ||
+      result.found !== true ||
+      !('space' in result) ||
+      !result.space ||
+      typeof result.space !== 'object'
+    ) {
+      return null;
+    }
+
+    const space = result.space as {
+      title?: string;
+      description?: string | null;
+      memberCount?: number;
+      documentCount?: number;
+    };
+    const title = typeof space.title === 'string' ? space.title : safe;
+    const description =
+      typeof space.description === 'string' && space.description.trim()
+        ? space.description.trim()
+        : null;
+
+    return [
+      'CRITICAL — ACTIVE SPACE CONTEXT (this overrides any other space name from earlier chat turns):',
+      `- Active space slug for tools: ${safe}`,
+      `- Display name: ${title}`,
+      ...(clientTitle && clientTitle !== title
+        ? [`- Client-reported title: ${clientTitle}`]
+        : []),
+      ...(description ? [`- Purpose: ${description}`] : []),
+      ...(typeof space.memberCount === 'number'
+        ? [`- Members: ${space.memberCount}`]
+        : []),
+      ...(typeof space.documentCount === 'number'
+        ? [`- Documents: ${space.documentCount}`]
+        : []),
+      ...(typeof (space as { activationMode?: string }).activationMode ===
+      'string'
+        ? [
+            `- Activation mode: ${
+              (space as { activationMode: string }).activationMode
+            }`,
+          ]
+        : []),
+      ...((
+        space as { privacy?: { isAlreadyPrivate?: boolean; summary?: string } }
+      ).privacy?.summary
+        ? [
+            `- Privacy: ${
+              (space as { privacy: { summary: string } }).privacy.summary
+            }`,
+          ]
+        : []),
+      `- The user switched to this space via navigation, the space picker, or recently visited. Answer ONLY about this space unless they explicitly ask about another.`,
+      `- For "which space am I in" / "where am I" questions: answer with "${title}" and call get_space_by_slug with slug "${safe}". Never name a different space from chat history.`,
+      `- Privacy/transparency changes on existing spaces require create_space_setup_proposal (proposal_type space_transparency) and member vote — never claim updates via update_space_settings.`,
+    ].join('\n');
+  } catch {
+    return null;
+  }
 }
 
 async function convertMessagesSafely(
@@ -1117,17 +1365,26 @@ export async function createChatStreamResult(
   {
     debugRequestId,
     requestUrlForSessionMatrix,
+    activeSpaceTitle,
     conversationContext,
+    discoveryMode,
+    activeProposalFormSnapshot,
     onboardingWriteToolsEnabled,
     ecosystemAutomationEnabled,
+    locale,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
+  const recentUserTexts = extractRecentUserTexts(messages);
   const normalizedConversationContext = normalizeConversationContext(
     conversationContext,
     lastUserText,
   );
+  const chatLocale = resolveChatLocale({
+    locale,
+    conversationContext: normalizedConversationContext,
+  });
   const tools = createChatTools(
     authToken,
     requestUrlForSessionMatrix,
@@ -1136,6 +1393,10 @@ export async function createChatStreamResult(
       onboardingWriteToolsEnabled: onboardingWriteToolsEnabled !== false,
       ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
     },
+    lastUserText,
+    recentUserTexts,
+    activeProposalFormSnapshot,
+    chatLocale,
   );
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
@@ -1143,16 +1404,154 @@ export async function createChatStreamResult(
     authToken,
     debugRequestId,
   });
+  const spaceContextSnapshot = spaceSlug?.trim()
+    ? await buildSpaceContextSnapshot(spaceSlug, activeSpaceTitle)
+    : null;
   const effectiveSystemPrompt = buildEffectiveSystemPrompt(
     spaceSlug,
     lastUserText,
+    normalizedConversationContext,
+    spaceContextSnapshot,
   );
+  const onboardingLocaleDirective = buildOnboardingLocaleDirective(
+    normalizedConversationContext?.mode === 'onboarding_setup'
+      ? normalizedConversationContext.locale
+      : chatLocale,
+  );
+  const localizedEntryMethodGuidelines =
+    chatLocale !== 'en'
+      ? buildOnboardingEntryMethodGuidelines(chatLocale)
+      : null;
+  const ecosystemExecuteDirective =
+    normalizedConversationContext?.mode === 'onboarding_setup'
+      ? buildEcosystemExecutePhaseDirective(normalizedConversationContext)
+      : null;
+  const pendingEcosystemChildren =
+    normalizedConversationContext?.mode === 'onboarding_setup'
+      ? hasPendingEcosystemChildSpaces(normalizedConversationContext)
+      : false;
+  const voiceDiscoveryActive =
+    normalizedConversationContext?.discoveryMode === 'voice_interview' ||
+    discoveryMode === 'voice_interview';
+  const lastAssistantText = extractLastAssistantText(messages);
+  const postCreateVotingMethodDirective = buildPostCreateVotingMethodDirective({
+    userText: lastUserText,
+    assistantText: lastAssistantText,
+    spaceSlug:
+      normalizedConversationContext?.createdSpaceSlug?.trim() ||
+      spaceSlug?.trim() ||
+      null,
+    votingMethodAlreadySet: Boolean(
+      normalizedConversationContext?.votingMethod ||
+        normalizedConversationContext?.activeGovernanceProposal
+          ?.proposalType === 'change_voting_method',
+    ),
+  });
+  const snapshotWalkthrough =
+    activeProposalFormSnapshot?.activeGovernanceProposal;
+  const activeGovernanceProposalDirective =
+    buildActiveGovernanceProposalDirective(normalizedConversationContext) ||
+    buildActiveGovernanceProposalDirective(
+      snapshotWalkthrough
+        ? {
+            activeGovernanceProposal: {
+              proposalType: snapshotWalkthrough.proposalType,
+              collectedFields: snapshotWalkthrough.collectedFields ?? {},
+              formOpen: snapshotWalkthrough.formOpen,
+            },
+          }
+        : null,
+    );
+  const postCreateGovernanceVoiceActive =
+    voiceDiscoveryActive &&
+    normalizedConversationContext?.mode === 'onboarding_setup' &&
+    (normalizedConversationContext.setupPhase === 'execute' ||
+      normalizedConversationContext.setupPhase === 'verify') &&
+    !pendingEcosystemChildren;
+  const onboardingVoiceModeDirectives =
+    postCreateGovernanceVoiceActive || activeGovernanceProposalDirective
+      ? VOICE_MODE_PROPOSAL_WALKTHROUGH_DIRECTIVES
+      : VOICE_MODE_ACTIVE_DIRECTIVES;
+  const proposalFormStateDirective = buildProposalFormStateDirective(
+    activeProposalFormSnapshot,
+  );
+  const proposalAcceptanceDirective = buildProposalAcceptanceDirective({
+    userText: lastUserText,
+    assistantText: lastAssistantText,
+    spaceSlug: spaceSlug?.trim() || null,
+    formSnapshot: activeProposalFormSnapshot,
+    activeProposalType:
+      normalizedConversationContext?.activeGovernanceProposal?.proposalType ??
+      snapshotWalkthrough?.proposalType ??
+      null,
+    collectedFields:
+      normalizedConversationContext?.activeGovernanceProposal
+        ?.collectedFields ?? snapshotWalkthrough?.collectedFields,
+  });
   const systemPrompt =
     normalizedConversationContext?.mode === 'onboarding_setup'
-      ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active.\n- Act as a setup architect for creating and configuring a first space.\n- Before any write action, present a concise action plan and request explicit confirmation.\n- Prefer structured, step-by-step guidance with clear defaults and trade-offs.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
+      ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active (from the onboarding page or the left AI panel).\n- Act as a setup architect and trusted advisor for creating and configuring spaces or full ecosystems.\n- ALWAYS call onboarding_guidance(process: create_space) at the start of each discover-phase turn before asking questions or calling write tools.\n- Before wallet-signing write actions (create_space_from_onboarding, create_space_setup_proposal), present a concise recap and request explicit confirmation once. prepare_governance_proposal opens the Agreements form — after the user accepts your voting or entry method recommendation, call it immediately in the same turn; never ask again.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
           normalizedConversationContext.setupPhase ?? 'discover'
-        }.`
-      : effectiveSystemPrompt;
+        }.\n${ONBOARDING_TRANSPARENCY_GUIDELINES}\n${ONBOARDING_CATEGORY_GUIDELINES}\n${ONBOARDING_CREATION_CONFIRMATION_GUIDELINES}\n${SOUND_ADVISOR_GUIDELINES}\n${ECOSYSTEM_NESTED_SPACES_GUIDELINES}\n- Discovery order (single space): (1) journey cards, (2) name and purpose, (3) principles reaction, (4) org discovery, (5) activation mode, (6) transparency discoverability then activity access, (7) entry method, (8) location, (9) logo and hero banner.\n- Discovery order (full ecosystem): same through (4), then (5) root-space role and ecosystem structure, (6) functional domains and propose_organisation_blueprint—confirm nested-space plan BEFORE activation, (7) activation mode, (8) transparency, (9) entry method, (10) location, (11) logo and hero banner, (12) create root space ONLY (never create_ecosystem_space during onboarding), (13) left panel execute—nested spaces one at a time with create_ecosystem_space.\n- Never skip to activation, transparency, entry method, wallet signing, or create_space_from_onboarding until onboarding_guidance shows the current step is complete—including nested-space blueprint confirmation before operational settings.\n- After org discovery, use assigned_category_groups and suggested_categories from onboarding_guidance—do not ask users to confirm or invent tags.\n- After ecosystem root creation the user lands on ecosystem navigation with the left AI panel open—nested spaces from the saved blueprint are the mandatory next step, not governance.\n- User-facing vocabulary: say nested spaces only—never subspace, subspaces, or child space.\n- After single-space onboarding creation, the user lands on the coherence view with the AI panel open—finish voting method and entry method setup first, then help with the first signal once governance basics are settled.\n- When the user selects journey, activation, transparency, entry method, or location via onboarding UI, pass values into onboarding_guidance known_answers and create tools. For location, always use the address search and map card—never ask users to confirm latitude or longitude in chat.\n- After wallet handoff, instruct the user to complete the wallet signing prompt (standard signatures and 2FA/MFA wallets). If signing fails, explain clearly and offer retry—never loop on verbal confirmations.${
+          resolveLatestVisualGenerationIntent(recentUserTexts)
+            ? '\n- The user asked for generated visuals in this thread. You MUST call generate_space_visual_assets or create_space_from_onboarding with generate_visuals=true in this turn. Never say images must wait until after creation. Default to text-free images — no words or typography unless the user explicitly requests on-image text.'
+            : ''
+        }${
+          (normalizedConversationContext.setupPhase === 'execute' ||
+            normalizedConversationContext.setupPhase === 'verify') &&
+          !pendingEcosystemChildren
+            ? `\n${POST_CREATE_GOVERNANCE_SETUP_GUIDELINES}\n${PROPOSAL_DISCOVERY_GUIDELINES}\n- Post-create phase (space is live): finish governance setup before signals or member-gated read tools. Recommend a voting method or use the voting method card — when the user accepts, call prepare_governance_proposal with change_voting_method in the same turn (partial: true opens the form). Then entry method if skipped during discover. Do NOT call create_space_setup_proposal with collective_agreement for voting or entry method. Do NOT call get_signals_by_space_slug or other member-gated tools until voting method and entry method are settled.${
+                postCreateVotingMethodDirective
+                  ? `\n${postCreateVotingMethodDirective}`
+                  : ''
+              }${
+                activeGovernanceProposalDirective
+                  ? `\n${activeGovernanceProposalDirective}`
+                  : ''
+              }${
+                proposalAcceptanceDirective
+                  ? `\n${proposalAcceptanceDirective}`
+                  : ''
+              }`
+            : ''
+        }${
+          normalizedConversationContext.setupPhase === 'confirm'
+            ? '\n- The user already confirmed creation in this thread. Do not ask for another confirmation. Proceed with create_space_from_onboarding (no dry_run) only when logo_url and lead_image_url are set, then wallet signing.'
+            : ''
+        }${ecosystemExecuteDirective ? `\n${ecosystemExecuteDirective}` : ''}${
+          voiceDiscoveryActive
+            ? `\n${onboardingVoiceModeDirectives}\n- Voice interview mode is active: speak like a warm human advisor who does the work for them—reflect what you heard, draft and recommend proactively, ask one small thing at a time, keep replies short and conversational (no bullet lists or markdown). UI cards still appear for structured choices; introduce them naturally without reading every option aloud.`
+            : ''
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+          localizedEntryMethodGuidelines
+            ? `\n${localizedEntryMethodGuidelines}`
+            : ''
+        }`
+      : voiceDiscoveryActive && spaceSlug?.trim()
+      ? `${effectiveSystemPrompt}\n\n${VOICE_MODE_ACTIVE_DIRECTIVES}\n- Voice discovery mode is active for this space: the AI does it for them—reflect what you heard, propose drafts and next steps, one small ask at a time, short conversational replies (no bullet lists or markdown in voice turns). Continuous discovery applies: learn the space with tools, adapt to circumstances, and handle the next move toward purpose—not a fixed checklist.${
+          proposalAcceptanceDirective
+            ? `\n\n${proposalAcceptanceDirective}`
+            : ''
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+          localizedEntryMethodGuidelines
+            ? `\n${localizedEntryMethodGuidelines}`
+            : ''
+        }`
+      : `${effectiveSystemPrompt}${
+          proposalFormStateDirective ? `\n\n${proposalFormStateDirective}` : ''
+        }${
+          activeGovernanceProposalDirective
+            ? `\n\n${activeGovernanceProposalDirective}`
+            : ''
+        }${
+          proposalAcceptanceDirective
+            ? `\n\n${proposalAcceptanceDirective}`
+            : ''
+        }${onboardingLocaleDirective ? `\n${onboardingLocaleDirective}` : ''}${
+          localizedEntryMethodGuidelines
+            ? `\n${localizedEntryMethodGuidelines}`
+            : ''
+        }`;
 
   if (modelMessages.length === 0) {
     console.warn('[chat][empty-model-messages]', {

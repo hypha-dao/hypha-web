@@ -4,6 +4,7 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React from 'react';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useRouter } from 'next/navigation';
+import { saveAuthReturnPath } from './auth-return-path';
 
 export function useAuthentication() {
   const {
@@ -38,10 +39,17 @@ export function useAuthentication() {
     }
   }, [smartWallet?.address, wallets, setActiveWallet]);
 
-  const login = React.useCallback(async (): Promise<void> => {
+  const openLoginModal = React.useCallback((): void => {
     privyLogin();
-    setLoggingIn(true);
   }, [privyLogin]);
+
+  const login = React.useCallback(async (): Promise<void> => {
+    if (typeof window !== 'undefined') {
+      saveAuthReturnPath(window.location.pathname);
+    }
+    openLoginModal();
+    setLoggingIn(true);
+  }, [openLoginModal]);
 
   const logout = React.useCallback(
     async (redirect: boolean = true): Promise<void> => {
@@ -83,6 +91,7 @@ export function useAuthentication() {
     isEmbeddedWallet,
     user,
     login,
+    openLoginModal,
     logout,
     isLoggingIn,
     setLoggingIn,

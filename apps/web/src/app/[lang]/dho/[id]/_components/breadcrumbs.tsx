@@ -85,7 +85,7 @@ export async function Breadcrumbs({
               ) : (
                 <BreadcrumbLink asChild>
                   <Link
-                    href={`/${lang}/dho/${crumb.slug}/agreements`}
+                    href={`/${lang}/dho/${crumb.slug}/overview`}
                     className="inline-block max-w-[9rem] truncate align-bottom sm:max-w-[12rem]"
                     title={crumb.title}
                   >

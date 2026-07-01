@@ -41,7 +41,7 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Archive, Pencil, SearchIcon } from 'lucide-react';
-import { useSpaceMember } from '../../spaces/hooks/use-space-member';
+import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
@@ -243,8 +243,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [provisioningNoticeLines]);
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
-  const { isMember, isMemberLoading } = useSpaceMember({
+  const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
     spaceId: web3SpaceId,
+    spaceSlug: id,
   });
   const boardStorageKey = React.useMemo(
     () => `${SIGNAL_BOARDS_STORAGE_KEY_PREFIX}${id}`,
@@ -686,14 +687,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
               variant="outline"
               colorVariant="accent"
               className="w-auto"
+              disabled={isMutateLoading || !canMutate}
               onClick={() => {
+                if (isMutateLoading || !canMutate) return;
                 resetBoardForm();
                 setCreateBoardOpen(true);
               }}
             >
               {t('createBoard')}
             </Button>
-            {!isMemberLoading && isMember ? (
+            {!isMutateLoading && canMutate ? (
               <Button
                 asChild
                 variant="default"
