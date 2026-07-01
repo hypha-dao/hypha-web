@@ -76,7 +76,7 @@ export function ScheduledItemMeetingActions({
   return (
     <div
       className={cn(
-        'rounded-xl border border-accent-8/35 bg-gradient-to-br from-accent-2/40 via-card/80 to-card/40 p-4 shadow-sm',
+        'min-w-0 w-full rounded-xl border border-accent-8/35 bg-gradient-to-br from-accent-2/40 via-card/80 to-card/40 p-4 shadow-sm',
         className,
       )}
     >
@@ -96,10 +96,11 @@ export function ScheduledItemMeetingActions({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className={cn('flex gap-2', compact ? 'flex-col' : 'flex-wrap')}>
         <Button
           type="button"
           size={compact ? 'sm' : 'default'}
+          className={compact ? 'w-full justify-center' : undefined}
           onClick={() => {
             if (!joinUrl) return;
             window.open(joinUrl, '_blank', 'noopener,noreferrer');
@@ -112,6 +113,7 @@ export function ScheduledItemMeetingActions({
           type="button"
           variant="outline"
           size={compact ? 'sm' : 'default'}
+          className={compact ? 'w-full justify-center' : undefined}
           onClick={() => void handleCopy()}
         >
           {copied ? (
@@ -124,7 +126,7 @@ export function ScheduledItemMeetingActions({
       </div>
 
       <p
-        className="mt-3 truncate text-xs text-muted-foreground"
+        className="mt-3 min-w-0 break-all text-xs text-muted-foreground"
         title={joinUrl}
       >
         {joinUrl}
