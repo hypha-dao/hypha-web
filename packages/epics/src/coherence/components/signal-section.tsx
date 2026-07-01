@@ -7,11 +7,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { SearchIcon } from 'lucide-react';
-import {
-  Button,
-  ErrorAlert,
-  Input,
-} from '@hypha-platform/ui';
+import { Button, ErrorAlert, Input } from '@hypha-platform/ui';
 import {
   Coherence,
   DEFAULT_SIGNAL_WORKFLOW,

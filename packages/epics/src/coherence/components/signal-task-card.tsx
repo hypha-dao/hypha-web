@@ -92,8 +92,8 @@ export function SignalTaskCard({
     signal.dueAt instanceof Date
       ? signal.dueAt
       : signal.dueAt
-        ? new Date(signal.dueAt)
-        : null;
+      ? new Date(signal.dueAt)
+      : null;
   const hasValidDue = dueDate != null && isValid(dueDate);
   const isOverdue = hasValidDue && dueDate.getTime() < Date.now();
 

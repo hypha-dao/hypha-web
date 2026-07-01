@@ -5,12 +5,14 @@ import {
   checkSpaceAccessForSpace,
   createScheduledItem,
   findScheduledItemsBySpaceId,
+  findScheduledItemsByCoherenceId,
   findSelf,
   findSpaceBySlug,
   getDb,
   parseHttpPaginationParams,
   schemaCreateScheduledItem,
   schemaScheduledItemsRangeQuery,
+  assertCoherenceInSpace,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -99,7 +101,35 @@ export async function GET(
       return accessResponse;
     }
 
-    const range = parseRange(new URL(request.url));
+    const url = new URL(request.url);
+    const coherenceIdRaw = url.searchParams.get('coherenceId');
+    if (coherenceIdRaw) {
+      const coherenceId = Number.parseInt(coherenceIdRaw, 10);
+      if (!Number.isInteger(coherenceId) || coherenceId <= 0) {
+        return NextResponse.json(
+          { error: 'Invalid coherenceId query param' },
+          { status: 400 },
+        );
+      }
+
+      const { page, pageSize } = parseHttpPaginationParams(url, {
+        defaultPageSize: 50,
+      });
+      const result = await findScheduledItemsByCoherenceId(
+        { spaceId: space.id, coherenceId, page, pageSize },
+        { db },
+      );
+      return NextResponse.json(
+        buildPaginatedResponse(
+          result.items,
+          result.total,
+          result.page,
+          result.pageSize,
+        ),
+      );
+    }
+
+    const range = parseRange(url);
     if (!range) {
       return NextResponse.json(
         { error: 'Query params "from" and "to" (ISO dates) are required' },
@@ -197,6 +227,23 @@ export async function POST(
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    try {
+      await assertCoherenceInSpace(
+        { coherenceId: parsed.data.coherenceId, spaceId: space.id },
+        { db },
+      );
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Linked signal must belong to this space',
+        },
         { status: 400 },
       );
     }

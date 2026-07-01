@@ -58,6 +58,7 @@ export async function createScheduledItem(
       remindEmail: values.remindEmail ?? false,
       remindPush: values.remindPush ?? false,
       reminderMinutesBefore: values.reminderMinutesBefore ?? null,
+      coherenceId: values.coherenceId ?? null,
     })
     .returning();
 

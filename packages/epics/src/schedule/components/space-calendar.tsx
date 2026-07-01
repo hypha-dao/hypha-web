@@ -44,8 +44,6 @@ import {
   toFullCalendarRruleInput,
   useScheduledItemMutations,
   useScheduledItems,
-  useSignalDeadlines,
-  type Coherence,
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -103,36 +101,6 @@ function toCalendarEvent(item: ScheduledItem): EventInput {
   };
 }
 
-const SIGNAL_DEADLINE_COLOR = '#7c3aed';
-
-function toSignalDeadlineEvent(
-  signal: Coherence,
-  lang: string,
-  spaceSlug: string,
-): EventInput | null {
-  if (!signal.dueAt) return null;
-  const dueAt =
-    signal.dueAt instanceof Date ? signal.dueAt : new Date(signal.dueAt);
-  if (Number.isNaN(dueAt.getTime())) return null;
-  const end = new Date(dueAt);
-  end.setHours(23, 59, 59, 999);
-  if (!signal.slug) return null;
-  return {
-    id: `signal-deadline-${signal.id}`,
-    title: signal.title,
-    start: dueAt,
-    end,
-    allDay: true,
-    editable: false,
-    backgroundColor: SIGNAL_DEADLINE_COLOR,
-    borderColor: SIGNAL_DEADLINE_COLOR,
-    extendedProps: {
-      signalDeadline: signal,
-      signalHref: `/${lang}/dho/${spaceSlug}/coherence/${signal.slug}`,
-    },
-  };
-}
-
 function isScheduledItem(value: unknown): value is ScheduledItem {
   return (
     typeof value === 'object' &&
@@ -140,13 +108,6 @@ function isScheduledItem(value: unknown): value is ScheduledItem {
     'id' in value &&
     typeof (value as ScheduledItem).id === 'number'
   );
-}
-
-function getSignalHrefFromExtendedProps(
-  extendedProps: Record<string, unknown>,
-): string | undefined {
-  const href = extendedProps.signalHref;
-  return typeof href === 'string' && href.length > 0 ? href : undefined;
 }
 
 function defaultRangeForView(view: CalendarView, anchor: Date) {
@@ -244,20 +205,12 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     to: range.to,
   });
 
-  const { deadlines: signalDeadlines } = useSignalDeadlines(spaceSlug, {
-    from: range.from.toISOString(),
-    to: range.to.toISOString(),
-  });
-
   const calendarApiRef = React.useRef<CalendarApi | null>(null);
 
-  const calendarEvents = React.useMemo(() => {
-    const scheduled = (scheduledItems ?? []).map(toCalendarEvent);
-    const signalEvents = signalDeadlines
-      .map((signal) => toSignalDeadlineEvent(signal, lang, spaceSlug))
-      .filter((event): event is EventInput => event != null);
-    return [...scheduled, ...signalEvents];
-  }, [scheduledItems, signalDeadlines, lang, spaceSlug]);
+  const calendarEvents = React.useMemo(
+    () => (scheduledItems ?? []).map(toCalendarEvent),
+    [scheduledItems],
+  );
 
   const syncCalendarDate = React.useCallback((date: Date) => {
     calendarApiRef.current?.gotoDate(date);
@@ -318,13 +271,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const signalHref = getSignalHrefFromExtendedProps(
-      clickInfo.event.extendedProps as Record<string, unknown>,
-    );
-    if (signalHref) {
-      router.push(signalHref, { scroll: false });
-      return;
-    }
     if (!isAuthenticated) return;
     const item = isScheduledItem(clickInfo.event.extendedProps.scheduledItem)
       ? clickInfo.event.extendedProps.scheduledItem

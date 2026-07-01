@@ -24,6 +24,7 @@ export function mergeScheduledItemUpdateInput(
     remindEmail: existing.remindEmail,
     remindPush: existing.remindPush,
     reminderMinutesBefore: existing.reminderMinutesBefore,
+    coherenceId: existing.coherenceId,
     ...patch,
     id,
   };

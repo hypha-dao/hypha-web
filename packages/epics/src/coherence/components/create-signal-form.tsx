@@ -59,6 +59,8 @@ import {
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
 import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
+import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
+import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -68,6 +70,7 @@ export interface CreateSignalFormProps {
   closeUrl?: string;
   backUrl?: string;
   mode?: 'create' | 'edit';
+  signalId?: number;
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
@@ -153,12 +156,14 @@ export const CreateSignalForm = ({
   closeUrl,
   backUrl,
   mode = 'create',
+  signalId,
   signalSlug,
   signalRoomId,
   initialValues,
 }: CreateSignalFormProps) => {
-  const params = useParams<{ id?: string }>();
+  const params = useParams<{ id?: string; lang?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
   const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -315,6 +320,26 @@ export const CreateSignalForm = ({
   }, [form, formDefaults, mode, signalSlug]);
 
   useScrollToErrors(form, formRef);
+
+  const watchedTitle = form.watch('title');
+  const watchedDueAt = form.watch('dueAt');
+  const scheduleFromSignalPath = React.useMemo(() => {
+    if (!spaceSlug || !signalId) return '';
+    const paramsQuery = buildScheduleFromSignalSearchParams({
+      coherenceId: signalId,
+      title:
+        watchedTitle?.trim() || initialValues?.title?.trim() || 'Signal call',
+      dueAt: watchedDueAt,
+    });
+    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
+  }, [
+    initialValues?.title,
+    lang,
+    signalId,
+    spaceSlug,
+    watchedDueAt,
+    watchedTitle,
+  ]);
 
   const typeOptions = React.useMemo(() => {
     return COHERENCE_TYPE_OPTIONS.filter((option) =>
@@ -1021,6 +1046,15 @@ export const CreateSignalForm = ({
                 />
               </div>
             </section>
+            {mode === 'edit' && signalId && spaceSlug ? (
+              <SignalLinkedCalendarEvents
+                spaceSlug={spaceSlug}
+                coherenceId={signalId}
+                lang={lang}
+                calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
+                scheduleFromSignalPath={scheduleFromSignalPath}
+              />
+            ) : null}
             <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
               <FormField
                 control={form.control}

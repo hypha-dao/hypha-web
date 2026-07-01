@@ -1,10 +1,7 @@
 'use client';
 
 import React from 'react';
-import {
-  Coherence,
-  SignalWorkflowConfig,
-} from '@hypha-platform/core/client';
+import { Coherence, SignalWorkflowConfig } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { SignalTaskCard } from './signal-task-card';
@@ -129,7 +126,10 @@ export function SignalBoardView({
                   ? undefined
                   : (event) => {
                       if (
-                        isDragLeaveColumn(event, event.currentTarget as HTMLElement)
+                        isDragLeaveColumn(
+                          event,
+                          event.currentTarget as HTMLElement,
+                        )
                       ) {
                         setDropTargetSlug((current) =>
                           current === status.slug ? null : current,

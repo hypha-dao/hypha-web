@@ -123,6 +123,54 @@ export async function findScheduledItemsBySpaceId(
   };
 }
 
+export async function findScheduledItemsByCoherenceId(
+  {
+    spaceId,
+    coherenceId,
+    page = 1,
+    pageSize = 50,
+  }: {
+    spaceId: number;
+    coherenceId: number;
+    page?: number;
+    pageSize?: number;
+  },
+  { db }: DbConfig,
+): Promise<{
+  items: ScheduledItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}> {
+  const safePageSize = Math.min(100, Math.max(1, pageSize));
+  const safePage = Math.max(1, page);
+  const offset = (safePage - 1) * safePageSize;
+  const conditions = and(
+    eq(spaceScheduledItems.spaceId, spaceId),
+    eq(spaceScheduledItems.coherenceId, coherenceId),
+  );
+
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(spaceScheduledItems)
+    .where(conditions);
+
+  const rows = await db
+    .select()
+    .from(spaceScheduledItems)
+    .where(conditions)
+    .orderBy(asc(spaceScheduledItems.startsAt))
+    .limit(safePageSize)
+    .offset(offset);
+
+  return {
+    items: rows.map(mapRow),
+    total: countRow?.count ?? 0,
+    page: safePage,
+    pageSize: safePageSize,
+  };
+}
+
 export async function findScheduledItemById(
   { id }: { id: number },
   { db }: DbConfig,

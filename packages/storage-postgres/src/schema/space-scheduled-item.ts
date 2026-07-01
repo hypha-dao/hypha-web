@@ -18,8 +18,6 @@ export const SCHEDULED_ITEM_TYPES = [
   'call',
   'event',
   'meeting',
-  'deadline',
-  'reminder',
   'booking',
 ] as const;
 

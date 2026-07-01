@@ -88,6 +88,7 @@ const scheduledItemBaseFields = {
   remindEmail: z.boolean().optional().default(false),
   remindPush: z.boolean().optional().default(false),
   reminderMinutesBefore: reminderMinutesSchema,
+  coherenceId: z.number().int().positive().optional().nullable(),
 };
 
 function resolveRecurrenceRule(data: {
