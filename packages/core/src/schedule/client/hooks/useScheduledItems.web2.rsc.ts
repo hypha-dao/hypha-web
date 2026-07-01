@@ -241,9 +241,7 @@ function mapScheduledItemResponse(row: ScheduledItem): ScheduledItem {
     ...row,
     startsAt: new Date(row.startsAt),
     endsAt: new Date(row.endsAt),
-    recurrenceUntil: row.recurrenceUntil
-      ? new Date(row.recurrenceUntil)
-      : null,
+    recurrenceUntil: row.recurrenceUntil ? new Date(row.recurrenceUntil) : null,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   };
@@ -253,8 +251,7 @@ export function useScheduledItemMutations(spaceSlug?: string, lang?: string) {
   const { jwt, isLoadingJwt } = useJwt();
   const slug = spaceSlug?.trim() || null;
   const locale = lang?.trim() || 'en';
-  const mutationKey =
-    jwt && slug ? ([slug, jwt, locale] as const) : null;
+  const mutationKey = jwt && slug ? ([slug, jwt, locale] as const) : null;
 
   const mutationHeaders = (token: string): HeadersInit => ({
     Authorization: `Bearer ${token}`,
@@ -268,7 +265,10 @@ export function useScheduledItemMutations(spaceSlug?: string, lang?: string) {
     error: createError,
   } = useSWRMutation(
     mutationKey ? ([...mutationKey, 'create'] as const) : null,
-    async ([resolvedSlug, token, resolvedLocale], { arg }: { arg: unknown }) => {
+    async (
+      [resolvedSlug, token, resolvedLocale],
+      { arg }: { arg: unknown },
+    ) => {
       const payload = serializeScheduledItemPayload(
         (arg ?? {}) as Record<string, unknown>,
       );
@@ -297,7 +297,10 @@ export function useScheduledItemMutations(spaceSlug?: string, lang?: string) {
     error: updateError,
   } = useSWRMutation(
     mutationKey ? ([...mutationKey, 'update'] as const) : null,
-    async ([resolvedSlug, token, resolvedLocale], { arg }: { arg: unknown }) => {
+    async (
+      [resolvedSlug, token, resolvedLocale],
+      { arg }: { arg: unknown },
+    ) => {
       const input = (arg ?? {}) as Record<string, unknown> & { id?: number };
       const id = input.id;
       if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) {
@@ -306,7 +309,9 @@ export function useScheduledItemMutations(spaceSlug?: string, lang?: string) {
 
       const { id: _ignored, ...patch } = input;
       const response = await fetch(
-        `/api/v1/spaces/${encodeURIComponent(resolvedSlug)}/scheduled-items/${id}`,
+        `/api/v1/spaces/${encodeURIComponent(
+          resolvedSlug,
+        )}/scheduled-items/${id}`,
         {
           method: 'PATCH',
           headers: {
@@ -332,7 +337,9 @@ export function useScheduledItemMutations(spaceSlug?: string, lang?: string) {
     mutationKey ? ([...mutationKey, 'delete'] as const) : null,
     async ([resolvedSlug, token], { arg }: { arg: { id: number } }) => {
       const response = await fetch(
-        `/api/v1/spaces/${encodeURIComponent(resolvedSlug)}/scheduled-items/${arg.id}`,
+        `/api/v1/spaces/${encodeURIComponent(resolvedSlug)}/scheduled-items/${
+          arg.id
+        }`,
         {
           method: 'DELETE',
           headers: {

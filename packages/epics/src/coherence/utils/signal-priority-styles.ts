@@ -43,7 +43,12 @@ export const PRIORITY_DOT: Record<string, string> = {
 
 /** @deprecated Prefer statusColorDotClass — index-based dots clash with priority colors. */
 export function statusColumnDotClass(index: number): string {
-  const legacy = ['bg-neutral-9', 'bg-accent-9', 'bg-warning-9', 'bg-success-9'];
+  const legacy = [
+    'bg-neutral-9',
+    'bg-accent-9',
+    'bg-warning-9',
+    'bg-success-9',
+  ];
   return legacy[index % legacy.length] ?? 'bg-neutral-9';
 }
 
@@ -59,7 +64,9 @@ export function statusColumnTopBorderClass(color?: string | null): string {
 
 export function statusHeaderTintClass(color?: string | null): string {
   const key = color?.trim().toLowerCase() ?? 'neutral';
-  return WORKFLOW_STATUS_HEADER_TINT[key] ?? WORKFLOW_STATUS_HEADER_TINT.neutral!;
+  return (
+    WORKFLOW_STATUS_HEADER_TINT[key] ?? WORKFLOW_STATUS_HEADER_TINT.neutral!
+  );
 }
 
 export const PRIORITY_LEFT_BORDER_EDGE: Record<string, string> = {

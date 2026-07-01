@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { safeParseMergedScheduledItemUpdate } from '../server/merge-scheduled-item-update';
 import type { ScheduledItem } from '../types';
 
-function baseExisting(
-  overrides: Partial<ScheduledItem> = {},
-): ScheduledItem {
+function baseExisting(overrides: Partial<ScheduledItem> = {}): ScheduledItem {
   return {
     id: 1,
     spaceId: 1,

@@ -25,7 +25,10 @@ export function SignalCreatorMeta({
     >
       {creatorDisplayName ? (
         <span className="inline-flex min-w-0 items-center gap-1 truncate">
-          <UserCircle2 className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+          <UserCircle2
+            className="h-3.5 w-3.5 shrink-0 opacity-70"
+            aria-hidden
+          />
           <span className="truncate">{creatorDisplayName}</span>
         </span>
       ) : null}

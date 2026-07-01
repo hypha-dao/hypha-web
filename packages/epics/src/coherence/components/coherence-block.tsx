@@ -1,6 +1,11 @@
 'use client';
 
-import { Tabs, TabsList, TabsTrigger, MOBILE_BREAKPOINT_PX } from '@hypha-platform/ui';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  MOBILE_BREAKPOINT_PX,
+} from '@hypha-platform/ui';
 import {
   Coherence,
   useFindCoherences,

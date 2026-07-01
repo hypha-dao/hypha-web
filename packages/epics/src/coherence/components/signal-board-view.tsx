@@ -14,7 +14,11 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { SignalTaskCard } from './signal-task-card';
 import { SignalDropPlaceholder } from './signal-drop-placeholder';
-import { statusColorDotClass, statusColumnTopBorderClass, statusHeaderTintClass } from '../utils/signal-priority-styles';
+import {
+  statusColorDotClass,
+  statusColumnTopBorderClass,
+  statusHeaderTintClass,
+} from '../utils/signal-priority-styles';
 import {
   getSignalDragSlug,
   handleColumnDragOver,
@@ -144,7 +148,10 @@ export function SignalBoardView({
         >
           {t('signalListStatus')}
         </label>
-        <Select value={mobileStatusSlug} onValueChange={handleMobileStatusChange}>
+        <Select
+          value={mobileStatusSlug}
+          onValueChange={handleMobileStatusChange}
+        >
           <SelectTrigger
             id="signal-board-mobile-status"
             className="h-9 w-full border-border/60 bg-background/80"
@@ -311,7 +318,9 @@ export function SignalBoardView({
                             setDraggingSignal(signal);
                           }
                     }
-                    onDragEnd={readOnly || isMobile ? undefined : clearDragState}
+                    onDragEnd={
+                      readOnly || isMobile ? undefined : clearDragState
+                    }
                     onClick={
                       onSignalClick ? () => onSignalClick(signal) : undefined
                     }
