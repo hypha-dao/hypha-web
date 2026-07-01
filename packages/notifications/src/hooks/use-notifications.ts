@@ -9,6 +9,7 @@ import {
   Tag,
   TAG_EMAIL,
   TAG_MENTION_CONSENT,
+  TAG_MEETING_CONSENT,
   TAG_PUSH,
   TAG_SUBSCRIBED,
 } from '../constants';
@@ -28,6 +29,7 @@ export interface NotificationConfiguration {
   emailNotifications: boolean;
   browserNotifications: boolean;
   mentionNotificationsConsent: boolean;
+  meetingNotificationsConsent: boolean;
   subscriptions: {
     name: SubscriptionTag;
     value: boolean;
@@ -94,6 +96,11 @@ export const useNotifications = ({
         TAG_MENTION_CONSENT,
         true,
       );
+      const meetingNotificationsConsent = checkTag(
+        tags,
+        TAG_MEETING_CONSENT,
+        true,
+      );
       const subscriptions = SUBSCRIPTION_TAGS.map((tagName) => ({
         name: tagName,
         value: checkTag(tags, tagName, true),
@@ -102,6 +109,7 @@ export const useNotifications = ({
         browserNotifications,
         emailNotifications,
         mentionNotificationsConsent,
+        meetingNotificationsConsent,
         subscriptions,
       });
     } catch (err) {
@@ -182,6 +190,10 @@ export const useNotifications = ({
         await OneSignal.User.addTag(
           TAG_MENTION_CONSENT,
           configuration.mentionNotificationsConsent ? TRUE : FALSE,
+        );
+        await OneSignal.User.addTag(
+          TAG_MEETING_CONSENT,
+          configuration.meetingNotificationsConsent ? TRUE : FALSE,
         );
         for (const subscription of configuration.subscriptions) {
           const tagName = subscription.name;

@@ -2,6 +2,7 @@ export const TAG_SUBSCRIBED = 'subscribed';
 export const TAG_PUSH = 'push';
 export const TAG_EMAIL = 'email';
 export const TAG_MENTION_CONSENT = 'consent_mentions';
+export const TAG_MEETING_CONSENT = 'consent_meetings';
 
 export const TAG_SUB_NEW_PROPOSAL_OPEN = 'sub_newProposalOpen';
 export const TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED =
@@ -12,6 +13,7 @@ export const MAIN_TAGS = [
   TAG_PUSH,
   TAG_EMAIL,
   TAG_MENTION_CONSENT,
+  TAG_MEETING_CONSENT,
 ] as const;
 export const SUBSCRIPTION_TAGS = [
   TAG_SUB_NEW_PROPOSAL_OPEN,

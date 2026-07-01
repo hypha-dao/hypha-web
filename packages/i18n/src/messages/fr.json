@@ -281,6 +281,10 @@
       "mentionOnChatMessage": {
         "title": "Mentions @ et alertes d'appel",
         "description": "Lorsque quelqu'un vous @mentionne ou démarre un appel dans un espace ou un fil signal dont vous faites partie."
+      },
+      "meetingReminders": {
+        "title": "Rappels de réunion et d'appel",
+        "description": "Lorsqu'une réunion ou un appel dans l'un de vos espaces est sur le point de commencer."
       }
     },
     "actions": {
