@@ -53,8 +53,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import {
-  signalTagBadgeStyle,
   SIGNAL_TAG_BADGE_CLASS,
+  SIGNAL_TAG_OVERFLOW_BADGE_CLASS,
 } from '../utils/signal-tag-badge-styles';
 
 type SignalCardProps = {
@@ -356,10 +356,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         : tag;
     return {
       label: `#${displayLabel}`,
-      variant: 'outline',
-      colorVariant: 'neutral',
+      variant: 'soft',
+      colorVariant: 'accent',
       className: SIGNAL_TAG_BADGE_CLASS,
-      style: signalTagBadgeStyle,
     };
   });
   const compactTagList: BadgeItem[] = React.useMemo(() => {
@@ -370,7 +369,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         label: `+${tagList.length - MAX_VISIBLE_SIGNAL_TAGS}`,
         variant: 'outline',
         colorVariant: 'neutral',
-        className: `${SIGNAL_TAG_BADGE_CLASS} border-border/60 bg-transparent text-muted-foreground`,
+        className: SIGNAL_TAG_OVERFLOW_BADGE_CLASS,
       },
     ];
   }, [tagList]);
@@ -735,7 +734,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               <BadgesList
                 isLoading={isLoading}
                 badges={compactTagList}
-                className="content-start flex-nowrap overflow-hidden"
+                className="content-start gap-1.5"
               />
             ) : (
               <span className="block h-6" aria-hidden />

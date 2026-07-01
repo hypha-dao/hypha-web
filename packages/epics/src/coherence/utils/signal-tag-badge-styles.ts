@@ -1,12 +1,7 @@
-import type { CSSProperties } from 'react';
-
+/** Layout-only classes for signal tag pills — color comes from Badge `soft` + `accent`. */
 export const SIGNAL_TAG_BADGE_CLASS =
-  'max-w-[8.5rem] overflow-hidden text-ellipsis whitespace-nowrap rounded-full';
+  'shrink-0 whitespace-nowrap rounded-full';
 
-export const signalTagBadgeStyle: CSSProperties = {
-  borderColor:
-    'color-mix(in srgb, var(--space-accent) 42%, var(--color-neutral-8) 58%)',
-  backgroundColor:
-    'color-mix(in srgb, var(--space-accent) 12%, transparent)',
-  color: 'color-mix(in srgb, var(--space-accent) 55%, var(--foreground) 45%)',
-};
+/** Overflow counter (+N) when more tags exist than we show inline. */
+export const SIGNAL_TAG_OVERFLOW_BADGE_CLASS =
+  `${SIGNAL_TAG_BADGE_CLASS} border-border/60 bg-transparent text-muted-foreground`;
