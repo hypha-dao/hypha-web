@@ -3514,11 +3514,11 @@
       "cancelled": "Abgebrochen"
     },
     "signalWorkflowColors": {
-      "neutral": "Neutral",
-      "accent": "Akzent",
-      "warn": "Warnung",
-      "success": "Erfolg",
-      "error": "Fehler"
+      "neutral": "Grau",
+      "accent": "Blau",
+      "warn": "Bernstein",
+      "success": "Grün",
+      "error": "Rot"
     },
     "spaceMemoryTimelineLabel": "Space-Memory-Verlauf"
   },

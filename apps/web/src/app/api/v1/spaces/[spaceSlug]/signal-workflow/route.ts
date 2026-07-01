@@ -3,13 +3,15 @@ import {
   authorizeSpacePanelInteraction,
   findSpaceBySlug,
   readSignalWorkflowConfig,
-  schemaSignalWorkflowConfig,
+  sanitizeSignalWorkflowConfig,
   updateSignalWorkflowConfig,
 } from '@hypha-platform/core/server';
+import type { SignalWorkflowConfig } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { parseBearerToken } from '@web/utils/parse-bearer-token';
+import { ZodError } from 'zod';
 
 type Params = { spaceSlug: string };
 
@@ -89,19 +91,39 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const parsed = schemaSignalWorkflowConfig.safeParse(body);
-    if (!parsed.success) {
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+
+    const candidate = body as SignalWorkflowConfig;
+    if (
+      !Array.isArray(candidate.statuses) ||
+      !Array.isArray(candidate.boards)
+    ) {
       return NextResponse.json(
-        { error: parsed.error.flatten() },
+        { error: 'Invalid workflow shape' },
         { status: 400 },
       );
     }
 
-    const config = await updateSignalWorkflowConfig(
-      { spaceId: space.id, config: parsed.data },
+    let config: SignalWorkflowConfig;
+    try {
+      config = sanitizeSignalWorkflowConfig(candidate);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return NextResponse.json({ error: error.flatten() }, { status: 400 });
+      }
+      return NextResponse.json(
+        { error: 'Invalid workflow config' },
+        { status: 400 },
+      );
+    }
+
+    const saved = await updateSignalWorkflowConfig(
+      { spaceId: space.id, config },
       { db },
     );
-    return NextResponse.json(config);
+    return NextResponse.json(saved);
   } catch (error) {
     console.error('Failed to update signal workflow:', error);
     return NextResponse.json(

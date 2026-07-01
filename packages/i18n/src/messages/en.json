@@ -3553,11 +3553,11 @@
       "cancelled": "Cancelled"
     },
     "signalWorkflowColors": {
-      "neutral": "Neutral",
-      "accent": "Accent",
-      "warn": "Warning",
-      "success": "Success",
-      "error": "Error"
+      "neutral": "Gray",
+      "accent": "Blue",
+      "warn": "Amber",
+      "success": "Green",
+      "error": "Red"
     },
     "spaceMemoryTimelineLabel": "Space memory history"
   },

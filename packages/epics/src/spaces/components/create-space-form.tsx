@@ -55,7 +55,10 @@ import {
   ButtonBack,
   ButtonClose,
 } from '@hypha-platform/epics';
-import { SignalWorkflowSettings } from '../../coherence/components/signal-workflow-settings';
+import {
+  SignalWorkflowSettings,
+  type SignalWorkflowSettingsHandle,
+} from '../../coherence/components/signal-workflow-settings';
 import {
   SpaceLocationPicker,
   type SpaceLocationPickerHandle,
@@ -173,6 +176,9 @@ export const SpaceForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const locationPickerRef = React.useRef<SpaceLocationPickerHandle>(null);
+  const workflowSettingsRef =
+    React.useRef<SignalWorkflowSettingsHandle>(null);
+  const [isSavingWorkflow, setIsSavingWorkflow] = React.useState(false);
   const form = useForm<SchemaCreateSpaceForm>({
     resolver: zodResolver(schema),
     defaultValues,
@@ -459,6 +465,16 @@ export const SpaceForm = ({
             showUnsetParentIdError();
             return;
           }
+          if (label === 'configure' && spaceSlug) {
+            setIsSavingWorkflow(true);
+            try {
+              await workflowSettingsRef.current?.saveIfDirty();
+            } catch {
+              setIsSavingWorkflow(false);
+              return;
+            }
+            setIsSavingWorkflow(false);
+          }
           await onSubmit(space, organisationSpaces);
         },
         () => {
@@ -479,20 +495,24 @@ export const SpaceForm = ({
     },
     [
       form,
+      label,
       onSubmit,
       organisationSpaces,
       parentSpaceId,
       showCategoriesError,
       showUnsetParentIdError,
+      spaceSlug,
     ],
   );
+
+  const isSubmitting = isLoading || isSavingWorkflow;
 
   return (
     <Form {...form}>
       <form
         ref={formRef}
         onSubmit={handleFormSubmit}
-        className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
+        className={clsx('flex flex-col gap-5', isSubmitting && 'opacity-50')}
       >
         <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
           <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
@@ -1000,16 +1020,19 @@ export const SpaceForm = ({
         {label === 'configure' && spaceSlug ? (
           <>
             <Separator />
-            <SignalWorkflowSettings spaceSlug={spaceSlug} />
+            <SignalWorkflowSettings
+              ref={workflowSettingsRef}
+              spaceSlug={spaceSlug}
+            />
           </>
         ) : null}
         <div className="flex justify-end w-full">
           <Button
             type="submit"
-            variant={isLoading ? 'outline' : 'default'}
-            disabled={isLoading}
+            variant={isSubmitting ? 'outline' : 'default'}
+            disabled={isSubmitting}
           >
-            {isLoading ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
+            {isSubmitting ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
           </Button>
         </div>
       </form>

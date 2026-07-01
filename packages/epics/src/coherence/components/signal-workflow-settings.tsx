@@ -9,6 +9,7 @@ import {
   type SignalStatusCategory,
   type SignalStatusDefinition,
   type SignalWorkflowConfig,
+  sanitizeSignalWorkflowConfig,
   useSignalWorkflow,
   useUpdateSignalWorkflow,
 } from '@hypha-platform/core/client';
@@ -62,17 +63,21 @@ type SignalWorkflowSettingsProps = {
   spaceSlug: string;
 };
 
-export function SignalWorkflowSettings({
-  spaceSlug,
-}: SignalWorkflowSettingsProps) {
+export type SignalWorkflowSettingsHandle = {
+  saveIfDirty: () => Promise<void>;
+};
+
+export const SignalWorkflowSettings = React.forwardRef<
+  SignalWorkflowSettingsHandle,
+  SignalWorkflowSettingsProps
+>(function SignalWorkflowSettings({ spaceSlug }, ref) {
   const t = useTranslations('CoherenceTab');
   const { workflow, isLoading, refresh } = useSignalWorkflow(spaceSlug);
-  const { updateWorkflow, isUpdating } = useUpdateSignalWorkflow(spaceSlug);
+  const { updateWorkflow } = useUpdateSignalWorkflow(spaceSlug);
   const [draft, setDraft] = React.useState<SignalWorkflowConfig>(
     structuredClone(DEFAULT_SIGNAL_WORKFLOW),
   );
   const [saveError, setSaveError] = React.useState<string | null>(null);
-  const [saved, setSaved] = React.useState(false);
 
   React.useEffect(() => {
     if (workflow) {
@@ -93,7 +98,6 @@ export function SignalWorkflowSettings({
         [items[index], items[target]] = [items[target]!, items[index]!];
         return { ...current, [key]: reindexPositions(items) };
       });
-      setSaved(false);
     },
     [],
   );
@@ -107,7 +111,6 @@ export function SignalWorkflowSettings({
         statuses[index] = { ...existing, ...patch };
         return { ...current, statuses };
       });
-      setSaved(false);
     },
     [],
   );
@@ -121,7 +124,6 @@ export function SignalWorkflowSettings({
         boards[index] = { ...existing, ...patch };
         return { ...current, boards };
       });
-      setSaved(false);
     },
     [],
   );
@@ -144,7 +146,6 @@ export function SignalWorkflowSettings({
         ]),
       };
     });
-    setSaved(false);
   }, [t]);
 
   const addBoard = React.useCallback(() => {
@@ -164,7 +165,6 @@ export function SignalWorkflowSettings({
         ]),
       };
     });
-    setSaved(false);
   }, [t]);
 
   const removeStatus = React.useCallback((index: number) => {
@@ -173,7 +173,6 @@ export function SignalWorkflowSettings({
       const statuses = current.statuses.filter((_, i) => i !== index);
       return { ...current, statuses: reindexPositions(statuses) };
     });
-    setSaved(false);
   }, []);
 
   const removeBoard = React.useCallback((index: number) => {
@@ -182,22 +181,35 @@ export function SignalWorkflowSettings({
       const boards = current.boards.filter((_, i) => i !== index);
       return { ...current, boards: reindexPositions(boards) };
     });
-    setSaved(false);
   }, []);
 
   const handleSave = React.useCallback(async () => {
     setSaveError(null);
-    setSaved(false);
+    const prepared = sanitizeSignalWorkflowConfig(draft);
     try {
-      await updateWorkflow(draft);
+      await updateWorkflow(prepared);
+      setDraft(prepared);
       await refresh();
-      setSaved(true);
     } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : t('signalWorkflowSaveFailed'),
-      );
+      const message =
+        error instanceof Error ? error.message : t('signalWorkflowSaveFailed');
+      setSaveError(message);
+      throw error;
     }
   }, [draft, refresh, t, updateWorkflow]);
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      saveIfDirty: async () => {
+        if (!workflow) return;
+        const prepared = sanitizeSignalWorkflowConfig(draft);
+        if (JSON.stringify(prepared) === JSON.stringify(workflow)) return;
+        await handleSave();
+      },
+    }),
+    [draft, handleSave, workflow],
+  );
 
   if (isLoading && !workflow) {
     return (
@@ -359,26 +371,12 @@ export function SignalWorkflowSettings({
         </div>
       </div>
 
-      <div className="flex flex-col items-end gap-2">
-        {saveError ? (
-          <p className="w-full text-1 text-error-11">{saveError}</p>
-        ) : null}
-        {saved ? (
-          <p className="w-full text-1 text-success-11">
-            {t('signalWorkflowSaved')}
-          </p>
-        ) : null}
-        <Button
-          type="button"
-          disabled={isUpdating}
-          onClick={() => void handleSave()}
-        >
-          {isUpdating ? t('signalWorkflowSaving') : t('signalWorkflowSave')}
-        </Button>
-      </div>
+      {saveError ? (
+        <p className="text-1 text-error-11">{saveError}</p>
+      ) : null}
     </div>
   );
-}
+});
 
 type WorkflowRowProps = {
   children: React.ReactNode;

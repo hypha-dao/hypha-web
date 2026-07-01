@@ -75,6 +75,66 @@ export const DEFAULT_SIGNAL_WORKFLOW: SignalWorkflowConfig = {
 
 export const DEFAULT_SIGNAL_PROGRESS_STATUS = 'backlog';
 
+function reserveUniqueSlug(base: string, used: Set<string>): string {
+  const normalized =
+    base
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 64) || 'item';
+  if (!used.has(normalized)) {
+    used.add(normalized);
+    return normalized;
+  }
+  let counter = 2;
+  while (used.has(`${normalized}_${counter}`)) {
+    counter += 1;
+  }
+  const next = `${normalized}_${counter}`.slice(0, 64);
+  used.add(next);
+  return next;
+}
+
+function reindexWorkflowPositions<T extends { position: number }>(
+  items: T[],
+): T[] {
+  return items.map((item, index) => ({ ...item, position: index }));
+}
+
+/** Normalize editor draft before save — fixes duplicate slugs and empty names. */
+export function sanitizeSignalWorkflowConfig(
+  config: SignalWorkflowConfig,
+): SignalWorkflowConfig {
+  const statusSlugs = new Set<string>();
+  const statuses = reindexWorkflowPositions(
+    [...config.statuses]
+      .sort((a, b) => a.position - b.position)
+      .map((status, index) => {
+        const slug = reserveUniqueSlug(status.slug || `status_${index + 1}`, statusSlugs);
+        const name = status.name.trim() || `Status ${index + 1}`;
+        return { ...status, slug, name };
+      }),
+  );
+
+  const boardSlugs = new Set<string>();
+  const boards = reindexWorkflowPositions(
+    [...config.boards]
+      .sort((a, b) => a.position - b.position)
+      .map((board, index) => {
+        const slug = reserveUniqueSlug(board.slug || `board_${index + 1}`, boardSlugs);
+        const name = board.name.trim() || `Category ${index + 1}`;
+        return { ...board, slug, name };
+      }),
+  );
+
+  const parsed = schemaSignalWorkflowConfig.parse({ statuses, boards });
+  return {
+    statuses: [...parsed.statuses].sort((a, b) => a.position - b.position),
+    boards: [...parsed.boards].sort((a, b) => a.position - b.position),
+  };
+}
+
 export function normalizeSignalWorkflowConfig(
   raw: unknown,
 ): SignalWorkflowConfig {

@@ -2986,11 +2986,11 @@
       "cancelled": "Annulé"
     },
     "signalWorkflowColors": {
-      "neutral": "Neutre",
-      "accent": "Accent",
-      "warn": "Avertissement",
-      "success": "Succès",
-      "error": "Erreur"
+      "neutral": "Gris",
+      "accent": "Bleu",
+      "warn": "Ambre",
+      "success": "Vert",
+      "error": "Rouge"
     },
     "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace"
   },
