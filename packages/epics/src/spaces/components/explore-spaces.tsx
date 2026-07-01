@@ -27,7 +27,7 @@ import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
-import { Badge, Heading, Separator } from '@hypha-platform/ui';
+import { Badge, Heading, Separator, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -50,16 +50,40 @@ function toLowerHex<A extends `0x${string}`>(a: A): Lowercase<A> {
   return a.toLowerCase() as Lowercase<A>;
 }
 
+const CountValue = ({
+  value,
+  isLoading,
+  width = 24,
+}: {
+  value: number;
+  isLoading?: boolean;
+  width?: number;
+}) => {
+  if (isLoading) {
+    return (
+      <Skeleton
+        loading
+        width={width}
+        height={16}
+        className="inline-block align-middle"
+      />
+    );
+  }
+  return <>{value}</>;
+};
+
 const CategoryLabel = ({
   selectedSpaces,
   categoryGroups,
   allLabel,
   className,
+  isLoading,
 }: {
   selectedSpaces: Space[];
   categoryGroups?: CategoryGroupId[];
   allLabel: string;
   className?: string | undefined;
+  isLoading?: boolean;
 }) => {
   return (
     <Text className={cn('text-4 text-left', className)}>
@@ -72,13 +96,13 @@ const CategoryLabel = ({
             </Text>
           ))}{' '}
           <Text className="text-4 ml-1 mr-1">|</Text>
-          {selectedSpaces?.length}
+          <CountValue value={selectedSpaces?.length ?? 0} isLoading={isLoading} />
         </Text>
       ) : (
         <Text className="text-4 text-left">
           <Text className="text-4 ml-1 capitalize">{allLabel}</Text>
           <Text className="text-4 ml-1 mr-1">|</Text>
-          {selectedSpaces?.length}
+          <CountValue value={selectedSpaces?.length ?? 0} isLoading={isLoading} />
         </Text>
       )}
     </Text>
@@ -123,11 +147,25 @@ export function ExploreSpaces({
     [nonArchivedSpaces, categoryGroups],
   );
 
-  const { filteredSpaces: selectedSpaces } =
+  const { filteredSpaces: selectedSpaces, isLoading: isFilterLoading } =
     useFilterSpacesListWithDiscoverability({
       spaces: categoryFilteredSpaces,
       useGeneralState: true,
     });
+
+  // Discoverability is resolved on-chain, so the filtered set (and therefore the
+  // total count) starts as "all spaces" and shrinks as the batch resolves, which
+  // made the list visibly reorder and the counts flicker on first load. Gate the
+  // list + counts on a settle-once flag so we show a stable skeleton until the
+  // filter has resolved a single time, then keep the final set. Rendering the
+  // skeleton on the server too avoids an SSR -> skeleton flash.
+  const [hasSettledFilter, setHasSettledFilter] = React.useState(false);
+  React.useEffect(() => {
+    if (!isFilterLoading) {
+      setHasSettledFilter(true);
+    }
+  }, [isFilterLoading]);
+  const showSpacesSkeleton = !hasSettledFilter;
 
   const agreementCount = React.useMemo(() => {
     return selectedSpaces.reduce(
@@ -239,6 +277,27 @@ export function ExploreSpaces({
     [selectedSpaces],
   );
 
+  const cardGridClassName = 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';
+  const spacesListContent = showSpacesSkeleton ? (
+    <div className={cn('grid w-full grid-cols-1 gap-4', cardGridClassName)}>
+      {Array.from({ length: 12 }).map((_, index) => (
+        <Skeleton
+          key={index}
+          loading
+          height={228}
+          className="w-full rounded-lg"
+        />
+      ))}
+    </div>
+  ) : (
+    <SpaceCardList
+      lang={lang}
+      spaces={sortedSpaces}
+      pageSize={12}
+      cardGridClassName={cardGridClassName}
+    />
+  );
+
   const { isAuthenticated } = useAuthentication();
 
   const renderMapToolbar = React.useCallback(
@@ -335,6 +394,7 @@ export function ExploreSpaces({
         selectedSpaces={selectedSpaces}
         categoryGroups={categoryGroups}
         allLabel={t('all')}
+        isLoading={showSpacesSkeleton}
       />
       {showSortControl ? <SpaceOrderCombobox order={order} /> : null}
     </div>
@@ -344,7 +404,11 @@ export function ExploreSpaces({
     <div className="flex items-stretch justify-center gap-0">
       <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
         <div className="flex justify-center text-7 font-medium">
-          {selectedSpaces.length}
+          <CountValue
+            value={selectedSpaces.length}
+            isLoading={showSpacesSkeleton}
+            width={40}
+          />
         </div>
         <div className="mt-2 flex justify-center text-1 text-neutral-500">
           {tCommon('Spaces')}
@@ -356,7 +420,11 @@ export function ExploreSpaces({
       />
       <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
         <div className="flex justify-center text-7 font-medium">
-          {uniqueMemberAddresses.size}
+          <CountValue
+            value={uniqueMemberAddresses.size}
+            isLoading={showSpacesSkeleton}
+            width={40}
+          />
         </div>
         <div className="mt-2 flex justify-center text-1 text-neutral-500">
           {tCommon('Members')}
@@ -368,7 +436,11 @@ export function ExploreSpaces({
       />
       <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
         <div className="flex justify-center text-7 font-medium">
-          {agreementCount}
+          <CountValue
+            value={agreementCount}
+            isLoading={showSpacesSkeleton}
+            width={40}
+          />
         </div>
         <div className="mt-2 flex justify-center text-1 text-neutral-500">
           {tCommon('Agreements')}
@@ -405,12 +477,7 @@ export function ExploreSpaces({
           </div>
           <div className={cn(view !== 'list' && 'hidden')}>
             {listMetaRow}
-            <SpaceCardList
-              lang={lang}
-              spaces={sortedSpaces}
-              pageSize={12}
-              cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-            />
+            {spacesListContent}
           </div>
           <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
             {metricsSection}
@@ -419,12 +486,7 @@ export function ExploreSpaces({
       ) : (
         <>
           {listMetaRow}
-          <SpaceCardList
-            lang={lang}
-            spaces={sortedSpaces}
-            pageSize={12}
-            cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-          />
+          {spacesListContent}
         </>
       )}
     </div>
