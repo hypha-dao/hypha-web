@@ -1,0 +1,198 @@
+'use client';
+
+import React from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Archive, ArchiveRestore, Pencil } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+} from '@hypha-platform/ui';
+import { Coherence, useCoherenceMutationsWeb2Rsc, useJwt } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
+import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+
+type SignalCardActionsProps = {
+  signal: Pick<
+    Coherence,
+    'slug' | 'roomId' | 'creatorId' | 'archived'
+  >;
+  refresh: () => Promise<void>;
+  className?: string;
+  size?: 'sm' | 'md';
+};
+
+export function SignalCardActions({
+  signal,
+  refresh,
+  className,
+  size = 'sm',
+}: SignalCardActionsProps) {
+  const t = useTranslations('CoherenceTab');
+  const tSignalCard = useTranslations('SignalCard');
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+  const router = useRouter();
+  const params = useParams<{ lang: string; id: string; tab?: string }>();
+
+  const canManage = useCanManageSignal({
+    slug: signal.slug,
+    roomId: signal.roomId,
+    creatorId: signal.creatorId,
+  });
+
+  const [archiveOpen, setArchiveOpen] = React.useState(false);
+  const [isMutating, setIsMutating] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const slug = signal.slug?.trim();
+  if (!canManage || !slug) return null;
+
+  const buttonClass =
+    size === 'sm'
+      ? 'h-7 w-7 shrink-0 p-0'
+      : 'h-8 w-8 shrink-0 p-0';
+
+  const stopActivation = (event: React.SyntheticEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleEdit = (event: React.MouseEvent) => {
+    stopActivation(event);
+    if (!params.lang || !params.id) return;
+    const tab = params.tab ?? 'coherence';
+    router.push(`/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`);
+  };
+
+  const handleUnarchive = async (event: React.MouseEvent) => {
+    stopActivation(event);
+    setIsMutating(true);
+    try {
+      await updateCoherenceBySlug({ slug, archived: false });
+      await refresh();
+    } catch (archiveError) {
+      console.warn('Could not unarchive signal:', archiveError);
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    setError(null);
+    setIsMutating(true);
+    try {
+      await updateCoherenceBySlug({ slug, archived: true });
+      try {
+        await refresh();
+      } catch (refreshError) {
+        console.warn('Signal archived but list refresh failed:', refreshError);
+      }
+      setArchiveOpen(false);
+    } catch (archiveError) {
+      console.warn('Could not archive signal:', archiveError);
+      setError(t('errorOhSnap'));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  return (
+    <>
+      <div
+        className={cn(
+          'flex shrink-0 items-center gap-0.5 transition-opacity',
+          className,
+        )}
+        draggable={false}
+        onMouseDown={stopActivation}
+        onClick={stopActivation}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          colorVariant="neutral"
+          size="sm"
+          className={cn(
+            buttonClass,
+            'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+          )}
+          disabled={isMutating}
+          aria-label={tSignalCard('editMenu')}
+          title={tSignalCard('editMenu')}
+          onClick={handleEdit}
+        >
+          <Pencil className="h-3.5 w-3.5" aria-hidden />
+        </Button>
+        {signal.archived ? (
+          <Button
+            type="button"
+            variant="ghost"
+            colorVariant="neutral"
+            size="sm"
+            className={cn(
+              buttonClass,
+              'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+            )}
+            disabled={isMutating}
+            aria-label={t('unarchiveConversation')}
+            title={t('unarchiveConversation')}
+            onClick={handleUnarchive}
+          >
+            <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            colorVariant="neutral"
+            size="sm"
+            className={cn(
+              buttonClass,
+              'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+            )}
+            disabled={isMutating}
+            aria-label={t('archiveConversation')}
+            title={t('archiveConversation')}
+            onClick={(event) => {
+              stopActivation(event);
+              setArchiveOpen(true);
+            }}
+          >
+            <Archive className="h-3.5 w-3.5" aria-hidden />
+          </Button>
+        )}
+      </div>
+
+      <AlertDialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+        <AlertDialogContent onClick={stopActivation}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('archiveConversation')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('archiveConfirm')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          {error ? (
+            <p className="text-sm text-error-11">{error}</p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMutating}>
+              {t('noLeave')}
+            </AlertDialogCancel>
+            <Button
+              colorVariant="error"
+              disabled={isMutating}
+              onClick={handleArchive}
+            >
+              {t('yesArchive')}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
