@@ -24,7 +24,9 @@ export function SignalBoardView({
 }: SignalBoardViewProps) {
   const [draggingSlug, setDraggingSlug] = React.useState<string | null>(null);
 
-  const statuses = workflow.statuses.filter((status) => !status.isTerminal || true);
+  const statuses = workflow.statuses.filter(
+    (status) => !status.isTerminal || true,
+  );
 
   const byStatus = React.useMemo(() => {
     const map = new Map<string, Coherence[]>();
@@ -74,18 +76,20 @@ export function SignalBoardView({
                   signal={signal}
                   status={status}
                   board={
-                    workflow.boards.find((board) => board.slug === signal.board) ??
-                    null
+                    workflow.boards.find(
+                      (board) => board.slug === signal.board,
+                    ) ?? null
                   }
                   draggable
                   onDragStart={(event) => {
+                    if (!signal.slug) return;
                     event.dataTransfer.setData('text/signal-slug', signal.slug);
                     setDraggingSlug(signal.slug);
                   }}
-                  onClick={onSignalClick ? () => onSignalClick(signal) : undefined}
-                  className={cn(
-                    draggingSlug === signal.slug && 'opacity-50',
-                  )}
+                  onClick={
+                    onSignalClick ? () => onSignalClick(signal) : undefined
+                  }
+                  className={cn(draggingSlug === signal.slug && 'opacity-50')}
                 />
               ))}
             </div>

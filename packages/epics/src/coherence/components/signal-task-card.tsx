@@ -2,7 +2,11 @@
 
 import React from 'react';
 import { format, isValid } from 'date-fns';
-import { Coherence, SignalBoardDefinition, SignalStatusDefinition } from '@hypha-platform/core/client';
+import {
+  Coherence,
+  SignalBoardDefinition,
+  SignalStatusDefinition,
+} from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -62,12 +66,10 @@ export function SignalTaskCard({
     signal.dueAt instanceof Date
       ? signal.dueAt
       : signal.dueAt
-        ? new Date(signal.dueAt)
-        : null;
+      ? new Date(signal.dueAt)
+      : null;
   const hasValidDue = dueDate != null && isValid(dueDate);
-  const isOverdue =
-    hasValidDue &&
-    dueDate.getTime() < Date.now();
+  const isOverdue = hasValidDue && dueDate.getTime() < Date.now();
 
   return (
     <div
@@ -98,7 +100,9 @@ export function SignalTaskCard({
           {signal.type} · {signal.priority}
         </span>
       </div>
-      <p className="line-clamp-2 text-sm font-medium leading-snug">{signal.title}</p>
+      <p className="line-clamp-2 text-sm font-medium leading-snug">
+        {signal.title}
+      </p>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {hasValidDue ? (
           <span
@@ -111,7 +115,10 @@ export function SignalTaskCard({
           </span>
         ) : null}
         {board ? (
-          <Badge colorVariant="neutral" className="max-w-[7rem] truncate text-[10px]">
+          <Badge
+            colorVariant="neutral"
+            className="max-w-[7rem] truncate text-[10px]"
+          >
             {board.name}
           </Badge>
         ) : null}

@@ -97,10 +97,13 @@ export function SignalSwimlaneView({
                   board={lane.board}
                   draggable
                   onDragStart={(event) => {
+                    if (!signal.slug) return;
                     event.dataTransfer.setData('text/signal-slug', signal.slug);
                     setDraggingSlug(signal.slug);
                   }}
-                  onClick={onSignalClick ? () => onSignalClick(signal) : undefined}
+                  onClick={
+                    onSignalClick ? () => onSignalClick(signal) : undefined
+                  }
                   className={cn(draggingSlug === signal.slug && 'opacity-50')}
                 />
               ))}

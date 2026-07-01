@@ -20,10 +20,7 @@ import {
 } from '../signal-workflow';
 
 async function assertCanEditCoherence(
-  {
-    slug,
-    requesterPersonId,
-  }: { slug: string; requesterPersonId: number },
+  { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
   { db }: { db: DatabaseInstance },
 ) {
   const existing = await db
@@ -223,7 +220,8 @@ export const patchCoherenceTaskBySlug = async (
     patch.dueAt = rest.dueAt;
   }
   if (rest.progressStatus !== undefined) {
-    patch.progressStatus = rest.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
+    patch.progressStatus =
+      rest.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
   }
   if (rest.board !== undefined) {
     patch.board = rest.board;

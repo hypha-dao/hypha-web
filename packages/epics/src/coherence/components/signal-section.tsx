@@ -72,7 +72,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
     string[]
   >([]);
 
-  const { workflow, isLoading: isWorkflowLoading } = useSignalWorkflow(spaceSlug);
+  const { workflow, isLoading: isWorkflowLoading } =
+    useSignalWorkflow(spaceSlug);
   const { patchTask } = usePatchCoherenceTask(spaceSlug);
   const { canMutate } = useCanMutateInSpace({ spaceId: web3SpaceId });
 
@@ -136,6 +137,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         assigneeIds?: number[];
       },
     ) => {
+      if (!signal.slug?.trim()) return;
       await patchTask({
         slug: signal.slug,
         ...patch,
@@ -166,7 +168,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
         >
           <TabsList>
             <TabsTrigger value="board">{t('signalViewBoard')}</TabsTrigger>
-            <TabsTrigger value="swimlane">{t('signalViewSwimlane')}</TabsTrigger>
+            <TabsTrigger value="swimlane">
+              {t('signalViewSwimlane')}
+            </TabsTrigger>
             <TabsTrigger value="list">{t('signalViewList')}</TabsTrigger>
             <TabsTrigger value="grid">{t('signalViewGrid')}</TabsTrigger>
           </TabsList>

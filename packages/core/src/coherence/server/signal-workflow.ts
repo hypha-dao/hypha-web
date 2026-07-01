@@ -52,7 +52,7 @@ export async function updateSignalWorkflowConfig(
     .update(spaces)
     .set({ signalWorkflow: normalized })
     .where(eq(spaces.id, spaceId))
-    .returning({ signalWorkflow: spaces.signalWorkflow });
+    .returning();
 
   if (!updated) {
     throw new Error(`Failed to update signal workflow for spaceId=${spaceId}`);

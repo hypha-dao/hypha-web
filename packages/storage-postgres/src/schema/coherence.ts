@@ -38,10 +38,7 @@ export const coherences = pgTable(
     dueAt: timestamp('due_at', { withTimezone: true }),
     progressStatus: text('progress_status'),
     board: text('board'),
-    assigneeIds: jsonb('assignee_ids')
-      .$type<number[]>()
-      .notNull()
-      .default([]),
+    assigneeIds: jsonb('assignee_ids').$type<number[]>().notNull().default([]),
     ...commonDateFields,
   },
   (table) => [

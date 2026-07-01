@@ -2,10 +2,7 @@
 
 import React from 'react';
 import { format } from 'date-fns';
-import {
-  Coherence,
-  SignalWorkflowConfig,
-} from '@hypha-platform/core/client';
+import { Coherence, SignalWorkflowConfig } from '@hypha-platform/core/client';
 import {
   Select,
   SelectContent,

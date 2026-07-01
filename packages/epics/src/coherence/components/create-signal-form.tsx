@@ -273,6 +273,10 @@ export const CreateSignalForm = ({
               typeof tag === 'string' && tag.trim().length > 0,
           ) as CoherenceTag[])
         : [],
+      dueAt: initialValues?.dueAt ?? null,
+      progressStatus: initialValues?.progressStatus,
+      board: initialValues?.board ?? null,
+      assigneeIds: initialValues?.assigneeIds ?? [],
     }),
     [initialValues, person?.id, spaceId],
   );

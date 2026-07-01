@@ -61,7 +61,9 @@ export async function PATCH(
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : 'Failed to patch signal task',
+          error instanceof Error
+            ? error.message
+            : 'Failed to patch signal task',
       },
       { status: 500 },
     );
