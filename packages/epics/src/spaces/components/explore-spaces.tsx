@@ -96,13 +96,19 @@ const CategoryLabel = ({
             </Text>
           ))}{' '}
           <Text className="text-4 ml-1 mr-1">|</Text>
-          <CountValue value={selectedSpaces?.length ?? 0} isLoading={isLoading} />
+          <CountValue
+            value={selectedSpaces?.length ?? 0}
+            isLoading={isLoading}
+          />
         </Text>
       ) : (
         <Text className="text-4 text-left">
           <Text className="text-4 ml-1 capitalize">{allLabel}</Text>
           <Text className="text-4 ml-1 mr-1">|</Text>
-          <CountValue value={selectedSpaces?.length ?? 0} isLoading={isLoading} />
+          <CountValue
+            value={selectedSpaces?.length ?? 0}
+            isLoading={isLoading}
+          />
         </Text>
       )}
     </Text>
