@@ -10,7 +10,14 @@ import {
   SignalStatusDefinition,
   usePersonById,
 } from '@hypha-platform/core/client';
-import { Badge } from '@hypha-platform/ui';
+import {
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { SignalCardActions } from './signal-card-actions';
@@ -35,6 +42,8 @@ type SignalTaskCardProps = {
   onDragEnd?: (event: React.DragEvent<HTMLDivElement>) => void;
   onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
   refresh?: () => Promise<void>;
+  statusOptions?: SignalStatusDefinition[];
+  onStatusChange?: (progressStatus: string) => void;
   className?: string;
 };
 
@@ -82,6 +91,8 @@ export function SignalTaskCard({
   onDragEnd,
   onDragOver,
   refresh,
+  statusOptions,
+  onStatusChange,
   className,
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
@@ -203,6 +214,36 @@ export function SignalTaskCard({
           createdAtRelative={createdAtRelative}
           className="mt-1"
         />
+
+        {statusOptions && statusOptions.length > 0 && onStatusChange ? (
+          <div
+            className="mt-2"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <label className="sr-only" htmlFor={`signal-status-${signal.id}`}>
+              {t('signalFormStatus')}
+            </label>
+            <Select
+              value={signal.progressStatus ?? statusOptions[0]?.slug}
+              onValueChange={onStatusChange}
+            >
+              <SelectTrigger
+                id={`signal-status-${signal.id}`}
+                className="h-7 w-full border-border/60 bg-background/80 text-xs"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.slug} value={option.slug}>
+                    {option.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
         <div className="mt-2.5 flex items-end justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
