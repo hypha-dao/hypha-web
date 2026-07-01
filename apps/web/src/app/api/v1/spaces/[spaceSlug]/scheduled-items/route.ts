@@ -153,6 +153,7 @@ export async function GET(
         to: range.data.to,
         page,
         pageSize,
+        includeTotal: false,
       },
       { db },
     );

@@ -56,12 +56,14 @@ export async function findScheduledItemsBySpaceId(
     to,
     page = 1,
     pageSize = 100,
+    includeTotal = true,
   }: {
     spaceId: number;
     from?: Date;
     to?: Date;
     page?: number;
     pageSize?: number;
+    includeTotal?: boolean;
   },
   { db }: DbConfig,
 ): Promise<{
@@ -102,10 +104,14 @@ export async function findScheduledItemsBySpaceId(
     }
   }
 
-  const [countRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(spaceScheduledItems)
-    .where(and(...conditions));
+  let total = 0;
+  if (includeTotal) {
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(spaceScheduledItems)
+      .where(and(...conditions));
+    total = countRow?.count ?? 0;
+  }
 
   const rows = await db
     .select()
@@ -117,7 +123,7 @@ export async function findScheduledItemsBySpaceId(
 
   return {
     items: rows.map(mapScheduledItemRow),
-    total: countRow?.count ?? 0,
+    total,
     page: safePage,
     pageSize: safePageSize,
   };

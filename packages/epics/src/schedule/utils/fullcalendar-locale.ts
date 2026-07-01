@@ -23,3 +23,14 @@ export function resolveFullCalendarLocale(locale: string): LocaleInput {
     enGbLocale
   );
 }
+
+/** Matches FullCalendar `week.dow` (0 = Sunday, 1 = Monday, …). */
+export function getCalendarWeekStartsOn(
+  locale: string,
+): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
+  const dow = resolveFullCalendarLocale(locale).week?.dow;
+  if (typeof dow === 'number' && dow >= 0 && dow <= 6) {
+    return dow as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  }
+  return 1;
+}

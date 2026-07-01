@@ -75,20 +75,26 @@ export function useScheduledItems({
   to,
 }: {
   spaceSlug?: string;
-  from: Date;
-  to: Date;
+  from?: Date | null;
+  to?: Date | null;
 }) {
   const { getAccessToken } = useAuthentication();
   const slug = spaceSlug?.trim() || null;
+  const rangeReady =
+    from instanceof Date &&
+    to instanceof Date &&
+    !Number.isNaN(from.getTime()) &&
+    !Number.isNaN(to.getTime());
 
-  const swrKey = slug
-    ? ([
-        SCHEDULED_ITEMS_SWR_KEY,
-        slug,
-        from.toISOString(),
-        to.toISOString(),
-      ] as const)
-    : null;
+  const swrKey =
+    slug && rangeReady
+      ? ([
+          SCHEDULED_ITEMS_SWR_KEY,
+          slug,
+          from.toISOString(),
+          to.toISOString(),
+        ] as const)
+      : null;
 
   const {
     data,
@@ -107,6 +113,7 @@ export function useScheduledItems({
     {
       revalidateOnFocus: true,
       keepPreviousData: true,
+      dedupingInterval: 30_000,
     },
   );
 
