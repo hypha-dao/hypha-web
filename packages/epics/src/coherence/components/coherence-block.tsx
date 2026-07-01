@@ -178,30 +178,26 @@ export function CoherenceBlock({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
-        <h1 className="text-7 font-semibold tracking-tight text-foreground">
-          {t('signals')}
-          {typeof signals?.length === 'number' ? (
-            <span className="ml-2 text-5 font-medium text-muted-foreground">
-              | {format.number(signals.length)}
-            </span>
-          ) : null}
-        </h1>
-      </div>
-      <div className="flex flex-col gap-4">
-        <SignalSection
-          toolbarLeft={priorityTabs}
-          basePath={chatBasePath}
-          web3SpaceId={space?.web3SpaceId ?? 0}
-          signals={filteredSignals}
-          leadImage={space?.leadImage ?? undefined}
-          isLoading={isSpaceLoading || isSignalsLoading}
-          hideArchived={hideArchived}
-          setHideArchived={setHideArchived}
-          refresh={refresh}
-          onSignalClick={onSignalClick}
-        />
-      </div>
+      <h1 className="text-7 font-semibold tracking-tight text-foreground">
+        {t('signals')}
+        {typeof signals?.length === 'number' ? (
+          <span className="ml-2 text-5 font-medium text-muted-foreground">
+            | {format.number(signals.length)}
+          </span>
+        ) : null}
+      </h1>
+      {priorityTabs}
+      <SignalSection
+        basePath={chatBasePath}
+        web3SpaceId={space?.web3SpaceId ?? 0}
+        signals={filteredSignals}
+        leadImage={space?.leadImage ?? undefined}
+        isLoading={isSpaceLoading || isSignalsLoading}
+        hideArchived={hideArchived}
+        setHideArchived={setHideArchived}
+        refresh={refresh}
+        onSignalClick={onSignalClick}
+      />
     </div>
   );
 }
