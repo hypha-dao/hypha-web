@@ -16,6 +16,39 @@ export type SignalCreatorMetaInput = Pick<
   'creatorId' | 'createdAt' | 'description' | 'title' | 'tags'
 >;
 
+function parseRelaySourceSpaceSlug(description: string): string | null {
+  const marker = 'Relayed from ecosystem space:';
+  const index = description.toLowerCase().indexOf(marker.toLowerCase());
+  if (index === -1) return null;
+  let rest = description.slice(index + marker.length);
+  while (rest.length > 0 && /\s/.test(rest[0] ?? '')) {
+    rest = rest.slice(1);
+  }
+  let slug = '';
+  for (const char of rest) {
+    if (/[a-z0-9-]/i.test(char)) {
+      slug += char.toLowerCase();
+      continue;
+    }
+    break;
+  }
+  return slug || null;
+}
+
+function isHighSignalUpdateTitle(title: string): boolean {
+  const lower = title.toLowerCase();
+  if (!lower.startsWith('high-signal ')) return false;
+  return lower.includes(' update');
+}
+
+function isBackgroundJobDescription(description: string): boolean {
+  return description
+    .toLowerCase()
+    .includes(
+      'recent space-memory activity indicates a coordination opportunity',
+    );
+}
+
 export function useSignalCreatorMeta({
   creatorId,
   createdAt,
@@ -53,12 +86,10 @@ export function useSignalCreatorMeta({
     [tags],
   );
 
-  const relaySourceSpaceSlug = React.useMemo(() => {
-    const match = description.match(
-      /Relayed from ecosystem space:\s*([a-z0-9-]+)/i,
-    );
-    return match?.[1] ?? null;
-  }, [description]);
+  const relaySourceSpaceSlug = React.useMemo(
+    () => parseRelaySourceSpaceSlug(description),
+    [description],
+  );
 
   const { space: relaySourceSpace } = useSpaceBySlug(
     relaySourceSpaceSlug ?? '',
@@ -66,9 +97,7 @@ export function useSignalCreatorMeta({
 
   const isBackgroundJobSignal = React.useMemo(
     () =>
-      /recent space-memory activity indicates a coordination opportunity/i.test(
-        description,
-      ) || /high-signal .* update/i.test(title),
+      isBackgroundJobDescription(description) || isHighSignalUpdateTitle(title),
     [description, title],
   );
 

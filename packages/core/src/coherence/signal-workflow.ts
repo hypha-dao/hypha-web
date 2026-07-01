@@ -90,14 +90,37 @@ export function resolveDefaultProgressStatus(
   return ordered[0]?.slug ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
 }
 
+function normalizeSlugBase(base: string): string {
+  const lower = base.trim().toLowerCase();
+  let normalized = '';
+  let lastWasUnderscore = false;
+  for (const char of lower) {
+    const code = char.charCodeAt(0);
+    const isSlugChar =
+      (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || char === '_';
+    if (isSlugChar) {
+      normalized += char;
+      lastWasUnderscore = char === '_';
+      continue;
+    }
+    if (!lastWasUnderscore && normalized.length > 0) {
+      normalized += '_';
+      lastWasUnderscore = true;
+    }
+  }
+  let start = 0;
+  while (start < normalized.length && normalized[start] === '_') {
+    start += 1;
+  }
+  let end = normalized.length;
+  while (end > start && normalized[end - 1] === '_') {
+    end -= 1;
+  }
+  return normalized.slice(start, end).slice(0, 64) || 'item';
+}
+
 function reserveUniqueSlug(base: string, used: Set<string>): string {
-  const normalized =
-    base
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9_]+/g, '_')
-      .replace(/^_+|_+$/g, '')
-      .slice(0, 64) || 'item';
+  const normalized = normalizeSlugBase(base);
   if (!used.has(normalized)) {
     used.add(normalized);
     return normalized;

@@ -24,7 +24,15 @@ export function buildScheduledItemJoinPath(
   if (meetingUrl.startsWith('/')) {
     return meetingUrl;
   }
-  return meetingUrl;
+  try {
+    const parsed = new URL(meetingUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null;
+    }
+    return parsed.href;
+  } catch {
+    return null;
+  }
 }
 
 export function resolveScheduledItemJoinUrl(
