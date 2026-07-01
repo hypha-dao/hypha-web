@@ -259,12 +259,16 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     setAnchorDate((prev) =>
       prev.getTime() === nextStart.getTime() ? prev : nextStart,
     );
-    setRange((prev) =>
-      prev.from.getTime() === arg.start.getTime() &&
-      prev.to.getTime() === arg.end.getTime()
-        ? prev
-        : { from: arg.start, to: arg.end },
-    );
+    setRange((prev) => {
+      if (
+        prev &&
+        prev.from.getTime() === arg.start.getTime() &&
+        prev.to.getTime() === arg.end.getTime()
+      ) {
+        return prev;
+      }
+      return { from: arg.start, to: arg.end };
+    });
   };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {

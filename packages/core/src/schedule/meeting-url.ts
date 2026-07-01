@@ -35,6 +35,27 @@ export function buildScheduledItemJoinPath(
   }
 }
 
+export function sanitizeJoinHref(
+  url: string | null | undefined,
+): string | null {
+  if (!url?.trim()) return null;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/')) {
+    if (trimmed.startsWith('//')) return null;
+    if (/[\u0000-\u001F\u007F<>"]/.test(trimmed)) return null;
+    return trimmed;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null;
+    }
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
 export function resolveScheduledItemJoinUrl(
   item: Pick<ScheduledItem, 'type' | 'matrixAutoLink' | 'meetingUrl'>,
   lang: string,
@@ -43,12 +64,14 @@ export function resolveScheduledItemJoinUrl(
 ): string | null {
   const pathOrUrl = buildScheduledItemJoinPath(item, lang, spaceSlug);
   if (!pathOrUrl) return null;
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    return sanitizeJoinHref(pathOrUrl);
+  }
   const base = origin?.trim() || '';
-  if (!base) return pathOrUrl;
+  if (!base) return sanitizeJoinHref(pathOrUrl);
   try {
-    return new URL(pathOrUrl, base).href;
+    return sanitizeJoinHref(new URL(pathOrUrl, base).href);
   } catch {
-    return pathOrUrl;
+    return sanitizeJoinHref(pathOrUrl);
   }
 }

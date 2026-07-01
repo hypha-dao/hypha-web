@@ -3,6 +3,7 @@ import {
   buildScheduledItemJoinPath,
   isJoinableScheduledItem,
   resolveScheduledItemJoinUrl,
+  sanitizeJoinHref,
 } from '../meeting-url';
 
 describe('meeting-url helpers', () => {
@@ -58,5 +59,16 @@ describe('meeting-url helpers', () => {
         'demo-space',
       ),
     ).toBeNull();
+  });
+
+  it('sanitizes join hrefs at the sink', () => {
+    expect(sanitizeJoinHref('https://meet.example.com/room')).toBe(
+      'https://meet.example.com/room',
+    );
+    expect(sanitizeJoinHref('/en/dho/demo-space?joinCall=1')).toBe(
+      '/en/dho/demo-space?joinCall=1',
+    );
+    expect(sanitizeJoinHref('javascript:alert(1)')).toBeNull();
+    expect(sanitizeJoinHref('//evil.example/phish')).toBeNull();
   });
 });
