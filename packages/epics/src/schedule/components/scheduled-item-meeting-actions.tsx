@@ -5,11 +5,29 @@ import { useTranslations } from 'next-intl';
 import { Check, Copy, ExternalLink, Video } from 'lucide-react';
 import {
   resolveScheduledItemJoinUrl,
-  sanitizeJoinHref,
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+
+function toSafeMeetingJoinHref(url: string | null | undefined): string | null {
+  if (!url?.trim()) return null;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/')) {
+    if (trimmed.startsWith('//')) return null;
+    if (/[\u0000-\u001F\u007F<>"]/.test(trimmed)) return null;
+    return trimmed;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null;
+    }
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
 
 type ScheduledItemMeetingActionsProps = {
   item: Pick<ScheduledItem, 'type' | 'matrixAutoLink' | 'meetingUrl'>;
@@ -28,18 +46,15 @@ export function ScheduledItemMeetingActions({
 }: ScheduledItemMeetingActionsProps) {
   const t = useTranslations('Calendar');
   const [copied, setCopied] = React.useState(false);
-  const joinUrl = React.useMemo(
-    () =>
-      sanitizeJoinHref(
-        resolveScheduledItemJoinUrl(
-          item,
-          lang,
-          spaceSlug,
-          typeof window !== 'undefined' ? window.location.origin : undefined,
-        ),
-      ),
-    [item, lang, spaceSlug],
-  );
+  const joinUrl = React.useMemo(() => {
+    const resolved = resolveScheduledItemJoinUrl(
+      item,
+      lang,
+      spaceSlug,
+      typeof window !== 'undefined' ? window.location.origin : undefined,
+    );
+    return toSafeMeetingJoinHref(resolved);
+  }, [item, lang, spaceSlug]);
 
   React.useEffect(() => {
     if (!copied) return;
@@ -82,11 +97,16 @@ export function ScheduledItemMeetingActions({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button asChild size={compact ? 'sm' : 'default'}>
-          <a href={joinUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="size-4" />
-            {t('meetingJoin')}
-          </a>
+        <Button
+          type="button"
+          size={compact ? 'sm' : 'default'}
+          onClick={() => {
+            if (!joinUrl) return;
+            window.open(joinUrl, '_blank', 'noopener,noreferrer');
+          }}
+        >
+          <ExternalLink className="size-4" />
+          {t('meetingJoin')}
         </Button>
         <Button
           type="button"
