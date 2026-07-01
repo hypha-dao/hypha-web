@@ -54,6 +54,7 @@ import {
   viewToModifierClass,
   type CalendarView,
 } from '../utils/calendar-view-config';
+import { scheduledItemTypeIconHtml } from '../utils/scheduled-item-type-icon';
 import { ScheduledItemEventSheet } from './scheduled-item-event-sheet';
 
 const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
@@ -289,16 +290,23 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   const renderEventContent = React.useCallback(
     (arg: EventContentArg) => {
-      if (arg.view.type === 'dayGridMonth') {
-        return true;
-      }
-
       const item = isScheduledItem(arg.event.extendedProps.scheduledItem)
         ? arg.event.extendedProps.scheduledItem
         : null;
+      const itemType = item?.type ?? 'event';
+      const icon = scheduledItemTypeIconHtml(itemType);
       const typeLabel = item ? t(`type_${item.type}` as 'type_call') : '';
       const title = escapeCalendarHtml(arg.event.title);
       const time = escapeCalendarHtml(arg.timeText);
+
+      if (arg.view.type === 'dayGridMonth') {
+        const timeMarkup = time
+          ? `<span class="hypha-cal-month-event__time">${time}</span>`
+          : '';
+        return {
+          html: `<div class="hypha-cal-month-event">${icon}${timeMarkup}<span class="hypha-cal-month-event__title">${title}</span></div>`,
+        };
+      }
 
       if (arg.view.type === 'listWeek') {
         return {
@@ -307,7 +315,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
             <div class="hypha-cal-agenda-card__body">
               ${
                 typeLabel
-                  ? `<span class="hypha-cal-agenda-card__type">${escapeCalendarHtml(
+                  ? `<span class="hypha-cal-agenda-card__type">${icon}${escapeCalendarHtml(
                       typeLabel,
                     )}</span>`
                   : ''
@@ -320,11 +328,14 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
       return {
         html: `<div class="hypha-cal-time-event">
-          ${
-            time
-              ? `<span class="hypha-cal-time-event__time">${time}</span>`
-              : ''
-          }
+          <div class="hypha-cal-time-event__row">
+            ${icon}
+            ${
+              time
+                ? `<span class="hypha-cal-time-event__time">${time}</span>`
+                : ''
+            }
+          </div>
           <span class="hypha-cal-time-event__title">${title}</span>
         </div>`,
       };
