@@ -14,11 +14,6 @@ import type {
   CalendarApi,
 } from '@fullcalendar/core';
 import type { EventResizeDoneArg } from '@fullcalendar/interaction';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import listPlugin from '@fullcalendar/list';
-import interactionPlugin from '@fullcalendar/interaction';
-import rrulePlugin from '@fullcalendar/rrule';
 import {
   addMonths,
   endOfMonth,
@@ -45,16 +40,19 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { Button, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
-import { SpaceAccentLoader } from '../../common/space-accent-loader';
-import { resolveFullCalendarLocale } from '../utils/fullcalendar-locale';
+import {
+  getCalendarWeekStartsOn,
+  resolveFullCalendarLocale,
+} from '../utils/fullcalendar-locale';
 import { ScheduledItemEventSheet } from './scheduled-item-event-sheet';
 
-const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
+const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[520px] items-center justify-center rounded-xl border border-border/60 bg-muted/20">
-      <SpaceAccentLoader size="lg" showLabel={false} />
-    </div>
+    <div
+      aria-hidden
+      className="min-h-[520px] animate-pulse rounded-xl border border-border/60 bg-muted/15"
+    />
   ),
 });
 
@@ -109,11 +107,15 @@ function isScheduledItem(value: unknown): value is ScheduledItem {
   );
 }
 
-function defaultRangeForView(view: CalendarView, anchor: Date) {
+function defaultRangeForView(
+  view: CalendarView,
+  anchor: Date,
+  weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+) {
   if (view === 'dayGridMonth') {
     return {
-      from: startOfWeek(startOfMonth(anchor), { weekStartsOn: 0 }),
-      to: endOfWeek(endOfMonth(anchor), { weekStartsOn: 0 }),
+      from: startOfWeek(startOfMonth(anchor), { weekStartsOn }),
+      to: endOfWeek(endOfMonth(anchor), { weekStartsOn }),
     };
   }
   if (view === 'timeGridDay') {
@@ -124,8 +126,8 @@ function defaultRangeForView(view: CalendarView, anchor: Date) {
     return { from: dayStart, to: dayEnd };
   }
   return {
-    from: startOfWeek(anchor, { weekStartsOn: 0 }),
-    to: endOfWeek(anchor, { weekStartsOn: 0 }),
+    from: startOfWeek(anchor, { weekStartsOn }),
+    to: endOfWeek(anchor, { weekStartsOn }),
   };
 }
 
@@ -189,9 +191,10 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   const [view, setView] = React.useState<CalendarView>('dayGridMonth');
   const [anchorDate, setAnchorDate] = React.useState(() => new Date());
-  const [range, setRange] = React.useState(() =>
-    defaultRangeForView('dayGridMonth', new Date()),
-  );
+  const [range, setRange] = React.useState<{
+    from: Date;
+    to: Date;
+  } | null>(null);
   const [selectedItem, setSelectedItem] = React.useState<ScheduledItem | null>(
     null,
   );
@@ -199,8 +202,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   const { scheduledItems, isLoading, refresh } = useScheduledItems({
     spaceSlug,
-    from: range.from,
-    to: range.to,
+    from: range?.from ?? null,
+    to: range?.to ?? null,
   });
 
   const calendarApiRef = React.useRef<CalendarApi | null>(null);
@@ -224,9 +227,17 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   );
 
   const dateFnsLocale = React.useMemo(() => resolveDateFnsLocale(lang), [lang]);
+  const weekStartsOn = React.useMemo(
+    () => getCalendarWeekStartsOn(lang),
+    [lang],
+  );
   const fullCalendarLocale = React.useMemo(
     () => resolveFullCalendarLocale(lang),
     [lang],
+  );
+  const displayRange = React.useMemo(
+    () => range ?? defaultRangeForView(view, anchorDate, weekStartsOn),
+    [range, view, anchorDate, weekStartsOn],
   );
 
   const openCreate = (startsAt: Date, endsAt: Date, allDay: boolean) => {
@@ -377,9 +388,9 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       ? formatDate(anchorDate, 'MMMM yyyy', { locale: dateFnsLocale })
       : view === 'timeGridDay'
       ? formatDate(anchorDate, 'EEEE, MMMM d, yyyy', { locale: dateFnsLocale })
-      : `${formatDate(range.from, 'MMM d', {
+      : `${formatDate(displayRange.from, 'MMM d', {
           locale: dateFnsLocale,
-        })} – ${formatDate(range.to, 'MMM d, yyyy', {
+        })} – ${formatDate(displayRange.to, 'MMM d, yyyy', {
           locale: dateFnsLocale,
         })}`;
 
@@ -393,6 +404,10 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
           {typeof itemCount === 'number' ? (
             <span className="ml-2 text-5 font-medium text-muted-foreground">
               | {intlFormat.number(itemCount)}
+            </span>
+          ) : isLoading ? (
+            <span className="ml-2 text-5 font-medium text-muted-foreground">
+              | …
             </span>
           ) : null}
         </h1>
@@ -474,21 +489,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
             resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
           )}
         >
-          {isLoading && !scheduledItems ? (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/40 backdrop-blur-[1px]">
-              <SpaceAccentLoader size="md" showLabel={false} />
-            </div>
-          ) : null}
-
           <FullCalendar
             key={`${resolvedTheme}`}
-            plugins={[
-              dayGridPlugin,
-              timeGridPlugin,
-              listPlugin,
-              interactionPlugin,
-              rrulePlugin,
-            ]}
             initialView={view}
             initialDate={anchorDate}
             headerToolbar={false}
