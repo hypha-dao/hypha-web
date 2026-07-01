@@ -1,5 +1,7 @@
 'use client';
 
+import './signal-tag-badges.css';
+
 import { COHERENCE_TAGS } from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -49,9 +51,13 @@ export function SignalTagBadges({
       {visible.map((tag) => (
         <Badge
           key={tag}
-          colorVariant="accent"
-          variant="soft"
-          className={cn(SIGNAL_TAG_BADGE_CLASS, sizeClassName)}
+          variant="outline"
+          colorVariant="neutral"
+          className={cn(
+            SIGNAL_TAG_BADGE_CLASS,
+            'border-transparent bg-transparent shadow-none ring-0',
+            sizeClassName,
+          )}
         >
           {showHashPrefix
             ? `#${tagDisplayLabel(tag, t)}`
