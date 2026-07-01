@@ -1,38 +1,17 @@
 'use client';
 
-import React from 'react';
-import { useMatrix, useMe } from '@hypha-platform/core/client';
-import { getSignalTeamMembersFromRoom } from '../utils/signal-team-access';
+import { useCanUpdateSignalTasks } from './use-can-update-signal-tasks';
 
 type UseCanManageSignalArgs = {
-  slug?: string | null;
-  roomId?: string | null;
-  creatorId?: number | null;
+  spaceSlug: string;
+  web3SpaceId?: number;
 };
 
+/** Any space member/delegate who can interact in the panel (matches server task patch auth). */
 export function useCanManageSignal({
-  slug,
-  roomId,
-  creatorId,
+  spaceSlug,
+  web3SpaceId,
 }: UseCanManageSignalArgs): boolean {
-  const { person } = useMe();
-  const { client: matrixClient } = useMatrix();
-  const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
-
-  const signalTeamAccess = React.useMemo(() => {
-    if (!roomId?.trim()) {
-      return { hasPolicy: false, memberMatrixUserIds: [] as string[] };
-    }
-    return getSignalTeamMembersFromRoom({
-      room: matrixClient?.getRoom(roomId.trim()) ?? null,
-      coherenceSlug: slug ?? undefined,
-    });
-  }, [matrixClient, roomId, slug]);
-
-  const isCreator = person?.id != null && person.id === creatorId;
-  const isSignalTeamMember = currentUserMatrixId
-    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
-    : false;
-
-  return isCreator || (signalTeamAccess.hasPolicy && isSignalTeamMember);
+  const { canUpdateTasks } = useCanUpdateSignalTasks({ spaceSlug, web3SpaceId });
+  return canUpdateTasks;
 }

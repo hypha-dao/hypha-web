@@ -19,6 +19,7 @@ import {
   buildScheduleFromSignalSearchParams,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
@@ -45,11 +46,11 @@ export function SignalCardActions({
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const router = useRouter();
   const params = useParams<{ lang: string; id: string; tab?: string }>();
+  const { space } = useSpaceBySlug(params.id ?? '');
 
   const canManage = useCanManageSignal({
-    slug: signal.slug,
-    roomId: signal.roomId,
-    creatorId: signal.creatorId,
+    spaceSlug: params.id ?? '',
+    web3SpaceId: space?.web3SpaceId ?? undefined,
   });
 
   const [archiveOpen, setArchiveOpen] = React.useState(false);
@@ -60,7 +61,11 @@ export function SignalCardActions({
   if (!canManage || !slug) return null;
 
   const buttonClass =
-    size === 'sm' ? 'h-7 w-7 shrink-0 p-0' : 'h-8 w-8 shrink-0 p-0';
+    size === 'sm'
+      ? 'h-6 w-6 min-h-6 min-w-6 max-h-6 max-w-6 shrink-0 p-0'
+      : 'h-8 w-8 min-h-8 min-w-8 max-h-8 max-w-8 shrink-0 p-0';
+
+  const iconClass = size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5';
 
   const stopActivation = (event: React.SyntheticEvent) => {
     event.preventDefault();
@@ -126,7 +131,7 @@ export function SignalCardActions({
     <>
       <div
         className={cn(
-          'flex shrink-0 items-center gap-0.5 transition-opacity',
+          'flex shrink-0 items-center gap-0 transition-opacity',
           className,
         )}
         draggable={false}
@@ -137,7 +142,6 @@ export function SignalCardActions({
           type="button"
           variant="ghost"
           colorVariant="neutral"
-          size="sm"
           className={cn(
             buttonClass,
             'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -147,13 +151,12 @@ export function SignalCardActions({
           title={t('scheduleOnCalendar')}
           onClick={handleScheduleOnCalendar}
         >
-          <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+          <CalendarDays className={iconClass} aria-hidden />
         </Button>
         <Button
           type="button"
           variant="ghost"
           colorVariant="neutral"
-          size="sm"
           className={cn(
             buttonClass,
             'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -163,14 +166,13 @@ export function SignalCardActions({
           title={tSignalCard('editMenu')}
           onClick={handleEdit}
         >
-          <Pencil className="h-3.5 w-3.5" aria-hidden />
+          <Pencil className={iconClass} aria-hidden />
         </Button>
         {signal.archived ? (
           <Button
             type="button"
             variant="ghost"
             colorVariant="neutral"
-            size="sm"
             className={cn(
               buttonClass,
               'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -180,14 +182,13 @@ export function SignalCardActions({
             title={t('unarchiveConversation')}
             onClick={handleUnarchive}
           >
-            <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
+            <ArchiveRestore className={iconClass} aria-hidden />
           </Button>
         ) : (
           <Button
             type="button"
             variant="ghost"
             colorVariant="neutral"
-            size="sm"
             className={cn(
               buttonClass,
               'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -200,7 +201,7 @@ export function SignalCardActions({
               setArchiveOpen(true);
             }}
           >
-            <Archive className="h-3.5 w-3.5" aria-hidden />
+            <Archive className={iconClass} aria-hidden />
           </Button>
         )}
       </div>

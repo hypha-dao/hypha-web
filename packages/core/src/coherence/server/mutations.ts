@@ -20,7 +20,7 @@ import {
   normalizeAssigneeIds,
 } from '../signal-workflow';
 
-async function assertCanEditCoherence(
+export async function assertCanEditCoherence(
   { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
   { db }: { db: DatabaseInstance },
 ) {
