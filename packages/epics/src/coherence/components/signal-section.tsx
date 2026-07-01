@@ -9,12 +9,8 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import { SearchIcon } from 'lucide-react';
 import {
   Button,
-  Checkbox,
   ErrorAlert,
   Input,
-  Tabs,
-  TabsList,
-  TabsTrigger,
 } from '@hypha-platform/ui';
 import {
   Coherence,
@@ -38,7 +34,7 @@ import { SignalGrid } from './signal-grid';
 
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
-type SignalViewMode = 'board' | 'swimlane' | 'list' | 'grid';
+export type SignalViewMode = 'board' | 'swimlane' | 'list' | 'grid';
 
 type SignalSectionProps = {
   basePath: string;
@@ -46,8 +42,7 @@ type SignalSectionProps = {
   signals: Coherence[];
   leadImage?: string;
   isLoading: boolean;
-  hideArchived: boolean;
-  setHideArchived: (checked: boolean) => void;
+  viewMode: SignalViewMode;
   order?: string;
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
@@ -59,14 +54,12 @@ export const SignalSection: FC<SignalSectionProps> = ({
   signals,
   leadImage,
   isLoading,
-  hideArchived,
-  setHideArchived,
+  viewMode,
   refresh,
   onSignalClick,
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
-  const [viewMode, setViewMode] = React.useState<SignalViewMode>('board');
   const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
     string[]
   >([]);
@@ -166,34 +159,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
           className="w-full lg:min-w-0 lg:flex-1"
           defaultValue={searchTerm}
         />
-        <div className="flex flex-wrap items-center gap-3">
-          <Tabs
-            value={viewMode}
-            onValueChange={(value) => setViewMode(value as SignalViewMode)}
-          >
-            <TabsList triggerVariant="switch" className="w-fit">
-              <TabsTrigger value="board" variant="switch">
-                {t('signalViewBoard')}
-              </TabsTrigger>
-              <TabsTrigger value="swimlane" variant="switch">
-                {t('signalViewSwimlane')}
-              </TabsTrigger>
-              <TabsTrigger value="list" variant="switch">
-                {t('signalViewList')}
-              </TabsTrigger>
-              <TabsTrigger value="grid" variant="switch">
-                {t('signalViewGrid')}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Checkbox
-              checked={hideArchived}
-              onCheckedChange={(checked) => setHideArchived(checked === true)}
-            />
-            {t('hideArchived')}
-          </label>
-        </div>
         {canMutate ? (
           <div className="flex w-full items-center justify-end gap-2 lg:w-auto lg:shrink-0">
             <Button asChild colorVariant="accent">

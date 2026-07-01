@@ -11,7 +11,8 @@ import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
-import { SignalSection } from './signal-section';
+import { SignalSection, type SignalViewMode } from './signal-section';
+import { SignalViewControls } from './signal-view-controls';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 
 type CoherenceBlockProps = {
@@ -93,6 +94,7 @@ export function CoherenceBlock({
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
   const [hideArchived, setHideArchived] = React.useState(true);
+  const [viewMode, setViewMode] = React.useState<SignalViewMode>('board');
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const {
     coherences: signals,
@@ -186,15 +188,24 @@ export function CoherenceBlock({
           </span>
         ) : null}
       </h1>
-      {priorityTabs}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {priorityTabs}
+        <div className="flex flex-wrap items-center justify-start gap-3 sm:justify-end">
+          <SignalViewControls
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            hideArchived={hideArchived}
+            onHideArchivedChange={setHideArchived}
+          />
+        </div>
+      </div>
       <SignalSection
         basePath={chatBasePath}
         web3SpaceId={space?.web3SpaceId ?? 0}
         signals={filteredSignals}
         leadImage={space?.leadImage ?? undefined}
         isLoading={isSpaceLoading || isSignalsLoading}
-        hideArchived={hideArchived}
-        setHideArchived={setHideArchived}
+        viewMode={viewMode}
         refresh={refresh}
         onSignalClick={onSignalClick}
       />
