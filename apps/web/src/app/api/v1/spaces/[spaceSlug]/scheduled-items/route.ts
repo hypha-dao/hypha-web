@@ -5,6 +5,7 @@ import {
   checkSpaceAccessForSpace,
   createScheduledItem,
   findScheduledItemsBySpaceId,
+  mapScheduledItemRow,
   findScheduledItemsByCoherenceId,
   findSelf,
   findSpaceBySlug,
@@ -15,6 +16,7 @@ import {
   assertCoherenceInSpace,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { dispatchScheduledItemInvitation } from '@hypha-platform/notifications/server';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { PrivyClient } from '@privy-io/node';
@@ -259,6 +261,21 @@ export async function POST(
         lang: request.headers.get('x-hypha-locale')?.trim() || 'en',
       },
     );
+
+    const lang = request.headers.get('x-hypha-locale')?.trim() || 'en';
+    try {
+      await dispatchScheduledItemInvitation(
+        {
+          item: mapScheduledItemRow(created),
+          spaceSlug: space.slug,
+          spaceTitle: space.title,
+          lang,
+        },
+        { db },
+      );
+    } catch (inviteError) {
+      console.error('Failed to dispatch scheduled item invitation:', inviteError);
+    }
 
     return NextResponse.json({ data: created }, { status: 201 });
   } catch (error) {

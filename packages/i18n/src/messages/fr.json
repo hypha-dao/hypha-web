@@ -3657,7 +3657,7 @@
     "recurrence_yearly": "Annuel",
     "fieldRecurrenceUntil": "Répéter jusqu'au",
     "fieldMatrixAutoLink": "Lier à l'appel du space",
-    "fieldMatrixAutoLinkHint": "Génère automatiquement un lien d'appel Hypha pour la salle de chat",
+    "fieldMatrixAutoLinkHint": "Génère automatiquement un lien d'appel Hypha et envoie les invitations à l'enregistrement",
     "matrixLinkPreview": "Lien d'appel : {url}",
     "fieldReminders": "Rappels",
     "fieldRemindEmail": "Email aux membres",
@@ -3670,6 +3670,14 @@
     "reminderMinutes_60": "1 heure avant",
     "reminderMinutes_120": "2 heures avant",
     "reminderMinutes_1440": "1 jour avant",
-    "reminderMinutes_10080": "1 semaine avant"
+    "reminderMinutes_10080": "1 semaine avant",
+    "meetingJoinTitle": "Rejoindre en ligne",
+    "meetingJoinHint": "Partagez ce lien ou rejoignez au début de la réunion.",
+    "meetingJoin": "Rejoindre la réunion",
+    "meetingCopyLink": "Copier le lien",
+    "meetingLinkCopied": "Copié",
+    "invitationSentHint": "Les invitations sont envoyées par e-mail et notification à l'enregistrement. Des rappels suivent avant le début.",
+    "editDetails": "Modifier les détails",
+    "close": "Fermer"
   }
 }

@@ -106,3 +106,30 @@ export type NewSpaceScheduledItem = InferInsertModel<
 export type SpaceScheduledItemReminderDispatch = InferSelectModel<
   typeof spaceScheduledItemReminderDispatches
 >;
+
+export const spaceScheduledItemInvitationDispatches = pgTable(
+  'space_scheduled_item_invitation_dispatches',
+  {
+    id: serial('id').primaryKey(),
+    scheduledItemId: integer('scheduled_item_id')
+      .notNull()
+      .references(() => spaceScheduledItems.id, { onDelete: 'cascade' }),
+    inviteRevision: text('invite_revision').notNull(),
+    channel: text('channel', { enum: ['email', 'push'] }).notNull(),
+    dispatchedAt: timestamp('dispatched_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('space_scheduled_item_invitation_unique').on(
+      table.scheduledItemId,
+      table.inviteRevision,
+      table.channel,
+    ),
+    index('space_scheduled_item_invitation_item_idx').on(table.scheduledItemId),
+  ],
+);
+
+export type SpaceScheduledItemInvitationDispatch = InferSelectModel<
+  typeof spaceScheduledItemInvitationDispatches
+>;

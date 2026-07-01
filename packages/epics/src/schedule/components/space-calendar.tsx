@@ -52,6 +52,7 @@ import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { resolveFullCalendarLocale } from '../utils/fullcalendar-locale';
+import { ScheduledItemEventSheet } from './scheduled-item-event-sheet';
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
   ssr: false,
@@ -197,6 +198,10 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const [range, setRange] = React.useState(() =>
     defaultRangeForView('dayGridMonth', new Date()),
   );
+  const [selectedItem, setSelectedItem] = React.useState<ScheduledItem | null>(
+    null,
+  );
+  const [eventSheetOpen, setEventSheetOpen] = React.useState(false);
 
   const { scheduledItems, isLoading, refresh } = useScheduledItems({
     spaceSlug,
@@ -269,11 +274,12 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
-    if (!isAuthenticated) return;
     const item = isScheduledItem(clickInfo.event.extendedProps.scheduledItem)
       ? clickInfo.event.extendedProps.scheduledItem
       : undefined;
-    if (item) openEdit(item);
+    if (!item) return;
+    setSelectedItem(item);
+    setEventSheetOpen(true);
   };
 
   const handleEventDidMount = React.useCallback((info: EventMountArg) => {
@@ -525,6 +531,18 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
           />
         </div>
       </div>
+
+      <ScheduledItemEventSheet
+        item={selectedItem}
+        open={eventSheetOpen}
+        onOpenChange={setEventSheetOpen}
+        spaceSlug={spaceSlug}
+        lang={lang}
+        onEdit={(item) => {
+          if (!isAuthenticated) return;
+          openEdit(item);
+        }}
+      />
     </div>
   );
 }

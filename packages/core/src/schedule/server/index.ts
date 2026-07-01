@@ -5,3 +5,5 @@ export * from './merge-scheduled-item-update';
 export * from './app-origin';
 export * from './matrix-link';
 export * from './assert-coherence-in-space';
+export * from './recipients';
+export * from './invitation-dispatch';

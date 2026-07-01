@@ -3661,7 +3661,7 @@
     "recurrence_yearly": "Jährlich",
     "fieldRecurrenceUntil": "Wiederholen bis",
     "fieldMatrixAutoLink": "Mit Space-Anruf verknüpfen",
-    "fieldMatrixAutoLinkHint": "Automatisch einen Hypha-Anruflink für den Chat-Raum erzeugen",
+    "fieldMatrixAutoLinkHint": "Automatisch einen Hypha-Anruflink erzeugen und Einladungen beim Speichern senden",
     "matrixLinkPreview": "Anruflink: {url}",
     "fieldReminders": "Erinnerungen",
     "fieldRemindEmail": "E-Mail an Mitglieder",
@@ -3674,6 +3674,14 @@
     "reminderMinutes_60": "1 Stunde vorher",
     "reminderMinutes_120": "2 Stunden vorher",
     "reminderMinutes_1440": "1 Tag vorher",
-    "reminderMinutes_10080": "1 Woche vorher"
+    "reminderMinutes_10080": "1 Woche vorher",
+    "meetingJoinTitle": "Online teilnehmen",
+    "meetingJoinHint": "Teilen Sie diesen Link oder nehmen Sie zum Startzeitpunkt teil.",
+    "meetingJoin": "Meeting beitreten",
+    "meetingCopyLink": "Link kopieren",
+    "meetingLinkCopied": "Kopiert",
+    "invitationSentHint": "Einladungen werden beim Speichern per E-Mail und Push gesendet. Erinnerungen folgen vor dem Start.",
+    "editDetails": "Details bearbeiten",
+    "close": "Schließen"
   }
 }

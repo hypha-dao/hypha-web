@@ -1,9 +1,7 @@
 import 'server-only';
 
-import {
-  buildScheduledCallJoinPath,
-  type ScheduledItem,
-} from '@hypha-platform/core/client';
+import type { ScheduledItem } from '@hypha-platform/core/client';
+import { resolveScheduledItemJoinUrl } from '@hypha-platform/core/client';
 import { TAG_MEETING_CONSENT } from '../constants/tags';
 import { toAbsoluteAppUrl } from '@hypha-platform/core/server';
 import { sendEmailNotifications, sendPushNotifications } from '../mutations';
@@ -17,20 +15,6 @@ export type NotifyScheduledItemReminderInput = {
   channels: Array<'email' | 'push'>;
   lang?: string;
 };
-
-function buildReminderUrl(input: NotifyScheduledItemReminderInput): string {
-  const lang = input.lang?.trim() || 'en';
-  if (
-    input.item.matrixAutoLink &&
-    (input.item.type === 'call' || input.item.type === 'meeting')
-  ) {
-    return toAbsoluteAppUrl(buildScheduledCallJoinPath(lang, input.spaceSlug));
-  }
-  if (input.item.meetingUrl?.trim()) {
-    return input.item.meetingUrl.trim();
-  }
-  return toAbsoluteAppUrl(`/${lang}/dho/${input.spaceSlug}/calendar`);
-}
 
 function escapeHtml(value: string): string {
   return value
@@ -65,6 +49,21 @@ function formatReminderWhen(
   }).format(occurrenceStartsAt);
 }
 
+function buildReminderUrl(input: NotifyScheduledItemReminderInput): string {
+  const lang = input.lang?.trim() || 'en';
+  const joinPathOrUrl = resolveScheduledItemJoinUrl(
+    input.item,
+    lang,
+    input.spaceSlug,
+  );
+  if (joinPathOrUrl) {
+    return joinPathOrUrl.startsWith('http')
+      ? joinPathOrUrl
+      : toAbsoluteAppUrl(joinPathOrUrl);
+  }
+  return toAbsoluteAppUrl(`/${lang}/dho/${input.spaceSlug}/calendar`);
+}
+
 export async function notifyScheduledItemReminder(
   input: NotifyScheduledItemReminderInput,
 ) {
@@ -85,8 +84,14 @@ export async function notifyScheduledItemReminder(
   const pushUrl = safeUrl === '#' ? undefined : safeUrl;
   const heading = `${title} starts soon`;
   const pushBody = `${title} starts at ${whenLabel}`;
-  const body = `<p><strong>${safeTitle}</strong> in <strong>${safeSpaceTitle}</strong> starts at ${whenLabel}.</p><p><a href="${safeUrl}">Open in Hypha</a></p>`;
-  const textBody = `${title} in ${spaceTitle} starts at ${whenLabel}. Open: ${url}`;
+  const body = `<div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;">
+  <p><strong>${safeTitle}</strong> in <strong>${safeSpaceTitle}</strong> starts at ${whenLabel}.</p>
+  <p style="margin:20px 0;">
+    <a href="${safeUrl}" style="display:inline-block;background:#6d28d9;color:#fff;text-decoration:none;font-weight:600;padding:10px 20px;border-radius:10px;">Join now</a>
+  </p>
+  <p style="font-size:13px;color:#666;">Or open: <a href="${safeUrl}">${safeUrl}</a></p>
+</div>`;
+  const textBody = `${title} in ${spaceTitle} starts at ${whenLabel}. Join: ${url}`;
 
   let sent = 0;
 

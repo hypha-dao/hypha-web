@@ -37,6 +37,7 @@ import {
   ButtonClose,
   createAsideOverlayCloseHandler,
 } from '../../common/button-close';
+import { ScheduledItemMeetingActions } from './scheduled-item-meeting-actions';
 
 const DATETIME_LOCAL_STEP_SECONDS = 300;
 const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
@@ -919,10 +920,22 @@ export function ScheduledItemForm({
           </div>
         ) : null}
 
-        {showCallFields && matrixAutoLink && initialItem?.meetingUrl ? (
-          <p className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-            {t('matrixLinkPreview', { url: initialItem.meetingUrl })}
-          </p>
+        {showCallFields && (matrixAutoLink || meetingUrl.trim()) ? (
+          <ScheduledItemMeetingActions
+            item={{
+              type,
+              matrixAutoLink,
+              meetingUrl: matrixAutoLink
+                ? initialItem?.meetingUrl ?? null
+                : meetingUrl.trim() || null,
+            }}
+            spaceSlug={spaceSlug}
+            lang={lang}
+          />
+        ) : null}
+
+        {showCallFields ? (
+          <p className="text-xs text-muted-foreground">{t('invitationSentHint')}</p>
         ) : null}
 
         <div className="flex flex-col gap-2">

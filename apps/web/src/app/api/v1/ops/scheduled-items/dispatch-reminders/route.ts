@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   findDueScheduledReminders,
-  findSpaceMemberSlugsBySpaceId,
   releaseScheduledReminderDispatch,
+  resolveScheduledItemRecipientSlugs,
   tryClaimScheduledReminderDispatch,
 } from '@hypha-platform/core/server';
 import { notifyScheduledItemReminder } from '@hypha-platform/notifications/server';
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const due = await findDueScheduledReminders({ now: new Date() }, { db });
-    const memberSlugsBySpace = new Map<number, string[]>();
+    const recipientSlugsByItem = new Map<number, string[]>();
     let dispatched = 0;
     let skipped = 0;
     let failed = 0;
@@ -51,13 +51,12 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        let memberSlugs = memberSlugsBySpace.get(reminder.item.spaceId);
+        let memberSlugs = recipientSlugsByItem.get(reminder.item.id);
         if (!memberSlugs) {
-          memberSlugs = await findSpaceMemberSlugsBySpaceId(
-            { spaceId: reminder.item.spaceId },
-            { db },
-          );
-          memberSlugsBySpace.set(reminder.item.spaceId, memberSlugs);
+          memberSlugs = await resolveScheduledItemRecipientSlugs(reminder.item, {
+            db,
+          });
+          recipientSlugsByItem.set(reminder.item.id, memberSlugs);
         }
 
         await notifyScheduledItemReminder({
