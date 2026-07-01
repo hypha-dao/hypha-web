@@ -20,7 +20,9 @@ export function useSignalDeadlines(
     async ([slug, token, from, to]) => {
       const params = new URLSearchParams({ from, to });
       const response = await fetch(
-        `/api/v1/spaces/${encodeURIComponent(slug)}/coherences/deadlines?${params}`,
+        `/api/v1/spaces/${encodeURIComponent(
+          slug,
+        )}/coherences/deadlines?${params}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (!response.ok) {

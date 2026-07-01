@@ -4,7 +4,17 @@ import {
   spaces,
 } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
-import { and, arrayOverlaps, desc, eq, gte, isNotNull, lte, SQL, sql } from 'drizzle-orm';
+import {
+  and,
+  arrayOverlaps,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  lte,
+  SQL,
+  sql,
+} from 'drizzle-orm';
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
 import { CoherencePriority } from '../coherence-priorities';
@@ -91,13 +101,12 @@ export const findAllCoherences = async (
           : undefined,
         board ? eq(coherences.board, board) : undefined,
         assigneeId
-          ? sql`${coherences.assigneeIds} @> ${JSON.stringify([assigneeId])}::jsonb`
+          ? sql`${coherences.assigneeIds} @> ${JSON.stringify([
+              assigneeId,
+            ])}::jsonb`
           : undefined,
         overdue
-          ? and(
-              isNotNull(coherences.dueAt),
-              lte(coherences.dueAt, new Date()),
-            )
+          ? and(isNotNull(coherences.dueAt), lte(coherences.dueAt, new Date()))
           : undefined,
       ),
     )

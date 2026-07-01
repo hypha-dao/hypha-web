@@ -12,10 +12,16 @@ export function usePatchCoherenceTask(spaceSlug?: string) {
     jwt && spaceSlug ? ([spaceSlug, jwt, 'patchCoherenceTask'] as const) : null,
     async (
       [slug, token],
-      { arg }: { arg: Omit<PatchCoherenceTaskBySlugInput, 'slug'> & { slug: string } },
+      {
+        arg,
+      }: {
+        arg: Omit<PatchCoherenceTaskBySlugInput, 'slug'> & { slug: string };
+      },
     ) => {
       const response = await fetch(
-        `/api/v1/spaces/${encodeURIComponent(slug)}/coherences/${encodeURIComponent(arg.slug)}/task`,
+        `/api/v1/spaces/${encodeURIComponent(
+          slug,
+        )}/coherences/${encodeURIComponent(arg.slug)}/task`,
         {
           method: 'PATCH',
           headers: {
@@ -34,7 +40,9 @@ export function usePatchCoherenceTask(spaceSlug?: string) {
         const payload = (await response.json().catch(() => null)) as {
           error?: string;
         } | null;
-        throw new Error(payload?.error ?? `Failed to patch task: ${response.status}`);
+        throw new Error(
+          payload?.error ?? `Failed to patch task: ${response.status}`,
+        );
       }
       return hydrateCoherenceFromApi(await response.json()) as Coherence;
     },

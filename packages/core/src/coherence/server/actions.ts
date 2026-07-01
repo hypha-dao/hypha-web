@@ -86,7 +86,8 @@ export async function patchCoherenceTaskBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   const validated = schemaPatchCoherenceTaskBySlug.parse(data);
-  if (!authToken) throw new Error('authToken is required to patch coherence task');
+  if (!authToken)
+    throw new Error('authToken is required to patch coherence task');
   const authDb = getDb({ authToken });
   const self = await findSelf({ db: authDb });
   if (!self?.id) {
@@ -111,10 +112,7 @@ export async function getSignalWorkflowConfigAction(
 }
 
 export async function updateSignalWorkflowConfigAction(
-  {
-    spaceId,
-    config,
-  }: { spaceId: number; config: SignalWorkflowConfig },
+  { spaceId, config }: { spaceId: number; config: SignalWorkflowConfig },
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) {

@@ -1,8 +1,4 @@
-export type SignalStatusCategory =
-  | 'backlog'
-  | 'active'
-  | 'done'
-  | 'cancelled';
+export type SignalStatusCategory = 'backlog' | 'active' | 'done' | 'cancelled';
 
 export type SignalStatusDefinition = {
   slug: string;
@@ -121,7 +117,8 @@ export function normalizeAssigneeIds(raw: unknown): number[] {
   const seen = new Set<number>();
   const out: number[] = [];
   for (const value of raw) {
-    const id = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+    const id =
+      typeof value === 'number' ? value : Number.parseInt(String(value), 10);
     if (!Number.isFinite(id) || id < 1 || seen.has(id)) continue;
     seen.add(id);
     out.push(id);
@@ -129,12 +126,16 @@ export function normalizeAssigneeIds(raw: unknown): number[] {
   return out;
 }
 
-export function hydrateCoherenceFromApi<T extends {
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  dueAt?: Date | string | null;
-  assigneeIds?: unknown;
-}>(raw: T): T & {
+export function hydrateCoherenceFromApi<
+  T extends {
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    dueAt?: Date | string | null;
+    assigneeIds?: unknown;
+  },
+>(
+  raw: T,
+): T & {
   createdAt: Date;
   updatedAt: Date;
   dueAt: Date | null;
