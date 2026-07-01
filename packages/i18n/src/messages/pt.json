@@ -2942,6 +2942,12 @@
     "signalListDue": "Prazo",
     "signalListPriority": "Prioridade",
     "signalListBoard": "Quadro",
+    "signalFormStatus": "Status",
+    "signalFormStatusHint": "Etapa do fluxo de trabalho deste sinal (colunas nas vistas Board e Swimlane).",
+    "signalFormBoard": "Categoria do quadro",
+    "signalFormBoardHint": "Swimlane organizacional — agrupa sinais por equipa, iniciativa ou área. Não é o mesmo que Tipo (Oportunidade/Risco/Insight) ou Tags.",
+    "signalFormDueDate": "Data limite",
+    "signalFormDueDateHint": "Prazo opcional; aparece no calendário do espaço quando definido.",
     "spaceMemoryTimelineLabel": "Histórico da memória do espaço"
   },
   "GlobalCallDock": {

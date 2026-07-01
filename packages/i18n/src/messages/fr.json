@@ -2940,6 +2940,12 @@
     "signalListDue": "Échéance",
     "signalListPriority": "Priorité",
     "signalListBoard": "Tableau",
+    "signalFormStatus": "Statut",
+    "signalFormStatusHint": "Étape du workflow de ce signal (colonnes dans les vues Board et Swimlane).",
+    "signalFormBoard": "Catégorie de tableau",
+    "signalFormBoardHint": "Couloir organisationnel — regroupe les signaux par équipe, initiative ou domaine. Différent du Type (Opportunité/Risque/Insight) et des Tags.",
+    "signalFormDueDate": "Date d'échéance",
+    "signalFormDueDateHint": "Échéance optionnelle ; apparaît sur le calendrier de l'espace lorsqu'elle est définie.",
     "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace"
   },
   "GlobalCallDock": {

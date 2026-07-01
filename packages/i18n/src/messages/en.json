@@ -3507,6 +3507,12 @@
     "signalListDue": "Due",
     "signalListPriority": "Priority",
     "signalListBoard": "Board",
+    "signalFormStatus": "Status",
+    "signalFormStatusHint": "Workflow stage for this signal (shown as columns in Board and Swimlane views).",
+    "signalFormBoard": "Board category",
+    "signalFormBoardHint": "Organizational swimlane — groups signals by team, initiative, or workstream. Not the same as Type (Opportunity/Risk/Insight) or Tags.",
+    "signalFormDueDate": "Due date",
+    "signalFormDueDateHint": "Optional deadline; appears on the space calendar when set.",
     "spaceMemoryTimelineLabel": "Space memory history"
   },
   "GlobalCallDock": {

@@ -3468,6 +3468,12 @@
     "signalListDue": "Fällig",
     "signalListPriority": "Priorität",
     "signalListBoard": "Board",
+    "signalFormStatus": "Status",
+    "signalFormStatusHint": "Workflow-Stufe dieses Signals (Spalten in Board- und Swimlane-Ansicht).",
+    "signalFormBoard": "Board-Kategorie",
+    "signalFormBoardHint": "Organisatorische Swimlane — gruppiert Signale nach Team, Initiative oder Bereich. Nicht dasselbe wie Typ (Opportunity/Risk/Insight) oder Tags.",
+    "signalFormDueDate": "Fälligkeitsdatum",
+    "signalFormDueDateHint": "Optionaler Termin; erscheint im Space-Kalender, wenn gesetzt.",
     "spaceMemoryTimelineLabel": "Space-Memory-Verlauf"
   },
   "GlobalCallDock": {

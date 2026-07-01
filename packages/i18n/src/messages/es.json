@@ -2944,6 +2944,12 @@
     "signalListDue": "Fecha límite",
     "signalListPriority": "Prioridad",
     "signalListBoard": "Tablero",
+    "signalFormStatus": "Estado",
+    "signalFormStatusHint": "Etapa del flujo de trabajo de esta señal (columnas en las vistas Board y Swimlane).",
+    "signalFormBoard": "Categoría del tablero",
+    "signalFormBoardHint": "Carril organizativo: agrupa señales por equipo, iniciativa o área. No es lo mismo que Tipo (Oportunidad/Riesgo/Insight) ni Tags.",
+    "signalFormDueDate": "Fecha límite",
+    "signalFormDueDateHint": "Plazo opcional; aparece en el calendario del espacio cuando se define.",
     "spaceMemoryTimelineLabel": "Historial de memoria del espacio"
   },
   "GlobalCallDock": {
