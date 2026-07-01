@@ -2,7 +2,11 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceMember } from './use-space-member';
-import { useIsDelegate } from '@hypha-platform/core/client';
+import { useMemberWeb3SpaceIds } from './use-member-web3-space-ids';
+import {
+  useIsDelegate,
+  useSpaceDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import {
   useSpaceBySlug,
   Space,
@@ -48,6 +52,81 @@ export function useUserSpaceState({
     spaceId: effectiveSpaceId as number,
     userAddress: user?.wallet?.address,
   });
+
+  const {
+    web3SpaceIds: userMemberWeb3SpaceIds,
+    isLoading: isUserMemberWeb3SpaceIdsLoading,
+  } = useMemberWeb3SpaceIds({ personAddress: user?.wallet?.address });
+
+  const {
+    spaceDetails: hostSpaceDetails,
+    isLoading: isHostSpaceDetailsLoading,
+  } = useSpaceDetailsWeb3Rpc({
+    spaceId: effectiveSpaceId ?? undefined,
+  });
+
+  const hostMemberAddressesKey = useMemo(() => {
+    const members = hostSpaceDetails?.members;
+    if (!members?.length) return '';
+    return members
+      .map((member: string) => member.toLowerCase())
+      .sort()
+      .join(',');
+  }, [hostSpaceDetails?.members]);
+
+  const userMemberSpaceIdsKey = useMemo(() => {
+    if (!userMemberWeb3SpaceIds?.length) return '';
+    return userMemberWeb3SpaceIds
+      .map((id) => id.toString())
+      .sort()
+      .join(',');
+  }, [userMemberWeb3SpaceIds]);
+
+  const {
+    data: isMemberSpaceParticipant,
+    isLoading: isMemberSpaceParticipantLoading,
+  } = useSWR(
+    isAuthenticated &&
+      user?.wallet?.address &&
+      effectiveSpaceId &&
+      hostMemberAddressesKey &&
+      userMemberSpaceIdsKey
+      ? [
+          'memberSpaceParticipant',
+          effectiveSpaceId,
+          hostMemberAddressesKey,
+          userMemberSpaceIdsKey,
+        ]
+      : null,
+    async () => {
+      const hostMembersLower = new Set(
+        hostSpaceDetails!.members.map((member: string) => member.toLowerCase()),
+      );
+
+      const checks = await Promise.all(
+        userMemberWeb3SpaceIds!.map(async (spaceId) => {
+          try {
+            const details = await publicClient.readContract(
+              getSpaceDetails({ spaceId }),
+            );
+            const executor = details[9] as string | undefined;
+            return (
+              typeof executor === 'string' &&
+              hostMembersLower.has(executor.toLowerCase())
+            );
+          } catch (error) {
+            console.error(
+              `Error checking member-space access for space ${spaceId}:`,
+              error,
+            );
+            return false;
+          }
+        }),
+      );
+
+      return checks.some(Boolean);
+    },
+  );
 
   const effectiveSpaceSlug = spaceSlug || effectiveSpace?.slug || '';
   const { spaces: organisationSpaces, isLoading: isOrganisationSpacesLoading } =
@@ -150,7 +229,7 @@ export function useUserSpaceState({
       return UserSpaceState.NOT_LOGGED_IN;
     }
 
-    if (isMember || isDelegate) {
+    if (isMember || isDelegate || isMemberSpaceParticipant) {
       return UserSpaceState.LOGGED_IN_SPACE;
     }
 
@@ -159,11 +238,22 @@ export function useUserSpaceState({
     }
 
     return UserSpaceState.LOGGED_IN;
-  }, [isAuthenticated, user, isMember, isDelegate, isOrgMember, isOrgDelegate]);
+  }, [
+    isAuthenticated,
+    user,
+    isMember,
+    isDelegate,
+    isMemberSpaceParticipant,
+    isOrgMember,
+    isOrgDelegate,
+  ]);
 
   const isLoading =
     isMemberLoading ||
     isDelegateLoading ||
+    isUserMemberWeb3SpaceIdsLoading ||
+    isHostSpaceDetailsLoading ||
+    isMemberSpaceParticipantLoading ||
     isOrganisationSpacesLoading ||
     isOrgMembershipLoading ||
     spaceFromHook.isLoading;
