@@ -1,8 +1,16 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Checkbox, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Cog } from 'lucide-react';
+import {
+  Button,
+  Checkbox,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import type { SignalViewMode } from './signal-section';
 
 type SignalViewControlsProps = {
@@ -10,6 +18,7 @@ type SignalViewControlsProps = {
   onViewModeChange: (mode: SignalViewMode) => void;
   hideArchived: boolean;
   onHideArchivedChange: (checked: boolean) => void;
+  workflowSettingsHref?: string | null;
 };
 
 export function SignalViewControls({
@@ -17,30 +26,51 @@ export function SignalViewControls({
   onViewModeChange,
   hideArchived,
   onHideArchivedChange,
+  workflowSettingsHref,
 }: SignalViewControlsProps) {
   const t = useTranslations('CoherenceTab');
 
   return (
     <>
-      <Tabs
-        value={viewMode}
-        onValueChange={(value) => onViewModeChange(value as SignalViewMode)}
-      >
-        <TabsList triggerVariant="switch" className="w-fit">
-          <TabsTrigger value="board" variant="switch">
-            {t('signalViewBoard')}
-          </TabsTrigger>
-          <TabsTrigger value="swimlane" variant="switch">
-            {t('signalViewSwimlane')}
-          </TabsTrigger>
-          <TabsTrigger value="list" variant="switch">
-            {t('signalViewList')}
-          </TabsTrigger>
-          <TabsTrigger value="grid" variant="switch">
-            {t('signalViewGrid')}
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center gap-2">
+        {workflowSettingsHref ? (
+          <Button
+            asChild
+            type="button"
+            variant="ghost"
+            colorVariant="neutral"
+            className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+          >
+            <Link
+              href={workflowSettingsHref}
+              scroll={false}
+              aria-label={t('signalWorkflowSettings')}
+              title={t('signalWorkflowSettings')}
+            >
+              <Cog className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+            </Link>
+          </Button>
+        ) : null}
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => onViewModeChange(value as SignalViewMode)}
+        >
+          <TabsList triggerVariant="switch" className="w-fit">
+            <TabsTrigger value="board" variant="switch">
+              {t('signalViewBoard')}
+            </TabsTrigger>
+            <TabsTrigger value="swimlane" variant="switch">
+              {t('signalViewSwimlane')}
+            </TabsTrigger>
+            <TabsTrigger value="list" variant="switch">
+              {t('signalViewList')}
+            </TabsTrigger>
+            <TabsTrigger value="grid" variant="switch">
+              {t('signalViewGrid')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <Checkbox
           checked={hideArchived}
