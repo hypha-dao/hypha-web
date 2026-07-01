@@ -420,6 +420,13 @@ type ProposalDetailProps = ProposalHeadProps & {
   leadImage?: string;
   attachments?: (string | Attachment)[];
   proposalId?: number | null | undefined;
+  /**
+   * The space's on-chain id, known immediately from the URL slug. Passing it
+   * lets space-scoped reads (space details, membership, delegate, min duration,
+   * documents) start in parallel instead of waiting for `proposalDetails` to
+   * resolve first - which removed the cold-open loading waterfall.
+   */
+  web3SpaceId?: number;
   spaceSlug: string;
   label?: string;
   documentSlug: string;
@@ -454,6 +461,7 @@ export const ProposalDetail = ({
   leadImage,
   attachments,
   proposalId,
+  web3SpaceId,
   spaceSlug,
   label,
   documentSlug,
@@ -472,12 +480,16 @@ export const ProposalDetail = ({
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
+  // Prefer the space id from the URL (available immediately) so space-scoped
+  // reads don't wait on the on-chain proposal fetch. Fall back to the proposal
+  // once it resolves for any consumer opened without the prop.
+  const effectiveWeb3SpaceId = web3SpaceId ?? proposalDetails?.spaceId ?? null;
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: proposalDetails?.spaceId ?? null,
+    spaceId: effectiveWeb3SpaceId,
   });
   const { isAuthenticated } = useAuthentication();
   const { documents: documentsArrays } = useSpaceDocumentsWithStatuses({
-    spaceId: proposalDetails?.spaceId,
+    spaceId: effectiveWeb3SpaceId,
     spaceSlug,
     order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   });
@@ -666,9 +678,8 @@ export const ProposalDetail = ({
     );
   };
 
-  const spaceIdBigInt = proposalDetails?.spaceId
-    ? BigInt(proposalDetails?.spaceId)
-    : null;
+  const spaceIdBigInt =
+    effectiveWeb3SpaceId != null ? BigInt(effectiveWeb3SpaceId) : null;
 
   const { duration } = useSpaceMinProposalDuration({
     spaceId: spaceIdBigInt as bigint,
@@ -1444,11 +1455,11 @@ export const ProposalDetail = ({
         onAccept={handleAccept}
         onReject={handleReject}
         isCheckingExpiration={isCheckingExpiration}
-        isLoading={isLoading}
+        isLoading={isLoading || !spaceDetails}
         isVoting={isVoting}
         documentSlug={documentSlug}
         isAuthenticated={isAuthenticated}
-        web3SpaceId={proposalDetails?.spaceId}
+        web3SpaceId={effectiveWeb3SpaceId ?? undefined}
         spaceDetails={spaceDetails as unknown as SpaceDetails}
         proposalStatus={proposalStatus}
         hideDurationData={hideDurationData()}

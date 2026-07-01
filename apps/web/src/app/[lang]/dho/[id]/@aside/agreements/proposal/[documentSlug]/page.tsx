@@ -151,7 +151,7 @@ export default function Agreements() {
     <ProposalOverlayShell>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isLoading || isVoting || !!voteError}
+        isLoading={isVoting || !!voteError}
         message={
           voteError ? (
             <div className="text-center space-y-2">
@@ -202,6 +202,7 @@ export default function Agreements() {
           leadImage={document?.leadImage}
           attachments={document?.attachments}
           proposalId={document?.web3ProposalId}
+          web3SpaceId={space?.web3SpaceId ?? undefined}
           spaceSlug={space?.slug || ''}
           label={document?.label || ''}
           documentSlug={documentSlug}
