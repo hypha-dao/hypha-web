@@ -3458,7 +3458,7 @@
     "boardCancelAction": "Abbrechen",
     "boardAll": "Alle Signale",
     "boardDelete": "Board {boardName} löschen",
-    "signalViewBoard": "Board",
+    "signalViewBoard": "Kanban Board",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
     "signalViewGrid": "Raster",
