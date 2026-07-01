@@ -146,18 +146,18 @@ export const SignalSection: FC<SignalSectionProps> = ({
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="flex w-full items-center gap-2 sm:gap-3">
         <Input
           type="search"
           placeholder={t('searchSignals')}
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          className="w-full lg:min-w-0 lg:flex-1"
+          className="min-w-0 flex-1"
           defaultValue={searchTerm}
         />
         {canMutate ? (
-          <div className="flex w-full items-center justify-end gap-2 lg:w-auto lg:shrink-0">
-            <Button asChild colorVariant="accent">
+          <div className="flex shrink-0 items-center">
+            <Button asChild colorVariant="accent" className="whitespace-nowrap">
               <Link href={createSignalHref}>
                 <PlusIcon />
                 {t('newSignal')}
@@ -179,6 +179,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         <SignalBoardView
           signals={visibleSignals}
           workflow={resolvedWorkflow}
+          spaceSlug={spaceSlug}
           onSignalClick={onSignalClick}
           readOnly={!canUpdateTasks}
           refresh={refresh}
