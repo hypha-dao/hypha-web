@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm';
-import { spaces } from '@hypha-platform/storage-postgres';
+import { and, eq, inArray } from 'drizzle-orm';
+import { coherences, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
 import {
-  DEFAULT_SIGNAL_WORKFLOW,
+  DEFAULT_SIGNAL_PROGRESS_STATUS,
   normalizeSignalWorkflowConfig,
+  sanitizeSignalWorkflowConfig,
   type SignalWorkflowConfig,
 } from '../signal-workflow';
 
@@ -72,7 +73,48 @@ export async function updateSignalWorkflowConfig(
   },
   { db }: DbConfig,
 ): Promise<SignalWorkflowConfig> {
-  const normalized = normalizeSignalWorkflowConfig(config);
+  const previous = await readSignalWorkflowConfig({ spaceId }, { db });
+  const normalized = sanitizeSignalWorkflowConfig(config);
+
+  const nextStatusSlugs = new Set(normalized.statuses.map((status) => status.slug));
+  const removedStatusSlugs = previous.statuses
+    .map((status) => status.slug)
+    .filter((slug) => !nextStatusSlugs.has(slug));
+
+  if (removedStatusSlugs.length > 0) {
+    const fallbackStatus =
+      normalized.statuses.find((status) => status.category === 'backlog')
+        ?.slug ??
+      normalized.statuses[0]?.slug ??
+      DEFAULT_SIGNAL_PROGRESS_STATUS;
+    await db
+      .update(coherences)
+      .set({ progressStatus: fallbackStatus })
+      .where(
+        and(
+          eq(coherences.spaceId, spaceId),
+          inArray(coherences.progressStatus, removedStatusSlugs),
+        ),
+      );
+  }
+
+  const nextBoardSlugs = new Set(normalized.boards.map((board) => board.slug));
+  const removedBoardSlugs = previous.boards
+    .map((board) => board.slug)
+    .filter((slug) => !nextBoardSlugs.has(slug));
+
+  if (removedBoardSlugs.length > 0) {
+    await db
+      .update(coherences)
+      .set({ board: null })
+      .where(
+        and(
+          eq(coherences.spaceId, spaceId),
+          inArray(coherences.board, removedBoardSlugs),
+        ),
+      );
+  }
+
   const [updated] = await db
     .update(spaces)
     .set({ signalWorkflow: normalized })
