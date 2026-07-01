@@ -8,7 +8,6 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
-  useMatrix,
   useMe,
   usePersonById,
   useSpaceBySlug,
@@ -52,6 +51,7 @@ import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { useScrollParallax } from '../../common/use-scroll-parallax';
 import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 import {
   signalTagBadgeStyle,
   SIGNAL_TAG_BADGE_CLASS,
@@ -125,66 +125,6 @@ const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   neutral: 'text-neutral-11',
 };
 
-const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
-const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
-
-function normalizeMatrixUserIds(ids: unknown): string[] {
-  if (!Array.isArray(ids)) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const value of ids) {
-    if (typeof value !== 'string') continue;
-    const trimmed = value.trim();
-    if (!trimmed || seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    out.push(trimmed);
-  }
-  return out;
-}
-
-function getSignalTeamMembersFromRoom(options: {
-  room: {
-    getLiveTimeline: () => {
-      getEvents: () => Array<{
-        getType: () => string;
-        getContent: () => Record<string, unknown> | null;
-      }>;
-    };
-  } | null;
-  coherenceSlug?: string;
-}): { hasPolicy: boolean; memberMatrixUserIds: string[] } {
-  const { room, coherenceSlug } = options;
-  if (!room) return { hasPolicy: false, memberMatrixUserIds: [] };
-  const targetSlug = coherenceSlug?.trim() || null;
-  let hasPolicy = false;
-  let members: string[] = [];
-  for (const event of room.getLiveTimeline().getEvents()) {
-    if (event.getType() !== 'm.room.message') continue;
-    const content = event.getContent();
-    if (!content || typeof content !== 'object') continue;
-    const msgtype =
-      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-    const body = typeof content.body === 'string' ? content.body.trim() : '';
-    const eventKind =
-      msgtype === SIGNAL_TEAM_EVENT_KIND ||
-      body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
-        ? SIGNAL_TEAM_EVENT_KIND
-        : null;
-    if (!eventKind) continue;
-    const eventSlug =
-      typeof content.coherenceSlug === 'string'
-        ? content.coherenceSlug.trim()
-        : '';
-    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
-    const nextMembers = normalizeMatrixUserIds(content.memberMatrixUserIds);
-    if (nextMembers.length > 0) {
-      members = nextMembers;
-      hasPolicy = true;
-    }
-  }
-  return { hasPolicy, memberMatrixUserIds: members };
-}
-
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
   title,
@@ -205,7 +145,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
-  const { client: matrixClient } = useMatrix();
   const { person: creatorPerson } = usePersonById({ id: creatorId });
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
@@ -213,6 +152,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const tCommon = useTranslations('Common');
   const router = useRouter();
   const params = useParams<{ lang: string; id: string; tab?: string }>();
+  const { space: currentSpace } = useSpaceBySlug(params.id ?? '');
+  const canManageSignal = useCanManageSignal({
+    spaceSlug: params.id ?? '',
+    web3SpaceId: currentSpace?.web3SpaceId ?? undefined,
+  });
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
@@ -296,21 +240,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const [metaDetailsShouldLeftAlign, setMetaDetailsShouldLeftAlign] =
     React.useState(false);
   const isCreator = person?.id === creatorId;
-  const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
-  const signalTeamAccess = React.useMemo(() => {
-    if (!roomId?.trim()) {
-      return { hasPolicy: false, memberMatrixUserIds: [] };
-    }
-    return getSignalTeamMembersFromRoom({
-      room: matrixClient?.getRoom(roomId.trim()) ?? null,
-      coherenceSlug: slug ?? undefined,
-    });
-  }, [matrixClient, roomId, slug]);
-  const isSignalTeamMember = currentUserMatrixId
-    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
-    : false;
-  const canManageSignal =
-    isCreator || (signalTeamAccess.hasPolicy && isSignalTeamMember);
   const creatorDisplayName = React.useMemo(() => {
     if (isCreator) {
       const currentUserName = [person?.name, person?.surname]

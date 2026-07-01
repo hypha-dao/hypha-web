@@ -17,6 +17,7 @@ import {
   patchCoherenceTaskBySlug,
   updateCoherenceBySlug,
   updateCoherenceSignalBySlug,
+  assertCanEditCoherence,
 } from './mutations';
 import {
   schemaPatchCoherenceTaskBySlug,
@@ -63,8 +64,20 @@ export async function updateCoherenceBySlugAction(
   data: UpdateCoherenceBySlugInput,
   { authToken }: { authToken?: string },
 ) {
-  // TODO: #602 Define RLS Policies for Spaces Table
-  // const db = getDb({ authToken });
+  if (!authToken) {
+    throw new Error('authToken is required to update coherence');
+  }
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for update coherence',
+    );
+  }
+  await assertCanEditCoherence(
+    { slug: data.slug, requesterPersonId: self.id },
+    { db },
+  );
   return updateCoherenceBySlug(data, { db });
 }
 

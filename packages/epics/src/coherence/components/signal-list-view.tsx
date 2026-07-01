@@ -33,10 +33,16 @@ type SignalListViewProps = {
   readOnly?: boolean;
 };
 
-function ListAssigneeStack({ assigneeIds }: { assigneeIds: number[] }) {
+function ListAssigneeStack({
+  assigneeIds,
+  className,
+}: {
+  assigneeIds: number[];
+  className?: string;
+}) {
   const visible = assigneeIds.slice(0, 2);
   return (
-    <div className="flex -space-x-1">
+    <div className={cn('flex -space-x-1', className)}>
       {visible.map((id) => (
         <ListAssigneeAvatar key={id} personId={id} />
       ))}
@@ -77,7 +83,7 @@ export function SignalListView({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
-      <div className="hidden grid-cols-[minmax(0,1.6fr)_9rem_7rem_6rem_9rem_5rem] gap-3 border-b border-border/40 bg-muted/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+      <div className="hidden grid-cols-[minmax(0,1.6fr)_9rem_7rem_6rem_minmax(0,9rem)_4.75rem] gap-3 border-b border-border/40 bg-muted/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
         <span>{t('signalListTitle')}</span>
         <span>{t('signalListStatus')}</span>
         <span>{t('signalListDue')}</span>
@@ -111,7 +117,7 @@ export function SignalListView({
               key={signal.id}
               className="group px-3 py-3 transition-colors hover:bg-muted/20 lg:px-4"
             >
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.6fr)_9rem_7rem_6rem_9rem_5rem] lg:items-center lg:gap-3">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.6fr)_9rem_7rem_6rem_minmax(0,9rem)_4.75rem] lg:items-center lg:gap-3">
                 <div className="flex min-w-0 items-start gap-2.5">
                   <span
                     className={cn(
@@ -140,6 +146,12 @@ export function SignalListView({
                       )}
                     </span>
                   </button>
+                  {signal.assigneeIds.length > 0 ? (
+                    <ListAssigneeStack
+                      assigneeIds={signal.assigneeIds}
+                      className="hidden shrink-0 lg:flex"
+                    />
+                  ) : null}
                 </div>
 
                 <div className="lg:contents">
@@ -204,12 +216,12 @@ export function SignalListView({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 lg:block">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
+                    <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListBoard')}
                     </span>
                     {readOnly ? (
-                      <span className="text-sm text-muted-foreground">
+                      <span className="truncate text-sm text-muted-foreground">
                         {boardName}
                       </span>
                     ) : (
@@ -221,7 +233,7 @@ export function SignalListView({
                           })
                         }
                       >
-                        <SelectTrigger className="h-8 w-full max-w-[9rem] border-border/60 bg-background/80">
+                        <SelectTrigger className="h-8 w-full min-w-0 max-w-full border-border/60 bg-background/80 lg:max-w-[9rem]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -240,16 +252,19 @@ export function SignalListView({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 lg:justify-end">
+                  <div className="flex items-center justify-between gap-2 lg:col-start-6 lg:justify-end">
                     {signal.assigneeIds.length > 0 ? (
-                      <ListAssigneeStack assigneeIds={signal.assigneeIds} />
+                      <ListAssigneeStack
+                        assigneeIds={signal.assigneeIds}
+                        className="lg:hidden"
+                      />
                     ) : (
                       <span className="lg:hidden" />
                     )}
                     <SignalCardActions
                       signal={signal}
                       refresh={refresh}
-                      className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+                      className="shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
                     />
                   </div>
                 </div>

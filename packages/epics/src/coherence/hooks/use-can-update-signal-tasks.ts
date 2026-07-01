@@ -2,11 +2,7 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useJwt } from '@hypha-platform/core/client';
-import {
-  UserSpaceState,
-  useUserSpaceState,
-} from '../../spaces/hooks/use-user-space-state.web3.rpc';
-import { canInteractInSpace } from '../../spaces/utils/transparency-access';
+import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 
 export function useCanUpdateSignalTasks({
   spaceSlug,
@@ -20,17 +16,14 @@ export function useCanUpdateSignalTasks({
 } {
   const { isAuthenticated } = useAuthentication();
   const { jwt } = useJwt();
-  const { userState, isLoading } = useUserSpaceState({
+  const { canMutate, isLoading } = useCanMutateInSpace({
     spaceSlug,
-    spaceId: web3SpaceId || undefined,
+    spaceId: web3SpaceId,
   });
 
-  const canUpdateTasks =
-    isAuthenticated &&
-    Boolean(jwt) &&
-    (isLoading || canInteractInSpace(userState));
+  const canUpdateTasks = isAuthenticated && Boolean(jwt) && canMutate;
 
   return { canUpdateTasks, isLoading };
 }
 
-export { UserSpaceState };
+export { UserSpaceState } from '../../spaces/hooks/use-user-space-state.web3.rpc';
