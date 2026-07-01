@@ -169,7 +169,7 @@ export function ExploreSpaces({
   );
 
   const viewFromUrl = (params: URLSearchParams): NetworkMapView =>
-    params.get('view') === 'list' ? 'list' : 'map';
+    params.get('view') === 'map' ? 'map' : 'list';
 
   const [view, setViewState] = React.useState<NetworkMapView>(() =>
     enableNetworkMap ? viewFromUrl(searchParams) : 'list',
