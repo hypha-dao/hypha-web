@@ -16,6 +16,11 @@ import {
   MultiSelect,
   RequirementMark,
   RichTextEditor,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
@@ -30,12 +35,14 @@ import {
   COHERENCE_TYPE_OPTIONS,
   CoherenceTag,
   CoherenceType,
+  DEFAULT_SIGNAL_PROGRESS_STATUS,
   schemaCreateCoherenceForm,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
   useMe,
+  useSignalWorkflow,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
@@ -126,6 +133,20 @@ function getSignalTeamMembersFromRoom(options: {
   return { hasPolicy, memberMatrixUserIds: members };
 }
 
+function toDueDateInputValue(dueAt: Date | null | undefined): string {
+  if (!dueAt) return '';
+  const date = dueAt instanceof Date ? dueAt : new Date(dueAt);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+}
+
+function dueDateFromInputValue(value: string): Date | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const date = new Date(`${trimmed}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export const CreateSignalForm = ({
   spaceId,
   successfulUrl,
@@ -139,6 +160,7 @@ export const CreateSignalForm = ({
   const params = useParams<{ id?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const t = useTranslations('CoherenceTab');
+  const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
     (
@@ -274,7 +296,8 @@ export const CreateSignalForm = ({
           ) as CoherenceTag[])
         : [],
       dueAt: initialValues?.dueAt ?? null,
-      progressStatus: initialValues?.progressStatus,
+      progressStatus:
+        initialValues?.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
       board: initialValues?.board ?? null,
       assigneeIds: initialValues?.assigneeIds ?? [],
     }),
@@ -543,6 +566,10 @@ export const CreateSignalForm = ({
             type: data.type,
             priority: data.priority,
             tags: data.tags,
+            dueAt: data.dueAt ?? null,
+            progressStatus:
+              data.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
+            board: data.board ?? null,
           });
           if (updatedSignal?.roomId) {
             try {
@@ -889,6 +916,110 @@ export const CreateSignalForm = ({
                   </FormItem>
                 )}
               />
+            </section>
+            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="progressStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">
+                        {t('signalFormStatus')}
+                      </FormLabel>
+                      <Select
+                        value={field.value ?? DEFAULT_SIGNAL_PROGRESS_STATUS}
+                        onValueChange={field.onChange}
+                        disabled={isMutating}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(workflow?.statuses ?? []).map((status) => (
+                            <SelectItem key={status.slug} value={status.slug}>
+                              {status.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {t('signalFormStatusHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="board"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">
+                        {t('signalFormBoard')}
+                      </FormLabel>
+                      <Select
+                        value={field.value ?? '__none__'}
+                        onValueChange={(value) =>
+                          field.onChange(value === '__none__' ? null : value)
+                        }
+                        disabled={isMutating}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="__none__">
+                            {t('signalBoardUncategorized')}
+                          </SelectItem>
+                          {(workflow?.boards ?? [])
+                            .filter((board) => !board.archived)
+                            .map((board) => (
+                              <SelectItem key={board.slug} value={board.slug}>
+                                {board.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {t('signalFormBoardHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dueAt"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel className="text-foreground">
+                        {t('signalFormDueDate')}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          disabled={isMutating}
+                          value={toDueDateInputValue(field.value ?? null)}
+                          onChange={(event) =>
+                            field.onChange(
+                              dueDateFromInputValue(event.target.value),
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('signalFormDueDateHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </section>
             <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
               <FormField

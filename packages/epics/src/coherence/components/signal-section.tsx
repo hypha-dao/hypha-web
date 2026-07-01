@@ -216,7 +216,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
           readOnly={!canMutate}
-          onMoveBoard={(signal, board) => patchAndRefresh(signal, { board })}
+          onPatch={patchAndRefresh}
         />
       ) : viewMode === 'list' ? (
         <SignalListView
