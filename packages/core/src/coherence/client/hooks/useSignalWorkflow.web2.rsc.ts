@@ -23,6 +23,10 @@ export function useSignalWorkflow(spaceSlug?: string) {
       }
       return (await response.json()) as SignalWorkflowConfig;
     },
+    {
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
   );
 
   return {

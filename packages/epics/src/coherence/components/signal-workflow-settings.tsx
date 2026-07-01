@@ -59,6 +59,10 @@ function uniqueSlug(base: string, existing: Set<string>): string {
   return `${normalized}_${counter}`.slice(0, 64);
 }
 
+function workflowFingerprint(config: SignalWorkflowConfig): string {
+  return JSON.stringify(config);
+}
+
 type SignalWorkflowSettingsProps = {
   spaceSlug: string;
 };
@@ -78,11 +82,22 @@ export const SignalWorkflowSettings = React.forwardRef<
     structuredClone(DEFAULT_SIGNAL_WORKFLOW),
   );
   const [saveError, setSaveError] = React.useState<string | null>(null);
+  const syncedWorkflowFingerprint = React.useRef<string | null>(null);
+  const syncedSpaceSlug = React.useRef(spaceSlug);
 
   React.useEffect(() => {
-    if (workflow) {
-      setDraft(structuredClone(workflow));
+    if (syncedSpaceSlug.current !== spaceSlug) {
+      syncedSpaceSlug.current = spaceSlug;
+      syncedWorkflowFingerprint.current = null;
     }
+  }, [spaceSlug]);
+
+  React.useEffect(() => {
+    if (!workflow) return;
+    const fingerprint = workflowFingerprint(workflow);
+    if (syncedWorkflowFingerprint.current === fingerprint) return;
+    syncedWorkflowFingerprint.current = fingerprint;
+    setDraft(structuredClone(workflow));
   }, [workflow]);
 
   const moveItem = React.useCallback(
@@ -189,6 +204,7 @@ export const SignalWorkflowSettings = React.forwardRef<
     try {
       await updateWorkflow(prepared);
       setDraft(prepared);
+      syncedWorkflowFingerprint.current = workflowFingerprint(prepared);
       await refresh();
     } catch (error) {
       const message =

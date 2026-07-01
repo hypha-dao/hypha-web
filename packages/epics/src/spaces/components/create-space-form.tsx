@@ -506,14 +506,17 @@ export const SpaceForm = ({
   );
 
   const isSubmitting = isLoading || isSavingWorkflow;
+  const spaceConfigurationFormId = 'space-configuration-form';
 
   return (
     <Form {...form}>
-      <form
-        ref={formRef}
-        onSubmit={handleFormSubmit}
-        className={clsx('flex flex-col gap-5', isSubmitting && 'opacity-50')}
-      >
+      <div className="flex flex-col gap-5">
+        <form
+          id={label === 'configure' ? spaceConfigurationFormId : undefined}
+          ref={formRef}
+          onSubmit={handleFormSubmit}
+          className={clsx('flex flex-col gap-5', isSubmitting && 'opacity-50')}
+        >
         <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
           <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
             <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
@@ -1017,25 +1020,38 @@ export const SpaceForm = ({
             </Card>
           )}
         </div>
-        {label === 'configure' && spaceSlug ? (
-          <>
-            <Separator />
-            <SignalWorkflowSettings
-              ref={workflowSettingsRef}
-              spaceSlug={spaceSlug}
-            />
-          </>
+        {label !== 'configure' ? (
+          <div className="flex justify-end w-full">
+            <Button
+              type="submit"
+              variant={isSubmitting ? 'outline' : 'default'}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
+            </Button>
+          </div>
         ) : null}
-        <div className="flex justify-end w-full">
-          <Button
-            type="submit"
-            variant={isSubmitting ? 'outline' : 'default'}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
-          </Button>
-        </div>
       </form>
+      {label === 'configure' && spaceSlug ? (
+        <>
+          <Separator />
+          <SignalWorkflowSettings
+            ref={workflowSettingsRef}
+            spaceSlug={spaceSlug}
+          />
+          <div className="flex justify-end w-full">
+            <Button
+              type="submit"
+              form={spaceConfigurationFormId}
+              variant={isSubmitting ? 'outline' : 'default'}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? resolvedSubmitLoadingLabel : resolvedSubmitLabel}
+            </Button>
+          </div>
+        </>
+      ) : null}
+      </div>
     </Form>
   );
 };
