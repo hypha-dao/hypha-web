@@ -10,7 +10,11 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { SignalTaskCard } from './signal-task-card';
 import { SignalDropPlaceholder } from './signal-drop-placeholder';
-import { statusColorDotClass } from '../utils/signal-priority-styles';
+import {
+  statusColorDotClass,
+  statusColumnTopBorderClass,
+  statusHeaderTintClass,
+} from '../utils/signal-priority-styles';
 import {
   getSignalDragSlug,
   handleColumnDragOver,
@@ -144,13 +148,19 @@ export function SignalSwimlaneView({
                   <div
                     key={dropKey}
                     className={cn(
-                      'flex min-w-[15.5rem] flex-1 flex-col rounded-xl border bg-muted/10 transition-[border-color,box-shadow]',
+                      'flex min-w-[15.5rem] flex-1 flex-col rounded-xl border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
+                      statusColumnTopBorderClass(status.color),
                       isDropTarget
                         ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'
                         : 'border-border/40',
                     )}
                   >
-                    <div className="flex items-center justify-between gap-2 border-b border-border/30 px-2.5 py-2">
+                    <div
+                      className={cn(
+                        'flex items-center justify-between gap-2 border-b border-border/30 px-2.5 py-2',
+                        statusHeaderTintClass(status.color),
+                      )}
+                    >
                       <div className="flex min-w-0 items-center gap-1.5">
                         <span
                           className={cn(
@@ -197,17 +207,22 @@ export function SignalSwimlaneView({
                       onDrop={
                         readOnly
                           ? undefined
-                          : async (event) => {
+                          : (event) => {
                               event.preventDefault();
                               event.stopPropagation();
                               const slug = getSignalDragSlug(
                                 event,
                                 draggingSlugRef.current,
                               );
-                              clearDragState();
-                              if (!slug) return;
+                              if (!slug) {
+                                clearDragState();
+                                return;
+                              }
                               const signal = resolveDraggingSignal(slug);
-                              if (!signal) return;
+                              if (!signal) {
+                                clearDragState();
+                                return;
+                              }
 
                               const patch: {
                                 progressStatus?: string;
@@ -219,8 +234,17 @@ export function SignalSwimlaneView({
                               if (signal.board !== laneBoard) {
                                 patch.board = laneBoard;
                               }
-                              if (Object.keys(patch).length === 0) return;
-                              await onPatch(signal, patch);
+                              if (Object.keys(patch).length === 0) {
+                                clearDragState();
+                                return;
+                              }
+                              void onPatch(signal, patch).catch((error) => {
+                                console.error(
+                                  '[SignalSwimlaneView] Failed to move signal',
+                                  error,
+                                );
+                              });
+                              clearDragState();
                             }
                       }
                     >

@@ -16,7 +16,7 @@ import { useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalCreatorMeta } from './signal-creator-meta';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
-import { priorityDotClass } from '../utils/signal-priority-styles';
+import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonById } from '@hypha-platform/core/client';
 
@@ -144,7 +144,10 @@ export function SignalListView({
           return (
             <li
               key={signal.id}
-              className="group px-3 py-3 transition-colors hover:bg-muted/20 lg:px-4"
+              className={cn(
+                'group border-l-[3px] px-3 py-3 transition-colors hover:bg-muted/20 lg:px-4',
+                priorityLeftBorderEdgeClass(signal.priority),
+              )}
             >
               <div
                 className={cn(
@@ -153,13 +156,6 @@ export function SignalListView({
                 )}
               >
                 <div className="flex min-w-0 items-start gap-2.5">
-                  <span
-                    className={cn(
-                      'mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ring-2',
-                      priorityDotClass(signal.priority),
-                    )}
-                    aria-hidden
-                  />
                   <button
                     type="button"
                     className="min-w-0 flex-1 text-left"

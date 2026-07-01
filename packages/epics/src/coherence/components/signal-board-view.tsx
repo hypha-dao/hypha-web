@@ -14,7 +14,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { SignalTaskCard } from './signal-task-card';
 import { SignalDropPlaceholder } from './signal-drop-placeholder';
-import { statusColorDotClass } from '../utils/signal-priority-styles';
+import { statusColorDotClass, statusColumnTopBorderClass, statusHeaderTintClass } from '../utils/signal-priority-styles';
 import {
   getSignalDragSlug,
   handleColumnDragOver,
@@ -192,14 +192,20 @@ export function SignalBoardView({
             <div
               key={status.slug}
               className={cn(
-                'flex flex-col rounded-2xl border bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
+                'flex flex-col rounded-2xl border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
+                statusColumnTopBorderClass(status.color),
                 isMobile ? 'w-full min-w-0' : 'min-w-[17.5rem] flex-1',
                 isDropTarget
                   ? 'border-accent-8/70 ring-2 ring-accent-9/30 shadow-md'
                   : 'border-border/50',
               )}
             >
-              <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
+              <div
+                className={cn(
+                  'flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5',
+                  statusHeaderTintClass(status.color),
+                )}
+              >
                 <div className="flex min-w-0 items-center gap-2">
                   <span
                     className={cn(
@@ -246,20 +252,31 @@ export function SignalBoardView({
                 onDrop={
                   readOnly
                     ? undefined
-                    : async (event) => {
+                    : (event) => {
                         event.preventDefault();
                         event.stopPropagation();
                         const slug = getSignalDragSlug(
                           event,
                           draggingSlugRef.current,
                         );
-                        clearDragState();
-                        if (!slug) return;
-                        const signal = resolveDraggingSignal(slug);
-                        if (!signal || signal.progressStatus === status.slug) {
+                        if (!slug) {
+                          clearDragState();
                           return;
                         }
-                        await onMoveStatus(signal, status.slug);
+                        const signal = resolveDraggingSignal(slug);
+                        if (!signal || signal.progressStatus === status.slug) {
+                          clearDragState();
+                          return;
+                        }
+                        void onMoveStatus(signal, status.slug).catch(
+                          (error) => {
+                            console.error(
+                              '[SignalBoardView] Failed to move signal',
+                              error,
+                            );
+                          },
+                        );
+                        clearDragState();
                       }
                 }
               >

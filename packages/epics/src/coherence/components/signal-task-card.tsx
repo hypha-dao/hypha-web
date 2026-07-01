@@ -18,7 +18,7 @@ import { SignalCardActions } from './signal-card-actions';
 import { SignalCreatorMeta } from './signal-creator-meta';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
-  priorityDotClass,
+  priorityLeftBorderClass,
   statusColorDotClass,
 } from '../utils/signal-priority-styles';
 import {
@@ -164,7 +164,16 @@ export function SignalTaskCard({
         className,
       )}
     >
-      <div className="relative px-2.5 py-2.5">
+      <div
+        className={cn(
+          'absolute inset-y-0 left-0 w-1 rounded-l-xl',
+          priorityLeftBorderClass(signal.priority),
+        )}
+        title={priorityLabel}
+        aria-label={priorityLabel}
+      />
+
+      <div className="relative pl-3 pr-2.5 py-2.5">
         <div className="mb-1.5 flex min-h-6 items-center justify-between gap-1">
           <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
             <Badge
@@ -196,19 +205,9 @@ export function SignalTaskCard({
           ) : null}
         </div>
 
-        <div className="flex min-w-0 items-start gap-2">
-          <span
-            className={cn(
-              'mt-1.5 h-2 w-2 shrink-0 rounded-full ring-2',
-              priorityDotClass(signal.priority),
-            )}
-            title={priorityLabel}
-            aria-label={priorityLabel}
-          />
-          <p className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-snug tracking-tight text-foreground">
-            {signal.title}
-          </p>
-        </div>
+        <p className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground">
+          {signal.title}
+        </p>
 
         <SignalCreatorMeta
           creatorDisplayName={creatorDisplayName}
