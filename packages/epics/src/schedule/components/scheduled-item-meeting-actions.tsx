@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Check, Copy, ExternalLink, Video } from 'lucide-react';
 import {
   resolveScheduledItemJoinUrl,
+  sanitizeJoinHref,
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
@@ -29,11 +30,13 @@ export function ScheduledItemMeetingActions({
   const [copied, setCopied] = React.useState(false);
   const joinUrl = React.useMemo(
     () =>
-      resolveScheduledItemJoinUrl(
-        item,
-        lang,
-        spaceSlug,
-        typeof window !== 'undefined' ? window.location.origin : undefined,
+      sanitizeJoinHref(
+        resolveScheduledItemJoinUrl(
+          item,
+          lang,
+          spaceSlug,
+          typeof window !== 'undefined' ? window.location.origin : undefined,
+        ),
       ),
     [item, lang, spaceSlug],
   );

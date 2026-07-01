@@ -28,7 +28,10 @@ export function resolveFullCalendarLocale(locale: string): LocaleInput {
 export function getCalendarWeekStartsOn(
   locale: string,
 ): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
-  const dow = resolveFullCalendarLocale(locale).week?.dow;
+  const resolved = resolveFullCalendarLocale(locale) as LocaleInput & {
+    week?: { dow?: number };
+  };
+  const dow = resolved.week?.dow;
   if (typeof dow === 'number' && dow >= 0 && dow <= 6) {
     return dow as 0 | 1 | 2 | 3 | 4 | 5 | 6;
   }

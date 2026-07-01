@@ -29,6 +29,7 @@ export {
   buildScheduledItemJoinPath,
   isJoinableScheduledItem,
   resolveScheduledItemJoinUrl,
+  sanitizeJoinHref,
 } from './meeting-url';
 export { parseScheduledItemId } from './parse-scheduled-item-id';
 export type {
