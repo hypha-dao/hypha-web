@@ -56,6 +56,7 @@ export default function Agreements() {
   const {
     proposalDetails,
     isLoading: isLoadingProposal,
+    error: proposalError,
     refreshUntilVoteApplied,
   } = useProposalDetailsWeb3Rpc({
     proposalId: document?.web3ProposalId as number,
@@ -63,9 +64,11 @@ export default function Agreements() {
   // While the document says this is a proposal (has a web3ProposalId) but the
   // on-chain details haven't arrived yet, keep the detail view in its loading
   // state. Otherwise quorum/unity/vote bars briefly render as 0 and then jump
-  // to their real values - the visible "flicker" when opening the modal.
+  // to their real values - the visible "flicker" when opening the modal. Stop
+  // waiting once the RPC read errors, otherwise the skeleton would be stuck
+  // forever (proposalDetails never arrives) instead of surfacing the failure.
   const isProposalDataPending =
-    document?.web3ProposalId != null && !proposalDetails;
+    document?.web3ProposalId != null && !proposalDetails && !proposalError;
   const { mutate: votersMutate, myVote } = useMyVote(documentSlug);
   const {
     handleAccept,
