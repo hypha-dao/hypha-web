@@ -14,6 +14,8 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
+import { SignalCreatorMeta } from './signal-creator-meta';
+import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityDotClass } from '../utils/signal-priority-styles';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonById } from '@hypha-platform/core/client';
@@ -71,6 +73,28 @@ function ListAssigneeAvatar({ personId }: { personId: number }) {
   );
 }
 
+function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
+  const { creatorDisplayName, createdAtRelative } = useSignalCreatorMeta({
+    creatorId: signal.creatorId,
+    createdAt: signal.createdAt,
+    description: signal.description,
+    title: signal.title,
+    tags: signal.tags,
+  });
+
+  return (
+    <SignalCreatorMeta
+      creatorDisplayName={creatorDisplayName}
+      createdAtRelative={createdAtRelative}
+      className="mt-0.5"
+    />
+  );
+}
+
+/** Shared desktop list grid — title flexes; metadata columns stay compact but readable. */
+const SIGNAL_LIST_GRID_CLASS =
+  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_5.25rem_4.5rem_minmax(8.5rem,10.5rem)_3.5rem] lg:gap-2';
+
 export function SignalListView({
   signals,
   workflow,
@@ -83,7 +107,12 @@ export function SignalListView({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
-      <div className="hidden grid-cols-[minmax(0,1.6fr)_9rem_7rem_6rem_minmax(0,9rem)_4.75rem] gap-3 border-b border-border/40 bg-muted/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid">
+      <div
+        className={cn(
+          'hidden gap-2 border-b border-border/40 bg-muted/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid',
+          SIGNAL_LIST_GRID_CLASS,
+        )}
+      >
         <span>{t('signalListTitle')}</span>
         <span>{t('signalListStatus')}</span>
         <span>{t('signalListDue')}</span>
@@ -117,7 +146,12 @@ export function SignalListView({
               key={signal.id}
               className="group px-3 py-3 transition-colors hover:bg-muted/20 lg:px-4"
             >
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.6fr)_9rem_7rem_6rem_minmax(0,9rem)_4.75rem] lg:items-center lg:gap-3">
+              <div
+                className={cn(
+                  'grid grid-cols-1 gap-3 lg:items-center',
+                  SIGNAL_LIST_GRID_CLASS,
+                )}
+              >
                 <div className="flex min-w-0 items-start gap-2.5">
                   <span
                     className={cn(
@@ -145,6 +179,7 @@ export function SignalListView({
                           | 'types.Proposal',
                       )}
                     </span>
+                    <SignalListCreatorMeta signal={signal} />
                   </button>
                   {signal.assigneeIds.length > 0 ? (
                     <ListAssigneeStack
@@ -172,7 +207,7 @@ export function SignalListView({
                           onPatch(signal, { progressStatus: value })
                         }
                       >
-                        <SelectTrigger className="h-8 w-full max-w-[9rem] border-border/60 bg-background/80">
+                        <SelectTrigger className="h-8 w-full min-w-0 truncate border-border/60 bg-background/80">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -211,7 +246,7 @@ export function SignalListView({
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListPriority')}
                     </span>
-                    <span className="text-sm capitalize text-muted-foreground">
+                    <span className="truncate text-sm capitalize text-muted-foreground">
                       {signal.priority}
                     </span>
                   </div>
@@ -233,7 +268,7 @@ export function SignalListView({
                           })
                         }
                       >
-                        <SelectTrigger className="h-8 w-full min-w-0 max-w-full border-border/60 bg-background/80 lg:max-w-[9rem]">
+                        <SelectTrigger className="h-8 w-full min-w-0 truncate border-border/60 bg-background/80">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

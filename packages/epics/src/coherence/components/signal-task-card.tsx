@@ -15,12 +15,13 @@ import { Badge } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { SignalCardActions } from './signal-card-actions';
+import { SignalCreatorMeta } from './signal-creator-meta';
+import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   priorityDotClass,
   statusColorDotClass,
 } from '../utils/signal-priority-styles';
 import {
-  signalTagBadgeStyle,
   SIGNAL_TAG_BADGE_CLASS,
 } from '../utils/signal-tag-badge-styles';
 
@@ -127,6 +128,14 @@ export function SignalTaskCard({
       | 'priorities.low',
   );
 
+  const { creatorDisplayName, createdAtRelative } = useSignalCreatorMeta({
+    creatorId: signal.creatorId,
+    createdAt: signal.createdAt,
+    description: signal.description,
+    title: signal.title,
+    tags: signal.tags,
+  });
+
   return (
     <div
       role={onClick ? 'button' : undefined}
@@ -201,6 +210,12 @@ export function SignalTaskCard({
           </p>
         </div>
 
+        <SignalCreatorMeta
+          creatorDisplayName={creatorDisplayName}
+          createdAtRelative={createdAtRelative}
+          className="mt-1"
+        />
+
         <div className="mt-2.5 flex items-end justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {hasValidDue ? (
@@ -228,10 +243,9 @@ export function SignalTaskCard({
             {visibleTags.map((tag) => (
               <Badge
                 key={tag}
-                colorVariant="neutral"
-                variant="outline"
-                className={cn(SIGNAL_TAG_BADGE_CLASS, 'max-w-[5.5rem] text-[10px]')}
-                style={signalTagBadgeStyle}
+                colorVariant="accent"
+                variant="soft"
+                className={cn(SIGNAL_TAG_BADGE_CLASS, 'text-[10px]')}
               >
                 {tagDisplayLabel(tag)}
               </Badge>
