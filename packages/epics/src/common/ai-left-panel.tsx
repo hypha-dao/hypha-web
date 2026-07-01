@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
+  CalendarDays,
   HandCoins,
   Coins,
   FileCheck2,
@@ -551,6 +552,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         | 'ecosystem-navigation'
         | 'agreements'
         | 'members'
+        | 'calendar'
         | 'treasury'
         | 'rewards'
         | 'memory'
@@ -594,6 +596,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         icon: Radio,
         href: `/${lang}/dho/${spaceSlug}/coherence`,
         active: isSectionActive('coherence'),
+      },
+      {
+        key: 'calendar',
+        label: tCommon('Calendar'),
+        icon: CalendarDays,
+        href: `/${lang}/dho/${spaceSlug}/calendar`,
+        active: isSectionActive('calendar'),
       },
       {
         key: 'agreements',

@@ -379,6 +379,41 @@
       "when": 1781618688647,
       "tag": "0053_space_geo_location",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1781700000000,
+      "tag": "0054_space_scheduled_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1781800000000,
+      "tag": "0055_scheduled_item_recurrence_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1781900000000,
+      "tag": "0056_scheduled_item_type_channel_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1782000000000,
+      "tag": "0057_scheduled_item_booking_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1782100000000,
+      "tag": "0058_scheduled_item_integrity_checks",
+      "breakpoints": true
     }
   ]
 }
