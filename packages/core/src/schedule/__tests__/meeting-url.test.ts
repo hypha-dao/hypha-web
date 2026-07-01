@@ -45,4 +45,18 @@ describe('meeting-url helpers', () => {
       ),
     ).toBe('https://meet.example.com/room');
   });
+
+  it('rejects unsafe meeting URL schemes', () => {
+    expect(
+      buildScheduledItemJoinPath(
+        {
+          type: 'meeting',
+          matrixAutoLink: false,
+          meetingUrl: 'javascript:alert(1)',
+        },
+        'en',
+        'demo-space',
+      ),
+    ).toBeNull();
+  });
 });
