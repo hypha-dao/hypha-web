@@ -14,6 +14,7 @@ import { findScheduledItemById } from './queries';
 import { safeParseMergedScheduledItemUpdate } from './merge-scheduled-item-update';
 import { assertCoherenceInSpace } from './assert-coherence-in-space';
 import { schemaCreateScheduledItem } from '../validation';
+import { parseScheduledItemId } from '../parse-scheduled-item-id';
 
 async function assertScheduledItemSpaceAccess(
   authToken: string,
@@ -105,8 +106,12 @@ export async function updateScheduledItemAction(
     throw new Error('Scheduled item id is required');
   }
 
-  const incoming = data as Record<string, unknown> & { id: number };
-  const existing = await findScheduledItemById({ id: incoming.id }, { db });
+  const incoming = data as Record<string, unknown>;
+  const id = parseScheduledItemId(String(incoming.id ?? ''));
+  if (id == null) {
+    throw new Error('Scheduled item id is invalid');
+  }
+  const existing = await findScheduledItemById({ id }, { db });
   if (!existing) {
     throw new Error('Scheduled item not found');
   }
@@ -121,7 +126,7 @@ export async function updateScheduledItemAction(
   const parsed = safeParseMergedScheduledItemUpdate(
     existing,
     incoming,
-    incoming.id,
+    id,
   );
   if (!parsed.success) {
     throw new Error(
@@ -158,6 +163,11 @@ export async function deleteScheduledItemAction(
     throw new Error('authToken is required to delete a scheduled item');
   }
 
+  const parsedId = parseScheduledItemId(String(id ?? ''));
+  if (parsedId == null) {
+    throw new Error('Scheduled item id is invalid');
+  }
+
   await assertScheduledItemSpaceAccess(authToken, spaceSlug);
 
   const authDb = getDb({ authToken });
@@ -166,7 +176,7 @@ export async function deleteScheduledItemAction(
     throw new Error('Could not resolve authenticated user');
   }
 
-  const existing = await findScheduledItemById({ id }, { db });
+  const existing = await findScheduledItemById({ id: parsedId }, { db });
   if (!existing) {
     throw new Error('Scheduled item not found');
   }
@@ -178,5 +188,5 @@ export async function deleteScheduledItemAction(
     throw new Error('Scheduled item not found in this space');
   }
 
-  return deleteScheduledItemById({ id }, { db });
+  return deleteScheduledItemById({ id: parsedId }, { db });
 }

@@ -1,5 +1,4 @@
 const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
-const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
 
 function normalizeMatrixUserIds(ids: unknown): string[] {
   if (!Array.isArray(ids)) return [];
@@ -37,23 +36,15 @@ export function getSignalTeamMembersFromRoom(options: {
     if (!content || typeof content !== 'object') continue;
     const msgtype =
       typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-    const body = typeof content.body === 'string' ? content.body.trim() : '';
-    const eventKind =
-      msgtype === SIGNAL_TEAM_EVENT_KIND ||
-      body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
-        ? SIGNAL_TEAM_EVENT_KIND
-        : null;
-    if (!eventKind) continue;
+    if (msgtype !== SIGNAL_TEAM_EVENT_KIND) continue;
     const eventSlug =
       typeof content.coherenceSlug === 'string'
         ? content.coherenceSlug.trim()
         : '';
     if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
     const nextMembers = normalizeMatrixUserIds(content.memberMatrixUserIds);
-    if (nextMembers.length > 0) {
-      members = nextMembers;
-      hasPolicy = true;
-    }
+    members = nextMembers;
+    hasPolicy = true;
   }
   return { hasPolicy, memberMatrixUserIds: members };
 }

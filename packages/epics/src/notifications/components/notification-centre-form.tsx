@@ -98,8 +98,8 @@ export const NotificationCentreForm = ({
       meetingNotificationsConsent: configuration
         ? typeof configuration.meetingNotificationsConsent === 'boolean'
           ? getSwitch(configuration.meetingNotificationsConsent)
-          : 'yes'
-        : 'yes',
+          : 'no'
+        : 'no',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS,
     },
     mode: 'onChange',
@@ -120,7 +120,7 @@ export const NotificationCentreForm = ({
       meetingNotificationsConsent:
         typeof configuration.meetingNotificationsConsent === 'boolean'
           ? getSwitch(configuration.meetingNotificationsConsent)
-          : 'yes',
+          : 'no',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
         const sub = configuration.subscriptions?.find(
           (s) => s.name === subscription.tagName,

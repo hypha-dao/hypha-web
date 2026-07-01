@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/core/client';
 import {
   Button,
+  ConfirmDialog,
   Input,
   Label,
   Select,
@@ -935,7 +936,9 @@ export function ScheduledItemForm({
         ) : null}
 
         {showCallFields ? (
-          <p className="text-xs text-muted-foreground">{t('invitationSentHint')}</p>
+          <p className="text-xs text-muted-foreground">
+            {t('invitationSentHint')}
+          </p>
         ) : null}
 
         <div className="flex flex-col gap-2">
@@ -981,16 +984,23 @@ export function ScheduledItemForm({
 
         <div className="sticky bottom-0 z-[1] -mx-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/80 bg-background-2/95 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7 lg:px-7">
           {mode === 'edit' && initialItem ? (
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="error"
-              disabled={isSubmitting || isDeleting}
-              onClick={() => void handleDelete()}
+            <ConfirmDialog
+              title={t('deleteConfirmTitle')}
+              description={t('deleteConfirm')}
+              customAcceptButtonText={t('deleteConfirmAction')}
+              customRejectButtonText={t('cancel')}
+              onAcceptClicked={() => void handleDelete()}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {isDeleting ? t('deleting') : t('delete')}
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="error"
+                disabled={isSubmitting || isDeleting}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isDeleting ? t('deleting') : t('delete')}
+              </Button>
+            </ConfirmDialog>
           ) : (
             <span />
           )}

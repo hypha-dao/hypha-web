@@ -61,6 +61,7 @@ import {
 import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
+import { toLocalDueDateInputValue } from '../utils/signal-due-date';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -134,13 +135,6 @@ function getSignalTeamMembersFromRoom(options: {
     }
   }
   return { hasPolicy, memberMatrixUserIds: members };
-}
-
-function toDueDateInputValue(dueAt: Date | null | undefined): string {
-  if (!dueAt) return '';
-  const date = dueAt instanceof Date ? dueAt : new Date(dueAt);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toISOString().slice(0, 10);
 }
 
 function dueDateFromInputValue(value: string): Date | null {
@@ -1029,7 +1023,7 @@ export const CreateSignalForm = ({
                         <Input
                           type="date"
                           disabled={isMutating}
-                          value={toDueDateInputValue(field.value ?? null)}
+                          value={toLocalDueDateInputValue(field.value ?? null)}
                           onChange={(event) =>
                             field.onChange(
                               dueDateFromInputValue(event.target.value),

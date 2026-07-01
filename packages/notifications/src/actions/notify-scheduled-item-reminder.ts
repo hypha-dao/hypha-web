@@ -93,6 +93,11 @@ export async function notifyScheduledItemReminder(
 </div>`;
   const textBody = `${title} in ${spaceTitle} starts at ${whenLabel}. Join: ${url}`;
 
+  const meetingConsentTags =
+    input.item.type === 'call' || input.item.type === 'meeting'
+      ? { [TAG_MEETING_CONSENT]: 'true' as const }
+      : undefined;
+
   let sent = 0;
 
   if (input.channels.includes('push')) {
@@ -101,7 +106,7 @@ export async function notifyScheduledItemReminder(
       headings: { en: heading },
       contents: { en: pushBody },
       url: pushUrl,
-      requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
+      requiredTags: meetingConsentTags,
     });
     sent += 1;
   }
@@ -111,7 +116,7 @@ export async function notifyScheduledItemReminder(
       usernames: input.memberSlugs,
       subject: heading,
       body,
-      requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
+      requiredTags: meetingConsentTags,
     });
     sent += 1;
   }
