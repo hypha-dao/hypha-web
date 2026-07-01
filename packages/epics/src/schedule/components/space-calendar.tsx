@@ -5,13 +5,15 @@ import './space-calendar.css';
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import type {
+  CalendarApi,
   DateSelectArg,
   DatesSetArg,
+  DayHeaderContentArg,
   EventClickArg,
+  EventContentArg,
   EventDropArg,
   EventInput,
   EventMountArg,
-  CalendarApi,
 } from '@fullcalendar/core';
 import type { EventResizeDoneArg } from '@fullcalendar/interaction';
 import {
@@ -21,6 +23,7 @@ import {
   format as formatDate,
   startOfMonth,
   startOfWeek,
+  subDays,
   subMonths,
 } from 'date-fns';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -31,6 +34,7 @@ import {
   getEventDurationMs,
   getScheduledItemTypeColor,
   revalidateScheduledItems,
+  SCHEDULED_ITEM_TYPES,
   toFullCalendarRruleInput,
   useScheduledItemMutations,
   useScheduledItems,
@@ -44,6 +48,12 @@ import {
   getCalendarWeekStartsOn,
   resolveFullCalendarLocale,
 } from '../utils/fullcalendar-locale';
+import {
+  calendarLayoutForView,
+  escapeCalendarHtml,
+  viewToModifierClass,
+  type CalendarView,
+} from '../utils/calendar-view-config';
 import { ScheduledItemEventSheet } from './scheduled-item-event-sheet';
 
 const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
@@ -56,11 +66,15 @@ const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
   ),
 });
 
-type CalendarView =
-  | 'dayGridMonth'
-  | 'timeGridWeek'
-  | 'timeGridDay'
-  | 'listWeek';
+const TYPE_LEGEND: {
+  type: (typeof SCHEDULED_ITEM_TYPES)[number];
+  key: 'type_call' | 'type_event' | 'type_meeting' | 'type_booking';
+}[] = [
+  { type: 'call', key: 'type_call' },
+  { type: 'event', key: 'type_event' },
+  { type: 'meeting', key: 'type_meeting' },
+  { type: 'booking', key: 'type_booking' },
+];
 
 function toCalendarEvent(item: ScheduledItem): EventInput {
   const accentColor = getScheduledItemTypeColor(item.type, item.color);
@@ -240,6 +254,84 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     [range, view, anchorDate, weekStartsOn],
   );
 
+  const calendarLayout = React.useMemo(
+    () => calendarLayoutForView(view),
+    [view],
+  );
+
+  const renderDayHeader = React.useCallback(
+    (arg: DayHeaderContentArg) => {
+      if (view === 'dayGridMonth') {
+        const label = formatDate(arg.date, 'EEE', { locale: dateFnsLocale });
+        return {
+          html: `<span class="hypha-cal-month-head">${escapeCalendarHtml(
+            label,
+          )}</span>`,
+        };
+      }
+
+      const dow = formatDate(arg.date, 'EEE', { locale: dateFnsLocale });
+      const dayNum = formatDate(arg.date, 'd');
+      const todayClass = arg.isToday ? ' hypha-cal-col-head--today' : '';
+      return {
+        html: `<div class="hypha-cal-col-head${todayClass}">
+          <span class="hypha-cal-col-head__dow">${escapeCalendarHtml(
+            dow,
+          )}</span>
+          <span class="hypha-cal-col-head__num">${escapeCalendarHtml(
+            dayNum,
+          )}</span>
+        </div>`,
+      };
+    },
+    [dateFnsLocale, view],
+  );
+
+  const renderEventContent = React.useCallback(
+    (arg: EventContentArg) => {
+      if (arg.view.type === 'dayGridMonth') {
+        return true;
+      }
+
+      const item = isScheduledItem(arg.event.extendedProps.scheduledItem)
+        ? arg.event.extendedProps.scheduledItem
+        : null;
+      const typeLabel = item ? t(`type_${item.type}` as 'type_call') : '';
+      const title = escapeCalendarHtml(arg.event.title);
+      const time = escapeCalendarHtml(arg.timeText);
+
+      if (arg.view.type === 'listWeek') {
+        return {
+          html: `<article class="hypha-cal-agenda-card">
+            <div class="hypha-cal-agenda-card__time">${time}</div>
+            <div class="hypha-cal-agenda-card__body">
+              ${
+                typeLabel
+                  ? `<span class="hypha-cal-agenda-card__type">${escapeCalendarHtml(
+                      typeLabel,
+                    )}</span>`
+                  : ''
+              }
+              <span class="hypha-cal-agenda-card__title">${title}</span>
+            </div>
+          </article>`,
+        };
+      }
+
+      return {
+        html: `<div class="hypha-cal-time-event">
+          ${
+            time
+              ? `<span class="hypha-cal-time-event__time">${time}</span>`
+              : ''
+          }
+          <span class="hypha-cal-time-event__title">${title}</span>
+        </div>`,
+      };
+    },
+    [t],
+  );
+
   const openCreate = (startsAt: Date, endsAt: Date, allDay: boolean) => {
     router.push(
       buildNewScheduledItemPath(lang, spaceSlug, { startsAt, endsAt, allDay }),
@@ -394,30 +486,45 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       ? formatDate(anchorDate, 'EEEE, MMMM d, yyyy', { locale: dateFnsLocale })
       : `${formatDate(displayRange.from, 'MMM d', {
           locale: dateFnsLocale,
-        })} – ${formatDate(displayRange.to, 'MMM d, yyyy', {
-          locale: dateFnsLocale,
-        })}`;
+        })} – ${formatDate(
+          range ? subDays(range.to, 1) : displayRange.to,
+          'MMM d, yyyy',
+          { locale: dateFnsLocale },
+        )}`;
+
+  const headerContextLabel =
+    view === 'dayGridMonth'
+      ? formatDate(anchorDate, 'yyyy', { locale: dateFnsLocale })
+      : view === 'timeGridDay'
+      ? formatDate(anchorDate, 'EEEE', { locale: dateFnsLocale })
+      : t('viewWeek');
 
   const itemCount = scheduledItems?.length;
 
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-7 font-semibold tracking-tight text-foreground">
-          {t('title')}
-          {typeof itemCount === 'number' ? (
-            <span className="ml-2 text-5 font-medium text-muted-foreground">
-              | {intlFormat.number(itemCount)}
-            </span>
-          ) : isLoading ? (
-            <span className="ml-2 text-5 font-medium text-muted-foreground">
-              | …
-            </span>
-          ) : null}
-        </h1>
+    <div className="flex flex-col gap-5">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-7 font-semibold tracking-tight text-foreground">
+            {t('title')}
+            {typeof itemCount === 'number' ? (
+              <span className="ml-2 text-5 font-medium text-muted-foreground">
+                | {intlFormat.number(itemCount)}
+              </span>
+            ) : isLoading ? (
+              <span className="ml-2 text-5 font-medium text-muted-foreground">
+                | …
+              </span>
+            ) : null}
+          </h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            {t('subtitle')}
+          </p>
+        </div>
         {isAuthenticated ? (
           <Button
             type="button"
+            className="shadow-[0_8px_24px_-12px_hsl(var(--accent-9)/0.65)]"
             onClick={() =>
               openCreate(new Date(), new Date(Date.now() + 3_600_000), false)
             }
@@ -428,103 +535,164 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         ) : null}
       </header>
 
-      <div className="hypha-space-calendar rounded-2xl border border-border/50 bg-gradient-to-b from-card via-card/98 to-muted/15 p-3 shadow-sm md:p-4">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              size="icon"
-              aria-label={t('previous')}
-              onClick={() => shiftAnchor(-1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              onClick={() => {
-                const today = new Date();
-                setAnchorDate(today);
-                syncCalendarDate(today);
+      <div
+        className={cn(
+          'hypha-space-calendar relative overflow-hidden rounded-2xl border border-border/45 p-1 shadow-[0_1px_0_hsl(var(--foreground)/0.04)_inset,0_20px_48px_-28px_hsl(var(--accent-9)/0.45)]',
+          viewToModifierClass(view),
+        )}
+      >
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--accent-9)/0.14),transparent_70%)]"
+          aria-hidden
+        />
+        <div className="relative rounded-[calc(1rem-4px)] border border-border/35 bg-card/75 p-3 backdrop-blur-sm md:p-4">
+          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center rounded-xl border border-border/50 bg-muted/20 p-0.5 shadow-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  aria-label={t('previous')}
+                  onClick={() => shiftAnchor(-1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  className="h-8 rounded-lg px-3 text-xs font-semibold uppercase tracking-wide"
+                  onClick={() => {
+                    const today = new Date();
+                    setAnchorDate(today);
+                    syncCalendarDate(today);
+                  }}
+                >
+                  {t('today')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  aria-label={t('next')}
+                  onClick={() => shiftAnchor(1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="flex min-w-0 items-center gap-3 pl-1">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-accent-8/25 bg-gradient-to-br from-accent-3/80 to-accent-2/30 text-accent-11 shadow-sm">
+                  <CalendarDays className="size-5" aria-hidden />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    {headerContextLabel}
+                  </p>
+                  <p className="truncate text-lg font-semibold tracking-tight text-foreground md:text-xl">
+                    {headerLabel}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Tabs
+              value={view}
+              onValueChange={(value) => {
+                const nextView = value as CalendarView;
+                setView(nextView);
+                syncCalendarView(nextView);
               }}
             >
-              {t('today')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              colorVariant="neutral"
-              size="icon"
-              aria-label={t('next')}
-              onClick={() => shiftAnchor(1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <div className="ml-2 flex items-center gap-2 text-base font-semibold tracking-tight">
-              <CalendarDays className="h-4 w-4 text-accent-11" />
-              <span>{headerLabel}</span>
-            </div>
+              <TabsList
+                triggerVariant="switch"
+                className="w-fit border border-border/40 bg-muted/25 p-0.5 shadow-inner"
+              >
+                {viewButtons.map(({ id, label }) => (
+                  <TabsTrigger
+                    key={id}
+                    value={id}
+                    variant="switch"
+                    className="px-3.5 text-xs font-semibold uppercase tracking-wide"
+                  >
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           </div>
 
-          <Tabs
-            value={view}
-            onValueChange={(value) => {
-              const nextView = value as CalendarView;
-              setView(nextView);
-              syncCalendarView(nextView);
-            }}
-          >
-            <TabsList triggerVariant="switch" className="w-fit">
-              {viewButtons.map(({ id, label }) => (
-                <TabsTrigger key={id} value={id} variant="switch">
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/35 pb-4">
+            {TYPE_LEGEND.map(({ type, key }) => (
+              <span
+                key={type}
+                className="inline-flex items-center gap-1.5 text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                <span
+                  className={`hypha-cal-legend-dot hypha-cal-legend-dot--${type}`}
+                  aria-hidden
+                />
+                {t(key)}
+              </span>
+            ))}
+          </div>
 
-        <div
-          className={cn(
-            'relative min-h-[520px] overflow-hidden rounded-xl border border-border/35 bg-card/20',
-            resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
-          )}
-        >
-          <FullCalendar
-            key={`${resolvedTheme}`}
-            initialView={view}
-            initialDate={anchorDate}
-            headerToolbar={false}
-            events={calendarEvents}
-            height="auto"
-            contentHeight={560}
-            selectable={isAuthenticated}
-            selectMirror
-            editable={isAuthenticated}
-            droppable={false}
-            eventResizableFromStart={isAuthenticated}
-            dayMaxEvents={3}
-            nowIndicator
-            slotMinTime="06:00:00"
-            slotMaxTime="22:00:00"
-            allDaySlot
-            weekends
-            datesSet={handleDatesSet}
-            select={handleDateSelect}
-            eventClick={handleEventClick}
-            eventDidMount={handleEventDidMount}
-            eventDrop={handleEventDrop}
-            eventResize={handleEventResize}
-            locale={fullCalendarLocale}
-            eventTimeFormat={{
-              hour: 'numeric',
-              minute: '2-digit',
-              meridiem: 'short',
-            }}
-          />
+          <div
+            className={cn(
+              'relative overflow-hidden rounded-xl border border-border/30 bg-gradient-to-b from-background/40 via-card/30 to-muted/10',
+              view === 'listWeek' ? 'min-h-[480px]' : 'min-h-[520px]',
+              resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
+            )}
+          >
+            <FullCalendar
+              key={`${resolvedTheme}-${view}`}
+              initialView={view}
+              initialDate={anchorDate}
+              headerToolbar={false}
+              events={calendarEvents}
+              height={calendarLayout.height ?? 'auto'}
+              contentHeight={calendarLayout.contentHeight}
+              selectable={isAuthenticated}
+              selectMirror
+              editable={isAuthenticated}
+              droppable={false}
+              eventResizableFromStart={isAuthenticated}
+              dayMaxEvents={calendarLayout.dayMaxEvents}
+              nowIndicator
+              slotMinTime={calendarLayout.slotMinTime}
+              slotMaxTime={calendarLayout.slotMaxTime}
+              slotDuration="00:30:00"
+              expandRows
+              stickyHeaderDates
+              allDaySlot
+              weekends
+              datesSet={handleDatesSet}
+              select={handleDateSelect}
+              eventClick={handleEventClick}
+              eventDidMount={handleEventDidMount}
+              eventContent={renderEventContent}
+              dayHeaderContent={renderDayHeader}
+              eventDrop={handleEventDrop}
+              eventResize={handleEventResize}
+              locale={fullCalendarLocale}
+              listDayFormat={{
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              }}
+              listDaySideFormat={false}
+              eventTimeFormat={{
+                hour: 'numeric',
+                minute: '2-digit',
+                meridiem: 'short',
+              }}
+            />
+          </div>
         </div>
       </div>
 
