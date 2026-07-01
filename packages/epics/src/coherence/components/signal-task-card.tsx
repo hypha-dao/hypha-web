@@ -19,6 +19,7 @@ type SignalTaskCardProps = {
   onClick?: () => void;
   draggable?: boolean;
   onDragStart?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd?: (event: React.DragEvent<HTMLDivElement>) => void;
   className?: string;
 };
 
@@ -60,6 +61,7 @@ export function SignalTaskCard({
   onClick,
   draggable,
   onDragStart,
+  onDragEnd,
   className,
 }: SignalTaskCardProps) {
   const dueDate =
@@ -77,6 +79,7 @@ export function SignalTaskCard({
       tabIndex={onClick ? 0 : undefined}
       draggable={draggable}
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onClick={onClick}
       onKeyDown={
         onClick

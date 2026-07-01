@@ -23,6 +23,7 @@ type SignalListViewProps = {
       board?: string | null;
     },
   ) => Promise<void>;
+  readOnly?: boolean;
 };
 
 export function SignalListView({
@@ -30,6 +31,7 @@ export function SignalListView({
   workflow,
   onSignalClick,
   onPatch,
+  readOnly = false,
 }: SignalListViewProps) {
   const t = useTranslations('CoherenceTab');
 
@@ -61,23 +63,33 @@ export function SignalListView({
                 </button>
               </td>
               <td className="px-3 py-2">
-                <Select
-                  value={signal.progressStatus ?? workflow.statuses[0]?.slug}
-                  onValueChange={(value) =>
-                    onPatch(signal, { progressStatus: value })
-                  }
-                >
-                  <SelectTrigger className="h-8 w-[9rem]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workflow.statuses.map((status) => (
-                      <SelectItem key={status.slug} value={status.slug}>
-                        {status.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {readOnly ? (
+                  <span className="text-muted-foreground">
+                    {workflow.statuses.find(
+                      (status) => status.slug === signal.progressStatus,
+                    )?.name ??
+                      signal.progressStatus ??
+                      '—'}
+                  </span>
+                ) : (
+                  <Select
+                    value={signal.progressStatus ?? workflow.statuses[0]?.slug}
+                    onValueChange={(value) =>
+                      onPatch(signal, { progressStatus: value })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-[9rem]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workflow.statuses.map((status) => (
+                        <SelectItem key={status.slug} value={status.slug}>
+                          {status.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </td>
               <td className="px-3 py-2 text-muted-foreground">
                 {signal.dueAt ? format(signal.dueAt, 'MMM d, yyyy') : '—'}
@@ -86,30 +98,38 @@ export function SignalListView({
                 {signal.priority}
               </td>
               <td className="px-3 py-2">
-                <Select
-                  value={signal.board ?? '__none__'}
-                  onValueChange={(value) =>
-                    onPatch(signal, {
-                      board: value === '__none__' ? null : value,
-                    })
-                  }
-                >
-                  <SelectTrigger className="h-8 w-[9rem]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">
-                      {t('signalBoardUncategorized')}
-                    </SelectItem>
-                    {workflow.boards
-                      .filter((board) => !board.archived)
-                      .map((board) => (
-                        <SelectItem key={board.slug} value={board.slug}>
-                          {board.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                {readOnly ? (
+                  <span className="text-muted-foreground">
+                    {workflow.boards.find(
+                      (board) => board.slug === signal.board,
+                    )?.name ?? t('signalBoardUncategorized')}
+                  </span>
+                ) : (
+                  <Select
+                    value={signal.board ?? '__none__'}
+                    onValueChange={(value) =>
+                      onPatch(signal, {
+                        board: value === '__none__' ? null : value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-[9rem]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">
+                        {t('signalBoardUncategorized')}
+                      </SelectItem>
+                      {workflow.boards
+                        .filter((board) => !board.archived)
+                        .map((board) => (
+                          <SelectItem key={board.slug} value={board.slug}>
+                            {board.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </td>
             </tr>
           ))}

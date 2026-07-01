@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   authorizeSpacePanelInteraction,
+  buildPaginatedResponse,
   checkSpaceAccessForSpace,
   createScheduledItem,
   findScheduledItemsBySpaceId,
   findSelf,
   findSpaceBySlug,
   getDb,
+  parseHttpPaginationParams,
   schemaCreateScheduledItem,
   schemaScheduledItemsRangeQuery,
-  type PaginatedResponse,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { PrivyClient } from '@privy-io/node';
+import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
 type Params = { spaceSlug: string };
 
@@ -63,22 +65,9 @@ async function assertScheduledItemsReadAccess(
 }
 
 async function assertScheduledItemsWriteAccess(
-  request: NextRequest,
   spaceSlug: string,
   authToken: string,
 ) {
-  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-  if (space?.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-    const { hasAccess, response } = await checkSpaceAccess(
-      request,
-      space.web3SpaceId as number,
-    );
-    if (!hasAccess && response) {
-      return response;
-    }
-    return null;
-  }
-
   const interactionAuth = await authorizeSpacePanelInteraction({
     spaceSlug,
     authToken,
@@ -127,28 +116,28 @@ export async function GET(
       );
     }
 
-    const items = await findScheduledItemsBySpaceId(
+    const { page, pageSize } = parseHttpPaginationParams(new URL(request.url), {
+      defaultPageSize: 100,
+    });
+    const result = await findScheduledItemsBySpaceId(
       {
         spaceId: space.id,
         from: range.data.from,
         to: range.data.to,
+        page,
+        pageSize,
       },
       { db },
     );
 
-    const response: PaginatedResponse<(typeof items)[number]> = {
-      data: items,
-      pagination: {
-        total: items.length,
-        page: 1,
-        pageSize: items.length,
-        totalPages: 1,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      },
-    };
-
-    return NextResponse.json(response);
+    return NextResponse.json(
+      buildPaginatedResponse(
+        result.items,
+        result.total,
+        result.page,
+        result.pageSize,
+      ),
+    );
   } catch (error) {
     console.error('Failed to fetch scheduled items:', error);
     return NextResponse.json(
@@ -165,7 +154,7 @@ export async function POST(
   const { spaceSlug } = await params;
 
   try {
-    const authToken = request.headers.get('Authorization')?.split(' ')[1];
+    const authToken = parseBearerToken(request.headers.get('Authorization'));
     if (!authToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -176,7 +165,6 @@ export async function POST(
     }
 
     const accessResponse = await assertScheduledItemsWriteAccess(
-      request,
       spaceSlug,
       authToken,
     );

@@ -14,6 +14,7 @@ type SignalBoardViewProps = {
   workflow: SignalWorkflowConfig;
   onSignalClick?: (signal: Coherence) => void;
   onMoveStatus: (signal: Coherence, progressStatus: string) => Promise<void>;
+  readOnly?: boolean;
 };
 
 export function SignalBoardView({
@@ -21,23 +22,25 @@ export function SignalBoardView({
   workflow,
   onSignalClick,
   onMoveStatus,
+  readOnly = false,
 }: SignalBoardViewProps) {
   const [draggingSlug, setDraggingSlug] = React.useState<string | null>(null);
 
-  const statuses = workflow.statuses.filter(
-    (status) => !status.isTerminal || true,
-  );
+  const statuses = React.useMemo(() => workflow.statuses, [workflow.statuses]);
 
   const byStatus = React.useMemo(() => {
     const map = new Map<string, Coherence[]>();
     for (const status of statuses) {
       map.set(status.slug, []);
     }
+    const fallbackSlug = statuses[0]?.slug ?? 'backlog';
     for (const signal of signals) {
-      const key = signal.progressStatus ?? statuses[0]?.slug ?? 'backlog';
-      const bucket = map.get(key) ?? [];
+      const key =
+        signal.progressStatus != null && map.has(signal.progressStatus)
+          ? signal.progressStatus
+          : fallbackSlug;
+      const bucket = map.get(key)!;
       bucket.push(signal);
-      map.set(key, bucket);
     }
     return map;
   }, [signals, statuses]);
@@ -50,16 +53,24 @@ export function SignalBoardView({
           <div
             key={status.slug}
             className="flex w-64 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/15"
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={async (event) => {
-              event.preventDefault();
-              const slug = event.dataTransfer.getData('text/signal-slug');
-              if (!slug) return;
-              const signal = signals.find((item) => item.slug === slug);
-              if (!signal || signal.progressStatus === status.slug) return;
-              await onMoveStatus(signal, status.slug);
-              setDraggingSlug(null);
-            }}
+            onDragOver={
+              readOnly ? undefined : (event) => event.preventDefault()
+            }
+            onDrop={
+              readOnly
+                ? undefined
+                : async (event) => {
+                    event.preventDefault();
+                    const slug = event.dataTransfer.getData('text/signal-slug');
+                    setDraggingSlug(null);
+                    if (!slug) return;
+                    const signal = signals.find((item) => item.slug === slug);
+                    if (!signal || signal.progressStatus === status.slug) {
+                      return;
+                    }
+                    await onMoveStatus(signal, status.slug);
+                  }
+            }
           >
             <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -80,12 +91,20 @@ export function SignalBoardView({
                       (board) => board.slug === signal.board,
                     ) ?? null
                   }
-                  draggable
-                  onDragStart={(event) => {
-                    if (!signal.slug) return;
-                    event.dataTransfer.setData('text/signal-slug', signal.slug);
-                    setDraggingSlug(signal.slug);
-                  }}
+                  draggable={!readOnly}
+                  onDragStart={
+                    readOnly
+                      ? undefined
+                      : (event) => {
+                          if (!signal.slug) return;
+                          event.dataTransfer.setData(
+                            'text/signal-slug',
+                            signal.slug,
+                          );
+                          setDraggingSlug(signal.slug);
+                        }
+                  }
+                  onDragEnd={readOnly ? undefined : () => setDraggingSlug(null)}
                   onClick={
                     onSignalClick ? () => onSignalClick(signal) : undefined
                   }

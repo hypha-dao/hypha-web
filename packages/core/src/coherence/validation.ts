@@ -155,7 +155,34 @@ export const signalBoardDefinitionSchema = z.object({
   archived: z.boolean().optional(),
 });
 
-export const schemaSignalWorkflowConfig = z.object({
-  statuses: z.array(signalStatusDefinitionSchema).min(1).max(20),
-  boards: z.array(signalBoardDefinitionSchema).min(1).max(50),
-});
+export const schemaSignalWorkflowConfig = z
+  .object({
+    statuses: z.array(signalStatusDefinitionSchema).min(1).max(20),
+    boards: z.array(signalBoardDefinitionSchema).min(1).max(50),
+  })
+  .superRefine((data, ctx) => {
+    const statusSlugs = new Set<string>();
+    for (const status of data.statuses) {
+      if (statusSlugs.has(status.slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate status slug: ${status.slug}`,
+          path: ['statuses'],
+        });
+        break;
+      }
+      statusSlugs.add(status.slug);
+    }
+    const boardSlugs = new Set<string>();
+    for (const board of data.boards) {
+      if (boardSlugs.has(board.slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate board slug: ${board.slug}`,
+          path: ['boards'],
+        });
+        break;
+      }
+      boardSlugs.add(board.slug);
+    }
+  });

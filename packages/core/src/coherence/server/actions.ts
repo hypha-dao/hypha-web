@@ -9,6 +9,8 @@ import {
   UpdateCoherenceSignalBySlugInput,
 } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
+import { and, eq } from 'drizzle-orm';
+import { memberships } from '@hypha-platform/storage-postgres';
 import {
   createCoherence,
   deleteCoherenceBySlug,
@@ -22,10 +24,32 @@ import {
   schemaUpdateCoherenceSignalBySlug,
 } from '../validation';
 import {
-  getSignalWorkflowConfig,
+  readSignalWorkflowConfig,
   updateSignalWorkflowConfig,
 } from './signal-workflow';
 import type { SignalWorkflowConfig } from '../signal-workflow';
+
+async function assertSignalWorkflowAccess({
+  spaceId,
+  requesterPersonId,
+}: {
+  spaceId: number;
+  requesterPersonId: number;
+}) {
+  const [membership] = await db
+    .select({ id: memberships.id })
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.spaceId, spaceId),
+        eq(memberships.personId, requesterPersonId),
+      ),
+    )
+    .limit(1);
+  if (!membership) {
+    throw new Error('Forbidden: user is not a member of this space');
+  }
+}
 
 export async function createCoherenceAction(
   data: CreateCoherenceInput,
@@ -108,7 +132,15 @@ export async function getSignalWorkflowConfigAction(
   if (!authToken) {
     throw new Error('authToken is required to get signal workflow config');
   }
-  return getSignalWorkflowConfig({ spaceId }, { db });
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for get signal workflow config',
+    );
+  }
+  await assertSignalWorkflowAccess({ spaceId, requesterPersonId: self.id });
+  return readSignalWorkflowConfig({ spaceId }, { db });
 }
 
 export async function updateSignalWorkflowConfigAction(
@@ -118,6 +150,14 @@ export async function updateSignalWorkflowConfigAction(
   if (!authToken) {
     throw new Error('authToken is required to update signal workflow config');
   }
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for update signal workflow config',
+    );
+  }
+  await assertSignalWorkflowAccess({ spaceId, requesterPersonId: self.id });
   const validated = schemaSignalWorkflowConfig.parse(config);
   return updateSignalWorkflowConfig({ spaceId, config: validated }, { db });
 }

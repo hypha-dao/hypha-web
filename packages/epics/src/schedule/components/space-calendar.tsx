@@ -10,6 +10,7 @@ import type {
   EventClickArg,
   EventDropArg,
   EventInput,
+  CalendarApi,
 } from '@fullcalendar/core';
 import type { EventResizeDoneArg } from '@fullcalendar/interaction';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -86,6 +87,7 @@ function toCalendarEvent(item: ScheduledItem): EventInput {
       return {
         ...base,
         rrule,
+        editable: false,
         duration: {
           milliseconds: getEventDurationMs(item.startsAt, item.endsAt),
         },
@@ -107,10 +109,14 @@ function toSignalDeadlineEvent(
   signal: Coherence,
   lang: string,
   spaceSlug: string,
-): EventInput {
-  const dueAt = signal.dueAt!;
+): EventInput | null {
+  if (!signal.dueAt) return null;
+  const dueAt =
+    signal.dueAt instanceof Date ? signal.dueAt : new Date(signal.dueAt);
+  if (Number.isNaN(dueAt.getTime())) return null;
   const end = new Date(dueAt);
   end.setHours(23, 59, 59, 999);
+  if (!signal.slug) return null;
   return {
     id: `signal-deadline-${signal.id}`,
     title: signal.title,
@@ -125,6 +131,22 @@ function toSignalDeadlineEvent(
       signalHref: `/${lang}/dho/${spaceSlug}/coherence/${signal.slug}`,
     },
   };
+}
+
+function isScheduledItem(value: unknown): value is ScheduledItem {
+  return (
+    typeof value === 'object' &&
+    value != null &&
+    'id' in value &&
+    typeof (value as ScheduledItem).id === 'number'
+  );
+}
+
+function getSignalHrefFromExtendedProps(
+  extendedProps: Record<string, unknown>,
+): string | undefined {
+  const href = extendedProps.signalHref;
+  return typeof href === 'string' && href.length > 0 ? href : undefined;
 }
 
 function defaultRangeForView(view: CalendarView, anchor: Date) {
@@ -227,13 +249,26 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     to: range.to.toISOString(),
   });
 
+  const calendarApiRef = React.useRef<CalendarApi | null>(null);
+
   const calendarEvents = React.useMemo(() => {
     const scheduled = (scheduledItems ?? []).map(toCalendarEvent);
-    const signalEvents = signalDeadlines.map((signal) =>
-      toSignalDeadlineEvent(signal, lang, spaceSlug),
-    );
+    const signalEvents = signalDeadlines
+      .map((signal) => toSignalDeadlineEvent(signal, lang, spaceSlug))
+      .filter((event): event is EventInput => event != null);
     return [...scheduled, ...signalEvents];
   }, [scheduledItems, signalDeadlines, lang, spaceSlug]);
+
+  React.useEffect(() => {
+    calendarApiRef.current?.gotoDate(anchorDate);
+  }, [anchorDate]);
+
+  React.useEffect(() => {
+    const api = calendarApiRef.current;
+    if (api && api.view.type !== view) {
+      api.changeView(view);
+    }
+  }, [view]);
 
   const { updateScheduledItem } = useScheduledItemMutations(
     authToken,
@@ -261,35 +296,34 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   };
 
   const handleDatesSet = (arg: DatesSetArg) => {
+    calendarApiRef.current = arg.view.calendar;
     setAnchorDate(arg.view.currentStart);
     setRange({ from: arg.start, to: arg.end });
   };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     if (!isAuthenticated) return;
-    const start = new Date(selectInfo.start);
-    let end = new Date(selectInfo.end);
-    if (selectInfo.allDay) {
-      start.setHours(0, 0, 0, 0);
-      end = new Date(end.getTime() - 86_400_000);
-      end.setHours(23, 59, 59, 999);
-    }
-    openCreate(start, end, selectInfo.allDay);
+    const { startsAt, endsAt, allDay } = normalizeCalendarEventRange(
+      selectInfo.start,
+      selectInfo.end,
+      selectInfo.allDay,
+    );
+    openCreate(startsAt, endsAt, allDay);
     selectInfo.view.calendar.unselect();
   };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const signalHref = clickInfo.event.extendedProps.signalHref as
-      | string
-      | undefined;
+    const signalHref = getSignalHrefFromExtendedProps(
+      clickInfo.event.extendedProps as Record<string, unknown>,
+    );
     if (signalHref) {
       router.push(signalHref, { scroll: false });
       return;
     }
     if (!isAuthenticated) return;
-    const item = clickInfo.event.extendedProps.scheduledItem as
-      | ScheduledItem
-      | undefined;
+    const item = isScheduledItem(clickInfo.event.extendedProps.scheduledItem)
+      ? clickInfo.event.extendedProps.scheduledItem
+      : undefined;
     if (item) openEdit(item);
   };
 
@@ -303,9 +337,9 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       dropInfo.revert();
       return;
     }
-    const item = dropInfo.event.extendedProps.scheduledItem as
-      | ScheduledItem
-      | undefined;
+    const item = isScheduledItem(dropInfo.event.extendedProps.scheduledItem)
+      ? dropInfo.event.extendedProps.scheduledItem
+      : undefined;
     if (!item || item.recurrenceRule) {
       dropInfo.revert();
       return;
@@ -331,9 +365,9 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       resizeInfo.revert();
       return;
     }
-    const item = resizeInfo.event.extendedProps.scheduledItem as
-      | ScheduledItem
-      | undefined;
+    const item = isScheduledItem(resizeInfo.event.extendedProps.scheduledItem)
+      ? resizeInfo.event.extendedProps.scheduledItem
+      : undefined;
     if (!item || item.recurrenceRule) {
       resizeInfo.revert();
       return;
@@ -484,7 +518,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
           ) : null}
 
           <FullCalendar
-            key={`${view}-${resolvedTheme}-${anchorDate.toISOString()}`}
+            key={`${resolvedTheme}`}
             plugins={[
               dayGridPlugin,
               timeGridPlugin,
