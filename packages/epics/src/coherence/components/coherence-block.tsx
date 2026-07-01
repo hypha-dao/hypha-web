@@ -1,6 +1,6 @@
 'use client';
 
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Tabs, TabsList, TabsTrigger, MOBILE_BREAKPOINT_PX } from '@hypha-platform/ui';
 import {
   Coherence,
   useFindCoherences,
@@ -95,6 +95,15 @@ export function CoherenceBlock({
   const format = useFormatter();
   const [hideArchived, setHideArchived] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<SignalViewMode>('board');
+  const hasInitializedViewMode = React.useRef(false);
+
+  React.useEffect(() => {
+    if (hasInitializedViewMode.current) return;
+    hasInitializedViewMode.current = true;
+    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
+      setViewMode('list');
+    }
+  }, []);
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const {
     coherences: signals,

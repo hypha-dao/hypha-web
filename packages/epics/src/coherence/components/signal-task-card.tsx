@@ -5,6 +5,7 @@ import { format, isValid } from 'date-fns';
 import { CalendarDays, MessageSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
+  COHERENCE_TAGS,
   Coherence,
   SignalBoardDefinition,
   SignalStatusDefinition,
@@ -14,7 +15,14 @@ import { Badge } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { SignalCardActions } from './signal-card-actions';
-import { priorityAccentClass } from '../utils/signal-priority-styles';
+import {
+  priorityDotClass,
+  statusColorDotClass,
+} from '../utils/signal-priority-styles';
+import {
+  signalTagBadgeStyle,
+  SIGNAL_TAG_BADGE_CLASS,
+} from '../utils/signal-tag-badge-styles';
 
 type SignalTaskCardProps = {
   signal: Coherence;
@@ -103,6 +111,22 @@ export function SignalTaskCard({
       : 0;
   const visibleTags = (signal.tags ?? []).slice(0, 2);
 
+  const tagDisplayLabel = (tag: string) => {
+    const translationKey = `tagLabels.${tag}`;
+    return (COHERENCE_TAGS as readonly string[]).includes(tag) &&
+      t.has(translationKey as never)
+      ? t(translationKey as never)
+      : tag;
+  };
+
+  const priorityLabel = t(
+    `priorities.${signal.priority}` as
+      | 'priorities.critical'
+      | 'priorities.high'
+      | 'priorities.medium'
+      | 'priorities.low',
+  );
+
   return (
     <div
       role={onClick ? 'button' : undefined}
@@ -131,15 +155,7 @@ export function SignalTaskCard({
         className,
       )}
     >
-      <div
-        className={cn(
-          'absolute inset-y-0 left-0 w-1 rounded-l-xl',
-          priorityAccentClass(signal.priority),
-        )}
-        aria-hidden
-      />
-
-      <div className="relative pl-3.5 pr-2.5 py-2.5">
+      <div className="relative px-2.5 py-2.5">
         <div className="mb-1.5 flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
             <Badge
@@ -151,7 +167,13 @@ export function SignalTaskCard({
             </Badge>
             {showStatus && status ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent-9" />
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    statusColorDotClass(status.color),
+                  )}
+                  aria-hidden
+                />
                 {status.name}
               </span>
             ) : null}
@@ -165,9 +187,19 @@ export function SignalTaskCard({
           ) : null}
         </div>
 
-        <p className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground">
-          {signal.title}
-        </p>
+        <div className="flex min-w-0 items-start gap-2">
+          <span
+            className={cn(
+              'mt-1.5 h-2 w-2 shrink-0 rounded-full ring-2',
+              priorityDotClass(signal.priority),
+            )}
+            title={priorityLabel}
+            aria-label={priorityLabel}
+          />
+          <p className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-snug tracking-tight text-foreground">
+            {signal.title}
+          </p>
+        </div>
 
         <div className="mt-2.5 flex items-end justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -196,11 +228,12 @@ export function SignalTaskCard({
             {visibleTags.map((tag) => (
               <Badge
                 key={tag}
-                colorVariant="accent"
-                variant="soft"
-                className="max-w-[5.5rem] truncate text-[10px]"
+                colorVariant="neutral"
+                variant="outline"
+                className={cn(SIGNAL_TAG_BADGE_CLASS, 'max-w-[5.5rem] text-[10px]')}
+                style={signalTagBadgeStyle}
               >
-                {tag}
+                {tagDisplayLabel(tag)}
               </Badge>
             ))}
             {messageCount > 0 ? (

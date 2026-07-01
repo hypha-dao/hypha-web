@@ -10,7 +10,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { SignalTaskCard } from './signal-task-card';
 import { SignalDropPlaceholder } from './signal-drop-placeholder';
-import { statusColumnDotClass } from '../utils/signal-priority-styles';
+import { statusColorDotClass } from '../utils/signal-priority-styles';
 import {
   getSignalDragSlug,
   handleColumnDragOver,
@@ -155,7 +155,7 @@ export function SignalSwimlaneView({
                         <span
                           className={cn(
                             'h-1.5 w-1.5 shrink-0 rounded-full',
-                            statusColumnDotClass(index),
+                            statusColorDotClass(status.color),
                           )}
                           aria-hidden
                         />

@@ -52,6 +52,10 @@ import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { useScrollParallax } from '../../common/use-scroll-parallax';
 import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import {
+  signalTagBadgeStyle,
+  SIGNAL_TAG_BADGE_CLASS,
+} from '../utils/signal-tag-badge-styles';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -112,8 +116,6 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
       'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
   };
 const MAX_VISIBLE_SIGNAL_TAGS = 3;
-const SIGNAL_TAG_BADGE_CLASS =
-  'max-w-[8.5rem] overflow-hidden text-ellipsis whitespace-nowrap rounded-full';
 
 const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'text-accent-10',
@@ -428,13 +430,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       variant: 'outline',
       colorVariant: 'neutral',
       className: SIGNAL_TAG_BADGE_CLASS,
-      style: {
-        borderColor:
-          'color-mix(in srgb, var(--space-accent) 42%, var(--color-neutral-8) 58%)',
-        backgroundColor:
-          'color-mix(in srgb, var(--space-accent) 12%, transparent)',
-        color: 'color-mix(in srgb, var(--space-accent) 78%, white 22%)',
-      },
+      style: signalTagBadgeStyle,
     };
   });
   const compactTagList: BadgeItem[] = React.useMemo(() => {
