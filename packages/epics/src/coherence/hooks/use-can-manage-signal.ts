@@ -12,6 +12,9 @@ export function useCanManageSignal({
   spaceSlug,
   web3SpaceId,
 }: UseCanManageSignalArgs): boolean {
-  const { canUpdateTasks } = useCanUpdateSignalTasks({ spaceSlug, web3SpaceId });
+  const { canUpdateTasks } = useCanUpdateSignalTasks({
+    spaceSlug,
+    web3SpaceId,
+  });
   return canUpdateTasks;
 }

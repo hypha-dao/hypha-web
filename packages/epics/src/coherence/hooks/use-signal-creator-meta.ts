@@ -60,7 +60,9 @@ export function useSignalCreatorMeta({
     return match?.[1] ?? null;
   }, [description]);
 
-  const { space: relaySourceSpace } = useSpaceBySlug(relaySourceSpaceSlug ?? '');
+  const { space: relaySourceSpace } = useSpaceBySlug(
+    relaySourceSpaceSlug ?? '',
+  );
 
   const isBackgroundJobSignal = React.useMemo(
     () =>

@@ -56,8 +56,7 @@ function patchMatchesSignal(
   const statusOk =
     patch.progressStatus === undefined ||
     signal.progressStatus === patch.progressStatus;
-  const boardOk =
-    patch.board === undefined || signal.board === patch.board;
+  const boardOk = patch.board === undefined || signal.board === patch.board;
   return statusOk && boardOk;
 }
 

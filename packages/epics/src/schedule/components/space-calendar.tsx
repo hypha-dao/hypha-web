@@ -377,11 +377,11 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       ? formatDate(anchorDate, 'MMMM yyyy', { locale: dateFnsLocale })
       : view === 'timeGridDay'
       ? formatDate(anchorDate, 'EEEE, MMMM d, yyyy', { locale: dateFnsLocale })
-      : `${formatDate(range.from, 'MMM d', { locale: dateFnsLocale })} – ${formatDate(
-          range.to,
-          'MMM d, yyyy',
-          { locale: dateFnsLocale },
-        )}`;
+      : `${formatDate(range.from, 'MMM d', {
+          locale: dateFnsLocale,
+        })} – ${formatDate(range.to, 'MMM d, yyyy', {
+          locale: dateFnsLocale,
+        })}`;
 
   const itemCount = scheduledItems?.length;
 
