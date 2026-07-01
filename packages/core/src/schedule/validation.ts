@@ -174,23 +174,10 @@ export const schemaMergedScheduledItemUpdate = z
     id: z.number().int().positive(),
     ...scheduledItemBaseFields,
   })
-  .transform((data) => {
-    if (data.recurrencePreset === 'none') {
-      return { ...data, recurrenceRule: null };
-    }
-    if (data.recurrencePreset) {
-      return {
-        ...data,
-        recurrenceRule: resolveRecurrenceRule({
-          recurrencePreset: data.recurrencePreset,
-          recurrenceRule: data.recurrenceRule,
-          startsAt: data.startsAt,
-          timezone: data.timezone,
-        }),
-      };
-    }
-    return data;
-  })
+  .transform((data) => ({
+    ...data,
+    recurrenceRule: resolveRecurrenceRule(data),
+  }))
   .superRefine((data, ctx) => {
     if (data.endsAt.getTime() < data.startsAt.getTime()) {
       ctx.addIssue({

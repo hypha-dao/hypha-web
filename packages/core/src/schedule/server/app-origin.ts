@@ -12,6 +12,11 @@ export function resolveAppOrigin(): string | null {
 
 export function toAbsoluteAppUrl(path: string): string {
   const origin = resolveAppOrigin();
-  if (!origin) return path;
+  if (!origin) {
+    console.warn(
+      'App origin is not configured (NEXT_PUBLIC_APP_URL / VERCEL_URL); absolute URLs may be invalid',
+    );
+    return path;
+  }
   return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
 }

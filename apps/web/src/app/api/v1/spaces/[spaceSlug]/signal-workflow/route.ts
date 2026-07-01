@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   authorizeSpacePanelInteraction,
   findSpaceBySlug,
-  getSignalWorkflowConfig,
+  readSignalWorkflowConfig,
   schemaSignalWorkflowConfig,
   updateSignalWorkflowConfig,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
 type Params = { spaceSlug: string };
 
@@ -40,7 +41,10 @@ export async function GET(
     const denied = await assertReadAccess(request, space);
     if (denied) return denied;
 
-    const config = await getSignalWorkflowConfig({ spaceId: space.id }, { db });
+    const config = await readSignalWorkflowConfig(
+      { spaceId: space.id },
+      { db },
+    );
     return NextResponse.json(config);
   } catch (error) {
     console.error('Failed to fetch signal workflow:', error);
@@ -56,7 +60,7 @@ export async function PUT(
   { params }: { params: Promise<Params> },
 ) {
   const { spaceSlug } = await params;
-  const authToken = request.headers.get('Authorization')?.split(' ')[1];
+  const authToken = parseBearerToken(request.headers.get('Authorization'));
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -78,7 +82,13 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
     const parsed = schemaSignalWorkflowConfig.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

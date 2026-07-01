@@ -7,7 +7,8 @@ ALTER TABLE "spaces" ADD COLUMN "signal_workflow" jsonb DEFAULT '{}'::jsonb NOT 
 
 ALTER TABLE "space_scheduled_items" ADD COLUMN "coherence_id" integer;
 ALTER TABLE "space_scheduled_items" ADD CONSTRAINT "space_scheduled_items_coherence_id_coherences_id_fk"
-  FOREIGN KEY ("coherence_id") REFERENCES "coherences"("id") ON DELETE set null ON UPDATE no action;
+  FOREIGN KEY ("coherence_id") REFERENCES "coherences"("id") ON DELETE set null ON UPDATE no action NOT VALID;
+ALTER TABLE "space_scheduled_items" VALIDATE CONSTRAINT "space_scheduled_items_coherence_id_coherences_id_fk";
 
 CREATE INDEX "coherences_space_progress_status_idx" ON "coherences" ("space_id", "progress_status");
 CREATE INDEX "coherences_space_board_idx" ON "coherences" ("space_id", "board");

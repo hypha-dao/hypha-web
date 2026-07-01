@@ -1,3 +1,5 @@
+import { schemaSignalWorkflowConfig } from './validation';
+
 export type SignalStatusCategory = 'backlog' | 'active' | 'done' | 'cancelled';
 
 export type SignalStatusDefinition = {
@@ -76,40 +78,16 @@ export const DEFAULT_SIGNAL_PROGRESS_STATUS = 'backlog';
 export function normalizeSignalWorkflowConfig(
   raw: unknown,
 ): SignalWorkflowConfig {
-  if (!raw || typeof raw !== 'object') {
-    return structuredClone(DEFAULT_SIGNAL_WORKFLOW);
+  const parsed = schemaSignalWorkflowConfig.safeParse(raw);
+  if (parsed.success) {
+    return {
+      statuses: [...parsed.data.statuses].sort(
+        (a, b) => a.position - b.position,
+      ),
+      boards: [...parsed.data.boards].sort((a, b) => a.position - b.position),
+    };
   }
-  const input = raw as Partial<SignalWorkflowConfig>;
-  const statuses = Array.isArray(input.statuses)
-    ? input.statuses.filter(
-        (item): item is SignalStatusDefinition =>
-          typeof item?.slug === 'string' &&
-          typeof item?.name === 'string' &&
-          typeof item?.color === 'string' &&
-          typeof item?.category === 'string' &&
-          typeof item?.position === 'number',
-      )
-    : [];
-  const boards = Array.isArray(input.boards)
-    ? input.boards.filter(
-        (item): item is SignalBoardDefinition =>
-          typeof item?.slug === 'string' &&
-          typeof item?.name === 'string' &&
-          typeof item?.color === 'string' &&
-          typeof item?.position === 'number',
-      )
-    : [];
-
-  return {
-    statuses:
-      statuses.length > 0
-        ? [...statuses].sort((a, b) => a.position - b.position)
-        : structuredClone(DEFAULT_SIGNAL_WORKFLOW.statuses),
-    boards:
-      boards.length > 0
-        ? [...boards].sort((a, b) => a.position - b.position)
-        : structuredClone(DEFAULT_SIGNAL_WORKFLOW.boards),
-  };
+  return structuredClone(DEFAULT_SIGNAL_WORKFLOW);
 }
 
 export function normalizeAssigneeIds(raw: unknown): number[] {

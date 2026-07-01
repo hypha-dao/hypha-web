@@ -33,6 +33,8 @@ function buildScheduledItemsUrl(
   const params = new URLSearchParams({
     from: from.toISOString(),
     to: to.toISOString(),
+    page: '1',
+    pageSize: '500',
   });
   return `/api/v1/spaces/${encodeURIComponent(
     spaceSlug,

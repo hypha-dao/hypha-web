@@ -7,7 +7,24 @@ import {
   type SignalWorkflowConfig,
 } from '../signal-workflow';
 
-export async function getSignalWorkflowConfig(
+export async function readSignalWorkflowConfig(
+  { spaceId }: { spaceId: number },
+  { db }: DbConfig,
+): Promise<SignalWorkflowConfig> {
+  const [space] = await db
+    .select({ signalWorkflow: spaces.signalWorkflow })
+    .from(spaces)
+    .where(eq(spaces.id, spaceId))
+    .limit(1);
+
+  if (!space) {
+    throw new Error(`Space not found for id=${spaceId}`);
+  }
+
+  return normalizeSignalWorkflowConfig(space.signalWorkflow);
+}
+
+export async function ensureSignalWorkflowConfig(
   { spaceId }: { spaceId: number },
   { db }: DbConfig,
 ): Promise<SignalWorkflowConfig> {
@@ -35,6 +52,14 @@ export async function getSignalWorkflowConfig(
   }
 
   return config;
+}
+
+/** @deprecated Use readSignalWorkflowConfig or ensureSignalWorkflowConfig */
+export async function getSignalWorkflowConfig(
+  input: { spaceId: number },
+  config: DbConfig,
+): Promise<SignalWorkflowConfig> {
+  return ensureSignalWorkflowConfig(input, config);
 }
 
 export async function updateSignalWorkflowConfig(

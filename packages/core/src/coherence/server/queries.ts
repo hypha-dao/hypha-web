@@ -122,21 +122,44 @@ export const findCoherencesWithDueDatesInRange = async (
     from,
     to,
     includeArchived = false,
-  }: FindCoherencesWithDueDatesInput,
+    page = 1,
+    pageSize = 100,
+  }: FindCoherencesWithDueDatesInput & {
+    page?: number;
+    pageSize?: number;
+  },
 ) => {
-  return db
+  const safePageSize = Math.min(500, Math.max(1, pageSize));
+  const safePage = Math.max(1, page);
+  const offset = (safePage - 1) * safePageSize;
+
+  const conditions = and(
+    eq(coherences.spaceId, spaceId),
+    includeArchived ? undefined : eq(coherences.archived, false),
+    isNotNull(coherences.dueAt),
+    gte(coherences.dueAt, from),
+    lte(coherences.dueAt, to),
+  );
+
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(coherences)
+    .where(conditions);
+
+  const rows = await db
     .select()
     .from(coherences)
-    .where(
-      and(
-        eq(coherences.spaceId, spaceId),
-        includeArchived ? undefined : eq(coherences.archived, false),
-        isNotNull(coherences.dueAt),
-        gte(coherences.dueAt, from),
-        lte(coherences.dueAt, to),
-      ),
-    )
-    .orderBy(coherences.dueAt);
+    .where(conditions)
+    .orderBy(coherences.dueAt)
+    .limit(safePageSize)
+    .offset(offset);
+
+  return {
+    rows,
+    total: countRow?.count ?? 0,
+    page: safePage,
+    pageSize: safePageSize,
+  };
 };
 
 export const findCoherenceById = async (

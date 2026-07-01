@@ -89,6 +89,12 @@ export async function updateScheduledItemAction(
 
   await assertScheduledItemSpaceAccess(authToken, spaceSlug);
 
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error('Could not resolve authenticated user');
+  }
+
   if (typeof data !== 'object' || data == null || !('id' in data)) {
     throw new Error('Scheduled item id is required');
   }
@@ -139,6 +145,12 @@ export async function deleteScheduledItemAction(
   }
 
   await assertScheduledItemSpaceAccess(authToken, spaceSlug);
+
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error('Could not resolve authenticated user');
+  }
 
   const existing = await findScheduledItemById({ id }, { db });
   if (!existing) {

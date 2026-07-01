@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findDueScheduledReminders,
   findSpaceMemberSlugsBySpaceId,
+  releaseScheduledReminderDispatch,
   tryClaimScheduledReminderDispatch,
 } from '@hypha-platform/core/server';
 import { notifyScheduledItemReminder } from '@hypha-platform/notifications/server';
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
     let failed = 0;
 
     for (const reminder of due) {
+      const claimedChannels: Array<'email' | 'push'> = [];
       try {
-        const claimedChannels: Array<'email' | 'push'> = [];
         for (const channel of reminder.channels) {
           const claimed = await tryClaimScheduledReminderDispatch(
             {
@@ -70,6 +71,16 @@ export async function POST(request: NextRequest) {
 
         dispatched += 1;
       } catch (error) {
+        for (const channel of claimedChannels) {
+          await releaseScheduledReminderDispatch(
+            {
+              scheduledItemId: reminder.item.id,
+              occurrenceStartsAt: reminder.occurrenceStartsAt,
+              channel,
+            },
+            { db },
+          );
+        }
         failed += 1;
         console.error(
           'Failed to dispatch scheduled item reminder:',

@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { format } from 'date-fns';
 import {
   buildScheduledCallJoinPath,
   type ScheduledItem,
@@ -43,7 +42,7 @@ function escapeHtml(value: string): string {
 
 function sanitizeReminderUrl(url: string): string {
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(url, 'https://placeholder.local');
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return '#';
     }
@@ -53,12 +52,29 @@ function sanitizeReminderUrl(url: string): string {
   }
 }
 
+function formatReminderWhen(
+  occurrenceStartsAt: Date,
+  lang: string,
+  timezone?: string | null,
+): string {
+  return new Intl.DateTimeFormat(lang, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: timezone?.trim() || undefined,
+  }).format(occurrenceStartsAt);
+}
+
 export async function notifyScheduledItemReminder(
   input: NotifyScheduledItemReminderInput,
 ) {
   if (input.memberSlugs.length === 0) return { sent: 0 };
 
-  const whenLabel = format(input.occurrenceStartsAt, 'PPpp');
+  const lang = input.lang?.trim() || 'en';
+  const whenLabel = formatReminderWhen(
+    input.occurrenceStartsAt,
+    lang,
+    input.item.timezone,
+  );
   const title = input.item.title.trim();
   const spaceTitle = input.spaceTitle.trim();
   const url = buildReminderUrl(input);
@@ -67,6 +83,7 @@ export async function notifyScheduledItemReminder(
   const safeUrl = sanitizeReminderUrl(url);
   const pushUrl = safeUrl === '#' ? undefined : safeUrl;
   const heading = `${title} starts soon`;
+  const pushBody = `${title} starts at ${whenLabel}`;
   const body = `<p><strong>${safeTitle}</strong> in <strong>${safeSpaceTitle}</strong> starts at ${whenLabel}.</p><p><a href="${safeUrl}">Open in Hypha</a></p>`;
   const textBody = `${title} in ${spaceTitle} starts at ${whenLabel}. Open: ${url}`;
 
@@ -76,7 +93,7 @@ export async function notifyScheduledItemReminder(
     await sendPushNotifications({
       usernames: input.memberSlugs,
       headings: { en: heading },
-      contents: { en: `${title} starts at ${whenLabel}` },
+      contents: { en: pushBody },
       url: pushUrl,
     });
     sent += 1;

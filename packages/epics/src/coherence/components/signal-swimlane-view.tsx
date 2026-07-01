@@ -15,6 +15,7 @@ type SignalSwimlaneViewProps = {
   workflow: SignalWorkflowConfig;
   onSignalClick?: (signal: Coherence) => void;
   onMoveBoard: (signal: Coherence, board: string | null) => Promise<void>;
+  readOnly?: boolean;
 };
 
 const UNCategorized_SLUG = '__uncategorized__';
@@ -24,16 +25,20 @@ export function SignalSwimlaneView({
   workflow,
   onSignalClick,
   onMoveBoard,
+  readOnly = false,
 }: SignalSwimlaneViewProps) {
   const t = useTranslations('CoherenceTab');
   const [draggingSlug, setDraggingSlug] = React.useState<string | null>(null);
 
-  const lanes: Array<{ slug: string; board: SignalBoardDefinition | null }> = [
-    ...workflow.boards
-      .filter((board) => !board.archived)
-      .map((board) => ({ slug: board.slug, board })),
-    { slug: UNCategorized_SLUG, board: null },
-  ];
+  const lanes = React.useMemo(
+    (): Array<{ slug: string; board: SignalBoardDefinition | null }> => [
+      ...workflow.boards
+        .filter((board) => !board.archived)
+        .map((board) => ({ slug: board.slug, board })),
+      { slug: UNCategorized_SLUG, board: null },
+    ],
+    [workflow.boards],
+  );
 
   const byBoard = React.useMemo(() => {
     const map = new Map<string, Coherence[]>();
@@ -62,19 +67,25 @@ export function SignalSwimlaneView({
           <div
             key={lane.slug}
             className="rounded-xl border border-border/60 bg-muted/10"
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={async (event) => {
-              event.preventDefault();
-              const slug = event.dataTransfer.getData('text/signal-slug');
-              if (!slug) return;
-              const signal = signals.find((item) => item.slug === slug);
-              if (!signal) return;
-              const nextBoard =
-                lane.slug === UNCategorized_SLUG ? null : lane.slug;
-              if (signal.board === nextBoard) return;
-              await onMoveBoard(signal, nextBoard);
-              setDraggingSlug(null);
-            }}
+            onDragOver={
+              readOnly ? undefined : (event) => event.preventDefault()
+            }
+            onDrop={
+              readOnly
+                ? undefined
+                : async (event) => {
+                    event.preventDefault();
+                    const slug = event.dataTransfer.getData('text/signal-slug');
+                    setDraggingSlug(null);
+                    if (!slug) return;
+                    const signal = signals.find((item) => item.slug === slug);
+                    if (!signal) return;
+                    const nextBoard =
+                      lane.slug === UNCategorized_SLUG ? null : lane.slug;
+                    if (signal.board === nextBoard) return;
+                    await onMoveBoard(signal, nextBoard);
+                  }
+            }
           >
             <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
               <span className="text-sm font-semibold">
@@ -95,12 +106,20 @@ export function SignalSwimlaneView({
                     ) ?? workflow.statuses[0]
                   }
                   board={lane.board}
-                  draggable
-                  onDragStart={(event) => {
-                    if (!signal.slug) return;
-                    event.dataTransfer.setData('text/signal-slug', signal.slug);
-                    setDraggingSlug(signal.slug);
-                  }}
+                  draggable={!readOnly}
+                  onDragStart={
+                    readOnly
+                      ? undefined
+                      : (event) => {
+                          if (!signal.slug) return;
+                          event.dataTransfer.setData(
+                            'text/signal-slug',
+                            signal.slug,
+                          );
+                          setDraggingSlug(signal.slug);
+                        }
+                  }
+                  onDragEnd={readOnly ? undefined : () => setDraggingSlug(null)}
                   onClick={
                     onSignalClick ? () => onSignalClick(signal) : undefined
                   }

@@ -62,7 +62,9 @@ export const coherences = pgTable(
       table.progressStatus,
     ),
     index('coherences_space_board_idx').on(table.spaceId, table.board),
-    index('coherences_due_at_idx').on(table.dueAt),
+    index('coherences_due_at_idx')
+      .on(table.dueAt)
+      .where(sql`${table.dueAt} IS NOT NULL`),
     index('coherences_assignee_ids_idx').using('gin', table.assigneeIds),
   ],
 );

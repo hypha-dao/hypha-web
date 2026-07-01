@@ -12,7 +12,8 @@ import { and, eq } from 'drizzle-orm';
 import {
   assertValidBoard,
   assertValidProgressStatus,
-  getSignalWorkflowConfig,
+  ensureSignalWorkflowConfig,
+  updateSignalWorkflowConfig,
 } from './signal-workflow';
 import {
   DEFAULT_SIGNAL_PROGRESS_STATUS,
@@ -88,7 +89,7 @@ export const createCoherence = async (
   const assigneeIds = normalizeAssigneeIds(inputAssigneeIds ?? []);
 
   if (spaceId != null) {
-    const workflow = await getSignalWorkflowConfig({ spaceId }, { db });
+    const workflow = await ensureSignalWorkflowConfig({ spaceId }, { db });
     assertValidProgressStatus(workflow, progressStatus);
     assertValidBoard(workflow, inputBoard ?? null);
   }
@@ -168,7 +169,7 @@ export const updateCoherenceSignalBySlug = async (
   const row = await assertCanEditCoherence({ slug, requesterPersonId }, { db });
 
   if (row.spaceId != null) {
-    const workflow = await getSignalWorkflowConfig(
+    const workflow = await ensureSignalWorkflowConfig(
       { spaceId: row.spaceId },
       { db },
     );
@@ -231,7 +232,7 @@ export const patchCoherenceTaskBySlug = async (
   }
 
   if (row.spaceId != null) {
-    const workflow = await getSignalWorkflowConfig(
+    const workflow = await ensureSignalWorkflowConfig(
       { spaceId: row.spaceId },
       { db },
     );

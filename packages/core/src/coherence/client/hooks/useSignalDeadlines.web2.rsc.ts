@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import type { Coherence } from '../../types';
+import type { PaginatedResponse } from '../../../common/types';
 import { hydrateCoherenceFromApi } from '../../signal-workflow';
 import { useJwt } from '../../../people/client/hooks/useJwt';
 
@@ -18,7 +19,12 @@ export function useSignalDeadlines(
   const { data, error, isLoading, mutate } = useSWR(
     key,
     async ([slug, token, from, to]) => {
-      const params = new URLSearchParams({ from, to });
+      const params = new URLSearchParams({
+        from,
+        to,
+        page: '1',
+        pageSize: '500',
+      });
       const response = await fetch(
         `/api/v1/spaces/${encodeURIComponent(
           slug,
@@ -28,8 +34,8 @@ export function useSignalDeadlines(
       if (!response.ok) {
         throw new Error(`Failed to fetch signal deadlines: ${response.status}`);
       }
-      const rows = (await response.json()) as Coherence[];
-      return rows.map((row) => hydrateCoherenceFromApi(row));
+      const payload = (await response.json()) as PaginatedResponse<Coherence>;
+      return payload.data.map((row) => hydrateCoherenceFromApi(row));
     },
   );
 

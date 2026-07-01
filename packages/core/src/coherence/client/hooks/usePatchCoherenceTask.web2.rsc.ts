@@ -29,10 +29,14 @@ export function usePatchCoherenceTask(spaceSlug?: string) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            dueAt: arg.dueAt ?? null,
-            progressStatus: arg.progressStatus,
-            board: arg.board,
-            assigneeIds: arg.assigneeIds,
+            ...(arg.dueAt !== undefined ? { dueAt: arg.dueAt } : {}),
+            ...(arg.progressStatus !== undefined
+              ? { progressStatus: arg.progressStatus }
+              : {}),
+            ...(arg.board !== undefined ? { board: arg.board } : {}),
+            ...(arg.assigneeIds !== undefined
+              ? { assigneeIds: arg.assigneeIds }
+              : {}),
           }),
         },
       );

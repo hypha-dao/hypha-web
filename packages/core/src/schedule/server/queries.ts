@@ -1,4 +1,14 @@
-import { and, asc, eq, gte, isNotNull, isNull, lte, or } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm';
 import {
   memberships,
   people,
@@ -44,13 +54,25 @@ export async function findScheduledItemsBySpaceId(
     spaceId,
     from,
     to,
+    page = 1,
+    pageSize = 100,
   }: {
     spaceId: number;
     from?: Date;
     to?: Date;
+    page?: number;
+    pageSize?: number;
   },
   { db }: DbConfig,
-): Promise<ScheduledItem[]> {
+): Promise<{
+  items: ScheduledItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}> {
+  const safePageSize = Math.min(500, Math.max(1, pageSize));
+  const safePage = Math.max(1, page);
+  const offset = (safePage - 1) * safePageSize;
   const conditions = [eq(spaceScheduledItems.spaceId, spaceId)];
 
   if (from && to) {
@@ -80,13 +102,25 @@ export async function findScheduledItemsBySpaceId(
     }
   }
 
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(spaceScheduledItems)
+    .where(and(...conditions));
+
   const rows = await db
     .select()
     .from(spaceScheduledItems)
     .where(and(...conditions))
-    .orderBy(asc(spaceScheduledItems.startsAt));
+    .orderBy(asc(spaceScheduledItems.startsAt))
+    .limit(safePageSize)
+    .offset(offset);
 
-  return rows.map(mapRow);
+  return {
+    items: rows.map(mapRow),
+    total: countRow?.count ?? 0,
+    page: safePage,
+    pageSize: safePageSize,
+  };
 }
 
 export async function findScheduledItemById(
@@ -269,6 +303,35 @@ export async function tryClaimScheduledReminderDispatch(
     .returning();
 
   return Boolean(row);
+}
+
+export async function releaseScheduledReminderDispatch(
+  {
+    scheduledItemId,
+    occurrenceStartsAt,
+    channel,
+  }: {
+    scheduledItemId: number;
+    occurrenceStartsAt: Date;
+    channel: 'email' | 'push';
+  },
+  { db }: DbConfig,
+) {
+  await db
+    .delete(spaceScheduledItemReminderDispatches)
+    .where(
+      and(
+        eq(
+          spaceScheduledItemReminderDispatches.scheduledItemId,
+          scheduledItemId,
+        ),
+        eq(
+          spaceScheduledItemReminderDispatches.occurrenceStartsAt,
+          occurrenceStartsAt,
+        ),
+        eq(spaceScheduledItemReminderDispatches.channel, channel),
+      ),
+    );
 }
 
 export async function recordScheduledReminderDispatch(

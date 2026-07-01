@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  buildPaginatedResponse,
   findCoherencesWithDueDatesInRange,
   findSpaceBySlug,
   normalizeCoherence,
+  parseHttpPaginationParams,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -46,11 +48,22 @@ export async function GET(
       if (!hasAccess && response) return response;
     }
 
-    const rows = await findCoherencesWithDueDatesInRange(
+    const { page, pageSize } = parseHttpPaginationParams(url, {
+      defaultPageSize: 100,
+    });
+    const result = await findCoherencesWithDueDatesInRange(
       { db },
-      { spaceId: space.id, from, to },
+      { spaceId: space.id, from, to, page, pageSize },
     );
-    return NextResponse.json(rows.map(normalizeCoherence));
+
+    return NextResponse.json(
+      buildPaginatedResponse(
+        result.rows.map(normalizeCoherence),
+        result.total,
+        result.page,
+        result.pageSize,
+      ),
+    );
   } catch (error) {
     console.error('Failed to fetch signal deadlines:', error);
     return NextResponse.json(

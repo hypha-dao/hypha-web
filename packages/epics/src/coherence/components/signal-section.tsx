@@ -205,6 +205,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
+          readOnly={!canMutate}
           onMoveStatus={(signal, progressStatus) =>
             patchAndRefresh(signal, { progressStatus })
           }
@@ -214,6 +215,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
+          readOnly={!canMutate}
           onMoveBoard={(signal, board) => patchAndRefresh(signal, { board })}
         />
       ) : viewMode === 'list' ? (
@@ -221,6 +223,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
+          readOnly={!canMutate}
           onPatch={patchAndRefresh}
         />
       ) : (
