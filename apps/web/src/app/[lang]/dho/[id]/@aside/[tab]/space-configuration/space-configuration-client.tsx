@@ -148,8 +148,6 @@ export function SpaceConfigurationClient({
   return (
     <ProposalOverlayShell>
       <LoadingBackdrop
-        showKeepWindowOpenMessage={true}
-        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         fullHeight={true}
         progress={progress}
         isLoading={isBusy}
@@ -169,7 +167,11 @@ export function SpaceConfigurationClient({
               <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (
-            <div>{currentAction}</div>
+            <div>
+              {isPending
+                ? tAgreementFlow('spaceConfiguration.updating')
+                : currentAction}
+            </div>
           )
         }
       >
