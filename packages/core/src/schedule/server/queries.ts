@@ -40,8 +40,6 @@ function mapRow(row: typeof spaceScheduledItems.$inferSelect): ScheduledItem {
     recurrenceUntil: row.recurrenceUntil,
     matrixRoomId: row.matrixRoomId,
     matrixAutoLink: row.matrixAutoLink,
-    remindEmail: row.remindEmail,
-    remindPush: row.remindPush,
     reminderMinutesBefore: row.reminderMinutesBefore,
     coherenceId: row.coherenceId ?? null,
     createdAt: row.createdAt,

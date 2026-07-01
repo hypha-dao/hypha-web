@@ -55,8 +55,6 @@ export async function createScheduledItem(
       recurrenceUntil: values.recurrenceUntil ?? null,
       matrixRoomId: values.matrixRoomId ?? null,
       matrixAutoLink: values.matrixAutoLink ?? false,
-      remindEmail: values.remindEmail ?? false,
-      remindPush: values.remindPush ?? false,
       reminderMinutesBefore: values.reminderMinutesBefore ?? null,
       coherenceId: values.coherenceId ?? null,
     })

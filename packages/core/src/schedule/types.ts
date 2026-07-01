@@ -19,8 +19,6 @@ export interface ScheduledItem {
   recurrenceUntil: Date | null;
   matrixRoomId: string | null;
   matrixAutoLink: boolean;
-  remindEmail: boolean;
-  remindPush: boolean;
   reminderMinutesBefore: number | null;
   coherenceId: number | null;
   createdAt: Date;
@@ -45,8 +43,6 @@ export interface CreateScheduledItemInput {
   recurrencePreset?: RecurrencePreset;
   matrixRoomId?: string | null;
   matrixAutoLink?: boolean;
-  remindEmail?: boolean;
-  remindPush?: boolean;
   reminderMinutesBefore?: number | null;
   coherenceId?: number | null;
 }
@@ -67,8 +63,6 @@ export interface UpdateScheduledItemInput {
   recurrencePreset?: RecurrencePreset;
   matrixRoomId?: string | null;
   matrixAutoLink?: boolean;
-  remindEmail?: boolean;
-  remindPush?: boolean;
   reminderMinutesBefore?: number | null;
   coherenceId?: number | null;
 }
