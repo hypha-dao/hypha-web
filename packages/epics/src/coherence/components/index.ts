@@ -23,5 +23,6 @@ export * from './signal-board-view';
 export * from './signal-swimlane-view';
 export * from './signal-list-view';
 export * from './signal-task-card';
+export * from './signal-workflow-settings';
 export * from './space-memory-section';
 export * from './space-memory-timeline-item';

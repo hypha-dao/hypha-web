@@ -102,7 +102,7 @@ export function SignalSwimlaneView({
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex w-full flex-col gap-5">
       {lanes.map((lane) => {
         const statusMap = byBoardAndStatus.get(lane.slug)!;
         const laneCount = [...statusMap.values()].reduce(
@@ -114,7 +114,7 @@ export function SignalSwimlaneView({
         return (
           <section
             key={lane.slug}
-            className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm"
+            className="w-full overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm"
           >
             <header className="flex items-center justify-between gap-3 border-b border-border/40 bg-gradient-to-r from-muted/35 via-muted/15 to-transparent px-4 py-3">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -128,7 +128,7 @@ export function SignalSwimlaneView({
               </span>
             </header>
 
-            <div className="flex gap-3 overflow-x-auto p-3">
+            <div className="flex w-full gap-3 overflow-x-auto p-3">
               {statuses.map((status, index) => {
                 const columnSignals = statusMap.get(status.slug) ?? [];
                 const dropKey = `${lane.slug}:${status.slug}`;
@@ -144,7 +144,7 @@ export function SignalSwimlaneView({
                   <div
                     key={dropKey}
                     className={cn(
-                      'flex w-[15.5rem] shrink-0 flex-col rounded-xl border bg-muted/10 transition-[border-color,box-shadow]',
+                      'flex min-w-[15.5rem] flex-1 flex-col rounded-xl border bg-muted/10 transition-[border-color,box-shadow]',
                       isDropTarget
                         ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'
                         : 'border-border/40',

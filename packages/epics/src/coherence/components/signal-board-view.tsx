@@ -76,7 +76,7 @@ export function SignalBoardView({
   );
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-3 pt-0.5">
+    <div className="flex w-full gap-4 overflow-x-auto pb-3 pt-0.5">
       {statuses.map((status, index) => {
         const columnSignals = byStatus.get(status.slug) ?? [];
         const isDropTarget = dropTargetSlug === status.slug;
@@ -90,7 +90,7 @@ export function SignalBoardView({
           <div
             key={status.slug}
             className={cn(
-              'flex w-[17.5rem] shrink-0 flex-col rounded-2xl border bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
+              'flex min-w-[17.5rem] flex-1 flex-col rounded-2xl border bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
               isDropTarget
                 ? 'border-accent-8/70 ring-2 ring-accent-9/30 shadow-md'
                 : 'border-border/50',
