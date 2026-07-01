@@ -278,6 +278,8 @@
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+  --animate-network-rise: network-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Keyframes */
@@ -296,6 +298,28 @@
   }
   to {
     height: 0;
+  }
+}
+
+/* Diagonal light sweep used by loading skeletons (e.g. the network grid). */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Staggered entrance for loading cards so the grid "assembles" itself. */
+@keyframes network-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

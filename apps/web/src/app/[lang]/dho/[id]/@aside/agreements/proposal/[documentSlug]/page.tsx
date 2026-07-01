@@ -4,6 +4,7 @@ import {
   ProposalDetail,
   ProposalOverlayShell,
   useSpaceDocumentsWithStatuses,
+  PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   useDbTokens,
 } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
@@ -52,10 +53,22 @@ export default function Agreements() {
   const { id, lang } = useParams();
   const documentSlug = useDocumentSlug();
   const { document, isLoading } = useDocumentBySlug(documentSlug);
-  const { proposalDetails, isLoading: isLoadingProposal } =
-    useProposalDetailsWeb3Rpc({
-      proposalId: document?.web3ProposalId as number,
-    });
+  const {
+    proposalDetails,
+    isLoading: isLoadingProposal,
+    error: proposalError,
+    refreshUntilVoteApplied,
+  } = useProposalDetailsWeb3Rpc({
+    proposalId: document?.web3ProposalId as number,
+  });
+  // While the document says this is a proposal (has a web3ProposalId) but the
+  // on-chain details haven't arrived yet, keep the detail view in its loading
+  // state. Otherwise quorum/unity/vote bars briefly render as 0 and then jump
+  // to their real values - the visible "flicker" when opening the modal. Stop
+  // waiting once the RPC read errors, otherwise the skeleton would be stuck
+  // forever (proposalDetails never arrives) instead of surfacing the failure.
+  const isProposalDataPending =
+    document?.web3ProposalId != null && !proposalDetails && !proposalError;
   const { mutate: votersMutate, myVote } = useMyVote(documentSlug);
   const {
     handleAccept,
@@ -76,6 +89,7 @@ export default function Agreements() {
   const { update } = useSpaceDocumentsWithStatuses({
     spaceSlug: space?.slug as string,
     spaceId: space?.web3SpaceId as number,
+    order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   });
   const { tokens } = useDbTokens();
   const [isVoting, setIsVoting] = useState(false);
@@ -100,7 +114,12 @@ export default function Agreements() {
       await update();
       setProgress(70);
       setVoteMessage(tAgreementFlow('proposalLoader.gettingUpdatedData'));
-      await votersMutate();
+      // Refresh the on-chain proposal details alongside the voters list so the
+      // quorum/unity bars reflect the new vote the instant the loading overlay
+      // closes, instead of waiting up to 10s for the next background poll. The
+      // RPC read can briefly lag the just-mined vote, so retry until the tally
+      // actually changes rather than trusting a single (possibly stale) read.
+      await Promise.all([votersMutate(), refreshUntilVoteApplied()]);
       setProgress(100);
       setVoteMessage(tAgreementFlow('proposalLoader.voteProcessed'));
     } catch (err: any) {
@@ -143,7 +162,7 @@ export default function Agreements() {
     <ProposalOverlayShell>
       <LoadingBackdrop
         progress={progress}
-        isLoading={isLoading || isVoting || !!voteError}
+        isLoading={isVoting || !!voteError}
         message={
           voteError ? (
             <div className="text-center space-y-2">
@@ -190,10 +209,11 @@ export default function Agreements() {
           }}
           title={document?.title}
           status={document?.state}
-          isLoading={isLoading}
+          isLoading={isLoading || isProposalDataPending}
           leadImage={document?.leadImage}
           attachments={document?.attachments}
           proposalId={document?.web3ProposalId}
+          web3SpaceId={space?.web3SpaceId ?? undefined}
           spaceSlug={space?.slug || ''}
           label={document?.label || ''}
           documentSlug={documentSlug}

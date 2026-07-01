@@ -8,6 +8,7 @@ export * from './people/server';
 export * from './people/types';
 export * from './space/server';
 export * from './space/types';
+export * from './space/utils';
 export {
   spaceSlugSchema,
   spaceMembersHttpPaginationQuerySchema,

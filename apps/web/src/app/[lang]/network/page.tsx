@@ -4,6 +4,7 @@ import {
   extractUniqueCategoryGroups,
   getAllSpaces,
   parseCategoryGroupFilterParam,
+  sortSpacesByOrder,
   SPACE_ORDERS,
   Space,
   SpaceOrder,
@@ -80,12 +81,17 @@ export default async function Index(props: PageProps) {
 
   const uniqueCategoryGroups = extractUniqueCategoryGroups(spaces);
 
+  // Pre-sort on the server so the first paint already matches the order the
+  // client applies after hydration. Without this the cards visibly reorder
+  // (DB order -> sorted order) on first load.
+  const sortedSpaces = sortSpacesByOrder(spaces, order);
+
   return (
     <Container className="flex flex-col gap-9 py-9">
       <ExploreSpaces
         lang={lang}
         query={query}
-        spaces={spaces}
+        spaces={sortedSpaces}
         categoryGroups={categoryGroups.length > 0 ? categoryGroups : undefined}
         order={order}
         uniqueCategoryGroups={uniqueCategoryGroups}

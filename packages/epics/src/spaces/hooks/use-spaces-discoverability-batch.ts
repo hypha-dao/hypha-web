@@ -106,7 +106,11 @@ export function useFilterSpacesListWithDiscoverability({
   const { discoverabilityMap, isLoading: isDiscoverabilityLoading } =
     useSpacesDiscoverabilityBatch({ spaces });
 
-  const { user } = useAuthentication();
+  const {
+    user,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
   const { web3SpaceIds: userMemberSpaceIds, isLoading: isMemberSpacesLoading } =
     useMemberWeb3SpaceIds({
       personAddress: user?.wallet?.address,
@@ -200,10 +204,26 @@ export function useFilterSpacesListWithDiscoverability({
     userMemberSpaceIdsSet,
   ]);
 
+  // For the network (general) list the filtered set depends on three async
+  // inputs: on-chain discoverability, whether the viewer is logged in, and which
+  // spaces they are a member of. On a hard refresh Privy isn't ready yet, so the
+  // viewer looks logged-out and their member-space fetch hasn't started -
+  // discoverability resolves first and the list would "settle" showing only
+  // public spaces, then jump as auth + membership resolve (the 76 -> 132 -> 182
+  // count climb). Treat the list as loading until Privy is ready AND, when the
+  // viewer is authenticated, until their member spaces have actually resolved.
+  const isGeneralStateLoading =
+    isAuthLoading ||
+    isDiscoverabilityLoading ||
+    isMemberSpacesLoading ||
+    (isAuthenticated &&
+      user?.wallet?.address != null &&
+      userMemberSpaceIds === undefined);
+
   return {
     filteredSpaces,
     isLoading: useGeneralState
-      ? isDiscoverabilityLoading || isMemberSpacesLoading
+      ? isGeneralStateLoading
       : isUserStateLoading || isDiscoverabilityLoading,
   };
 }
