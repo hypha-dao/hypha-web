@@ -23,12 +23,12 @@ import {
   addMonths,
   endOfMonth,
   endOfWeek,
-  format,
+  format as formatDate,
   startOfMonth,
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import {
@@ -187,14 +187,10 @@ function normalizeCalendarEventRange(
 
 export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const t = useTranslations('Calendar');
+  const intlFormat = useFormatter();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
-  const { getAccessToken, isAuthenticated } = useAuthentication();
-  const [authToken, setAuthToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    void getAccessToken().then(setAuthToken);
-  }, [getAccessToken]);
+  const { isAuthenticated } = useAuthentication();
 
   const [view, setView] = React.useState<CalendarView>('dayGridMonth');
   const [anchorDate, setAnchorDate] = React.useState(() => new Date());
@@ -223,8 +219,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     calendarApiRef.current?.changeView(nextView);
   }, []);
 
-  const { updateScheduledItem } = useScheduledItemMutations(
-    authToken,
+  const { updateScheduledItem, isAuthReady } = useScheduledItemMutations(
     spaceSlug,
     lang,
   );
@@ -299,7 +294,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   };
 
   const handleEventDrop = async (dropInfo: EventDropArg) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !isAuthReady) {
       dropInfo.revert();
       return;
     }
@@ -327,7 +322,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   };
 
   const handleEventResize = async (resizeInfo: EventResizeDoneArg) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !isAuthReady) {
       resizeInfo.revert();
       return;
     }
@@ -379,22 +374,28 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   const headerLabel =
     view === 'dayGridMonth'
-      ? format(anchorDate, 'MMMM yyyy', { locale: dateFnsLocale })
+      ? formatDate(anchorDate, 'MMMM yyyy', { locale: dateFnsLocale })
       : view === 'timeGridDay'
-      ? format(anchorDate, 'EEEE, MMMM d, yyyy', { locale: dateFnsLocale })
-      : `${format(range.from, 'MMM d', { locale: dateFnsLocale })} – ${format(
+      ? formatDate(anchorDate, 'EEEE, MMMM d, yyyy', { locale: dateFnsLocale })
+      : `${formatDate(range.from, 'MMM d', { locale: dateFnsLocale })} – ${formatDate(
           range.to,
           'MMM d, yyyy',
           { locale: dateFnsLocale },
         )}`;
 
+  const itemCount = scheduledItems?.length;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t('title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
-        </div>
+      <header className="flex flex-wrap items-end justify-between gap-2">
+        <h1 className="text-7 font-semibold tracking-tight text-foreground">
+          {t('title')}
+          {typeof itemCount === 'number' ? (
+            <span className="ml-2 text-5 font-medium text-muted-foreground">
+              | {intlFormat.number(itemCount)}
+            </span>
+          ) : null}
+        </h1>
         {isAuthenticated ? (
           <Button
             type="button"
@@ -406,7 +407,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
             {t('newItem')}
           </Button>
         ) : null}
-      </div>
+      </header>
 
       <div className="hypha-space-calendar rounded-2xl border border-border/50 bg-gradient-to-b from-card via-card/98 to-muted/15 p-3 shadow-sm md:p-4">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

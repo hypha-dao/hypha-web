@@ -3,7 +3,6 @@
 import {
   Coherence,
   COHERENCE_PRIORITY_OPTIONS,
-  COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
   DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
@@ -48,14 +47,11 @@ import { Archive, Pencil, Sparkles, UserCircle2, Workflow } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { SignalTagBadges } from './signal-tag-badges';
 import { useScrollParallax } from '../../common/use-scroll-parallax';
 import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
-import {
-  SIGNAL_TAG_BADGE_CLASS,
-  SIGNAL_TAG_OVERFLOW_BADGE_CLASS,
-} from '../utils/signal-tag-badge-styles';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -115,8 +111,6 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
     neutral:
       'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
   };
-const MAX_VISIBLE_SIGNAL_TAGS = 3;
-
 const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'text-accent-10',
   error: 'text-error-10',
@@ -346,33 +340,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     typeLabel,
     typeColorVariant,
   ]);
-
-  const tagList: BadgeItem[] = tags.map((tag) => {
-    const translationKey = `tagLabels.${tag}`;
-    const displayLabel =
-      (COHERENCE_TAGS as readonly string[]).includes(tag) &&
-      t.has(translationKey as never)
-        ? t(translationKey as never)
-        : tag;
-    return {
-      label: `#${displayLabel}`,
-      variant: 'soft',
-      colorVariant: 'accent',
-      className: SIGNAL_TAG_BADGE_CLASS,
-    };
-  });
-  const compactTagList: BadgeItem[] = React.useMemo(() => {
-    if (tagList.length <= MAX_VISIBLE_SIGNAL_TAGS) return tagList;
-    return [
-      ...tagList.slice(0, MAX_VISIBLE_SIGNAL_TAGS),
-      {
-        label: `+${tagList.length - MAX_VISIBLE_SIGNAL_TAGS}`,
-        variant: 'outline',
-        colorVariant: 'neutral',
-        className: SIGNAL_TAG_OVERFLOW_BADGE_CLASS,
-      },
-    ];
-  }, [tagList]);
 
   const plainDescription = React.useMemo(
     () =>
@@ -730,10 +697,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </Dialog>
 
           <div className="mt-auto min-h-[1.9rem] pt-0.5">
-            {tagList?.length > 0 ? (
-              <BadgesList
-                isLoading={isLoading}
-                badges={compactTagList}
+            {tags?.length > 0 ? (
+              <SignalTagBadges
+                tags={tags}
+                maxVisible={3}
+                showHashPrefix
                 className="content-start gap-1.5"
               />
             ) : (

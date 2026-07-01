@@ -28,15 +28,27 @@ const scheduledItemOptionalTextSchema = z
   .nullable()
   .transform((value) => value ?? null);
 
+function isValidMeetingUrl(value: string): boolean {
+  if (value.startsWith('/')) return true;
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const scheduledItemUrlSchema = z
   .string()
   .trim()
-  .url({ message: 'Enter a valid URL' })
   .max(2000)
   .optional()
   .nullable()
   .or(z.literal(''))
-  .transform((value) => (value ? value : null));
+  .transform((value) => (value ? value : null))
+  .refine((value) => value == null || isValidMeetingUrl(value), {
+    message: 'Enter a valid URL',
+  });
 
 const scheduledItemColorSchema = z
   .string()

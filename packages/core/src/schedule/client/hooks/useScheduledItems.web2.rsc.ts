@@ -5,11 +5,7 @@ import useSWRMutation from 'swr/mutation';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type { PaginatedResponse } from '../../../common/types';
 import type { ScheduledItem } from '../../types';
-import {
-  createScheduledItemAction,
-  deleteScheduledItemAction,
-  updateScheduledItemAction,
-} from '../index';
+import { useJwt } from '../../../people/client/hooks/useJwt';
 
 export const SCHEDULED_ITEMS_SWR_KEY = 'scheduled-items' as const;
 
@@ -206,30 +202,92 @@ export function useScheduledItemsByCoherenceId({
   };
 }
 
-export function useScheduledItemMutations(
-  authToken?: string | null,
-  spaceSlug?: string,
-  lang?: string,
-) {
-  const mutationBase = spaceSlug?.trim()
-    ? (['scheduled-item-mutations', spaceSlug.trim(), lang ?? 'en'] as const)
-    : null;
+function serializeScheduledItemPayload(payload: Record<string, unknown>) {
+  const serialized = { ...payload };
+  for (const key of ['startsAt', 'endsAt', 'recurrenceUntil'] as const) {
+    const value = serialized[key];
+    if (value instanceof Date) {
+      serialized[key] = value.toISOString();
+    }
+  }
+  return serialized;
+}
+
+async function readScheduledItemMutationError(response: Response) {
+  const payload = (await response.json().catch(() => null)) as {
+    error?: string;
+    details?: {
+      formErrors?: string[];
+      fieldErrors?: Record<string, string[] | undefined>;
+    };
+  } | null;
+
+  const fieldMessage = payload?.details?.fieldErrors
+    ? Object.values(payload.details.fieldErrors)
+        .flatMap((messages) => messages ?? [])
+        .find(Boolean)
+    : undefined;
+
+  return (
+    fieldMessage ??
+    payload?.details?.formErrors?.[0] ??
+    payload?.error ??
+    `Request failed (${response.status})`
+  );
+}
+
+function mapScheduledItemResponse(row: ScheduledItem): ScheduledItem {
+  return {
+    ...row,
+    startsAt: new Date(row.startsAt),
+    endsAt: new Date(row.endsAt),
+    recurrenceUntil: row.recurrenceUntil
+      ? new Date(row.recurrenceUntil)
+      : null,
+    createdAt: new Date(row.createdAt),
+    updatedAt: new Date(row.updatedAt),
+  };
+}
+
+export function useScheduledItemMutations(spaceSlug?: string, lang?: string) {
+  const { jwt, isLoadingJwt } = useJwt();
+  const slug = spaceSlug?.trim() || null;
+  const locale = lang?.trim() || 'en';
+  const mutationKey =
+    jwt && slug ? ([slug, jwt, locale] as const) : null;
+
+  const mutationHeaders = (token: string): HeadersInit => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'x-hypha-locale': locale,
+  });
 
   const {
     trigger: createScheduledItem,
     isMutating: isCreating,
     error: createError,
   } = useSWRMutation(
-    mutationBase ? ([...mutationBase, 'create'] as const) : null,
-    async (_key, { arg }: { arg: unknown }) => {
-      if (!authToken) {
-        throw new Error('authToken is required to create a scheduled item');
+    mutationKey ? ([...mutationKey, 'create'] as const) : null,
+    async ([resolvedSlug, token, resolvedLocale], { arg }: { arg: unknown }) => {
+      const payload = serializeScheduledItemPayload(
+        (arg ?? {}) as Record<string, unknown>,
+      );
+      const response = await fetch(
+        `/api/v1/spaces/${encodeURIComponent(resolvedSlug)}/scheduled-items`,
+        {
+          method: 'POST',
+          headers: {
+            ...mutationHeaders(token),
+            'x-hypha-locale': resolvedLocale,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(await readScheduledItemMutationError(response));
       }
-      return createScheduledItemAction(arg, {
-        authToken,
-        spaceSlug,
-        lang,
-      });
+      const body = (await response.json()) as { data: ScheduledItem };
+      return mapScheduledItemResponse(body.data);
     },
   );
 
@@ -238,16 +296,31 @@ export function useScheduledItemMutations(
     isMutating: isUpdating,
     error: updateError,
   } = useSWRMutation(
-    mutationBase ? ([...mutationBase, 'update'] as const) : null,
-    async (_key, { arg }: { arg: unknown }) => {
-      if (!authToken) {
-        throw new Error('authToken is required to update a scheduled item');
+    mutationKey ? ([...mutationKey, 'update'] as const) : null,
+    async ([resolvedSlug, token, resolvedLocale], { arg }: { arg: unknown }) => {
+      const input = (arg ?? {}) as Record<string, unknown> & { id?: number };
+      const id = input.id;
+      if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) {
+        throw new Error('Scheduled item id is required');
       }
-      return updateScheduledItemAction(arg, {
-        authToken,
-        spaceSlug,
-        lang,
-      });
+
+      const { id: _ignored, ...patch } = input;
+      const response = await fetch(
+        `/api/v1/spaces/${encodeURIComponent(resolvedSlug)}/scheduled-items/${id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...mutationHeaders(token),
+            'x-hypha-locale': resolvedLocale,
+          },
+          body: JSON.stringify(serializeScheduledItemPayload(patch)),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(await readScheduledItemMutationError(response));
+      }
+      const body = (await response.json()) as { data: ScheduledItem };
+      return mapScheduledItemResponse(body.data);
     },
   );
 
@@ -256,12 +329,20 @@ export function useScheduledItemMutations(
     isMutating: isDeleting,
     error: deleteError,
   } = useSWRMutation(
-    mutationBase ? ([...mutationBase, 'delete'] as const) : null,
-    async (_key, { arg }: { arg: { id: number } }) => {
-      if (!authToken) {
-        throw new Error('authToken is required to delete a scheduled item');
+    mutationKey ? ([...mutationKey, 'delete'] as const) : null,
+    async ([resolvedSlug, token], { arg }: { arg: { id: number } }) => {
+      const response = await fetch(
+        `/api/v1/spaces/${encodeURIComponent(resolvedSlug)}/scheduled-items/${arg.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new Error(await readScheduledItemMutationError(response));
       }
-      return deleteScheduledItemAction(arg, { authToken, spaceSlug });
     },
   );
 
@@ -272,6 +353,8 @@ export function useScheduledItemMutations(
     isCreating,
     isUpdating,
     isDeleting,
+    isAuthReady: Boolean(jwt),
+    isAuthLoading: isLoadingJwt,
     createError,
     updateError,
     deleteError,

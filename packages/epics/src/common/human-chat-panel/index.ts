@@ -48,6 +48,10 @@ export {
   type ChatDraftAttachment,
   type ChatMentionCandidate,
 } from './human-chat-panel-chat-bar';
+export {
+  buildSpaceRosterMentionCandidates,
+  personRosterDisplayLabel,
+} from './build-space-roster-mention-candidates';
 export { HumanChatPanelMessages } from './human-chat-panel-messages';
 export { HumanChatPanelTabs } from './human-chat-panel-tabs';
 export type { ChatPanelTab } from './human-chat-panel-tabs';

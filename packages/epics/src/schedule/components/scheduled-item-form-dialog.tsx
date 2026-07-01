@@ -14,8 +14,8 @@ import {
   type ScheduledItem,
   type ScheduledItemType,
   useFindCoherences,
+  REMINDER_MINUTES_OPTIONS,
 } from '@hypha-platform/core/client';
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   Button,
   Input,
@@ -47,7 +47,10 @@ function resolveReminderMinutesBefore(
   type: ScheduledItemType,
   existing: number | null | undefined,
 ): number | null {
-  if (existing != null) return existing;
+  const allowed = REMINDER_MINUTES_OPTIONS as readonly number[];
+  if (existing != null && allowed.includes(existing)) {
+    return existing;
+  }
   if (type === 'meeting' || type === 'call') {
     return DEFAULT_MEETING_REMINDER_MINUTES;
   }
@@ -330,12 +333,6 @@ export function ScheduledItemForm({
   const t = useTranslations('Calendar');
   const router = useRouter();
   const pathname = usePathname();
-  const { getAccessToken } = useAuthentication();
-  const [authToken, setAuthToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    void getAccessToken().then(setAuthToken);
-  }, [getAccessToken]);
 
   const {
     createScheduledItem,
@@ -344,7 +341,8 @@ export function ScheduledItemForm({
     isCreating,
     isUpdating,
     isDeleting,
-  } = useScheduledItemMutations(authToken, spaceSlug, lang);
+    isAuthReady,
+  } = useScheduledItemMutations(spaceSlug, lang);
 
   const isSubmitting = isCreating || isUpdating;
 
@@ -413,9 +411,10 @@ export function ScheduledItemForm({
       setAllDay(initialItem.allDay);
       setLocation(initialItem.location ?? '');
       setMeetingUrl(initialItem.meetingUrl ?? '');
-      setRecurrencePreset(detectRecurrencePreset(initialItem.recurrenceRule));
+      const preset = detectRecurrencePreset(initialItem.recurrenceRule);
+      setRecurrencePreset(preset);
       setRecurrenceUntilLocal(
-        initialItem.recurrenceUntil
+        preset !== 'none' && initialItem.recurrenceUntil
           ? toDatetimeLocalValue(asDate(initialItem.recurrenceUntil)).slice(
               0,
               10,
@@ -465,6 +464,13 @@ export function ScheduledItemForm({
     }
     setFieldErrors({});
   }, [mode, initialItem, draftRange, lockedLinkedSignal, resetExtendedFields]);
+
+  React.useEffect(() => {
+    if (recurrencePreset === 'none') {
+      setRecurrenceUntilLocal('');
+      clearFieldError('recurrenceUntil');
+    }
+  }, [recurrencePreset, clearFieldError]);
 
   React.useEffect(() => {
     if ((type === 'call' || type === 'meeting') && mode === 'create') {
@@ -988,7 +994,7 @@ export function ScheduledItemForm({
             </Button>
             <Button
               type="submit"
-              disabled={!authToken || isSubmitting || isDeleting}
+              disabled={!isAuthReady || isSubmitting || isDeleting}
             >
               {isSubmitting ? t('saving') : t('save')}
             </Button>
