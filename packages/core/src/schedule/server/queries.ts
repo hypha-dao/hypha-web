@@ -176,10 +176,6 @@ export async function findDueScheduledReminders(
     .innerJoin(spaces, eq(spaceScheduledItems.spaceId, spaces.id))
     .where(
       and(
-        or(
-          eq(spaceScheduledItems.remindEmail, true),
-          eq(spaceScheduledItems.remindPush, true),
-        ),
         isNotNull(spaceScheduledItems.reminderMinutesBefore),
         lte(spaceScheduledItems.startsAt, latestOccurrenceStart),
         or(
@@ -223,17 +219,12 @@ export async function findDueScheduledReminders(
       );
       if (reminderAt < now || reminderAt > horizon) continue;
 
-      const channels: Array<'email' | 'push'> = [];
-      if (item.remindEmail) channels.push('email');
-      if (item.remindPush) channels.push('push');
-      if (channels.length === 0) continue;
-
       due.push({
         item,
         occurrenceStartsAt,
         spaceSlug: row.spaceSlug,
         spaceTitle: row.spaceTitle,
-        channels,
+        channels: ['email', 'push'],
       });
     }
   }

@@ -280,6 +280,10 @@
       "mentionOnChatMessage": {
         "title": "Chat @mentions and call alerts",
         "description": "When someone @mentions you or starts a call in a space or signal thread you belong to."
+      },
+      "meetingReminders": {
+        "title": "Meeting and call reminders",
+        "description": "When a meeting or call in one of your spaces is about to start."
       }
     },
     "actions": {

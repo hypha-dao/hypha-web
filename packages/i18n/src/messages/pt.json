@@ -1040,6 +1040,10 @@
       "mentionOnChatMessage": {
         "title": "Menções @ e alertas de chamada",
         "description": "Quando alguém @menciona você ou inicia uma chamada em um espaço ou thread de sinal da qual você faz parte."
+      },
+      "meetingReminders": {
+        "title": "Lembretes de reuniões e chamadas",
+        "description": "Quando uma reunião ou chamada em um dos seus espaços está prestes a começar."
       }
     },
     "actions": {

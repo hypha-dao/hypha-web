@@ -8,7 +8,6 @@ import {
   useScheduledItemMutations,
   type RecurrencePreset,
   RECURRENCE_PRESETS,
-  REMINDER_MINUTES_OPTIONS,
   detectRecurrencePreset,
   SCHEDULED_ITEM_TYPES,
   type ScheduledItem,
@@ -37,6 +36,18 @@ import { ButtonClose, createAsideOverlayCloseHandler } from '../../common/button
 const DATETIME_LOCAL_STEP_SECONDS = 300;
 const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
 const MIN_TIMED_DURATION_MS = 5 * 60 * 1000;
+const DEFAULT_MEETING_REMINDER_MINUTES = 15;
+
+function resolveReminderMinutesBefore(
+  type: ScheduledItemType,
+  existing: number | null | undefined,
+): number | null {
+  if (existing != null) return existing;
+  if (type === 'meeting' || type === 'call') {
+    return DEFAULT_MEETING_REMINDER_MINUTES;
+  }
+  return null;
+}
 
 function snapMinuteToFiveMinuteStep(date: Date): Date {
   const snapped = new Date(date);
@@ -80,7 +91,6 @@ type ScheduledItemFormField =
   | 'startsAt'
   | 'endsAt'
   | 'recurrenceUntil'
-  | 'reminderMinutesBefore'
   | '_form';
 
 type ScheduledItemFieldErrors = Partial<Record<ScheduledItemFormField, string>>;
@@ -136,7 +146,6 @@ function scrollToFirstFieldError(
     'startsAt',
     'endsAt',
     'recurrenceUntil',
-    'reminderMinutesBefore',
     '_form',
   ];
 
@@ -340,11 +349,6 @@ export function ScheduledItemForm({
     React.useState<RecurrencePreset>('none');
   const [recurrenceUntilLocal, setRecurrenceUntilLocal] = React.useState('');
   const [matrixAutoLink, setMatrixAutoLink] = React.useState(false);
-  const [remindEmail, setRemindEmail] = React.useState(false);
-  const [remindPush, setRemindPush] = React.useState(false);
-  const [reminderMinutesBefore, setReminderMinutesBefore] = React.useState<
-    number | null
-  >(null);
   const [fieldErrors, setFieldErrors] =
     React.useState<ScheduledItemFieldErrors>({});
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -363,9 +367,6 @@ export function ScheduledItemForm({
     setRecurrencePreset('none');
     setRecurrenceUntilLocal('');
     setMatrixAutoLink(false);
-    setRemindEmail(false);
-    setRemindPush(false);
-    setReminderMinutesBefore(null);
   }, []);
 
   React.useEffect(() => {
@@ -394,9 +395,6 @@ export function ScheduledItemForm({
           : '',
       );
       setMatrixAutoLink(initialItem.matrixAutoLink);
-      setRemindEmail(initialItem.remindEmail);
-      setRemindPush(initialItem.remindPush);
-      setReminderMinutesBefore(initialItem.reminderMinutesBefore);
     } else if (draftRange) {
       setTitle('');
       setDescription('');
@@ -521,10 +519,6 @@ export function ScheduledItemForm({
       nextErrors.endsAt = t('validationEndAfterStart');
     }
 
-    if ((remindEmail || remindPush) && reminderMinutesBefore == null) {
-      nextErrors.reminderMinutesBefore = t('validationReminderRequired');
-    }
-
     if (
       recurrencePreset !== 'none' &&
       recurrenceUntilLocal &&
@@ -562,10 +556,12 @@ export function ScheduledItemForm({
             ? fromDatetimeLocalValue(`${recurrenceUntilLocal}T23:59`)
             : null,
         matrixAutoLink,
-        remindEmail,
-        remindPush,
-        reminderMinutesBefore:
-          remindEmail || remindPush ? reminderMinutesBefore : null,
+        remindEmail: false,
+        remindPush: false,
+        reminderMinutesBefore: resolveReminderMinutesBefore(
+          type,
+          mode === 'edit' ? initialItem?.reminderMinutesBefore : null,
+        ),
       };
 
       if (mode === 'create') {
@@ -862,67 +858,6 @@ export function ScheduledItemForm({
             onChange={(e) => setLocation(e.target.value)}
             placeholder={t('fieldLocationPlaceholder')}
           />
-        </div>
-
-        <div className="rounded-lg border border-border/60 p-3">
-          <p className="mb-3 text-sm font-medium">{t('fieldReminders')}</p>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="scheduled-item-remind-email">
-                {t('fieldRemindEmail')}
-              </Label>
-              <Switch
-                id="scheduled-item-remind-email"
-                checked={remindEmail}
-                onCheckedChange={setRemindEmail}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="scheduled-item-remind-push">
-                {t('fieldRemindPush')}
-              </Label>
-              <Switch
-                id="scheduled-item-remind-push"
-                checked={remindPush}
-                onCheckedChange={setRemindPush}
-              />
-            </div>
-            {remindEmail || remindPush ? (
-              <div className="flex flex-col gap-2">
-                <Label>{t('fieldReminderMinutesBefore')}</Label>
-                <Select
-                  value={
-                    reminderMinutesBefore != null
-                      ? String(reminderMinutesBefore)
-                      : ''
-                  }
-                  onValueChange={(value) => {
-                    clearFieldError('reminderMinutesBefore');
-                    setReminderMinutesBefore(Number.parseInt(value, 10));
-                  }}
-                >
-                  <SelectTrigger
-                    name="reminderMinutesBefore"
-                    aria-invalid={
-                      fieldErrors.reminderMinutesBefore ? true : undefined
-                    }
-                  >
-                    <SelectValue placeholder={t('fieldReminderPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REMINDER_MINUTES_OPTIONS.map((minutes) => (
-                      <SelectItem key={minutes} value={String(minutes)}>
-                        {t(`reminderMinutes_${minutes}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <ScheduledItemFieldError
-                  message={fieldErrors.reminderMinutesBefore}
-                />
-              </div>
-            ) : null}
-          </div>
         </div>
 
         <div className="flex flex-col gap-2">

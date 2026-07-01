@@ -281,6 +281,10 @@
       "mentionOnChatMessage": {
         "title": "Chat-Erwähnungen @ und Anrufbenachrichtigungen",
         "description": "Wenn Sie jemand @erwähnt oder einen Anruf in einem Space oder Signal-Thread startet, dem Sie angehören."
+      },
+      "meetingReminders": {
+        "title": "Meeting- und Anruferinnerungen",
+        "description": "Wenn ein Meeting oder Anruf in einem Ihrer Spaces kurz bevorsteht."
       }
     },
     "actions": {

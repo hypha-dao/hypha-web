@@ -4,6 +4,7 @@ import {
   buildScheduledCallJoinPath,
   type ScheduledItem,
 } from '@hypha-platform/core/client';
+import { TAG_MEETING_CONSENT } from '../constants/tags';
 import { toAbsoluteAppUrl } from '@hypha-platform/core/server';
 import { sendEmailNotifications, sendPushNotifications } from '../mutations';
 
@@ -95,6 +96,7 @@ export async function notifyScheduledItemReminder(
       headings: { en: heading },
       contents: { en: pushBody },
       url: pushUrl,
+      requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
     });
     sent += 1;
   }
@@ -104,6 +106,7 @@ export async function notifyScheduledItemReminder(
       usernames: input.memberSlugs,
       subject: heading,
       body,
+      requiredTags: { [TAG_MEETING_CONSENT]: 'true' },
     });
     sent += 1;
   }

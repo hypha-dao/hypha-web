@@ -130,24 +130,6 @@ function validateRecurrenceUntil(
   }
 }
 
-function validateReminderSettings(
-  data: {
-    remindEmail?: boolean;
-    remindPush?: boolean;
-    reminderMinutesBefore?: number | null;
-  },
-  ctx: z.RefinementCtx,
-) {
-  const wantsReminder = Boolean(data.remindEmail || data.remindPush);
-  if (wantsReminder && data.reminderMinutesBefore == null) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Choose when to send reminders',
-      path: ['reminderMinutesBefore'],
-    });
-  }
-}
-
 export const schemaCreateScheduledItem = z
   .object({
     spaceId: z.number().int().positive(),
@@ -165,7 +147,6 @@ export const schemaCreateScheduledItem = z
         path: ['endsAt'],
       });
     }
-    validateReminderSettings(data, ctx);
     validateRecurrenceUntil(data, ctx);
   });
 
@@ -186,7 +167,6 @@ export const schemaMergedScheduledItemUpdate = z
         path: ['endsAt'],
       });
     }
-    validateReminderSettings(data, ctx);
     validateRecurrenceUntil(data, ctx);
   });
 
