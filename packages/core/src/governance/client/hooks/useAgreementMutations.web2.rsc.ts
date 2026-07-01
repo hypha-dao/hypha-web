@@ -16,15 +16,19 @@ import {
  * new `web3ProposalId`) so the proposal card shows up in the agreements list as
  * soon as the create overlay closes instead of waiting for the next poll. Fired
  * twice (immediate + short delay) to absorb brief DB read propagation.
+ *
+ * We revalidate *without* passing new data so SWR keeps the current list on
+ * screen while it refetches - passing `undefined` here would wipe the cache
+ * first, making every proposal disappear for a moment before reappearing.
  */
 const revalidateSpaceDocuments = () => {
   const matchDocumentsAllKey = (key: unknown) =>
     Array.isArray(key) &&
     typeof key[0] === 'string' &&
     key[0].includes('/documents/all');
-  void globalMutate(matchDocumentsAllKey, undefined, { revalidate: true });
+  void globalMutate(matchDocumentsAllKey);
   setTimeout(() => {
-    void globalMutate(matchDocumentsAllKey, undefined, { revalidate: true });
+    void globalMutate(matchDocumentsAllKey);
   }, 1500);
 };
 

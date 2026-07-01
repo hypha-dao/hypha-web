@@ -20,6 +20,7 @@ import {
   type NetworkMapView,
 } from '../../network-map';
 import { CreateSpaceButton } from './create-space-button';
+import { NetworkLoadingGrid } from './network-loading-grid';
 import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
 import { SpaceOrderCombobox } from './space-order-combobox';
@@ -285,16 +286,7 @@ export function ExploreSpaces({
 
   const cardGridClassName = 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';
   const spacesListContent = showSpacesSkeleton ? (
-    <div className={cn('grid w-full grid-cols-1 gap-4', cardGridClassName)}>
-      {Array.from({ length: 12 }).map((_, index) => (
-        <Skeleton
-          key={index}
-          loading
-          height={228}
-          className="w-full rounded-lg"
-        />
-      ))}
-    </div>
+    <NetworkLoadingGrid count={12} cardGridClassName={cardGridClassName} />
   ) : (
     <SpaceCardList
       lang={lang}
