@@ -18,6 +18,7 @@ import {
 import {
   DEFAULT_SIGNAL_PROGRESS_STATUS,
   normalizeAssigneeIds,
+  resolveDefaultProgressStatus,
 } from '../signal-workflow';
 
 export async function assertCanEditCoherence(
@@ -85,13 +86,16 @@ export const createCoherence = async (
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
   const priority = maybePriority ?? 'medium';
-  const progressStatus = inputProgressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
   const assigneeIds = normalizeAssigneeIds(inputAssigneeIds ?? []);
 
+  let progressStatus = inputProgressStatus;
   if (spaceId != null) {
     const workflow = await ensureSignalWorkflowConfig({ spaceId }, { db });
+    progressStatus ??= resolveDefaultProgressStatus(workflow);
     assertValidProgressStatus(workflow, progressStatus);
     assertValidBoard(workflow, inputBoard ?? null);
+  } else {
+    progressStatus ??= DEFAULT_SIGNAL_PROGRESS_STATUS;
   }
 
   const [newSignal] = await db

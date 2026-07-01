@@ -31,13 +31,7 @@ import {
 import { useFormatter, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Plus,
-} from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import {
   getEventDurationMs,
   getScheduledItemTypeColor,
@@ -48,9 +42,10 @@ import {
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Button } from '@hypha-platform/ui';
+import { Button, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { SpaceAccentLoader } from '../../common/space-accent-loader';
 import { resolveFullCalendarLocale } from '../utils/fullcalendar-locale';
 import { ScheduledItemEventSheet } from './scheduled-item-event-sheet';
 
@@ -58,7 +53,7 @@ const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
   ssr: false,
   loading: () => (
     <div className="flex min-h-[520px] items-center justify-center rounded-xl border border-border/60 bg-muted/20">
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <SpaceAccentLoader size="lg" showLabel={false} />
     </div>
   ),
 });
@@ -456,26 +451,22 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-xl border border-border/40 bg-muted/30 p-1">
-            {viewButtons.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-sm font-medium transition-all',
-                  view === id
-                    ? 'bg-accent-3 text-accent-11 shadow-sm ring-1 ring-accent-8/35'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                )}
-                onClick={() => {
-                  setView(id);
-                  syncCalendarView(id);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <Tabs
+            value={view}
+            onValueChange={(value) => {
+              const nextView = value as CalendarView;
+              setView(nextView);
+              syncCalendarView(nextView);
+            }}
+          >
+            <TabsList triggerVariant="switch" className="w-fit">
+              {viewButtons.map(({ id, label }) => (
+                <TabsTrigger key={id} value={id} variant="switch">
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         <div
@@ -486,7 +477,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         >
           {isLoading && !scheduledItems ? (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/40 backdrop-blur-[1px]">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <SpaceAccentLoader size="md" showLabel={false} />
             </div>
           ) : null}
 

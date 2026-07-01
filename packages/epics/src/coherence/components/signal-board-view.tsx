@@ -17,7 +17,6 @@ import { SignalDropPlaceholder } from './signal-drop-placeholder';
 import {
   statusColorDotClass,
   statusColumnTopBorderClass,
-  statusHeaderTintClass,
 } from '../utils/signal-priority-styles';
 import {
   getSignalDragSlug,
@@ -207,12 +206,7 @@ export function SignalBoardView({
                   : 'border-border/50',
               )}
             >
-              <div
-                className={cn(
-                  'flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5',
-                  statusHeaderTintClass(status.color),
-                )}
-              >
+              <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
                 <div className="flex min-w-0 items-center gap-2">
                   <span
                     className={cn(

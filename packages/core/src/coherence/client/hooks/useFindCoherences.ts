@@ -36,6 +36,40 @@ export function revalidateCoherences(spaceSlug?: string) {
   );
 }
 
+/** Merge a patched signal into the local SWR list without a full refetch. */
+export async function upsertCoherenceInSpaceCache(
+  spaceSlug: string,
+  updated: Coherence,
+): Promise<boolean> {
+  const trimmedSpaceSlug = spaceSlug.trim();
+  const updatedSlug = updated.slug?.trim();
+  if (!trimmedSpaceSlug || !updatedSlug) return false;
+
+  let didUpdate = false;
+
+  await mutate(
+    (key) =>
+      Array.isArray(key) &&
+      key[0] === COHERENCES_SWR_KEY &&
+      key[1] === trimmedSpaceSlug,
+    (current) => {
+      if (!current?.length) return current;
+      let found = false;
+      const next = current.map((item) => {
+        const itemSlug = item.slug?.trim();
+        if (itemSlug !== updatedSlug) return item;
+        found = true;
+        return { ...item, ...updated };
+      });
+      if (found) didUpdate = true;
+      return found ? next : current;
+    },
+    { revalidate: false },
+  );
+
+  return didUpdate;
+}
+
 function buildCoherencesUrl(
   spaceSlug: string,
   query: Omit<CoherenceQuery, 'spaceSlug'>,
