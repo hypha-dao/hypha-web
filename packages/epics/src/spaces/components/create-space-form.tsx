@@ -55,6 +55,7 @@ import {
   ButtonBack,
   ButtonClose,
 } from '@hypha-platform/epics';
+import { SignalWorkflowSettings } from '../../coherence/components/signal-workflow-settings';
 import {
   SpaceLocationPicker,
   type SpaceLocationPickerHandle,
@@ -87,6 +88,7 @@ export type CreateSpaceFormProps = {
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
   spaceId?: number;
+  spaceSlug?: string;
   enableNetworkMap?: boolean;
   slugIncorrectMessage?: string;
   onSubmit: (
@@ -133,6 +135,7 @@ export const SpaceForm = ({
   submitLoadingLabel,
   label = 'create',
   spaceId = -1,
+  spaceSlug,
   enableNetworkMap = false,
   slugIncorrectMessage,
 }: CreateSpaceFormProps) => {
@@ -994,6 +997,12 @@ export const SpaceForm = ({
             </Card>
           )}
         </div>
+        {label === 'configure' && spaceSlug ? (
+          <>
+            <Separator />
+            <SignalWorkflowSettings spaceSlug={spaceSlug} />
+          </>
+        ) : null}
         <div className="flex justify-end w-full">
           <Button
             type="submit"

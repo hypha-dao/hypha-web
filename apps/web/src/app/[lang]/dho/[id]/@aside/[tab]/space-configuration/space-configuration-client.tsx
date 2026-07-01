@@ -192,6 +192,7 @@ export function SpaceConfigurationClient({
             enableNetworkMap={enableNetworkMap}
             initialParentSpaceId={space.parentId ?? null}
             spaceId={space.id}
+            spaceSlug={spaceSlug}
           />
         ) : (
           <div aria-hidden="true" className="min-h-px" />
