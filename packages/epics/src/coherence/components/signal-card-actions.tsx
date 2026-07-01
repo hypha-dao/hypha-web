@@ -3,7 +3,7 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Archive, ArchiveRestore, Pencil } from 'lucide-react';
+import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -14,14 +14,19 @@ import {
   AlertDialogTitle,
   Button,
 } from '@hypha-platform/ui';
-import { Coherence, useCoherenceMutationsWeb2Rsc, useJwt } from '@hypha-platform/core/client';
+import {
+  Coherence,
+  buildScheduleFromSignalSearchParams,
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+} from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 
 type SignalCardActionsProps = {
   signal: Pick<
     Coherence,
-    'slug' | 'roomId' | 'creatorId' | 'archived'
+    'id' | 'slug' | 'roomId' | 'creatorId' | 'archived' | 'title' | 'dueAt'
   >;
   refresh: () => Promise<void>;
   className?: string;
@@ -55,9 +60,7 @@ export function SignalCardActions({
   if (!canManage || !slug) return null;
 
   const buttonClass =
-    size === 'sm'
-      ? 'h-7 w-7 shrink-0 p-0'
-      : 'h-8 w-8 shrink-0 p-0';
+    size === 'sm' ? 'h-7 w-7 shrink-0 p-0' : 'h-8 w-8 shrink-0 p-0';
 
   const stopActivation = (event: React.SyntheticEvent) => {
     event.preventDefault();
@@ -69,6 +72,22 @@ export function SignalCardActions({
     if (!params.lang || !params.id) return;
     const tab = params.tab ?? 'coherence';
     router.push(`/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`);
+  };
+
+  const handleScheduleOnCalendar = (event: React.MouseEvent) => {
+    stopActivation(event);
+    if (!params.lang || !params.id) return;
+    const paramsQuery = buildScheduleFromSignalSearchParams({
+      coherenceId: signal.id,
+      title: signal.title,
+      dueAt: signal.dueAt,
+    });
+    router.push(
+      `/${params.lang}/dho/${
+        params.id
+      }/calendar/new-scheduled-item?${paramsQuery.toString()}`,
+      { scroll: false },
+    );
   };
 
   const handleUnarchive = async (event: React.MouseEvent) => {
@@ -114,6 +133,22 @@ export function SignalCardActions({
         onMouseDown={stopActivation}
         onClick={stopActivation}
       >
+        <Button
+          type="button"
+          variant="ghost"
+          colorVariant="neutral"
+          size="sm"
+          className={cn(
+            buttonClass,
+            'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+          )}
+          disabled={isMutating}
+          aria-label={t('scheduleOnCalendar')}
+          title={t('scheduleOnCalendar')}
+          onClick={handleScheduleOnCalendar}
+        >
+          <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+        </Button>
         <Button
           type="button"
           variant="ghost"
@@ -174,11 +209,11 @@ export function SignalCardActions({
         <AlertDialogContent onClick={stopActivation}>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('archiveConversation')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('archiveConfirm')}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {t('archiveConfirm')}
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          {error ? (
-            <p className="text-sm text-error-11">{error}</p>
-          ) : null}
+          {error ? <p className="text-sm text-error-11">{error}</p> : null}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isMutating}>
               {t('noLeave')}

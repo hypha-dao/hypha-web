@@ -5,8 +5,6 @@ export const SCHEDULED_ITEM_TYPE_COLORS: Record<ScheduledItemType, string> = {
   call: '#6366f1',
   event: '#0ea5e9',
   meeting: '#8b5cf6',
-  deadline: '#ef4444',
-  reminder: '#f59e0b',
   booking: '#14b8a6',
 };
 

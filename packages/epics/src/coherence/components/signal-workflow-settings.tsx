@@ -26,7 +26,13 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { Archive, ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 
-const WORKFLOW_COLORS = ['neutral', 'accent', 'warn', 'success', 'error'] as const;
+const WORKFLOW_COLORS = [
+  'neutral',
+  'accent',
+  'warn',
+  'success',
+  'error',
+] as const;
 
 const STATUS_CATEGORIES: SignalStatusCategory[] = [
   'backlog',
@@ -56,7 +62,9 @@ type SignalWorkflowSettingsProps = {
   spaceSlug: string;
 };
 
-export function SignalWorkflowSettings({ spaceSlug }: SignalWorkflowSettingsProps) {
+export function SignalWorkflowSettings({
+  spaceSlug,
+}: SignalWorkflowSettingsProps) {
   const t = useTranslations('CoherenceTab');
   const { workflow, isLoading, refresh } = useSignalWorkflow(spaceSlug);
   const { updateWorkflow, isUpdating } = useUpdateSignalWorkflow(spaceSlug);
@@ -211,8 +219,12 @@ export function SignalWorkflowSettings({ spaceSlug }: SignalWorkflowSettingsProp
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <Label className="text-foreground">{t('signalWorkflowStatuses')}</Label>
-            <p className="text-1 text-neutral-11">{t('signalFormStatusHint')}</p>
+            <Label className="text-foreground">
+              {t('signalWorkflowStatuses')}
+            </Label>
+            <p className="text-1 text-neutral-11">
+              {t('signalFormStatusHint')}
+            </p>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={addStatus}>
             <Plus className="size-4" />
@@ -282,7 +294,9 @@ export function SignalWorkflowSettings({ spaceSlug }: SignalWorkflowSettingsProp
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <Label className="text-foreground">{t('signalWorkflowBoards')}</Label>
+            <Label className="text-foreground">
+              {t('signalWorkflowBoards')}
+            </Label>
             <p className="text-1 text-neutral-11">{t('signalFormBoardHint')}</p>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={addBoard}>

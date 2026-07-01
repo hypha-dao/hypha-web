@@ -122,6 +122,90 @@ export function useScheduledItems({
   };
 }
 
+function buildScheduledItemsByCoherenceUrl(
+  spaceSlug: string,
+  coherenceId: number,
+): string {
+  const params = new URLSearchParams({
+    coherenceId: String(coherenceId),
+    page: '1',
+    pageSize: '50',
+  });
+  return `/api/v1/spaces/${encodeURIComponent(
+    spaceSlug,
+  )}/scheduled-items?${params.toString()}`;
+}
+
+export function useScheduledItemsByCoherenceId({
+  spaceSlug,
+  coherenceId,
+}: {
+  spaceSlug?: string;
+  coherenceId?: number | null;
+}) {
+  const { getAccessToken } = useAuthentication();
+  const slug = spaceSlug?.trim() || null;
+  const resolvedCoherenceId =
+    typeof coherenceId === 'number' && coherenceId > 0 ? coherenceId : null;
+
+  const swrKey =
+    slug && resolvedCoherenceId
+      ? ([
+          SCHEDULED_ITEMS_SWR_KEY,
+          slug,
+          'coherence',
+          resolvedCoherenceId,
+        ] as const)
+      : null;
+
+  const {
+    data,
+    isLoading,
+    error,
+    mutate: refresh,
+  } = useSWR(
+    swrKey,
+    async ([, resolvedSlug, , resolvedId]) => {
+      const headers: HeadersInit = {};
+      const token = await getAccessToken();
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(
+        buildScheduledItemsByCoherenceUrl(resolvedSlug, resolvedId),
+        { headers },
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch linked events: ${response.status}`);
+      }
+
+      const payload =
+        (await response.json()) as PaginatedResponse<ScheduledItem>;
+      return payload.data.map((item) => ({
+        ...item,
+        startsAt: new Date(item.startsAt),
+        endsAt: new Date(item.endsAt),
+        recurrenceUntil: item.recurrenceUntil
+          ? new Date(item.recurrenceUntil)
+          : null,
+        createdAt: new Date(item.createdAt),
+        updatedAt: new Date(item.updatedAt),
+      }));
+    },
+    {
+      revalidateOnFocus: true,
+    },
+  );
+
+  return {
+    linkedEvents: data,
+    isLoading,
+    error,
+    refresh,
+  };
+}
+
 export function useScheduledItemMutations(
   authToken?: string | null,
   spaceSlug?: string,

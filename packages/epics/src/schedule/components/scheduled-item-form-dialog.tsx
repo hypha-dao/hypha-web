@@ -10,8 +10,10 @@ import {
   RECURRENCE_PRESETS,
   detectRecurrencePreset,
   SCHEDULED_ITEM_TYPES,
+  COHERENCE_SIGNAL_TYPES,
   type ScheduledItem,
   type ScheduledItemType,
+  useFindCoherences,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -31,7 +33,10 @@ import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ButtonBack } from '../../common/button-back';
-import { ButtonClose, createAsideOverlayCloseHandler } from '../../common/button-close';
+import {
+  ButtonClose,
+  createAsideOverlayCloseHandler,
+} from '../../common/button-close';
 
 const DATETIME_LOCAL_STEP_SECONDS = 300;
 const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
@@ -260,8 +265,6 @@ const TYPE_EMOJI: Record<ScheduledItemType, string> = {
   call: '📞',
   event: '📅',
   meeting: '👥',
-  deadline: '⏰',
-  reminder: '🔔',
   booking: '📋',
 };
 
@@ -280,6 +283,7 @@ export type ScheduledItemFormValues = {
   remindEmail?: boolean;
   remindPush?: boolean;
   reminderMinutesBefore?: number | null;
+  coherenceId?: number | null;
 };
 
 export type ScheduledItemFormProps = {
@@ -295,6 +299,14 @@ export type ScheduledItemFormProps = {
     startsAt: Date;
     endsAt: Date;
     allDay: boolean;
+    title?: string;
+    type?: ScheduledItemType;
+    coherenceId?: number | null;
+  } | null;
+  linkedSignal?: {
+    coherenceId: number;
+    title: string;
+    slug?: string | null;
   } | null;
 };
 
@@ -315,6 +327,7 @@ export function ScheduledItemForm({
   backUrl,
   initialItem,
   draftRange,
+  linkedSignal,
 }: ScheduledItemFormProps) {
   const t = useTranslations('Calendar');
   const router = useRouter();
@@ -349,6 +362,7 @@ export function ScheduledItemForm({
     React.useState<RecurrencePreset>('none');
   const [recurrenceUntilLocal, setRecurrenceUntilLocal] = React.useState('');
   const [matrixAutoLink, setMatrixAutoLink] = React.useState(false);
+  const [coherenceId, setCoherenceId] = React.useState<number | null>(null);
   const [fieldErrors, setFieldErrors] =
     React.useState<ScheduledItemFieldErrors>({});
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -368,6 +382,22 @@ export function ScheduledItemForm({
     setRecurrenceUntilLocal('');
     setMatrixAutoLink(false);
   }, []);
+
+  const lockedLinkedSignal = linkedSignal ?? null;
+  const { coherences: spaceSignals } = useFindCoherences({
+    spaceSlug,
+    includeArchived: false,
+  });
+  const selectableSignals = React.useMemo(
+    () =>
+      (spaceSignals ?? []).filter(
+        (signal) =>
+          typeof signal.id === 'number' &&
+          signal.id > 0 &&
+          (COHERENCE_SIGNAL_TYPES as readonly string[]).includes(signal.type),
+      ),
+    [spaceSignals],
+  );
 
   React.useEffect(() => {
     if (mode === 'edit' && initialItem) {
@@ -395,10 +425,11 @@ export function ScheduledItemForm({
           : '',
       );
       setMatrixAutoLink(initialItem.matrixAutoLink);
+      setCoherenceId(initialItem.coherenceId ?? null);
     } else if (draftRange) {
-      setTitle('');
+      setTitle(draftRange.title?.trim() ?? '');
       setDescription('');
-      setType('event');
+      setType(draftRange.type ?? 'event');
       const normalized = normalizeLocalRange(
         toDatetimeLocalValue(draftRange.startsAt),
         toDatetimeLocalValue(draftRange.endsAt),
@@ -410,6 +441,9 @@ export function ScheduledItemForm({
       setAllDay(draftRange.allDay);
       setLocation('');
       setMeetingUrl('');
+      setCoherenceId(
+        lockedLinkedSignal?.coherenceId ?? draftRange.coherenceId ?? null,
+      );
       resetExtendedFields();
     } else if (mode === 'create') {
       const now = new Date();
@@ -428,10 +462,11 @@ export function ScheduledItemForm({
       setAllDay(false);
       setLocation('');
       setMeetingUrl('');
+      setCoherenceId(lockedLinkedSignal?.coherenceId ?? null);
       resetExtendedFields();
     }
     setFieldErrors({});
-  }, [mode, initialItem, draftRange, resetExtendedFields]);
+  }, [mode, initialItem, draftRange, lockedLinkedSignal, resetExtendedFields]);
 
   React.useEffect(() => {
     if ((type === 'call' || type === 'meeting') && mode === 'create') {
@@ -562,6 +597,7 @@ export function ScheduledItemForm({
           type,
           mode === 'edit' ? initialItem?.reminderMinutesBefore : null,
         ),
+        coherenceId,
       };
 
       if (mode === 'create') {
@@ -654,6 +690,43 @@ export function ScheduledItemForm({
           />
           <ScheduledItemFieldError message={fieldErrors.title} />
         </div>
+
+        {lockedLinkedSignal ? (
+          <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t('fieldLinkedSignal')}
+            </p>
+            <p className="mt-1 text-sm font-medium text-foreground">
+              {lockedLinkedSignal.title}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="scheduled-item-linked-signal">
+              {t('fieldLinkedSignalOptional')}
+            </Label>
+            <Select
+              value={coherenceId != null ? String(coherenceId) : 'none'}
+              onValueChange={(value) =>
+                setCoherenceId(value === 'none' ? null : Number(value))
+              }
+            >
+              <SelectTrigger id="scheduled-item-linked-signal">
+                <SelectValue placeholder={t('fieldLinkedSignalPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">
+                  {t('fieldLinkedSignalNone')}
+                </SelectItem>
+                {selectableSignals.map((signal) => (
+                  <SelectItem key={signal.id} value={String(signal.id)}>
+                    {signal.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <Label>{t('fieldType')}</Label>

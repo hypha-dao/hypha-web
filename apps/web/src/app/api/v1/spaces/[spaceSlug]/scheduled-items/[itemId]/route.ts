@@ -9,6 +9,7 @@ import {
   safeParseMergedScheduledItemUpdate,
   parseScheduledItemId,
   updateScheduledItemById,
+  assertCoherenceInSpace,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { PrivyClient } from '@privy-io/node';
@@ -99,6 +100,23 @@ export async function PATCH(
     }
 
     const { id: _id, ...updates } = parsed.data;
+    try {
+      await assertCoherenceInSpace(
+        { coherenceId: updates.coherenceId, spaceId: existing.spaceId },
+        { db },
+      );
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Linked signal must belong to this space',
+        },
+        { status: 400 },
+      );
+    }
+
     const updated = await updateScheduledItemById(
       { id, ...updates },
       {

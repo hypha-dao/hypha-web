@@ -48,6 +48,7 @@ export interface CreateScheduledItemInput {
   remindEmail?: boolean;
   remindPush?: boolean;
   reminderMinutesBefore?: number | null;
+  coherenceId?: number | null;
 }
 
 export interface UpdateScheduledItemInput {
@@ -69,6 +70,7 @@ export interface UpdateScheduledItemInput {
   remindEmail?: boolean;
   remindPush?: boolean;
   reminderMinutesBefore?: number | null;
+  coherenceId?: number | null;
 }
 
 export type DueScheduledReminder = {

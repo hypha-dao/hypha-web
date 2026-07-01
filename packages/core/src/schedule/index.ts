@@ -37,3 +37,8 @@ export {
   schemaUpdateScheduledItem,
   schemaScheduledItemsRangeQuery,
 } from './validation';
+export {
+  buildScheduleFromSignalDraft,
+  buildScheduleFromSignalSearchParams,
+  type ScheduleFromSignalInput,
+} from './schedule-from-signal';

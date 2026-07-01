@@ -31,5 +31,7 @@ export const STATUS_COLUMN_DOTS = [
 ] as const;
 
 export function statusColumnDotClass(index: number): string {
-  return STATUS_COLUMN_DOTS[index % STATUS_COLUMN_DOTS.length] ?? 'bg-neutral-9';
+  return (
+    STATUS_COLUMN_DOTS[index % STATUS_COLUMN_DOTS.length] ?? 'bg-neutral-9'
+  );
 }

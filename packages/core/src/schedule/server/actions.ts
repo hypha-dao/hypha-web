@@ -12,6 +12,7 @@ import {
 } from './mutations';
 import { findScheduledItemById } from './queries';
 import { safeParseMergedScheduledItemUpdate } from './merge-scheduled-item-update';
+import { assertCoherenceInSpace } from './assert-coherence-in-space';
 import { schemaCreateScheduledItem } from '../validation';
 
 async function assertScheduledItemSpaceAccess(
@@ -59,6 +60,11 @@ export async function createScheduledItemAction(
   if (space && validated.spaceId !== space.id) {
     throw new Error('Scheduled item space does not match the requested space');
   }
+
+  await assertCoherenceInSpace(
+    { coherenceId: validated.coherenceId, spaceId: validated.spaceId },
+    { db },
+  );
 
   return createScheduledItem(
     {
@@ -123,6 +129,14 @@ export async function updateScheduledItemAction(
     );
   }
   const { id, ...mergedUpdates } = parsed.data;
+
+  await assertCoherenceInSpace(
+    {
+      coherenceId: mergedUpdates.coherenceId,
+      spaceId: existing.spaceId,
+    },
+    { db },
+  );
 
   return updateScheduledItemById(
     { id, ...mergedUpdates },
