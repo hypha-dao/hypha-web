@@ -259,16 +259,13 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     return [...scheduled, ...signalEvents];
   }, [scheduledItems, signalDeadlines, lang, spaceSlug]);
 
-  React.useEffect(() => {
-    calendarApiRef.current?.gotoDate(anchorDate);
-  }, [anchorDate]);
+  const syncCalendarDate = React.useCallback((date: Date) => {
+    calendarApiRef.current?.gotoDate(date);
+  }, []);
 
-  React.useEffect(() => {
-    const api = calendarApiRef.current;
-    if (api && api.view.type !== view) {
-      api.changeView(view);
-    }
-  }, [view]);
+  const syncCalendarView = React.useCallback((nextView: CalendarView) => {
+    calendarApiRef.current?.changeView(nextView);
+  }, []);
 
   const { updateScheduledItem } = useScheduledItemMutations(
     authToken,
@@ -297,8 +294,16 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
   const handleDatesSet = (arg: DatesSetArg) => {
     calendarApiRef.current = arg.view.calendar;
-    setAnchorDate(arg.view.currentStart);
-    setRange({ from: arg.start, to: arg.end });
+    const nextStart = arg.view.currentStart;
+    setAnchorDate((prev) =>
+      prev.getTime() === nextStart.getTime() ? prev : nextStart,
+    );
+    setRange((prev) =>
+      prev.from.getTime() === arg.start.getTime() &&
+      prev.to.getTime() === arg.end.getTime()
+        ? prev
+        : { from: arg.start, to: arg.end },
+    );
   };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
@@ -401,7 +406,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                 (view === 'timeGridDay' ? 86_400_000 : 7 * 86_400_000),
           );
     setAnchorDate(next);
-    setRange(defaultRangeForView(view, next));
+    syncCalendarDate(next);
   };
 
   const viewButtons: { id: CalendarView; label: string }[] = [
@@ -462,7 +467,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               onClick={() => {
                 const today = new Date();
                 setAnchorDate(today);
-                setRange(defaultRangeForView(view, today));
+                syncCalendarDate(today);
               }}
             >
               {t('today')}
@@ -496,7 +501,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                 )}
                 onClick={() => {
                   setView(id);
-                  setRange(defaultRangeForView(id, anchorDate));
+                  syncCalendarView(id);
                 }}
               >
                 {label}
@@ -511,8 +516,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
             resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
           )}
         >
-          {isLoading ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/40 backdrop-blur-[1px]">
+          {isLoading && !scheduledItems ? (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/40 backdrop-blur-[1px]">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : null}
