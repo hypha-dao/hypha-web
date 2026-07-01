@@ -11,6 +11,9 @@ import { Button, ErrorAlert, Input } from '@hypha-platform/ui';
 import {
   Coherence,
   DEFAULT_SIGNAL_WORKFLOW,
+  applyPendingCoherenceTaskPatch,
+  clearPendingCoherenceTaskPatch,
+  setPendingCoherenceTaskPatch,
   upsertCoherenceInSpaceCache,
   usePatchCoherenceTask,
   useSignalWorkflow,
@@ -30,36 +33,6 @@ import { SignalListView } from './signal-list-view';
 import { SignalGrid } from './signal-grid';
 
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
-
-type OptimisticTaskPatch = {
-  progressStatus?: string | null;
-  board?: string | null;
-};
-
-function applyOptimisticTaskPatches(
-  items: Coherence[],
-  optimisticBySlug: Record<string, OptimisticTaskPatch>,
-): Coherence[] {
-  if (Object.keys(optimisticBySlug).length === 0) return items;
-  return items.map((signal) => {
-    const slug = signal.slug?.trim();
-    if (!slug) return signal;
-    const patch = optimisticBySlug[slug];
-    if (!patch) return signal;
-    return { ...signal, ...patch };
-  });
-}
-
-function patchMatchesSignal(
-  signal: Coherence,
-  patch: OptimisticTaskPatch,
-): boolean {
-  const statusOk =
-    patch.progressStatus === undefined ||
-    signal.progressStatus === patch.progressStatus;
-  const boardOk = patch.board === undefined || signal.board === patch.board;
-  return statusOk && boardOk;
-}
 
 export type SignalViewMode = 'board' | 'swimlane' | 'list' | 'grid';
 
@@ -90,9 +63,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
     string[]
   >([]);
-  const [optimisticBySlug, setOptimisticBySlug] = React.useState<
-    Record<string, OptimisticTaskPatch>
-  >({});
 
   const { workflow, isLoading: isWorkflowLoading } =
     useSignalWorkflow(spaceSlug);
@@ -169,16 +139,25 @@ export const SignalSection: FC<SignalSectionProps> = ({
       const slug = signal.slug?.trim();
       if (!slug) return;
 
-      const optimisticPatch: OptimisticTaskPatch = {};
+      const taskPatch: {
+        progressStatus?: string | null;
+        board?: string | null;
+      } = {};
       if (patch.progressStatus !== undefined) {
-        optimisticPatch.progressStatus = patch.progressStatus;
+        taskPatch.progressStatus = patch.progressStatus;
       }
       if (patch.board !== undefined) {
-        optimisticPatch.board = patch.board;
+        taskPatch.board = patch.board;
       }
 
-      if (Object.keys(optimisticPatch).length > 0) {
-        setOptimisticBySlug((prev) => ({ ...prev, [slug]: optimisticPatch }));
+      const hasTaskFieldPatch = Object.keys(taskPatch).length > 0;
+
+      if (hasTaskFieldPatch) {
+        applyPendingCoherenceTaskPatch(spaceSlug, slug, taskPatch);
+        await upsertCoherenceInSpaceCache(spaceSlug, {
+          ...signal,
+          ...taskPatch,
+        });
       }
 
       try {
@@ -186,20 +165,28 @@ export const SignalSection: FC<SignalSectionProps> = ({
           slug,
           ...patch,
         });
-        const didUpsert = await upsertCoherenceInSpaceCache(spaceSlug, {
-          ...updated,
-          ...optimisticPatch,
-        });
-        if (!didUpsert) {
-          void refresh();
+
+        if (hasTaskFieldPatch) {
+          const confirmedUpdatedAtMs =
+            updated.updatedAt instanceof Date
+              ? updated.updatedAt.getTime()
+              : new Date(updated.updatedAt).getTime();
+          setPendingCoherenceTaskPatch(spaceSlug, slug, {
+            ...taskPatch,
+            confirmedUpdatedAtMs,
+          });
+          const didUpsert = await upsertCoherenceInSpaceCache(spaceSlug, {
+            ...updated,
+            ...taskPatch,
+          });
+          if (!didUpsert) {
+            void refresh();
+          }
         }
       } catch (error) {
-        if (Object.keys(optimisticPatch).length > 0) {
-          setOptimisticBySlug((prev) => {
-            const next = { ...prev };
-            delete next[slug];
-            return next;
-          });
+        if (hasTaskFieldPatch) {
+          clearPendingCoherenceTaskPatch(spaceSlug, slug);
+          void refresh();
         }
         throw error;
       }
@@ -208,32 +195,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   );
 
   const visibleSignals = filteredSignals;
-
-  const signalsForTaskViews = React.useMemo(
-    () => applyOptimisticTaskPatches(visibleSignals, optimisticBySlug),
-    [optimisticBySlug, visibleSignals],
-  );
-
-  React.useEffect(() => {
-    setOptimisticBySlug((current) => {
-      const slugs = Object.keys(current);
-      if (slugs.length === 0) return current;
-      const next = { ...current };
-      let changed = false;
-      for (const slug of slugs) {
-        const patch = current[slug];
-        if (!patch) continue;
-        const signal = signals.find(
-          (item) => item.slug?.trim() === slug.trim(),
-        );
-        if (signal && patchMatchesSignal(signal, patch)) {
-          delete next[slug];
-          changed = true;
-        }
-      }
-      return changed ? next : current;
-    });
-  }, [signals]);
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -268,7 +229,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         </Empty>
       ) : viewMode === 'board' ? (
         <SignalBoardView
-          signals={signalsForTaskViews}
+          signals={visibleSignals}
           workflow={resolvedWorkflow}
           spaceSlug={spaceSlug}
           onSignalClick={onSignalClick}
@@ -280,7 +241,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         />
       ) : viewMode === 'swimlane' ? (
         <SignalSwimlaneView
-          signals={signalsForTaskViews}
+          signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
           readOnly={!canUpdateTasks}
@@ -289,7 +250,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         />
       ) : viewMode === 'list' ? (
         <SignalListView
-          signals={signalsForTaskViews}
+          signals={visibleSignals}
           workflow={resolvedWorkflow}
           onSignalClick={onSignalClick}
           readOnly={!canUpdateTasks}
