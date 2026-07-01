@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR, { mutate as globalMutate } from 'swr';
+import useSWR from 'swr';
 import { Config } from '@wagmi/core';
 import { z } from 'zod';
 import { produce } from 'immer';
@@ -269,18 +269,6 @@ export const useCreateAgreementOrchestrator = ({
           web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
         });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        // The new document now has its web3ProposalId, so it will show up in the
-        // agreements list. Revalidate the (already mounted, behind the overlay)
-        // `/documents/all` caches immediately so the proposal card appears as
-        // soon as the create overlay closes, instead of after the next poll.
-        void globalMutate(
-          (key) =>
-            Array.isArray(key) &&
-            typeof key[0] === 'string' &&
-            key[0].includes('/documents/all'),
-          undefined,
-          { revalidate: true },
-        );
         return result;
       } catch (error) {
         if (error instanceof Error) {

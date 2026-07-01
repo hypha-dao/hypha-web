@@ -56,7 +56,7 @@ export default function Agreements() {
   const {
     proposalDetails,
     isLoading: isLoadingProposal,
-    mutate: proposalDetailsMutate,
+    refreshUntilVoteApplied,
   } = useProposalDetailsWeb3Rpc({
     proposalId: document?.web3ProposalId as number,
   });
@@ -113,8 +113,10 @@ export default function Agreements() {
       setVoteMessage(tAgreementFlow('proposalLoader.gettingUpdatedData'));
       // Refresh the on-chain proposal details alongside the voters list so the
       // quorum/unity bars reflect the new vote the instant the loading overlay
-      // closes, instead of waiting up to 10s for the next background poll.
-      await Promise.all([votersMutate(), proposalDetailsMutate()]);
+      // closes, instead of waiting up to 10s for the next background poll. The
+      // RPC read can briefly lag the just-mined vote, so retry until the tally
+      // actually changes rather than trusting a single (possibly stale) read.
+      await Promise.all([votersMutate(), refreshUntilVoteApplied()]);
       setProgress(100);
       setVoteMessage(tAgreementFlow('proposalLoader.voteProcessed'));
     } catch (err: any) {
