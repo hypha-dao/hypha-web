@@ -1,7 +1,0 @@
-/* Always a light lavender pill with dark indigo text — readable in light and dark UI. */
-.hypha-signal-tag {
-  border: 1px solid oklch(86.196% 0.06763 271.095 / 0.42);
-  background: oklch(96.086% 0.01707 267.82);
-  color: oklch(31.264% 0.08587 268.608);
-  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.35);
-}
