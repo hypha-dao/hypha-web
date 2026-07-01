@@ -53,9 +53,12 @@ export async function POST(request: NextRequest) {
 
         let memberSlugs = recipientSlugsByItem.get(reminder.item.id);
         if (!memberSlugs) {
-          memberSlugs = await resolveScheduledItemRecipientSlugs(reminder.item, {
-            db,
-          });
+          memberSlugs = await resolveScheduledItemRecipientSlugs(
+            reminder.item,
+            {
+              db,
+            },
+          );
           recipientSlugsByItem.set(reminder.item.id, memberSlugs);
         }
 
@@ -71,14 +74,26 @@ export async function POST(request: NextRequest) {
         dispatched += 1;
       } catch (error) {
         for (const channel of claimedChannels) {
-          await releaseScheduledReminderDispatch(
-            {
-              scheduledItemId: reminder.item.id,
-              occurrenceStartsAt: reminder.occurrenceStartsAt,
-              channel,
-            },
-            { db },
-          );
+          try {
+            await releaseScheduledReminderDispatch(
+              {
+                scheduledItemId: reminder.item.id,
+                occurrenceStartsAt: reminder.occurrenceStartsAt,
+                channel,
+              },
+              { db },
+            );
+          } catch (releaseError) {
+            console.error(
+              'Failed to release scheduled item reminder claim:',
+              {
+                scheduledItemId: reminder.item.id,
+                occurrenceStartsAt: reminder.occurrenceStartsAt.toISOString(),
+                channel,
+              },
+              releaseError,
+            );
+          }
         }
         failed += 1;
         console.error(

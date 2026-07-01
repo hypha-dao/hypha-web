@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { format, isValid } from 'date-fns';
+import { isValid } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import { Coherence, SignalWorkflowConfig } from '@hypha-platform/core/client';
 import {
@@ -12,12 +12,13 @@ import {
   SelectValue,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalCreatorMeta } from './signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
+import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonById } from '@hypha-platform/core/client';
 
@@ -105,6 +106,7 @@ export function SignalListView({
   readOnly = false,
 }: SignalListViewProps) {
   const t = useTranslations('CoherenceTab');
+  const intlFormat = useFormatter();
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
@@ -131,7 +133,7 @@ export function SignalListView({
               ? new Date(signal.dueAt)
               : null;
           const hasValidDue = dueDate != null && isValid(dueDate);
-          const isOverdue = hasValidDue && dueDate.getTime() < Date.now();
+          const isOverdue = hasValidDue && isSignalDueOverdue(dueDate);
           const statusName =
             workflow.statuses.find(
               (status) => status.slug === signal.progressStatus,
@@ -237,7 +239,10 @@ export function SignalListView({
                         )}
                       >
                         <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                        {format(dueDate, 'MMM d')}
+                        {intlFormat.dateTime(dueDate, {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                       </span>
                     ) : (
                       <span className="text-sm text-muted-foreground">—</span>

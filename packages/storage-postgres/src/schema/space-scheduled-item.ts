@@ -88,6 +88,7 @@ export const spaceScheduledItemReminderDispatches = pgTable(
     dispatchedAt: timestamp('dispatched_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    ...commonDateFields,
   },
   (table) => [
     uniqueIndex('space_scheduled_item_reminder_unique').on(

@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { format, isValid } from 'date-fns';
+import { isValid } from 'date-fns';
 import { CalendarDays, MessageSquare } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import {
   Coherence,
   SignalBoardDefinition,
@@ -21,6 +21,7 @@ import {
   statusColorDotClass,
 } from '../utils/signal-priority-styles';
 import { SignalTagBadges } from './signal-tag-badges';
+import { isSignalDueOverdue } from '../utils/signal-due-date';
 
 type SignalTaskCardProps = {
   signal: Coherence;
@@ -84,6 +85,7 @@ export function SignalTaskCard({
   className,
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
+  const intlFormat = useFormatter();
   const typeLabel = t(
     `types.${signal.type}` as
       | 'types.Opportunity'
@@ -101,7 +103,7 @@ export function SignalTaskCard({
       ? new Date(signal.dueAt)
       : null;
   const hasValidDue = dueDate != null && isValid(dueDate);
-  const isOverdue = hasValidDue && dueDate.getTime() < Date.now();
+  const isOverdue = hasValidDue && isSignalDueOverdue(dueDate);
 
   const messageCount =
     typeof signal.messages === 'number' && signal.messages > 0
@@ -214,7 +216,10 @@ export function SignalTaskCard({
                 )}
               >
                 <CalendarDays className="h-3 w-3 shrink-0" aria-hidden />
-                {format(dueDate, 'MMM d')}
+                {intlFormat.dateTime(dueDate, {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </span>
             ) : null}
             {showBoard && board ? (

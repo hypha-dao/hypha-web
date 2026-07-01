@@ -21,7 +21,8 @@ export function useCanUpdateSignalTasks({
     spaceId: web3SpaceId,
   });
 
-  const canUpdateTasks = isAuthenticated && Boolean(jwt) && canMutate;
+  const canUpdateTasks =
+    isAuthenticated && Boolean(jwt) && !isLoading && canMutate;
 
   return { canUpdateTasks, isLoading };
 }

@@ -53,9 +53,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
+    const bodyRecord =
+      typeof body === 'object' && body != null
+        ? (body as Record<string, unknown>)
+        : {};
+    const { slug: _ignoredSlug, ...bodyWithoutSlug } = bodyRecord;
     const parsed = schemaPatchCoherenceTaskBySlug.safeParse({
+      ...bodyWithoutSlug,
       slug,
-      ...(typeof body === 'object' && body != null ? body : {}),
     });
     if (!parsed.success) {
       return NextResponse.json(
