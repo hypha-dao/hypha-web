@@ -4,7 +4,6 @@ import {
   Coherence,
   COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_TYPE_OPTIONS,
-  DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMe,
@@ -24,7 +23,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
   CardTitle,
   ConfirmDialog,
   Dialog,
@@ -33,7 +31,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Image,
   Skeleton,
   type LucideReactIcon,
 } from '@hypha-platform/ui';
@@ -48,7 +45,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { SignalTagBadges } from './signal-tag-badges';
-import { useScrollParallax } from '../../common/use-scroll-parallax';
+import { priorityLeftBorderClass } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
@@ -74,43 +71,6 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
 
-const HERO_PRIORITY_WASH_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-accent-9/12',
-  error: 'bg-error-9/14',
-  warn: 'bg-warning-9/13',
-  success: 'bg-success-9/12',
-  neutral: 'bg-neutral-9/10',
-};
-
-const HERO_PRIORITY_SPOTLIGHT_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-br from-accent-9/24 via-accent-8/11 to-transparent',
-  error: 'bg-gradient-to-br from-error-9/26 via-error-8/12 to-transparent',
-  warn: 'bg-gradient-to-br from-warning-9/26 via-warning-8/12 to-transparent',
-  success:
-    'bg-gradient-to-br from-success-9/24 via-success-8/11 to-transparent',
-  neutral:
-    'bg-gradient-to-br from-neutral-9/22 via-neutral-8/10 to-transparent',
-};
-
-const HERO_PRIORITY_VIGNETTE_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-t from-accent-10/20 via-accent-9/10 to-transparent',
-  error: 'bg-gradient-to-t from-error-10/22 via-error-9/10 to-transparent',
-  warn: 'bg-gradient-to-t from-warning-10/22 via-warning-9/10 to-transparent',
-  success:
-    'bg-gradient-to-t from-success-10/20 via-success-9/10 to-transparent',
-  neutral: 'bg-gradient-to-t from-neutral-10/16 via-neutral-9/8 to-transparent',
-};
-
-const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
-  {
-    accent: 'bg-gradient-to-t from-accent-10/24 via-accent-9/10 to-transparent',
-    error: 'bg-gradient-to-t from-error-10/26 via-error-9/11 to-transparent',
-    warn: 'bg-gradient-to-t from-warning-10/26 via-warning-9/11 to-transparent',
-    success:
-      'bg-gradient-to-t from-success-10/24 via-success-9/10 to-transparent',
-    neutral:
-      'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
-  };
 const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'text-accent-10',
   error: 'text-error-10',
@@ -135,7 +95,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   refresh,
   onOpenConversation,
   className,
-  leadImage,
+  leadImage: _leadImage,
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
@@ -223,10 +183,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const { reduceMotion, parallaxY } = useScrollParallax({
-    rate: 0.12,
-    maxShiftPx: 20,
-  });
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const metaBadgesRef = React.useRef<HTMLDivElement>(null);
   const metaDetailsRef = React.useRef<HTMLDivElement>(null);
@@ -306,6 +262,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       'neutral',
     [priorityMeta?.colorVariant],
   );
+
+  const priorityStripeLabel = React.useMemo(() => {
+    if (!priorityMeta) return t('priorities.medium');
+    const priorityKey = `priorities.${priorityMeta.priority}`;
+    return t.has(priorityKey as never)
+      ? t(priorityKey as never)
+      : priorityMeta.priority;
+  }, [priorityMeta, t]);
 
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
@@ -438,75 +402,21 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card pt-0 shadow-sm',
+        'group relative flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         'hover:border-accent-8/75 hover:shadow-md',
         'focus-within:border-accent-8/75 focus-within:shadow-md',
         className,
       )}
     >
-      <CardHeader className="relative h-[98px] shrink-0 overflow-hidden p-0 isolate">
-        <Skeleton
-          className="h-full min-w-full"
-          width="100%"
-          height="98px"
-          loading={isLoading}
-        >
-          <div className="absolute inset-0 overflow-hidden">
-            <div
-              className="absolute inset-x-[-2%] top-[-24%] h-[152%] will-change-transform"
-              style={
-                reduceMotion
-                  ? undefined
-                  : { transform: `translate3d(0, ${parallaxY}px, 0)` }
-              }
-            >
-              <Image
-                width={640}
-                height={98}
-                className="block h-full w-full object-cover"
-                src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                alt=""
-              />
-              <div
-                className={cn(
-                  'absolute inset-0 pointer-events-none',
-                  HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-              <div
-                className={cn(
-                  'pointer-events-none absolute inset-0',
-                  HERO_PRIORITY_SPOTLIGHT_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-              <div
-                className={cn(
-                  'absolute inset-0 pointer-events-none',
-                  HERO_PRIORITY_VIGNETTE_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-              <div
-                className={cn(
-                  'pointer-events-none absolute inset-0',
-                  HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-            </div>
-            <div
-              className={cn(
-                'pointer-events-none absolute inset-0',
-                HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
-              )}
-              aria-hidden
-            />
-          </div>
-        </Skeleton>
-      </CardHeader>
+      <div
+        className={cn(
+          'absolute inset-y-0 left-0 w-1 rounded-l-xl',
+          priorityLeftBorderClass(priority),
+        )}
+        title={priorityStripeLabel}
+        aria-label={priorityStripeLabel}
+      />
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2 pt-2.5">
           <div className="flex min-w-0 flex-col gap-1.5">
