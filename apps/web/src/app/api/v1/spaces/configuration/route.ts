@@ -10,9 +10,9 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
-const schemaPatchSpaceConfiguration = schemaUpdateSpace.extend({
-  id: z.number().int().positive(),
-});
+const schemaPatchSpaceConfiguration = schemaUpdateSpace.and(
+  z.object({ id: z.number().int().positive() }),
+);
 
 export async function PATCH(request: NextRequest) {
   const authToken = parseBearerToken(request.headers.get('Authorization'));

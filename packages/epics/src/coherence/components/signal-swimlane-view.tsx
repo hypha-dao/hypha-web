@@ -275,22 +275,26 @@ export function SignalSwimlaneView({
                               ? () => onSignalClick(signal)
                               : undefined
                           }
-                          statusOptions={readOnly ? undefined : workflow.statuses}
+                          statusOptions={
+                            readOnly ? undefined : workflow.statuses
+                          }
                           onStatusChange={
                             readOnly
                               ? undefined
                               : (progressStatus) => {
-                                  if (signal.progressStatus === progressStatus) {
+                                  if (
+                                    signal.progressStatus === progressStatus
+                                  ) {
                                     return;
                                   }
-                                  void onPatch(signal, { progressStatus }).catch(
-                                    (error) => {
-                                      console.error(
-                                        '[SignalSwimlaneView] Failed to move signal',
-                                        error,
-                                      );
-                                    },
-                                  );
+                                  void onPatch(signal, {
+                                    progressStatus,
+                                  }).catch((error) => {
+                                    console.error(
+                                      '[SignalSwimlaneView] Failed to move signal',
+                                      error,
+                                    );
+                                  });
                                 }
                           }
                           className={cn(

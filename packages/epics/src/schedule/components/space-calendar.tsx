@@ -164,9 +164,7 @@ function buildEditScheduledItemPath(
   return buildCalendarPath(lang, spaceSlug, `/edit-scheduled-item/${itemId}`);
 }
 
-import {
-  normalizeAllDayEventRange,
-} from '../utils/all-day-event-range';
+import { normalizeAllDayEventRange } from '../utils/all-day-event-range';
 
 function normalizeCalendarEventRange(
   start: Date,
