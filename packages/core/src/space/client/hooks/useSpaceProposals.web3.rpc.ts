@@ -5,9 +5,14 @@ import useSWR from 'swr';
 import { getSpaceProposals } from '../web3';
 import React from 'react';
 
-export const useSpaceProposalsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
+export const useSpaceProposalsWeb3Rpc = ({
+  spaceId,
+}: {
+  spaceId: number | undefined | null;
+}) => {
+  const hasValidSpaceId = spaceId != null && Number.isFinite(Number(spaceId));
   const { data, isLoading, error, mutate } = useSWR(
-    [spaceId, 'spaceProposals'],
+    hasValidSpaceId ? [Number(spaceId), 'spaceProposals'] : null,
     async ([spaceId]) =>
       publicClient.readContract(
         getSpaceProposals({ spaceId: BigInt(spaceId) }),

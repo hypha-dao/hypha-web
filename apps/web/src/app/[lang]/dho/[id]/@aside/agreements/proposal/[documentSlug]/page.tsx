@@ -4,6 +4,7 @@ import {
   ProposalDetail,
   ProposalOverlayShell,
   useSpaceDocumentsWithStatuses,
+  PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   useDbTokens,
 } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
@@ -56,6 +57,12 @@ export default function Agreements() {
     useProposalDetailsWeb3Rpc({
       proposalId: document?.web3ProposalId as number,
     });
+  // While the document says this is a proposal (has a web3ProposalId) but the
+  // on-chain details haven't arrived yet, keep the detail view in its loading
+  // state. Otherwise quorum/unity/vote bars briefly render as 0 and then jump
+  // to their real values - the visible "flicker" when opening the modal.
+  const isProposalDataPending =
+    document?.web3ProposalId != null && !proposalDetails;
   const { mutate: votersMutate, myVote } = useMyVote(documentSlug);
   const {
     handleAccept,
@@ -76,6 +83,7 @@ export default function Agreements() {
   const { update } = useSpaceDocumentsWithStatuses({
     spaceSlug: space?.slug as string,
     spaceId: space?.web3SpaceId as number,
+    order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   });
   const { tokens } = useDbTokens();
   const [isVoting, setIsVoting] = useState(false);
@@ -190,7 +198,7 @@ export default function Agreements() {
           }}
           title={document?.title}
           status={document?.state}
-          isLoading={isLoading}
+          isLoading={isLoading || isProposalDataPending}
           leadImage={document?.leadImage}
           attachments={document?.attachments}
           proposalId={document?.web3ProposalId}

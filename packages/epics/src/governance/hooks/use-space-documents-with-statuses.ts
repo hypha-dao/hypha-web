@@ -18,6 +18,16 @@ import {
   normalizeProposalDocumentLabel,
 } from '@hypha-platform/core/client';
 
+/**
+ * Shared default ordering for the space documents list. Exported so every
+ * consumer (proposal aside page, `ProposalDetail`, agreements tab) uses the
+ * exact same SWR key and the `/documents/all` request is deduped instead of
+ * fetched once per component instance.
+ */
+export const PROPOSAL_DOCUMENTS_DEFAULT_ORDER: Order<Document> = [
+  { name: 'createdAt', dir: DirectionType.DESC },
+];
+
 const getDocumentBadges = (document: Document, t: (key: string) => string) => {
   const badges = [];
   const canonicalLabel = normalizeProposalDocumentLabel(document.label);
@@ -68,7 +78,7 @@ export const useSpaceDocumentsWithStatuses = ({
   order,
 }: {
   spaceSlug: string;
-  spaceId: number;
+  spaceId: number | undefined | null;
   order?: Order<Document>;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
