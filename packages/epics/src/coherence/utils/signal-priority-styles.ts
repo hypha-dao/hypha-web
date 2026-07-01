@@ -1,4 +1,4 @@
-/** Workflow status colors — rings + tints for columns/headers (process stage). */
+/** Workflow status colors — rings + top borders for columns (process stage). */
 const WORKFLOW_STATUS_DOT: Record<string, string> = {
   neutral: 'bg-neutral-9 ring-2 ring-neutral-9/30',
   accent: 'bg-accent-9 ring-2 ring-accent-9/35',
@@ -15,15 +15,6 @@ const WORKFLOW_STATUS_TOP_BORDER: Record<string, string> = {
   warning: 'border-t-warning-9',
   success: 'border-t-success-9',
   error: 'border-t-error-9',
-};
-
-const WORKFLOW_STATUS_HEADER_TINT: Record<string, string> = {
-  neutral: 'bg-neutral-3/35',
-  accent: 'bg-accent-3/45',
-  warn: 'bg-warning-3/45',
-  warning: 'bg-warning-3/45',
-  success: 'bg-success-3/40',
-  error: 'bg-error-3/40',
 };
 
 /** Priority colors — left card stripe + list dots (urgency, not workflow stage). */
@@ -60,13 +51,6 @@ export function statusColorDotClass(color?: string | null): string {
 export function statusColumnTopBorderClass(color?: string | null): string {
   const key = color?.trim().toLowerCase() ?? 'neutral';
   return WORKFLOW_STATUS_TOP_BORDER[key] ?? WORKFLOW_STATUS_TOP_BORDER.neutral!;
-}
-
-export function statusHeaderTintClass(color?: string | null): string {
-  const key = color?.trim().toLowerCase() ?? 'neutral';
-  return (
-    WORKFLOW_STATUS_HEADER_TINT[key] ?? WORKFLOW_STATUS_HEADER_TINT.neutral!
-  );
 }
 
 export const PRIORITY_LEFT_BORDER_EDGE: Record<string, string> = {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeSignalWorkflowConfig } from '../signal-workflow';
+import {
+  resolveDefaultProgressStatus,
+  sanitizeSignalWorkflowConfig,
+} from '../signal-workflow';
 
 describe('sanitizeSignalWorkflowConfig', () => {
   it('deduplicates status slugs before validation', () => {
@@ -66,5 +69,38 @@ describe('sanitizeSignalWorkflowConfig', () => {
     });
 
     expect(sanitized.statuses[0]?.name).toBe('Status 1');
+  });
+});
+
+describe('resolveDefaultProgressStatus', () => {
+  it('uses the first backlog-category status when backlog slug was renamed', () => {
+    const slug = resolveDefaultProgressStatus({
+      statuses: [
+        {
+          slug: 'todo',
+          name: 'To do',
+          color: 'accent',
+          category: 'backlog',
+          position: 0,
+        },
+        {
+          slug: 'in_progress',
+          name: 'In progress',
+          color: 'warn',
+          category: 'active',
+          position: 1,
+        },
+      ],
+      boards: [
+        {
+          slug: 'general',
+          name: 'General',
+          color: 'neutral',
+          position: 0,
+        },
+      ],
+    });
+
+    expect(slug).toBe('todo');
   });
 });

@@ -3,13 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useScheduledItemsByCoherenceId,
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
+import { SpaceAccentSpinner } from '../../common/space-accent-loader';
 
 type SignalLinkedCalendarEventsProps = {
   spaceSlug: string;
@@ -97,8 +98,12 @@ export function SignalLinkedCalendarEvents({
       </div>
 
       {isLoading && !linkedEvents ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div
+          className="flex items-center gap-2.5 text-sm text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
+          <SpaceAccentSpinner size="sm" />
           {t('linkedCalendarEventsLoading')}
         </div>
       ) : linkedEvents && linkedEvents.length > 0 ? (

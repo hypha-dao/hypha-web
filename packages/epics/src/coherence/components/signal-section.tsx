@@ -11,6 +11,7 @@ import { Button, ErrorAlert, Input } from '@hypha-platform/ui';
 import {
   Coherence,
   DEFAULT_SIGNAL_WORKFLOW,
+  upsertCoherenceInSpaceCache,
   usePatchCoherenceTask,
   useSignalWorkflow,
 } from '@hypha-platform/core/client';
@@ -181,11 +182,17 @@ export const SignalSection: FC<SignalSectionProps> = ({
       }
 
       try {
-        await patchTask({
+        const updated = await patchTask({
           slug,
           ...patch,
         });
-        await refresh();
+        const didUpsert = await upsertCoherenceInSpaceCache(spaceSlug, {
+          ...updated,
+          ...optimisticPatch,
+        });
+        if (!didUpsert) {
+          void refresh();
+        }
       } catch (error) {
         if (Object.keys(optimisticPatch).length > 0) {
           setOptimisticBySlug((prev) => {
@@ -197,7 +204,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         throw error;
       }
     },
-    [patchTask, refresh],
+    [patchTask, refresh, spaceSlug],
   );
 
   const visibleSignals = filteredSignals;
@@ -216,7 +223,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
       for (const slug of slugs) {
         const patch = current[slug];
         if (!patch) continue;
-        const signal = signals.find((item) => item.slug === slug);
+        const signal = signals.find(
+          (item) => item.slug?.trim() === slug.trim(),
+        );
         if (signal && patchMatchesSignal(signal, patch)) {
           delete next[slug];
           changed = true;

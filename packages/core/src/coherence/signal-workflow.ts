@@ -75,6 +75,21 @@ export const DEFAULT_SIGNAL_WORKFLOW: SignalWorkflowConfig = {
 
 export const DEFAULT_SIGNAL_PROGRESS_STATUS = 'backlog';
 
+/** First backlog-column status for this space, or the first status overall. */
+export function resolveDefaultProgressStatus(
+  config: SignalWorkflowConfig,
+): string {
+  const ordered = [...config.statuses].sort((a, b) => a.position - b.position);
+  const backlogStatus = ordered.find((status) => status.category === 'backlog');
+  if (backlogStatus) return backlogStatus.slug;
+  if (
+    ordered.some((status) => status.slug === DEFAULT_SIGNAL_PROGRESS_STATUS)
+  ) {
+    return DEFAULT_SIGNAL_PROGRESS_STATUS;
+  }
+  return ordered[0]?.slug ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
+}
+
 function reserveUniqueSlug(base: string, used: Set<string>): string {
   const normalized =
     base
@@ -111,7 +126,10 @@ export function sanitizeSignalWorkflowConfig(
     [...config.statuses]
       .sort((a, b) => a.position - b.position)
       .map((status, index) => {
-        const slug = reserveUniqueSlug(status.slug || `status_${index + 1}`, statusSlugs);
+        const slug = reserveUniqueSlug(
+          status.slug || `status_${index + 1}`,
+          statusSlugs,
+        );
         const name = status.name.trim() || `Status ${index + 1}`;
         return { ...status, slug, name };
       }),
@@ -122,7 +140,10 @@ export function sanitizeSignalWorkflowConfig(
     [...config.boards]
       .sort((a, b) => a.position - b.position)
       .map((board, index) => {
-        const slug = reserveUniqueSlug(board.slug || `board_${index + 1}`, boardSlugs);
+        const slug = reserveUniqueSlug(
+          board.slug || `board_${index + 1}`,
+          boardSlugs,
+        );
         const name = board.name.trim() || `Category ${index + 1}`;
         return { ...board, slug, name };
       }),
