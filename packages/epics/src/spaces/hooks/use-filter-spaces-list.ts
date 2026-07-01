@@ -2,7 +2,10 @@
 
 import { Space } from '@hypha-platform/core/client';
 import { useSpaceDiscoverability } from './use-space-discoverability';
-import { useUserSpaceState, UserSpaceState } from './use-user-space-state';
+import {
+  useUserSpaceState,
+  UserSpaceState,
+} from './use-user-space-state.web3.rpc';
 import { shouldShowSpace } from './use-filter-spaces-by-discoverability';
 import { useMemo } from 'react';
 

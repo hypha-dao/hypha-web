@@ -1,10 +1,10 @@
 'use client';
 
 import { Space } from '@hypha-platform/core/client';
-import { useUserSpaceState } from './use-user-space-state';
+import { useUserSpaceState } from './use-user-space-state.web3.rpc';
 import { shouldShowSpace } from './use-filter-spaces-by-discoverability';
 import { TransparencyLevel } from '../components/transparency-level';
-import { UserSpaceState } from './use-user-space-state';
+import { UserSpaceState } from './use-user-space-state.web3.rpc';
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { publicClient, getSpaceVisibility } from '@hypha-platform/core/client';
