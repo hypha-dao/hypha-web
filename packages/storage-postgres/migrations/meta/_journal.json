@@ -428,6 +428,13 @@
       "when": 1782300000000,
       "tag": "0060_scheduled_item_four_types",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1782400000000,
+      "tag": "0061_schedule_schema_optimize",
+      "breakpoints": true
     }
   ]
 }

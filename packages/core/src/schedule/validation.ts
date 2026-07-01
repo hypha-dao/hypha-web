@@ -85,8 +85,6 @@ const scheduledItemBaseFields = {
   recurrencePreset: recurrencePresetSchema,
   matrixRoomId: scheduledItemOptionalTextSchema,
   matrixAutoLink: z.boolean().optional().default(false),
-  remindEmail: z.boolean().optional().default(false),
-  remindPush: z.boolean().optional().default(false),
   reminderMinutesBefore: reminderMinutesSchema,
   coherenceId: z.number().int().positive().optional().nullable(),
 };

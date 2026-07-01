@@ -26,7 +26,6 @@ export {
   updateSignalWorkflowConfigAction,
 } from './coherence/server/actions';
 export { normalizeCoherence } from './coherence/server/web3/normalize-coherence';
-export { findCoherencesWithDueDatesInRange } from './coherence/server/queries';
 export { readSignalWorkflowConfig } from './coherence/server/signal-workflow';
 export * from './coherence/coherence-tags';
 export * from './coherence/coherence-types';

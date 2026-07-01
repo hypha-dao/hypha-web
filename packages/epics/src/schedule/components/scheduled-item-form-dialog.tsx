@@ -280,8 +280,6 @@ export type ScheduledItemFormValues = {
   recurrencePreset?: RecurrencePreset;
   recurrenceUntil?: Date | null;
   matrixAutoLink?: boolean;
-  remindEmail?: boolean;
-  remindPush?: boolean;
   reminderMinutesBefore?: number | null;
   coherenceId?: number | null;
 };
@@ -591,8 +589,6 @@ export function ScheduledItemForm({
             ? fromDatetimeLocalValue(`${recurrenceUntilLocal}T23:59`)
             : null,
         matrixAutoLink,
-        remindEmail: false,
-        remindPush: false,
         reminderMinutesBefore: resolveReminderMinutesBefore(
           type,
           mode === 'edit' ? initialItem?.reminderMinutesBefore : null,

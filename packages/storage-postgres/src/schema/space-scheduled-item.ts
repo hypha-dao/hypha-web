@@ -1,5 +1,6 @@
 import {
   boolean,
+  foreignKey,
   index,
   integer,
   pgTable,
@@ -8,7 +9,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
 import { people } from './people';
@@ -47,12 +48,8 @@ export const spaceScheduledItems = pgTable(
     recurrenceUntil: timestamp('recurrence_until', { withTimezone: true }),
     matrixRoomId: text('matrix_room_id'),
     matrixAutoLink: boolean('matrix_auto_link').notNull().default(false),
-    remindEmail: boolean('remind_email').notNull().default(false),
-    remindPush: boolean('remind_push').notNull().default(false),
     reminderMinutesBefore: integer('reminder_minutes_before'),
-    coherenceId: integer('coherence_id').references(() => coherences.id, {
-      onDelete: 'set null',
-    }),
+    coherenceId: integer('coherence_id'),
     ...commonDateFields,
   },
   (table) => [
@@ -63,12 +60,17 @@ export const spaceScheduledItems = pgTable(
       table.startsAt,
     ),
     index('space_scheduled_items_type_idx').on(table.type),
-    index('space_scheduled_items_reminder_idx').on(
-      table.remindEmail,
-      table.remindPush,
-      table.reminderMinutesBefore,
-    ),
-    index('space_scheduled_items_coherence_id_idx').on(table.coherenceId),
+    index('space_scheduled_items_reminder_due_idx')
+      .on(table.reminderMinutesBefore, table.startsAt)
+      .where(sql`${table.reminderMinutesBefore} IS NOT NULL`),
+    index('space_scheduled_items_space_coherence_idx')
+      .on(table.spaceId, table.coherenceId)
+      .where(sql`${table.coherenceId} IS NOT NULL`),
+    foreignKey({
+      name: 'space_scheduled_items_coherence_space_fk',
+      columns: [table.coherenceId, table.spaceId],
+      foreignColumns: [coherences.id, coherences.spaceId],
+    }).onDelete('set null'),
   ],
 );
 
