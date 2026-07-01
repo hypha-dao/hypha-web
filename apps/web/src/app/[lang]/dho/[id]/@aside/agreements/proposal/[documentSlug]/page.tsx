@@ -53,10 +53,13 @@ export default function Agreements() {
   const { id, lang } = useParams();
   const documentSlug = useDocumentSlug();
   const { document, isLoading } = useDocumentBySlug(documentSlug);
-  const { proposalDetails, isLoading: isLoadingProposal } =
-    useProposalDetailsWeb3Rpc({
-      proposalId: document?.web3ProposalId as number,
-    });
+  const {
+    proposalDetails,
+    isLoading: isLoadingProposal,
+    mutate: proposalDetailsMutate,
+  } = useProposalDetailsWeb3Rpc({
+    proposalId: document?.web3ProposalId as number,
+  });
   // While the document says this is a proposal (has a web3ProposalId) but the
   // on-chain details haven't arrived yet, keep the detail view in its loading
   // state. Otherwise quorum/unity/vote bars briefly render as 0 and then jump
@@ -108,7 +111,10 @@ export default function Agreements() {
       await update();
       setProgress(70);
       setVoteMessage(tAgreementFlow('proposalLoader.gettingUpdatedData'));
-      await votersMutate();
+      // Refresh the on-chain proposal details alongside the voters list so the
+      // quorum/unity bars reflect the new vote the instant the loading overlay
+      // closes, instead of waiting up to 10s for the next background poll.
+      await Promise.all([votersMutate(), proposalDetailsMutate()]);
       setProgress(100);
       setVoteMessage(tAgreementFlow('proposalLoader.voteProcessed'));
     } catch (err: any) {

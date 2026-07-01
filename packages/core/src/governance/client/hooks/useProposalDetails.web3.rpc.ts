@@ -41,7 +41,7 @@ export const useProposalDetailsWeb3Rpc = ({
 }) => {
   const hasValidProposalId =
     proposalId != null && Number.isFinite(Number(proposalId));
-  const { data, isLoading, error } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     hasValidProposalId ? [Number(proposalId), 'proposalDetails'] : null,
     async ([proposalId]) =>
       publicClient.readContract(
@@ -921,5 +921,6 @@ export const useProposalDetailsWeb3Rpc = ({
     proposalDetails: parsedProposal,
     isLoading,
     error,
+    mutate,
   };
 };
