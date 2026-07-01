@@ -7,9 +7,8 @@ import {
   findScheduledItemsBySpaceId,
   mapScheduledItemRow,
   findScheduledItemsByCoherenceId,
-  findSelf,
+  resolvePersonFromAuthToken,
   findSpaceBySlug,
-  getDb,
   parseHttpPaginationParams,
   schemaCreateScheduledItem,
   schemaScheduledItemsRangeQuery,
@@ -19,13 +18,9 @@ import { db } from '@hypha-platform/storage-postgres';
 import { dispatchScheduledItemInvitation } from '@hypha-platform/notifications/server';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
-import { PrivyClient } from '@privy-io/node';
 import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
 type Params = { spaceSlug: string };
-
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
-const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
 function parseRange(url: URL) {
   const fromRaw = url.searchParams.get('from');
@@ -204,17 +199,8 @@ export async function POST(
       return accessResponse;
     }
 
-    const privy = new PrivyClient({
-      appId: PRIVY_APP_ID,
-      appSecret: PRIVY_APP_SECRET,
-    });
-    const { user_id: privyUserId } = await privy
-      .utils()
-      .auth()
-      .verifyAuthToken(authToken);
-    const authDb = getDb({ authToken });
-    const self = await findSelf({ db: authDb });
-    if (!self?.id || self.sub !== privyUserId) {
+    const self = await resolvePersonFromAuthToken(authToken);
+    if (!self?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
