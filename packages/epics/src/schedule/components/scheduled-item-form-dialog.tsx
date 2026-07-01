@@ -30,9 +30,9 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ButtonBack } from '../../common/button-back';
-import { ButtonClose } from '../../common/button-close';
+import { ButtonClose, createAsideOverlayCloseHandler } from '../../common/button-close';
 
 const DATETIME_LOCAL_STEP_SECONDS = 300;
 const DEFAULT_TIMED_DURATION_MS = 60 * 60 * 1000;
@@ -309,6 +309,7 @@ export function ScheduledItemForm({
 }: ScheduledItemFormProps) {
   const t = useTranslations('Calendar');
   const router = useRouter();
+  const pathname = usePathname();
   const { getAccessToken } = useAuthentication();
   const [authToken, setAuthToken] = React.useState<string | null>(null);
 
@@ -605,6 +606,10 @@ export function ScheduledItemForm({
 
   const showCallFields = type === 'call' || type === 'meeting';
   const panelTitle = mode === 'create' ? t('createTitle') : t('editTitle');
+  const handleOverlayClose = React.useCallback(
+    createAsideOverlayCloseHandler({ closeUrl, pathname, router }),
+    [closeUrl, pathname, router],
+  );
 
   return (
     <>
@@ -621,6 +626,7 @@ export function ScheduledItemForm({
             />
             <ButtonClose
               closeUrl={closeUrl}
+              preferBack
               className="px-0 md:px-3 align-top"
             />
           </div>
@@ -972,7 +978,7 @@ export function ScheduledItemForm({
               variant="outline"
               colorVariant="neutral"
             >
-              <Link href={closeUrl} scroll={false}>
+              <Link href={closeUrl} scroll={false} onClick={handleOverlayClose}>
                 {t('cancel')}
               </Link>
             </Button>
