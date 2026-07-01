@@ -2932,7 +2932,7 @@
     "boardCancelAction": "Cancelar",
     "boardAll": "Todos os sinais",
     "boardDelete": "Excluir quadro {boardName}",
-    "signalViewBoard": "Quadro",
+    "signalViewBoard": "Quadro Kanban",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Lista",
     "signalViewGrid": "Grade",

@@ -2930,7 +2930,7 @@
     "boardCancelAction": "Annuler",
     "boardAll": "Tous les signaux",
     "boardDelete": "Supprimer le tableau {boardName}",
-    "signalViewBoard": "Tableau",
+    "signalViewBoard": "Tableau Kanban",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
     "signalViewGrid": "Grille",
