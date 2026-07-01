@@ -66,12 +66,6 @@ export function NetworkLoadingGrid({
               </React.Fragment>
             ))}
           </div>
-
-          {/* Footer stat pills */}
-          <div className="absolute inset-x-5 bottom-5 flex items-center justify-between">
-            <div className="h-6 w-16 rounded-full bg-neutral-3" />
-            <div className="h-6 w-6 rounded-full bg-neutral-3" />
-          </div>
         </div>
       ))}
     </div>
