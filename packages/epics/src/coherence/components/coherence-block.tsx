@@ -266,7 +266,7 @@ export function CoherenceBlock({
         web3SpaceId={space?.web3SpaceId ?? 0}
         signals={filteredSignals}
         leadImage={space?.leadImage ?? undefined}
-        isLoading={isSpaceLoading || (isSignalsLoading && !(signals?.length))}
+        isLoading={isSpaceLoading || (isSignalsLoading && !signals?.length)}
         viewMode={viewMode}
         refresh={refresh}
         onSignalClick={onSignalClick}
