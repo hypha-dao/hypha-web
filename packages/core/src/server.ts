@@ -27,6 +27,7 @@ export {
 } from './coherence/server/actions';
 export { normalizeCoherence } from './coherence/server/web3/normalize-coherence';
 export { readSignalWorkflowConfig } from './coherence/server/signal-workflow';
+export { resolveCoherenceTaskPatchContext } from './coherence/server/resolve-coherence-task-patch-context';
 export * from './coherence/coherence-tags';
 export * from './coherence/coherence-types';
 export * from './coherence/coherence-tags';

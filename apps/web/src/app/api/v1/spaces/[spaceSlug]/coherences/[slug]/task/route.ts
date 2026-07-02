@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   authorizeSpacePanelInteraction,
-  buildPaginatedResponse,
-  findCoherenceBySlug,
-  findSpaceBySlug,
   normalizeCoherence,
-  parseHttpPaginationParams,
   patchCoherenceTaskBySlugAction,
+  resolveCoherenceTaskPatchContext,
   schemaPatchCoherenceTaskBySlug,
 } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
 import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
 type Params = { spaceSlug: string; slug: string };
@@ -25,9 +21,12 @@ export async function PATCH(
   }
 
   try {
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    const context = await resolveCoherenceTaskPatchContext({ spaceSlug, slug });
+    if (!context.ok) {
+      return NextResponse.json(
+        { error: context.error },
+        { status: context.status },
+      );
     }
 
     const interactionAuth = await authorizeSpacePanelInteraction({
@@ -39,11 +38,6 @@ export async function PATCH(
         { error: interactionAuth.message },
         { status: 403 },
       );
-    }
-
-    const existing = await findCoherenceBySlug({ slug }, { db });
-    if (!existing || existing.spaceId !== space.id) {
-      return NextResponse.json({ error: 'Signal not found' }, { status: 404 });
     }
 
     let body: unknown;
