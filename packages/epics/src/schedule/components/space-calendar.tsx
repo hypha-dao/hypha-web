@@ -8,12 +8,14 @@ import type {
   CalendarApi,
   DateSelectArg,
   DatesSetArg,
+  DayCellContentArg,
   DayHeaderContentArg,
   EventClickArg,
   EventContentArg,
   EventDropArg,
   EventInput,
   EventMountArg,
+  SlotLabelContentArg,
 } from '@fullcalendar/core';
 import type { EventResizeDoneArg } from '@fullcalendar/interaction';
 import {
@@ -274,6 +276,11 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       const dow = formatDate(arg.date, 'EEE', { locale: dateFnsLocale });
       const dayNum = formatDate(arg.date, 'd');
       const todayClass = arg.isToday ? ' hypha-cal-col-head--today' : '';
+      const todayMarkup = arg.isToday
+        ? `<span class="hypha-cal-col-head__today">${escapeCalendarHtml(
+            t('today'),
+          )}</span>`
+        : '';
       return {
         html: `<div class="hypha-cal-col-head${todayClass}">
           <span class="hypha-cal-col-head__dow">${escapeCalendarHtml(
@@ -281,11 +288,41 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
           )}</span>
           <span class="hypha-cal-col-head__num">${escapeCalendarHtml(
             dayNum,
-          )}</span>
+          )}</span>${todayMarkup}
         </div>`,
       };
     },
-    [dateFnsLocale, view],
+    [dateFnsLocale, t, view],
+  );
+
+  const renderDayCellContent = React.useCallback(
+    (arg: DayCellContentArg) => {
+      const dayNum = escapeCalendarHtml(arg.dayNumberText);
+      if (!arg.isToday) {
+        return { html: `<span class="hypha-cal-day-num">${dayNum}</span>` };
+      }
+      return {
+        html: `<span class="hypha-cal-day-num hypha-cal-day-num--today">
+          <span class="hypha-cal-day-num__value">${dayNum}</span>
+          <span class="hypha-cal-day-num__badge">${escapeCalendarHtml(
+            t('today'),
+          )}</span>
+        </span>`,
+      };
+    },
+    [t],
+  );
+
+  const renderSlotLabel = React.useCallback(
+    (arg: SlotLabelContentArg) => {
+      const label = formatDate(arg.date, 'HH:mm', { locale: dateFnsLocale });
+      return {
+        html: `<span class="hypha-cal-slot-label">${escapeCalendarHtml(
+          label,
+        )}</span>`,
+      };
+    },
+    [dateFnsLocale],
   );
 
   const renderEventContent = React.useCallback(
@@ -689,6 +726,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               eventDidMount={handleEventDidMount}
               eventContent={renderEventContent}
               dayHeaderContent={renderDayHeader}
+              dayCellContent={renderDayCellContent}
+              slotLabelContent={renderSlotLabel}
               eventDrop={handleEventDrop}
               eventResize={handleEventResize}
               locale={fullCalendarLocale}
