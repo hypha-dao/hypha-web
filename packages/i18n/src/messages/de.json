@@ -3134,6 +3134,9 @@
     "signalTeamMemberListHint": "Wähle Mitglieder aus, die Nachrichten senden, erwähnen und an Thread-Anrufen teilnehmen können.",
     "signalTeamAddMember": "Hinzufügen",
     "signalTeamRemoveMember": "Entfernen",
+    "signalTeamOwner": "Inhaber",
+    "signalTeamMembersLoadFailed": "Mitgliederliste konnte nicht geladen werden. Bitte erneut versuchen.",
+    "signalTeamNoChatAccount": "Kein Chat-Konto",
     "signalTeamPendingRequests": "Ausstehende Anfragen",
     "signalTeamApproveRequester": "Zum Team hinzufügen",
     "signalTeamUpdated": "Signal-Team aktualisiert",
@@ -3545,7 +3548,9 @@
     "resizeBottomLeftLabel": "Anruffenster über die untere linke Ecke skalieren",
     "resizeBottomRightLabel": "Anruffenster über die untere rechte Ecke skalieren",
     "openFloatingWindowLabel": "Schwebendes Anruffenster öffnen",
-    "closeFloatingWindowLabel": "Schwebendes Anruffenster schließen"
+    "closeFloatingWindowLabel": "Schwebendes Anruffenster schließen",
+    "signalTeamMembersLoadFailed": "Mitgliederliste konnte nicht geladen werden. Bitte erneut versuchen.",
+    "signalTeamNoChatAccount": "Kein Chat-Konto"
   },
   "SpaceLocation": {
     "sectionTitle": "Standort auf der Karte",

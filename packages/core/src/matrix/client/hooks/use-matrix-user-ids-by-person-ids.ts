@@ -8,11 +8,6 @@ import { getMatrixUserIdsByPersonIdsAction } from '../../server/actions';
 
 /** Stable fallback — new object each render breaks referential equality downstream. */
 const EMPTY_PERSON_TO_MATRIX: Record<number, string> = {};
-const lastPersonToMatrixByKey = new Map<string, Record<number, string>>();
-
-function personIdsCacheKey(ids: number[]): string {
-  return ids.join('\u0000');
-}
 
 export interface UseMatrixUserIdsByPersonIdsInput {
   /** Hypha `Person.id` values from the space roster. */
@@ -55,19 +50,13 @@ export const useMatrixUserIdsByPersonIds = ({
       for (const row of rows) {
         map[row.personId] = row.matrixUserId;
       }
-      lastPersonToMatrixByKey.set(personIdsCacheKey(a.personIds), map);
       return map;
     },
     { keepPreviousData: true },
   );
 
-  const cachedMap =
-    uniqueSorted.length > 0
-      ? lastPersonToMatrixByKey.get(personIdsCacheKey(uniqueSorted))
-      : undefined;
-
   return {
-    personIdToMatrixUserId: data ?? cachedMap ?? EMPTY_PERSON_TO_MATRIX,
+    personIdToMatrixUserId: data ?? EMPTY_PERSON_TO_MATRIX,
     isLoading: isLoadingJwt || isLoading,
     error,
   };
