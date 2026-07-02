@@ -65,9 +65,7 @@ export function SignalViewControls({
           ) : null}
           <Tabs
             value={viewMode}
-            onValueChange={(value) =>
-              onViewModeChange(value as SignalViewMode)
-            }
+            onValueChange={(value) => onViewModeChange(value as SignalViewMode)}
             className="shrink-0"
           >
             <TabsList triggerVariant="switch" className="w-fit">

@@ -1,4 +1,7 @@
-import { expandScheduledOccurrenceStarts, getEventDurationMs } from './recurrence';
+import {
+  expandScheduledOccurrenceStarts,
+  getEventDurationMs,
+} from './recurrence';
 import { getScheduledItemTypeColor } from './scheduled-item-colors';
 import type { ScheduledItem } from './types';
 

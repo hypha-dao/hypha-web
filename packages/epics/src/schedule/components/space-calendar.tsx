@@ -234,7 +234,10 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       if (isDefaultCalendarViewMode(nextView)) {
         nextParams.delete(CALENDAR_VIEW_QUERY_KEY);
       } else {
-        nextParams.set(CALENDAR_VIEW_QUERY_KEY, calendarViewToUrlSlug(nextView));
+        nextParams.set(
+          CALENDAR_VIEW_QUERY_KEY,
+          calendarViewToUrlSlug(nextView),
+        );
       }
       const query = nextParams.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, {

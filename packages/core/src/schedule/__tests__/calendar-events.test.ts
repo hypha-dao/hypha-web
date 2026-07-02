@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ScheduledItem } from '../types';
 import { toCalendarEventsInRange } from '../calendar-events';
 
-function buildItem(
-  overrides: Partial<ScheduledItem> = {},
-): ScheduledItem {
+function buildItem(overrides: Partial<ScheduledItem> = {}): ScheduledItem {
   return {
     id: 1,
     spaceId: 1,
