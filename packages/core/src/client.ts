@@ -14,6 +14,7 @@ export * from './schedule';
 export * from './geo';
 export * from './geo/client';
 export * from './org-memory';
+export * from './energy';
 export {
   getDefaultDestinationCurrency,
   getDestinationCurrenciesForSourceRail,

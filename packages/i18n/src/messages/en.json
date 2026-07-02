@@ -5,6 +5,7 @@
     "memberRoleLabel": "Member",
     "delegatedVotingMemberLabel": "Delegated voting member",
     "Treasury": "Treasury",
+    "Energy": "Energy",
     "Agreements": "Agreements",
     "Spaces": "Spaces",
     "loadMore": "Load more",
@@ -1663,7 +1664,13 @@
       "funding": "Funding",
       "airdrop": "Airdrop",
       "investment": "Investment",
-      "exchange": "Exchange"
+      "exchange": "Exchange",
+      "enableEnergyCommunity": "Enable Energy Community",
+      "energySharing": "Energy Sharing",
+      "registerEnergySource": "Register Energy Source",
+      "addEnergyMember": "Add Energy Member",
+      "changeEnergyOptimization": "Change Energy Optimization",
+      "whitelistEnergySettlement": "Whitelist Energy Settlement"
     },
     "documentBadges": {
       "invite": "Invite",

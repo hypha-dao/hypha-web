@@ -34,6 +34,10 @@ export const getDhoPathOverview = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/overview`;
 };
 
+export const getDhoPathEnergy = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/energy`;
+};
+
 /** Default tab when opening a space from lists, maps, or bare `/dho/[slug]` URLs. */
 export const getDhoPathDefaultLanding = getDhoPathOverview;
 

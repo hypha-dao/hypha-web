@@ -5,6 +5,7 @@
     "memberRoleLabel": "Mitglied",
     "delegatedVotingMemberLabel": "Delegiertes Stimmmitglied",
     "Treasury": "Schatzkammer",
+    "Energy": "Energie",
     "Agreements": "Vereinbarungen",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
@@ -1664,7 +1665,13 @@
       "funding": "Finanzierung",
       "airdrop": "Airdrop",
       "investment": "Investition",
-      "exchange": "Exchange"
+      "exchange": "Exchange",
+      "enableEnergyCommunity": "Energiegemeinschaft aktivieren",
+      "energySharing": "Energie teilen",
+      "registerEnergySource": "Energiequelle registrieren",
+      "addEnergyMember": "Energiemitglied hinzufügen",
+      "changeEnergyOptimization": "Energieoptimierung ändern",
+      "whitelistEnergySettlement": "Energieabrechnung freigeben"
     },
     "documentBadges": {
       "invite": "Einladung",

@@ -1,0 +1,46 @@
+import {
+  CreateEnergySharingForm,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
+import { Locale } from '@hypha-platform/i18n';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
+import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import {
+  findEnergyCommunityBySpaceId,
+  findSpaceBySlug,
+} from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
+import { notFound, redirect } from 'next/navigation';
+
+type PageProps = {
+  params: Promise<{ lang: Locale; id: string }>;
+};
+
+export default async function CreateEnergySharingProposalPage({
+  params,
+}: PageProps) {
+  const { lang, id } = await params;
+  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+  if (!spaceFromDb) notFound();
+
+  const successfulUrl = getDhoPathAgreements(lang as Locale, id);
+  const backUrl = `${successfulUrl}${PATH_SELECT_CREATE_ACTION}`;
+  const energyMapping = await findEnergyCommunityBySpaceId(spaceFromDb.id, {
+    db,
+  });
+
+  if (!energyMapping) {
+    redirect(backUrl);
+  }
+
+  return (
+    <ProposalOverlayShell>
+      <CreateEnergySharingForm
+        successfulUrl={successfulUrl}
+        backUrl={backUrl}
+        spaceId={spaceFromDb.id}
+        web3SpaceId={spaceFromDb.web3SpaceId}
+      />
+    </ProposalOverlayShell>
+  );
+}

@@ -18,6 +18,7 @@ import {
   useEvents,
 } from '@hypha-platform/core/client';
 import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
+import { stripEnergyProposalMarker } from '../utils/energy-proposal-markers';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 
@@ -88,7 +89,11 @@ function stripDescription(description: string): string {
     withoutInvestmentMarker,
     { replaceWith: '\n' },
   );
-  return stripMdxComments(stripHtmlComments(withoutExchangeDetails))
+  // Energy proposals embed a `__hypha_energy_proposal__ … __end…__` JSON marker
+  // that markdown renders as bold text + raw JSON on the card preview. Strip it
+  // so the card shows only the user-authored description.
+  const withoutEnergyMarker = stripEnergyProposalMarker(withoutExchangeDetails);
+  return stripMdxComments(stripHtmlComments(withoutEnergyMarker))
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')
     .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
       const codePoint = Number.parseInt(hex, 16);

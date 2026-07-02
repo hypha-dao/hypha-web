@@ -449,6 +449,20 @@
       "when": 1782600000000,
       "tag": "0063_reminder_dispatch_date_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1779214317323,
+      "tag": "0064_energy_communities",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1779214317324,
+      "tag": "0065_energy_communities_authenticated_grants",
+      "breakpoints": true
     }
   ]
 }

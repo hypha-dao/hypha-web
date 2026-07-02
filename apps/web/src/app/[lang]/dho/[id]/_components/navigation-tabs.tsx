@@ -9,11 +9,13 @@ import { useTranslations } from 'next-intl';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
+import { getDhoPathEnergy } from '../@tab/energy/constants';
 import { getDhoPathOverview } from '../@tab/overview/constants';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   getActiveTabFromPath,
   useMainColumnScrollY,
+  useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 import { getDhoPathCalendar } from '../@tab/calendar/constants';
@@ -52,6 +54,7 @@ export function NavigationTabs({
     () => getActiveTabFromPath(pathname),
     [pathname],
   );
+  const { data: spaceEnergy } = useSpaceEnergy();
 
   const mainScrollY = useMainColumnScrollY();
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
@@ -108,6 +111,15 @@ export function NavigationTabs({
       name: 'treasury',
       href: getDhoPathTreasury(lang as Locale, id as string),
     },
+    ...(spaceEnergy?.enabled
+      ? [
+          {
+            title: t('Energy'),
+            name: 'energy',
+            href: getDhoPathEnergy(lang as Locale, id as string),
+          },
+        ]
+      : []),
   ];
 
   return (
