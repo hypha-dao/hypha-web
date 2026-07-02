@@ -34,6 +34,7 @@ import {
   useHookRegistry,
   useJwt,
   useMatrixUserIdsByPrivySubs,
+  useMatrixUserIdsByPersonIds,
   useMe,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
@@ -60,6 +61,7 @@ import {
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
 import { UseMembers } from '../spaces';
+import { useSpaceMembersAndDelegates } from '../spaces/hooks/use-space-members-and-delegates';
 import {
   UserSpaceState,
   useUserSpaceState,
@@ -131,9 +133,12 @@ import {
   buildHyphaChatMentionDeepLinkUrl,
   setSignalSearchParam,
 } from './human-chat-panel/human-chat-message-link';
-import { buildSpaceRosterMentionCandidates } from './human-chat-panel/build-space-roster-mention-candidates';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
+import {
+  buildSpaceRosterMentionCandidates,
+  buildSpaceRosterSignalTeamMembers,
+} from './human-chat-panel/build-space-roster-mention-candidates';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -996,16 +1001,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     authToken,
   });
   const { person: me } = useMe();
-  const { persons: spaceMembersResult } = useMembers({
-    spaceSlug,
-    paginationDisabled: true,
-  });
-  const spaceMembers = useMemo(
-    () => spaceMembersResult?.data ?? [],
-    [spaceMembersResult?.data],
-  );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
+  const { persons: spaceMembersResult, isLoading: isLoadingSpaceMembers } =
+    useSpaceMembersAndDelegates({
+      spaceSlug,
+      web3SpaceId: effectiveSpaceWeb3Id,
+      useMembers,
+    });
+  const spaceMembers = useMemo(
+    () => spaceMembersResult ?? [],
+    [spaceMembersResult],
+  );
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
     useSpaceDiscoverability({
       spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
@@ -1432,6 +1439,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   >(null);
   const signalDeepLinkEpochRef = useRef(0);
 
+  /** Leave signal/coherence chat without the deep-link effect re-opening from `?signal=`. */
+  const exitCoherenceChat = useCallback(() => {
+    signalDeepLinkEpochRef.current += 1;
+    setSignalDeepLinkNotice(null);
+
+    const hasSignalDeepLink =
+      Boolean(searchParams?.get('signal')?.trim()) ||
+      Boolean(searchParams?.get('msg')?.trim());
+    if (hasSignalDeepLink) {
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+      next.delete('signal');
+      next.delete('msg');
+      const qs = next.toString();
+      const cleaned = qs ? `${pathname}?${qs}` : pathname;
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(window.history.state, '', cleaned);
+      }
+      router.replace(cleaned, { scroll: false });
+    }
+
+    closeCoherenceChat();
+  }, [closeCoherenceChat, pathname, router, searchParams]);
+
   const pendingCallStartNotifyRef = useRef(false);
   const callStartedNotifyRoomRef = useRef<string | null>(null);
 
@@ -1575,23 +1605,39 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         .filter((s): s is string => Boolean(s)),
     [spaceMembers],
   );
+  const rosterPersonIds = useMemo(
+    () =>
+      spaceMembers
+        .map((p) => p.id)
+        .filter((id): id is number => Number.isFinite(id) && id > 0),
+    [spaceMembers],
+  );
 
   const { subToMatrixUserId } = useMatrixUserIdsByPrivySubs({
     privySubs: rosterSubs,
+  });
+  const {
+    personIdToMatrixUserId,
+    isLoading: isLoadingMatrixUserIds,
+    error: matrixUserIdsError,
+  } = useMatrixUserIdsByPersonIds({
+    personIds: rosterPersonIds,
   });
 
   /** Same source as `@` mention labels: Hypha roster wins over Matrix bridge displaynames. */
   const matrixUserIdToPersonLabel = useMemo(() => {
     const m = new Map<string, string>();
     for (const p of spaceMembers) {
-      const sub = p.sub?.trim();
-      if (!sub) continue;
-      const mxid = subToMatrixUserId[sub]?.trim();
+      let mxid = personIdToMatrixUserId[p.id]?.trim();
+      if (!mxid) {
+        const sub = p.sub?.trim();
+        if (sub) mxid = subToMatrixUserId[sub]?.trim();
+      }
       if (!mxid) continue;
       m.set(mxid, personRosterLabel(p, t('unknownMember')));
     }
     return m;
-  }, [spaceMembers, subToMatrixUserId, t]);
+  }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId, t]);
 
   /** Fallback roster lookup using Matrix localpart == Privy sub (same `useMembers` roster source as chat Members tab). */
   const personLabelByPrivySub = useMemo(() => {
@@ -1670,80 +1716,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [roomId, mode, space?.chatRoomId]);
 
   const rawMentionCandidates = useMemo((): ChatMentionCandidate[] => {
-    if (!client || mentionCandidateRoomIds.length === 0) return [];
-
-    const byUserId = new Map<
-      string,
-      { displayLabel: string; avatarUrl?: string; privySub?: string }
-    >();
-
-    for (const candidateRoomId of mentionCandidateRoomIds) {
-      const room = client.getRoom(candidateRoomId);
-      if (!room) continue;
-      for (const member of room.getJoinedMembers()) {
-        const userId = member.userId;
-        if (!userId) continue;
-        if (currentUserId && userId === currentUserId) continue;
-        byUserId.set(userId, {
-          displayLabel: matrixMemberDisplayLabel(member, userId),
-          avatarUrl: matrixMemberAvatarSquare(
-            client,
-            candidateRoomId,
-            userId,
-            64,
-          ),
-        });
-      }
-    }
-
-    /** Same names as Members tab — overrides Matrix-only technical displaynames. */
-    for (const p of spaceMembers) {
-      const sub = p.sub?.trim();
-      if (!sub) continue;
-      let mxid = subToMatrixUserId[sub];
-      if (!mxid) {
-        for (const userId of byUserId.keys()) {
-          if (matrixUserIdToCanonicalPrivySub(userId) === sub) {
-            mxid = userId;
-            break;
-          }
-        }
-      }
-      if (!mxid) continue;
-      if (currentUserId && mxid === currentUserId) continue;
-      const prev = byUserId.get(mxid);
-      byUserId.set(mxid, {
-        displayLabel: personRosterLabel(p, t('unknownMember')),
-        avatarUrl: p.avatarUrl ?? prev?.avatarUrl,
-        privySub: sub,
-      });
-    }
-
-    const list: ChatMentionCandidate[] = [];
-    for (const [userId, v] of byUserId) {
-      list.push({
-        userId,
-        displayLabel: v.displayLabel,
-        avatarUrl: v.avatarUrl,
-        ...(v.privySub ? { privySub: v.privySub } : {}),
-      });
-    }
-
-    list.sort((a, b) =>
-      a.displayLabel.localeCompare(b.displayLabel, undefined, {
-        sensitivity: 'base',
-      }),
-    );
-    return list;
-  }, [
-    client,
-    mentionCandidateRoomIds,
-    currentUserId,
-    spaceMembers,
-    subToMatrixUserId,
-    t,
-    mentionMembershipEpoch,
-  ]);
+    const candidates = buildSpaceRosterMentionCandidates({
+      spaceMembers,
+      personIdToMatrixUserId,
+      unknownLabel: t('unknownMember'),
+    });
+    if (!currentUserId) return candidates;
+    return candidates.filter((candidate) => candidate.userId !== currentUserId);
+  }, [spaceMembers, personIdToMatrixUserId, currentUserId, t]);
 
   useEffect(() => {
     if (!client || rawMentionCandidates.length === 0) return;
@@ -2084,47 +2064,47 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     canInteractWithSignalThread &&
     !isChatFollowerTab &&
     mentionCandidates.length > 0;
+  const signalTeamRosterMembers = useMemo(
+    () =>
+      buildSpaceRosterSignalTeamMembers({
+        spaceMembers,
+        personIdToMatrixUserId,
+        unknownLabel: t('unknownMember'),
+      }),
+    [spaceMembers, personIdToMatrixUserId, t],
+  );
   const signalTeamSelectableMembers = useMemo((): ChatMentionCandidate[] => {
     const extraCandidates: ChatMentionCandidate[] = [];
     if (currentUserId) {
-      const alreadyListed = spaceMembers.some((member) => {
-        const sub = member.sub?.trim();
-        return sub && subToMatrixUserId[sub]?.trim() === currentUserId;
-      });
+      const alreadyListed = spaceMembers.some(
+        (member) => personIdToMatrixUserId[member.id]?.trim() === currentUserId,
+      );
       if (!alreadyListed) {
-        const selfSub = me?.sub?.trim();
-        const isOnSpaceRoster = selfSub
-          ? spaceMembers.some((member) => member.sub?.trim() === selfSub)
-          : false;
-        if (isOnSpaceRoster) {
-          extraCandidates.push({
-            userId: currentUserId,
-            displayLabel:
-              [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
-              me?.nickname?.trim() ||
-              t('you'),
-            avatarUrl: me?.avatarUrl,
-            ...(selfSub ? { privySub: selfSub } : {}),
-          });
-        }
+        extraCandidates.push({
+          userId: currentUserId,
+          displayLabel:
+            [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+            me?.nickname?.trim() ||
+            t('you'),
+          avatarUrl: me?.avatarUrl,
+        });
       }
     }
 
     return buildSpaceRosterMentionCandidates({
       spaceMembers,
-      subToMatrixUserId,
+      personIdToMatrixUserId,
       unknownLabel: t('unknownMember'),
       extraCandidates,
     });
   }, [
     spaceMembers,
-    subToMatrixUserId,
+    personIdToMatrixUserId,
     currentUserId,
     me?.name,
     me?.surname,
     me?.nickname,
     me?.avatarUrl,
-    me?.sub,
     t,
   ]);
   const effectiveSignalTeamMemberIds = useMemo(
@@ -2487,10 +2467,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
-      closeCoherenceChat();
+      exitCoherenceChat();
     }
     prevSidebarOpenRef.current = sidebarOpen;
-  }, [sidebarOpen, mode, closeCoherenceChat]);
+  }, [sidebarOpen, mode, exitCoherenceChat]);
 
   // Reset human chat when navigating to a different space (picker, recently visited, etc.)
   useEffect(() => {
@@ -2500,31 +2480,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     lastHumanChatSpaceSlugRef.current = nextSlug;
     if (!prevSlug) return;
 
-    closeCoherenceChat();
-    setSignalDeepLinkNotice(null);
-    signalDeepLinkEpochRef.current += 1;
-
-    if (searchParams?.get('signal')?.trim()) {
-      const cleaned = setSignalSearchParam(
-        pathname,
-        searchParams?.toString() ?? '',
-        null,
-      );
-      if (typeof window !== 'undefined') {
-        window.history.replaceState(window.history.state, '', cleaned);
-      }
-      router.replace(cleaned, { scroll: false });
-    }
-
+    exitCoherenceChat();
     resetChatStateOnAuthDrop();
-  }, [
-    spaceSlug,
-    closeCoherenceChat,
-    pathname,
-    router,
-    searchParams,
-    resetChatStateOnAuthDrop,
-  ]);
+  }, [spaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
 
   useEffect(() => {
     hasLoadedCoherenceMessagesRef.current = false;
@@ -3131,7 +3089,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         pathSlug === spaceSlug
       ) {
         if (mode === 'coherence') {
-          closeCoherenceChat();
+          exitCoherenceChat();
         }
         openHumanChatPanel();
         setActiveTab('chat');
@@ -3242,7 +3200,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       router,
       openCoherenceChat,
       openHumanChatPanel,
-      closeCoherenceChat,
+      exitCoherenceChat,
       mode,
       space?.chatRoomId,
       spaceSlug,
@@ -4172,7 +4130,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       <SidebarHeader className="bg-background-2 gap-0 p-0">
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
-          onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+          onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
             showAuthedUi && roomId ? (
@@ -4580,66 +4538,90 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         <p className="text-xs text-muted-foreground">
                           {t('signalTeamMemberListHint')}
                         </p>
-                        <div className="grid gap-1">
-                          {signalTeamSelectableMembers.map((member) => {
-                            const selected = signalTeamEditorMemberIds.includes(
-                              member.userId,
-                            );
-                            const isCurrentUser =
-                              member.userId === currentUserId;
-                            const isOwner = member.userId === signalTeamOwnerId;
-                            return (
-                              <button
-                                key={member.userId}
-                                type="button"
-                                className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
-                                  selected
-                                    ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
-                                    : 'border border-transparent hover:bg-muted/70'
-                                }`}
-                                disabled={signalTeamBusy}
-                                onClick={() => {
-                                  if (isCurrentUser && selected) return;
-                                  if (isOwner && selected) return;
-                                  const next = selected
-                                    ? signalTeamEditorMemberIds.filter(
-                                        (id) => id !== member.userId,
-                                      )
-                                    : [
-                                        ...signalTeamEditorMemberIds,
-                                        member.userId,
-                                      ];
-                                  setSignalTeamDraftMemberIds(
-                                    normalizeMatrixUserIds(next),
-                                  );
-                                }}
-                              >
-                                <SignalTeamResolvedMemberLabel
-                                  candidate={{
-                                    userId: member.userId,
-                                    displayLabel: member.displayLabel,
-                                    privySub: member.privySub,
+                        {isLoadingSpaceMembers || isLoadingMatrixUserIds ? (
+                          <p className="text-sm text-muted-foreground">
+                            {t('loading')}
+                          </p>
+                        ) : matrixUserIdsError &&
+                          signalTeamRosterMembers.length === 0 ? (
+                          <p role="alert" className="text-sm text-destructive">
+                            {t('signalTeamMembersLoadFailed')}
+                          </p>
+                        ) : signalTeamRosterMembers.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            {t('noMembers')}
+                          </p>
+                        ) : (
+                          <div className="narrow-scrollbar grid max-h-60 gap-1 overflow-y-auto">
+                            {signalTeamRosterMembers.map((member) => {
+                              const matrixUserId = member.matrixUserId;
+                              const selected = matrixUserId
+                                ? signalTeamEditorMemberIds.includes(
+                                    matrixUserId,
+                                  )
+                                : false;
+                              const isCurrentUser =
+                                matrixUserId != null &&
+                                matrixUserId === currentUserId;
+                              const isOwner =
+                                matrixUserId != null &&
+                                matrixUserId === signalTeamOwnerId;
+                              const canToggle = Boolean(matrixUserId);
+                              return (
+                                <button
+                                  key={member.personId}
+                                  type="button"
+                                  className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
+                                    selected
+                                      ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
+                                      : 'border border-transparent hover:bg-muted/70'
+                                  } ${!canToggle ? 'opacity-60' : ''}`}
+                                  disabled={signalTeamBusy || !canToggle}
+                                  onClick={() => {
+                                    if (!matrixUserId) return;
+                                    if (isCurrentUser && selected) return;
+                                    if (isOwner && selected) return;
+                                    const next = selected
+                                      ? signalTeamEditorMemberIds.filter(
+                                          (id) => id !== matrixUserId,
+                                        )
+                                      : [
+                                          ...signalTeamEditorMemberIds,
+                                          matrixUserId,
+                                        ];
+                                    setSignalTeamDraftMemberIds(
+                                      normalizeMatrixUserIds(next),
+                                    );
                                   }}
-                                  fallbackLabel={member.displayLabel}
-                                  isOwner={isOwner}
-                                  unknownMemberLabel={t('unknownMember')}
-                                />
-                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                  {isOwner ? null : selected ? (
-                                    <Check className="h-3.5 w-3.5 text-accent-11" />
-                                  ) : (
-                                    <Plus className="h-3.5 w-3.5" />
-                                  )}
-                                  {isOwner
-                                    ? 'Owner'
-                                    : selected
-                                    ? t('signalTeamRemoveMember')
-                                    : t('signalTeamAddMember')}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                                >
+                                  <SignalTeamResolvedMemberLabel
+                                    candidate={{
+                                      userId: matrixUserId ?? '',
+                                      displayLabel: member.displayLabel,
+                                    }}
+                                    fallbackLabel={member.displayLabel}
+                                    isOwner={isOwner}
+                                    unknownMemberLabel={t('unknownMember')}
+                                  />
+                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                    {isOwner ? null : selected ? (
+                                      <Check className="h-3.5 w-3.5 text-accent-11" />
+                                    ) : canToggle ? (
+                                      <Plus className="h-3.5 w-3.5" />
+                                    ) : null}
+                                    {isOwner
+                                      ? t('signalTeamOwner')
+                                      : !canToggle
+                                      ? t('signalTeamNoChatAccount')
+                                      : selected
+                                      ? t('signalTeamRemoveMember')
+                                      : t('signalTeamAddMember')}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

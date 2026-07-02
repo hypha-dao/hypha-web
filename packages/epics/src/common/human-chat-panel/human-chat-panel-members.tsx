@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
-import { useMatrix } from '@hypha-platform/core/client';
+import { useMatrix, useSpaceBySlug } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
 import { UseMembers } from '../../spaces';
+import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import { shortenMatrixIdForDisplay } from './matrix-room-member-display';
 
 type HumanChatPanelMembersProps = {
@@ -32,14 +33,13 @@ export function HumanChatPanelMembers({
   const t = useTranslations('HumanChatPanel');
   const { getRoomMembers, isMatrixAvailable, isAuthenticated } = useMatrix();
   const [onlineCount, setOnlineCount] = useState(0);
-
-  const { persons, isLoading } = useMembers({
+  const { space } = useSpaceBySlug(spaceSlug ?? '');
+  const { persons: members, isLoading } = useSpaceMembersAndDelegates({
     spaceSlug,
-    paginationDisabled: true,
+    web3SpaceId: space?.web3SpaceId,
+    useMembers,
   });
-
-  const members = persons?.data ?? [];
-  const totalCount = persons?.pagination?.total ?? members.length;
+  const totalCount = members.length;
 
   useEffect(() => {
     if (!roomId || !isMatrixAvailable || !isAuthenticated) {
