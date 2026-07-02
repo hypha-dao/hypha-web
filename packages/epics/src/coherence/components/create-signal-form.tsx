@@ -86,6 +86,16 @@ function dueDateFromInputValue(value: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function resolveMutationErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) return '';
+  const message = error.message.trim();
+  if (message) return message;
+  if (error.cause instanceof Error) {
+    return error.cause.message.trim();
+  }
+  return '';
+}
+
 export const CreateSignalForm = ({
   spaceId,
   successfulUrl,
@@ -126,7 +136,12 @@ export const CreateSignalForm = ({
     spaceSlug,
     web3SpaceId: space?.web3SpaceId ?? undefined,
   });
-  const isEditAuthorized = mode !== 'edit' || canManageSignal;
+  const isSignalCreator =
+    mode === 'edit' &&
+    typeof initialValues?.creatorId === 'number' &&
+    person?.id === initialValues.creatorId;
+  const isEditAuthorized =
+    mode !== 'edit' || canManageSignal || isSignalCreator;
 
   const {
     createCoherence,
@@ -512,6 +527,7 @@ export const CreateSignalForm = ({
             progressStatus:
               data.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
             board: data.board ?? null,
+            assigneeIds: data.assigneeIds,
           });
           if (updatedSignal?.roomId) {
             try {
@@ -531,10 +547,7 @@ export const CreateSignalForm = ({
           }
           router.push(successfulUrl);
         } catch (error) {
-          const rawMessage =
-            error instanceof Error && error.message.trim().length > 0
-              ? error.message
-              : '';
+          const rawMessage = resolveMutationErrorMessage(error);
           const isSanitizedServerError =
             rawMessage.includes(
               'An error occurred in the Server Components render',
@@ -545,6 +558,10 @@ export const CreateSignalForm = ({
             rawMessage.includes('must be a space member') ||
             rawMessage.includes('interact in this space') ||
             rawMessage.includes('Could not verify your identity');
+          const isValidationError =
+            rawMessage.includes('Invalid signal update') ||
+            rawMessage.includes('Unknown progress status') ||
+            rawMessage.includes('Unknown board');
           const isAuthError = rawMessage.includes('authToken is required');
           const genericSaveError = t.has('editSignalSaveFailed')
             ? t('editSignalSaveFailed')
@@ -552,11 +569,13 @@ export const CreateSignalForm = ({
           const message = isPermissionError
             ? t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only signal team members can edit this signal.'
+              : 'Only space members and delegates can edit this signal.'
             : isAuthError
             ? t.has('editSignalMissingAuth')
               ? t('editSignalMissingAuth')
               : 'Your session expired. Please sign in again before saving.'
+            : isValidationError
+            ? rawMessage
             : isSanitizedServerError
             ? genericSaveError
             : rawMessage || genericSaveError;
