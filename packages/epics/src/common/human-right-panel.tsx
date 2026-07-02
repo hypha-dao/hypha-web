@@ -1439,6 +1439,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   >(null);
   const signalDeepLinkEpochRef = useRef(0);
 
+  /** Leave signal/coherence chat without the deep-link effect re-opening from `?signal=`. */
+  const exitCoherenceChat = useCallback(() => {
+    signalDeepLinkEpochRef.current += 1;
+    setSignalDeepLinkNotice(null);
+
+    const hasSignalDeepLink =
+      Boolean(searchParams?.get('signal')?.trim()) ||
+      Boolean(searchParams?.get('msg')?.trim());
+    if (hasSignalDeepLink) {
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+      next.delete('signal');
+      next.delete('msg');
+      const qs = next.toString();
+      const cleaned = qs ? `${pathname}?${qs}` : pathname;
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(window.history.state, '', cleaned);
+      }
+      router.replace(cleaned, { scroll: false });
+    }
+
+    closeCoherenceChat();
+  }, [closeCoherenceChat, pathname, router, searchParams]);
+
   const pendingCallStartNotifyRef = useRef(false);
   const callStartedNotifyRoomRef = useRef<string | null>(null);
 
@@ -2444,10 +2467,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
-      closeCoherenceChat();
+      exitCoherenceChat();
     }
     prevSidebarOpenRef.current = sidebarOpen;
-  }, [sidebarOpen, mode, closeCoherenceChat]);
+  }, [sidebarOpen, mode, exitCoherenceChat]);
 
   // Reset human chat when navigating to a different space (picker, recently visited, etc.)
   useEffect(() => {
@@ -2457,31 +2480,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     lastHumanChatSpaceSlugRef.current = nextSlug;
     if (!prevSlug) return;
 
-    closeCoherenceChat();
-    setSignalDeepLinkNotice(null);
-    signalDeepLinkEpochRef.current += 1;
-
-    if (searchParams?.get('signal')?.trim()) {
-      const cleaned = setSignalSearchParam(
-        pathname,
-        searchParams?.toString() ?? '',
-        null,
-      );
-      if (typeof window !== 'undefined') {
-        window.history.replaceState(window.history.state, '', cleaned);
-      }
-      router.replace(cleaned, { scroll: false });
-    }
-
+    exitCoherenceChat();
     resetChatStateOnAuthDrop();
-  }, [
-    spaceSlug,
-    closeCoherenceChat,
-    pathname,
-    router,
-    searchParams,
-    resetChatStateOnAuthDrop,
-  ]);
+  }, [spaceSlug, exitCoherenceChat, resetChatStateOnAuthDrop]);
 
   useEffect(() => {
     hasLoadedCoherenceMessagesRef.current = false;
@@ -3088,7 +3089,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         pathSlug === spaceSlug
       ) {
         if (mode === 'coherence') {
-          closeCoherenceChat();
+          exitCoherenceChat();
         }
         openHumanChatPanel();
         setActiveTab('chat');
@@ -3199,7 +3200,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       router,
       openCoherenceChat,
       openHumanChatPanel,
-      closeCoherenceChat,
+      exitCoherenceChat,
       mode,
       space?.chatRoomId,
       spaceSlug,
@@ -4129,7 +4130,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       <SidebarHeader className="bg-background-2 gap-0 p-0">
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
-          onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+          onBack={mode === 'coherence' ? exitCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
             showAuthedUi && roomId ? (
