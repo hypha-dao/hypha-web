@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR, { mutate } from 'swr';
 import type { PaginatedResponse } from '@hypha-platform/core/client';
@@ -85,8 +86,8 @@ function serverConfirmedOnFetch(
   item: Coherence,
   pending: PendingCoherenceTaskPatch,
 ): boolean {
+  if (pending.confirmedUpdatedAtMs == null) return false;
   if (!fieldsMatchPending(item, pending)) return false;
-  if (pending.confirmedUpdatedAtMs == null) return true;
   return itemUpdatedAtMs(item) >= pending.confirmedUpdatedAtMs;
 }
 
@@ -314,8 +315,16 @@ export const useFindCoherences = ({
     },
   );
 
+  const mergedCoherences = React.useMemo(
+    () =>
+      slug && coherences
+        ? mergePendingCoherenceTaskPatches(slug, coherences)
+        : coherences,
+    [slug, coherences],
+  );
+
   return {
-    coherences,
+    coherences: mergedCoherences,
     isLoading,
     error,
     refresh,
