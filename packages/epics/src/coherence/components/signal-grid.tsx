@@ -55,7 +55,6 @@ export function SignalGrid({
               className="w-full min-h-0"
               isLoading={isLoading}
               refresh={refresh}
-              onOpenConversation={() => onSignalClick(signal)}
             />
           </div>
         ) : (

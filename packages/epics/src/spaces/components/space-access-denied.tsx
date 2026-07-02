@@ -2,7 +2,7 @@
 
 import { Button } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
-import { UserSpaceState } from '../hooks/use-user-space-state';
+import { UserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useSpaceDetailsWeb3Rpc,

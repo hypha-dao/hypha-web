@@ -9,6 +9,8 @@ export * from './events';
 export * from './notifications';
 export * from './matrix';
 export * from './coherence';
+export * from './schedule/client';
+export * from './schedule';
 export * from './geo';
 export * from './geo/client';
 export * from './org-memory';

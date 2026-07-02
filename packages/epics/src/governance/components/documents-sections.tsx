@@ -11,7 +11,7 @@ import { Button } from '@hypha-platform/ui';
 import {
   UserSpaceState,
   useUserSpaceState,
-} from '../../spaces/hooks/use-user-space-state';
+} from '../../spaces/hooks/use-user-space-state.web3.rpc';
 
 type DocumentsSectionsProps = {
   lang: string;

@@ -383,15 +383,85 @@
     {
       "idx": 54,
       "version": "7",
-      "when": 1779214317323,
-      "tag": "0054_energy_communities",
+      "when": 1781700000000,
+      "tag": "0054_space_scheduled_items",
       "breakpoints": true
     },
     {
       "idx": 55,
       "version": "7",
+      "when": 1781800000000,
+      "tag": "0055_scheduled_item_recurrence_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1781900000000,
+      "tag": "0056_scheduled_item_type_channel_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1782000000000,
+      "tag": "0057_scheduled_item_booking_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1782100000000,
+      "tag": "0058_scheduled_item_integrity_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1782200000000,
+      "tag": "0059_signal_task_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1782300000000,
+      "tag": "0060_scheduled_item_four_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1782400000000,
+      "tag": "0061_schedule_schema_optimize",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1782500000000,
+      "tag": "0062_scheduled_item_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1782600000000,
+      "tag": "0063_reminder_dispatch_date_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1779214317323,
+      "tag": "0064_energy_communities",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
       "when": 1779214317324,
-      "tag": "0055_energy_communities_authenticated_grants",
+      "tag": "0065_energy_communities_authenticated_grants",
       "breakpoints": true
     }
   ]

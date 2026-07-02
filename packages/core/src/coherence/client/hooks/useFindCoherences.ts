@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR, { mutate } from 'swr';
 import type { PaginatedResponse } from '@hypha-platform/core/client';
@@ -23,6 +24,136 @@ const COHERENCES_PAGE_SIZE = 100;
 
 export const COHERENCES_SWR_KEY = 'coherences' as const;
 
+export type PendingCoherenceTaskPatch = {
+  progressStatus?: string | null;
+  board?: string | null;
+  /** After PATCH succeeds, stale list fetches older than this keep the overlay. */
+  confirmedUpdatedAtMs?: number;
+};
+
+const pendingTaskPatches = new Map<string, PendingCoherenceTaskPatch>();
+
+function pendingPatchKey(spaceSlug: string, slug: string): string {
+  return `${spaceSlug.trim()}:${slug.trim()}`;
+}
+
+export function setPendingCoherenceTaskPatch(
+  spaceSlug: string,
+  slug: string,
+  patch: PendingCoherenceTaskPatch,
+): void {
+  const key = pendingPatchKey(spaceSlug, slug);
+  pendingTaskPatches.set(key, {
+    ...pendingTaskPatches.get(key),
+    ...patch,
+  });
+}
+
+export function clearPendingCoherenceTaskPatch(
+  spaceSlug: string,
+  slug: string,
+): void {
+  pendingTaskPatches.delete(pendingPatchKey(spaceSlug, slug));
+}
+
+function itemUpdatedAtMs(item: Coherence): number {
+  const raw = item.updatedAt;
+  if (raw instanceof Date) return raw.getTime();
+  return new Date(raw).getTime();
+}
+
+function fieldsMatchPending(
+  item: Coherence,
+  pending: PendingCoherenceTaskPatch,
+): boolean {
+  const statusOk =
+    pending.progressStatus === undefined ||
+    item.progressStatus === pending.progressStatus;
+  const boardOk = pending.board === undefined || item.board === pending.board;
+  return statusOk && boardOk;
+}
+
+function needsPendingOverlay(
+  item: Coherence,
+  pending: PendingCoherenceTaskPatch,
+): boolean {
+  if (!fieldsMatchPending(item, pending)) return true;
+  if (pending.confirmedUpdatedAtMs == null) return false;
+  return itemUpdatedAtMs(item) < pending.confirmedUpdatedAtMs;
+}
+
+function serverConfirmedOnFetch(
+  item: Coherence,
+  pending: PendingCoherenceTaskPatch,
+): boolean {
+  if (pending.confirmedUpdatedAtMs == null) return false;
+  if (!fieldsMatchPending(item, pending)) return false;
+  return itemUpdatedAtMs(item) >= pending.confirmedUpdatedAtMs;
+}
+
+type MergePendingOptions = {
+  /** Only network refetches may drop overlays once the server has caught up. */
+  fromFetch?: boolean;
+};
+
+/** Overlay in-flight task moves so stale SWR revalidations cannot snap cards back. */
+export function mergePendingCoherenceTaskPatches(
+  spaceSlug: string,
+  items: Coherence[],
+  options?: MergePendingOptions,
+): Coherence[] {
+  const trimmedSpace = spaceSlug.trim();
+  if (!trimmedSpace || pendingTaskPatches.size === 0) return items;
+
+  let changed = false;
+  const next = items.map((item) => {
+    const slug = item.slug?.trim();
+    if (!slug) return item;
+    const patchKey = pendingPatchKey(trimmedSpace, slug);
+    const patch = pendingTaskPatches.get(patchKey);
+    if (!patch) return item;
+
+    if (!needsPendingOverlay(item, patch)) {
+      if (options?.fromFetch && serverConfirmedOnFetch(item, patch)) {
+        pendingTaskPatches.delete(patchKey);
+      }
+      return item;
+    }
+
+    changed = true;
+    return { ...item, ...patch };
+  });
+
+  return changed ? next : items;
+}
+
+function touchCoherenceCache(spaceSlug: string): void {
+  const trimmedSpaceSlug = spaceSlug.trim();
+  if (!trimmedSpaceSlug) return;
+
+  void mutate(
+    (key) =>
+      Array.isArray(key) &&
+      key[0] === COHERENCES_SWR_KEY &&
+      key[1] === trimmedSpaceSlug,
+    (current) =>
+      current?.length
+        ? mergePendingCoherenceTaskPatches(trimmedSpaceSlug, current)
+        : current,
+    { revalidate: false },
+  );
+}
+
+/** Register a pending task move and refresh the local SWR list immediately. */
+export function applyPendingCoherenceTaskPatch(
+  spaceSlug: string,
+  slug: string,
+  patch: PendingCoherenceTaskPatch,
+): void {
+  setPendingCoherenceTaskPatch(spaceSlug, slug, patch);
+  touchCoherenceCache(spaceSlug);
+}
+
 /** Revalidate signal lists for a space (e.g. after create, edit, or delete). */
 export function revalidateCoherences(spaceSlug?: string) {
   const normalizedSlug = spaceSlug?.trim() || null;
@@ -34,6 +165,42 @@ export function revalidateCoherences(spaceSlug?: string) {
     undefined,
     { revalidate: true },
   );
+}
+
+/** Merge a patched signal into the local SWR list without a full refetch. */
+export async function upsertCoherenceInSpaceCache(
+  spaceSlug: string,
+  updated: Coherence,
+): Promise<boolean> {
+  const trimmedSpaceSlug = spaceSlug.trim();
+  const updatedSlug = updated.slug?.trim();
+  if (!trimmedSpaceSlug || !updatedSlug) return false;
+
+  let didUpdate = false;
+
+  await mutate(
+    (key) =>
+      Array.isArray(key) &&
+      key[0] === COHERENCES_SWR_KEY &&
+      key[1] === trimmedSpaceSlug,
+    (current) => {
+      if (!current?.length) return current;
+      let found = false;
+      const next = current.map((item: Coherence) => {
+        const itemSlug = item.slug?.trim();
+        if (itemSlug !== updatedSlug) return item;
+        found = true;
+        return { ...item, ...updated };
+      });
+      if (found) didUpdate = true;
+      return found
+        ? mergePendingCoherenceTaskPatches(trimmedSpaceSlug, next)
+        : current;
+    },
+    { revalidate: false },
+  );
+
+  return didUpdate;
 }
 
 function buildCoherencesUrl(
@@ -86,7 +253,7 @@ async function fetchAllCoherences(
     page += 1;
   }
 
-  return all;
+  return mergePendingCoherenceTaskPatches(spaceSlug, all, { fromFetch: true });
 }
 
 export const useFindCoherences = ({
@@ -148,8 +315,16 @@ export const useFindCoherences = ({
     },
   );
 
+  const mergedCoherences = React.useMemo(
+    () =>
+      slug && coherences
+        ? mergePendingCoherenceTaskPatches(slug, coherences)
+        : coherences,
+    [slug, coherences],
+  );
+
   return {
-    coherences,
+    coherences: mergedCoherences,
     isLoading,
     error,
     refresh,

@@ -8,10 +8,11 @@ import React from 'react';
 export const useWithdrawnProposalsWeb3Rpc = ({
   spaceId,
 }: {
-  spaceId: number;
+  spaceId: number | undefined | null;
 }) => {
+  const hasValidSpaceId = spaceId != null && Number.isFinite(Number(spaceId));
   const { data, isLoading, error, mutate } = useSWR(
-    [spaceId, 'withdrawnProposals'],
+    hasValidSpaceId ? [Number(spaceId), 'withdrawnProposals'] : null,
     async ([spaceId]) =>
       publicClient.readContract(
         getWithdrawnProposalsBySpace({ spaceId: BigInt(spaceId) }),

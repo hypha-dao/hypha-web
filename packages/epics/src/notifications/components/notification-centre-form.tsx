@@ -95,6 +95,11 @@ export const NotificationCentreForm = ({
           ? getSwitch(configuration.mentionNotificationsConsent)
           : 'yes'
         : 'yes',
+      meetingNotificationsConsent: configuration
+        ? typeof configuration.meetingNotificationsConsent === 'boolean'
+          ? getSwitch(configuration.meetingNotificationsConsent)
+          : 'no'
+        : 'no',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS,
     },
     mode: 'onChange',
@@ -112,6 +117,10 @@ export const NotificationCentreForm = ({
         typeof configuration.mentionNotificationsConsent === 'boolean'
           ? getSwitch(configuration.mentionNotificationsConsent)
           : 'yes',
+      meetingNotificationsConsent:
+        typeof configuration.meetingNotificationsConsent === 'boolean'
+          ? getSwitch(configuration.meetingNotificationsConsent)
+          : 'no',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
         const sub = configuration.subscriptions?.find(
           (s) => s.name === subscription.tagName,
@@ -135,6 +144,9 @@ export const NotificationCentreForm = ({
         emailNotifications: parseSwitch(values.emailNotifications),
         mentionNotificationsConsent: parseSwitch(
           values.mentionNotificationsConsent,
+        ),
+        meetingNotificationsConsent: parseSwitch(
+          values.meetingNotificationsConsent,
         ),
         subscriptions: values.subscriptions.map((subscription) => {
           return {
@@ -337,6 +349,46 @@ export const NotificationCentreForm = ({
                         <span className="text-2 text-neutral-11">
                           {tNotificationCentre(
                             'subscriptions.mentionOnChatMessage.description',
+                          )}
+                        </span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+            <FormField
+              control={form.control}
+              name="meetingNotificationsConsent"
+              render={({ field }) => {
+                const checkboxId = 'meetingNotificationsConsentChecked';
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <div className="flex flex-col gap-2">
+                        <div className="text-2 text-neutral-11 justify-between">
+                          <div className="flex flex-row gap-2">
+                            <Checkbox
+                              id={checkboxId}
+                              checked={parseSwitch(field.value)}
+                              onCheckedChange={(value) => {
+                                form.setValue(
+                                  field.name,
+                                  value === true ? 'yes' : 'no',
+                                );
+                              }}
+                            />
+                            <FormLabel htmlFor={checkboxId}>
+                              {tNotificationCentre(
+                                'subscriptions.meetingReminders.title',
+                              )}
+                            </FormLabel>
+                          </div>
+                        </div>
+                        <span className="text-2 text-neutral-11">
+                          {tNotificationCentre(
+                            'subscriptions.meetingReminders.description',
                           )}
                         </span>
                       </div>

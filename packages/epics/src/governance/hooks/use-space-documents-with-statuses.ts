@@ -18,6 +18,16 @@ import {
   normalizeProposalDocumentLabel,
 } from '@hypha-platform/core/client';
 
+/**
+ * Shared default ordering for the space documents list. Exported so every
+ * consumer (proposal aside page, `ProposalDetail`, agreements tab) uses the
+ * exact same SWR key and the `/documents/all` request is deduped instead of
+ * fetched once per component instance.
+ */
+export const PROPOSAL_DOCUMENTS_DEFAULT_ORDER: Order<Document> = [
+  { name: 'createdAt', dir: DirectionType.DESC },
+];
+
 const getDocumentBadges = (document: Document, t: (key: string) => string) => {
   const badges = [];
   const canonicalLabel = normalizeProposalDocumentLabel(document.label);
@@ -68,7 +78,7 @@ export const useSpaceDocumentsWithStatuses = ({
   order,
 }: {
   spaceSlug: string;
-  spaceId: number;
+  spaceId: number | undefined | null;
   order?: Order<Document>;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -126,7 +136,11 @@ export const useSpaceDocumentsWithStatuses = ({
     },
     {
       revalidateOnFocus: true,
-      refreshInterval: 10000,
+      // The `/documents/all` endpoint returns the full (unpaginated) document
+      // set, so polling it every 10s is expensive. New documents are rare and
+      // user-driven changes (create/vote/withdraw) call `update()` for instant
+      // reflection, so a slower background poll is enough.
+      refreshInterval: 30000,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     },

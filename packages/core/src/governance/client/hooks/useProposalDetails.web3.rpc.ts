@@ -37,19 +37,56 @@ type ProposalTransaction = Parameters<typeof decodeTransaction>[0];
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
 }: {
-  proposalId: number;
+  proposalId: number | undefined | null;
 }) => {
-  const { data, isLoading, error } = useSWR(
-    [proposalId, 'proposalDetails'],
+  const hasValidProposalId =
+    proposalId != null && Number.isFinite(Number(proposalId));
+  const { data, isLoading, error, mutate } = useSWR(
+    hasValidProposalId ? [Number(proposalId), 'proposalDetails'] : null,
     async ([proposalId]) =>
       publicClient.readContract(
         getProposalDetails({ proposalId: BigInt(proposalId) }),
       ),
     {
       revalidateOnFocus: true,
-      refreshInterval: 10000,
+      // Only poll while the proposal is still live. Once it is executed
+      // (index 3) or expired (index 4) its on-chain state is immutable, so
+      // there is nothing to poll for - stop hitting the RPC every 10s.
+      refreshInterval: (latest) =>
+        latest && (latest[3] || latest[4]) ? 0 : 10000,
     },
   );
+
+  // Keep the latest raw tuple in a ref so `refreshUntilVoteApplied` can compare
+  // pre/post-vote tallies without being recreated on every data change.
+  const dataRef = React.useRef(data);
+  dataRef.current = data;
+
+  /**
+   * After a vote we want the quorum/unity bars to update immediately, but the
+   * RPC node the read hits can briefly lag the just-mined vote transaction, so a
+   * single refetch sometimes returns stale tallies (the bars then only correct
+   * on the next 10s poll - the "sometimes not quick" behaviour). Refetch a few
+   * times until the yes+no tally changes (or we run out of attempts). Each
+   * refetch updates the SWR cache regardless, so the bars still reflect whatever
+   * the latest read returns.
+   */
+  const refreshUntilVoteApplied = React.useCallback(async () => {
+    const baseline = dataRef.current
+      ? Number(dataRef.current[5]) + Number(dataRef.current[6])
+      : null;
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      const updated = await mutate();
+      if (
+        !updated ||
+        baseline === null ||
+        Number(updated[5]) + Number(updated[6]) !== baseline
+      ) {
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+  }, [mutate]);
 
   const parsedProposal = React.useMemo(() => {
     if (!data) return null;
@@ -915,5 +952,7 @@ export const useProposalDetailsWeb3Rpc = ({
     proposalDetails: parsedProposal,
     isLoading,
     error,
+    mutate,
+    refreshUntilVoteApplied,
   };
 };

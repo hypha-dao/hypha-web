@@ -1,7 +1,10 @@
 'use client';
 
 import { Space } from '@hypha-platform/core/client';
-import { UserSpaceState, useUserSpaceState } from './use-user-space-state';
+import {
+  UserSpaceState,
+  useUserSpaceState,
+} from './use-user-space-state.web3.rpc';
 
 export function useCanMutateInSpace({
   spaceId,

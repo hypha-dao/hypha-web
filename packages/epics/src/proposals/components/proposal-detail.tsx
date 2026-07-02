@@ -12,10 +12,8 @@ import {
   Attachment,
   useSpaceDetailsWeb3Rpc,
   SpaceDetails,
-  DirectionType,
   Document,
   useSpaceMinProposalDuration,
-  useVote,
   bigIntToPercentageString,
   getTokenDecimals,
   CURRENCY_FEEDS,
@@ -53,9 +51,12 @@ import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
-import { useSpaceDocumentsWithStatuses } from '../../governance';
+import {
+  useSpaceDocumentsWithStatuses,
+  PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
+} from '../../governance';
 import { isPast } from 'date-fns';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
@@ -447,6 +448,13 @@ type ProposalDetailProps = ProposalHeadProps & {
   leadImage?: string;
   attachments?: (string | Attachment)[];
   proposalId?: number | null | undefined;
+  /**
+   * The space's on-chain id, known immediately from the URL slug. Passing it
+   * lets space-scoped reads (space details, membership, delegate, min duration,
+   * documents) start in parallel instead of waiting for `proposalDetails` to
+   * resolve first - which removed the cold-open loading waterfall.
+   */
+  web3SpaceId?: number;
   spaceSlug: string;
   label?: string;
   documentSlug: string;
@@ -481,6 +489,7 @@ export const ProposalDetail = ({
   leadImage,
   attachments,
   proposalId,
+  web3SpaceId,
   spaceSlug,
   label,
   documentSlug,
@@ -499,19 +508,18 @@ export const ProposalDetail = ({
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
+  // Prefer the space id from the URL (available immediately) so space-scoped
+  // reads don't wait on the on-chain proposal fetch. Fall back to the proposal
+  // once it resolves for any consumer opened without the prop.
+  const effectiveWeb3SpaceId = web3SpaceId ?? proposalDetails?.spaceId ?? null;
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: Number(proposalDetails?.spaceId),
+    spaceId: effectiveWeb3SpaceId,
   });
   const { isAuthenticated } = useAuthentication();
   const { documents: documentsArrays } = useSpaceDocumentsWithStatuses({
-    spaceId: Number(proposalDetails?.spaceId),
+    spaceId: effectiveWeb3SpaceId,
     spaceSlug,
-    order: [
-      {
-        name: 'createdAt',
-        dir: DirectionType.DESC,
-      },
-    ],
+    order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   });
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
 
@@ -558,8 +566,6 @@ export const ProposalDetail = ({
     proposalDetails?.updateTokenData?.initialTransferWhitelistSpaceIds,
     proposalDetails?.updateTokenData?.initialReceiveWhitelistSpaceIds,
   ]);
-
-  const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
   const redeemChainDataForResubmit = useMemo(() => {
     if (label !== 'Redeem Tokens') return null;
@@ -620,31 +626,42 @@ export const ProposalDetail = ({
     };
   }, [redeemChainDataForResubmit]);
 
-  const {
-    handleAccept: internalHandleAccept,
-    handleReject: internalHandleReject,
-    handleCheckProposalExpiration: internalHandleCheckProposalExpiration,
-    isCheckingExpiration: internalIsCheckingExpiration,
-    isVoting: internalIsVoting,
-    isDeletingToken,
-    isUpdatingToken,
-  } = useVote({
-    documentId,
-    proposalId,
-    tokenSymbol,
-    authToken,
-  });
-
-  const handleAccept = onAccept || internalHandleAccept;
-  const handleReject = onReject || internalHandleReject;
+  // Voting handlers and state come from the parent (the proposal aside page),
+  // which owns the single `useVote` instance. Previously `ProposalDetail` also
+  // called `useVote`, spinning up a second set of contract-event watchers for
+  // the same proposal. The fallbacks below keep the component usable on its own.
+  const noopVoteHandler = useCallback(async () => {}, []);
+  const handleAccept = onAccept ?? noopVoteHandler;
+  const handleReject = onReject ?? noopVoteHandler;
   const handleCheckProposalExpiration =
-    onCheckProposalExpiration || internalHandleCheckProposalExpiration;
-  const isCheckingExpiration =
-    externalIsCheckingExpiration !== undefined
-      ? externalIsCheckingExpiration
-      : internalIsCheckingExpiration;
-  const isVoting =
-    externalIsVoting !== undefined ? externalIsVoting : internalIsVoting;
+    onCheckProposalExpiration ?? noopVoteHandler;
+  const isCheckingExpiration = externalIsCheckingExpiration ?? false;
+  const isVoting = externalIsVoting ?? false;
+
+  // Stable ISO end time. The previous inline `new Date()` fallback produced a
+  // brand-new value on every render, which re-triggered downstream effects and
+  // width transitions on each 10s poll. Memoizing keeps the reference stable
+  // between polls (the fallback is only used while data is still loading, and
+  // is hidden behind the FormVoting skeleton).
+  const formattedEndTime = useMemo(
+    () => formatISO(new Date(proposalDetails?.endTime ?? new Date())),
+    [proposalDetails?.endTime],
+  );
+
+  // The description is rendered through MarkdownSuspense, which compiles MDX
+  // asynchronously and therefore re-suspends (flashing its "Loading..."
+  // fallback) whenever this subtree re-renders. After voting, unrelated state
+  // (vote counts, voters, isVoting) changes and would otherwise re-render the
+  // markdown and reload the description. Memoizing the element by its actual
+  // inputs keeps the reference stable so React skips re-rendering it.
+  const descriptionMarkdown = useMemo(
+    () => (
+      <MarkdownSuspense>
+        {markdownBodyForProposalView(label, content)}
+      </MarkdownSuspense>
+    ),
+    [content, label],
+  );
 
   const findDocumentStatus = (
     documentsArrays: DocumentsArrays,
@@ -685,12 +702,12 @@ export const ProposalDetail = ({
     );
   };
 
-  const spaceIdBigInt = proposalDetails?.spaceId
-    ? BigInt(proposalDetails?.spaceId)
-    : null;
+  const spaceIdBigInt =
+    effectiveWeb3SpaceId != null ? BigInt(effectiveWeb3SpaceId) : null;
 
   const { duration } = useSpaceMinProposalDuration({
     spaceId: spaceIdBigInt as bigint,
+    enabled: spaceIdBigInt != null,
   });
 
   const [displayExpireProposalBanner, setDisplayExpireProposalBanner] =
@@ -748,7 +765,20 @@ export const ProposalDetail = ({
     }
 
     setDisplayExpireProposalBanner(shouldShowBanner);
-  }, [duration, proposalDetails, spaceDetails]);
+    // Depend on the scalar fields we actually read rather than the whole
+    // `proposalDetails`/`spaceDetails` objects, which get a fresh reference on
+    // every 10s poll even when nothing changed - that was causing needless
+    // setState cascades (and animated vote-bar re-renders) on each poll.
+  }, [
+    duration,
+    proposalDetails?.endTime,
+    proposalDetails?.executed,
+    proposalDetails?.expired,
+    proposalDetails?.quorumPercentage,
+    proposalDetails?.unityPercentage,
+    spaceDetails?.quorum,
+    spaceDetails?.unity,
+  ]);
 
   useEffect(() => {
     if (proposalDetails?.executed || proposalDetails?.expired) {
@@ -1216,9 +1246,7 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
-      <MarkdownSuspense>
-        {markdownBodyForProposalView(label, content)}
-      </MarkdownSuspense>
+      {descriptionMarkdown}
       <AttachmentList attachments={attachments || []} />
       {label === 'Investment' ? (
         <ProposalAcceptInvestmentData
@@ -1465,17 +1493,17 @@ export const ProposalDetail = ({
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
-        endTime={formatISO(new Date(proposalDetails?.endTime || new Date()))}
+        endTime={formattedEndTime}
         executed={proposalDetails?.executed}
         expired={proposalDetails?.expired}
         onAccept={handleAccept}
         onReject={handleReject}
         isCheckingExpiration={isCheckingExpiration}
-        isLoading={isLoading}
+        isLoading={isLoading || !spaceDetails}
         isVoting={isVoting}
         documentSlug={documentSlug}
         isAuthenticated={isAuthenticated}
-        web3SpaceId={proposalDetails?.spaceId}
+        web3SpaceId={effectiveWeb3SpaceId ?? undefined}
         spaceDetails={spaceDetails as unknown as SpaceDetails}
         proposalStatus={proposalStatus}
         hideDurationData={hideDurationData()}

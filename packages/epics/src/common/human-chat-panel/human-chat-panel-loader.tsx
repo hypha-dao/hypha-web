@@ -1,10 +1,10 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { SpaceAccentSpinner } from '../space-accent-loader';
 
 type HumanChatPanelLoaderProps = {
   label?: string;
@@ -52,29 +52,6 @@ function ChatLoaderSkeletonRow({
   );
 }
 
-function LoaderIndicator({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-3 text-center">
-      <div className="relative flex h-11 w-11 items-center justify-center">
-        <div
-          className="absolute inset-0 animate-pulse rounded-full bg-[color:color-mix(in_srgb,var(--space-accent,#4a65d8)_22%,transparent)]"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-[3px] rounded-full border border-[color:color-mix(in_srgb,var(--space-accent,#4a65d8)_35%,transparent)]"
-          aria-hidden
-        />
-        <Loader2
-          className="h-5 w-5 animate-spin text-[color:var(--space-accent,#4a65d8)]"
-          strokeWidth={2.25}
-          aria-hidden
-        />
-      </div>
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
 export function HumanChatPanelLoader({
   label,
   showPreview = false,
@@ -101,7 +78,10 @@ export function HumanChatPanelLoader({
           <ChatLoaderSkeletonRow align="start" bubbleWidth={176} />
         </div>
       ) : null}
-      <LoaderIndicator label={message} />
+      <div className="flex flex-col items-center gap-3 text-center">
+        <SpaceAccentSpinner size="md" />
+        <p className="text-sm font-medium text-muted-foreground">{message}</p>
+      </div>
     </div>
   );
 }

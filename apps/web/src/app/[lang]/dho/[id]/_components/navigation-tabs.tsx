@@ -18,6 +18,7 @@ import {
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
+import { getDhoPathCalendar } from '../@tab/calendar/constants';
 
 /** Subtle scroll parallax: tab strip drifts slightly vs page for depth (see CompactSpaceBannerLead). */
 const TAB_PARALLAX_SCROLL_RATE = 0.07;
@@ -90,6 +91,11 @@ export function NavigationTabs({
           },
         ]
       : []),
+    {
+      title: t('Calendar'),
+      name: 'calendar',
+      href: getDhoPathCalendar(lang as Locale, id as string),
+    },
     {
       title: t('Agreements'),
       name: 'agreements',

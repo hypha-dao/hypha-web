@@ -1,5 +1,6 @@
 import {
   Alchemy,
+  deleteUndeployedTokensByAgreementWeb3Ids,
   findDocumentsCreatorsForNotifications,
   findDocumentWithSpaceByIdRaw,
   findPeopleByWeb3Addresses,
@@ -36,6 +37,30 @@ export const POST = proposalRejectedSigningKey
               args.proposalId >= BigInt(Number.MIN_SAFE_INTEGER),
           )
           .map(({ args }) => Number(args.proposalId));
+
+        try {
+          const deletedTokens = await deleteUndeployedTokensByAgreementWeb3Ids(
+            proposalIds,
+            { db },
+          );
+          if (deletedTokens.length > 0) {
+            console.log(
+              'Deleted undeployed draft tokens for rejected proposals:',
+              deletedTokens.map((token) => ({
+                id: token.id,
+                agreementWeb3Id: token.agreementWeb3Id,
+                name: token.name,
+                symbol: token.symbol,
+              })),
+            );
+          }
+        } catch (error) {
+          console.error(
+            'Failed to delete undeployed draft tokens for rejected proposals:',
+            error,
+          );
+          throw error;
+        }
 
         const creatorsToNotify = await findDocumentsCreatorsForNotifications(
           { proposalIds },

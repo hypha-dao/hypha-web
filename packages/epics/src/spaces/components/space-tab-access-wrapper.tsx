@@ -1,7 +1,7 @@
 'use client';
 
 import { useSpaceDiscoverability } from '../hooks/use-space-discoverability';
-import { useUserSpaceState } from '../hooks/use-user-space-state';
+import { useUserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 import { checkAccess } from '../utils/transparency-access';
 import { SpaceAccessDenied } from './space-access-denied';
 import { useSpaceBySlug } from '@hypha-platform/core/client';

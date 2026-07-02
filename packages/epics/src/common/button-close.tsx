@@ -4,10 +4,10 @@ import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { MouseEvent, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
-import { APP_NAV_COUNT_KEY } from './app-navigation-session';
+import { createAsideOverlayCloseHandler } from './aside-overlay-close';
 
 type ButtonCloseProps = {
   closeUrl?: string;
@@ -51,21 +51,8 @@ export const ButtonClose = ({
     className,
   );
   const handleClick = useCallback(
-    (event: MouseEvent<HTMLAnchorElement>) => {
-      if (typeof window === 'undefined') {
-        return;
-      }
-      const appNavCount = Number.parseInt(
-        window.sessionStorage.getItem(APP_NAV_COUNT_KEY) ?? '0',
-        10,
-      );
-      if (!Number.isFinite(appNavCount) || appNavCount <= 0) {
-        return;
-      }
-      event.preventDefault();
-      router.back();
-    },
-    [router],
+    createAsideOverlayCloseHandler({ closeUrl, pathname, router }),
+    [closeUrl, pathname, router],
   );
 
   const onClick = preferBack ? handleClick : undefined;
@@ -84,3 +71,5 @@ export const ButtonClose = ({
     </Button>
   );
 };
+
+export { createAsideOverlayCloseHandler } from './aside-overlay-close';

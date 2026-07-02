@@ -7,7 +7,8 @@
     "push": "drizzle-kit push",
     "migrate": "drizzle-kit migrate",
     "seed": "tsx src/seed.ts",
-    "studio": "drizzle-kit studio"
+    "studio": "drizzle-kit studio",
+    "cleanup:undeployed-tokens": "tsx scripts/cleanup-undeployed-space-tokens.ts"
   },
   "devDependencies": {
     "@hypha-platform/config-typescript": "workspace:*",

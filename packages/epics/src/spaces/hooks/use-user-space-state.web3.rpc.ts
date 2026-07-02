@@ -2,7 +2,11 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceMember } from './use-space-member';
-import { useIsDelegate } from '@hypha-platform/core/client';
+import { useMemberWeb3SpaceIds } from './use-member-web3-space-ids';
+import {
+  useIsDelegate,
+  useSpaceDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import {
   useSpaceBySlug,
   Space,
@@ -48,6 +52,91 @@ export function useUserSpaceState({
     spaceId: effectiveSpaceId as number,
     userAddress: user?.wallet?.address,
   });
+
+  const shouldCheckMemberSpaceParticipant =
+    isAuthenticated &&
+    !!user?.wallet?.address &&
+    !!effectiveSpaceId &&
+    !isMemberLoading &&
+    !isDelegateLoading &&
+    !isMember &&
+    !isDelegate;
+
+  const {
+    web3SpaceIds: userMemberWeb3SpaceIds,
+    isLoading: isUserMemberWeb3SpaceIdsLoading,
+  } = useMemberWeb3SpaceIds({
+    personAddress: shouldCheckMemberSpaceParticipant
+      ? user?.wallet?.address
+      : undefined,
+  });
+
+  const {
+    spaceDetails: hostSpaceDetails,
+    isLoading: isHostSpaceDetailsLoading,
+  } = useSpaceDetailsWeb3Rpc({
+    spaceId: shouldCheckMemberSpaceParticipant ? effectiveSpaceId : undefined,
+  });
+
+  const hostMemberAddressesKey = useMemo(() => {
+    const members = hostSpaceDetails?.members;
+    if (!members?.length) return '';
+    return members
+      .map((member: string) => member.toLowerCase())
+      .sort()
+      .join(',');
+  }, [hostSpaceDetails?.members]);
+
+  const userMemberSpaceIdsKey = useMemo(() => {
+    if (!userMemberWeb3SpaceIds?.length) return '';
+    return userMemberWeb3SpaceIds
+      .map((id) => id.toString())
+      .sort()
+      .join(',');
+  }, [userMemberWeb3SpaceIds]);
+
+  const {
+    data: isMemberSpaceParticipant,
+    isLoading: isMemberSpaceParticipantLoading,
+  } = useSWR(
+    shouldCheckMemberSpaceParticipant &&
+      hostMemberAddressesKey &&
+      userMemberSpaceIdsKey
+      ? [
+          'memberSpaceParticipant',
+          effectiveSpaceId,
+          hostMemberAddressesKey,
+          userMemberSpaceIdsKey,
+        ]
+      : null,
+    async () => {
+      const hostMembersLower = new Set(
+        hostSpaceDetails!.members.map((member: string) => member.toLowerCase()),
+      );
+
+      for (const spaceId of userMemberWeb3SpaceIds!) {
+        try {
+          const details = await publicClient.readContract(
+            getSpaceDetails({ spaceId }),
+          );
+          const executor = details[9] as string | undefined;
+          if (
+            typeof executor === 'string' &&
+            hostMembersLower.has(executor.toLowerCase())
+          ) {
+            return true;
+          }
+        } catch (error) {
+          console.error(
+            `Error checking member-space access for space ${spaceId}:`,
+            error,
+          );
+        }
+      }
+
+      return false;
+    },
+  );
 
   const effectiveSpaceSlug = spaceSlug || effectiveSpace?.slug || '';
   const { spaces: organisationSpaces, isLoading: isOrganisationSpacesLoading } =
@@ -150,7 +239,7 @@ export function useUserSpaceState({
       return UserSpaceState.NOT_LOGGED_IN;
     }
 
-    if (isMember || isDelegate) {
+    if (isMember || isDelegate || isMemberSpaceParticipant) {
       return UserSpaceState.LOGGED_IN_SPACE;
     }
 
@@ -159,11 +248,26 @@ export function useUserSpaceState({
     }
 
     return UserSpaceState.LOGGED_IN;
-  }, [isAuthenticated, user, isMember, isDelegate, isOrgMember, isOrgDelegate]);
+  }, [
+    isAuthenticated,
+    user,
+    isMember,
+    isDelegate,
+    isMemberSpaceParticipant,
+    isOrgMember,
+    isOrgDelegate,
+  ]);
+
+  const isMemberSpaceParticipantPathLoading =
+    shouldCheckMemberSpaceParticipant &&
+    (isUserMemberWeb3SpaceIdsLoading ||
+      isHostSpaceDetailsLoading ||
+      isMemberSpaceParticipantLoading);
 
   const isLoading =
     isMemberLoading ||
     isDelegateLoading ||
+    isMemberSpaceParticipantPathLoading ||
     isOrganisationSpacesLoading ||
     isOrgMembershipLoading ||
     spaceFromHook.isLoading;

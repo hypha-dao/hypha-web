@@ -192,4 +192,8 @@ export {
   useGlobalCallDock,
 } from './global-call-dock-context';
 export { GlobalCallDockOverlay } from './global-call-dock-overlay';
+export {
+  FormattedLocalDateTime,
+  SpaceCreatedOnText,
+} from './formatted-local-date-time';
 export * from './composer';

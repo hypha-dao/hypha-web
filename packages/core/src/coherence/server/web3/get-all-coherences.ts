@@ -16,6 +16,10 @@ type GetAllCoherencesInput = {
   priority?: CoherencePriority;
   includeArchived?: boolean;
   orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  progressStatus?: string;
+  board?: string;
+  assigneeId?: number;
+  overdue?: boolean;
 };
 
 export async function getAllCoherences(

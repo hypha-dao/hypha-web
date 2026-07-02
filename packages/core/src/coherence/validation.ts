@@ -18,6 +18,51 @@ const coherenceTagsSchema = z
   })
   .default([]);
 
+const assigneeIdsSchema = z
+  .array(z.number().int().min(1))
+  .max(20)
+  .transform((ids) => {
+    const seen = new Set<number>();
+    const unique: number[] = [];
+    for (const id of ids) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      unique.push(id);
+    }
+    return unique;
+  })
+  .default([]);
+
+const optionalDueAtSchema = z
+  .union([z.string().datetime(), z.date(), z.null()])
+  .optional()
+  .transform((value) => {
+    if (value == null) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  });
+
+const signalTaskFields = {
+  dueAt: optionalDueAtSchema,
+  progressStatus: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_]+$/)
+    .nullable()
+    .optional(),
+  board: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_]+$/)
+    .nullable()
+    .optional(),
+  assigneeIds: assigneeIdsSchema.optional(),
+};
+
 const coherenceSignalFields = {
   type: z.enum(COHERENCE_SIGNAL_TYPES),
   priority: z.enum(COHERENCE_PRIORITIES),
@@ -32,6 +77,7 @@ const coherenceSignalFields = {
     .min(1, { message: 'Please add content to your coherence' })
     .max(4000),
   tags: coherenceTagsSchema,
+  ...signalTaskFields,
 };
 
 const coherenceSlugSchema = z
@@ -69,3 +115,74 @@ export const schemaUpdateCoherenceSignalBySlug = z.object({
   slug: coherenceSlugSchema,
   ...coherenceSignalFields,
 });
+
+export const schemaPatchCoherenceTaskBySlug = z.object({
+  slug: coherenceSlugSchema,
+  ...signalTaskFields,
+});
+
+const signalStatusCategorySchema = z.enum([
+  'backlog',
+  'active',
+  'done',
+  'cancelled',
+]);
+
+export const signalStatusDefinitionSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_]+$/),
+  name: z.string().trim().min(1).max(80),
+  color: z.string().trim().min(1).max(32),
+  category: signalStatusCategorySchema,
+  position: z.number().int().min(0).max(100),
+  isTerminal: z.boolean().optional(),
+});
+
+export const signalBoardDefinitionSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_]+$/),
+  name: z.string().trim().min(1).max(80),
+  color: z.string().trim().min(1).max(32),
+  position: z.number().int().min(0).max(100),
+  archived: z.boolean().optional(),
+});
+
+export const schemaSignalWorkflowConfig = z
+  .object({
+    statuses: z.array(signalStatusDefinitionSchema).min(1).max(20),
+    boards: z.array(signalBoardDefinitionSchema).min(1).max(50),
+  })
+  .superRefine((data, ctx) => {
+    const statusSlugs = new Set<string>();
+    for (const status of data.statuses) {
+      if (statusSlugs.has(status.slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate status slug: ${status.slug}`,
+          path: ['statuses'],
+        });
+        break;
+      }
+      statusSlugs.add(status.slug);
+    }
+    const boardSlugs = new Set<string>();
+    for (const board of data.boards) {
+      if (boardSlugs.has(board.slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate board slug: ${board.slug}`,
+          path: ['boards'],
+        });
+        break;
+      }
+      boardSlugs.add(board.slug);
+    }
+  });

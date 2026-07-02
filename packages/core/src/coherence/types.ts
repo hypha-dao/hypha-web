@@ -1,4 +1,7 @@
-import { CoherencePriority } from './coherence-priorities';
+import {
+  CoherencePriority,
+  COHERENCE_PRIORITIES,
+} from './coherence-priorities';
 import { CoherenceTag } from './coherence-tags';
 import { CoherenceType } from './coherence-types';
 
@@ -15,6 +18,10 @@ export interface CreateCoherenceInput {
   tags: CoherenceTag[];
   messages?: number;
   views?: number;
+  dueAt?: Date | null;
+  progressStatus?: string | null;
+  board?: string | null;
+  assigneeIds?: number[];
 }
 
 export interface UpdateCoherenceInput {
@@ -34,11 +41,26 @@ export interface UpdateCoherenceSignalInput {
   title: string;
   description: string;
   tags: CoherenceTag[];
+  dueAt?: Date | null;
+  progressStatus?: string | null;
+  board?: string | null;
+  assigneeIds?: number[];
 }
 
 export type UpdateCoherenceSignalBySlugInput = {
   slug: string;
 } & UpdateCoherenceSignalInput;
+
+export interface PatchCoherenceTaskInput {
+  dueAt?: Date | null;
+  progressStatus?: string | null;
+  board?: string | null;
+  assigneeIds?: number[];
+}
+
+export type PatchCoherenceTaskBySlugInput = {
+  slug: string;
+} & PatchCoherenceTaskInput;
 
 export type Coherence = {
   id: number;
@@ -56,6 +78,10 @@ export type Coherence = {
   tags: CoherenceTag[];
   messages?: number;
   views?: number;
+  dueAt: Date | null;
+  progressStatus: string | null;
+  board: string | null;
+  assigneeIds: number[];
 };
 
 export enum Environment {
@@ -63,3 +89,5 @@ export enum Environment {
   PREVIEW = 'preview',
   PRODUCTION = 'production',
 }
+
+export type { CoherencePriority };

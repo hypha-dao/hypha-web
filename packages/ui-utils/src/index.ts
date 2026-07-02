@@ -17,3 +17,4 @@ export * from './formatSeconds';
 export * from './formatDecayInterval';
 export * from './stripDescription';
 export * from './coherence-priorities';
+export * from './local-date-time';

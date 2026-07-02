@@ -6,6 +6,10 @@ import {
   CoherencePriority,
 } from '../../coherence-priorities';
 import { Coherence } from '../../types';
+import {
+  DEFAULT_SIGNAL_PROGRESS_STATUS,
+  normalizeAssigneeIds,
+} from '../../signal-workflow';
 
 export function normalizeCoherence({
   type,
@@ -16,6 +20,10 @@ export function normalizeCoherence({
   slug,
   messages,
   views,
+  dueAt,
+  progressStatus,
+  board,
+  assigneeIds,
   ...rest
 }: DbCoherence): Coherence {
   return {
@@ -38,6 +46,10 @@ export function normalizeCoherence({
     slug: slug ?? '',
     messages: messages ?? 0,
     views: views ?? 0,
+    dueAt: dueAt ?? null,
+    progressStatus: progressStatus?.trim() || DEFAULT_SIGNAL_PROGRESS_STATUS,
+    board: board?.trim() || null,
+    assigneeIds: normalizeAssigneeIds(assigneeIds),
     ...rest,
   };
 }

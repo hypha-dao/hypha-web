@@ -28,6 +28,11 @@ import {
   signalOrchestratorDispatches,
   signalOrchestratorQueue,
 } from './signal-orchestrator';
+import {
+  spaceScheduledItems,
+  spaceScheduledItemReminderDispatches,
+  spaceScheduledItemInvitationDispatches,
+} from './space-scheduled-item';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -48,6 +53,7 @@ export * from './energy-community';
 export * from './bank-customer';
 export * from './call-artifacts';
 export * from './signal-orchestrator';
+export * from './space-scheduled-item';
 
 export const schema = {
   documents,
@@ -76,4 +82,7 @@ export const schema = {
   signalOrchestratorQueue,
   signalOrchestratorCooldowns,
   signalOrchestratorDispatches,
+  spaceScheduledItems,
+  spaceScheduledItemReminderDispatches,
+  spaceScheduledItemInvitationDispatches,
 };

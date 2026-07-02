@@ -8,7 +8,7 @@ import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import {
   UserSpaceState,
   useUserSpaceState,
-} from '../hooks/use-user-space-state';
+} from '../hooks/use-user-space-state.web3.rpc';
 
 type SpaceCallJoinHeroBannerProps = {
   spaceSlug: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { Space } from '@hypha-platform/core/client';
-import { useUserSpaceState } from '../hooks/use-user-space-state';
+import { useUserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 import { shouldShowSpace } from '../hooks/use-filter-spaces-by-discoverability';
 import { useMemo } from 'react';
 

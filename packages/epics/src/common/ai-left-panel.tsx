@@ -17,6 +17,7 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   Bolt,
+  CalendarDays,
   HandCoins,
   Coins,
   FileCheck2,
@@ -77,7 +78,7 @@ import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-displa
 import {
   UserSpaceState,
   useUserSpaceState,
-} from '../spaces/hooks/use-user-space-state';
+} from '../spaces/hooks/use-user-space-state.web3.rpc';
 import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
 import {
   checkAccess,
@@ -556,6 +557,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         | 'ecosystem-navigation'
         | 'agreements'
         | 'members'
+        | 'calendar'
         | 'treasury'
         | 'energy'
         | 'rewards'
@@ -600,6 +602,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         icon: Radio,
         href: `/${lang}/dho/${spaceSlug}/coherence`,
         active: isSectionActive('coherence'),
+      },
+      {
+        key: 'calendar',
+        label: tCommon('Calendar'),
+        icon: CalendarDays,
+        href: `/${lang}/dho/${spaceSlug}/calendar`,
+        active: isSectionActive('calendar'),
       },
       {
         key: 'agreements',
