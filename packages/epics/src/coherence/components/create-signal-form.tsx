@@ -708,8 +708,8 @@ export const CreateSignalForm = ({
               ? t('keepWindowOpenWhileUnarchiving')
               : 'Please keep this window open while unarchiving the signal.'
             : t.has('keepWindowOpenWhileArchiving')
-              ? t('keepWindowOpenWhileArchiving')
-              : 'Please keep this window open while archiving the signal.'
+            ? t('keepWindowOpenWhileArchiving')
+            : 'Please keep this window open while archiving the signal.'
           : t('keepWindowOpenWhileCreating')
       }
       message={
@@ -726,8 +726,8 @@ export const CreateSignalForm = ({
                   ? t('unarchivingSignal')
                   : 'Unarchiving signal'
                 : t.has('archivingSignal')
-                  ? t('archivingSignal')
-                  : 'Archiving signal'
+                ? t('archivingSignal')
+                : 'Archiving signal'
               : mode === 'edit'
               ? t.has('savingSignal')
                 ? t('savingSignal')
@@ -1108,8 +1108,8 @@ export const CreateSignalForm = ({
                         ? t('unarchiveSignal')
                         : 'Unarchive signal'
                       : t.has('archiveSignal')
-                        ? t('archiveSignal')
-                        : 'Archive signal'
+                      ? t('archiveSignal')
+                      : 'Archive signal'
                   }
                   description={
                     isSignalArchived
@@ -1117,8 +1117,8 @@ export const CreateSignalForm = ({
                         ? t('unarchiveSignalConfirm')
                         : 'Restore this signal to active views. Continue?'
                       : t.has('archiveSignalConfirm')
-                        ? t('archiveSignalConfirm')
-                        : 'This hides the signal from active views. You can unarchive it later. Continue?'
+                      ? t('archiveSignalConfirm')
+                      : 'This hides the signal from active views. You can unarchive it later. Continue?'
                   }
                   customAcceptButtonText={
                     isSignalArchived
@@ -1126,8 +1126,8 @@ export const CreateSignalForm = ({
                         ? t('yesUnarchive')
                         : 'Yes, unarchive'
                       : t.has('yesArchive')
-                        ? t('yesArchive')
-                        : 'Yes, archive'
+                      ? t('yesArchive')
+                      : 'Yes, archive'
                   }
                   customRejectButtonText={t('noLeave')}
                   onAcceptClicked={async () => {
@@ -1138,8 +1138,8 @@ export const CreateSignalForm = ({
                         message: t.has('editSignalMissingAuth')
                           ? t('editSignalMissingAuth')
                           : isSignalArchived
-                            ? 'Your session expired. Please sign in again before unarchiving.'
-                            : 'Your session expired. Please sign in again before archiving.',
+                          ? 'Your session expired. Please sign in again before unarchiving.'
+                          : 'Your session expired. Please sign in again before archiving.',
                       });
                       return;
                     }
@@ -1174,12 +1174,12 @@ export const CreateSignalForm = ({
                         error.message.trim().length > 0
                           ? error.message
                           : isSignalArchived
-                            ? t.has('unarchiveFailed')
-                              ? t('unarchiveFailed')
-                              : 'Could not unarchive signal. Please try again.'
-                            : t.has('archiveFailed')
-                              ? t('archiveFailed')
-                              : 'Could not archive signal. Please try again.';
+                          ? t.has('unarchiveFailed')
+                            ? t('unarchiveFailed')
+                            : 'Could not unarchive signal. Please try again.'
+                          : t.has('archiveFailed')
+                          ? t('archiveFailed')
+                          : 'Could not archive signal. Please try again.';
                       form.setError('root', {
                         type: 'manual',
                         message,
@@ -1201,11 +1201,11 @@ export const CreateSignalForm = ({
                       ? t.has('unarchiveAction')
                         ? t('unarchiveAction')
                         : t.has('unarchive')
-                          ? t('unarchive')
-                          : 'Unarchive'
+                        ? t('unarchive')
+                        : 'Unarchive'
                       : t.has('archiveAction')
-                        ? t('archiveAction')
-                        : 'Archive'}
+                      ? t('archiveAction')
+                      : 'Archive'}
                   </Button>
                 </ConfirmDialog>
               ) : null}
