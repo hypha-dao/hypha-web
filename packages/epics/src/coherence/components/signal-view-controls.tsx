@@ -34,22 +34,25 @@ export function SignalViewControls({
     <>
       <div className="flex flex-wrap items-center gap-2">
         {workflowSettingsHref ? (
-          <Button
-            asChild
-            type="button"
-            variant="ghost"
-            colorVariant="neutral"
-            className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground"
-          >
-            <Link
-              href={workflowSettingsHref}
-              scroll={false}
-              aria-label={t('signalWorkflowSettings')}
-              title={t('signalWorkflowSettings')}
+          <div className="inline-flex h-10 items-center rounded-lg bg-neutral-3 px-1">
+            <Button
+              asChild
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-foreground"
             >
-              <Cog className="h-[1.125rem] w-[1.125rem]" aria-hidden />
-            </Link>
-          </Button>
+              <Link
+                href={workflowSettingsHref}
+                scroll={false}
+                aria-label={t('signalWorkflowSettings')}
+                title={t('signalWorkflowSettings')}
+              >
+                <Cog className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+              </Link>
+            </Button>
+          </div>
         ) : null}
         <Tabs
           value={viewMode}
