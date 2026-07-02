@@ -20,6 +20,10 @@ export {
   toFullCalendarRruleInput,
 } from './recurrence';
 export {
+  calendarRangeInclusiveTo,
+  toCalendarEventsInRange,
+} from './calendar-events';
+export {
   buildScheduledCallJoinPath,
   buildScheduledCalendarEventPath,
   isMatrixLinkedCall,
