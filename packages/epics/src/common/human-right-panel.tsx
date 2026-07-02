@@ -61,6 +61,7 @@ import {
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
 import { UseMembers } from '../spaces';
+import { useSpaceMembersAndDelegates } from '../spaces/hooks/use-space-members-and-delegates';
 import {
   UserSpaceState,
   useUserSpaceState,
@@ -997,16 +998,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     authToken,
   });
   const { person: me } = useMe();
-  const { persons: spaceMembersResult } = useMembers({
-    spaceSlug,
-    paginationDisabled: true,
-  });
-  const spaceMembers = useMemo(
-    () => spaceMembersResult?.data ?? [],
-    [spaceMembersResult?.data],
-  );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
+  const { persons: spaceMembersResult } = useSpaceMembersAndDelegates({
+    spaceSlug,
+    web3SpaceId: effectiveSpaceWeb3Id,
+    useMembers,
+  });
+  const spaceMembers = useMemo(
+    () => spaceMembersResult ?? [],
+    [spaceMembersResult],
+  );
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
     useSpaceDiscoverability({
       spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
@@ -1683,83 +1685,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [roomId, mode, space?.chatRoomId]);
 
   const rawMentionCandidates = useMemo((): ChatMentionCandidate[] => {
-    if (!client || mentionCandidateRoomIds.length === 0) return [];
-
-    const byUserId = new Map<
-      string,
-      { displayLabel: string; avatarUrl?: string; privySub?: string }
-    >();
-
-    for (const candidateRoomId of mentionCandidateRoomIds) {
-      const room = client.getRoom(candidateRoomId);
-      if (!room) continue;
-      for (const member of room.getJoinedMembers()) {
-        const userId = member.userId;
-        if (!userId) continue;
-        if (currentUserId && userId === currentUserId) continue;
-        byUserId.set(userId, {
-          displayLabel: matrixMemberDisplayLabel(member, userId),
-          avatarUrl: matrixMemberAvatarSquare(
-            client,
-            candidateRoomId,
-            userId,
-            64,
-          ),
-        });
-      }
-    }
-
-    /** Same names as Members tab — overrides Matrix-only technical displaynames. */
-    for (const p of spaceMembers) {
-      let mxid = personIdToMatrixUserId[p.id]?.trim();
-      const sub = p.sub?.trim();
-      if (!mxid && sub) {
-        mxid = subToMatrixUserId[sub]?.trim();
-      }
-      if (!mxid && sub) {
-        for (const userId of byUserId.keys()) {
-          if (matrixUserIdToCanonicalPrivySub(userId) === sub) {
-            mxid = userId;
-            break;
-          }
-        }
-      }
-      if (!mxid) continue;
-      if (currentUserId && mxid === currentUserId) continue;
-      const prev = byUserId.get(mxid);
-      byUserId.set(mxid, {
-        displayLabel: personRosterLabel(p, t('unknownMember')),
-        avatarUrl: p.avatarUrl ?? prev?.avatarUrl,
-        ...(sub ? { privySub: sub } : {}),
-      });
-    }
-
-    const list: ChatMentionCandidate[] = [];
-    for (const [userId, v] of byUserId) {
-      list.push({
-        userId,
-        displayLabel: v.displayLabel,
-        avatarUrl: v.avatarUrl,
-        ...(v.privySub ? { privySub: v.privySub } : {}),
-      });
-    }
-
-    list.sort((a, b) =>
-      a.displayLabel.localeCompare(b.displayLabel, undefined, {
-        sensitivity: 'base',
-      }),
-    );
-    return list;
-  }, [
-    client,
-    mentionCandidateRoomIds,
-    currentUserId,
-    spaceMembers,
-    subToMatrixUserId,
-    personIdToMatrixUserId,
-    t,
-    mentionMembershipEpoch,
-  ]);
+    const candidates = buildSpaceRosterMentionCandidates({
+      spaceMembers,
+      personIdToMatrixUserId,
+      unknownLabel: t('unknownMember'),
+    });
+    if (!currentUserId) return candidates;
+    return candidates.filter((candidate) => candidate.userId !== currentUserId);
+  }, [spaceMembers, personIdToMatrixUserId, currentUserId, t]);
 
   useEffect(() => {
     if (!client || rawMentionCandidates.length === 0) return;
