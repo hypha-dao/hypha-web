@@ -559,13 +559,13 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         <div className="relative rounded-[calc(1rem-4px)] border border-border/35 bg-card/75 p-3 backdrop-blur-sm md:p-4">
           <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center rounded-xl border border-border/50 bg-muted/20 p-0.5 shadow-sm">
+              <div className="flex h-10 items-stretch overflow-hidden rounded-xl border border-border/50 bg-muted/20 shadow-sm">
                 <Button
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
                   size="icon"
-                  className="h-8 w-8 rounded-lg"
+                  className="size-10 min-h-0 shrink-0 rounded-none"
                   aria-label={t('previous')}
                   onClick={() => shiftAnchor(-1)}
                 >
@@ -575,7 +575,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
-                  className="h-8 rounded-lg px-3 text-xs font-semibold uppercase tracking-wide"
+                  size="sm"
+                  className="h-10 min-h-0 rounded-none px-3 py-0 text-xs font-semibold uppercase tracking-wide"
                   onClick={() => {
                     const today = new Date();
                     setAnchorDate(today);
@@ -589,7 +590,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                   variant="ghost"
                   colorVariant="neutral"
                   size="icon"
-                  className="h-8 w-8 rounded-lg"
+                  className="size-10 min-h-0 shrink-0 rounded-none"
                   aria-label={t('next')}
                   onClick={() => shiftAnchor(1)}
                 >
