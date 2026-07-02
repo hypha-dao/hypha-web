@@ -4,9 +4,9 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
 
 export const useJwt = () => {
-  const { getAccessToken, user, isAuthenticated } = useAuthentication();
+  const { getAccessToken, user, isAuthenticated, isLoading } = useAuthentication();
   const { data: jwt, isLoading: isLoadingJwt } = useSWR(
-    isAuthenticated && user?.id ? [user.id, 'jwt'] : null,
+    !isLoading && isAuthenticated && user?.id ? [user.id, 'jwt'] : null,
     () => getAccessToken(),
     {
       // Privy returns a cached token and only refreshes it when it is close to

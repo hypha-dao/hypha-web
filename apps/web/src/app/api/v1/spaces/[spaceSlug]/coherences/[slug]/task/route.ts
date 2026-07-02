@@ -69,9 +69,14 @@ export async function PATCH(
     return NextResponse.json(normalizeCoherence(updated));
   } catch (error) {
     console.error('Failed to patch signal task:', error);
-    return NextResponse.json(
-      { error: 'Failed to patch signal task' },
-      { status: 500 },
-    );
+    const message =
+      error instanceof Error ? error.message : 'Failed to patch signal task';
+    const status = message.includes('not found')
+      ? 404
+      : message.includes('Unknown progress status') ||
+          message.includes('Unknown board')
+        ? 400
+        : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

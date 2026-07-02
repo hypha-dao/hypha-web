@@ -13,6 +13,7 @@ import {
   DEFAULT_SIGNAL_WORKFLOW,
   applyPendingCoherenceTaskPatch,
   clearPendingCoherenceTaskPatch,
+  revalidateCoherences,
   setPendingCoherenceTaskPatch,
   upsertCoherenceInSpaceCache,
   usePatchCoherenceTask,
@@ -175,19 +176,18 @@ export const SignalSection: FC<SignalSectionProps> = ({
             ...taskPatch,
             confirmedUpdatedAtMs,
           });
-          const didUpsert = await upsertCoherenceInSpaceCache(spaceSlug, {
+          await upsertCoherenceInSpaceCache(spaceSlug, {
             ...updated,
             ...taskPatch,
           });
-          if (!didUpsert) {
-            void refresh();
-          }
+          void revalidateCoherences(spaceSlug);
         }
       } catch (error) {
         if (hasTaskFieldPatch) {
           clearPendingCoherenceTaskPatch(spaceSlug, slug);
           void refresh();
         }
+        console.error('[SignalSection] Failed to patch signal task', error);
         throw error;
       }
     },

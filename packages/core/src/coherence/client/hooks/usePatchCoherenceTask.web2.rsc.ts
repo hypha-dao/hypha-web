@@ -1,26 +1,32 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
+import { useAuthentication } from '@hypha-platform/authentication';
 import type { Coherence, PatchCoherenceTaskBySlugInput } from '../../types';
 import { hydrateCoherenceFromApi } from '../../signal-workflow';
-import { useJwt } from '../../../people/client/hooks/useJwt';
 
 export function usePatchCoherenceTask(spaceSlug?: string) {
-  const { jwt } = useJwt();
+  const { getAccessToken, isAuthenticated } = useAuthentication();
+  const slug = spaceSlug?.trim() || null;
 
   const { trigger, isMutating, error } = useSWRMutation(
-    jwt && spaceSlug ? ([spaceSlug, jwt, 'patchCoherenceTask'] as const) : null,
+    slug && isAuthenticated ? ([slug, 'patchCoherenceTask'] as const) : null,
     async (
-      [slug, token],
+      [resolvedSpaceSlug],
       {
         arg,
       }: {
         arg: Omit<PatchCoherenceTaskBySlugInput, 'slug'> & { slug: string };
       },
     ) => {
+      const token = await getAccessToken();
+      if (!token) {
+        throw new Error('Authentication required to update signal task');
+      }
+
       const response = await fetch(
         `/api/v1/spaces/${encodeURIComponent(
-          slug,
+          resolvedSpaceSlug,
         )}/coherences/${encodeURIComponent(arg.slug)}/task`,
         {
           method: 'PATCH',
@@ -42,11 +48,17 @@ export function usePatchCoherenceTask(spaceSlug?: string) {
       );
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as {
-          error?: string;
+          error?: string | { message?: string };
         } | null;
-        throw new Error(
-          payload?.error ?? `Failed to patch task: ${response.status}`,
-        );
+        const message =
+          typeof payload?.error === 'string'
+            ? payload.error
+            : payload?.error &&
+                typeof payload.error === 'object' &&
+                typeof payload.error.message === 'string'
+              ? payload.error.message
+              : `Failed to patch task: ${response.status}`;
+        throw new Error(message);
       }
       return hydrateCoherenceFromApi(await response.json()) as Coherence;
     },

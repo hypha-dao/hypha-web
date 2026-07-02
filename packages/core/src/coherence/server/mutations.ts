@@ -64,6 +64,30 @@ export async function assertCanEditCoherence(
   return row;
 }
 
+/** Load coherence row for task-field PATCH. Caller must enforce space auth. */
+async function getCoherenceRowForTaskPatch(
+  { slug }: { slug: string },
+  { db }: { db: DatabaseInstance },
+) {
+  const existing = await db
+    .select({
+      id: coherences.id,
+      creatorId: coherences.creatorId,
+      spaceId: coherences.spaceId,
+    })
+    .from(coherences)
+    .where(eq(coherences.slug, slug));
+  if (existing.length === 0) {
+    throw new Error(`Coherence not found for slug="${slug}"`);
+  }
+  if (existing.length > 1) {
+    throw new Error(
+      `Multiple coherences found for slug="${slug}", expected exactly one`,
+    );
+  }
+  return existing[0]!;
+}
+
 export const createCoherence = async (
   {
     creatorId,
@@ -213,12 +237,12 @@ export const updateCoherenceSignalBySlug = async (
 export const patchCoherenceTaskBySlug = async (
   {
     slug,
-    requesterPersonId,
+    requesterPersonId: _requesterPersonId,
     ...rest
   }: { slug: string; requesterPersonId: number } & PatchCoherenceTaskInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  const row = await assertCanEditCoherence({ slug, requesterPersonId }, { db });
+  const row = await getCoherenceRowForTaskPatch({ slug }, { db });
   const patch: Partial<typeof coherences.$inferInsert> = {};
 
   if (rest.dueAt !== undefined) {

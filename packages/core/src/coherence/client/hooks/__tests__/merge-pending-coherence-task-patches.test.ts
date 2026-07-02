@@ -120,4 +120,32 @@ describe('mergePendingCoherenceTaskPatches', () => {
 
     expect(merged?.progressStatus).toBe('done');
   });
+
+  it('does not clear overlay on refetch before PATCH confirms', () => {
+    applyPendingCoherenceTaskPatch('space-a', 'signal-1', {
+      progressStatus: 'done',
+    });
+
+    mergePendingCoherenceTaskPatches(
+      'space-a',
+      [
+        makeSignal({
+          slug: 'signal-1',
+          progressStatus: 'done',
+          updatedAt: new Date('2026-07-01T12:00:00.000Z'),
+        }),
+      ],
+      { fromFetch: true },
+    );
+
+    const [merged] = mergePendingCoherenceTaskPatches('space-a', [
+      makeSignal({
+        slug: 'signal-1',
+        progressStatus: 'backlog',
+        updatedAt: new Date('2026-07-01T10:00:00.000Z'),
+      }),
+    ]);
+
+    expect(merged?.progressStatus).toBe('done');
+  });
 });
