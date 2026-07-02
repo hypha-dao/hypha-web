@@ -332,21 +332,33 @@ export async function GET(
     const memberAddressList = memberAddresses ?? [];
 
     // Per-member on-chain detail: signed energy-credit balance (positive =
-    // holds credit, negative = owes) and the source ids this member co-owns
-    // (with ownership bps). Powers the Ownership and Credits views in the UI.
+    // holds credit, negative = owes), the source ids this member co-owns
+    // (with ownership bps) and the consumption meter ids registered for the
+    // member. Powers the Ownership, Credits and per-consumer telemetry views.
     const memberDetails = await Promise.all(
       memberAddressList.map(async (rawAddress) => {
         const address = rawAddress.toLowerCase() as `0x${string}`;
-        const [creditBalance, debtStablecoin, creditStablecoin, ownerships] =
-          await Promise.all([
-            safeRead<bigint>('getEnergyCreditBalance', [address]),
-            safeRead<bigint>('getDebtInStablecoin', [address]),
-            safeRead<bigint>('getCreditInStablecoin', [address]),
-            safeRead<readonly [readonly `0x${string}`[], readonly bigint[]]>(
-              'getAllSourceOwnerships',
-              [address],
-            ),
-          ]);
+        const [
+          creditBalance,
+          debtStablecoin,
+          creditStablecoin,
+          ownerships,
+          memberRecord,
+        ] = await Promise.all([
+          safeRead<bigint>('getEnergyCreditBalance', [address]),
+          safeRead<bigint>('getDebtInStablecoin', [address]),
+          safeRead<bigint>('getCreditInStablecoin', [address]),
+          safeRead<readonly [readonly `0x${string}`[], readonly bigint[]]>(
+            'getAllSourceOwnerships',
+            [address],
+          ),
+          safeRead<{
+            memberAddress: `0x${string}`;
+            deviceIds: readonly bigint[];
+            isActive: boolean;
+            metadataHash: `0x${string}`;
+          }>('getMember', [address]),
+        ]);
         const ownedIds = ownerships ? ownerships[0] : [];
         const ownedBps = ownerships ? ownerships[1] : [];
         return {
@@ -357,6 +369,9 @@ export async function GET(
             debtStablecoin !== null ? debtStablecoin.toString() : null,
           creditInStablecoin:
             creditStablecoin !== null ? creditStablecoin.toString() : null,
+          deviceIds: memberRecord
+            ? memberRecord.deviceIds.map((id) => Number(id))
+            : null,
           ownerships: ownedIds.map((sourceId, index) => ({
             sourceId,
             sourceLabel: decodeSourceId(sourceId),

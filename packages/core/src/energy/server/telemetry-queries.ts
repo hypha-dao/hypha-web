@@ -6,6 +6,7 @@ import { getEnergyDbConfigFromEnv } from './azure-db-config';
 import {
   ENERGY_TELEMETRY_PERIODS,
   PRODUCTION_METER_LABELS,
+  type EnergyTelemetryMeterSeries,
   type EnergyTelemetryPeriod,
   type EnergyTelemetryResponse,
   type EnergyTelemetrySourceSeries,
@@ -20,11 +21,12 @@ type AggregateRow = {
 
 const PERIOD_CONFIG: Record<
   EnergyTelemetryPeriod,
-  { points: number; unit: 'day' | 'month'; intervalSql: string }
+  { points: number; unit: 'day' | 'week' | 'month'; intervalSql: string }
 > = {
   '7d': { points: 7, unit: 'day', intervalSql: "interval '7 days'" },
   '30d': { points: 30, unit: 'day', intervalSql: "interval '30 days'" },
   '90d': { points: 90, unit: 'day', intervalSql: "interval '90 days'" },
+  '12w': { points: 12, unit: 'week', intervalSql: "interval '12 weeks'" },
   '12m': { points: 12, unit: 'month', intervalSql: "interval '12 months'" },
 };
 
@@ -86,6 +88,21 @@ function buildBucketKeys(
     return { keys, labels };
   }
 
+  if (cfg.unit === 'week') {
+    // Postgres date_trunc('week', …) buckets start on Monday (ISO weeks).
+    const monday = new Date(end);
+    monday.setUTCHours(0, 0, 0, 0);
+    monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+    for (let i = cfg.points - 1; i >= 0; i--) {
+      const d = new Date(monday);
+      d.setUTCDate(monday.getUTCDate() - i * 7);
+      const key = d.toISOString().slice(0, 10);
+      keys.push(key);
+      labels.push(formatDayLabel(d.toISOString()));
+    }
+    return { keys, labels };
+  }
+
   for (let i = cfg.points - 1; i >= 0; i--) {
     const d = new Date(end);
     d.setUTCDate(end.getUTCDate() - i);
@@ -102,7 +119,10 @@ function buildBucketKeys(
   return { keys, labels };
 }
 
-function bucketKeyFromRow(bucketIso: string, unit: 'day' | 'month'): string {
+function bucketKeyFromRow(
+  bucketIso: string,
+  unit: 'day' | 'week' | 'month',
+): string {
   return unit === 'month' ? bucketIso.slice(0, 7) : bucketIso.slice(0, 10);
 }
 
@@ -118,6 +138,7 @@ function emptyResponse(
     period,
     labels,
     consumptionKwh: keys.map(() => 0),
+    consumptionByMeter: [],
     productionBySource: [],
     gridImportKwh: keys.map(() => 0),
     gridExportKwh: keys.map(() => 0),
@@ -180,7 +201,8 @@ export async function fetchEnergyTelemetry(input: {
       };
     }
 
-    const truncateUnit = cfg.unit === 'month' ? 'month' : 'day';
+    const truncateUnit =
+      cfg.unit === 'month' ? 'month' : cfg.unit === 'week' ? 'week' : 'day';
     const aggregateSql = `
       select
         date_trunc('${truncateUnit}', interval_start at time zone 'UTC')::text as bucket,
@@ -229,6 +251,7 @@ export async function fetchEnergyTelemetry(input: {
     const gridImportWh = keys.map(() => 0);
     const gridExportWh = keys.map(() => 0);
     const productionByMeter = new Map<number, number[]>();
+    const consumptionByMeterWh = new Map<number, number[]>();
 
     for (const row of aggResult.rows) {
       const key = bucketKeyFromRow(row.bucket, cfg.unit);
@@ -238,6 +261,10 @@ export async function fetchEnergyTelemetry(input: {
       const wh = Number(row.total_wh);
       if (row.kind === 'consumption') {
         consumptionWh[idx] = (consumptionWh[idx] ?? 0) + wh;
+        const series =
+          consumptionByMeterWh.get(row.meter_id) ?? keys.map(() => 0);
+        series[idx] = (series[idx] ?? 0) + wh;
+        consumptionByMeterWh.set(row.meter_id, series);
       } else if (row.kind === 'production') {
         const series = productionByMeter.get(row.meter_id) ?? keys.map(() => 0);
         series[idx] = (series[idx] ?? 0) + wh;
@@ -279,6 +306,15 @@ export async function fetchEnergyTelemetry(input: {
         valuesKwh: valuesWh.map((wh) => whToKwh(wh)),
       }));
 
+    const consumptionByMeter: EnergyTelemetryMeterSeries[] = [
+      ...consumptionByMeterWh.entries(),
+    ]
+      .sort(([a], [b]) => a - b)
+      .map(([meterId, valuesWh]) => ({
+        meterId,
+        valuesKwh: valuesWh.map((wh) => whToKwh(wh)),
+      }));
+
     const consumptionKwh = consumptionWh.map((wh) => whToKwh(wh));
     const gridImportKwh = gridImportWh.map((wh) => whToKwh(wh));
     const gridExportKwh = gridExportWh.map((wh) => whToKwh(wh));
@@ -296,6 +332,7 @@ export async function fetchEnergyTelemetry(input: {
       period,
       labels,
       consumptionKwh,
+      consumptionByMeter,
       productionBySource,
       gridImportKwh,
       gridExportKwh,

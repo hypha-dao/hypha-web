@@ -7,18 +7,28 @@ import { usePathname } from 'next/navigation';
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
 import type { Timeframe } from '../components/assets/energy/dummy-data';
 
+/** Server-side telemetry period. Superset of the chart `Timeframe` toggle values. */
+export type TelemetryPeriod = Timeframe | '12w';
+
 export type EnergyTelemetrySourceSeries = {
   meterId: number;
   label: string;
   valuesKwh: number[];
 };
 
+export type EnergyTelemetryMeterSeries = {
+  meterId: number;
+  valuesKwh: number[];
+};
+
 export type SpaceEnergyTelemetryResponse = {
   enabled: boolean;
   configured: boolean;
-  period: Timeframe;
+  period: TelemetryPeriod;
   labels: string[];
   consumptionKwh: number[];
+  /** Consumption broken down by meter id; join with member deviceIds for per-user views. */
+  consumptionByMeter: EnergyTelemetryMeterSeries[];
   productionBySource: EnergyTelemetrySourceSeries[];
   gridImportKwh: number[];
   gridExportKwh: number[];
@@ -34,7 +44,7 @@ export type SpaceEnergyTelemetryResponse = {
   communityId: number | null;
 };
 
-export const useSpaceEnergyTelemetry = (period: Timeframe) => {
+export const useSpaceEnergyTelemetry = (period: TelemetryPeriod) => {
   const pathname = usePathname();
   const spaceSlug = React.useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),

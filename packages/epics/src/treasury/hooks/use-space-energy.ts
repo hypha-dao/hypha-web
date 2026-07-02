@@ -23,6 +23,8 @@ export type SpaceEnergyMemberDetail = {
   debtInStablecoin: string | null;
   /** Credit the member can claim, in stablecoin micro-units (USDC 6dp). */
   creditInStablecoin: string | null;
+  /** Consumption meter ids registered for this member on-chain (null if the read failed). */
+  deviceIds: number[] | null;
   ownerships: {
     sourceId: `0x${string}`;
     sourceLabel: string;

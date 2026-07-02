@@ -4,7 +4,8 @@ import * as React from 'react';
 import { UsersIcon, ZapIcon } from 'lucide-react';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { ENERGY_PALETTE } from './charts';
-import { EnergyPersonCard, SourceCard, SectionTitle } from './shared';
+import { SourceCard, SectionTitle } from './shared';
+import { ConsumerConsumptionCard } from './consumer-consumption-card';
 import { useEnergyPeople } from './use-energy-people';
 import { prettySourceLabel } from './format';
 
@@ -13,12 +14,21 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const sources = data.sources ?? [];
   const { people, isLoading } = useEnergyPeople(members);
 
+  // address -> consumption meter ids, read from on-chain member records.
+  const deviceIdsByAddress = React.useMemo(() => {
+    const map = new Map<string, number[] | null>();
+    (data.memberDetails ?? []).forEach((detail) => {
+      map.set(detail.address.toLowerCase(), detail.deviceIds ?? null);
+    });
+    return map;
+  }, [data.memberDetails]);
+
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
         <SectionTitle
           title="Local energy consumers"
-          description="People taking part in this community's energy pool."
+          description="People taking part in this community's energy pool. Click a member to see their consumption."
           right={
             <span className="flex items-center gap-1.5 text-1 text-neutral-11">
               <UsersIcon size={14} />
@@ -29,11 +39,14 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
         {members.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {members.map((address) => (
-              <EnergyPersonCard
+              <ConsumerConsumptionCard
                 key={address}
                 address={address}
                 person={people[address.toLowerCase()]}
                 isLoading={isLoading}
+                deviceIds={
+                  deviceIdsByAddress.get(address.toLowerCase()) ?? null
+                }
               />
             ))}
           </div>

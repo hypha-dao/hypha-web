@@ -134,6 +134,8 @@ export type BarChartProps = {
   className?: string;
   /** Suffix appended to values in the hover tooltip (e.g. " kWh"). */
   valueSuffix?: string;
+  /** Max fraction digits for tooltip values (default 0). */
+  valueDecimals?: number;
   showLegend?: boolean;
 };
 
@@ -144,6 +146,7 @@ export const BarChart = ({
   height = 280,
   className,
   valueSuffix = '',
+  valueDecimals = 0,
   showLegend = true,
 }: BarChartProps) => {
   const gradId = React.useId();
@@ -177,7 +180,7 @@ export const BarChart = ({
 
   const fmt = (v: number) =>
     `${v.toLocaleString(undefined, {
-      maximumFractionDigits: 0,
+      maximumFractionDigits: valueDecimals,
     })}${valueSuffix}`;
 
   // Tooltip anchor for the hovered band.

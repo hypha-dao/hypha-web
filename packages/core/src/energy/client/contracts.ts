@@ -405,6 +405,24 @@ export const energyPpaV2Abi = [
   },
   {
     type: 'function',
+    name: 'getMember',
+    stateMutability: 'view',
+    inputs: [{ name: 'memberAddress', type: 'address' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'memberAddress', type: 'address' },
+          { name: 'deviceIds', type: 'uint256[]' },
+          { name: 'isActive', type: 'bool' },
+          { name: 'metadataHash', type: 'bytes32' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'function',
     name: 'getEnergyTokenAddress',
     stateMutability: 'view',
     inputs: [],

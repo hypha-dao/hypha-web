@@ -1,8 +1,14 @@
-export type EnergyTelemetryPeriod = '7d' | '30d' | '90d' | '12m';
+export type EnergyTelemetryPeriod = '7d' | '30d' | '90d' | '12w' | '12m';
 
 export type EnergyTelemetrySourceSeries = {
   meterId: number;
   label: string;
+  valuesKwh: number[];
+};
+
+/** Raw per-meter consumption series; meter ids map to members on-chain (`getMember(...).deviceIds`). */
+export type EnergyTelemetryMeterSeries = {
+  meterId: number;
   valuesKwh: number[];
 };
 
@@ -12,6 +18,8 @@ export type EnergyTelemetryResponse = {
   period: EnergyTelemetryPeriod;
   labels: string[];
   consumptionKwh: number[];
+  /** Consumption broken down by individual meter, for per-member views. */
+  consumptionByMeter: EnergyTelemetryMeterSeries[];
   productionBySource: EnergyTelemetrySourceSeries[];
   /** Grid energy bought from the external grid per bucket (kWh). */
   gridImportKwh: number[];
@@ -33,6 +41,7 @@ export const ENERGY_TELEMETRY_PERIODS: EnergyTelemetryPeriod[] = [
   '7d',
   '30d',
   '90d',
+  '12w',
   '12m',
 ];
 

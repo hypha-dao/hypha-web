@@ -38,7 +38,7 @@ const MONTHS = [
 ];
 
 // Mulberry32 — tiny deterministic PRNG.
-const seeded = (seed: number) => {
+export const seeded = (seed: number) => {
   let t = seed + 0x6d2b79f5;
   return () => {
     t |= 0;
@@ -49,7 +49,7 @@ const seeded = (seed: number) => {
   };
 };
 
-const hashString = (value: string) => {
+export const hashString = (value: string) => {
   let h = 2166136261;
   for (let i = 0; i < value.length; i++) {
     h ^= value.charCodeAt(i);

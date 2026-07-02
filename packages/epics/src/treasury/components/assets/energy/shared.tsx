@@ -7,6 +7,7 @@ import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyPerson } from './use-energy-people';
 import { personDisplayName, shortAddr } from './format';
 import { ENERGY_PALETTE } from './charts';
+import { AnimatedSourceIcon } from './animated-source-icons';
 
 /** Placeholder until grid-operator profiles are wired to on-chain roles. */
 export const GRID_OPERATOR_DISPLAY_NAME = 'Local grid operator';
@@ -116,12 +117,7 @@ export const SourceCard = ({
   accent: string;
 }) => (
   <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
-    <span
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold"
-      style={{ backgroundColor: `${accent}22`, color: accent }}
-    >
-      {type === 'BATTERY' ? '🔋' : type === 'SOLAR' ? '☀️' : '⚡'}
-    </span>
+    <AnimatedSourceIcon type={type} accent={accent} />
     <div className="min-w-0 flex-1">
       <p className="truncate font-medium text-foreground">{label}</p>
       <p className="text-1 text-neutral-11">{type}</p>
