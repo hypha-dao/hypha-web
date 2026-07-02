@@ -39,7 +39,14 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, ArchiveRestore, Pencil, Sparkles, UserCircle2, Workflow } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  Pencil,
+  Sparkles,
+  UserCircle2,
+  Workflow,
+} from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -364,7 +371,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       try {
         await refresh();
       } catch (refreshErr) {
-        console.warn('Signal archive state updated but refresh failed:', refreshErr);
+        console.warn(
+          'Signal archive state updated but refresh failed:',
+          refreshErr,
+        );
       }
       return true;
     } catch (error) {
@@ -661,7 +671,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           >
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {archived ? t('unarchiveConversation') : t('archiveConversation')}
+                {archived
+                  ? t('unarchiveConversation')
+                  : t('archiveConversation')}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {archived ? t('unarchiveConfirm') : t('archiveConfirm')}
