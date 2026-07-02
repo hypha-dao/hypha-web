@@ -5,4 +5,5 @@ export * from './mutations';
 export * from './queries';
 export * from './signal-orchestrator';
 export * from './signal-workflow';
+export * from './resolve-coherence-task-patch-context';
 export * from './web3';
