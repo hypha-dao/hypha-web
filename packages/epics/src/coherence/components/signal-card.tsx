@@ -620,6 +620,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
         </div>
 
+        {(archived || onOpenConversation) && (
         <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
           {archived ? (
             <div
@@ -666,6 +667,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </Button>
           )}
         </div>
+        )}
         <AlertDialog
           open={deleteOpen}
           onOpenChange={(open) => {
