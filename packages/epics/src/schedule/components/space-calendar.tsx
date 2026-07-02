@@ -629,7 +629,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                     key={id}
                     value={id}
                     variant="switch"
-                    className="px-3.5 text-xs font-semibold uppercase tracking-wide"
+                    className="px-3.5 text-xs font-semibold"
                   >
                     {label}
                   </TabsTrigger>
