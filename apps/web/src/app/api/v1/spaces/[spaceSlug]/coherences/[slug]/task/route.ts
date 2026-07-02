@@ -74,9 +74,9 @@ export async function PATCH(
     const status = message.includes('not found')
       ? 404
       : message.includes('Unknown progress status') ||
-          message.includes('Unknown board')
-        ? 400
-        : 500;
+        message.includes('Unknown board')
+      ? 400
+      : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

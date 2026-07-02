@@ -54,10 +54,10 @@ export function usePatchCoherenceTask(spaceSlug?: string) {
           typeof payload?.error === 'string'
             ? payload.error
             : payload?.error &&
-                typeof payload.error === 'object' &&
-                typeof payload.error.message === 'string'
-              ? payload.error.message
-              : `Failed to patch task: ${response.status}`;
+              typeof payload.error === 'object' &&
+              typeof payload.error.message === 'string'
+            ? payload.error.message
+            : `Failed to patch task: ${response.status}`;
         throw new Error(message);
       }
       return hydrateCoherenceFromApi(await response.json()) as Coherence;
