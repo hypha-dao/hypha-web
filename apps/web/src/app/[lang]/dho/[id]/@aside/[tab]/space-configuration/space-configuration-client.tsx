@@ -109,14 +109,22 @@ export function SpaceConfigurationClient({
 
   const resolvedCloseUrl = React.useMemo(() => {
     if (returnToSignals) {
-      return getSignalWorkflowReturnPath(lang as Locale, spaceSlug, searchParams);
+      return getSignalWorkflowReturnPath(
+        lang as Locale,
+        spaceSlug,
+        searchParams,
+      );
     }
     return closeUrl;
   }, [closeUrl, lang, returnToSignals, searchParams, spaceSlug]);
 
   const resolvedBackUrl = React.useMemo(() => {
     if (returnToSignals) {
-      return getSignalWorkflowReturnPath(lang as Locale, spaceSlug, searchParams);
+      return getSignalWorkflowReturnPath(
+        lang as Locale,
+        spaceSlug,
+        searchParams,
+      );
     }
     return `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
   }, [closeUrl, lang, returnToSignals, searchParams, spaceSlug]);
