@@ -5,13 +5,15 @@ import { authorizeSpacePanelInteraction } from '../../space/server/authorize-spa
 import { findSpaceById } from '../../space/server/queries';
 import { findCoherenceBySlug } from './queries';
 
-/** Matches panel interaction auth: postgres members and on-chain delegates. */
+/** Space panel auth (members/delegates) plus signal creators. */
 export async function assertCoherenceSpacePanelAuth({
   slug,
   authToken,
+  requesterPersonId,
 }: {
   slug: string;
   authToken: string;
+  requesterPersonId?: number;
 }): Promise<void> {
   const coherence = await findCoherenceBySlug({ slug }, { db });
   if (!coherence) {
@@ -19,6 +21,10 @@ export async function assertCoherenceSpacePanelAuth({
   }
   if (coherence.spaceId == null) {
     throw new Error(`Coherence has no space for slug="${slug}"`);
+  }
+
+  if (requesterPersonId != null && coherence.creatorId === requesterPersonId) {
+    return;
   }
 
   const space = await findSpaceById({ id: coherence.spaceId }, { db });

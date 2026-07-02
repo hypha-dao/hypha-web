@@ -64,7 +64,7 @@ export async function assertCanEditCoherence(
   return row;
 }
 
-/** Load coherence row for task-field PATCH. Caller must enforce space auth. */
+/** Load coherence row for mutations. Caller must enforce space auth. */
 async function getCoherenceRowForTaskPatch(
   { slug }: { slug: string },
   { db }: { db: DatabaseInstance },
@@ -74,6 +74,9 @@ async function getCoherenceRowForTaskPatch(
       id: coherences.id,
       creatorId: coherences.creatorId,
       spaceId: coherences.spaceId,
+      progressStatus: coherences.progressStatus,
+      board: coherences.board,
+      assigneeIds: coherences.assigneeIds,
     })
     .from(coherences)
     .where(eq(coherences.slug, slug));
@@ -195,14 +198,23 @@ export const updateCoherenceSignalBySlug = async (
     assigneeIds,
   } = rest;
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });
+  const nextProgressStatus = progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
+  const currentProgressStatus =
+    row.progressStatus?.trim() || DEFAULT_SIGNAL_PROGRESS_STATUS;
+  const nextBoard = board ?? null;
+  const currentBoard = row.board?.trim() || null;
 
   if (row.spaceId != null) {
     const workflow = await ensureSignalWorkflowConfig(
       { spaceId: row.spaceId },
       { db },
     );
-    assertValidProgressStatus(workflow, progressStatus ?? null);
-    assertValidBoard(workflow, board ?? null);
+    if (nextProgressStatus !== currentProgressStatus) {
+      assertValidProgressStatus(workflow, nextProgressStatus);
+    }
+    if (nextBoard !== currentBoard) {
+      assertValidBoard(workflow, nextBoard);
+    }
   }
 
   const updated = await db
@@ -214,9 +226,11 @@ export const updateCoherenceSignalBySlug = async (
       description,
       tags,
       dueAt: dueAt ?? null,
-      progressStatus: progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
-      board: board ?? null,
-      assigneeIds: normalizeAssigneeIds(assigneeIds ?? []),
+      progressStatus: nextProgressStatus,
+      board: nextBoard,
+      ...(assigneeIds !== undefined
+        ? { assigneeIds: normalizeAssigneeIds(assigneeIds) }
+        : {}),
     })
     .where(eq(coherences.id, row.id))
     .returning();

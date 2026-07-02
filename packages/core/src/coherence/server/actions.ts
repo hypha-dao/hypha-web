@@ -23,12 +23,14 @@ import {
   schemaSignalWorkflowConfig,
   schemaUpdateCoherenceSignalBySlug,
 } from '../validation';
+import { z } from 'zod';
 import {
   readSignalWorkflowConfig,
   updateSignalWorkflowConfig,
 } from './signal-workflow';
 import type { SignalWorkflowConfig } from '../signal-workflow';
 import { assertCoherenceSpacePanelAuth } from './assert-coherence-space-panel-auth';
+import { normalizeCoherence } from './web3/normalize-coherence';
 
 async function assertSignalWorkflowAccess({
   spaceId,
@@ -74,7 +76,11 @@ export async function updateCoherenceBySlugAction(
       'Could not resolve authenticated user for update coherence',
     );
   }
-  await assertCoherenceSpacePanelAuth({ slug: data.slug, authToken });
+  await assertCoherenceSpacePanelAuth({
+    slug: data.slug,
+    authToken,
+    requesterPersonId: self.id,
+  });
   return updateCoherenceBySlug(data, { db });
 }
 
@@ -90,7 +96,11 @@ export async function deleteCoherenceBySlugAction(
       'Could not resolve authenticated user for delete coherence',
     );
   }
-  await assertCoherenceSpacePanelAuth({ slug: data.slug, authToken });
+  await assertCoherenceSpacePanelAuth({
+    slug: data.slug,
+    authToken,
+    requesterPersonId: self.id,
+  });
   return deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
     { db },
@@ -101,8 +111,23 @@ export async function updateCoherenceSignalBySlugAction(
   data: UpdateCoherenceSignalBySlugInput,
   { authToken }: { authToken?: string },
 ) {
-  const validated = schemaUpdateCoherenceSignalBySlug.parse(data);
   if (!authToken) throw new Error('authToken is required to update coherence');
+
+  let validated: z.infer<typeof schemaUpdateCoherenceSignalBySlug>;
+  try {
+    validated = schemaUpdateCoherenceSignalBySlug.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const details = error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ');
+      throw new Error(
+        details ? `Invalid signal update: ${details}` : 'Invalid signal update',
+      );
+    }
+    throw error;
+  }
+
   const authDb = getDb({ authToken });
   const self = await findSelf({ db: authDb });
   if (!self?.id) {
@@ -110,11 +135,16 @@ export async function updateCoherenceSignalBySlugAction(
       'Could not resolve authenticated user for update coherence signal',
     );
   }
-  await assertCoherenceSpacePanelAuth({ slug: validated.slug, authToken });
-  return updateCoherenceSignalBySlug(
+  await assertCoherenceSpacePanelAuth({
+    slug: validated.slug,
+    authToken,
+    requesterPersonId: self.id,
+  });
+  const updated = await updateCoherenceSignalBySlug(
     { ...validated, requesterPersonId: self.id },
     { db },
   );
+  return normalizeCoherence(updated);
 }
 
 export async function patchCoherenceTaskBySlugAction(
