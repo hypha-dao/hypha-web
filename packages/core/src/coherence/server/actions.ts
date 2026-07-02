@@ -17,7 +17,6 @@ import {
   patchCoherenceTaskBySlug,
   updateCoherenceBySlug,
   updateCoherenceSignalBySlug,
-  assertCanEditCoherence,
 } from './mutations';
 import {
   schemaPatchCoherenceTaskBySlug,
@@ -29,6 +28,7 @@ import {
   updateSignalWorkflowConfig,
 } from './signal-workflow';
 import type { SignalWorkflowConfig } from '../signal-workflow';
+import { assertCoherenceSpacePanelAuth } from './assert-coherence-space-panel-auth';
 
 async function assertSignalWorkflowAccess({
   spaceId,
@@ -74,10 +74,7 @@ export async function updateCoherenceBySlugAction(
       'Could not resolve authenticated user for update coherence',
     );
   }
-  await assertCanEditCoherence(
-    { slug: data.slug, requesterPersonId: self.id },
-    { db },
-  );
+  await assertCoherenceSpacePanelAuth({ slug: data.slug, authToken });
   return updateCoherenceBySlug(data, { db });
 }
 
@@ -93,6 +90,7 @@ export async function deleteCoherenceBySlugAction(
       'Could not resolve authenticated user for delete coherence',
     );
   }
+  await assertCoherenceSpacePanelAuth({ slug: data.slug, authToken });
   return deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
     { db },
@@ -112,6 +110,7 @@ export async function updateCoherenceSignalBySlugAction(
       'Could not resolve authenticated user for update coherence signal',
     );
   }
+  await assertCoherenceSpacePanelAuth({ slug: validated.slug, authToken });
   return updateCoherenceSignalBySlug(
     { ...validated, requesterPersonId: self.id },
     { db },

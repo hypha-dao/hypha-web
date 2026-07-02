@@ -178,7 +178,7 @@ export const updateCoherenceBySlug = async (
 export const updateCoherenceSignalBySlug = async (
   {
     slug,
-    requesterPersonId,
+    requesterPersonId: _requesterPersonId,
     ...rest
   }: { slug: string; requesterPersonId: number } & UpdateCoherenceSignalInput,
   { db }: { db: DatabaseInstance },
@@ -194,7 +194,7 @@ export const updateCoherenceSignalBySlug = async (
     board,
     assigneeIds,
   } = rest;
-  const row = await assertCanEditCoherence({ slug, requesterPersonId }, { db });
+  const row = await getCoherenceRowForTaskPatch({ slug }, { db });
 
   if (row.spaceId != null) {
     const workflow = await ensureSignalWorkflowConfig(
@@ -286,45 +286,13 @@ export const patchCoherenceTaskBySlug = async (
 };
 
 export const deleteCoherenceBySlug = async (
-  { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
+  {
+    slug,
+    requesterPersonId: _requesterPersonId,
+  }: { slug: string; requesterPersonId: number },
   { db }: { db: DatabaseInstance },
 ) => {
-  const existing = await db
-    .select({
-      id: coherences.id,
-      creatorId: coherences.creatorId,
-      spaceId: coherences.spaceId,
-    })
-    .from(coherences)
-    .where(eq(coherences.slug, slug));
-  if (existing.length === 0) {
-    throw new Error(`Coherence not found for slug="${slug}"`);
-  }
-  if (existing.length > 1) {
-    throw new Error(
-      `Multiple coherences found for slug="${slug}", expected exactly one`,
-    );
-  }
-  const row = existing[0]!;
-  let canDelete = row.creatorId === requesterPersonId;
-  if (!canDelete && row.spaceId != null) {
-    const membership = await db
-      .select({ id: memberships.id })
-      .from(memberships)
-      .where(
-        and(
-          eq(memberships.spaceId, row.spaceId),
-          eq(memberships.personId, requesterPersonId),
-        ),
-      )
-      .limit(1);
-    canDelete = membership.length > 0;
-  }
-  if (!canDelete) {
-    throw new Error(
-      'Only the signal creator or a space member can delete this coherence',
-    );
-  }
+  const row = await getCoherenceRowForTaskPatch({ slug }, { db });
   const deleted = await db
     .delete(coherences)
     .where(eq(coherences.id, row.id))
