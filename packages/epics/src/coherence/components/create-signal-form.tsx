@@ -43,6 +43,7 @@ import {
   useMatrix,
   useMe,
   useSignalWorkflow,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
@@ -62,6 +63,7 @@ import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description'
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { toLocalDueDateInputValue } from '../utils/signal-due-date';
+import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -75,66 +77,6 @@ export interface CreateSignalFormProps {
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
-}
-
-const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
-const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
-
-function normalizeMatrixUserIds(ids: unknown): string[] {
-  if (!Array.isArray(ids)) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const value of ids) {
-    if (typeof value !== 'string') continue;
-    const trimmed = value.trim();
-    if (!trimmed || seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    out.push(trimmed);
-  }
-  return out;
-}
-
-function getSignalTeamMembersFromRoom(options: {
-  room: {
-    getLiveTimeline: () => {
-      getEvents: () => Array<{
-        getType: () => string;
-        getContent: () => Record<string, unknown> | null;
-      }>;
-    };
-  } | null;
-  coherenceSlug?: string;
-}): { hasPolicy: boolean; memberMatrixUserIds: string[] } {
-  const { room, coherenceSlug } = options;
-  if (!room) return { hasPolicy: false, memberMatrixUserIds: [] };
-  const targetSlug = coherenceSlug?.trim() || null;
-  let hasPolicy = false;
-  let members: string[] = [];
-  for (const event of room.getLiveTimeline().getEvents()) {
-    if (event.getType() !== 'm.room.message') continue;
-    const content = event.getContent();
-    if (!content || typeof content !== 'object') continue;
-    const msgtype =
-      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-    const body = typeof content.body === 'string' ? content.body.trim() : '';
-    const eventKind =
-      msgtype === SIGNAL_TEAM_EVENT_KIND ||
-      body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
-        ? SIGNAL_TEAM_EVENT_KIND
-        : null;
-    if (!eventKind) continue;
-    const eventSlug =
-      typeof content.coherenceSlug === 'string'
-        ? content.coherenceSlug.trim()
-        : '';
-    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
-    const nextMembers = normalizeMatrixUserIds(content.memberMatrixUserIds);
-    if (nextMembers.length > 0) {
-      members = nextMembers;
-      hasPolicy = true;
-    }
-  }
-  return { hasPolicy, memberMatrixUserIds: members };
 }
 
 function dueDateFromInputValue(value: string): Date | null {
@@ -179,10 +121,12 @@ export const CreateSignalForm = ({
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
-  const signalCreatorId =
-    mode === 'edit' && typeof initialValues?.creatorId === 'number'
-      ? initialValues.creatorId
-      : null;
+  const { space } = useSpaceBySlug(spaceSlug);
+  const canManageSignal = useCanManageSignal({
+    spaceSlug,
+    web3SpaceId: space?.web3SpaceId ?? undefined,
+  });
+  const isEditAuthorized = mode !== 'edit' || canManageSignal;
 
   const {
     createCoherence,
@@ -206,27 +150,6 @@ export const CreateSignalForm = ({
     getRoomMessages,
     editRoomMessage,
   } = useMatrix();
-  const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
-  const signalTeamAccess = React.useMemo(() => {
-    if (mode !== 'edit' || !signalRoomId?.trim()) {
-      return { hasPolicy: false, memberMatrixUserIds: [] };
-    }
-    return getSignalTeamMembersFromRoom({
-      room: matrixClient?.getRoom(signalRoomId.trim()) ?? null,
-      coherenceSlug: signalSlug ?? undefined,
-    });
-  }, [matrixClient, mode, signalRoomId, signalSlug]);
-  const isSignalCreator =
-    signalCreatorId != null &&
-    person?.id != null &&
-    person.id === signalCreatorId;
-  const isSignalTeamMember = currentUserMatrixId
-    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
-    : false;
-  const isEditAuthorized =
-    mode !== 'edit' ||
-    isSignalCreator ||
-    (signalTeamAccess.hasPolicy && isSignalTeamMember);
 
   const upsertSignalDescriptionMessage = React.useCallback(
     async ({
@@ -573,7 +496,7 @@ export const CreateSignalForm = ({
             type: 'manual',
             message: t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only signal team members can edit this signal.',
+              : 'Only space members and delegates can edit this signal.',
           });
           return;
         }
@@ -618,7 +541,10 @@ export const CreateSignalForm = ({
             ) || rawMessage.toLowerCase().includes('digest');
           const isPermissionError =
             rawMessage.includes('can edit this coherence') ||
-            rawMessage.includes('can delete this coherence');
+            rawMessage.includes('can delete this coherence') ||
+            rawMessage.includes('must be a space member') ||
+            rawMessage.includes('interact in this space') ||
+            rawMessage.includes('Could not verify your identity');
           const isAuthError = rawMessage.includes('authToken is required');
           const genericSaveError = t.has('editSignalSaveFailed')
             ? t('editSignalSaveFailed')
@@ -1173,7 +1099,7 @@ export const CreateSignalForm = ({
                         type: 'manual',
                         message: t.has('editSignalNoPermission')
                           ? t('editSignalNoPermission')
-                          : 'Only signal team members can edit this signal.',
+                          : 'Only space members and delegates can edit this signal.',
                       });
                       return;
                     }
