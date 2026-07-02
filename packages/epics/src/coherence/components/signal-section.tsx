@@ -13,7 +13,6 @@ import {
   DEFAULT_SIGNAL_WORKFLOW,
   applyPendingCoherenceTaskPatch,
   clearPendingCoherenceTaskPatch,
-  revalidateCoherences,
   setPendingCoherenceTaskPatch,
   upsertCoherenceInSpaceCache,
   usePatchCoherenceTask,
@@ -155,7 +154,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
 
       if (hasTaskFieldPatch) {
         applyPendingCoherenceTaskPatch(spaceSlug, slug, taskPatch);
-        await upsertCoherenceInSpaceCache(spaceSlug, {
+        void upsertCoherenceInSpaceCache(spaceSlug, {
           ...signal,
           ...taskPatch,
         });
@@ -176,25 +175,27 @@ export const SignalSection: FC<SignalSectionProps> = ({
             ...taskPatch,
             confirmedUpdatedAtMs,
           });
-          await upsertCoherenceInSpaceCache(spaceSlug, {
+          void upsertCoherenceInSpaceCache(spaceSlug, {
             ...updated,
             ...taskPatch,
           });
-          void revalidateCoherences(spaceSlug);
         }
       } catch (error) {
         if (hasTaskFieldPatch) {
           clearPendingCoherenceTaskPatch(spaceSlug, slug);
-          void refresh();
+          void upsertCoherenceInSpaceCache(spaceSlug, signal);
         }
         console.error('[SignalSection] Failed to patch signal task', error);
         throw error;
       }
     },
-    [patchTask, refresh, spaceSlug],
+    [patchTask, spaceSlug],
   );
 
   const visibleSignals = filteredSignals;
+  const showInitialLoading =
+    (isLoading && visibleSignals.length === 0) ||
+    (isWorkflowLoading && !workflow);
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -223,7 +224,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
       ) : null}
 
-      {isLoading || isWorkflowLoading ? null : visibleSignals.length === 0 ? (
+      {showInitialLoading ? null : visibleSignals.length === 0 ? (
         <Empty>
           <p>{t('listIsEmpty')}</p>
         </Empty>
