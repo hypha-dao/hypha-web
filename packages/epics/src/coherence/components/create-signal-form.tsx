@@ -153,7 +153,15 @@ export const CreateSignalForm = ({
     updateCoherenceSignalBySlug,
     isUpdatingCoherenceSignal,
   } = useCoherenceMutationsWeb2Rsc(authToken);
-  const [isArchivingSignal, setIsArchivingSignal] = React.useState(false);
+  const [isTogglingArchiveState, setIsTogglingArchiveState] =
+    React.useState(false);
+  const [isSignalArchived, setIsSignalArchived] = React.useState(
+    initialValues?.archived ?? false,
+  );
+  React.useEffect(() => {
+    if (mode !== 'edit') return;
+    setIsSignalArchived(initialValues?.archived ?? false);
+  }, [initialValues?.archived, mode]);
   const {
     client: matrixClient,
     isMatrixAvailable,
@@ -197,15 +205,15 @@ export const CreateSignalForm = ({
   );
 
   const isMutating =
-    isCreatingCoherence || isUpdatingCoherenceSignal || isArchivingSignal;
+    isCreatingCoherence || isUpdatingCoherenceSignal || isTogglingArchiveState;
   const progress = React.useMemo(() => {
-    if (isArchivingSignal) return 50;
+    if (isTogglingArchiveState) return 50;
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
   }, [
     createdCoherence,
     isCreatingCoherence,
-    isArchivingSignal,
+    isTogglingArchiveState,
     isUpdatingCoherenceSignal,
     mode,
   ]);
@@ -694,10 +702,14 @@ export const CreateSignalForm = ({
       isLoading={isMutating}
       fullHeight={true}
       keepWindowOpenMessage={
-        isArchivingSignal
-          ? t.has('keepWindowOpenWhileArchiving')
-            ? t('keepWindowOpenWhileArchiving')
-            : 'Please keep this window open while archiving the signal.'
+        isTogglingArchiveState
+          ? isSignalArchived
+            ? t.has('keepWindowOpenWhileUnarchiving')
+              ? t('keepWindowOpenWhileUnarchiving')
+              : 'Please keep this window open while unarchiving the signal.'
+            : t.has('keepWindowOpenWhileArchiving')
+              ? t('keepWindowOpenWhileArchiving')
+              : 'Please keep this window open while archiving the signal.'
           : t('keepWindowOpenWhileCreating')
       }
       message={
@@ -708,10 +720,14 @@ export const CreateSignalForm = ({
           </div>
         ) : (
           <div>
-            {isArchivingSignal
-              ? t.has('archivingSignal')
-                ? t('archivingSignal')
-                : 'Archiving signal'
+            {isTogglingArchiveState
+              ? isSignalArchived
+                ? t.has('unarchivingSignal')
+                  ? t('unarchivingSignal')
+                  : 'Unarchiving signal'
+                : t.has('archivingSignal')
+                  ? t('archivingSignal')
+                  : 'Archiving signal'
               : mode === 'edit'
               ? t.has('savingSignal')
                 ? t('savingSignal')
@@ -1087,15 +1103,31 @@ export const CreateSignalForm = ({
               {mode === 'edit' && signalSlug ? (
                 <ConfirmDialog
                   title={
-                    t.has('archiveSignal') ? t('archiveSignal') : 'Archive signal'
+                    isSignalArchived
+                      ? t.has('unarchiveSignal')
+                        ? t('unarchiveSignal')
+                        : 'Unarchive signal'
+                      : t.has('archiveSignal')
+                        ? t('archiveSignal')
+                        : 'Archive signal'
                   }
                   description={
-                    t.has('archiveSignalConfirm')
-                      ? t('archiveSignalConfirm')
-                      : 'This hides the signal from active views. You can unarchive it later. Continue?'
+                    isSignalArchived
+                      ? t.has('unarchiveSignalConfirm')
+                        ? t('unarchiveSignalConfirm')
+                        : 'Restore this signal to active views. Continue?'
+                      : t.has('archiveSignalConfirm')
+                        ? t('archiveSignalConfirm')
+                        : 'This hides the signal from active views. You can unarchive it later. Continue?'
                   }
                   customAcceptButtonText={
-                    t.has('yesArchive') ? t('yesArchive') : 'Yes, archive'
+                    isSignalArchived
+                      ? t.has('yesUnarchive')
+                        ? t('yesUnarchive')
+                        : 'Yes, unarchive'
+                      : t.has('yesArchive')
+                        ? t('yesArchive')
+                        : 'Yes, archive'
                   }
                   customRejectButtonText={t('noLeave')}
                   onAcceptClicked={async () => {
@@ -1105,7 +1137,9 @@ export const CreateSignalForm = ({
                         type: 'manual',
                         message: t.has('editSignalMissingAuth')
                           ? t('editSignalMissingAuth')
-                          : 'Your session expired. Please sign in again before archiving.',
+                          : isSignalArchived
+                            ? 'Your session expired. Please sign in again before unarchiving.'
+                            : 'Your session expired. Please sign in again before archiving.',
                       });
                       return;
                     }
@@ -1118,30 +1152,40 @@ export const CreateSignalForm = ({
                       });
                       return;
                     }
-                    setIsArchivingSignal(true);
+                    setIsTogglingArchiveState(true);
+                    const nextArchivedState = !isSignalArchived;
                     try {
                       await updateCoherenceBySlug({
                         slug: signalSlug,
-                        archived: true,
+                        archived: nextArchivedState,
                       });
                       if (spaceSlug) {
                         await revalidateCoherences(spaceSlug);
                       }
-                      router.push(successfulUrl);
+                      if (nextArchivedState) {
+                        router.push(successfulUrl);
+                        return;
+                      }
+                      setIsSignalArchived(false);
+                      form.setValue('archived', false);
                     } catch (error) {
                       const message =
                         error instanceof Error &&
                         error.message.trim().length > 0
                           ? error.message
-                          : t.has('archiveFailed')
-                          ? t('archiveFailed')
-                          : 'Could not archive signal. Please try again.';
+                          : isSignalArchived
+                            ? t.has('unarchiveFailed')
+                              ? t('unarchiveFailed')
+                              : 'Could not unarchive signal. Please try again.'
+                            : t.has('archiveFailed')
+                              ? t('archiveFailed')
+                              : 'Could not archive signal. Please try again.';
                       form.setError('root', {
                         type: 'manual',
                         message,
                       });
                     } finally {
-                      setIsArchivingSignal(false);
+                      setIsTogglingArchiveState(false);
                     }
                   }}
                 >
@@ -1150,10 +1194,18 @@ export const CreateSignalForm = ({
                     variant="outline"
                     colorVariant="neutral"
                     disabled={
-                      isArchivingSignal || isMutating || !isEditAuthorized
+                      isTogglingArchiveState || isMutating || !isEditAuthorized
                     }
                   >
-                    {t.has('archiveAction') ? t('archiveAction') : 'Archive'}
+                    {isSignalArchived
+                      ? t.has('unarchiveAction')
+                        ? t('unarchiveAction')
+                        : t.has('unarchive')
+                          ? t('unarchive')
+                          : 'Unarchive'
+                      : t.has('archiveAction')
+                        ? t('archiveAction')
+                        : 'Archive'}
                   </Button>
                 </ConfirmDialog>
               ) : null}
