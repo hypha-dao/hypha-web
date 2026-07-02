@@ -15,12 +15,12 @@ export function personRosterDisplayLabel(
 /** Space members with a linked Matrix id — same source as the Members tab roster. */
 export function buildSpaceRosterMentionCandidates({
   spaceMembers,
-  subToMatrixUserId,
+  personIdToMatrixUserId,
   unknownLabel,
   extraCandidates = [],
 }: {
   spaceMembers: Person[];
-  subToMatrixUserId: Record<string, string>;
+  personIdToMatrixUserId: Record<number, string>;
   unknownLabel: string;
   extraCandidates?: ChatMentionCandidate[];
 }): ChatMentionCandidate[] {
@@ -33,15 +33,12 @@ export function buildSpaceRosterMentionCandidates({
   }
 
   for (const member of spaceMembers) {
-    const sub = member.sub?.trim();
-    if (!sub) continue;
-    const userId = subToMatrixUserId[sub]?.trim();
+    const userId = personIdToMatrixUserId[member.id]?.trim();
     if (!userId) continue;
     byUserId.set(userId, {
       userId,
       displayLabel: personRosterDisplayLabel(member, unknownLabel),
       avatarUrl: member.avatarUrl ?? undefined,
-      privySub: sub,
     });
   }
 

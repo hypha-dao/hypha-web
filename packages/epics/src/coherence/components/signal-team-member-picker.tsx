@@ -2,10 +2,7 @@
 
 import React from 'react';
 import { Check, Plus } from 'lucide-react';
-import {
-  Person,
-  useMatrixUserIdsByPrivySubs,
-} from '@hypha-platform/core/client';
+import { useMatrixUserIdsByPersonIds } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { UseMembers } from '../../spaces';
@@ -111,26 +108,25 @@ export function SignalTeamMemberPicker({
     paginationDisabled: true,
   });
   const spaceMembers = persons.data;
-  const privySubs = React.useMemo(
+  const rosterPersonIds = React.useMemo(
     () =>
       spaceMembers
-        .map((member) => member.sub?.trim())
-        .filter((sub): sub is string => Boolean(sub)),
+        .map((member) => member.id)
+        .filter((id): id is number => Number.isFinite(id) && id > 0),
     [spaceMembers],
   );
-  const { subToMatrixUserId, isLoading: isLoadingMatrixIds } =
-    useMatrixUserIdsByPrivySubs({ privySubs });
+  const { personIdToMatrixUserId, isLoading: isLoadingMatrixIds } =
+    useMatrixUserIdsByPersonIds({ personIds: rosterPersonIds });
 
   const ownerPerson = React.useMemo(() => {
     if (!ownerMatrixUserId) return null;
     return (
       spaceMembers.find(
         (member) =>
-          member.sub?.trim() &&
-          subToMatrixUserId[member.sub.trim()] === ownerMatrixUserId,
+          personIdToMatrixUserId[member.id]?.trim() === ownerMatrixUserId,
       ) ?? null
     );
-  }, [ownerMatrixUserId, spaceMembers, subToMatrixUserId]);
+  }, [ownerMatrixUserId, spaceMembers, personIdToMatrixUserId]);
 
   const selectableMembers = React.useMemo(() => {
     const extraCandidates = ownerMatrixUserId
@@ -140,27 +136,25 @@ export function SignalTeamMemberPicker({
             displayLabel: ownerPerson
               ? personRosterDisplayLabel(ownerPerson, t('unknownMember'))
               : t('createSignalTeamOwner'),
-            privySub: ownerPerson?.sub?.trim(),
             avatarUrl: ownerPerson?.avatarUrl ?? undefined,
           },
         ]
       : [];
 
     const rosterSpaceMembers = ownerMatrixUserId
-      ? spaceMembers.filter((member) => {
-          const sub = member.sub?.trim();
-          if (!sub) return true;
-          return subToMatrixUserId[sub] !== ownerMatrixUserId;
-        })
+      ? spaceMembers.filter(
+          (member) =>
+            personIdToMatrixUserId[member.id]?.trim() !== ownerMatrixUserId,
+        )
       : spaceMembers;
 
     return buildSpaceRosterMentionCandidates({
       spaceMembers: rosterSpaceMembers,
-      subToMatrixUserId,
+      personIdToMatrixUserId,
       unknownLabel: t('unknownMember'),
       extraCandidates,
     });
-  }, [ownerMatrixUserId, ownerPerson, spaceMembers, subToMatrixUserId, t]);
+  }, [ownerMatrixUserId, ownerPerson, spaceMembers, personIdToMatrixUserId, t]);
 
   const effectiveSelectedIds = React.useMemo(() => {
     const base = normalizeMatrixUserIds(selectedMemberIds);
