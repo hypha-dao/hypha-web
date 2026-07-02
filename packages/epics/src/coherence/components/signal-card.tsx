@@ -621,52 +621,52 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         </div>
 
         {(archived || onOpenConversation) && (
-        <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
-          {archived ? (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <ConfirmDialog
-                title={t('unarchiveConversation')}
-                description={t('unarchiveConfirm')}
-                customAcceptButtonText={t('yesUnarchive')}
-                customRejectButtonText={t('noLeave')}
-                onAcceptClicked={handleUnarchive}
-              >
-                <Button
-                  variant="outline"
-                  colorVariant="accent"
-                  size="sm"
-                  className="h-8 w-full bg-transparent hover:bg-accent-3/30"
-                >
-                  {t('unarchive')}
-                </Button>
-              </ConfirmDialog>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              colorVariant="accent"
-              size="sm"
-              className="h-8 w-full bg-transparent hover:bg-accent-3/30"
-              disabled={isLoading || !roomId}
-              onClick={(e) => {
-                if (onOpenConversation) {
+          <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
+            {archived ? (
+              <div
+                onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  onOpenConversation();
-                }
-              }}
-              title={!roomId ? tSignalCard('noConversationRoom') : undefined}
-            >
-              <ChatBubbleIcon />
-              {t('openConversation')}
-            </Button>
-          )}
-        </div>
+                }}
+              >
+                <ConfirmDialog
+                  title={t('unarchiveConversation')}
+                  description={t('unarchiveConfirm')}
+                  customAcceptButtonText={t('yesUnarchive')}
+                  customRejectButtonText={t('noLeave')}
+                  onAcceptClicked={handleUnarchive}
+                >
+                  <Button
+                    variant="outline"
+                    colorVariant="accent"
+                    size="sm"
+                    className="h-8 w-full bg-transparent hover:bg-accent-3/30"
+                  >
+                    {t('unarchive')}
+                  </Button>
+                </ConfirmDialog>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                colorVariant="accent"
+                size="sm"
+                className="h-8 w-full bg-transparent hover:bg-accent-3/30"
+                disabled={isLoading || !roomId}
+                onClick={(e) => {
+                  if (onOpenConversation) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onOpenConversation();
+                  }
+                }}
+                title={!roomId ? tSignalCard('noConversationRoom') : undefined}
+              >
+                <ChatBubbleIcon />
+                {t('openConversation')}
+              </Button>
+            )}
+          </div>
         )}
         <AlertDialog
           open={deleteOpen}
