@@ -48,6 +48,10 @@ const formatTick = (v: number) => {
     return `${(v / 1000).toLocaleString(undefined, {
       maximumFractionDigits: 1,
     })}k`;
+  // Small scales (e.g. EURC earnings) need decimals or every tick rounds
+  // to the same integer.
+  if (Math.abs(v) < 10)
+    return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
   return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
 };
 

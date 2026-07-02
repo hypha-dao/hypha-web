@@ -60,12 +60,21 @@ const ConsumerConsumptionChart = ({
 
   const total = values.reduce((a, b) => a + b, 0);
 
+  // Individual households move small amounts per bucket; render in Wh when
+  // the whole series fits under 10 kWh so bars and ticks stay readable.
+  const useWh = values.every((v) => v < 10);
+  const unit = useWh ? 'Wh' : 'kWh';
+  const displayValues = useWh
+    ? values.map((v) => Math.round(v * 1000))
+    : values;
+  const displayTotal = useWh ? Math.round(total * 1000) : Math.round(total);
+
   const series: ChartSeries[] = [
     {
       key: 'consumption',
       label: 'Consumption',
       color: ENERGY_PALETTE[2]!,
-      values,
+      values: displayValues,
     },
   ];
 
@@ -73,7 +82,7 @@ const ConsumerConsumptionChart = ({
     <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-1 text-neutral-11">
-          {Math.round(total).toLocaleString()} kWh over this window
+          {displayTotal.toLocaleString()} {unit} over this window
         </p>
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
@@ -85,7 +94,7 @@ const ConsumerConsumptionChart = ({
           labels={labels}
           mode="grouped"
           height={200}
-          valueSuffix=" kWh"
+          valueSuffix={` ${unit}`}
           showLegend={false}
         />
       )}
