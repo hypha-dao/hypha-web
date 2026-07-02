@@ -248,17 +248,18 @@ export function CoherenceBlock({
           </span>
         ) : null}
       </h1>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {priorityTabs}
-        <div className="flex flex-wrap items-center justify-start gap-3 sm:justify-end">
-          <SignalViewControls
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            hideArchived={hideArchived}
-            onHideArchivedChange={setHideArchived}
-            workflowSettingsHref={workflowSettingsHref}
-          />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
+          <div className="w-max">{priorityTabs}</div>
         </div>
+        <SignalViewControls
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          hideArchived={hideArchived}
+          onHideArchivedChange={setHideArchived}
+          workflowSettingsHref={workflowSettingsHref}
+          className="lg:shrink-0"
+        />
       </div>
       <SignalSection
         basePath={chatBasePath}
