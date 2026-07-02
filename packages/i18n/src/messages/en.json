@@ -3173,6 +3173,9 @@
     "signalTeamMemberListHint": "Select members who can message, mention, and join thread calls.",
     "signalTeamAddMember": "Add",
     "signalTeamRemoveMember": "Remove",
+    "signalTeamOwner": "Owner",
+    "signalTeamMembersLoadFailed": "Could not load member list. Try again.",
+    "signalTeamNoChatAccount": "No chat account",
     "signalTeamPendingRequests": "Pending requests",
     "signalTeamApproveRequester": "Add to team",
     "signalTeamUpdated": "Signal team updated",
@@ -3588,7 +3591,9 @@
     "resizeBottomLabel": "Resize call window from bottom edge",
     "resizeLeftLabel": "Resize call window from left edge",
     "openFloatingWindowLabel": "Open floating call window",
-    "closeFloatingWindowLabel": "Close floating call window"
+    "closeFloatingWindowLabel": "Close floating call window",
+    "signalTeamMembersLoadFailed": "Could not load member list. Try again.",
+    "signalTeamNoChatAccount": "No chat account"
   },
   "SpaceLocation": {
     "sectionTitle": "Location on map",
