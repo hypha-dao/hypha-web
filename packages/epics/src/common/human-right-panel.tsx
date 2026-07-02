@@ -34,6 +34,7 @@ import {
   useHookRegistry,
   useJwt,
   useMatrixUserIdsByPrivySubs,
+  useMatrixUserIdsByPersonIds,
   useMe,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
@@ -131,9 +132,9 @@ import {
   buildHyphaChatMentionDeepLinkUrl,
   setSignalSearchParam,
 } from './human-chat-panel/human-chat-message-link';
-import { buildSpaceRosterMentionCandidates } from './human-chat-panel/build-space-roster-mention-candidates';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
+import { buildSpaceRosterMentionCandidates } from './human-chat-panel/build-space-roster-mention-candidates';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -1575,23 +1576,35 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         .filter((s): s is string => Boolean(s)),
     [spaceMembers],
   );
+  const rosterPersonIds = useMemo(
+    () =>
+      spaceMembers
+        .map((p) => p.id)
+        .filter((id): id is number => Number.isFinite(id) && id > 0),
+    [spaceMembers],
+  );
 
   const { subToMatrixUserId } = useMatrixUserIdsByPrivySubs({
     privySubs: rosterSubs,
+  });
+  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
+    personIds: rosterPersonIds,
   });
 
   /** Same source as `@` mention labels: Hypha roster wins over Matrix bridge displaynames. */
   const matrixUserIdToPersonLabel = useMemo(() => {
     const m = new Map<string, string>();
     for (const p of spaceMembers) {
-      const sub = p.sub?.trim();
-      if (!sub) continue;
-      const mxid = subToMatrixUserId[sub]?.trim();
+      let mxid = personIdToMatrixUserId[p.id]?.trim();
+      if (!mxid) {
+        const sub = p.sub?.trim();
+        if (sub) mxid = subToMatrixUserId[sub]?.trim();
+      }
       if (!mxid) continue;
       m.set(mxid, personRosterLabel(p, t('unknownMember')));
     }
     return m;
-  }, [spaceMembers, subToMatrixUserId, t]);
+  }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId, t]);
 
   /** Fallback roster lookup using Matrix localpart == Privy sub (same `useMembers` roster source as chat Members tab). */
   const personLabelByPrivySub = useMemo(() => {
@@ -1698,10 +1711,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     /** Same names as Members tab — overrides Matrix-only technical displaynames. */
     for (const p of spaceMembers) {
+      let mxid = personIdToMatrixUserId[p.id]?.trim();
       const sub = p.sub?.trim();
-      if (!sub) continue;
-      let mxid = subToMatrixUserId[sub];
-      if (!mxid) {
+      if (!mxid && sub) {
+        mxid = subToMatrixUserId[sub]?.trim();
+      }
+      if (!mxid && sub) {
         for (const userId of byUserId.keys()) {
           if (matrixUserIdToCanonicalPrivySub(userId) === sub) {
             mxid = userId;
@@ -1715,7 +1730,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       byUserId.set(mxid, {
         displayLabel: personRosterLabel(p, t('unknownMember')),
         avatarUrl: p.avatarUrl ?? prev?.avatarUrl,
-        privySub: sub,
+        ...(sub ? { privySub: sub } : {}),
       });
     }
 
@@ -1741,6 +1756,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     currentUserId,
     spaceMembers,
     subToMatrixUserId,
+    personIdToMatrixUserId,
     t,
     mentionMembershipEpoch,
   ]);
@@ -2087,44 +2103,35 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const signalTeamSelectableMembers = useMemo((): ChatMentionCandidate[] => {
     const extraCandidates: ChatMentionCandidate[] = [];
     if (currentUserId) {
-      const alreadyListed = spaceMembers.some((member) => {
-        const sub = member.sub?.trim();
-        return sub && subToMatrixUserId[sub]?.trim() === currentUserId;
-      });
+      const alreadyListed = spaceMembers.some(
+        (member) => personIdToMatrixUserId[member.id]?.trim() === currentUserId,
+      );
       if (!alreadyListed) {
-        const selfSub = me?.sub?.trim();
-        const isOnSpaceRoster = selfSub
-          ? spaceMembers.some((member) => member.sub?.trim() === selfSub)
-          : false;
-        if (isOnSpaceRoster) {
-          extraCandidates.push({
-            userId: currentUserId,
-            displayLabel:
-              [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
-              me?.nickname?.trim() ||
-              t('you'),
-            avatarUrl: me?.avatarUrl,
-            ...(selfSub ? { privySub: selfSub } : {}),
-          });
-        }
+        extraCandidates.push({
+          userId: currentUserId,
+          displayLabel:
+            [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+            me?.nickname?.trim() ||
+            t('you'),
+          avatarUrl: me?.avatarUrl,
+        });
       }
     }
 
     return buildSpaceRosterMentionCandidates({
       spaceMembers,
-      subToMatrixUserId,
+      personIdToMatrixUserId,
       unknownLabel: t('unknownMember'),
       extraCandidates,
     });
   }, [
     spaceMembers,
-    subToMatrixUserId,
+    personIdToMatrixUserId,
     currentUserId,
     me?.name,
     me?.surname,
     me?.nickname,
     me?.avatarUrl,
-    me?.sub,
     t,
   ]);
   const effectiveSignalTeamMemberIds = useMemo(
@@ -4580,66 +4587,74 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         <p className="text-xs text-muted-foreground">
                           {t('signalTeamMemberListHint')}
                         </p>
-                        <div className="grid gap-1">
-                          {signalTeamSelectableMembers.map((member) => {
-                            const selected = signalTeamEditorMemberIds.includes(
-                              member.userId,
-                            );
-                            const isCurrentUser =
-                              member.userId === currentUserId;
-                            const isOwner = member.userId === signalTeamOwnerId;
-                            return (
-                              <button
-                                key={member.userId}
-                                type="button"
-                                className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
-                                  selected
-                                    ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
-                                    : 'border border-transparent hover:bg-muted/70'
-                                }`}
-                                disabled={signalTeamBusy}
-                                onClick={() => {
-                                  if (isCurrentUser && selected) return;
-                                  if (isOwner && selected) return;
-                                  const next = selected
-                                    ? signalTeamEditorMemberIds.filter(
-                                        (id) => id !== member.userId,
-                                      )
-                                    : [
-                                        ...signalTeamEditorMemberIds,
-                                        member.userId,
-                                      ];
-                                  setSignalTeamDraftMemberIds(
-                                    normalizeMatrixUserIds(next),
-                                  );
-                                }}
-                              >
-                                <SignalTeamResolvedMemberLabel
-                                  candidate={{
-                                    userId: member.userId,
-                                    displayLabel: member.displayLabel,
-                                    privySub: member.privySub,
+                        {signalTeamSelectableMembers.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            {t('noMembers')}
+                          </p>
+                        ) : (
+                          <div className="grid gap-1">
+                            {signalTeamSelectableMembers.map((member) => {
+                              const selected =
+                                signalTeamEditorMemberIds.includes(
+                                  member.userId,
+                                );
+                              const isCurrentUser =
+                                member.userId === currentUserId;
+                              const isOwner =
+                                member.userId === signalTeamOwnerId;
+                              return (
+                                <button
+                                  key={member.userId}
+                                  type="button"
+                                  className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
+                                    selected
+                                      ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
+                                      : 'border border-transparent hover:bg-muted/70'
+                                  }`}
+                                  disabled={signalTeamBusy}
+                                  onClick={() => {
+                                    if (isCurrentUser && selected) return;
+                                    if (isOwner && selected) return;
+                                    const next = selected
+                                      ? signalTeamEditorMemberIds.filter(
+                                          (id) => id !== member.userId,
+                                        )
+                                      : [
+                                          ...signalTeamEditorMemberIds,
+                                          member.userId,
+                                        ];
+                                    setSignalTeamDraftMemberIds(
+                                      normalizeMatrixUserIds(next),
+                                    );
                                   }}
-                                  fallbackLabel={member.displayLabel}
-                                  isOwner={isOwner}
-                                  unknownMemberLabel={t('unknownMember')}
-                                />
-                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                  {isOwner ? null : selected ? (
-                                    <Check className="h-3.5 w-3.5 text-accent-11" />
-                                  ) : (
-                                    <Plus className="h-3.5 w-3.5" />
-                                  )}
-                                  {isOwner
-                                    ? 'Owner'
-                                    : selected
-                                    ? t('signalTeamRemoveMember')
-                                    : t('signalTeamAddMember')}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                                >
+                                  <SignalTeamResolvedMemberLabel
+                                    candidate={{
+                                      userId: member.userId,
+                                      displayLabel: member.displayLabel,
+                                      privySub: member.privySub,
+                                    }}
+                                    fallbackLabel={member.displayLabel}
+                                    isOwner={isOwner}
+                                    unknownMemberLabel={t('unknownMember')}
+                                  />
+                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                    {isOwner ? null : selected ? (
+                                      <Check className="h-3.5 w-3.5 text-accent-11" />
+                                    ) : (
+                                      <Plus className="h-3.5 w-3.5" />
+                                    )}
+                                    {isOwner
+                                      ? 'Owner'
+                                      : selected
+                                      ? t('signalTeamRemoveMember')
+                                      : t('signalTeamAddMember')}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
