@@ -24,7 +24,6 @@ import {
   format as formatDate,
   startOfMonth,
   startOfWeek,
-  subDays,
   subMonths,
 } from 'date-fns';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -40,7 +39,7 @@ import {
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Button, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import {
@@ -55,8 +54,6 @@ import {
 } from '../utils/calendar-view-config';
 import {
   CALENDAR_VIEW_QUERY_KEY,
-  calendarViewToUrlSlug,
-  isDefaultCalendarViewMode,
   parseCalendarViewMode,
 } from '../utils/calendar-view-mode';
 import { scheduledItemTypeIconHtml } from '../utils/scheduled-item-type-icon';
@@ -175,12 +172,22 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const { resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthentication();
 
-  const view = React.useMemo(() => {
-    const parsed = parseCalendarViewMode(
-      searchParams.get(CALENDAR_VIEW_QUERY_KEY),
-    );
-    return parsed ?? 'dayGridMonth';
-  }, [searchParams]);
+  const view = React.useMemo((): CalendarView => {
+    // Week, day, and agenda views are not ready — keep month until they ship.
+    return 'dayGridMonth';
+  }, []);
+
+  React.useEffect(() => {
+    if (!parseCalendarViewMode(searchParams.get(CALENDAR_VIEW_QUERY_KEY))) {
+      return;
+    }
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete(CALENDAR_VIEW_QUERY_KEY);
+    const query = nextParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }, [pathname, router, searchParams]);
   const [anchorDate, setAnchorDate] = React.useState(() => new Date());
   const [range, setRange] = React.useState<{
     from: Date;
@@ -224,30 +231,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     calendarApiRef.current?.gotoDate(date);
   }, []);
 
-  const syncCalendarView = React.useCallback((nextView: CalendarView) => {
-    calendarApiRef.current?.changeView(nextView);
-  }, []);
-
-  const handleCalendarViewChange = React.useCallback(
-    (nextView: CalendarView) => {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      if (isDefaultCalendarViewMode(nextView)) {
-        nextParams.delete(CALENDAR_VIEW_QUERY_KEY);
-      } else {
-        nextParams.set(
-          CALENDAR_VIEW_QUERY_KEY,
-          calendarViewToUrlSlug(nextView),
-        );
-      }
-      const query = nextParams.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-      syncCalendarView(nextView);
-    },
-    [pathname, router, searchParams, syncCalendarView],
-  );
-
   const { updateScheduledItem, isAuthReady } = useScheduledItemMutations(
     spaceSlug,
     lang,
@@ -257,8 +240,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     () => resolveFullCalendarLocale(lang),
     [lang],
   );
-  const displayRange = effectiveRange;
-
   const calendarLayout = React.useMemo(
     () => calendarLayoutForView(view),
     [view],
@@ -522,32 +503,13 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     syncCalendarDate(next);
   };
 
-  const viewButtons: { id: CalendarView; label: string }[] = [
-    { id: 'dayGridMonth', label: t('viewMonth') },
-    { id: 'timeGridWeek', label: t('viewWeek') },
-    { id: 'timeGridDay', label: t('viewDay') },
-    { id: 'listWeek', label: t('viewAgenda') },
-  ];
+  const headerLabel = formatDate(anchorDate, 'MMMM yyyy', {
+    locale: dateFnsLocale,
+  });
 
-  const headerLabel =
-    view === 'dayGridMonth'
-      ? formatDate(anchorDate, 'MMMM yyyy', { locale: dateFnsLocale })
-      : view === 'timeGridDay'
-      ? formatDate(anchorDate, 'EEEE, MMMM d, yyyy', { locale: dateFnsLocale })
-      : `${formatDate(displayRange.from, 'MMM d', {
-          locale: dateFnsLocale,
-        })} – ${formatDate(
-          range ? subDays(range.to, 1) : displayRange.to,
-          'MMM d, yyyy',
-          { locale: dateFnsLocale },
-        )}`;
-
-  const headerContextLabel =
-    view === 'dayGridMonth'
-      ? formatDate(anchorDate, 'yyyy', { locale: dateFnsLocale })
-      : view === 'timeGridDay'
-      ? formatDate(anchorDate, 'EEEE', { locale: dateFnsLocale })
-      : t('viewWeek');
+  const headerContextLabel = formatDate(anchorDate, 'yyyy', {
+    locale: dateFnsLocale,
+  });
 
   const itemCount = scheduledItems?.length;
 
@@ -584,7 +546,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
       <div
         className={cn(
-          'hypha-space-calendar relative overflow-hidden rounded-2xl border border-border/45 p-1 shadow-[0_1px_0_hsl(var(--foreground)/0.04)_inset,0_20px_48px_-28px_hsl(var(--accent-9)/0.45)]',
+          'hypha-space-calendar relative overflow-hidden rounded-2xl border border-border/35 bg-card/75 p-3 shadow-[0_20px_48px_-28px_hsl(var(--accent-9)/0.45)] backdrop-blur-sm md:p-4',
           viewToModifierClass(view),
         )}
       >
@@ -592,8 +554,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--accent-9)/0.14),transparent_70%)]"
           aria-hidden
         />
-        <div className="relative rounded-[calc(1rem-4px)] border border-border/35 bg-card/75 p-3 backdrop-blur-sm md:p-4">
-          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative">
+          <div className="mb-4 flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex h-10 items-stretch overflow-hidden rounded-xl border border-border/50 bg-muted/20 shadow-sm">
                 <Button
@@ -648,29 +610,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                 </div>
               </div>
             </div>
-
-            <Tabs
-              value={view}
-              onValueChange={(value) =>
-                handleCalendarViewChange(value as CalendarView)
-              }
-            >
-              <TabsList
-                triggerVariant="switch"
-                className="w-fit border border-border/40 bg-muted/25 p-0.5 shadow-inner"
-              >
-                {viewButtons.map(({ id, label }) => (
-                  <TabsTrigger
-                    key={id}
-                    value={id}
-                    variant="switch"
-                    className="px-3.5 text-xs font-semibold"
-                  >
-                    {label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
           </div>
 
           <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/35 pb-4">
