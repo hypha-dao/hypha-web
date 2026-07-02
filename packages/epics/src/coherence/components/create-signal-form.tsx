@@ -152,9 +152,8 @@ export const CreateSignalForm = ({
     updateCoherenceBySlug,
     updateCoherenceSignalBySlug,
     isUpdatingCoherenceSignal,
-    deleteCoherenceBySlug,
-    isDeletingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const [isArchivingSignal, setIsArchivingSignal] = React.useState(false);
   const {
     client: matrixClient,
     isMatrixAvailable,
@@ -198,15 +197,15 @@ export const CreateSignalForm = ({
   );
 
   const isMutating =
-    isCreatingCoherence || isUpdatingCoherenceSignal || isDeletingCoherence;
+    isCreatingCoherence || isUpdatingCoherenceSignal || isArchivingSignal;
   const progress = React.useMemo(() => {
-    if (isDeletingCoherence) return 50;
+    if (isArchivingSignal) return 50;
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
   }, [
     createdCoherence,
     isCreatingCoherence,
-    isDeletingCoherence,
+    isArchivingSignal,
     isUpdatingCoherenceSignal,
     mode,
   ]);
@@ -554,7 +553,6 @@ export const CreateSignalForm = ({
             ) || rawMessage.toLowerCase().includes('digest');
           const isPermissionError =
             rawMessage.includes('can edit this coherence') ||
-            rawMessage.includes('can delete this coherence') ||
             rawMessage.includes('must be a space member') ||
             rawMessage.includes('interact in this space') ||
             rawMessage.includes('Could not verify your identity');
@@ -696,10 +694,10 @@ export const CreateSignalForm = ({
       isLoading={isMutating}
       fullHeight={true}
       keepWindowOpenMessage={
-        isDeletingCoherence
-          ? t.has('keepWindowOpenWhileDeleting')
-            ? t('keepWindowOpenWhileDeleting')
-            : 'Please keep this window open while deleting the signal.'
+        isArchivingSignal
+          ? t.has('keepWindowOpenWhileArchiving')
+            ? t('keepWindowOpenWhileArchiving')
+            : 'Please keep this window open while archiving the signal.'
           : t('keepWindowOpenWhileCreating')
       }
       message={
@@ -710,10 +708,10 @@ export const CreateSignalForm = ({
           </div>
         ) : (
           <div>
-            {isDeletingCoherence
-              ? t.has('deletingSignal')
-                ? t('deletingSignal')
-                : 'Deleting signal'
+            {isArchivingSignal
+              ? t.has('archivingSignal')
+                ? t('archivingSignal')
+                : 'Archiving signal'
               : mode === 'edit'
               ? t.has('savingSignal')
                 ? t('savingSignal')
@@ -1089,17 +1087,15 @@ export const CreateSignalForm = ({
               {mode === 'edit' && signalSlug ? (
                 <ConfirmDialog
                   title={
-                    t.has('deleteSignal') ? t('deleteSignal') : 'Delete signal'
+                    t.has('archiveSignal') ? t('archiveSignal') : 'Archive signal'
                   }
                   description={
-                    t.has('deleteSignalConfirm')
-                      ? t('deleteSignalConfirm')
-                      : 'This permanently removes this signal from the space. Continue?'
+                    t.has('archiveSignalConfirm')
+                      ? t('archiveSignalConfirm')
+                      : 'This hides the signal from active views. You can unarchive it later. Continue?'
                   }
                   customAcceptButtonText={
-                    t.has('deleteSignalAction')
-                      ? t('deleteSignalAction')
-                      : 'Delete signal'
+                    t.has('yesArchive') ? t('yesArchive') : 'Yes, archive'
                   }
                   customRejectButtonText={t('noLeave')}
                   onAcceptClicked={async () => {
@@ -1109,7 +1105,7 @@ export const CreateSignalForm = ({
                         type: 'manual',
                         message: t.has('editSignalMissingAuth')
                           ? t('editSignalMissingAuth')
-                          : 'Your session expired. Please sign in again before deleting.',
+                          : 'Your session expired. Please sign in again before archiving.',
                       });
                       return;
                     }
@@ -1122,8 +1118,12 @@ export const CreateSignalForm = ({
                       });
                       return;
                     }
+                    setIsArchivingSignal(true);
                     try {
-                      await deleteCoherenceBySlug({ slug: signalSlug });
+                      await updateCoherenceBySlug({
+                        slug: signalSlug,
+                        archived: true,
+                      });
                       if (spaceSlug) {
                         await revalidateCoherences(spaceSlug);
                       }
@@ -1133,13 +1133,15 @@ export const CreateSignalForm = ({
                         error instanceof Error &&
                         error.message.trim().length > 0
                           ? error.message
-                          : t.has('deleteFailed')
-                          ? t('deleteFailed')
-                          : 'Could not delete signal. Please try again.';
+                          : t.has('archiveFailed')
+                          ? t('archiveFailed')
+                          : 'Could not archive signal. Please try again.';
                       form.setError('root', {
                         type: 'manual',
                         message,
                       });
+                    } finally {
+                      setIsArchivingSignal(false);
                     }
                   }}
                 >
@@ -1148,10 +1150,10 @@ export const CreateSignalForm = ({
                     variant="outline"
                     colorVariant="neutral"
                     disabled={
-                      isDeletingCoherence || isMutating || !isEditAuthorized
+                      isArchivingSignal || isMutating || !isEditAuthorized
                     }
                   >
-                    {t.has('deleteAction') ? t('deleteAction') : 'Delete'}
+                    {t.has('archiveAction') ? t('archiveAction') : 'Archive'}
                   </Button>
                 </ConfirmDialog>
               ) : null}
