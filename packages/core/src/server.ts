@@ -3,6 +3,10 @@ export * from './assets/server';
 export * from './categories/types';
 export * from './common/server';
 export * from './common/types';
+export {
+  buildPaginatedResponse,
+  parseHttpPaginationParams,
+} from './common/pagination';
 export * from './governance/server';
 export * from './people/server';
 export * from './people/types';
@@ -16,10 +20,25 @@ export {
 export * from './events/server';
 export * from './transaction/server';
 export * from './coherence/server';
+export {
+  patchCoherenceTaskBySlugAction,
+  getSignalWorkflowConfigAction,
+  updateSignalWorkflowConfigAction,
+} from './coherence/server/actions';
+export { normalizeCoherence } from './coherence/server/web3/normalize-coherence';
+export { readSignalWorkflowConfig } from './coherence/server/signal-workflow';
+export { resolveCoherenceTaskPatchContext } from './coherence/server/resolve-coherence-task-patch-context';
 export * from './coherence/coherence-tags';
 export * from './coherence/coherence-types';
 export * from './coherence/coherence-tags';
 export * from './coherence/types';
+export * from './coherence/signal-workflow';
+export {
+  schemaPatchCoherenceTaskBySlug,
+  schemaSignalWorkflowConfig,
+} from './coherence/validation';
+export * from './schedule/server';
+export * from './schedule';
 export * from './matrix/server';
 export * from './matrix/types';
 export * from './banking/server';

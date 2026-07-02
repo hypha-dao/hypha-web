@@ -46,6 +46,7 @@ export default async function EditSignalPage({ params }: PageProps) {
     <ProposalOverlayShell>
       <ConnectedCreateSignalForm
         mode="edit"
+        signalId={signal.id}
         signalSlug={signal.slug}
         signalRoomId={signal.roomId}
         initialValues={{
@@ -57,6 +58,10 @@ export default async function EditSignalPage({ params }: PageProps) {
           type: signalType,
           priority: signal.priority,
           tags: signal.tags,
+          dueAt: signal.dueAt ?? null,
+          progressStatus: signal.progressStatus ?? undefined,
+          board: signal.board ?? null,
+          assigneeIds: signal.assigneeIds ?? [],
         }}
         successfulUrl={successfulUrl}
         closeUrl={successfulUrl}

@@ -6,6 +6,7 @@ import {
   pgTable,
   serial,
   text,
+  timestamp,
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -34,6 +35,10 @@ export const coherences = pgTable(
     views: integer('views').default(0),
     messages: integer('messages').default(0),
     tags: jsonb('tags').$type<Array<string>>().notNull().default([]),
+    dueAt: timestamp('due_at', { withTimezone: true }),
+    progressStatus: text('progress_status'),
+    board: text('board'),
+    assigneeIds: jsonb('assignee_ids').$type<number[]>().notNull().default([]),
     ...commonDateFields,
   },
   (table) => [
@@ -52,6 +57,16 @@ export const coherences = pgTable(
     index('search_views').on(table.views),
     index('search_messages').on(table.messages),
     index('search_tags').using('gin', table.tags),
+    index('coherences_space_progress_status_idx').on(
+      table.spaceId,
+      table.progressStatus,
+    ),
+    index('coherences_space_board_idx').on(table.spaceId, table.board),
+    uniqueIndex('coherences_id_space_id_key').on(table.id, table.spaceId),
+    index('coherences_space_due_at_idx')
+      .on(table.spaceId, table.dueAt)
+      .where(sql`${table.dueAt} IS NOT NULL AND ${table.archived} = false`),
+    index('coherences_assignee_ids_idx').using('gin', table.assigneeIds),
   ],
 );
 

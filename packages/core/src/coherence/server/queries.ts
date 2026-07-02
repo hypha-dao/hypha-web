@@ -4,7 +4,16 @@ import {
   spaces,
 } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
-import { and, arrayOverlaps, desc, eq, SQL, sql } from 'drizzle-orm';
+import {
+  and,
+  arrayOverlaps,
+  desc,
+  eq,
+  isNotNull,
+  lte,
+  SQL,
+  sql,
+} from 'drizzle-orm';
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
 import { CoherencePriority } from '../coherence-priorities';
@@ -17,6 +26,10 @@ type FindAllCoherencesInput = {
   priority?: CoherencePriority;
   includeArchived?: boolean;
   orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  progressStatus?: string;
+  board?: string;
+  assigneeId?: number;
+  overdue?: boolean;
 };
 
 export const findAllCoherences = async (
@@ -29,6 +42,10 @@ export const findAllCoherences = async (
     priority,
     includeArchived = false,
     orderBy,
+    progressStatus,
+    board,
+    assigneeId,
+    overdue,
   }: FindAllCoherencesInput,
 ) => {
   if (spaceId === undefined) {
@@ -71,6 +88,18 @@ export const findAllCoherences = async (
           ? arrayOverlaps(coherences.tags, tags)
           : undefined,
         priority ? eq(coherences.priority, priority) : undefined,
+        progressStatus
+          ? eq(coherences.progressStatus, progressStatus)
+          : undefined,
+        board ? eq(coherences.board, board) : undefined,
+        assigneeId
+          ? sql`${coherences.assigneeIds} @> ${JSON.stringify([
+              assigneeId,
+            ])}::jsonb`
+          : undefined,
+        overdue
+          ? and(isNotNull(coherences.dueAt), lte(coherences.dueAt, new Date()))
+          : undefined,
       ),
     )
     .orderBy(order);

@@ -3,11 +3,93 @@ import { v4 as uuidv4 } from 'uuid';
 import { DatabaseInstance } from '../../server';
 import {
   CreateCoherenceInput,
+  PatchCoherenceTaskInput,
   UpdateCoherenceInput,
   UpdateCoherenceSignalInput,
 } from '../types';
 import { coherences, memberships } from '@hypha-platform/storage-postgres';
 import { and, eq } from 'drizzle-orm';
+import {
+  assertValidBoard,
+  assertValidProgressStatus,
+  ensureSignalWorkflowConfig,
+  updateSignalWorkflowConfig,
+} from './signal-workflow';
+import {
+  DEFAULT_SIGNAL_PROGRESS_STATUS,
+  normalizeAssigneeIds,
+  resolveDefaultProgressStatus,
+} from '../signal-workflow';
+
+export async function assertCanEditCoherence(
+  { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
+  { db }: { db: DatabaseInstance },
+) {
+  const existing = await db
+    .select({
+      id: coherences.id,
+      creatorId: coherences.creatorId,
+      spaceId: coherences.spaceId,
+    })
+    .from(coherences)
+    .where(eq(coherences.slug, slug));
+  if (existing.length === 0) {
+    throw new Error(`Coherence not found for slug="${slug}"`);
+  }
+  if (existing.length > 1) {
+    throw new Error(
+      `Multiple coherences found for slug="${slug}", expected exactly one`,
+    );
+  }
+  const row = existing[0]!;
+  let canEdit = row.creatorId === requesterPersonId;
+  if (!canEdit && row.spaceId != null) {
+    const membership = await db
+      .select({ id: memberships.id })
+      .from(memberships)
+      .where(
+        and(
+          eq(memberships.spaceId, row.spaceId),
+          eq(memberships.personId, requesterPersonId),
+        ),
+      )
+      .limit(1);
+    canEdit = membership.length > 0;
+  }
+  if (!canEdit) {
+    throw new Error(
+      'Only the signal creator or a space member can edit this coherence',
+    );
+  }
+  return row;
+}
+
+/** Load coherence row for mutations. Caller must enforce space auth. */
+async function getCoherenceRowForTaskPatch(
+  { slug }: { slug: string },
+  { db }: { db: DatabaseInstance },
+) {
+  const existing = await db
+    .select({
+      id: coherences.id,
+      creatorId: coherences.creatorId,
+      spaceId: coherences.spaceId,
+      progressStatus: coherences.progressStatus,
+      board: coherences.board,
+      assigneeIds: coherences.assigneeIds,
+    })
+    .from(coherences)
+    .where(eq(coherences.slug, slug));
+  if (existing.length === 0) {
+    throw new Error(`Coherence not found for slug="${slug}"`);
+  }
+  if (existing.length > 1) {
+    throw new Error(
+      `Multiple coherences found for slug="${slug}", expected exactly one`,
+    );
+  }
+  return existing[0]!;
+}
 
 export const createCoherence = async (
   {
@@ -15,6 +97,10 @@ export const createCoherence = async (
     spaceId,
     slug: maybeSlug,
     priority: maybePriority,
+    progressStatus: inputProgressStatus,
+    assigneeIds: inputAssigneeIds,
+    board: inputBoard,
+    dueAt: inputDueAt,
     ...rest
   }: CreateCoherenceInput,
   { db }: { db: DatabaseInstance },
@@ -27,6 +113,17 @@ export const createCoherence = async (
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
   const priority = maybePriority ?? 'medium';
+  const assigneeIds = normalizeAssigneeIds(inputAssigneeIds ?? []);
+
+  let progressStatus = inputProgressStatus;
+  if (spaceId != null) {
+    const workflow = await ensureSignalWorkflowConfig({ spaceId }, { db });
+    progressStatus ??= resolveDefaultProgressStatus(workflow);
+    assertValidProgressStatus(workflow, progressStatus);
+    assertValidBoard(workflow, inputBoard ?? null);
+  } else {
+    progressStatus ??= DEFAULT_SIGNAL_PROGRESS_STATUS;
+  }
 
   const [newSignal] = await db
     .insert(coherences)
@@ -35,6 +132,10 @@ export const createCoherence = async (
       spaceId,
       slug,
       priority,
+      progressStatus,
+      assigneeIds,
+      board: inputBoard ?? null,
+      dueAt: inputDueAt ?? null,
       ...rest,
     })
     .returning();
@@ -80,51 +181,57 @@ export const updateCoherenceBySlug = async (
 export const updateCoherenceSignalBySlug = async (
   {
     slug,
-    requesterPersonId,
+    requesterPersonId: _requesterPersonId,
     ...rest
   }: { slug: string; requesterPersonId: number } & UpdateCoherenceSignalInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  const { type, priority, title, description, tags } = rest;
-  const existing = await db
-    .select({
-      id: coherences.id,
-      creatorId: coherences.creatorId,
-      spaceId: coherences.spaceId,
-    })
-    .from(coherences)
-    .where(eq(coherences.slug, slug));
-  if (existing.length === 0) {
-    throw new Error(`Coherence not found for slug="${slug}"`);
-  }
-  if (existing.length > 1) {
-    throw new Error(
-      `Multiple coherences found for slug="${slug}", expected exactly one`,
+  const {
+    type,
+    priority,
+    title,
+    description,
+    tags,
+    dueAt,
+    progressStatus,
+    board,
+    assigneeIds,
+  } = rest;
+  const row = await getCoherenceRowForTaskPatch({ slug }, { db });
+  const nextProgressStatus = progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
+  const currentProgressStatus =
+    row.progressStatus?.trim() || DEFAULT_SIGNAL_PROGRESS_STATUS;
+  const nextBoard = board ?? null;
+  const currentBoard = row.board?.trim() || null;
+
+  if (row.spaceId != null) {
+    const workflow = await ensureSignalWorkflowConfig(
+      { spaceId: row.spaceId },
+      { db },
     );
+    if (nextProgressStatus !== currentProgressStatus) {
+      assertValidProgressStatus(workflow, nextProgressStatus);
+    }
+    if (nextBoard !== currentBoard) {
+      assertValidBoard(workflow, nextBoard);
+    }
   }
-  const row = existing[0]!;
-  let canEdit = row.creatorId === requesterPersonId;
-  if (!canEdit && row.spaceId != null) {
-    const membership = await db
-      .select({ id: memberships.id })
-      .from(memberships)
-      .where(
-        and(
-          eq(memberships.spaceId, row.spaceId),
-          eq(memberships.personId, requesterPersonId),
-        ),
-      )
-      .limit(1);
-    canEdit = membership.length > 0;
-  }
-  if (!canEdit) {
-    throw new Error(
-      'Only the signal creator or a space member can edit this coherence',
-    );
-  }
+
   const updated = await db
     .update(coherences)
-    .set({ type, priority, title, description, tags })
+    .set({
+      type,
+      priority,
+      title,
+      description,
+      tags,
+      dueAt: dueAt ?? null,
+      progressStatus: nextProgressStatus,
+      board: nextBoard,
+      ...(assigneeIds !== undefined
+        ? { assigneeIds: normalizeAssigneeIds(assigneeIds) }
+        : {}),
+    })
     .where(eq(coherences.id, row.id))
     .returning();
 
@@ -141,46 +248,65 @@ export const updateCoherenceSignalBySlug = async (
   throw new Error(`Failed to update coherence for slug="${slug}"`);
 };
 
-export const deleteCoherenceBySlug = async (
-  { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
+export const patchCoherenceTaskBySlug = async (
+  {
+    slug,
+    requesterPersonId: _requesterPersonId,
+    ...rest
+  }: { slug: string; requesterPersonId: number } & PatchCoherenceTaskInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  const existing = await db
-    .select({
-      id: coherences.id,
-      creatorId: coherences.creatorId,
-      spaceId: coherences.spaceId,
-    })
-    .from(coherences)
-    .where(eq(coherences.slug, slug));
-  if (existing.length === 0) {
-    throw new Error(`Coherence not found for slug="${slug}"`);
+  const row = await getCoherenceRowForTaskPatch({ slug }, { db });
+  const patch: Partial<typeof coherences.$inferInsert> = {};
+
+  if (rest.dueAt !== undefined) {
+    patch.dueAt = rest.dueAt;
   }
-  if (existing.length > 1) {
-    throw new Error(
-      `Multiple coherences found for slug="${slug}", expected exactly one`,
+  if (rest.progressStatus !== undefined) {
+    patch.progressStatus =
+      rest.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
+  }
+  if (rest.board !== undefined) {
+    patch.board = rest.board;
+  }
+  if (rest.assigneeIds !== undefined) {
+    patch.assigneeIds = normalizeAssigneeIds(rest.assigneeIds);
+  }
+
+  if (row.spaceId != null) {
+    const workflow = await ensureSignalWorkflowConfig(
+      { spaceId: row.spaceId },
+      { db },
     );
+    if (rest.progressStatus !== undefined) {
+      assertValidProgressStatus(workflow, rest.progressStatus);
+    }
+    if (rest.board !== undefined) {
+      assertValidBoard(workflow, rest.board);
+    }
   }
-  const row = existing[0]!;
-  let canDelete = row.creatorId === requesterPersonId;
-  if (!canDelete && row.spaceId != null) {
-    const membership = await db
-      .select({ id: memberships.id })
-      .from(memberships)
-      .where(
-        and(
-          eq(memberships.spaceId, row.spaceId),
-          eq(memberships.personId, requesterPersonId),
-        ),
-      )
-      .limit(1);
-    canDelete = membership.length > 0;
+
+  const updated = await db
+    .update(coherences)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(coherences.id, row.id))
+    .returning();
+
+  if (updated.length === 1) {
+    return updated[0]!;
   }
-  if (!canDelete) {
-    throw new Error(
-      'Only the signal creator or a space member can delete this coherence',
-    );
-  }
+
+  throw new Error(`Failed to patch coherence task for slug="${slug}"`);
+};
+
+export const deleteCoherenceBySlug = async (
+  {
+    slug,
+    requesterPersonId: _requesterPersonId,
+  }: { slug: string; requesterPersonId: number },
+  { db }: { db: DatabaseInstance },
+) => {
+  const row = await getCoherenceRowForTaskPatch({ slug }, { db });
   const deleted = await db
     .delete(coherences)
     .where(eq(coherences.id, row.id))

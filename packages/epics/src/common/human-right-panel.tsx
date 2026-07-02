@@ -131,6 +131,7 @@ import {
   buildHyphaChatMentionDeepLinkUrl,
   setSignalSearchParam,
 } from './human-chat-panel/human-chat-message-link';
+import { buildSpaceRosterMentionCandidates } from './human-chat-panel/build-space-roster-mention-candidates';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 
@@ -2084,40 +2085,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     !isChatFollowerTab &&
     mentionCandidates.length > 0;
   const signalTeamSelectableMembers = useMemo((): ChatMentionCandidate[] => {
-    const byUserId = new Map<string, ChatMentionCandidate>();
-    for (const member of rawMentionCandidates) {
-      byUserId.set(member.userId, member);
-    }
+    const extraCandidates: ChatMentionCandidate[] = [];
     if (currentUserId) {
-      const currentUserLabel =
-        [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
-        me?.nickname?.trim() ||
-        t('you');
-      if (!byUserId.has(currentUserId)) {
-        byUserId.set(currentUserId, {
-          userId: currentUserId,
-          displayLabel: currentUserLabel,
-          avatarUrl: me?.avatarUrl,
-        });
+      const alreadyListed = spaceMembers.some((member) => {
+        const sub = member.sub?.trim();
+        return sub && subToMatrixUserId[sub]?.trim() === currentUserId;
+      });
+      if (!alreadyListed) {
+        const selfSub = me?.sub?.trim();
+        const isOnSpaceRoster = selfSub
+          ? spaceMembers.some((member) => member.sub?.trim() === selfSub)
+          : false;
+        if (isOnSpaceRoster) {
+          extraCandidates.push({
+            userId: currentUserId,
+            displayLabel:
+              [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+              me?.nickname?.trim() ||
+              t('you'),
+            avatarUrl: me?.avatarUrl,
+            ...(selfSub ? { privySub: selfSub } : {}),
+          });
+        }
       }
     }
-    return [...byUserId.values()].sort((a, b) =>
-      resolveMentionMemberLabel(a.userId).localeCompare(
-        resolveMentionMemberLabel(b.userId),
-        undefined,
-        {
-          sensitivity: 'base',
-        },
-      ),
-    );
+
+    return buildSpaceRosterMentionCandidates({
+      spaceMembers,
+      subToMatrixUserId,
+      unknownLabel: t('unknownMember'),
+      extraCandidates,
+    });
   }, [
-    rawMentionCandidates,
+    spaceMembers,
+    subToMatrixUserId,
     currentUserId,
     me?.name,
     me?.surname,
     me?.nickname,
     me?.avatarUrl,
-    resolveMentionMemberLabel,
+    me?.sub,
     t,
   ]);
   const effectiveSignalTeamMemberIds = useMemo(

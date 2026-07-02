@@ -16,6 +16,11 @@ import {
   MultiSelect,
   RequirementMark,
   RichTextEditor,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
@@ -30,12 +35,15 @@ import {
   COHERENCE_TYPE_OPTIONS,
   CoherenceTag,
   CoherenceType,
+  DEFAULT_SIGNAL_PROGRESS_STATUS,
   schemaCreateCoherenceForm,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
   useMe,
+  useSignalWorkflow,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
@@ -52,6 +60,10 @@ import {
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
 import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
+import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
+import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
+import { toLocalDueDateInputValue } from '../utils/signal-due-date';
+import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -61,69 +73,27 @@ export interface CreateSignalFormProps {
   closeUrl?: string;
   backUrl?: string;
   mode?: 'create' | 'edit';
+  signalId?: number;
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
 }
 
-const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
-const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
-
-function normalizeMatrixUserIds(ids: unknown): string[] {
-  if (!Array.isArray(ids)) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const value of ids) {
-    if (typeof value !== 'string') continue;
-    const trimmed = value.trim();
-    if (!trimmed || seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    out.push(trimmed);
-  }
-  return out;
+function dueDateFromInputValue(value: string): Date | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const date = new Date(`${trimmed}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function getSignalTeamMembersFromRoom(options: {
-  room: {
-    getLiveTimeline: () => {
-      getEvents: () => Array<{
-        getType: () => string;
-        getContent: () => Record<string, unknown> | null;
-      }>;
-    };
-  } | null;
-  coherenceSlug?: string;
-}): { hasPolicy: boolean; memberMatrixUserIds: string[] } {
-  const { room, coherenceSlug } = options;
-  if (!room) return { hasPolicy: false, memberMatrixUserIds: [] };
-  const targetSlug = coherenceSlug?.trim() || null;
-  let hasPolicy = false;
-  let members: string[] = [];
-  for (const event of room.getLiveTimeline().getEvents()) {
-    if (event.getType() !== 'm.room.message') continue;
-    const content = event.getContent();
-    if (!content || typeof content !== 'object') continue;
-    const msgtype =
-      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-    const body = typeof content.body === 'string' ? content.body.trim() : '';
-    const eventKind =
-      msgtype === SIGNAL_TEAM_EVENT_KIND ||
-      body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
-        ? SIGNAL_TEAM_EVENT_KIND
-        : null;
-    if (!eventKind) continue;
-    const eventSlug =
-      typeof content.coherenceSlug === 'string'
-        ? content.coherenceSlug.trim()
-        : '';
-    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
-    const nextMembers = normalizeMatrixUserIds(content.memberMatrixUserIds);
-    if (nextMembers.length > 0) {
-      members = nextMembers;
-      hasPolicy = true;
-    }
+function resolveMutationErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) return '';
+  const message = error.message.trim();
+  if (message) return message;
+  if (error.cause instanceof Error) {
+    return error.cause.message.trim();
   }
-  return { hasPolicy, memberMatrixUserIds: members };
+  return '';
 }
 
 export const CreateSignalForm = ({
@@ -132,13 +102,16 @@ export const CreateSignalForm = ({
   closeUrl,
   backUrl,
   mode = 'create',
+  signalId,
   signalSlug,
   signalRoomId,
   initialValues,
 }: CreateSignalFormProps) => {
-  const params = useParams<{ id?: string }>();
+  const params = useParams<{ id?: string; lang?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const t = useTranslations('CoherenceTab');
+  const { workflow } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
     (
@@ -158,10 +131,17 @@ export const CreateSignalForm = ({
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
-  const signalCreatorId =
-    mode === 'edit' && typeof initialValues?.creatorId === 'number'
-      ? initialValues.creatorId
-      : null;
+  const { space } = useSpaceBySlug(spaceSlug);
+  const canManageSignal = useCanManageSignal({
+    spaceSlug,
+    web3SpaceId: space?.web3SpaceId ?? undefined,
+  });
+  const isSignalCreator =
+    mode === 'edit' &&
+    typeof initialValues?.creatorId === 'number' &&
+    person?.id === initialValues.creatorId;
+  const isEditAuthorized =
+    mode !== 'edit' || canManageSignal || isSignalCreator;
 
   const {
     createCoherence,
@@ -172,9 +152,16 @@ export const CreateSignalForm = ({
     updateCoherenceBySlug,
     updateCoherenceSignalBySlug,
     isUpdatingCoherenceSignal,
-    deleteCoherenceBySlug,
-    isDeletingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const [isTogglingArchiveState, setIsTogglingArchiveState] =
+    React.useState(false);
+  const [isSignalArchived, setIsSignalArchived] = React.useState(
+    initialValues?.archived ?? false,
+  );
+  React.useEffect(() => {
+    if (mode !== 'edit') return;
+    setIsSignalArchived(initialValues?.archived ?? false);
+  }, [initialValues?.archived, mode]);
   const {
     client: matrixClient,
     isMatrixAvailable,
@@ -185,27 +172,6 @@ export const CreateSignalForm = ({
     getRoomMessages,
     editRoomMessage,
   } = useMatrix();
-  const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
-  const signalTeamAccess = React.useMemo(() => {
-    if (mode !== 'edit' || !signalRoomId?.trim()) {
-      return { hasPolicy: false, memberMatrixUserIds: [] };
-    }
-    return getSignalTeamMembersFromRoom({
-      room: matrixClient?.getRoom(signalRoomId.trim()) ?? null,
-      coherenceSlug: signalSlug ?? undefined,
-    });
-  }, [matrixClient, mode, signalRoomId, signalSlug]);
-  const isSignalCreator =
-    signalCreatorId != null &&
-    person?.id != null &&
-    person.id === signalCreatorId;
-  const isSignalTeamMember = currentUserMatrixId
-    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
-    : false;
-  const isEditAuthorized =
-    mode !== 'edit' ||
-    isSignalCreator ||
-    (signalTeamAccess.hasPolicy && isSignalTeamMember);
 
   const upsertSignalDescriptionMessage = React.useCallback(
     async ({
@@ -239,15 +205,15 @@ export const CreateSignalForm = ({
   );
 
   const isMutating =
-    isCreatingCoherence || isUpdatingCoherenceSignal || isDeletingCoherence;
+    isCreatingCoherence || isUpdatingCoherenceSignal || isTogglingArchiveState;
   const progress = React.useMemo(() => {
-    if (isDeletingCoherence) return 50;
+    if (isTogglingArchiveState) return 50;
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
   }, [
     createdCoherence,
     isCreatingCoherence,
-    isDeletingCoherence,
+    isTogglingArchiveState,
     isUpdatingCoherenceSignal,
     mode,
   ]);
@@ -273,6 +239,11 @@ export const CreateSignalForm = ({
               typeof tag === 'string' && tag.trim().length > 0,
           ) as CoherenceTag[])
         : [],
+      dueAt: initialValues?.dueAt ?? null,
+      progressStatus:
+        initialValues?.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
+      board: initialValues?.board ?? null,
+      assigneeIds: initialValues?.assigneeIds ?? [],
     }),
     [initialValues, person?.id, spaceId],
   );
@@ -288,6 +259,26 @@ export const CreateSignalForm = ({
   }, [form, formDefaults, mode, signalSlug]);
 
   useScrollToErrors(form, formRef);
+
+  const watchedTitle = form.watch('title');
+  const watchedDueAt = form.watch('dueAt');
+  const scheduleFromSignalPath = React.useMemo(() => {
+    if (!spaceSlug || !signalId) return '';
+    const paramsQuery = buildScheduleFromSignalSearchParams({
+      coherenceId: signalId,
+      title:
+        watchedTitle?.trim() || initialValues?.title?.trim() || 'Signal call',
+      dueAt: watchedDueAt,
+    });
+    return `/${lang}/dho/${spaceSlug}/calendar/new-scheduled-item?${paramsQuery.toString()}`;
+  }, [
+    initialValues?.title,
+    lang,
+    signalId,
+    spaceSlug,
+    watchedDueAt,
+    watchedTitle,
+  ]);
 
   const typeOptions = React.useMemo(() => {
     return COHERENCE_TYPE_OPTIONS.filter((option) =>
@@ -527,7 +518,7 @@ export const CreateSignalForm = ({
             type: 'manual',
             message: t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only signal team members can edit this signal.',
+              : 'Only space members and delegates can edit this signal.',
           });
           return;
         }
@@ -539,6 +530,11 @@ export const CreateSignalForm = ({
             type: data.type,
             priority: data.priority,
             tags: data.tags,
+            dueAt: data.dueAt ?? null,
+            progressStatus:
+              data.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
+            board: data.board ?? null,
+            assigneeIds: data.assigneeIds,
           });
           if (updatedSignal?.roomId) {
             try {
@@ -558,17 +554,20 @@ export const CreateSignalForm = ({
           }
           router.push(successfulUrl);
         } catch (error) {
-          const rawMessage =
-            error instanceof Error && error.message.trim().length > 0
-              ? error.message
-              : '';
+          const rawMessage = resolveMutationErrorMessage(error);
           const isSanitizedServerError =
             rawMessage.includes(
               'An error occurred in the Server Components render',
             ) || rawMessage.toLowerCase().includes('digest');
           const isPermissionError =
             rawMessage.includes('can edit this coherence') ||
-            rawMessage.includes('can delete this coherence');
+            rawMessage.includes('must be a space member') ||
+            rawMessage.includes('interact in this space') ||
+            rawMessage.includes('Could not verify your identity');
+          const isValidationError =
+            rawMessage.includes('Invalid signal update') ||
+            rawMessage.includes('Unknown progress status') ||
+            rawMessage.includes('Unknown board');
           const isAuthError = rawMessage.includes('authToken is required');
           const genericSaveError = t.has('editSignalSaveFailed')
             ? t('editSignalSaveFailed')
@@ -576,11 +575,13 @@ export const CreateSignalForm = ({
           const message = isPermissionError
             ? t.has('editSignalNoPermission')
               ? t('editSignalNoPermission')
-              : 'Only signal team members can edit this signal.'
+              : 'Only space members and delegates can edit this signal.'
             : isAuthError
             ? t.has('editSignalMissingAuth')
               ? t('editSignalMissingAuth')
               : 'Your session expired. Please sign in again before saving.'
+            : isValidationError
+            ? rawMessage
             : isSanitizedServerError
             ? genericSaveError
             : rawMessage || genericSaveError;
@@ -701,10 +702,14 @@ export const CreateSignalForm = ({
       isLoading={isMutating}
       fullHeight={true}
       keepWindowOpenMessage={
-        isDeletingCoherence
-          ? t.has('keepWindowOpenWhileDeleting')
-            ? t('keepWindowOpenWhileDeleting')
-            : 'Please keep this window open while deleting the signal.'
+        isTogglingArchiveState
+          ? isSignalArchived
+            ? t.has('keepWindowOpenWhileUnarchiving')
+              ? t('keepWindowOpenWhileUnarchiving')
+              : 'Please keep this window open while unarchiving the signal.'
+            : t.has('keepWindowOpenWhileArchiving')
+            ? t('keepWindowOpenWhileArchiving')
+            : 'Please keep this window open while archiving the signal.'
           : t('keepWindowOpenWhileCreating')
       }
       message={
@@ -715,10 +720,14 @@ export const CreateSignalForm = ({
           </div>
         ) : (
           <div>
-            {isDeletingCoherence
-              ? t.has('deletingSignal')
-                ? t('deletingSignal')
-                : 'Deleting signal'
+            {isTogglingArchiveState
+              ? isSignalArchived
+                ? t.has('unarchivingSignal')
+                  ? t('unarchivingSignal')
+                  : 'Unarchiving signal'
+                : t.has('archivingSignal')
+                ? t('archivingSignal')
+                : 'Archiving signal'
               : mode === 'edit'
               ? t.has('savingSignal')
                 ? t('savingSignal')
@@ -887,6 +896,119 @@ export const CreateSignalForm = ({
               />
             </section>
             <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="progressStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">
+                        {t('signalFormStatus')}
+                      </FormLabel>
+                      <Select
+                        value={field.value ?? DEFAULT_SIGNAL_PROGRESS_STATUS}
+                        onValueChange={field.onChange}
+                        disabled={isMutating}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(workflow?.statuses ?? []).map((status) => (
+                            <SelectItem key={status.slug} value={status.slug}>
+                              {status.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {t('signalFormStatusHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="board"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">
+                        {t('signalFormBoard')}
+                      </FormLabel>
+                      <Select
+                        value={field.value ?? '__none__'}
+                        onValueChange={(value) =>
+                          field.onChange(value === '__none__' ? null : value)
+                        }
+                        disabled={isMutating}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="__none__">
+                            {t('signalBoardUncategorized')}
+                          </SelectItem>
+                          {(workflow?.boards ?? [])
+                            .filter((board) => !board.archived)
+                            .map((board) => (
+                              <SelectItem key={board.slug} value={board.slug}>
+                                {board.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {t('signalFormBoardHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dueAt"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel className="text-foreground">
+                        {t('signalFormDueDate')}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          disabled={isMutating}
+                          value={toLocalDueDateInputValue(field.value ?? null)}
+                          onChange={(event) =>
+                            field.onChange(
+                              dueDateFromInputValue(event.target.value),
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('signalFormDueDateHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </section>
+            {mode === 'edit' && signalId && spaceSlug ? (
+              <SignalLinkedCalendarEvents
+                spaceSlug={spaceSlug}
+                coherenceId={signalId}
+                lang={lang}
+                calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
+                scheduleFromSignalPath={scheduleFromSignalPath}
+              />
+            ) : null}
+            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
               <FormField
                 control={form.control}
                 name="description"
@@ -981,17 +1103,31 @@ export const CreateSignalForm = ({
               {mode === 'edit' && signalSlug ? (
                 <ConfirmDialog
                   title={
-                    t.has('deleteSignal') ? t('deleteSignal') : 'Delete signal'
+                    isSignalArchived
+                      ? t.has('unarchiveSignal')
+                        ? t('unarchiveSignal')
+                        : 'Unarchive signal'
+                      : t.has('archiveSignal')
+                      ? t('archiveSignal')
+                      : 'Archive signal'
                   }
                   description={
-                    t.has('deleteSignalConfirm')
-                      ? t('deleteSignalConfirm')
-                      : 'This permanently removes this signal from the space. Continue?'
+                    isSignalArchived
+                      ? t.has('unarchiveSignalConfirm')
+                        ? t('unarchiveSignalConfirm')
+                        : 'Restore this signal to active views. Continue?'
+                      : t.has('archiveSignalConfirm')
+                      ? t('archiveSignalConfirm')
+                      : 'This hides the signal from active views. You can unarchive it later. Continue?'
                   }
                   customAcceptButtonText={
-                    t.has('deleteSignalAction')
-                      ? t('deleteSignalAction')
-                      : 'Delete signal'
+                    isSignalArchived
+                      ? t.has('yesUnarchive')
+                        ? t('yesUnarchive')
+                        : 'Yes, unarchive'
+                      : t.has('yesArchive')
+                      ? t('yesArchive')
+                      : 'Yes, archive'
                   }
                   customRejectButtonText={t('noLeave')}
                   onAcceptClicked={async () => {
@@ -1001,7 +1137,9 @@ export const CreateSignalForm = ({
                         type: 'manual',
                         message: t.has('editSignalMissingAuth')
                           ? t('editSignalMissingAuth')
-                          : 'Your session expired. Please sign in again before deleting.',
+                          : isSignalArchived
+                          ? 'Your session expired. Please sign in again before unarchiving.'
+                          : 'Your session expired. Please sign in again before archiving.',
                       });
                       return;
                     }
@@ -1010,28 +1148,44 @@ export const CreateSignalForm = ({
                         type: 'manual',
                         message: t.has('editSignalNoPermission')
                           ? t('editSignalNoPermission')
-                          : 'Only signal team members can edit this signal.',
+                          : 'Only space members and delegates can edit this signal.',
                       });
                       return;
                     }
+                    setIsTogglingArchiveState(true);
+                    const nextArchivedState = !isSignalArchived;
                     try {
-                      await deleteCoherenceBySlug({ slug: signalSlug });
+                      await updateCoherenceBySlug({
+                        slug: signalSlug,
+                        archived: nextArchivedState,
+                      });
                       if (spaceSlug) {
                         await revalidateCoherences(spaceSlug);
                       }
-                      router.push(successfulUrl);
+                      if (nextArchivedState) {
+                        router.push(successfulUrl);
+                        return;
+                      }
+                      setIsSignalArchived(false);
+                      form.setValue('archived', false);
                     } catch (error) {
                       const message =
                         error instanceof Error &&
                         error.message.trim().length > 0
                           ? error.message
-                          : t.has('deleteFailed')
-                          ? t('deleteFailed')
-                          : 'Could not delete signal. Please try again.';
+                          : isSignalArchived
+                          ? t.has('unarchiveFailed')
+                            ? t('unarchiveFailed')
+                            : 'Could not unarchive signal. Please try again.'
+                          : t.has('archiveFailed')
+                          ? t('archiveFailed')
+                          : 'Could not archive signal. Please try again.';
                       form.setError('root', {
                         type: 'manual',
                         message,
                       });
+                    } finally {
+                      setIsTogglingArchiveState(false);
                     }
                   }}
                 >
@@ -1040,10 +1194,18 @@ export const CreateSignalForm = ({
                     variant="outline"
                     colorVariant="neutral"
                     disabled={
-                      isDeletingCoherence || isMutating || !isEditAuthorized
+                      isTogglingArchiveState || isMutating || !isEditAuthorized
                     }
                   >
-                    {t.has('deleteAction') ? t('deleteAction') : 'Delete'}
+                    {isSignalArchived
+                      ? t.has('unarchiveAction')
+                        ? t('unarchiveAction')
+                        : t.has('unarchive')
+                        ? t('unarchive')
+                        : 'Unarchive'
+                      : t.has('archiveAction')
+                      ? t('archiveAction')
+                      : 'Archive'}
                   </Button>
                 </ConfirmDialog>
               ) : null}

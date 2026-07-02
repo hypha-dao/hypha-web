@@ -20,7 +20,8 @@
     "@privy-io/node": "^0.12.0",
     "@wagmi/cli": "^2.2.0",
     "matrix-js-sdk": "^40.0.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "rrule": "^2.8.1"
   },
   "exports": {
     "./client": "./src/client.ts",

@@ -13,6 +13,8 @@ import {
   SpaceForm,
   getNetworkMapReturnPath,
   isNetworkAddLocationReturn,
+  getSignalWorkflowReturnPath,
+  isSignalWorkflowConfigurationReturn,
 } from '@hypha-platform/epics';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import React from 'react';
@@ -33,6 +35,7 @@ export function SpaceConfigurationClient({
 }: SpaceConfigurationClientProps) {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tCoherence = useTranslations('CoherenceTab');
   const { person } = useMe();
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
   const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
@@ -53,6 +56,10 @@ export function SpaceConfigurationClient({
     () => isNetworkAddLocationReturn(searchParams),
     [searchParams],
   );
+  const returnToSignals = React.useMemo(
+    () => isSignalWorkflowConfigurationReturn(searchParams),
+    [searchParams],
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isPending && newSpaceSlug) {
@@ -60,9 +67,28 @@ export function SpaceConfigurationClient({
         router.push(getNetworkMapReturnPath(lang as Locale));
         return;
       }
+      if (returnToSignals) {
+        router.push(
+          getSignalWorkflowReturnPath(
+            lang as Locale,
+            newSpaceSlug,
+            searchParams,
+          ),
+        );
+        return;
+      }
       router.push(getDhoPathAgreements(lang as Locale, newSpaceSlug));
     }
-  }, [progress, isPending, newSpaceSlug, lang, router, returnToNetworkMap]);
+  }, [
+    progress,
+    isPending,
+    newSpaceSlug,
+    lang,
+    router,
+    returnToNetworkMap,
+    returnToSignals,
+    searchParams,
+  ]);
 
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
@@ -80,6 +106,32 @@ export function SpaceConfigurationClient({
     }
     return pathname.replace(segment, '') || '/';
   }, [pathname]);
+
+  const resolvedCloseUrl = React.useMemo(() => {
+    if (returnToSignals) {
+      return getSignalWorkflowReturnPath(
+        lang as Locale,
+        spaceSlug,
+        searchParams,
+      );
+    }
+    return closeUrl;
+  }, [closeUrl, lang, returnToSignals, searchParams, spaceSlug]);
+
+  const resolvedBackUrl = React.useMemo(() => {
+    if (returnToSignals) {
+      return getSignalWorkflowReturnPath(
+        lang as Locale,
+        spaceSlug,
+        searchParams,
+      );
+    }
+    return `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
+  }, [closeUrl, lang, returnToSignals, searchParams, spaceSlug]);
+
+  const resolvedBackLabel = returnToSignals
+    ? tCoherence('backToCoherence')
+    : tSpaces('backToSettings');
 
   const formValues = React.useMemo(():
     | Partial<SchemaCreateSpaceForm>
@@ -148,8 +200,6 @@ export function SpaceConfigurationClient({
   return (
     <ProposalOverlayShell>
       <LoadingBackdrop
-        showKeepWindowOpenMessage={true}
-        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         fullHeight={true}
         progress={progress}
         isLoading={isBusy}
@@ -169,7 +219,11 @@ export function SpaceConfigurationClient({
               <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (
-            <div>{currentAction}</div>
+            <div>
+              {isPending
+                ? tAgreementFlow('spaceConfiguration.updating')
+                : currentAction}
+            </div>
           )
         }
       >
@@ -178,9 +232,9 @@ export function SpaceConfigurationClient({
             submitLabel={tAgreementFlow('spaceConfiguration.update')}
             submitLoadingLabel={tAgreementFlow('spaceConfiguration.updating')}
             isLoading={isBusy}
-            closeUrl={closeUrl}
-            backUrl={`${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`}
-            backLabel={tSpaces('backToSettings')}
+            closeUrl={resolvedCloseUrl}
+            backUrl={resolvedBackUrl}
+            backLabel={resolvedBackLabel}
             creator={{
               name: person?.name,
               surname: person?.surname,
@@ -192,6 +246,7 @@ export function SpaceConfigurationClient({
             enableNetworkMap={enableNetworkMap}
             initialParentSpaceId={space.parentId ?? null}
             spaceId={space.id}
+            spaceSlug={spaceSlug}
           />
         ) : (
           <div aria-hidden="true" className="min-h-px" />

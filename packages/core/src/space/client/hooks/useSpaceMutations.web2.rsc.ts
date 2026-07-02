@@ -11,10 +11,55 @@ import {
 import {
   createSpaceAction,
   deleteSpaceBySlugAction,
-  updateSpaceByIdAction,
   updateSpaceBySlugAction,
-  updateSpaceConfigurationByIdAction,
 } from '@hypha-platform/core/space/server/actions';
+
+function readApiError(
+  payload: {
+    error?:
+      | string
+      | {
+          formErrors?: string[];
+          fieldErrors?: Record<string, string[] | undefined>;
+        };
+  } | null,
+): string | undefined {
+  if (!payload?.error) return undefined;
+  if (typeof payload.error === 'string') return payload.error;
+  const fieldMessage = Object.values(payload.error.fieldErrors ?? {})
+    .flatMap((messages) => messages ?? [])
+    .find(Boolean);
+  return fieldMessage ?? payload.error.formErrors?.[0];
+}
+
+async function patchSpaceViaApi(
+  authToken: string,
+  path: 'configuration' | 'record',
+  arg: UpdateSpaceByIdInput,
+) {
+  const response = await fetch(`/api/v1/spaces/${path}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(arg),
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as {
+      error?:
+        | string
+        | {
+            formErrors?: string[];
+            fieldErrors?: Record<string, string[] | undefined>;
+          };
+    } | null;
+    throw new Error(
+      readApiError(payload) ?? `Failed to update space (${response.status})`,
+    );
+  }
+  return response.json();
+}
 
 export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   const {
@@ -78,7 +123,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'updateSpaceById'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
-      await updateSpaceByIdAction(arg, { authToken }),
+      patchSpaceViaApi(authToken, 'record', arg),
   );
 
   const {
@@ -90,7 +135,7 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   } = useSWRMutation(
     authToken ? [authToken, 'updateSpaceConfigurationById'] : null,
     async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
-      await updateSpaceConfigurationByIdAction(arg, { authToken }),
+      patchSpaceViaApi(authToken, 'configuration', arg),
   );
 
   const {

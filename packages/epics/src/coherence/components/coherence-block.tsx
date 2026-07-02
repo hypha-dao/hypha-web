@@ -1,6 +1,11 @@
 'use client';
 
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  MOBILE_BREAKPOINT_PX,
+} from '@hypha-platform/ui';
 import {
   Coherence,
   useFindCoherences,
@@ -11,8 +16,16 @@ import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
-import { SignalSection } from './signal-section';
+import { buildSignalWorkflowConfigurationPath } from '../lib/signal-workflow-configuration-return';
+import {
+  isDefaultSignalViewMode,
+  parseSignalViewMode,
+  SIGNAL_VIEW_QUERY_KEY,
+} from '../lib/signal-view-mode';
+import { SignalSection, type SignalViewMode } from './signal-section';
+import { SignalViewControls } from './signal-view-controls';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
+import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -92,8 +105,57 @@ export function CoherenceBlock({
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [hideArchived, setHideArchived] = React.useState(true);
+  const viewMode = React.useMemo(() => {
+    const parsed = parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY));
+    return parsed ?? 'board';
+  }, [searchParams]);
+  const hasAppliedMobileDefault = React.useRef(false);
+
+  React.useEffect(() => {
+    if (hasAppliedMobileDefault.current) return;
+    if (parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY))) {
+      hasAppliedMobileDefault.current = true;
+      return;
+    }
+    hasAppliedMobileDefault.current = true;
+    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set(SIGNAL_VIEW_QUERY_KEY, 'list');
+      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+    }
+  }, [pathname, router, searchParams]);
+
+  const handleViewModeChange = React.useCallback(
+    (nextValue: SignalViewMode) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      if (isDefaultSignalViewMode(nextValue)) {
+        nextParams.delete(SIGNAL_VIEW_QUERY_KEY);
+      } else {
+        nextParams.set(SIGNAL_VIEW_QUERY_KEY, nextValue);
+      }
+      const query = nextParams.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
+  const { canMutate } = useCanMutateInSpace({
+    spaceSlug,
+    spaceId: space?.web3SpaceId ?? undefined,
+  });
+  const workflowSettingsHref = React.useMemo(
+    () =>
+      canMutate
+        ? buildSignalWorkflowConfigurationPath(lang, spaceSlug, searchParams)
+        : null,
+    [canMutate, lang, searchParams, spaceSlug],
+  );
   const {
     coherences: signals,
     isLoading: isSignalsLoading,
@@ -178,30 +240,37 @@ export function CoherenceBlock({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
-        <h1 className="text-7 font-semibold tracking-tight text-foreground">
-          {t('signals')}
-          {typeof signals?.length === 'number' ? (
-            <span className="ml-2 text-5 font-medium text-muted-foreground">
-              | {format.number(signals.length)}
-            </span>
-          ) : null}
-        </h1>
-      </div>
-      <div className="flex flex-col gap-4">
-        <SignalSection
-          toolbarLeft={priorityTabs}
-          basePath={chatBasePath}
-          web3SpaceId={space?.web3SpaceId ?? 0}
-          signals={filteredSignals}
-          leadImage={space?.leadImage ?? undefined}
-          isLoading={isSpaceLoading || isSignalsLoading}
+      <h1 className="text-7 font-semibold tracking-tight text-foreground">
+        {t('signals')}
+        {typeof signals?.length === 'number' ? (
+          <span className="ml-2 text-5 font-medium text-muted-foreground">
+            | {format.number(signals.length)}
+          </span>
+        ) : null}
+      </h1>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
+          <div className="w-max">{priorityTabs}</div>
+        </div>
+        <SignalViewControls
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
           hideArchived={hideArchived}
-          setHideArchived={setHideArchived}
-          refresh={refresh}
-          onSignalClick={onSignalClick}
+          onHideArchivedChange={setHideArchived}
+          workflowSettingsHref={workflowSettingsHref}
+          className="lg:shrink-0"
         />
       </div>
+      <SignalSection
+        basePath={chatBasePath}
+        web3SpaceId={space?.web3SpaceId ?? 0}
+        signals={filteredSignals}
+        leadImage={space?.leadImage ?? undefined}
+        isLoading={isSpaceLoading || (isSignalsLoading && !signals?.length)}
+        viewMode={viewMode}
+        refresh={refresh}
+        onSignalClick={onSignalClick}
+      />
     </div>
   );
 }

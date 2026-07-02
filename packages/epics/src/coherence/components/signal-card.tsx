@@ -3,12 +3,9 @@
 import {
   Coherence,
   COHERENCE_PRIORITY_OPTIONS,
-  COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
-  DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
-  useMatrix,
   useMe,
   usePersonById,
   useSpaceBySlug,
@@ -26,16 +23,13 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
   CardTitle,
-  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Image,
   Skeleton,
   type LucideReactIcon,
 } from '@hypha-platform/ui';
@@ -45,13 +39,22 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, Pencil, Sparkles, UserCircle2, Workflow } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  Pencil,
+  Sparkles,
+  UserCircle2,
+  Workflow,
+} from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
-import { useScrollParallax } from '../../common/use-scroll-parallax';
+import { SignalTagBadges } from './signal-tag-badges';
+import { priorityLeftBorderClass } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { useCanManageSignal } from '../hooks/use-can-manage-signal';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -74,47 +77,6 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
 
-const HERO_PRIORITY_WASH_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-accent-9/12',
-  error: 'bg-error-9/14',
-  warn: 'bg-warning-9/13',
-  success: 'bg-success-9/12',
-  neutral: 'bg-neutral-9/10',
-};
-
-const HERO_PRIORITY_SPOTLIGHT_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-br from-accent-9/24 via-accent-8/11 to-transparent',
-  error: 'bg-gradient-to-br from-error-9/26 via-error-8/12 to-transparent',
-  warn: 'bg-gradient-to-br from-warning-9/26 via-warning-8/12 to-transparent',
-  success:
-    'bg-gradient-to-br from-success-9/24 via-success-8/11 to-transparent',
-  neutral:
-    'bg-gradient-to-br from-neutral-9/22 via-neutral-8/10 to-transparent',
-};
-
-const HERO_PRIORITY_VIGNETTE_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-t from-accent-10/20 via-accent-9/10 to-transparent',
-  error: 'bg-gradient-to-t from-error-10/22 via-error-9/10 to-transparent',
-  warn: 'bg-gradient-to-t from-warning-10/22 via-warning-9/10 to-transparent',
-  success:
-    'bg-gradient-to-t from-success-10/20 via-success-9/10 to-transparent',
-  neutral: 'bg-gradient-to-t from-neutral-10/16 via-neutral-9/8 to-transparent',
-};
-
-const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
-  {
-    accent: 'bg-gradient-to-t from-accent-10/24 via-accent-9/10 to-transparent',
-    error: 'bg-gradient-to-t from-error-10/26 via-error-9/11 to-transparent',
-    warn: 'bg-gradient-to-t from-warning-10/26 via-warning-9/11 to-transparent',
-    success:
-      'bg-gradient-to-t from-success-10/24 via-success-9/10 to-transparent',
-    neutral:
-      'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
-  };
-const MAX_VISIBLE_SIGNAL_TAGS = 3;
-const SIGNAL_TAG_BADGE_CLASS =
-  'max-w-[8.5rem] overflow-hidden text-ellipsis whitespace-nowrap rounded-full';
-
 const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'text-accent-10',
   error: 'text-error-10',
@@ -122,66 +84,6 @@ const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   success: 'text-success-10',
   neutral: 'text-neutral-11',
 };
-
-const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
-const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
-
-function normalizeMatrixUserIds(ids: unknown): string[] {
-  if (!Array.isArray(ids)) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const value of ids) {
-    if (typeof value !== 'string') continue;
-    const trimmed = value.trim();
-    if (!trimmed || seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    out.push(trimmed);
-  }
-  return out;
-}
-
-function getSignalTeamMembersFromRoom(options: {
-  room: {
-    getLiveTimeline: () => {
-      getEvents: () => Array<{
-        getType: () => string;
-        getContent: () => Record<string, unknown> | null;
-      }>;
-    };
-  } | null;
-  coherenceSlug?: string;
-}): { hasPolicy: boolean; memberMatrixUserIds: string[] } {
-  const { room, coherenceSlug } = options;
-  if (!room) return { hasPolicy: false, memberMatrixUserIds: [] };
-  const targetSlug = coherenceSlug?.trim() || null;
-  let hasPolicy = false;
-  let members: string[] = [];
-  for (const event of room.getLiveTimeline().getEvents()) {
-    if (event.getType() !== 'm.room.message') continue;
-    const content = event.getContent();
-    if (!content || typeof content !== 'object') continue;
-    const msgtype =
-      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-    const body = typeof content.body === 'string' ? content.body.trim() : '';
-    const eventKind =
-      msgtype === SIGNAL_TEAM_EVENT_KIND ||
-      body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
-        ? SIGNAL_TEAM_EVENT_KIND
-        : null;
-    if (!eventKind) continue;
-    const eventSlug =
-      typeof content.coherenceSlug === 'string'
-        ? content.coherenceSlug.trim()
-        : '';
-    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
-    const nextMembers = normalizeMatrixUserIds(content.memberMatrixUserIds);
-    if (nextMembers.length > 0) {
-      members = nextMembers;
-      hasPolicy = true;
-    }
-  }
-  return { hasPolicy, memberMatrixUserIds: members };
-}
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
@@ -199,11 +101,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   refresh,
   onOpenConversation,
   className,
-  leadImage,
+  leadImage: _leadImage,
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
-  const { client: matrixClient } = useMatrix();
   const { person: creatorPerson } = usePersonById({ id: creatorId });
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
@@ -211,6 +112,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const tCommon = useTranslations('Common');
   const router = useRouter();
   const params = useParams<{ lang: string; id: string; tab?: string }>();
+  const { space: currentSpace } = useSpaceBySlug(params.id ?? '');
+  const canManageSignal = useCanManageSignal({
+    spaceSlug: params.id ?? '',
+    web3SpaceId: currentSpace?.web3SpaceId ?? undefined,
+  });
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
@@ -279,14 +185,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     );
   }, [creatorKind, creatorPerson, relaySourceSpace, relaySourceSpaceSlug]);
 
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [archiveDialogOpen, setArchiveDialogOpen] = React.useState(false);
+  const [isArchiveMutating, setIsArchiveMutating] = React.useState(false);
+  const [archiveError, setArchiveError] = React.useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const { reduceMotion, parallaxY } = useScrollParallax({
-    rate: 0.12,
-    maxShiftPx: 20,
-  });
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const metaBadgesRef = React.useRef<HTMLDivElement>(null);
   const metaDetailsRef = React.useRef<HTMLDivElement>(null);
@@ -294,21 +196,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const [metaDetailsShouldLeftAlign, setMetaDetailsShouldLeftAlign] =
     React.useState(false);
   const isCreator = person?.id === creatorId;
-  const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
-  const signalTeamAccess = React.useMemo(() => {
-    if (!roomId?.trim()) {
-      return { hasPolicy: false, memberMatrixUserIds: [] };
-    }
-    return getSignalTeamMembersFromRoom({
-      room: matrixClient?.getRoom(roomId.trim()) ?? null,
-      coherenceSlug: slug ?? undefined,
-    });
-  }, [matrixClient, roomId, slug]);
-  const isSignalTeamMember = currentUserMatrixId
-    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
-    : false;
-  const canManageSignal =
-    isCreator || (signalTeamAccess.hasPolicy && isSignalTeamMember);
   const creatorDisplayName = React.useMemo(() => {
     if (isCreator) {
       const currentUserName = [person?.name, person?.surname]
@@ -382,6 +269,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     [priorityMeta?.colorVariant],
   );
 
+  const priorityStripeLabel = React.useMemo(() => {
+    if (!priorityMeta) return t('priorities.medium');
+    const priorityKey = `priorities.${priorityMeta.priority}`;
+    return t.has(priorityKey as never)
+      ? t(priorityKey as never)
+      : priorityMeta.priority;
+  }, [priorityMeta, t]);
+
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
       icon: (coherenceType?.icon ?? 'ArrowUpRight') as LucideReactIcon,
@@ -415,40 +310,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     typeLabel,
     typeColorVariant,
   ]);
-
-  const tagList: BadgeItem[] = tags.map((tag) => {
-    const translationKey = `tagLabels.${tag}`;
-    const displayLabel =
-      (COHERENCE_TAGS as readonly string[]).includes(tag) &&
-      t.has(translationKey as never)
-        ? t(translationKey as never)
-        : tag;
-    return {
-      label: `#${displayLabel}`,
-      variant: 'outline',
-      colorVariant: 'neutral',
-      className: SIGNAL_TAG_BADGE_CLASS,
-      style: {
-        borderColor:
-          'color-mix(in srgb, var(--space-accent) 42%, var(--color-neutral-8) 58%)',
-        backgroundColor:
-          'color-mix(in srgb, var(--space-accent) 12%, transparent)',
-        color: 'color-mix(in srgb, var(--space-accent) 78%, white 22%)',
-      },
-    };
-  });
-  const compactTagList: BadgeItem[] = React.useMemo(() => {
-    if (tagList.length <= MAX_VISIBLE_SIGNAL_TAGS) return tagList;
-    return [
-      ...tagList.slice(0, MAX_VISIBLE_SIGNAL_TAGS),
-      {
-        label: `+${tagList.length - MAX_VISIBLE_SIGNAL_TAGS}`,
-        variant: 'outline',
-        colorVariant: 'neutral',
-        className: `${SIGNAL_TAG_BADGE_CLASS} border-border/60 bg-transparent text-muted-foreground`,
-      },
-    ];
-  }, [tagList]);
 
   const plainDescription = React.useMemo(
     () =>
@@ -501,36 +362,32 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     return () => ro.disconnect();
   }, [creatorDisplayName, createdAtDate, normalizedMessagesCount, metaBadges]);
 
-  const handleUnarchive = React.useCallback(async () => {
-    if (!slug) return;
+  const handleToggleArchive = React.useCallback(async (): Promise<boolean> => {
+    if (!slug || isArchiveMutating) return false;
+    setArchiveError(null);
+    setIsArchiveMutating(true);
     try {
-      await updateCoherenceBySlug({ slug, archived: false });
-      await refresh();
-    } catch (error) {
-      console.warn('Could not unarchive conversation:', error);
-    }
-  }, [slug, refresh, updateCoherenceBySlug]);
-
-  const handleArchive = React.useCallback(async (): Promise<boolean> => {
-    if (!slug || isDeleting) return false;
-    setDeleteError(null);
-    setIsDeleting(true);
-    try {
-      await updateCoherenceBySlug({ slug, archived: true });
+      await updateCoherenceBySlug({ slug, archived: !archived });
       try {
         await refresh();
       } catch (refreshErr) {
-        console.warn('Signal archived but list refresh failed:', refreshErr);
+        console.warn(
+          'Signal archive state updated but refresh failed:',
+          refreshErr,
+        );
       }
       return true;
     } catch (error) {
-      console.warn('Could not archive signal:', error);
-      setDeleteError(t('errorOhSnap'));
+      console.warn(
+        archived ? 'Could not unarchive signal:' : 'Could not archive signal:',
+        error,
+      );
+      setArchiveError(t('errorOhSnap'));
       return false;
     } finally {
-      setIsDeleting(false);
+      setIsArchiveMutating(false);
     }
-  }, [slug, isDeleting, refresh, t, updateCoherenceBySlug]);
+  }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
 
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -547,75 +404,21 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card pt-0 shadow-sm',
+        'group relative flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         'hover:border-accent-8/75 hover:shadow-md',
         'focus-within:border-accent-8/75 focus-within:shadow-md',
         className,
       )}
     >
-      <CardHeader className="relative h-[98px] shrink-0 overflow-hidden p-0 isolate">
-        <Skeleton
-          className="h-full min-w-full"
-          width="100%"
-          height="98px"
-          loading={isLoading}
-        >
-          <div className="absolute inset-0 overflow-hidden">
-            <div
-              className="absolute inset-x-[-2%] top-[-24%] h-[152%] will-change-transform"
-              style={
-                reduceMotion
-                  ? undefined
-                  : { transform: `translate3d(0, ${parallaxY}px, 0)` }
-              }
-            >
-              <Image
-                width={640}
-                height={98}
-                className="block h-full w-full object-cover"
-                src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                alt=""
-              />
-              <div
-                className={cn(
-                  'absolute inset-0 pointer-events-none',
-                  HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-              <div
-                className={cn(
-                  'pointer-events-none absolute inset-0',
-                  HERO_PRIORITY_SPOTLIGHT_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-              <div
-                className={cn(
-                  'absolute inset-0 pointer-events-none',
-                  HERO_PRIORITY_VIGNETTE_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-              <div
-                className={cn(
-                  'pointer-events-none absolute inset-0',
-                  HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP[priorityColorVariant],
-                )}
-                aria-hidden
-              />
-            </div>
-            <div
-              className={cn(
-                'pointer-events-none absolute inset-0',
-                HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
-              )}
-              aria-hidden
-            />
-          </div>
-        </Skeleton>
-      </CardHeader>
+      <div
+        className={cn(
+          'absolute inset-y-0 left-0 w-1 rounded-l-xl',
+          priorityLeftBorderClass(priority),
+        )}
+        title={priorityStripeLabel}
+        aria-label={priorityStripeLabel}
+      />
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2 pt-2.5">
           <div className="flex min-w-0 flex-col gap-1.5">
@@ -662,17 +465,29 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                     colorVariant="neutral"
                     size="sm"
                     className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    disabled={isLoading}
-                    aria-label={t('archiveConversation')}
-                    title={t('archiveConversation')}
+                    disabled={isLoading || isArchiveMutating}
+                    aria-label={
+                      archived
+                        ? t('unarchiveConversation')
+                        : t('archiveConversation')
+                    }
+                    title={
+                      archived
+                        ? t('unarchiveConversation')
+                        : t('archiveConversation')
+                    }
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setDeleteOpen(true);
+                      setArchiveDialogOpen(true);
                     }}
                     onKeyDown={stopCardActivationKey}
                   >
-                    <Archive className="h-3.5 w-3.5" aria-hidden />
+                    {archived ? (
+                      <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
+                    ) : (
+                      <Archive className="h-3.5 w-3.5" aria-hidden />
+                    )}
                   </Button>
                 </div>
               ) : null}
@@ -806,11 +621,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </Dialog>
 
           <div className="mt-auto min-h-[1.9rem] pt-0.5">
-            {tagList?.length > 0 ? (
-              <BadgesList
-                isLoading={isLoading}
-                badges={compactTagList}
-                className="content-start flex-nowrap overflow-hidden"
+            {tags?.length > 0 ? (
+              <SignalTagBadges
+                tags={tags}
+                maxVisible={3}
+                showHashPrefix
+                className="content-start gap-1.5"
               />
             ) : (
               <span className="block h-6" aria-hidden />
@@ -818,32 +634,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
         </div>
 
-        <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
-          {archived ? (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <ConfirmDialog
-                title={t('unarchiveConversation')}
-                description={t('unarchiveConfirm')}
-                customAcceptButtonText={t('yesUnarchive')}
-                customRejectButtonText={t('noLeave')}
-                onAcceptClicked={handleUnarchive}
-              >
-                <Button
-                  variant="outline"
-                  colorVariant="accent"
-                  size="sm"
-                  className="h-8 w-full bg-transparent hover:bg-accent-3/30"
-                >
-                  {t('unarchive')}
-                </Button>
-              </ConfirmDialog>
-            </div>
-          ) : (
+        {onOpenConversation && !archived ? (
+          <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
             <Button
               variant="outline"
               colorVariant="accent"
@@ -851,25 +643,23 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               className="h-8 w-full bg-transparent hover:bg-accent-3/30"
               disabled={isLoading || !roomId}
               onClick={(e) => {
-                if (onOpenConversation) {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onOpenConversation();
-                }
+                e.stopPropagation();
+                e.preventDefault();
+                onOpenConversation();
               }}
               title={!roomId ? tSignalCard('noConversationRoom') : undefined}
             >
               <ChatBubbleIcon />
               {t('openConversation')}
             </Button>
-          )}
-        </div>
+          </div>
+        ) : null}
         <AlertDialog
-          open={deleteOpen}
+          open={archiveDialogOpen}
           onOpenChange={(open) => {
-            if (isDeleting) return;
-            setDeleteOpen(open);
-            if (!open) setDeleteError(null);
+            if (isArchiveMutating) return;
+            setArchiveDialogOpen(open);
+            if (!open) setArchiveError(null);
           }}
         >
           <AlertDialogContent
@@ -880,17 +670,21 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <AlertDialogHeader>
-              <AlertDialogTitle>{t('archiveConversation')}</AlertDialogTitle>
+              <AlertDialogTitle>
+                {archived
+                  ? t('unarchiveConversation')
+                  : t('archiveConversation')}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                {t('archiveConfirm')}
+                {archived ? t('unarchiveConfirm') : t('archiveConfirm')}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            {deleteError ? (
+            {archiveError ? (
               <p
                 role="alert"
                 className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
               >
-                {deleteError}
+                {archiveError}
               </p>
             ) : null}
             <AlertDialogFooter>
@@ -898,7 +692,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 <Button
                   variant="outline"
                   colorVariant="neutral"
-                  disabled={isDeleting}
+                  disabled={isArchiveMutating}
                   onKeyDown={stopCardActivationKey}
                 >
                   {t('noLeave')}
@@ -907,15 +701,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               <Button
                 type="button"
                 colorVariant="accent"
-                disabled={isDeleting}
+                disabled={isArchiveMutating}
                 onClick={async (e) => {
                   e.stopPropagation();
-                  const archived = await handleArchive();
-                  if (archived) setDeleteOpen(false);
+                  const updated = await handleToggleArchive();
+                  if (updated) setArchiveDialogOpen(false);
                 }}
                 onKeyDown={stopCardActivationKey}
               >
-                {t('yesArchive')}
+                {archived ? t('yesUnarchive') : t('yesArchive')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
