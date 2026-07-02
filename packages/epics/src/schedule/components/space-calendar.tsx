@@ -13,7 +13,6 @@ import type {
   EventClickArg,
   EventContentArg,
   EventDropArg,
-  EventInput,
   EventMountArg,
   SlotLabelContentArg,
 } from '@fullcalendar/core';
@@ -30,14 +29,12 @@ import {
 } from 'date-fns';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import {
-  getEventDurationMs,
-  getScheduledItemTypeColor,
   revalidateScheduledItems,
   SCHEDULED_ITEM_TYPES,
-  toFullCalendarRruleInput,
+  toCalendarEventsInRange,
   useScheduledItemMutations,
   useScheduledItems,
   type ScheduledItem,
@@ -56,6 +53,12 @@ import {
   viewToModifierClass,
   type CalendarView,
 } from '../utils/calendar-view-config';
+import {
+  CALENDAR_VIEW_QUERY_KEY,
+  calendarViewToUrlSlug,
+  isDefaultCalendarViewMode,
+  parseCalendarViewMode,
+} from '../utils/calendar-view-mode';
 import { scheduledItemTypeIconHtml } from '../utils/scheduled-item-type-icon';
 import { ScheduledItemEventSheet } from './scheduled-item-event-sheet';
 
@@ -78,42 +81,6 @@ const TYPE_LEGEND: {
   { type: 'meeting', key: 'type_meeting' },
   { type: 'booking', key: 'type_booking' },
 ];
-
-function toCalendarEvent(item: ScheduledItem): EventInput {
-  const accentColor = getScheduledItemTypeColor(item.type, item.color);
-  const base: EventInput = {
-    id: String(item.id),
-    title: item.title,
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    classNames: ['hypha-cal-event', `hypha-cal-event--${item.type}`],
-    extendedProps: {
-      scheduledItem: item,
-      accentColor,
-    },
-  };
-
-  if (item.recurrenceRule) {
-    const rrule = toFullCalendarRruleInput(item);
-    if (rrule) {
-      return {
-        ...base,
-        rrule,
-        editable: false,
-        duration: {
-          milliseconds: getEventDurationMs(item.startsAt, item.endsAt),
-        },
-      };
-    }
-  }
-
-  return {
-    ...base,
-    start: item.startsAt,
-    end: item.endsAt,
-    allDay: item.allDay,
-  };
-}
 
 function isScheduledItem(value: unknown): value is ScheduledItem {
   return (
@@ -203,10 +170,17 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const t = useTranslations('Calendar');
   const intlFormat = useFormatter();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthentication();
 
-  const [view, setView] = React.useState<CalendarView>('dayGridMonth');
+  const view = React.useMemo(() => {
+    const parsed = parseCalendarViewMode(
+      searchParams.get(CALENDAR_VIEW_QUERY_KEY),
+    );
+    return parsed ?? 'dayGridMonth';
+  }, [searchParams]);
   const [anchorDate, setAnchorDate] = React.useState(() => new Date());
   const [range, setRange] = React.useState<{
     from: Date;
@@ -217,17 +191,33 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   );
   const [eventSheetOpen, setEventSheetOpen] = React.useState(false);
 
+  const dateFnsLocale = React.useMemo(() => resolveDateFnsLocale(lang), [lang]);
+  const weekStartsOn = React.useMemo(
+    () => getCalendarWeekStartsOn(lang),
+    [lang],
+  );
+
+  const effectiveRange = React.useMemo(
+    () => range ?? defaultRangeForView(view, anchorDate, weekStartsOn),
+    [range, view, anchorDate, weekStartsOn],
+  );
+
   const { scheduledItems, isLoading, refresh } = useScheduledItems({
     spaceSlug,
-    from: range?.from ?? null,
-    to: range?.to ?? null,
+    from: effectiveRange.from,
+    to: effectiveRange.to,
   });
 
   const calendarApiRef = React.useRef<CalendarApi | null>(null);
 
   const calendarEvents = React.useMemo(
-    () => (scheduledItems ?? []).map(toCalendarEvent),
-    [scheduledItems],
+    () =>
+      (scheduledItems ?? []).flatMap((item) =>
+        toCalendarEventsInRange(item, effectiveRange, {
+          exclusiveEnd: range != null,
+        }),
+      ),
+    [effectiveRange, range, scheduledItems],
   );
 
   const syncCalendarDate = React.useCallback((date: Date) => {
@@ -238,24 +228,33 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     calendarApiRef.current?.changeView(nextView);
   }, []);
 
+  const handleCalendarViewChange = React.useCallback(
+    (nextView: CalendarView) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      if (isDefaultCalendarViewMode(nextView)) {
+        nextParams.delete(CALENDAR_VIEW_QUERY_KEY);
+      } else {
+        nextParams.set(CALENDAR_VIEW_QUERY_KEY, calendarViewToUrlSlug(nextView));
+      }
+      const query = nextParams.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+      syncCalendarView(nextView);
+    },
+    [pathname, router, searchParams, syncCalendarView],
+  );
+
   const { updateScheduledItem, isAuthReady } = useScheduledItemMutations(
     spaceSlug,
     lang,
   );
 
-  const dateFnsLocale = React.useMemo(() => resolveDateFnsLocale(lang), [lang]);
-  const weekStartsOn = React.useMemo(
-    () => getCalendarWeekStartsOn(lang),
-    [lang],
-  );
   const fullCalendarLocale = React.useMemo(
     () => resolveFullCalendarLocale(lang),
     [lang],
   );
-  const displayRange = React.useMemo(
-    () => range ?? defaultRangeForView(view, anchorDate, weekStartsOn),
-    [range, view, anchorDate, weekStartsOn],
-  );
+  const displayRange = effectiveRange;
 
   const calendarLayout = React.useMemo(
     () => calendarLayoutForView(view),
@@ -552,7 +551,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="space-y-1">
+        <div>
           <h1 className="text-7 font-semibold tracking-tight text-foreground">
             {t('title')}
             {typeof itemCount === 'number' ? (
@@ -565,9 +564,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               </span>
             ) : null}
           </h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            {t('subtitle')}
-          </p>
         </div>
         {isAuthenticated ? (
           <Button
@@ -652,11 +648,9 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
             <Tabs
               value={view}
-              onValueChange={(value) => {
-                const nextView = value as CalendarView;
-                setView(nextView);
-                syncCalendarView(nextView);
-              }}
+              onValueChange={(value) =>
+                handleCalendarViewChange(value as CalendarView)
+              }
             >
               <TabsList
                 triggerVariant="switch"
