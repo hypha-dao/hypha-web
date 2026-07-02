@@ -2,10 +2,14 @@
 
 import React from 'react';
 import { Check, Plus } from 'lucide-react';
-import { useMatrixUserIdsByPersonIds } from '@hypha-platform/core/client';
+import {
+  useMatrixUserIdsByPersonIds,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { UseMembers } from '../../spaces';
+import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import { useResolvedMentionCandidateLabel } from '../../common/human-chat-panel/use-resolved-mention-candidate-label';
 import {
   buildSpaceRosterMentionCandidates,
@@ -103,11 +107,13 @@ export function SignalTeamMemberPicker({
   disabled,
 }: SignalTeamMemberPickerProps) {
   const t = useTranslations('CoherenceTab');
-  const { persons, isLoading: isLoadingMembers } = useMembers({
+  const { space } = useSpaceBySlug(spaceSlug);
+  const { persons, isLoading: isLoadingMembers } = useSpaceMembersAndDelegates({
     spaceSlug,
-    paginationDisabled: true,
+    web3SpaceId: space?.web3SpaceId,
+    useMembers,
   });
-  const spaceMembers = persons.data;
+  const spaceMembers = persons;
   const rosterPersonIds = React.useMemo(
     () =>
       spaceMembers
