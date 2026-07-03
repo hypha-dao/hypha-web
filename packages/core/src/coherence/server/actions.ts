@@ -310,6 +310,13 @@ export async function removeCoherenceUpvoteAction(
     slug,
     authToken,
   });
+  // Same membership rules as the upvote path — otherwise any authenticated
+  // user could read arbitrary signals' upvote summaries via this action.
+  await assertCoherenceSpacePanelAuth({
+    slug,
+    authToken: authToken as string,
+    requesterPersonId: self.id,
+  });
   const removed = await removeCoherenceUpvote(
     { coherenceId: coherence.id, personId: self.id },
     { db },
