@@ -3621,7 +3621,6 @@
     "totalSupport": "Gesamte Unterstützung",
     "yourVotingPowerShare": "Anteil deiner Stimmkraft",
     "supportersCount": "{count, plural, =0 {Noch keine Unterstützer} one {# Unterstützer} other {# Unterstützer}}",
-    "noSupportersYet": "Noch keine Stimmen — sei die erste Person.",
     "anonymousSupporter": "Mitglied",
     "signInToUpvote": "Melde dich als Space-Mitglied an, um Signale zu unterstützen.",
     "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen."

@@ -3095,7 +3095,6 @@
     "totalSupport": "Apoio total",
     "yourVotingPowerShare": "Parcela do seu poder de voto",
     "supportersCount": "{count, plural, =0 {Ainda sem apoios} one {# apoio} other {# apoios}}",
-    "noSupportersYet": "Ainda não há votos — seja a primeira pessoa.",
     "anonymousSupporter": "Membro",
     "signInToUpvote": "Inicie sessão como membro do espaço para apoiar sinais.",
     "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente."

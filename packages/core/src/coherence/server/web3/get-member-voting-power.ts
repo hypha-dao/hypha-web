@@ -1,19 +1,26 @@
 import 'server-only';
 
-import {
-  tokenVotingPowerImplementationAddress,
-  voteDecayTokenVotingPowerImplementationAddress,
-} from '@hypha-platform/core/generated';
-import { publicClient } from '../../../common/web3/public-client';
+import { web3Client } from '../../../common/server/web3-rpc/client';
 import { getSpaceDetails } from '../../../space/shared/web3/get-space-details';
 
 /**
- * SpaceVotingPower (1 member = 1 vote) — voting power source id 2.
+ * VotingPowerDirectory — resolves a voting power source id to its contract,
+ * exactly like DAOProposalsImplementation does when tallying proposal votes.
  * Not part of the wagmi-generated bindings; address from
  * packages/storage-evm/contracts/addresses.txt.
  */
-const SPACE_VOTING_POWER_ADDRESS =
-  '0x87537f0B5B8f34D689d484E743e83F82636E14a7' as const;
+const VOTING_POWER_DIRECTORY_ADDRESS =
+  '0x9780a96B4382bdd0Aa6fC41B6b6A68A04c5C5727' as const;
+
+const votingPowerDirectoryAbi = [
+  {
+    type: 'function',
+    name: 'getVotingPowerSourceContract',
+    stateMutability: 'view',
+    inputs: [{ name: '_id', type: 'uint256' }],
+    outputs: [{ type: 'address' }],
+  },
+] as const;
 
 /** Shared `getVotingPower` view exposed by every voting power source contract. */
 const votingPowerSourceAbi = [
@@ -29,23 +36,8 @@ const votingPowerSourceAbi = [
   },
 ] as const;
 
-const VOTING_POWER_SOURCE_CONTRACTS: Record<
-  number,
-  { address: `0x${string}`; tokenDecimals: number }
-> = {
-  // 1 token = 1 vote (TokenVotingPower)
-  1: {
-    address: tokenVotingPowerImplementationAddress[8453],
-    tokenDecimals: 18,
-  },
-  // 1 member = 1 vote (SpaceVotingPower)
-  2: { address: SPACE_VOTING_POWER_ADDRESS, tokenDecimals: 0 },
-  // 1 voice = 1 vote (VoteDecayTokenVotingPower)
-  3: {
-    address: voteDecayTokenVotingPowerImplementationAddress[8453],
-    tokenDecimals: 18,
-  },
-};
+/** Source 2 (SpaceVotingPower, 1 member = 1 vote) counts votes as plain integers. */
+const ONE_MEMBER_ONE_VOTE_SOURCE = 2;
 
 export type MemberVotingPower = {
   votingPower: bigint;
@@ -64,20 +56,20 @@ export async function getMemberVotingPower({
   memberAddress: `0x${string}`;
   web3SpaceId: number;
 }): Promise<MemberVotingPower> {
-  const spaceDetails = await publicClient.readContract(
+  const spaceDetails = await web3Client.readContract(
     getSpaceDetails({ spaceId: BigInt(web3SpaceId) }),
   );
   const votingPowerSource = Number(spaceDetails[2]);
 
-  const source = VOTING_POWER_SOURCE_CONTRACTS[votingPowerSource];
-  if (!source) {
-    throw new Error(
-      `Unsupported voting power source ${votingPowerSource} for space ${web3SpaceId}`,
-    );
-  }
+  const sourceAddress = await web3Client.readContract({
+    address: VOTING_POWER_DIRECTORY_ADDRESS,
+    abi: votingPowerDirectoryAbi,
+    functionName: 'getVotingPowerSourceContract',
+    args: [BigInt(votingPowerSource)],
+  });
 
-  const votingPower = await publicClient.readContract({
-    address: source.address,
+  const votingPower = await web3Client.readContract({
+    address: sourceAddress,
     abi: votingPowerSourceAbi,
     functionName: 'getVotingPower',
     args: [memberAddress, BigInt(web3SpaceId)],
@@ -86,6 +78,6 @@ export async function getMemberVotingPower({
   return {
     votingPower,
     votingPowerSource,
-    tokenDecimals: source.tokenDecimals,
+    tokenDecimals: votingPowerSource === ONE_MEMBER_ONE_VOTE_SOURCE ? 0 : 18,
   };
 }

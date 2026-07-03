@@ -237,8 +237,11 @@ export async function upvoteCoherenceAction(
   if (!self.address) {
     throw new Error('A linked wallet is required to vote on signals');
   }
-  await assertSignalWorkflowAccess({
-    spaceId: coherence.spaceId,
+  // Same membership rules as other signal interactions: Postgres membership
+  // with an on-chain member/delegate fallback.
+  await assertCoherenceSpacePanelAuth({
+    slug,
+    authToken: authToken as string,
     requesterPersonId: self.id,
   });
 

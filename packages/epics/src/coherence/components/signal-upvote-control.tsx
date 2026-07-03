@@ -164,7 +164,7 @@ export function SignalUpvoteControl({
     [],
   );
 
-  const pillHeightClass = compact ? 'h-6' : 'h-8';
+  const pillHeightClass = compact ? 'h-5' : 'h-6';
 
   return (
     <div
@@ -227,7 +227,7 @@ export function SignalUpvoteControl({
             size="sm"
             className={cn(
               pillHeightClass,
-              'w-6 rounded-l-none px-0 text-muted-foreground hover:text-foreground',
+              'w-5 rounded-l-none px-0 text-muted-foreground hover:text-foreground',
             )}
             aria-label={t('upvoteDetails')}
             title={t('upvoteDetails')}
@@ -308,11 +308,7 @@ export function SignalUpvoteControl({
               <span className="text-1 font-medium text-muted-foreground">
                 {t('supportersCount', { count: summary.upvoteCount })}
               </span>
-              {summary.voters.length === 0 ? (
-                <p className="text-1 text-muted-foreground">
-                  {t('noSupportersYet')}
-                </p>
-              ) : (
+              {summary.voters.length === 0 ? null : (
                 <ul className="flex max-h-40 flex-col gap-1.5 overflow-y-auto">
                   {summary.voters.map((voter) => (
                     <li

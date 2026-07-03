@@ -3664,7 +3664,6 @@
     "totalSupport": "Total support",
     "yourVotingPowerShare": "Share of your voting power",
     "supportersCount": "{count, plural, =0 {No supporters yet} one {# supporter} other {# supporters}}",
-    "noSupportersYet": "No upvotes yet — be the first.",
     "anonymousSupporter": "Member",
     "signInToUpvote": "Sign in as a space member to upvote signals.",
     "upvoteFailed": "Could not update your upvote. Try again."
