@@ -34,7 +34,11 @@ export function HumanChatPanelMembers({
   const { getRoomMembers, isMatrixAvailable, isAuthenticated } = useMatrix();
   const [onlineCount, setOnlineCount] = useState(0);
   const { space } = useSpaceBySlug(spaceSlug ?? '');
-  const { persons: members, isLoading } = useSpaceMembersAndDelegates({
+  const {
+    persons: members,
+    isLoading,
+    error,
+  } = useSpaceMembersAndDelegates({
     spaceSlug,
     web3SpaceId: space?.web3SpaceId,
     useMembers,
@@ -115,7 +119,15 @@ export function HumanChatPanelMembers({
           ))}
         </div>
       )}
-      {!isLoading && members.length === 0 && (
+      {!isLoading && error && members.length === 0 && (
+        <div
+          role="alert"
+          className="px-2 py-4 text-center text-sm text-destructive"
+        >
+          {t('signalTeamMembersLoadFailed')}
+        </div>
+      )}
+      {!isLoading && !error && members.length === 0 && (
         <div className="px-2 py-4 text-center text-sm text-muted-foreground">
           {t('noMembers')}
         </div>

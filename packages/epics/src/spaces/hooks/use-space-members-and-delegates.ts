@@ -10,6 +10,7 @@ import {
 import { useMemo } from 'react';
 import useSWR from 'swr';
 
+import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import type { UseMembers } from './types';
 
 function normalizeAddress(address: string | undefined | null): string | null {
@@ -59,15 +60,21 @@ export function useSpaceMembersAndDelegates({
       ? web3SpaceId
       : undefined;
 
-  const { data: delegateAddresses, isLoading: isLoadingDelegateAddresses } =
-    useDelegatesForSpaces({
-      spaceId: effectiveWeb3SpaceId ? BigInt(effectiveWeb3SpaceId) : undefined,
-    });
+  const {
+    data: delegateAddresses,
+    isLoading: isLoadingDelegateAddresses,
+    error: delegateAddressesError,
+  } = useDelegatesForSpaces({
+    spaceId: effectiveWeb3SpaceId ? BigInt(effectiveWeb3SpaceId) : undefined,
+  });
 
-  const { spaceDetails, isLoading: isLoadingSpaceDetails } =
-    useSpaceDetailsWeb3Rpc({
-      spaceId: effectiveWeb3SpaceId,
-    });
+  const {
+    spaceDetails,
+    isLoading: isLoadingSpaceDetails,
+    error: spaceDetailsError,
+  } = useSpaceDetailsWeb3Rpc({
+    spaceId: effectiveWeb3SpaceId,
+  });
 
   const onChainMemberAddressSet = useMemo(() => {
     const set = new Set<string>();
@@ -78,9 +85,19 @@ export function useSpaceMembersAndDelegates({
     return set;
   }, [spaceDetails?.members]);
 
+  const onChainMembersCacheKey = useMemo(
+    () => [...onChainMemberAddressSet].sort().join('\u0000'),
+    [onChainMemberAddressSet],
+  );
+
   const memberPersonIds = useMemo(
     () => new Set(memberPersons.map((person) => person.id)),
     [memberPersons],
+  );
+
+  const memberPersonIdsCacheKey = useMemo(
+    () => [...memberPersonIds].sort((a, b) => a - b).join(','),
+    [memberPersonIds],
   );
 
   const memberAddressSet = useMemo(() => {
@@ -109,10 +126,16 @@ export function useSpaceMembersAndDelegates({
           'spaceDelegatePersons',
           effectiveWeb3SpaceId,
           extraDelegateAddresses.join('\u0000'),
+          onChainMembersCacheKey,
+          memberPersonIdsCacheKey,
         ]
       : null;
 
-  const { data: delegatePersons, isLoading: isLoadingDelegatePersons } = useSWR(
+  const {
+    data: delegatePersons,
+    isLoading: isLoadingDelegatePersons,
+    error: delegatePersonsError,
+  } = useSWR(
     delegatePersonsKey,
     async () => {
       if (!effectiveWeb3SpaceId) return [];
@@ -165,18 +188,17 @@ export function useSpaceMembersAndDelegates({
         byId.set(person.id, person);
       }
     }
-    return [...byId.values()].sort((a, b) => {
-      const labelA =
-        [a.name, a.surname].filter(Boolean).join(' ').trim() ||
-        a.nickname?.trim() ||
-        '';
-      const labelB =
-        [b.name, b.surname].filter(Boolean).join(' ').trim() ||
-        b.nickname?.trim() ||
-        '';
-      return labelA.localeCompare(labelB, undefined, { sensitivity: 'base' });
-    });
+    return [...byId.values()].sort((a, b) =>
+      personRosterDisplayLabel(a, '').localeCompare(
+        personRosterDisplayLabel(b, ''),
+        undefined,
+        { sensitivity: 'base' },
+      ),
+    );
   }, [memberPersons, delegatePersons]);
+
+  const error =
+    delegateAddressesError ?? spaceDetailsError ?? delegatePersonsError;
 
   return {
     persons: personsList,
@@ -185,5 +207,6 @@ export function useSpaceMembersAndDelegates({
       isLoadingDelegateAddresses ||
       isLoadingSpaceDetails ||
       isLoadingDelegatePersons,
+    error,
   };
 }
