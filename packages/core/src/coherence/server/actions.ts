@@ -39,6 +39,8 @@ import {
   upsertCoherenceUpvote,
 } from './coherence-upvotes';
 import { getMemberVotingPower } from './web3/get-member-voting-power';
+import { recordSignalUpvoteOnChain } from './web3/record-signal-upvote-onchain';
+import { after } from 'next/server';
 import type { CoherenceUpvoteSummary } from '../types';
 
 async function assertSignalWorkflowAccess({
@@ -275,6 +277,21 @@ export async function upvoteCoherenceAction(
     { db },
   );
 
+  // Mirror the upvote to the Signals contract after the response is sent;
+  // best-effort and invisible to the user.
+  const web3SpaceId = coherence.web3SpaceId;
+  const voter = self.address as `0x${string}`;
+  const amount = votingPower;
+  after(() =>
+    recordSignalUpvoteOnChain({
+      web3SpaceId,
+      signalId: coherence.id,
+      voter,
+      amount,
+      kind: 'upvote',
+    }),
+  );
+
   return getCoherenceUpvoteSummary({
     coherenceId: coherence.id,
     viewerPersonId: self.id,
@@ -294,6 +311,20 @@ export async function removeCoherenceUpvoteAction(
     { coherenceId: coherence.id, personId: self.id },
     { db },
   );
+
+  if (coherence.web3SpaceId != null && self.address) {
+    const web3SpaceId = coherence.web3SpaceId;
+    const voter = self.address as `0x${string}`;
+    after(() =>
+      recordSignalUpvoteOnChain({
+        web3SpaceId,
+        signalId: coherence.id,
+        voter,
+        kind: 'removal',
+      }),
+    );
+  }
+
   return getCoherenceUpvoteSummary({
     coherenceId: coherence.id,
     viewerPersonId: self.id,
