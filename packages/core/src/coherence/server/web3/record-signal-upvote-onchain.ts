@@ -50,9 +50,22 @@ type UpvoteEvent = {
 };
 
 function getSignalsConfig() {
-  const address = process.env.SIGNALS_CONTRACT_ADDRESS;
-  const privateKey = process.env.SIGNALS_RELAYER_PRIVATE_KEY;
-  if (!address || !privateKey) return null;
+  const address = process.env.SIGNALS_CONTRACT_ADDRESS?.trim();
+  // Tolerate keys pasted without the 0x prefix or with stray quotes/spaces.
+  const rawKey = process.env.SIGNALS_RELAYER_PRIVATE_KEY?.trim().replace(
+    /^['"]|['"]$/g,
+    '',
+  );
+  if (!address || !rawKey) return null;
+
+  const privateKey = rawKey.startsWith('0x') ? rawKey : `0x${rawKey}`;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(privateKey)) {
+    console.error(
+      '[signals-onchain] SIGNALS_RELAYER_PRIVATE_KEY is not a 32-byte hex key; skipping on-chain mirror',
+    );
+    return null;
+  }
+
   return {
     address: address as `0x${string}`,
     privateKey: privateKey as `0x${string}`,
