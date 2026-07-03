@@ -135,6 +135,8 @@ export function AiPanelMessages({
     onboardingContext,
     isStreaming,
   });
+  const suppressWalletSignaturePrompt =
+    isPostCreateOnboardingPhase(onboardingContext);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -203,6 +205,7 @@ export function AiPanelMessages({
                 : []
             }
             onActionReplySelect={onActionReplySelect}
+            suppressWalletSignaturePrompt={suppressWalletSignaturePrompt}
             isStreaming={
               msg.role === 'assistant' &&
               isStreaming &&

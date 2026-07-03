@@ -1665,6 +1665,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;
     if (onboardingContext.createdSpaceSlug?.trim()) return;
+    if (isPostCreateOnboardingPhase(onboardingContext)) return;
     if (aiWalletCreateInFlightRef.current) return;
 
     const latestWalletCreatePayload = [...messages]

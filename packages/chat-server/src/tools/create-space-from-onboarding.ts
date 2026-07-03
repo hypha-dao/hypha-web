@@ -23,6 +23,7 @@ import {
   createOnboardingCategoriesSchema,
   resolveOnboardingCategories,
 } from './onboarding-categories';
+import { shouldUseCreateEcosystemSpaceInstead } from './create-space-from-onboarding-redirect';
 
 type ResolvedLocationSource = 'geocode' | 'manual' | 'map_click';
 
@@ -61,6 +62,8 @@ const inputSchema = z.object({
   onboarding_last_user_text: z.string().optional(),
   onboarding_recent_user_texts: z.array(z.string()).optional(),
   onboarding_setup_phase: z.string().optional(),
+  onboarding_setup_journey: z.enum(['single_space', 'ecosystem']).optional(),
+  onboarding_created_space_slug: z.string().trim().min(1).max(128).optional(),
   dry_run: z.boolean().optional().default(false),
 });
 
@@ -212,6 +215,24 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
         if (!access.hasAccess) {
           return { ok: false, error: access.message };
         }
+      }
+
+      const ecosystemSpaceRedirect = shouldUseCreateEcosystemSpaceInstead(
+        data,
+        parentSpace,
+      );
+      if (ecosystemSpaceRedirect.redirect) {
+        logOnboardingToolEvent({
+          tool: 'create_space_from_onboarding',
+          status: 'failed',
+          spaceSlug: normalizedSlug,
+          error: 'use_create_ecosystem_space',
+        });
+        return {
+          ok: false,
+          error: ecosystemSpaceRedirect.reason,
+          use_instead: 'create_ecosystem_space',
+        };
       }
 
       const { person: creator, privyUserId } = await resolveActorPerson(

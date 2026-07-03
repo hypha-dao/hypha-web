@@ -47,6 +47,7 @@ export function buildEcosystemExecutePhaseDirective(
     '- Left panel execute phase (ecosystem): the root space is live. Nested spaces from the onboarding blueprint are the mandatory next step—do not skip or apologize for missing them. User-facing term: nested spaces only—never subspace or subspaces.',
     '- Do NOT ask about voting method, entry method, signals, or member-gated tools until nested spaces are created—or the user explicitly defers for later.',
     '- Do not restart discovery, re-ask journey, or call create_space_from_onboarding for the root again.',
+    '- create_ecosystem_space never requires wallet signing—after the user confirms, call it without dry_run in the same turn. Never ask the user to sign their wallet for nested spaces.',
     rootSlug
       ? `- Use parent_space_slug "${rootSlug}" for every create_ecosystem_space call.`
       : '- Use the ecosystem root slug as parent_space_slug for create_ecosystem_space.',
