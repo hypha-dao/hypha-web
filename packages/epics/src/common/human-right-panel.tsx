@@ -3561,10 +3561,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const qpMsg = searchParams?.get('msg')?.trim();
     if (!qpSignal) return;
 
-    if (
-      mode === 'coherence' &&
-      coherenceSlug?.trim() === qpSignal
-    ) {
+    if (mode === 'coherence' && coherenceSlug?.trim() === qpSignal) {
       openHumanChatPanel();
       setActiveTab('chat');
       return;
