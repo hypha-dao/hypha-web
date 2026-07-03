@@ -4,7 +4,10 @@ import type { PaginatedResponse } from '@hypha-platform/core/client';
 import {
   COHERENCE_TAGS,
   COHERENCE_TYPES,
+  findCoherenceUpvoteSummaries,
+  findSelf,
   findSpaceBySlug,
+  getDb,
   type Coherence,
   type CoherenceTag,
   type CoherenceType,
@@ -53,11 +56,38 @@ function paginateCoherences(
 
 function parseOrderBy(
   raw: string | null,
-): 'mostrecent' | 'mostmessages' | 'mostviews' | undefined {
-  if (raw === 'mostrecent' || raw === 'mostmessages' || raw === 'mostviews') {
+): 'mostrecent' | 'mostmessages' | 'mostviews' | 'mostupvoted' | undefined {
+  if (
+    raw === 'mostrecent' ||
+    raw === 'mostmessages' ||
+    raw === 'mostviews' ||
+    raw === 'mostupvoted'
+  ) {
     return raw;
   }
   return undefined;
+}
+
+/** Resolve the authenticated viewer's person id (if any) for `myUpvote`. */
+async function resolveViewerPersonId(
+  request: NextRequest,
+): Promise<number | null> {
+  const authToken = request.headers.get('Authorization')?.split(' ')[1];
+  if (!authToken) return null;
+  try {
+    const viewer = await findSelf({ db: getDb({ authToken }) });
+    return viewer?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function toBigIntOrZero(value: string | undefined): bigint {
+  try {
+    return BigInt(value ?? '0');
+  } catch {
+    return 0n;
+  }
 }
 
 function parseType(raw: string | null): CoherenceType | undefined {
@@ -119,6 +149,8 @@ export async function GET(
       includeArchivedRaw === 'true' ||
       includeArchivedRaw === 'yes';
 
+    const orderBy = parseOrderBy(url.searchParams.get('orderBy'));
+
     const coherences = await getAllCoherences({
       spaceId: space.id,
       search: url.searchParams.get('search')?.trim() || undefined,
@@ -126,13 +158,39 @@ export async function GET(
       tags: parseTags(url),
       priority: parsePriority(url.searchParams.get('priority')),
       includeArchived,
-      orderBy: parseOrderBy(url.searchParams.get('orderBy')),
+      orderBy,
     });
+
+    const viewerPersonId = await resolveViewerPersonId(request);
+    const upvoteSummaries = await findCoherenceUpvoteSummaries(
+      {
+        coherenceIds: coherences.map((coherence) => coherence.id),
+        viewerPersonId,
+      },
+      { db },
+    );
+
+    let enriched: Coherence[] = coherences.map((coherence) => ({
+      ...coherence,
+      upvotes: upvoteSummaries[coherence.id],
+    }));
+
+    if (orderBy === 'mostupvoted') {
+      enriched = [...enriched].sort((a, b) => {
+        const diff =
+          toBigIntOrZero(b.upvotes?.totalVotingPower) -
+          toBigIntOrZero(a.upvotes?.totalVotingPower);
+        if (diff !== 0n) return diff > 0n ? 1 : -1;
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
+    }
 
     const page = parsePositiveInt(url.searchParams.get('page'), 1);
     const pageSize = parsePositiveInt(url.searchParams.get('pageSize'), 100);
 
-    return NextResponse.json(paginateCoherences(coherences, page, pageSize));
+    return NextResponse.json(paginateCoherences(enriched, page, pageSize));
   } catch (error) {
     console.error('Failed to fetch coherences:', error);
     return NextResponse.json(

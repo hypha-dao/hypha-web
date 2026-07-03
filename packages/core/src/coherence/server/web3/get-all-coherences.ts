@@ -15,7 +15,7 @@ type GetAllCoherencesInput = {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews' | 'mostupvoted';
   progressStatus?: string;
   board?: string;
   assigneeId?: number;

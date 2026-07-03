@@ -16,7 +16,7 @@ export interface CoherenceQuery {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews' | 'mostupvoted';
 }
 
 const COHERENCES_REFRESH_MS = 60_000;

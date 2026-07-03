@@ -3,8 +3,8 @@ import type { SignalViewMode } from '../components/signal-section';
 export const SIGNAL_VIEW_QUERY_KEY = 'view';
 
 export const SIGNAL_VIEW_MODES = [
-  'board',
   'swimlane',
+  'board',
   'list',
   'grid',
 ] as const satisfies readonly SignalViewMode[];
@@ -19,5 +19,5 @@ export function parseSignalViewMode(
 }
 
 export function isDefaultSignalViewMode(view: SignalViewMode): boolean {
-  return view === 'board';
+  return view === 'swimlane';
 }

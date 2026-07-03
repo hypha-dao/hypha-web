@@ -3188,6 +3188,7 @@
   },
   "CoherenceTab": {
     "signals": "Signals",
+    "loadingSignals": "Loading signals...",
     "signInToSee": "Please, sign in to see signals, space memory, and conversations",
     "searchSignals": "Search signals...",
     "newSignal": "New Signal",
@@ -3532,6 +3533,8 @@
     "signalFormBoardHint": "Organizational swimlane — groups signals by team, initiative, or workstream. Not the same as Type (Opportunity/Risk/Insight) or Tags.",
     "signalFormDueDate": "Due date",
     "signalFormDueDateHint": "Optional target date for tracking this signal task.",
+    "signalFormVotingPower": "Your voting power",
+    "signalFormVotingPowerHint": "Share of your voting power backing this signal. Uses your full voting power by default; you can adjust or remove it later.",
     "scheduleOnCalendar": "Schedule on calendar",
     "linkedCalendarEventsTitle": "Linked calendar events",
     "linkedCalendarEventsHint": "Calls and meetings scheduled to work on this signal.",
@@ -3654,7 +3657,17 @@
     "deleteConfirm": "This permanently removes this signal from the space. Continue?",
     "deleteMenu": "Delete",
     "deleteConfirmAction": "Delete signal",
-    "deleteFailed": "Could not delete this signal. Try again."
+    "deleteFailed": "Could not delete this signal. Try again.",
+    "upvote": "Upvote",
+    "updateUpvote": "Update upvote",
+    "removeUpvote": "Remove upvote",
+    "upvoteDetails": "Support details",
+    "totalSupport": "Total support",
+    "yourVotingPowerShare": "Share of your voting power",
+    "supportersCount": "{count, plural, =0 {No supporters yet} one {# supporter} other {# supporters}}",
+    "anonymousSupporter": "Member",
+    "signInToUpvote": "Sign in as a space member to upvote signals.",
+    "upvoteFailed": "Could not update your upvote. Try again."
   },
   "Calendar": {
     "title": "Calendar",

@@ -22,8 +22,9 @@ describe('parseSignalViewMode', () => {
 });
 
 describe('isDefaultSignalViewMode', () => {
-  it('treats board as default', () => {
-    expect(isDefaultSignalViewMode('board')).toBe(true);
+  it('treats swimlane as default', () => {
+    expect(isDefaultSignalViewMode('swimlane')).toBe(true);
+    expect(isDefaultSignalViewMode('board')).toBe(false);
     expect(isDefaultSignalViewMode('grid')).toBe(false);
   });
 });

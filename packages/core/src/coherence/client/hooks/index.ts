@@ -1,4 +1,5 @@
 export * from './useCoherenceMutations.web2.rsc';
+export * from './useCoherenceUpvotes.web2.rsc';
 export * from './useFindCoherences';
 export * from './useSignalWorkflow.web2.rsc';
 export * from './useUpdateSignalWorkflow.web2.rsc';

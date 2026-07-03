@@ -2625,6 +2625,7 @@
   },
   "CoherenceTab": {
     "signals": "Señales",
+    "loadingSignals": "Cargando señales...",
     "signInToSee": "Por favor, inicie sesión para ver señales, la memoria del espacio y conversaciones",
     "searchSignals": "Buscar señales...",
     "newSignal": "Nueva señal",
@@ -2969,6 +2970,8 @@
     "signalFormBoardHint": "Carril organizativo: agrupa señales por equipo, iniciativa o área. No es lo mismo que Tipo (Oportunidad/Riesgo/Insight) ni Tags.",
     "signalFormDueDate": "Fecha límite",
     "signalFormDueDateHint": "Fecha objetivo opcional para hacer seguimiento de esta tarea de señal.",
+    "signalFormVotingPower": "Tu poder de voto",
+    "signalFormVotingPowerHint": "Parte de tu poder de voto que respalda esta señal. Por defecto se usa todo tu poder de voto; puedes ajustarlo o retirarlo más tarde.",
     "scheduleOnCalendar": "Programar en el calendario",
     "linkedCalendarEventsTitle": "Eventos de calendario vinculados",
     "linkedCalendarEventsHint": "Llamadas y reuniones programadas para trabajar en esta señal.",
@@ -3087,7 +3090,17 @@
     "deleteConfirm": "Esto elimina permanentemente esta señal del espacio. ¿Continuar?",
     "deleteMenu": "Eliminar",
     "deleteConfirmAction": "Eliminar señal",
-    "deleteFailed": "No se pudo eliminar esta señal. Inténtalo de nuevo."
+    "deleteFailed": "No se pudo eliminar esta señal. Inténtalo de nuevo.",
+    "upvote": "Apoyar",
+    "updateUpvote": "Actualizar apoyo",
+    "removeUpvote": "Retirar apoyo",
+    "upvoteDetails": "Detalles del apoyo",
+    "totalSupport": "Apoyo total",
+    "yourVotingPowerShare": "Parte de tu poder de voto",
+    "supportersCount": "{count, plural, =0 {Aún sin apoyos} one {# apoyo} other {# apoyos}}",
+    "anonymousSupporter": "Miembro",
+    "signInToUpvote": "Inicia sesión como miembro del espacio para apoyar señales.",
+    "upvoteFailed": "No se pudo actualizar tu voto. Inténtalo de nuevo."
   },
   "BankingTab": {
     "title": "Banca",

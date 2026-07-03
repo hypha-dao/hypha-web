@@ -69,11 +69,11 @@ export function SignalViewControls({
             className="shrink-0"
           >
             <TabsList triggerVariant="switch" className="w-fit">
-              <TabsTrigger value="board" variant="switch">
-                {t('signalViewBoard')}
-              </TabsTrigger>
               <TabsTrigger value="swimlane" variant="switch">
                 {t('signalViewSwimlane')}
+              </TabsTrigger>
+              <TabsTrigger value="board" variant="switch">
+                {t('signalViewBoard')}
               </TabsTrigger>
               <TabsTrigger value="list" variant="switch">
                 {t('signalViewList')}

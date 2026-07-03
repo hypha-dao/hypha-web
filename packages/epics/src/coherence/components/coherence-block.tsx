@@ -111,7 +111,7 @@ export function CoherenceBlock({
   const [hideArchived, setHideArchived] = React.useState(true);
   const viewMode = React.useMemo(() => {
     const parsed = parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY));
-    return parsed ?? 'board';
+    return parsed ?? 'swimlane';
   }, [searchParams]);
   const hasAppliedMobileDefault = React.useRef(false);
 
