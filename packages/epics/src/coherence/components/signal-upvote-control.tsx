@@ -139,7 +139,10 @@ export function SignalUpvoteControl({
         slug: trimmedSlug,
         votingPowerPercent: percent,
       });
-      if (next) await applyResult(next);
+      if (next) {
+        setPopoverOpen(false);
+        await applyResult(next);
+      }
     } catch (err) {
       console.warn('Could not update signal upvote:', err);
       setError(t('upvoteFailed'));
@@ -152,7 +155,10 @@ export function SignalUpvoteControl({
     setError(null);
     try {
       const next = await removeUpvote({ slug: trimmedSlug });
-      if (next) await applyResult(next);
+      if (next) {
+        setPopoverOpen(false);
+        await applyResult(next);
+      }
     } catch (err) {
       console.warn('Could not remove signal upvote:', err);
       setError(t('upvoteFailed'));
@@ -164,7 +170,7 @@ export function SignalUpvoteControl({
     [],
   );
 
-  const pillHeightClass = compact ? 'h-5' : 'h-6';
+  const pillHeightClass = compact ? 'h-4' : 'h-5';
 
   return (
     <div
@@ -202,7 +208,7 @@ export function SignalUpvoteControl({
       >
         <ArrowBigUp
           className={cn(
-            compact ? 'h-3.5 w-3.5' : 'h-4 w-4',
+            compact ? 'h-3 w-3' : 'h-3.5 w-3.5',
             hasVoted && 'fill-current',
           )}
           aria-hidden
@@ -227,7 +233,7 @@ export function SignalUpvoteControl({
             size="sm"
             className={cn(
               pillHeightClass,
-              'w-5 rounded-l-none px-0 text-muted-foreground hover:text-foreground',
+              'w-8 rounded-l-none px-0 text-muted-foreground hover:text-foreground',
             )}
             aria-label={t('upvoteDetails')}
             title={t('upvoteDetails')}
