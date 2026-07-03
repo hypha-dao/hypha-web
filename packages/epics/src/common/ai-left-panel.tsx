@@ -33,6 +33,7 @@ import {
   Category,
   Space,
   SpaceFlags,
+  COHERENCES_SWR_KEY,
   useCreateSpaceOrchestrator,
   useCreateAgreementOrchestrator,
   useJwt,
@@ -40,6 +41,7 @@ import {
   useSpaceBySlug,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
+import { mutate } from 'swr';
 import {
   SidebarHeader,
   SidebarContent,
@@ -1543,6 +1545,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const navigationKey = navigationTarget.key;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
+
+    const isSignalCreateNavigation =
+      navigationTarget.toolName === 'create_space_signal_by_slug' ||
+      navigationTarget.toolName === 'relay_ecosystem_signal';
+
+    if (isAtNavigationTarget(href, pathname, currentSearch)) {
+      if (navigationTarget.openHumanChat && navigationTarget.coherenceChat) {
+        lastAutoNavigationKeyRef.current = navigationKey;
+        openCoherenceChat(
+          navigationTarget.coherenceChat.roomId,
+          navigationTarget.coherenceChat.title,
+          navigationTarget.coherenceChat.slug,
+        );
+        openHumanChatPanel();
+      }
+      return;
+    }
+
     if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
     lastAutoNavigationKeyRef.current = navigationKey;
 
@@ -1567,6 +1587,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         );
       }
       openHumanChatPanel();
+    }
+
+    if (isSignalCreateNavigation) {
+      const targetSpaceSlug = getDhoSpaceSlugFromPathname(href);
+      if (targetSpaceSlug) {
+        void mutate(
+          (key) =>
+            Array.isArray(key) &&
+            key[0] === COHERENCES_SWR_KEY &&
+            key[1] === targetSpaceSlug,
+        );
+      }
     }
 
     router.push(href);

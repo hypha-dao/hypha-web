@@ -19,6 +19,7 @@ import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
+import { SIGNAL_SLUG_SELECTOR_ATTR } from '../lib/signal-deep-link-dom';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonById } from '@hypha-platform/core/client';
 
@@ -147,6 +148,9 @@ export function SignalListView({
           return (
             <li
               key={signal.id}
+              {...(signal.slug
+                ? { [SIGNAL_SLUG_SELECTOR_ATTR]: signal.slug }
+                : {})}
               className={cn(
                 'group border-l-[3px] px-3 py-3 transition-colors hover:bg-muted/20 lg:px-4',
                 priorityLeftBorderEdgeClass(signal.priority),

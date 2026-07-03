@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cn } from '@hypha-platform/ui-utils';
 import { SignalCard } from './signal-card';
 import { Coherence } from '@hypha-platform/core/client';
+import { SIGNAL_SLUG_SELECTOR_ATTR } from '../lib/signal-deep-link-dom';
 
 type SignalGridProps = {
   isLoading: boolean;
@@ -35,6 +36,9 @@ export function SignalGrid({
         ) : onSignalClick ? (
           <div
             key={signal.id}
+            {...(signal.slug
+              ? { [SIGNAL_SLUG_SELECTOR_ATTR]: signal.slug }
+              : {})}
             role="button"
             tabIndex={0}
             className={cn(

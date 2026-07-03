@@ -26,6 +26,7 @@ import { SignalSection, type SignalViewMode } from './signal-section';
 import { SignalViewControls } from './signal-view-controls';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
+import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -192,7 +193,7 @@ export function CoherenceBlock({
     [lang, spaceSlug],
   );
 
-  const { openCoherenceChat } = useHumanChatPanel();
+  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
 
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {
@@ -205,6 +206,41 @@ export function CoherenceBlock({
     },
     [openCoherenceChat],
   );
+
+  const handleDeepLinkOpenSignalChat = React.useCallback(
+    (signal: Coherence) => {
+      handleSignalClick(signal);
+      openHumanChatPanel();
+    },
+    [handleSignalClick, openHumanChatPanel],
+  );
+
+  const handleRevealArchivedSignal = React.useCallback(() => {
+    setHideArchived(false);
+  }, []);
+
+  const handleClearPriorityFilter = React.useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete('priority');
+    const query = nextParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }, [pathname, router, searchParams]);
+
+  useCoherenceSignalDeepLink({
+    signals,
+    isLoading: isSpaceLoading || (isSignalsLoading && !signals?.length),
+    humanChatEnabled,
+    hideArchived,
+    priorityFilter,
+    onOpenSignalChat: humanChatEnabled
+      ? handleDeepLinkOpenSignalChat
+      : undefined,
+    onRevealArchivedSignal: handleRevealArchivedSignal,
+    onClearPriorityFilter: handleClearPriorityFilter,
+    onRefreshSignals: refreshSignals,
+  });
 
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 

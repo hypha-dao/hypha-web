@@ -3563,13 +3563,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     if (
       mode === 'coherence' &&
-      coherenceSlug?.trim() === qpSignal &&
-      coherenceRoomId?.trim()
+      coherenceSlug?.trim() === qpSignal
     ) {
+      openHumanChatPanel();
+      setActiveTab('chat');
       return;
     }
 
-    if (mode !== 'space') return;
+    const onCoherenceRoute = pathname.includes('/coherence');
+    if (mode !== 'space' && !onCoherenceRoute) return;
 
     let cancelled = false;
     const epochAtStart = signalDeepLinkEpochRef.current;
@@ -3618,12 +3620,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return;
       }
 
-      rememberRoomToCoherenceSession(
-        result.roomId,
-        result.signalSlug,
-        result.signalTitle,
-        result.spaceSlug,
-      );
+      if (result.roomId) {
+        rememberRoomToCoherenceSession(
+          result.roomId,
+          result.signalSlug,
+          result.signalTitle,
+          result.spaceSlug,
+        );
+      }
       openCoherenceChat(
         result.roomId,
         result.signalTitle?.trim() || result.signalSlug,
