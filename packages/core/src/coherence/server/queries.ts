@@ -25,7 +25,7 @@ type FindAllCoherencesInput = {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews' | 'mostupvoted';
   progressStatus?: string;
   board?: string;
   assigneeId?: number;
@@ -59,6 +59,8 @@ export const findAllCoherences = async (
         return desc(coherences.messages);
       case 'mostviews':
         return desc(coherences.views);
+      // 'mostupvoted' is resolved by the caller after aggregating upvote
+      // summaries; recency is only the SQL-level pre-sort.
       default:
         return desc(coherences.createdAt);
     }

@@ -12,6 +12,7 @@ export const COHERENCE_ORDERS = [
   'mostviews',
   'mostmessages',
   'mostrecent',
+  'mostupvoted',
 ] as const;
 export type CoherenceOrder = (typeof COHERENCE_ORDERS)[number];
 

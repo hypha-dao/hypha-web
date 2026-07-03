@@ -37,7 +37,7 @@ export default async function CoherencePage(props: PageProps) {
   const order: CoherenceOrder =
     orderRaw && COHERENCE_ORDERS.includes(orderRaw as CoherenceOrder)
       ? (orderRaw as CoherenceOrder)
-      : 'mostrecent';
+      : 'mostupvoted';
   const priorityRaw = searchParams?.priority;
   const priorityFilter =
     priorityRaw === 'critical' ||

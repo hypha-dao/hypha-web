@@ -3493,6 +3493,8 @@
     "signalFormBoardHint": "Organisatorische Swimlane — gruppiert Signale nach Team, Initiative oder Bereich. Nicht dasselbe wie Typ (Chance/Risiko/Erkenntnis) oder Tags.",
     "signalFormDueDate": "Fälligkeitsdatum",
     "signalFormDueDateHint": "Optionales Zieldatum zur Nachverfolgung dieser Signal-Aufgabe.",
+    "signalFormVotingPower": "Deine Stimmkraft",
+    "signalFormVotingPowerHint": "Anteil deiner Stimmkraft, der dieses Signal unterstützt. Standardmäßig wird deine volle Stimmkraft verwendet; du kannst dies später anpassen oder entfernen.",
     "scheduleOnCalendar": "Im Kalender planen",
     "linkedCalendarEventsTitle": "Verknüpfte Kalendertermine",
     "linkedCalendarEventsHint": "Anrufe und Meetings, die für dieses Signal geplant sind.",
@@ -3611,7 +3613,18 @@
     "deleteConfirm": "Dies entfernt das Signal dauerhaft aus dem Space. Fortfahren?",
     "deleteMenu": "Löschen",
     "deleteConfirmAction": "Signal löschen",
-    "deleteFailed": "Signal konnte nicht gelöscht werden. Bitte erneut versuchen."
+    "deleteFailed": "Signal konnte nicht gelöscht werden. Bitte erneut versuchen.",
+    "upvote": "Unterstützen",
+    "updateUpvote": "Unterstützung aktualisieren",
+    "removeUpvote": "Unterstützung entfernen",
+    "upvoteDetails": "Details zur Unterstützung",
+    "totalSupport": "Gesamte Unterstützung",
+    "yourVotingPowerShare": "Anteil deiner Stimmkraft",
+    "supportersCount": "{count, plural, =0 {Noch keine Unterstützer} one {# Unterstützer} other {# Unterstützer}}",
+    "noSupportersYet": "Noch keine Stimmen — sei die erste Person.",
+    "anonymousSupporter": "Mitglied",
+    "signInToUpvote": "Melde dich als Space-Mitglied an, um Signale zu unterstützen.",
+    "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen."
   },
   "Calendar": {
     "title": "Kalender",

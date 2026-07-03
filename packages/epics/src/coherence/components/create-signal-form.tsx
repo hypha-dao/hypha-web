@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
+  Slider,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
@@ -39,6 +40,7 @@ import {
   schemaCreateCoherenceForm,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
+  useCoherenceUpvoteMutations,
   useJwt,
   useMatrix,
   useMe,
@@ -153,6 +155,9 @@ export const CreateSignalForm = ({
     updateCoherenceSignalBySlug,
     isUpdatingCoherenceSignal,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
+  // Creator's initial upvote share of their proposal voting power (max by default).
+  const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
   const [isTogglingArchiveState, setIsTogglingArchiveState] =
     React.useState(false);
   const [isSignalArchived, setIsSignalArchived] = React.useState(
@@ -596,6 +601,20 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...data });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
+        if (coherenceSlug) {
+          // Best-effort creator upvote; ranking still works without it.
+          try {
+            await upvoteCoherence({
+              slug: coherenceSlug,
+              votingPowerPercent: creatorVotePercent,
+            });
+          } catch (upvoteError) {
+            console.warn(
+              'Signal created but creator upvote failed:',
+              upvoteError,
+            );
+          }
+        }
         if (!isMatrixAvailable) {
           setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
           console.warn('Matrix client is unavailable — skipping room creation');
@@ -670,6 +689,8 @@ export const CreateSignalForm = ({
       authToken,
       createCoherence,
       createRoom,
+      creatorVotePercent,
+      upvoteCoherence,
       isEditAuthorized,
       joinRoom,
       loadRoomHistory,
@@ -895,6 +916,29 @@ export const CreateSignalForm = ({
                 )}
               />
             </section>
+            {mode === 'create' ? (
+              <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+                <div className="flex w-full flex-col gap-3">
+                  <FormLabel className="text-foreground">
+                    {t('signalFormVotingPower')}
+                  </FormLabel>
+                  <Slider
+                    min={1}
+                    max={100}
+                    step={1}
+                    value={[creatorVotePercent]}
+                    onValueChange={(value) =>
+                      setCreatorVotePercent(value[0] ?? 100)
+                    }
+                    displayValue
+                    disabled={isMutating}
+                  />
+                  <FormDescription>
+                    {t('signalFormVotingPowerHint')}
+                  </FormDescription>
+                </div>
+              </section>
+            ) : null}
             <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <FormField
