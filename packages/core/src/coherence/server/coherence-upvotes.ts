@@ -147,16 +147,19 @@ export const upsertCoherenceUpvote = async (
     });
 };
 
+/** @returns true when an upvote row was actually deleted. */
 export const removeCoherenceUpvote = async (
   { coherenceId, personId }: { coherenceId: number; personId: number },
   { db }: DbConfig,
-) => {
-  await db
+): Promise<boolean> => {
+  const deleted = await db
     .delete(coherenceUpvotes)
     .where(
       and(
         eq(coherenceUpvotes.coherenceId, coherenceId),
         eq(coherenceUpvotes.personId, personId),
       ),
-    );
+    )
+    .returning();
+  return deleted.length > 0;
 };

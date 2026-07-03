@@ -247,9 +247,12 @@ export async function upvoteCoherenceAction(
     requesterPersonId: self.id,
   });
 
+  // Default to 100 only for missing/non-numeric input; an explicit 0 falls
+  // through to the Math.max(1, ...) clamp below.
+  const rawPercent = Number(votingPowerPercent);
   const percent = Math.min(
     100,
-    Math.max(1, Math.trunc(Number(votingPowerPercent) || 100)),
+    Math.max(1, Number.isFinite(rawPercent) ? Math.trunc(rawPercent) : 100),
   );
 
   const { votingPower: maxVotingPower, tokenDecimals } =
@@ -307,12 +310,14 @@ export async function removeCoherenceUpvoteAction(
     slug,
     authToken,
   });
-  await removeCoherenceUpvote(
+  const removed = await removeCoherenceUpvote(
     { coherenceId: coherence.id, personId: self.id },
     { db },
   );
 
-  if (coherence.web3SpaceId != null && self.address) {
+  // Only mirror on-chain when a row was actually deleted; a no-op removal
+  // (e.g. double click) should not emit a removal event.
+  if (removed && coherence.web3SpaceId != null && self.address) {
     const web3SpaceId = coherence.web3SpaceId;
     const voter = self.address as `0x${string}`;
     after(() =>

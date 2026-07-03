@@ -12,6 +12,7 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  Label,
   LucideReactIcon,
   MultiSelect,
   RequirementMark,
@@ -918,10 +919,12 @@ export const CreateSignalForm = ({
             </section>
             {mode === 'create' ? (
               <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+                {/* creatorVotePercent is local state, not a form field, so
+                    avoid the FormField-context-bound components here. */}
                 <div className="flex w-full flex-col gap-3">
-                  <FormLabel className="text-foreground">
+                  <Label className="text-foreground">
                     {t('signalFormVotingPower')}
-                  </FormLabel>
+                  </Label>
                   <Slider
                     min={1}
                     max={100}
@@ -933,9 +936,9 @@ export const CreateSignalForm = ({
                     displayValue
                     disabled={isMutating}
                   />
-                  <FormDescription>
+                  <p className="text-sm text-muted-foreground">
                     {t('signalFormVotingPowerHint')}
-                  </FormDescription>
+                  </p>
                 </div>
               </section>
             ) : null}

@@ -76,6 +76,12 @@ export function SignalUpvoteControl({
   const [popoverOpen, setPopoverOpen] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Drop the optimistic overlay whenever the parent delivers fresh upvote
+  // data (refresh() or another member's vote), so the prop wins again.
+  React.useEffect(() => {
+    setLocalSummary(null);
+  }, [upvotes]);
+
   const summary = localSummary ?? upvotes ?? EMPTY_SUMMARY;
   const hasVoted = summary.myUpvote != null;
   const isMutating = isUpvoting || isRemovingUpvote;
