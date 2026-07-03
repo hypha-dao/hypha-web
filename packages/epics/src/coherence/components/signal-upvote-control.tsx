@@ -170,7 +170,9 @@ export function SignalUpvoteControl({
     [],
   );
 
-  const pillHeightClass = compact ? 'h-4' : 'h-5';
+  // Button size="sm" sets min-h-8; zero it so the compact heights apply.
+  const pillHeightClass = cn('min-h-0 py-0', compact ? 'h-5' : 'h-6');
+  const hasAnyVotes = summary.upvoteCount > 0;
 
   return (
     <div
@@ -185,7 +187,8 @@ export function SignalUpvoteControl({
         size="sm"
         className={cn(
           pillHeightClass,
-          'gap-1 rounded-r-none border-r-0 px-2 tabular-nums',
+          'gap-1 rounded-r-none border-r-0 tabular-nums',
+          hasAnyVotes ? 'px-2' : 'w-8 justify-center px-0',
           hasVoted
             ? 'bg-accent-3/40 text-accent-11 hover:bg-accent-3/60'
             : 'bg-transparent text-muted-foreground hover:text-foreground',
@@ -235,6 +238,7 @@ export function SignalUpvoteControl({
               pillHeightClass,
               'w-8 rounded-l-none px-0 text-muted-foreground hover:text-foreground',
             )}
+            aria-haspopup="dialog"
             aria-label={t('upvoteDetails')}
             title={t('upvoteDetails')}
             onClick={stopPropagation}
