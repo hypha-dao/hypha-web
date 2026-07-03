@@ -2623,6 +2623,7 @@
   },
   "CoherenceTab": {
     "signals": "Signaux",
+    "loadingSignals": "Chargement des signaux...",
     "signInToSee": "Veuillez vous connecter pour voir les signaux, la mémoire de l'espace et les conversations",
     "searchSignals": "Rechercher des signaux...",
     "newSignal": "Nouveau signal",

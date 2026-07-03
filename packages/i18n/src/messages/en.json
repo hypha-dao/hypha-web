@@ -3188,6 +3188,7 @@
   },
   "CoherenceTab": {
     "signals": "Signals",
+    "loadingSignals": "Loading signals...",
     "signInToSee": "Please, sign in to see signals, space memory, and conversations",
     "searchSignals": "Search signals...",
     "newSignal": "New Signal",
