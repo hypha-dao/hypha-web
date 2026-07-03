@@ -30,6 +30,7 @@ import {
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
+import { SIGNAL_SLUG_SELECTOR_ATTR } from '../lib/signal-deep-link-dom';
 
 type SignalTaskCardProps = {
   signal: Coherence;
@@ -139,6 +140,7 @@ export function SignalTaskCard({
 
   return (
     <div
+      {...(signal.slug ? { [SIGNAL_SLUG_SELECTOR_ATTR]: signal.slug } : {})}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       draggable={draggable}
