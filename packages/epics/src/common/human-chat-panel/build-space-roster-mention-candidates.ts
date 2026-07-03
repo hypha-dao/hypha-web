@@ -15,12 +15,12 @@ export function personRosterDisplayLabel(
 /** Space members with a linked Matrix id — same source as the Members tab roster. */
 export function buildSpaceRosterMentionCandidates({
   spaceMembers,
-  subToMatrixUserId,
+  personIdToMatrixUserId,
   unknownLabel,
   extraCandidates = [],
 }: {
   spaceMembers: Person[];
-  subToMatrixUserId: Record<string, string>;
+  personIdToMatrixUserId: Record<number, string>;
   unknownLabel: string;
   extraCandidates?: ChatMentionCandidate[];
 }): ChatMentionCandidate[] {
@@ -33,15 +33,12 @@ export function buildSpaceRosterMentionCandidates({
   }
 
   for (const member of spaceMembers) {
-    const sub = member.sub?.trim();
-    if (!sub) continue;
-    const userId = subToMatrixUserId[sub]?.trim();
+    const userId = personIdToMatrixUserId[member.id]?.trim();
     if (!userId) continue;
     byUserId.set(userId, {
       userId,
       displayLabel: personRosterDisplayLabel(member, unknownLabel),
       avatarUrl: member.avatarUrl ?? undefined,
-      privySub: sub,
     });
   }
 
@@ -50,4 +47,35 @@ export function buildSpaceRosterMentionCandidates({
       sensitivity: 'base',
     }),
   );
+}
+
+export type SignalTeamRosterMember = {
+  personId: number;
+  matrixUserId: string | null;
+  displayLabel: string;
+  avatarUrl?: string;
+};
+
+/** Full space roster for Signal Team manage UI — includes members without a Matrix link. */
+export function buildSpaceRosterSignalTeamMembers({
+  spaceMembers,
+  personIdToMatrixUserId,
+  unknownLabel,
+}: {
+  spaceMembers: Person[];
+  personIdToMatrixUserId: Record<number, string>;
+  unknownLabel: string;
+}): SignalTeamRosterMember[] {
+  return spaceMembers
+    .map((member) => ({
+      personId: member.id,
+      matrixUserId: personIdToMatrixUserId[member.id]?.trim() || null,
+      displayLabel: personRosterDisplayLabel(member, unknownLabel),
+      avatarUrl: member.avatarUrl ?? undefined,
+    }))
+    .sort((a, b) =>
+      a.displayLabel.localeCompare(b.displayLabel, undefined, {
+        sensitivity: 'base',
+      }),
+    );
 }

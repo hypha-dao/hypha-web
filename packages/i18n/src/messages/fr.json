@@ -2608,6 +2608,9 @@
     "signalTeamMemberListHint": "Sélectionnez les membres qui peuvent envoyer des messages, mentionner et rejoindre les appels du fil.",
     "signalTeamAddMember": "Ajouter",
     "signalTeamRemoveMember": "Retirer",
+    "signalTeamOwner": "Propriétaire",
+    "signalTeamMembersLoadFailed": "Impossible de charger la liste des membres. Réessayez.",
+    "signalTeamNoChatAccount": "Pas de compte chat",
     "signalTeamPendingRequests": "Demandes en attente",
     "signalTeamApproveRequester": "Ajouter à l’équipe",
     "signalTeamUpdated": "Équipe Signal mise à jour",
@@ -3017,7 +3020,9 @@
     "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche",
     "resizeBottomRightLabel": "Redimensionner l'appel depuis le coin inférieur droit",
     "openFloatingWindowLabel": "Ouvrir la fenêtre d'appel flottante",
-    "closeFloatingWindowLabel": "Fermer la fenêtre d'appel flottante"
+    "closeFloatingWindowLabel": "Fermer la fenêtre d'appel flottante",
+    "signalTeamMembersLoadFailed": "Impossible de charger la liste des membres. Réessayez.",
+    "signalTeamNoChatAccount": "Pas de compte chat"
   },
   "SpaceLocation": {
     "sectionTitle": "Emplacement sur la carte",

@@ -1,8 +1,9 @@
 import {
   matrixUserLinks,
+  people,
   type MatrixUserLink,
 } from '@hypha-platform/storage-postgres';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 
 import { Environment } from '../../coherence/types';
 import { DbConfig } from '../../server';
@@ -88,6 +89,34 @@ export const findMatrixUserIdsByPrivyUserIds = async (
         inArray(matrixUserLinks.privyUserId, ids),
       ),
     );
+
+  return rows;
+};
+
+/** Batch lookup for mention picker: Hypha roster `person.id` → Matrix MXID (same env). */
+export const findMatrixUserIdsByPersonIds = async (
+  { personIds, environment }: { personIds: number[]; environment: Environment },
+  { db }: DbConfig,
+): Promise<Array<{ personId: number; matrixUserId: string }>> => {
+  const ids = [
+    ...new Set(personIds.filter((id) => Number.isFinite(id) && id > 0)),
+  ];
+  if (ids.length === 0) return [];
+
+  const rows = await db
+    .select({
+      personId: people.id,
+      matrixUserId: matrixUserLinks.matrixUserId,
+    })
+    .from(people)
+    .innerJoin(
+      matrixUserLinks,
+      and(
+        eq(matrixUserLinks.privyUserId, people.sub),
+        eq(matrixUserLinks.environment, environment),
+      ),
+    )
+    .where(and(inArray(people.id, ids), isNotNull(people.sub)));
 
   return rows;
 };
