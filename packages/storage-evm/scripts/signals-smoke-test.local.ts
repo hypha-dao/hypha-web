@@ -25,7 +25,9 @@ async function main(): Promise<void> {
     .map((log: { topics: string[]; data: string }) =>
       signals.interface.parseLog(log),
     )
-    .find((parsed: { name: string } | null) => parsed?.name === 'SignalUpvoted');
+    .find(
+      (parsed: { name: string } | null) => parsed?.name === 'SignalUpvoted',
+    );
   console.log('SignalUpvoted:', event?.args.toString());
 
   // Relayer records a removal
