@@ -1003,12 +1003,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const { person: me } = useMe();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
-  const { persons: spaceMembersResult, isLoading: isLoadingSpaceMembers } =
-    useSpaceMembersAndDelegates({
-      spaceSlug,
-      web3SpaceId: effectiveSpaceWeb3Id,
-      useMembers,
-    });
+  const {
+    persons: spaceMembersResult,
+    isLoading: isLoadingSpaceMembers,
+    error: spaceMembersError,
+  } = useSpaceMembersAndDelegates({
+    spaceSlug,
+    web3SpaceId: effectiveSpaceWeb3Id,
+    useMembers,
+  });
   const spaceMembers = useMemo(
     () => spaceMembersResult ?? [],
     [spaceMembersResult],
@@ -4542,7 +4545,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           <p className="text-sm text-muted-foreground">
                             {t('loading')}
                           </p>
-                        ) : matrixUserIdsError &&
+                        ) : (matrixUserIdsError || spaceMembersError) &&
                           signalTeamRosterMembers.length === 0 ? (
                           <p role="alert" className="text-sm text-destructive">
                             {t('signalTeamMembersLoadFailed')}

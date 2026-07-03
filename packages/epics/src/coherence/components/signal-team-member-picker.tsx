@@ -113,7 +113,11 @@ export function SignalTeamMemberPicker({
 }: SignalTeamMemberPickerProps) {
   const t = useTranslations('CoherenceTab');
   const { space } = useSpaceBySlug(spaceSlug);
-  const { persons, isLoading: isLoadingMembers } = useSpaceMembersAndDelegates({
+  const {
+    persons,
+    isLoading: isLoadingMembers,
+    error: membersError,
+  } = useSpaceMembersAndDelegates({
     spaceSlug,
     web3SpaceId: space?.web3SpaceId,
     useMembers,
@@ -193,7 +197,7 @@ export function SignalTeamMemberPicker({
       </p>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t('loading')}</p>
-      ) : matrixIdsError && rosterMembers.length === 0 ? (
+      ) : (matrixIdsError || membersError) && rosterMembers.length === 0 ? (
         <p role="alert" className="text-sm text-destructive">
           {t('signalTeamMembersLoadFailed')}
         </p>
