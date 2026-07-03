@@ -4,6 +4,7 @@ import type { OnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { parseOnboardingDiscoveryMode } from './onboarding-discovery-mode';
 import { transferMobilizedAiAgentsToSpace } from './ai-agent-competencies';
 import { shouldAttachOnboardingContext } from './onboarding-context-attach';
+import { isOnboardingWalletSessionActive } from './onboarding-wallet-handoff';
 import type { ActiveProposalFormSnapshotPayload } from './active-proposal-form-snapshot';
 
 export type { OnboardingDiscoveryMode };
@@ -80,6 +81,8 @@ export type OnboardingConversationContext = {
   ecosystemRootSlug?: string;
   /** Slug of the space created during onboarding (single-space or ecosystem root). */
   createdSpaceSlug?: string;
+  /** Browser session: user completed at least one wallet/2FA sign this tab session. */
+  walletSessionActive?: boolean;
   /** Confirmed logo + hero banner URLs from upload or generation. */
   visualAssets?: {
     logoUrl: string;
@@ -505,6 +508,7 @@ export function serializeConversationContextForChatApi(
     ...(context.createdSpaceSlug
       ? { createdSpaceSlug: context.createdSpaceSlug }
       : {}),
+    ...(context.walletSessionActive ? { walletSessionActive: true } : {}),
     ...(context.visualAssets ? { visualAssets: context.visualAssets } : {}),
     ...(discoveryMode ? { discoveryMode } : {}),
     ...(context.lastUserText ? { lastUserText: context.lastUserText } : {}),
@@ -591,7 +595,12 @@ export function resolveChatTransportBody({
       ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
       ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
       conversationContext: serializeConversationContextForChatApi(
-        onboardingContext,
+        {
+          ...onboardingContext,
+          ...(isOnboardingWalletSessionActive()
+            ? { walletSessionActive: true }
+            : {}),
+        },
         { discoveryMode },
       ),
       ...(discoveryModePayload ? { discoveryMode: discoveryModePayload } : {}),

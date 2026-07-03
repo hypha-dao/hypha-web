@@ -44,7 +44,7 @@ describe('buildEcosystemExecutePhaseDirective', () => {
 
     expect(directive).toContain('acme-root');
     expect(directive).toContain('Community Hub');
-    expect(directive).toContain('create_ecosystem_space');
+    expect(directive).toContain('create_space_from_onboarding');
     expect(directive).toContain('ONE nested space per turn');
     expect(directive).toContain('Do not restart discovery');
     expect(directive).toContain('never subspace');

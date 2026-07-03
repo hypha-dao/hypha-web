@@ -1,38 +1,33 @@
 import { describe, expect, it } from 'vitest';
 
-import { shouldUseCreateEcosystemSpaceInstead } from '../tools/create-space-from-onboarding-redirect';
+import { shouldBlockDuplicateRootSpaceCreation } from '../tools/create-space-from-onboarding-redirect';
 
-describe('shouldUseCreateEcosystemSpaceInstead', () => {
-  it('redirects during execute phase', () => {
-    const result = shouldUseCreateEcosystemSpaceInstead({
+describe('shouldBlockDuplicateRootSpaceCreation', () => {
+  it('blocks another root during execute phase', () => {
+    const result = shouldBlockDuplicateRootSpaceCreation({
       onboarding_setup_phase: 'execute',
     });
-    expect(result.redirect).toBe(true);
+    expect(result.block).toBe(true);
   });
 
-  it('redirects when root was already created in session', () => {
-    const result = shouldUseCreateEcosystemSpaceInstead({
-      onboarding_created_space_slug: 'my-root',
-    });
-    expect(result.redirect).toBe(true);
-  });
-
-  it('redirects nested ecosystem spaces under a live on-chain parent', () => {
-    const result = shouldUseCreateEcosystemSpaceInstead(
+  it('allows nested on-chain create with parent', () => {
+    const result = shouldBlockDuplicateRootSpaceCreation(
       {
-        onboarding_setup_journey: 'ecosystem',
+        onboarding_setup_phase: 'execute',
+        onboarding_created_space_slug: 'my-root',
         parent_space_slug: 'my-root',
       },
-      { web3SpaceId: 42, parentId: null },
+      { id: 99 },
+      'my-root-community',
     );
-    expect(result.redirect).toBe(true);
+    expect(result.block).toBe(false);
   });
 
   it('allows root creation during confirm phase', () => {
-    const result = shouldUseCreateEcosystemSpaceInstead({
+    const result = shouldBlockDuplicateRootSpaceCreation({
       onboarding_setup_phase: 'confirm',
       onboarding_setup_journey: 'ecosystem',
     });
-    expect(result.redirect).toBe(false);
+    expect(result.block).toBe(false);
   });
 });

@@ -19,6 +19,7 @@ import {
 import { shouldShowOnboardingEntryMethodPicker } from '../onboarding-entry-method-ui';
 import { shouldShowOnboardingVotingMethodPicker } from '../onboarding-voting-method-ui';
 import { isPostCreateOnboardingPhase } from '../ai-onboarding-context';
+import { isOnboardingWalletSessionActive } from '../onboarding-wallet-handoff';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
 import { OnboardingSpaceLocationCard } from './onboarding-space-location-card';
 import { OnboardingSetupJourneyCard } from './onboarding-setup-journey-card';
@@ -135,8 +136,7 @@ export function AiPanelMessages({
     onboardingContext,
     isStreaming,
   });
-  const suppressWalletSignaturePrompt =
-    isPostCreateOnboardingPhase(onboardingContext);
+  const suppressWalletSignaturePrompt = isOnboardingWalletSessionActive();
 
   useEffect(() => {
     const container = containerRef.current;

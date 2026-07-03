@@ -37,6 +37,7 @@ function withInjectedOnboardingContext<T extends Record<string, unknown>>(
     setupPhase?: string;
     setupJourney?: 'single_space' | 'ecosystem';
     createdSpaceSlug?: string;
+    walletSessionActive?: boolean;
   },
 ): T & {
   onboarding_last_user_text?: string;
@@ -44,6 +45,7 @@ function withInjectedOnboardingContext<T extends Record<string, unknown>>(
   onboarding_setup_phase?: string;
   onboarding_setup_journey?: 'single_space' | 'ecosystem';
   onboarding_created_space_slug?: string;
+  onboarding_wallet_session_active?: boolean;
 } {
   return {
     ...payload,
@@ -61,6 +63,9 @@ function withInjectedOnboardingContext<T extends Record<string, unknown>>(
       : {}),
     ...(context.createdSpaceSlug
       ? { onboarding_created_space_slug: context.createdSpaceSlug }
+      : {}),
+    ...(context.walletSessionActive
+      ? { onboarding_wallet_session_active: true }
       : {}),
   };
 }
@@ -414,6 +419,11 @@ function resolveOnboardingInjectionContext(
     lastUserTextFromRequest?.trim() || contextLastUserText?.trim() || undefined;
   const contextSetupJourney =
     extractSetupJourneyFromContext(conversationContext);
+  const contextWalletSessionActive =
+    conversationContext &&
+    typeof conversationContext === 'object' &&
+    (conversationContext as { walletSessionActive?: unknown })
+      .walletSessionActive === true;
 
   return {
     effectiveLastUserText,
@@ -425,6 +435,7 @@ function resolveOnboardingInjectionContext(
       ...(contextCreatedSpaceSlug?.trim()
         ? { createdSpaceSlug: contextCreatedSpaceSlug.trim() }
         : {}),
+      ...(contextWalletSessionActive ? { walletSessionActive: true } : {}),
     },
     contextSpaceLocation: extractSpaceLocationFromContext(conversationContext),
     contextActivationMethod:

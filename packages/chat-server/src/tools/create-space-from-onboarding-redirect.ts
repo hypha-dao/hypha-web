@@ -1,52 +1,50 @@
 export type CreateSpaceFromOnboardingRedirectInput = {
   onboarding_setup_phase?: string | null;
-  onboarding_setup_journey?: 'single_space' | 'ecosystem' | null;
   onboarding_created_space_slug?: string | null;
   parent_space_slug?: string | null;
   parent_space_name?: string | null;
+  slug?: string | null;
 };
 
-export type CreateSpaceFromOnboardingRedirectParent = {
-  web3SpaceId?: number | null;
-  parentId?: number | null;
-} | null;
-
-export function shouldUseCreateEcosystemSpaceInstead(
+/** Block only a duplicate root create — nested on-chain spaces stay on create_space_from_onboarding. */
+export function shouldBlockDuplicateRootSpaceCreation(
   data: CreateSpaceFromOnboardingRedirectInput,
-  parentSpace?: CreateSpaceFromOnboardingRedirectParent,
-): { redirect: true; reason: string } | { redirect: false } {
-  const setupPhase = data.onboarding_setup_phase?.trim();
-  if (setupPhase === 'execute' || setupPhase === 'verify') {
-    return {
-      redirect: true,
-      reason:
-        'The root space is already live. Use create_ecosystem_space for nested spaces under the root—confirmation only, no wallet signature.',
-    };
-  }
-
-  if (data.onboarding_created_space_slug?.trim()) {
-    return {
-      redirect: true,
-      reason:
-        'Space creation already completed in this onboarding session. Use create_ecosystem_space for additional nested spaces—confirmation only, no wallet signature.',
-    };
-  }
-
+  parentSpace?: { id?: number | null } | null,
+  normalizedSlug?: string | null,
+): { block: true; reason: string } | { block: false } {
   const hasParentReference = Boolean(
-    data.parent_space_slug?.trim() || data.parent_space_name?.trim(),
+    parentSpace?.id != null ||
+      data.parent_space_slug?.trim() ||
+      data.parent_space_name?.trim(),
   );
+  if (hasParentReference) {
+    return { block: false };
+  }
+
+  const createdRootSlug = data.onboarding_created_space_slug?.trim();
+  const setupPhase = data.onboarding_setup_phase?.trim();
+  const isPostRootPhase = setupPhase === 'execute' || setupPhase === 'verify';
+
+  if (isPostRootPhase || createdRootSlug) {
+    return {
+      block: true,
+      reason:
+        'The root space is already live in this onboarding session. Use create_space_from_onboarding with parent_space_slug set to the root slug to create each nested on-chain space.',
+    };
+  }
+
+  const slug = normalizedSlug?.trim();
   if (
-    data.onboarding_setup_journey === 'ecosystem' &&
-    hasParentReference &&
-    parentSpace?.web3SpaceId != null &&
-    parentSpace.web3SpaceId > 0
+    createdRootSlug &&
+    slug &&
+    slug === createdRootSlug &&
+    !hasParentReference
   ) {
     return {
-      redirect: true,
-      reason:
-        'Nested ecosystem spaces are created with create_ecosystem_space under the live root—confirmation only, no wallet signature.',
+      block: true,
+      reason: `Root space "${createdRootSlug}" was already created in this session.`,
     };
   }
 
-  return { redirect: false };
+  return { block: false };
 }

@@ -400,7 +400,7 @@ function getCreateSpaceGuidance(
         'Pass suggested_categories from onboarding_guidance into create tools—never group ids or labels.',
         'Complete logo and hero banner (upload or generate_space_visual_assets with user confirmation) before create_space_from_onboarding or wallet signing.',
         'Create ONLY the root space with create_space_from_onboarding and wallet signing—never call create_ecosystem_space during onboarding.',
-        'After the root exists, continue in the left AI panel (execute phase): create each nested space with create_ecosystem_space one at a time—never skip this phase.',
+        'After the root exists, continue in the left AI panel (execute phase): create each nested space on-chain with create_space_from_onboarding (parent_space_slug) one at a time—never skip this phase.',
       ],
       suggested_tools: [
         'web_search',
