@@ -169,7 +169,10 @@ function formatSaveError(error: unknown, fallback: string): string {
   if (!(error instanceof Error)) return fallback;
   const message = error.message.trim();
   if (!message) return fallback;
-  if (message.includes('authToken is required')) {
+  if (
+    message.includes('authToken is required') ||
+    message.includes('signed in to save')
+  ) {
     return fallback;
   }
   if (message.length > 180) {
@@ -310,11 +313,6 @@ export function ScheduledItemForm({
   const t = useTranslations('Calendar');
   const router = useRouter();
   const { getAccessToken } = useAuthentication();
-  const [authToken, setAuthToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    void getAccessToken().then(setAuthToken);
-  }, [getAccessToken]);
 
   const {
     createScheduledItem,
@@ -323,7 +321,7 @@ export function ScheduledItemForm({
     isCreating,
     isUpdating,
     isDeleting,
-  } = useScheduledItemMutations(authToken, spaceSlug, lang);
+  } = useScheduledItemMutations(getAccessToken, spaceSlug, lang);
 
   const isSubmitting = isCreating || isUpdating;
 
@@ -976,10 +974,7 @@ export function ScheduledItemForm({
                 {t('cancel')}
               </Link>
             </Button>
-            <Button
-              type="submit"
-              disabled={!authToken || isSubmitting || isDeleting}
-            >
+            <Button type="submit" disabled={isSubmitting || isDeleting}>
               {isSubmitting ? t('saving') : t('save')}
             </Button>
           </div>

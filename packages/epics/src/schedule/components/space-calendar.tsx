@@ -176,11 +176,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const { getAccessToken, isAuthenticated } = useAuthentication();
-  const [authToken, setAuthToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    void getAccessToken().then(setAuthToken);
-  }, [getAccessToken]);
 
   const [view, setView] = React.useState<CalendarView>('dayGridMonth');
   const [anchorDate, setAnchorDate] = React.useState(() => new Date());
@@ -195,7 +190,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   });
 
   const { updateScheduledItem } = useScheduledItemMutations(
-    authToken,
+    getAccessToken,
     spaceSlug,
     lang,
   );
