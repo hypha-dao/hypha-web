@@ -168,7 +168,7 @@ function useGlobalCallDockValue() {
     client,
     roomId: activeRoomId,
     anchorEventId: call.callSessionAnchorEventId,
-    groupCallId: call.groupCall?.groupCallId ?? null,
+    callSessionId: call.callSessionId ?? null,
     callState: call.callState,
     currentUserId,
     inCallUserIds: call.inCallUserIdsForRoster,

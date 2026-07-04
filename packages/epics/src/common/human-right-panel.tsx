@@ -1201,7 +1201,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isLocalVideoMuted: spaceCallVideoMuted,
     isScreensharing: spaceCallScreensharing,
     remoteScreenshareActive: spaceCallRemoteScreenshareActive,
-    groupCall: spaceGroupCall,
+    room: spaceCallRoom,
     feedVersion: spaceCallFeedVersion,
     screenshareErrorCode: spaceCallScreenshareError,
     screenshareTabAudioMissing: spaceCallScreenshareTabAudioMissing,
@@ -4407,7 +4407,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     <HumanChatPanelCallStage
                       client={client}
                       roomId={roomId}
-                      groupCall={spaceGroupCall}
+                      liveKitRoom={spaceCallRoom}
                       callKind={spaceCallKind}
                       isLocalVideoMuted={spaceCallVideoMuted}
                       isMicrophoneMuted={spaceCallMicMuted}

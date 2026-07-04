@@ -1,0 +1,116 @@
+import type * as MatrixSdk from 'matrix-js-sdk';
+
+export type LiveKitConnectCredentials = {
+  url: string;
+  jwt: string;
+};
+
+type MatrixClientWellKnown = {
+  'org.matrix.msc4143.rtc_foci'?: Array<{
+    type?: string;
+    livekit_service_url?: string;
+  }>;
+};
+
+let cachedJwtServiceUrl: string | null = null;
+
+function livekitJwtServiceUrlFromEnv(): string | null {
+  const raw = process.env.NEXT_PUBLIC_LIVEKIT_JWT_SERVICE_URL?.trim();
+  return raw || null;
+}
+
+/**
+ * Resolve the lk-jwt-service URL from Matrix .well-known or env fallback.
+ */
+export async function resolveLivekitJwtServiceUrl(
+  client: MatrixSdk.MatrixClient,
+): Promise<string> {
+  if (cachedJwtServiceUrl) return cachedJwtServiceUrl;
+
+  const envUrl = livekitJwtServiceUrlFromEnv();
+  if (envUrl) {
+    cachedJwtServiceUrl = envUrl;
+    return envUrl;
+  }
+
+  const homeserverUrl = client.getHomeserverUrl();
+  const wellKnownUrl = new URL('/.well-known/matrix/client', homeserverUrl);
+  try {
+    const res = await fetch(wellKnownUrl.toString());
+    if (res.ok) {
+      const data = (await res.json()) as MatrixClientWellKnown;
+      const foci = data['org.matrix.msc4143.rtc_foci'];
+      const livekitFocus = foci?.find(
+        (f) => f.type === 'livekit' && f.livekit_service_url?.trim(),
+      );
+      const url = livekitFocus?.livekit_service_url?.trim();
+      if (url) {
+        cachedJwtServiceUrl = url;
+        return url;
+      }
+    }
+  } catch {
+    // fall through to same-origin .well-known (Next.js dev static file)
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/.well-known/matrix/client');
+      if (res.ok) {
+        const data = (await res.json()) as MatrixClientWellKnown;
+        const foci = data['org.matrix.msc4143.rtc_foci'];
+        const livekitFocus = foci?.find(
+          (f) => f.type === 'livekit' && f.livekit_service_url?.trim(),
+        );
+        const url = livekitFocus?.livekit_service_url?.trim();
+        if (url) {
+          cachedJwtServiceUrl = url;
+          return url;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  throw new Error(
+    'LiveKit JWT service URL not configured. Set NEXT_PUBLIC_LIVEKIT_JWT_SERVICE_URL or org.matrix.msc4143.rtc_foci in .well-known/matrix/client.',
+  );
+}
+
+/**
+ * Exchange Matrix OpenID token for LiveKit room credentials via lk-jwt-service.
+ */
+export async function fetchLivekitConnectCredentials(
+  client: MatrixSdk.MatrixClient,
+  roomId: string,
+  jwtServiceUrl: string,
+): Promise<LiveKitConnectCredentials> {
+  const openIdToken = await client.getOpenIdToken();
+  const base = jwtServiceUrl.replace(/\/$/, '');
+  const res = await fetch(`${base}/sfu/get`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      room: roomId,
+      openid_token: openIdToken,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(
+      `LiveKit JWT exchange failed (${res.status})${text ? `: ${text}` : ''}`,
+    );
+  }
+  const data = (await res.json()) as { url?: string; jwt?: string };
+  const url = data.url?.trim();
+  const jwt = data.jwt?.trim();
+  if (!url || !jwt) {
+    throw new Error('LiveKit JWT service returned invalid credentials');
+  }
+  return { url, jwt };
+}
+
+export function clearLivekitJwtServiceUrlCache(): void {
+  cachedJwtServiceUrl = null;
+}

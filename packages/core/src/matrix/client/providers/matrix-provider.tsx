@@ -677,7 +677,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           disableVoip: false,
           /** matrix-js-sdk v40 Rust crypto path cannot send encrypted group-call to-device VoIP events. */
           useE2eForGroupCall: false,
-          useLivekitForGroupCalls: false,
+          useLivekitForGroupCalls: true,
           forceTURN: matrixWebRtcForceTurnFromEnv(),
           fallbackICEServerAllowed: matrixWebRtcFallbackIceAllowedFromEnv(),
           iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
