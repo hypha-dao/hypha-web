@@ -536,8 +536,21 @@
       "activateSpaces": {
         "title": "Activer le(s) espace(s)",
         "description": "Contribuez en HYPHA ou en USDC pour activer votre/vos espace(s) et soutenir le réseau Hypha."
+      },
+      "subscribeWithCard": {
+        "title": "S'abonner par carte",
+        "description": "Payez un abonnement mensuel par carte via Stripe pour garder cet espace actif automatiquement."
       }
     }
+  },
+  "StripeSubscription": {
+    "title": "Abonnement par carte",
+    "statusLabel": "Statut : {status}",
+    "statusActive": "Actif",
+    "statusPastDue": "En retard",
+    "statusCanceled": "Annulé",
+    "statusIncomplete": "En attente",
+    "manageBilling": "Gérer la facturation"
   },
   "SelectNavigationAction": {
     "title": "Navigation des espaces",

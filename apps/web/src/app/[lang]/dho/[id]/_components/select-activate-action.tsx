@@ -3,11 +3,15 @@
 import { useMemo } from 'react';
 import { isAddress } from 'ethers';
 
-import { SelectAction, useFundWallet } from '@hypha-platform/epics';
+import {
+  SelectAction,
+  useFundWallet,
+  useStripeSubscription,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
-import { Rocket, Sparkles, Wallet } from 'lucide-react';
+import { CreditCard, Rocket, Sparkles, Wallet } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import {
   useSpaceBySlug,
@@ -57,6 +61,15 @@ export const SelectActivateAction = ({
   });
   const t = useTranslations('SelectActivateAction');
 
+  const {
+    enabled: stripeEnabled,
+    startCheckout,
+    isRedirecting,
+  } = useStripeSubscription({
+    spaceSlug: daoSlug,
+    lang,
+  });
+
   const SELECT_ACTIVATE_ACTIONS = [
     {
       title: t('actions.depositFunds.title'),
@@ -83,6 +96,21 @@ export const SelectActivateAction = ({
       baseTab: 'agreements',
       icon: <Rocket className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
+    ...(stripeEnabled
+      ? [
+          {
+            title: t('actions.subscribeWithCard.title'),
+            description: t('actions.subscribeWithCard.description'),
+            icon: (
+              <CreditCard className="size-[22px] shrink-0" strokeWidth={1.75} />
+            ),
+            onAction: () => {
+              void startCheckout();
+            },
+            disabled: isRedirecting,
+          },
+        ]
+      : []),
   ];
 
   const computeHref = (

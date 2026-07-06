@@ -536,8 +536,21 @@
       "activateSpaces": {
         "title": "Spaces aktivieren",
         "description": "Tragen Sie HYPHA oder USDC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+      },
+      "subscribeWithCard": {
+        "title": "Mit Karte abonnieren",
+        "description": "Zahlen Sie ein monatliches Kartenabonnement über Stripe, um diesen Space automatisch aktiv zu halten."
       }
     }
+  },
+  "StripeSubscription": {
+    "title": "Kartenabonnement",
+    "statusLabel": "Status: {status}",
+    "statusActive": "Aktiv",
+    "statusPastDue": "Überfällig",
+    "statusCanceled": "Gekündigt",
+    "statusIncomplete": "Ausstehend",
+    "manageBilling": "Abrechnung verwalten"
   },
   "SelectNavigationAction": {
     "title": "Space-Navigation",

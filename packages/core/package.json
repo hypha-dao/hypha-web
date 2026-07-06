@@ -21,7 +21,8 @@
     "@wagmi/cli": "^2.2.0",
     "matrix-js-sdk": "^40.0.0",
     "pdf-parse": "^1.1.1",
-    "rrule": "^2.8.1"
+    "rrule": "^2.8.1",
+    "stripe": "^22.3.0"
   },
   "exports": {
     "./client": "./src/client.ts",
