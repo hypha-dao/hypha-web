@@ -16,7 +16,6 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
-  Bolt,
   CalendarDays,
   HandCoins,
   Coins,
@@ -29,6 +28,7 @@ import {
   Settings,
   Sparkles,
   UsersRound,
+  Zap,
 } from 'lucide-react';
 import {
   Category,
@@ -636,7 +636,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             {
               key: 'energy',
               label: tCommon('Energy'),
-              icon: Bolt,
+              icon: Zap,
               href: getDhoPathEnergy(lang as Locale, spaceSlug),
               active: isSectionActive('energy'),
             },

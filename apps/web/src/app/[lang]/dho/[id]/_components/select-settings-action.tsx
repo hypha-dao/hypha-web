@@ -11,7 +11,6 @@ import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import {
-  Bolt,
   Coins,
   Code2,
   DoorOpen,
@@ -230,7 +229,7 @@ export const SelectSettingsAction = ({
               'Deploy an EnergyPPAv2 community via factory deployCommunity to activate energy features for this space.',
             href: 'create/enable-energy-community',
             baseTab: 'agreements',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
         ]
@@ -245,7 +244,7 @@ export const SelectSettingsAction = ({
               'Define or update how this community shares and settles energy balances.',
             href: 'create/energy-sharing',
             baseTab: 'agreements',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
           {
@@ -256,7 +255,7 @@ export const SelectSettingsAction = ({
               'Propose onboarding a new source (solar, battery, etc.) into the energy mix.',
             href: 'create/register-energy-source',
             baseTab: 'agreements',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
           {
@@ -267,7 +266,7 @@ export const SelectSettingsAction = ({
               'Propose adding a member with device mapping for energy accounting.',
             href: 'create/add-energy-member',
             baseTab: 'agreements',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
           {
@@ -278,7 +277,7 @@ export const SelectSettingsAction = ({
               'Re-rank the community optimisation objectives and update social allocation on-chain.',
             href: 'create/change-energy-optimization',
             baseTab: 'agreements',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
           {
@@ -289,7 +288,7 @@ export const SelectSettingsAction = ({
               'Allow a backend wallet to submit consumeEnergy interval settlements on the community PPA.',
             href: 'create/whitelist-energy-settlement',
             baseTab: 'agreements',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
         ]
