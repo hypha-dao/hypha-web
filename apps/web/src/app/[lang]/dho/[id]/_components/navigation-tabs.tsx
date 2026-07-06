@@ -124,11 +124,7 @@ export function NavigationTabs({
             name: 'energy',
             href: getDhoPathEnergy(lang as Locale, id as string),
             icon: (
-              <Zap
-                className="size-4 shrink-0"
-                strokeWidth={1.75}
-                aria-hidden
-              />
+              <Zap className="size-4 shrink-0" strokeWidth={1.75} aria-hidden />
             ),
           },
         ]
