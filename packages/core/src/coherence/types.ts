@@ -62,6 +62,26 @@ export type PatchCoherenceTaskBySlugInput = {
   slug: string;
 } & PatchCoherenceTaskInput;
 
+export type CoherenceUpvoter = {
+  personId: number;
+  name: string | null;
+  avatarUrl: string | null;
+  /** Raw voting power units (wei-scale for token sources, whole votes for 1m1v). */
+  votingPower: string;
+};
+
+export type CoherenceUpvoteSummary = {
+  /** Sum of all upvote voting power in raw units. */
+  totalVotingPower: string;
+  upvoteCount: number;
+  /** Display decimals of the voting power source (0 for 1m1v, 18 for token/voice). */
+  tokenDecimals: number;
+  /** Voters ordered by voting power, highest first (capped). */
+  voters: CoherenceUpvoter[];
+  /** The requesting user's own upvote, when authenticated. */
+  myUpvote: { votingPower: string; maxVotingPower: string } | null;
+};
+
 export type Coherence = {
   id: number;
   creatorId: number;
@@ -82,6 +102,8 @@ export type Coherence = {
   progressStatus: string | null;
   board: string | null;
   assigneeIds: number[];
+  /** Present on list/detail API responses; not stored on the row itself. */
+  upvotes?: CoherenceUpvoteSummary;
 };
 
 export enum Environment {

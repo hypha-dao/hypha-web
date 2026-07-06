@@ -3,15 +3,16 @@
 import React from 'react';
 import { Check, Plus } from 'lucide-react';
 import {
-  Person,
-  useMatrixUserIdsByPrivySubs,
+  useMatrixUserIdsByPersonIds,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { UseMembers } from '../../spaces';
+import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import { useResolvedMentionCandidateLabel } from '../../common/human-chat-panel/use-resolved-mention-candidate-label';
 import {
-  buildSpaceRosterMentionCandidates,
+  buildSpaceRosterSignalTeamMembers,
   personRosterDisplayLabel,
 } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 
@@ -35,6 +36,7 @@ function SignalTeamPickerRow({
   selected,
   disabled,
   isOwner,
+  noChatAccountLabel,
   onToggle,
 }: {
   matrixUserId: string;
@@ -44,6 +46,7 @@ function SignalTeamPickerRow({
   selected: boolean;
   disabled?: boolean;
   isOwner?: boolean;
+  noChatAccountLabel?: string;
   onToggle: () => void;
 }) {
   const t = useTranslations('CoherenceTab');
@@ -53,6 +56,7 @@ function SignalTeamPickerRow({
     privySub,
   });
   const label = resolvedLabel?.trim() || displayLabel;
+  const canToggle = Boolean(matrixUserId.trim());
 
   return (
     <button
@@ -61,7 +65,7 @@ function SignalTeamPickerRow({
         selected
           ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
           : 'border border-transparent hover:bg-muted/70'
-      }`}
+      } ${!canToggle ? 'opacity-60' : ''}`}
       disabled={disabled || (isOwner && selected)}
       onClick={onToggle}
     >
@@ -77,11 +81,13 @@ function SignalTeamPickerRow({
             <Check className="h-3.5 w-3.5 text-accent-11" />
             {t('signalTeamRemoveMember')}
           </>
-        ) : (
+        ) : canToggle ? (
           <>
             <Plus className="h-3.5 w-3.5" />
             {t('signalTeamAddMember')}
           </>
+        ) : (
+          noChatAccountLabel
         )}
       </span>
     </button>
@@ -106,61 +112,73 @@ export function SignalTeamMemberPicker({
   disabled,
 }: SignalTeamMemberPickerProps) {
   const t = useTranslations('CoherenceTab');
-  const { persons, isLoading: isLoadingMembers } = useMembers({
+  const { space } = useSpaceBySlug(spaceSlug);
+  const {
+    persons,
+    isLoading: isLoadingMembers,
+    error: membersError,
+  } = useSpaceMembersAndDelegates({
     spaceSlug,
-    paginationDisabled: true,
+    web3SpaceId: space?.web3SpaceId,
+    useMembers,
   });
-  const spaceMembers = persons.data;
-  const privySubs = React.useMemo(
+  const spaceMembers = persons;
+  const rosterPersonIds = React.useMemo(
     () =>
       spaceMembers
-        .map((member) => member.sub?.trim())
-        .filter((sub): sub is string => Boolean(sub)),
+        .map((member) => member.id)
+        .filter((id): id is number => Number.isFinite(id) && id > 0),
     [spaceMembers],
   );
-  const { subToMatrixUserId, isLoading: isLoadingMatrixIds } =
-    useMatrixUserIdsByPrivySubs({ privySubs });
+  const {
+    personIdToMatrixUserId,
+    isLoading: isLoadingMatrixIds,
+    error: matrixIdsError,
+  } = useMatrixUserIdsByPersonIds({ personIds: rosterPersonIds });
 
   const ownerPerson = React.useMemo(() => {
     if (!ownerMatrixUserId) return null;
     return (
       spaceMembers.find(
         (member) =>
-          member.sub?.trim() &&
-          subToMatrixUserId[member.sub.trim()] === ownerMatrixUserId,
+          personIdToMatrixUserId[member.id]?.trim() === ownerMatrixUserId,
       ) ?? null
     );
-  }, [ownerMatrixUserId, spaceMembers, subToMatrixUserId]);
+  }, [ownerMatrixUserId, spaceMembers, personIdToMatrixUserId]);
 
-  const selectableMembers = React.useMemo(() => {
-    const extraCandidates = ownerMatrixUserId
-      ? [
-          {
-            userId: ownerMatrixUserId,
-            displayLabel: ownerPerson
-              ? personRosterDisplayLabel(ownerPerson, t('unknownMember'))
-              : t('createSignalTeamOwner'),
-            privySub: ownerPerson?.sub?.trim(),
-            avatarUrl: ownerPerson?.avatarUrl ?? undefined,
-          },
-        ]
-      : [];
-
-    const rosterSpaceMembers = ownerMatrixUserId
-      ? spaceMembers.filter((member) => {
-          const sub = member.sub?.trim();
-          if (!sub) return true;
-          return subToMatrixUserId[sub] !== ownerMatrixUserId;
-        })
-      : spaceMembers;
-
-    return buildSpaceRosterMentionCandidates({
-      spaceMembers: rosterSpaceMembers,
-      subToMatrixUserId,
+  const rosterMembers = React.useMemo(() => {
+    const rows = buildSpaceRosterSignalTeamMembers({
+      spaceMembers: ownerMatrixUserId
+        ? spaceMembers.filter(
+            (member) =>
+              personIdToMatrixUserId[member.id]?.trim() !== ownerMatrixUserId,
+          )
+        : spaceMembers,
+      personIdToMatrixUserId,
       unknownLabel: t('unknownMember'),
-      extraCandidates,
     });
-  }, [ownerMatrixUserId, ownerPerson, spaceMembers, subToMatrixUserId, t]);
+
+    if (!ownerMatrixUserId) return rows;
+
+    const ownerRow = ownerPerson
+      ? {
+          personId: ownerPerson.id,
+          matrixUserId: ownerMatrixUserId,
+          displayLabel: personRosterDisplayLabel(
+            ownerPerson,
+            t('unknownMember'),
+          ),
+          avatarUrl: ownerPerson.avatarUrl ?? undefined,
+        }
+      : {
+          personId: -1,
+          matrixUserId: ownerMatrixUserId,
+          displayLabel: t('createSignalTeamOwner'),
+          avatarUrl: undefined,
+        };
+
+    return [ownerRow, ...rows];
+  }, [ownerMatrixUserId, ownerPerson, spaceMembers, personIdToMatrixUserId, t]);
 
   const effectiveSelectedIds = React.useMemo(() => {
     const base = normalizeMatrixUserIds(selectedMemberIds);
@@ -179,33 +197,43 @@ export function SignalTeamMemberPicker({
       </p>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t('loading')}</p>
-      ) : selectableMembers.length === 0 ? (
+      ) : (matrixIdsError || membersError) && rosterMembers.length === 0 ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t('signalTeamMembersLoadFailed')}
+        </p>
+      ) : rosterMembers.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {t('createSignalTeamNoMembers')}
         </p>
       ) : (
-        <div className="grid gap-1">
-          {selectableMembers.map((member) => {
-            const isOwner = member.userId === ownerMatrixUserId;
-            const selected = effectiveSelectedIds.includes(member.userId);
+        <div className="narrow-scrollbar grid max-h-60 gap-1 overflow-y-auto">
+          {rosterMembers.map((member) => {
+            const matrixUserId = member.matrixUserId;
+            const isOwner = matrixUserId === ownerMatrixUserId;
+            const selected = matrixUserId
+              ? effectiveSelectedIds.includes(matrixUserId)
+              : false;
+            const canToggle = Boolean(matrixUserId);
             return (
               <SignalTeamPickerRow
-                key={member.userId}
-                matrixUserId={member.userId}
+                key={member.personId}
+                matrixUserId={matrixUserId ?? ''}
                 displayLabel={member.displayLabel}
-                privySub={member.privySub}
+                privySub={undefined}
                 avatarUrl={member.avatarUrl}
                 selected={selected}
-                disabled={disabled}
+                disabled={disabled || !canToggle}
                 isOwner={isOwner}
+                noChatAccountLabel={t('signalTeamNoChatAccount')}
                 onToggle={() => {
+                  if (!matrixUserId) return;
                   if (isOwner && selected) return;
                   const memberIdsOnly = effectiveSelectedIds.filter(
                     (id) => id !== ownerMatrixUserId,
                   );
                   const next = selected
-                    ? memberIdsOnly.filter((id) => id !== member.userId)
-                    : [...memberIdsOnly, member.userId];
+                    ? memberIdsOnly.filter((id) => id !== matrixUserId)
+                    : [...memberIdsOnly, matrixUserId];
                   onSelectedMemberIdsChange(normalizeMatrixUserIds(next));
                 }}
               />

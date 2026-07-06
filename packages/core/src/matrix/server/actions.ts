@@ -19,6 +19,7 @@ import { createMatrixUserLink, updateMatrixUserLink } from './mutations';
 import {
   findAdminUserName,
   findLinkByPrivyUserId,
+  findMatrixUserIdsByPersonIds,
   findMatrixUserIdsByPrivyUserIds,
 } from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
@@ -81,6 +82,23 @@ export async function getMatrixUserIdsByPrivySubsAction(
     throw new Error('authToken is required for matrix user id batch lookup');
   }
   return findMatrixUserIdsByPrivyUserIds({ privyUserIds, environment }, { db });
+}
+
+/** Batch map space roster person ids → Matrix MXIDs without exposing Privy subs. */
+export async function getMatrixUserIdsByPersonIdsAction(
+  {
+    personIds,
+    environment,
+  }: {
+    personIds: number[];
+    environment: Environment;
+  },
+  { authToken }: { authToken?: string } = {},
+): Promise<Array<{ personId: number; matrixUserId: string }>> {
+  if (!authToken) {
+    throw new Error('authToken is required for matrix user id batch lookup');
+  }
+  return findMatrixUserIdsByPersonIds({ personIds, environment }, { db });
 }
 
 export async function getLinkByMatrixUserIdAction(

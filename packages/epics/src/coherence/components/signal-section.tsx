@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { SearchIcon } from 'lucide-react';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { Button, ErrorAlert, Input } from '@hypha-platform/ui';
 import {
   Coherence,
@@ -31,6 +32,7 @@ import { SignalBoardView } from './signal-board-view';
 import { SignalSwimlaneView } from './signal-swimlane-view';
 import { SignalListView } from './signal-list-view';
 import { SignalGrid } from './signal-grid';
+import { SignalSectionSkeleton } from './signal-section-skeleton';
 
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
@@ -64,8 +66,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
     string[]
   >([]);
 
-  const { workflow, isLoading: isWorkflowLoading } =
-    useSignalWorkflow(spaceSlug);
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuthentication();
+  const { workflow, error: workflowError } = useSignalWorkflow(spaceSlug);
   const { patchTask } = usePatchCoherenceTask(spaceSlug);
   const { canMutate } = useCanMutateInSpace({
     spaceId: web3SpaceId || undefined,
@@ -193,9 +195,34 @@ export const SignalSection: FC<SignalSectionProps> = ({
   );
 
   const visibleSignals = filteredSignals;
+
+  // The workflow is only fetched once auth resolves and a jwt exists, so the
+  // auth → jwt → workflow chain has gaps where every isLoading flag is false.
+  // Gating on data/error instead of isLoading keeps the board from flashing
+  // in with the default workflow and disappearing again mid-load. Signed-out
+  // visitors never get a workflow and render the default one immediately.
+  const isWorkflowPending =
+    !workflow && !workflowError && (isAuthLoading || isAuthenticated);
+
+  // Safety valve: if auth or the workflow fetch silently stalls, reveal the
+  // board with the default workflow rather than pulsing forever.
+  const [workflowWaitExpired, setWorkflowWaitExpired] = React.useState(false);
+  React.useEffect(() => {
+    if (!isWorkflowPending) return;
+    const timer = window.setTimeout(() => setWorkflowWaitExpired(true), 8000);
+    return () => window.clearTimeout(timer);
+  }, [isWorkflowPending]);
+
+  // Once real content has been shown, never fall back to the skeleton —
+  // late revalidations must not blank the board.
+  const hasShownContentRef = React.useRef(false);
   const showInitialLoading =
-    (isLoading && visibleSignals.length === 0) ||
-    (isWorkflowLoading && !workflow);
+    !hasShownContentRef.current &&
+    ((isLoading && visibleSignals.length === 0) ||
+      (isWorkflowPending && !workflowWaitExpired));
+  if (!showInitialLoading) {
+    hasShownContentRef.current = true;
+  }
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -224,49 +251,55 @@ export const SignalSection: FC<SignalSectionProps> = ({
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
       ) : null}
 
-      {showInitialLoading ? null : visibleSignals.length === 0 ? (
-        <Empty>
-          <p>{t('listIsEmpty')}</p>
-        </Empty>
-      ) : viewMode === 'board' ? (
-        <SignalBoardView
-          signals={visibleSignals}
-          workflow={resolvedWorkflow}
-          spaceSlug={spaceSlug}
-          onSignalClick={onSignalClick}
-          readOnly={!canUpdateTasks}
-          refresh={refresh}
-          onMoveStatus={(signal, progressStatus) =>
-            patchAndRefresh(signal, { progressStatus })
-          }
-        />
-      ) : viewMode === 'swimlane' ? (
-        <SignalSwimlaneView
-          signals={visibleSignals}
-          workflow={resolvedWorkflow}
-          onSignalClick={onSignalClick}
-          readOnly={!canUpdateTasks}
-          refresh={refresh}
-          onPatch={patchAndRefresh}
-        />
-      ) : viewMode === 'list' ? (
-        <SignalListView
-          signals={visibleSignals}
-          workflow={resolvedWorkflow}
-          onSignalClick={onSignalClick}
-          readOnly={!canUpdateTasks}
-          refresh={refresh}
-          onPatch={patchAndRefresh}
-        />
+      {showInitialLoading ? (
+        <SignalSectionSkeleton viewMode={viewMode} />
       ) : (
-        <SignalGrid
-          isLoading={false}
-          basePath={basePath}
-          leadImage={leadImage}
-          signals={visibleSignals}
-          refresh={refresh}
-          onSignalClick={onSignalClick}
-        />
+        <div className="animate-in fade-in duration-300">
+          {visibleSignals.length === 0 ? (
+            <Empty>
+              <p>{t('listIsEmpty')}</p>
+            </Empty>
+          ) : viewMode === 'board' ? (
+            <SignalBoardView
+              signals={visibleSignals}
+              workflow={resolvedWorkflow}
+              spaceSlug={spaceSlug}
+              onSignalClick={onSignalClick}
+              readOnly={!canUpdateTasks}
+              refresh={refresh}
+              onMoveStatus={(signal, progressStatus) =>
+                patchAndRefresh(signal, { progressStatus })
+              }
+            />
+          ) : viewMode === 'swimlane' ? (
+            <SignalSwimlaneView
+              signals={visibleSignals}
+              workflow={resolvedWorkflow}
+              onSignalClick={onSignalClick}
+              readOnly={!canUpdateTasks}
+              refresh={refresh}
+              onPatch={patchAndRefresh}
+            />
+          ) : viewMode === 'list' ? (
+            <SignalListView
+              signals={visibleSignals}
+              workflow={resolvedWorkflow}
+              onSignalClick={onSignalClick}
+              readOnly={!canUpdateTasks}
+              refresh={refresh}
+              onPatch={patchAndRefresh}
+            />
+          ) : (
+            <SignalGrid
+              isLoading={false}
+              basePath={basePath}
+              leadImage={leadImage}
+              signals={visibleSignals}
+              refresh={refresh}
+              onSignalClick={onSignalClick}
+            />
+          )}
+        </div>
       )}
     </div>
   );
