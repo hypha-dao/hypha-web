@@ -4,12 +4,10 @@ import {
   SelectAction,
   useActionGating,
   useCanMutateInSpace,
-  useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import {
-  Bolt,
   FileText,
   Gift,
   Package,
@@ -33,7 +31,6 @@ export const SelectCreateAction = ({
   children,
 }: SelectCreateActionProps) => {
   const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
-  const { data: spaceEnergy } = useSpaceEnergy();
   const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
     spaceSlug: daoSlug,
     space,
@@ -41,71 +38,8 @@ export const SelectCreateAction = ({
   });
   const t = useTranslations('SelectCreateAction');
   const tSettings = useTranslations('SpaceSettingsAction');
-  const isEnergyCommunity = spaceEnergy?.enabled === true;
 
   const CREATE_ACTIONS = [
-    ...(!isEnergyCommunity
-      ? [
-          {
-            defaultDurationDays: 5,
-            title: 'Enable Energy Community',
-            description:
-              'Deploy an EnergyPPAv2 community via factory deployCommunity to activate energy features for this space.',
-            href: 'agreements/create/enable-energy-community',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
-            disabled: isPaymentExpired,
-          },
-        ]
-      : []),
-    ...(isEnergyCommunity
-      ? [
-          {
-            defaultDurationDays: 5,
-            title: 'Energy Sharing Proposal',
-            description:
-              'Define or update how this community shares and settles energy balances.',
-            href: 'agreements/create/energy-sharing',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
-            disabled: isPaymentExpired,
-          },
-          {
-            defaultDurationDays: 5,
-            title: 'Register Energy Source',
-            description:
-              'Propose onboarding a new source (solar, battery, etc.) into the energy mix.',
-            href: 'agreements/create/register-energy-source',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
-            disabled: isPaymentExpired,
-          },
-          {
-            defaultDurationDays: 5,
-            title: 'Add Energy Member',
-            description:
-              'Propose adding a member with device mapping for energy accounting.',
-            href: 'agreements/create/add-energy-member',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
-            disabled: isPaymentExpired,
-          },
-          {
-            defaultDurationDays: 5,
-            title: 'Change Energy Optimization',
-            description:
-              'Re-rank the community optimisation objectives and update social allocation on-chain.',
-            href: 'agreements/create/change-energy-optimization',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
-            disabled: isPaymentExpired,
-          },
-          {
-            defaultDurationDays: 5,
-            title: 'Whitelist Energy Settlement',
-            description:
-              'Allow a backend wallet to submit consumeEnergy interval settlements on the community PPA.',
-            href: 'agreements/create/whitelist-energy-settlement',
-            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
-            disabled: isPaymentExpired,
-          },
-        ]
-      : []),
     {
       defaultDurationDays: 3,
       title: t('actions.makeCollectiveAgreement.title'),

@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { Zap } from 'lucide-react';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
@@ -76,7 +77,12 @@ export function NavigationTabs({
       ? 0
       : clampTabParallaxScrollY(mainScrollY);
 
-  const tabs = [
+  const tabs: {
+    title: string;
+    name: string;
+    href: string;
+    icon?: React.ReactNode;
+  }[] = [
     {
       title: t('home'),
       name: 'overview',
@@ -117,6 +123,13 @@ export function NavigationTabs({
             title: t('Energy'),
             name: 'energy',
             href: getDhoPathEnergy(lang as Locale, id as string),
+            icon: (
+              <Zap
+                className="size-4 shrink-0"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+            ),
           },
         ]
       : []),
@@ -142,9 +155,14 @@ export function NavigationTabs({
               : { transform: `translate3d(0, ${tabParallaxY}px, 0)` }
           }
         >
-          {tabs.map(({ name, href, title }) => (
+          {tabs.map(({ name, href, title, icon }) => (
             <TabsTrigger asChild key={name} value={name} variant="ghost">
-              <Link href={href} className="w-full" passHref>
+              <Link
+                href={href}
+                className="flex w-full items-center justify-center gap-1.5"
+                passHref
+              >
+                {icon}
                 {title}
               </Link>
             </TabsTrigger>

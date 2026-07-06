@@ -148,7 +148,7 @@ export const ProductionConsumptionTab = ({
     if (useLiveTelemetry && telemetry?.dataFrom && telemetry?.dataTo) {
       const from = new Date(telemetry.dataFrom).toLocaleDateString();
       const to = new Date(telemetry.dataTo).toLocaleDateString();
-      return `Live 15-minute interval data (${from} – ${to}). Sparse buckets show zero until more history accumulates.`;
+      return `Collective consumption and production data of the whole community (${from} – ${to}).`;
     }
     if (telemetry?.enabled && !telemetry?.dataFrom) {
       return 'No interval readings yet for this community — showing placeholder charts.';
