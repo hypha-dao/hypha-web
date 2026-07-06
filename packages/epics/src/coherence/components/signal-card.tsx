@@ -51,6 +51,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalUpvoteControl } from './signal-upvote-control';
 import { priorityLeftBorderClass } from '../utils/signal-priority-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -98,6 +99,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   messages = 0,
   roomId,
   creatorId,
+  upvotes,
   refresh,
   onOpenConversation,
   className,
@@ -634,13 +636,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
         </div>
 
-        {onOpenConversation && !archived ? (
-          <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
+        <div className="mt-auto flex min-h-[2.75rem] shrink-0 items-center gap-2 bg-muted/10 px-3 py-1.5">
+          <SignalUpvoteControl
+            slug={slug}
+            upvotes={upvotes}
+            refresh={refresh}
+            disabled={isLoading || Boolean(archived)}
+          />
+          {onOpenConversation && !archived ? (
             <Button
               variant="outline"
               colorVariant="accent"
               size="sm"
-              className="h-8 w-full bg-transparent hover:bg-accent-3/30"
+              className="h-8 min-w-0 flex-1 bg-transparent hover:bg-accent-3/30"
               disabled={isLoading || !roomId}
               onClick={(e) => {
                 e.stopPropagation();
@@ -650,10 +658,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               title={!roomId ? tSignalCard('noConversationRoom') : undefined}
             >
               <ChatBubbleIcon />
-              {t('openConversation')}
+              <span className="truncate">{t('openConversation')}</span>
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
         <AlertDialog
           open={archiveDialogOpen}
           onOpenChange={(open) => {

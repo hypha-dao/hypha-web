@@ -2617,6 +2617,9 @@
     "signalTeamMemberListHint": "Selecione os membros que podem enviar mensagens, mencionar e participar de chamadas da thread.",
     "signalTeamAddMember": "Adicionar",
     "signalTeamRemoveMember": "Remover",
+    "signalTeamOwner": "Proprietário",
+    "signalTeamMembersLoadFailed": "Não foi possível carregar a lista de membros. Tente novamente.",
+    "signalTeamNoChatAccount": "Sem conta de chat",
     "signalTeamPendingRequests": "Solicitações pendentes",
     "signalTeamApproveRequester": "Adicionar à equipe",
     "signalTeamUpdated": "Equipe Signal atualizada",
@@ -2629,6 +2632,7 @@
   },
   "CoherenceTab": {
     "signals": "Sinais",
+    "loadingSignals": "Carregando sinais...",
     "signInToSee": "Por favor, faça login para ver sinais, a memória do espaço e conversas",
     "searchSignals": "Pesquisar sinais...",
     "newSignal": "Novo sinal",
@@ -2971,6 +2975,8 @@
     "signalFormBoardHint": "Swimlane organizacional — agrupa sinais por equipa, iniciativa ou área. Não é o mesmo que Tipo (Oportunidade/Risco/Insight) ou Tags.",
     "signalFormDueDate": "Data limite",
     "signalFormDueDateHint": "Data-alvo opcional para acompanhar esta tarefa de sinal.",
+    "signalFormVotingPower": "Seu poder de voto",
+    "signalFormVotingPowerHint": "Parcela do seu poder de voto que apoia este sinal. Por padrão, todo o seu poder de voto é usado; você pode ajustar ou remover depois.",
     "scheduleOnCalendar": "Agendar no calendário",
     "linkedCalendarEventsTitle": "Eventos de calendário vinculados",
     "linkedCalendarEventsHint": "Chamadas e reuniões agendadas para trabalhar neste sinal.",
@@ -3026,7 +3032,9 @@
     "resizeBottomLeftLabel": "Redimensionar chamada pelo canto inferior esquerdo",
     "resizeBottomRightLabel": "Redimensionar chamada pelo canto inferior direito",
     "openFloatingWindowLabel": "Abrir janela flutuante da chamada",
-    "closeFloatingWindowLabel": "Fechar janela flutuante da chamada"
+    "closeFloatingWindowLabel": "Fechar janela flutuante da chamada",
+    "signalTeamMembersLoadFailed": "Não foi possível carregar a lista de membros. Tente novamente.",
+    "signalTeamNoChatAccount": "Sem conta de chat"
   },
   "SpaceLocation": {
     "sectionTitle": "Localização no mapa",
@@ -3087,7 +3095,17 @@
     "deleteConfirm": "Isto remove permanentemente este sinal do espaço. Continuar?",
     "deleteMenu": "Eliminar",
     "deleteConfirmAction": "Eliminar sinal",
-    "deleteFailed": "Não foi possível eliminar este sinal. Tente novamente."
+    "deleteFailed": "Não foi possível eliminar este sinal. Tente novamente.",
+    "upvote": "Apoiar",
+    "updateUpvote": "Atualizar apoio",
+    "removeUpvote": "Remover apoio",
+    "upvoteDetails": "Detalhes do apoio",
+    "totalSupport": "Apoio total",
+    "yourVotingPowerShare": "Parcela do seu poder de voto",
+    "supportersCount": "{count, plural, =0 {Ainda sem apoios} one {# apoio} other {# apoios}}",
+    "anonymousSupporter": "Membro",
+    "signInToUpvote": "Inicie sessão como membro do espaço para apoiar sinais.",
+    "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente."
   },
   "BankingTab": {
     "title": "Banco",

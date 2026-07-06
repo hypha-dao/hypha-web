@@ -28,6 +28,7 @@ import {
   statusColorDotClass,
 } from '../utils/signal-priority-styles';
 import { SignalTagBadges } from './signal-tag-badges';
+import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 
 type SignalTaskCardProps = {
@@ -247,6 +248,13 @@ export function SignalTaskCard({
 
         <div className="mt-2.5 flex items-end justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <SignalUpvoteControl
+              slug={signal.slug}
+              upvotes={signal.upvotes}
+              refresh={refresh}
+              disabled={Boolean(signal.archived)}
+              compact
+            />
             {hasValidDue ? (
               <span
                 className={cn(
