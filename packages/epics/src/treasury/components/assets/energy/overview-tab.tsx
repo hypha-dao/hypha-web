@@ -10,9 +10,7 @@ import { useEnergyPeople } from './use-energy-people';
 import { prettySourceLabel } from './format';
 
 export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
-  const members = data.members ?? [];
   const sources = data.sources ?? [];
-  const { people, isLoading } = useEnergyPeople(members);
 
   // address -> consumption meter ids, read from on-chain member records.
   const deviceIdsByAddress = React.useMemo(() => {
@@ -23,6 +21,22 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
     return map;
   }, [data.memberDetails]);
 
+  // Actual consumers only: members without registered meters are investors
+  // (they co-own sources but consume nothing), so they are excluded here.
+  // Members whose meter list could not be read are kept (unknown ≠ investor).
+  const consumers = React.useMemo(
+    () =>
+      (data.members ?? []).filter((address) => {
+        const deviceIds = deviceIdsByAddress.get(address.toLowerCase());
+        return deviceIds === undefined || deviceIds === null
+          ? true
+          : deviceIds.length > 0;
+      }),
+    [data.members, deviceIdsByAddress],
+  );
+
+  const { people, isLoading } = useEnergyPeople(consumers);
+
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
@@ -32,13 +46,13 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
           right={
             <span className="flex items-center gap-1.5 text-1 text-neutral-11">
               <UsersIcon size={14} />
-              {members.length} member{members.length === 1 ? '' : 's'}
+              {consumers.length} consumer{consumers.length === 1 ? '' : 's'}
             </span>
           }
         />
-        {members.length ? (
+        {consumers.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {members.map((address) => (
+            {consumers.map((address) => (
               <ConsumerConsumptionCard
                 key={address}
                 address={address}

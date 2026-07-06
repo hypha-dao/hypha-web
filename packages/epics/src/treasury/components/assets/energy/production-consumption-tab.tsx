@@ -215,7 +215,7 @@ export const ProductionConsumptionTab = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Production by source</CardTitle>
+          <CardTitle>Energy by source</CardTitle>
         </CardHeader>
         <CardContent>
           {telemetryLoading ? (

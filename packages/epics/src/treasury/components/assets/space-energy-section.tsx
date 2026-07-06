@@ -15,14 +15,12 @@ import { ENERGY_PALETTE } from './energy/charts';
 import { formatStablecoinMicro } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
 import { ProductionConsumptionTab } from './energy/production-consumption-tab';
-import { SettlementTab } from './energy/settlement-tab';
 import { OwnershipTab } from './energy/ownership-tab';
 import { CreditsTab } from './energy/credits-tab';
 
 const TAB_DEFS = [
   { value: 'overview', label: 'Overview' },
   { value: 'flows', label: 'Production & consumption' },
-  { value: 'settlement', label: 'Settlement' },
   { value: 'ownership', label: 'Ownership' },
   { value: 'credits', label: 'Credits' },
 ] as const;
@@ -55,12 +53,22 @@ export const SpaceEnergySection = () => {
     overview.contractStablecoinBalance,
   );
 
+  // Count only members with registered meters; meter-less members are
+  // investors, not consumers. Falls back to the raw member count when
+  // per-member details are unavailable.
+  const memberDetails = data.memberDetails ?? [];
+  const consumerCount = memberDetails.length
+    ? memberDetails.filter(
+        (detail) => detail.deviceIds === null || detail.deviceIds.length > 0,
+      ).length
+    : overview.memberCount;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           label="Energy consumers"
-          value={overview.memberCount}
+          value={consumerCount}
           accent={ENERGY_PALETTE[2]}
           icon={<UsersIcon size={16} />}
         />
@@ -92,9 +100,6 @@ export const SpaceEnergySection = () => {
         </TabsContent>
         <TabsContent value="flows" className="mt-6">
           <ProductionConsumptionTab data={data} />
-        </TabsContent>
-        <TabsContent value="settlement" className="mt-6">
-          <SettlementTab data={data} />
         </TabsContent>
         <TabsContent value="ownership" className="mt-6">
           <OwnershipTab data={data} />

@@ -97,11 +97,10 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
 
   const totalToSettle = rows.reduce((acc, r) => acc + r.toSettleMicro, 0n);
   const totalCredit = rows.reduce((acc, r) => acc + r.creditMicro, 0n);
-  const totalSettled = toBigInt(data.overview?.contractStablecoinBalance);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-border bg-background-2 p-4">
           <p className="text-1 text-neutral-11">Outstanding to settle (EURC)</p>
           <p
@@ -118,15 +117,6 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
             style={{ color: ENERGY_PALETTE[1] }}
           >
             {formatStablecoinMicro(totalCredit.toString())}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border bg-background-2 p-4">
-          <p className="text-1 text-neutral-11">EURC in contract</p>
-          <p
-            className="mt-1 text-5 font-semibold"
-            style={{ color: ENERGY_PALETTE[1] }}
-          >
-            {formatStablecoinMicro(totalSettled.toString())}
           </p>
         </div>
       </div>
@@ -212,8 +202,7 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
             <p className="text-1 text-neutral-11">
               Balances reflect live on-chain energy credits from the PPA
               contract. “To settle” is outstanding debt; “credit” is claimable
-              once EURC is deposited. “EURC in contract” is stablecoin held by
-              the PPA today.
+              once EURC is deposited.
             </p>
           </CardContent>
         </Card>
