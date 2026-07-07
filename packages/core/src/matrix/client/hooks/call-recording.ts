@@ -403,6 +403,9 @@ function normalizeCallRecordingMediaResolver(
   return () => sourceOrResolver;
 }
 
+/** Reused across frames so ensureVideoElement doesn't see a new stream (and reset playback) each call. */
+const liveKitVideoStreamCache = new WeakMap<MediaStreamTrack, MediaStream>();
+
 export function collectCallVideoSourcesFromLiveKitRoom(
   lkRoom: Room,
 ): CallVideoSource[] {
@@ -425,7 +428,11 @@ export function collectCallVideoSourcesFromLiveKitRoom(
       const mediaTrack = pub?.track?.mediaStreamTrack;
       if (!mediaTrack || pub.isMuted || seen.has(mediaTrack.id)) continue;
       seen.add(mediaTrack.id);
-      const stream = new MediaStream([mediaTrack]);
+      let stream = liveKitVideoStreamCache.get(mediaTrack);
+      if (!stream) {
+        stream = new MediaStream([mediaTrack]);
+        liveKitVideoStreamCache.set(mediaTrack, stream);
+      }
       out.push({
         track: mediaTrack,
         stream,

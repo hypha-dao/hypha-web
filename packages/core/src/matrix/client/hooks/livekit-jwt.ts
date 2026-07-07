@@ -12,11 +12,29 @@ type MatrixClientWellKnown = {
   }>;
 };
 
-let cachedJwtServiceUrl: string | null = null;
+const WELL_KNOWN_FETCH_TIMEOUT_MS = 5_000;
+
+/** Keyed by homeserver URL so switching homeservers can't reuse a stale resolution. */
+const cachedJwtServiceUrlByHomeserver = new Map<string, string>();
 
 function livekitJwtServiceUrlFromEnv(): string | null {
   const raw = process.env.NEXT_PUBLIC_LIVEKIT_JWT_SERVICE_URL?.trim();
   return raw || null;
+}
+
+function extractLivekitFocusUrl(data: MatrixClientWellKnown): string | null {
+  const foci = data['org.matrix.msc4143.rtc_foci'];
+  const livekitFocus = foci?.find(
+    (f) => f.type === 'livekit' && f.livekit_service_url?.trim(),
+  );
+  const url = livekitFocus?.livekit_service_url?.trim();
+  if (!url) return null;
+  try {
+    if (new URL(url).protocol !== 'https:') return null;
+  } catch {
+    return null;
+  }
+  return url;
 }
 
 /**
@@ -25,27 +43,23 @@ function livekitJwtServiceUrlFromEnv(): string | null {
 export async function resolveLivekitJwtServiceUrl(
   client: MatrixSdk.MatrixClient,
 ): Promise<string> {
-  if (cachedJwtServiceUrl) return cachedJwtServiceUrl;
-
   const envUrl = livekitJwtServiceUrlFromEnv();
-  if (envUrl) {
-    cachedJwtServiceUrl = envUrl;
-    return envUrl;
-  }
+  if (envUrl) return envUrl;
 
   const homeserverUrl = client.getHomeserverUrl();
+  const cached = cachedJwtServiceUrlByHomeserver.get(homeserverUrl);
+  if (cached) return cached;
+
   const wellKnownUrl = new URL('/.well-known/matrix/client', homeserverUrl);
   try {
-    const res = await fetch(wellKnownUrl.toString());
+    const res = await fetch(wellKnownUrl.toString(), {
+      signal: AbortSignal.timeout(WELL_KNOWN_FETCH_TIMEOUT_MS),
+    });
     if (res.ok) {
       const data = (await res.json()) as MatrixClientWellKnown;
-      const foci = data['org.matrix.msc4143.rtc_foci'];
-      const livekitFocus = foci?.find(
-        (f) => f.type === 'livekit' && f.livekit_service_url?.trim(),
-      );
-      const url = livekitFocus?.livekit_service_url?.trim();
+      const url = extractLivekitFocusUrl(data);
       if (url) {
-        cachedJwtServiceUrl = url;
+        cachedJwtServiceUrlByHomeserver.set(homeserverUrl, url);
         return url;
       }
     }
@@ -55,16 +69,14 @@ export async function resolveLivekitJwtServiceUrl(
 
   if (typeof window !== 'undefined') {
     try {
-      const res = await fetch('/.well-known/matrix/client');
+      const res = await fetch('/.well-known/matrix/client', {
+        signal: AbortSignal.timeout(WELL_KNOWN_FETCH_TIMEOUT_MS),
+      });
       if (res.ok) {
         const data = (await res.json()) as MatrixClientWellKnown;
-        const foci = data['org.matrix.msc4143.rtc_foci'];
-        const livekitFocus = foci?.find(
-          (f) => f.type === 'livekit' && f.livekit_service_url?.trim(),
-        );
-        const url = livekitFocus?.livekit_service_url?.trim();
+        const url = extractLivekitFocusUrl(data);
         if (url) {
-          cachedJwtServiceUrl = url;
+          cachedJwtServiceUrlByHomeserver.set(homeserverUrl, url);
           return url;
         }
       }
@@ -95,6 +107,7 @@ export async function fetchLivekitConnectCredentials(
       room: roomId,
       openid_token: openIdToken,
     }),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -112,5 +125,5 @@ export async function fetchLivekitConnectCredentials(
 }
 
 export function clearLivekitJwtServiceUrlCache(): void {
-  cachedJwtServiceUrl = null;
+  cachedJwtServiceUrlByHomeserver.clear();
 }

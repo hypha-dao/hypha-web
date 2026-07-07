@@ -1,3 +1,5 @@
+'use client';
+
 import { CallFeedEvent } from 'matrix-js-sdk/lib/webrtc/callFeed';
 import type { CallFeed } from 'matrix-js-sdk/lib/webrtc/callFeed';
 import {
@@ -74,15 +76,23 @@ class LiveKitAdaptedCallFeed {
     const onMute = () => {
       this.emit(CallFeedEvent.MuteStateChanged);
     };
+    const onSpeakingChanged = () => {
+      this.emit(CallFeedEvent.Speaking);
+    };
     this.participant.on(ParticipantEvent.TrackSubscribed, refresh);
     this.participant.on(ParticipantEvent.TrackUnpublished, refresh);
     this.participant.on(ParticipantEvent.TrackMuted, onMute);
     this.participant.on(ParticipantEvent.TrackUnmuted, onMute);
+    this.participant.on(ParticipantEvent.IsSpeakingChanged, onSpeakingChanged);
     this.disposers.push(() => {
       this.participant.off(ParticipantEvent.TrackSubscribed, refresh);
       this.participant.off(ParticipantEvent.TrackUnpublished, refresh);
       this.participant.off(ParticipantEvent.TrackMuted, onMute);
       this.participant.off(ParticipantEvent.TrackUnmuted, onMute);
+      this.participant.off(
+        ParticipantEvent.IsSpeakingChanged,
+        onSpeakingChanged,
+      );
     });
     for (const pub of this.participant.trackPublications.values()) {
       const track = pub.track;
