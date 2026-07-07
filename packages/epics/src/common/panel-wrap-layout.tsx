@@ -14,7 +14,7 @@ import {
   SidebarProvider,
   Sidebar,
   SidebarResizeHandle,
-  useCompactHeaderMode,
+  useCompactPanelsMode,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import {
@@ -124,7 +124,7 @@ export function AiSidebarTrigger() {
     useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isCompactHeader = useCompactHeaderMode();
+  const isCompactPanels = useCompactPanelsMode();
   const t = useTranslations('AiPanel');
 
   if (!isSpace) return null;
@@ -139,7 +139,7 @@ export function AiSidebarTrigger() {
           hideAiOverlay();
           return;
         }
-        if (isCompactHeader && rightOpen) {
+        if (isCompactPanels && rightOpen) {
           toggleRight();
         }
         if (open) {
@@ -165,7 +165,7 @@ export function AiPanelTrigger() {
   const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isCompactHeader = useCompactHeaderMode();
+  const isCompactPanels = useCompactPanelsMode();
   const t = useTranslations('AiPanel');
 
   if (!isSpace) return null;
@@ -178,7 +178,7 @@ export function AiPanelTrigger() {
           closeAiPanel();
           return;
         }
-        if (isCompactHeader && rightOpen) {
+        if (isCompactPanels && rightOpen) {
           toggleRight();
         }
         openAiPanel();
@@ -199,7 +199,7 @@ export function HumanSidebarTrigger() {
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
-  const isCompactHeader = useCompactHeaderMode();
+  const isCompactPanels = useCompactPanelsMode();
 
   // Hide header trigger while the chat panel is open — the panel has its own chrome.
   if (!isSpace || open) return null;
@@ -212,7 +212,7 @@ export function HumanSidebarTrigger() {
           toggle();
           return;
         }
-        if (isCompactHeader && (leftOpen || overlayVisible)) {
+        if (isCompactPanels && (leftOpen || overlayVisible)) {
           closeAiPanel();
         }
         openHumanChatPanel();
@@ -307,8 +307,6 @@ export function PanelWrapLayout({
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isOnboarding = pathname.includes('/onboarding');
-  const isCompactUi = useCompactHeaderMode();
-
   const effectiveLeft = isSpace ? left : undefined;
   // Right human panel remains space-context only.
   const effectiveRight = isSpace ? right : undefined;
@@ -331,7 +329,10 @@ export function PanelWrapLayout({
     (viewportWidth < DUAL_PANEL_MIN_VIEWPORT_PX ||
       viewportWidth - leftFootprintPx - rightFootprintPx <
         MIN_MAIN_COLUMN_WIDTH_PX);
-  const isCompactPanels = isCompactUi || forceCompactPanels;
+  // Panel compact mode is viewport-driven only — do not conflate with header
+  // compact (MenuTop overflow), or opening one panel shrinks the center column
+  // and incorrectly closes the opposite panel on desktop widths.
+  const isCompactPanels = forceCompactPanels;
   const useMobilePanelWidths = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
   const rightSidebarWidth = isCompactPanels
     ? useMobilePanelWidths

@@ -66,7 +66,7 @@ import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
-import { useCompactHeaderMode } from '@hypha-platform/ui';
+import { useCompactHeaderMode, useCompactPanelsMode } from '@hypha-platform/ui';
 import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { CHAT_ATTACHMENT_MAX_SIZE_LABEL } from '@hypha-platform/core/client';
@@ -363,6 +363,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { jwt } = useJwt();
   const lang = getLocaleFromPath(pathname);
   const isCompactHeader = useCompactHeaderMode();
+  const isCompactPanels = useCompactPanelsMode();
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
@@ -2844,7 +2845,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       handleOverlayClose();
       return;
     }
-    if (isCompactHeader && rightOpen) {
+    if (isCompactPanels && rightOpen) {
       toggleRight();
     }
     showAiOverlay();
@@ -2852,7 +2853,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     handleOverlayClose,
     isAiOpen,
     overlayVisible,
-    isCompactHeader,
+    isCompactPanels,
     rightOpen,
     toggleRight,
     showAiOverlay,
