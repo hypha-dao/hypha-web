@@ -26,7 +26,6 @@ describe('shouldBlockDuplicateRootSpaceCreation', () => {
   it('allows root creation during confirm phase', () => {
     const result = shouldBlockDuplicateRootSpaceCreation({
       onboarding_setup_phase: 'confirm',
-      onboarding_setup_journey: 'ecosystem',
     });
     expect(result.block).toBe(false);
   });
