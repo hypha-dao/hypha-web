@@ -422,6 +422,7 @@ function resolveOnboardingInjectionContext(
   const contextWalletSessionActive =
     conversationContext &&
     typeof conversationContext === 'object' &&
+    'walletSessionActive' in conversationContext &&
     (conversationContext as { walletSessionActive?: unknown })
       .walletSessionActive === true;
 

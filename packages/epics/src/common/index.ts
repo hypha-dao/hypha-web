@@ -160,6 +160,11 @@ export {
   type VoiceTranscriptTurn,
 } from './onboarding-voice-transcript-bridge';
 export {
+  clearOnboardingWalletSessionActive,
+  isOnboardingWalletSessionActive,
+  markOnboardingWalletSessionActive,
+} from './onboarding-wallet-handoff';
+export {
   ONBOARDING_MOBILIZED_SCOPE,
   recordMobilizedAiAgentsForOnboarding,
   transferMobilizedAiAgentsToSpace,

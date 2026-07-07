@@ -1505,6 +1505,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (alreadyOnTarget) return;
     if (lastAutoNavigationKeyRef.current === prepareUpdate.key) return;
     if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
+    lastAutoNavigationKeyRef.current = navigationKey;
 
     lastAutoNavigationKeyRef.current = prepareUpdate.key;
     markKeepAiPanelOpen();
@@ -1538,23 +1539,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const currentSearch =
       typeof window !== 'undefined' ? window.location.search : '';
-    if (isAtNavigationTarget(href, pathname, currentSearch)) {
-      return;
-    }
-
-    if (navigationTarget.resubmitPayload) {
-      writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
-    }
-
     const navigationKey = navigationTarget.key;
-    if (lastAutoNavigationKeyRef.current === navigationKey) return;
-
     const isSignalCreateNavigation =
       navigationTarget.toolName === 'create_space_signal_by_slug' ||
       navigationTarget.toolName === 'relay_ecosystem_signal';
 
     if (isAtNavigationTarget(href, pathname, currentSearch)) {
-      if (navigationTarget.openHumanChat && navigationTarget.coherenceChat) {
+      if (
+        isSignalCreateNavigation &&
+        navigationTarget.openHumanChat &&
+        navigationTarget.coherenceChat &&
+        lastAutoNavigationKeyRef.current !== navigationKey
+      ) {
         lastAutoNavigationKeyRef.current = navigationKey;
         openCoherenceChat(
           navigationTarget.coherenceChat.roomId,
@@ -1565,6 +1561,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }
       return;
     }
+
+    if (navigationTarget.resubmitPayload) {
+      writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
+    }
+
+    if (lastAutoNavigationKeyRef.current === navigationKey) return;
 
     if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
     lastAutoNavigationKeyRef.current = navigationKey;

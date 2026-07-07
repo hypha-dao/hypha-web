@@ -24,16 +24,8 @@ export function shouldBlockDuplicateRootSpaceCreation(
   const createdRootSlug = data.onboarding_created_space_slug?.trim();
   const setupPhase = data.onboarding_setup_phase?.trim();
   const isPostRootPhase = setupPhase === 'execute' || setupPhase === 'verify';
-
-  if (isPostRootPhase || createdRootSlug) {
-    return {
-      block: true,
-      reason:
-        'The root space is already live in this onboarding session. Use create_space_from_onboarding with parent_space_slug set to the root slug to create each nested on-chain space.',
-    };
-  }
-
   const slug = normalizedSlug?.trim();
+
   if (
     createdRootSlug &&
     slug &&
@@ -43,6 +35,14 @@ export function shouldBlockDuplicateRootSpaceCreation(
     return {
       block: true,
       reason: `Root space "${createdRootSlug}" was already created in this session.`,
+    };
+  }
+
+  if (isPostRootPhase || createdRootSlug) {
+    return {
+      block: true,
+      reason:
+        'The root space is already live in this onboarding session. Use create_space_from_onboarding with parent_space_slug set to the root slug to create each nested on-chain space.',
     };
   }
 

@@ -137,7 +137,6 @@ export function createCreateEcosystemSpaceTool(
       const confirmed = hasOnboardingConfirmation(
         {
           lastUserText: data.onboarding_last_user_text,
-          recentUserTexts: data.onboarding_recent_user_texts,
           setupPhase: data.onboarding_setup_phase,
         },
         confirmationToken,

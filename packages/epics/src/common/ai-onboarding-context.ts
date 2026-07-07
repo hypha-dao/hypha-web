@@ -590,13 +590,16 @@ export function resolveChatTransportBody({
     };
   }
 
+  const { walletSessionActive: _staleWalletSession, ...onboardingWithoutWalletSession } =
+    onboardingContext ?? {};
+
   return {
     body: {
       ...(trimmedSlug ? { spaceSlug: trimmedSlug } : {}),
       ...(trimmedTitle ? { activeSpaceTitle: trimmedTitle } : {}),
       conversationContext: serializeConversationContextForChatApi(
         {
-          ...onboardingContext,
+          ...onboardingWithoutWalletSession,
           ...(isOnboardingWalletSessionActive()
             ? { walletSessionActive: true }
             : {}),

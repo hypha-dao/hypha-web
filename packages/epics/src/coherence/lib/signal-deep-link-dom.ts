@@ -29,6 +29,14 @@ export function highlightSignalCardElement(el: HTMLElement): void {
   }, 2400);
 }
 
+export function getSignalSlugDomProps(
+  slug?: string | null,
+): Record<string, string> {
+  const trimmed = slug?.trim();
+  if (!trimmed) return {};
+  return { [SIGNAL_SLUG_SELECTOR_ATTR]: trimmed };
+}
+
 /** Retry locating a signal card until the coherence view has rendered. */
 export function scrollToSignalCardWithRetry(
   slug: string,

@@ -36,10 +36,12 @@ export function useCoherenceSignalDeepLink({
   const signalSlug = searchParams.get('signal')?.trim() ?? null;
   const openedChatForSlugRef = React.useRef<string | null>(null);
   const refreshAttemptForSlugRef = React.useRef<string | null>(null);
+  const scrolledForSlugRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     openedChatForSlugRef.current = null;
     refreshAttemptForSlugRef.current = null;
+    scrolledForSlugRef.current = null;
   }, [signalSlug]);
 
   React.useEffect(() => {
@@ -79,6 +81,10 @@ export function useCoherenceSignalDeepLink({
       onOpenSignalChat(signal);
     }
 
+    if (scrolledForSlugRef.current === signalSlug) {
+      return;
+    }
+    scrolledForSlugRef.current = signalSlug;
     return scrollToSignalCardWithRetry(signalSlug);
   }, [
     hideArchived,
