@@ -123,4 +123,29 @@ describe('safeParseMergedScheduledItemUpdate', () => {
     );
     expect(result.success).toBe(false);
   });
+
+  it('treats empty recurrencePreset as non-recurring', () => {
+    const result = safeParseMergedScheduledItemUpdate(
+      baseExisting({
+        recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO',
+        recurrenceUntil: new Date('2026-07-31T22:59:00.000Z'),
+      }),
+      baseEditPatch({ recurrencePreset: '' }),
+      1,
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.recurrenceRule).toBeNull();
+      expect(result.data.recurrenceUntil).toBeNull();
+    }
+  });
+
+  it('accepts empty recurrencePreset for non-recurring items', () => {
+    const result = safeParseMergedScheduledItemUpdate(
+      baseExisting(),
+      baseEditPatch({ recurrencePreset: '' }),
+      1,
+    );
+    expect(result.success).toBe(true);
+  });
 });
