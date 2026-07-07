@@ -864,6 +864,23 @@
     "ecosystemLogo": "Logo del ecosistema",
     "continueAdventure": "Continuar tu aventura"
   },
+  "NetworkFeedback": {
+    "triggerLabel": "Da tu opinión",
+    "triggerAriaLabel": "Da forma a Hypha — comunidad y gobernanza",
+    "title": "Da forma a Hypha con nosotros",
+    "subtitle": "Dos formas de influir en el rumbo de la red.",
+    "community": {
+      "title": "Comunidad",
+      "description": "Únete al espacio Hypha Community—comparte señales, vota ideas y ayuda a definir prioridades y hoja de ruta.",
+      "action": "Explorar señales"
+    },
+    "governance": {
+      "title": "Gobernanza",
+      "description": "Con al menos un token Hypha tienes voz en la gobernanza de la red. Hecho por muchos. En manos de todos—Hypha es el token de utilidad que mantiene el poder en los miembros.",
+      "learnMore": "Sobre la tokenomics de Hypha",
+      "action": "Abrir gobernanza"
+    }
+  },
   "OnboardingAdventure": {
     "heroEyebrow": "LA ORGANIZACIÓN INTELIGENTE",
     "title": "Tienes una visión poderosa para el mundo.",

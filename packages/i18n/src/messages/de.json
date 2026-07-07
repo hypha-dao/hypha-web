@@ -105,6 +105,23 @@
     "ecosystemLogo": "Ökosystem-Logo",
     "continueAdventure": "Abenteuer fortsetzen"
   },
+  "NetworkFeedback": {
+    "triggerLabel": "Mitgestalten",
+    "triggerAriaLabel": "Hypha mitgestalten — Community und Governance",
+    "title": "Gestalte Hypha mit uns",
+    "subtitle": "Zwei Wege, die Richtung des Netzwerks mitzubestimmen.",
+    "community": {
+      "title": "Community",
+      "description": "Tritt dem Hypha-Community-Space bei—teile Signale, vote Ideen hoch und hilf mit, Prioritäten und Roadmap zu setzen.",
+      "action": "Signale entdecken"
+    },
+    "governance": {
+      "title": "Governance",
+      "description": "Mit mindestens einem Hypha-Token hast du Mitsprache in der Netzwerk-Governance. Von vielen gemacht. Von allen gehalten—Hypha ist der Utility-Token, der Macht bei den Mitgliedern hält.",
+      "learnMore": "Mehr zu Hypha-Tokenomics",
+      "action": "Governance öffnen"
+    }
+  },
   "OnboardingAdventure": {
     "heroEyebrow": "DIE INTELLIGENTE ORGANISATION",
     "title": "Du hast eine kraftvolle Vision für die Welt.",

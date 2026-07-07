@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Fragment } from 'react';
 
 import {
   Button,
@@ -50,6 +51,8 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
+  /** Rendered immediately after the first main nav link (e.g. My Spaces). */
+  afterFirstNavItem?: ReactNode;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
   /** Compact toolbar mode: render profile trigger instead of full mobile column menu. */
@@ -75,6 +78,7 @@ export const ButtonProfile = ({
   navItems,
   onChangeThemeMode,
   resolvedTheme,
+  afterFirstNavItem,
   trailingBeforeProfile,
   compact = false,
 }: ButtonProfileProps) => {
@@ -221,31 +225,38 @@ export const ButtonProfile = ({
                 <>
                   <DropdownMenuSeparator className="-mx-0 my-1" />
                   <DropdownMenuGroup className="space-y-0.5">
-                    {navItems.map((item) =>
-                      item.href ? (
-                        <DropdownMenuItem
-                          key={item.href}
-                          className={menuItemClass}
-                          asChild
-                        >
-                          <Link href={item.href}>
+                    {navItems.map((item, index) => (
+                      <Fragment key={item.href ?? item.label}>
+                        {item.href ? (
+                          <DropdownMenuItem
+                            key={item.href}
+                            className={menuItemClass}
+                            asChild
+                          >
+                            <Link href={item.href}>
+                              <span className="flex-1">{item.label}</span>
+                              <ChevronRight
+                                className="ml-auto size-4 opacity-60"
+                                aria-hidden
+                              />
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            key={`nav-action-${item.label}`}
+                            className={menuItemClass}
+                            onClick={item.onClick}
+                          >
                             <span className="flex-1">{item.label}</span>
-                            <ChevronRight
-                              className="ml-auto size-4 opacity-60"
-                              aria-hidden
-                            />
-                          </Link>
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          key={`nav-action-${item.label}`}
-                          className={menuItemClass}
-                          onClick={item.onClick}
-                        >
-                          <span className="flex-1">{item.label}</span>
-                        </DropdownMenuItem>
-                      ),
-                    )}
+                          </DropdownMenuItem>
+                        )}
+                        {index === 0 && afterFirstNavItem ? (
+                          <div key="nav-after-first" className="px-1 py-0.5">
+                            {afterFirstNavItem}
+                          </div>
+                        ) : null}
+                      </Fragment>
+                    ))}
                   </DropdownMenuGroup>
                 </>
               ) : null}
@@ -424,34 +435,37 @@ export const ButtonProfile = ({
                 ) : null}
 
                 <div className="space-y-1">
-                  {navItems.map((item) =>
-                    item.href ? (
-                      <Link
-                        key={`${item.label}-${String(item.href)}`}
-                        href={item.href}
-                        className={compactSheetItemClass}
-                        onClick={() => setProfileMenuOpen(false)}
-                      >
-                        <span className="flex-1">{item.label}</span>
-                        <ChevronRight
-                          className="ml-auto size-4 text-muted-foreground"
-                          aria-hidden
-                        />
-                      </Link>
-                    ) : (
-                      <button
-                        key={`nav-action-${item.label}`}
-                        type="button"
-                        className={compactSheetItemClass}
-                        onClick={(event) => {
-                          setProfileMenuOpen(false);
-                          item.onClick?.(event);
-                        }}
-                      >
-                        <span className="flex-1">{item.label}</span>
-                      </button>
-                    ),
-                  )}
+                  {navItems.map((item, index) => (
+                    <Fragment key={item.href ?? item.label}>
+                      {item.href ? (
+                        <Link
+                          href={item.href}
+                          className={compactSheetItemClass}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <span className="flex-1">{item.label}</span>
+                          <ChevronRight
+                            className="ml-auto size-4 text-muted-foreground"
+                            aria-hidden
+                          />
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className={compactSheetItemClass}
+                          onClick={(event) => {
+                            setProfileMenuOpen(false);
+                            item.onClick?.(event);
+                          }}
+                        >
+                          <span className="flex-1">{item.label}</span>
+                        </button>
+                      )}
+                      {index === 0 && afterFirstNavItem ? (
+                        <div className="px-1">{afterFirstNavItem}</div>
+                      ) : null}
+                    </Fragment>
+                  ))}
                   {profileUrl ? (
                     <Link
                       href={profileUrl}
@@ -611,12 +625,13 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
-            {navItems.map((item) => (
-              <ButtonNavItem
-                key={item.href}
-                href={item.href}
-                label={item.label}
-              />
+            {navItems.map((item, index) => (
+              <Fragment key={item.href ?? item.label}>
+                <ButtonNavItem href={item.href} label={item.label} />
+                {index === 0 && afterFirstNavItem ? (
+                  <div>{afterFirstNavItem}</div>
+                ) : null}
+              </Fragment>
             ))}
 
             {trailingBeforeProfile ? (
@@ -674,12 +689,13 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden md:flex gap-2">
             <div className="flex gap-2">
-              {navItems.map((item) => (
-                <ButtonNavItem
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                />
+              {navItems.map((item, index) => (
+                <Fragment key={item.href ?? item.label}>
+                  <ButtonNavItem href={item.href} label={item.label} />
+                  {index === 0 && afterFirstNavItem ? (
+                    <div>{afterFirstNavItem}</div>
+                  ) : null}
+                </Fragment>
               ))}
             </div>
             {trailingBeforeProfile}
