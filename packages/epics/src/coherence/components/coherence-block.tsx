@@ -239,7 +239,7 @@ export function CoherenceBlock({
       : undefined,
     onRevealArchivedSignal: handleRevealArchivedSignal,
     onClearPriorityFilter: handleClearPriorityFilter,
-    onRefreshSignals: refreshSignals,
+    onRefreshSignals: refresh,
   });
 
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
