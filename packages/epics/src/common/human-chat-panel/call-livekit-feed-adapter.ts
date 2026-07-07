@@ -79,14 +79,21 @@ class LiveKitAdaptedCallFeed {
     const onSpeakingChanged = () => {
       this.emit(CallFeedEvent.Speaking);
     };
-    this.participant.on(ParticipantEvent.TrackSubscribed, refresh);
-    this.participant.on(ParticipantEvent.TrackUnpublished, refresh);
+    /** Local publishes/unpublishes don't fire TrackSubscribed/TrackUnpublished (those are for remote tracks). */
+    const publishedEvent = this.isLocalFeed
+      ? ParticipantEvent.LocalTrackPublished
+      : ParticipantEvent.TrackSubscribed;
+    const unpublishedEvent = this.isLocalFeed
+      ? ParticipantEvent.LocalTrackUnpublished
+      : ParticipantEvent.TrackUnpublished;
+    this.participant.on(publishedEvent, refresh);
+    this.participant.on(unpublishedEvent, refresh);
     this.participant.on(ParticipantEvent.TrackMuted, onMute);
     this.participant.on(ParticipantEvent.TrackUnmuted, onMute);
     this.participant.on(ParticipantEvent.IsSpeakingChanged, onSpeakingChanged);
     this.disposers.push(() => {
-      this.participant.off(ParticipantEvent.TrackSubscribed, refresh);
-      this.participant.off(ParticipantEvent.TrackUnpublished, refresh);
+      this.participant.off(publishedEvent, refresh);
+      this.participant.off(unpublishedEvent, refresh);
       this.participant.off(ParticipantEvent.TrackMuted, onMute);
       this.participant.off(ParticipantEvent.TrackUnmuted, onMute);
       this.participant.off(

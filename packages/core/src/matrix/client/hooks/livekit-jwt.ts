@@ -37,6 +37,28 @@ function extractLivekitFocusUrl(data: MatrixClientWellKnown): string | null {
   return url;
 }
 
+async function tryFetchWellKnown(
+  url: string,
+  homeserverUrl: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(WELL_KNOWN_FETCH_TIMEOUT_MS),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as MatrixClientWellKnown;
+      const focusUrl = extractLivekitFocusUrl(data);
+      if (focusUrl) {
+        cachedJwtServiceUrlByHomeserver.set(homeserverUrl, focusUrl);
+        return focusUrl;
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
 /**
  * Resolve the lk-jwt-service URL from Matrix .well-known or env fallback.
  */
@@ -51,38 +73,18 @@ export async function resolveLivekitJwtServiceUrl(
   if (cached) return cached;
 
   const wellKnownUrl = new URL('/.well-known/matrix/client', homeserverUrl);
-  try {
-    const res = await fetch(wellKnownUrl.toString(), {
-      signal: AbortSignal.timeout(WELL_KNOWN_FETCH_TIMEOUT_MS),
-    });
-    if (res.ok) {
-      const data = (await res.json()) as MatrixClientWellKnown;
-      const url = extractLivekitFocusUrl(data);
-      if (url) {
-        cachedJwtServiceUrlByHomeserver.set(homeserverUrl, url);
-        return url;
-      }
-    }
-  } catch {
-    // fall through to same-origin .well-known (Next.js dev static file)
-  }
+  const fromHomeserver = await tryFetchWellKnown(
+    wellKnownUrl.toString(),
+    homeserverUrl,
+  );
+  if (fromHomeserver) return fromHomeserver;
 
   if (typeof window !== 'undefined') {
-    try {
-      const res = await fetch('/.well-known/matrix/client', {
-        signal: AbortSignal.timeout(WELL_KNOWN_FETCH_TIMEOUT_MS),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as MatrixClientWellKnown;
-        const url = extractLivekitFocusUrl(data);
-        if (url) {
-          cachedJwtServiceUrlByHomeserver.set(homeserverUrl, url);
-          return url;
-        }
-      }
-    } catch {
-      // ignore
-    }
+    const fromSameOrigin = await tryFetchWellKnown(
+      '/.well-known/matrix/client',
+      homeserverUrl,
+    );
+    if (fromSameOrigin) return fromSameOrigin;
   }
 
   throw new Error(
