@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findPersonBySub,
   findSpaceBySlug,
+  isOnChainMemberOrDelegate,
   verifyPrivyAuthToken,
 } from '@hypha-platform/core/server';
 import { db, memberships } from '@hypha-platform/storage-postgres';
@@ -23,8 +24,10 @@ type AuthenticateSubscriptionResult =
 
 /**
  * Any space member may manage a Stripe subscription for that space:
- * verifies the Privy Bearer token, resolves the person, and checks a
- * DB membership row for the space.
+ * verifies the Privy Bearer token, resolves the person, and checks
+ * membership via a DB row first, falling back to the on-chain
+ * member-or-delegate check (membership's source of truth is the
+ * DAOSpaceFactory contract; DB rows may lag or be absent on previews).
  */
 export async function authenticateSubscriptionRequest(
   request: NextRequest,
@@ -79,15 +82,32 @@ export async function authenticateSubscriptionRequest(
     )
     .limit(1);
 
-  if (!membership) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: 'Only space members can manage the subscription' },
-        { status: 403 },
-      ),
-    };
+  if (membership) {
+    return { ok: true, space, person };
   }
 
-  return { ok: true, space, person };
+  if (typeof space.web3SpaceId === 'number' && person.address) {
+    try {
+      const allowed = await isOnChainMemberOrDelegate(
+        space.web3SpaceId,
+        person.address as `0x${string}`,
+      );
+      if (allowed) {
+        return { ok: true, space, person };
+      }
+    } catch (error) {
+      console.error(
+        'subscription auth: on-chain membership check failed:',
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  return {
+    ok: false,
+    response: NextResponse.json(
+      { error: 'Only space members can manage the subscription' },
+      { status: 403 },
+    ),
+  };
 }
