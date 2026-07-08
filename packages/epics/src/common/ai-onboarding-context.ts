@@ -590,8 +590,10 @@ export function resolveChatTransportBody({
     };
   }
 
-  const { walletSessionActive: _staleWalletSession, ...onboardingWithoutWalletSession } =
-    onboardingContext ?? {};
+  const {
+    walletSessionActive: _staleWalletSession,
+    ...onboardingWithoutWalletSession
+  } = onboardingContext ?? {};
 
   return {
     body: {
