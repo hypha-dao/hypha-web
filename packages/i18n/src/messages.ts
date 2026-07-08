@@ -5,6 +5,7 @@ import deMessages from './messages/de.json';
 import esMessages from './messages/es.json';
 import frMessages from './messages/fr.json';
 import ptMessages from './messages/pt.json';
+import mkMessages from './messages/mk.json';
 
 type Messages = Record<string, unknown>;
 
@@ -16,6 +17,7 @@ const localeMessagesMap: Record<Locale, Messages> = {
   es: esMessages as Messages,
   fr: frMessages as Messages,
   pt: ptMessages as Messages,
+  mk: mkMessages as Messages,
 };
 
 export function resolveLocale(locale: string | null | undefined): Locale {
