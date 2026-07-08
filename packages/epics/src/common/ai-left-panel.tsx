@@ -1505,7 +1505,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (alreadyOnTarget) return;
     if (lastAutoNavigationKeyRef.current === prepareUpdate.key) return;
     if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
-    lastAutoNavigationKeyRef.current = navigationKey;
 
     lastAutoNavigationKeyRef.current = prepareUpdate.key;
     markKeepAiPanelOpen();
