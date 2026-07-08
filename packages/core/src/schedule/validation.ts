@@ -69,14 +69,11 @@ const recurrenceRuleSchema = z
   .nullable()
   .transform((value) => value ?? null);
 
-const recurrencePresetSchema = z.preprocess(
-  (value) => {
-    if (value === '') return 'none';
-    if (value == null) return undefined;
-    return value;
-  },
-  z.enum(RECURRENCE_PRESETS).optional(),
-);
+const recurrencePresetSchema = z.preprocess((value) => {
+  if (value === '') return 'none';
+  if (value == null) return undefined;
+  return value;
+}, z.enum(RECURRENCE_PRESETS).optional());
 
 const reminderMinutesSchema = z
   .number()
