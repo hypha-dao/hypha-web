@@ -1,6 +1,6 @@
 'use client';
 
-const SUPPORTED_APP_LOCALES = ['en', 'pt', 'es', 'fr', 'de'] as const;
+const SUPPORTED_APP_LOCALES = ['en', 'pt', 'es', 'fr', 'de', 'mk'] as const;
 
 type AppLocale = (typeof SUPPORTED_APP_LOCALES)[number];
 
@@ -11,6 +11,7 @@ const SPEECH_LOCALE_BY_APP_LOCALE: Record<AppLocale, string> = {
   es: 'es-ES',
   fr: 'fr-FR',
   de: 'de-DE',
+  mk: 'mk-MK',
 };
 
 function isSupportedAppLocale(value: string): value is AppLocale {
