@@ -98,7 +98,9 @@ export const useStripeSubscription = ({
         );
         window.location.assign(url);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Request failed');
+        const message = err instanceof Error ? err.message : 'Request failed';
+        console.error(`Stripe subscription ${path} failed:`, message);
+        setError(message);
         setIsRedirecting(false);
       }
     },
