@@ -44,6 +44,7 @@ import {
 import {
   getPayoutRailEndorsementStatus,
   isBankRailSelectable,
+  type BankingOwnerContext,
 } from '../banking-ui';
 import { getPayoutMinimum } from '../banking-minimums';
 
@@ -74,6 +75,12 @@ type AddPayoutAccountDialogProps = {
   defaultBusinessName?: string;
   /** Customer status used to gate rails by Bridge endorsement — mirrors the deposit-side check. */
   status?: BankCustomerPublicStatus | null;
+  /**
+   * Whether this account belongs to a space or an individual member's profile. Defaults to
+   * 'space'. Only changes the initial `accountOwnerType` selection ('individual' for a person,
+   * 'business' for a space) — the toggle stays visible and changeable in both cases.
+   */
+  ownerContext?: BankingOwnerContext;
   onSubmit: (
     input: CreatePayoutAccountInput,
   ) => Promise<BankPayoutAccountPublic>;
@@ -183,10 +190,12 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   defaultAccountOwnerName = '',
   defaultBusinessName = '',
   status,
+  ownerContext = 'space',
   onSubmit,
   onSuccess,
 }) => {
   const t = useTranslations('BankingTab.payouts.addDialog');
+  const isPersonOwner = ownerContext === 'person';
   const tMinimums = useTranslations('BankingTab.minimums');
   const REQUIRED_MSG = t('fieldRequired');
   const radioName = useId();
@@ -212,7 +221,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const [accountName, setAccountName] = useState('');
   const [accountOwnerType, setAccountOwnerType] = useState<
     'business' | 'individual'
-  >('business');
+  >(isPersonOwner ? 'individual' : 'business');
   const [accountOwnerName, setAccountOwnerName] = useState(
     defaultAccountOwnerName,
   );
@@ -274,7 +283,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     setSourceCurrency('usdc');
     setBankName('');
     setAccountName('');
-    setAccountOwnerType('business');
+    setAccountOwnerType(isPersonOwner ? 'individual' : 'business');
     setAccountOwnerName(defaultAccountOwnerName);
     setFirstName('');
     setLastName('');
@@ -287,7 +296,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     setPostalCode('');
     setCountry('');
     setFieldErrors({});
-  }, [open, defaultAccountOwnerName, defaultBusinessName]);
+  }, [open, defaultAccountOwnerName, defaultBusinessName, isPersonOwner]);
 
   const railKey = payoutCurrencyToRailKey(selectedCurrency);
   const showUsFields = selectedCurrency === 'usd';

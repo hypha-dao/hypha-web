@@ -456,6 +456,13 @@
       "when": 1782700000000,
       "tag": "0064_coherence_upvotes",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1782800000000,
+      "tag": "0065_personal_bank_customers",
+      "breakpoints": true
     }
   ]
 }

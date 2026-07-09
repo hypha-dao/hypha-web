@@ -646,7 +646,10 @@
       },
       "section": {
         "title": "Банкарски сметки за исплата",
-        "description": "Регистрирајте надворешна банкарска сметка за да префрлате средства од вашите USDC или EURC паричници преку предлози."
+        "description": "Регистрирајте надворешна банкарска сметка за да префрлате средства од вашите USDC или EURC паричници преку предлози.",
+        "person": {
+          "description": "Register an external bank account to receive transfers from your wallet."
+        }
       },
       "addCta": "Додај сметка за исплата",
       "loading": "Се вчитуваат сметките за исплата…",
@@ -734,7 +737,11 @@
           "liquidationAddressLabel": "Адреса за исплата",
           "howToTitle": "Како да исплатите",
           "howToText": "Создајте предлог за финансирање или трошоци што упатува на оваа адреса како одредиште за исплата. Средствата ќе бидат конвертирани и префрлени во вашата регистрирана банка.",
-          "done": "Готово"
+          "done": "Готово",
+          "person": {
+            "subtitle": "The account is active. Copy the payout address to send funds to it.",
+            "howToText": "Use Transfer funds from your profile to send {currency} to this address. Funds will be converted and transferred to your registered bank."
+          }
         },
         "swift": {
           "code": "SWIFT (USD)",
@@ -869,8 +876,18 @@
           "approved": "Верификацијата на фирмата е завршена. Тука не е потребно дополнително дејство.",
           "rejected": "Верификацијата беше одбиена. Контактирајте ја поддршката ако сметате дека станува збор за грешка.",
           "paused": "Верификацијата е паузирана. Контактирајте ја поддршката за помош.",
-          "offboarded": "Банкарската верификација повеќе не е достапна за овој клиент. Контактирајте ја поддршката за помош."
+          "offboarded": "Банкарската верификација повеќе не е достапна за овој клиент. Контактирајте ја поддршката за помош.",
+          "person": {
+            "complete": "Identity verification is complete. No further action is required here.",
+            "not_started": "Open the verification link to start your identity verification.",
+            "awaiting_ubo": "Bridge is completing additional verification steps for your submission.",
+            "approved": "Identity verification is complete. No further action is required here."
+          }
         }
+      },
+      "person": {
+        "noCustomer": "No bank customer record for your profile yet.",
+        "kybProcedure": "Identity verification (KYC)"
       }
     },
     "tosStatus": {
@@ -921,11 +938,22 @@
       "currenciesTitle": "Валути што сакате да ги користите",
       "currenciesDescription": "Изберете ги валутите што овој простор ќе ги користи за банкарски депозити и исплати. Вашата организација ќе биде верификувана еднаш кај нашиот банкарски партнер.",
       "currenciesHint": "Можете да додадете повеќе валути подоцна од Банкарските поставки.",
-      "submit": "Продолжи"
+      "submit": "Продолжи",
+      "legalName": "Legal entity name",
+      "contactEmail": "Contact email",
+      "person": {
+        "organizationLegend": "Your details",
+        "organizationHint": "Your details are sent to our banking partner for verification and are not stored on Hypha.",
+        "legalName": "Full name",
+        "currenciesDescription": "Select the currencies you want to use for bank payouts. You'll be verified once with our banking partner."
+      }
     },
     "notStarted": {
       "description": "Банкарството сè уште не е поставено за овој простор.",
-      "enableCta": "Продолжи"
+      "enableCta": "Продолжи",
+      "person": {
+        "description": "Banking is not set up for your profile yet."
+      }
     },
     "blockers": {
       "notOnChain": "Овој простор мора да биде распореден на блокчејн пред да може да се постави поврзана банкарска сметка.",
@@ -1073,7 +1101,14 @@
       "simulateFillingKybRequiredData": "Симулирај пополнување на задолжителните KYB податоци",
       "cta": "Симулирај KYB одобрување",
       "simulating": "Се симулира…",
-      "refreshing": "Се освежува статусот…"
+      "refreshing": "Се освежува статусот…",
+      "person": {
+        "title": "Sandbox / Dev — KYC simulation",
+        "description": "KYC is a manual step, so it must be simulated in sandbox. This can bypass filling in the form completely as well.",
+        "infoTooltipAria": "About KYC simulation in sandbox",
+        "simulateFillingKybRequiredData": "Simulate Filling KYC Required Data",
+        "cta": "Simulate KYC approval"
+      }
     },
     "endorsements": {
       "base": "USD (ACH / дознака)",
@@ -1082,16 +1117,6 @@
       "pix": "BRL (PIX, Бразил)",
       "sepa": "EUR (SEPA банкарски трансфер)",
       "spei": "MXN (SPEI, Мексико)"
-    },
-    "onboardingDialog": {
-      "title": "Овозможи банкарски депозити",
-      "description": "Ги користиме овие информации за да ја верификуваме вашата организација. По одобрувањето, вашиот простор ќе биде поставен да прима банкарски трансфери.",
-      "legalName": "Име на правното лице",
-      "contactEmail": "Е-пошта за контакт",
-      "endorsementsLabel": "Платежни канали",
-      "endorsementsHint": "Ова се Bridge KYB одобренија (на пр. base за USD, sepa за EUR). Секој избран канал е вклучен во линкот за верификација.",
-      "submit": "Започни верификација",
-      "submitting": "Се започнува…"
     },
     "status": {
       "not_started": {
