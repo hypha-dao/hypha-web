@@ -19,7 +19,6 @@ import {
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
-  HyphaNetworkFeedbackTrigger,
 } from '@hypha-platform/epics';
 import { DeferredFooter } from '@web/components/deferred-footer';
 import { ConnectedButtonProfile } from '@web/components/connected-button-profile';
@@ -314,9 +313,7 @@ export default async function RootLayout({
                                       href: `/${locale}/network`,
                                     },
                                   ]}
-                                  beforeFirstNavItem={
-                                    <HyphaNetworkFeedbackTrigger className="w-full justify-start" />
-                                  }
+                                  showNetworkFeedback
                                   trailingBeforeProfile={
                                     isLanguageSelectVisible ? (
                                       <ConnectedLanguageSelect
@@ -344,9 +341,7 @@ export default async function RootLayout({
                                       href: `/${locale}/network`,
                                     },
                                   ]}
-                                  beforeFirstNavItem={
-                                    <HyphaNetworkFeedbackTrigger />
-                                  }
+                                  showNetworkFeedback
                                   trailingBeforeProfile={
                                     isLanguageSelectVisible ? (
                                       <ConnectedLanguageSelect

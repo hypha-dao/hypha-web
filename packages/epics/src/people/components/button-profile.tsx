@@ -21,6 +21,8 @@ import {
   Bell,
   ChevronRight,
   Compass,
+  Globe2,
+  LayoutGrid,
   LogOutIcon,
   Repeat,
   Shield,
@@ -37,6 +39,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
+import { HyphaNetworkFeedbackTrigger } from '../../common/hypha-network-feedback-dialog';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -51,8 +54,8 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
-  /** Rendered immediately before the first main nav link (e.g. Feedback before My Spaces). */
-  beforeFirstNavItem?: ReactNode;
+  /** When true, show Shape Hypha Together before main nav links. */
+  showNetworkFeedback?: boolean;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
   /** Compact toolbar mode: render profile trigger instead of full mobile column menu. */
@@ -64,6 +67,23 @@ const menuItemClass =
 const compactSheetItemClass =
   'flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-2 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+
+function resolveNavItemIcon(href?: string) {
+  if (!href) {
+    return null;
+  }
+  if (href.includes('/my-spaces')) {
+    return (
+      <LayoutGrid className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    );
+  }
+  if (href.includes('/network')) {
+    return (
+      <Globe2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    );
+  }
+  return null;
+}
 
 export const ButtonProfile = ({
   person,
@@ -78,7 +98,7 @@ export const ButtonProfile = ({
   navItems,
   onChangeThemeMode,
   resolvedTheme,
-  beforeFirstNavItem,
+  showNetworkFeedback,
   trailingBeforeProfile,
   compact = false,
 }: ButtonProfileProps) => {
@@ -225,10 +245,11 @@ export const ButtonProfile = ({
                 <>
                   <DropdownMenuSeparator className="-mx-0 my-1" />
                   <DropdownMenuGroup className="space-y-0.5">
-                    {beforeFirstNavItem ? (
-                      <div key="nav-before-first" className="px-1 py-0.5">
-                        {beforeFirstNavItem}
-                      </div>
+                    {showNetworkFeedback ? (
+                      <HyphaNetworkFeedbackTrigger
+                        variant="menu"
+                        onNavigate={() => setProfileMenuOpen(false)}
+                      />
                     ) : null}
                     {navItems.map((item) => (
                       <Fragment key={item.href ?? item.label}>
@@ -239,6 +260,7 @@ export const ButtonProfile = ({
                             asChild
                           >
                             <Link href={item.href}>
+                              {resolveNavItemIcon(item.href)}
                               <span className="flex-1">{item.label}</span>
                               <ChevronRight
                                 className="ml-auto size-4 opacity-60"
@@ -435,8 +457,11 @@ export const ButtonProfile = ({
                 ) : null}
 
                 <div className="space-y-1">
-                  {beforeFirstNavItem ? (
-                    <div className="px-1">{beforeFirstNavItem}</div>
+                  {showNetworkFeedback ? (
+                    <HyphaNetworkFeedbackTrigger
+                      variant="sheet"
+                      onNavigate={() => setProfileMenuOpen(false)}
+                    />
                   ) : null}
                   {navItems.map((item) => (
                     <Fragment key={item.href ?? item.label}>
@@ -446,6 +471,7 @@ export const ButtonProfile = ({
                           className={compactSheetItemClass}
                           onClick={() => setProfileMenuOpen(false)}
                         >
+                          {resolveNavItemIcon(item.href)}
                           <span className="flex-1">{item.label}</span>
                           <ChevronRight
                             className="ml-auto size-4 text-muted-foreground"
@@ -625,12 +651,15 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
-            {beforeFirstNavItem ? <div>{beforeFirstNavItem}</div> : null}
+            {showNetworkFeedback ? (
+              <HyphaNetworkFeedbackTrigger variant="toolbar" />
+            ) : null}
             {navItems.map((item) => (
               <ButtonNavItem
                 key={item.href ?? item.label}
                 href={item.href}
                 label={item.label}
+                icon={resolveNavItemIcon(item.href)}
               />
             ))}
 
@@ -689,12 +718,15 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden md:flex gap-2">
             <div className="flex gap-2">
-              {beforeFirstNavItem ? <div>{beforeFirstNavItem}</div> : null}
+              {showNetworkFeedback ? (
+                <HyphaNetworkFeedbackTrigger variant="toolbar" />
+              ) : null}
               {navItems.map((item) => (
                 <ButtonNavItem
                   key={item.href ?? item.label}
                   href={item.href}
                   label={item.label}
+                  icon={resolveNavItemIcon(item.href)}
                 />
               ))}
             </div>
