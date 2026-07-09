@@ -11,6 +11,8 @@ type UseCoherenceSignalDeepLinkOptions = {
   humanChatEnabled: boolean;
   hideArchived: boolean;
   priorityFilter: 'all' | 'critical' | 'high' | 'medium' | 'low';
+  /** When set, skip re-opening chat / scroll if the user is already on this signal. */
+  activeCoherenceSlug?: string | null;
   onOpenSignalChat?: (signal: Coherence) => void;
   onRevealArchivedSignal?: () => void;
   onClearPriorityFilter?: () => void;
@@ -27,6 +29,7 @@ export function useCoherenceSignalDeepLink({
   humanChatEnabled,
   hideArchived,
   priorityFilter,
+  activeCoherenceSlug,
   onOpenSignalChat,
   onRevealArchivedSignal,
   onClearPriorityFilter,
@@ -72,16 +75,23 @@ export function useCoherenceSignalDeepLink({
       return;
     }
 
+    const alreadyViewingSignal =
+      activeCoherenceSlug?.trim() === signalSlug ||
+      openedChatForSlugRef.current === signalSlug;
+
     if (
       humanChatEnabled &&
       onOpenSignalChat &&
-      openedChatForSlugRef.current !== signalSlug
+      !alreadyViewingSignal
     ) {
       openedChatForSlugRef.current = signalSlug;
       onOpenSignalChat(signal);
+    } else if (alreadyViewingSignal) {
+      openedChatForSlugRef.current = signalSlug;
     }
 
-    if (scrolledForSlugRef.current === signalSlug) {
+    if (scrolledForSlugRef.current === signalSlug || alreadyViewingSignal) {
+      scrolledForSlugRef.current = signalSlug;
       return;
     }
     return scrollToSignalCardWithRetry(signalSlug, {
@@ -93,6 +103,7 @@ export function useCoherenceSignalDeepLink({
     hideArchived,
     humanChatEnabled,
     isLoading,
+    activeCoherenceSlug,
     onClearPriorityFilter,
     onOpenSignalChat,
     onRefreshSignals,

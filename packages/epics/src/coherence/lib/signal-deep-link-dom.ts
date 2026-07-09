@@ -16,17 +16,13 @@ export function findSignalCardElement(slug: string): HTMLElement | null {
   ) as HTMLElement | null;
 }
 
-export function highlightSignalCardElement(el: HTMLElement): void {
+export function scrollSignalCardElementIntoView(el: HTMLElement): void {
   el.scrollIntoView({ block: 'center', behavior: 'smooth', inline: 'nearest' });
-  el.classList.add('ring-2', 'ring-primary', 'rounded-xl', 'transition-shadow');
-  window.setTimeout(() => {
-    el.classList.remove(
-      'ring-2',
-      'ring-primary',
-      'rounded-xl',
-      'transition-shadow',
-    );
-  }, 2400);
+}
+
+/** Scroll only — persistent accent selection is applied in React via {@link signalCardActiveClass}. */
+export function highlightSignalCardElement(el: HTMLElement): void {
+  scrollSignalCardElementIntoView(el);
 }
 
 export function getSignalSlugDomProps(

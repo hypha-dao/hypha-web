@@ -48,6 +48,7 @@ type SignalSectionProps = {
   order?: string;
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
 };
 
 export const SignalSection: FC<SignalSectionProps> = ({
@@ -59,6 +60,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   viewMode,
   refresh,
   onSignalClick,
+  activeSignalSlug,
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
@@ -265,6 +267,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               workflow={resolvedWorkflow}
               spaceSlug={spaceSlug}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
               readOnly={!canUpdateTasks}
               refresh={refresh}
               onMoveStatus={(signal, progressStatus) =>
@@ -276,6 +279,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={visibleSignals}
               workflow={resolvedWorkflow}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
               readOnly={!canUpdateTasks}
               refresh={refresh}
               onPatch={patchAndRefresh}
@@ -285,6 +289,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={visibleSignals}
               workflow={resolvedWorkflow}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
               readOnly={!canUpdateTasks}
               refresh={refresh}
               onPatch={patchAndRefresh}
@@ -297,6 +302,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={visibleSignals}
               refresh={refresh}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
             />
           )}
         </div>

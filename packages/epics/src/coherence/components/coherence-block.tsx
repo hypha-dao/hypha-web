@@ -192,7 +192,15 @@ export function CoherenceBlock({
     [lang, spaceSlug],
   );
 
-  const { openCoherenceChat, openHumanChatPanel } = useHumanChatPanel();
+  const { openCoherenceChat, openHumanChatPanel, mode, coherenceSlug } =
+    useHumanChatPanel();
+
+  const activeSignalSlug = React.useMemo(() => {
+    const fromQuery = searchParams.get('signal')?.trim() ?? null;
+    const fromChat =
+      mode === 'coherence' ? coherenceSlug?.trim() ?? null : null;
+    return fromChat ?? fromQuery;
+  }, [coherenceSlug, mode, searchParams]);
 
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {
@@ -233,6 +241,7 @@ export function CoherenceBlock({
     humanChatEnabled,
     hideArchived,
     priorityFilter,
+    activeCoherenceSlug: coherenceSlug,
     onOpenSignalChat: humanChatEnabled
       ? handleDeepLinkOpenSignalChat
       : undefined,
@@ -305,6 +314,7 @@ export function CoherenceBlock({
         viewMode={viewMode}
         refresh={refresh}
         onSignalClick={onSignalClick}
+        activeSignalSlug={activeSignalSlug}
       />
     </div>
   );

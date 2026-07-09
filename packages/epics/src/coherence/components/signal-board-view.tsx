@@ -24,6 +24,7 @@ import {
   isDragLeaveColumn,
   setSignalDragData,
 } from '../utils/signal-dnd-utils';
+import { isSignalSlugActive } from '../utils/signal-active-styles';
 
 const SIGNAL_BOARD_MOBILE_STATUS_KEY = 'signal-board-mobile-status';
 
@@ -32,6 +33,7 @@ type SignalBoardViewProps = {
   workflow: SignalWorkflowConfig;
   spaceSlug?: string;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
   onMoveStatus: (signal: Coherence, progressStatus: string) => Promise<void>;
   refresh: () => Promise<void>;
   readOnly?: boolean;
@@ -61,6 +63,7 @@ export function SignalBoardView({
   workflow,
   spaceSlug,
   onSignalClick,
+  activeSignalSlug,
   onMoveStatus,
   refresh,
   readOnly = false,
@@ -285,6 +288,7 @@ export function SignalBoardView({
                   <SignalTaskCard
                     key={signal.id}
                     signal={signal}
+                    isActive={isSignalSlugActive(signal.slug, activeSignalSlug)}
                     status={status}
                     showBoard
                     board={

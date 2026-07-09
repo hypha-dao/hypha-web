@@ -20,6 +20,10 @@ import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
+import {
+  isSignalSlugActive,
+  signalCardActiveClass,
+} from '../utils/signal-active-styles';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonById } from '@hypha-platform/core/client';
 
@@ -27,6 +31,7 @@ type SignalListViewProps = {
   signals: Coherence[];
   workflow: SignalWorkflowConfig;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
   onPatch: (
     signal: Coherence,
     patch: {
@@ -102,6 +107,7 @@ export function SignalListView({
   signals,
   workflow,
   onSignalClick,
+  activeSignalSlug,
   onPatch,
   refresh,
   readOnly = false,
@@ -144,14 +150,17 @@ export function SignalListView({
           const boardName =
             workflow.boards.find((board) => board.slug === signal.board)
               ?.name ?? t('signalBoardUncategorized');
+          const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
 
           return (
             <li
               key={signal.id}
               {...getSignalSlugDomProps(signal.slug)}
               className={cn(
-                'group border-l-[3px] px-3 py-3 transition-colors hover:bg-muted/20 lg:px-4',
+                'group border-l-[3px] px-3 py-3 transition-[background-color,border-color,box-shadow] lg:px-4',
                 priorityLeftBorderEdgeClass(signal.priority),
+                signalCardActiveClass(isActive, 'rounded-none'),
+                !isActive && 'hover:bg-muted/20',
               )}
             >
               <div

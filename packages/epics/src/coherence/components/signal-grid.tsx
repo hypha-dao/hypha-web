@@ -3,6 +3,10 @@ import { cn } from '@hypha-platform/ui-utils';
 import { SignalCard } from './signal-card';
 import { Coherence } from '@hypha-platform/core/client';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
+import {
+  isSignalSlugActive,
+  signalCardActiveClass,
+} from '../utils/signal-active-styles';
 
 type SignalGridProps = {
   isLoading: boolean;
@@ -11,6 +15,7 @@ type SignalGridProps = {
   signals: Coherence[];
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
 };
 
 export function SignalGrid({
@@ -20,16 +25,20 @@ export function SignalGrid({
   signals,
   refresh,
   onSignalClick,
+  activeSignalSlug,
 }: SignalGridProps) {
   return (
     <div className="grid w-full grid-cols-1 items-start gap-2 md:grid-cols-[repeat(auto-fill,minmax(min(100%,14.25rem),1fr))]">
-      {signals.map((signal) =>
-        signal.archived ? (
+      {signals.map((signal) => {
+        const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
+
+        return signal.archived ? (
           <SignalCard
             key={signal.id}
             {...signal}
             leadImage={leadImage}
             className="w-full min-h-0"
+            isActive={isActive}
             isLoading={isLoading}
             refresh={refresh}
           />
@@ -40,7 +49,8 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'flex min-h-0 w-full cursor-pointer rounded-xl text-left outline-none',
+              'flex min-h-0 w-full cursor-pointer rounded-xl text-left outline-none transition-[border-color,box-shadow] duration-200',
+              signalCardActiveClass(isActive),
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
             onClick={() => onSignalClick(signal)}
@@ -63,7 +73,11 @@ export function SignalGrid({
           <Link
             key={signal.id}
             href={`${basePath}/${signal.slug}`}
-            className="flex min-h-0 w-full"
+            {...getSignalSlugDomProps(signal.slug)}
+            className={cn(
+              'flex min-h-0 w-full rounded-xl transition-[border-color,box-shadow] duration-200',
+              signalCardActiveClass(isActive),
+            )}
           >
             <SignalCard
               {...signal}
@@ -73,8 +87,8 @@ export function SignalGrid({
               refresh={refresh}
             />
           </Link>
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }

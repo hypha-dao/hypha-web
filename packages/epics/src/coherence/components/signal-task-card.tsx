@@ -31,6 +31,10 @@ import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
+import {
+  isSignalSlugActive,
+  signalCardActiveClass,
+} from '../utils/signal-active-styles';
 
 type SignalTaskCardProps = {
   signal: Coherence;
@@ -38,6 +42,7 @@ type SignalTaskCardProps = {
   board?: SignalBoardDefinition | null;
   showBoard?: boolean;
   showStatus?: boolean;
+  isActive?: boolean;
   onClick?: () => void;
   draggable?: boolean;
   onDragStart?: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -87,6 +92,7 @@ export function SignalTaskCard({
   board,
   showBoard = true,
   showStatus = false,
+  isActive = false,
   onClick,
   draggable,
   onDragStart,
@@ -161,7 +167,8 @@ export function SignalTaskCard({
       className={cn(
         'group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm',
         'transition-all duration-200 ease-out',
-        'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
+        !isActive && 'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
+        signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',
         className,

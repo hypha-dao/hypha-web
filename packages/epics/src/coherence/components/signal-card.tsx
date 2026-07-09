@@ -53,6 +53,7 @@ import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { priorityLeftBorderClass } from '../utils/signal-priority-styles';
+import { signalCardActiveClass } from '../utils/signal-active-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
@@ -63,6 +64,7 @@ type SignalCardProps = {
   onOpenConversation?: () => void;
   className?: string;
   leadImage?: string;
+  isActive?: boolean;
 };
 
 const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
@@ -104,6 +106,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   onOpenConversation,
   className,
   leadImage: _leadImage,
+  isActive = false,
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
@@ -408,8 +411,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       className={cn(
         'group relative flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
-        'hover:border-accent-8/75 hover:shadow-md',
-        'focus-within:border-accent-8/75 focus-within:shadow-md',
+        !isActive && 'hover:border-accent-8/75 hover:shadow-md',
+        !isActive && 'focus-within:border-accent-8/75 focus-within:shadow-md',
+        signalCardActiveClass(isActive),
         className,
       )}
     >

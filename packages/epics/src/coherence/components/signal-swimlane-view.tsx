@@ -20,11 +20,13 @@ import {
   isDragLeaveColumn,
   setSignalDragData,
 } from '../utils/signal-dnd-utils';
+import { isSignalSlugActive } from '../utils/signal-active-styles';
 
 type SignalSwimlaneViewProps = {
   signals: Coherence[];
   workflow: SignalWorkflowConfig;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
   onPatch: (
     signal: Coherence,
     patch: {
@@ -42,6 +44,7 @@ export function SignalSwimlaneView({
   signals,
   workflow,
   onSignalClick,
+  activeSignalSlug,
   onPatch,
   refresh,
   readOnly = false,
@@ -246,6 +249,10 @@ export function SignalSwimlaneView({
                         <SignalTaskCard
                           key={signal.id}
                           signal={signal}
+                          isActive={isSignalSlugActive(
+                            signal.slug,
+                            activeSignalSlug,
+                          )}
                           status={status}
                           showBoard={false}
                           board={lane.board}
