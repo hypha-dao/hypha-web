@@ -3571,6 +3571,7 @@
     "signalListDue": "Due",
     "signalListPriority": "Priority",
     "signalListBoard": "Board",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Drop signals here",
     "signalDropHere": "Drop here",
     "signalListActions": "Actions",

@@ -14,6 +14,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
+import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
@@ -102,7 +103,7 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
 
 /** Shared desktop list grid — title flexes; metadata columns stay compact but readable. */
 const SIGNAL_LIST_GRID_CLASS =
-  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_5.25rem_4.5rem_minmax(8.5rem,10.5rem)_3.5rem] lg:gap-2';
+  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_5.25rem_4.5rem_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
 
 export function SignalListView({
   signals,
@@ -129,6 +130,7 @@ export function SignalListView({
         <span>{t('signalListDue')}</span>
         <span>{t('signalListPriority')}</span>
         <span>{t('signalListBoard')}</span>
+        <span>{t('signalListUpvote')}</span>
         <span className="text-right">{t('signalListActions')}</span>
       </div>
 
@@ -305,7 +307,19 @@ export function SignalListView({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 lg:col-start-6 lg:justify-end">
+                  <div className="flex items-center gap-2 lg:block">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
+                      {t('signalListUpvote')}
+                    </span>
+                    <SignalUpvoteControl
+                      slug={signal.slug}
+                      upvotes={signal.upvotes}
+                      refresh={refresh}
+                      disabled={Boolean(signal.archived)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 lg:col-start-7 lg:justify-end">
                     {signal.assigneeIds.length > 0 ? (
                       <ListAssigneeStack
                         assigneeIds={signal.assigneeIds}
