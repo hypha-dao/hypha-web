@@ -84,8 +84,11 @@ export function useCoherenceSignalDeepLink({
     if (scrolledForSlugRef.current === signalSlug) {
       return;
     }
-    scrolledForSlugRef.current = signalSlug;
-    return scrollToSignalCardWithRetry(signalSlug);
+    return scrollToSignalCardWithRetry(signalSlug, {
+      onFound: () => {
+        scrolledForSlugRef.current = signalSlug;
+      },
+    });
   }, [
     hideArchived,
     humanChatEnabled,

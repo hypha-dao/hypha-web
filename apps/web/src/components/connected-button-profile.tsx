@@ -17,9 +17,9 @@ type ConnectedButtonProfileProps = Omit<
 
 function useAuthenticationWithWalletSessionCleanup() {
   const auth = useAuthentication();
-  const logout = useCallback(() => {
+  const logout = useCallback((redirect?: boolean) => {
     clearOnboardingWalletSessionActive();
-    auth.logout();
+    auth.logout(redirect);
   }, [auth]);
 
   return useMemo(() => ({ ...auth, logout }), [auth, logout]);

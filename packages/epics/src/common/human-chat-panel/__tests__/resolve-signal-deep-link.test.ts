@@ -78,6 +78,19 @@ describe('resolveSignalDeepLinkWithRetry (CSH-DISCOVER-2/3)', () => {
     expect(fetchSignal).toHaveBeenCalledTimes(4);
   });
 
+  it('returns not_found for 404 when maxAttempts is smaller than retry delays', async () => {
+    const fetchSignal = vi.fn(async () => new Response(null, { status: 404 }));
+    const result = await resolveSignalDeepLinkWithRetry({
+      signalId: 'missing',
+      expectedSpaceSlug: 'demo-space',
+      getAuthToken: () => 'token',
+      fetchSignal,
+      maxAttempts: 1,
+    });
+    expect(result).toEqual({ ok: false, reason: 'not_found' });
+    expect(fetchSignal).toHaveBeenCalledTimes(1);
+  });
+
   it('succeeds when roomId is not set yet', async () => {
     const result = await resolveSignalDeepLinkWithRetry({
       signalId: 'new-signal',

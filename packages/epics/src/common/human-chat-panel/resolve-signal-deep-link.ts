@@ -39,7 +39,10 @@ export async function resolveSignalDeepLinkWithRetry(input: {
     try {
       const res = await input.fetchSignal(input.signalId, token);
       if (res.status === 404) {
-        if (attempt < NOT_FOUND_RETRY_DELAYS_MS.length) {
+        const canRetry404 =
+          attempt < NOT_FOUND_RETRY_DELAYS_MS.length &&
+          attempt < maxAttempts - 1;
+        if (canRetry404) {
           await new Promise((resolve) => {
             window.setTimeout(resolve, NOT_FOUND_RETRY_DELAYS_MS[attempt]);
           });
@@ -86,5 +89,8 @@ export async function resolveSignalDeepLinkWithRetry(input: {
     }
   }
 
-  return { ok: false, reason: 'auth_not_ready' };
+  const token = input.getAuthToken()?.trim() ?? null;
+  return token
+    ? { ok: false, reason: 'not_found' }
+    : { ok: false, reason: 'auth_not_ready' };
 }
