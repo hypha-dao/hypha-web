@@ -13,6 +13,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Separator,
   Slider,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -254,91 +255,107 @@ export function SignalUpvoteControl({
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-72 p-4"
+          sideOffset={8}
+          className="w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border/90 bg-background-2 p-0 shadow-xl ring-1 ring-white/5 dark:ring-white/10"
           style={spaceAccentPortalStyle}
+          data-space-accent-scope
           onClick={stopPropagation}
         >
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between gap-3 px-4 py-3.5">
               <span className="text-1 font-medium text-muted-foreground">
                 {t('totalSupport')}
               </span>
-              <span className="text-2 font-semibold tabular-nums">
+              <span className="text-3 font-semibold tabular-nums text-foreground">
                 {totalLabel}
               </span>
             </div>
 
             {canVote ? (
-              <div className="flex flex-col gap-2">
-                <span className="text-1 text-muted-foreground">
-                  {t('yourVotingPowerShare')}
-                </span>
-                <Slider
-                  min={1}
-                  max={100}
-                  step={1}
-                  value={[percent]}
-                  onValueChange={(value) => setPercent(value[0] ?? 100)}
-                  displayValue
-                  disabled={isMutating}
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    colorVariant="accent"
-                    size="sm"
-                    className="h-7 flex-1"
-                    disabled={isMutating}
-                    onClick={() => void handleApplyPercent()}
-                  >
-                    {hasVoted ? t('updateUpvote') : t('upvote')}
-                  </Button>
-                  {hasVoted ? (
+              <>
+                <Separator className="bg-border/70" />
+                <div className="flex flex-col gap-4 px-4 py-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-1 font-medium text-foreground">
+                        {t('yourVotingPowerShare')}
+                      </span>
+                      <span className="text-1 font-semibold tabular-nums text-accent-11">
+                        {percent}%
+                      </span>
+                    </div>
+                    <Slider
+                      min={1}
+                      max={100}
+                      step={1}
+                      value={[percent]}
+                      onValueChange={(value) => setPercent(value[0] ?? 100)}
+                      disabled={isMutating}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
                     <Button
                       type="button"
-                      variant="outline"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="h-7"
+                      colorVariant="accent"
+                      className="w-full"
                       disabled={isMutating}
-                      onClick={() => void handleRemove()}
+                      onClick={() => void handleApplyPercent()}
                     >
-                      {t('removeUpvote')}
+                      {hasVoted ? t('updateUpvote') : t('upvote')}
                     </Button>
-                  ) : null}
+                    {hasVoted ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        colorVariant="neutral"
+                        className="w-full text-muted-foreground hover:text-foreground"
+                        disabled={isMutating}
+                        onClick={() => void handleRemove()}
+                      >
+                        {t('removeUpvote')}
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
+              </>
             ) : (
-              <p className="text-1 text-muted-foreground">
-                {t('signInToUpvote')}
-              </p>
+              <>
+                <Separator className="bg-border/70" />
+                <p className="px-4 py-4 text-1 leading-relaxed text-muted-foreground">
+                  {t('signInToUpvote')}
+                </p>
+              </>
             )}
 
             {error ? (
-              <p role="alert" className="text-1 text-error-11">
+              <p
+                role="alert"
+                className="mx-4 mb-4 rounded-lg border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+              >
                 {error}
               </p>
             ) : null}
 
-            <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2.5">
+            <Separator className="bg-border/70" />
+            <div className="flex flex-col gap-3 px-4 py-3.5">
               <span className="text-1 font-medium text-muted-foreground">
                 {t('supportersCount', { count: summary.upvoteCount })}
               </span>
-              {summary.voters.length === 0 ? null : (
-                <ul className="flex max-h-40 flex-col gap-1.5 overflow-y-auto">
+              {summary.voters.length > 0 ? (
+                <ul className="flex max-h-44 flex-col gap-1 overflow-y-auto rounded-xl border border-border/80 bg-muted/20 p-1.5 narrow-scrollbar">
                   {summary.voters.map((voter) => (
                     <li
                       key={voter.personId}
-                      className="flex items-center justify-between gap-2"
+                      className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-background-3/70"
                     >
-                      <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="flex min-w-0 items-center gap-2">
                         <PersonAvatar
                           size="sm"
                           shape="circle"
                           avatarSrc={voter.avatarUrl ?? ''}
                           userName={voter.name ?? undefined}
                         />
-                        <span className="truncate text-1">
+                        <span className="truncate text-1 font-medium text-foreground">
                           {voter.name || t('anonymousSupporter')}
                         </span>
                       </span>
@@ -352,7 +369,7 @@ export function SignalUpvoteControl({
                     </li>
                   ))}
                 </ul>
-              )}
+              ) : null}
             </div>
           </div>
         </PopoverContent>
