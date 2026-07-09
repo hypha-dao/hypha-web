@@ -18,6 +18,7 @@ import {
 import {
   DEFAULT_SIGNAL_PROGRESS_STATUS,
   normalizeAssigneeIds,
+  resolveDefaultBoard,
   resolveDefaultProgressStatus,
 } from '../signal-workflow';
 
@@ -116,11 +117,13 @@ export const createCoherence = async (
   const assigneeIds = normalizeAssigneeIds(inputAssigneeIds ?? []);
 
   let progressStatus = inputProgressStatus;
+  let defaultBoard: string | null = null;
   if (spaceId != null) {
     const workflow = await ensureSignalWorkflowConfig({ spaceId }, { db });
     progressStatus ??= resolveDefaultProgressStatus(workflow);
     assertValidProgressStatus(workflow, progressStatus);
     assertValidBoard(workflow, inputBoard ?? null);
+    defaultBoard = resolveDefaultBoard(workflow);
   } else {
     progressStatus ??= DEFAULT_SIGNAL_PROGRESS_STATUS;
   }
@@ -134,7 +137,7 @@ export const createCoherence = async (
       priority,
       progressStatus,
       assigneeIds,
-      board: inputBoard ?? null,
+      board: inputBoard ?? defaultBoard,
       dueAt: inputDueAt ?? null,
       ...rest,
     })
@@ -282,7 +285,11 @@ export const patchCoherenceTaskBySlug = async (
       assertValidProgressStatus(workflow, rest.progressStatus);
     }
     if (rest.board !== undefined) {
-      assertValidBoard(workflow, rest.board);
+      patch.board =
+        rest.board == null || rest.board === ''
+          ? resolveDefaultBoard(workflow)
+          : rest.board;
+      assertValidBoard(workflow, patch.board);
     }
   }
 

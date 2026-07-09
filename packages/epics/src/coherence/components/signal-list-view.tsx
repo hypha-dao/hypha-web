@@ -24,6 +24,7 @@ import {
   isSignalSlugActive,
   signalCardActiveClass,
 } from '../utils/signal-active-styles';
+import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonById } from '@hypha-platform/core/client';
 
@@ -148,8 +149,10 @@ export function SignalListView({
             signal.progressStatus ??
             '—';
           const boardName =
-            workflow.boards.find((board) => board.slug === signal.board)
-              ?.name ?? t('signalBoardUncategorized');
+            workflow.boards.find(
+              (board) =>
+                board.slug === resolveEffectiveBoard(signal.board, workflow),
+            )?.name ?? resolveEffectiveBoard(signal.board, workflow);
           const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
 
           return (
@@ -279,10 +282,10 @@ export function SignalListView({
                       </span>
                     ) : (
                       <Select
-                        value={signal.board ?? '__none__'}
+                        value={resolveEffectiveBoard(signal.board, workflow)}
                         onValueChange={(value) =>
                           onPatch(signal, {
-                            board: value === '__none__' ? null : value,
+                            board: value,
                           })
                         }
                       >
@@ -290,9 +293,6 @@ export function SignalListView({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">
-                            {t('signalBoardUncategorized')}
-                          </SelectItem>
                           {workflow.boards
                             .filter((board) => !board.archived)
                             .map((board) => (

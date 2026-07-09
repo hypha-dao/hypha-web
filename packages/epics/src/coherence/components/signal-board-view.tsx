@@ -25,6 +25,11 @@ import {
   setSignalDragData,
 } from '../utils/signal-dnd-utils';
 import { isSignalSlugActive } from '../utils/signal-active-styles';
+import {
+  SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
+  SIGNAL_STATUS_CARD_STACK_CLASS,
+} from '../utils/signal-board-layout';
+import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 
 const SIGNAL_BOARD_MOBILE_STATUS_KEY = 'signal-board-mobile-status';
 
@@ -185,7 +190,7 @@ export function SignalBoardView({
       <div
         className={cn(
           'flex w-full gap-4',
-          isMobile ? 'flex-col pb-1' : 'overflow-x-auto pb-3 pt-0.5',
+          isMobile ? 'flex-col pb-1' : 'items-start overflow-x-auto pb-3 pt-0.5',
         )}
       >
         {visibleStatuses.map((status) => {
@@ -201,15 +206,16 @@ export function SignalBoardView({
             <div
               key={status.slug}
               className={cn(
-                'flex flex-col rounded-2xl border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
+                'flex min-h-[8rem] flex-col rounded-2xl border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
                 statusColumnTopBorderClass(status.color),
                 isMobile ? 'w-full min-w-0' : 'min-w-[17.5rem] flex-1',
+                SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
                 isDropTarget
                   ? 'border-accent-8/70 ring-2 ring-accent-9/30 shadow-md'
                   : 'border-border/50',
               )}
             >
-              <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
                 <div className="flex min-w-0 items-center gap-2">
                   <span
                     className={cn(
@@ -228,7 +234,7 @@ export function SignalBoardView({
               </div>
 
               <div
-                className="flex min-h-[8rem] flex-col gap-2.5 p-2.5"
+                className={SIGNAL_STATUS_CARD_STACK_CLASS}
                 onDragOver={
                   readOnly
                     ? undefined
@@ -293,7 +299,9 @@ export function SignalBoardView({
                     showBoard
                     board={
                       workflow.boards.find(
-                        (board) => board.slug === signal.board,
+                        (board) =>
+                          board.slug ===
+                          resolveEffectiveBoard(signal.board, workflow),
                       ) ?? null
                     }
                     draggable={!readOnly && !isMobile}

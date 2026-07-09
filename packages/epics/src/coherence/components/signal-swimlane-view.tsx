@@ -21,6 +21,11 @@ import {
   setSignalDragData,
 } from '../utils/signal-dnd-utils';
 import { isSignalSlugActive } from '../utils/signal-active-styles';
+import {
+  SIGNAL_STATUS_CARD_STACK_CLASS,
+  SIGNAL_SWIMLANE_STATUS_ROW_CLASS,
+} from '../utils/signal-board-layout';
+import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 
 type SignalSwimlaneViewProps = {
   signals: Coherence[];
@@ -37,8 +42,6 @@ type SignalSwimlaneViewProps = {
   refresh: () => Promise<void>;
   readOnly?: boolean;
 };
-
-const UNCategorized_SLUG = '__uncategorized__';
 
 export function SignalSwimlaneView({
   signals,
@@ -59,12 +62,10 @@ export function SignalSwimlaneView({
   const statuses = React.useMemo(() => workflow.statuses, [workflow.statuses]);
 
   const lanes = React.useMemo(
-    (): Array<{ slug: string; board: SignalBoardDefinition | null }> => [
-      ...workflow.boards
+    (): Array<{ slug: string; board: SignalBoardDefinition }> =>
+      workflow.boards
         .filter((board) => !board.archived)
         .map((board) => ({ slug: board.slug, board })),
-      { slug: UNCategorized_SLUG, board: null },
-    ],
     [workflow.boards],
   );
 
@@ -81,8 +82,9 @@ export function SignalSwimlaneView({
     }
 
     for (const signal of signals) {
-      const laneKey = signal.board ?? UNCategorized_SLUG;
-      const statusMap = map.get(laneKey) ?? map.get(UNCategorized_SLUG)!;
+      const laneKey = resolveEffectiveBoard(signal.board, workflow);
+      const statusMap = map.get(laneKey);
+      if (!statusMap) continue;
       const statusKey =
         signal.progressStatus != null && statusMap.has(signal.progressStatus)
           ? signal.progressStatus
@@ -91,7 +93,7 @@ export function SignalSwimlaneView({
     }
 
     return map;
-  }, [lanes, signals, statuses]);
+  }, [lanes, signals, statuses, workflow]);
 
   const clearDragState = React.useCallback(() => {
     draggingSlugRef.current = null;
@@ -115,18 +117,18 @@ export function SignalSwimlaneView({
           (sum, bucket) => sum + bucket.length,
           0,
         );
-        const laneBoard = lane.slug === UNCategorized_SLUG ? null : lane.slug;
+        const laneBoard = lane.slug;
 
         return (
           <section
             key={lane.slug}
             className="w-full overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm"
           >
-            <header className="flex items-center justify-between gap-3 border-b border-border/40 bg-gradient-to-r from-muted/35 via-muted/15 to-transparent px-4 py-3">
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 bg-gradient-to-r from-muted/35 via-muted/15 to-transparent px-4 py-3">
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="h-8 w-1 shrink-0 rounded-full bg-accent-9" />
                 <h3 className="truncate text-sm font-semibold tracking-tight text-foreground">
-                  {lane.board?.name ?? t('signalBoardUncategorized')}
+                  {lane.board.name}
                 </h3>
               </div>
               <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
@@ -134,8 +136,13 @@ export function SignalSwimlaneView({
               </span>
             </header>
 
-            <div className="flex w-full gap-3 overflow-x-auto p-3">
-              {statuses.map((status, index) => {
+            <div
+              className={cn(
+                'flex w-full min-h-0 gap-3 overflow-x-auto p-3',
+                SIGNAL_SWIMLANE_STATUS_ROW_CLASS,
+              )}
+            >
+              {statuses.map((status) => {
                 const columnSignals = statusMap.get(status.slug) ?? [];
                 const dropKey = `${lane.slug}:${status.slug}`;
                 const isDropTarget = dropTargetKey === dropKey;
@@ -150,14 +157,14 @@ export function SignalSwimlaneView({
                   <div
                     key={dropKey}
                     className={cn(
-                      'flex min-w-[15.5rem] flex-1 flex-col rounded-xl border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
+                      'flex min-h-[6rem] min-w-[15.5rem] flex-1 flex-col rounded-xl border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
                       statusColumnTopBorderClass(status.color),
                       isDropTarget
                         ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'
                         : 'border-border/40',
                     )}
                   >
-                    <div className="flex items-center justify-between gap-2 border-b border-border/30 px-2.5 py-2">
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/30 px-2.5 py-2">
                       <div className="flex min-w-0 items-center gap-1.5">
                         <span
                           className={cn(
@@ -176,7 +183,7 @@ export function SignalSwimlaneView({
                     </div>
 
                     <div
-                      className="flex min-h-[6rem] flex-col gap-2 p-2"
+                      className={cn(SIGNAL_STATUS_CARD_STACK_CLASS, 'gap-2 p-2')}
                       onDragOver={
                         readOnly
                           ? undefined
