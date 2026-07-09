@@ -22,7 +22,8 @@
     "e2e": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --reporter=line",
     "e2e:ui": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --ui",
     "e2e:debug": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --debug",
-    "check:matrix-sdk": "node scripts/check-matrix-js-sdk-version.mjs"
+    "check:matrix-sdk": "node scripts/check-matrix-js-sdk-version.mjs",
+    "verify:stripe-env": "node scripts/verify-stripe-subscriptions-env.mjs"
   },
   "private": true,
   "nx": {},

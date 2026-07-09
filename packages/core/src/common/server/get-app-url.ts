@@ -7,12 +7,23 @@ const DEFAULT_LOCALE = 'en';
 
 /**
  * Absolute origin for the Hypha web app (no trailing slash).
- * Prefer `NEXT_PUBLIC_APP_URL`; on Vercel previews use `VERCEL_URL`.
+ * Prefer `NEXT_PUBLIC_APP_URL`; on Vercel use the public hostname for each
+ * environment so Stripe/Billing redirects land on the same origin users
+ * opened checkout from (not the internal *.vercel.app deployment URL).
  */
 export function getAppBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (fromEnv) {
     return fromEnv.replace(/\/$/, '');
+  }
+
+  if (process.env.VERCEL_ENV === 'production') {
+    return DEFAULT_APP_BASE_URL;
+  }
+
+  const prNumber = process.env.VERCEL_GIT_PULL_REQUEST_ID?.trim();
+  if (process.env.VERCEL_ENV === 'preview' && prNumber) {
+    return `https://pr-${prNumber}.preview-app.hypha.earth`;
   }
 
   const vercel = process.env.VERCEL_URL?.trim();

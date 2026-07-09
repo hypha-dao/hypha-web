@@ -2,6 +2,8 @@ import 'server-only';
 
 import Stripe from 'stripe';
 
+import { assertStripeKeyMatchesRuntime } from './stripe-env';
+
 let cachedClient: Stripe | null = null;
 
 /**
@@ -16,6 +18,8 @@ export function getStripeClient(): Stripe {
   if (!apiKey) {
     throw new Error('STRIPE_SECRET_KEY is not set');
   }
+
+  assertStripeKeyMatchesRuntime(apiKey);
 
   cachedClient = new Stripe(apiKey);
   return cachedClient;
