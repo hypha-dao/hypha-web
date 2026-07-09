@@ -51,8 +51,8 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
-  /** Rendered immediately after the first main nav link (e.g. My Spaces). */
-  afterFirstNavItem?: ReactNode;
+  /** Rendered immediately before the first main nav link (e.g. Feedback before My Spaces). */
+  beforeFirstNavItem?: ReactNode;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
   /** Compact toolbar mode: render profile trigger instead of full mobile column menu. */
@@ -78,7 +78,7 @@ export const ButtonProfile = ({
   navItems,
   onChangeThemeMode,
   resolvedTheme,
-  afterFirstNavItem,
+  beforeFirstNavItem,
   trailingBeforeProfile,
   compact = false,
 }: ButtonProfileProps) => {
@@ -225,7 +225,12 @@ export const ButtonProfile = ({
                 <>
                   <DropdownMenuSeparator className="-mx-0 my-1" />
                   <DropdownMenuGroup className="space-y-0.5">
-                    {navItems.map((item, index) => (
+                    {beforeFirstNavItem ? (
+                      <div key="nav-before-first" className="px-1 py-0.5">
+                        {beforeFirstNavItem}
+                      </div>
+                    ) : null}
+                    {navItems.map((item) => (
                       <Fragment key={item.href ?? item.label}>
                         {item.href ? (
                           <DropdownMenuItem
@@ -250,11 +255,6 @@ export const ButtonProfile = ({
                             <span className="flex-1">{item.label}</span>
                           </DropdownMenuItem>
                         )}
-                        {index === 0 && afterFirstNavItem ? (
-                          <div key="nav-after-first" className="px-1 py-0.5">
-                            {afterFirstNavItem}
-                          </div>
-                        ) : null}
                       </Fragment>
                     ))}
                   </DropdownMenuGroup>
@@ -435,7 +435,10 @@ export const ButtonProfile = ({
                 ) : null}
 
                 <div className="space-y-1">
-                  {navItems.map((item, index) => (
+                  {beforeFirstNavItem ? (
+                    <div className="px-1">{beforeFirstNavItem}</div>
+                  ) : null}
+                  {navItems.map((item) => (
                     <Fragment key={item.href ?? item.label}>
                       {item.href ? (
                         <Link
@@ -461,9 +464,6 @@ export const ButtonProfile = ({
                           <span className="flex-1">{item.label}</span>
                         </button>
                       )}
-                      {index === 0 && afterFirstNavItem ? (
-                        <div className="px-1">{afterFirstNavItem}</div>
-                      ) : null}
                     </Fragment>
                   ))}
                   {profileUrl ? (
@@ -625,13 +625,13 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
-            {navItems.map((item, index) => (
-              <Fragment key={item.href ?? item.label}>
-                <ButtonNavItem href={item.href} label={item.label} />
-                {index === 0 && afterFirstNavItem ? (
-                  <div>{afterFirstNavItem}</div>
-                ) : null}
-              </Fragment>
+            {beforeFirstNavItem ? <div>{beforeFirstNavItem}</div> : null}
+            {navItems.map((item) => (
+              <ButtonNavItem
+                key={item.href ?? item.label}
+                href={item.href}
+                label={item.label}
+              />
             ))}
 
             {trailingBeforeProfile ? (
@@ -689,13 +689,13 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden md:flex gap-2">
             <div className="flex gap-2">
-              {navItems.map((item, index) => (
-                <Fragment key={item.href ?? item.label}>
-                  <ButtonNavItem href={item.href} label={item.label} />
-                  {index === 0 && afterFirstNavItem ? (
-                    <div>{afterFirstNavItem}</div>
-                  ) : null}
-                </Fragment>
+              {beforeFirstNavItem ? <div>{beforeFirstNavItem}</div> : null}
+              {navItems.map((item) => (
+                <ButtonNavItem
+                  key={item.href ?? item.label}
+                  href={item.href}
+                  label={item.label}
+                />
               ))}
             </div>
             {trailingBeforeProfile}

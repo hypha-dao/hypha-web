@@ -1,18 +1,21 @@
 'use client';
 
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import clsx from 'clsx';
 import { Megaphone, Radio, Scale } from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import {
   Button,
+  Card,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  Separator,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -25,6 +28,8 @@ type FeedbackOptionProps = {
   actionLabel: string;
   actionHref: string;
   onNavigate: () => void;
+  /** When true, card uses router navigation so inline links can stop propagation. */
+  hasInlineLink?: boolean;
 };
 
 function FeedbackOption({
@@ -34,22 +39,68 @@ function FeedbackOption({
   actionLabel,
   actionHref,
   onNavigate,
+  hasInlineLink = false,
 }: FeedbackOptionProps) {
-  return (
-    <div className="flex h-full flex-col rounded-xl border border-border/80 bg-muted/20 p-5">
-      <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-accent-9/15 text-accent-11">
-        {icon}
+  const router = useRouter();
+
+  const cardClassName = clsx(
+    'group flex h-full flex-col rounded-2xl border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
+    'cursor-pointer hover:border-accent-9 hover:bg-background-3/70 hover:shadow-md hover:ring-accent-10/45',
+    'focus-visible:border-accent-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background-2',
+  );
+
+  const cardBody = (
+    <>
+      <div className="flex items-start gap-4">
+        <div
+          className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 [&_svg]:shrink-0"
+          aria-hidden
+        >
+          {icon}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-2 font-semibold leading-snug text-foreground">
+            {title}
+          </span>
+          <span className="text-1 leading-relaxed text-muted-foreground">
+            {description}
+          </span>
+          <span className="mt-2 text-1 font-medium text-accent-11 group-hover:underline">
+            {actionLabel} →
+          </span>
+        </div>
       </div>
-      <h3 className="text-4 font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 flex-1 text-2 leading-relaxed text-muted-foreground">
-        {description}
-      </p>
-      <Button asChild colorVariant="accent" className="mt-5 w-full">
-        <Link href={actionHref} onClick={onNavigate}>
-          {actionLabel}
-        </Link>
-      </Button>
-    </div>
+    </>
+  );
+
+  const navigate = () => {
+    onNavigate();
+    router.push(actionHref);
+  };
+
+  if (hasInlineLink) {
+    return (
+      <Card
+        role="link"
+        tabIndex={0}
+        className={cardClassName}
+        onClick={navigate}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            navigate();
+          }
+        }}
+      >
+        {cardBody}
+      </Card>
+    );
+  }
+
+  return (
+    <Link href={actionHref} onClick={onNavigate} className="block h-full">
+      <Card className={cardClassName}>{cardBody}</Card>
+    </Link>
   );
 }
 
@@ -79,18 +130,24 @@ export function HyphaNetworkFeedbackTrigger({
         {t('triggerLabel')}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl gap-0 p-0">
-          <DialogHeader className="border-b border-border/70 px-6 py-5 text-left">
-            <DialogTitle className="text-5 font-semibold tracking-tight">
+        <DialogContent
+          className={cn(
+            'gap-6 rounded-2xl border-border/90 bg-background-2 p-4 shadow-2xl sm:p-6 lg:p-7',
+            'max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto',
+          )}
+        >
+          <DialogHeader className="space-y-2 text-left">
+            <DialogTitle className="text-4 font-semibold tracking-tight">
               {t('title')}
             </DialogTitle>
-            <DialogDescription className="text-2 text-muted-foreground">
+            <DialogDescription className="text-2 leading-relaxed text-muted-foreground">
               {t('subtitle')}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 p-6 sm:grid-cols-2">
+          <Separator />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <FeedbackOption
-              icon={<Radio className="size-5" aria-hidden />}
+              icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
               title={t('community.title')}
               description={t('community.description')}
               actionLabel={t('community.action')}
@@ -98,8 +155,9 @@ export function HyphaNetworkFeedbackTrigger({
               onNavigate={close}
             />
             <FeedbackOption
-              icon={<Scale className="size-5" aria-hidden />}
+              icon={<Scale className="size-[22px]" strokeWidth={1.75} />}
               title={t('governance.title')}
+              hasInlineLink
               description={
                 <>
                   {t('governance.description')}{' '}
@@ -107,6 +165,7 @@ export function HyphaNetworkFeedbackTrigger({
                     href={HYPHA_TOKENOMICS_BRIEF_URL}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(event) => event.stopPropagation()}
                     className="font-medium text-accent-11 underline-offset-2 hover:underline"
                   >
                     {t('governance.learnMore')}

@@ -314,7 +314,7 @@ export default async function RootLayout({
                                       href: `/${locale}/network`,
                                     },
                                   ]}
-                                  afterFirstNavItem={
+                                  beforeFirstNavItem={
                                     <HyphaNetworkFeedbackTrigger className="w-full justify-start" />
                                   }
                                   trailingBeforeProfile={
@@ -344,7 +344,7 @@ export default async function RootLayout({
                                       href: `/${locale}/network`,
                                     },
                                   ]}
-                                  afterFirstNavItem={
+                                  beforeFirstNavItem={
                                     <HyphaNetworkFeedbackTrigger />
                                   }
                                   trailingBeforeProfile={

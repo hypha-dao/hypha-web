@@ -106,17 +106,17 @@
     "continueAdventure": "Continue your adventure"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Have your say",
-    "triggerAriaLabel": "Shape Hypha — community and governance",
+    "triggerLabel": "Feedback",
+    "triggerAriaLabel": "Hypha network feedback — community and governance",
     "title": "Shape Hypha with us",
     "subtitle": "Two ways to influence where the network goes next.",
     "community": {
-      "title": "Community",
-      "description": "Join the Hypha Community space—share signals, upvote ideas, and help set the priorities and roadmap we build toward.",
+      "title": "Hypha Network Community",
+      "description": "Join the Hypha Community space to share signals, upvote ideas, and help shape the priorities and roadmap we build together.",
       "action": "Explore signals"
     },
     "governance": {
-      "title": "Governance",
+      "title": "Hypha Network Governance",
       "description": "Hold at least one Hypha token and you have a voice in network governance. Made by many. Owned by all—Hypha is the utility token that keeps power with members.",
       "learnMore": "About Hypha tokenomics",
       "action": "Open governance"

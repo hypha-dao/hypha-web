@@ -865,17 +865,17 @@
     "continueAdventure": "Continuar sua aventura"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Dê sua opinião",
-    "triggerAriaLabel": "Moldar a Hypha — comunidade e governança",
+    "triggerLabel": "Feedback",
+    "triggerAriaLabel": "Feedback da rede Hypha — comunidade e governança",
     "title": "Moldar a Hypha connosco",
     "subtitle": "Duas formas de influenciar o rumo da rede.",
     "community": {
-      "title": "Comunidade",
-      "description": "Junte-se ao espaço Hypha Community—partilhe sinais, vote ideias e ajude a definir prioridades e roteiro.",
+      "title": "Comunidade da rede Hypha",
+      "description": "Junte-se ao espaço Hypha Community para partilhar sinais, votar ideias e ajudar a definir as prioridades e o roteiro que construímos juntos.",
       "action": "Explorar sinais"
     },
     "governance": {
-      "title": "Governança",
+      "title": "Governança da rede Hypha",
       "description": "Com pelo menos um token Hypha, tem voz na governança da rede. Feito por muitos. Detido por todos—a Hypha é o token de utilidade que mantém o poder nas mãos dos membros.",
       "learnMore": "Sobre a tokenomics Hypha",
       "action": "Abrir governança"

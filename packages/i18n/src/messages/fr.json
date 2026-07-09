@@ -106,17 +106,17 @@
     "continueAdventure": "Continuer votre aventure"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Donnez votre avis",
-    "triggerAriaLabel": "Façonner Hypha — communauté et gouvernance",
+    "triggerLabel": "Feedback",
+    "triggerAriaLabel": "Retours sur le réseau Hypha — communauté et gouvernance",
     "title": "Façonnez Hypha avec nous",
     "subtitle": "Deux façons d’influencer la direction du réseau.",
     "community": {
-      "title": "Communauté",
-      "description": "Rejoignez l’espace Hypha Community—partagez des signaux, votez pour les idées et aidez à définir les priorités et la feuille de route.",
+      "title": "Communauté du réseau Hypha",
+      "description": "Rejoignez l’espace Hypha Community pour partager des signaux, voter pour les idées et contribuer à définir les priorités et la feuille de route que nous construisons ensemble.",
       "action": "Explorer les signaux"
     },
     "governance": {
-      "title": "Gouvernance",
+      "title": "Gouvernance du réseau Hypha",
       "description": "Avec au moins un token Hypha, vous avez voix au chapitre dans la gouvernance du réseau. Fait par beaucoup. Détenu par tous—Hypha est le token utilitaire qui garde le pouvoir entre les mains des membres.",
       "learnMore": "À propos de la tokenomics Hypha",
       "action": "Ouvrir la gouvernance"
