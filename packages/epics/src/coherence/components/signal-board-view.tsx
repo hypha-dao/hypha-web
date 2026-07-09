@@ -208,7 +208,7 @@ export function SignalBoardView({
             <div
               key={status.slug}
               className={cn(
-                'flex min-h-[8rem] flex-col rounded-2xl border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
+                'flex flex-col rounded-2xl border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
                 statusColumnTopBorderClass(status.color),
                 isMobile ? 'w-full min-w-0' : 'min-w-[17.5rem] flex-1',
                 SIGNAL_KANBAN_COLUMN_SHELL_CLASS,

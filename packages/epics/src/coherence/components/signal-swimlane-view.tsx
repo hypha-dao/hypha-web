@@ -23,6 +23,7 @@ import {
 import { isSignalSlugActive } from '../utils/signal-active-styles';
 import {
   SIGNAL_STATUS_CARD_STACK_CLASS,
+  SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
   SIGNAL_SWIMLANE_STATUS_ROW_CLASS,
 } from '../utils/signal-board-layout';
 import { resolveEffectiveBoard } from '@hypha-platform/core/client';
@@ -157,7 +158,8 @@ export function SignalSwimlaneView({
                   <div
                     key={dropKey}
                     className={cn(
-                      'flex min-h-[6rem] min-w-[15.5rem] flex-1 flex-col rounded-xl border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
+                      SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
+                      'min-h-[6rem] rounded-xl border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
                       statusColumnTopBorderClass(status.color),
                       isDropTarget
                         ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'

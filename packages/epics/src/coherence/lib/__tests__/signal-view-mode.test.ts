@@ -22,8 +22,9 @@ describe('parseSignalViewMode', () => {
 });
 
 describe('isDefaultSignalViewMode', () => {
-  it('treats grid (UpVote) as default', () => {
-    expect(isDefaultSignalViewMode('grid')).toBe(true);
+  it('treats list as default', () => {
+    expect(isDefaultSignalViewMode('list')).toBe(true);
+    expect(isDefaultSignalViewMode('grid')).toBe(false);
     expect(isDefaultSignalViewMode('swimlane')).toBe(false);
     expect(isDefaultSignalViewMode('board')).toBe(false);
   });

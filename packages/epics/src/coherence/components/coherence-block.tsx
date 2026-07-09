@@ -188,15 +188,19 @@ export function CoherenceBlock({
     [lang, spaceSlug],
   );
 
-  const { openCoherenceChat, openHumanChatPanel, mode, coherenceSlug } =
+  const { open: humanChatOpen, openCoherenceChat, openHumanChatPanel, mode, coherenceSlug } =
     useHumanChatPanel();
 
   const activeSignalSlug = React.useMemo(() => {
-    const fromQuery = searchParams.get('signal')?.trim() ?? null;
-    const fromChat =
-      mode === 'coherence' ? coherenceSlug?.trim() ?? null : null;
-    return fromChat ?? fromQuery;
-  }, [coherenceSlug, mode, searchParams]);
+    const slug = coherenceSlug?.trim() ?? null;
+    if (humanChatEnabled && humanChatOpen && mode === 'coherence' && slug) {
+      return slug;
+    }
+    if (!humanChatEnabled) {
+      return searchParams.get('signal')?.trim() ?? null;
+    }
+    return null;
+  }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
 
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {

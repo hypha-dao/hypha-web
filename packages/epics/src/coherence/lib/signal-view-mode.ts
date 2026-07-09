@@ -2,7 +2,7 @@ import type { SignalViewMode } from '../components/signal-section';
 
 export const SIGNAL_VIEW_QUERY_KEY = 'view';
 
-export const DEFAULT_SIGNAL_VIEW_MODE = 'grid' satisfies SignalViewMode;
+export const DEFAULT_SIGNAL_VIEW_MODE = 'list' satisfies SignalViewMode;
 
 export const SIGNAL_VIEW_MODES = [
   'grid',
