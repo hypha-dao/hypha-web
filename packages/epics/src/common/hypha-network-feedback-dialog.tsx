@@ -16,7 +16,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-const HYPHA_TOKENOMICS_BRIEF_URL = 'https://io.hypha.earth/';
+const HYPHA_TOKENOMICS_BRIEF_URL = 'https://hypha.earth/tokenomics';
 
 type FeedbackOptionProps = {
   icon: React.ReactNode;
