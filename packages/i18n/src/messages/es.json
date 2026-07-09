@@ -2972,7 +2972,7 @@
     "boardCancelAction": "Cancelar",
     "boardAll": "Todas las señales",
     "boardDelete": "Eliminar tablero {boardName}",
-    "signalViewBoard": "Tablero Kanban",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configurar estados y tableros",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Lista",

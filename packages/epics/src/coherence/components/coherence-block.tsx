@@ -4,7 +4,6 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
-  MOBILE_BREAKPOINT_PX,
 } from '@hypha-platform/ui';
 import {
   Coherence,
@@ -18,9 +17,12 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { buildSignalWorkflowConfigurationPath } from '../lib/signal-workflow-configuration-return';
 import {
+  DEFAULT_SIGNAL_VIEW_MODE,
   isDefaultSignalViewMode,
   parseSignalViewMode,
+  readStoredSignalViewMode,
   SIGNAL_VIEW_QUERY_KEY,
+  writeStoredSignalViewMode,
 } from '../lib/signal-view-mode';
 import { SignalSection, type SignalViewMode } from './signal-section';
 import { SignalViewControls } from './signal-view-controls';
@@ -112,26 +114,23 @@ export function CoherenceBlock({
   const [hideArchived, setHideArchived] = React.useState(true);
   const viewMode = React.useMemo(() => {
     const parsed = parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY));
-    return parsed ?? 'swimlane';
+    return parsed ?? DEFAULT_SIGNAL_VIEW_MODE;
   }, [searchParams]);
-  const hasAppliedMobileDefault = React.useRef(false);
-
   React.useEffect(() => {
-    if (hasAppliedMobileDefault.current) return;
     if (parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY))) {
-      hasAppliedMobileDefault.current = true;
       return;
     }
-    hasAppliedMobileDefault.current = true;
-    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
+    const stored = readStoredSignalViewMode(spaceSlug);
+    if (stored && !isDefaultSignalViewMode(stored)) {
       const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.set(SIGNAL_VIEW_QUERY_KEY, 'list');
+      nextParams.set(SIGNAL_VIEW_QUERY_KEY, stored);
       router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
     }
-  }, [pathname, router, searchParams]);
+  }, [pathname, router, searchParams, spaceSlug]);
 
   const handleViewModeChange = React.useCallback(
     (nextValue: SignalViewMode) => {
+      writeStoredSignalViewMode(spaceSlug, nextValue);
       const nextParams = new URLSearchParams(searchParams.toString());
       if (isDefaultSignalViewMode(nextValue)) {
         nextParams.delete(SIGNAL_VIEW_QUERY_KEY);
@@ -143,7 +142,7 @@ export function CoherenceBlock({
         scroll: false,
       });
     },
-    [pathname, router, searchParams],
+    [pathname, router, searchParams, spaceSlug],
   );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({

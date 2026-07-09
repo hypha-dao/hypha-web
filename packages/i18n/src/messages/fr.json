@@ -2968,7 +2968,7 @@
     "boardCancelAction": "Annuler",
     "boardAll": "Tous les signaux",
     "boardDelete": "Supprimer le tableau {boardName}",
-    "signalViewBoard": "Tableau Kanban",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configurer les statuts et les tableaux",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
