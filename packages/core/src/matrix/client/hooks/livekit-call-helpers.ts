@@ -1,16 +1,26 @@
 import {
+  LogLevel,
   Room,
   RoomEvent,
+  setLogLevel,
   Track,
   type LocalParticipant,
   type RemoteParticipant,
 } from 'livekit-client';
+import { isMatrixCallDebugEnabled } from '../matrix-webrtc-env';
 import {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,
 } from './matrix-rtc-events';
 
 export function createLiveKitRoom(): Room {
+  if (isMatrixCallDebugEnabled()) {
+    // Surfaces livekit-client's internal ICE gathering/negotiation trace
+    // (candidate additions, SDP offer/answer, connection state) in the
+    // console under the "hypha.group_call" filter's neighborhood, useful
+    // when diagnosing second-joiner connect failures.
+    setLogLevel(LogLevel.debug);
+  }
   return new Room({
     adaptiveStream: true,
     dynacast: true,
@@ -115,6 +125,102 @@ export function activeSpeakerKeyFromRoom(room: Room | null): string | null {
   const speakers = room.activeSpeakers;
   if (speakers.length === 0) return null;
   return speakers[0]?.identity?.trim() || null;
+}
+
+/**
+ * Debug-only visibility into the connect/negotiate timeline, independent of
+ * `attachLiveKitRoomMediaListeners`. Attached before `room.connect()` so it
+ * also captures the state transitions that happen during connect itself
+ * (join-as-second-participant subscriber negotiation vs. join-as-first
+ * publisher-only negotiation).
+ */
+export function attachLiveKitRtcDebugListeners(
+  room: Room,
+  context: { roomId: string; kind: 'audio' | 'video' },
+): LiveKitRoomListenerCleanup {
+  if (!isMatrixCallDebugEnabled()) return () => undefined;
+  const t0 =
+    typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const elapsed = () =>
+    Math.round(
+      (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
+        t0,
+    );
+  const onConnectionStateChanged = (state: string) => {
+    console.info('[hypha.group_call.debug] connectionStateChanged', {
+      ...context,
+      state,
+      elapsedMs: elapsed(),
+      remoteParticipants: room.remoteParticipants.size,
+    });
+  };
+  const onSignalReconnecting = () => {
+    console.info('[hypha.group_call.debug] signalReconnecting', {
+      ...context,
+      elapsedMs: elapsed(),
+    });
+  };
+  const onReconnecting = () => {
+    console.info('[hypha.group_call.debug] reconnecting', {
+      ...context,
+      elapsedMs: elapsed(),
+    });
+  };
+  const onReconnected = () => {
+    console.info('[hypha.group_call.debug] reconnected', {
+      ...context,
+      elapsedMs: elapsed(),
+    });
+  };
+  const onDisconnected = (reason?: unknown) => {
+    console.info('[hypha.group_call.debug] disconnected', {
+      ...context,
+      reason,
+      elapsedMs: elapsed(),
+    });
+  };
+  const onParticipantConnected = (participant: RemoteParticipant) => {
+    console.info('[hypha.group_call.debug] remoteParticipantConnected', {
+      ...context,
+      remoteIdentity: participant.identity,
+      elapsedMs: elapsed(),
+    });
+  };
+  const onTrackSubscribed = () => {
+    console.info('[hypha.group_call.debug] trackSubscribed', {
+      ...context,
+      elapsedMs: elapsed(),
+    });
+  };
+  const onTrackSubscriptionFailed = (trackSid: string) => {
+    console.warn('[hypha.group_call.debug] trackSubscriptionFailed', {
+      ...context,
+      trackSid,
+      elapsedMs: elapsed(),
+    });
+  };
+  console.info('[hypha.group_call.debug] listenersAttached', {
+    ...context,
+    remoteParticipantsAtAttach: room.remoteParticipants.size,
+  });
+  room.on(RoomEvent.ConnectionStateChanged, onConnectionStateChanged);
+  room.on(RoomEvent.SignalReconnecting, onSignalReconnecting);
+  room.on(RoomEvent.Reconnecting, onReconnecting);
+  room.on(RoomEvent.Reconnected, onReconnected);
+  room.on(RoomEvent.Disconnected, onDisconnected);
+  room.on(RoomEvent.ParticipantConnected, onParticipantConnected);
+  room.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
+  room.on(RoomEvent.TrackSubscriptionFailed, onTrackSubscriptionFailed);
+  return () => {
+    room.off(RoomEvent.ConnectionStateChanged, onConnectionStateChanged);
+    room.off(RoomEvent.SignalReconnecting, onSignalReconnecting);
+    room.off(RoomEvent.Reconnecting, onReconnecting);
+    room.off(RoomEvent.Reconnected, onReconnected);
+    room.off(RoomEvent.Disconnected, onDisconnected);
+    room.off(RoomEvent.ParticipantConnected, onParticipantConnected);
+    room.off(RoomEvent.TrackSubscribed, onTrackSubscribed);
+    room.off(RoomEvent.TrackSubscriptionFailed, onTrackSubscriptionFailed);
+  };
 }
 
 export type LiveKitRoomListenerCleanup = () => void;

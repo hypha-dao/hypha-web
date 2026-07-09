@@ -95,6 +95,7 @@ import {
 import {
   activeSpeakerKeyFromRoom,
   attachLiveKitRoomMediaListeners,
+  attachLiveKitRtcDebugListeners,
   createLiveKitRoom,
   getRemoteScreenshareOwnerFromRoom,
   isLocalScreenshareActiveInRoom,
@@ -1469,23 +1470,68 @@ export function useSpaceGroupCall(
         })();
       }
 
+      const debugElapsedMs = () =>
+        joinStartedAtRef.current != null
+          ? Math.round(
+              (typeof performance !== 'undefined'
+                ? performance.now()
+                : Date.now()) - joinStartedAtRef.current,
+            )
+          : undefined;
+      const logJoinDebugStep = (
+        step: string,
+        extra?: Record<string, unknown>,
+      ) => {
+        if (!isMatrixCallDebugEnabled()) return;
+        console.info('[hypha.group_call.debug] ' + step, {
+          roomId,
+          kind,
+          elapsedMs: debugElapsedMs(),
+          ...extra,
+        });
+      };
+
       try {
         const session = getMatrixRtcSession(client, matrixRoom);
         rtcSessionRef.current = session;
+        logJoinDebugStep('join-step:session-created');
         const jwtServiceUrl = await resolveLivekitJwtServiceUrl(client);
+        logJoinDebugStep('join-step:jwt-service-url-resolved');
         await session.joinRoomSession(
           [{ type: 'livekit', livekit_service_url: jwtServiceUrl }],
           undefined,
           { manageMediaKeys: false, callIntent: kind },
         );
+        logJoinDebugStep('join-step:matrix-rtc-join-room-session-sent');
         await waitForRtcSessionJoined(session);
+        logJoinDebugStep('join-step:matrix-rtc-session-joined');
         const { url, jwt } = await fetchLivekitConnectCredentials(
           client,
           activeRoomId,
           jwtServiceUrl,
         );
+        logJoinDebugStep('join-step:livekit-credentials-fetched');
         const lkRoom = createLiveKitRoom();
-        await lkRoom.connect(url, jwt);
+        const detachRtcDebugListeners = attachLiveKitRtcDebugListeners(lkRoom, {
+          roomId,
+          kind,
+        });
+        logJoinDebugStep('join-step:livekit-connect-start');
+        try {
+          await lkRoom.connect(url, jwt);
+        } catch (connectError) {
+          logJoinDebugStep('join-step:livekit-connect-threw', {
+            error:
+              connectError instanceof Error
+                ? { name: connectError.name, message: connectError.message }
+                : String(connectError),
+          });
+          detachRtcDebugListeners();
+          throw connectError;
+        }
+        logJoinDebugStep('join-step:livekit-connect-resolved', {
+          remoteParticipantsAtConnect: lkRoom.remoteParticipants.size,
+        });
 
         if (joinEpoch !== joinEpochRef.current) {
           await lkRoom.disconnect().catch(() => undefined);
@@ -1495,8 +1541,11 @@ export function useSpaceGroupCall(
           return;
         }
 
+        logJoinDebugStep('join-step:enabling-microphone');
         await lkRoom.localParticipant.setMicrophoneEnabled(true);
+        logJoinDebugStep('join-step:enabling-camera', { enableCamera });
         await lkRoom.localParticipant.setCameraEnabled(enableCamera);
+        logJoinDebugStep('join-step:local-tracks-published');
 
         liveKitRoomRef.current = lkRoom;
         activeCallRoomIdRef.current = activeRoomId;
@@ -1546,6 +1595,24 @@ export function useSpaceGroupCall(
           : isDeviceNotFoundGroupCallError(e)
           ? 'DEVICE_NOT_FOUND'
           : 'WEBRTC_FAILED';
+        if (isMatrixCallDebugEnabled()) {
+          // The mapped errorCode above collapses everything else to
+          // WEBRTC_FAILED; log the raw error so we can see what actually
+          // rejected (e.g. connect() timeout vs. a specific DOMException).
+          console.error(
+            '[hypha.group_call.debug] join-step:enter-with-kind-failed',
+            {
+              roomId,
+              kind,
+              code,
+              elapsedMs: debugElapsedMs(),
+              error:
+                e instanceof Error
+                  ? { name: e.name, message: e.message, stack: e.stack }
+                  : String(e),
+            },
+          );
+        }
         setErrorCode(code);
         setCallSessionId(null);
         if (roomId) {
