@@ -155,6 +155,12 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   }
 }
 
+/** Live URL query — `useSearchParams()` can lag behind `history.replaceState`. */
+function readLiveSearchParam(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get(key)?.trim() ?? null;
+}
+
 function resolveCallRecordingRoomTitle(
   client: ReturnType<typeof useMatrix>['client'],
   roomId: string | null | undefined,
@@ -1446,8 +1452,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const exitCoherenceChat = useCallback(() => {
     signalDeepLinkEpochRef.current += 1;
     setSignalDeepLinkNotice(null);
+    setIsJoining(false);
 
     const hasSignalDeepLink =
+      Boolean(readLiveSearchParam('signal')) ||
+      Boolean(readLiveSearchParam('msg')) ||
       Boolean(searchParams?.get('signal')?.trim()) ||
       Boolean(searchParams?.get('msg')?.trim());
     if (hasSignalDeepLink) {
@@ -2650,6 +2659,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     return () => {
       cancelled = true;
+      setIsJoining(false);
     };
   }, [
     mode,
@@ -2692,6 +2702,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     if (mode === 'space' && prevMode === 'coherence') {
       // Switching FROM coherence TO space — clear state, space init will re-run
+      setIsJoining(false);
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
       }
@@ -2844,6 +2855,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     return () => {
       cancelled = true;
+      setIsJoining(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -3557,8 +3569,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (!spaceSlug?.trim()) return;
-    const qpSignal = searchParams?.get('signal')?.trim();
-    const qpMsg = searchParams?.get('msg')?.trim();
+    const qpSignal =
+      readLiveSearchParam('signal') ??
+      searchParams?.get('signal')?.trim() ??
+      null;
+    const qpMsg =
+      readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
 
     if (mode === 'coherence' && coherenceSlug?.trim() === qpSignal) {
@@ -3603,7 +3619,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (cancelled) return;
       if (epochAtStart !== signalDeepLinkEpochRef.current) return;
       if (spaceSlug?.trim() !== expectedSpaceSlug) return;
-      if (!searchParams?.get('signal')?.trim()) return;
+      if (!readLiveSearchParam('signal')) return;
 
       if (!result.ok) {
         const messageKey =
