@@ -9,8 +9,10 @@ import { SUBSCRIPTION_USDC_PER_CYCLE } from '../constants';
 import {
   findSpaceSubscriptionByStripeCustomerId,
   findSpaceSubscriptionByStripeSubscriptionId,
+  findSubscriptionInvoiceByStripeInvoiceId,
 } from './queries';
 import {
+  claimFailedInvoiceForRetry,
   insertSubscriptionInvoiceIfNew,
   updateSpaceSubscription,
   updateSubscriptionInvoiceSettlement,
@@ -130,7 +132,7 @@ async function handleInvoicePaid(
   );
 
   const amountUsdc = SUBSCRIPTION_USDC_PER_CYCLE;
-  const invoiceRow = await insertSubscriptionInvoiceIfNew(
+  let invoiceRow = await insertSubscriptionInvoiceIfNew(
     {
       spaceSubscriptionId: subscriptionRow.id,
       stripeInvoiceId: invoice.id,
@@ -140,10 +142,25 @@ async function handleInvoicePaid(
   );
 
   if (!invoiceRow) {
-    return {
-      handled: true,
-      detail: `invoice ${invoice.id} already recorded; skipping settlement`,
-    };
+    // Redelivery of a known invoice: retry settlement only when the previous
+    // attempt failed. The claim is an atomic failed→pending flip so
+    // concurrent deliveries cannot double-settle.
+    const existing = await findSubscriptionInvoiceByStripeInvoiceId(
+      { stripeInvoiceId: invoice.id },
+      { db },
+    );
+    if (existing?.settlementStatus === 'failed') {
+      invoiceRow = await claimFailedInvoiceForRetry(
+        { id: existing.id },
+        { db },
+      );
+    }
+    if (!invoiceRow) {
+      return {
+        handled: true,
+        detail: `invoice ${invoice.id} already recorded; skipping settlement`,
+      };
+    }
   }
 
   const [space] = await db

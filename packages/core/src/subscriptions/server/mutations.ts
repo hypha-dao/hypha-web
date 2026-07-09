@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import type { DbConfig } from '../../common/server/types';
 import {
@@ -87,6 +87,34 @@ export const insertSubscriptionInvoiceIfNew = async (
     .onConflictDoNothing({
       target: spaceSubscriptionInvoices.stripeInvoiceId,
     })
+    .returning();
+
+  return row ?? null;
+};
+
+/**
+ * Atomically claims a failed invoice for a settlement retry by flipping it
+ * back to `pending`. Returns null when the invoice is not in `failed` state
+ * (already settled, or another delivery claimed it first) — the caller must
+ * not settle in that case.
+ */
+export const claimFailedInvoiceForRetry = async (
+  { id }: { id: number },
+  { db }: DbConfig,
+): Promise<SpaceSubscriptionInvoice | null> => {
+  const [row] = await db
+    .update(spaceSubscriptionInvoices)
+    .set({
+      settlementStatus: 'pending',
+      settlementError: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(spaceSubscriptionInvoices.id, id),
+        eq(spaceSubscriptionInvoices.settlementStatus, 'failed'),
+      ),
+    )
     .returning();
 
   return row ?? null;

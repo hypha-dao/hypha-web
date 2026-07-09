@@ -13,19 +13,25 @@ import { SUBSCRIPTION_USDC_PER_CYCLE } from '../../constants';
 
 const findSpaceSubscriptionByStripeSubscriptionId = vi.fn();
 const findSpaceSubscriptionByStripeCustomerId = vi.fn();
+const findSubscriptionInvoiceByStripeInvoiceId = vi.fn();
 
 vi.mock('../queries', () => ({
   findSpaceSubscriptionByStripeSubscriptionId: (...args: unknown[]) =>
     findSpaceSubscriptionByStripeSubscriptionId(...args),
   findSpaceSubscriptionByStripeCustomerId: (...args: unknown[]) =>
     findSpaceSubscriptionByStripeCustomerId(...args),
+  findSubscriptionInvoiceByStripeInvoiceId: (...args: unknown[]) =>
+    findSubscriptionInvoiceByStripeInvoiceId(...args),
 }));
 
+const claimFailedInvoiceForRetry = vi.fn();
 const insertSubscriptionInvoiceIfNew = vi.fn();
 const updateSpaceSubscription = vi.fn();
 const updateSubscriptionInvoiceSettlement = vi.fn();
 
 vi.mock('../mutations', () => ({
+  claimFailedInvoiceForRetry: (...args: unknown[]) =>
+    claimFailedInvoiceForRetry(...args),
   insertSubscriptionInvoiceIfNew: (...args: unknown[]) =>
     insertSubscriptionInvoiceIfNew(...args),
   updateSpaceSubscription: (...args: unknown[]) =>
@@ -104,8 +110,12 @@ describe('processStripeWebhookEvent', () => {
     );
   });
 
-  it('does not settle again when the invoice was already recorded', async () => {
+  it('does not settle again when the invoice was already settled', async () => {
     insertSubscriptionInvoiceIfNew.mockResolvedValue(null);
+    findSubscriptionInvoiceByStripeInvoiceId.mockResolvedValue({
+      id: 11,
+      settlementStatus: 'settled',
+    });
     const settle = vi.fn();
 
     const result = await processStripeWebhookEvent(invoicePaidEvent(), {
@@ -116,7 +126,55 @@ describe('processStripeWebhookEvent', () => {
     expect(result.handled).toBe(true);
     expect(result.detail).toContain('already recorded');
     expect(settle).not.toHaveBeenCalled();
+    expect(claimFailedInvoiceForRetry).not.toHaveBeenCalled();
     expect(updateSubscriptionInvoiceSettlement).not.toHaveBeenCalled();
+  });
+
+  it('retries settlement on redelivery when the previous attempt failed', async () => {
+    insertSubscriptionInvoiceIfNew.mockResolvedValue(null);
+    findSubscriptionInvoiceByStripeInvoiceId.mockResolvedValue({
+      id: 11,
+      settlementStatus: 'failed',
+    });
+    claimFailedInvoiceForRetry.mockResolvedValue({ id: 11 });
+    const settle = vi
+      .fn()
+      .mockResolvedValue({ ok: true, txHash: '0xdef' as const });
+
+    const result = await processStripeWebhookEvent(invoicePaidEvent(), {
+      db: makeDb(42),
+      settleSpaceSubscription: settle,
+    });
+
+    expect(result.handled).toBe(true);
+    expect(claimFailedInvoiceForRetry).toHaveBeenCalledWith(
+      { id: 11 },
+      expect.anything(),
+    );
+    expect(settle).toHaveBeenCalledTimes(1);
+    expect(updateSubscriptionInvoiceSettlement).toHaveBeenCalledWith(
+      expect.objectContaining({ settlementStatus: 'settled', txHash: '0xdef' }),
+      expect.anything(),
+    );
+  });
+
+  it('does not settle when another delivery already claimed the failed invoice', async () => {
+    insertSubscriptionInvoiceIfNew.mockResolvedValue(null);
+    findSubscriptionInvoiceByStripeInvoiceId.mockResolvedValue({
+      id: 11,
+      settlementStatus: 'failed',
+    });
+    claimFailedInvoiceForRetry.mockResolvedValue(null);
+    const settle = vi.fn();
+
+    const result = await processStripeWebhookEvent(invoicePaidEvent(), {
+      db: makeDb(42),
+      settleSpaceSubscription: settle,
+    });
+
+    expect(result.handled).toBe(true);
+    expect(result.detail).toContain('already recorded');
+    expect(settle).not.toHaveBeenCalled();
   });
 
   it('marks the invoice failed when on-chain settlement fails', async () => {
