@@ -92,23 +92,26 @@ export const JoinSpace = ({
     if (notifiedProposalIdRef.current === inviteProposalId) {
       return;
     }
-    notifiedProposalIdRef.current = inviteProposalId;
 
     const url =
       typeof spaceSlugParam === 'string'
         ? getDhoUrlAgreements(lang as Locale, spaceSlugParam)
         : undefined;
 
-    notifyProposalCreated({
+    void notifyProposalCreated({
       proposalId: inviteProposalId,
       spaceId: BigInt(web3SpaceId),
       // On-chain ProposalCreated.creator is the space factory for join
       // requests; pass the requester so member notifications exclude them.
       creator: person.address as `0x${string}`,
       url,
-    }).catch((error) =>
-      console.warn('Failed to send join request notifications:', error),
-    );
+    })
+      .then(() => {
+        notifiedProposalIdRef.current = inviteProposalId;
+      })
+      .catch((error) =>
+        console.warn('Failed to send join request notifications:', error),
+      );
   }, [
     inviteRequested,
     inviteProposalId,
