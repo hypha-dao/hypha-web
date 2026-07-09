@@ -3116,7 +3116,7 @@
     "removeUpvote": "Remover apoio",
     "upvoteDetails": "Detalhes do apoio",
     "totalSupport": "Apoio total",
-    "yourVotingPowerShare": "Parcela do seu poder de voto",
+    "yourVotingPowerShare": "Votar usando uma parcela do seu poder de voto",
     "supportersCount": "{count, plural, =0 {Ainda sem apoios} one {# apoio} other {# apoios}}",
     "anonymousSupporter": "Membro",
     "signInToUpvote": "Inicie sessão como membro do espaço para apoiar sinais.",

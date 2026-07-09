@@ -3653,7 +3653,7 @@
     "removeUpvote": "Отстрани поддршка",
     "upvoteDetails": "Детали за поддршката",
     "totalSupport": "Вкупна поддршка",
-    "yourVotingPowerShare": "Удел од твојата гласачка моќ",
+    "yourVotingPowerShare": "Upvote користејќи дел од твојата гласачка моќ",
     "supportersCount": "{count, plural, =0 {Сè уште нема поддржувачи} one {# поддржувач} other {# поддржувачи}}",
     "anonymousSupporter": "Член",
     "signInToUpvote": "Најави се како член на просторот за да поддржуваш сигнали.",
