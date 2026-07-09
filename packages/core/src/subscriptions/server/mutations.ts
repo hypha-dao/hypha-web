@@ -2,13 +2,38 @@ import { and, eq } from 'drizzle-orm';
 
 import type { DbConfig } from '../../common/server/types';
 import {
+  personStripeCustomers,
   spaceSubscriptionInvoices,
   spaceSubscriptions,
+  type PersonStripeCustomer,
   type SettlementStatus,
   type SpaceSubscription,
   type SpaceSubscriptionInvoice,
   type SpaceSubscriptionStatus,
 } from '@hypha-platform/storage-postgres';
+
+export type InsertPersonStripeCustomerInput = {
+  personId: number;
+  stripeCustomerId: string;
+};
+
+/**
+ * Idempotent insert keyed on person_id. Returns null when the person already
+ * has a Stripe customer (e.g. a concurrent checkout won the race) — the
+ * caller must re-read and use the existing one.
+ */
+export const insertPersonStripeCustomerIfNew = async (
+  input: InsertPersonStripeCustomerInput,
+  { db }: DbConfig,
+): Promise<PersonStripeCustomer | null> => {
+  const [row] = await db
+    .insert(personStripeCustomers)
+    .values(input)
+    .onConflictDoNothing({ target: personStripeCustomers.personId })
+    .returning();
+
+  return row ?? null;
+};
 
 export type InsertSpaceSubscriptionInput = {
   spaceId: number;
@@ -33,6 +58,7 @@ export const insertSpaceSubscription = async (
 
 export type UpdateSpaceSubscriptionInput = {
   id: number;
+  stripeCustomerId?: string;
   stripeSubscriptionId?: string | null;
   status?: SpaceSubscriptionStatus;
 };
@@ -45,6 +71,9 @@ export const updateSpaceSubscription = async (
     updatedAt: new Date(),
   };
 
+  if (input.stripeCustomerId !== undefined) {
+    patch.stripeCustomerId = input.stripeCustomerId;
+  }
   if (input.stripeSubscriptionId !== undefined) {
     patch.stripeSubscriptionId = input.stripeSubscriptionId;
   }

@@ -46,6 +46,7 @@ export async function POST(
         space: {
           id: space.id,
           slug: space.slug,
+          title: space.title,
           web3SpaceId: space.web3SpaceId,
         },
         person: {

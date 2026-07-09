@@ -21,7 +21,7 @@ function getSubscriptionEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/subscription`;
 }
 
-async function postForUrl(
+export async function postForUrl(
   endpoint: string,
   token: string,
   lang: string,
@@ -80,41 +80,26 @@ export const useStripeSubscription = ({
     },
   );
 
-  const redirectTo = React.useCallback(
-    async (
-      path: 'checkout' | 'portal',
-      urlKey: 'checkoutUrl' | 'portalUrl',
-    ) => {
-      setIsRedirecting(true);
-      setError(null);
-      try {
-        const token = await getAccessToken();
-        if (!token) throw new Error('Unauthorized');
-        const url = await postForUrl(
-          `${getSubscriptionEndpoint(spaceSlug)}/${path}`,
-          token,
-          lang,
-          urlKey,
-        );
-        window.location.assign(url);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Request failed';
-        console.error(`Stripe subscription ${path} failed:`, message);
-        setError(message);
-        setIsRedirecting(false);
-      }
-    },
-    [getAccessToken, spaceSlug, lang],
-  );
-
-  const startCheckout = React.useCallback(
-    () => redirectTo('checkout', 'checkoutUrl'),
-    [redirectTo],
-  );
-  const openBillingPortal = React.useCallback(
-    () => redirectTo('portal', 'portalUrl'),
-    [redirectTo],
-  );
+  const startCheckout = React.useCallback(async () => {
+    setIsRedirecting(true);
+    setError(null);
+    try {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Unauthorized');
+      const url = await postForUrl(
+        `${getSubscriptionEndpoint(spaceSlug)}/checkout`,
+        token,
+        lang,
+        'checkoutUrl',
+      );
+      window.location.assign(url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Request failed';
+      console.error('Stripe subscription checkout failed:', message);
+      setError(message);
+      setIsRedirecting(false);
+    }
+  }, [getAccessToken, spaceSlug, lang]);
 
   return {
     enabled,
@@ -123,6 +108,5 @@ export const useStripeSubscription = ({
     isRedirecting,
     error,
     startCheckout,
-    openBillingPortal,
   };
 };

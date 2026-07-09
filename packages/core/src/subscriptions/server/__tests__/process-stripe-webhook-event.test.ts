@@ -12,14 +12,17 @@ import { processStripeWebhookEvent } from '../process-stripe-webhook-event';
 import { SUBSCRIPTION_USDC_PER_CYCLE } from '../../constants';
 
 const findSpaceSubscriptionByStripeSubscriptionId = vi.fn();
-const findSpaceSubscriptionByStripeCustomerId = vi.fn();
+const findSpaceSubscriptionById = vi.fn();
+const findUnlinkedSpaceSubscriptionByStripeCustomerId = vi.fn();
 const findSubscriptionInvoiceByStripeInvoiceId = vi.fn();
 
 vi.mock('../queries', () => ({
   findSpaceSubscriptionByStripeSubscriptionId: (...args: unknown[]) =>
     findSpaceSubscriptionByStripeSubscriptionId(...args),
-  findSpaceSubscriptionByStripeCustomerId: (...args: unknown[]) =>
-    findSpaceSubscriptionByStripeCustomerId(...args),
+  findSpaceSubscriptionById: (...args: unknown[]) =>
+    findSpaceSubscriptionById(...args),
+  findUnlinkedSpaceSubscriptionByStripeCustomerId: (...args: unknown[]) =>
+    findUnlinkedSpaceSubscriptionByStripeCustomerId(...args),
   findSubscriptionInvoiceByStripeInvoiceId: (...args: unknown[]) =>
     findSubscriptionInvoiceByStripeInvoiceId(...args),
 }));
@@ -209,6 +212,112 @@ describe('processStripeWebhookEvent', () => {
     expect(settle).not.toHaveBeenCalled();
     expect(updateSubscriptionInvoiceSettlement).toHaveBeenCalledWith(
       expect.objectContaining({ settlementStatus: 'failed' }),
+      expect.anything(),
+    );
+  });
+
+  it('resolves the row via subscription metadata when checkout linkage lags', async () => {
+    findSpaceSubscriptionByStripeSubscriptionId.mockResolvedValue(null);
+    findSpaceSubscriptionById.mockResolvedValue({
+      ...subscriptionRow,
+      stripeSubscriptionId: null,
+    });
+    const settle = vi
+      .fn()
+      .mockResolvedValue({ ok: true, txHash: '0xabc' as const });
+
+    const event = {
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: 'in_1',
+          customer: 'cus_shared',
+          parent: {
+            subscription_details: {
+              subscription: 'sub_1',
+              metadata: { spaceSubscriptionId: '7' },
+            },
+          },
+        },
+      },
+    } as unknown as Stripe.Event;
+
+    const result = await processStripeWebhookEvent(event, {
+      db: makeDb(42),
+      settleSpaceSubscription: settle,
+    });
+
+    expect(result.handled).toBe(true);
+    expect(findSpaceSubscriptionById).toHaveBeenCalledWith(
+      { id: 7 },
+      expect.anything(),
+    );
+    expect(updateSpaceSubscription).toHaveBeenCalledWith(
+      { id: 7, stripeSubscriptionId: 'sub_1' },
+      expect.anything(),
+    );
+    expect(
+      findUnlinkedSpaceSubscriptionByStripeCustomerId,
+    ).not.toHaveBeenCalled();
+    expect(settle).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the newest unlinked row of a shared customer', async () => {
+    findSpaceSubscriptionByStripeSubscriptionId.mockResolvedValue(null);
+    findUnlinkedSpaceSubscriptionByStripeCustomerId.mockResolvedValue({
+      ...subscriptionRow,
+      stripeSubscriptionId: null,
+    });
+    const settle = vi
+      .fn()
+      .mockResolvedValue({ ok: true, txHash: '0xabc' as const });
+
+    const result = await processStripeWebhookEvent(invoicePaidEvent(), {
+      db: makeDb(42),
+      settleSpaceSubscription: settle,
+    });
+
+    expect(result.handled).toBe(true);
+    expect(
+      findUnlinkedSpaceSubscriptionByStripeCustomerId,
+    ).toHaveBeenCalledWith({ stripeCustomerId: 'cus_1' }, expect.anything());
+    expect(updateSpaceSubscription).toHaveBeenCalledWith(
+      { id: 7, stripeSubscriptionId: 'sub_1' },
+      expect.anything(),
+    );
+    expect(settle).toHaveBeenCalledTimes(1);
+  });
+
+  it('links via metadata on customer.subscription.updated when the row is unlinked', async () => {
+    findSpaceSubscriptionByStripeSubscriptionId.mockResolvedValue(null);
+    findSpaceSubscriptionById.mockResolvedValue({
+      ...subscriptionRow,
+      stripeSubscriptionId: null,
+    });
+
+    const event = {
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_1',
+          status: 'active',
+          metadata: { spaceSubscriptionId: '7' },
+        },
+      },
+    } as unknown as Stripe.Event;
+
+    const result = await processStripeWebhookEvent(event, {
+      db: makeDb(42),
+      settleSpaceSubscription: vi.fn(),
+    });
+
+    expect(result.handled).toBe(true);
+    expect(updateSpaceSubscription).toHaveBeenCalledWith(
+      { id: 7, stripeSubscriptionId: 'sub_1' },
+      expect.anything(),
+    );
+    expect(updateSpaceSubscription).toHaveBeenCalledWith(
+      { id: 7, status: 'active' },
       expect.anything(),
     );
   });

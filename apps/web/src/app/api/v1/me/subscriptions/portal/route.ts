@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { createSubscriptionPortalSession } from '@hypha-platform/core/server';
+import { createSubscriptionsPortalSession } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
-import { authenticateSubscriptionRequest } from '@web/lib/subscriptions/authenticate-subscription-request';
-import { buildSpaceUrl } from '@web/lib/subscriptions/build-space-url';
-
-type Params = { spaceSlug: string };
+import { authenticatePersonRequest } from '@web/lib/subscriptions/authenticate-subscription-request';
+import { buildMySpacesUrl } from '@web/lib/subscriptions/build-space-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,13 +13,12 @@ const bodySchema = z.object({
   lang: z.enum(['en', 'pt', 'es', 'fr', 'de']).default('en'),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<Params> },
-) {
-  const { spaceSlug } = await params;
-
-  const authResult = await authenticateSubscriptionRequest(request, spaceSlug);
+/**
+ * Opens the Stripe Customer Portal for the caller. The portal lists every
+ * space subscription under the person's shared Stripe customer.
+ */
+export async function POST(request: NextRequest) {
+  const authResult = await authenticatePersonRequest(request);
   if (!authResult.ok) {
     return authResult.response;
   }
@@ -32,11 +29,10 @@ export async function POST(
   }
 
   try {
-    const result = await createSubscriptionPortalSession(
+    const result = await createSubscriptionsPortalSession(
       {
-        spaceId: authResult.space.id,
         personId: authResult.person.id,
-        returnUrl: buildSpaceUrl(parsed.data.lang, spaceSlug),
+        returnUrl: buildMySpacesUrl(parsed.data.lang),
       },
       { db },
     );
@@ -47,7 +43,7 @@ export async function POST(
     );
   } catch (error) {
     console.error(
-      'subscription/portal POST failed:',
+      'me/subscriptions/portal POST failed:',
       error instanceof Error ? error.message : error,
     );
     return NextResponse.json(

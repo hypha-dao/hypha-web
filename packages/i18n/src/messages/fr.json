@@ -91,6 +91,7 @@
     "selectLanguage": "Choisir la langue",
     "myProfile": "Mon profil",
     "notificationCentre": "Centre de notifications",
+    "manageSubscriptions": "Gérer les abonnements",
     "switchToLightMode": "Passer en mode clair",
     "switchToDarkMode": "Passer en mode sombre",
     "updateMfa": "Mettre à jour la protection des fonds (MFA)",
@@ -542,15 +543,6 @@
         "description": "Payez un abonnement mensuel par carte via Stripe pour garder cet espace actif automatiquement."
       }
     }
-  },
-  "StripeSubscription": {
-    "title": "Abonnement par carte",
-    "statusLabel": "Statut : {status}",
-    "statusActive": "Actif",
-    "statusPastDue": "En retard",
-    "statusCanceled": "Annulé",
-    "statusIncomplete": "En attente",
-    "manageBilling": "Gérer la facturation"
   },
   "SelectNavigationAction": {
     "title": "Navigation des espaces",

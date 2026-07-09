@@ -463,6 +463,13 @@
       "when": 1783343621873,
       "tag": "0065_space_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1783590306957,
+      "tag": "0066_person_stripe_customers",
+      "breakpoints": true
     }
   ]
 }

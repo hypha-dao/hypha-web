@@ -7,9 +7,10 @@ import { spaces } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
 import { SUBSCRIPTION_USDC_PER_CYCLE } from '../constants';
 import {
-  findSpaceSubscriptionByStripeCustomerId,
+  findSpaceSubscriptionById,
   findSpaceSubscriptionByStripeSubscriptionId,
   findSubscriptionInvoiceByStripeInvoiceId,
+  findUnlinkedSpaceSubscriptionByStripeCustomerId,
 } from './queries';
 import {
   claimFailedInvoiceForRetry,
@@ -39,6 +40,12 @@ function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
   return asId(invoice.parent?.subscription_details?.subscription);
 }
 
+/** Our own row id, planted in subscription metadata at checkout. */
+function parseRowId(value: string | undefined): number | null {
+  const rowId = Number(value);
+  return Number.isInteger(rowId) && rowId > 0 ? rowId : null;
+}
+
 function mapStripeSubscriptionStatus(
   status: Stripe.Subscription.Status,
 ): 'incomplete' | 'active' | 'past_due' | 'canceled' {
@@ -61,10 +68,10 @@ async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session,
   { db }: DbConfig,
 ): Promise<ProcessStripeWebhookEventResult> {
-  const rowId = Number(session.metadata?.spaceSubscriptionId);
+  const rowId = parseRowId(session.metadata?.spaceSubscriptionId);
   const stripeSubscriptionId = asId(session.subscription);
 
-  if (!Number.isInteger(rowId) || rowId <= 0 || !stripeSubscriptionId) {
+  if (!rowId || !stripeSubscriptionId) {
     return {
       handled: false,
       detail:
@@ -93,15 +100,34 @@ async function resolveSubscriptionRow(
     if (row) return row;
   }
 
-  // checkout.session.completed may not have arrived yet — fall back to the
-  // customer created before checkout.
+  // checkout.session.completed may not have arrived yet. The subscription's
+  // metadata (set at checkout) carries our row id and is unambiguous even
+  // though the Stripe customer is shared across a person's subscriptions.
+  const metadataRowId = parseRowId(
+    invoice.parent?.subscription_details?.metadata?.spaceSubscriptionId,
+  );
+  if (metadataRowId) {
+    const row = await findSpaceSubscriptionById({ id: metadataRowId }, { db });
+    if (row) {
+      if (!row.stripeSubscriptionId && stripeSubscriptionId) {
+        return updateSpaceSubscription(
+          { id: row.id, stripeSubscriptionId },
+          { db },
+        );
+      }
+      return row;
+    }
+  }
+
+  // Last resort: the newest row of this customer still awaiting its
+  // subscription link — a fresh checkout.
   const stripeCustomerId = asId(invoice.customer);
   if (!stripeCustomerId) return null;
-  const row = await findSpaceSubscriptionByStripeCustomerId(
+  const row = await findUnlinkedSpaceSubscriptionByStripeCustomerId(
     { stripeCustomerId },
     { db },
   );
-  if (row && !row.stripeSubscriptionId && stripeSubscriptionId) {
+  if (row && stripeSubscriptionId) {
     return updateSpaceSubscription(
       { id: row.id, stripeSubscriptionId },
       { db },
@@ -222,10 +248,32 @@ async function handleSubscriptionChanged(
   subscription: Stripe.Subscription,
   { db }: DbConfig,
 ): Promise<ProcessStripeWebhookEventResult> {
-  const row = await findSpaceSubscriptionByStripeSubscriptionId(
+  let row = await findSpaceSubscriptionByStripeSubscriptionId(
     { stripeSubscriptionId: subscription.id },
     { db },
   );
+
+  // Race with checkout.session.completed: fall back to our row id in the
+  // subscription metadata and link the Stripe subscription while at it.
+  if (!row) {
+    const metadataRowId = parseRowId(
+      subscription.metadata?.spaceSubscriptionId,
+    );
+    if (metadataRowId) {
+      const candidate = await findSpaceSubscriptionById(
+        { id: metadataRowId },
+        { db },
+      );
+      if (candidate && !candidate.stripeSubscriptionId) {
+        row = await updateSpaceSubscription(
+          { id: candidate.id, stripeSubscriptionId: subscription.id },
+          { db },
+        );
+      } else if (candidate?.stripeSubscriptionId === subscription.id) {
+        row = candidate;
+      }
+    }
+  }
 
   if (!row) {
     return {

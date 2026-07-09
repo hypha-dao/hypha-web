@@ -850,6 +850,7 @@
     "selectLanguage": "Selecionar idioma",
     "myProfile": "Meu perfil",
     "notificationCentre": "Central de Notificações",
+    "manageSubscriptions": "Gerenciar assinaturas",
     "switchToLightMode": "Mudar para o modo claro",
     "switchToDarkMode": "Mudar para o modo escuro",
     "updateMfa": "Atualizar proteção de fundos (MFA)",
@@ -1301,15 +1302,6 @@
         "description": "Pague uma assinatura mensal com cartão via Stripe para manter este espaço ativo automaticamente."
       }
     }
-  },
-  "StripeSubscription": {
-    "title": "Assinatura com cartão",
-    "statusLabel": "Status: {status}",
-    "statusActive": "Ativa",
-    "statusPastDue": "Em atraso",
-    "statusCanceled": "Cancelada",
-    "statusIncomplete": "Pendente",
-    "manageBilling": "Gerenciar cobrança"
   },
   "SelectNavigationAction": {
     "title": "Navegação Espacial",

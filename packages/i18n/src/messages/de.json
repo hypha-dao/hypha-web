@@ -91,6 +91,7 @@
     "selectLanguage": "Sprache auswählen",
     "myProfile": "Mein Profil",
     "notificationCentre": "Benachrichtigungszentrale",
+    "manageSubscriptions": "Abonnements verwalten",
     "switchToLightMode": "Zum hellen Modus wechseln",
     "switchToDarkMode": "Zum dunklen Modus wechseln",
     "updateMfa": "Fondsschutz aktualisieren (MFA)",
@@ -542,15 +543,6 @@
         "description": "Zahlen Sie ein monatliches Kartenabonnement über Stripe, um diesen Space automatisch aktiv zu halten."
       }
     }
-  },
-  "StripeSubscription": {
-    "title": "Kartenabonnement",
-    "statusLabel": "Status: {status}",
-    "statusActive": "Aktiv",
-    "statusPastDue": "Überfällig",
-    "statusCanceled": "Gekündigt",
-    "statusIncomplete": "Ausstehend",
-    "manageBilling": "Abrechnung verwalten"
   },
   "SelectNavigationAction": {
     "title": "Space-Navigation",

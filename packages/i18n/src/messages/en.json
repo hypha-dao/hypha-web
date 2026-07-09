@@ -91,6 +91,7 @@
     "selectLanguage": "Select language",
     "myProfile": "My Profile",
     "notificationCentre": "Notification Centre",
+    "manageSubscriptions": "Manage subscriptions",
     "switchToLightMode": "Switch to light mode",
     "switchToDarkMode": "Switch to dark mode",
     "updateMfa": "Update funds protection (MFA)",
@@ -541,15 +542,6 @@
         "description": "Pay a monthly card subscription via Stripe to keep this space active automatically."
       }
     }
-  },
-  "StripeSubscription": {
-    "title": "Card Subscription",
-    "statusLabel": "Status: {status}",
-    "statusActive": "Active",
-    "statusPastDue": "Past due",
-    "statusCanceled": "Canceled",
-    "statusIncomplete": "Pending",
-    "manageBilling": "Manage Billing"
   },
   "SelectNavigationAction": {
     "title": "Space Navigation",

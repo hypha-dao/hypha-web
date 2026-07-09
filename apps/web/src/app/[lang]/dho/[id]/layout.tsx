@@ -8,7 +8,6 @@ import {
   SpaceAccentFromImages,
   SpaceAccentPortalBridge,
   SpaceCreatedOnText,
-  StripeSubscriptionCard,
   isSafeImageUrl,
 } from '@hypha-platform/epics';
 import '../../_shared/space-accent.css';
@@ -187,7 +186,6 @@ export default async function DhoLayout({
             />
             <div className="mt-4 flex flex-col gap-3">
               <SalesBanner web3SpaceId={web3SpaceId} />
-              <StripeSubscriptionCard spaceSlug={daoSlug} lang={lang} />
               <SpaceEscrowDepositBanners
                 web3SpaceId={web3SpaceId}
                 spaceDbId={spaceFromDb.id}

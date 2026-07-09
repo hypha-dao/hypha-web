@@ -35,7 +35,6 @@ export * from './space-call-join-hero-banner';
 export * from './space-escrow-deposit-banner';
 export * from './space-escrow-deposit-banners';
 export * from './subscription-badge';
-export * from './stripe-subscription-card';
 export * from './transparency-level';
 export * from './space-location-picker';
 export * from './space-discoverability-field';

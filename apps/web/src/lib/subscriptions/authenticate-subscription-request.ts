@@ -18,21 +18,22 @@ export function extractBearerToken(request: NextRequest): string | null {
 type SpaceRecord = NonNullable<Awaited<ReturnType<typeof findSpaceBySlug>>>;
 type PersonRecord = NonNullable<Awaited<ReturnType<typeof findPersonBySub>>>;
 
+type AuthenticatePersonResult =
+  | { ok: true; person: PersonRecord }
+  | { ok: false; response: NextResponse };
+
 type AuthenticateSubscriptionResult =
   | { ok: true; space: SpaceRecord; person: PersonRecord }
   | { ok: false; response: NextResponse };
 
 /**
- * Any space member may manage a Stripe subscription for that space:
- * verifies the Privy Bearer token, resolves the person, and checks
- * membership via a DB row first, falling back to the on-chain
- * member-or-delegate check (membership's source of truth is the
- * DAOSpaceFactory contract; DB rows may lag or be absent on previews).
+ * Verifies the Privy Bearer token and resolves the caller's person record.
+ * Used by person-scoped subscription endpoints (`/api/v1/me/subscriptions`)
+ * where no space membership check applies.
  */
-export async function authenticateSubscriptionRequest(
+export async function authenticatePersonRequest(
   request: NextRequest,
-  spaceSlug: string,
-): Promise<AuthenticateSubscriptionResult> {
+): Promise<AuthenticatePersonResult> {
   const authToken = extractBearerToken(request);
   if (!authToken) {
     return {
@@ -59,6 +60,26 @@ export async function authenticateSubscriptionRequest(
       ),
     };
   }
+
+  return { ok: true, person };
+}
+
+/**
+ * Any space member may manage a Stripe subscription for that space:
+ * verifies the Privy Bearer token, resolves the person, and checks
+ * membership via a DB row first, falling back to the on-chain
+ * member-or-delegate check (membership's source of truth is the
+ * DAOSpaceFactory contract; DB rows may lag or be absent on previews).
+ */
+export async function authenticateSubscriptionRequest(
+  request: NextRequest,
+  spaceSlug: string,
+): Promise<AuthenticateSubscriptionResult> {
+  const personResult = await authenticatePersonRequest(request);
+  if (!personResult.ok) {
+    return personResult;
+  }
+  const { person } = personResult;
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) {

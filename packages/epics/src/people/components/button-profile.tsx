@@ -20,6 +20,7 @@ import {
   Bell,
   ChevronRight,
   Compass,
+  CreditCard,
   LogOutIcon,
   Repeat,
   Shield,
@@ -47,6 +48,8 @@ export type ButtonProfileProps = {
   profileUrl?: string;
   onboardingUrl?: string;
   notificationCentrePath?: string;
+  /** Opens the Stripe billing portal; only provided when the user has a card subscription. */
+  onManageSubscriptions?: () => void;
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
@@ -72,6 +75,7 @@ export const ButtonProfile = ({
   profileUrl,
   onboardingUrl,
   notificationCentrePath,
+  onManageSubscriptions,
   navItems,
   onChangeThemeMode,
   resolvedTheme,
@@ -249,7 +253,10 @@ export const ButtonProfile = ({
                   </DropdownMenuGroup>
                 </>
               ) : null}
-              {(profileUrl || onboardingUrl || notificationCentrePath) && (
+              {(profileUrl ||
+                onboardingUrl ||
+                notificationCentrePath ||
+                onManageSubscriptions) && (
                 <>
                   <DropdownMenuSeparator className="-mx-0 my-1" />
                   <DropdownMenuGroup className="space-y-0.5">
@@ -291,6 +298,21 @@ export const ButtonProfile = ({
                             aria-hidden
                           />
                         </Link>
+                      </DropdownMenuItem>
+                    ) : null}
+                    {onManageSubscriptions ? (
+                      <DropdownMenuItem
+                        className={menuItemClass}
+                        onClick={onManageSubscriptions}
+                      >
+                        <CreditCard className="size-4 shrink-0" aria-hidden />
+                        <span className="flex-1">
+                          {t('manageSubscriptions')}
+                        </span>
+                        <ChevronRight
+                          className="ml-auto size-4 opacity-60"
+                          aria-hidden
+                        />
                       </DropdownMenuItem>
                     ) : null}
                   </DropdownMenuGroup>
@@ -494,6 +516,23 @@ export const ButtonProfile = ({
                       />
                     </Link>
                   ) : null}
+                  {onManageSubscriptions ? (
+                    <button
+                      type="button"
+                      className={compactSheetItemClass}
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onManageSubscriptions();
+                      }}
+                    >
+                      <CreditCard className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1">{t('manageSubscriptions')}</span>
+                      <ChevronRight
+                        className="ml-auto size-4 text-muted-foreground"
+                        aria-hidden
+                      />
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="my-2 border-t border-border/60" />
@@ -643,6 +682,13 @@ export const ButtonProfile = ({
               />
             )}
 
+            {onManageSubscriptions && (
+              <ButtonNavItem
+                onClick={onManageSubscriptions}
+                label={t('manageSubscriptions')}
+              />
+            )}
+
             <ButtonNavItem
               onClick={onChangeThemeMode}
               label={
@@ -759,7 +805,10 @@ export const ButtonProfile = ({
                   </div>
                 ) : null}
 
-                {(profileUrl || onboardingUrl || notificationCentrePath) && (
+                {(profileUrl ||
+                  onboardingUrl ||
+                  notificationCentrePath ||
+                  onManageSubscriptions) && (
                   <>
                     <DropdownMenuSeparator className="-mx-0 my-1" />
                     <DropdownMenuGroup className="space-y-0.5">
@@ -804,6 +853,21 @@ export const ButtonProfile = ({
                               aria-hidden
                             />
                           </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {onManageSubscriptions ? (
+                        <DropdownMenuItem
+                          className={menuItemClass}
+                          onClick={onManageSubscriptions}
+                        >
+                          <CreditCard className="size-4 shrink-0" aria-hidden />
+                          <span className="flex-1">
+                            {t('manageSubscriptions')}
+                          </span>
+                          <ChevronRight
+                            className="ml-auto size-4 opacity-60"
+                            aria-hidden
+                          />
                         </DropdownMenuItem>
                       ) : null}
                     </DropdownMenuGroup>
