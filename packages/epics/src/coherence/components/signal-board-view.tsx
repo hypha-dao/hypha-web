@@ -25,10 +25,9 @@ import {
   setSignalDragData,
 } from '../utils/signal-dnd-utils';
 import { isSignalSlugActive } from '../utils/signal-active-styles';
-import {
-  SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
-  SIGNAL_STATUS_CARD_STACK_CLASS,
-} from '../utils/signal-board-layout';
+import { handleSignalColumnShellWheel } from '../utils/signal-column-scroll-chain';
+import { SIGNAL_KANBAN_COLUMN_SHELL_CLASS } from '../utils/signal-board-layout';
+import { SignalStatusCardStack } from './signal-status-card-stack';
 import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 
 const SIGNAL_BOARD_MOBILE_STATUS_KEY = 'signal-board-mobile-status';
@@ -216,6 +215,7 @@ export function SignalBoardView({
                   ? 'border-accent-8/70 ring-2 ring-accent-9/30 shadow-md'
                   : 'border-border/50',
               )}
+              onWheel={handleSignalColumnShellWheel}
             >
               <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
                 <div className="flex min-w-0 items-center gap-2">
@@ -235,8 +235,7 @@ export function SignalBoardView({
                 </span>
               </div>
 
-              <div
-                className={SIGNAL_STATUS_CARD_STACK_CLASS}
+              <SignalStatusCardStack
                 onDragOver={
                   readOnly
                     ? undefined
@@ -373,7 +372,7 @@ export function SignalBoardView({
                     {t('signalColumnEmpty')}
                   </div>
                 ) : null}
-              </div>
+              </SignalStatusCardStack>
             </div>
           );
         })}

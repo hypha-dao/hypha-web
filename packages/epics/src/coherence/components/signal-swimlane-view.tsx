@@ -21,11 +21,12 @@ import {
   setSignalDragData,
 } from '../utils/signal-dnd-utils';
 import { isSignalSlugActive } from '../utils/signal-active-styles';
+import { handleSignalColumnShellWheel } from '../utils/signal-column-scroll-chain';
 import {
-  SIGNAL_STATUS_CARD_STACK_CLASS,
   SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
   SIGNAL_SWIMLANE_STATUS_ROW_CLASS,
 } from '../utils/signal-board-layout';
+import { SignalStatusCardStack } from './signal-status-card-stack';
 import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 
 type SignalSwimlaneViewProps = {
@@ -165,6 +166,7 @@ export function SignalSwimlaneView({
                         ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'
                         : 'border-border/40',
                     )}
+                    onWheel={handleSignalColumnShellWheel}
                   >
                     <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/30 px-2.5 py-2">
                       <div className="flex min-w-0 items-center gap-1.5">
@@ -184,11 +186,8 @@ export function SignalSwimlaneView({
                       </span>
                     </div>
 
-                    <div
-                      className={cn(
-                        SIGNAL_STATUS_CARD_STACK_CLASS,
-                        'gap-2 p-2',
-                      )}
+                    <SignalStatusCardStack
+                      className="gap-2 p-2"
                       onDragOver={
                         readOnly
                           ? undefined
@@ -339,7 +338,7 @@ export function SignalSwimlaneView({
                           {t('signalColumnEmpty')}
                         </div>
                       ) : null}
-                    </div>
+                    </SignalStatusCardStack>
                   </div>
                 );
               })}
