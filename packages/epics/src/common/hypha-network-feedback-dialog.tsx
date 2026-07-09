@@ -128,31 +128,29 @@ function NetworkFeedbackDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'gap-6 rounded-2xl border-border/90 bg-background-2 p-4 shadow-2xl sm:p-6 lg:p-7',
-          'max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto',
+          'gap-0 overflow-hidden rounded-2xl border border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 dark:ring-white/10',
+          'max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]',
         )}
       >
-        <DialogHeader className="space-y-2 text-left">
-          <DialogTitle className="text-4 font-semibold tracking-tight">
-            {t('title')}
-          </DialogTitle>
-          <DialogDescription className="text-2 leading-relaxed text-muted-foreground">
-            {t('subtitle')}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2">
-          <p className="text-2 font-semibold leading-snug text-foreground">
-            {t('missionLine1')}
-          </p>
-          <p className="text-2 font-semibold leading-snug text-foreground">
-            {t('missionLine2')}
-          </p>
-          <p className="text-2 leading-relaxed text-muted-foreground">
-            {t('missionBody')}
-          </p>
-        </div>
-        <Separator />
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="flex max-h-[min(90dvh,calc(100dvh-2rem))] flex-col gap-6 overflow-y-auto p-4 sm:p-6 lg:p-7">
+          <DialogHeader className="space-y-2 text-left">
+            <DialogTitle className="text-4 font-semibold tracking-tight">
+              {t('title')}
+            </DialogTitle>
+            <DialogDescription className="text-2 leading-relaxed text-muted-foreground">
+              {t('subtitle')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-2 font-semibold leading-snug text-foreground">
+              {t('missionLine1')} {t('missionLine2')}
+            </p>
+            <p className="text-2 leading-relaxed text-muted-foreground">
+              {t('missionBody')}
+            </p>
+          </div>
+          <Separator />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <FeedbackOption
             icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
             title={t('community.title')}
@@ -183,6 +181,7 @@ function NetworkFeedbackDialog({
             actionHref={`/${locale}/dho/hypha-tokenomics/ecosystem-navigation`}
             onNavigate={close}
           />
+        </div>
         </div>
       </DialogContent>
     </Dialog>
