@@ -109,19 +109,26 @@ export function CoherenceBlock({
   const searchParams = useSearchParams();
   const [hideArchived, setHideArchived] = React.useState(true);
   const viewMode = React.useMemo(() => {
-    const parsed = parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY));
-    return parsed ?? DEFAULT_SIGNAL_VIEW_MODE;
-  }, [searchParams]);
-  React.useEffect(() => {
+    const fromUrl = parseSignalViewMode(
+      searchParams.get(SIGNAL_VIEW_QUERY_KEY),
+    );
+    if (fromUrl) {
+      return fromUrl;
+    }
+    const stored = readStoredSignalViewMode(spaceSlug);
+    return stored ?? DEFAULT_SIGNAL_VIEW_MODE;
+  }, [searchParams, spaceSlug]);
+  React.useLayoutEffect(() => {
     if (parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY))) {
       return;
     }
     const stored = readStoredSignalViewMode(spaceSlug);
-    if (stored && !isDefaultSignalViewMode(stored)) {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.set(SIGNAL_VIEW_QUERY_KEY, stored);
-      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+    if (!stored || isDefaultSignalViewMode(stored)) {
+      return;
     }
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set(SIGNAL_VIEW_QUERY_KEY, stored);
+    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
   }, [pathname, router, searchParams, spaceSlug]);
 
   const handleViewModeChange = React.useCallback(
