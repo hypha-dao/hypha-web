@@ -111,7 +111,7 @@ function FeedbackOption({
   );
 }
 
-function NetworkFeedbackDialog({
+export function HyphaNetworkFeedbackDialog({
   open,
   onOpenChange,
 }: {
@@ -188,38 +188,32 @@ function NetworkFeedbackDialog({
   );
 }
 
-export type HyphaNetworkFeedbackTriggerProps = {
+export type HyphaNetworkFeedbackMenuItemProps = {
   className?: string;
-  variant?: 'toolbar' | 'menu' | 'sheet';
-  onNavigate?: () => void;
+  variant?: 'menu' | 'sheet';
+  /** Called when the user activates the item; close profile chrome then open the dialog. */
+  onOpen: () => void;
 };
 
-export function HyphaNetworkFeedbackTrigger({
+/** Profile menu / sheet row — render {@link HyphaNetworkFeedbackDialog} outside the menu. */
+export function HyphaNetworkFeedbackMenuItem({
   className,
-  variant = 'toolbar',
-  onNavigate,
-}: HyphaNetworkFeedbackTriggerProps) {
-  const [open, setOpen] = useState(false);
+  variant = 'menu',
+  onOpen,
+}: HyphaNetworkFeedbackMenuItemProps) {
   const t = useTranslations('NetworkFeedback');
-
-  const openDialog = () => {
-    onNavigate?.();
-    setOpen(true);
-  };
 
   const triggerIcon = (
     <Sparkles className="size-4 shrink-0" aria-hidden strokeWidth={1.75} />
   );
 
-  let trigger: React.ReactNode;
-
   if (variant === 'menu') {
-    trigger = (
+    return (
       <DropdownMenuItem
         className={profileMenuItemClass}
         onSelect={(event) => {
           event.preventDefault();
-          openDialog();
+          onOpen();
         }}
       >
         {triggerIcon}
@@ -227,42 +221,53 @@ export function HyphaNetworkFeedbackTrigger({
         <ChevronRight className="ml-auto size-4 opacity-60" aria-hidden />
       </DropdownMenuItem>
     );
-  } else if (variant === 'sheet') {
-    trigger = (
-      <button
-        type="button"
-        className={cn(profileSheetItemClass, className)}
-        aria-label={t('triggerAriaLabel')}
-        onClick={openDialog}
-      >
-        <span className="text-muted-foreground">{triggerIcon}</span>
-        <span className="flex-1">{t('triggerLabel')}</span>
-        <ChevronRight
-          className="ml-auto size-4 text-muted-foreground"
-          aria-hidden
-        />
-      </button>
-    );
-  } else {
-    trigger = (
+  }
+
+  return (
+    <button
+      type="button"
+      className={cn(profileSheetItemClass, className)}
+      aria-label={t('triggerAriaLabel')}
+      onClick={onOpen}
+    >
+      <span className="text-muted-foreground">{triggerIcon}</span>
+      <span className="flex-1">{t('triggerLabel')}</span>
+      <ChevronRight
+        className="ml-auto size-4 text-muted-foreground"
+        aria-hidden
+      />
+    </button>
+  );
+}
+
+export type HyphaNetworkFeedbackTriggerProps = {
+  className?: string;
+};
+
+export function HyphaNetworkFeedbackTrigger({
+  className,
+}: HyphaNetworkFeedbackTriggerProps) {
+  const [open, setOpen] = useState(false);
+  const t = useTranslations('NetworkFeedback');
+
+  const triggerIcon = (
+    <Sparkles className="size-4 shrink-0" aria-hidden strokeWidth={1.75} />
+  );
+
+  return (
+    <>
       <Button
         type="button"
         variant="ghost"
         colorVariant="neutral"
         className={cn('gap-1.5 hover:bg-neutral-3', className)}
         aria-label={t('triggerAriaLabel')}
-        onClick={openDialog}
+        onClick={() => setOpen(true)}
       >
         {triggerIcon}
         {t('triggerLabel')}
       </Button>
-    );
-  }
-
-  return (
-    <>
-      {trigger}
-      <NetworkFeedbackDialog open={open} onOpenChange={setOpen} />
+      <HyphaNetworkFeedbackDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }

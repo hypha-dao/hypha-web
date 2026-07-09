@@ -39,7 +39,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
-import { HyphaNetworkFeedbackTrigger } from '../../common/hypha-network-feedback-dialog';
+import {
+  HyphaNetworkFeedbackDialog,
+  HyphaNetworkFeedbackMenuItem,
+  HyphaNetworkFeedbackTrigger,
+} from '../../common/hypha-network-feedback-dialog';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -106,6 +110,11 @@ export const ButtonProfile = ({
   const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [networkFeedbackOpen, setNetworkFeedbackOpen] = useState(false);
+  const openNetworkFeedbackFromProfileMenu = useCallback(() => {
+    setProfileMenuOpen(false);
+    setNetworkFeedbackOpen(true);
+  }, []);
   const fundWalletTimeoutRef = useRef<
     ReturnType<typeof setTimeout> | undefined
   >(undefined);
@@ -246,9 +255,9 @@ export const ButtonProfile = ({
                   <DropdownMenuSeparator className="-mx-0 my-1" />
                   <DropdownMenuGroup className="space-y-0.5">
                     {showNetworkFeedback ? (
-                      <HyphaNetworkFeedbackTrigger
+                      <HyphaNetworkFeedbackMenuItem
                         variant="menu"
-                        onNavigate={() => setProfileMenuOpen(false)}
+                        onOpen={openNetworkFeedbackFromProfileMenu}
                       />
                     ) : null}
                     {navItems.map((item) => (
@@ -383,6 +392,10 @@ export const ButtonProfile = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <HyphaNetworkFeedbackDialog
+            open={networkFeedbackOpen}
+            onOpenChange={setNetworkFeedbackOpen}
+          />
         </div>
       );
     }
@@ -458,9 +471,9 @@ export const ButtonProfile = ({
 
                 <div className="space-y-1">
                   {showNetworkFeedback ? (
-                    <HyphaNetworkFeedbackTrigger
+                    <HyphaNetworkFeedbackMenuItem
                       variant="sheet"
-                      onNavigate={() => setProfileMenuOpen(false)}
+                      onOpen={openNetworkFeedbackFromProfileMenu}
                     />
                   ) : null}
                   {navItems.map((item) => (
@@ -612,6 +625,10 @@ export const ButtonProfile = ({
             </div>
           </SheetContent>
         </Sheet>
+        <HyphaNetworkFeedbackDialog
+          open={networkFeedbackOpen}
+          onOpenChange={setNetworkFeedbackOpen}
+        />
       </div>
     );
   }
@@ -651,9 +668,7 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
-            {showNetworkFeedback ? (
-              <HyphaNetworkFeedbackTrigger variant="toolbar" />
-            ) : null}
+            {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
             {navItems.map((item) => (
               <ButtonNavItem
                 key={item.href ?? item.label}
@@ -718,9 +733,7 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden md:flex gap-2">
             <div className="flex gap-2">
-              {showNetworkFeedback ? (
-                <HyphaNetworkFeedbackTrigger variant="toolbar" />
-              ) : null}
+              {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
               {navItems.map((item) => (
                 <ButtonNavItem
                   key={item.href ?? item.label}
