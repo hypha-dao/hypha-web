@@ -26,7 +26,10 @@ import {
 } from '../utils/signal-dnd-utils';
 import { isSignalSlugActive } from '../utils/signal-active-styles';
 import { handleSignalColumnShellWheel } from '../utils/signal-column-scroll-chain';
-import { SIGNAL_KANBAN_COLUMN_SHELL_CLASS } from '../utils/signal-board-layout';
+import {
+  SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
+  SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS,
+} from '../utils/signal-board-layout';
 import { SignalStatusCardStack } from './signal-status-card-stack';
 import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 
@@ -350,6 +353,7 @@ export function SignalBoardView({
                           }
                     }
                     className={cn(
+                      SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS,
                       draggingSignal?.slug === signal.slug &&
                         'opacity-40 scale-[0.98]',
                     )}

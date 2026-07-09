@@ -25,6 +25,7 @@ import {
   isSignalSlugActive,
   signalCardActiveClass,
 } from '../utils/signal-active-styles';
+import { SIGNAL_LIST_ITEM_SHELL_CLASS } from '../utils/signal-board-layout';
 import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { usePersonById } from '@hypha-platform/core/client';
@@ -163,6 +164,7 @@ export function SignalListView({
               {...getSignalSlugDomProps(signal.slug)}
               className={cn(
                 'group border-l-[3px] px-3 py-3 transition-[background-color,border-color,box-shadow] lg:px-4',
+                SIGNAL_LIST_ITEM_SHELL_CLASS,
                 priorityLeftBorderEdgeClass(signal.priority),
                 signalCardActiveClass(isActive, 'rounded-none'),
                 !isActive && 'hover:bg-muted/20',
@@ -180,7 +182,7 @@ export function SignalListView({
                     className="min-w-0 flex-1 text-left"
                     onClick={() => onSignalClick?.(signal)}
                   >
-                    <span className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-accent-11">
+                    <span className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-accent-11">
                       {signal.title}
                     </span>
                     <span className="mt-0.5 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

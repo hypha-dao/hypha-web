@@ -7,6 +7,10 @@ import {
   isSignalSlugActive,
   signalCardActiveClass,
 } from '../utils/signal-active-styles';
+import {
+  SIGNAL_GRID_CARD_WRAPPER_CLASS,
+  SIGNAL_GRID_LAYOUT_CLASS,
+} from '../utils/signal-board-layout';
 
 type SignalGridProps = {
   isLoading: boolean;
@@ -28,20 +32,21 @@ export function SignalGrid({
   activeSignalSlug,
 }: SignalGridProps) {
   return (
-    <div className="grid w-full grid-cols-1 items-start gap-2 md:grid-cols-[repeat(auto-fill,minmax(min(100%,14.25rem),1fr))]">
+    <div className={SIGNAL_GRID_LAYOUT_CLASS}>
       {signals.map((signal) => {
         const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
 
         return signal.archived ? (
-          <SignalCard
-            key={signal.id}
-            {...signal}
-            leadImage={leadImage}
-            className="w-full min-h-0"
-            isActive={isActive}
-            isLoading={isLoading}
-            refresh={refresh}
-          />
+          <div key={signal.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
+            <SignalCard
+              {...signal}
+              leadImage={leadImage}
+              className="h-full min-h-0 w-full"
+              isActive={isActive}
+              isLoading={isLoading}
+              refresh={refresh}
+            />
+          </div>
         ) : onSignalClick ? (
           <div
             key={signal.id}
@@ -49,7 +54,8 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'flex min-h-0 w-full cursor-pointer rounded-xl text-left outline-none transition-[border-color,box-shadow] duration-200',
+              SIGNAL_GRID_CARD_WRAPPER_CLASS,
+              'cursor-pointer rounded-xl text-left outline-none transition-[border-color,box-shadow] duration-200',
               signalCardActiveClass(isActive),
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
@@ -64,7 +70,7 @@ export function SignalGrid({
             <SignalCard
               {...signal}
               leadImage={leadImage}
-              className="w-full min-h-0"
+              className="h-full min-h-0 w-full"
               isActive={isActive}
               isLoading={isLoading}
               refresh={refresh}
@@ -76,14 +82,15 @@ export function SignalGrid({
             href={`${basePath}/${signal.slug}`}
             {...getSignalSlugDomProps(signal.slug)}
             className={cn(
-              'flex min-h-0 w-full rounded-xl transition-[border-color,box-shadow] duration-200',
+              SIGNAL_GRID_CARD_WRAPPER_CLASS,
+              'rounded-xl transition-[border-color,box-shadow] duration-200',
               signalCardActiveClass(isActive),
             )}
           >
             <SignalCard
               {...signal}
               leadImage={leadImage}
-              className="w-full min-h-0"
+              className="h-full min-h-0 w-full"
               isActive={isActive}
               isLoading={isLoading}
               refresh={refresh}

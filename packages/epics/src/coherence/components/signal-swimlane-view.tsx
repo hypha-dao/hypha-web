@@ -25,6 +25,7 @@ import { handleSignalColumnShellWheel } from '../utils/signal-column-scroll-chai
 import {
   SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
   SIGNAL_SWIMLANE_STATUS_ROW_CLASS,
+  SIGNAL_SWIMLANE_TASK_CARD_SHELL_CLASS,
 } from '../utils/signal-board-layout';
 import { SignalStatusCardStack } from './signal-status-card-stack';
 import { resolveEffectiveBoard } from '@hypha-platform/core/client';
@@ -316,6 +317,7 @@ export function SignalSwimlaneView({
                                 }
                           }
                           className={cn(
+                            SIGNAL_SWIMLANE_TASK_CARD_SHELL_CLASS,
                             draggingSignal?.slug === signal.slug &&
                               'opacity-40 scale-[0.98]',
                           )}

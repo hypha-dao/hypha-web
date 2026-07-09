@@ -1,5 +1,27 @@
 import { cn } from '@hypha-platform/ui-utils';
 
+/** Upvote/grid — cards in the same row share height. */
+export const SIGNAL_GRID_LAYOUT_CLASS = cn(
+  'grid w-full grid-cols-1 items-stretch gap-2 md:grid-cols-[repeat(auto-fill,minmax(min(100%,14.25rem),1fr))]',
+);
+
+export const SIGNAL_GRID_CARD_WRAPPER_CLASS = cn(
+  'flex h-full min-h-0 w-full flex-col',
+);
+
+/** Kanban task cards — uniform height within the board view. */
+export const SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS = cn(
+  'flex h-[14.5rem] flex-col',
+);
+
+/** Swimlane task cards — uniform height within the swimlane view. */
+export const SIGNAL_SWIMLANE_TASK_CARD_SHELL_CLASS = cn(
+  'flex h-[13.25rem] flex-col',
+);
+
+/** List rows — uniform minimum height within the list view. */
+export const SIGNAL_LIST_ITEM_SHELL_CLASS = cn('min-h-[6rem]');
+
 /** Kanban columns — fixed height so headers stay visible while cards scroll inside. */
 export const SIGNAL_KANBAN_COLUMN_SHELL_CLASS = cn(
   'h-[min(calc(100dvh-13rem),42rem)] min-h-[8rem] overflow-hidden',
