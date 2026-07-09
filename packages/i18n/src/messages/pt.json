@@ -866,21 +866,21 @@
   },
   "NetworkFeedback": {
     "triggerLabel": "Moldar a Hypha juntos",
-    "triggerAriaLabel": "Moldar a Hypha juntos — comunidade e governança",
-    "title": "Moldar a Hypha juntos",
-    "subtitle": "Duas formas de decidirmos juntos para onde a rede segue.",
-    "missionLine1": "Construído pela rede.",
-    "missionLine2": "Pertence à rede.",
-    "missionBody": "Não somos uma empresa de software típica. Somos uma rede global de construtores, sonhadores e realizadores a criar as ferramentas que gostaríamos que existissem.",
+    "triggerAriaLabel": "Ajude a moldar a Hypha — comunidade e governança",
+    "title": "Ajude a moldar a Hypha",
+    "subtitle": "Escolha como gostaria de participar na rede.",
+    "intro": "Quer queira partilhar ideias ou ajudar a governar o protocolo, existem duas formas de se envolver.",
     "community": {
-      "title": "Comunidade da rede Hypha",
-      "description": "Junte-se ao espaço Hypha Community para partilhar sinais, votar ideias e ajudar a definir as prioridades e o roteiro que construímos juntos.",
-      "action": "Explorar sinais"
+      "title": "Comunidade",
+      "tagline": "Partilhe ideias. Defina prioridades.",
+      "description": "Junte-se à comunidade para debater ideias, enviar feedback e votar nas funcionalidades e iniciativas que gostaria de ver a seguir.",
+      "action": "Explorar a comunidade"
     },
     "governance": {
-      "title": "Governança da rede Hypha",
-      "description": "Com pelo menos um token Hypha, tem voz na governança da rede. Feito por muitos. Detido por todos—a Hypha é o token de utilidade que mantém o poder nas mãos dos membros.",
-      "learnMore": "Sobre a tokenomics Hypha",
+      "title": "Governança",
+      "tagline": "Ajude a governar a rede.",
+      "description": "Detenha pelo menos um token HYPHA para participar na governança, votar em propostas e ajudar a orientar o futuro da rede.",
+      "learnMore": "Saiba mais sobre a tokenomics HYPHA.",
       "action": "Abrir governança"
     }
   },

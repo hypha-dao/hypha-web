@@ -107,21 +107,21 @@
   },
   "NetworkFeedback": {
     "triggerLabel": "Shape Hypha Together",
-    "triggerAriaLabel": "Shape Hypha together — community and governance",
-    "title": "Shape Hypha together",
-    "subtitle": "Two ways we can decide together where the network goes next.",
-    "missionLine1": "Built by the Network.",
-    "missionLine2": "Owned by the Network.",
-    "missionBody": "We're not a typical software company. We're a global network of builders, dreamers, and doers creating the tools we wish existed.",
+    "triggerAriaLabel": "Help shape Hypha — community and governance",
+    "title": "Help Shape Hypha",
+    "subtitle": "Choose how you'd like to participate in the network.",
+    "intro": "Whether you want to share ideas or help govern the protocol, there are two ways to get involved.",
     "community": {
-      "title": "Hypha Network Community",
-      "description": "Join the Hypha Community space to share signals, upvote ideas, and help shape the priorities and roadmap we build together.",
-      "action": "Explore signals"
+      "title": "Community",
+      "tagline": "Share ideas. Shape priorities.",
+      "description": "Join the community to discuss ideas, submit feedback, and vote on the features and initiatives you'd like to see next.",
+      "action": "Explore community"
     },
     "governance": {
-      "title": "Hypha Network Governance",
-      "description": "Hold at least one Hypha token and you have a voice in network governance. Made by many. Owned by all—Hypha is the utility token that keeps power with members.",
-      "learnMore": "About Hypha tokenomics",
+      "title": "Governance",
+      "tagline": "Help govern the network.",
+      "description": "Hold at least one HYPHA token to participate in governance, vote on proposals, and help guide the future of the network.",
+      "learnMore": "Learn about HYPHA tokenomics.",
       "action": "Open governance"
     }
   },

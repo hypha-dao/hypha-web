@@ -866,21 +866,21 @@
   },
   "NetworkFeedback": {
     "triggerLabel": "Da forma a Hypha juntos",
-    "triggerAriaLabel": "Da forma a Hypha juntos — comunidad y gobernanza",
-    "title": "Da forma a Hypha juntos",
-    "subtitle": "Dos formas de decidir juntos hacia dónde va la red.",
-    "missionLine1": "Construido por la red.",
-    "missionLine2": "Propiedad de la red.",
-    "missionBody": "No somos una empresa de software típica. Somos una red global de constructores, soñadores y hacedores que crean las herramientas que deseamos que existieran.",
+    "triggerAriaLabel": "Ayuda a dar forma a Hypha — comunidad y gobernanza",
+    "title": "Ayuda a dar forma a Hypha",
+    "subtitle": "Elige cómo te gustaría participar en la red.",
+    "intro": "Ya sea que quieras compartir ideas o ayudar a gobernar el protocolo, hay dos formas de involucrarte.",
     "community": {
-      "title": "Comunidad de la red Hypha",
-      "description": "Únete al espacio Hypha Community para compartir señales, votar ideas y ayudar a definir las prioridades y la hoja de ruta que construimos juntos.",
-      "action": "Explorar señales"
+      "title": "Comunidad",
+      "tagline": "Comparte ideas. Define prioridades.",
+      "description": "Únete a la comunidad para debatir ideas, enviar comentarios y votar por las funciones e iniciativas que te gustaría ver a continuación.",
+      "action": "Explorar la comunidad"
     },
     "governance": {
-      "title": "Gobernanza de la red Hypha",
-      "description": "Con al menos un token Hypha tienes voz en la gobernanza de la red. Hecho por muchos. En manos de todos—Hypha es el token de utilidad que mantiene el poder en los miembros.",
-      "learnMore": "Sobre la tokenomics de Hypha",
+      "title": "Gobernanza",
+      "tagline": "Ayuda a gobernar la red.",
+      "description": "Mantén al menos un token HYPHA para participar en la gobernanza, votar propuestas y ayudar a orientar el futuro de la red.",
+      "learnMore": "Más sobre la tokenomics de HYPHA.",
       "action": "Abrir gobernanza"
     }
   },

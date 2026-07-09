@@ -30,6 +30,7 @@ const profileSheetItemClass =
 type FeedbackOptionProps = {
   icon: React.ReactNode;
   title: string;
+  tagline: string;
   description: React.ReactNode;
   actionLabel: string;
   actionHref: string;
@@ -41,6 +42,7 @@ type FeedbackOptionProps = {
 function FeedbackOption({
   icon,
   title,
+  tagline,
   description,
   actionLabel,
   actionHref,
@@ -67,6 +69,9 @@ function FeedbackOption({
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-2 font-semibold leading-snug text-foreground">
             {title}
+          </span>
+          <span className="text-1 font-medium leading-snug text-foreground">
+            {tagline}
           </span>
           <span className="text-1 leading-relaxed text-muted-foreground">
             {description}
@@ -139,11 +144,15 @@ export function HyphaNetworkFeedbackDialog({
             <DialogDescription className="text-2 leading-relaxed text-muted-foreground">
               {t('subtitle')}
             </DialogDescription>
+            <p className="text-2 leading-relaxed text-muted-foreground">
+              {t('intro')}
+            </p>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <FeedbackOption
               icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
               title={t('community.title')}
+              tagline={t('community.tagline')}
               description={t('community.description')}
               actionLabel={t('community.action')}
               actionHref={`/${locale}/dho/hypha/coherence`}
@@ -152,6 +161,7 @@ export function HyphaNetworkFeedbackDialog({
             <FeedbackOption
               icon={<Scale className="size-[22px]" strokeWidth={1.75} />}
               title={t('governance.title')}
+              tagline={t('governance.tagline')}
               hasInlineLink
               description={
                 <>
@@ -171,14 +181,6 @@ export function HyphaNetworkFeedbackDialog({
               actionHref={`/${locale}/dho/hypha-tokenomics/ecosystem-navigation`}
               onNavigate={close}
             />
-          </div>
-          <div className="space-y-2">
-            <p className="text-2 font-semibold leading-snug text-foreground">
-              {t('missionLine1')} {t('missionLine2')}
-            </p>
-            <p className="text-2 leading-relaxed text-muted-foreground">
-              {t('missionBody')}
-            </p>
           </div>
         </div>
       </DialogContent>
