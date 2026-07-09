@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowBigUp, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   useCoherenceUpvoteMutations,
   useJwt,
@@ -20,6 +20,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
+import { SignalUpvoteIcon } from './signal-upvote-icon';
 
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -178,7 +179,8 @@ export function SignalUpvoteControl({
   );
 
   // Button size="sm" sets min-h-8; zero it so the compact heights apply.
-  const pillHeightClass = cn('min-h-0 py-0', compact ? 'h-5' : 'h-6');
+  const pillHeightClass = cn('min-h-0 py-0', compact ? 'h-5' : 'h-7');
+  const iconSizeClass = compact ? 'h-3 w-3' : 'h-3.5 w-3.5';
   const hasAnyVotes = summary.upvoteCount > 0;
 
   return (
@@ -187,73 +189,108 @@ export function SignalUpvoteControl({
       onClick={stopPropagation}
       onKeyDown={stopPropagation}
     >
-      <Button
-        type="button"
-        variant="outline"
-        colorVariant={hasVoted ? 'accent' : 'neutral'}
-        size="sm"
+      <div
         className={cn(
+          'group/upvote inline-flex items-stretch overflow-hidden rounded-full border shadow-sm backdrop-blur-[2px] transition-[border-color,box-shadow,background-color,opacity] duration-200 ease-out',
           pillHeightClass,
-          'gap-1 rounded-r-none border-r-0 tabular-nums',
-          hasAnyVotes ? 'px-2' : 'w-8 justify-center px-0',
           hasVoted
-            ? 'bg-accent-3/40 text-accent-11 hover:bg-accent-3/60'
-            : 'bg-transparent text-muted-foreground hover:text-foreground',
+            ? 'border-accent-8/70 bg-accent-3/45 shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent-8)_35%,transparent),0_4px_14px_-6px_color-mix(in_srgb,var(--accent-9)_55%,transparent)]'
+            : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25 hover:shadow-md',
+          isMutating && 'pointer-events-none opacity-65',
+          !canVote && 'opacity-55',
         )}
-        disabled={!canVote || isMutating}
-        aria-pressed={hasVoted}
-        aria-label={hasVoted ? t('removeUpvote') : t('upvote')}
-        title={
-          !jwt
-            ? t('signInToUpvote')
-            : hasVoted
-            ? t('removeUpvote')
-            : t('upvote')
-        }
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void handleToggle();
-        }}
       >
-        <ArrowBigUp
+        <Button
+          type="button"
+          variant="ghost"
+          colorVariant={hasVoted ? 'accent' : 'neutral'}
+          size="sm"
           className={cn(
-            compact ? 'h-3 w-3' : 'h-3.5 w-3.5',
-            hasVoted && 'fill-current',
+            pillHeightClass,
+            'gap-1 rounded-none border-0 px-0 tabular-nums shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
+            compact ? 'min-w-[2.75rem] px-2' : 'min-w-[3rem] px-2.5',
+            hasVoted
+              ? 'text-accent-11 hover:bg-accent-4/55 active:bg-accent-4/70'
+              : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground active:bg-muted/50',
           )}
+          disabled={!canVote || isMutating}
+          aria-pressed={hasVoted}
+          aria-label={hasVoted ? t('removeUpvote') : t('upvote')}
+          title={
+            !jwt
+              ? t('signInToUpvote')
+              : hasVoted
+                ? t('removeUpvote')
+                : t('upvote')
+          }
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void handleToggle();
+          }}
+        >
+          <SignalUpvoteIcon
+            className={cn(
+              iconSizeClass,
+              'transition-transform duration-200 ease-out group-hover/upvote:scale-105',
+              hasVoted && 'text-accent-11',
+            )}
+            active={hasVoted}
+          />
+          <span
+            className={cn(
+              compact ? 'text-[11px]' : 'text-1',
+              hasVoted
+                ? 'font-semibold text-accent-11'
+                : hasAnyVotes
+                  ? 'font-medium text-foreground'
+                  : 'font-medium text-muted-foreground',
+            )}
+          >
+            {totalLabel}
+          </span>
+        </Button>
+        <span
+          className="my-1 w-px shrink-0 self-stretch bg-border/80"
           aria-hidden
         />
-        <span className={compact ? 'text-[11px]' : 'text-1'}>{totalLabel}</span>
-      </Button>
-      <Popover
-        open={popoverOpen}
-        onOpenChange={(open) => {
-          setPopoverOpen(open);
-          if (open) {
-            setPercent(myUpvotePercent(summary));
-            setError(null);
-          }
-        }}
-      >
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            size="sm"
-            className={cn(
-              pillHeightClass,
-              'w-8 rounded-l-none px-0 text-muted-foreground hover:text-foreground',
-            )}
-            aria-haspopup="dialog"
-            aria-label={t('upvoteDetails')}
-            title={t('upvoteDetails')}
-            onClick={stopPropagation}
-          >
-            <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
+        <Popover
+          open={popoverOpen}
+          onOpenChange={(open) => {
+            setPopoverOpen(open);
+            if (open) {
+              setPercent(myUpvotePercent(summary));
+              setError(null);
+            }
+          }}
+        >
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className={cn(
+                pillHeightClass,
+                'w-7 rounded-none border-0 px-0 text-muted-foreground shadow-none ring-0 hover:bg-muted/35 hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/45 data-[state=open]:text-foreground',
+                hasVoted && 'text-accent-10 hover:text-accent-11',
+              )}
+              aria-haspopup="dialog"
+              aria-label={t('upvoteDetails')}
+              title={t('upvoteDetails')}
+              onClick={stopPropagation}
+            >
+              <ChevronDown
+                className={cn(
+                  iconSizeClass,
+                  'transition-transform duration-200',
+                  popoverOpen && 'rotate-180',
+                )}
+                aria-hidden
+              />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
           align="start"
           sideOffset={8}
           className="w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border/90 bg-background-2 p-0 shadow-xl ring-1 ring-white/5 dark:ring-white/10"
@@ -297,10 +334,11 @@ export function SignalUpvoteControl({
                     <Button
                       type="button"
                       colorVariant="accent"
-                      className="w-full"
+                      className="w-full gap-2"
                       disabled={isMutating}
                       onClick={() => void handleApplyPercent()}
                     >
+                      <SignalUpvoteIcon className="h-4 w-4" active />
                       {hasVoted ? t('updateUpvote') : t('upvote')}
                     </Button>
                     {hasVoted ? (
@@ -373,7 +411,8 @@ export function SignalUpvoteControl({
             </div>
           </div>
         </PopoverContent>
-      </Popover>
+        </Popover>
+      </div>
     </div>
   );
 }
