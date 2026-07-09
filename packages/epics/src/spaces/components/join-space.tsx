@@ -12,12 +12,15 @@ import {
   useJwt,
   useAddMemberOrchestrator,
   useCreateEvent,
+  useHookRegistry,
   Person,
 } from '@hypha-platform/core/client';
 import { BaseError, useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
 import { useInviteStatus, useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { getDhoUrlAgreements } from '../../common';
+import type { Locale } from '@hypha-platform/i18n';
 
 type JoinSpaceProps = {
   spaceId: number;
@@ -35,7 +38,7 @@ export const JoinSpace = ({
   hideWhenMember = false,
 }: JoinSpaceProps) => {
   const t = useTranslations('Spaces');
-  const { lang } = useParams();
+  const { lang, id: spaceSlugParam } = useParams();
   const config = useConfig();
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
@@ -69,6 +72,50 @@ export const JoinSpace = ({
     memberAddress: person?.address as `0x${string}`,
   });
   const { createEvent } = useCreateEvent({ authToken: jwt });
+
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyProposalCreated } = useSendNotifications({ authToken: jwt });
+
+  // Join requests bypass the proposal form, so the usual in-app notification
+  // watcher (useProposalNotifications) never runs for them. Trigger the same
+  // server action once the invite proposal id is known from the tx receipt.
+  const inviteProposalId = agreement?.proposalId;
+  const notifiedProposalIdRef = React.useRef<bigint | undefined>(undefined);
+  useEffect(() => {
+    if (
+      !inviteRequested ||
+      inviteProposalId === undefined ||
+      !person?.address
+    ) {
+      return;
+    }
+    if (notifiedProposalIdRef.current === inviteProposalId) {
+      return;
+    }
+    notifiedProposalIdRef.current = inviteProposalId;
+
+    const url =
+      typeof spaceSlugParam === 'string'
+        ? getDhoUrlAgreements(lang as Locale, spaceSlugParam)
+        : undefined;
+
+    notifyProposalCreated({
+      proposalId: inviteProposalId,
+      spaceId: BigInt(web3SpaceId),
+      creator: person.address as `0x${string}`,
+      url,
+    }).catch((error) =>
+      console.warn('Failed to send join request notifications:', error),
+    );
+  }, [
+    inviteRequested,
+    inviteProposalId,
+    person?.address,
+    notifyProposalCreated,
+    lang,
+    spaceSlugParam,
+    web3SpaceId,
+  ]);
 
   const { revalidateInviteStatus, isInviteLoading, lastInviteTime } =
     useInviteStatus({
