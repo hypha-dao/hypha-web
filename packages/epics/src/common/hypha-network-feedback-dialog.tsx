@@ -16,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
   DropdownMenuItem,
-  Separator,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -128,7 +127,7 @@ export function HyphaNetworkFeedbackDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'gap-0 overflow-hidden rounded-2xl border border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 dark:ring-white/10',
+          'gap-0 overflow-hidden rounded-none border border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 sm:rounded-2xl dark:ring-white/10',
           'max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]',
         )}
       >
@@ -141,15 +140,6 @@ export function HyphaNetworkFeedbackDialog({
               {t('subtitle')}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <p className="text-2 font-semibold leading-snug text-foreground">
-              {t('missionLine1')} {t('missionLine2')}
-            </p>
-            <p className="text-2 leading-relaxed text-muted-foreground">
-              {t('missionBody')}
-            </p>
-          </div>
-          <Separator />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <FeedbackOption
               icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
@@ -181,6 +171,14 @@ export function HyphaNetworkFeedbackDialog({
               actionHref={`/${locale}/dho/hypha-tokenomics/ecosystem-navigation`}
               onNavigate={close}
             />
+          </div>
+          <div className="space-y-2">
+            <p className="text-2 font-semibold leading-snug text-foreground">
+              {t('missionLine1')} {t('missionLine2')}
+            </p>
+            <p className="text-2 leading-relaxed text-muted-foreground">
+              {t('missionBody')}
+            </p>
           </div>
         </div>
       </DialogContent>
