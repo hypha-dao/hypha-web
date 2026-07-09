@@ -102,6 +102,8 @@ export const JoinSpace = ({
     notifyProposalCreated({
       proposalId: inviteProposalId,
       spaceId: BigInt(web3SpaceId),
+      // On-chain ProposalCreated.creator is the space factory for join
+      // requests; pass the requester so member notifications exclude them.
       creator: person.address as `0x${string}`,
       url,
     }).catch((error) =>
