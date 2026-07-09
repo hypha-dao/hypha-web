@@ -11,6 +11,7 @@ import {
   getDefaultBankCurrencyCodes,
   type BankCurrencyCode,
 } from '../bank-currency-display';
+import { ownerText, type BankingOwnerContext } from '../banking-ui';
 import { CurrencyOptionRow } from './currency-option-row';
 
 export type BankingInitialSetupProps = {
@@ -18,6 +19,8 @@ export type BankingInitialSetupProps = {
   initialContactEmail: string;
   isSubmitting: boolean;
   error: string | null;
+  /** Whether this setup is for a space or an individual member's profile. Defaults to 'space'. */
+  ownerContext?: BankingOwnerContext;
   onSubmit: (input: {
     legalName: string;
     contactEmail: string;
@@ -30,10 +33,12 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   initialContactEmail,
   isSubmitting,
   error,
+  ownerContext = 'space',
   onSubmit,
 }) => {
   const t = useTranslations('BankingTab.initialSetup');
   const tOpen = useTranslations('BankingTab.openAccount');
+  const ot = (key: string) => ownerText(t, ownerContext, key);
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -88,10 +93,10 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
             id="banking-setup-org"
             className="text-3 font-semibold tracking-tight text-foreground"
           >
-            {t('organizationLegend')}
+            {ot('organizationLegend')}
           </h2>
           <p className="text-2 text-muted-foreground">
-            {t('organizationHint')}
+            {ot('organizationHint')}
           </p>
         </div>
         <div className="flex flex-col gap-4">
@@ -100,7 +105,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
               htmlFor="banking-setup-legal-name"
               className="text-foreground"
             >
-              {tOpen('legalName')}
+              {ot('legalName')}
             </Label>
             <Input
               id="banking-setup-legal-name"
@@ -114,7 +119,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="banking-setup-email" className="text-foreground">
-              {tOpen('contactEmail')}
+              {t('contactEmail')}
             </Label>
             <Input
               id="banking-setup-email"
@@ -141,7 +146,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
             {t('currenciesTitle')}
           </h2>
           <p className="text-2 text-muted-foreground">
-            {t('currenciesDescription')}
+            {ot('currenciesDescription')}
           </p>
           <p className="text-1 text-muted-foreground">{t('currenciesHint')}</p>
         </div>

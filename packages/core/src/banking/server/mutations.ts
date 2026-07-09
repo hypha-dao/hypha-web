@@ -9,7 +9,9 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 export type InsertBankCustomerInput = {
-  spaceId: number;
+  /** Exactly one owner must be provided: `spaceId` (space banking) or `personId` (individual). */
+  spaceId?: number;
+  personId?: number;
   entityType: BankEntityType;
   provider: BankProvider;
   providerCustomerId: string | null;

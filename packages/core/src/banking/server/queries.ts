@@ -29,3 +29,26 @@ export const findBankCustomerBySpaceAndProvider = async (
 
   return row ?? null;
 };
+
+type FindBankCustomerByPersonAndProviderInput = {
+  personId: number;
+  provider: BankProvider;
+};
+
+export const findBankCustomerByPersonAndProvider = async (
+  { personId, provider }: FindBankCustomerByPersonAndProviderInput,
+  { db }: DbConfig,
+): Promise<BankCustomer | null> => {
+  const [row] = await db
+    .select()
+    .from(bankCustomers)
+    .where(
+      and(
+        eq(bankCustomers.personId, personId),
+        eq(bankCustomers.provider, provider),
+      ),
+    )
+    .limit(1);
+
+  return row ?? null;
+};

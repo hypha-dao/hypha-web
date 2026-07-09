@@ -10,6 +10,8 @@
     "memberRoleLabel": "Membro",
     "delegatedVotingMemberLabel": "Membro com voto delegado",
     "Treasury": "Tesouraria",
+    "Wallet": "Carteira",
+    "Banking": "Banco",
     "Agreements": "Acordos",
     "Spaces": "Espaços",
     "loadMore": "Carregar mais",
@@ -3134,7 +3136,10 @@
       },
       "section": {
         "title": "Contas bancárias de pagamento",
-        "description": "Cadastre uma conta bancária externa para transferir fundos das suas carteiras USDC ou EURC por meio de propostas."
+        "description": "Cadastre uma conta bancária externa para transferir fundos das suas carteiras USDC ou EURC por meio de propostas.",
+        "person": {
+          "description": "Cadastre uma conta bancária externa para receber transferências da sua carteira."
+        }
       },
       "addCta": "Adicionar conta de pagamento",
       "loading": "Carregando contas de pagamento…",
@@ -3222,7 +3227,11 @@
           "liquidationAddressLabel": "Endereço de pagamento",
           "howToTitle": "Como realizar pagamentos",
           "howToText": "Crie uma proposta de Funding ou Expenses apontando para este endereço como destino do pagamento. Os fundos serão convertidos e transferidos para o banco cadastrado.",
-          "done": "Concluído"
+          "done": "Concluído",
+          "person": {
+            "subtitle": "A conta está ativa. Copie o endereço de pagamento para enviar fundos a ele.",
+            "howToText": "Use \"Transferir fundos\" no seu perfil para enviar {currency} a este endereço. Os fundos serão convertidos e transferidos para o banco cadastrado."
+          }
         },
         "swift": {
           "code": "SWIFT (USD)",
@@ -3310,6 +3319,10 @@
       "dialogDescription": "Informações detalhadas e configurações técnicas.",
       "dataMinimizationNotice": "Detalhes de depósito e verificação são carregados do nosso parceiro bancário e não são salvos nos servidores da Hypha.",
       "noCustomer": "Ainda não há registro de cliente bancário para este space.",
+      "person": {
+        "noCustomer": "Ainda não há registro de cliente bancário para o seu perfil.",
+        "kybProcedure": "Verificação de identidade (KYC)"
+      },
       "approvedSummary": "A verificação foi aprovada. Gerencie suas moedas suportadas na seção abaixo.",
       "providerValidationsTitle": "Validações do provedor",
       "legalNameLabel": "Nome legal da entidade",
@@ -3349,7 +3362,13 @@
           "approved": "A verificação empresarial está concluída. Nenhuma ação adicional é necessária aqui.",
           "rejected": "A verificação foi recusada. Entre em contato com o suporte se acreditar que isso é um erro.",
           "paused": "A verificação está pausada. Entre em contato com o suporte.",
-          "offboarded": "A verificação bancária não está mais disponível para este cliente. Entre em contato com o suporte."
+          "offboarded": "A verificação bancária não está mais disponível para este cliente. Entre em contato com o suporte.",
+          "person": {
+            "complete": "A verificação de identidade está concluída. Nenhuma ação adicional é necessária aqui.",
+            "not_started": "Abra o link de verificação para iniciar sua verificação de identidade.",
+            "awaiting_ubo": "O Bridge está concluindo etapas de verificação adicionais para o seu envio.",
+            "approved": "A verificação de identidade está concluída. Nenhuma ação adicional é necessária aqui."
+          }
         }
       },
       "requestRailDisabledInitialSetup": "Conclua sua verificação atual antes de solicitar corredores de moeda adicionais",
@@ -3406,14 +3425,25 @@
     "initialSetup": {
       "organizationLegend": "Dados da organização",
       "organizationHint": "Os dados da organização são enviados ao nosso parceiro bancário para verificação e não são armazenados na Hypha.",
+      "legalName": "Nome legal da entidade",
+      "contactEmail": "E-mail de contato",
       "currenciesTitle": "Moedas que deseja utilizar",
       "currenciesDescription": "Selecione as moedas que este space utilizará para depósitos e pagamentos bancários. Sua organização será verificada uma vez com nosso parceiro bancário.",
       "currenciesHint": "Você pode adicionar mais moedas depois nas configurações bancárias.",
-      "submit": "Continuar"
+      "submit": "Continuar",
+      "person": {
+        "organizationLegend": "Seus dados",
+        "organizationHint": "Seus dados são enviados ao nosso parceiro bancário para verificação e não são armazenados na Hypha.",
+        "legalName": "Nome completo",
+        "currenciesDescription": "Selecione as moedas que deseja utilizar para pagamentos bancários. Você será verificado uma vez com nosso parceiro bancário."
+      }
     },
     "notStarted": {
       "description": "Os serviços bancários ainda não estão configurados para este space.",
-      "enableCta": "Continuar"
+      "enableCta": "Continuar",
+      "person": {
+        "description": "Os serviços bancários ainda não estão configurados para o seu perfil."
+      }
     },
     "blockers": {
       "notOnChain": "Este space deve estar implantado on-chain antes que uma conta bancária vinculada possa ser configurada.",
@@ -3561,7 +3591,14 @@
       "simulateFillingKybRequiredData": "Simular preenchimento de dados KYB obrigatórios",
       "cta": "Simular aprovação KYB",
       "simulating": "Simulando…",
-      "refreshing": "Atualizando status…"
+      "refreshing": "Atualizando status…",
+      "person": {
+        "title": "Sandbox / Dev — Simulação KYC",
+        "description": "KYC é uma etapa manual, portanto deve ser simulada no sandbox. Isso também pode ignorar completamente o preenchimento do formulário.",
+        "infoTooltipAria": "Sobre simulação KYC no sandbox",
+        "simulateFillingKybRequiredData": "Simular preenchimento de dados KYC obrigatórios",
+        "cta": "Simular aprovação KYC"
+      }
     },
     "endorsements": {
       "base": "USD (ACH / transferência wire)",
@@ -3570,16 +3607,6 @@
       "pix": "BRL (PIX, Brasil)",
       "sepa": "EUR (transferência bancária SEPA)",
       "spei": "MXN (SPEI, México)"
-    },
-    "onboardingDialog": {
-      "title": "Ativar depósitos bancários",
-      "description": "Usamos estas informações para verificar sua organização. Após a aprovação, seu space será configurado para receber transferências bancárias.",
-      "legalName": "Nome legal da entidade",
-      "contactEmail": "E-mail de contato",
-      "endorsementsLabel": "Corredores de pagamento",
-      "endorsementsHint": "Estes são endossos KYB do Bridge (ex.: base para USD, sepa para EUR). Cada corredor selecionado é incluído no link de verificação.",
-      "submit": "Iniciar verificação",
-      "submitting": "Iniciando…"
     },
     "status": {
       "not_started": {

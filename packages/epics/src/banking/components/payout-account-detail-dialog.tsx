@@ -19,6 +19,7 @@ import {
   type BankCurrencyCode,
 } from '../bank-currency-display';
 import { PAYOUT_RAIL_MINIMUMS } from '../banking-minimums';
+import { ownerText, type BankingOwnerContext } from '../banking-ui';
 import type { BankPayoutAccountPublic } from '../hooks/types';
 import {
   BANKING_DIALOG_FOOTER_CLASS,
@@ -51,12 +52,15 @@ type PayoutAccountDetailDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   account: BankPayoutAccountPublic | null;
+  /** Whether this account belongs to a space or an individual member's profile. Defaults to 'space'. */
+  ownerContext?: BankingOwnerContext;
 };
 
 export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
   open,
   onOpenChange,
   account,
+  ownerContext = 'space',
 }) => {
   const t = useTranslations('BankingTab.payouts');
   const tDialog = useTranslations('BankingTab.payouts.addDialog');
@@ -166,7 +170,9 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
                 {tDialog('success.howToTitle')}
               </p>
               <p className="text-2 text-muted-foreground">
-                {tDialog('success.howToText')}
+                {ownerText(tDialog, ownerContext, 'success.howToText', {
+                  currency: source,
+                })}
               </p>
               {account.paymentRail &&
               PAYOUT_RAIL_MINIMUMS[account.paymentRail]?.(

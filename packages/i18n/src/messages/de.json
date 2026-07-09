@@ -5,6 +5,8 @@
     "memberRoleLabel": "Mitglied",
     "delegatedVotingMemberLabel": "Delegiertes Stimmmitglied",
     "Treasury": "Schatzkammer",
+    "Wallet": "Wallet",
+    "Banking": "Bankdienste",
     "Agreements": "Vereinbarungen",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
@@ -621,6 +623,9 @@
     "errorFetchStatus": "Beim Abrufen Ihrer Bankinformationen ist ein Problem aufgetreten. Bitte versuchen Sie es später erneut.",
     "notStarted": {
       "description": "Banking ist für diesen Space noch nicht eingerichtet.",
+      "person": {
+        "description": "Banking ist für Ihr Profil noch nicht eingerichtet."
+      },
       "enableCta": "Weiter"
     },
     "blockers": {
@@ -641,16 +646,6 @@
       "pix": "BRL (PIX, Brasilien)",
       "sepa": "EUR (SEPA-Überweisung)",
       "spei": "MXN (SPEI, Mexiko)"
-    },
-    "onboardingDialog": {
-      "title": "Bankeinzahlungen aktivieren",
-      "description": "Diese Angaben dienen der Verifizierung Ihrer Organisation. Nach der Freigabe wird Ihr Space für den Empfang von Banküberweisungen eingerichtet.",
-      "legalName": "Rechtlicher Name der Organisation",
-      "contactEmail": "Kontakt-E-Mail",
-      "endorsementsLabel": "Zahlungskorridore",
-      "endorsementsHint": "Dies sind Bridge-KYB-Endorsements (z. B. base für USD, sepa für EUR). Jeder ausgewählte Korridor ist im Verifizierungslink enthalten.",
-      "submit": "Verifizierung starten",
-      "submitting": "Wird gestartet…"
     },
     "status": {
       "not_started": {
@@ -722,7 +717,10 @@
       },
       "section": {
         "title": "Auszahlungsbankkonten",
-        "description": "Registrieren Sie ein externes Bankkonto, um Gelder aus Ihren USDC- oder EURC-Wallets über Anträge zu überweisen."
+        "description": "Registrieren Sie ein externes Bankkonto, um Gelder aus Ihren USDC- oder EURC-Wallets über Anträge zu überweisen.",
+        "person": {
+          "description": "Registrieren Sie ein externes Bankkonto, um Überweisungen von Ihrer Wallet zu empfangen."
+        }
       },
       "addCta": "Auszahlungskonto hinzufügen",
       "loading": "Auszahlungskonten werden geladen…",
@@ -810,7 +808,11 @@
           "liquidationAddressLabel": "Auszahlungsadresse",
           "howToTitle": "So führen Sie Auszahlungen durch",
           "howToText": "Erstellen Sie einen Funding- oder Expenses-Antrag mit dieser Adresse als Auszahlungsziel. Die Gelder werden umgewandelt und an Ihre registrierte Bank überwiesen.",
-          "done": "Fertig"
+          "done": "Fertig",
+          "person": {
+            "subtitle": "Das Konto ist aktiv. Kopieren Sie die Auszahlungsadresse, um Gelder dorthin zu senden.",
+            "howToText": "Nutzen Sie „Geld überweisen“ in Ihrem Profil, um {currency} an diese Adresse zu senden. Die Gelder werden umgewandelt und an Ihre registrierte Bank überwiesen."
+          }
         },
         "swift": {
           "code": "SWIFT (USD)",
@@ -898,6 +900,10 @@
       "dialogDescription": "Detaillierte Informationen und technische Konfigurationen.",
       "dataMinimizationNotice": "Einzahlungs- und Verifizierungsdetails werden von unserem Banking-Partner geladen und nicht auf Hypha-Servern gespeichert.",
       "noCustomer": "Für diesen Space existiert noch kein Bankkunden-Datensatz.",
+      "person": {
+        "noCustomer": "Für Ihr Profil existiert noch kein Bankkunden-Datensatz.",
+        "kybProcedure": "Identitätsprüfung (KYC)"
+      },
       "approvedSummary": "Die Verifizierung ist genehmigt. Verwalten Sie Ihre unterstützten Währungen im Abschnitt unten.",
       "providerValidationsTitle": "Anbieterprüfungen",
       "legalNameLabel": "Rechtlicher Name der Organisation",
@@ -937,7 +943,13 @@
           "approved": "Die Unternehmensverifizierung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich.",
           "rejected": "Die Verifizierung wurde abgelehnt. Kontaktieren Sie den Support, wenn Sie glauben, dass dies ein Fehler ist.",
           "paused": "Die Verifizierung ist pausiert. Kontaktieren Sie den Support.",
-          "offboarded": "Die Banking-Verifizierung ist für diesen Kunden nicht mehr verfügbar. Kontaktieren Sie den Support."
+          "offboarded": "Die Banking-Verifizierung ist für diesen Kunden nicht mehr verfügbar. Kontaktieren Sie den Support.",
+          "person": {
+            "complete": "Die Identitätsprüfung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich.",
+            "not_started": "Öffnen Sie den Verifizierungslink, um Ihre Identitätsprüfung zu starten.",
+            "awaiting_ubo": "Bridge schließt zusätzliche Verifizierungsschritte für Ihre Einreichung ab.",
+            "approved": "Die Identitätsprüfung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich."
+          }
         }
       },
       "requestRailDisabledInitialSetup": "Schließen Sie Ihre aktuelle Verifizierung ab, bevor Sie weitere Währungskorridore anfordern",
@@ -994,10 +1006,18 @@
     "initialSetup": {
       "organizationLegend": "Organisationsdetails",
       "organizationHint": "Organisationsdetails werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
+      "legalName": "Rechtlicher Name der Organisation",
+      "contactEmail": "Kontakt-E-Mail",
       "currenciesTitle": "Gewünschte Währungen",
       "currenciesDescription": "Wählen Sie die Währungen, die dieser Space für Bankeinzahlungen und Auszahlungen verwenden soll. Ihre Organisation wird einmalig von unserem Banking-Partner verifiziert.",
       "currenciesHint": "Weitere Währungen können Sie später in den Banking-Einstellungen hinzufügen.",
-      "submit": "Weiter"
+      "submit": "Weiter",
+      "person": {
+        "organizationLegend": "Ihre Angaben",
+        "organizationHint": "Ihre Angaben werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
+        "legalName": "Vollständiger Name",
+        "currenciesDescription": "Wählen Sie die Währungen aus, die Sie für Bankauszahlungen verwenden möchten. Sie werden einmalig von unserem Banking-Partner verifiziert."
+      }
     },
     "corridors": {
       "provisioning": "Wird eingerichtet…",
@@ -1134,7 +1154,14 @@
       "simulateFillingKybRequiredData": "Ausfüllen der erforderlichen KYB-Daten simulieren",
       "cta": "KYB-Freigabe simulieren",
       "simulating": "Wird simuliert…",
-      "refreshing": "Status wird aktualisiert…"
+      "refreshing": "Status wird aktualisiert…",
+      "person": {
+        "title": "Sandbox / Dev — KYC-Simulation",
+        "description": "KYC ist ein manueller Schritt und muss in der Sandbox simuliert werden. Dies kann auch das vollständige Ausfüllen des Formulars umgehen.",
+        "infoTooltipAria": "Über KYC-Simulation in der Sandbox",
+        "simulateFillingKybRequiredData": "Ausfüllen der erforderlichen KYC-Daten simulieren",
+        "cta": "KYC-Freigabe simulieren"
+      }
     }
   },
   "TreasuryTab": {

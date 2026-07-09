@@ -46,6 +46,28 @@ export {
   BANKING_DIALOG_BODY_CLASS as BANKING_DETAILS_DIALOG_BODY_CLASS,
 } from './components/banking-dialog-layout';
 
+/** Which subject a shared banking component is rendering for — drives which i18n copy variant to use. */
+export type BankingOwnerContext = 'space' | 'person';
+
+/**
+ * Resolves a translation key that has a person-specific override nested next to the key it
+ * overrides, as a `person` sibling at the same depth — e.g. `foo.bar` → `foo.person.bar`, so the
+ * override sits next to the string it replaces in the JSON rather than at the namespace root.
+ */
+export function ownerText(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  ownerContext: BankingOwnerContext,
+  key: string,
+  values?: Record<string, string | number>,
+): string {
+  if (ownerContext !== 'person') {
+    return t(key, values);
+  }
+  const segments = key.split('.');
+  const lastSegment = segments.pop();
+  return t([...segments, 'person', lastSegment].join('.'), values);
+}
+
 export function procedureLink(
   procedure: BankCustomerPublicStatus['procedures']['kyc'],
 ): string | null {

@@ -2,27 +2,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { requestSpaceBankOnboarding } from '../request-space-bank-onboarding';
+import { requestPersonalBankOnboarding } from '../request-personal-bank-onboarding';
 import type { BankKycProvider } from '../providers/types';
 
-const findSpaceBySlug = vi.fn();
-const authorizeSpaceBankOnboarding = vi.fn();
-const findBankCustomerBySpaceAndProvider = vi.fn();
+const findPersonBySlug = vi.fn();
+const authorizePersonalBankOnboarding = vi.fn();
+const findBankCustomerByPersonAndProvider = vi.fn();
 const insertBankCustomer = vi.fn();
 const loadBankingProviderState = vi.fn();
 
-vi.mock('../../../space/server/queries', () => ({
-  findSpaceBySlug: (...args: unknown[]) => findSpaceBySlug(...args),
+vi.mock('../../../people/server/queries', () => ({
+  findPersonBySlug: (...args: unknown[]) => findPersonBySlug(...args),
 }));
 
-vi.mock('../authorize-space-bank-onboarding', () => ({
-  authorizeSpaceBankOnboarding: (...args: unknown[]) =>
-    authorizeSpaceBankOnboarding(...args),
+vi.mock('../authorize-personal-bank-onboarding', () => ({
+  authorizePersonalBankOnboarding: (...args: unknown[]) =>
+    authorizePersonalBankOnboarding(...args),
 }));
 
 vi.mock('../queries', () => ({
-  findBankCustomerBySpaceAndProvider: (...args: unknown[]) =>
-    findBankCustomerBySpaceAndProvider(...args),
+  findBankCustomerByPersonAndProvider: (...args: unknown[]) =>
+    findBankCustomerByPersonAndProvider(...args),
 }));
 
 vi.mock('../mutations', () => ({
@@ -43,10 +43,10 @@ vi.mock('../providers/bridge/banking-provider-state', async () => {
 const mockDb = {} as never;
 
 const onboardingInput = {
-  spaceSlug: 'acme',
+  personSlug: 'alice',
   authToken: 'token',
-  legalName: 'Acme Foundation Ltd.',
-  contactEmail: 'compliance@acme.org',
+  legalName: 'Alice Doe',
+  contactEmail: 'alice@example.org',
   requestedRails: ['eur', 'usd'] as const,
 };
 
@@ -67,21 +67,20 @@ const mockProvider: BankKycProvider = {
   }),
 };
 
-describe('requestSpaceBankOnboarding', () => {
+describe('requestPersonalBankOnboarding', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findSpaceBySlug.mockResolvedValue({
-      id: 1,
-      title: 'Acme',
-      slug: 'acme',
-      web3SpaceId: 42,
-      address: '0xtreasury',
+    findPersonBySlug.mockResolvedValue({
+      id: 10,
+      slug: 'alice',
+      name: 'Alice',
+      email: 'alice@example.org',
     });
-    authorizeSpaceBankOnboarding.mockResolvedValue({
+    authorizePersonalBankOnboarding.mockResolvedValue({
       authorized: true,
       person: { id: 10, slug: 'alice' },
     });
-    findBankCustomerBySpaceAndProvider.mockResolvedValue(null);
+    findBankCustomerByPersonAndProvider.mockResolvedValue(null);
     insertBankCustomer.mockResolvedValue({
       id: 1,
       providerKycLinkId: 'link_1',
@@ -89,11 +88,11 @@ describe('requestSpaceBankOnboarding', () => {
     });
   });
 
-  it('throws BankOnboardingError 404 when space is not found', async () => {
-    findSpaceBySlug.mockResolvedValue(null);
+  it('throws BankOnboardingError 404 when the person is not found', async () => {
+    findPersonBySlug.mockResolvedValue(null);
 
     await expect(
-      requestSpaceBankOnboarding(
+      requestPersonalBankOnboarding(
         {
           ...onboardingInput,
           requestedRails: [...onboardingInput.requestedRails],
@@ -103,8 +102,28 @@ describe('requestSpaceBankOnboarding', () => {
       ),
     ).rejects.toMatchObject({
       status: 404,
-      message: 'Space not found',
+      message: 'Person not found',
     });
+  });
+
+  it('throws when the caller is not the profile owner', async () => {
+    authorizePersonalBankOnboarding.mockResolvedValue({
+      authorized: false,
+      message: 'You can only manage banking for your own profile.',
+      httpStatus: 403,
+    });
+
+    await expect(
+      requestPersonalBankOnboarding(
+        {
+          ...onboardingInput,
+          requestedRails: [...onboardingInput.requestedRails],
+        },
+        { db: mockDb },
+        { kycProvider: mockProvider },
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mockProvider.createKycLink).not.toHaveBeenCalled();
   });
 
   it('returns existing customer without calling provider (idempotent)', async () => {
@@ -114,7 +133,7 @@ describe('requestSpaceBankOnboarding', () => {
       providerCustomerId: 'cust_1',
       requestedRails: ['eur'],
     };
-    findBankCustomerBySpaceAndProvider.mockResolvedValue(existingCustomer);
+    findBankCustomerByPersonAndProvider.mockResolvedValue(existingCustomer);
     loadBankingProviderState.mockResolvedValue({
       kycLink: {
         id: 'link_1',
@@ -130,7 +149,7 @@ describe('requestSpaceBankOnboarding', () => {
       liquidationAddressPairs: new Set(),
     });
 
-    const result = await requestSpaceBankOnboarding(
+    const result = await requestPersonalBankOnboarding(
       {
         ...onboardingInput,
         requestedRails: [...onboardingInput.requestedRails],
@@ -150,8 +169,8 @@ describe('requestSpaceBankOnboarding', () => {
     );
   });
 
-  it('creates customer via provider with requested rails', async () => {
-    const result = await requestSpaceBankOnboarding(
+  it('creates an individual customer with personId set', async () => {
+    const result = await requestPersonalBankOnboarding(
       {
         ...onboardingInput,
         requestedRails: [...onboardingInput.requestedRails],
@@ -162,25 +181,28 @@ describe('requestSpaceBankOnboarding', () => {
 
     expect(mockProvider.createKycLink).toHaveBeenCalledWith(
       expect.objectContaining({
-        entityType: 'business',
-        legalName: 'Acme Foundation Ltd.',
-        contactEmail: 'compliance@acme.org',
+        entityType: 'individual',
+        legalName: 'Alice Doe',
+        contactEmail: 'alice@example.org',
         endorsements: ['sepa', 'base'],
         idempotencyKey: expect.any(String),
       }),
     );
     expect(insertBankCustomer).toHaveBeenCalledWith(
       expect.objectContaining({
+        personId: 10,
+        entityType: 'individual',
         providerKycLinkId: 'link_1',
         requestedRails: ['eur', 'usd'],
       }),
       expect.any(Object),
     );
     expect(insertBankCustomer).toHaveBeenCalledWith(
-      expect.not.objectContaining({ contactEmail: expect.anything() }),
+      expect.not.objectContaining({ spaceId: expect.anything() }),
       expect.any(Object),
     );
     expect(result.created).toBe(true);
+    expect(result.ownerName).toBe('Alice Doe');
     expect(result.kycLink).toBe('https://bridge.example/kyc');
   });
 });

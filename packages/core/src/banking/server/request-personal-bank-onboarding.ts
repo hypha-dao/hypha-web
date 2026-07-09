@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 
 import type { DatabaseInstance } from '../../common/server/types';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
-import { findSpaceBySlug } from '../../space/server/queries';
+import { findPersonBySlug } from '../../people/server/queries';
 import type {
-  BankOnboardingResult,
-  RequestSpaceBankOnboardingInput,
+  PersonalBankOnboardingResult,
+  RequestPersonalBankOnboardingInput,
 } from '../types';
-import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
+import { authorizePersonalBankOnboarding } from './authorize-personal-bank-onboarding';
 import { BankOnboardingError } from './errors';
 import { insertBankCustomer } from './mutations';
 import { getBankKycProvider } from './providers';
@@ -17,19 +17,19 @@ import {
   buildCustomerValidations,
   loadBankingProviderState,
 } from './providers/bridge/banking-provider-state';
-import { findBankCustomerBySpaceAndProvider } from './queries';
+import { findBankCustomerByPersonAndProvider } from './queries';
 
-export type RequestSpaceBankOnboardingOptions = {
+export type RequestPersonalBankOnboardingOptions = {
   kycProvider?: BankKycProvider;
 };
 
-export async function requestSpaceBankOnboarding(
-  input: RequestSpaceBankOnboardingInput,
+export async function requestPersonalBankOnboarding(
+  input: RequestPersonalBankOnboardingInput,
   { db }: { db: DatabaseInstance },
-  options?: RequestSpaceBankOnboardingOptions,
-): Promise<BankOnboardingResult> {
+  options?: RequestPersonalBankOnboardingOptions,
+): Promise<PersonalBankOnboardingResult> {
   const {
-    spaceSlug,
+    personSlug,
     authToken,
     legalName,
     contactEmail,
@@ -37,13 +37,13 @@ export async function requestSpaceBankOnboarding(
     redirectUri,
   } = input;
 
-  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-  if (!space) {
-    throw new BankOnboardingError('Space not found', 404);
+  const person = await findPersonBySlug({ slug: personSlug }, { db });
+  if (!person) {
+    throw new BankOnboardingError('Person not found', 404);
   }
 
-  const auth = await authorizeSpaceBankOnboarding({
-    space,
+  const auth = await authorizePersonalBankOnboarding({
+    person: { id: person.id },
     authToken,
   });
 
@@ -51,13 +51,10 @@ export async function requestSpaceBankOnboarding(
     throw new BankOnboardingError(auth.message, auth.httpStatus);
   }
 
-  const emailMeta = {
-    spaceTitle: space.title,
-    requesterSlug: auth.person.slug ?? null,
-  };
+  const requesterSlug = auth.person.slug ?? null;
 
-  const existing = await findBankCustomerBySpaceAndProvider(
-    { spaceId: space.id, provider: DEFAULT_BANK_PROVIDER },
+  const existing = await findBankCustomerByPersonAndProvider(
+    { personId: person.id, provider: DEFAULT_BANK_PROVIDER },
     { db },
   );
 
@@ -68,8 +65,8 @@ export async function requestSpaceBankOnboarding(
     return {
       provider: DEFAULT_BANK_PROVIDER,
       created: false,
-      spaceTitle: emailMeta.spaceTitle,
-      requesterSlug: emailMeta.requesterSlug,
+      ownerName: legalName,
+      requesterSlug,
       kycLink: validations.kycLink,
       tosLink: validations.tosLink,
       procedures: {
@@ -87,7 +84,7 @@ export async function requestSpaceBankOnboarding(
     options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
 
   const kycLinkResult = await kycProvider.createKycLink({
-    entityType: 'business',
+    entityType: 'individual',
     legalName,
     contactEmail,
     idempotencyKey,
@@ -97,8 +94,8 @@ export async function requestSpaceBankOnboarding(
 
   await insertBankCustomer(
     {
-      spaceId: space.id,
-      entityType: 'business',
+      personId: person.id,
+      entityType: 'individual',
       provider: DEFAULT_BANK_PROVIDER,
       providerCustomerId: kycLinkResult.providerCustomerId,
       providerKycLinkId: kycLinkResult.providerKycLinkId,
@@ -119,8 +116,8 @@ export async function requestSpaceBankOnboarding(
   return {
     provider: DEFAULT_BANK_PROVIDER,
     created: true,
-    spaceTitle: emailMeta.spaceTitle,
-    requesterSlug: emailMeta.requesterSlug,
+    ownerName: legalName,
+    requesterSlug,
     kycLink: validations.kycLink,
     tosLink: validations.tosLink,
     procedures: {
