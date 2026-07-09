@@ -1541,10 +1541,18 @@ export function useSpaceGroupCall(
           return;
         }
 
-        logJoinDebugStep('join-step:enabling-microphone');
-        await lkRoom.localParticipant.setMicrophoneEnabled(true);
-        logJoinDebugStep('join-step:enabling-camera', { enableCamera });
-        await lkRoom.localParticipant.setCameraEnabled(enableCamera);
+        // Enable concurrently (not sequentially) so livekit-client's internal
+        // negotiation queue can coalesce both track publishes into a single
+        // offer/answer round instead of two separate renegotiations racing
+        // the initial ICE gathering — see join-step:livekit-connect-* debug
+        // logs for the renegotiation churn this was suspected to cause.
+        logJoinDebugStep('join-step:enabling-microphone-and-camera', {
+          enableCamera,
+        });
+        await Promise.all([
+          lkRoom.localParticipant.setMicrophoneEnabled(true),
+          lkRoom.localParticipant.setCameraEnabled(enableCamera),
+        ]);
         logJoinDebugStep('join-step:local-tracks-published');
 
         liveKitRoomRef.current = lkRoom;
