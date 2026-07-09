@@ -15,6 +15,11 @@ import { coherenceUpvotes } from './coherence-upvotes';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 import { bankCustomers } from './bank-customer';
+import { personStripeCustomers } from './person-stripe-customer';
+import {
+  spaceSubscriptions,
+  spaceSubscriptionInvoices,
+} from './space-subscription';
 import {
   spaceCallRecordings,
   spaceCallTranscripts,
@@ -48,6 +53,8 @@ export * from './coherence-upvotes';
 export * from './matrix-user-link';
 export * from './token-updates';
 export * from './bank-customer';
+export * from './person-stripe-customer';
+export * from './space-subscription';
 export * from './call-artifacts';
 export * from './signal-orchestrator';
 export * from './space-scheduled-item';
@@ -72,6 +79,9 @@ export const schema = {
   tokenUpdates,
   tokenUpdateRelations,
   bankCustomers,
+  personStripeCustomers,
+  spaceSubscriptions,
+  spaceSubscriptionInvoices,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,

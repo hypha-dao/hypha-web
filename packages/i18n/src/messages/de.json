@@ -91,6 +91,7 @@
     "selectLanguage": "Sprache auswählen",
     "myProfile": "Mein Profil",
     "notificationCentre": "Benachrichtigungszentrale",
+    "manageSubscriptions": "Abonnements verwalten",
     "switchToLightMode": "Zum hellen Modus wechseln",
     "switchToDarkMode": "Zum dunklen Modus wechseln",
     "updateMfa": "Fondsschutz aktualisieren (MFA)",
@@ -536,6 +537,10 @@
       "activateSpaces": {
         "title": "Spaces aktivieren",
         "description": "Tragen Sie HYPHA oder USDC bei, um Ihre Spaces zu aktivieren und das Hypha-Netzwerk zu unterstützen."
+      },
+      "subscribeWithCard": {
+        "title": "Mit Karte abonnieren",
+        "description": "Zahlen Sie ein monatliches Kartenabonnement über Stripe, um diesen Space automatisch aktiv zu halten."
       }
     }
   },

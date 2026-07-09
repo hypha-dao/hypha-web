@@ -91,6 +91,7 @@
     "selectLanguage": "Choisir la langue",
     "myProfile": "Mon profil",
     "notificationCentre": "Centre de notifications",
+    "manageSubscriptions": "Gérer les abonnements",
     "switchToLightMode": "Passer en mode clair",
     "switchToDarkMode": "Passer en mode sombre",
     "updateMfa": "Mettre à jour la protection des fonds (MFA)",
@@ -536,6 +537,10 @@
       "activateSpaces": {
         "title": "Activer le(s) espace(s)",
         "description": "Contribuez en HYPHA ou en USDC pour activer votre/vos espace(s) et soutenir le réseau Hypha."
+      },
+      "subscribeWithCard": {
+        "title": "S'abonner par carte",
+        "description": "Payez un abonnement mensuel par carte via Stripe pour garder cet espace actif automatiquement."
       }
     }
   },

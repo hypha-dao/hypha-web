@@ -10,6 +10,7 @@ import {
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
+import { useMySubscriptions } from '../../spaces/hooks/use-my-subscriptions';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: ProfileUseAuthentication;
@@ -64,6 +65,15 @@ export const ConnectedButtonProfile = ({
     typeof lang === 'string' ? `/${lang}/onboarding` : undefined;
   const localizedSignupPath =
     typeof lang === 'string' ? `/${lang}/profile/signup` : newUserRedirectPath;
+
+  const {
+    enabled: stripeEnabled,
+    hasSubscriptions,
+    openBillingPortal,
+  } = useMySubscriptions({
+    lang: typeof lang === 'string' ? lang : 'en',
+  });
+  const hasCardSubscription = stripeEnabled && hasSubscriptions;
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
@@ -153,6 +163,9 @@ export const ConnectedButtonProfile = ({
       }
       onboardingUrl={onboardingUrl}
       notificationCentrePath={notificationCentrePath}
+      onManageSubscriptions={
+        hasCardSubscription ? () => void openBillingPortal() : undefined
+      }
       navItems={navItems}
       trailingBeforeProfile={trailingBeforeProfile}
       compact={compact}
