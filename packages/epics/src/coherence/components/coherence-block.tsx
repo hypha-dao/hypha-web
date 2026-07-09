@@ -188,8 +188,13 @@ export function CoherenceBlock({
     [lang, spaceSlug],
   );
 
-  const { open: humanChatOpen, openCoherenceChat, openHumanChatPanel, mode, coherenceSlug } =
-    useHumanChatPanel();
+  const {
+    open: humanChatOpen,
+    openCoherenceChat,
+    openHumanChatPanel,
+    mode,
+    coherenceSlug,
+  } = useHumanChatPanel();
 
   const activeSignalSlug = React.useMemo(() => {
     const slug = coherenceSlug?.trim() ?? null;
