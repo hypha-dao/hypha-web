@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from '@hypha-platform/ui';
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   Coherence,
   useFindCoherences,

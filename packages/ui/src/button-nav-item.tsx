@@ -24,7 +24,9 @@ export const ButtonNavItem = ({
   const isActive = href && pathname.includes(href);
   const content = (
     <>
-      {icon ? <span className="mr-1.5 inline-flex shrink-0">{icon}</span> : null}
+      {icon ? (
+        <span className="mr-1.5 inline-flex shrink-0">{icon}</span>
+      ) : null}
       {label}
     </>
   );

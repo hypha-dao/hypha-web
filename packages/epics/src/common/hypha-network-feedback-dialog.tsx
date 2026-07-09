@@ -151,37 +151,37 @@ export function HyphaNetworkFeedbackDialog({
           </div>
           <Separator />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <FeedbackOption
-            icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
-            title={t('community.title')}
-            description={t('community.description')}
-            actionLabel={t('community.action')}
-            actionHref={`/${locale}/dho/hypha/coherence`}
-            onNavigate={close}
-          />
-          <FeedbackOption
-            icon={<Scale className="size-[22px]" strokeWidth={1.75} />}
-            title={t('governance.title')}
-            hasInlineLink
-            description={
-              <>
-                {t('governance.description')}{' '}
-                <a
-                  href={HYPHA_TOKENOMICS_BRIEF_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(event) => event.stopPropagation()}
-                  className="font-medium text-accent-11 underline-offset-2 hover:underline"
-                >
-                  {t('governance.learnMore')}
-                </a>
-              </>
-            }
-            actionLabel={t('governance.action')}
-            actionHref={`/${locale}/dho/hypha-tokenomics/ecosystem-navigation`}
-            onNavigate={close}
-          />
-        </div>
+            <FeedbackOption
+              icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
+              title={t('community.title')}
+              description={t('community.description')}
+              actionLabel={t('community.action')}
+              actionHref={`/${locale}/dho/hypha/coherence`}
+              onNavigate={close}
+            />
+            <FeedbackOption
+              icon={<Scale className="size-[22px]" strokeWidth={1.75} />}
+              title={t('governance.title')}
+              hasInlineLink
+              description={
+                <>
+                  {t('governance.description')}{' '}
+                  <a
+                    href={HYPHA_TOKENOMICS_BRIEF_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                    className="font-medium text-accent-11 underline-offset-2 hover:underline"
+                  >
+                    {t('governance.learnMore')}
+                  </a>
+                </>
+              }
+              actionLabel={t('governance.action')}
+              actionHref={`/${locale}/dho/hypha-tokenomics/ecosystem-navigation`}
+              onNavigate={close}
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

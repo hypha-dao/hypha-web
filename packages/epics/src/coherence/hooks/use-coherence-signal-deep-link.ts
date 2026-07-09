@@ -79,11 +79,7 @@ export function useCoherenceSignalDeepLink({
       activeCoherenceSlug?.trim() === signalSlug ||
       openedChatForSlugRef.current === signalSlug;
 
-    if (
-      humanChatEnabled &&
-      onOpenSignalChat &&
-      !alreadyViewingSignal
-    ) {
+    if (humanChatEnabled && onOpenSignalChat && !alreadyViewingSignal) {
       openedChatForSlugRef.current = signalSlug;
       onOpenSignalChat(signal);
     } else if (alreadyViewingSignal) {

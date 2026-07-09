@@ -167,7 +167,8 @@ export function SignalTaskCard({
       className={cn(
         'group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm',
         'transition-all duration-200 ease-out',
-        !isActive && 'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
+        !isActive &&
+          'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
         signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',

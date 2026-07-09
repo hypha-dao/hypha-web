@@ -190,7 +190,9 @@ export function SignalBoardView({
       <div
         className={cn(
           'flex w-full gap-4',
-          isMobile ? 'flex-col pb-1' : 'items-start overflow-x-auto pb-3 pt-0.5',
+          isMobile
+            ? 'flex-col pb-1'
+            : 'items-start overflow-x-auto pb-3 pt-0.5',
         )}
       >
         {visibleStatuses.map((status) => {

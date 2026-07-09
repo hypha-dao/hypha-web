@@ -543,8 +543,7 @@ export const CreateSignalForm = ({
             progressStatus:
               data.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
             board:
-              data.board ??
-              (workflow ? resolveDefaultBoard(workflow) : null),
+              data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: data.assigneeIds,
           });
           if (updatedSignal?.roomId) {
@@ -993,9 +992,7 @@ export const CreateSignalForm = ({
                       <Select
                         value={
                           field.value ??
-                          (workflow
-                            ? resolveDefaultBoard(workflow)
-                            : 'general')
+                          (workflow ? resolveDefaultBoard(workflow) : 'general')
                         }
                         onValueChange={field.onChange}
                         disabled={isMutating}

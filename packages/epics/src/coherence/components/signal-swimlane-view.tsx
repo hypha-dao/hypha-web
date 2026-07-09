@@ -183,7 +183,10 @@ export function SignalSwimlaneView({
                     </div>
 
                     <div
-                      className={cn(SIGNAL_STATUS_CARD_STACK_CLASS, 'gap-2 p-2')}
+                      className={cn(
+                        SIGNAL_STATUS_CARD_STACK_CLASS,
+                        'gap-2 p-2',
+                      )}
                       onDragOver={
                         readOnly
                           ? undefined

@@ -78,7 +78,10 @@ function resolveNavItemIcon(href?: string) {
   }
   if (href.includes('/my-spaces')) {
     return (
-      <LayoutGrid className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <LayoutGrid
+        className="size-4 shrink-0 text-muted-foreground"
+        aria-hidden
+      />
     );
   }
   if (href.includes('/network')) {

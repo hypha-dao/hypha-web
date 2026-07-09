@@ -266,7 +266,9 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                     >
                       ·
                     </span>
-                    <span className="text-white/88 max-md:hidden">{createdOnText}</span>
+                    <span className="text-white/88 max-md:hidden">
+                      {createdOnText}
+                    </span>
                   </>
                 ) : null}
               </div>
