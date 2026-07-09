@@ -2,10 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const resolveCustomerApproved = vi.fn();
-const loadBankingProviderState = vi.fn();
-const laPairKey = vi.fn();
-const mapBridgePayoutAccountToPublic = vi.fn();
+const {
+  resolveCustomerApproved,
+  loadBankingProviderState,
+  laPairKey,
+  mapBridgePayoutAccountToPublic,
+} = vi.hoisted(() => ({
+  resolveCustomerApproved: vi.fn(),
+  loadBankingProviderState: vi.fn(),
+  laPairKey: vi.fn(),
+  mapBridgePayoutAccountToPublic: vi.fn(),
+}));
 
 vi.mock('../providers/bridge/banking-provider-state', () => ({
   resolveCustomerApproved: (...args: unknown[]) =>
@@ -22,11 +29,13 @@ vi.mock('../map-bridge-resources', () => ({
 
 import { createBankPayoutAccountForCustomer } from '../create-bank-payout-account-for-customer';
 import type { BankKycProvider } from '../providers/types';
+import type { BankCustomer } from '@hypha-platform/storage-postgres';
+import type { CreateBankPayoutAccountFields } from '../../types';
 
 const customer = {
   id: 1,
   providerCustomerId: 'cust_1',
-} as never;
+} as unknown as BankCustomer;
 
 const input = {
   railKey: 'usd_ach',
@@ -42,7 +51,7 @@ const input = {
     postal_code: '10001',
     country: 'USA',
   },
-} as never;
+} as unknown as CreateBankPayoutAccountFields;
 
 const mockProvider: BankKycProvider = {
   provider: 'bridge',

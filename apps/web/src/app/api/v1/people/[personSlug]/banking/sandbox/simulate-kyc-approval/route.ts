@@ -31,7 +31,9 @@ export async function POST(
       { db },
     );
 
-    return NextResponse.json(status);
+    return NextResponse.json(status, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
     if (error instanceof BankOnboardingError) {
       return NextResponse.json(

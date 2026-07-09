@@ -13,10 +13,8 @@ import { insertBankCustomer } from './mutations';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { currenciesToEndorsements } from '../constants';
-import {
-  buildCustomerValidations,
-  loadBankingProviderState,
-} from './providers/bridge/banking-provider-state';
+import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
+import { bridgeGetKycLink } from '../../common/server/bridge-client';
 import { findBankCustomerByPersonAndProvider } from './queries';
 
 export type RequestPersonalBankOnboardingOptions = {
@@ -59,8 +57,8 @@ export async function requestPersonalBankOnboarding(
   );
 
   if (existing) {
-    const state = await loadBankingProviderState(existing);
-    const validations = buildCustomerValidations(state.kycLink);
+    const kycLink = await bridgeGetKycLink(existing.providerKycLinkId);
+    const validations = buildCustomerValidations(kycLink);
 
     return {
       provider: DEFAULT_BANK_PROVIDER,

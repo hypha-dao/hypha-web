@@ -13,8 +13,6 @@ export * from './create-space-bank-transfer';
 export * from './create-space-bank-virtual-account';
 export * from './get-space-bank-payout-accounts';
 export * from './create-space-bank-payout-account';
-export * from './get-bank-payout-accounts-for-customer';
-export * from './create-bank-payout-account-for-customer';
 export * from './authorize-personal-bank-onboarding';
 export * from './request-personal-bank-onboarding';
 export * from './get-personal-bank-customer-public-status';

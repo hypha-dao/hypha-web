@@ -23,8 +23,9 @@ export const ProfileTabs = ({
   const [treasuryView, setTreasuryView] = React.useState('wallet');
   const { person: authenticatedPerson } = useMe();
   const isMyProfile =
-    person?.address?.toLowerCase() ===
-    authenticatedPerson?.address?.toLowerCase();
+    !!person?.address &&
+    !!authenticatedPerson?.address &&
+    person.address.toLowerCase() === authenticatedPerson.address.toLowerCase();
 
   const walletContent = (
     <div className="flex flex-col gap-6">

@@ -22,48 +22,59 @@ export async function authenticatePersonalBankCustomerRequest(
   request: NextRequest,
   personSlug: string,
 ): Promise<AuthenticatePersonalBankCustomerResult> {
-  const authToken = extractBearerToken(request);
+  try {
+    const authToken = extractBearerToken(request);
 
-  if (!authToken) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
+    if (!authToken) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      };
+    }
 
-  const auth = await verifyPrivyAuthToken(authToken);
-  if (!auth.ok) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
+    const auth = await verifyPrivyAuthToken(authToken);
+    if (!auth.ok) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      };
+    }
 
-  const person = await findPersonBySlug({ slug: personSlug }, { db });
-  if (!person) {
+    const person = await findPersonBySlug({ slug: personSlug }, { db });
+    if (!person) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: 'Person not found' },
+          { status: 404 },
+        ),
+      };
+    }
+
+    const authorization = await authorizePersonalBankOnboarding({
+      person: { id: person.id },
+      authToken,
+    });
+
+    if (!authorization.authorized) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: authorization.message },
+          { status: authorization.httpStatus },
+        ),
+      };
+    }
+
+    return { ok: true, person, authToken };
+  } catch (error) {
+    console.error('authenticatePersonalBankCustomerRequest failed:', error);
     return {
       ok: false,
       response: NextResponse.json(
-        { error: 'Person not found' },
-        { status: 404 },
+        { error: 'Authentication failed' },
+        { status: 500 },
       ),
     };
   }
-
-  const authorization = await authorizePersonalBankOnboarding({
-    person: { id: person.id },
-    authToken,
-  });
-
-  if (!authorization.authorized) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: authorization.message },
-        { status: authorization.httpStatus },
-      ),
-    };
-  }
-
-  return { ok: true, person, authToken };
 }
