@@ -48,7 +48,6 @@ type SignalUpvoteControlProps = {
   upvotes?: CoherenceUpvoteSummary;
   refresh?: () => Promise<void>;
   disabled?: boolean;
-  /** Smaller pill for dense task cards. */
   compact?: boolean;
   className?: string;
 };
@@ -178,8 +177,8 @@ export function SignalUpvoteControl({
     [],
   );
 
-  // Button size="sm" sets min-h-8; zero it so the compact heights apply.
-  const pillHeightClass = cn('min-h-0 py-0', compact ? 'h-5' : 'h-7');
+  // Button size="sm" sets min-h-8; zero it so our pill height wins.
+  const pillHeightClass = cn('min-h-0 shrink-0 py-0', compact ? 'h-5' : 'h-7');
   const iconSizeClass = compact ? 'h-3 w-3' : 'h-3.5 w-3.5';
   const hasAnyVotes = summary.upvoteCount > 0;
 
@@ -191,7 +190,7 @@ export function SignalUpvoteControl({
     >
       <div
         className={cn(
-          'group/upvote inline-flex items-stretch overflow-hidden rounded-full border shadow-sm backdrop-blur-[2px] transition-[border-color,box-shadow,background-color,opacity] duration-200 ease-out',
+          'group/upvote inline-flex items-center overflow-hidden rounded-full border shadow-sm backdrop-blur-[2px] transition-[border-color,box-shadow,background-color,opacity] duration-200 ease-out',
           pillHeightClass,
           hasVoted
             ? 'border-accent-8/85 bg-background/55 shadow-sm'
@@ -208,6 +207,7 @@ export function SignalUpvoteControl({
           className={cn(
             pillHeightClass,
             'gap-1 rounded-none border-0 px-0 tabular-nums shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
+            'flex items-center justify-center',
             compact ? 'min-w-[2.75rem] px-2' : 'min-w-[3rem] px-2.5',
             hasVoted
               ? 'text-accent-11 hover:bg-muted/30 active:bg-muted/40'
@@ -250,10 +250,7 @@ export function SignalUpvoteControl({
             {totalLabel}
           </span>
         </Button>
-        <span
-          className="my-1 w-px shrink-0 self-stretch bg-border/80"
-          aria-hidden
-        />
+        <span className="mx-0.5 h-4 w-px shrink-0 bg-border/80" aria-hidden />
         <Popover
           open={popoverOpen}
           onOpenChange={(open) => {
@@ -272,7 +269,7 @@ export function SignalUpvoteControl({
               size="sm"
               className={cn(
                 pillHeightClass,
-                'w-7 rounded-none border-0 px-0 text-muted-foreground shadow-none ring-0 hover:bg-muted/35 hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/45 data-[state=open]:text-foreground',
+                'flex w-7 items-center justify-center rounded-none border-0 px-0 text-muted-foreground shadow-none ring-0 hover:bg-muted/35 hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/45 data-[state=open]:text-foreground',
                 hasVoted && 'text-accent-11 hover:text-accent-11',
               )}
               aria-haspopup="dialog"

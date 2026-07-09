@@ -263,7 +263,6 @@ export function SignalTaskCard({
               upvotes={signal.upvotes}
               refresh={refresh}
               disabled={Boolean(signal.archived)}
-              compact
             />
             {hasValidDue ? (
               <span
