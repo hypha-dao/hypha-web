@@ -3561,7 +3561,7 @@
     "signalWorkflowSettings": "Configure statuses and boards",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "List",
-    "signalViewGrid": "Grid",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Uncategorized",
     "signalListTitle": "Title",
     "signalListStatus": "Status",
