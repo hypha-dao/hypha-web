@@ -865,10 +865,13 @@
     "continueAdventure": "Continuar tu aventura"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Feedback",
-    "triggerAriaLabel": "Comentarios de la red Hypha — comunidad y gobernanza",
-    "title": "Da forma a Hypha con nosotros",
-    "subtitle": "Dos formas de influir en el rumbo de la red.",
+    "triggerLabel": "Da forma a Hypha juntos",
+    "triggerAriaLabel": "Da forma a Hypha juntos — comunidad y gobernanza",
+    "title": "Da forma a Hypha juntos",
+    "subtitle": "Dos formas de decidir juntos hacia dónde va la red.",
+    "missionLine1": "Construido por la red.",
+    "missionLine2": "Propiedad de la red.",
+    "missionBody": "No somos una empresa de software típica. Somos una red global de constructores, soñadores y hacedores que crean las herramientas que deseamos que existieran.",
     "community": {
       "title": "Comunidad de la red Hypha",
       "description": "Únete al espacio Hypha Community para compartir señales, votar ideas y ayudar a definir las prioridades y la hoja de ruta que construimos juntos.",

@@ -106,10 +106,13 @@
     "continueAdventure": "Continue your adventure"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Feedback",
-    "triggerAriaLabel": "Hypha network feedback — community and governance",
-    "title": "Shape Hypha with us",
-    "subtitle": "Two ways to influence where the network goes next.",
+    "triggerLabel": "Shape Hypha Together",
+    "triggerAriaLabel": "Shape Hypha together — community and governance",
+    "title": "Shape Hypha together",
+    "subtitle": "Two ways we can decide together where the network goes next.",
+    "missionLine1": "Built by the Network.",
+    "missionLine2": "Owned by the Network.",
+    "missionBody": "We're not a typical software company. We're a global network of builders, dreamers, and doers creating the tools we wish existed.",
     "community": {
       "title": "Hypha Network Community",
       "description": "Join the Hypha Community space to share signals, upvote ideas, and help shape the priorities and roadmap we build together.",

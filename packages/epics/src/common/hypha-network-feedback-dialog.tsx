@@ -144,6 +144,17 @@ export function HyphaNetworkFeedbackTrigger({
               {t('subtitle')}
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-2 font-semibold leading-snug text-foreground">
+              {t('missionLine1')}
+            </p>
+            <p className="text-2 font-semibold leading-snug text-foreground">
+              {t('missionLine2')}
+            </p>
+            <p className="text-2 leading-relaxed text-muted-foreground">
+              {t('missionBody')}
+            </p>
+          </div>
           <Separator />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <FeedbackOption

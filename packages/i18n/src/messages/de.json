@@ -106,10 +106,13 @@
     "continueAdventure": "Abenteuer fortsetzen"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Feedback",
-    "triggerAriaLabel": "Hypha-Netzwerk-Feedback — Community und Governance",
-    "title": "Gestalte Hypha mit uns",
-    "subtitle": "Zwei Wege, die Richtung des Netzwerks mitzubestimmen.",
+    "triggerLabel": "Hypha gemeinsam gestalten",
+    "triggerAriaLabel": "Hypha gemeinsam gestalten — Community und Governance",
+    "title": "Hypha gemeinsam gestalten",
+    "subtitle": "Zwei Wege, gemeinsam zu entscheiden, wohin sich das Netzwerk entwickelt.",
+    "missionLine1": "Gebaut vom Netzwerk.",
+    "missionLine2": "Im Besitz des Netzwerks.",
+    "missionBody": "Wir sind kein typisches Softwareunternehmen. Wir sind ein globales Netzwerk aus Macherinnen, Träumern und Umsetzenden, die die Werkzeuge schaffen, die wir uns gewünscht haben.",
     "community": {
       "title": "Hypha-Netzwerk-Community",
       "description": "Tritt dem Hypha-Community-Space bei, teile Signale, vote Ideen hoch und hilf mit, Prioritäten und Roadmap gemeinsam zu gestalten.",
