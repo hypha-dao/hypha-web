@@ -32,9 +32,7 @@ export function scrollScrollableAncestorOrWindow(
  * When a kanban/swimlane column has no internal overflow, wheel events should
  * scroll the page instead of being swallowed by the column shell.
  */
-export function handleSignalColumnWheel(
-  event: WheelEvent<HTMLElement>,
-): void {
+export function handleSignalColumnWheel(event: WheelEvent<HTMLElement>): void {
   const column = event.currentTarget;
   if (column.scrollHeight > column.clientHeight + 1) {
     return;
