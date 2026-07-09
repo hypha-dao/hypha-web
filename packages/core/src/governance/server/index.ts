@@ -6,6 +6,7 @@ export * from './get-token-holdings-by-space-slug';
 export * from './fetch-org-memory-asset';
 export * from './resolve-document-proposal-status';
 export * from './call-artifacts';
+export * from './decode-join-request-proposal';
 export * from './extract-deployed-token-from-receipt';
 export * from './link-deployed-token';
 export * from './send-human-chat-message';
