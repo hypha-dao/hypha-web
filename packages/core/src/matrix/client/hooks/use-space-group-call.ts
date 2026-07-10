@@ -217,6 +217,20 @@ function abortInFlightJoin(
 }
 
 const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
+/**
+ * Debounce for the UI spotlight/focus handoff. LiveKit's `activeSpeakers`
+ * ranking flips on raw instantaneous audio level (cross-talk, coughs) far
+ * faster than a human would call it a handoff — mirror what real moderators
+ * do: a challenger must hold the lead continuously for this long before
+ * taking the floor.
+ */
+const ACTIVE_SPEAKER_MIN_LEAD_MS = 900;
+/**
+ * The current focused speaker keeps the floor until they've been absent
+ * from `activeSpeakers` (i.e. actually gone quiet) for this long — not just
+ * briefly outranked while still talking.
+ */
+const ACTIVE_SPEAKER_SILENCE_GRACE_MS = 600;
 const VOICE_PROCESSING_PRESET_KEY = 'hypha-group-call-voice-processing-v1';
 const CALL_CAPTURE_NOTICE_BODY = 'Hypha call capture notice';
 
@@ -391,9 +405,18 @@ export function useSpaceGroupCall(
   const [callSessionAnchorEventId, setCallSessionAnchorEventId] = useState<
     string | null
   >(null);
+  /** Debounced spotlight/focus key — see `syncActiveSpeakerFromRoom`. */
   const [activeSpeakerKey, setActiveSpeakerKey] = useState<string | null>(null);
-  /** Latest active speaker for transcript attribution (avoids stale closure in SR). */
+  /** Latest debounced spotlight key (avoids stale closure); mirrors `activeSpeakerKey`. */
   const activeSpeakerKeyRef = useRef<string | null>(null);
+  /** Raw, undebounced instantaneous top speaker — used for transcript attribution, where accuracy matters more than UI stability. */
+  const rawActiveSpeakerKeyRef = useRef<string | null>(null);
+  const activeSpeakerCandidateKeyRef = useRef<string | null>(null);
+  const activeSpeakerCandidateSinceRef = useRef<number | null>(null);
+  const activeSpeakerFocusedSilentSinceRef = useRef<number | null>(null);
+  const activeSpeakerCommitTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   /** Screenshare-only failure (does not end the call). */
   const [screenshareErrorCode, setScreenshareErrorCode] =
     useState<SpaceGroupCallErrorCode | null>(null);
@@ -555,11 +578,91 @@ export function useSpaceGroupCall(
     return () => mediaQuery.removeEventListener('change', stopShareOnMobile);
   }, [callState]);
 
-  const syncActiveSpeakerFromRoom = useCallback((lkRoom: LiveKitRoom) => {
-    const key = activeSpeakerKeyFromRoom(lkRoom);
+  const clearActiveSpeakerCommitTimer = useCallback(() => {
+    if (activeSpeakerCommitTimerRef.current != null) {
+      clearTimeout(activeSpeakerCommitTimerRef.current);
+      activeSpeakerCommitTimerRef.current = null;
+    }
+  }, []);
+
+  const commitActiveSpeakerFocus = useCallback((key: string | null) => {
+    clearActiveSpeakerCommitTimer();
+    activeSpeakerCandidateKeyRef.current = null;
+    activeSpeakerCandidateSinceRef.current = null;
+    activeSpeakerFocusedSilentSinceRef.current = null;
     activeSpeakerKeyRef.current = key;
     setActiveSpeakerKey(key);
   }, []);
+
+  /**
+   * Debounced handoff for the UI spotlight. Two rules, mirroring what a
+   * human moderator would do: a challenger must hold the lead for
+   * `ACTIVE_SPEAKER_MIN_LEAD_MS` before taking over, and the current
+   * speaker keeps the floor until they've actually gone quiet (absent from
+   * `activeSpeakers`) for `ACTIVE_SPEAKER_SILENCE_GRACE_MS` — not just
+   * briefly outranked while still talking. Re-evaluated both on every
+   * `ActiveSpeakersChanged` event and via a scheduled timer, so a sustained
+   * lead still commits even if the event stream goes briefly quiet.
+   */
+  const syncActiveSpeakerFromRoom = useCallback(
+    (lkRoom: LiveKitRoom) => {
+      const speakers = lkRoom.activeSpeakers;
+      const topKey = activeSpeakerKeyFromRoom(lkRoom);
+      rawActiveSpeakerKeyRef.current = topKey;
+
+      const focusedKey = activeSpeakerKeyRef.current;
+      if (topKey === focusedKey) {
+        clearActiveSpeakerCommitTimer();
+        activeSpeakerCandidateKeyRef.current = null;
+        activeSpeakerCandidateSinceRef.current = null;
+        activeSpeakerFocusedSilentSinceRef.current = null;
+        return;
+      }
+
+      if (focusedKey == null) {
+        // No current focus yet (first speaker of the call) — adopt immediately.
+        commitActiveSpeakerFocus(topKey);
+        return;
+      }
+
+      const focusedStillPresent = speakers.some(
+        (p) => (p.identity?.trim() || null) === focusedKey,
+      );
+      activeSpeakerFocusedSilentSinceRef.current = focusedStillPresent
+        ? null
+        : activeSpeakerFocusedSilentSinceRef.current ?? Date.now();
+
+      if (topKey !== activeSpeakerCandidateKeyRef.current) {
+        activeSpeakerCandidateKeyRef.current = topKey;
+        activeSpeakerCandidateSinceRef.current = Date.now();
+        clearActiveSpeakerCommitTimer();
+        // No scheduled re-check when the room goes quiet (topKey === null):
+        // the spotlight should stay on the last speaker through silence,
+        // not fall back to "nobody," until an actual new speaker emerges.
+        if (topKey != null) {
+          activeSpeakerCommitTimerRef.current = setTimeout(() => {
+            activeSpeakerCommitTimerRef.current = null;
+            const current = liveKitRoomRef.current;
+            if (current) syncActiveSpeakerFromRoom(current);
+          }, ACTIVE_SPEAKER_MIN_LEAD_MS);
+        }
+      }
+
+      const candidateSince = activeSpeakerCandidateSinceRef.current;
+      const candidateSustained =
+        candidateSince != null &&
+        Date.now() - candidateSince >= ACTIVE_SPEAKER_MIN_LEAD_MS;
+      const silentSince = activeSpeakerFocusedSilentSinceRef.current;
+      const currentReleased =
+        silentSince != null &&
+        Date.now() - silentSince >= ACTIVE_SPEAKER_SILENCE_GRACE_MS;
+
+      if (candidateSustained && currentReleased) {
+        commitActiveSpeakerFocus(topKey);
+      }
+    },
+    [clearActiveSpeakerCommitTimer, commitActiveSpeakerFocus],
+  );
 
   const scheduleFeedBatched = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -688,7 +791,7 @@ export function useSpaceGroupCall(
           resolveMatrixSpeakerDisplayName(
             client,
             activeRoom,
-            activeSpeakerKeyRef.current,
+            rawActiveSpeakerKeyRef.current,
           ),
         onError: () => {
           // recording continues even if speech recognition fails
@@ -1125,6 +1228,14 @@ export function useSpaceGroupCall(
       setIsMicrophoneMuted(false);
       setIsLocalVideoMuted(true);
       setRoom(null);
+      if (activeSpeakerCommitTimerRef.current != null) {
+        clearTimeout(activeSpeakerCommitTimerRef.current);
+        activeSpeakerCommitTimerRef.current = null;
+      }
+      activeSpeakerCandidateKeyRef.current = null;
+      activeSpeakerCandidateSinceRef.current = null;
+      activeSpeakerFocusedSilentSinceRef.current = null;
+      rawActiveSpeakerKeyRef.current = null;
       activeSpeakerKeyRef.current = null;
       setActiveSpeakerKey(null);
       setCallSessionId(null);
