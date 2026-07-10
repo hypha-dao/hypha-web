@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import {
   type Person as SavedPerson,
   CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
   resolveSupportedCurrency,
   schemaEditPersonWeb2,
   editPersonFiles,
@@ -458,7 +459,7 @@ export const EditPersonSection = ({
                       <FormItem>
                         <FormControl>
                           <Select
-                            value={field.value || 'USD'}
+                            value={field.value || DEFAULT_CURRENCY}
                             onValueChange={field.onChange}
                             disabled={isLoading}
                           >
