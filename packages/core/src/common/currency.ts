@@ -33,15 +33,15 @@ export const CURRENCY_OPTIONS: Array<{
 
 export const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
   USD: '$',
-  EUR: 'EUR',
-  GBP: 'GBP',
-  JPY: 'JPY',
-  CNY: 'CNY',
-  CAD: 'CAD',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  CNY: '¥',
+  CAD: 'C$',
   CHF: 'CHF',
-  AUD: 'AUD',
-  NZD: 'NZD',
-  HKD: 'HKD',
+  AUD: 'A$',
+  NZD: 'NZ$',
+  HKD: 'HK$',
 };
 
 export const isSupportedCurrency = (

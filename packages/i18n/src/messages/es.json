@@ -1430,6 +1430,7 @@
     },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
+      "tokenPrice": "Precio del token: {price} {currency}",
       "totalIssuance": "Emisión total: {value}",
       "createdOn": "Creado en {date}",
       "mutualCredit": {
@@ -1507,7 +1508,8 @@
         "nickname": "Apodo",
         "lifePurpose": "Escribe aquí tu propósito de vida...",
         "email": "Correo electrónico",
-        "location": "Ubicación"
+        "location": "Ubicación",
+        "currency": "Seleccionar moneda"
       },
       "actions": {
         "retry": "Reintentar",

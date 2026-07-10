@@ -36,6 +36,7 @@ async function fetchUsdConversionRate(currency: SupportedCurrency) {
       headers: {
         Accept: 'application/json',
       },
+      signal: AbortSignal.timeout(10_000),
     },
   );
 
@@ -65,4 +66,18 @@ export async function getUsdConversionRate(currency?: string | null) {
     console.error('Failed to get fiat conversion rate:', error);
     return { currency: DEFAULT_CURRENCY, rate: 1 };
   }
+}
+
+/** Convert an amount denominated in `currency` into USD using cached fiat rates. */
+export async function convertAmountToUsd(
+  amount: number,
+  currency?: string | null,
+): Promise<number> {
+  const resolvedCurrency = resolveSupportedCurrency(currency);
+  if (resolvedCurrency === DEFAULT_CURRENCY) {
+    return amount;
+  }
+
+  const { rate } = await getUsdConversionRate(resolvedCurrency);
+  return amount / rate;
 }

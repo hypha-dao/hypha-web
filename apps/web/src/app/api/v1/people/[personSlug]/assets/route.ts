@@ -12,6 +12,7 @@ import {
   getMutualCreditInfo,
   findSelf,
   getUsdConversionRate,
+  convertAmountToUsd,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -256,15 +257,21 @@ export async function GET(
       address: token.address ?? undefined,
       referenceCurrency: token.referenceCurrency,
       referencePrice:
-        token.referencePrice === null ? null : Number(token.referencePrice),
+        token.referencePrice != null ? Number(token.referencePrice) : null,
     }));
 
-    const referencePriceByAddress: Record<string, number> = {};
+    const referencePriceByAddress: Record<
+      string,
+      { price: number; currency: string }
+    > = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
         if (Number.isFinite(parsed) && parsed >= 0) {
-          referencePriceByAddress[t.address.toLowerCase()] = parsed;
+          referencePriceByAddress[t.address.toLowerCase()] = {
+            price: parsed,
+            currency: t.referenceCurrency ?? 'USD',
+          };
         }
       }
     });
@@ -319,7 +326,14 @@ export async function GET(
           const totalSupply = supplyRes?.totalSupply;
           let rate = isEnergyToken ? 1 : prices[token.address] || 0;
           if (rate === 0) {
-            rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            const fallback =
+              referencePriceByAddress[token.address.toLowerCase()];
+            if (fallback) {
+              rate = await convertAmountToUsd(
+                fallback.price,
+                fallback.currency,
+              );
+            }
           }
           return {
             ...meta,

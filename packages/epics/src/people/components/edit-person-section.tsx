@@ -463,7 +463,11 @@ export const EditPersonSection = ({
                             disabled={isLoading}
                           >
                             <SelectTrigger className="w-60">
-                              <SelectValue placeholder="Select currency" />
+                              <SelectValue
+                                placeholder={tProfile(
+                                  'editForm.placeholders.currency',
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {CURRENCY_OPTIONS.map((option) => (

@@ -47,7 +47,6 @@ type AssetItem = {
   address: string;
   createdAt?: Date;
   referencePrice?: number | null;
-  referenceCurrency?: string | null;
 };
 
 type UseAssetsData = {

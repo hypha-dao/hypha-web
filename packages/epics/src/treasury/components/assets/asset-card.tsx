@@ -193,9 +193,10 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         referenceCurrency && (
           <div className="w-full flex flex-row gap-1">
             <Text className="text-1 text-neutral-11">
-              {`Token Price: ${formatCurrencyValue(
-                referencePrice,
-              )} ${referenceCurrency}`}
+              {tTreasury('assetCard.tokenPrice', {
+                price: formatCurrencyValue(referencePrice, lang),
+                currency: referenceCurrency,
+              })}
             </Text>
           </div>
         )}

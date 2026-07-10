@@ -670,6 +670,7 @@
     },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
+      "tokenPrice": "Prix du jeton : {price} {currency}",
       "totalIssuance": "Émission totale : {value}",
       "createdOn": "Créé le {date}",
       "mutualCredit": {
@@ -747,7 +748,8 @@
         "nickname": "Pseudo",
         "lifePurpose": "Décrivez ici votre raison d’être...",
         "email": "E-mail",
-        "location": "Localisation"
+        "location": "Localisation",
+        "currency": "Sélectionner une devise"
       },
       "actions": {
         "retry": "Réessayer",

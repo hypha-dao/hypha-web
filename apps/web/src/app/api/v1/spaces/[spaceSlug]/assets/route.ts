@@ -9,6 +9,7 @@ import {
   findAllTokens,
   getSupply,
   getUsdConversionRate,
+  convertAmountToUsd,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -77,21 +78,22 @@ export async function GET(
       createdAt: token.createdAt ?? undefined,
       referenceCurrency: token.referenceCurrency,
       referencePrice:
-        token.referencePrice === null ? null : Number(token.referencePrice),
+        token.referencePrice != null ? Number(token.referencePrice) : null,
     }));
 
-    const referencePriceByAddress: Record<string, number> = {};
-    const referenceCurrencyByAddress: Record<string, string> = {};
+    const referencePriceByAddress: Record<
+      string,
+      { price: number; currency: string }
+    > = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
         if (Number.isFinite(parsed) && parsed >= 0) {
-          referencePriceByAddress[t.address.toLowerCase()] = parsed;
+          referencePriceByAddress[t.address.toLowerCase()] = {
+            price: parsed,
+            currency: t.referenceCurrency ?? 'USD',
+          };
         }
-      }
-      if (t.address && t.referenceCurrency) {
-        referenceCurrencyByAddress[t.address.toLowerCase()] =
-          t.referenceCurrency;
       }
     });
 
@@ -242,11 +244,19 @@ export async function GET(
             rate = 1;
           }
           if (rate === 0) {
-            rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            const fallback =
+              referencePriceByAddress[token.address.toLowerCase()];
+            if (fallback) {
+              rate = await convertAmountToUsd(
+                fallback.price,
+                fallback.currency,
+              );
+            }
           }
           const decimals = await getTokenDecimals(token.address);
           const referenceCurrency =
-            referenceCurrencyByAddress[token.address.toLowerCase()];
+            referencePriceByAddress[token.address.toLowerCase()]?.currency ??
+            meta.referenceCurrency;
           return {
             ...meta,
             address: token.address,

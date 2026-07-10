@@ -1218,6 +1218,7 @@
     },
     "assetCard": {
       "fromSpace": "from {spaceTitle}",
+      "tokenPrice": "Token Price: {price} {currency}",
       "totalIssuance": "Total Issuance: {value}",
       "createdOn": "Created on {date}",
       "mutualCredit": {
@@ -1295,7 +1296,8 @@
         "nickname": "Nickname",
         "lifePurpose": "Type your life purpose here...",
         "email": "Email",
-        "location": "Location"
+        "location": "Location",
+        "currency": "Select currency"
       },
       "actions": {
         "retry": "Retry",
