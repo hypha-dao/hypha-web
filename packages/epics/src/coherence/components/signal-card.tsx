@@ -409,7 +409,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group relative flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card shadow-sm',
+        'group relative flex h-full w-full min-h-0 flex-col rounded-xl border-border/70 bg-card shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         !isActive && 'hover:border-accent-8/75 hover:shadow-md',
         !isActive && 'focus-within:border-accent-8/75 focus-within:shadow-md',
@@ -425,8 +425,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         title={priorityStripeLabel}
         aria-label={priorityStripeLabel}
       />
-      <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2 pt-2.5">
+      <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
+        <div className="relative flex flex-1 flex-col gap-2 px-3 pb-2.5 pt-2.5">
           <div className="flex min-w-0 flex-col gap-1.5">
             <div className="flex min-h-[2.75rem] min-w-0 items-start justify-between gap-2">
               <div className="min-w-0 flex-1">

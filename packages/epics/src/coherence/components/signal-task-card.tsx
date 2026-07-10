@@ -165,7 +165,7 @@ export function SignalTaskCard({
           : undefined
       }
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm',
+        'group relative flex flex-col rounded-xl border border-border/60 bg-card shadow-sm',
         'transition-all duration-200 ease-out',
         !isActive &&
           'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
@@ -184,7 +184,7 @@ export function SignalTaskCard({
         aria-label={priorityLabel}
       />
 
-      <div className="relative flex min-h-0 flex-1 flex-col pl-3 pr-2.5 py-2.5">
+      <div className="relative flex flex-1 flex-col pl-3 pr-2.5 py-2.5">
         <div className="mb-1.5 flex min-h-6 shrink-0 items-center justify-between gap-1">
           <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
             <Badge
@@ -257,7 +257,7 @@ export function SignalTaskCard({
           ) : null}
         </div>
 
-        <div className="mt-auto flex shrink-0 items-end justify-between gap-2 pt-2.5">
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2.5 pb-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <SignalUpvoteControl
               slug={signal.slug}
