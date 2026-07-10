@@ -4,6 +4,7 @@ import React from 'react';
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useMe } from '@hypha-platform/core/client';
 
 type OneChartPoint = {
   month: string;
@@ -74,13 +75,22 @@ export const useAssets = ({
 }): UseAssetsReturn => {
   const { id } = useParams<{ id: string }>();
   const { getAccessToken } = useAuthentication();
+  const { person } = useMe();
 
   const endpoint = React.useMemo(() => {
-    return `/api/v1/spaces/${id}/assets${bestEffort ? '?bestEffort=true' : ''}`;
-  }, [bestEffort, id]);
+    const params = new URLSearchParams();
+    if (bestEffort) {
+      params.set('bestEffort', 'true');
+    }
+    if (person?.currency) {
+      params.set('currency', person.currency);
+    }
+    const query = params.toString();
+    return `/api/v1/spaces/${id}/assets${query ? `?${query}` : ''}`;
+  }, [bestEffort, id, person?.currency]);
 
   const { data, isLoading } = useSWR(
-    [endpoint],
+    [endpoint, person?.currency],
     async ([endpoint]) => {
       const token = await getAccessToken();
       const headers: HeadersInit = {

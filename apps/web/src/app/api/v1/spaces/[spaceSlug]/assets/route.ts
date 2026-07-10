@@ -8,8 +8,6 @@ import {
   getTokenMeta,
   findAllTokens,
   getSupply,
-  findSelf,
-  getDb,
   getUsdConversionRate,
 } from '@hypha-platform/core/server';
 import {
@@ -35,15 +33,11 @@ export async function GET(
 ) {
   const { spaceSlug } = await params;
   const bestEffort = request.nextUrl.searchParams.get('bestEffort') === 'true';
-  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
 
   try {
-    const self = authToken
-      ? await findSelf({ db: getDb({ authToken }) })
-      : null;
     const requestedCurrency = request.nextUrl.searchParams.get('currency');
     const { currency, rate: usdConversionRate } = await getUsdConversionRate(
-      requestedCurrency || self?.currency,
+      requestedCurrency,
     );
 
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
