@@ -12,6 +12,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 import { sql, eq, inArray, and } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
+import { isSupportedCurrency } from '../../common/currency';
 import { DatabaseInstance, DbConfig } from '../../server';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
@@ -42,6 +43,8 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
   invariant(dbPerson.createdAt, 'Person must have createdAt');
   invariant(dbPerson.updatedAt, 'Person must have updatedAt');
 
+  const currency = dbPerson.currency ?? null;
+
   return {
     id: dbPerson.id!,
     name: nullToUndefined(dbPerson.name ?? null),
@@ -53,7 +56,7 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
     leadImageUrl: nullToUndefined(dbPerson.leadImageUrl ?? null),
     description: nullToUndefined(dbPerson.description ?? null),
     location: nullToUndefined(dbPerson.location ?? null),
-    currency: nullToUndefined(dbPerson.currency ?? null),
+    currency: isSupportedCurrency(currency) ? currency : undefined,
     nickname: nullToUndefined(dbPerson.nickname ?? null),
     address: nullToUndefined(dbPerson.address ?? null),
     links: nullToUndefined(dbPerson.links ?? null),
