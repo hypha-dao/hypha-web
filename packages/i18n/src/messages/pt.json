@@ -3116,9 +3116,9 @@
     "updateUpvote": "Atualizar apoio",
     "removeUpvote": "Remover apoio",
     "upvoteDetails": "Detalhes do apoio",
-    "totalSupport": "Apoio total",
-    "yourVotingPowerShare": "Votar usando uma parcela do seu poder de voto",
-    "supportersCount": "{count, plural, =0 {Ainda sem apoios} one {# apoio} other {# apoios}}",
+    "totalSupport": "UpVote total",
+    "yourVotingPowerShare": "Votar com um % do seu poder de voto",
+    "supportersCount": "{count, plural, =0 {Ainda sem UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Membro",
     "signInToUpvote": "Inicie sessão como membro do espaço para apoiar sinais.",
     "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente."

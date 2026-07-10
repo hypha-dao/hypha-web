@@ -3118,9 +3118,9 @@
     "updateUpvote": "Actualizar apoyo",
     "removeUpvote": "Retirar apoyo",
     "upvoteDetails": "Detalles del apoyo",
-    "totalSupport": "Apoyo total",
-    "yourVotingPowerShare": "Vota usando una parte de tu poder de voto",
-    "supportersCount": "{count, plural, =0 {Aún sin apoyos} one {# apoyo} other {# apoyos}}",
+    "totalSupport": "UpVote total",
+    "yourVotingPowerShare": "Vota con un % de tu poder de voto",
+    "supportersCount": "{count, plural, =0 {Aún sin UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Miembro",
     "signInToUpvote": "Inicia sesión como miembro del espacio para apoyar señales.",
     "upvoteFailed": "No se pudo actualizar tu voto. Inténtalo de nuevo."

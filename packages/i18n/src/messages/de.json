@@ -3667,9 +3667,9 @@
     "updateUpvote": "Unterstützung aktualisieren",
     "removeUpvote": "Unterstützung entfernen",
     "upvoteDetails": "Details zur Unterstützung",
-    "totalSupport": "Gesamte Unterstützung",
-    "yourVotingPowerShare": "Upvote mit einem Anteil deiner Stimmkraft",
-    "supportersCount": "{count, plural, =0 {Noch keine Unterstützer} one {# Unterstützer} other {# Unterstützer}}",
+    "totalSupport": "UpVote gesamt",
+    "yourVotingPowerShare": "Upvote mit einem % deiner Stimmkraft",
+    "supportersCount": "{count, plural, =0 {Noch keine UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Mitglied",
     "signInToUpvote": "Melde dich als Space-Mitglied an, um Signale zu unterstützen.",
     "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen."
