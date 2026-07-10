@@ -22,6 +22,7 @@ import {
 } from '../lib/signal-view-mode';
 import { SignalSection, type SignalViewMode } from './signal-section';
 import { SignalViewControls } from './signal-view-controls';
+import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-message-link';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
@@ -214,14 +215,22 @@ export function CoherenceBlock({
 
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {
+      const slug = signal.slug?.trim() ?? '';
       openCoherenceChat(
         signal.roomId ?? null,
         signal.title ?? '',
-        signal.slug ?? '',
+        slug,
         signal.description ?? null,
       );
+      if (!slug || typeof window === 'undefined') return;
+      const href = setSignalSearchParam(pathname, window.location.search, slug);
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== href) {
+        window.history.replaceState(window.history.state, '', href);
+        router.replace(href, { scroll: false });
+      }
     },
-    [openCoherenceChat],
+    [openCoherenceChat, pathname, router],
   );
 
   const handleRevealArchivedSignal = React.useCallback(() => {

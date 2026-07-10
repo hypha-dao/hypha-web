@@ -24,13 +24,24 @@ type UseCoherenceSignalDeepLinkOptions = {
   onRefreshSignals?: () => void | Promise<void>;
 };
 
+function resolveDeepLinkTargetSlug(
+  humanChatEnabled: boolean,
+  activeCoherenceSlug: string | null | undefined,
+): string | null {
+  const chatSlug = activeCoherenceSlug?.trim() ?? null;
+  if (humanChatEnabled && chatSlug) {
+    return chatSlug;
+  }
+  return readLiveSignalSlugFromUrl();
+}
+
 /**
  * When `?signal=<slug>` is present on a coherence route, scroll the matching
  * card into view and optionally open its chat thread.
  *
  * Chat opening for human-chat spaces is owned by `HumanRightPanel`; this hook
- * only scrolls/highlights once the thread is already active or the URL is a
- * genuine deep link (live query param, not stale `useSearchParams()`).
+ * only scrolls/highlights. When a coherence chat is active, the live chat slug
+ * wins over a lagging `?signal=` param so selection does not flash between cards.
  */
 export function useCoherenceSignalDeepLink({
   signals,
@@ -49,36 +60,39 @@ export function useCoherenceSignalDeepLink({
   const openedChatForSlugRef = React.useRef<string | null>(null);
   const refreshAttemptForSlugRef = React.useRef<string | null>(null);
   const scrolledForSlugRef = React.useRef<string | null>(null);
-  const lastLiveSignalSlugRef = React.useRef<string | null>(null);
+  const lastTargetSlugRef = React.useRef<string | null>(null);
+
+  const targetSlug = React.useMemo(
+    () => resolveDeepLinkTargetSlug(humanChatEnabled, activeCoherenceSlug),
+    [activeCoherenceSlug, humanChatEnabled, searchParams],
+  );
 
   React.useEffect(() => {
-    const signalSlug = readLiveSignalSlugFromUrl();
-    if (lastLiveSignalSlugRef.current !== signalSlug) {
+    if (lastTargetSlugRef.current !== targetSlug) {
       openedChatForSlugRef.current = null;
       refreshAttemptForSlugRef.current = null;
       scrolledForSlugRef.current = null;
-      lastLiveSignalSlugRef.current = signalSlug;
+      lastTargetSlugRef.current = targetSlug;
     }
-  }, [searchParams]);
+  }, [targetSlug]);
 
   React.useEffect(() => {
-    const signalSlug = readLiveSignalSlugFromUrl();
-    if (!signalSlug || isLoading) return;
+    if (!targetSlug || isLoading) return;
 
     if (humanChatEnabled && !humanChatOpen && !activeCoherenceSlug?.trim()) {
       return;
     }
 
     const signal = (signals ?? []).find(
-      (item) => item.slug?.trim() === signalSlug,
+      (item) => item.slug?.trim() === targetSlug,
     );
     if (!signal) {
       if (
         onRefreshSignals &&
         signals !== undefined &&
-        refreshAttemptForSlugRef.current !== signalSlug
+        refreshAttemptForSlugRef.current !== targetSlug
       ) {
-        refreshAttemptForSlugRef.current = signalSlug;
+        refreshAttemptForSlugRef.current = targetSlug;
         void onRefreshSignals();
       }
       return;
@@ -94,24 +108,30 @@ export function useCoherenceSignalDeepLink({
       return;
     }
 
+    const chatSlug = activeCoherenceSlug?.trim() ?? null;
     const alreadyViewingSignal =
-      activeCoherenceSlug?.trim() === signalSlug ||
-      openedChatForSlugRef.current === signalSlug;
+      chatSlug === targetSlug || openedChatForSlugRef.current === targetSlug;
 
     if (!humanChatEnabled && onOpenSignalChat && !alreadyViewingSignal) {
-      openedChatForSlugRef.current = signalSlug;
+      openedChatForSlugRef.current = targetSlug;
       onOpenSignalChat(signal);
     } else if (alreadyViewingSignal) {
-      openedChatForSlugRef.current = signalSlug;
+      openedChatForSlugRef.current = targetSlug;
     }
 
-    if (scrolledForSlugRef.current === signalSlug || alreadyViewingSignal) {
-      scrolledForSlugRef.current = signalSlug;
+    // Chat-driven selection: the user already clicked the card — ring only, no scroll.
+    if (humanChatEnabled && humanChatOpen && chatSlug === targetSlug) {
+      scrolledForSlugRef.current = targetSlug;
       return;
     }
-    return scrollToSignalCardWithRetry(signalSlug, {
+
+    if (scrolledForSlugRef.current === targetSlug) {
+      return;
+    }
+
+    return scrollToSignalCardWithRetry(targetSlug, {
       onFound: () => {
-        scrolledForSlugRef.current = signalSlug;
+        scrolledForSlugRef.current = targetSlug;
       },
     });
   }, [
@@ -125,7 +145,7 @@ export function useCoherenceSignalDeepLink({
     onRefreshSignals,
     onRevealArchivedSignal,
     priorityFilter,
-    searchParams,
     signals,
+    targetSlug,
   ]);
 }

@@ -3542,10 +3542,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
       }
       if (readSignalDeepLinkSlug(searchParams) === slug) return;
-      router.replace(
-        setSignalSearchParam(pathname, searchParams?.toString() ?? '', slug),
-        { scroll: false },
+      const href = setSignalSearchParam(
+        pathname,
+        typeof window !== 'undefined'
+          ? window.location.search
+          : searchParams?.toString() ?? '',
+        slug,
       );
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(window.history.state, '', href);
+      }
+      router.replace(href, { scroll: false });
       return;
     }
 
@@ -3554,10 +3561,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       mode === 'space' &&
       readSignalDeepLinkSlug(searchParams)
     ) {
-      router.replace(
-        setSignalSearchParam(pathname, searchParams?.toString() ?? '', null),
-        { scroll: false },
+      const href = setSignalSearchParam(
+        pathname,
+        typeof window !== 'undefined'
+          ? window.location.search
+          : searchParams?.toString() ?? '',
+        null,
       );
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(window.history.state, '', href);
+      }
+      router.replace(href, { scroll: false });
     }
   }, [
     coherenceRoomId,
