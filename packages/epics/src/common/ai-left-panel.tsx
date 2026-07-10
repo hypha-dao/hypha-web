@@ -68,7 +68,11 @@ import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
-import { useCompactHeaderMode, useCompactPanelsMode } from '@hypha-platform/ui';
+import {
+  useCompactHeaderMode,
+  useCompactPanelsMode,
+  useIsMobile,
+} from '@hypha-platform/ui';
 import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { CHAT_ATTACHMENT_MAX_SIZE_LABEL } from '@hypha-platform/core/client';
@@ -367,6 +371,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lang = getLocaleFromPath(pathname);
   const isCompactHeader = useCompactHeaderMode();
   const isCompactPanels = useCompactPanelsMode();
+  const isMobile = useIsMobile();
+  const mutuallyExclusivePanels = isCompactPanels || isMobile === true;
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
@@ -449,7 +455,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   } = useAiPanel();
   const {
     open: rightOpen,
-    toggle: toggleRight,
+    closeHumanChatPanel,
     openHumanChatPanel,
     openCoherenceChat,
   } = useHumanChatPanel();
@@ -2884,17 +2890,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       handleOverlayClose();
       return;
     }
-    if (isCompactPanels && rightOpen) {
-      toggleRight();
+    if (mutuallyExclusivePanels && rightOpen) {
+      closeHumanChatPanel();
     }
     showAiOverlay();
   }, [
     handleOverlayClose,
     isAiOpen,
     overlayVisible,
-    isCompactPanels,
+    mutuallyExclusivePanels,
     rightOpen,
-    toggleRight,
+    closeHumanChatPanel,
     showAiOverlay,
   ]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;

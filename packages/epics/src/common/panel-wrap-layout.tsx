@@ -15,6 +15,7 @@ import {
   Sidebar,
   SidebarResizeHandle,
   useCompactPanelsMode,
+  useIsMobile,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import {
@@ -119,12 +120,18 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // Both triggers use custom contexts (not useSidebar()) so they work correctly
 // regardless of SidebarProvider nesting order.
 
+function useMutuallyExclusivePanels(): boolean {
+  const isCompactPanels = useCompactPanelsMode();
+  const isMobile = useIsMobile();
+  return isCompactPanels || isMobile === true;
+}
+
 export function AiSidebarTrigger() {
   const { open, overlayVisible, showAiOverlay, hideAiOverlay, closeAiPanel } =
     useAiPanel();
-  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isCompactPanels = useCompactPanelsMode();
+  const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
   if (!isSpace) return null;
@@ -139,8 +146,8 @@ export function AiSidebarTrigger() {
           hideAiOverlay();
           return;
         }
-        if (isCompactPanels && rightOpen) {
-          toggleRight();
+        if (mutuallyExclusive && rightOpen) {
+          closeHumanChatPanel();
         }
         if (open) {
           closeAiPanel();
@@ -163,9 +170,9 @@ export function AiSidebarTrigger() {
 
 export function AiPanelTrigger() {
   const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
-  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isCompactPanels = useCompactPanelsMode();
+  const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
 
   if (!isSpace) return null;
@@ -178,8 +185,8 @@ export function AiPanelTrigger() {
           closeAiPanel();
           return;
         }
-        if (isCompactPanels && rightOpen) {
-          toggleRight();
+        if (mutuallyExclusive && rightOpen) {
+          closeHumanChatPanel();
         }
         openAiPanel();
         setAiOverlayVisible(false);
@@ -199,7 +206,7 @@ export function HumanSidebarTrigger() {
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
-  const isCompactPanels = useCompactPanelsMode();
+  const mutuallyExclusive = useMutuallyExclusivePanels();
 
   // Hide header trigger while the chat panel is open — the panel has its own chrome.
   if (!isSpace || open) return null;
@@ -212,7 +219,7 @@ export function HumanSidebarTrigger() {
           toggle();
           return;
         }
-        if (isCompactPanels && (leftOpen || overlayVisible)) {
+        if (mutuallyExclusive && (leftOpen || overlayVisible)) {
           closeAiPanel();
         }
         openHumanChatPanel();
@@ -304,15 +311,22 @@ export function PanelWrapLayout({
     openAiPanel,
     closeAiPanel,
   } = useAiPanel();
-  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const {
+    open: rightOpen,
+    toggle: toggleRight,
+    closeHumanChatPanel,
+  } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isOnboarding = pathname.includes('/onboarding');
   const effectiveLeft = isSpace ? left : undefined;
   // Right human panel remains space-context only.
   const effectiveRight = isSpace ? right : undefined;
-  const [viewportWidth, setViewportWidth] = useState<number>(
-    DUAL_PANEL_MIN_VIEWPORT_PX,
-  );
+  const [viewportWidth, setViewportWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') {
+      return MOBILE_PANEL_BREAKPOINT_PX;
+    }
+    return window.innerWidth;
+  });
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
@@ -329,13 +343,16 @@ export function PanelWrapLayout({
     (viewportWidth < DUAL_PANEL_MIN_VIEWPORT_PX ||
       viewportWidth - leftFootprintPx - rightFootprintPx <
         MIN_MAIN_COLUMN_WIDTH_PX);
+  const isMobileViewport = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
+  const isMutuallyExclusivePanels =
+    Boolean(effectiveLeft && effectiveRight) &&
+    (forceCompactPanels || isMobileViewport);
   // Panel compact mode is viewport-driven only — do not conflate with header
   // compact (MenuTop overflow), or opening one panel shrinks the center column
   // and incorrectly closes the opposite panel on desktop widths.
   const isCompactPanels = forceCompactPanels;
-  const useMobilePanelWidths = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
   const rightSidebarWidth = isCompactPanels
-    ? useMobilePanelWidths
+    ? isMobileViewport
       ? RIGHT_SIDEBAR_WIDTH_COMPACT
       : RIGHT_SIDEBAR_WIDTH
     : RIGHT_SIDEBAR_WIDTH;
@@ -364,15 +381,20 @@ export function PanelWrapLayout({
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
     root.setAttribute(PANEL_COMPACT_ATTR, isCompactPanels ? 'true' : 'false');
+    root.setAttribute(
+      'data-mutually-exclusive-panels',
+      isMutuallyExclusivePanels ? 'true' : 'false',
+    );
     return () => {
       root.removeAttribute(PANEL_COMPACT_ATTR);
+      root.removeAttribute('data-mutually-exclusive-panels');
       root.removeAttribute(PANEL_OPEN_ATTR);
     };
-  }, [isCompactPanels]);
+  }, [isCompactPanels, isMutuallyExclusivePanels]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -384,12 +406,12 @@ export function PanelWrapLayout({
   }, [effectiveLeft, leftExpanded, effectiveRight, rightOpen]);
 
   useEffect(() => {
-    if (!isCompactPanels) return;
+    if (!isMutuallyExclusivePanels) return;
     if (leftExpanded && rightOpen) {
-      // Compact mode allows one expanded rail at a time to preserve main content width.
-      closeAiPanel();
+      // Prefer the left panel when both are open on mobile / compact widths.
+      closeHumanChatPanel();
     }
-  }, [isCompactPanels, leftExpanded, rightOpen, closeAiPanel]);
+  }, [isMutuallyExclusivePanels, leftExpanded, rightOpen, closeHumanChatPanel]);
 
   useLayoutEffect(() => {
     const root = wrapperRef.current;
@@ -480,8 +502,8 @@ export function PanelWrapLayout({
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
-            if (isCompactPanels && rightOpen) {
-              toggleRight();
+            if (isMutuallyExclusivePanels && rightOpen) {
+              closeHumanChatPanel();
             }
             openAiPanel();
             return;
@@ -490,7 +512,7 @@ export function PanelWrapLayout({
         }}
         rightOpen={rightOpen}
         onRightOpenChange={(open) => {
-          if (open && isCompactPanels && leftExpanded) {
+          if (open && isMutuallyExclusivePanels && leftExpanded) {
             closeAiPanel();
           }
           if (open !== rightOpen) toggleRight();
@@ -508,7 +530,7 @@ export function PanelWrapLayout({
         defaultOpen={false}
         open={rightOpen}
         onOpenChange={(open) => {
-          if (open && isCompactPanels && leftExpanded) {
+          if (open && isMutuallyExclusivePanels && leftExpanded) {
             closeAiPanel();
           }
           if (open !== rightOpen) toggleRight();
@@ -544,8 +566,8 @@ export function PanelWrapLayout({
         onOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
-            if (isCompactPanels && rightOpen) {
-              toggleRight();
+            if (isMutuallyExclusivePanels && rightOpen) {
+              closeHumanChatPanel();
             }
             openAiPanel();
             return;
