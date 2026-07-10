@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { getCurrencySymbol } from '@hypha-platform/core/client';
 import { FILTER_OPTIONS_ASSETS } from '../../common/constants';
 import { useUserAssets } from './use-user-assets';
 
@@ -24,7 +25,7 @@ export const useUserAssetsSection = ({
   const [searchTerm, setSearchTerm] = React.useState('');
   const [hideSmallBalances, setHideSmallBalances] = React.useState(false);
 
-  const { isLoading, balance, assets, manualUpdate } = useUserAssets({
+  const { isLoading, balance, assets, currency, manualUpdate } = useUserAssets({
     ...(activeFilter !== 'all' && { filter: { type: activeFilter } }),
     personSlug,
   });
@@ -37,9 +38,9 @@ export const useUserAssetsSection = ({
     setVisibleCount((prev) => prev + pageSize);
   }, [pageSize]);
 
-  const totalBalance = `${balance < 0 ? '-' : ''}$ ${formatCurrencyValue(
-    Math.abs(balance),
-  )}`;
+  const totalBalance = `${balance < 0 ? '-' : ''}${getCurrencySymbol(
+    currency,
+  )} ${formatCurrencyValue(Math.abs(balance))}`;
 
   const filteredAssets = React.useMemo(() => {
     let result = assets;

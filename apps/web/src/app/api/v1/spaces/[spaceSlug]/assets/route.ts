@@ -8,6 +8,8 @@ import {
   getTokenMeta,
   findAllTokens,
   getSupply,
+  getUsdConversionRate,
+  convertAmountToUsd,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -34,6 +36,11 @@ export async function GET(
   const bestEffort = request.nextUrl.searchParams.get('bestEffort') === 'true';
 
   try {
+    const requestedCurrency = request.nextUrl.searchParams.get('currency');
+    const { currency, rate: usdConversionRate } = await getUsdConversionRate(
+      requestedCurrency,
+    );
+
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
@@ -69,20 +76,24 @@ export async function GET(
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
       createdAt: token.createdAt ?? undefined,
+      referenceCurrency: token.referenceCurrency,
+      referencePrice:
+        token.referencePrice != null ? Number(token.referencePrice) : null,
     }));
 
-    const referencePriceByAddress: Record<string, number> = {};
-    const referenceCurrencyByAddress: Record<string, string> = {};
+    const referencePriceByAddress: Record<
+      string,
+      { price: number; currency: string }
+    > = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
         if (Number.isFinite(parsed) && parsed >= 0) {
-          referencePriceByAddress[t.address.toLowerCase()] = parsed;
+          referencePriceByAddress[t.address.toLowerCase()] = {
+            price: parsed,
+            currency: t.referenceCurrency ?? 'USD',
+          };
         }
-      }
-      if (t.address && t.referenceCurrency) {
-        referenceCurrencyByAddress[t.address.toLowerCase()] =
-          t.referenceCurrency;
       }
     });
 
@@ -233,11 +244,19 @@ export async function GET(
             rate = 1;
           }
           if (rate === 0) {
-            rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            const fallback =
+              referencePriceByAddress[token.address.toLowerCase()];
+            if (fallback) {
+              rate = await convertAmountToUsd(
+                fallback.price,
+                fallback.currency,
+              );
+            }
           }
           const decimals = await getTokenDecimals(token.address);
           const referenceCurrency =
-            referenceCurrencyByAddress[token.address.toLowerCase()];
+            referencePriceByAddress[token.address.toLowerCase()]?.currency ??
+            meta.referenceCurrency;
           return {
             ...meta,
             address: token.address,
@@ -276,9 +295,12 @@ export async function GET(
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 
+    const usdBalance = sorted.reduce((sum, asset) => sum + asset.usdEqual, 0);
+
     return NextResponse.json({
       assets: sorted,
-      balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
+      balance: usdBalance * usdConversionRate,
+      currency,
     });
   } catch (error) {
     console.error('Failed to fetch assets:', error);

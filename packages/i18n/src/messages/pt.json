@@ -1430,6 +1430,7 @@
     },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
+      "tokenPrice": "Preço do token: {price} {currency}",
       "totalIssuance": "Emissão total: {value}",
       "createdOn": "Criado em {date}",
       "mutualCredit": {
@@ -1498,7 +1499,8 @@
       "uploadLeadImageLabel": "<accent>Carregar</accent> uma imagem",
       "labels": {
         "email": "E-mail",
-        "location": "Localização"
+        "location": "Localização",
+        "currency": "Moeda"
       },
       "placeholders": {
         "firstName": "Primeiro nome",
@@ -1506,7 +1508,8 @@
         "nickname": "Apelido",
         "lifePurpose": "Digite aqui o seu propósito de vida...",
         "email": "E-mail",
-        "location": "Localização"
+        "location": "Localização",
+        "currency": "Selecionar moeda"
       },
       "actions": {
         "retry": "Tentar novamente",

@@ -1,3 +1,5 @@
+import type { SupportedCurrency } from '../common/currency';
+
 export interface Person {
   id: number;
   name?: string;
@@ -9,6 +11,7 @@ export interface Person {
   leadImageUrl?: string;
   description?: string;
   location?: string;
+  currency?: SupportedCurrency;
   nickname?: string;
   address?: string;
   links?: string[];
@@ -32,4 +35,5 @@ export interface EditPersonInput {
   nickname?: string;
   description?: string;
   leadImageUrl?: string;
+  currency?: SupportedCurrency;
 }

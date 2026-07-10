@@ -10,6 +10,9 @@ import {
   getTokenMeta,
   getSupply,
   getMutualCreditInfo,
+  findSelf,
+  getUsdConversionRate,
+  convertAmountToUsd,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -39,6 +42,12 @@ export async function GET(
   }
 
   try {
+    const self = await findSelf({ db: getDb({ authToken }) });
+    const requestedCurrency = request.nextUrl.searchParams.get('currency');
+    const { currency, rate: usdConversionRate } = await getUsdConversionRate(
+      requestedCurrency || self?.currency,
+    );
+
     const person = await findPersonBySlug(
       { slug: personSlug },
       { db: getDb({ authToken }) },
@@ -246,14 +255,23 @@ export async function GET(
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
+      referenceCurrency: token.referenceCurrency,
+      referencePrice:
+        token.referencePrice != null ? Number(token.referencePrice) : null,
     }));
 
-    const referencePriceByAddress: Record<string, number> = {};
+    const referencePriceByAddress: Record<
+      string,
+      { price: number; currency: string }
+    > = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
         if (Number.isFinite(parsed) && parsed >= 0) {
-          referencePriceByAddress[t.address.toLowerCase()] = parsed;
+          referencePriceByAddress[t.address.toLowerCase()] = {
+            price: parsed,
+            currency: t.referenceCurrency ?? 'USD',
+          };
         }
       }
     });
@@ -308,7 +326,14 @@ export async function GET(
           const totalSupply = supplyRes?.totalSupply;
           let rate = isEnergyToken ? 1 : prices[token.address] || 0;
           if (rate === 0) {
-            rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            const fallback =
+              referencePriceByAddress[token.address.toLowerCase()];
+            if (fallback) {
+              rate = await convertAmountToUsd(
+                fallback.price,
+                fallback.currency,
+              );
+            }
           }
           return {
             ...meta,
@@ -384,9 +409,12 @@ export async function GET(
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 
+    const usdBalance = sorted.reduce((sum, asset) => sum + asset.usdEqual, 0);
+
     return NextResponse.json({
       assets: sorted,
-      balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
+      balance: usdBalance * usdConversionRate,
+      currency,
     });
   } catch (error) {
     console.error('Failed to fetch user assets:', error);

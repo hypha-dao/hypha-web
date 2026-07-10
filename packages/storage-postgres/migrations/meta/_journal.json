@@ -470,6 +470,13 @@
       "when": 1782900000000,
       "tag": "0066_coherence_board_general_default",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1783000000000,
+      "tag": "0067_people_currency",
+      "breakpoints": true
     }
   ]
 }
