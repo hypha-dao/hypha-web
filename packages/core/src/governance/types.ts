@@ -111,6 +111,7 @@ export const REFERENCE_CURRENCIES = [
   'CAD',
   'CHF',
   'AUD',
+  'NZD',
   'HKD',
 ] as const;
 
@@ -124,6 +125,7 @@ export const TOKEN_PRICE_REFERENCE_CURRENCIES = [
   'CAD',
   'CHF',
   'AUD',
+  'NZD',
 ] as const;
 
 export type TokenPriceReferenceCurrency =

@@ -110,6 +110,7 @@ Use these when a community token is denominated in a non-USD fiat currency. Pass
 | **Canadian Dollar (CAD)** | CAD/USD | `0xA840145F87572E82519d578b1F36340368a25D5d` | 0.1% | Low | Yes |
 | **Swiss Franc (CHF)** | CHF/USD | `0x3A1d6444fb6a402470098E23DaD0B7E86E14252F` | 0.5% | Low | Yes |
 | **Australian Dollar (AUD)** | AUD/USD | `0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229` | 0.5% | Low | Yes |
+| **New Zealand Dollar (NZD)** | NZD/USD | `0x06bdFe07E71C476157FC025d3cCD4BBe08e83EF9` | 0.5% | Low | Yes |
 | **Chinese Yuan (CNY)** | — | — | — | — | **No** |
 | **Japanese Yen (JPY)** | — | — | — | — | **No** |
 | **Hong Kong Dollar (HKD)** | — | — | — | — | **No** |
