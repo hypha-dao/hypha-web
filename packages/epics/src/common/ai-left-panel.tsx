@@ -2838,7 +2838,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [isOnboardingSetup, isVoiceInterview, lang, onboardingContext, spaceSlug]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled: isVoiceInterview,
+    enabled: isVoiceInterview && !isLoading && isAuthenticated,
     isStreaming,
     lastAssistantText,
     locale: lang,

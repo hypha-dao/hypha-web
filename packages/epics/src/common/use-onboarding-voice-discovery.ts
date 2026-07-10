@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { VoiceSessionContext } from './space-voice-session-context';
 import { getClientEnableOnboardingVoiceRealtime } from './onboarding-voice-realtime-flag';
@@ -42,6 +42,21 @@ export function useOnboardingVoiceDiscovery(
 ) {
   const realtimeFlagEnabled = getClientEnableOnboardingVoiceRealtime();
   const [useWebSpeechFallback, setUseWebSpeechFallback] = useState(false);
+  const prevEnabledRef = useRef(options.enabled);
+
+  useEffect(() => {
+    if (prevEnabledRef.current !== options.enabled) {
+      // Switching back to Live Voice should retry Realtime instead of staying latched.
+      if (options.enabled) {
+        setUseWebSpeechFallback(false);
+      }
+      prevEnabledRef.current = options.enabled;
+    }
+  }, [options.enabled]);
+
+  useEffect(() => {
+    setUseWebSpeechFallback(false);
+  }, [options.activeSpaceSlug]);
 
   const handleFallback = useCallback(() => {
     setUseWebSpeechFallback(true);

@@ -12,6 +12,7 @@ import {
   fetchRealtimeVoiceSession,
   isIgnorableRealtimeError,
   isSubstantiveUserTranscript,
+  RealtimeVoiceSessionRequestError,
   setLocalMicEnabled,
   setRealtimeRemoteAudioMuted,
   speakAssistantTextViaRealtime,
@@ -65,6 +66,37 @@ function mapSessionErrorToVoiceCode(status: number): VoiceInterviewErrorCode {
   if (status === 401 || status === 403) return 'error';
   if (status === 404 || status === 502 || status === 503) return 'session';
   return 'network';
+}
+
+const MAX_REALTIME_CONNECT_RETRIES = 5;
+const REALTIME_CONNECT_RETRY_MS = [400, 800, 1500, 2500, 4000];
+
+function resolveRealtimeConnectFailureStatus(error: unknown): number {
+  if (error instanceof RealtimeVoiceSessionRequestError) {
+    return error.status;
+  }
+  if (error && typeof error === 'object' && 'status' in error) {
+    return Number((error as { status: number }).status);
+  }
+  return 0;
+}
+
+function isPermanentRealtimeConnectFailure(
+  status: number,
+  error: unknown,
+): boolean {
+  if (status === 401 || status === 403 || status === 404) return true;
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (
+      message.includes('secure context') ||
+      message.includes('not supported in this browser') ||
+      message.includes('only available in the browser')
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isAssistantFailureText(text: string): boolean {
@@ -152,6 +184,10 @@ export function useOnboardingVoiceRealtime({
 }: UseOnboardingVoiceRealtimeOptions) {
   const connectionRef = useRef<RealtimeVoiceConnection | null>(null);
   const connectInFlightRef = useRef(false);
+  const connectRetryCountRef = useRef(0);
+  const connectRetryTimerRef = useRef<number | null>(null);
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
   const sendInFlightRef = useRef(false);
   const phaseRef = useRef<VoiceInterviewPhase>('idle');
   const lastActiveSpaceSlugRef = useRef(activeSpaceSlug?.trim() || undefined);
@@ -220,6 +256,13 @@ export function useOnboardingVoiceRealtime({
     if (playbackFallbackTimerRef.current !== null) {
       window.clearTimeout(playbackFallbackTimerRef.current);
       playbackFallbackTimerRef.current = null;
+    }
+  }, []);
+
+  const clearConnectRetryTimer = useCallback(() => {
+    if (connectRetryTimerRef.current !== null) {
+      window.clearTimeout(connectRetryTimerRef.current);
+      connectRetryTimerRef.current = null;
     }
   }, []);
 
@@ -473,6 +516,7 @@ export function useOnboardingVoiceRealtime({
   );
 
   const disconnect = useCallback(() => {
+    clearConnectRetryTimer();
     connectInFlightRef.current = false;
     setIsConnecting(false);
     setIsRealtimeConnected(false);
@@ -493,7 +537,41 @@ export function useOnboardingVoiceRealtime({
     }
     releaseWarmMicStream();
     setPhase('idle');
-  }, [clearMicRestoreTimer, clearPlaybackFallbackTimer, stopBrowserSpeech]);
+  }, [
+    clearConnectRetryTimer,
+    clearMicRestoreTimer,
+    clearPlaybackFallbackTimer,
+    stopBrowserSpeech,
+  ]);
+
+  const connectRef = useRef<() => Promise<void>>(async () => {});
+
+  const scheduleConnectRetry = useCallback(() => {
+    if (!enabledRef.current) {
+      connectInFlightRef.current = false;
+      setIsConnecting(false);
+      return;
+    }
+    if (connectRetryCountRef.current >= MAX_REALTIME_CONNECT_RETRIES) {
+      setVoiceError('session');
+      connectInFlightRef.current = false;
+      setIsConnecting(false);
+      onFallbackRef.current?.();
+      return;
+    }
+
+    const delay =
+      REALTIME_CONNECT_RETRY_MS[connectRetryCountRef.current] ??
+      REALTIME_CONNECT_RETRY_MS.at(-1)!;
+    connectRetryCountRef.current += 1;
+    clearConnectRetryTimer();
+    setIsConnecting(true);
+    connectRetryTimerRef.current = window.setTimeout(() => {
+      connectRetryTimerRef.current = null;
+      connectInFlightRef.current = false;
+      void connectRef.current();
+    }, delay);
+  }, [clearConnectRetryTimer]);
 
   const handleServerEvent = useCallback(
     (event: RealtimeServerEvent) => {
@@ -696,11 +774,11 @@ export function useOnboardingVoiceRealtime({
     try {
       const token = (await getAccessToken?.())?.trim();
       if (!token) {
-        setVoiceError('error');
-        setPhase('idle');
-        onFallbackRef.current?.();
+        scheduleConnectRetry();
         return;
       }
+
+      connectRetryCountRef.current = 0;
 
       await acquireWarmMicStream();
 
@@ -744,22 +822,33 @@ export function useOnboardingVoiceRealtime({
       setIsRealtimeConnected(true);
       restoreMicForListening(connection);
       setPhase('listening');
+      connectRetryCountRef.current = 0;
       console.info('[VoiceRealtime] connected', {
         model: session.model,
         voice: session.voice,
       });
     } catch (error) {
       console.error('[VoiceRealtime] connect failed:', error);
-      const status =
-        error && typeof error === 'object' && 'status' in error
-          ? Number((error as { status: number }).status)
-          : 0;
-      setVoiceError(status ? mapSessionErrorToVoiceCode(status) : 'network');
+      const status = resolveRealtimeConnectFailureStatus(error);
       disconnect();
-      onFallbackRef.current?.();
+      if (
+        isPermanentRealtimeConnectFailure(status, error) ||
+        connectRetryCountRef.current >= MAX_REALTIME_CONNECT_RETRIES
+      ) {
+        setVoiceError(status ? mapSessionErrorToVoiceCode(status) : 'network');
+        onFallbackRef.current?.();
+        connectInFlightRef.current = false;
+        setIsConnecting(false);
+        return;
+      }
+      setVoiceError(status ? mapSessionErrorToVoiceCode(status) : 'network');
+      scheduleConnectRetry();
+      return;
     } finally {
-      connectInFlightRef.current = false;
-      setIsConnecting(false);
+      if (!connectRetryTimerRef.current) {
+        connectInFlightRef.current = false;
+        setIsConnecting(false);
+      }
     }
   }, [
     conversationContext,
@@ -767,6 +856,7 @@ export function useOnboardingVoiceRealtime({
     getAccessToken,
     handleServerEvent,
     locale,
+    scheduleConnectRetry,
   ]);
 
   const stopSpeaking = useCallback(() => {
@@ -813,11 +903,12 @@ export function useOnboardingVoiceRealtime({
     void connect();
   }, [connect]);
 
-  const connectRef = useRef(connect);
   connectRef.current = connect;
 
   useEffect(() => {
     if (!enabled) {
+      connectRetryCountRef.current = 0;
+      clearConnectRetryTimer();
       disconnect();
       setLiveTranscript('');
       setVoiceError(null);
@@ -826,7 +917,7 @@ export function useOnboardingVoiceRealtime({
     return () => {
       disconnect();
     };
-  }, [disconnect, enabled]);
+  }, [clearConnectRetryTimer, disconnect, enabled]);
 
   useEffect(() => {
     if (!enabled) return;
