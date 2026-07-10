@@ -11,4 +11,5 @@ export * from './hooks';
 
 export * from './coherence';
 export * from './network-map';
+export * from './platform-dashboard';
 export * from './schedule';

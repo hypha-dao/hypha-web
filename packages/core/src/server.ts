@@ -42,6 +42,7 @@ export * from './schedule';
 export * from './matrix/server';
 export * from './matrix/types';
 export * from './banking/server';
+export * from './platform/server';
 export * from './geo/server';
 export {
   geocodeRequestSchema,
