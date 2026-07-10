@@ -58,7 +58,7 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
-  /** When true, show Shape Hypha Together before main nav links. */
+  /** When true, show Shape Hypha before main nav links. */
   showNetworkFeedback?: boolean;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;

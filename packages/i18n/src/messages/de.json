@@ -106,11 +106,11 @@
     "continueAdventure": "Abenteuer fortsetzen"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Hypha gemeinsam gestalten",
+    "triggerLabel": "Hypha gestalten",
     "triggerAriaLabel": "Hypha mitgestalten — Community und Governance",
     "title": "Hilf mit, Hypha zu gestalten",
     "subtitle": "Wähle, wie du im Netzwerk mitwirken möchtest.",
-    "intro": "Ob du Ideen teilen oder das Protokoll mitgestalten möchtest — es gibt zwei Wege, sich einzubringen.",
+    "intro": "Ob du Ideen teilen oder das Netzwerk mitgestalten möchtest — es gibt zwei Wege, sich einzubringen.",
     "community": {
       "title": "Community",
       "tagline": "Ideen teilen. Prioritäten mitgestalten.",

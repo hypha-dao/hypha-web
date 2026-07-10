@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { ChevronRight, Radio, Scale, Sparkles } from 'lucide-react';
+import { ChevronRight, HeartHandshake, Radio, Scale } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -204,7 +204,11 @@ export function HyphaNetworkFeedbackMenuItem({
   const t = useTranslations('NetworkFeedback');
 
   const triggerIcon = (
-    <Sparkles className="size-4 shrink-0" aria-hidden strokeWidth={1.75} />
+    <HeartHandshake
+      className="size-4 shrink-0"
+      aria-hidden
+      strokeWidth={1.75}
+    />
   );
 
   if (variant === 'menu') {
@@ -251,7 +255,11 @@ export function HyphaNetworkFeedbackTrigger({
   const t = useTranslations('NetworkFeedback');
 
   const triggerIcon = (
-    <Sparkles className="size-4 shrink-0" aria-hidden strokeWidth={1.75} />
+    <HeartHandshake
+      className="size-4 shrink-0"
+      aria-hidden
+      strokeWidth={1.75}
+    />
   );
 
   return (

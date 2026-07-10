@@ -865,11 +865,11 @@
     "continueAdventure": "Continuar tu aventura"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Da forma a Hypha juntos",
+    "triggerLabel": "Da forma a Hypha",
     "triggerAriaLabel": "Ayuda a dar forma a Hypha — comunidad y gobernanza",
     "title": "Ayuda a dar forma a Hypha",
     "subtitle": "Elige cómo te gustaría participar en la red.",
-    "intro": "Ya sea que quieras compartir ideas o ayudar a gobernar el protocolo, hay dos formas de involucrarte.",
+    "intro": "Ya sea que quieras compartir ideas o ayudar a gobernar la red, hay dos formas de involucrarte.",
     "community": {
       "title": "Comunidad",
       "tagline": "Comparte ideas. Define prioridades.",
