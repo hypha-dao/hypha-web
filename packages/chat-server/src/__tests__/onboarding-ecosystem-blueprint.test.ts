@@ -44,11 +44,27 @@ describe('buildEcosystemExecutePhaseDirective', () => {
 
     expect(directive).toContain('acme-root');
     expect(directive).toContain('Community Hub');
-    expect(directive).toContain('create_ecosystem_space');
+    expect(directive).toContain('create_space_from_onboarding');
     expect(directive).toContain('ONE nested space per turn');
     expect(directive).toContain('Do not restart discovery');
     expect(directive).toContain('never subspace');
     expect(directive).not.toContain('1. Community Hub');
+  });
+
+  it('uses active wallet session guidance when walletSessionActive is true', () => {
+    const directive = buildEcosystemExecutePhaseDirective({
+      mode: 'onboarding_setup',
+      setupPhase: 'execute',
+      setupJourney: 'ecosystem',
+      ecosystemRootSlug: 'acme-root',
+      walletSessionActive: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(directive).toContain('Wallet/2FA session is active');
+    expect(directive).not.toContain(
+      'First on-chain sign in this browser session may require wallet/2FA',
+    );
   });
 
   it('detects pending nested spaces during ecosystem execute', () => {

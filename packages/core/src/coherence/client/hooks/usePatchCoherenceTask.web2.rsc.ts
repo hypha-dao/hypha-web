@@ -43,6 +43,7 @@ export function usePatchCoherenceTask(spaceSlug?: string) {
             ...(arg.assigneeIds !== undefined
               ? { assigneeIds: arg.assigneeIds }
               : {}),
+            ...(arg.priority !== undefined ? { priority: arg.priority } : {}),
           }),
         },
       );

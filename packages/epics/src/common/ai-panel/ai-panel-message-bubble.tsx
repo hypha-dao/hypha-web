@@ -47,6 +47,7 @@ type AiPanelMessageBubbleProps = {
   mobilizedAgents?: readonly AiCompetencyAgent[];
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
+  suppressWalletSignaturePrompt?: boolean;
 };
 
 type OlListItem = {
@@ -522,6 +523,7 @@ export function AiPanelMessageBubble({
   mobilizedAgents = [],
   isStreaming,
   onActionReplySelect,
+  suppressWalletSignaturePrompt = false,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
   const locale = useLocale();
@@ -987,7 +989,7 @@ export function AiPanelMessageBubble({
               })}
             </div>
           )}
-          {walletSignaturePending ? (
+          {walletSignaturePending && !suppressWalletSignaturePrompt ? (
             <div className="rounded-xl border border-accent-8/40 bg-accent-2/40 px-3 py-2 text-xs text-foreground">
               {t('walletSignaturePending')}
             </div>

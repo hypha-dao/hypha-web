@@ -35,11 +35,17 @@ function withInjectedOnboardingContext<T extends Record<string, unknown>>(
     lastUserText?: string;
     recentUserTexts?: string[];
     setupPhase?: string;
+    setupJourney?: 'single_space' | 'ecosystem';
+    createdSpaceSlug?: string;
+    walletSessionActive?: boolean;
   },
 ): T & {
   onboarding_last_user_text?: string;
   onboarding_recent_user_texts?: string[];
   onboarding_setup_phase?: string;
+  onboarding_setup_journey?: 'single_space' | 'ecosystem';
+  onboarding_created_space_slug?: string;
+  onboarding_wallet_session_active?: boolean;
 } {
   return {
     ...payload,
@@ -51,6 +57,15 @@ function withInjectedOnboardingContext<T extends Record<string, unknown>>(
       : {}),
     ...(context.setupPhase
       ? { onboarding_setup_phase: context.setupPhase }
+      : {}),
+    ...(context.setupJourney
+      ? { onboarding_setup_journey: context.setupJourney }
+      : {}),
+    ...(context.createdSpaceSlug
+      ? { onboarding_created_space_slug: context.createdSpaceSlug }
+      : {}),
+    ...(context.walletSessionActive
+      ? { onboarding_wallet_session_active: true }
       : {}),
   };
 }
@@ -392,8 +407,24 @@ function resolveOnboardingInjectionContext(
       'string'
       ? (conversationContext as { setupPhase: string }).setupPhase
       : undefined;
+  const contextCreatedSpaceSlug =
+    conversationContext &&
+    typeof conversationContext === 'object' &&
+    'createdSpaceSlug' in conversationContext &&
+    typeof (conversationContext as { createdSpaceSlug?: unknown })
+      .createdSpaceSlug === 'string'
+      ? (conversationContext as { createdSpaceSlug: string }).createdSpaceSlug
+      : undefined;
   const effectiveLastUserText =
     lastUserTextFromRequest?.trim() || contextLastUserText?.trim() || undefined;
+  const contextSetupJourney =
+    extractSetupJourneyFromContext(conversationContext);
+  const contextWalletSessionActive =
+    conversationContext &&
+    typeof conversationContext === 'object' &&
+    'walletSessionActive' in conversationContext &&
+    (conversationContext as { walletSessionActive?: unknown })
+      .walletSessionActive === true;
 
   return {
     effectiveLastUserText,
@@ -401,6 +432,11 @@ function resolveOnboardingInjectionContext(
       lastUserText: effectiveLastUserText,
       recentUserTexts: recentUserTextsFromRequest,
       setupPhase: contextSetupPhase,
+      ...(contextSetupJourney ? { setupJourney: contextSetupJourney } : {}),
+      ...(contextCreatedSpaceSlug?.trim()
+        ? { createdSpaceSlug: contextCreatedSpaceSlug.trim() }
+        : {}),
+      ...(contextWalletSessionActive ? { walletSessionActive: true } : {}),
     },
     contextSpaceLocation: extractSpaceLocationFromContext(conversationContext),
     contextActivationMethod:
@@ -409,7 +445,7 @@ function resolveOnboardingInjectionContext(
       extractTransparencyMatrixFromContext(conversationContext),
     contextPendingTransparencyDiscoverability:
       extractPendingTransparencyDiscoverabilityFromContext(conversationContext),
-    contextSetupJourney: extractSetupJourneyFromContext(conversationContext),
+    contextSetupJourney,
     contextEntryMethod: extractEntryMethodFromContext(conversationContext),
     contextVisualAssets: extractVisualAssetsFromContext(conversationContext),
     contextEcosystemBlueprint:

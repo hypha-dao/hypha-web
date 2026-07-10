@@ -105,6 +105,26 @@
     "ecosystemLogo": "Ecosystem Logo",
     "continueAdventure": "Continue your adventure"
   },
+  "NetworkFeedback": {
+    "triggerLabel": "Shape Hypha",
+    "triggerAriaLabel": "Help shape Hypha — community and governance",
+    "title": "Help Shape Hypha",
+    "subtitle": "Choose how you'd like to participate in the network.",
+    "intro": "Whether you want to contribute ideas or help steer the network's governance, there are two ways to get involved.",
+    "community": {
+      "title": "Community",
+      "tagline": "Share ideas. Shape priorities.",
+      "description": "Join the community to discuss ideas, submit feedback, and vote on the features and initiatives you'd like to see next.",
+      "action": "Explore community"
+    },
+    "governance": {
+      "title": "Governance",
+      "tagline": "Help govern the network.",
+      "description": "Hold at least one HYPHA token to participate in governance, vote on proposals, and help guide the future of the network.",
+      "learnMore": "Learn about HYPHA tokenomics.",
+      "action": "Open governance"
+    }
+  },
   "OnboardingAdventure": {
     "heroEyebrow": "THE INTELLIGENT ORGANISATION",
     "title": "You have a powerful vision for the world.",
@@ -3540,17 +3560,18 @@
     "boardCancelAction": "Cancel",
     "boardAll": "All signals",
     "boardDelete": "Delete board {boardName}",
-    "signalViewBoard": "Kanban Board",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configure statuses and boards",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "List",
-    "signalViewGrid": "Grid",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Uncategorized",
     "signalListTitle": "Title",
     "signalListStatus": "Status",
     "signalListDue": "Due",
     "signalListPriority": "Priority",
     "signalListBoard": "Board",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Drop signals here",
     "signalDropHere": "Drop here",
     "signalListActions": "Actions",
@@ -3689,9 +3710,9 @@
     "updateUpvote": "Update upvote",
     "removeUpvote": "Remove upvote",
     "upvoteDetails": "Support details",
-    "totalSupport": "Total support",
-    "yourVotingPowerShare": "Share of your voting power",
-    "supportersCount": "{count, plural, =0 {No supporters yet} one {# supporter} other {# supporters}}",
+    "totalSupport": "Total UpVote",
+    "yourVotingPowerShare": "Upvote with a % of your voting power",
+    "supportersCount": "{count, plural, =0 {No UpVoters yet} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Member",
     "signInToUpvote": "Sign in as a space member to upvote signals.",
     "upvoteFailed": "Could not update your upvote. Try again."

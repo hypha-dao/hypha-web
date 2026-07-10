@@ -16,6 +16,7 @@ export * from './get-dho-space-context-path';
 export * from './get-dho-space-slug-from-pathname';
 export * from './get-root-space';
 export * from './get-path-function';
+export * from './hypha-network-feedback-dialog';
 export * from './ecosystem-navigation-shell';
 export * from './screen-toolbar';
 export * from './ai-panel';
@@ -159,6 +160,11 @@ export {
   toStoredOnboardingChatMessages,
   type VoiceTranscriptTurn,
 } from './onboarding-voice-transcript-bridge';
+export {
+  clearOnboardingWalletSessionActive,
+  isOnboardingWalletSessionActive,
+  markOnboardingWalletSessionActive,
+} from './onboarding-wallet-handoff';
 export {
   ONBOARDING_MOBILIZED_SCOPE,
   recordMobilizedAiAgentsForOnboarding,

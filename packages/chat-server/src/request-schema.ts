@@ -58,6 +58,8 @@ export const onboardingConversationContextSchema = z.object({
   pendingTransparencyDiscoverability: z.number().int().min(0).max(3).optional(),
   ecosystemRootSlug: z.string().optional(),
   createdSpaceSlug: z.string().optional(),
+  /** True after first wallet/2FA sign in this browser session (client sessionStorage). */
+  walletSessionActive: z.boolean().optional(),
   visualAssets: onboardingVisualAssetsSchema.optional(),
   discoveryMode: z.enum(['chat', 'voice_interview']).optional(),
   lastUserText: z.string().optional(),

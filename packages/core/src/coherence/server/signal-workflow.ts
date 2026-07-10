@@ -5,6 +5,7 @@ import {
   DEFAULT_SIGNAL_PROGRESS_STATUS,
   DEFAULT_SIGNAL_WORKFLOW,
   normalizeSignalWorkflowConfig,
+  resolveDefaultBoard,
   sanitizeSignalWorkflowConfig,
   type SignalWorkflowConfig,
 } from '../signal-workflow';
@@ -107,9 +108,10 @@ export async function updateSignalWorkflowConfig(
     .filter((slug) => !nextBoardSlugs.has(slug));
 
   if (removedBoardSlugs.length > 0) {
+    const fallbackBoard = resolveDefaultBoard(normalized);
     await db
       .update(coherences)
-      .set({ board: null })
+      .set({ board: fallbackBoard })
       .where(
         and(
           eq(coherences.spaceId, spaceId),

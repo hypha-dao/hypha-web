@@ -57,7 +57,7 @@ export type VoiceTranscriptSendOutcome =
 const RECOGNITION_RESTART_DELAY_MS = 40;
 const NETWORK_RETRY_DELAY_MS = 700;
 const MIC_PREWARM_BEFORE_TTS_END_MS = 400;
-const DEFAULT_SILENCE_MS_BEFORE_SEND = 850;
+const DEFAULT_SILENCE_MS_BEFORE_SEND = 1200;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {

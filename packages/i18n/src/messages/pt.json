@@ -864,6 +864,26 @@
     "ecosystemLogo": "Logo do ecossistema",
     "continueAdventure": "Continuar sua aventura"
   },
+  "NetworkFeedback": {
+    "triggerLabel": "Moldar a Hypha",
+    "triggerAriaLabel": "Ajude a moldar a Hypha — comunidade e governança",
+    "title": "Ajude a moldar a Hypha",
+    "subtitle": "Escolha como gostaria de participar na rede.",
+    "intro": "Quer queira contribuir com ideias ou ajudar a orientar a governação da rede, existem duas formas de se envolver.",
+    "community": {
+      "title": "Comunidade",
+      "tagline": "Partilhe ideias. Defina prioridades.",
+      "description": "Junte-se à comunidade para debater ideias, enviar feedback e votar nas funcionalidades e iniciativas que gostaria de ver a seguir.",
+      "action": "Explorar a comunidade"
+    },
+    "governance": {
+      "title": "Governança",
+      "tagline": "Ajude a governar a rede.",
+      "description": "Detenha pelo menos um token HYPHA para participar na governança, votar em propostas e ajudar a orientar o futuro da rede.",
+      "learnMore": "Saiba mais sobre a tokenomics HYPHA.",
+      "action": "Abrir governança"
+    }
+  },
   "OnboardingAdventure": {
     "heroEyebrow": "A ORGANIZAÇÃO INTELIGENTE",
     "title": "Você tem uma visão poderosa para o mundo.",
@@ -2950,17 +2970,18 @@
     "boardCancelAction": "Cancelar",
     "boardAll": "Todos os sinais",
     "boardDelete": "Excluir quadro {boardName}",
-    "signalViewBoard": "Quadro Kanban",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configurar estados e quadros",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Lista",
-    "signalViewGrid": "Grade",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Sem categoria",
     "signalListTitle": "Título",
     "signalListStatus": "Status",
     "signalListDue": "Prazo",
     "signalListPriority": "Prioridade",
     "signalListBoard": "Quadro",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Solte sinais aqui",
     "signalDropHere": "Soltar aqui",
     "signalListActions": "Ações",
@@ -3095,9 +3116,9 @@
     "updateUpvote": "Atualizar apoio",
     "removeUpvote": "Remover apoio",
     "upvoteDetails": "Detalhes do apoio",
-    "totalSupport": "Apoio total",
-    "yourVotingPowerShare": "Parcela do seu poder de voto",
-    "supportersCount": "{count, plural, =0 {Ainda sem apoios} one {# apoio} other {# apoios}}",
+    "totalSupport": "UpVote total",
+    "yourVotingPowerShare": "Votar com um % do seu poder de voto",
+    "supportersCount": "{count, plural, =0 {Ainda sem UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Membro",
     "signInToUpvote": "Inicie sessão como membro do espaço para apoiar sinais.",
     "upvoteFailed": "Não foi possível atualizar o seu voto. Tente novamente."

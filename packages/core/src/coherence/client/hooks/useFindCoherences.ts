@@ -9,6 +9,13 @@ import { CoherenceTag } from '../../coherence-tags';
 import { CoherencePriority } from '../../coherence-priorities';
 import type { Coherence } from '../../types';
 
+function dueAtTimeMs(value: Date | null | undefined): number | null {
+  if (value == null) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  const ms = date.getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
 export interface CoherenceQuery {
   spaceSlug?: string;
   search?: string;
@@ -27,6 +34,8 @@ export const COHERENCES_SWR_KEY = 'coherences' as const;
 export type PendingCoherenceTaskPatch = {
   progressStatus?: string | null;
   board?: string | null;
+  priority?: CoherencePriority;
+  dueAt?: Date | null;
   /** After PATCH succeeds, stale list fetches older than this keep the overlay. */
   confirmedUpdatedAtMs?: number;
 };
@@ -70,7 +79,12 @@ function fieldsMatchPending(
     pending.progressStatus === undefined ||
     item.progressStatus === pending.progressStatus;
   const boardOk = pending.board === undefined || item.board === pending.board;
-  return statusOk && boardOk;
+  const priorityOk =
+    pending.priority === undefined || item.priority === pending.priority;
+  const dueOk =
+    pending.dueAt === undefined ||
+    dueAtTimeMs(item.dueAt) === dueAtTimeMs(pending.dueAt);
+  return statusOk && boardOk && priorityOk && dueOk;
 }
 
 function needsPendingOverlay(

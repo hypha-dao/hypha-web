@@ -105,6 +105,26 @@
     "ecosystemLogo": "Logo de l’écosystème",
     "continueAdventure": "Continuer votre aventure"
   },
+  "NetworkFeedback": {
+    "triggerLabel": "Façonner Hypha",
+    "triggerAriaLabel": "Aidez à façonner Hypha — communauté et gouvernance",
+    "title": "Aidez à façonner Hypha",
+    "subtitle": "Choisissez comment vous souhaitez participer au réseau.",
+    "intro": "Que vous souhaitiez contribuer des idées ou participer à l'orientation de la gouvernance du réseau, il existe deux façons de vous impliquer.",
+    "community": {
+      "title": "Communauté",
+      "tagline": "Partagez des idées. Façonnez les priorités.",
+      "description": "Rejoignez la communauté pour discuter d'idées, soumettre des retours et voter pour les fonctionnalités et initiatives que vous aimeriez voir ensuite.",
+      "action": "Explorer la communauté"
+    },
+    "governance": {
+      "title": "Gouvernance",
+      "tagline": "Aidez à gouverner le réseau.",
+      "description": "Détenez au moins un token HYPHA pour participer à la gouvernance, voter sur les propositions et contribuer à orienter l'avenir du réseau.",
+      "learnMore": "En savoir plus sur la tokenomics HYPHA.",
+      "action": "Ouvrir la gouvernance"
+    }
+  },
   "OnboardingAdventure": {
     "heroEyebrow": "L'ORGANISATION INTELLIGENTE",
     "title": "Vous avez une vision puissante du monde.",
@@ -2948,17 +2968,18 @@
     "boardCancelAction": "Annuler",
     "boardAll": "Tous les signaux",
     "boardDelete": "Supprimer le tableau {boardName}",
-    "signalViewBoard": "Tableau Kanban",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configurer les statuts et les tableaux",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
-    "signalViewGrid": "Grille",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Non classé",
     "signalListTitle": "Titre",
     "signalListStatus": "Statut",
     "signalListDue": "Échéance",
     "signalListPriority": "Priorité",
     "signalListBoard": "Tableau",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Déposer les signaux ici",
     "signalDropHere": "Déposer ici",
     "signalListActions": "Actions",
@@ -3093,9 +3114,9 @@
     "updateUpvote": "Mettre à jour le soutien",
     "removeUpvote": "Retirer le soutien",
     "upvoteDetails": "Détails du soutien",
-    "totalSupport": "Soutien total",
-    "yourVotingPowerShare": "Part de votre pouvoir de vote",
-    "supportersCount": "{count, plural, =0 {Aucun soutien pour l'instant} one {# soutien} other {# soutiens}}",
+    "totalSupport": "UpVote total",
+    "yourVotingPowerShare": "Upvote avec un % de votre pouvoir de vote",
+    "supportersCount": "{count, plural, =0 {Aucun UpVoter pour l'instant} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Membre",
     "signInToUpvote": "Connectez-vous en tant que membre de l'espace pour soutenir des signaux.",
     "upvoteFailed": "Impossible de mettre à jour votre vote. Réessayez."

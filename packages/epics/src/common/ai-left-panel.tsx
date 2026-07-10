@@ -33,6 +33,7 @@ import {
   Category,
   Space,
   SpaceFlags,
+  COHERENCES_SWR_KEY,
   useCreateSpaceOrchestrator,
   useCreateAgreementOrchestrator,
   useJwt,
@@ -40,6 +41,7 @@ import {
   useSpaceBySlug,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
+import { mutate } from 'swr';
 import {
   SidebarHeader,
   SidebarContent,
@@ -66,7 +68,11 @@ import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
-import { useCompactHeaderMode } from '@hypha-platform/ui';
+import {
+  useCompactHeaderMode,
+  useCompactPanelsMode,
+  useIsMobile,
+} from '@hypha-platform/ui';
 import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { CHAT_ATTACHMENT_MAX_SIZE_LABEL } from '@hypha-platform/core/client';
@@ -136,6 +142,7 @@ import {
   isOnboardingWalletHandoffSlugComplete,
   markOnboardingWalletHandoffPayloadHandled,
   markOnboardingWalletHandoffSlugComplete,
+  markOnboardingWalletSessionActive,
 } from './onboarding-wallet-handoff';
 import {
   applyOnboardingLocationToContext,
@@ -363,6 +370,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { jwt } = useJwt();
   const lang = getLocaleFromPath(pathname);
   const isCompactHeader = useCompactHeaderMode();
+  const isCompactPanels = useCompactPanelsMode();
+  const isMobile = useIsMobile();
+  const mutuallyExclusivePanels = isCompactPanels || isMobile === true;
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
   const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
@@ -445,7 +455,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   } = useAiPanel();
   const {
     open: rightOpen,
-    toggle: toggleRight,
+    closeHumanChatPanel,
     openHumanChatPanel,
     openCoherenceChat,
   } = useHumanChatPanel();
@@ -523,6 +533,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       const normalized = slug.trim();
       if (!normalized) return;
       markOnboardingWalletHandoffSlugComplete(normalized);
+      markOnboardingWalletSessionActive();
       resetCreateSpaceWalletFlow();
     },
     [resetCreateSpaceWalletFlow],
@@ -532,6 +543,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const slug = onboardingContext?.createdSpaceSlug?.trim();
     if (!slug) return;
     markOnboardingWalletHandoffSlugComplete(slug);
+    markOnboardingWalletSessionActive();
     resetCreateSpaceWalletFlow();
   }, [onboardingContext?.createdSpaceSlug, resetCreateSpaceWalletFlow]);
 
@@ -1533,7 +1545,26 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     const currentSearch =
       typeof window !== 'undefined' ? window.location.search : '';
+    const navigationKey = navigationTarget.key;
+    const isSignalCreateNavigation =
+      navigationTarget.toolName === 'create_space_signal_by_slug' ||
+      navigationTarget.toolName === 'relay_ecosystem_signal';
+
     if (isAtNavigationTarget(href, pathname, currentSearch)) {
+      if (
+        isSignalCreateNavigation &&
+        navigationTarget.openHumanChat &&
+        navigationTarget.coherenceChat &&
+        lastAutoNavigationKeyRef.current !== navigationKey
+      ) {
+        lastAutoNavigationKeyRef.current = navigationKey;
+        openCoherenceChat(
+          navigationTarget.coherenceChat.roomId,
+          navigationTarget.coherenceChat.title,
+          navigationTarget.coherenceChat.slug,
+        );
+        openHumanChatPanel();
+      }
       return;
     }
 
@@ -1541,8 +1572,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       writeGovernanceProposalResubmitPayload(navigationTarget.resubmitPayload);
     }
 
-    const navigationKey = navigationTarget.key;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
+
     if (shouldSkipStaleOverviewAutoNavigation(pathname, href)) return;
     lastAutoNavigationKeyRef.current = navigationKey;
 
@@ -1567,6 +1598,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         );
       }
       openHumanChatPanel();
+    }
+
+    if (isSignalCreateNavigation) {
+      const targetSpaceSlug = getDhoSpaceSlugFromPathname(href);
+      if (targetSpaceSlug) {
+        void mutate(
+          (key) =>
+            Array.isArray(key) &&
+            key[0] === COHERENCES_SWR_KEY &&
+            key[1] === targetSpaceSlug,
+        );
+      }
     }
 
     router.push(href);
@@ -1664,7 +1707,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (!isSpaceSetupContext(onboardingContext)) return;
-    if (onboardingContext.createdSpaceSlug?.trim()) return;
     if (aiWalletCreateInFlightRef.current) return;
 
     const latestWalletCreatePayload = [...messages]
@@ -1742,13 +1784,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (!payload?.title || !payload.description) return;
     const payloadSlug =
       typeof payload.slug === 'string' ? payload.slug.trim() : '';
-    if (
+    const payloadParentId =
+      typeof payload.parent_id === 'number' ? payload.parent_id : null;
+    const rootSlug = onboardingContext.createdSpaceSlug?.trim();
+    const isDuplicateRootAttempt =
+      !payloadParentId &&
       payloadSlug &&
       (payloadSlug === spaceSlug?.trim() ||
-        payloadSlug === onboardingContext.createdSpaceSlug?.trim() ||
+        payloadSlug === rootSlug ||
         payloadSlug === walletCreatedSpace?.slug?.trim() ||
-        isOnboardingWalletHandoffSlugComplete(payloadSlug))
-    ) {
+        isOnboardingWalletHandoffSlugComplete(payloadSlug));
+    if (isDuplicateRootAttempt) {
       if (payloadKey) {
         handledWalletPayloadKeyRef.current = payloadKey;
         markOnboardingWalletHandoffPayloadHandled(payloadKey);
@@ -2792,7 +2838,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [isOnboardingSetup, isVoiceInterview, lang, onboardingContext, spaceSlug]);
 
   const voiceInterview = useOnboardingVoiceDiscovery({
-    enabled: isVoiceInterview,
+    enabled: isVoiceInterview && !isLoading && isAuthenticated,
     isStreaming,
     lastAssistantText,
     locale: lang,
@@ -2844,17 +2890,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       handleOverlayClose();
       return;
     }
-    if (isCompactHeader && rightOpen) {
-      toggleRight();
+    if (mutuallyExclusivePanels && rightOpen) {
+      closeHumanChatPanel();
     }
     showAiOverlay();
   }, [
     handleOverlayClose,
     isAiOpen,
     overlayVisible,
-    isCompactHeader,
+    mutuallyExclusivePanels,
     rightOpen,
-    toggleRight,
+    closeHumanChatPanel,
     showAiOverlay,
   ]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;

@@ -11,7 +11,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 import {
-  hasExplicitConfirmation,
+  hasOnboardingConfirmation,
   resolveActorPerson,
 } from './onboarding-actor';
 import { logOnboardingToolEvent } from './onboarding-observability';
@@ -44,6 +44,8 @@ const inputSchema = z.object({
     .optional()
     .default([]),
   onboarding_last_user_text: z.string().optional(),
+  onboarding_recent_user_texts: z.array(z.string()).optional(),
+  onboarding_setup_phase: z.string().optional(),
   require_confirmation_token: z
     .string()
     .trim()
@@ -132,8 +134,11 @@ export function createCreateEcosystemSpaceTool(
 
       const { person, privyUserId } = await resolveActorPerson(authToken);
       const confirmationToken = data.require_confirmation_token;
-      const confirmed = hasExplicitConfirmation(
-        data.onboarding_last_user_text,
+      const confirmed = hasOnboardingConfirmation(
+        {
+          lastUserText: data.onboarding_last_user_text,
+          setupPhase: data.onboarding_setup_phase,
+        },
         confirmationToken,
       );
 

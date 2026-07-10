@@ -48,6 +48,7 @@ type SignalSectionProps = {
   order?: string;
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
 };
 
 export const SignalSection: FC<SignalSectionProps> = ({
@@ -59,6 +60,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   viewMode,
   refresh,
   onSignalClick,
+  activeSignalSlug,
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
@@ -136,6 +138,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         board?: string | null;
         dueAt?: Date | null;
         assigneeIds?: number[];
+        priority?: Coherence['priority'];
       },
     ) => {
       const slug = signal.slug?.trim();
@@ -144,12 +147,20 @@ export const SignalSection: FC<SignalSectionProps> = ({
       const taskPatch: {
         progressStatus?: string | null;
         board?: string | null;
+        priority?: Coherence['priority'];
+        dueAt?: Date | null;
       } = {};
       if (patch.progressStatus !== undefined) {
         taskPatch.progressStatus = patch.progressStatus;
       }
       if (patch.board !== undefined) {
         taskPatch.board = patch.board;
+      }
+      if (patch.priority !== undefined) {
+        taskPatch.priority = patch.priority;
+      }
+      if (patch.dueAt !== undefined) {
+        taskPatch.dueAt = patch.dueAt;
       }
 
       const hasTaskFieldPatch = Object.keys(taskPatch).length > 0;
@@ -265,6 +276,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               workflow={resolvedWorkflow}
               spaceSlug={spaceSlug}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
               readOnly={!canUpdateTasks}
               refresh={refresh}
               onMoveStatus={(signal, progressStatus) =>
@@ -276,6 +288,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={visibleSignals}
               workflow={resolvedWorkflow}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
               readOnly={!canUpdateTasks}
               refresh={refresh}
               onPatch={patchAndRefresh}
@@ -285,6 +298,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={visibleSignals}
               workflow={resolvedWorkflow}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
               readOnly={!canUpdateTasks}
               refresh={refresh}
               onPatch={patchAndRefresh}
@@ -297,6 +311,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={visibleSignals}
               refresh={refresh}
               onSignalClick={onSignalClick}
+              activeSignalSlug={activeSignalSlug}
             />
           )}
         </div>

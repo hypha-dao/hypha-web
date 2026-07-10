@@ -38,6 +38,7 @@ import {
   CoherenceTag,
   CoherenceType,
   DEFAULT_SIGNAL_PROGRESS_STATUS,
+  resolveDefaultBoard,
   schemaCreateCoherenceForm,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
@@ -248,10 +249,12 @@ export const CreateSignalForm = ({
       dueAt: initialValues?.dueAt ?? null,
       progressStatus:
         initialValues?.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
-      board: initialValues?.board ?? null,
+      board:
+        initialValues?.board ??
+        (workflow ? resolveDefaultBoard(workflow) : null),
       assigneeIds: initialValues?.assigneeIds ?? [],
     }),
-    [initialValues, person?.id, spaceId],
+    [initialValues, person?.id, spaceId, workflow],
   );
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -539,7 +542,8 @@ export const CreateSignalForm = ({
             dueAt: data.dueAt ?? null,
             progressStatus:
               data.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
-            board: data.board ?? null,
+            board:
+              data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: data.assigneeIds,
           });
           if (updatedSignal?.roomId) {
@@ -986,10 +990,11 @@ export const CreateSignalForm = ({
                         {t('signalFormBoard')}
                       </FormLabel>
                       <Select
-                        value={field.value ?? '__none__'}
-                        onValueChange={(value) =>
-                          field.onChange(value === '__none__' ? null : value)
+                        value={
+                          field.value ??
+                          (workflow ? resolveDefaultBoard(workflow) : 'general')
                         }
+                        onValueChange={field.onChange}
                         disabled={isMutating}
                       >
                         <FormControl>
@@ -998,9 +1003,6 @@ export const CreateSignalForm = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="__none__">
-                            {t('signalBoardUncategorized')}
-                          </SelectItem>
                           {(workflow?.boards ?? [])
                             .filter((board) => !board.archived)
                             .map((board) => (

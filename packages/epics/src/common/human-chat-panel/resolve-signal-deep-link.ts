@@ -4,9 +4,11 @@ export type SignalDeepLinkLookupResult =
       signalSlug: string;
       signalTitle?: string;
       spaceSlug: string;
-      roomId: string;
+      roomId: string | null;
     }
   | { ok: false; reason: 'auth_not_ready' | 'not_found' | 'network' };
+
+const NOT_FOUND_RETRY_DELAYS_MS = [400, 1200, 2500] as const;
 
 const AUTH_RETRY_DELAYS_MS = [500, 1500, 4000] as const;
 
@@ -37,6 +39,15 @@ export async function resolveSignalDeepLinkWithRetry(input: {
     try {
       const res = await input.fetchSignal(input.signalId, token);
       if (res.status === 404) {
+        const canRetry404 =
+          attempt < NOT_FOUND_RETRY_DELAYS_MS.length &&
+          attempt < maxAttempts - 1;
+        if (canRetry404) {
+          await new Promise((resolve) => {
+            window.setTimeout(resolve, NOT_FOUND_RETRY_DELAYS_MS[attempt]);
+          });
+          continue;
+        }
         return { ok: false, reason: 'not_found' };
       }
       if (!res.ok) {
@@ -47,17 +58,22 @@ export async function resolveSignalDeepLinkWithRetry(input: {
         signalSlug?: string;
         signalTitle?: string;
         spaceSlug?: string;
-        roomId?: string;
+        roomId?: string | null;
       };
       const resolvedSlug = data.signalSlug?.trim();
       const resolvedSpaceSlug = data.spaceSlug?.trim();
-      const resolvedRoomId = data.roomId?.trim();
+      const resolvedRoomId = data.roomId?.trim() || null;
       if (
         !resolvedSlug ||
         !resolvedSpaceSlug ||
-        !resolvedRoomId ||
         resolvedSpaceSlug !== input.expectedSpaceSlug.trim()
       ) {
+        if (attempt < NOT_FOUND_RETRY_DELAYS_MS.length) {
+          await new Promise((resolve) => {
+            window.setTimeout(resolve, NOT_FOUND_RETRY_DELAYS_MS[attempt]);
+          });
+          continue;
+        }
         return { ok: false, reason: 'not_found' };
       }
 
@@ -73,5 +89,8 @@ export async function resolveSignalDeepLinkWithRetry(input: {
     }
   }
 
-  return { ok: false, reason: 'auth_not_ready' };
+  const token = input.getAuthToken()?.trim() ?? null;
+  return token
+    ? { ok: false, reason: 'not_found' }
+    : { ok: false, reason: 'auth_not_ready' };
 }

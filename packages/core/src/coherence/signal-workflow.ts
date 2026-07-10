@@ -90,6 +90,30 @@ export function resolveDefaultProgressStatus(
   return ordered[0]?.slug ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
 }
 
+/** First active board for this space — prefers `general`, else lowest position. */
+export function resolveDefaultBoard(config: SignalWorkflowConfig): string {
+  const activeBoards = config.boards.filter((board) => !board.archived);
+  const general = activeBoards.find((board) => board.slug === 'general');
+  if (general) return general.slug;
+  const sorted = [...activeBoards].sort((a, b) => a.position - b.position);
+  return sorted[0]?.slug ?? 'general';
+}
+
+/** Map null/unknown board slugs to the space default board (`general` when present). */
+export function resolveEffectiveBoard(
+  board: string | null | undefined,
+  config: SignalWorkflowConfig,
+): string {
+  const trimmed = board?.trim();
+  if (trimmed) {
+    const exists = config.boards.some(
+      (item) => item.slug === trimmed && !item.archived,
+    );
+    if (exists) return trimmed;
+  }
+  return resolveDefaultBoard(config);
+}
+
 function normalizeSlugBase(base: string): string {
   const lower = base.trim().toLowerCase();
   let normalized = '';

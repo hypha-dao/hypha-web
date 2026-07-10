@@ -23,6 +23,7 @@ import {
   createOnboardingCategoriesSchema,
   resolveOnboardingCategories,
 } from './onboarding-categories';
+import { shouldBlockDuplicateRootSpaceCreation } from './create-space-from-onboarding-redirect';
 
 type ResolvedLocationSource = 'geocode' | 'manual' | 'map_click';
 
@@ -61,6 +62,9 @@ const inputSchema = z.object({
   onboarding_last_user_text: z.string().optional(),
   onboarding_recent_user_texts: z.array(z.string()).optional(),
   onboarding_setup_phase: z.string().optional(),
+  onboarding_setup_journey: z.enum(['single_space', 'ecosystem']).optional(),
+  onboarding_created_space_slug: z.string().trim().min(1).max(128).optional(),
+  onboarding_wallet_session_active: z.boolean().optional().default(false),
   dry_run: z.boolean().optional().default(false),
 });
 
@@ -214,6 +218,24 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
         }
       }
 
+      const duplicateRoot = shouldBlockDuplicateRootSpaceCreation(
+        data,
+        parentSpace,
+        normalizedSlug,
+      );
+      if (duplicateRoot.block) {
+        logOnboardingToolEvent({
+          tool: 'create_space_from_onboarding',
+          status: 'failed',
+          spaceSlug: normalizedSlug,
+          error: 'duplicate_root_space',
+        });
+        return {
+          ok: false,
+          error: duplicateRoot.reason,
+        };
+      }
+
       const { person: creator, privyUserId } = await resolveActorPerson(
         authToken,
       );
@@ -313,9 +335,15 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
         dedupeKey: `create_space:${normalizedSlug}`,
       });
 
+      const walletSessionActive =
+        data.onboarding_wallet_session_active === true ||
+        Boolean(data.onboarding_created_space_slug?.trim());
+      const isNestedCreate = parentSpace != null;
+
       return {
         ok: true,
         requires_wallet_signature: true,
+        wallet_session_active: walletSessionActive,
         create_payload: {
           title: data.title,
           description: data.description,
@@ -338,7 +366,11 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
           ecosystem_logo_dark_url: data.ecosystem_logo_dark_url ?? null,
         },
         next_step:
-          'Ask the user to sign the on-chain space creation transaction. After wallet confirmation and receipt, persist the space in DB.',
+          walletSessionActive && isNestedCreate
+            ? 'User confirmed. The app creates the on-chain nested space using their active wallet session (2FA/MFA already satisfied)—do not ask them to sign or check their wallet again.'
+            : walletSessionActive
+            ? 'User confirmed. The app submits the on-chain transaction using their active wallet session when applicable—do not ask them to sign again unless the transaction fails.'
+            : 'Ask the user to sign the on-chain space creation transaction. After wallet confirmation and receipt, persist the space in DB.',
         audit: {
           actor_person_id: creator.id,
           actor_sub: privyUserId,

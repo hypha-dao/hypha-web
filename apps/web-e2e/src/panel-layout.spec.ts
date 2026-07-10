@@ -129,6 +129,37 @@ test.describe('Panel Layout', () => {
     expect(center!.x + center!.width).toBeLessThanOrEqual(right!.x + 2);
   });
 
+  test('opening chat panel keeps expanded AI panel open on desktop', async () => {
+    await layout.openAiPanel();
+    await expect(layout.leftSidebarHeader).toBeVisible();
+    const leftBefore = await layout.leftSidebar.boundingBox();
+    expect(leftBefore).not.toBeNull();
+    expect(leftBefore!.width).toBeGreaterThan(200);
+
+    await layout.openChatPanel();
+    await expect(layout.rightSidebar).toBeVisible();
+    await expect(layout.leftSidebarHeader).toBeVisible();
+
+    const leftAfter = await layout.leftSidebar.boundingBox();
+    expect(leftAfter).not.toBeNull();
+    expect(leftAfter!.width).toBeGreaterThan(200);
+  });
+
+  test('compact viewport closes opposite panel when opening chat', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await layout.openAiPanel();
+    await expect(layout.leftSidebarHeader).toBeVisible();
+
+    await layout.openChatPanel();
+    await expect(layout.rightSidebar).toBeVisible();
+
+    const leftAfter = await layout.leftSidebar.boundingBox();
+    expect(leftAfter).not.toBeNull();
+    expect(leftAfter!.width).toBeLessThanOrEqual(80);
+  });
+
   test('menu bar and panel headers occupy separate columns at same level', async () => {
     await layout.openChatPanel();
     await expect(layout.rightSidebar).toBeVisible();

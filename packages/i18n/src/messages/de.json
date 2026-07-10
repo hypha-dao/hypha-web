@@ -105,6 +105,26 @@
     "ecosystemLogo": "Ökosystem-Logo",
     "continueAdventure": "Abenteuer fortsetzen"
   },
+  "NetworkFeedback": {
+    "triggerLabel": "Hypha gestalten",
+    "triggerAriaLabel": "Hypha mitgestalten — Community und Governance",
+    "title": "Hilf mit, Hypha zu gestalten",
+    "subtitle": "Wähle, wie du im Netzwerk mitwirken möchtest.",
+    "intro": "Ob du Ideen beitragen oder die Governance des Netzwerks mitgestalten möchtest — es gibt zwei Wege, sich einzubringen.",
+    "community": {
+      "title": "Community",
+      "tagline": "Ideen teilen. Prioritäten mitgestalten.",
+      "description": "Tritt der Community bei, um Ideen zu diskutieren, Feedback einzureichen und über Funktionen und Initiativen abzustimmen, die du als Nächstes sehen möchtest.",
+      "action": "Community entdecken"
+    },
+    "governance": {
+      "title": "Governance",
+      "tagline": "Hilf mit, das Netzwerk zu steuern.",
+      "description": "Halte mindestens einen HYPHA-Token, um an der Governance teilzunehmen, über Vorschläge abzustimmen und die Zukunft des Netzwerks mitzugestalten.",
+      "learnMore": "Mehr über HYPHA-Tokenomics.",
+      "action": "Governance öffnen"
+    }
+  },
   "OnboardingAdventure": {
     "heroEyebrow": "DIE INTELLIGENTE ORGANISATION",
     "title": "Du hast eine kraftvolle Vision für die Welt.",
@@ -3501,17 +3521,18 @@
     "boardCancelAction": "Abbrechen",
     "boardAll": "Alle Signale",
     "boardDelete": "Board {boardName} löschen",
-    "signalViewBoard": "Kanban Board",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Status und Boards konfigurieren",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
-    "signalViewGrid": "Raster",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Unkategorisiert",
     "signalListTitle": "Titel",
     "signalListStatus": "Status",
     "signalListDue": "Fällig",
     "signalListPriority": "Priorität",
     "signalListBoard": "Board",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Signale hier ablegen",
     "signalDropHere": "Hier ablegen",
     "signalListActions": "Aktionen",
@@ -3646,9 +3667,9 @@
     "updateUpvote": "Unterstützung aktualisieren",
     "removeUpvote": "Unterstützung entfernen",
     "upvoteDetails": "Details zur Unterstützung",
-    "totalSupport": "Gesamte Unterstützung",
-    "yourVotingPowerShare": "Anteil deiner Stimmkraft",
-    "supportersCount": "{count, plural, =0 {Noch keine Unterstützer} one {# Unterstützer} other {# Unterstützer}}",
+    "totalSupport": "UpVote gesamt",
+    "yourVotingPowerShare": "Upvote mit einem % deiner Stimmkraft",
+    "supportersCount": "{count, plural, =0 {Noch keine UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Mitglied",
     "signInToUpvote": "Melde dich als Space-Mitglied an, um Signale zu unterstützen.",
     "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen."

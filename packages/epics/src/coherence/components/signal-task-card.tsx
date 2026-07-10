@@ -30,6 +30,11 @@ import {
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { isSignalDueOverdue } from '../utils/signal-due-date';
+import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
+import {
+  isSignalSlugActive,
+  signalCardActiveClass,
+} from '../utils/signal-active-styles';
 
 type SignalTaskCardProps = {
   signal: Coherence;
@@ -37,6 +42,7 @@ type SignalTaskCardProps = {
   board?: SignalBoardDefinition | null;
   showBoard?: boolean;
   showStatus?: boolean;
+  isActive?: boolean;
   onClick?: () => void;
   draggable?: boolean;
   onDragStart?: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -86,6 +92,7 @@ export function SignalTaskCard({
   board,
   showBoard = true,
   showStatus = false,
+  isActive = false,
   onClick,
   draggable,
   onDragStart,
@@ -139,6 +146,7 @@ export function SignalTaskCard({
 
   return (
     <div
+      {...getSignalSlugDomProps(signal.slug)}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       draggable={draggable}
@@ -157,9 +165,11 @@ export function SignalTaskCard({
           : undefined
       }
       className={cn(
-        'group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm',
+        'group relative flex flex-col rounded-xl border border-border/60 bg-card shadow-sm',
         'transition-all duration-200 ease-out',
-        'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
+        !isActive &&
+          'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
+        signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',
         className,
@@ -174,8 +184,8 @@ export function SignalTaskCard({
         aria-label={priorityLabel}
       />
 
-      <div className="relative pl-3 pr-2.5 py-2.5">
-        <div className="mb-1.5 flex min-h-6 items-center justify-between gap-1">
+      <div className="relative flex flex-1 flex-col pl-3 pr-2.5 py-2.5">
+        <div className="mb-1.5 flex min-h-6 shrink-0 items-center justify-between gap-1">
           <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
             <Badge
               colorVariant="neutral"
@@ -206,54 +216,54 @@ export function SignalTaskCard({
           ) : null}
         </div>
 
-        <p className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground">
+        <p className="line-clamp-2 min-h-[2.5rem] shrink-0 text-sm font-semibold leading-snug tracking-tight text-foreground">
           {signal.title}
         </p>
 
         <SignalCreatorMeta
           creatorDisplayName={creatorDisplayName}
           createdAtRelative={createdAtRelative}
-          className="mt-1"
+          className="mt-1 shrink-0"
         />
 
-        {statusOptions && statusOptions.length > 0 && onStatusChange ? (
-          <div
-            className="mt-2"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <label className="sr-only" htmlFor={`signal-status-${signal.id}`}>
-              {t('signalFormStatus')}
-            </label>
-            <Select
-              value={signal.progressStatus ?? statusOptions[0]?.slug}
-              onValueChange={onStatusChange}
+        <div className="mt-2 min-h-7 shrink-0">
+          {statusOptions && statusOptions.length > 0 && onStatusChange ? (
+            <div
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
             >
-              <SelectTrigger
-                id={`signal-status-${signal.id}`}
-                className="h-7 w-full border-border/60 bg-background/80 text-xs"
+              <label className="sr-only" htmlFor={`signal-status-${signal.id}`}>
+                {t('signalFormStatus')}
+              </label>
+              <Select
+                value={signal.progressStatus ?? statusOptions[0]?.slug}
+                onValueChange={onStatusChange}
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.slug} value={option.slug}>
-                    {option.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
+                <SelectTrigger
+                  id={`signal-status-${signal.id}`}
+                  className="h-7 w-full border-border/60 bg-background/80 text-xs"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.slug} value={option.slug}>
+                      {option.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+        </div>
 
-        <div className="mt-2.5 flex items-end justify-between gap-2">
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2.5 pb-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <SignalUpvoteControl
               slug={signal.slug}
               upvotes={signal.upvotes}
               refresh={refresh}
               disabled={Boolean(signal.archived)}
-              compact
             />
             {hasValidDue ? (
               <span
