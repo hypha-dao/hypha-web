@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   escapeCssSelector,
   findSignalCardElement,
+  readLiveSignalSlugFromUrl,
   SIGNAL_SLUG_SELECTOR_ATTR,
 } from '../signal-deep-link-dom';
 
@@ -20,5 +21,12 @@ describe('signal-deep-link-dom', () => {
 
   it('escapes special characters in slug selectors', () => {
     expect(escapeCssSelector('coh-"test"')).toContain('\\"');
+  });
+
+  it('reads the live signal slug from the current URL', () => {
+    window.history.replaceState({}, '', '/en/dho/demo/coherence?signal=coh-live');
+    expect(readLiveSignalSlugFromUrl()).toBe('coh-live');
+    window.history.replaceState({}, '', '/en/dho/demo/coherence');
+    expect(readLiveSignalSlugFromUrl()).toBeNull();
   });
 });

@@ -107,19 +107,18 @@ export function CoherenceBlock({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const viewParamFromUrl = searchParams.get(SIGNAL_VIEW_QUERY_KEY);
   const [hideArchived, setHideArchived] = React.useState(true);
   const viewMode = React.useMemo(() => {
-    const fromUrl = parseSignalViewMode(
-      searchParams.get(SIGNAL_VIEW_QUERY_KEY),
-    );
+    const fromUrl = parseSignalViewMode(viewParamFromUrl);
     if (fromUrl) {
       return fromUrl;
     }
     const stored = readStoredSignalViewMode(spaceSlug);
     return stored ?? DEFAULT_SIGNAL_VIEW_MODE;
-  }, [searchParams, spaceSlug]);
+  }, [viewParamFromUrl, spaceSlug]);
   React.useLayoutEffect(() => {
-    if (parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY))) {
+    if (parseSignalViewMode(viewParamFromUrl)) {
       return;
     }
     const stored = readStoredSignalViewMode(spaceSlug);
@@ -129,7 +128,7 @@ export function CoherenceBlock({
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set(SIGNAL_VIEW_QUERY_KEY, stored);
     router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams, spaceSlug]);
+  }, [pathname, router, searchParams, spaceSlug, viewParamFromUrl]);
 
   const handleViewModeChange = React.useCallback(
     (nextValue: SignalViewMode) => {
@@ -198,7 +197,6 @@ export function CoherenceBlock({
   const {
     open: humanChatOpen,
     openCoherenceChat,
-    openHumanChatPanel,
     mode,
     coherenceSlug,
   } = useHumanChatPanel();
@@ -226,14 +224,6 @@ export function CoherenceBlock({
     [openCoherenceChat],
   );
 
-  const handleDeepLinkOpenSignalChat = React.useCallback(
-    (signal: Coherence) => {
-      handleSignalClick(signal);
-      openHumanChatPanel();
-    },
-    [handleSignalClick, openHumanChatPanel],
-  );
-
   const handleRevealArchivedSignal = React.useCallback(() => {
     setHideArchived(false);
   }, []);
@@ -251,12 +241,10 @@ export function CoherenceBlock({
     signals,
     isLoading: isSpaceLoading || (isSignalsLoading && !signals?.length),
     humanChatEnabled,
+    humanChatOpen,
     hideArchived,
     priorityFilter,
     activeCoherenceSlug: coherenceSlug,
-    onOpenSignalChat: humanChatEnabled
-      ? handleDeepLinkOpenSignalChat
-      : undefined,
     onRevealArchivedSignal: handleRevealArchivedSignal,
     onClearPriorityFilter: handleClearPriorityFilter,
     onRefreshSignals: refresh,

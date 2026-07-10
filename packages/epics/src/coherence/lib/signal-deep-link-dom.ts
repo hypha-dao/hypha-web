@@ -1,5 +1,13 @@
 export const SIGNAL_SLUG_SELECTOR_ATTR = 'data-signal-slug';
 
+/** Live `?signal=` — `useSearchParams()` can lag behind `history.replaceState`. */
+export function readLiveSignalSlugFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  return (
+    new URLSearchParams(window.location.search).get('signal')?.trim() ?? null
+  );
+}
+
 export function escapeCssSelector(value: string): string {
   if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
     return CSS.escape(value);

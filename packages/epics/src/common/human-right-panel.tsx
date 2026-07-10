@@ -133,6 +133,7 @@ import {
   buildHyphaChatMentionDeepLinkUrl,
   setSignalSearchParam,
 } from './human-chat-panel/human-chat-message-link';
+import { readLiveSignalSlugFromUrl } from '../coherence/lib/signal-deep-link-dom';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import {
@@ -159,6 +160,15 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
 function readLiveSearchParam(key: string): string | null {
   if (typeof window === 'undefined') return null;
   return new URLSearchParams(window.location.search).get(key)?.trim() ?? null;
+}
+
+function readSignalDeepLinkSlug(
+  searchParams: ReturnType<typeof useSearchParams> | null,
+): string | null {
+  if (typeof window !== 'undefined') {
+    return readLiveSignalSlugFromUrl();
+  }
+  return searchParams?.get('signal')?.trim() ?? null;
 }
 
 function resolveCallRecordingRoomTitle(
@@ -1456,9 +1466,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const hasSignalDeepLink =
       Boolean(readLiveSearchParam('signal')) ||
-      Boolean(readLiveSearchParam('msg')) ||
-      Boolean(searchParams?.get('signal')?.trim()) ||
-      Boolean(searchParams?.get('msg')?.trim());
+      Boolean(readLiveSearchParam('msg'));
     if (hasSignalDeepLink) {
       const next = new URLSearchParams(searchParams?.toString() ?? '');
       next.delete('signal');
@@ -3436,7 +3444,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'space') return;
     /** Signal deep links (`?signal=`) are handled by the dedicated effect below. */
-    if (searchParams?.get('signal')?.trim()) return;
+    if (readSignalDeepLinkSlug(searchParams)) return;
     const qpChat = searchParams?.get('chat')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
     if (!qpMsg || !roomId) return;
@@ -3518,7 +3526,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (coherenceRoomId?.trim() && currentSpace) {
         const session = readRoomToCoherenceSession(coherenceRoomId);
         if (session.spaceSlug && session.spaceSlug !== currentSpace) {
-          if (searchParams?.get('signal')?.trim()) {
+          if (readSignalDeepLinkSlug(searchParams)) {
             signalDeepLinkEpochRef.current += 1;
             const cleaned = setSignalSearchParam(
               pathname,
@@ -3533,7 +3541,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           return;
         }
       }
-      if (searchParams?.get('signal')?.trim() === slug) return;
+      if (readSignalDeepLinkSlug(searchParams) === slug) return;
       router.replace(
         setSignalSearchParam(pathname, searchParams?.toString() ?? '', slug),
         { scroll: false },
@@ -3544,7 +3552,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (
       prevMode === 'coherence' &&
       mode === 'space' &&
-      searchParams?.get('signal')?.trim()
+      readSignalDeepLinkSlug(searchParams)
     ) {
       router.replace(
         setSignalSearchParam(pathname, searchParams?.toString() ?? '', null),
@@ -3562,17 +3570,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   ]);
 
   useEffect(() => {
-    if (!searchParams?.get('signal')?.trim()) {
+    if (!readSignalDeepLinkSlug(searchParams)) {
       setSignalDeepLinkNotice(null);
     }
   }, [searchParams]);
 
   useEffect(() => {
     if (!spaceSlug?.trim()) return;
-    const qpSignal =
-      readLiveSearchParam('signal') ??
-      searchParams?.get('signal')?.trim() ??
-      null;
+    const qpSignal = readSignalDeepLinkSlug(searchParams);
     const qpMsg =
       readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
@@ -3671,7 +3676,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!spaceSlug?.trim()) return;
     const qpJoinCall = searchParams?.get('joinCall')?.trim();
     if (qpJoinCall !== '1') return;
-    if (searchParams?.get('signal')?.trim()) return;
+    if (readSignalDeepLinkSlug(searchParams)) return;
 
     openHumanChatPanel();
     setActiveTab('chat');

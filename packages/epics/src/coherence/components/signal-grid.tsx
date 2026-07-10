@@ -42,7 +42,6 @@ export function SignalGrid({
               {...signal}
               leadImage={leadImage}
               className="h-full min-h-0 w-full"
-              isActive={isActive}
               isLoading={isLoading}
               refresh={refresh}
             />
@@ -71,7 +70,6 @@ export function SignalGrid({
               {...signal}
               leadImage={leadImage}
               className="h-full min-h-0 w-full"
-              isActive={isActive}
               isLoading={isLoading}
               refresh={refresh}
             />
@@ -91,7 +89,6 @@ export function SignalGrid({
               {...signal}
               leadImage={leadImage}
               className="h-full min-h-0 w-full"
-              isActive={isActive}
               isLoading={isLoading}
               refresh={refresh}
             />
