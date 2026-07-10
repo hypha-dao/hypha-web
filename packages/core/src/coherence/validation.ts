@@ -61,7 +61,6 @@ const signalTaskFields = {
     .nullable()
     .optional(),
   assigneeIds: assigneeIdsSchema.optional(),
-  priority: z.enum(COHERENCE_PRIORITIES).optional(),
 };
 
 const coherenceSignalFields = {
@@ -120,6 +119,7 @@ export const schemaUpdateCoherenceSignalBySlug = z.object({
 export const schemaPatchCoherenceTaskBySlug = z.object({
   slug: coherenceSlugSchema,
   ...signalTaskFields,
+  priority: z.enum(COHERENCE_PRIORITIES).optional(),
 });
 
 const signalStatusCategorySchema = z.enum([

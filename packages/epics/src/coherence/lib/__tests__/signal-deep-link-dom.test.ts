@@ -24,7 +24,11 @@ describe('signal-deep-link-dom', () => {
   });
 
   it('reads the live signal slug from the current URL', () => {
-    window.history.replaceState({}, '', '/en/dho/demo/coherence?signal=coh-live');
+    window.history.replaceState(
+      {},
+      '',
+      '/en/dho/demo/coherence?signal=coh-live',
+    );
     expect(readLiveSignalSlugFromUrl()).toBe('coh-live');
     window.history.replaceState({}, '', '/en/dho/demo/coherence');
     expect(readLiveSignalSlugFromUrl()).toBeNull();
