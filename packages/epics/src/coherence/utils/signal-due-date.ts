@@ -16,3 +16,10 @@ export function toLocalDueDateInputValue(
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+export function dueDateFromInputValue(value: string): Date | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const date = new Date(`${trimmed}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}

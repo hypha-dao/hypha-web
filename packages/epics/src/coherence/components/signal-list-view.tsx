@@ -16,6 +16,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Input,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -25,7 +26,11 @@ import { SignalCreatorMeta } from './signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
-import { isSignalDueOverdue } from '../utils/signal-due-date';
+import {
+  isSignalDueOverdue,
+  dueDateFromInputValue,
+  toLocalDueDateInputValue,
+} from '../utils/signal-due-date';
 import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
 import {
   isSignalSlugActive,
@@ -45,6 +50,7 @@ type SignalListViewProps = {
       progressStatus?: string | null;
       board?: string | null;
       priority?: Coherence['priority'];
+      dueAt?: Date | null;
     },
   ) => Promise<void>;
   refresh: () => Promise<void>;
@@ -109,7 +115,7 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
 
 /** Shared desktop list grid — title flexes; metadata columns stay compact but readable. */
 const SIGNAL_LIST_GRID_CLASS =
-  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_5.25rem_minmax(5.5rem,7rem)_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
+  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_minmax(6.5rem,8rem)_minmax(5.5rem,7rem)_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
 
 export function SignalListView({
   signals,
@@ -252,23 +258,42 @@ export function SignalListView({
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListDue')}
                     </span>
-                    {hasValidDue ? (
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 text-sm',
-                          isOverdue
-                            ? 'font-medium text-error-11'
-                            : 'text-muted-foreground',
-                        )}
-                      >
-                        <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                        {intlFormat.dateTime(dueDate, {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
+                    {readOnly ? (
+                      hasValidDue ? (
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 text-sm',
+                            isOverdue
+                              ? 'font-medium text-error-11'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                          {intlFormat.dateTime(dueDate, {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )
                     ) : (
-                      <span className="text-sm text-muted-foreground">—</span>
+                      <Input
+                        type="date"
+                        className={cn(
+                          'h-8 w-full min-w-0 border-border/60 bg-background/80 px-2 text-sm [color-scheme:light] dark:[color-scheme:dark]',
+                          hasValidDue &&
+                            isOverdue &&
+                            'font-medium text-error-11',
+                        )}
+                        value={toLocalDueDateInputValue(signal.dueAt)}
+                        onChange={(event) =>
+                          void onPatch(signal, {
+                            dueAt: dueDateFromInputValue(event.target.value),
+                          })
+                        }
+                        onClick={(event) => event.stopPropagation()}
+                      />
                     )}
                   </div>
 

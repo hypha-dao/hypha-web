@@ -148,6 +148,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         progressStatus?: string | null;
         board?: string | null;
         priority?: Coherence['priority'];
+        dueAt?: Date | null;
       } = {};
       if (patch.progressStatus !== undefined) {
         taskPatch.progressStatus = patch.progressStatus;
@@ -157,6 +158,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
       }
       if (patch.priority !== undefined) {
         taskPatch.priority = patch.priority;
+      }
+      if (patch.dueAt !== undefined) {
+        taskPatch.dueAt = patch.dueAt;
       }
 
       const hasTaskFieldPatch = Object.keys(taskPatch).length > 0;
