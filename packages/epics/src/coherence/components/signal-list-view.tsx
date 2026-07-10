@@ -117,6 +117,12 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
 const SIGNAL_LIST_GRID_CLASS =
   'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_minmax(7rem,8.5rem)_minmax(5.5rem,7rem)_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
 
+const SIGNAL_LIST_DATE_INPUT_CLASS = cn(
+  'h-8 min-h-8 w-full min-w-0 border-border/60 bg-background/80 py-0 pl-6 pr-1 text-sm [color-scheme:light] dark:[color-scheme:dark]',
+  '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:size-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+  '[&::-moz-calendar-picker-indicator]:absolute [&::-moz-calendar-picker-indicator]:inset-0 [&::-moz-calendar-picker-indicator]:size-full [&::-moz-calendar-picker-indicator]:cursor-pointer [&::-moz-calendar-picker-indicator]:opacity-0',
+);
+
 export function SignalListView({
   signals,
   workflow,
@@ -133,17 +139,19 @@ export function SignalListView({
     <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
       <div
         className={cn(
-          'hidden gap-2 border-b border-border/40 bg-muted/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid',
+          'hidden gap-2 border-b border-l-[3px] border-border/40 border-l-transparent bg-muted/20 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid lg:px-4',
           SIGNAL_LIST_GRID_CLASS,
         )}
       >
-        <span>{t('signalListTitle')}</span>
-        <span>{t('signalListStatus')}</span>
-        <span>{t('signalListDue')}</span>
-        <span>{t('signalListPriority')}</span>
-        <span>{t('signalListBoard')}</span>
-        <span>{t('signalListUpvote')}</span>
-        <span className="text-right">{t('signalListActions')}</span>
+        <span className="min-w-0">{t('signalListTitle')}</span>
+        <span className="min-w-0">{t('signalListStatus')}</span>
+        <span className="min-w-0">{t('signalListDue')}</span>
+        <span className="min-w-0">{t('signalListPriority')}</span>
+        <span className="min-w-0">{t('signalListBoard')}</span>
+        <span className="min-w-0">{t('signalListUpvote')}</span>
+        <span className="min-w-0 text-right lg:pl-5">
+          {t('signalListActions')}
+        </span>
       </div>
 
       <ul className="divide-y divide-border/40">
@@ -223,7 +231,7 @@ export function SignalListView({
                 </div>
 
                 <div className="lg:contents">
-                  <div className="flex items-center gap-2 lg:block">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListStatus')}
                     </span>
@@ -254,7 +262,7 @@ export function SignalListView({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 lg:block">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListDue')}
                     </span>
@@ -278,34 +286,32 @@ export function SignalListView({
                         <span className="text-sm text-muted-foreground">—</span>
                       )
                     ) : (
-                      <Input
-                        type="date"
-                        leftIcon={
-                          <CalendarDays
-                            className="h-3.5 w-3.5 shrink-0"
-                            aria-hidden
-                          />
-                        }
-                        className={cn(
-                          'h-8 min-h-8 w-full min-w-0 border-border/60 bg-background/80 py-0 pl-8 pr-1 text-sm [color-scheme:light] dark:[color-scheme:dark]',
-                          '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:size-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
-                          '[&::-moz-calendar-picker-indicator]:absolute [&::-moz-calendar-picker-indicator]:inset-0 [&::-moz-calendar-picker-indicator]:size-full [&::-moz-calendar-picker-indicator]:cursor-pointer [&::-moz-calendar-picker-indicator]:opacity-0',
-                          hasValidDue &&
-                            isOverdue &&
-                            'font-medium text-error-11',
-                        )}
-                        value={toLocalDueDateInputValue(signal.dueAt)}
-                        onChange={(event) =>
-                          void onPatch(signal, {
-                            dueAt: dueDateFromInputValue(event.target.value),
-                          })
-                        }
-                        onClick={(event) => event.stopPropagation()}
-                      />
+                      <div className="relative min-w-0">
+                        <CalendarDays
+                          className="pointer-events-none absolute left-1.5 top-1/2 z-[1] h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+                          aria-hidden
+                        />
+                        <Input
+                          type="date"
+                          className={cn(
+                            SIGNAL_LIST_DATE_INPUT_CLASS,
+                            hasValidDue &&
+                              isOverdue &&
+                              'font-medium text-error-11',
+                          )}
+                          value={toLocalDueDateInputValue(signal.dueAt)}
+                          onChange={(event) =>
+                            void onPatch(signal, {
+                              dueAt: dueDateFromInputValue(event.target.value),
+                            })
+                          }
+                          onClick={(event) => event.stopPropagation()}
+                        />
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 lg:block">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListPriority')}
                     </span>
@@ -373,7 +379,7 @@ export function SignalListView({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 lg:block">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListUpvote')}
                     </span>
