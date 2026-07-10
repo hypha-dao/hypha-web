@@ -1,6 +1,7 @@
 export type CreateSpaceFromOnboardingRedirectInput = {
   onboarding_setup_phase?: string | null;
   onboarding_created_space_slug?: string | null;
+  onboarding_setup_journey?: 'single_space' | 'ecosystem' | null;
   parent_space_slug?: string | null;
   parent_space_name?: string | null;
   slug?: string | null;

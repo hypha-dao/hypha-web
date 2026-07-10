@@ -5,6 +5,7 @@ import React from 'react';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useRouter } from 'next/navigation';
 import { saveAuthReturnPath } from './auth-return-path';
+import { clearOnboardingWalletSessionActive } from './onboarding-wallet-session';
 
 export function useAuthentication() {
   const {
@@ -22,6 +23,7 @@ export function useAuthentication() {
   const router = useRouter();
   const { setActiveWallet } = useSetActiveWallet();
   const [isLoggingIn, setLoggingIn] = React.useState(false);
+  const previousPrivyUserIdRef = React.useRef<string | undefined>(undefined);
 
   const smartWallet = React.useMemo(() => {
     return privyUser?.linkedAccounts?.find(
@@ -39,6 +41,23 @@ export function useAuthentication() {
     }
   }, [smartWallet?.address, wallets, setActiveWallet]);
 
+  React.useEffect(() => {
+    const currentUserId = privyUser?.id;
+    const previousUserId = previousPrivyUserIdRef.current;
+
+    if (previousUserId && currentUserId && previousUserId !== currentUserId) {
+      clearOnboardingWalletSessionActive();
+    }
+
+    previousPrivyUserIdRef.current = currentUserId;
+  }, [privyUser?.id]);
+
+  React.useEffect(() => {
+    if (ready && !authenticated) {
+      clearOnboardingWalletSessionActive();
+    }
+  }, [authenticated, ready]);
+
   const openLoginModal = React.useCallback((): void => {
     privyLogin();
   }, [privyLogin]);
@@ -53,6 +72,7 @@ export function useAuthentication() {
 
   const logout = React.useCallback(
     async (redirect: boolean = true): Promise<void> => {
+      clearOnboardingWalletSessionActive();
       privyLogout();
       if (redirect) {
         router.push('/network');
