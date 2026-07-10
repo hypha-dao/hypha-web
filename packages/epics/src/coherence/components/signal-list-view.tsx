@@ -115,7 +115,7 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
 
 /** Shared desktop list grid — title flexes; metadata columns stay compact but readable. */
 const SIGNAL_LIST_GRID_CLASS =
-  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_minmax(6.5rem,8rem)_minmax(5.5rem,7rem)_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
+  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_minmax(7rem,8.5rem)_minmax(5.5rem,7rem)_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
 
 export function SignalListView({
   signals,
@@ -280,8 +280,16 @@ export function SignalListView({
                     ) : (
                       <Input
                         type="date"
+                        leftIcon={
+                          <CalendarDays
+                            className="h-3.5 w-3.5 shrink-0"
+                            aria-hidden
+                          />
+                        }
                         className={cn(
-                          'h-8 w-full min-w-0 border-border/60 bg-background/80 px-2 text-sm [color-scheme:light] dark:[color-scheme:dark]',
+                          'h-8 min-h-8 w-full min-w-0 border-border/60 bg-background/80 py-0 pl-8 pr-1 text-sm [color-scheme:light] dark:[color-scheme:dark]',
+                          '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:size-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+                          '[&::-moz-calendar-picker-indicator]:absolute [&::-moz-calendar-picker-indicator]:inset-0 [&::-moz-calendar-picker-indicator]:size-full [&::-moz-calendar-picker-indicator]:cursor-pointer [&::-moz-calendar-picker-indicator]:opacity-0',
                           hasValidDue &&
                             isOverdue &&
                             'font-medium text-error-11',

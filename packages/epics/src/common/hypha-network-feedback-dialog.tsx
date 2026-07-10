@@ -178,7 +178,7 @@ export function HyphaNetworkFeedbackDialog({
                 </>
               }
               actionLabel={t('governance.action')}
-              actionHref={`/${locale}/dho/hypha-tokenomics/ecosystem-navigation`}
+              actionHref={`/${locale}/dho/hypha-tokenomics/coherence`}
               onNavigate={close}
             />
           </div>
