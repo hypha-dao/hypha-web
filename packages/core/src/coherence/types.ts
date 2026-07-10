@@ -56,6 +56,7 @@ export interface PatchCoherenceTaskInput {
   progressStatus?: string | null;
   board?: string | null;
   assigneeIds?: number[];
+  priority?: CoherencePriority;
 }
 
 export type PatchCoherenceTaskBySlugInput = {

@@ -138,6 +138,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         board?: string | null;
         dueAt?: Date | null;
         assigneeIds?: number[];
+        priority?: Coherence['priority'];
       },
     ) => {
       const slug = signal.slug?.trim();
@@ -146,12 +147,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
       const taskPatch: {
         progressStatus?: string | null;
         board?: string | null;
+        priority?: Coherence['priority'];
       } = {};
       if (patch.progressStatus !== undefined) {
         taskPatch.progressStatus = patch.progressStatus;
       }
       if (patch.board !== undefined) {
         taskPatch.board = patch.board;
+      }
+      if (patch.priority !== undefined) {
+        taskPatch.priority = patch.priority;
       }
 
       const hasTaskFieldPatch = Object.keys(taskPatch).length > 0;

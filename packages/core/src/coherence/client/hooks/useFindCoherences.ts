@@ -27,6 +27,7 @@ export const COHERENCES_SWR_KEY = 'coherences' as const;
 export type PendingCoherenceTaskPatch = {
   progressStatus?: string | null;
   board?: string | null;
+  priority?: CoherencePriority;
   /** After PATCH succeeds, stale list fetches older than this keep the overlay. */
   confirmedUpdatedAtMs?: number;
 };
@@ -70,7 +71,9 @@ function fieldsMatchPending(
     pending.progressStatus === undefined ||
     item.progressStatus === pending.progressStatus;
   const boardOk = pending.board === undefined || item.board === pending.board;
-  return statusOk && boardOk;
+  const priorityOk =
+    pending.priority === undefined || item.priority === pending.priority;
+  return statusOk && boardOk && priorityOk;
 }
 
 function needsPendingOverlay(

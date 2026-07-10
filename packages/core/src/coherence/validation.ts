@@ -61,6 +61,7 @@ const signalTaskFields = {
     .nullable()
     .optional(),
   assigneeIds: assigneeIdsSchema.optional(),
+  priority: z.enum(COHERENCE_PRIORITIES).optional(),
 };
 
 const coherenceSignalFields = {

@@ -275,6 +275,9 @@ export const patchCoherenceTaskBySlug = async (
   if (rest.assigneeIds !== undefined) {
     patch.assigneeIds = normalizeAssigneeIds(rest.assigneeIds);
   }
+  if (rest.priority !== undefined) {
+    patch.priority = rest.priority;
+  }
 
   if (row.spaceId != null) {
     const workflow = await ensureSignalWorkflowConfig(

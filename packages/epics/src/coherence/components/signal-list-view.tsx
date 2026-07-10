@@ -3,7 +3,13 @@
 import React from 'react';
 import { isValid } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
-import { Coherence, SignalWorkflowConfig } from '@hypha-platform/core/client';
+import {
+  COHERENCE_PRIORITIES,
+  Coherence,
+  SignalWorkflowConfig,
+  resolveEffectiveBoard,
+  usePersonById,
+} from '@hypha-platform/core/client';
 import {
   Select,
   SelectContent,
@@ -26,9 +32,7 @@ import {
   signalCardActiveClass,
 } from '../utils/signal-active-styles';
 import { SIGNAL_LIST_ITEM_SHELL_CLASS } from '../utils/signal-board-layout';
-import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { usePersonById } from '@hypha-platform/core/client';
 
 type SignalListViewProps = {
   signals: Coherence[];
@@ -40,6 +44,7 @@ type SignalListViewProps = {
     patch: {
       progressStatus?: string | null;
       board?: string | null;
+      priority?: Coherence['priority'];
     },
   ) => Promise<void>;
   refresh: () => Promise<void>;
@@ -104,7 +109,7 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
 
 /** Shared desktop list grid — title flexes; metadata columns stay compact but readable. */
 const SIGNAL_LIST_GRID_CLASS =
-  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_5.25rem_4.5rem_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
+  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_5.25rem_minmax(5.5rem,7rem)_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
 
 export function SignalListView({
   signals,
@@ -271,9 +276,35 @@ export function SignalListView({
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListPriority')}
                     </span>
-                    <span className="truncate text-sm capitalize text-muted-foreground">
-                      {signal.priority}
-                    </span>
+                    {readOnly ? (
+                      <span className="truncate text-sm text-muted-foreground">
+                        {t(`priorities.${signal.priority}` as never)}
+                      </span>
+                    ) : (
+                      <Select
+                        value={signal.priority}
+                        onValueChange={(value) =>
+                          onPatch(signal, {
+                            priority: value as Coherence['priority'],
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-full min-w-0 truncate border-border/60 bg-background/80 capitalize">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COHERENCE_PRIORITIES.map((priority) => (
+                            <SelectItem
+                              key={priority}
+                              value={priority}
+                              className="capitalize"
+                            >
+                              {t(`priorities.${priority}` as never)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
@@ -321,7 +352,7 @@ export function SignalListView({
                     />
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 lg:col-start-7 lg:justify-end">
+                  <div className="flex items-center justify-between gap-2 lg:col-start-7 lg:justify-end lg:pl-5">
                     {signal.assigneeIds.length > 0 ? (
                       <ListAssigneeStack
                         assigneeIds={signal.assigneeIds}
