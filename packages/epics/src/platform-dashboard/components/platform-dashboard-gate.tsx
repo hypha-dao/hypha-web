@@ -10,33 +10,26 @@ import {
   Input,
 } from '@hypha-platform/ui';
 
-const OPS_SECRET_STORAGE_KEY = 'hypha-ops-secret';
-
 export function PlatformDashboardGate({
   children,
 }: {
   children: (fetchDashboard: () => Promise<Response>) => React.ReactNode;
 }) {
-  const [secret, setSecret] = React.useState('');
-  const [storedSecret, setStoredSecret] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const existing = sessionStorage.getItem(OPS_SECRET_STORAGE_KEY);
-    if (existing) {
-      setStoredSecret(existing);
-    }
-  }, []);
+  const [secretInput, setSecretInput] = React.useState('');
+  const [activeSecret, setActiveSecret] = React.useState<string | null>(null);
 
   const fetchDashboard = React.useCallback(async () => {
-    const activeSecret = storedSecret ?? secret;
+    if (!activeSecret) {
+      throw new Error('Ops secret is required');
+    }
     return fetch('/api/v1/ops/platform/dashboard', {
       headers: {
         'x-hypha-ops-secret': activeSecret,
       },
     });
-  }, [secret, storedSecret]);
+  }, [activeSecret]);
 
-  if (!storedSecret) {
+  if (!activeSecret) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center gap-4 p-6">
         <Card>
@@ -46,20 +39,18 @@ export function PlatformDashboardGate({
           <CardContent className="space-y-4">
             <p className="text-3 text-muted-foreground">
               Enter the Hypha ops secret to view platform metrics. This uses the
-              same secret as space-memory ops routes.
+              same secret as space-memory ops routes. The secret stays in memory
+              for this tab only and is cleared when you refresh.
             </p>
             <Input
               type="password"
               placeholder="Ops secret"
-              value={secret}
-              onChange={(event) => setSecret(event.target.value)}
+              value={secretInput}
+              onChange={(event) => setSecretInput(event.target.value)}
             />
             <Button
-              disabled={!secret.trim()}
-              onClick={() => {
-                sessionStorage.setItem(OPS_SECRET_STORAGE_KEY, secret.trim());
-                setStoredSecret(secret.trim());
-              }}
+              disabled={!secretInput.trim()}
+              onClick={() => setActiveSecret(secretInput.trim())}
             >
               Continue
             </Button>
