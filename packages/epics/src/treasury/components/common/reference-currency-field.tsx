@@ -23,6 +23,7 @@ const CURRENCY_OPTIONS = [
   { value: 'EUR', key: 'eur' },
   { value: 'CHF', key: 'chf' },
   { value: 'AUD', key: 'aud' },
+  { value: 'NZD', key: 'nzd' },
 ] as const;
 
 export const ReferenceCurrencyField = () => {

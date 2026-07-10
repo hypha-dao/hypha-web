@@ -32,6 +32,7 @@ const FEEDS_RAW: { name: string; address: string }[] = [
   { name: 'AUD/USD', address: '0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229' },
   { name: 'CAD/USD', address: '0xA840145F87572E82519d578b1F36340368a25D5d' },
   { name: 'CHF/USD', address: '0x3A1d6444fb6a402470098E23DaD0B7E86E14252F' },
+  { name: 'NZD/USD', address: '0x06bdFe07E71C476157FC025d3cCD4BBe08e83EF9' },
 ];
 
 // Normalize addresses to proper checksums
