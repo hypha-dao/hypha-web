@@ -1,7 +1,10 @@
 'use client';
 
 /** Sustained speech before treating assistant playback as interrupted. */
-export const GRACEFUL_INTERRUPT_MIN_SPEECH_MS = 700;
+export const GRACEFUL_INTERRUPT_MIN_SPEECH_MS = 1200;
+
+/** Ignore brief ambient blips (e.g. a fly) unless the transcript is clearly intentional. */
+export const MIN_USER_TURN_SPEECH_MS = 550;
 
 const FILLER_TRANSCRIPT =
   /^(?:um+|uh+|ah+|er+|hm+|hmm+|euh+|heu+|ben+|oui+|ok+|okay|yes|yeah|yep|no|non|si|sí|ja|nein|oui oui|d'accord|allô|allo|hello|hi|hey|coucou|bonjour|salut)[\s.!?,-]*$/i;
@@ -19,7 +22,7 @@ export function countTranscriptWords(text: string): number {
 export function isLikelyNoiseTranscript(text: string): boolean {
   const normalized = normalizeVoiceTranscript(text);
   if (!normalized) return true;
-  if (normalized.length < 3) return true;
+  if (normalized.length < 4) return true;
   if (FILLER_TRANSCRIPT.test(normalized)) return true;
   return false;
 }
@@ -29,8 +32,11 @@ export function hasClearInterruptIntentFromTranscript(text: string): boolean {
   const normalized = normalizeVoiceTranscript(text);
   if (!normalized) return false;
   if (isLikelyNoiseTranscript(normalized)) return false;
-  if (countTranscriptWords(normalized) >= 2) return true;
-  return normalized.length >= 8;
+  if (countTranscriptWords(normalized) >= 3) return true;
+  if (countTranscriptWords(normalized) >= 2 && normalized.length >= 9) {
+    return true;
+  }
+  return normalized.length >= 12;
 }
 
 export function hasSustainedInterruptSpeech(

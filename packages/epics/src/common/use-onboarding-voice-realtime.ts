@@ -32,6 +32,8 @@ import {
 } from './onboarding-voice-speech';
 import {
   GRACEFUL_INTERRUPT_MIN_SPEECH_MS,
+  MIN_USER_TURN_SPEECH_MS,
+  countTranscriptWords,
   hasClearInterruptIntentFromTranscript,
   shouldGracefullyInterruptAssistant,
 } from './onboarding-voice-interrupt';
@@ -161,6 +163,7 @@ export function useOnboardingVoiceRealtime({
   const speechPlaybackRef = useRef<SpeechPlaybackController | null>(null);
   const gracefulInterruptPendingRef = useRef(false);
   const interruptSpeechStartedAtRef = useRef<number | null>(null);
+  const userTurnSpeechStartedAtRef = useRef<number | null>(null);
   const interruptTimerRef = useRef<number | null>(null);
   const micRestoreTimerRef = useRef<number | null>(null);
   const playbackFallbackTimerRef = useRef<number | null>(null);
@@ -385,6 +388,22 @@ export function useOnboardingVoiceRealtime({
       }
 
       if (!isSubstantiveUserTranscript(normalized)) {
+        userTurnSpeechStartedAtRef.current = null;
+        restoreMicForListening(connectionRef.current);
+        restoreListeningIfConnected(connectionRef.current, setPhase);
+        return;
+      }
+
+      const speechStartedAt = userTurnSpeechStartedAtRef.current;
+      userTurnSpeechStartedAtRef.current = null;
+      const speechDurationMs =
+        speechStartedAt === null ? null : Date.now() - speechStartedAt;
+      if (
+        speechDurationMs !== null &&
+        speechDurationMs < MIN_USER_TURN_SPEECH_MS &&
+        countTranscriptWords(normalized) < 3 &&
+        !hasClearInterruptIntentFromTranscript(normalized)
+      ) {
         restoreMicForListening(connectionRef.current);
         restoreListeningIfConnected(connectionRef.current, setPhase);
         return;
@@ -530,6 +549,8 @@ export function useOnboardingVoiceRealtime({
               beginGracefulUserBargeIn();
             }
           }, GRACEFUL_INTERRUPT_MIN_SPEECH_MS);
+        } else {
+          userTurnSpeechStartedAtRef.current = Date.now();
         }
       }
 
