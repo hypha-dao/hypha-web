@@ -1,0 +1,46 @@
+rank,person_slug,name,address,vote_pts,join_pts,proposal_pts,accepted_pts,total
+1,pile,Dejan Momiroski,0x422ac8f716a6f91f065a9099835628954a06de8a,5,3,2,0,10
+2,dima,Dimche Risteski,0x44aaee38f77d8119e80566d875ef793f5c351c33,6,0,0,3,9
+3,мрле,Драган Спироски,0xac5b181a8aa8812be414a5f5f6553392a418da2e,3,3,2,0,8
+4,radica,Rada Momiroska-Bucalo,0xfc9098395f1fe993651fc8299f4dcc6666acce90,7,0,0,0,7
+5,ace,Ace Kosteski,0x0fc60567526c3cf6b01794f6e3d7639826cece74,6,0,0,0,6
+6,igor,Igor Lukanoski,0x1265a0dac99bd3fdf89e4b3585f8f5a8ae22e481,6,0,0,0,6
+7,t1nk0,Valentin Spiroski,0x155ec7855fee6ad531bbf6fb80e4dbfcc1da01e8,1,3,2,0,6
+8,djoko,Djoko Poposki,0x1b65dc9c1d871b9bfc3be9753618528f96800a30,6,0,0,0,6
+9,lepa,LEPA MOMIROSKA,0x2ed57a96f8d0eb53c2c537a01ee2ff777d82ddf2,6,0,0,0,6
+10,danco,Daniel Blazeski,0x3ae7e811cdae274dabde212358073e4c9eeb6881,6,0,0,0,6
+11,andrej,Andrej Durtanovski,0x418b059e2a705a9ba87b18801fda2e21913b19a0,6,0,0,0,6
+12,mence,Mence Veljanoska Pejoska,0x5911594d51560c975bfebc5cf157882d98b88b55,6,0,0,0,6
+13,😊,Слаѓана Спироска,0x62b285f99a6dbbc9aed250ea3028d9ddae7c0c18,1,3,2,0,6
+14,dimitarst,Dimitar Stojkov,0x92bc46071b483de50adecb04eaea8ab0e27a58ae,6,0,0,0,6
+15,djakov,Antonio Djakov,0x9dc0a0b5931046c3ebb979d41e32f7ed62b3fcd5,6,0,0,0,6
+16,roza,Roza Spiroska,0xa1a3e46d5f8589f5d5941f144c0ca57ad929dd65,6,0,0,0,6
+17,blazo,Igor Dimitrievski,0xa8b8eb370ab2441d0e26f33a4090ca401ed81503,6,0,0,0,6
+18,dushko,Dushko Stankoski,0xb6328b0412e31d800b5fcac2e219efd54f71c501,6,0,0,0,6
+19,ljubica,Ljubica Markoska,0xe432aad319344d29f4068ed9b5d703400f6ba39e,6,0,0,0,6
+20,tijana,Tijana Sokoleska,0xeef5756de8f5fba7f59a451ec7bd43395d9b67e3,6,0,0,0,6
+21,bube,Ljubica Petreska,0x42f15286c2238688f4db40ca57f383b66ae62fa9,5,0,0,0,5
+22,nate72,Nataša Spiroska,0x9f6ba227f764230d866329dacb42c6e8a158c6c7,0,3,2,0,5
+23,sokol,Aleksandar Sokoleski,0xa13ce259c0c3ba2174077038d77d20cb61583252,5,0,0,0,5
+24,gogi,Gordana Beleska Blazheska,0xabddd1640fc77afa4d5be394404fb7fee026037b,5,0,0,0,5
+25,cane,Cane Paunoski,0xb0cef5b66d46657b5a87920307b356055b13d416,5,0,0,0,5
+26,mimi,Milica Spiroska,0xdb27ce2f080b95875b8536f671eb61387260b9f7,0,3,2,0,5
+27,usta,Blagojce Stanojoski,0xfb79ecb9be095b255d738c8082260fea4bbe7a6d,5,0,0,0,5
+28,mrleski,Toni Spiroski,0xfdf1d2ba5e20b7a7d93d3b227d50f5b99db13cda,5,0,0,0,5
+29,cvete,Cvete Beleska,0x29d38fd134b237be539bb09ffaadbe992e3bc789,4,0,0,0,4
+30,juge,Jugoslav Koloski,0x61ae85ca776b0e8715f80aab308b2a64428b17c7,4,0,0,0,4
+31,,Unknown,0x433702256b464248dcbe403c1334757be4ed9f26,0,0,0,3,3
+32,,Unknown,0x433702873e33d4846d399a75aaf96eacf181d0b2,0,0,0,3,3
+33,,Unknown,0x4337031ade3a53d10121f350369907076b6d32a4,0,0,0,3,3
+34,,Unknown,0x43370402cbeba6ab53fbc8a52894537024a39269,0,0,0,3,3
+35,,Unknown,0x43370460d26b10de805d4cdfe4d331adb7219ffe,0,0,0,3,3
+36,,Unknown,0x4337053498bf3de9bab4d55a345f727dba05d6af,0,0,0,3,3
+37,шуте,Саше Миленкоски,0x5596e97fb1deed5c5737ba24f60e8858a22a1894,3,0,0,0,3
+38,filip,Filip Dzhuklevski,0x61decea92d51332642d118582641ce2ab82c2aab,2,0,0,0,2
+39,ljupče1,Ljupče Korunoski,0x1064f4d7aec63b0ffc9eb7fb946209ffc7e37001,1,0,0,0,1
+40,belica,Rade Momiroski,0x117df5836ffa2948a60eba2a9408471dadefc65d,1,0,0,0,1
+41,toše,Stojan Grozdanovski,0x5c8f1aa17c91405b4cd67c0c0ae24c3c3fb71afd,1,0,0,0,1
+42,ivica,Ivica Blazevski,0x671bfb8cc84ce4890172eadfe68a0f789939e904,1,0,0,0,1
+43,ljupče,Ljupče Mateski,0x923640a794bc713c111321797580aedcdaf9c032,1,0,0,0,1
+44,pauc,vlado pejoski,0xa163315e5b06f26a9cc20a6215c9a4b4674905ba,1,0,0,0,1
+45,vase,Vase Korunoski,0xa9d070ecfb89cf13af8d07b4cd7689617e08fa65,1,0,0,0,1
