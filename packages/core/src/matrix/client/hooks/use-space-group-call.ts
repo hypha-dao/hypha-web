@@ -396,6 +396,10 @@ export function useSpaceGroupCall(
   const [screenshareTakeoverDenied, setScreenshareTakeoverDenied] =
     useState(false);
   const screenshareTakeoverPendingIdRef = useRef<string | null>(null);
+  /** Dedupes `screenshare-takeover:timeline-sync` debug logs — the timeline
+   * fires on every room event (chat messages included), not just takeover
+   * ones, so log only when the takeover-relevant fields actually change. */
+  const screenshareTakeoverDebugSignatureRef = useRef<string | null>(null);
   const [localPreviewStream, setLocalPreviewStream] =
     useState<MediaStream | null>(null);
   const [voiceProcessingPreset, setVoiceProcessingPresetState] =
@@ -628,23 +632,6 @@ export function useSpaceGroupCall(
 
       const focusedKey = activeSpeakerKeyRef.current;
 
-      logCallDebug('active-speaker:eval', {
-        speakers: speakers.map((p) => ({
-          identity: p.identity,
-          audioLevel: p.audioLevel,
-          isSpeaking: p.isSpeaking,
-        })),
-        topKey,
-        focusedKey,
-        candidateKey: activeSpeakerCandidateKeyRef.current,
-        candidateSinceMs: activeSpeakerCandidateSinceRef.current
-          ? Date.now() - activeSpeakerCandidateSinceRef.current
-          : null,
-        focusedSilentSinceMs: activeSpeakerFocusedSilentSinceRef.current
-          ? Date.now() - activeSpeakerFocusedSilentSinceRef.current
-          : null,
-      });
-
       if (topKey === focusedKey) {
         clearActiveSpeakerCommitTimer();
         activeSpeakerCandidateKeyRef.current = null;
@@ -698,13 +685,6 @@ export function useSpaceGroupCall(
 
       if (candidateSustained && currentReleased) {
         commitActiveSpeakerFocus(topKey);
-      } else {
-        logCallDebug('active-speaker:hold', {
-          topKey,
-          focusedKey,
-          candidateSustained,
-          currentReleased,
-        });
       }
     },
     [clearActiveSpeakerCommitTimer, commitActiveSpeakerFocus],
@@ -2536,14 +2516,23 @@ export function useSpaceGroupCall(
       const takeoverEventCount = recent.filter((event) =>
         isScreenshareTakeoverEvent(event),
       ).length;
-      logCallDebug('screenshare-takeover:timeline-sync', {
-        localUserId,
+      const debugSignature = JSON.stringify([
         isLocalSharing,
         takeoverEventCount,
-        incomingRequestId: incoming?.requestId ?? null,
-        incomingRequesterUserId: incoming?.requesterUserId ?? null,
-        pendingRequestId: screenshareTakeoverPendingIdRef.current,
-      });
+        incoming?.requestId ?? null,
+        screenshareTakeoverPendingIdRef.current,
+      ]);
+      if (debugSignature !== screenshareTakeoverDebugSignatureRef.current) {
+        screenshareTakeoverDebugSignatureRef.current = debugSignature;
+        logCallDebug('screenshare-takeover:timeline-sync', {
+          localUserId,
+          isLocalSharing,
+          takeoverEventCount,
+          incomingRequestId: incoming?.requestId ?? null,
+          incomingRequesterUserId: incoming?.requesterUserId ?? null,
+          pendingRequestId: screenshareTakeoverPendingIdRef.current,
+        });
+      }
       setScreenshareTakeoverIncoming(incoming);
 
       const pendingId = screenshareTakeoverPendingIdRef.current;
