@@ -27,7 +27,9 @@ export function matrixUserIdFromLiveKitIdentity(
 ): string | null {
   const trimmed = identity?.trim();
   if (!trimmed) return null;
-  return trimmed.replace(/:+$/, '');
+  let end = trimmed.length;
+  while (end > 0 && trimmed.charAt(end - 1) === ':') end -= 1;
+  return trimmed.slice(0, end) || null;
 }
 
 export function createLiveKitRoom(): Room {
