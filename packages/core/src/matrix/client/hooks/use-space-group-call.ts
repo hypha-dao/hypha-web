@@ -102,6 +102,7 @@ import {
   isLocalScreenshareActiveInRoom,
   isRemoteScreenshareActiveInRoom,
   localPreviewStreamFromRoom,
+  matrixUserIdFromLiveKitIdentity,
   readParticipantsFromLiveKitRoom,
   readParticipantsFromRtcMemberships,
   syncLocalMuteStateFromRoom,
@@ -660,7 +661,7 @@ export function useSpaceGroupCall(
       }
 
       const focusedStillPresent = speakers.some(
-        (p) => (p.identity?.trim() || null) === focusedKey,
+        (p) => matrixUserIdFromLiveKitIdentity(p.identity) === focusedKey,
       );
       activeSpeakerFocusedSilentSinceRef.current = focusedStillPresent
         ? null
@@ -1581,13 +1582,15 @@ export function useSpaceGroupCall(
       const resolveLabel = (userId: string) =>
         matrixRoom?.getMember(userId)?.name || userId;
       const activeSpeakerIdentities = new Set(
-        lkRoom.activeSpeakers.map((p) => p.identity?.trim() || null),
+        lkRoom.activeSpeakers.map((p) =>
+          matrixUserIdFromLiveKitIdentity(p.identity),
+        ),
       );
       const participants = [
         lkRoom.localParticipant,
         ...Array.from(lkRoom.remoteParticipants.values()),
       ].map((p) => {
-        const identity = p.identity?.trim() || null;
+        const identity = matrixUserIdFromLiveKitIdentity(p.identity);
         return {
           matrixUserId: identity,
           label: identity ? resolveLabel(identity) : null,

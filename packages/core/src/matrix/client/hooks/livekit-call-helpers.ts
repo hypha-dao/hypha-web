@@ -13,6 +13,23 @@ import {
   type MatrixRtcSessionLike,
 } from './matrix-rtc-events';
 
+/**
+ * LiveKit identity is minted as the Matrix user id, but some SFU/JWT-service
+ * configurations append a trailing `:<device-id>` separator that's empty
+ * (e.g. `@user:server.tld:`). That stray colon round-trips fine for
+ * LiveKit-to-LiveKit comparisons (they're all self-consistent) but breaks
+ * cross-system equality checks against a real Matrix user id (`client.getUserId()`
+ * never has one) — notably screenshare-takeover's `target_user_id` matching.
+ * Normalize once, here, so every call site gets a clean Matrix user id.
+ */
+export function matrixUserIdFromLiveKitIdentity(
+  identity: string | null | undefined,
+): string | null {
+  const trimmed = identity?.trim();
+  if (!trimmed) return null;
+  return trimmed.replace(/:+$/, '');
+}
+
 export function createLiveKitRoom(): Room {
   if (isMatrixCallDebugEnabled()) {
     // Surfaces livekit-client's internal ICE gathering/negotiation trace
@@ -32,12 +49,14 @@ export function readParticipantsFromLiveKitRoom(
   excludeUserId?: string | null,
 ): { count: number; inCallUserIds: string[] } {
   const userIdSet = new Set<string>();
-  const localId = room.localParticipant.identity;
+  const localId = matrixUserIdFromLiveKitIdentity(
+    room.localParticipant.identity,
+  );
   if (localId && localId !== excludeUserId) {
     userIdSet.add(localId);
   }
   for (const participant of room.remoteParticipants.values()) {
-    const id = participant.identity?.trim();
+    const id = matrixUserIdFromLiveKitIdentity(participant.identity);
     if (!id || id === excludeUserId) continue;
     userIdSet.add(id);
   }
@@ -65,7 +84,7 @@ export function getRemoteScreenshareOwnerFromRoom(
   for (const participant of room.remoteParticipants.values()) {
     const pub = participant.getTrackPublication(Track.Source.ScreenShare);
     if (pub?.track && !pub.isMuted) {
-      const userId = participant.identity?.trim();
+      const userId = matrixUserIdFromLiveKitIdentity(participant.identity);
       if (userId) return { userId };
     }
   }
@@ -124,7 +143,7 @@ export function activeSpeakerKeyFromRoom(room: Room | null): string | null {
   if (!room) return null;
   const speakers = room.activeSpeakers;
   if (speakers.length === 0) return null;
-  return speakers[0]?.identity?.trim() || null;
+  return matrixUserIdFromLiveKitIdentity(speakers[0]?.identity);
 }
 
 /**
