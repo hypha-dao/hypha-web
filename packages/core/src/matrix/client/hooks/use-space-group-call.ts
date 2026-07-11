@@ -54,6 +54,7 @@ import {
 } from './call-capture-consent';
 import {
   buildScreenshareTakeoverContent,
+  isScreenshareTakeoverEvent,
   resolveIncomingScreenshareTakeover,
   resolveScreenshareTakeoverOutcome,
   type ScreenshareTakeoverIncoming,
@@ -112,6 +113,16 @@ export type {
   SpaceGroupCallRecordingStatus,
 } from './space-group-call-state';
 export type { SpaceGroupCallCaptureConsent } from './call-capture-consent';
+
+/**
+ * Gated by `hypha.callDebug` (see `isMatrixCallDebugEnabled`) — used to trace
+ * active-speaker focus switching and screenshare-takeover signaling, both of
+ * which are hard to reproduce/repro-log after the fact.
+ */
+function logCallDebug(step: string, extra?: Record<string, unknown>) {
+  if (!isMatrixCallDebugEnabled()) return;
+  console.info('[hypha.group_call.debug] ' + step, extra);
+}
 
 export type SpaceGroupCallErrorCode =
   | 'NO_CLIENT'
@@ -586,6 +597,10 @@ export function useSpaceGroupCall(
   }, []);
 
   const commitActiveSpeakerFocus = useCallback((key: string | null) => {
+    logCallDebug('active-speaker:commit', {
+      from: activeSpeakerKeyRef.current,
+      to: key,
+    });
     clearActiveSpeakerCommitTimer();
     activeSpeakerCandidateKeyRef.current = null;
     activeSpeakerCandidateSinceRef.current = null;
@@ -611,6 +626,24 @@ export function useSpaceGroupCall(
       rawActiveSpeakerKeyRef.current = topKey;
 
       const focusedKey = activeSpeakerKeyRef.current;
+
+      logCallDebug('active-speaker:eval', {
+        speakers: speakers.map((p) => ({
+          identity: p.identity,
+          audioLevel: p.audioLevel,
+          isSpeaking: p.isSpeaking,
+        })),
+        topKey,
+        focusedKey,
+        candidateKey: activeSpeakerCandidateKeyRef.current,
+        candidateSinceMs: activeSpeakerCandidateSinceRef.current
+          ? Date.now() - activeSpeakerCandidateSinceRef.current
+          : null,
+        focusedSilentSinceMs: activeSpeakerFocusedSilentSinceRef.current
+          ? Date.now() - activeSpeakerFocusedSilentSinceRef.current
+          : null,
+      });
+
       if (topKey === focusedKey) {
         clearActiveSpeakerCommitTimer();
         activeSpeakerCandidateKeyRef.current = null;
@@ -621,6 +654,7 @@ export function useSpaceGroupCall(
 
       if (focusedKey == null) {
         // No current focus yet (first speaker of the call) — adopt immediately.
+        logCallDebug('active-speaker:adopt-first', { topKey });
         commitActiveSpeakerFocus(topKey);
         return;
       }
@@ -633,6 +667,10 @@ export function useSpaceGroupCall(
         : activeSpeakerFocusedSilentSinceRef.current ?? Date.now();
 
       if (topKey !== activeSpeakerCandidateKeyRef.current) {
+        logCallDebug('active-speaker:candidate-changed', {
+          from: activeSpeakerCandidateKeyRef.current,
+          to: topKey,
+        });
         activeSpeakerCandidateKeyRef.current = topKey;
         activeSpeakerCandidateSinceRef.current = Date.now();
         clearActiveSpeakerCommitTimer();
@@ -659,6 +697,13 @@ export function useSpaceGroupCall(
 
       if (candidateSustained && currentReleased) {
         commitActiveSpeakerFocus(topKey);
+      } else {
+        logCallDebug('active-speaker:hold', {
+          topKey,
+          focusedKey,
+          candidateSustained,
+          currentReleased,
+        });
       }
     },
     [clearActiveSpeakerCommitTimer, commitActiveSpeakerFocus],
@@ -695,7 +740,21 @@ export function useSpaceGroupCall(
       targetUserId?: string,
     ) => {
       const activeRoomId = roomId?.trim();
-      if (!client || !activeRoomId) return;
+      if (!client || !activeRoomId) {
+        logCallDebug('screenshare-takeover:send-skipped', {
+          reason: !client ? 'no-client' : 'no-room-id',
+          action,
+          requestId,
+        });
+        return;
+      }
+      logCallDebug('screenshare-takeover:send-start', {
+        action,
+        requestId,
+        requesterUserId,
+        targetUserId,
+        roomId: activeRoomId,
+      });
       try {
         await client.sendEvent(
           activeRoomId,
@@ -707,8 +766,19 @@ export function useSpaceGroupCall(
             targetUserId,
           ),
         );
-      } catch {
-        // best effort
+        logCallDebug('screenshare-takeover:send-ok', { action, requestId });
+      } catch (error) {
+        // best effort — but always surface why, since a silent failure here
+        // is indistinguishable from "the other person just didn't respond."
+        logCallDebug('screenshare-takeover:send-failed', {
+          action,
+          requestId,
+          errorCode:
+            error && typeof error === 'object' && 'errcode' in error
+              ? (error as { errcode?: unknown }).errcode
+              : undefined,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
       }
     },
     [client, roomId],
@@ -1493,6 +1563,52 @@ export function useSpaceGroupCall(
     ],
   );
 
+  /**
+   * Periodic snapshot for `hypha.callDebug`: every participant's raw LiveKit
+   * identity/label next to the current raw vs. debounced-focused speaker key,
+   * so a "border didn't show" or "focus didn't switch" report can be checked
+   * against what the client actually saw at the time, not just inferred.
+   */
+  useEffect(() => {
+    if (!isMatrixCallDebugEnabled()) return;
+    if (callState !== 'connected') return;
+    const interval = window.setInterval(() => {
+      const lkRoom = liveKitRoomRef.current;
+      if (!lkRoom) return;
+      const activeRoomId = roomId?.trim() ?? null;
+      const matrixRoom =
+        client && activeRoomId ? client.getRoom(activeRoomId) : null;
+      const resolveLabel = (userId: string) =>
+        matrixRoom?.getMember(userId)?.name || userId;
+      const activeSpeakerIdentities = new Set(
+        lkRoom.activeSpeakers.map((p) => p.identity?.trim() || null),
+      );
+      const participants = [
+        lkRoom.localParticipant,
+        ...Array.from(lkRoom.remoteParticipants.values()),
+      ].map((p) => {
+        const identity = p.identity?.trim() || null;
+        return {
+          matrixUserId: identity,
+          label: identity ? resolveLabel(identity) : null,
+          isLocal: p === lkRoom.localParticipant,
+          inActiveSpeakers: identity
+            ? activeSpeakerIdentities.has(identity)
+            : false,
+          audioLevel: p.audioLevel,
+          isFocused:
+            identity != null && identity === activeSpeakerKeyRef.current,
+        };
+      });
+      logCallDebug('active-speaker:snapshot', {
+        rawTopKey: rawActiveSpeakerKeyRef.current,
+        focusedKey: activeSpeakerKeyRef.current,
+        participants,
+      });
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, [callState, client, roomId]);
+
   const enterWithKind = useCallback(
     async (
       kind: 'audio' | 'video',
@@ -1951,6 +2067,22 @@ export function useSpaceGroupCall(
           }
           const localUserId = client?.getUserId()?.trim() ?? null;
           const remoteOwner = getRemoteScreenshareOwnerFromRoom(lkRoom);
+          logCallDebug('screenshare-takeover:detect-remote-owner', {
+            localUserId,
+            remoteOwnerUserId: remoteOwner?.userId ?? null,
+            remoteParticipantCount: lkRoom.remoteParticipants.size,
+            remoteScreensharePublications: Array.from(
+              lkRoom.remoteParticipants.values(),
+            ).map((p) => {
+              const pub = p.getTrackPublication(Track.Source.ScreenShare);
+              return {
+                identity: p.identity,
+                hasPublication: pub != null,
+                hasTrack: pub?.track != null,
+                isMuted: pub?.isMuted ?? null,
+              };
+            }),
+          });
           if (
             remoteOwner &&
             localUserId &&
@@ -1960,6 +2092,10 @@ export function useSpaceGroupCall(
             screenshareTakeoverPendingIdRef.current = requestId;
             setScreenshareTakeoverPendingId(requestId);
             setScreenshareTakeoverDenied(false);
+            logCallDebug('screenshare-takeover:request-flow', {
+              requestId,
+              targetUserId: remoteOwner.userId,
+            });
             await sendScreenshareTakeoverEvent(
               'request',
               requestId,
@@ -1968,6 +2104,11 @@ export function useSpaceGroupCall(
             );
             return;
           }
+          logCallDebug('screenshare-takeover:direct-enable', {
+            reason: !remoteOwner
+              ? 'no-remote-owner-detected'
+              : 'remote-owner-is-self',
+          });
           await enableLocalScreenshareDirect(lkRoom);
           return;
         }
@@ -2382,12 +2523,24 @@ export function useSpaceGroupCall(
         .reverse();
       if (!recent?.length) return;
 
+      const isLocalSharing = isLocalScreenshareActiveInRoom(lkRoom);
       const incoming = resolveIncomingScreenshareTakeover(
         recent,
         localUserId,
-        isLocalScreenshareActiveInRoom(lkRoom),
+        isLocalSharing,
         (senderId) => matrixRoom.getMember(senderId)?.name || senderId,
       );
+      const takeoverEventCount = recent.filter((event) =>
+        isScreenshareTakeoverEvent(event),
+      ).length;
+      logCallDebug('screenshare-takeover:timeline-sync', {
+        localUserId,
+        isLocalSharing,
+        takeoverEventCount,
+        incomingRequestId: incoming?.requestId ?? null,
+        incomingRequesterUserId: incoming?.requesterUserId ?? null,
+        pendingRequestId: screenshareTakeoverPendingIdRef.current,
+      });
       setScreenshareTakeoverIncoming(incoming);
 
       const pendingId = screenshareTakeoverPendingIdRef.current;
@@ -2397,6 +2550,10 @@ export function useSpaceGroupCall(
           localUserId,
           pendingId,
         );
+        logCallDebug('screenshare-takeover:outcome-check', {
+          pendingId,
+          outcome,
+        });
         if (outcome === 'approved') {
           screenshareTakeoverPendingIdRef.current = null;
           setScreenshareTakeoverPendingId(null);
