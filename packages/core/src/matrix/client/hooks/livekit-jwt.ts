@@ -17,9 +17,28 @@ const WELL_KNOWN_FETCH_TIMEOUT_MS = 5_000;
 /** Keyed by homeserver URL so switching homeservers can't reuse a stale resolution. */
 const cachedJwtServiceUrlByHomeserver = new Map<string, string>();
 
+/**
+ * The Matrix OpenID token is sent to this URL, so require https: — except for
+ * loopback hosts, where http: is the documented local-dev fallback (see
+ * `.env.template`).
+ */
+function isAllowedJwtServiceUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:') return true;
+    return (
+      parsed.protocol === 'http:' &&
+      (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+    );
+  } catch {
+    return false;
+  }
+}
+
 function livekitJwtServiceUrlFromEnv(): string | null {
   const raw = process.env.NEXT_PUBLIC_LIVEKIT_JWT_SERVICE_URL?.trim();
-  return raw || null;
+  if (!raw || !isAllowedJwtServiceUrl(raw)) return null;
+  return raw;
 }
 
 function extractLivekitFocusUrl(data: MatrixClientWellKnown): string | null {
@@ -28,12 +47,7 @@ function extractLivekitFocusUrl(data: MatrixClientWellKnown): string | null {
     (f) => f.type === 'livekit' && f.livekit_service_url?.trim(),
   );
   const url = livekitFocus?.livekit_service_url?.trim();
-  if (!url) return null;
-  try {
-    if (new URL(url).protocol !== 'https:') return null;
-  } catch {
-    return null;
-  }
+  if (!url || !isAllowedJwtServiceUrl(url)) return null;
   return url;
 }
 
