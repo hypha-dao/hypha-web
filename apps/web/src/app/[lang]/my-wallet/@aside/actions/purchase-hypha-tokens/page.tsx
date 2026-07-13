@@ -4,7 +4,7 @@ import {
   ModalStickyNavigation,
 } from '@hypha-platform/epics';
 import { getTranslations } from 'next-intl/server';
-import { MyWalletPurchaseHyphaTokensClient } from '../../_components/my-wallet-action-clients';
+import { MyWalletPurchaseHyphaTokensClient } from '../../../_components/my-wallet-action-clients';
 
 type PageProps = {
   params: Promise<{ lang: string }>;

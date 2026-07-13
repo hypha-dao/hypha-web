@@ -3,7 +3,7 @@ import {
   findAllPeopleWithoutPagination,
   getAllSpaces,
 } from '@hypha-platform/core/server';
-import { MyWalletTransferFundsClient } from '../../_components/my-wallet-action-clients';
+import { MyWalletTransferFundsClient } from '../../../_components/my-wallet-action-clients';
 
 export default async function MyWalletTransferFundsPage() {
   const spaces = await getAllSpaces({
