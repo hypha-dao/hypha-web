@@ -263,6 +263,8 @@
   },
   "MyWallet": {
     "title": "My Wallet",
+    "allYourRewards": "All your Rewards,",
+    "oneWallet": "One Wallet",
     "loading": "Loading...",
     "signInToViewWallet": "Sign in to view your wallet.",
     "tabs": {

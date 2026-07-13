@@ -1030,6 +1030,8 @@
   },
   "MyWallet": {
     "title": "Mi billetera",
+    "allYourRewards": "Todas tus recompensas,",
+    "oneWallet": "Una billetera",
     "loading": "Cargando...",
     "signInToViewWallet": "Inicia sesión para ver tu billetera.",
     "tabs": {

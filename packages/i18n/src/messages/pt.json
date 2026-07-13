@@ -1030,6 +1030,8 @@
   },
   "MyWallet": {
     "title": "Minha carteira",
+    "allYourRewards": "Todas as suas recompensas,",
+    "oneWallet": "Uma carteira",
     "loading": "Carregando...",
     "signInToViewWallet": "Faça login para ver sua carteira.",
     "tabs": {

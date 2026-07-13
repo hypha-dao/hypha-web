@@ -264,6 +264,8 @@
   },
   "MyWallet": {
     "title": "Mein Wallet",
+    "allYourRewards": "Alle deine Belohnungen,",
+    "oneWallet": "Ein Wallet",
     "loading": "Wird geladen...",
     "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen.",
     "tabs": {
