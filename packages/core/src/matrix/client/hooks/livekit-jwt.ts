@@ -1,5 +1,3 @@
-// Deploy trigger: force a fresh Preview build to pick up the removal of
-// NEXT_PUBLIC_LIVEKIT_JWT_SERVICE_URL (Next.js inlines NEXT_PUBLIC_* at build time).
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 export type LiveKitConnectCredentials = {
