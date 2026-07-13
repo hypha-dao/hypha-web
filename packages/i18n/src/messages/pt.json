@@ -1031,7 +1031,13 @@
   "MyWallet": {
     "title": "Minha carteira",
     "loading": "Carregando...",
-    "signInToViewWallet": "Faça login para ver sua carteira."
+    "signInToViewWallet": "Faça login para ver sua carteira.",
+    "tabs": {
+      "wallet": "Carteira",
+      "banking": "Banco",
+      "transactions": "Transações",
+      "rewards": "Recompensas"
+    }
   },
   "NotificationCentre": {
     "title": "Central de Notificações",

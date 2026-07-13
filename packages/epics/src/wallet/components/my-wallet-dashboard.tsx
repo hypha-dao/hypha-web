@@ -16,9 +16,6 @@ type MyWalletDashboardProps = {
 };
 
 export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
-  const tCommon = useTranslations('Common');
-  const tTreasury = useTranslations('TreasuryTab');
-  const tProfile = useTranslations('Profile');
   const tMyWallet = useTranslations('MyWallet');
   const { isAuthenticated } = useAuthentication();
   const { person, isLoading } = useMe();
@@ -46,23 +43,25 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
     <Tabs
       value={activeTab}
       onValueChange={setActiveTab}
-      className="flex w-full flex-col gap-4"
+      className="flex w-full min-w-0 flex-col gap-4"
     >
-      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <TabsList triggerVariant="switch" className="w-fit">
-          <TabsTrigger value="wallet" variant="switch">
-            {tCommon('Wallet')}
-          </TabsTrigger>
-          <TabsTrigger value="banking" variant="switch">
-            {tCommon('Banking')}
-          </TabsTrigger>
-          <TabsTrigger value="transactions" variant="switch">
-            {tTreasury('transactions')}
-          </TabsTrigger>
-          <TabsTrigger value="rewards" variant="switch">
-            {tProfile('rewards')}
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid w-full min-w-0 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+        <div className="min-w-0 overflow-x-auto">
+          <TabsList triggerVariant="switch" className="w-max max-w-full">
+            <TabsTrigger value="wallet" variant="switch">
+              {tMyWallet('tabs.wallet')}
+            </TabsTrigger>
+            <TabsTrigger value="banking" variant="switch">
+              {tMyWallet('tabs.banking')}
+            </TabsTrigger>
+            <TabsTrigger value="transactions" variant="switch">
+              {tMyWallet('tabs.transactions')}
+            </TabsTrigger>
+            <TabsTrigger value="rewards" variant="switch">
+              {tMyWallet('tabs.rewards')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
         <WalletActionsToolbar basePath={basePath} />
       </div>
 

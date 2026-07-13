@@ -242,7 +242,13 @@
   "MyWallet": {
     "title": "Мој паричник",
     "loading": "Се вчитува...",
-    "signInToViewWallet": "Најавете се за да го видите вашиот паричник."
+    "signInToViewWallet": "Најавете се за да го видите вашиот паричник.",
+    "tabs": {
+      "wallet": "Паричник",
+      "banking": "Банкарство",
+      "transactions": "Трансакции",
+      "rewards": "Награди"
+    }
   },
   "NotificationCentre": {
     "title": "Центар за известувања",

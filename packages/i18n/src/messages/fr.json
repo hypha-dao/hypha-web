@@ -265,7 +265,13 @@
   "MyWallet": {
     "title": "Mon portefeuille",
     "loading": "Chargement...",
-    "signInToViewWallet": "Connectez-vous pour afficher votre portefeuille."
+    "signInToViewWallet": "Connectez-vous pour afficher votre portefeuille.",
+    "tabs": {
+      "wallet": "Portefeuille",
+      "banking": "Services bancaires",
+      "transactions": "Transactions",
+      "rewards": "Récompenses"
+    }
   },
   "NotificationCentre": {
     "title": "Centre de notifications",

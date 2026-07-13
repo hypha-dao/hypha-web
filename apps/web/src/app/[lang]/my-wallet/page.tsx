@@ -12,8 +12,8 @@ export default async function MyWalletPage(props: PageProps) {
   const t = await getTranslations('MyWallet');
 
   return (
-    <div className="w-full overflow-auto">
-      <Container className="flex flex-col gap-9 py-9">
+    <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
+      <Container className="flex min-w-0 flex-col gap-9 py-9">
         <Heading size="9" color="secondary" weight="medium" align="center">
           {t('title')}
         </Heading>

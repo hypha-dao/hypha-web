@@ -264,7 +264,13 @@
   "MyWallet": {
     "title": "My Wallet",
     "loading": "Loading...",
-    "signInToViewWallet": "Sign in to view your wallet."
+    "signInToViewWallet": "Sign in to view your wallet.",
+    "tabs": {
+      "wallet": "Wallet",
+      "banking": "Banking",
+      "transactions": "Transactions",
+      "rewards": "Rewards"
+    }
   },
   "NotificationCentre": {
     "title": "Notification Centre",

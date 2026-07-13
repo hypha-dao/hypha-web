@@ -89,6 +89,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
             count={totalBalance || 0}
             label={tTreasury('balance')}
             hasSearch
+            inlineLabel={false}
             searchPlaceholder={tTreasury('searchTokens')}
             onChangeSearch={setSearchTerm}
           >
