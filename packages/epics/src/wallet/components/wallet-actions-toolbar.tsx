@@ -16,7 +16,7 @@ export function WalletActionsToolbar({
   const tProfile = useTranslations('Profile');
 
   return (
-    <div className="flex w-full flex-wrap justify-end gap-2">
+    <div className="flex w-full flex-wrap justify-end gap-2 shrink-0">
       <Link
         className={disabled ? 'cursor-not-allowed' : ''}
         href={disabled ? {} : `${basePath}/actions/buy-space-tokens`}

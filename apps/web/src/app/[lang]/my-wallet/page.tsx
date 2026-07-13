@@ -13,8 +13,8 @@ export default async function MyWalletPage(props: PageProps) {
 
   return (
     <div className="w-full overflow-auto">
-      <Container className="flex flex-col gap-6 py-9">
-        <Heading size="9" color="secondary" weight="medium">
+      <Container className="flex flex-col gap-9 py-9">
+        <Heading size="9" color="secondary" weight="medium" align="center">
           {t('title')}
         </Heading>
         <MyWalletDashboard lang={lang} />

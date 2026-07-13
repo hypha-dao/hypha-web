@@ -43,52 +43,49 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      <WalletActionsToolbar basePath={basePath} />
+    <Tabs
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="flex w-full flex-col gap-4"
+    >
+      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <TabsList triggerVariant="switch" className="w-fit">
+          <TabsTrigger value="wallet" variant="switch">
+            {tCommon('Wallet')}
+          </TabsTrigger>
+          <TabsTrigger value="banking" variant="switch">
+            {tCommon('Banking')}
+          </TabsTrigger>
+          <TabsTrigger value="transactions" variant="switch">
+            {tTreasury('transactions')}
+          </TabsTrigger>
+          <TabsTrigger value="rewards" variant="switch">
+            {tProfile('rewards')}
+          </TabsTrigger>
+        </TabsList>
+        <WalletActionsToolbar basePath={basePath} />
+      </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex w-full flex-col gap-4"
-      >
-        <div className="flex w-full justify-start">
-          <TabsList triggerVariant="switch" className="w-fit">
-            <TabsTrigger value="wallet" variant="switch">
-              {tCommon('Wallet')}
-            </TabsTrigger>
-            <TabsTrigger value="banking" variant="switch">
-              {tCommon('Banking')}
-            </TabsTrigger>
-            <TabsTrigger value="transactions" variant="switch">
-              {tTreasury('transactions')}
-            </TabsTrigger>
-            <TabsTrigger value="rewards" variant="switch">
-              {tProfile('rewards')}
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <TabsContent value="wallet" className="mt-0">
+        <UserAssetsSection
+          personSlug={person.slug}
+          basePath={basePath}
+          isMyProfile
+          showActionButtons={false}
+        />
+      </TabsContent>
 
-        <TabsContent value="wallet" className="mt-0">
-          <UserAssetsSection
-            personSlug={person.slug}
-            basePath={basePath}
-            isMyProfile
-            showActionButtons={false}
-          />
-        </TabsContent>
+      <TabsContent value="banking" className="mt-0">
+        <ProfileBankingSection personSlug={person.slug} isMyProfile />
+      </TabsContent>
 
-        <TabsContent value="banking" className="mt-0">
-          <ProfileBankingSection personSlug={person.slug} isMyProfile />
-        </TabsContent>
+      <TabsContent value="transactions" className="mt-0">
+        <UserTransactionsSection personSlug={person.slug} />
+      </TabsContent>
 
-        <TabsContent value="transactions" className="mt-0">
-          <UserTransactionsSection personSlug={person.slug} />
-        </TabsContent>
-
-        <TabsContent value="rewards" className="mt-0">
-          <PendingRewardsSection person={person} isMyProfile />
-        </TabsContent>
-      </Tabs>
-    </div>
+      <TabsContent value="rewards" className="mt-0">
+        <PendingRewardsSection person={person} isMyProfile />
+      </TabsContent>
+    </Tabs>
   );
 }
