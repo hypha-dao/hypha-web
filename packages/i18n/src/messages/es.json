@@ -1029,6 +1029,7 @@
     }
   },
   "MyWallet": {
+    "title": "Mi billetera",
     "loading": "Cargando...",
     "signInToViewWallet": "Inicia sesión para ver tu billetera."
   },

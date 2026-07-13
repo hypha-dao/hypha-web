@@ -1029,6 +1029,7 @@
     }
   },
   "MyWallet": {
+    "title": "Minha carteira",
     "loading": "Carregando...",
     "signInToViewWallet": "Faça login para ver sua carteira."
   },

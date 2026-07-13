@@ -71,6 +71,8 @@ export const ConnectedButtonProfile = ({
     if (!isPersonLoading && person?.slug) {
       if (pathname.includes('/network')) {
         return `/${lang}/network/notification-centre`;
+      } else if (pathname.includes('/my-wallet')) {
+        return `/${lang}/my-wallet/notification-centre`;
       } else if (pathname.includes('/my-spaces')) {
         return `/${lang}/my-spaces/notification-centre`;
       } else if (pathname.includes('/dho/')) {

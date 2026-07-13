@@ -14,12 +14,14 @@ type UserAssetsSectionProps = {
   personSlug: string;
   basePath?: string;
   isMyProfile?: boolean;
+  showActionButtons?: boolean;
 };
 
 export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
   personSlug,
   basePath,
   isMyProfile,
+  showActionButtons = true,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tProfile = useTranslations('Profile');
@@ -79,7 +81,29 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <div className="w-full">{renderFilterAndButtons()}</div>
+      <div className="w-full">
+        {showActionButtons ? (
+          renderFilterAndButtons()
+        ) : (
+          <SectionFilter
+            count={totalBalance || 0}
+            label={tTreasury('balance')}
+            hasSearch
+            searchPlaceholder={tTreasury('searchTokens')}
+            onChangeSearch={setSearchTerm}
+          >
+            <label className="flex items-center gap-1">
+              <Input
+                type="checkbox"
+                checked={hideSmallBalances}
+                onChange={(e) => setHideSmallBalances(e.target.checked)}
+                className="h-4 w-4 accent-accent-9"
+              />
+              <span>{tTreasury('hideSmallBalances')}</span>
+            </label>
+          </SectionFilter>
+        )}
+      </div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
           <p>{tProfile('noAssetsFoundForUser')}</p>

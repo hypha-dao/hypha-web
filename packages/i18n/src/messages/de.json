@@ -263,6 +263,7 @@
     }
   },
   "MyWallet": {
+    "title": "Mein Wallet",
     "loading": "Wird geladen...",
     "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen."
   },

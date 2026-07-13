@@ -263,6 +263,7 @@
     }
   },
   "MyWallet": {
+    "title": "Mon portefeuille",
     "loading": "Chargement...",
     "signInToViewWallet": "Connectez-vous pour afficher votre portefeuille."
   },
