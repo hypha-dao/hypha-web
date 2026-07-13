@@ -118,6 +118,8 @@ function errorKey(code: SpaceGroupCallErrorCode): string {
   switch (code) {
     case 'PERMISSION_DENIED':
       return 'callErrorPermission';
+    case 'DEVICE_NOT_FOUND':
+      return 'callErrorDeviceNotFound';
     case 'NOT_READY':
       return 'callErrorNotReady';
     case 'CONNECT_STALL':

@@ -2493,6 +2493,7 @@
     "callCameraOff": "Éteindre la caméra",
     "callErrorPermission": "Accès refusé à la caméra ou au micro. Vérifiez les paramètres du navigateur.",
     "callErrorPermissionGuidance": "Mettez à jour les autorisations caméra/micro de ce site dans les paramètres du navigateur, puis réessayez ici.",
+    "callErrorDeviceNotFound": "Aucune caméra ni microphone n'a été détecté sur cet appareil. Connectez-en un, puis réessayez.",
     "callErrorGeneric": "Impossible de démarrer l’appel. Réessayez.",
     "callSessionRefreshFailedDescription": "Votre session d’appel a expiré. Reconnectez-vous pour rester dans la réunion.",
     "callSessionRefreshFailedReconnect": "Reconnecter",

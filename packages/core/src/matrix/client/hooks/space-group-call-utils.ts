@@ -63,6 +63,11 @@ export function isPermissionLikeGroupCallError(e: unknown): boolean {
   return false;
 }
 
+/** True when getUserMedia failed because no matching camera/microphone device exists. */
+export function isDeviceNotFoundGroupCallError(e: unknown): boolean {
+  return e instanceof Error && e.name === 'NotFoundError';
+}
+
 /** True when the homeserver rejected the request for rate limiting (HTTP 429 / M_LIMIT_EXCEEDED). */
 export function isMatrixRateLimitedError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;

@@ -13,7 +13,8 @@ import {
   type CSSProperties,
 } from 'react';
 import { createPortal } from 'react-dom';
-import type { MatrixClient, GroupCall, Room } from 'matrix-js-sdk';
+import type { MatrixClient, Room as MatrixRoom } from 'matrix-js-sdk';
+import type { Room as LiveKitRoom } from 'livekit-client';
 import {
   CallFeedEvent,
   type CallFeed,
@@ -94,6 +95,10 @@ import { registerCallPlaybackElement } from './call-playback-registry';
 import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
 import { CallFloatingReactionOverlay } from './call-floating-reaction-overlay';
 import { CallRaiseHandBadge } from './call-raise-hand-badge';
+import {
+  buildCallFeedsFromLiveKitRoom,
+  feedKeyForActive,
+} from './call-livekit-feed-adapter';
 import type { CallFloatingReaction } from './use-call-reactions';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
@@ -101,7 +106,7 @@ export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 type HumanChatPanelCallStageBaseProps = {
   client: MatrixClient | null;
   roomId: string | null;
-  groupCall: GroupCall | null;
+  liveKitRoom: LiveKitRoom | null;
   callKind: 'audio' | 'video' | null;
   isLocalVideoMuted: boolean;
   /** GroupCall mic mute — use for local tiles (CallFeed often has no audio tracks on camera feed). */
@@ -171,10 +176,6 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
    */
   panelMobileLayout?: boolean;
 };
-
-function feedKeyForActive(feed: CallFeed): string {
-  return `${feed.userId}::${feed.deviceId ?? ''}`;
-}
 
 function feedKey(feed: CallFeed, index: number): string {
   return `${feed.userId}:${String(feed.deviceId)}:${String(
@@ -578,7 +579,7 @@ type CallStageMainModel = Extract<CallStageContentModel, { kind: 'main' }>;
  * enlarged (modal) call view is meaningful — not for the "screen share is on" text strip alone.
  */
 export function getHumanChatPanelCallStageModel(
-  groupCall: GroupCall | null,
+  liveKitRoom: LiveKitRoom | null,
   callKind: 'audio' | 'video' | null,
   isLocalVideoMuted: boolean,
   isScreensharing: boolean,
@@ -586,16 +587,16 @@ export function getHumanChatPanelCallStageModel(
   currentUserId: string | null = null,
   inCallUserIds: string[] | null = null,
 ): CallStageContentModel | null {
-  if (callState !== 'connected' || !groupCall) {
+  if (callState !== 'connected' || !liveKitRoom) {
     return null;
   }
   if (callKind !== 'video' && callKind !== 'audio') {
     return null;
   }
 
+  const { userMediaFeeds, screenshareFeeds: shareFeeds } =
+    buildCallFeedsFromLiveKitRoom(liveKitRoom);
   const isVideoCall = callKind === 'video';
-  const userMediaFeeds = [...groupCall.userMediaFeeds];
-  const shareFeeds = [...groupCall.screenshareFeeds];
   const hasLocalWebcam = isVideoCall && !isLocalVideoMuted;
 
   /**
@@ -659,7 +660,7 @@ export function getHumanChatPanelCallStageModel(
 
 /** `true` when a full-size stage (grid / tiles) is on screen — user may open the enlarged dialog. */
 export function canOpenHumanChatCallFullView(
-  groupCall: GroupCall | null,
+  liveKitRoom: LiveKitRoom | null,
   callKind: 'audio' | 'video' | null,
   isLocalVideoMuted: boolean,
   isScreensharing: boolean,
@@ -668,7 +669,7 @@ export function canOpenHumanChatCallFullView(
   inCallUserIds?: string[] | null,
 ): boolean {
   const m = getHumanChatPanelCallStageModel(
-    groupCall,
+    liveKitRoom,
     callKind,
     isLocalVideoMuted,
     isScreensharing,
@@ -711,7 +712,7 @@ type HumanChatPanelCallStageMainProps = HumanChatPanelCallStageProps & {
  */
 export function HumanChatPanelCallStage(props: HumanChatPanelCallStageProps) {
   const model = getHumanChatPanelCallStageModel(
-    props.groupCall,
+    props.liveKitRoom,
     props.callKind,
     props.isLocalVideoMuted,
     props.isScreensharing,
@@ -734,7 +735,7 @@ function HumanChatPanelCallStageMain({
   model,
   client,
   roomId,
-  groupCall: _groupCall,
+  liveKitRoom: _liveKitRoom,
   callKind: _callKind,
   isLocalVideoMuted,
   isMicrophoneMuted,
@@ -916,7 +917,7 @@ function HumanChatPanelCallStageMain({
       ? getCallPanelMobileGridLayout(participantGridTileCount)
       : null;
 
-  const room: Room | null =
+  const room: MatrixRoom | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
 
   const showExpand =
@@ -2125,7 +2126,7 @@ function HumanChatPanelCallStageMain({
 }
 
 function usePlaceholderParticipantName(
-  room: Room | null,
+  room: MatrixRoom | null,
   userId: string,
   resolveMemberLabel: (userId: string | undefined) => string,
   fallback: string,
@@ -2205,7 +2206,7 @@ function CallParticipantPlaceholderTile({
   panelMobileLayout?: boolean;
   t: (key: string, values?: Record<string, string | number>) => string;
 }) {
-  const room: Room | null =
+  const room: MatrixRoom | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
   const {
     text: label,
@@ -2373,7 +2374,7 @@ function needsHyphaResolutionForCallLabel(
 }
 
 function useCallParticipantDisplayName(
-  room: Room | null,
+  room: MatrixRoom | null,
   feed: CallFeed,
   currentUserId: string | null,
   resolveMemberLabel: (userId: string | undefined) => string,
@@ -2514,7 +2515,7 @@ const CallFeedTile = ({
   isFullView?: boolean;
   panelVideoFit?: 'cover' | 'contain';
   panelFlush?: boolean;
-  room: Room | null;
+  room: MatrixRoom | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
   isMicrophoneMuted?: boolean;
@@ -2585,7 +2586,7 @@ const FeedContent = ({
 }: {
   client: MatrixClient | null;
   roomId: string | null;
-  room: Room | null;
+  room: MatrixRoom | null;
   currentUserId: string | null;
   currentUserProfileAvatarUrl?: string | null;
   feed: CallFeed;
@@ -2814,9 +2815,9 @@ const FeedContent = ({
     feed.on(CallFeedEvent.NewStream, onFeedStreamChange);
     feed.on(CallFeedEvent.Speaking, onFeedVisualChange);
     return () => {
-      feed.removeListener(CallFeedEvent.MuteStateChanged, onFeedMediaChange);
-      feed.removeListener(CallFeedEvent.NewStream, onFeedStreamChange);
-      feed.removeListener(CallFeedEvent.Speaking, onFeedVisualChange);
+      feed.off(CallFeedEvent.MuteStateChanged, onFeedMediaChange);
+      feed.off(CallFeedEvent.NewStream, onFeedStreamChange);
+      feed.off(CallFeedEvent.Speaking, onFeedVisualChange);
     };
   }, [feed]);
 

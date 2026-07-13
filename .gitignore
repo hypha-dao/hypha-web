@@ -74,3 +74,6 @@ playwright-report/
 **/.local/
 .claude/skills/*.local/
 context-local/
+
+# Local Matrix client discovery well-known file (dev-only, machine-specific)
+apps/web/public/.well-known/

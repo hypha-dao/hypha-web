@@ -2493,6 +2493,7 @@
     "callCameraOff": "Desligar câmara",
     "callErrorPermission": "Acesso à câmara ou microfone recusado. Verifique o navegador.",
     "callErrorPermissionGuidance": "Atualize as permissões de câmara e microfone deste site nas definições do navegador e tente novamente aqui.",
+    "callErrorDeviceNotFound": "Não foi encontrada nenhuma câmara ou microfone neste dispositivo. Ligue um e tente novamente.",
     "callErrorGeneric": "Não foi possível iniciar a chamada. Tente novamente.",
     "callSessionRefreshFailedDescription": "A sua sessão de chamada expirou. Reconecte-se para permanecer na reunião.",
     "callSessionRefreshFailedReconnect": "Reconectar",

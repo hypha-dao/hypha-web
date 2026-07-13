@@ -3042,6 +3042,7 @@
     "callCameraOff": "Kamera ausschalten",
     "callErrorPermission": "Kamera- oder Mikrofonzugriff verweigert. Bitte Browsereinstellungen prüfen.",
     "callErrorPermissionGuidance": "Aktualisieren Sie Kamera- und Mikrofonberechtigungen für diese Seite in den Browsereinstellungen, und versuchen Sie es hier erneut.",
+    "callErrorDeviceNotFound": "Auf diesem Gerät wurde keine Kamera oder kein Mikrofon gefunden. Schließen Sie eines an und versuchen Sie es erneut.",
     "callErrorGeneric": "Anruf konnte nicht gestartet werden. Bitte erneut versuchen.",
     "callSessionRefreshFailedDescription": "Ihre Anrufsitzung ist abgelaufen. Verbinden Sie sich erneut, um im Meeting zu bleiben.",
     "callSessionRefreshFailedReconnect": "Erneut verbinden",

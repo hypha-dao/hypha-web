@@ -494,7 +494,7 @@ export function GlobalCallDockOverlay({
     feedVersion,
     activeSpeakerKey,
     inCallUserIdsForRoster,
-    groupCall,
+    room,
     roomGroupCallDeviceCount,
     isMicrophoneMuted,
     setMicrophoneMuted,
@@ -1336,7 +1336,7 @@ export function GlobalCallDockOverlay({
             <HumanChatPanelCallStage
               client={client}
               roomId={activeRoomId}
-              groupCall={groupCall}
+              liveKitRoom={room}
               callKind={callKind}
               isLocalVideoMuted={isLocalVideoMuted}
               isMicrophoneMuted={isMicrophoneMuted}
