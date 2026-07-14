@@ -25,42 +25,60 @@ export function WalletActionsToolbar({
         className,
       )}
     >
-      <Link
-        className={cn('shrink-0', disabled && 'cursor-not-allowed')}
-        href={disabled ? {} : `${basePath}/actions/buy-space-tokens`}
-        scroll={false}
-      >
+      {disabled ? (
         <Button
-          className="h-10 whitespace-nowrap px-3 text-sm sm:px-4"
-          disabled={disabled}
+          className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
+          disabled
         >
           {tProfile('buySpaceTokens')}
         </Button>
-      </Link>
-      <Link
-        className={cn('shrink-0', disabled && 'cursor-not-allowed')}
-        href={disabled ? {} : `${basePath}/actions/purchase-hypha-tokens`}
-        scroll={false}
-      >
+      ) : (
         <Button
-          className="h-10 whitespace-nowrap px-3 text-sm sm:px-4"
-          disabled={disabled}
+          asChild
+          className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
+        >
+          <Link href={`${basePath}/actions/buy-space-tokens`} scroll={false}>
+            {tProfile('buySpaceTokens')}
+          </Link>
+        </Button>
+      )}
+      {disabled ? (
+        <Button
+          className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
+          disabled
         >
           {tProfile('buyHypha')}
         </Button>
-      </Link>
-      <Link
-        className={cn('shrink-0', disabled && 'cursor-not-allowed')}
-        href={disabled ? {} : `${basePath}/actions`}
-        scroll={false}
-      >
+      ) : (
         <Button
-          className="h-10 whitespace-nowrap px-3 text-sm sm:px-4"
-          disabled={disabled}
+          asChild
+          className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
+        >
+          <Link
+            href={`${basePath}/actions/purchase-hypha-tokens`}
+            scroll={false}
+          >
+            {tProfile('buyHypha')}
+          </Link>
+        </Button>
+      )}
+      {disabled ? (
+        <Button
+          className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
+          disabled
         >
           {tProfile('actions')}
         </Button>
-      </Link>
+      ) : (
+        <Button
+          asChild
+          className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
+        >
+          <Link href={`${basePath}/actions`} scroll={false}>
+            {tProfile('actions')}
+          </Link>
+        </Button>
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ export default async function MyWalletActivateSpacesPage(props: PageProps) {
   const tFooter = await getTranslations('Footer');
   const basePath = `/${lang}/my-wallet`;
 
-  let spaces = [] as Space[];
+  let spaces: Space[] = [];
   let hasError = false;
 
   try {

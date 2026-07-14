@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-const MIGRATE_HYPHA_TOKENS_URL = 'https://hypha-react-demo.vercel.app';
+const MIGRATE_HYPHA_TOKENS_URL =
+  process.env.NEXT_PUBLIC_MIGRATE_HYPHA_TOKENS_URL ??
+  'https://hypha-react-demo.vercel.app';
 
 type WalletActionsPanelProps = {
   lang: string;
@@ -47,6 +49,7 @@ export function WalletActionsPanel({
       onAction: () => {
         fundWallet();
       },
+      disabled: !person?.address,
     },
     {
       id: 'transferFunds',
