@@ -8,49 +8,56 @@ import { useTranslations } from 'next-intl';
 type WalletActionsToolbarProps = {
   basePath: string;
   disabled?: boolean;
+  className?: string;
 };
 
 export function WalletActionsToolbar({
   basePath,
   disabled = false,
+  className,
 }: WalletActionsToolbarProps) {
   const tProfile = useTranslations('Profile');
 
   return (
-    <div className="flex w-full min-w-0 flex-wrap items-stretch gap-2 sm:items-center sm:justify-end xl:justify-end">
+    <div
+      className={cn(
+        'flex min-w-0 flex-wrap items-center justify-end gap-2',
+        className,
+      )}
+    >
       <Link
-        className={cn(
-          'min-w-0 flex-1 sm:flex-none',
-          disabled && 'cursor-not-allowed',
-        )}
+        className={cn('shrink-0', disabled && 'cursor-not-allowed')}
         href={disabled ? {} : `${basePath}/actions/buy-space-tokens`}
         scroll={false}
       >
-        <Button className="w-full sm:w-auto" disabled={disabled}>
+        <Button
+          className="h-10 whitespace-nowrap px-3 text-sm sm:px-4"
+          disabled={disabled}
+        >
           {tProfile('buySpaceTokens')}
         </Button>
       </Link>
       <Link
-        className={cn(
-          'min-w-0 flex-1 sm:flex-none',
-          disabled && 'cursor-not-allowed',
-        )}
+        className={cn('shrink-0', disabled && 'cursor-not-allowed')}
         href={disabled ? {} : `${basePath}/actions/purchase-hypha-tokens`}
         scroll={false}
       >
-        <Button className="w-full sm:w-auto" disabled={disabled}>
+        <Button
+          className="h-10 whitespace-nowrap px-3 text-sm sm:px-4"
+          disabled={disabled}
+        >
           {tProfile('buyHypha')}
         </Button>
       </Link>
       <Link
-        className={cn(
-          'min-w-0 flex-1 sm:flex-none',
-          disabled && 'cursor-not-allowed',
-        )}
+        className={cn('shrink-0', disabled && 'cursor-not-allowed')}
         href={disabled ? {} : `${basePath}/actions`}
         scroll={false}
       >
-        <Button className="w-full sm:w-auto" disabled={disabled}>
+        <Button
+          className="h-10 whitespace-nowrap px-3 text-sm sm:px-4"
+          disabled={disabled}
+        >
           {tProfile('actions')}
         </Button>
       </Link>

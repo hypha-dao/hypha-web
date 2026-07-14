@@ -100,36 +100,41 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
       onValueChange={setActiveTab}
       className="flex w-full min-w-0 flex-col gap-4"
     >
-      <div className="grid w-full min-w-0 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-        <div className="min-w-0 overflow-x-auto">
-          <TabsList triggerVariant="switch" className="w-max max-w-full">
-            <TabsTrigger value="wallet" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.wallet')}
-                count={walletCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="banking" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.banking')}
-                count={bankingCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="transactions" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.transactions')}
-                count={transactionCount}
-              />
-            </TabsTrigger>
-            <TabsTrigger value="rewards" variant="switch">
-              <WalletTabLabel
-                label={tMyWallet('tabs.rewards')}
-                count={rewardsCount}
-              />
-            </TabsTrigger>
-          </TabsList>
+      <div className="@container/wallet-toolbar w-full min-w-0">
+        <div className="flex w-full min-w-0 flex-col gap-2 @[52rem]:flex-row @[52rem]:items-center @[52rem]:justify-between @[52rem]:gap-3">
+          <div className="w-full min-w-0 overflow-x-auto">
+            <TabsList triggerVariant="switch" className="w-max max-w-none">
+              <TabsTrigger value="wallet" variant="switch">
+                <WalletTabLabel
+                  label={tMyWallet('tabs.wallet')}
+                  count={walletCount}
+                />
+              </TabsTrigger>
+              <TabsTrigger value="banking" variant="switch">
+                <WalletTabLabel
+                  label={tMyWallet('tabs.banking')}
+                  count={bankingCount}
+                />
+              </TabsTrigger>
+              <TabsTrigger value="transactions" variant="switch">
+                <WalletTabLabel
+                  label={tMyWallet('tabs.transactions')}
+                  count={transactionCount}
+                />
+              </TabsTrigger>
+              <TabsTrigger value="rewards" variant="switch">
+                <WalletTabLabel
+                  label={tMyWallet('tabs.rewards')}
+                  count={rewardsCount}
+                />
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <WalletActionsToolbar
+            basePath={basePath}
+            className="w-full @[52rem]:w-auto"
+          />
         </div>
-        <WalletActionsToolbar basePath={basePath} />
       </div>
 
       <TabsContent value="wallet" className="mt-0">
