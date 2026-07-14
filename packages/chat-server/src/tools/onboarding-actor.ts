@@ -31,3 +31,4 @@ export async function resolveActorPerson(authToken: string) {
 }
 
 export { hasExplicitConfirmation } from './onboarding-confirmation';
+export { hasOnboardingConfirmation } from './onboarding-confirmation';

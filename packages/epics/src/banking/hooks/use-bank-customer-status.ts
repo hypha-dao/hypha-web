@@ -5,13 +5,16 @@ import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { BankCustomerPublicStatus } from './types';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 export function getBankCustomerStatusEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/banking/bank-customers`;
 }
 
 type UseBankCustomerStatusOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
 };
 
 type UseBankCustomerStatusReturn = {
@@ -57,13 +60,14 @@ async function fetchBankCustomerStatus(
 
 export const useBankCustomerStatus = ({
   spaceSlug,
+  basePath,
 }: UseBankCustomerStatusOptions): UseBankCustomerStatusReturn => {
   const { getAccessToken, isAuthenticated } = useAuthentication();
 
-  const endpoint = React.useMemo(
-    () => (spaceSlug ? getBankCustomerStatusEndpoint(spaceSlug) : null),
-    [spaceSlug],
-  );
+  const endpoint = React.useMemo(() => {
+    const base = resolveBankingBasePath({ spaceSlug, basePath });
+    return base ? `${base}/bank-customers` : null;
+  }, [spaceSlug, basePath]);
 
   const swrKey = React.useMemo(
     () =>

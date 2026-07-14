@@ -461,14 +461,28 @@
       "idx": 65,
       "version": "7",
       "when": 1782800000000,
-      "tag": "0065_energy_communities",
+      "tag": "0065_personal_bank_customers",
       "breakpoints": true
     },
     {
       "idx": 66,
       "version": "7",
-      "when": 1782800000001,
-      "tag": "0066_energy_communities_authenticated_grants",
+      "when": 1782900000000,
+      "tag": "0066_coherence_board_general_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1783000000000,
+      "tag": "0067_energy_communities",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1783000000001,
+      "tag": "0068_energy_communities_authenticated_grants",
       "breakpoints": true
     }
   ]

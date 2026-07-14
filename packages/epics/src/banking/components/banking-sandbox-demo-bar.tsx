@@ -16,23 +16,31 @@ import {
 import type { BankCustomerPublicStatus } from '../hooks/types';
 import { useSimulateKycApproval } from '../hooks/use-simulate-kyc-approval';
 import { BANKING_SANDBOX_DEMO_ENABLED } from '../sandbox-demo';
+import { ownerText, type BankingOwnerContext } from '../banking-ui';
 
 type BankingSandboxDemoBarProps = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
   canManage: boolean;
   isRefreshing: boolean;
+  /** Whether this bar is for a space or an individual member's profile. Defaults to 'space'. */
+  ownerContext?: BankingOwnerContext;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
 };
 
 export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
   spaceSlug,
+  basePath,
   canManage,
   isRefreshing,
+  ownerContext = 'space',
   onRefreshStatus,
 }) => {
   const t = useTranslations('BankingTab.sandboxDemo');
+  const ot = (key: string) => ownerText(t, ownerContext, key);
   const { simulateApproval, isSimulating, error, clearError } =
-    useSimulateKycApproval({ spaceSlug });
+    useSimulateKycApproval({ spaceSlug, basePath });
   const [simulateKybData, setSimulateKybData] = useState(true);
   const [infoTooltipOpen, setInfoTooltipOpen] = useState(false);
 
@@ -69,7 +77,7 @@ export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
             <p className="min-w-0 flex-1 text-2 font-medium leading-snug text-warning-12">
-              {t('title')}
+              {ot('title')}
             </p>
             <Tooltip
               open={infoTooltipOpen}
@@ -81,7 +89,7 @@ export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label={t('infoTooltipAria')}
+                  aria-label={ot('infoTooltipAria')}
                   aria-expanded={infoTooltipOpen}
                   className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-warning-11 transition-colors hover:text-warning-12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning-8"
                   onPointerEnter={showInfoTooltip}
@@ -108,7 +116,7 @@ export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
                 align="end"
                 className="max-w-sm text-xs leading-relaxed"
               >
-                {t('description')}
+                {ot('description')}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -128,7 +136,7 @@ export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
                   {isSimulating ? t('simulating') : t('refreshing')}
                 </>
               ) : (
-                t('cta')
+                ot('cta')
               )}
             </Button>
             <div className="flex min-w-0 items-center gap-2 sm:flex-1">
@@ -142,7 +150,7 @@ export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
                 htmlFor="banking-sandbox-simulate-kyb-data"
                 className="cursor-pointer text-2 font-normal leading-snug text-warning-12"
               >
-                {t('simulateFillingKybRequiredData')}
+                {ot('simulateFillingKybRequiredData')}
               </Label>
             </div>
           </div>

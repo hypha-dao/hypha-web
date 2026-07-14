@@ -42,15 +42,19 @@ export function buildEcosystemExecutePhaseDirective(
     | undefined;
   const pending =
     blueprint?.filter((entry) => entry.status !== 'created') ?? [];
+  const walletSessionActive = context.walletSessionActive === true;
 
   const parts = [
     '- Left panel execute phase (ecosystem): the root space is live. Nested spaces from the onboarding blueprint are the mandatory next step—do not skip or apologize for missing them. User-facing term: nested spaces only—never subspace or subspaces.',
     '- Do NOT ask about voting method, entry method, signals, or member-gated tools until nested spaces are created—or the user explicitly defers for later.',
-    '- Do not restart discovery, re-ask journey, or call create_space_from_onboarding for the root again.',
+    '- Do not restart discovery, re-ask journey, or call create_space_from_onboarding for the root again (no parent_space_slug).',
     rootSlug
-      ? `- Use parent_space_slug "${rootSlug}" for every create_ecosystem_space call.`
-      : '- Use the ecosystem root slug as parent_space_slug for create_ecosystem_space.',
-    '- ONE nested space per turn: propose name, role, and purpose in warm prose, get reaction, then create_ecosystem_space. Never dump a numbered list of all pending spaces.',
+      ? `- Use parent_space_slug "${rootSlug}" on every nested create_space_from_onboarding call so each space is created on-chain and linked under the root.`
+      : '- Use the ecosystem root slug as parent_space_slug on nested create_space_from_onboarding calls.',
+    walletSessionActive
+      ? '- Wallet/2FA session is active: after the user confirms, call create_space_from_onboarding without dry_run in the same turn. The app submits the on-chain transaction using their active session—never ask them to sign or check their wallet again unless creation fails.'
+      : '- First on-chain sign in this browser session may require wallet/2FA; after that, confirm-only creates use the active session.',
+    '- ONE nested space per turn: propose name, role, and purpose in warm prose, get reaction, then create_space_from_onboarding with parent_space_slug. Never dump a numbered list of all pending spaces.',
   ];
 
   if (pending.length > 0) {
@@ -63,7 +67,7 @@ export function buildEcosystemExecutePhaseDirective(
     );
   } else {
     parts.push(
-      '- No saved blueprint—infer nested spaces from the onboarding conversation, propose the first one now, then create each with create_ecosystem_space after confirmation.',
+      '- No saved blueprint—infer nested spaces from the onboarding conversation, propose the first one now, then create each with create_space_from_onboarding (with parent_space_slug) after confirmation.',
     );
   }
 

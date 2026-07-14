@@ -581,7 +581,10 @@ export function ScheduledItemForm({
         allDay,
         location: location.trim() || null,
         meetingUrl: matrixAutoLink ? null : meetingUrl.trim() || null,
-        recurrencePreset,
+        recurrencePreset:
+          recurrencePreset && RECURRENCE_PRESETS.includes(recurrencePreset)
+            ? recurrencePreset
+            : 'none',
         recurrenceUntil:
           recurrencePreset !== 'none' && recurrenceUntilLocal
             ? fromDatetimeLocalValue(`${recurrenceUntilLocal}T23:59`)
@@ -840,7 +843,7 @@ export function ScheduledItemForm({
           <div className="flex flex-col gap-2">
             <Label>{t('fieldRecurrence')}</Label>
             <Select
-              value={recurrencePreset}
+              value={recurrencePreset || 'none'}
               onValueChange={(value) =>
                 setRecurrencePreset(value as RecurrencePreset)
               }

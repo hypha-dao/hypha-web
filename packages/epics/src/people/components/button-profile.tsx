@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Fragment } from 'react';
 
 import {
   Button,
@@ -20,6 +21,8 @@ import {
   Bell,
   ChevronRight,
   Compass,
+  Globe2,
+  LayoutGrid,
   LogOutIcon,
   Repeat,
   Shield,
@@ -36,6 +39,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
+import {
+  HyphaNetworkFeedbackDialog,
+  HyphaNetworkFeedbackMenuItem,
+  HyphaNetworkFeedbackTrigger,
+} from '../../common/hypha-network-feedback-dialog';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -50,6 +58,8 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
+  /** When true, show Shape Hypha before main nav links. */
+  showNetworkFeedback?: boolean;
   /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
   trailingBeforeProfile?: ReactNode;
   /** Compact toolbar mode: render profile trigger instead of full mobile column menu. */
@@ -61,6 +71,26 @@ const menuItemClass =
 const compactSheetItemClass =
   'flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-2 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+
+function resolveNavItemIcon(href?: string) {
+  if (!href) {
+    return null;
+  }
+  if (href.includes('/my-spaces')) {
+    return (
+      <LayoutGrid
+        className="size-4 shrink-0 text-muted-foreground"
+        aria-hidden
+      />
+    );
+  }
+  if (href.includes('/network')) {
+    return (
+      <Globe2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    );
+  }
+  return null;
+}
 
 export const ButtonProfile = ({
   person,
@@ -75,6 +105,7 @@ export const ButtonProfile = ({
   navItems,
   onChangeThemeMode,
   resolvedTheme,
+  showNetworkFeedback,
   trailingBeforeProfile,
   compact = false,
 }: ButtonProfileProps) => {
@@ -82,6 +113,11 @@ export const ButtonProfile = ({
   const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [networkFeedbackOpen, setNetworkFeedbackOpen] = useState(false);
+  const openNetworkFeedbackFromProfileMenu = useCallback(() => {
+    setProfileMenuOpen(false);
+    setNetworkFeedbackOpen(true);
+  }, []);
   const fundWalletTimeoutRef = useRef<
     ReturnType<typeof setTimeout> | undefined
   >(undefined);
@@ -221,31 +257,40 @@ export const ButtonProfile = ({
                 <>
                   <DropdownMenuSeparator className="-mx-0 my-1" />
                   <DropdownMenuGroup className="space-y-0.5">
-                    {navItems.map((item) =>
-                      item.href ? (
-                        <DropdownMenuItem
-                          key={item.href}
-                          className={menuItemClass}
-                          asChild
-                        >
-                          <Link href={item.href}>
+                    {showNetworkFeedback ? (
+                      <HyphaNetworkFeedbackMenuItem
+                        variant="menu"
+                        onOpen={openNetworkFeedbackFromProfileMenu}
+                      />
+                    ) : null}
+                    {navItems.map((item) => (
+                      <Fragment key={item.href ?? item.label}>
+                        {item.href ? (
+                          <DropdownMenuItem
+                            key={item.href}
+                            className={menuItemClass}
+                            asChild
+                          >
+                            <Link href={item.href}>
+                              {resolveNavItemIcon(item.href)}
+                              <span className="flex-1">{item.label}</span>
+                              <ChevronRight
+                                className="ml-auto size-4 opacity-60"
+                                aria-hidden
+                              />
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            key={`nav-action-${item.label}`}
+                            className={menuItemClass}
+                            onClick={item.onClick}
+                          >
                             <span className="flex-1">{item.label}</span>
-                            <ChevronRight
-                              className="ml-auto size-4 opacity-60"
-                              aria-hidden
-                            />
-                          </Link>
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          key={`nav-action-${item.label}`}
-                          className={menuItemClass}
-                          onClick={item.onClick}
-                        >
-                          <span className="flex-1">{item.label}</span>
-                        </DropdownMenuItem>
-                      ),
-                    )}
+                          </DropdownMenuItem>
+                        )}
+                      </Fragment>
+                    ))}
                   </DropdownMenuGroup>
                 </>
               ) : null}
@@ -350,6 +395,10 @@ export const ButtonProfile = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <HyphaNetworkFeedbackDialog
+            open={networkFeedbackOpen}
+            onOpenChange={setNetworkFeedbackOpen}
+          />
         </div>
       );
     }
@@ -424,34 +473,41 @@ export const ButtonProfile = ({
                 ) : null}
 
                 <div className="space-y-1">
-                  {navItems.map((item) =>
-                    item.href ? (
-                      <Link
-                        key={`${item.label}-${String(item.href)}`}
-                        href={item.href}
-                        className={compactSheetItemClass}
-                        onClick={() => setProfileMenuOpen(false)}
-                      >
-                        <span className="flex-1">{item.label}</span>
-                        <ChevronRight
-                          className="ml-auto size-4 text-muted-foreground"
-                          aria-hidden
-                        />
-                      </Link>
-                    ) : (
-                      <button
-                        key={`nav-action-${item.label}`}
-                        type="button"
-                        className={compactSheetItemClass}
-                        onClick={(event) => {
-                          setProfileMenuOpen(false);
-                          item.onClick?.(event);
-                        }}
-                      >
-                        <span className="flex-1">{item.label}</span>
-                      </button>
-                    ),
-                  )}
+                  {showNetworkFeedback ? (
+                    <HyphaNetworkFeedbackMenuItem
+                      variant="sheet"
+                      onOpen={openNetworkFeedbackFromProfileMenu}
+                    />
+                  ) : null}
+                  {navItems.map((item) => (
+                    <Fragment key={item.href ?? item.label}>
+                      {item.href ? (
+                        <Link
+                          href={item.href}
+                          className={compactSheetItemClass}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          {resolveNavItemIcon(item.href)}
+                          <span className="flex-1">{item.label}</span>
+                          <ChevronRight
+                            className="ml-auto size-4 text-muted-foreground"
+                            aria-hidden
+                          />
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className={compactSheetItemClass}
+                          onClick={(event) => {
+                            setProfileMenuOpen(false);
+                            item.onClick?.(event);
+                          }}
+                        >
+                          <span className="flex-1">{item.label}</span>
+                        </button>
+                      )}
+                    </Fragment>
+                  ))}
                   {profileUrl ? (
                     <Link
                       href={profileUrl}
@@ -572,6 +628,10 @@ export const ButtonProfile = ({
             </div>
           </SheetContent>
         </Sheet>
+        <HyphaNetworkFeedbackDialog
+          open={networkFeedbackOpen}
+          onOpenChange={setNetworkFeedbackOpen}
+        />
       </div>
     );
   }
@@ -611,11 +671,13 @@ export const ButtonProfile = ({
               ) : null}
             </div>
 
+            {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
             {navItems.map((item) => (
               <ButtonNavItem
-                key={item.href}
+                key={item.href ?? item.label}
                 href={item.href}
                 label={item.label}
+                icon={resolveNavItemIcon(item.href)}
               />
             ))}
 
@@ -674,11 +736,13 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden md:flex gap-2">
             <div className="flex gap-2">
+              {showNetworkFeedback ? <HyphaNetworkFeedbackTrigger /> : null}
               {navItems.map((item) => (
                 <ButtonNavItem
-                  key={item.href}
+                  key={item.href ?? item.label}
                   href={item.href}
                   label={item.label}
+                  icon={resolveNavItemIcon(item.href)}
                 />
               ))}
             </div>

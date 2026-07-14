@@ -24,6 +24,14 @@ import {
   isDragLeaveColumn,
   setSignalDragData,
 } from '../utils/signal-dnd-utils';
+import { isSignalSlugActive } from '../utils/signal-active-styles';
+import { handleSignalColumnShellWheel } from '../utils/signal-column-scroll-chain';
+import {
+  SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
+  SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS,
+} from '../utils/signal-board-layout';
+import { SignalStatusCardStack } from './signal-status-card-stack';
+import { resolveEffectiveBoard } from '@hypha-platform/core/client';
 
 const SIGNAL_BOARD_MOBILE_STATUS_KEY = 'signal-board-mobile-status';
 
@@ -32,6 +40,7 @@ type SignalBoardViewProps = {
   workflow: SignalWorkflowConfig;
   spaceSlug?: string;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
   onMoveStatus: (signal: Coherence, progressStatus: string) => Promise<void>;
   refresh: () => Promise<void>;
   readOnly?: boolean;
@@ -61,6 +70,7 @@ export function SignalBoardView({
   workflow,
   spaceSlug,
   onSignalClick,
+  activeSignalSlug,
   onMoveStatus,
   refresh,
   readOnly = false,
@@ -182,7 +192,9 @@ export function SignalBoardView({
       <div
         className={cn(
           'flex w-full gap-4',
-          isMobile ? 'flex-col pb-1' : 'overflow-x-auto pb-3 pt-0.5',
+          isMobile
+            ? 'flex-col pb-1'
+            : 'items-start overflow-x-auto pb-3 pt-0.5',
         )}
       >
         {visibleStatuses.map((status) => {
@@ -201,12 +213,14 @@ export function SignalBoardView({
                 'flex flex-col rounded-2xl border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
                 statusColumnTopBorderClass(status.color),
                 isMobile ? 'w-full min-w-0' : 'min-w-[17.5rem] flex-1',
+                SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
                 isDropTarget
                   ? 'border-accent-8/70 ring-2 ring-accent-9/30 shadow-md'
                   : 'border-border/50',
               )}
+              onWheel={handleSignalColumnShellWheel}
             >
-              <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
                 <div className="flex min-w-0 items-center gap-2">
                   <span
                     className={cn(
@@ -224,8 +238,7 @@ export function SignalBoardView({
                 </span>
               </div>
 
-              <div
-                className="flex min-h-[8rem] flex-col gap-2.5 p-2.5"
+              <SignalStatusCardStack
                 onDragOver={
                   readOnly
                     ? undefined
@@ -285,11 +298,14 @@ export function SignalBoardView({
                   <SignalTaskCard
                     key={signal.id}
                     signal={signal}
+                    isActive={isSignalSlugActive(signal.slug, activeSignalSlug)}
                     status={status}
                     showBoard
                     board={
                       workflow.boards.find(
-                        (board) => board.slug === signal.board,
+                        (board) =>
+                          board.slug ===
+                          resolveEffectiveBoard(signal.board, workflow),
                       ) ?? null
                     }
                     draggable={!readOnly && !isMobile}
@@ -337,6 +353,7 @@ export function SignalBoardView({
                           }
                     }
                     className={cn(
+                      SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS,
                       draggingSignal?.slug === signal.slug &&
                         'opacity-40 scale-[0.98]',
                     )}
@@ -359,7 +376,7 @@ export function SignalBoardView({
                     {t('signalColumnEmpty')}
                   </div>
                 ) : null}
-              </div>
+              </SignalStatusCardStack>
             </div>
           );
         })}

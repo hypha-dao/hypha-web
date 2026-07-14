@@ -29,7 +29,7 @@ export type UseCallReactionsOptions = {
   client: MatrixClient | null;
   roomId: string | null;
   anchorEventId: string | null;
-  groupCallId: string | null;
+  callSessionId: string | null;
   callState: SpaceGroupCallState;
   currentUserId: string | null;
   /** Matrix user ids with a device in the active group call — filters stale raise-hand timeline entries. */
@@ -44,7 +44,7 @@ export function useCallReactions({
   client,
   roomId,
   anchorEventId,
-  groupCallId,
+  callSessionId,
   callState,
   currentUserId,
   inCallUserIds = null,
@@ -65,7 +65,7 @@ export function useCallReactions({
     (userId: string, emoji: string, style?: CallFloatingReactionStyle) => void
   >(() => {});
 
-  const stableGroupCallId = groupCallId?.trim() || null;
+  const stableCallSessionId = callSessionId?.trim() || null;
   const reactionsApplyToPinnedSpace = callReactionsApplyToPinnedSpace(
     pinnedCallSpaceSlug,
     boundSpaceSlug,
@@ -73,7 +73,7 @@ export function useCallReactions({
 
   const callReactionsSessionActive =
     callState === 'connected' &&
-    Boolean(client && roomId?.trim() && stableGroupCallId);
+    Boolean(client && roomId?.trim() && stableCallSessionId);
 
   const canSendCallReactions =
     callReactionsSessionActive &&
@@ -97,7 +97,7 @@ export function useCallReactions({
   );
 
   const seedRaisedHands = useCallback(() => {
-    if (!client || !roomId?.trim() || !stableGroupCallId) {
+    if (!client || !roomId?.trim() || !stableCallSessionId) {
       setRaisedHands([]);
       setLocalHandRaised(false);
       return;
@@ -110,7 +110,7 @@ export function useCallReactions({
     }
     const events = room.getLiveTimeline()?.getEvents() ?? [];
     const aggregated = applyInCallFilter(
-      aggregateCallRaisedHands(events, stableGroupCallId),
+      aggregateCallRaisedHands(events, stableCallSessionId),
     );
     setRaisedHands(aggregated);
     setLocalHandRaised(
@@ -119,7 +119,7 @@ export function useCallReactions({
           aggregated.some((entry) => entry.userId === currentUserId),
       ),
     );
-  }, [applyInCallFilter, client, currentUserId, roomId, stableGroupCallId]);
+  }, [applyInCallFilter, client, currentUserId, roomId, stableCallSessionId]);
 
   useEffect(() => {
     seedRaisedHands();
@@ -156,7 +156,7 @@ export function useCallReactions({
       !callReactionsSessionActive ||
       !client ||
       !roomId?.trim() ||
-      !stableGroupCallId
+      !stableCallSessionId
     ) {
       return;
     }
@@ -169,7 +169,7 @@ export function useCallReactions({
     void sendCallRaiseHandNotice({
       client,
       roomId: roomId.trim(),
-      groupCallId: stableGroupCallId,
+      groupCallId: stableCallSessionId,
       raised: false,
     }).catch(() => {});
   }, [
@@ -179,7 +179,7 @@ export function useCallReactions({
     localHandRaised,
     reactionsApplyToPinnedSpace,
     roomId,
-    stableGroupCallId,
+    stableCallSessionId,
   ]);
 
   useEffect(() => {
@@ -227,8 +227,8 @@ export function useCallReactions({
         return;
       }
       const raiseHand = parseCallRaiseHandNotice(event);
-      if (!raiseHand || !stableGroupCallId) return;
-      if (raiseHand.groupCallId !== stableGroupCallId) return;
+      if (!raiseHand || !stableCallSessionId) return;
+      if (raiseHand.groupCallId !== stableCallSessionId) return;
       setRaisedHands((prev) => {
         const withoutUser = prev.filter(
           (entry) => entry.userId !== raiseHand.userId,
@@ -268,7 +268,7 @@ export function useCallReactions({
     client,
     currentUserId,
     roomId,
-    stableGroupCallId,
+    stableCallSessionId,
   ]);
 
   const sendReaction = useCallback(
@@ -300,7 +300,7 @@ export function useCallReactions({
       !reactionsApplyToPinnedSpace ||
       !client ||
       !roomId?.trim() ||
-      !stableGroupCallId
+      !stableCallSessionId
     ) {
       return;
     }
@@ -310,7 +310,7 @@ export function useCallReactions({
       await sendCallRaiseHandNotice({
         client,
         roomId: roomId.trim(),
-        groupCallId: stableGroupCallId,
+        groupCallId: stableCallSessionId,
         raised: nextRaised,
       });
     } catch {
@@ -322,7 +322,7 @@ export function useCallReactions({
     localHandRaised,
     reactionsApplyToPinnedSpace,
     roomId,
-    stableGroupCallId,
+    stableCallSessionId,
   ]);
 
   const visibleRaisedHands = reactionsApplyToPinnedSpace ? raisedHands : [];

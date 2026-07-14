@@ -9,13 +9,15 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 export type InsertBankCustomerInput = {
-  spaceId: number;
   entityType: BankEntityType;
   provider: BankProvider;
   providerCustomerId: string | null;
   providerKycLinkId: string;
   requestedRails: BankCustomerRequestedRails;
-};
+} & (
+  | { spaceId: number; personId?: undefined }
+  | { spaceId?: undefined; personId: number }
+);
 
 export const insertBankCustomer = async (
   input: InsertBankCustomerInput,

@@ -4,13 +4,23 @@ import { useCallback, useState } from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { BankCustomerPublicStatus } from './types';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 export type RequestEndorsementKycResult = {
   status: BankCustomerPublicStatus;
   kycLinkUrl: string;
 };
 
-export function useRequestEndorsementKyc(spaceSlug: string) {
+type UseRequestEndorsementKycOptions = {
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
+};
+
+export function useRequestEndorsementKyc({
+  spaceSlug,
+  basePath,
+}: UseRequestEndorsementKycOptions) {
   const { getAccessToken } = useAuthentication();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -26,17 +36,19 @@ export function useRequestEndorsementKyc(spaceSlug: string) {
           throw new Error('Unauthorized');
         }
 
-        const res = await fetch(
-          `/api/v1/spaces/${spaceSlug}/banking/endorsement-kyc`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ endorsement }),
+        const base = resolveBankingBasePath({ spaceSlug, basePath });
+        if (!base) {
+          throw new Error('Missing banking endpoint');
+        }
+
+        const res = await fetch(`${base}/endorsement-kyc`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-        );
+          body: JSON.stringify({ endorsement }),
+        });
 
         if (!res.ok) {
           const body = (await res.json().catch(() => ({}))) as {
@@ -57,7 +69,7 @@ export function useRequestEndorsementKyc(spaceSlug: string) {
         setIsLoading(false);
       }
     },
-    [getAccessToken, spaceSlug],
+    [getAccessToken, spaceSlug, basePath],
   );
 
   return { requestEndorsementKyc, isLoading, error };

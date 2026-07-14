@@ -6,6 +6,8 @@
     "delegatedVotingMemberLabel": "Membre avec vote délégué",
     "Treasury": "Trésorerie",
     "Energy": "Énergie",
+    "Wallet": "Portefeuille",
+    "Banking": "Banque",
     "Agreements": "Accords",
     "Spaces": "Espaces",
     "loadMore": "Charger plus",
@@ -103,6 +105,26 @@
     "getStarted": "Commencer",
     "ecosystemLogo": "Logo de l’écosystème",
     "continueAdventure": "Continuer votre aventure"
+  },
+  "NetworkFeedback": {
+    "triggerLabel": "Façonner Hypha",
+    "triggerAriaLabel": "Aidez à façonner Hypha — communauté et gouvernance",
+    "title": "Aidez à façonner Hypha",
+    "subtitle": "Choisissez comment vous souhaitez participer au réseau.",
+    "intro": "Que vous souhaitiez contribuer des idées ou participer à l'orientation de la gouvernance du réseau, il existe deux façons de vous impliquer.",
+    "community": {
+      "title": "Communauté",
+      "tagline": "Partagez des idées. Façonnez les priorités.",
+      "description": "Rejoignez la communauté pour discuter d'idées, soumettre des retours et voter pour les fonctionnalités et initiatives que vous aimeriez voir ensuite.",
+      "action": "Explorer la communauté"
+    },
+    "governance": {
+      "title": "Gouvernance",
+      "tagline": "Aidez à gouverner le réseau.",
+      "description": "Détenez au moins un token HYPHA pour participer à la gouvernance, voter sur les propositions et contribuer à orienter l'avenir du réseau.",
+      "learnMore": "En savoir plus sur la tokenomics HYPHA.",
+      "action": "Ouvrir la gouvernance"
+    }
   },
   "OnboardingAdventure": {
     "heroEyebrow": "L'ORGANISATION INTELLIGENTE",
@@ -1543,6 +1565,7 @@
             "cny": "Yuan chinois",
             "chf": "Franc suisse",
             "jpy": "Yen japonais",
+            "nzd": "Dollar néo-zélandais",
             "aud": "Dollar australien",
             "hkd": "Dollar de Hong Kong"
           }
@@ -2477,6 +2500,7 @@
     "callCameraOff": "Éteindre la caméra",
     "callErrorPermission": "Accès refusé à la caméra ou au micro. Vérifiez les paramètres du navigateur.",
     "callErrorPermissionGuidance": "Mettez à jour les autorisations caméra/micro de ce site dans les paramètres du navigateur, puis réessayez ici.",
+    "callErrorDeviceNotFound": "Aucune caméra ni microphone n'a été détecté sur cet appareil. Connectez-en un, puis réessayez.",
     "callErrorGeneric": "Impossible de démarrer l’appel. Réessayez.",
     "callSessionRefreshFailedDescription": "Votre session d’appel a expiré. Reconnectez-vous pour rester dans la réunion.",
     "callSessionRefreshFailedReconnect": "Reconnecter",
@@ -2953,17 +2977,18 @@
     "boardCancelAction": "Annuler",
     "boardAll": "Tous les signaux",
     "boardDelete": "Supprimer le tableau {boardName}",
-    "signalViewBoard": "Tableau Kanban",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configurer les statuts et les tableaux",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
-    "signalViewGrid": "Grille",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Non classé",
     "signalListTitle": "Titre",
     "signalListStatus": "Statut",
     "signalListDue": "Échéance",
     "signalListPriority": "Priorité",
     "signalListBoard": "Tableau",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Déposer les signaux ici",
     "signalDropHere": "Déposer ici",
     "signalListActions": "Actions",
@@ -3098,9 +3123,9 @@
     "updateUpvote": "Mettre à jour le soutien",
     "removeUpvote": "Retirer le soutien",
     "upvoteDetails": "Détails du soutien",
-    "totalSupport": "Soutien total",
-    "yourVotingPowerShare": "Part de votre pouvoir de vote",
-    "supportersCount": "{count, plural, =0 {Aucun soutien pour l'instant} one {# soutien} other {# soutiens}}",
+    "totalSupport": "UpVote total",
+    "yourVotingPowerShare": "Upvote avec un % de votre pouvoir de vote",
+    "supportersCount": "{count, plural, =0 {Aucun UpVoter pour l'instant} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Membre",
     "signInToUpvote": "Connectez-vous en tant que membre de l'espace pour soutenir des signaux.",
     "upvoteFailed": "Impossible de mettre à jour votre vote. Réessayez."
@@ -3139,7 +3164,10 @@
       },
       "section": {
         "title": "Comptes bancaires de paiement",
-        "description": "Enregistrez un compte bancaire externe pour transférer des fonds depuis vos portefeuilles USDC ou EURC via des propositions."
+        "description": "Enregistrez un compte bancaire externe pour transférer des fonds depuis vos portefeuilles USDC ou EURC via des propositions.",
+        "person": {
+          "description": "Enregistrez un compte bancaire externe pour recevoir des virements depuis votre portefeuille."
+        }
       },
       "addCta": "Ajouter un compte de paiement",
       "loading": "Chargement des comptes de paiement…",
@@ -3227,7 +3255,11 @@
           "liquidationAddressLabel": "Adresse de paiement",
           "howToTitle": "Comment effectuer un paiement",
           "howToText": "Créez une proposition Funding ou Expenses en indiquant cette adresse comme destination de paiement. Les fonds seront convertis et transférés vers votre banque enregistrée.",
-          "done": "Terminé"
+          "done": "Terminé",
+          "person": {
+            "subtitle": "Le compte est actif. Copiez l’adresse de paiement pour lui envoyer des fonds.",
+            "howToText": "Utilisez « Transférer des fonds » depuis votre profil pour envoyer des {currency} à cette adresse. Les fonds seront convertis et transférés vers votre banque enregistrée."
+          }
         },
         "swift": {
           "code": "SWIFT (USD)",
@@ -3315,6 +3347,10 @@
       "dialogDescription": "Informations détaillées et configurations techniques.",
       "dataMinimizationNotice": "Les détails de dépôt et de vérification sont chargés depuis notre partenaire bancaire et ne sont pas enregistrés sur les serveurs Hypha.",
       "noCustomer": "Aucun enregistrement client bancaire pour ce space pour le moment.",
+      "person": {
+        "noCustomer": "Aucun enregistrement client bancaire pour votre profil pour le moment.",
+        "kybProcedure": "Vérification d'identité (KYC)"
+      },
       "approvedSummary": "La vérification est approuvée. Gérez vos devises prises en charge dans la section ci-dessous.",
       "providerValidationsTitle": "Validations du fournisseur",
       "legalNameLabel": "Nom légal de l'entité",
@@ -3354,7 +3390,13 @@
           "approved": "La vérification d'entreprise est terminée. Aucune action supplémentaire n'est requise ici.",
           "rejected": "La vérification a été refusée. Contactez le support si vous pensez qu'il s'agit d'une erreur.",
           "paused": "La vérification est en pause. Contactez le support.",
-          "offboarded": "La vérification bancaire n'est plus disponible pour ce client. Contactez le support."
+          "offboarded": "La vérification bancaire n'est plus disponible pour ce client. Contactez le support.",
+          "person": {
+            "complete": "La vérification d'identité est terminée. Aucune action supplémentaire n'est requise ici.",
+            "not_started": "Ouvrez le lien de vérification pour démarrer votre vérification d'identité.",
+            "awaiting_ubo": "Bridge termine des étapes de vérification supplémentaires pour votre dossier.",
+            "approved": "La vérification d'identité est terminée. Aucune action supplémentaire n'est requise ici."
+          }
         }
       },
       "requestRailDisabledInitialSetup": "Terminez votre vérification en cours avant de demander des corridors de devise supplémentaires",
@@ -3411,14 +3453,25 @@
     "initialSetup": {
       "organizationLegend": "Informations sur l'organisation",
       "organizationHint": "Les informations sur l'organisation sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
+      "legalName": "Nom légal de l'entité",
+      "contactEmail": "E-mail de contact",
       "currenciesTitle": "Devises que vous souhaitez utiliser",
       "currenciesDescription": "Sélectionnez les devises que cet espace utilisera pour les dépôts et paiements bancaires. Votre organisation sera vérifiée une fois avec notre partenaire bancaire.",
       "currenciesHint": "Vous pourrez ajouter d'autres devises plus tard depuis les paramètres bancaires.",
-      "submit": "Continuer"
+      "submit": "Continuer",
+      "person": {
+        "organizationLegend": "Vos informations",
+        "organizationHint": "Vos informations sont envoyées à notre partenaire bancaire pour vérification et ne sont pas stockées sur Hypha.",
+        "legalName": "Nom complet",
+        "currenciesDescription": "Sélectionnez les devises que vous souhaitez utiliser pour les paiements bancaires. Vous serez vérifié une fois avec notre partenaire bancaire."
+      }
     },
     "notStarted": {
       "description": "Les services bancaires ne sont pas encore configurés pour ce space.",
-      "enableCta": "Continuer"
+      "enableCta": "Continuer",
+      "person": {
+        "description": "Les services bancaires ne sont pas encore configurés pour votre profil."
+      }
     },
     "blockers": {
       "notOnChain": "Ce space doit être déployé on-chain avant qu'un compte bancaire lié puisse être configuré.",
@@ -3566,7 +3619,14 @@
       "simulateFillingKybRequiredData": "Simuler le remplissage des données KYB requises",
       "cta": "Simuler l'approbation KYB",
       "simulating": "Simulation…",
-      "refreshing": "Actualisation du statut…"
+      "refreshing": "Actualisation du statut…",
+      "person": {
+        "title": "Sandbox / Dev — Simulation KYC",
+        "description": "KYC est une étape manuelle, elle doit donc être simulée en sandbox. Cela peut aussi contourner entièrement le remplissage du formulaire.",
+        "infoTooltipAria": "À propos de la simulation KYC en sandbox",
+        "simulateFillingKybRequiredData": "Simuler le remplissage des données KYC requises",
+        "cta": "Simuler l'approbation KYC"
+      }
     },
     "endorsements": {
       "base": "USD (ACH / virement wire)",
@@ -3575,16 +3635,6 @@
       "pix": "BRL (PIX, Brésil)",
       "sepa": "EUR (virement bancaire SEPA)",
       "spei": "MXN (SPEI, Mexique)"
-    },
-    "onboardingDialog": {
-      "title": "Activer les dépôts bancaires",
-      "description": "Nous utilisons ces informations pour vérifier votre organisation. Une fois approuvée, votre space sera configuré pour recevoir des virements bancaires.",
-      "legalName": "Nom légal de l'entité",
-      "contactEmail": "E-mail de contact",
-      "endorsementsLabel": "Corridors de paiement",
-      "endorsementsHint": "Il s'agit d'approbations KYB Bridge (p. ex. base pour USD, sepa pour EUR). Chaque corridor sélectionné est inclus dans le lien de vérification.",
-      "submit": "Démarrer la vérification",
-      "submitting": "Démarrage…"
     },
     "status": {
       "not_started": {

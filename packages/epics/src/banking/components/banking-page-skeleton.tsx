@@ -53,15 +53,14 @@ function SkeletonSection({
 }
 
 export const BankingPageSkeleton: FC = () => {
-  const tAccounts = useTranslations('BankingTab.sections.accounts');
-  const tTransfers = useTranslations('BankingTab.sections.transfers');
+  const t = useTranslations('BankingTab');
 
   return (
     <div
       className="flex w-full flex-col gap-6"
       role="status"
       aria-busy="true"
-      aria-label={`${tAccounts('title')}, ${tTransfers('title')}`}
+      aria-label={t('loading')}
     >
       <div className="flex items-center justify-between gap-2">
         <div

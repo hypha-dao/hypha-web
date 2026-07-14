@@ -1,5 +1,11 @@
 'use client';
 
+export {
+  clearOnboardingWalletSessionActive,
+  isOnboardingWalletSessionActive,
+  markOnboardingWalletSessionActive,
+} from '@hypha-platform/authentication';
+
 const COMPLETED_SLUGS_KEY = 'hypha:onboarding-wallet-handoff:slugs:v1';
 const HANDLED_PAYLOADS_KEY = 'hypha:onboarding-wallet-handoff:payloads:v1';
 

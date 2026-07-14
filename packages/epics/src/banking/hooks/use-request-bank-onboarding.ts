@@ -8,10 +8,12 @@ import {
   type BankOnboardingRequestInput,
   type BankOnboardingRequestResult,
 } from './types';
-import { getBankCustomerStatusEndpoint } from './use-bank-customer-status';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 type UseRequestBankOnboardingOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
 };
 
 type UseRequestBankOnboardingReturn = {
@@ -25,6 +27,7 @@ type UseRequestBankOnboardingReturn = {
 
 export const useRequestBankOnboarding = ({
   spaceSlug,
+  basePath,
 }: UseRequestBankOnboardingOptions): UseRequestBankOnboardingReturn => {
   const { getAccessToken } = useAuthentication();
   const { mutate } = useSWRConfig();
@@ -44,7 +47,11 @@ export const useRequestBankOnboarding = ({
           throw new Error('Unauthorized');
         }
 
-        const endpoint = getBankCustomerStatusEndpoint(spaceSlug);
+        const base = resolveBankingBasePath({ spaceSlug, basePath });
+        if (!base) {
+          throw new Error('Missing banking endpoint');
+        }
+        const endpoint = `${base}/bank-customers`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -80,7 +87,7 @@ export const useRequestBankOnboarding = ({
         setIsSubmitting(false);
       }
     },
-    [getAccessToken, mutate, spaceSlug],
+    [getAccessToken, mutate, spaceSlug, basePath],
   );
 
   const clearError = React.useCallback(() => setError(null), []);

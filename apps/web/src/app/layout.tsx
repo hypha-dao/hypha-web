@@ -313,6 +313,7 @@ export default async function RootLayout({
                                       href: `/${locale}/network`,
                                     },
                                   ]}
+                                  showNetworkFeedback
                                   trailingBeforeProfile={
                                     isLanguageSelectVisible ? (
                                       <ConnectedLanguageSelect
@@ -340,6 +341,7 @@ export default async function RootLayout({
                                       href: `/${locale}/network`,
                                     },
                                   ]}
+                                  showNetworkFeedback
                                   trailingBeforeProfile={
                                     isLanguageSelectVisible ? (
                                       <ConnectedLanguageSelect

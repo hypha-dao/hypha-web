@@ -36,6 +36,11 @@ const VOICE_INTERIM_ACK_PHRASES_BY_LOCALE: Record<string, readonly string[]> = {
     'Geben Sie mir eine Sekunde, ich prüfe das.',
     'Ich rufe das gleich für Sie ab.',
   ],
+  mk: [
+    'Само момент, ќе го проверам тоа за вас.',
+    'Дајте ми секунда да погледнам.',
+    'Веднаш ќе го најдам тоа за вас.',
+  ],
 };
 
 function resolveInterimAckLocale(locale?: string): string {

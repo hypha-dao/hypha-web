@@ -63,12 +63,55 @@ describe('resolveSignalDeepLinkWithRetry (CSH-DISCOVER-2/3)', () => {
   });
 
   it('returns not_found for 404 responses', async () => {
+    const fetchSignal = vi.fn(async () => new Response(null, { status: 404 }));
+    const resultPromise = resolveSignalDeepLinkWithRetry({
+      signalId: 'missing',
+      expectedSpaceSlug: 'demo-space',
+      getAuthToken: () => 'token',
+      fetchSignal,
+    });
+    await vi.advanceTimersByTimeAsync(5000);
+    await expect(resultPromise).resolves.toEqual({
+      ok: false,
+      reason: 'not_found',
+    });
+    expect(fetchSignal).toHaveBeenCalledTimes(4);
+  });
+
+  it('returns not_found for 404 when maxAttempts is smaller than retry delays', async () => {
+    const fetchSignal = vi.fn(async () => new Response(null, { status: 404 }));
     const result = await resolveSignalDeepLinkWithRetry({
       signalId: 'missing',
       expectedSpaceSlug: 'demo-space',
       getAuthToken: () => 'token',
-      fetchSignal: vi.fn(async () => new Response(null, { status: 404 })),
+      fetchSignal,
+      maxAttempts: 1,
     });
     expect(result).toEqual({ ok: false, reason: 'not_found' });
+    expect(fetchSignal).toHaveBeenCalledTimes(1);
+  });
+
+  it('succeeds when roomId is not set yet', async () => {
+    const result = await resolveSignalDeepLinkWithRetry({
+      signalId: 'new-signal',
+      expectedSpaceSlug: 'demo-space',
+      getAuthToken: () => 'token',
+      fetchSignal: vi.fn(async () =>
+        Response.json({
+          signalSlug: 'new-signal',
+          signalTitle: 'Fresh signal',
+          spaceSlug: 'demo-space',
+          roomId: null,
+        }),
+      ),
+      maxAttempts: 1,
+    });
+    expect(result).toEqual({
+      ok: true,
+      signalSlug: 'new-signal',
+      signalTitle: 'Fresh signal',
+      spaceSlug: 'demo-space',
+      roomId: null,
+    });
   });
 });

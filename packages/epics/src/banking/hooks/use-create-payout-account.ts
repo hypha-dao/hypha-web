@@ -8,10 +8,12 @@ import type {
   CreatePayoutAccountInput,
   CreatePayoutAccountResult,
 } from './types';
-import { getPayoutAccountsEndpoint } from './use-payout-accounts';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 type UseCreatePayoutAccountOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
 };
 
 type UseCreatePayoutAccountReturn = {
@@ -25,6 +27,7 @@ type UseCreatePayoutAccountReturn = {
 
 export const useCreatePayoutAccount = ({
   spaceSlug,
+  basePath,
 }: UseCreatePayoutAccountOptions): UseCreatePayoutAccountReturn => {
   const { getAccessToken } = useAuthentication();
   const { mutate } = useSWRConfig();
@@ -44,7 +47,11 @@ export const useCreatePayoutAccount = ({
           throw new Error('Unauthorized');
         }
 
-        const endpoint = getPayoutAccountsEndpoint(spaceSlug);
+        const base = resolveBankingBasePath({ spaceSlug, basePath });
+        if (!base) {
+          throw new Error('Missing banking endpoint');
+        }
+        const endpoint = `${base}/payout-accounts`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -80,7 +87,7 @@ export const useCreatePayoutAccount = ({
         setIsCreating(false);
       }
     },
-    [getAccessToken, mutate, spaceSlug],
+    [getAccessToken, mutate, spaceSlug, basePath],
   );
 
   const clearError = React.useCallback(() => setError(null), []);

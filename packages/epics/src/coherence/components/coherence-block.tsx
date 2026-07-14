@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  MOBILE_BREAKPOINT_PX,
-} from '@hypha-platform/ui';
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   Coherence,
   useFindCoherences,
@@ -18,14 +13,19 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { buildSignalWorkflowConfigurationPath } from '../lib/signal-workflow-configuration-return';
 import {
+  DEFAULT_SIGNAL_VIEW_MODE,
   isDefaultSignalViewMode,
   parseSignalViewMode,
+  readStoredSignalViewMode,
   SIGNAL_VIEW_QUERY_KEY,
+  writeStoredSignalViewMode,
 } from '../lib/signal-view-mode';
 import { SignalSection, type SignalViewMode } from './signal-section';
 import { SignalViewControls } from './signal-view-controls';
+import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-message-link';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
+import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -108,29 +108,32 @@ export function CoherenceBlock({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const viewParamFromUrl = searchParams.get(SIGNAL_VIEW_QUERY_KEY);
   const [hideArchived, setHideArchived] = React.useState(true);
   const viewMode = React.useMemo(() => {
-    const parsed = parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY));
-    return parsed ?? 'swimlane';
-  }, [searchParams]);
-  const hasAppliedMobileDefault = React.useRef(false);
-
-  React.useEffect(() => {
-    if (hasAppliedMobileDefault.current) return;
-    if (parseSignalViewMode(searchParams.get(SIGNAL_VIEW_QUERY_KEY))) {
-      hasAppliedMobileDefault.current = true;
+    const fromUrl = parseSignalViewMode(viewParamFromUrl);
+    if (fromUrl) {
+      return fromUrl;
+    }
+    const stored = readStoredSignalViewMode(spaceSlug);
+    return stored ?? DEFAULT_SIGNAL_VIEW_MODE;
+  }, [viewParamFromUrl, spaceSlug]);
+  React.useLayoutEffect(() => {
+    if (parseSignalViewMode(viewParamFromUrl)) {
       return;
     }
-    hasAppliedMobileDefault.current = true;
-    if (window.innerWidth < MOBILE_BREAKPOINT_PX) {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.set(SIGNAL_VIEW_QUERY_KEY, 'list');
-      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+    const stored = readStoredSignalViewMode(spaceSlug);
+    if (!stored || isDefaultSignalViewMode(stored)) {
+      return;
     }
-  }, [pathname, router, searchParams]);
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set(SIGNAL_VIEW_QUERY_KEY, stored);
+    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+  }, [pathname, router, searchParams, spaceSlug, viewParamFromUrl]);
 
   const handleViewModeChange = React.useCallback(
     (nextValue: SignalViewMode) => {
+      writeStoredSignalViewMode(spaceSlug, nextValue);
       const nextParams = new URLSearchParams(searchParams.toString());
       if (isDefaultSignalViewMode(nextValue)) {
         nextParams.delete(SIGNAL_VIEW_QUERY_KEY);
@@ -142,7 +145,7 @@ export function CoherenceBlock({
         scroll: false,
       });
     },
-    [pathname, router, searchParams],
+    [pathname, router, searchParams, spaceSlug],
   );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({
@@ -192,19 +195,69 @@ export function CoherenceBlock({
     [lang, spaceSlug],
   );
 
-  const { openCoherenceChat } = useHumanChatPanel();
+  const {
+    open: humanChatOpen,
+    openCoherenceChat,
+    mode,
+    coherenceSlug,
+  } = useHumanChatPanel();
+
+  const activeSignalSlug = React.useMemo(() => {
+    const slug = coherenceSlug?.trim() ?? null;
+    if (humanChatEnabled && humanChatOpen && mode === 'coherence' && slug) {
+      return slug;
+    }
+    if (!humanChatEnabled) {
+      return searchParams.get('signal')?.trim() ?? null;
+    }
+    return null;
+  }, [coherenceSlug, humanChatEnabled, humanChatOpen, mode, searchParams]);
 
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {
+      const slug = signal.slug?.trim() ?? '';
       openCoherenceChat(
         signal.roomId ?? null,
         signal.title ?? '',
-        signal.slug ?? '',
+        slug,
         signal.description ?? null,
       );
+      if (!slug || typeof window === 'undefined') return;
+      const href = setSignalSearchParam(pathname, window.location.search, slug);
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== href) {
+        window.history.replaceState(window.history.state, '', href);
+        router.replace(href, { scroll: false });
+      }
     },
-    [openCoherenceChat],
+    [openCoherenceChat, pathname, router],
   );
+
+  const handleRevealArchivedSignal = React.useCallback(() => {
+    setHideArchived(false);
+  }, []);
+
+  const handleClearPriorityFilter = React.useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete('priority');
+    const query = nextParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }, [pathname, router, searchParams]);
+
+  useCoherenceSignalDeepLink({
+    signals,
+    isLoading: isSpaceLoading || (isSignalsLoading && !signals?.length),
+    humanChatEnabled,
+    humanChatOpen,
+    hideArchived,
+    priorityFilter,
+    activeCoherenceSlug: coherenceSlug,
+    onRevealArchivedSignal: handleRevealArchivedSignal,
+    onClearPriorityFilter: handleClearPriorityFilter,
+    onRefreshSignals: refresh,
+  });
 
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 
@@ -270,6 +323,7 @@ export function CoherenceBlock({
         viewMode={viewMode}
         refresh={refresh}
         onSignalClick={onSignalClick}
+        activeSignalSlug={activeSignalSlug}
       />
     </div>
   );

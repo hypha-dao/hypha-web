@@ -15,6 +15,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 
 import type { BankCustomerPublicStatus } from '../hooks/types';
+import { type BankingOwnerContext } from '../banking-ui';
 import {
   BANKING_DIALOG_CONTENT_CLASS,
   BANKING_DIALOG_HEADER_CLASS,
@@ -23,7 +24,11 @@ import {
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
 
 type BankingAdvancedDialogProps = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
+  /** Whether this dialog is for a space or an individual member's profile. Defaults to 'space'. */
+  ownerContext?: BankingOwnerContext;
   status: BankCustomerPublicStatus | null | undefined;
   isLoading: boolean;
   isRefreshing: boolean;
@@ -36,6 +41,8 @@ type BankingAdvancedDialogProps = {
 
 export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
   spaceSlug,
+  basePath,
+  ownerContext = 'space',
   status,
   isLoading,
   isRefreshing,
@@ -71,6 +78,8 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
         <BankingDialogBody>
           <BankingProviderStatusPanel
             spaceSlug={spaceSlug}
+            basePath={basePath}
+            ownerContext={ownerContext}
             status={status}
             isLoading={isLoading}
             isRefreshing={isRefreshing}

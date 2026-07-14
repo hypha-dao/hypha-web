@@ -3,7 +3,13 @@
 import React from 'react';
 import { isValid } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
-import { Coherence, SignalWorkflowConfig } from '@hypha-platform/core/client';
+import {
+  COHERENCE_PRIORITIES,
+  Coherence,
+  SignalWorkflowConfig,
+  resolveEffectiveBoard,
+  usePersonById,
+} from '@hypha-platform/core/client';
 import {
   Select,
   SelectContent,
@@ -14,23 +20,36 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
+import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
 import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
-import { isSignalDueOverdue } from '../utils/signal-due-date';
+import {
+  isSignalDueOverdue,
+  dueDateFromInputValue,
+  toLocalDueDateInputValue,
+} from '../utils/signal-due-date';
+import { getSignalSlugDomProps } from '../lib/signal-deep-link-dom';
+import {
+  isSignalSlugActive,
+  signalCardActiveClass,
+} from '../utils/signal-active-styles';
+import { SIGNAL_LIST_ITEM_SHELL_CLASS } from '../utils/signal-board-layout';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { usePersonById } from '@hypha-platform/core/client';
 
 type SignalListViewProps = {
   signals: Coherence[];
   workflow: SignalWorkflowConfig;
   onSignalClick?: (signal: Coherence) => void;
+  activeSignalSlug?: string | null;
   onPatch: (
     signal: Coherence,
     patch: {
       progressStatus?: string | null;
       board?: string | null;
+      priority?: Coherence['priority'];
+      dueAt?: Date | null;
     },
   ) => Promise<void>;
   refresh: () => Promise<void>;
@@ -95,12 +114,33 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
 
 /** Shared desktop list grid — title flexes; metadata columns stay compact but readable. */
 const SIGNAL_LIST_GRID_CLASS =
-  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_5.25rem_4.5rem_minmax(8.5rem,10.5rem)_3.5rem] lg:gap-2';
+  'lg:grid-cols-[minmax(0,2.35fr)_minmax(7rem,8.25rem)_minmax(7rem,8.5rem)_minmax(5.5rem,7rem)_minmax(8.5rem,10.5rem)_minmax(5.75rem,7rem)_minmax(3.5rem,auto)] lg:gap-2';
+
+/** Matches SelectTrigger px-3 so column labels line up with control text. */
+const SIGNAL_LIST_META_HEADER_CLASS = 'min-w-0 px-3';
+
+const SIGNAL_LIST_SELECT_TRIGGER_CLASS =
+  'h-8 w-full min-w-0 truncate border-border/60 bg-background/80';
+
+const SIGNAL_LIST_SELECT_TRIGGER_PRIORITY_CLASS = cn(
+  SIGNAL_LIST_SELECT_TRIGGER_CLASS,
+  'capitalize',
+);
+
+const SIGNAL_LIST_DATE_FIELD_CLASS =
+  'flex h-8 w-full min-w-0 items-center gap-1.5 rounded border border-border/60 bg-background/80 px-3';
+
+const SIGNAL_LIST_DATE_INPUT_CLASS = cn(
+  'relative min-h-0 min-w-0 flex-1 border-0 bg-transparent p-0 text-sm [color-scheme:light] dark:[color-scheme:dark] focus-visible:outline-none focus-visible:ring-0',
+  '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:size-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+  '[&::-moz-calendar-picker-indicator]:absolute [&::-moz-calendar-picker-indicator]:inset-0 [&::-moz-calendar-picker-indicator]:size-full [&::-moz-calendar-picker-indicator]:cursor-pointer [&::-moz-calendar-picker-indicator]:opacity-0',
+);
 
 export function SignalListView({
   signals,
   workflow,
   onSignalClick,
+  activeSignalSlug,
   onPatch,
   refresh,
   readOnly = false,
@@ -112,16 +152,29 @@ export function SignalListView({
     <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
       <div
         className={cn(
-          'hidden gap-2 border-b border-border/40 bg-muted/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid',
+          'hidden gap-2 border-b border-l-[3px] border-border/40 border-l-transparent bg-muted/20 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid lg:px-4',
           SIGNAL_LIST_GRID_CLASS,
         )}
       >
-        <span>{t('signalListTitle')}</span>
-        <span>{t('signalListStatus')}</span>
-        <span>{t('signalListDue')}</span>
-        <span>{t('signalListPriority')}</span>
-        <span>{t('signalListBoard')}</span>
-        <span className="text-right">{t('signalListActions')}</span>
+        <span className="min-w-0">{t('signalListTitle')}</span>
+        <span className={SIGNAL_LIST_META_HEADER_CLASS}>
+          {t('signalListStatus')}
+        </span>
+        <span className={SIGNAL_LIST_META_HEADER_CLASS}>
+          {t('signalListDue')}
+        </span>
+        <span className={SIGNAL_LIST_META_HEADER_CLASS}>
+          {t('signalListPriority')}
+        </span>
+        <span className={SIGNAL_LIST_META_HEADER_CLASS}>
+          {t('signalListBoard')}
+        </span>
+        <span className={SIGNAL_LIST_META_HEADER_CLASS}>
+          {t('signalListUpvote')}
+        </span>
+        <span className={cn(SIGNAL_LIST_META_HEADER_CLASS, 'text-right')}>
+          {t('signalListActions')}
+        </span>
       </div>
 
       <ul className="divide-y divide-border/40">
@@ -141,15 +194,22 @@ export function SignalListView({
             signal.progressStatus ??
             '—';
           const boardName =
-            workflow.boards.find((board) => board.slug === signal.board)
-              ?.name ?? t('signalBoardUncategorized');
+            workflow.boards.find(
+              (board) =>
+                board.slug === resolveEffectiveBoard(signal.board, workflow),
+            )?.name ?? resolveEffectiveBoard(signal.board, workflow);
+          const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
 
           return (
             <li
               key={signal.id}
+              {...getSignalSlugDomProps(signal.slug)}
               className={cn(
-                'group border-l-[3px] px-3 py-3 transition-colors hover:bg-muted/20 lg:px-4',
+                'group border-l-[3px] px-3 py-3 transition-[background-color,border-color,box-shadow] lg:px-4',
+                SIGNAL_LIST_ITEM_SHELL_CLASS,
                 priorityLeftBorderEdgeClass(signal.priority),
+                signalCardActiveClass(isActive, 'rounded-none'),
+                !isActive && 'hover:bg-muted/20',
               )}
             >
               <div
@@ -164,7 +224,7 @@ export function SignalListView({
                     className="min-w-0 flex-1 text-left"
                     onClick={() => onSignalClick?.(signal)}
                   >
-                    <span className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-accent-11">
+                    <span className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-accent-11">
                       {signal.title}
                     </span>
                     <span className="mt-0.5 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -194,7 +254,7 @@ export function SignalListView({
                 </div>
 
                 <div className="lg:contents">
-                  <div className="flex items-center gap-2 lg:block">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListStatus')}
                     </span>
@@ -211,7 +271,9 @@ export function SignalListView({
                           onPatch(signal, { progressStatus: value })
                         }
                       >
-                        <SelectTrigger className="h-8 w-full min-w-0 truncate border-border/60 bg-background/80">
+                        <SelectTrigger
+                          className={SIGNAL_LIST_SELECT_TRIGGER_CLASS}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -225,37 +287,92 @@ export function SignalListView({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 lg:block">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListDue')}
                     </span>
-                    {hasValidDue ? (
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 text-sm',
-                          isOverdue
-                            ? 'font-medium text-error-11'
-                            : 'text-muted-foreground',
-                        )}
-                      >
-                        <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                        {intlFormat.dateTime(dueDate, {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
+                    {readOnly ? (
+                      hasValidDue ? (
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 text-sm',
+                            isOverdue
+                              ? 'font-medium text-error-11'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                          {intlFormat.dateTime(dueDate, {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )
                     ) : (
-                      <span className="text-sm text-muted-foreground">—</span>
+                      <div
+                        className={cn(
+                          SIGNAL_LIST_DATE_FIELD_CLASS,
+                          hasValidDue &&
+                            isOverdue &&
+                            'font-medium text-error-11',
+                        )}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <CalendarDays
+                          className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                          aria-hidden
+                        />
+                        <input
+                          type="date"
+                          className={SIGNAL_LIST_DATE_INPUT_CLASS}
+                          value={toLocalDueDateInputValue(signal.dueAt)}
+                          onChange={(event) =>
+                            void onPatch(signal, {
+                              dueAt: dueDateFromInputValue(event.target.value),
+                            })
+                          }
+                        />
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 lg:block">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
                       {t('signalListPriority')}
                     </span>
-                    <span className="truncate text-sm capitalize text-muted-foreground">
-                      {signal.priority}
-                    </span>
+                    {readOnly ? (
+                      <span className="truncate text-sm text-muted-foreground">
+                        {t(`priorities.${signal.priority}` as never)}
+                      </span>
+                    ) : (
+                      <Select
+                        value={signal.priority}
+                        onValueChange={(value) =>
+                          onPatch(signal, {
+                            priority: value as Coherence['priority'],
+                          })
+                        }
+                      >
+                        <SelectTrigger
+                          className={SIGNAL_LIST_SELECT_TRIGGER_PRIORITY_CLASS}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COHERENCE_PRIORITIES.map((priority) => (
+                            <SelectItem
+                              key={priority}
+                              value={priority}
+                              className="capitalize"
+                            >
+                              {t(`priorities.${priority}` as never)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
@@ -268,20 +385,19 @@ export function SignalListView({
                       </span>
                     ) : (
                       <Select
-                        value={signal.board ?? '__none__'}
+                        value={resolveEffectiveBoard(signal.board, workflow)}
                         onValueChange={(value) =>
                           onPatch(signal, {
-                            board: value === '__none__' ? null : value,
+                            board: value,
                           })
                         }
                       >
-                        <SelectTrigger className="h-8 w-full min-w-0 truncate border-border/60 bg-background/80">
+                        <SelectTrigger
+                          className={SIGNAL_LIST_SELECT_TRIGGER_CLASS}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">
-                            {t('signalBoardUncategorized')}
-                          </SelectItem>
                           {workflow.boards
                             .filter((board) => !board.archived)
                             .map((board) => (
@@ -294,7 +410,19 @@ export function SignalListView({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 lg:col-start-6 lg:justify-end">
+                  <div className="flex min-w-0 items-center gap-2 lg:min-w-0 lg:block">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:hidden">
+                      {t('signalListUpvote')}
+                    </span>
+                    <SignalUpvoteControl
+                      slug={signal.slug}
+                      upvotes={signal.upvotes}
+                      refresh={refresh}
+                      disabled={Boolean(signal.archived)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 lg:col-start-7 lg:justify-end lg:px-3">
                     {signal.assigneeIds.length > 0 ? (
                       <ListAssigneeStack
                         assigneeIds={signal.assigneeIds}

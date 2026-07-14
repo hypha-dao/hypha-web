@@ -6,6 +6,8 @@
     "delegatedVotingMemberLabel": "Delegiertes Stimmmitglied",
     "Treasury": "Schatzkammer",
     "Energy": "Energie",
+    "Wallet": "Wallet",
+    "Banking": "Bankdienste",
     "Agreements": "Vereinbarungen",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
@@ -103,6 +105,26 @@
     "getStarted": "Loslegen",
     "ecosystemLogo": "Ökosystem-Logo",
     "continueAdventure": "Abenteuer fortsetzen"
+  },
+  "NetworkFeedback": {
+    "triggerLabel": "Hypha gestalten",
+    "triggerAriaLabel": "Hypha mitgestalten — Community und Governance",
+    "title": "Hilf mit, Hypha zu gestalten",
+    "subtitle": "Wähle, wie du im Netzwerk mitwirken möchtest.",
+    "intro": "Ob du Ideen beitragen oder die Governance des Netzwerks mitgestalten möchtest — es gibt zwei Wege, sich einzubringen.",
+    "community": {
+      "title": "Community",
+      "tagline": "Ideen teilen. Prioritäten mitgestalten.",
+      "description": "Tritt der Community bei, um Ideen zu diskutieren, Feedback einzureichen und über Funktionen und Initiativen abzustimmen, die du als Nächstes sehen möchtest.",
+      "action": "Community entdecken"
+    },
+    "governance": {
+      "title": "Governance",
+      "tagline": "Hilf mit, das Netzwerk zu steuern.",
+      "description": "Halte mindestens einen HYPHA-Token, um an der Governance teilzunehmen, über Vorschläge abzustimmen und die Zukunft des Netzwerks mitzugestalten.",
+      "learnMore": "Mehr über HYPHA-Tokenomics.",
+      "action": "Governance öffnen"
+    }
   },
   "OnboardingAdventure": {
     "heroEyebrow": "DIE INTELLIGENTE ORGANISATION",
@@ -622,6 +644,9 @@
     "errorFetchStatus": "Beim Abrufen Ihrer Bankinformationen ist ein Problem aufgetreten. Bitte versuchen Sie es später erneut.",
     "notStarted": {
       "description": "Banking ist für diesen Space noch nicht eingerichtet.",
+      "person": {
+        "description": "Banking ist für Ihr Profil noch nicht eingerichtet."
+      },
       "enableCta": "Weiter"
     },
     "blockers": {
@@ -642,16 +667,6 @@
       "pix": "BRL (PIX, Brasilien)",
       "sepa": "EUR (SEPA-Überweisung)",
       "spei": "MXN (SPEI, Mexiko)"
-    },
-    "onboardingDialog": {
-      "title": "Bankeinzahlungen aktivieren",
-      "description": "Diese Angaben dienen der Verifizierung Ihrer Organisation. Nach der Freigabe wird Ihr Space für den Empfang von Banküberweisungen eingerichtet.",
-      "legalName": "Rechtlicher Name der Organisation",
-      "contactEmail": "Kontakt-E-Mail",
-      "endorsementsLabel": "Zahlungskorridore",
-      "endorsementsHint": "Dies sind Bridge-KYB-Endorsements (z. B. base für USD, sepa für EUR). Jeder ausgewählte Korridor ist im Verifizierungslink enthalten.",
-      "submit": "Verifizierung starten",
-      "submitting": "Wird gestartet…"
     },
     "status": {
       "not_started": {
@@ -723,7 +738,10 @@
       },
       "section": {
         "title": "Auszahlungsbankkonten",
-        "description": "Registrieren Sie ein externes Bankkonto, um Gelder aus Ihren USDC- oder EURC-Wallets über Anträge zu überweisen."
+        "description": "Registrieren Sie ein externes Bankkonto, um Gelder aus Ihren USDC- oder EURC-Wallets über Anträge zu überweisen.",
+        "person": {
+          "description": "Registrieren Sie ein externes Bankkonto, um Überweisungen von Ihrer Wallet zu empfangen."
+        }
       },
       "addCta": "Auszahlungskonto hinzufügen",
       "loading": "Auszahlungskonten werden geladen…",
@@ -811,7 +829,11 @@
           "liquidationAddressLabel": "Auszahlungsadresse",
           "howToTitle": "So führen Sie Auszahlungen durch",
           "howToText": "Erstellen Sie einen Funding- oder Expenses-Antrag mit dieser Adresse als Auszahlungsziel. Die Gelder werden umgewandelt und an Ihre registrierte Bank überwiesen.",
-          "done": "Fertig"
+          "done": "Fertig",
+          "person": {
+            "subtitle": "Das Konto ist aktiv. Kopieren Sie die Auszahlungsadresse, um Gelder dorthin zu senden.",
+            "howToText": "Nutzen Sie „Geld überweisen“ in Ihrem Profil, um {currency} an diese Adresse zu senden. Die Gelder werden umgewandelt und an Ihre registrierte Bank überwiesen."
+          }
         },
         "swift": {
           "code": "SWIFT (USD)",
@@ -899,6 +921,10 @@
       "dialogDescription": "Detaillierte Informationen und technische Konfigurationen.",
       "dataMinimizationNotice": "Einzahlungs- und Verifizierungsdetails werden von unserem Banking-Partner geladen und nicht auf Hypha-Servern gespeichert.",
       "noCustomer": "Für diesen Space existiert noch kein Bankkunden-Datensatz.",
+      "person": {
+        "noCustomer": "Für Ihr Profil existiert noch kein Bankkunden-Datensatz.",
+        "kybProcedure": "Identitätsprüfung (KYC)"
+      },
       "approvedSummary": "Die Verifizierung ist genehmigt. Verwalten Sie Ihre unterstützten Währungen im Abschnitt unten.",
       "providerValidationsTitle": "Anbieterprüfungen",
       "legalNameLabel": "Rechtlicher Name der Organisation",
@@ -938,7 +964,13 @@
           "approved": "Die Unternehmensverifizierung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich.",
           "rejected": "Die Verifizierung wurde abgelehnt. Kontaktieren Sie den Support, wenn Sie glauben, dass dies ein Fehler ist.",
           "paused": "Die Verifizierung ist pausiert. Kontaktieren Sie den Support.",
-          "offboarded": "Die Banking-Verifizierung ist für diesen Kunden nicht mehr verfügbar. Kontaktieren Sie den Support."
+          "offboarded": "Die Banking-Verifizierung ist für diesen Kunden nicht mehr verfügbar. Kontaktieren Sie den Support.",
+          "person": {
+            "complete": "Die Identitätsprüfung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich.",
+            "not_started": "Öffnen Sie den Verifizierungslink, um Ihre Identitätsprüfung zu starten.",
+            "awaiting_ubo": "Bridge schließt zusätzliche Verifizierungsschritte für Ihre Einreichung ab.",
+            "approved": "Die Identitätsprüfung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich."
+          }
         }
       },
       "requestRailDisabledInitialSetup": "Schließen Sie Ihre aktuelle Verifizierung ab, bevor Sie weitere Währungskorridore anfordern",
@@ -995,10 +1027,18 @@
     "initialSetup": {
       "organizationLegend": "Organisationsdetails",
       "organizationHint": "Organisationsdetails werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
+      "legalName": "Rechtlicher Name der Organisation",
+      "contactEmail": "Kontakt-E-Mail",
       "currenciesTitle": "Gewünschte Währungen",
       "currenciesDescription": "Wählen Sie die Währungen, die dieser Space für Bankeinzahlungen und Auszahlungen verwenden soll. Ihre Organisation wird einmalig von unserem Banking-Partner verifiziert.",
       "currenciesHint": "Weitere Währungen können Sie später in den Banking-Einstellungen hinzufügen.",
-      "submit": "Weiter"
+      "submit": "Weiter",
+      "person": {
+        "organizationLegend": "Ihre Angaben",
+        "organizationHint": "Ihre Angaben werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
+        "legalName": "Vollständiger Name",
+        "currenciesDescription": "Wählen Sie die Währungen aus, die Sie für Bankauszahlungen verwenden möchten. Sie werden einmalig von unserem Banking-Partner verifiziert."
+      }
     },
     "corridors": {
       "provisioning": "Wird eingerichtet…",
@@ -1135,7 +1175,14 @@
       "simulateFillingKybRequiredData": "Ausfüllen der erforderlichen KYB-Daten simulieren",
       "cta": "KYB-Freigabe simulieren",
       "simulating": "Wird simuliert…",
-      "refreshing": "Status wird aktualisiert…"
+      "refreshing": "Status wird aktualisiert…",
+      "person": {
+        "title": "Sandbox / Dev — KYC-Simulation",
+        "description": "KYC ist ein manueller Schritt und muss in der Sandbox simuliert werden. Dies kann auch das vollständige Ausfüllen des Formulars umgehen.",
+        "infoTooltipAria": "Über KYC-Simulation in der Sandbox",
+        "simulateFillingKybRequiredData": "Ausfüllen der erforderlichen KYC-Daten simulieren",
+        "cta": "KYC-Freigabe simulieren"
+      }
     }
   },
   "TreasuryTab": {
@@ -2067,6 +2114,7 @@
             "cny": "Chinesischer Yuan",
             "chf": "Schweizer Franken",
             "jpy": "Japanischer Yen",
+            "nzd": "Neuseeländischer Dollar",
             "aud": "Australischer Dollar",
             "hkd": "Hongkong-Dollar"
           }
@@ -3001,6 +3049,7 @@
     "callCameraOff": "Kamera ausschalten",
     "callErrorPermission": "Kamera- oder Mikrofonzugriff verweigert. Bitte Browsereinstellungen prüfen.",
     "callErrorPermissionGuidance": "Aktualisieren Sie Kamera- und Mikrofonberechtigungen für diese Seite in den Browsereinstellungen, und versuchen Sie es hier erneut.",
+    "callErrorDeviceNotFound": "Auf diesem Gerät wurde keine Kamera oder kein Mikrofon gefunden. Schließen Sie eines an und versuchen Sie es erneut.",
     "callErrorGeneric": "Anruf konnte nicht gestartet werden. Bitte erneut versuchen.",
     "callSessionRefreshFailedDescription": "Ihre Anrufsitzung ist abgelaufen. Verbinden Sie sich erneut, um im Meeting zu bleiben.",
     "callSessionRefreshFailedReconnect": "Erneut verbinden",
@@ -3481,17 +3530,18 @@
     "boardCancelAction": "Abbrechen",
     "boardAll": "Alle Signale",
     "boardDelete": "Board {boardName} löschen",
-    "signalViewBoard": "Kanban Board",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Status und Boards konfigurieren",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
-    "signalViewGrid": "Raster",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Unkategorisiert",
     "signalListTitle": "Titel",
     "signalListStatus": "Status",
     "signalListDue": "Fällig",
     "signalListPriority": "Priorität",
     "signalListBoard": "Board",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Signale hier ablegen",
     "signalDropHere": "Hier ablegen",
     "signalListActions": "Aktionen",
@@ -3626,9 +3676,9 @@
     "updateUpvote": "Unterstützung aktualisieren",
     "removeUpvote": "Unterstützung entfernen",
     "upvoteDetails": "Details zur Unterstützung",
-    "totalSupport": "Gesamte Unterstützung",
-    "yourVotingPowerShare": "Anteil deiner Stimmkraft",
-    "supportersCount": "{count, plural, =0 {Noch keine Unterstützer} one {# Unterstützer} other {# Unterstützer}}",
+    "totalSupport": "UpVote gesamt",
+    "yourVotingPowerShare": "Upvote mit einem % deiner Stimmkraft",
+    "supportersCount": "{count, plural, =0 {Noch keine UpVoters} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Mitglied",
     "signInToUpvote": "Melde dich als Space-Mitglied an, um Signale zu unterstützen.",
     "upvoteFailed": "Deine Stimme konnte nicht aktualisiert werden. Bitte erneut versuchen."

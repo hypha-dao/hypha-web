@@ -3,8 +3,12 @@
 import React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 
+import { resolveBankingBasePath } from './banking-endpoints';
+
 type UseSimulateKycApprovalOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
 };
 
 export type SimulateKycApprovalOptions = {
@@ -19,12 +23,9 @@ type UseSimulateKycApprovalReturn = {
   clearError: () => void;
 };
 
-function getSimulateKycApprovalEndpoint(spaceSlug: string): string {
-  return `/api/v1/spaces/${spaceSlug}/banking/sandbox/simulate-kyc-approval`;
-}
-
 export const useSimulateKycApproval = ({
   spaceSlug,
+  basePath,
 }: UseSimulateKycApprovalOptions): UseSimulateKycApprovalReturn => {
   const { getAccessToken } = useAuthentication();
   const [isSimulating, setIsSimulating] = React.useState(false);
@@ -43,7 +44,11 @@ export const useSimulateKycApproval = ({
           throw new Error('Unauthorized');
         }
 
-        const endpoint = getSimulateKycApprovalEndpoint(spaceSlug);
+        const base = resolveBankingBasePath({ spaceSlug, basePath });
+        if (!base) {
+          throw new Error('Missing banking endpoint');
+        }
+        const endpoint = `${base}/sandbox/simulate-kyc-approval`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -77,7 +82,7 @@ export const useSimulateKycApproval = ({
         setIsSimulating(false);
       }
     },
-    [getAccessToken, spaceSlug],
+    [getAccessToken, spaceSlug, basePath],
   );
 
   const clearError = React.useCallback(() => setError(null), []);

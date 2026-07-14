@@ -10,6 +10,7 @@ export type ButtonNavItemProps = {
   label: string;
   classNames?: string;
   onClick?: React.MouseEventHandler;
+  icon?: React.ReactNode;
 };
 
 export const ButtonNavItem = ({
@@ -17,9 +18,18 @@ export const ButtonNavItem = ({
   label,
   onClick,
   classNames,
+  icon,
 }: ButtonNavItemProps) => {
   const pathname = usePathname();
   const isActive = href && pathname.includes(href);
+  const content = (
+    <>
+      {icon ? (
+        <span className="mr-1.5 inline-flex shrink-0">{icon}</span>
+      ) : null}
+      {label}
+    </>
+  );
   return (
     <Button
       key={label}
@@ -33,7 +43,7 @@ export const ButtonNavItem = ({
       asChild={!!href}
       onClick={onClick}
     >
-      {href ? <Link href={href}>{label}</Link> : <span>{label}</span>}
+      {href ? <Link href={href}>{content}</Link> : <span>{content}</span>}
     </Button>
   );
 };

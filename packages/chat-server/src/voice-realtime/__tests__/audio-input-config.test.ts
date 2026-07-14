@@ -9,18 +9,27 @@ describe('resolveRealtimeAudioInputConfig', () => {
     process.env = { ...originalEnv };
   });
 
-  it('uses production Live Voice VAD defaults', () => {
+  it('uses tuned Live Voice VAD defaults', () => {
     delete process.env.OPENAI_REALTIME_VAD_THRESHOLD;
     delete process.env.OPENAI_REALTIME_VAD_SILENCE_MS;
     delete process.env.OPENAI_REALTIME_NOISE_REDUCTION;
 
     const config = resolveRealtimeAudioInputConfig('gpt-4o-mini-transcribe');
 
-    expect(config.turnDetection.threshold).toBe(0.5);
-    expect(config.turnDetection.silence_duration_ms).toBe(450);
+    expect(config.turnDetection.threshold).toBe(0.72);
+    expect(config.turnDetection.silence_duration_ms).toBe(1000);
+    expect(config.turnDetection.prefix_padding_ms).toBe(350);
     expect(config.turnDetection.interrupt_response).toBe(false);
-    expect(config.noiseReduction).toBeNull();
+    expect(config.noiseReduction).toEqual({ type: 'near_field' });
     expect(config.transcription.model).toBe('gpt-4o-mini-transcribe');
+  });
+
+  it('allows disabling noise reduction via env', () => {
+    process.env.OPENAI_REALTIME_NOISE_REDUCTION = 'off';
+
+    const config = resolveRealtimeAudioInputConfig('gpt-4o-mini-transcribe');
+
+    expect(config.noiseReduction).toBeNull();
   });
 
   it('reads optional env overrides', () => {

@@ -19,6 +19,7 @@ type ConnectedButtonProfileProps = {
   resolvePostAuthRedirectPathOrDefault: ResolvePostAuthRedirectPathOrDefault;
   navItems: ButtonNavItemProps[];
   trailingBeforeProfile?: ReactNode;
+  showNetworkFeedback?: boolean;
   compact?: boolean;
 };
 
@@ -43,6 +44,7 @@ export const ConnectedButtonProfile = ({
   resolvePostAuthRedirectPathOrDefault,
   navItems,
   trailingBeforeProfile,
+  showNetworkFeedback,
   compact = false,
 }: ConnectedButtonProfileProps) => {
   const {
@@ -154,6 +156,7 @@ export const ConnectedButtonProfile = ({
       onboardingUrl={onboardingUrl}
       notificationCentrePath={notificationCentrePath}
       navItems={navItems}
+      showNetworkFeedback={showNetworkFeedback}
       trailingBeforeProfile={trailingBeforeProfile}
       compact={compact}
     />

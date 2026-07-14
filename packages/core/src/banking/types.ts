@@ -75,6 +75,36 @@ export type RequestSpaceBankOnboardingInput = {
   redirectUri?: string;
 };
 
+/** Personal (individual) off-ramp onboarding — owner is a person, not a space. */
+export type RequestPersonalBankOnboardingInput = {
+  personSlug: string;
+  authToken: string;
+  legalName: string;
+  contactEmail: string;
+  requestedRails?: string[];
+  redirectUri?: string;
+};
+
+export type PersonalBankOnboardingResult = {
+  provider: BankProvider;
+  created: boolean;
+  /** Person display/legal name — used to personalize the KYC email. */
+  ownerName: string;
+  requesterSlug: string | null;
+  kycLink: string | null;
+  tosLink: string | null;
+  procedures: {
+    tos: BankValidationRequirement;
+    kyc: BankValidationRequirement;
+  };
+};
+
+export type RequestPersonalEndorsementKycInput = {
+  personSlug: string;
+  authToken: string;
+  endorsement: string;
+};
+
 export type BankVirtualAccountPublic = {
   id: string;
   currency: string;
@@ -202,6 +232,18 @@ export type ListBankPayoutAccountsInput = {
   startingAfter?: string;
 };
 
+/** Owner-agnostic payout-account list options for the shared payout core. */
+export type BankPayoutAccountsListOptions = {
+  limit?: number;
+  startingAfter?: string;
+};
+
+export type ListPersonalBankPayoutAccountsInput = {
+  personSlug: string;
+  limit?: number;
+  startingAfter?: string;
+};
+
 export type CreateSpaceBankPayoutAccountInput = {
   spaceSlug: string;
   authToken: string;
@@ -248,6 +290,21 @@ export type CreateSpaceBankPayoutAccountInput = {
 export type CreateSpaceBankPayoutAccountResult = {
   account: BankPayoutAccountPublic;
 };
+
+/** Owner-agnostic payout-account fields (no space/person owner, no auth token). */
+export type CreateBankPayoutAccountFields = Omit<
+  CreateSpaceBankPayoutAccountInput,
+  'spaceSlug' | 'authToken'
+>;
+
+export type CreatePersonalBankPayoutAccountInput =
+  CreateBankPayoutAccountFields & {
+    personSlug: string;
+    authToken: string;
+  };
+
+export type CreatePersonalBankPayoutAccountResult =
+  CreateSpaceBankPayoutAccountResult;
 
 export type BankAddAccountRailOption = {
   railKey: string;

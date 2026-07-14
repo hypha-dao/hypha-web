@@ -9,7 +9,7 @@ const findSpaceBySlug = vi.fn();
 const authorizeSpaceBankOnboarding = vi.fn();
 const findBankCustomerBySpaceAndProvider = vi.fn();
 const insertBankCustomer = vi.fn();
-const buildPublicStatusFromCustomer = vi.fn();
+const bridgeGetKycLink = vi.fn();
 
 vi.mock('../../../space/server/queries', () => ({
   findSpaceBySlug: (...args: unknown[]) => findSpaceBySlug(...args),
@@ -29,10 +29,15 @@ vi.mock('../mutations', () => ({
   insertBankCustomer: (...args: unknown[]) => insertBankCustomer(...args),
 }));
 
-vi.mock('../get-space-bank-customer-public-status', () => ({
-  buildPublicStatusFromCustomer: (...args: unknown[]) =>
-    buildPublicStatusFromCustomer(...args),
-}));
+vi.mock('../../../common/server/bridge-client', async () => {
+  const actual = await vi.importActual<
+    typeof import('../../../common/server/bridge-client')
+  >('../../../common/server/bridge-client');
+  return {
+    ...actual,
+    bridgeGetKycLink: (...args: unknown[]) => bridgeGetKycLink(...args),
+  };
+});
 
 const mockDb = {} as never;
 
@@ -61,21 +66,6 @@ const mockProvider: BankKycProvider = {
   }),
 };
 
-const mockProcedures = {
-  tos: {
-    key: 'tos',
-    status: 'pending',
-    isComplete: false,
-    action: { type: 'link' as const, url: 'https://bridge.example/tos' },
-  },
-  kyc: {
-    key: 'kyc',
-    status: 'not_started',
-    isComplete: false,
-    action: { type: 'link' as const, url: 'https://bridge.example/kyc' },
-  },
-};
-
 describe('requestSpaceBankOnboarding', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -94,14 +84,6 @@ describe('requestSpaceBankOnboarding', () => {
     insertBankCustomer.mockResolvedValue({
       id: 1,
       providerKycLinkId: 'link_1',
-      requestedRails: ['eur', 'usd'],
-    });
-    buildPublicStatusFromCustomer.mockResolvedValue({
-      isApproved: false,
-      approvalRegistered: false,
-      procedures: mockProcedures,
-      railStatuses: [],
-      currencyStatuses: [],
       requestedRails: ['eur', 'usd'],
     });
   });
@@ -125,10 +107,20 @@ describe('requestSpaceBankOnboarding', () => {
   });
 
   it('returns existing customer without calling provider (idempotent)', async () => {
-    findBankCustomerBySpaceAndProvider.mockResolvedValue({
+    const existingCustomer = {
       id: 1,
       providerKycLinkId: 'link_1',
+      providerCustomerId: 'cust_1',
       requestedRails: ['eur'],
+    };
+    findBankCustomerBySpaceAndProvider.mockResolvedValue(existingCustomer);
+    bridgeGetKycLink.mockResolvedValue({
+      id: 'link_1',
+      customer_id: 'cust_1',
+      kyc_link: 'https://bridge.example/kyc',
+      tos_link: 'https://bridge.example/tos',
+      kyc_status: 'under_review',
+      tos_status: 'approved',
     });
 
     const result = await requestSpaceBankOnboarding(
@@ -143,7 +135,12 @@ describe('requestSpaceBankOnboarding', () => {
     expect(result.created).toBe(false);
     expect(mockProvider.createKycLink).not.toHaveBeenCalled();
     expect(insertBankCustomer).not.toHaveBeenCalled();
-    expect(buildPublicStatusFromCustomer).toHaveBeenCalled();
+    expect(bridgeGetKycLink).toHaveBeenCalledWith('link_1');
+    expect(result.kycLink).toBe('https://bridge.example/kyc');
+    // buildCustomerValidations rewrites tos_link's redirect_uri to point at the kyc_link.
+    expect(result.tosLink).toBe(
+      'https://bridge.example/tos?redirect_uri=https%3A%2F%2Fbridge.example%2Fkyc',
+    );
   });
 
   it('creates customer via provider with requested rails', async () => {

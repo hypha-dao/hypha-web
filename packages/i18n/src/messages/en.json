@@ -6,6 +6,8 @@
     "delegatedVotingMemberLabel": "Delegated voting member",
     "Treasury": "Treasury",
     "Energy": "Energy",
+    "Wallet": "Wallet",
+    "Banking": "Banking",
     "Agreements": "Agreements",
     "Spaces": "Spaces",
     "loadMore": "Load more",
@@ -103,6 +105,26 @@
     "getStarted": "Get started",
     "ecosystemLogo": "Ecosystem Logo",
     "continueAdventure": "Continue your adventure"
+  },
+  "NetworkFeedback": {
+    "triggerLabel": "Shape Hypha",
+    "triggerAriaLabel": "Help shape Hypha — community and governance",
+    "title": "Help Shape Hypha",
+    "subtitle": "Choose how you'd like to participate in the network.",
+    "intro": "Whether you want to contribute ideas or help steer the network's governance, there are two ways to get involved.",
+    "community": {
+      "title": "Community",
+      "tagline": "Share ideas. Shape priorities.",
+      "description": "Join the community to discuss ideas, submit feedback, and vote on the features and initiatives you'd like to see next.",
+      "action": "Explore community"
+    },
+    "governance": {
+      "title": "Governance",
+      "tagline": "Help govern the network.",
+      "description": "Hold at least one HYPHA token to participate in governance, vote on proposals, and help guide the future of the network.",
+      "learnMore": "Learn about HYPHA tokenomics.",
+      "action": "Open governance"
+    }
   },
   "OnboardingAdventure": {
     "heroEyebrow": "THE INTELLIGENT ORGANISATION",
@@ -647,7 +669,10 @@
       },
       "section": {
         "title": "Payout Bank Accounts",
-        "description": "Register an external bank account to transfer funds from your USDC or EURC wallets through proposals."
+        "description": "Register an external bank account to transfer funds from your USDC or EURC wallets through proposals.",
+        "person": {
+          "description": "Register an external bank account to receive transfers from your wallet."
+        }
       },
       "addCta": "Add payout account",
       "loading": "Loading payout accounts…",
@@ -735,7 +760,11 @@
           "liquidationAddressLabel": "Payout address",
           "howToTitle": "How to pay out",
           "howToText": "Create a Funding or Expenses proposal pointing to this address as the payout destination. Funds will be converted and transferred to your registered bank.",
-          "done": "Done"
+          "done": "Done",
+          "person": {
+            "subtitle": "The account is active. Copy the payout address to send funds to it.",
+            "howToText": "Use Transfer funds from your profile to send {currency} to this address. Funds will be converted and transferred to your registered bank."
+          }
         },
         "swift": {
           "code": "SWIFT (USD)",
@@ -823,6 +852,10 @@
       "dialogDescription": "Detailed information and technical configurations.",
       "dataMinimizationNotice": "Deposit and verification details are loaded from our banking partner and are not saved on Hypha servers.",
       "noCustomer": "No bank customer record for this space yet.",
+      "person": {
+        "noCustomer": "No bank customer record for your profile yet.",
+        "kybProcedure": "Identity verification (KYC)"
+      },
       "approvedSummary": "Verification is approved. Manage your supported currencies in the section below.",
       "providerValidationsTitle": "Provider validations",
       "legalNameLabel": "Legal entity name",
@@ -870,7 +903,13 @@
           "approved": "Business verification is complete. No further action is required here.",
           "rejected": "Verification was declined. Contact support if you believe this is an error.",
           "paused": "Verification is paused. Contact support for assistance.",
-          "offboarded": "Banking verification is no longer available for this customer. Contact support for assistance."
+          "offboarded": "Banking verification is no longer available for this customer. Contact support for assistance.",
+          "person": {
+            "complete": "Identity verification is complete. No further action is required here.",
+            "not_started": "Open the verification link to start your identity verification.",
+            "awaiting_ubo": "Bridge is completing additional verification steps for your submission.",
+            "approved": "Identity verification is complete. No further action is required here."
+          }
         }
       }
     },
@@ -919,14 +958,25 @@
     "initialSetup": {
       "organizationLegend": "Organization details",
       "organizationHint": "Organization details are sent to our banking partner for verification and are not stored on Hypha.",
+      "legalName": "Legal entity name",
+      "contactEmail": "Contact email",
       "currenciesTitle": "Currencies you want to use",
       "currenciesDescription": "Select the currencies this space will use for bank deposits and payouts. Your organization will be verified once with our banking partner.",
       "currenciesHint": "You can add more currencies later from Banking settings.",
-      "submit": "Continue"
+      "submit": "Continue",
+      "person": {
+        "organizationLegend": "Your details",
+        "organizationHint": "Your details are sent to our banking partner for verification and are not stored on Hypha.",
+        "legalName": "Full name",
+        "currenciesDescription": "Select the currencies you want to use for bank payouts. You'll be verified once with our banking partner."
+      }
     },
     "notStarted": {
       "description": "Banking is not set up for this space yet.",
-      "enableCta": "Continue"
+      "enableCta": "Continue",
+      "person": {
+        "description": "Banking is not set up for your profile yet."
+      }
     },
     "blockers": {
       "notOnChain": "This space must be deployed on-chain before a linked bank account can be set up.",
@@ -1074,7 +1124,14 @@
       "simulateFillingKybRequiredData": "Simulate Filling KYB Required Data",
       "cta": "Simulate KYB approval",
       "simulating": "Simulating…",
-      "refreshing": "Refreshing status…"
+      "refreshing": "Refreshing status…",
+      "person": {
+        "title": "Sandbox / Dev — KYC simulation",
+        "description": "KYC is a manual step, so it must be simulated in sandbox. This can bypass filling in the form completely as well.",
+        "infoTooltipAria": "About KYC simulation in sandbox",
+        "simulateFillingKybRequiredData": "Simulate Filling KYC Required Data",
+        "cta": "Simulate KYC approval"
+      }
     },
     "endorsements": {
       "base": "USD (ACH / wire transfer)",
@@ -1083,16 +1140,6 @@
       "pix": "BRL (PIX, Brazil)",
       "sepa": "EUR (SEPA bank transfer)",
       "spei": "MXN (SPEI, Mexico)"
-    },
-    "onboardingDialog": {
-      "title": "Enable bank deposits",
-      "description": "We use this information to verify your organization. Once approved, your space will be set up to receive bank transfers.",
-      "legalName": "Legal entity name",
-      "contactEmail": "Contact email",
-      "endorsementsLabel": "Payment rails",
-      "endorsementsHint": "These are Bridge KYB endorsements (e.g. base for USD, sepa for EUR). Each selected rail is included in the verification link.",
-      "submit": "Start verification",
-      "submitting": "Starting…"
     },
     "status": {
       "not_started": {
@@ -2069,6 +2116,7 @@
             "cny": "Chinese Yuan",
             "chf": "Swiss Franc",
             "jpy": "Japanese Yen",
+            "nzd": "New Zealand Dollar",
             "aud": "Australian Dollar",
             "hkd": "Hong Kong Dollar"
           }
@@ -3035,6 +3083,7 @@
     "callCameraOff": "Turn camera off",
     "callErrorPermission": "Call start was blocked by permissions (camera/microphone or room call permissions).",
     "callErrorPermissionGuidance": "Allow camera/microphone in your browser and ensure this room allows members to start calls, then try again.",
+    "callErrorDeviceNotFound": "No camera or microphone was found on this device. Connect one and try again.",
     "callErrorGeneric": "Could not start the call. Try again.",
     "callSessionRefreshFailedDescription": "Your call session expired. Reconnect to stay in the meeting.",
     "callSessionRefreshFailedReconnect": "Reconnect",
@@ -3520,17 +3569,18 @@
     "boardCancelAction": "Cancel",
     "boardAll": "All signals",
     "boardDelete": "Delete board {boardName}",
-    "signalViewBoard": "Kanban Board",
+    "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configure statuses and boards",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "List",
-    "signalViewGrid": "Grid",
+    "signalViewGrid": "UpVote",
     "signalBoardUncategorized": "Uncategorized",
     "signalListTitle": "Title",
     "signalListStatus": "Status",
     "signalListDue": "Due",
     "signalListPriority": "Priority",
     "signalListBoard": "Board",
+    "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Drop signals here",
     "signalDropHere": "Drop here",
     "signalListActions": "Actions",
@@ -3669,9 +3719,9 @@
     "updateUpvote": "Update upvote",
     "removeUpvote": "Remove upvote",
     "upvoteDetails": "Support details",
-    "totalSupport": "Total support",
-    "yourVotingPowerShare": "Share of your voting power",
-    "supportersCount": "{count, plural, =0 {No supporters yet} one {# supporter} other {# supporters}}",
+    "totalSupport": "Total UpVote",
+    "yourVotingPowerShare": "Upvote with a % of your voting power",
+    "supportersCount": "{count, plural, =0 {No UpVoters yet} one {# UpVoter} other {# UpVoters}}",
     "anonymousSupporter": "Member",
     "signInToUpvote": "Sign in as a space member to upvote signals.",
     "upvoteFailed": "Could not update your upvote. Try again."

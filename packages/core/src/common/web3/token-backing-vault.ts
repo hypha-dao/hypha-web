@@ -18,6 +18,7 @@ export const CURRENCY_FEEDS = {
   CAD: '0xA840145F87572E82519d578b1F36340368a25D5d' as const,
   CHF: '0x3A1d6444fb6a402470098E23DaD0B7E86E14252F' as const,
   AUD: '0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229' as const,
+  NZD: '0x06bdFe07E71C476157FC025d3cCD4BBe08e83EF9' as const,
 } as const;
 
 export const CURRENCY_FEED_OPTIONS = [
@@ -27,6 +28,7 @@ export const CURRENCY_FEED_OPTIONS = [
   { value: CURRENCY_FEEDS.CAD, label: 'CAD' },
   { value: CURRENCY_FEEDS.CHF, label: 'CHF' },
   { value: CURRENCY_FEEDS.AUD, label: 'AUD' },
+  { value: CURRENCY_FEEDS.NZD, label: 'NZD' },
 ] as const;
 
 /** address(0) for Hypha tokens — price read from token contract */

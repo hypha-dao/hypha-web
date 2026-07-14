@@ -124,7 +124,7 @@ describe('CSH-SHARE-3 single presenter (one share at a time)', () => {
       ),
       'utf8',
     );
-    expect(source).toContain('getRemoteScreenshareOwner(gc)');
+    expect(source).toContain('getRemoteScreenshareOwnerFromRoom(lkRoom)');
     expect(source).toMatch(/sendScreenshareTakeoverEvent\(\s*'request'/);
     expect(source).toContain('resolveIncomingScreenshareTakeover');
     expect(source).toContain('resolveScreenshareTakeoverOutcome');
@@ -392,7 +392,7 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       'utf8',
     );
     expect(source).toContain('ensureCallReactionAnchor');
-    expect(source).toContain('groupCallId: gc.groupCallId');
+    expect(source).toContain('groupCallId: newSessionId');
     expect(source).toContain('callSessionAnchorEventId');
   });
 

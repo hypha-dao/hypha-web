@@ -21,17 +21,17 @@ export type RealtimeAudioInputConfig = {
   transcription: { model: string };
 };
 
-/** Match production Live Voice VAD defaults. */
+/** Live Voice VAD defaults — keep in sync with chat-server audio-input-config. */
 export const DEFAULT_REALTIME_AUDIO_INPUT: RealtimeAudioInputConfig = {
   turnDetection: {
     type: 'server_vad',
-    threshold: 0.5,
-    prefix_padding_ms: 300,
-    silence_duration_ms: 450,
+    threshold: 0.72,
+    prefix_padding_ms: 350,
+    silence_duration_ms: 1000,
     create_response: false,
     interrupt_response: false,
   },
-  noiseReduction: null,
+  noiseReduction: { type: 'near_field' },
   transcription: { model: 'gpt-4o-mini-transcribe' },
 };
 
@@ -171,9 +171,12 @@ function isNoiseOnlyTranscript(text: string): boolean {
 /** Ignore VAD false positives — barge-in and /api/chat only on real user speech. */
 export function isSubstantiveUserTranscript(text: string): boolean {
   const normalized = text.trim();
-  if (normalized.length < 2) return false;
+  if (normalized.length < 3) return false;
   if (isNoiseOnlyTranscript(normalized)) return false;
-  return /\p{L}/u.test(normalized);
+  if (!/\p{L}/u.test(normalized)) return false;
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  if (wordCount === 1 && normalized.length < 5) return false;
+  return true;
 }
 
 export function setLocalMicEnabled(

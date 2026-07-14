@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowBigUp, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   useCoherenceUpvoteMutations,
   useJwt,
@@ -13,12 +13,14 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Separator,
   Slider,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
+import { SignalUpvoteIcon } from './signal-upvote-icon';
 
 const EMPTY_SUMMARY: CoherenceUpvoteSummary = {
   totalVotingPower: '0',
@@ -46,7 +48,6 @@ type SignalUpvoteControlProps = {
   upvotes?: CoherenceUpvoteSummary;
   refresh?: () => Promise<void>;
   disabled?: boolean;
-  /** Smaller pill for dense task cards. */
   compact?: boolean;
   className?: string;
 };
@@ -176,8 +177,9 @@ export function SignalUpvoteControl({
     [],
   );
 
-  // Button size="sm" sets min-h-8; zero it so the compact heights apply.
-  const pillHeightClass = cn('min-h-0 py-0', compact ? 'h-5' : 'h-6');
+  // Button size="sm" sets min-h-8; zero it so our pill height wins.
+  const pillHeightClass = cn('min-h-0 shrink-0 py-0', compact ? 'h-5' : 'h-7');
+  const iconSizeClass = compact ? 'h-3 w-3' : 'h-3.5 w-3.5';
   const hasAnyVotes = summary.upvoteCount > 0;
 
   return (
@@ -186,177 +188,228 @@ export function SignalUpvoteControl({
       onClick={stopPropagation}
       onKeyDown={stopPropagation}
     >
-      <Button
-        type="button"
-        variant="outline"
-        colorVariant={hasVoted ? 'accent' : 'neutral'}
-        size="sm"
+      <div
         className={cn(
+          'group/upvote inline-flex items-center overflow-hidden rounded-full border shadow-sm backdrop-blur-[2px] transition-[border-color,box-shadow,background-color,opacity] duration-200 ease-out',
           pillHeightClass,
-          'gap-1 rounded-r-none border-r-0 tabular-nums',
-          hasAnyVotes ? 'px-2' : 'w-8 justify-center px-0',
           hasVoted
-            ? 'bg-accent-3/40 text-accent-11 hover:bg-accent-3/60'
-            : 'bg-transparent text-muted-foreground hover:text-foreground',
+            ? 'border-accent-8/85 bg-background/55 shadow-sm'
+            : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25 hover:shadow-md',
+          isMutating && 'pointer-events-none opacity-65',
+          !canVote && 'opacity-55',
         )}
-        disabled={!canVote || isMutating}
-        aria-pressed={hasVoted}
-        aria-label={hasVoted ? t('removeUpvote') : t('upvote')}
-        title={
-          !jwt
-            ? t('signInToUpvote')
-            : hasVoted
-            ? t('removeUpvote')
-            : t('upvote')
-        }
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void handleToggle();
-        }}
       >
-        <ArrowBigUp
+        <Button
+          type="button"
+          variant="ghost"
+          colorVariant="neutral"
+          size="sm"
           className={cn(
-            compact ? 'h-3 w-3' : 'h-3.5 w-3.5',
-            hasVoted && 'fill-current',
+            pillHeightClass,
+            'gap-1 rounded-none border-0 px-0 tabular-nums shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
+            'flex items-center justify-center',
+            compact ? 'min-w-[2.75rem] px-2' : 'min-w-[3rem] px-2.5',
+            hasVoted
+              ? 'text-accent-11 hover:bg-muted/30 active:bg-muted/40'
+              : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground active:bg-muted/50',
           )}
-          aria-hidden
-        />
-        <span className={compact ? 'text-[11px]' : 'text-1'}>{totalLabel}</span>
-      </Button>
-      <Popover
-        open={popoverOpen}
-        onOpenChange={(open) => {
-          setPopoverOpen(open);
-          if (open) {
-            setPercent(myUpvotePercent(summary));
-            setError(null);
+          disabled={!canVote || isMutating}
+          aria-pressed={hasVoted}
+          aria-label={hasVoted ? t('removeUpvote') : t('upvote')}
+          title={
+            !jwt
+              ? t('signInToUpvote')
+              : hasVoted
+              ? t('removeUpvote')
+              : t('upvote')
           }
-        }}
-      >
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            size="sm"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void handleToggle();
+          }}
+        >
+          <SignalUpvoteIcon
             className={cn(
-              pillHeightClass,
-              'w-8 rounded-l-none px-0 text-muted-foreground hover:text-foreground',
+              iconSizeClass,
+              'transition-transform duration-200 ease-out group-hover/upvote:scale-105',
+              hasVoted ? 'text-accent-11' : 'text-muted-foreground',
             )}
-            aria-haspopup="dialog"
-            aria-label={t('upvoteDetails')}
-            title={t('upvoteDetails')}
+            active={hasVoted}
+          />
+          <span
+            className={cn(
+              compact ? 'text-[11px]' : 'text-1',
+              hasVoted
+                ? 'font-semibold text-accent-11'
+                : hasAnyVotes
+                ? 'font-medium text-foreground'
+                : 'font-medium text-muted-foreground',
+            )}
+          >
+            {totalLabel}
+          </span>
+        </Button>
+        <span className="mx-0.5 h-4 w-px shrink-0 bg-border/80" aria-hidden />
+        <Popover
+          open={popoverOpen}
+          onOpenChange={(open) => {
+            setPopoverOpen(open);
+            if (open) {
+              setPercent(myUpvotePercent(summary));
+              setError(null);
+            }
+          }}
+        >
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className={cn(
+                pillHeightClass,
+                'flex w-7 items-center justify-center rounded-none border-0 px-0 text-muted-foreground shadow-none ring-0 hover:bg-muted/35 hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/45 data-[state=open]:text-foreground',
+                hasVoted && 'text-accent-11 hover:text-accent-11',
+              )}
+              aria-haspopup="dialog"
+              aria-label={t('upvoteDetails')}
+              title={t('upvoteDetails')}
+              onClick={stopPropagation}
+            >
+              <ChevronDown
+                className={cn(
+                  iconSizeClass,
+                  'transition-transform duration-200',
+                  popoverOpen && 'rotate-180',
+                )}
+                aria-hidden
+              />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            sideOffset={8}
+            className="w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border/90 bg-background-2 p-0 shadow-xl ring-1 ring-white/5 dark:ring-white/10"
+            style={spaceAccentPortalStyle}
+            data-space-accent-scope
             onClick={stopPropagation}
           >
-            <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          className="w-72 p-4"
-          style={spaceAccentPortalStyle}
-          onClick={stopPropagation}
-        >
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-1 font-medium text-muted-foreground">
-                {t('totalSupport')}
-              </span>
-              <span className="text-2 font-semibold tabular-nums">
-                {totalLabel}
-              </span>
-            </div>
-
-            {canVote ? (
-              <div className="flex flex-col gap-2">
-                <span className="text-1 text-muted-foreground">
-                  {t('yourVotingPowerShare')}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+                <span className="text-1 font-medium text-muted-foreground">
+                  {t('totalSupport')}
                 </span>
-                <Slider
-                  min={1}
-                  max={100}
-                  step={1}
-                  value={[percent]}
-                  onValueChange={(value) => setPercent(value[0] ?? 100)}
-                  displayValue
-                  disabled={isMutating}
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    colorVariant="accent"
-                    size="sm"
-                    className="h-7 flex-1"
-                    disabled={isMutating}
-                    onClick={() => void handleApplyPercent()}
-                  >
-                    {hasVoted ? t('updateUpvote') : t('upvote')}
-                  </Button>
-                  {hasVoted ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="h-7"
-                      disabled={isMutating}
-                      onClick={() => void handleRemove()}
-                    >
-                      {t('removeUpvote')}
-                    </Button>
-                  ) : null}
-                </div>
+                <span className="text-3 font-semibold tabular-nums text-foreground">
+                  {totalLabel}
+                </span>
               </div>
-            ) : (
-              <p className="text-1 text-muted-foreground">
-                {t('signInToUpvote')}
-              </p>
-            )}
 
-            {error ? (
-              <p role="alert" className="text-1 text-error-11">
-                {error}
-              </p>
-            ) : null}
-
-            <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2.5">
-              <span className="text-1 font-medium text-muted-foreground">
-                {t('supportersCount', { count: summary.upvoteCount })}
-              </span>
-              {summary.voters.length === 0 ? null : (
-                <ul className="flex max-h-40 flex-col gap-1.5 overflow-y-auto">
-                  {summary.voters.map((voter) => (
-                    <li
-                      key={voter.personId}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <PersonAvatar
-                          size="sm"
-                          shape="circle"
-                          avatarSrc={voter.avatarUrl ?? ''}
-                          userName={voter.name ?? undefined}
-                        />
-                        <span className="truncate text-1">
-                          {voter.name || t('anonymousSupporter')}
+              {canVote ? (
+                <>
+                  <Separator className="bg-border/70" />
+                  <div className="flex flex-col gap-4 px-4 py-4">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-1 font-medium text-foreground">
+                          {t('yourVotingPowerShare')}
                         </span>
-                      </span>
-                      <span className="shrink-0 text-1 tabular-nums text-muted-foreground">
-                        {formatVotingPowerCompact(
-                          voter.votingPower,
-                          summary.tokenDecimals,
-                          locale,
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                        <span className="text-1 font-semibold tabular-nums text-accent-11">
+                          {percent}%
+                        </span>
+                      </div>
+                      <Slider
+                        min={1}
+                        max={100}
+                        step={1}
+                        value={[percent]}
+                        onValueChange={(value) => setPercent(value[0] ?? 100)}
+                        disabled={isMutating}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        colorVariant="accent"
+                        className="w-full gap-2"
+                        disabled={isMutating}
+                        onClick={() => void handleApplyPercent()}
+                      >
+                        <SignalUpvoteIcon className="h-4 w-4" active />
+                        {hasVoted ? t('updateUpvote') : t('upvote')}
+                      </Button>
+                      {hasVoted ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          colorVariant="neutral"
+                          className="w-full text-muted-foreground hover:text-foreground"
+                          disabled={isMutating}
+                          onClick={() => void handleRemove()}
+                        >
+                          {t('removeUpvote')}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Separator className="bg-border/70" />
+                  <p className="px-4 py-4 text-1 leading-relaxed text-muted-foreground">
+                    {t('signInToUpvote')}
+                  </p>
+                </>
               )}
+
+              {error ? (
+                <p
+                  role="alert"
+                  className="mx-4 mb-4 rounded-lg border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+                >
+                  {error}
+                </p>
+              ) : null}
+
+              <Separator className="bg-border/70" />
+              <div className="flex flex-col gap-3 px-4 py-3.5">
+                <span className="text-1 font-medium text-muted-foreground">
+                  {t('supportersCount', { count: summary.upvoteCount })}
+                </span>
+                {summary.voters.length > 0 ? (
+                  <ul className="flex max-h-44 flex-col gap-1 overflow-y-auto rounded-xl border border-border/80 bg-muted/20 p-1.5 narrow-scrollbar">
+                    {summary.voters.map((voter) => (
+                      <li
+                        key={voter.personId}
+                        className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-background-3/70"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <PersonAvatar
+                            size="sm"
+                            shape="circle"
+                            avatarSrc={voter.avatarUrl ?? ''}
+                            userName={voter.name ?? undefined}
+                          />
+                          <span className="truncate text-1 font-medium text-foreground">
+                            {voter.name || t('anonymousSupporter')}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-1 tabular-nums text-muted-foreground">
+                          {formatVotingPowerCompact(
+                            voter.votingPower,
+                            summary.tokenDecimals,
+                            locale,
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
             </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }

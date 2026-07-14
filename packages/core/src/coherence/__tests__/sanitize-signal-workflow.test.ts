@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  resolveDefaultBoard,
   resolveDefaultProgressStatus,
+  resolveEffectiveBoard,
   sanitizeSignalWorkflowConfig,
 } from '../signal-workflow';
 
@@ -102,5 +104,48 @@ describe('resolveDefaultProgressStatus', () => {
     });
 
     expect(slug).toBe('todo');
+  });
+});
+
+describe('resolveDefaultBoard', () => {
+  const workflow = {
+    statuses: [],
+    boards: [
+      { slug: 'product', name: 'Product', color: 'accent', position: 1 },
+      { slug: 'general', name: 'General', color: 'neutral', position: 0 },
+    ],
+  };
+
+  it('prefers the general board when present', () => {
+    expect(resolveDefaultBoard(workflow)).toBe('general');
+  });
+
+  it('falls back to the first active board by position', () => {
+    expect(
+      resolveDefaultBoard({
+        statuses: [],
+        boards: [
+          { slug: 'product', name: 'Product', color: 'accent', position: 0 },
+        ],
+      }),
+    ).toBe('product');
+  });
+});
+
+describe('resolveEffectiveBoard', () => {
+  const workflow = {
+    statuses: [],
+    boards: [
+      { slug: 'general', name: 'General', color: 'neutral', position: 0 },
+      { slug: 'product', name: 'Product', color: 'accent', position: 1 },
+    ],
+  };
+
+  it('maps null boards to general', () => {
+    expect(resolveEffectiveBoard(null, workflow)).toBe('general');
+  });
+
+  it('maps unknown boards to general', () => {
+    expect(resolveEffectiveBoard('missing', workflow)).toBe('general');
   });
 });

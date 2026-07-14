@@ -5,13 +5,16 @@ import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { PaginatedBankPayoutAccounts } from './types';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 export function getPayoutAccountsEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/banking/payout-accounts`;
 }
 
 type UsePayoutAccountsOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
   enabled?: boolean;
 };
 
@@ -26,14 +29,15 @@ type UsePayoutAccountsReturn = {
 
 export const usePayoutAccounts = ({
   spaceSlug,
+  basePath,
   enabled = true,
 }: UsePayoutAccountsOptions): UsePayoutAccountsReturn => {
   const { getAccessToken, isAuthenticated } = useAuthentication();
 
-  const endpoint = React.useMemo(
-    () => (spaceSlug ? getPayoutAccountsEndpoint(spaceSlug) : null),
-    [spaceSlug],
-  );
+  const endpoint = React.useMemo(() => {
+    const base = resolveBankingBasePath({ spaceSlug, basePath });
+    return base ? `${base}/payout-accounts` : null;
+  }, [spaceSlug, basePath]);
 
   const swrKey = React.useMemo(
     () =>

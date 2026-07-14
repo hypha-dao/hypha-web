@@ -1,5 +1,6 @@
 import {
   Alchemy,
+  decodeJoinRequestProposal,
   findPersonByWeb3Address,
   findSpaceByWeb3Id,
   findPeopleByWeb3Addresses,
@@ -28,14 +29,30 @@ export const POST = proposalCreatedSigningKey
         event: 'ProposalCreated',
       },
       async (events) => {
-        const eventsData = events.map(({ args }) => ({
-          spaceWeb3Id: args.spaceId,
-          creatorWeb3Address: args.creator,
-          proposalWeb3Id: args.proposalId,
-        }));
+        const eventsData = events.map(({ args }) => {
+          // Join requests are created on-chain by DAOSpaceFactory.joinSpace(),
+          // so the event's `creator` is the factory contract — the actual
+          // requester has to be recovered from the executionData.
+          const joinRequesterAddress = decodeJoinRequestProposal({
+            creator: args.creator,
+            executionData: args.executionData,
+          });
+
+          return {
+            spaceWeb3Id: args.spaceId,
+            creatorWeb3Address: joinRequesterAddress ?? args.creator,
+            proposalWeb3Id: args.proposalId,
+            isJoinRequest: joinRequesterAddress !== null,
+          };
+        });
 
         const fetchingDbData = eventsData.map(
-          async ({ spaceWeb3Id, creatorWeb3Address, proposalWeb3Id }) => {
+          async ({
+            spaceWeb3Id,
+            creatorWeb3Address,
+            proposalWeb3Id,
+            isJoinRequest,
+          }) => {
             const person = findPersonByWeb3Address(
               { address: creatorWeb3Address },
               { db },
@@ -45,7 +62,12 @@ export const POST = proposalCreatedSigningKey
               { db },
             );
 
-            return { proposalWeb3Id, person: await person, space: await space };
+            return {
+              proposalWeb3Id,
+              isJoinRequest,
+              person: await person,
+              space: await space,
+            };
           },
         );
         const resultFetchingDbData = await Promise.allSettled(fetchingDbData);
@@ -82,6 +104,7 @@ export const POST = proposalCreatedSigningKey
           creatorName: data.person?.name,
           spaceTitle: data.space?.title,
           spaceSlug: data.space?.slug,
+          proposalLabel: data.isJoinRequest ? 'Invite' : undefined,
         }));
         const sendingEmails = notificationParams.map(async (params) => {
           const { body, subject } = emailProposalCreationForCreator(params);
@@ -119,7 +142,14 @@ export const POST = proposalCreatedSigningKey
           );
       },
       async (events) => {
-        const spaceIds = events.map(({ args }) => args.spaceId);
+        const eventsData = events.map(({ args }) => ({
+          spaceWeb3Id: args.spaceId,
+          joinRequesterAddress: decodeJoinRequestProposal({
+            creator: args.creator,
+            executionData: args.executionData,
+          }),
+        }));
+        const spaceIds = eventsData.map(({ spaceWeb3Id }) => spaceWeb3Id);
 
         const spacesDetails = await (async () => {
           try {
@@ -141,20 +171,39 @@ export const POST = proposalCreatedSigningKey
           return;
         }
 
-        const fetchingData = spacesDetails.map(async ({ members, spaceId }) => {
-          const people = await findPeopleByWeb3Addresses(
-            {
-              addresses: members as string[],
-            },
-            { db },
-          );
-          const space = await findSpaceByWeb3Id(
-            { id: Number(spaceId) },
-            { db },
-          );
+        // fetchSpaceDetails preserves the input order, so entries align with
+        // eventsData by index.
+        const fetchingData = spacesDetails.map(
+          async ({ members, spaceId }, index) => {
+            const joinRequesterAddress =
+              eventsData[index]?.spaceWeb3Id === spaceId
+                ? eventsData[index]?.joinRequesterAddress ?? null
+                : null;
 
-          return { people, space };
-        });
+            const [people, space, joinRequester] = await Promise.all([
+              findPeopleByWeb3Addresses(
+                {
+                  addresses: members as string[],
+                },
+                { db },
+              ),
+              findSpaceByWeb3Id({ id: Number(spaceId) }, { db }),
+              joinRequesterAddress
+                ? findPersonByWeb3Address(
+                    { address: joinRequesterAddress },
+                    { db },
+                  )
+                : Promise.resolve(null),
+            ]);
+
+            return {
+              people,
+              space,
+              isJoinRequest: joinRequesterAddress !== null,
+              joinRequester,
+            };
+          },
+        );
         const spacesWithPeople = (await Promise.allSettled(fetchingData))
           .filter((res) => res.status === 'fulfilled')
           .map(({ value }) => value)
@@ -166,10 +215,16 @@ export const POST = proposalCreatedSigningKey
           );
 
         const notificationParams = spacesWithPeople.map(
-          ({ space, people }) => ({
+          ({ space, people, isJoinRequest, joinRequester }) => ({
             slugs: people.map(({ slug }) => slug!),
             spaceTitle: space!.title,
             spaceSlug: space!.slug,
+            proposalLabel: isJoinRequest ? 'Invite' : undefined,
+            creatorName: isJoinRequest
+              ? [joinRequester?.name, joinRequester?.surname]
+                  .filter(Boolean)
+                  .join(' ') || undefined
+              : undefined,
           }),
         );
 

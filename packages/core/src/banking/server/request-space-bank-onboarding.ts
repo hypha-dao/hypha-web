@@ -14,6 +14,7 @@ import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { currenciesToEndorsements } from '../constants';
 import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
+import { bridgeGetKycLink } from '../../common/server/bridge-client';
 import { findBankCustomerBySpaceAndProvider } from './queries';
 
 export type RequestSpaceBankOnboardingOptions = {
@@ -59,16 +60,19 @@ export async function requestSpaceBankOnboarding(
   );
 
   if (existing) {
+    const kycLink = await bridgeGetKycLink(existing.providerKycLinkId);
+    const validations = buildCustomerValidations(kycLink);
+
     return {
       provider: DEFAULT_BANK_PROVIDER,
       created: false,
       spaceTitle: emailMeta.spaceTitle,
       requesterSlug: emailMeta.requesterSlug,
-      kycLink: null,
-      tosLink: null,
+      kycLink: validations.kycLink,
+      tosLink: validations.tosLink,
       procedures: {
-        tos: { key: 'tos', status: null, isComplete: false },
-        kyc: { key: 'kyc', status: null, isComplete: false },
+        tos: validations.tos,
+        kyc: validations.kyc,
       },
     };
   }

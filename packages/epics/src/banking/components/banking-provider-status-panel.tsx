@@ -10,6 +10,8 @@ import { cn } from '@hypha-platform/ui-utils';
 import {
   bankRailNeedsEndorsementRequest,
   getBankEndorsementStatusesForPanel,
+  ownerText,
+  type BankingOwnerContext,
 } from '../banking-ui';
 import { useRequestEndorsementKyc } from '../hooks/use-request-endorsement-kyc';
 import {
@@ -24,7 +26,11 @@ import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 import { BankingSandboxDemoBar } from './banking-sandbox-demo-bar';
 
 export type BankingProviderStatusPanelProps = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
+  /** Whether this panel is for a space or an individual member's profile. Defaults to 'space'. */
+  ownerContext?: BankingOwnerContext;
   status: BankCustomerPublicStatus | null | undefined;
   isLoading: boolean;
   isRefreshing: boolean;
@@ -74,19 +80,34 @@ const KYB_PROCEDURE_HINT_STATUSES = [
 
 type KybProcedureHintStatus = (typeof KYB_PROCEDURE_HINT_STATUSES)[number];
 
+/** Statuses that have person-specific copy (identity verification vs. business/KYB wording). */
+const PERSON_OVERRIDDEN_KYB_HINTS = new Set<
+  KybProcedureHintStatus | 'complete'
+>(['complete', 'not_started', 'awaiting_ubo', 'approved']);
+
 function getProcedureLinkHint(
   kind: 'tos' | 'kyc' | 'sof',
   procedure: BankVerificationProcedurePublic,
   tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>,
+  ownerContext: BankingOwnerContext,
 ): string {
   if (kind === 'sof') {
     return tAdvanced('sofProcedureHint');
   }
 
+  const kybHint = (status: KybProcedureHintStatus | 'complete') =>
+    ownerContext === 'person' && PERSON_OVERRIDDEN_KYB_HINTS.has(status)
+      ? tAdvanced(
+          `procedureHints.kyb.person.${status}` as 'procedureHints.kyb.complete',
+        )
+      : tAdvanced(
+          `procedureHints.kyb.${status}` as 'procedureHints.kyb.complete',
+        );
+
   if (procedure.isComplete) {
     return kind === 'tos'
       ? tAdvanced('procedureHints.tos.complete')
-      : tAdvanced('procedureHints.kyb.complete');
+      : kybHint('complete');
   }
 
   const status = procedure.status;
@@ -104,7 +125,7 @@ function getProcedureLinkHint(
     status &&
     (KYB_PROCEDURE_HINT_STATUSES as readonly string[]).includes(status)
   ) {
-    return tAdvanced(`procedureHints.kyb.${status as KybProcedureHintStatus}`);
+    return kybHint(status as KybProcedureHintStatus);
   }
 
   return tAdvanced('procedureHints.fallback');
@@ -118,6 +139,7 @@ function ProcedureRow({
   t,
   tTos,
   tAdvanced,
+  ownerContext,
 }: {
   kind: 'tos' | 'kyc' | 'sof';
   title: string;
@@ -126,6 +148,7 @@ function ProcedureRow({
   t: ReturnType<typeof useTranslations<'BankingTab'>>;
   tTos: ReturnType<typeof useTranslations<'BankingTab.tosStatus'>>;
   tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
+  ownerContext: BankingOwnerContext;
 }) {
   const statusLabel = procedure.isComplete
     ? tAdvanced('stepCompleted')
@@ -153,7 +176,7 @@ function ProcedureRow({
         <div className="mt-3">
           {procedure.linkDisabled ? (
             <p className="text-1 text-muted-foreground">
-              {getProcedureLinkHint(kind, procedure, tAdvanced)}
+              {getProcedureLinkHint(kind, procedure, tAdvanced, ownerContext)}
             </p>
           ) : (
             <Button colorVariant="accent" size="sm" className="w-fit" asChild>
@@ -195,6 +218,7 @@ function getEndorsementLabel(
 
 function EndorsementValidationsList({
   spaceSlug,
+  basePath,
   endorsements,
   t,
   tAdvanced,
@@ -204,7 +228,8 @@ function EndorsementValidationsList({
   onRefreshStatus,
   disableNewEndorsementRequests = false,
 }: {
-  spaceSlug: string;
+  spaceSlug?: string;
+  basePath?: string;
   endorsements: BankEndorsementPublicStatus[];
   t: ReturnType<typeof useTranslations<'BankingTab'>>;
   tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
@@ -216,7 +241,7 @@ function EndorsementValidationsList({
   disableNewEndorsementRequests?: boolean;
 }) {
   const { requestEndorsementKyc, isLoading: isVerifying } =
-    useRequestEndorsementKyc(spaceSlug);
+    useRequestEndorsementKyc({ spaceSlug, basePath });
 
   const handleVerify = useCallback(
     async (endorsement: string) => {
@@ -356,6 +381,7 @@ function UboPendingNotice({
 
 function ProviderValidationsSection({
   spaceSlug,
+  basePath,
   status,
   t,
   tTos,
@@ -365,8 +391,10 @@ function ProviderValidationsSection({
   showProcedures,
   onOpenGear,
   onRefreshStatus,
+  ownerContext,
 }: {
-  spaceSlug: string;
+  spaceSlug?: string;
+  basePath?: string;
   status: NonNullable<BankCustomerPublicStatus>;
   t: ReturnType<typeof useTranslations<'BankingTab'>>;
   tTos: ReturnType<typeof useTranslations<'BankingTab.tosStatus'>>;
@@ -376,6 +404,7 @@ function ProviderValidationsSection({
   showProcedures: boolean;
   onOpenGear?: () => void;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
+  ownerContext: BankingOwnerContext;
 }) {
   const sofQuestionnaire = showProcedures
     ? status.pendingRequirements?.sofQuestionnaire
@@ -416,15 +445,17 @@ function ProviderValidationsSection({
               t={t}
               tTos={tTos}
               tAdvanced={tAdvanced}
+              ownerContext={ownerContext}
             />
             <ProcedureRow
               kind="kyc"
-              title={tAdvanced('kybProcedure')}
+              title={ownerText(tAdvanced, ownerContext, 'kybProcedure')}
               procedure={status.procedures.kyc}
               openLinkLabel={t('actions.openVerificationForm')}
               t={t}
               tTos={tTos}
               tAdvanced={tAdvanced}
+              ownerContext={ownerContext}
             />
             {sofProcedure ? (
               <ProcedureRow
@@ -435,6 +466,7 @@ function ProviderValidationsSection({
                 t={t}
                 tTos={tTos}
                 tAdvanced={tAdvanced}
+                ownerContext={ownerContext}
               />
             ) : null}
           </>
@@ -442,6 +474,7 @@ function ProviderValidationsSection({
 
         <EndorsementValidationsList
           spaceSlug={spaceSlug}
+          basePath={basePath}
           endorsements={getBankEndorsementStatusesForPanel(status)}
           t={t}
           tAdvanced={tAdvanced}
@@ -464,6 +497,7 @@ export const BankingProviderStatusPanel: FC<
   BankingProviderStatusPanelProps
 > = ({
   spaceSlug,
+  basePath,
   status,
   isLoading,
   isRefreshing,
@@ -472,6 +506,7 @@ export const BankingProviderStatusPanel: FC<
   onRefreshStatus,
   showPageHeader = false,
   onOpenGear,
+  ownerContext = 'space',
 }) => {
   const t = useTranslations('BankingTab');
   const tTos = useTranslations('BankingTab.tosStatus');
@@ -492,7 +527,7 @@ export const BankingProviderStatusPanel: FC<
     if (status == null) {
       return (
         <p className="text-2 text-muted-foreground">
-          {tAdvanced('noCustomer')}
+          {ownerText(tAdvanced, ownerContext, 'noCustomer')}
         </p>
       );
     }
@@ -506,6 +541,7 @@ export const BankingProviderStatusPanel: FC<
         ) : null}
         <ProviderValidationsSection
           spaceSlug={spaceSlug}
+          basePath={basePath}
           status={status}
           t={t}
           tTos={tTos}
@@ -515,6 +551,7 @@ export const BankingProviderStatusPanel: FC<
           showProcedures={!status.approvalRegistered}
           onOpenGear={onOpenGear}
           onRefreshStatus={onRefreshStatus}
+          ownerContext={ownerContext}
         />
       </div>
     );
@@ -550,9 +587,11 @@ export const BankingProviderStatusPanel: FC<
       !status.isApproved ? (
         <BankingSandboxDemoBar
           spaceSlug={spaceSlug}
+          basePath={basePath}
           canManage={canManage}
           isRefreshing={isRefreshing}
           onRefreshStatus={onRefreshStatus}
+          ownerContext={ownerContext}
         />
       ) : null}
     </div>
