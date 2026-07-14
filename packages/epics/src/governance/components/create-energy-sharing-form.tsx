@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import {
   createAgreementFiles,
@@ -7,22 +9,6 @@ import {
 } from '@hypha-platform/core/client';
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
 import { EnergySharingPlugin } from '../../agreements/plugins/energy-sharing/plugin';
-
-const schemaCreateEnergySharingForm = schemaCreateAgreementForm
-  .extend(createAgreementFiles)
-  .extend({
-    energySharing: z.object({
-      settlementWindow: z
-        .string()
-        .trim()
-        .min(1, 'Settlement window is required'),
-      creditPolicy: z.string().trim().min(1, 'Credit policy is required'),
-      debtPolicy: z.string().trim().min(1, 'Debt policy is required'),
-      effectiveFrom: z.string().trim().min(1, 'Effective date is required'),
-    }),
-  });
-
-type FormValues = z.infer<typeof schemaCreateEnergySharingForm>;
 
 export const CreateEnergySharingForm = ({
   spaceId,
@@ -35,11 +21,41 @@ export const CreateEnergySharingForm = ({
   successfulUrl: string;
   backUrl?: string;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const t = useTranslations('Energy');
+
+  const schema = React.useMemo(
+    () =>
+      schemaCreateAgreementForm.extend(createAgreementFiles).extend({
+        energySharing: z.object({
+          settlementWindow: z
+            .string()
+            .trim()
+            .min(1, t('validation.settlementWindowRequired')),
+          creditPolicy: z
+            .string()
+            .trim()
+            .min(1, t('validation.creditPolicyRequired')),
+          debtPolicy: z
+            .string()
+            .trim()
+            .min(1, t('validation.debtPolicyRequired')),
+          effectiveFrom: z
+            .string()
+            .trim()
+            .min(1, t('validation.effectiveDateRequired')),
+        }),
+      }),
+    [t],
+  );
+
+  type FormValues = z.infer<typeof schema>;
+
   return (
     <CreateEnergyProposalForm<FormValues>
-      schema={schemaCreateEnergySharingForm}
-      label="Energy Sharing"
-      stickyHeaderTitle="Create Energy Sharing Proposal"
+      schema={schema}
+      label={tAgreementFlow('labels.energySharing')}
+      stickyHeaderTitle={t('forms.stickyHeaders.energySharing')}
       resubmitTemplateSegment="energy-sharing"
       spaceId={spaceId}
       web3SpaceId={web3SpaceId}
