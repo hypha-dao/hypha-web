@@ -11,6 +11,7 @@ import { useUserAssets, useUserTransfers } from '../../treasury/hooks';
 import { ProfileBankingSection } from '../../banking/components/profile-banking-section';
 import { SpaceAccessDenied } from '../../spaces/components/space-access-denied';
 import { UserSpaceState } from '../../spaces/hooks/use-user-space-state.web3.rpc';
+import { SpaceAccentLoader } from '../../common/space-accent-loader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { WalletActionsToolbar } from './wallet-actions-toolbar';
@@ -88,9 +89,9 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
 
   if (isLoading || !personSlug) {
     return (
-      <p className="text-center text-muted-foreground">
-        {tMyWallet('loading')}
-      </p>
+      <div className="flex w-full min-h-[280px] items-center justify-center py-16">
+        <SpaceAccentLoader label={tMyWallet('loading')} />
+      </div>
     );
   }
 
