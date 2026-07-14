@@ -62,7 +62,7 @@ export function PanelDualSidebarScrollBridge({
         side="left"
         variant="sidebar"
         collapsible="icon"
-        mobileWidth={leftPanelOpen ? '100vw' : undefined}
+        mobileWidth={leftOpen ? '100vw' : undefined}
         className="z-[50] overflow-visible"
       >
         {leftContent}

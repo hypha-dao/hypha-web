@@ -9,6 +9,9 @@ import {
   getDhoSpaceSlugFromPathname,
   getRootSpace,
   isSafeImageUrl,
+  useAiPanel,
+  AiPanelTrigger,
+  AiSidebarTrigger,
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
 import { Space } from '@hypha-platform/core/client';
@@ -128,6 +131,20 @@ export function ConnectedMenuTop({
     : ecosystemLogoLabel;
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
+  const { overlayVisible } = useAiPanel();
+
+  const resolvedLeadingAction = aiChatEnabled ? (
+    <div className="flex items-center gap-2">
+      {!overlayVisible ? (
+        <div className="md:hidden">
+          <AiSidebarTrigger />
+        </div>
+      ) : null}
+      <AiPanelTrigger />
+    </div>
+  ) : (
+    leadingAction
+  );
 
   const canRenderSpaceLogoNode =
     suppressDefaultLogo &&
@@ -179,16 +196,17 @@ export function ConnectedMenuTop({
       />
     )
   ) : undefined;
-  const useReplacementLogoNode = Boolean(logoNode);
+  const useReplacementLogoNode =
+    Boolean(logoNode) && !(overlayVisible && isSpaceRoute);
 
   return (
     <MenuTop
       logoHref={useReplacementLogoNode ? undefined : logoHref}
-      logoNode={logoNode}
+      logoNode={useReplacementLogoNode ? logoNode : undefined}
       hrefTarget={hrefTarget}
       openMenuLabel={openMenuLabel}
       closeMenuLabel={closeMenuLabel}
-      leadingAction={leadingAction}
+      leadingAction={resolvedLeadingAction}
       trailingAction={trailingAction}
       mobileAction={mobileAction}
       showMobileHamburger={false}

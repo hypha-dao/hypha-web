@@ -24,6 +24,8 @@ type MenuTopProps = {
   compactReleaseThresholdPx?: number;
   compactDataAttribute?: string;
   showLeadingActionOnlyWhenCompact?: boolean;
+  /** When true, collapse desktop nav while the left AI panel is expanded (overlay or rail). */
+  forceCompactWhenLeftPanelExpanded?: boolean;
 };
 
 export const MenuTop = ({
@@ -42,6 +44,7 @@ export const MenuTop = ({
   compactReleaseThresholdPx = 256,
   compactDataAttribute = 'data-compact-header',
   showLeadingActionOnlyWhenCompact = false,
+  forceCompactWhenLeftPanelExpanded = true,
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -107,8 +110,13 @@ export const MenuTop = ({
         desktopEl.getBoundingClientRect().width,
       );
       const freeSpace = rowWidth - leadWidth - desktopNeeded - 16;
+      const leftPanelExpanded =
+        forceCompactWhenLeftPanelExpanded &&
+        root.getAttribute('data-left-panel-expanded') === 'true';
 
-      const shouldCompact = compactRef
+      const shouldCompact = leftPanelExpanded
+        ? true
+        : compactRef
         ? freeSpace < compactReleaseThresholdPx
         : freeSpace < compactSafeThresholdPx;
 
@@ -128,6 +136,11 @@ export const MenuTop = ({
     ro.observe(rowEl);
     ro.observe(leadEl);
     ro.observe(desktopEl);
+    const panelObserver = new MutationObserver(schedule);
+    panelObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-left-panel-expanded'],
+    });
     window.addEventListener('resize', schedule);
     schedule();
 
@@ -136,9 +149,15 @@ export const MenuTop = ({
         window.cancelAnimationFrame(raf);
       }
       ro.disconnect();
+      panelObserver.disconnect();
       window.removeEventListener('resize', schedule);
     };
-  }, [compactReleaseThresholdPx, compactSafeThresholdPx, isCompact]);
+  }, [
+    compactReleaseThresholdPx,
+    compactSafeThresholdPx,
+    forceCompactWhenLeftPanelExpanded,
+    isCompact,
+  ]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
