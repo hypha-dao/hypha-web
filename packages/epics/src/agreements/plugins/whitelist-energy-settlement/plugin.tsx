@@ -9,9 +9,11 @@ import {
   Input,
   Switch,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
 export const WhitelistEnergySettlementPlugin = () => {
+  const t = useTranslations('Energy.plugins.whitelistSettlement');
   const { control } = useFormContext();
 
   return (
@@ -21,14 +23,13 @@ export const WhitelistEnergySettlementPlugin = () => {
         name="energySettlementWhitelist.account"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Settlement address</FormLabel>
+            <FormLabel>{t('settlementAddress')}</FormLabel>
             <FormDescription>
-              Wallet allowed to call consumeEnergy on the community PPA (e.g.
-              your backend bot).
+              {t('settlementAddressDescription')}
             </FormDescription>
             <FormControl>
               <Input
-                placeholder="0x..."
+                placeholder={t('settlementAddressPlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -42,10 +43,8 @@ export const WhitelistEnergySettlementPlugin = () => {
         render={({ field }) => (
           <FormItem className="flex flex-row items-center justify-between rounded-lg border border-neutral-5 p-4">
             <div className="space-y-0.5">
-              <FormLabel>Whitelisted</FormLabel>
-              <FormDescription>
-                Turn off to remove an address from the settlement whitelist.
-              </FormDescription>
+              <FormLabel>{t('whitelisted')}</FormLabel>
+              <FormDescription>{t('whitelistedDescription')}</FormDescription>
             </div>
             <FormControl>
               <Switch

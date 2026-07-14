@@ -12,29 +12,13 @@ export type Timeframe = '7d' | '30d' | '90d' | '12m';
 
 export const TIMEFRAMES: {
   id: Timeframe;
-  label: string;
   points: number;
   unit: 'day' | 'month';
 }[] = [
-  { id: '7d', label: '7D', points: 7, unit: 'day' },
-  { id: '30d', label: '30D', points: 30, unit: 'day' },
-  { id: '90d', label: '90D', points: 90, unit: 'day' },
-  { id: '12m', label: '12M', points: 12, unit: 'month' },
-];
-
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
+  { id: '7d', points: 7, unit: 'day' },
+  { id: '30d', points: 30, unit: 'day' },
+  { id: '90d', points: 90, unit: 'day' },
+  { id: '12m', points: 12, unit: 'month' },
 ];
 
 // Mulberry32 — tiny deterministic PRNG.
@@ -58,23 +42,31 @@ export const hashString = (value: string) => {
   return h >>> 0;
 };
 
-export const timeframeLabels = (timeframe: Timeframe): string[] => {
+export const timeframeLabels = (
+  timeframe: Timeframe,
+  locale = 'en',
+): string[] => {
   const tf = TIMEFRAMES.find((t) => t.id === timeframe) ?? TIMEFRAMES[1]!;
   const now = new Date();
   if (tf.unit === 'month') {
+    const fmt = new Intl.DateTimeFormat(locale, { month: 'short' });
     return Array.from({ length: tf.points }, (_, i) => {
       const d = new Date(
         now.getFullYear(),
         now.getMonth() - (tf.points - 1 - i),
         1,
       );
-      return MONTHS[d.getMonth()]!;
+      return fmt.format(d);
     });
   }
+  const fmt = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'numeric',
+  });
   return Array.from({ length: tf.points }, (_, i) => {
     const d = new Date(now);
     d.setDate(now.getDate() - (tf.points - 1 - i));
-    return `${d.getDate()}/${d.getMonth() + 1}`;
+    return fmt.format(d);
   });
 };
 

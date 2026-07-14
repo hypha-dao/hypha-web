@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
 /**
@@ -141,6 +142,7 @@ export type BarChartProps = {
   /** Max fraction digits for tooltip values (default 0). */
   valueDecimals?: number;
   showLegend?: boolean;
+  totalLabel?: string;
 };
 
 export const BarChart = ({
@@ -152,7 +154,10 @@ export const BarChart = ({
   valueSuffix = '',
   valueDecimals = 0,
   showLegend = true,
+  totalLabel,
 }: BarChartProps) => {
+  const t = useTranslations('Energy.charts');
+  const resolvedTotalLabel = totalLabel ?? t('total');
   const gradId = React.useId();
   const [hovered, setHovered] = React.useState<number | null>(null);
 
@@ -345,7 +350,7 @@ export const BarChart = ({
             ))}
             {mode === 'stacked' && tooltip.rows.length > 1 ? (
               <div className="mt-1 border-t border-border pt-1 text-1 font-medium text-foreground">
-                Total {fmt(tooltip.total)}
+                {resolvedTotalLabel} {fmt(tooltip.total)}
               </div>
             ) : null}
           </div>

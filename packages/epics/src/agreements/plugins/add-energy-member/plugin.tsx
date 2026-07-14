@@ -8,6 +8,7 @@ import {
   Input,
 } from '@hypha-platform/ui';
 import type { Person, Space } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { RecipientField } from '../components/common/recipient-field';
 
@@ -20,6 +21,7 @@ export const AddEnergyMemberPlugin = ({
   members = [],
   spaces = [],
 }: AddEnergyMemberPluginProps) => {
+  const t = useTranslations('Energy.plugins.addMember');
   const { control } = useFormContext();
 
   return (
@@ -29,7 +31,7 @@ export const AddEnergyMemberPlugin = ({
         members={members}
         spaces={spaces}
         defaultRecipientType="member"
-        label="Member"
+        label={t('member')}
       />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField
@@ -37,10 +39,10 @@ export const AddEnergyMemberPlugin = ({
           name="energyMember.metadataHash"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Metadata Hash</FormLabel>
+              <FormLabel>{t('metadataHash')}</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="0x... or ipfs hash"
+                  placeholder={t('metadataHashPlaceholder')}
                   value={field.value ?? ''}
                   onChange={field.onChange}
                 />
@@ -53,10 +55,10 @@ export const AddEnergyMemberPlugin = ({
           name="energyMember.deviceIdsCsv"
           render={({ field }) => (
             <FormItem className="md:col-span-2">
-              <FormLabel>Device IDs (comma separated)</FormLabel>
+              <FormLabel>{t('deviceIds')}</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="e.g. 201,202,203"
+                  placeholder={t('deviceIdsPlaceholder')}
                   value={field.value ?? ''}
                   onChange={field.onChange}
                 />

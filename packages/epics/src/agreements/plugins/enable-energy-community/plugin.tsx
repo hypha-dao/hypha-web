@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Button,
   FormControl,
@@ -34,10 +35,7 @@ type EnableEnergyCommunityPluginProps = {
   spaces?: Space[];
 };
 
-const SOURCE_TYPE_OPTIONS = [
-  { value: 'SOLAR', label: 'Solar' },
-  { value: 'BATTERY', label: 'Battery' },
-] as const;
+const SOURCE_TYPE_VALUES = ['SOLAR', 'BATTERY'] as const;
 
 const emptySource = {
   name: '',
@@ -52,6 +50,8 @@ export const EnableEnergyCommunityPlugin = ({
   members = [],
   spaces = [],
 }: EnableEnergyCommunityPluginProps) => {
+  const t = useTranslations('Energy.plugins.enableCommunity');
+  const tShared = useTranslations('Energy.shared');
   const { control } = useFormContext();
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
@@ -86,10 +86,9 @@ export const EnableEnergyCommunityPlugin = ({
       {/* Section 3 — Members */}
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
         <div className="flex flex-col gap-1">
-          <div className="text-1 font-medium">Members</div>
+          <div className="text-1 font-medium">{t('membersTitle')}</div>
           <p className="text-2 text-secondary-foreground">
-            Choose community members and how many smart meters each one has.
-            Investors with no meter can be left at zero.
+            {t('membersDescription')}
           </p>
         </div>
         {memberFields.map((field, index) => (
@@ -110,14 +109,14 @@ export const EnableEnergyCommunityPlugin = ({
                 render={({ field: meterField }) => (
                   <FormItem>
                     <FormLabel className="text-2 text-neutral-11">
-                      Number of meters
+                      {t('numberOfMeters')}
                     </FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min={0}
                         className="w-28"
-                        placeholder="0"
+                        placeholder={t('meterPlaceholder')}
                         value={meterField.value ?? ''}
                         onChange={meterField.onChange}
                       />
@@ -132,7 +131,7 @@ export const EnableEnergyCommunityPlugin = ({
                 onClick={() => removeMember(index)}
               >
                 <Cross2Icon />
-                Remove
+                {tShared('remove')}
               </Button>
             </div>
           </div>
@@ -144,18 +143,16 @@ export const EnableEnergyCommunityPlugin = ({
             onClick={() => appendMember({ recipient: '', meterCount: '0' })}
           >
             <PlusIcon />
-            Add member
+            {t('addMember')}
           </Button>
         </div>
       </div>
 
-      {/* Section 4 — Energy sources */}
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
         <div className="flex flex-col gap-1">
-          <div className="text-1 font-medium">Energy sources</div>
+          <div className="text-1 font-medium">{t('sourcesTitle')}</div>
           <p className="text-2 text-secondary-foreground">
-            Add each generation or storage asset and split its ownership across
-            members (shares total 100%).
+            {t('sourcesDescription')}
           </p>
         </div>
         {sourceFields.map((sourceField, index) => (
@@ -169,10 +166,10 @@ export const EnableEnergyCommunityPlugin = ({
                 name={`energyCommunityActivation.sources.${index}.name`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>{t('name')}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g. Solar Park 1"
+                        placeholder={t('namePlaceholder')}
                         value={field.value ?? ''}
                         onChange={field.onChange}
                       />
@@ -186,19 +183,21 @@ export const EnableEnergyCommunityPlugin = ({
                 name={`energyCommunityActivation.sources.${index}.sourceType`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{t('type')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a type" />
+                          <SelectValue placeholder={t('selectType')} />
                         </SelectTrigger>
                         <SelectContent>
-                          {SOURCE_TYPE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
+                          {SOURCE_TYPE_VALUES.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {value === 'SOLAR'
+                                ? t('sourceTypeSolar')
+                                : t('sourceTypeBattery')}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -213,12 +212,12 @@ export const EnableEnergyCommunityPlugin = ({
                 name={`energyCommunityActivation.sources.${index}.basePricePerKwh`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Base price per kWh</FormLabel>
+                    <FormLabel>{t('basePricePerKwh')}</FormLabel>
                     <FormControl>
                       <Input
                         type="text"
                         inputMode="decimal"
-                        placeholder="e.g. 0.11"
+                        placeholder={t('basePricePlaceholder')}
                         value={field.value ?? ''}
                         onChange={field.onChange}
                       />
@@ -230,12 +229,12 @@ export const EnableEnergyCommunityPlugin = ({
             </div>
 
             <div className="flex flex-col gap-2">
-              <FormLabel>Ownership</FormLabel>
+              <FormLabel>{t('ownership')}</FormLabel>
               <PercentageSplitFieldArray
                 name={`energyCommunityActivation.sources.${index}.owners`}
                 members={members}
                 spaces={spaces}
-                addLabel="Add owner"
+                addLabel={t('addOwner')}
               />
               <FormField
                 control={control}
@@ -255,10 +254,10 @@ export const EnableEnergyCommunityPlugin = ({
                   name={`energyCommunityActivation.sources.${index}.tokenName`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ownership token name (optional)</FormLabel>
+                      <FormLabel>{t('tokenNameOptional')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="defaults to source name"
+                          placeholder={t('tokenNamePlaceholder')}
                           value={field.value ?? ''}
                           onChange={field.onChange}
                         />
@@ -272,10 +271,10 @@ export const EnableEnergyCommunityPlugin = ({
                   name={`energyCommunityActivation.sources.${index}.tokenSymbol`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ownership token symbol (optional)</FormLabel>
+                      <FormLabel>{t('tokenSymbolOptional')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="auto-derived"
+                          placeholder={t('tokenSymbolPlaceholder')}
                           value={field.value ?? ''}
                           onChange={field.onChange}
                         />
@@ -295,7 +294,7 @@ export const EnableEnergyCommunityPlugin = ({
                 disabled={sourceFields.length <= 1}
               >
                 <Cross2Icon />
-                Remove source
+                {t('removeSource')}
               </Button>
             </div>
           </div>
@@ -307,12 +306,11 @@ export const EnableEnergyCommunityPlugin = ({
             onClick={() => appendSource({ ...emptySource })}
           >
             <PlusIcon />
-            Add source
+            {t('addSource')}
           </Button>
         </div>
       </div>
 
-      {/* Section 5 — Advanced */}
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
         <Button
           type="button"
@@ -321,7 +319,7 @@ export const EnableEnergyCommunityPlugin = ({
           onClick={() => setShowAdvanced((prev) => !prev)}
         >
           {showAdvanced ? <ChevronDownIcon /> : <ChevronRightIcon />}
-          Advanced settings
+          {t('advancedSettings')}
         </Button>
 
         {showAdvanced && (
@@ -331,7 +329,7 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.admin"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Admin address (space executor)</FormLabel>
+                  <FormLabel>{t('adminAddress')}</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="0x..."
@@ -341,9 +339,7 @@ export const EnableEnergyCommunityPlugin = ({
                     />
                   </FormControl>
                   <p className="text-2 text-secondary-foreground">
-                    Auto-filled with this space&rsquo;s executor. The DAO
-                    proposal executes the factory call from this address, so it
-                    must own the new community for Hypha to discover it.
+                    {t('adminHint')}
                   </p>
                   <FormMessage />
                 </FormItem>
@@ -354,10 +350,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.stablecoin"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Stablecoin address</FormLabel>
+                  <FormLabel>{t('stablecoinAddress')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="0x... (defaults to Base USDC)"
+                      placeholder={t('stablecoinPlaceholder')}
                       value={field.value ?? ''}
                       onChange={field.onChange}
                     />
@@ -371,10 +367,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.gridOperator"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Grid operator address (optional)</FormLabel>
+                  <FormLabel>{t('gridOperatorAddress')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="0x... (defaults to executor)"
+                      placeholder={t('gridOperatorPlaceholder')}
                       value={field.value ?? ''}
                       onChange={field.onChange}
                     />
@@ -388,10 +384,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.communityAddress"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Community fee address (optional)</FormLabel>
+                  <FormLabel>{t('communityFeeAddress')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="0x..."
+                      placeholder={t('communityFeePlaceholder')}
                       value={field.value ?? ''}
                       onChange={field.onChange}
                     />
@@ -405,10 +401,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.communityFeePercent"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Community fee (optional)</FormLabel>
+                  <FormLabel>{t('communityFee')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. 5"
+                      placeholder={t('communityFeePercentPlaceholder')}
                       rightIcon={<>%</>}
                       value={field.value ?? ''}
                       onChange={field.onChange}
@@ -423,10 +419,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.aggregatorAddress"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Aggregator fee address (optional)</FormLabel>
+                  <FormLabel>{t('aggregatorFeeAddress')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="0x..."
+                      placeholder={t('aggregatorFeePlaceholder')}
                       value={field.value ?? ''}
                       onChange={field.onChange}
                     />
@@ -440,10 +436,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.aggregatorFeePercent"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Aggregator fee (optional)</FormLabel>
+                  <FormLabel>{t('aggregatorFee')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. 3"
+                      placeholder={t('aggregatorFeePercentPlaceholder')}
                       rightIcon={<>%</>}
                       value={field.value ?? ''}
                       onChange={field.onChange}
@@ -458,12 +454,12 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.exportDeviceId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Export device ID (optional)</FormLabel>
+                  <FormLabel>{t('exportDeviceId')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min={0}
-                      placeholder="e.g. 9999"
+                      placeholder={t('exportDeviceIdPlaceholder')}
                       value={field.value ?? ''}
                       onChange={field.onChange}
                     />
@@ -477,10 +473,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.energyTokenName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Energy token name</FormLabel>
+                  <FormLabel>{t('energyTokenName')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Community Energy Credit"
+                      placeholder={t('energyTokenNamePlaceholder')}
                       value={field.value ?? ''}
                       onChange={field.onChange}
                     />
@@ -494,10 +490,10 @@ export const EnableEnergyCommunityPlugin = ({
               name="energyCommunityActivation.energyTokenSymbol"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Energy token symbol</FormLabel>
+                  <FormLabel>{t('energyTokenSymbol')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="NRG"
+                      placeholder={t('energyTokenSymbolPlaceholder')}
                       value={field.value ?? ''}
                       onChange={field.onChange}
                     />

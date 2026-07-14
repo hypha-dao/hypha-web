@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -31,56 +32,54 @@ import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { RecipientField } from '../components/common/recipient-field';
 import { ConversionPercentageInput } from '../components/common/token-percentage-field';
 
+type EnergyTranslate = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
 // ─────────────────────────────────────────────────────────────────────────
 //  Option metadata (REC memo Level 1 + Level 2)
 // ─────────────────────────────────────────────────────────────────────────
 
-export const BASE_PURPOSE_OPTIONS: ReadonlyArray<{
-  value: EnergyBasePurpose;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'SELF_CONSUMPTION',
-    label: 'Maximum Self-Consumption',
-    description:
-      'Use locally generated energy within the community before any grid interaction.',
-  },
-  {
-    value: 'MIN_CO2',
-    label: 'Minimum CO₂ Emissions',
-    description:
-      'Minimise the lifecycle carbon intensity of every unit consumed.',
-  },
-  {
-    value: 'LOWEST_PRICE',
-    label: 'Lowest Price',
-    description:
-      'Minimise total energy cost, actively exploiting market price dynamics.',
-  },
-];
+export const getBasePurposeOptions = (t: EnergyTranslate) =>
+  [
+    {
+      value: 'SELF_CONSUMPTION' as const,
+      label: t('optimization.selfConsumption'),
+      description: t('optimization.selfConsumptionDescription'),
+    },
+    {
+      value: 'MIN_CO2' as const,
+      label: t('optimization.minCo2'),
+      description: t('optimization.minCo2Description'),
+    },
+    {
+      value: 'LOWEST_PRICE' as const,
+      label: t('optimization.lowestPrice'),
+      description: t('optimization.lowestPriceDescription'),
+    },
+  ] as const;
 
-export const SOCIAL_MODE_OPTIONS: ReadonlyArray<{
-  value: 'FIXED' | 'VARIABLE';
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'VARIABLE',
-    label: 'Variable (% of solar)',
-    description:
-      'Ring-fence a percentage of actual solar generation each interval.',
-  },
-  {
-    value: 'FIXED',
-    label: 'Fixed (kWh per interval)',
-    description:
-      'Ring-fence a fixed number of kWh each 15-minute interval (grid tops up shortfalls).',
-  },
-];
+export const getSocialModeOptions = (t: EnergyTranslate) =>
+  [
+    {
+      value: 'VARIABLE' as const,
+      label: t('optimization.variableMode'),
+      description: t('optimization.variableModeDescription'),
+    },
+    {
+      value: 'FIXED' as const,
+      label: t('optimization.fixedMode'),
+      description: t('optimization.fixedModeDescription'),
+    },
+  ] as const;
 
-export const basePurposeLabel = (value: string): string =>
-  BASE_PURPOSE_OPTIONS.find((option) => option.value === value)?.label ?? value;
+export const basePurposeLabel = (value: string, t: EnergyTranslate): string => {
+  const option = getBasePurposeOptions(t).find(
+    (entry) => entry.value === value,
+  );
+  return option?.label ?? value;
+};
 
 /**
  * The contract stores a full 3-objective ranking, but the UI only asks for the
@@ -101,112 +100,120 @@ export const completeRanking = (
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
-export const percentageString = z
-  .string()
-  .trim()
-  .refine((value) => {
-    try {
-      percentageStringToBigInt(value);
-      return true;
-    } catch {
-      return false;
-    }
-  }, 'Enter a percentage between 0 and 100');
-
-const memberPercentRow = z.object({
-  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member or space'),
-  percentage: percentageString,
-});
-
-const purposeEnum = z.enum(ENERGY_BASE_PURPOSES);
-
-export const energyOptimizationSchema = z
-  .object({
-    purpose1: purposeEnum,
-    purpose2: purposeEnum,
-    purpose3: purposeEnum,
-    socialEnabled: z.boolean().optional(),
-    socialMode: z.enum(['FIXED', 'VARIABLE']).optional(),
-    socialFixedKwh: z.string().trim().optional(),
-    socialVariablePercent: z.string().trim().optional(),
-    socialWallets: z.array(memberPercentRow).optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (new Set([value.purpose1, value.purpose2, value.purpose3]).size !== 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['purpose3'],
-        message: 'Each priority must be a different objective',
-      });
-    }
-
-    if (!value.socialEnabled) return;
-
-    if (!value.socialMode) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['socialMode'],
-        message: 'Select a social allocation mode',
-      });
-    }
-
-    if (value.socialMode === 'FIXED') {
-      if (!value.socialFixedKwh || !/^\d+$/.test(value.socialFixedKwh)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['socialFixedKwh'],
-          message: 'Enter a whole number of kWh per interval',
-        });
-      }
-    }
-
-    if (value.socialMode === 'VARIABLE') {
-      let ok = false;
+export const createPercentageStringSchema = (t: EnergyTranslate) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => {
       try {
-        percentageStringToBigInt(value.socialVariablePercent ?? '');
-        ok = true;
+        percentageStringToBigInt(value);
+        return true;
       } catch {
-        ok = false;
+        return false;
       }
-      if (!ok) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['socialVariablePercent'],
-          message: 'Enter a percentage between 0 and 100',
-        });
-      }
-    }
+    }, t('validation.percentageRange'));
 
-    const wallets = value.socialWallets ?? [];
-    if (wallets.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['socialWallets'],
-        message: 'Add at least one goal wallet',
-      });
-      return;
-    }
-
-    let totalBps = 0n;
-    let valid = true;
-    for (const wallet of wallets) {
-      try {
-        totalBps += percentageStringToBigInt(wallet.percentage);
-      } catch {
-        valid = false;
-      }
-    }
-    if (valid && totalBps !== 10000n) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['socialWallets'],
-        message: 'Goal wallet shares must total 100%',
-      });
-    }
+export const createEnergyOptimizationSchema = (t: EnergyTranslate) => {
+  const percentageString = createPercentageStringSchema(t);
+  const memberPercentRow = z.object({
+    recipient: z
+      .string()
+      .trim()
+      .regex(ADDRESS_RE, t('validation.selectMemberOrSpace')),
+    percentage: percentageString,
   });
+  const purposeEnum = z.enum(ENERGY_BASE_PURPOSES);
+
+  return z
+    .object({
+      purpose1: purposeEnum,
+      purpose2: purposeEnum,
+      purpose3: purposeEnum,
+      socialEnabled: z.boolean().optional(),
+      socialMode: z.enum(['FIXED', 'VARIABLE']).optional(),
+      socialFixedKwh: z.string().trim().optional(),
+      socialVariablePercent: z.string().trim().optional(),
+      socialWallets: z.array(memberPercentRow).optional(),
+    })
+    .superRefine((value, ctx) => {
+      if (
+        new Set([value.purpose1, value.purpose2, value.purpose3]).size !== 3
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['purpose3'],
+          message: t('validation.distinctPriorities'),
+        });
+      }
+
+      if (!value.socialEnabled) return;
+
+      if (!value.socialMode) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['socialMode'],
+          message: t('validation.selectSocialMode'),
+        });
+      }
+
+      if (value.socialMode === 'FIXED') {
+        if (!value.socialFixedKwh || !/^\d+$/.test(value.socialFixedKwh)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['socialFixedKwh'],
+            message: t('validation.wholeKwhPerInterval'),
+          });
+        }
+      }
+
+      if (value.socialMode === 'VARIABLE') {
+        let ok = false;
+        try {
+          percentageStringToBigInt(value.socialVariablePercent ?? '');
+          ok = true;
+        } catch {
+          ok = false;
+        }
+        if (!ok) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['socialVariablePercent'],
+            message: t('validation.percentageRange'),
+          });
+        }
+      }
+
+      const wallets = value.socialWallets ?? [];
+      if (wallets.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['socialWallets'],
+          message: t('validation.addGoalWallet'),
+        });
+        return;
+      }
+
+      let totalBps = 0n;
+      let valid = true;
+      for (const wallet of wallets) {
+        try {
+          totalBps += percentageStringToBigInt(wallet.percentage);
+        } catch {
+          valid = false;
+        }
+      }
+      if (valid && totalBps !== 10000n) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['socialWallets'],
+          message: t('validation.goalWalletsTotal100'),
+        });
+      }
+    });
+};
 
 export type EnergyOptimizationFormValues = z.infer<
-  typeof energyOptimizationSchema
+  ReturnType<typeof createEnergyOptimizationSchema>
 >;
 
 export const ENERGY_OPTIMIZATION_DEFAULTS: EnergyOptimizationFormValues = {
@@ -297,6 +304,7 @@ export const PercentageSplitFieldArray = ({
   spaces?: Space[];
   addLabel: string;
 }) => {
+  const t = useTranslations('Energy');
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name });
   const rows = useWatch({ control, name }) as
@@ -324,7 +332,7 @@ export const PercentageSplitFieldArray = ({
               render={({ field: percentField }) => (
                 <FormItem>
                   <FormLabel className="text-2 text-neutral-11">
-                    Share
+                    {t('optimization.share')}
                   </FormLabel>
                   <FormControl>
                     <ConversionPercentageInput
@@ -338,14 +346,14 @@ export const PercentageSplitFieldArray = ({
             />
             <Button type="button" variant="ghost" onClick={() => remove(index)}>
               <Cross2Icon />
-              Remove
+              {t('shared.remove')}
             </Button>
           </div>
         </div>
       ))}
       <div className="flex items-center justify-between">
         <span className="text-1 text-neutral-11">
-          Total: {(totalBps / 100).toFixed(2)}%
+          {t('shared.totalPercent', { percent: (totalBps / 100).toFixed(2) })}
         </span>
         <Button
           type="button"
@@ -365,14 +373,18 @@ export const PercentageSplitFieldArray = ({
 // ─────────────────────────────────────────────────────────────────────────
 
 const PrimaryObjectiveField = () => {
+  const t = useTranslations('Energy');
   const { control, setValue } = useFormContext();
+  const basePurposeOptions = getBasePurposeOptions((key, values) =>
+    t(key, values),
+  );
   return (
     <FormField
       control={control}
       name="energyOptimization.purpose1"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Primary objective</FormLabel>
+          <FormLabel>{t('optimization.primaryObjective')}</FormLabel>
           <FormControl>
             <Select
               value={field.value}
@@ -390,10 +402,10 @@ const PrimaryObjectiveField = () => {
               }}
             >
               <SelectTrigger className="h-auto">
-                <SelectValue placeholder="Select an objective" />
+                <SelectValue placeholder={t('optimization.selectObjective')} />
               </SelectTrigger>
               <SelectContent className="p-2">
-                {BASE_PURPOSE_OPTIONS.map(({ value, label, description }) => (
+                {basePurposeOptions.map(({ value, label, description }) => (
                   <SelectItem key={value} value={value}>
                     <div className="flex flex-col text-left">
                       <span className="text-1 font-medium">{label}</span>
@@ -420,7 +432,11 @@ export const EnergyOptimizationFields = ({
   members: Person[];
   spaces?: Space[];
 }) => {
+  const t = useTranslations('Energy');
   const { control } = useFormContext();
+  const socialModeOptions = getSocialModeOptions((key, values) =>
+    t(key, values),
+  );
   const socialEnabled = useWatch({
     control,
     name: 'energyOptimization.socialEnabled',
@@ -434,11 +450,11 @@ export const EnergyOptimizationFields = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
         <div className="flex flex-col gap-1">
-          <div className="text-1 font-medium">Optimize community for</div>
+          <div className="text-1 font-medium">
+            {t('optimization.optimizeFor')}
+          </div>
           <p className="text-2 text-secondary-foreground">
-            Choose the community&rsquo;s main objective. The energy management
-            system optimises for it first, then balances the remaining
-            objectives automatically.
+            {t('optimization.optimizeDescription')}
           </p>
         </div>
         <PrimaryObjectiveField />
@@ -453,11 +469,10 @@ export const EnergyOptimizationFields = ({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <FormLabel className="text-1 font-medium">
-                    Social allocation
+                    {t('optimization.socialAllocation')}
                   </FormLabel>
                   <p className="text-2 text-secondary-foreground">
-                    Ring-fence part of solar production for community goal
-                    wallets before the optimisation runs.
+                    {t('optimization.socialAllocationDescription')}
                   </p>
                 </div>
                 <FormControl>
@@ -479,14 +494,16 @@ export const EnergyOptimizationFields = ({
               name="energyOptimization.socialMode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Allocation mode</FormLabel>
+                  <FormLabel>{t('optimization.allocationMode')}</FormLabel>
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="h-auto">
-                        <SelectValue placeholder="Select a mode" />
+                        <SelectValue
+                          placeholder={t('optimization.selectMode')}
+                        />
                       </SelectTrigger>
                       <SelectContent className="p-2">
-                        {SOCIAL_MODE_OPTIONS.map(
+                        {socialModeOptions.map(
                           ({ value, label, description }) => (
                             <SelectItem key={value} value={value}>
                               <div className="flex flex-col text-left">
@@ -514,12 +531,14 @@ export const EnergyOptimizationFields = ({
                 name="energyOptimization.socialFixedKwh"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>kWh per 15-minute interval</FormLabel>
+                    <FormLabel>{t('optimization.kwhPerInterval')}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min={0}
-                        placeholder="e.g. 1000"
+                        placeholder={t(
+                          'optimization.kwhPerIntervalPlaceholder',
+                        )}
                         value={field.value ?? ''}
                         onChange={field.onChange}
                       />
@@ -536,7 +555,7 @@ export const EnergyOptimizationFields = ({
                 name="energyOptimization.socialVariablePercent"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Share of solar generation</FormLabel>
+                    <FormLabel>{t('optimization.shareOfSolar')}</FormLabel>
                     <FormControl>
                       <ConversionPercentageInput
                         value={field.value ?? ''}
@@ -550,16 +569,15 @@ export const EnergyOptimizationFields = ({
             )}
 
             <div className="flex flex-col gap-2">
-              <FormLabel>Goal wallets</FormLabel>
+              <FormLabel>{t('optimization.goalWallets')}</FormLabel>
               <p className="text-2 text-secondary-foreground">
-                Distribute the social allocation across goal wallets (shares
-                total 100%).
+                {t('optimization.goalWalletsDescription')}
               </p>
               <PercentageSplitFieldArray
                 name="energyOptimization.socialWallets"
                 members={members}
                 spaces={spaces}
-                addLabel="Add goal wallet"
+                addLabel={t('optimization.addGoalWallet')}
               />
               <FormField
                 control={control}

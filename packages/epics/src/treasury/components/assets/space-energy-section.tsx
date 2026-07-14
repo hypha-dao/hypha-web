@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Skeleton,
   Tabs,
@@ -18,14 +19,11 @@ import { ProductionConsumptionTab } from './energy/production-consumption-tab';
 import { OwnershipTab } from './energy/ownership-tab';
 import { CreditsTab } from './energy/credits-tab';
 
-const TAB_DEFS = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'flows', label: 'Production & consumption' },
-  { value: 'ownership', label: 'Ownership' },
-  { value: 'credits', label: 'Credits' },
-] as const;
+const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
 
 export const SpaceEnergySection = () => {
+  const t = useTranslations('Energy.tabs');
+  const tOverview = useTranslations('Energy.overview');
   const { data, isLoading } = useSpaceEnergy();
   const [tab, setTab] = React.useState<string>('overview');
 
@@ -53,9 +51,6 @@ export const SpaceEnergySection = () => {
     overview.contractStablecoinBalance,
   );
 
-  // Count only members with registered meters; meter-less members are
-  // investors, not consumers. Falls back to the raw member count when
-  // per-member details are unavailable.
   const memberDetails = data.memberDetails ?? [];
   const consumerCount = memberDetails.length
     ? memberDetails.filter(
@@ -67,19 +62,19 @@ export const SpaceEnergySection = () => {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
-          label="Energy consumers"
+          label={tOverview('statConsumers')}
           value={consumerCount}
           accent={ENERGY_PALETTE[2]}
           icon={<UsersIcon size={16} />}
         />
         <StatCard
-          label="Energy sources"
+          label={tOverview('statSources')}
           value={overview.sourceCount}
           accent={ENERGY_PALETTE[0]}
           icon={<ZapIcon size={16} />}
         />
         <StatCard
-          label="Total settled (EURC)"
+          label={tOverview('statTotalSettled')}
           value={totalSettledEurc}
           accent={ENERGY_PALETTE[1]}
           icon={<CoinsIcon size={16} />}
@@ -88,9 +83,9 @@ export const SpaceEnergySection = () => {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList triggerVariant="switch" className="flex w-full flex-wrap">
-          {TAB_DEFS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value} variant="switch">
-              {t.label}
+          {TAB_VALUES.map((value) => (
+            <TabsTrigger key={value} value={value} variant="switch">
+              {t(value)}
             </TabsTrigger>
           ))}
         </TabsList>

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDownIcon } from 'lucide-react';
 import {
   Card,
@@ -51,6 +52,7 @@ const useSourceProduction = (
   sourceIndex: number,
   sourceName: string,
   granularity: Granularity,
+  locale: string,
 ) => {
   const cfg = granularityConfig(granularity);
   const {
@@ -76,12 +78,20 @@ const useSourceProduction = (
       };
     }
     return {
-      labels: granularityLabels(granularity),
+      labels: granularityLabels(granularity, locale),
       values: buildSourceProductionSeries(sourceName, granularity),
       isPlaceholder: true,
       isLoading,
     };
-  }, [live, telemetry, sourceIndex, sourceName, granularity, isLoading]);
+  }, [
+    live,
+    telemetry,
+    sourceIndex,
+    sourceName,
+    granularity,
+    isLoading,
+    locale,
+  ]);
 };
 
 const earningsFromProduction = (
@@ -105,11 +115,14 @@ const OwnerEarningsChart = ({
   owner: Owner;
   accent: string;
 }) => {
+  const locale = useLocale();
+  const t = useTranslations('Energy.ownership');
   const [granularity, setGranularity] = React.useState<Granularity>('daily');
   const production = useSourceProduction(
     group.sourceIndex,
     group.name,
     granularity,
+    locale,
   );
 
   const earnings = earningsFromProduction(
@@ -122,7 +135,7 @@ const OwnerEarningsChart = ({
   const series: ChartSeries[] = [
     {
       key: 'earnings',
-      label: 'Earnings',
+      label: t('earnings'),
       color: accent,
       values: earnings.map((v) => Math.round(v * 100) / 100),
     },
@@ -132,7 +145,7 @@ const OwnerEarningsChart = ({
     <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-1 text-neutral-11">
-          ≈ {formatEarnings(total)} EURC over this window
+          {t('earningsOverWindow', { amount: formatEarnings(total) })}
         </p>
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
@@ -144,15 +157,15 @@ const OwnerEarningsChart = ({
           labels={production.labels}
           mode="grouped"
           height={200}
-          valueSuffix=" EURC"
+          valueSuffix={t('eurcSuffix')}
           valueDecimals={2}
           showLegend={false}
         />
       )}
       <p className="text-1 text-neutral-11">
         {production.isPlaceholder
-          ? 'Placeholder estimate — live production telemetry is not connected yet.'
-          : 'Estimated from live production telemetry × base price × ownership share.'}
+          ? t('placeholderEstimate')
+          : t('liveEstimate')}
       </p>
     </div>
   );
@@ -175,6 +188,7 @@ const OwnerEarningsRow = ({
   totalEarned: number;
   totalIsPlaceholder: boolean;
 }) => {
+  const t = useTranslations('Energy.ownership');
   const [expanded, setExpanded] = React.useState(false);
   const name = personDisplayName(person) ?? shortAddr(owner.address);
 
@@ -196,8 +210,10 @@ const OwnerEarningsRow = ({
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{name}</p>
           <p className="truncate text-1 text-neutral-11">
-            {totalIsPlaceholder ? '≈ ' : ''}
-            {formatEarnings(totalEarned)} EURC earned from this source
+            {t('earnedFromSource', {
+              prefix: totalIsPlaceholder ? '≈ ' : '',
+              amount: formatEarnings(totalEarned),
+            })}
           </p>
         </div>
         <span
@@ -233,12 +249,14 @@ const SourceOwnershipCard = ({
   people: Record<string, EnergyPerson | null>;
   peopleLoading: boolean;
 }) => {
-  // Widest window (12 months) approximates all-time earnings for the
-  // collapsed rows without an extra endpoint.
+  const locale = useLocale();
+  const t = useTranslations('Energy.ownership');
+  const tShared = useTranslations('Energy.shared');
   const production = useSourceProduction(
     group.sourceIndex,
     group.name,
     'monthly',
+    locale,
   );
   const totalProductionKwh = production.values.reduce((a, b) => a + b, 0);
 
@@ -271,9 +289,9 @@ const SourceOwnershipCard = ({
           />
         ))}
         <p className="text-1 text-neutral-11">
-          Earnings are estimated over the last 12 months from{' '}
-          {production.isPlaceholder ? 'placeholder' : 'live'} production data.
-          Click an owner for daily, weekly or monthly detail.
+          {t('earningsHint', {
+            dataType: production.isPlaceholder ? t('placeholder') : t('live'),
+          })}
         </p>
       </CardContent>
     </Card>
@@ -281,6 +299,8 @@ const SourceOwnershipCard = ({
 };
 
 export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
+  const t = useTranslations('Energy.ownership');
+  const tShared = useTranslations('Energy.shared');
   const details = data.memberDetails ?? [];
 
   // sourceId -> { type, label, index, price } from the registered source list
@@ -324,23 +344,28 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
         const meta = sourceMeta.get(sourceId.toLowerCase());
         return {
           sourceId,
-          name: sourceDisplayName(meta?.type, meta?.label, index),
+          name: sourceDisplayName(
+            meta?.type,
+            meta?.label,
+            index,
+            tShared('source'),
+            {
+              SOLAR: tShared('sourceTypeSolar'),
+              BATTERY: tShared('sourceTypeBattery'),
+            },
+          ),
           sourceIndex: meta?.index ?? index,
           basePricePerKwh: meta?.basePricePerKwh ?? 0,
           owners: value.owners.sort((a, b) => b.bps - a.bps),
         };
       });
     return { groups, allAddresses: Array.from(addresses) };
-  }, [details, sourceMeta]);
+  }, [details, sourceMeta, tShared]);
 
   const { people, isLoading } = useEnergyPeople(allAddresses);
 
   if (!groups.length) {
-    return (
-      <p className="text-2 text-neutral-11">
-        No source ownership has been recorded on-chain yet.
-      </p>
-    );
+    return <p className="text-2 text-neutral-11">{t('noOwnership')}</p>;
   }
 
   return (

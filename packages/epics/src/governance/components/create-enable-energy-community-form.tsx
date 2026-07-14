@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
 import { useReadContract } from 'wagmi';
 import { z } from 'zod';
@@ -23,9 +24,9 @@ import { EnableEnergyCommunityPlugin } from '../../agreements/plugins/enable-ene
 import {
   basePurposeLabel,
   ENERGY_OPTIMIZATION_DEFAULTS,
-  energyOptimizationSchema,
+  createEnergyOptimizationSchema,
+  createPercentageStringSchema,
   optimizationFormToContract,
-  percentageString,
 } from '../../agreements/plugins/enable-energy-community/energy-form-fields';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -35,31 +36,40 @@ const BASE_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
-const optionalAddressField = z
-  .string()
-  .trim()
-  .optional()
-  .refine((value) => !value || ADDRESS_RE.test(value), 'Invalid address');
+const createOptionalAddressField = (t: (key: string) => string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (value) => !value || ADDRESS_RE.test(value),
+      t('validation.invalidAddress'),
+    );
 
-const optionalPercentField = z
-  .string()
-  .trim()
-  .optional()
-  .refine((value) => {
-    if (!value) return true;
-    try {
-      percentageStringToBigInt(value);
-      return true;
-    } catch {
-      return false;
-    }
-  }, 'Enter a percentage between 0 and 100');
+const createOptionalPercentField = (t: (key: string) => string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => {
+      if (!value) return true;
+      try {
+        percentageStringToBigInt(value);
+        return true;
+      } catch {
+        return false;
+      }
+    }, t('validation.percentageRange'));
 
-const optionalUintField = z
-  .string()
-  .trim()
-  .optional()
-  .refine((value) => !value || /^\d+$/.test(value), 'Must be an integer');
+const createOptionalUintField = (t: (key: string) => string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (value) => !value || /^\d+$/.test(value),
+      t('validation.mustBeInteger'),
+    );
 
 /**
  * Human price → on-chain integer "internal units" (1 unit = 0.01 of the
@@ -88,79 +98,82 @@ const internalUnitsToPriceDisplay = (units: string): string => {
   return (value / 100).toFixed(2);
 };
 
-const memberRowSchema = z.object({
-  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member or space'),
-  meterCount: z
-    .string()
-    .trim()
-    .refine((value) => /^\d+$/.test(value), 'Enter a whole number of meters'),
-});
-
-const ownerRowSchema = z.object({
-  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member or space'),
-  percentage: percentageString,
-});
-
-const sourceSchema = z
-  .object({
-    name: z.string().trim().min(1, 'Source name is required'),
-    sourceType: z.enum(['SOLAR', 'BATTERY']),
-    basePricePerKwh: z
+const createEnableEnergyCommunitySchema = (t: (key: string) => string) => {
+  const percentageString = createPercentageStringSchema(t);
+  const memberRowSchema = z.object({
+    recipient: z
       .string()
       .trim()
-      .min(1, 'Base price is required')
-      .refine(
-        (value) => PRICE_RE.test(value) && Number(value.replace(',', '.')) > 0,
-        'Enter a price greater than 0 (max 2 decimals, e.g. 0.11)',
-      ),
-    owners: z.array(ownerRowSchema).min(1, 'Add at least one owner'),
-    tokenName: z.string().trim().optional(),
-    tokenSymbol: z.string().trim().optional(),
-  })
-  .superRefine((value, ctx) => {
-    let totalBps = 0n;
-    let valid = true;
-    for (const owner of value.owners) {
-      try {
-        totalBps += percentageStringToBigInt(owner.percentage);
-      } catch {
-        valid = false;
-      }
-    }
-    if (valid && value.owners.length > 0 && totalBps !== 10000n) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['owners'],
-        message: 'Ownership shares must total 100%',
-      });
-    }
+      .regex(ADDRESS_RE, t('validation.selectMemberOrSpace')),
+    meterCount: z
+      .string()
+      .trim()
+      .refine((value) => /^\d+$/.test(value), t('validation.wholeMeters')),
   });
+  const ownerRowSchema = z.object({
+    recipient: z
+      .string()
+      .trim()
+      .regex(ADDRESS_RE, t('validation.selectMemberOrSpace')),
+    percentage: percentageString,
+  });
+  const sourceSchema = z
+    .object({
+      name: z.string().trim().min(1, t('validation.sourceNameRequired')),
+      sourceType: z.enum(['SOLAR', 'BATTERY']),
+      basePricePerKwh: z
+        .string()
+        .trim()
+        .min(1, t('validation.basePriceRequired'))
+        .refine(
+          (value) =>
+            PRICE_RE.test(value) && Number(value.replace(',', '.')) > 0,
+          t('validation.priceGreaterThanZero'),
+        ),
+      owners: z.array(ownerRowSchema).min(1, t('validation.addOwner')),
+      tokenName: z.string().trim().optional(),
+      tokenSymbol: z.string().trim().optional(),
+    })
+    .superRefine((value, ctx) => {
+      let totalBps = 0n;
+      let valid = true;
+      for (const owner of value.owners) {
+        try {
+          totalBps += percentageStringToBigInt(owner.percentage);
+        } catch {
+          valid = false;
+        }
+      }
+      if (valid && value.owners.length > 0 && totalBps !== 10000n) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['owners'],
+          message: t('validation.ownershipTotal100'),
+        });
+      }
+    });
 
-const schemaCreateEnableEnergyCommunityForm = schemaCreateAgreementForm
-  .extend(createAgreementFiles)
-  .extend({
-    energyOptimization: energyOptimizationSchema,
+  return schemaCreateAgreementForm.extend(createAgreementFiles).extend({
+    energyOptimization: createEnergyOptimizationSchema(t),
     energyCommunityActivation: z
       .object({
-        admin: z.string().trim().regex(ADDRESS_RE, 'Invalid admin address'),
-        stablecoin: optionalAddressField,
-        gridOperator: optionalAddressField,
-        communityAddress: optionalAddressField,
-        aggregatorAddress: optionalAddressField,
-        communityFeePercent: optionalPercentField,
-        aggregatorFeePercent: optionalPercentField,
-        exportDeviceId: optionalUintField,
+        admin: z
+          .string()
+          .trim()
+          .regex(ADDRESS_RE, t('validation.invalidAdminAddress')),
+        stablecoin: createOptionalAddressField(t),
+        gridOperator: createOptionalAddressField(t),
+        communityAddress: createOptionalAddressField(t),
+        aggregatorAddress: createOptionalAddressField(t),
+        communityFeePercent: createOptionalPercentField(t),
+        aggregatorFeePercent: createOptionalPercentField(t),
+        exportDeviceId: createOptionalUintField(t),
         energyTokenName: z.string().trim().optional(),
         energyTokenSymbol: z.string().trim().optional(),
         members: z.array(memberRowSchema).optional(),
-        sources: z
-          .array(sourceSchema)
-          .min(1, 'At least one source is required'),
+        sources: z.array(sourceSchema).min(1, t('validation.atLeastOneSource')),
       })
       .superRefine((value, ctx) => {
-        // Revenue is only distributed to registered members (the contract loops
-        // over `memberAddresses`). A source owner who is not also a member would
-        // silently lose their share, so require every owner to be a member.
         const memberAddresses = new Set(
           (value.members ?? []).map((member) =>
             member.recipient.trim().toLowerCase(),
@@ -174,15 +187,15 @@ const schemaCreateEnableEnergyCommunityForm = schemaCreateAgreementForm
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               path: ['sources', sourceIndex, 'owners', ownerIndex, 'recipient'],
-              message:
-                'This owner must also be added as a member (meter count 0 is fine) or they will not receive revenue.',
+              message: t('validation.ownerMustBeMember'),
             });
           });
         });
       }),
   });
+};
 
-type FormValues = z.infer<typeof schemaCreateEnableEnergyCommunityForm>;
+type FormValues = z.infer<ReturnType<typeof createEnableEnergyCommunitySchema>>;
 
 const deriveSymbol = (name: string): string =>
   name
@@ -199,6 +212,8 @@ const deriveSymbol = (name: string): string =>
 const formToDeployInput = (
   values: FormValues,
   executorAddress: string | undefined,
+  defaultEnergyTokenName: string,
+  defaultEnergyTokenSymbol: string,
 ): EnergyDeployCommunityInput => {
   const activation = values.energyCommunityActivation;
   const optimization = optimizationFormToContract(values.energyOptimization);
@@ -245,8 +260,9 @@ const formToDeployInput = (
       : 0,
     exportDeviceId: activation.exportDeviceId?.trim() || '0',
     energyTokenName:
-      activation.energyTokenName?.trim() || 'Community Energy Credit',
-    energyTokenSymbol: activation.energyTokenSymbol?.trim() || 'NRG',
+      activation.energyTokenName?.trim() || defaultEnergyTokenName,
+    energyTokenSymbol:
+      activation.energyTokenSymbol?.trim() || defaultEnergyTokenSymbol,
     sources,
     members,
     ...optimization,
@@ -268,6 +284,15 @@ export const CreateEnableEnergyCommunityForm = ({
   members?: Person[];
   spaces?: Space[];
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const t = useTranslations('Energy');
+  const schema = React.useMemo(
+    () => createEnableEnergyCommunitySchema((key) => t(key)),
+    [t],
+  );
+  const defaultEnergyTokenName = t('forms.defaultEnergyTokenName');
+  const defaultEnergyTokenSymbol = t('forms.defaultEnergyTokenSymbol');
+
   const daoSpaceFactory =
     daoSpaceFactoryImplementationAddress[ENERGY_PPA_CHAIN_ID];
 
@@ -309,9 +334,9 @@ export const CreateEnableEnergyCommunityForm = ({
 
   return (
     <CreateEnergyProposalForm<FormValues>
-      schema={schemaCreateEnableEnergyCommunityForm}
-      label="Enable Energy Community"
-      stickyHeaderTitle="Create Enable Energy Community Proposal"
+      schema={schema}
+      label={tAgreementFlow('labels.enableEnergyCommunity')}
+      stickyHeaderTitle={t('forms.stickyHeaders.enableEnergyCommunity')}
       resubmitTemplateSegment="enable-energy-community"
       spaceId={spaceId}
       web3SpaceId={web3SpaceId}
@@ -331,8 +356,8 @@ export const CreateEnableEnergyCommunityForm = ({
             communityFeePercent: '',
             aggregatorFeePercent: '',
             exportDeviceId: '',
-            energyTokenName: 'Community Energy Credit',
-            energyTokenSymbol: 'NRG',
+            energyTokenName: defaultEnergyTokenName,
+            energyTokenSymbol: defaultEnergyTokenSymbol,
             members: [],
             sources: [
               {
@@ -351,21 +376,28 @@ export const CreateEnableEnergyCommunityForm = ({
         const optimization = optimizationFormToContract(
           values.energyOptimization,
         );
-        const deployInput = formToDeployInput(values, executorAddress);
+        const deployInput = formToDeployInput(
+          values,
+          executorAddress,
+          defaultEnergyTokenName,
+          defaultEnergyTokenSymbol,
+        );
         const social =
           optimization.socialMode === 'NONE'
-            ? 'Disabled'
+            ? t('optimization.socialDisabled')
             : optimization.socialMode === 'FIXED'
-            ? `Fixed: ${optimization.socialFixedKwh} kWh per interval`
-            : `Variable: ${(optimization.socialVariableBps / 100).toFixed(
-                2,
-              )}% of solar`;
+            ? t('optimization.socialFixed', {
+                kwh: optimization.socialFixedKwh,
+              })
+            : t('optimization.socialVariable', {
+                percent: (optimization.socialVariableBps / 100).toFixed(2),
+              });
 
         return {
           contractMethod: 'deployCommunity',
           optimization: {
             priorities: optimization.purposeRanking.map((purpose) =>
-              basePurposeLabel(purpose),
+              basePurposeLabel(purpose, (key, values) => t(key, values)),
             ),
             socialAllocation: social,
             goalWallets: optimization.socialWallets.map(
@@ -376,9 +408,11 @@ export const CreateEnableEnergyCommunityForm = ({
             ),
           },
           energyToken: `${deployInput.energyTokenName} (${deployInput.energyTokenSymbol})`,
-          members: (deployInput.members ?? []).map(
-            (member) =>
-              `${member.memberAddress} — ${member.deviceIds.length} meter(s)`,
+          members: (deployInput.members ?? []).map((member) =>
+            t('optimization.metersPerMember', {
+              address: member.memberAddress,
+              count: member.deviceIds.length,
+            }),
           ),
           sources: deployInput.sources.map((source) => ({
             name: `${source.tokenName} [${source.sourceType}]`,
@@ -400,11 +434,14 @@ export const CreateEnableEnergyCommunityForm = ({
         // the DAO proposal executes via the space executor, force `admin` to
         // the executor regardless of what the user typed.
         if (!executorAddress) {
-          throw new Error(
-            'Space executor is not loaded yet. Please retry in a moment.',
-          );
+          throw new Error(t('forms.executorNotLoaded'));
         }
-        const deployInput = formToDeployInput(values, executorAddress);
+        const deployInput = formToDeployInput(
+          values,
+          executorAddress,
+          defaultEnergyTokenName,
+          defaultEnergyTokenSymbol,
+        );
         const tx = buildDeployCommunityTransaction({
           ...deployInput,
           admin: executorAddress as string,

@@ -14,50 +14,43 @@ export type Granularity = 'daily' | 'weekly' | 'monthly';
 
 export const GRANULARITIES: {
   id: Granularity;
-  label: string;
   period: TelemetryPeriod;
   points: number;
   /** Multiplier vs a single day, used to scale placeholder series. */
   dayScale: number;
 }[] = [
-  { id: 'daily', label: 'Daily', period: '30d', points: 30, dayScale: 1 },
-  { id: 'weekly', label: 'Weekly', period: '12w', points: 12, dayScale: 7 },
-  { id: 'monthly', label: 'Monthly', period: '12m', points: 12, dayScale: 30 },
+  { id: 'daily', period: '30d', points: 30, dayScale: 1 },
+  { id: 'weekly', period: '12w', points: 12, dayScale: 7 },
+  { id: 'monthly', period: '12m', points: 12, dayScale: 30 },
 ];
 
 export const granularityConfig = (granularity: Granularity) =>
   GRANULARITIES.find((g) => g.id === granularity) ?? GRANULARITIES[0]!;
 
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
 /** X-axis labels for placeholder series (live telemetry ships its own). */
-export const granularityLabels = (granularity: Granularity): string[] => {
+export const granularityLabels = (
+  granularity: Granularity,
+  locale = 'en',
+): string[] => {
   const cfg = granularityConfig(granularity);
   const now = new Date();
 
   if (granularity === 'monthly') {
+    const fmt = new Intl.DateTimeFormat(locale, { month: 'short' });
     return Array.from({ length: cfg.points }, (_, i) => {
       const d = new Date(
         now.getFullYear(),
         now.getMonth() - (cfg.points - 1 - i),
         1,
       );
-      return MONTHS[d.getMonth()]!;
+      return fmt.format(d);
     });
   }
+
+  const fmt = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'numeric',
+  });
 
   if (granularity === 'weekly') {
     const monday = new Date(now);
@@ -65,14 +58,14 @@ export const granularityLabels = (granularity: Granularity): string[] => {
     return Array.from({ length: cfg.points }, (_, i) => {
       const d = new Date(monday);
       d.setDate(monday.getDate() - (cfg.points - 1 - i) * 7);
-      return `${d.getDate()}/${d.getMonth() + 1}`;
+      return fmt.format(d);
     });
   }
 
   return Array.from({ length: cfg.points }, (_, i) => {
     const d = new Date(now);
     d.setDate(now.getDate() - (cfg.points - 1 - i));
-    return `${d.getDate()}/${d.getMonth() + 1}`;
+    return fmt.format(d);
   });
 };
 

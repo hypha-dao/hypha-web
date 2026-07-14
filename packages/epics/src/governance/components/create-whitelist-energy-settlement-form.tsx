@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import {
   buildUpdateWhitelistTransaction,
@@ -9,20 +11,6 @@ import {
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
 import { WhitelistEnergySettlementPlugin } from '../../agreements/plugins/whitelist-energy-settlement/plugin';
 import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
-
-const schemaCreateWhitelistEnergySettlementForm = schemaCreateAgreementForm
-  .extend(createAgreementFiles)
-  .extend({
-    energySettlementWhitelist: z.object({
-      account: z
-        .string()
-        .trim()
-        .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid settlement address'),
-      whitelisted: z.boolean(),
-    }),
-  });
-
-type FormValues = z.infer<typeof schemaCreateWhitelistEnergySettlementForm>;
 
 export const CreateWhitelistEnergySettlementForm = ({
   spaceId,
@@ -35,14 +23,35 @@ export const CreateWhitelistEnergySettlementForm = ({
   successfulUrl: string;
   backUrl?: string;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const t = useTranslations('Energy');
   const { data: spaceEnergy } = useSpaceEnergy();
   const communityProxyAddress = spaceEnergy?.activation?.communityProxyAddress;
 
+  const schema = React.useMemo(
+    () =>
+      schemaCreateAgreementForm.extend(createAgreementFiles).extend({
+        energySettlementWhitelist: z.object({
+          account: z
+            .string()
+            .trim()
+            .regex(
+              /^0x[a-fA-F0-9]{40}$/,
+              t('validation.invalidSettlementAddress'),
+            ),
+          whitelisted: z.boolean(),
+        }),
+      }),
+    [t],
+  );
+
+  type FormValues = z.infer<typeof schema>;
+
   return (
     <CreateEnergyProposalForm<FormValues>
-      schema={schemaCreateWhitelistEnergySettlementForm}
-      label="Whitelist Energy Settlement"
-      stickyHeaderTitle="Create Whitelist Energy Settlement Proposal"
+      schema={schema}
+      label={tAgreementFlow('labels.whitelistEnergySettlement')}
+      stickyHeaderTitle={t('forms.stickyHeaders.whitelistEnergySettlement')}
       resubmitTemplateSegment="whitelist-energy-settlement"
       spaceId={spaceId}
       web3SpaceId={web3SpaceId}
@@ -59,15 +68,13 @@ export const CreateWhitelistEnergySettlementForm = ({
       }
       mapPayload={(values) => ({
         contractMethod: 'updateWhitelist',
-        communityProxyAddress: communityProxyAddress ?? 'Unknown',
+        communityProxyAddress: communityProxyAddress ?? t('forms.unknown'),
         settlementAddress: values.energySettlementWhitelist.account,
         whitelisted: values.energySettlementWhitelist.whitelisted,
       })}
       buildExtraTransactions={(values) => {
         if (!communityProxyAddress) {
-          throw new Error(
-            'This space does not have an energy community yet, or it is still syncing. Please retry in a moment.',
-          );
+          throw new Error(t('forms.noEnergyCommunity'));
         }
         return [
           buildUpdateWhitelistTransaction({

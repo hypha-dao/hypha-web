@@ -7,9 +7,11 @@ import {
   FormLabel,
   Input,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
 export const EnergySharingPlugin = () => {
+  const t = useTranslations('Energy.plugins.energySharing');
   const { control } = useFormContext();
 
   return (
@@ -19,10 +21,10 @@ export const EnergySharingPlugin = () => {
         name="energySharing.settlementWindow"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Settlement Window</FormLabel>
+            <FormLabel>{t('settlementWindow')}</FormLabel>
             <FormControl>
               <Input
-                placeholder="e.g. Monthly net settlement"
+                placeholder={t('settlementWindowPlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -35,10 +37,10 @@ export const EnergySharingPlugin = () => {
         name="energySharing.creditPolicy"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Credit Policy</FormLabel>
+            <FormLabel>{t('creditPolicy')}</FormLabel>
             <FormControl>
               <Input
-                placeholder="e.g. Claim any positive balance weekly"
+                placeholder={t('creditPolicyPlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -51,10 +53,10 @@ export const EnergySharingPlugin = () => {
         name="energySharing.debtPolicy"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Debt Policy</FormLabel>
+            <FormLabel>{t('debtPolicy')}</FormLabel>
             <FormControl>
               <Input
-                placeholder="e.g. Must settle within 14 days"
+                placeholder={t('debtPolicyPlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -67,7 +69,7 @@ export const EnergySharingPlugin = () => {
         name="energySharing.effectiveFrom"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Effective From</FormLabel>
+            <FormLabel>{t('effectiveFrom')}</FormLabel>
             <FormControl>
               <Input
                 type="date"

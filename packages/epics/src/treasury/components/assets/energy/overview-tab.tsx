@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { UsersIcon, ZapIcon } from 'lucide-react';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { ENERGY_PALETTE } from './charts';
@@ -10,9 +11,10 @@ import { useEnergyPeople } from './use-energy-people';
 import { prettySourceLabel } from './format';
 
 export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
+  const t = useTranslations('Energy.overview');
+  const tShared = useTranslations('Energy.shared');
   const sources = data.sources ?? [];
 
-  // address -> consumption meter ids, read from on-chain member records.
   const deviceIdsByAddress = React.useMemo(() => {
     const map = new Map<string, number[] | null>();
     (data.memberDetails ?? []).forEach((detail) => {
@@ -21,9 +23,6 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
     return map;
   }, [data.memberDetails]);
 
-  // Actual consumers only: members without registered meters are investors
-  // (they co-own sources but consume nothing), so they are excluded here.
-  // Members whose meter list could not be read are kept (unknown ≠ investor).
   const consumers = React.useMemo(
     () =>
       (data.members ?? []).filter((address) => {
@@ -36,17 +35,22 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
   );
 
   const { people, isLoading } = useEnergyPeople(consumers);
+  const sourceFallback = tShared('source');
+  const sourceTypeLabels = {
+    SOLAR: tShared('sourceTypeSolar'),
+    BATTERY: tShared('sourceTypeBattery'),
+  };
 
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
         <SectionTitle
-          title="Local energy consumers"
-          description="People taking part in this community's energy pool. Click a member to see their consumption."
+          title={t('consumersTitle')}
+          description={t('consumersDescription')}
           right={
             <span className="flex items-center gap-1.5 text-1 text-neutral-11">
               <UsersIcon size={14} />
-              {consumers.length} consumer{consumers.length === 1 ? '' : 's'}
+              {t('consumerCount', { count: consumers.length })}
             </span>
           }
         />
@@ -65,18 +69,18 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
             ))}
           </div>
         ) : (
-          <p className="text-2 text-neutral-11">No consumers registered yet.</p>
+          <p className="text-2 text-neutral-11">{t('noConsumers')}</p>
         )}
       </section>
 
       <section className="flex flex-col gap-4">
         <SectionTitle
-          title="Local energy sources"
-          description="Generation and storage assets feeding the community."
+          title={t('sourcesTitle')}
+          description={t('sourcesDescription')}
           right={
             <span className="flex items-center gap-1.5 text-1 text-neutral-11">
               <ZapIcon size={14} />
-              {sources.length} source{sources.length === 1 ? '' : 's'}
+              {t('sourceCount', { count: sources.length })}
             </span>
           }
         />
@@ -89,6 +93,8 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
                   source.sourceLabel,
                   index,
                   source.sourceType,
+                  sourceFallback,
+                  sourceTypeLabels,
                 )}
                 type={source.sourceType}
                 basePrice={source.basePricePerKwh}
@@ -98,7 +104,7 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
             ))}
           </div>
         ) : (
-          <p className="text-2 text-neutral-11">No sources registered yet.</p>
+          <p className="text-2 text-neutral-11">{t('noSources')}</p>
         )}
       </section>
     </div>

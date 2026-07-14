@@ -95,6 +95,7 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
 }: CreateEnergyProposalFormProps<T>) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tEnergy = useTranslations('Energy');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -149,7 +150,7 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
   const handleCreate = async (data: T) => {
     if (spaceId == null) {
       form.setError('root', {
-        message: 'Space is required to create a proposal.',
+        message: tEnergy('forms.spaceRequired'),
       });
       return;
     }

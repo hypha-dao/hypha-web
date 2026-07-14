@@ -55,22 +55,44 @@ const titleCaseType = (type?: string) =>
     ? `${type[0]}${type.slice(1).toLowerCase()}`
     : null;
 
+const resolveTypeLabel = (
+  type: string | undefined,
+  sourceFallback: string,
+  typeLabels?: { SOLAR?: string; BATTERY?: string },
+) => {
+  if (type === 'SOLAR' && typeLabels?.SOLAR) return typeLabels.SOLAR;
+  if (type === 'BATTERY' && typeLabels?.BATTERY) return typeLabels.BATTERY;
+  return titleCaseType(type) ?? sourceFallback;
+};
+
 export const prettySourceLabel = (
   label: string,
   index: number,
   type?: string,
+  sourceFallback = 'Source',
+  typeLabels?: { SOLAR?: string; BATTERY?: string },
 ) => {
   if (isReadableLabel(label)) return label;
-  return `${titleCaseType(type) ?? 'Source'} ${index + 1}`;
+  const typeLabel = resolveTypeLabel(type, sourceFallback, typeLabels);
+  return `${typeLabel} ${index + 1}`;
 };
 
 /**
  * Display name for an energy source preferring the human label, then the type
  * (e.g. "Solar", "Battery"), then a numbered fallback.
  */
-export const sourceDisplayName = (type?: string, label?: string, index = 0) => {
+export const sourceDisplayName = (
+  type?: string,
+  label?: string,
+  index = 0,
+  sourceFallback = 'Source',
+  typeLabels?: { SOLAR?: string; BATTERY?: string },
+) => {
   if (label && isReadableLabel(label)) return label;
-  return titleCaseType(type) ?? `Source ${index + 1}`;
+  const typeLabel = resolveTypeLabel(type, sourceFallback, typeLabels);
+  return typeLabel === sourceFallback
+    ? `${sourceFallback} ${index + 1}`
+    : typeLabel;
 };
 
 export const personDisplayName = (

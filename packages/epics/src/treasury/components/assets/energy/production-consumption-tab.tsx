@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Card,
   CardContent,
@@ -28,6 +29,9 @@ export const ProductionConsumptionTab = ({
 }: {
   data: SpaceEnergyResponse;
 }) => {
+  const locale = useLocale();
+  const t = useTranslations('Energy.productionConsumption');
+  const tShared = useTranslations('Energy.shared');
   const [timeframe, setTimeframe] = React.useState<Timeframe>('30d');
   const {
     data: telemetry,
@@ -35,21 +39,33 @@ export const ProductionConsumptionTab = ({
     error: telemetryError,
   } = useSpaceEnergyTelemetry(timeframe);
 
+  const sourceFallback = tShared('source');
+  const sourceTypeLabels = {
+    SOLAR: tShared('sourceTypeSolar'),
+    BATTERY: tShared('sourceTypeBattery'),
+  };
+
   const sourceLabels = React.useMemo(
     () =>
       (data.sources ?? []).map((s, i) =>
-        prettySourceLabel(s.sourceLabel, i, s.sourceType),
+        prettySourceLabel(
+          s.sourceLabel,
+          i,
+          s.sourceType,
+          sourceFallback,
+          sourceTypeLabels,
+        ),
       ),
-    [data.sources],
+    [data.sources, sourceFallback, sourceTypeLabels],
   );
 
   const dummy = React.useMemo(
     () =>
       buildProductionSeries(
-        sourceLabels.length ? sourceLabels : ['Community grid'],
+        sourceLabels.length ? sourceLabels : [t('communityGrid')],
         timeframe,
       ),
-    [sourceLabels, timeframe],
+    [sourceLabels, timeframe, t],
   );
 
   const useLiveTelemetry = Boolean(
@@ -61,7 +77,7 @@ export const ProductionConsumptionTab = ({
 
   const labels = useLiveTelemetry
     ? telemetry!.labels
-    : timeframeLabels(timeframe);
+    : timeframeLabels(timeframe, locale);
   const perSource = useLiveTelemetry
     ? telemetry!.productionBySource.map((s) => ({
         label: s.label,
@@ -101,7 +117,7 @@ export const ProductionConsumptionTab = ({
   const productionVsConsumption: ChartSeries[] = [
     {
       key: 'produced',
-      label: 'Produced',
+      label: t('produced'),
       color: ENERGY_PALETTE[0]!,
       values: labels.map((_, i) =>
         perSource.reduce((acc, s) => acc + (s.values[i] ?? 0), 0),
@@ -109,7 +125,7 @@ export const ProductionConsumptionTab = ({
     },
     {
       key: 'consumed',
-      label: 'Consumed',
+      label: t('consumed'),
       color: ENERGY_PALETTE[2]!,
       values: consumption,
     },
@@ -125,36 +141,34 @@ export const ProductionConsumptionTab = ({
   const gridImportExport: ChartSeries[] = [
     {
       key: 'grid-import',
-      label: 'Grid import',
+      label: t('gridImport'),
       color: ENERGY_PALETTE[4]!,
       values: gridImport,
     },
     {
       key: 'grid-export',
-      label: 'Grid export',
+      label: t('gridExport'),
       color: ENERGY_PALETTE[1]!,
       values: gridExport,
     },
   ];
 
+  const kwhSuffix = t('kwhSuffix');
+
   const statusMessage = React.useMemo(() => {
-    if (telemetryLoading) return 'Loading interval telemetry…';
-    if (telemetryError) {
-      return 'Could not load telemetry — showing placeholder charts.';
-    }
-    if (!telemetry?.configured) {
-      return 'Azure energy DB is not configured (ENERGY_DB_* env vars). Showing placeholder charts.';
-    }
+    if (telemetryLoading) return t('loadingTelemetry');
+    if (telemetryError) return t('telemetryError');
+    if (!telemetry?.configured) return t('dbNotConfigured');
     if (useLiveTelemetry && telemetry?.dataFrom && telemetry?.dataTo) {
-      const from = new Date(telemetry.dataFrom).toLocaleDateString();
-      const to = new Date(telemetry.dataTo).toLocaleDateString();
-      return `Collective consumption and production data of the whole community (${from} – ${to}).`;
+      const from = new Date(telemetry.dataFrom).toLocaleDateString(locale);
+      const to = new Date(telemetry.dataTo).toLocaleDateString(locale);
+      return t('liveDataRange', { from, to });
     }
-    if (telemetry?.enabled && !telemetry?.dataFrom) {
-      return 'No interval readings yet for this community — showing placeholder charts.';
-    }
-    return 'Placeholder telemetry — production & consumption readings will stream from the metering API.';
+    if (telemetry?.enabled && !telemetry?.dataFrom) return t('noReadings');
+    return t('placeholderTelemetry');
   }, [
+    locale,
+    t,
     telemetry?.configured,
     telemetry?.dataFrom,
     telemetry?.dataTo,
@@ -176,20 +190,25 @@ export const ProductionConsumptionTab = ({
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatCard
-            label="Total produced"
-            value={`${totalProduced.toLocaleString()} kWh`}
+            label={t('totalProduced')}
+            value={t('kwhValue', {
+              value: totalProduced.toLocaleString(locale),
+            })}
             accent={ENERGY_PALETTE[0]}
           />
           <StatCard
-            label="Total consumed"
-            value={`${totalConsumed.toLocaleString()} kWh`}
+            label={t('totalConsumed')}
+            value={t('kwhValue', {
+              value: totalConsumed.toLocaleString(locale),
+            })}
             accent={ENERGY_PALETTE[2]}
           />
           <StatCard
-            label="Net surplus"
-            value={`${net >= 0 ? '+' : '−'}${Math.abs(
-              net,
-            ).toLocaleString()} kWh`}
+            label={t('netSurplus')}
+            value={t('netKwhValue', {
+              sign: net >= 0 ? '+' : '−',
+              value: Math.abs(net).toLocaleString(locale),
+            })}
             accent={net >= 0 ? ENERGY_PALETTE[1] : ENERGY_PALETTE[4]}
           />
         </div>
@@ -197,7 +216,7 @@ export const ProductionConsumptionTab = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Production vs consumption</CardTitle>
+          <CardTitle>{t('productionVsConsumption')}</CardTitle>
         </CardHeader>
         <CardContent>
           {telemetryLoading ? (
@@ -207,7 +226,7 @@ export const ProductionConsumptionTab = ({
               series={productionVsConsumption}
               labels={labels}
               mode="grouped"
-              valueSuffix=" kWh"
+              valueSuffix={kwhSuffix}
             />
           )}
         </CardContent>
@@ -215,7 +234,7 @@ export const ProductionConsumptionTab = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Energy by source</CardTitle>
+          <CardTitle>{t('energyBySource')}</CardTitle>
         </CardHeader>
         <CardContent>
           {telemetryLoading ? (
@@ -225,7 +244,7 @@ export const ProductionConsumptionTab = ({
               series={bySource}
               labels={labels}
               mode="stacked"
-              valueSuffix=" kWh"
+              valueSuffix={kwhSuffix}
             />
           )}
         </CardContent>
@@ -233,7 +252,7 @@ export const ProductionConsumptionTab = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Grid import vs export</CardTitle>
+          <CardTitle>{t('gridImportVsExport')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {telemetryLoading ? (
@@ -242,13 +261,17 @@ export const ProductionConsumptionTab = ({
             <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <StatCard
-                  label="Total grid import"
-                  value={`${totalGridImport.toLocaleString()} kWh`}
+                  label={t('totalGridImport')}
+                  value={t('kwhValue', {
+                    value: totalGridImport.toLocaleString(locale),
+                  })}
                   accent={ENERGY_PALETTE[4]}
                 />
                 <StatCard
-                  label="Total grid export"
-                  value={`${totalGridExport.toLocaleString()} kWh`}
+                  label={t('totalGridExport')}
+                  value={t('kwhValue', {
+                    value: totalGridExport.toLocaleString(locale),
+                  })}
                   accent={ENERGY_PALETTE[1]}
                 />
               </div>
@@ -256,13 +279,9 @@ export const ProductionConsumptionTab = ({
                 series={gridImportExport}
                 labels={labels}
                 mode="grouped"
-                valueSuffix=" kWh"
+                valueSuffix={kwhSuffix}
               />
-              <p className="text-1 text-neutral-11">
-                Grid flows use explicit import/export meter readings when
-                present; otherwise they are estimated as the community net
-                deficit or surplus (consumption minus local production).
-              </p>
+              <p className="text-1 text-neutral-11">{t('gridFlowsHint')}</p>
             </>
           )}
         </CardContent>

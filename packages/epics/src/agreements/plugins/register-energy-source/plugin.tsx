@@ -7,9 +7,11 @@ import {
   FormLabel,
   Input,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
 export const RegisterEnergySourcePlugin = () => {
+  const t = useTranslations('Energy.plugins.registerSource');
   const { control } = useFormContext();
 
   return (
@@ -19,10 +21,10 @@ export const RegisterEnergySourcePlugin = () => {
         name="energySource.sourceId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Source ID</FormLabel>
+            <FormLabel>{t('sourceId')}</FormLabel>
             <FormControl>
               <Input
-                placeholder="e.g. SOLAR_ROOF_A"
+                placeholder={t('sourceIdPlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -35,10 +37,10 @@ export const RegisterEnergySourcePlugin = () => {
         name="energySource.sourceType"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Source Type</FormLabel>
+            <FormLabel>{t('sourceType')}</FormLabel>
             <FormControl>
               <Input
-                placeholder="e.g. SOLAR or BATTERY"
+                placeholder={t('sourceTypePlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -51,13 +53,13 @@ export const RegisterEnergySourcePlugin = () => {
         name="energySource.basePricePerKwh"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Base Price Per kWh</FormLabel>
+            <FormLabel>{t('basePricePerKwh')}</FormLabel>
             <FormControl>
               <Input
                 type="number"
                 min="0"
                 step="0.0001"
-                placeholder="e.g. 0.2500"
+                placeholder={t('basePricePlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -70,10 +72,10 @@ export const RegisterEnergySourcePlugin = () => {
         name="energySource.ownershipToken"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Ownership Token Address</FormLabel>
+            <FormLabel>{t('ownershipToken')}</FormLabel>
             <FormControl>
               <Input
-                placeholder="0x..."
+                placeholder={t('ownershipTokenPlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -86,10 +88,10 @@ export const RegisterEnergySourcePlugin = () => {
         name="energySource.deviceIdsCsv"
         render={({ field }) => (
           <FormItem className="md:col-span-2">
-            <FormLabel>Device IDs (comma separated)</FormLabel>
+            <FormLabel>{t('deviceIds')}</FormLabel>
             <FormControl>
               <Input
-                placeholder="e.g. 1001,1002,1003"
+                placeholder={t('deviceIdsPlaceholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { UtilityPoleIcon } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
@@ -10,31 +11,31 @@ import { ENERGY_PALETTE } from './charts';
 import { AnimatedSourceIcon } from './animated-source-icons';
 
 /** Placeholder until grid-operator profiles are wired to on-chain roles. */
-export const GRID_OPERATOR_DISPLAY_NAME = 'Local grid operator';
-export const GRID_OPERATOR_SUBTITLE = 'External energy supplier';
-
-export const GridOperatorCard = ({ right }: { right?: React.ReactNode }) => (
-  <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
-    <span
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-      style={{
-        backgroundColor: `${ENERGY_PALETTE[2]}22`,
-        color: ENERGY_PALETTE[2],
-      }}
-    >
-      <UtilityPoleIcon className="h-5 w-5" aria-hidden />
-    </span>
-    <div className="min-w-0 flex-1">
-      <p className="truncate font-medium text-foreground">
-        {GRID_OPERATOR_DISPLAY_NAME}
-      </p>
-      <p className="truncate text-1 text-neutral-11">
-        {GRID_OPERATOR_SUBTITLE}
-      </p>
+export const GridOperatorCard = ({ right }: { right?: React.ReactNode }) => {
+  const t = useTranslations('Energy.shared');
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
+      <span
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+        style={{
+          backgroundColor: `${ENERGY_PALETTE[2]}22`,
+          color: ENERGY_PALETTE[2],
+        }}
+      >
+        <UtilityPoleIcon className="h-5 w-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-foreground">
+          {t('gridOperatorName')}
+        </p>
+        <p className="truncate text-1 text-neutral-11">
+          {t('gridOperatorSubtitle')}
+        </p>
+      </div>
+      {right ? <div className="shrink-0 text-right">{right}</div> : null}
     </div>
-    {right ? <div className="shrink-0 text-right">{right}</div> : null}
-  </div>
-);
+  );
+};
 
 export const StatCard = ({
   label,
@@ -115,29 +116,38 @@ export const SourceCard = ({
   basePrice: string;
   active: boolean;
   accent: string;
-}) => (
-  <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
-    <AnimatedSourceIcon type={type} accent={accent} />
-    <div className="min-w-0 flex-1">
-      <p className="truncate font-medium text-foreground">{label}</p>
-      <p className="text-1 text-neutral-11">{type}</p>
+}) => {
+  const t = useTranslations('Energy.shared');
+  const typeLabel =
+    type === 'SOLAR'
+      ? t('sourceTypeSolar')
+      : type === 'BATTERY'
+      ? t('sourceTypeBattery')
+      : type;
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
+      <AnimatedSourceIcon type={type} accent={accent} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-foreground">{label}</p>
+        <p className="text-1 text-neutral-11">{typeLabel}</p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-1 text-neutral-11">{t('basePerKwh')}</p>
+        <p className="font-medium text-foreground">{basePrice}</p>
+        <span
+          className={cn(
+            'mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
+            active
+              ? 'bg-success-3 text-success-11'
+              : 'bg-neutral-3 text-neutral-11',
+          )}
+        >
+          {active ? t('active') : t('inactive')}
+        </span>
+      </div>
     </div>
-    <div className="shrink-0 text-right">
-      <p className="text-1 text-neutral-11">Base / kWh</p>
-      <p className="font-medium text-foreground">{basePrice}</p>
-      <span
-        className={cn(
-          'mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
-          active
-            ? 'bg-success-3 text-success-11'
-            : 'bg-neutral-3 text-neutral-11',
-        )}
-      >
-        {active ? 'Active' : 'Inactive'}
-      </span>
-    </div>
-  </div>
-);
+  );
+};
 
 export const SectionTitle = ({
   title,

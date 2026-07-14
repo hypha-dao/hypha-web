@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   Button,
   Card,
@@ -82,6 +83,7 @@ export const UserEnergySection = ({
   isMyProfile?: boolean;
   lang: string;
 }) => {
+  const t = useTranslations('Energy.profile');
   const { data, isLoading, refresh } = useUserEnergy(personSlug);
   const { client } = useSmartWallets();
   const walletReady = Boolean(client);
@@ -190,31 +192,32 @@ export const UserEnergySection = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Energy communities</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
         <CardDescription>
-          Settlement credit on the energy PPA (internal units) and USDC amounts
-          for debt or claims. Debt settlement uses Base USDC (
-          {stablecoinToken?.address ?? 'not configured'}) — ensure your
-          community&apos;s PPA uses the same stablecoin.
+          {t('description', {
+            address: stablecoinToken?.address ?? t('notConfigured'),
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {data.totals ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-              <p className="text-1 text-neutral-11">Energy credit (internal)</p>
+              <p className="text-1 text-neutral-11">
+                {t('energyCreditInternal')}
+              </p>
               <p className="font-medium">
                 {formatInternalCredits(data.totals.energyCreditBalance)}
               </p>
             </div>
             <div>
-              <p className="text-1 text-neutral-11">Debt (USDC)</p>
+              <p className="text-1 text-neutral-11">{t('debtUsdc')}</p>
               <p className="font-medium">
                 {formatStablecoinMicro(data.totals.debtInStablecoin)}
               </p>
             </div>
             <div>
-              <p className="text-1 text-neutral-11">Claimable (USDC)</p>
+              <p className="text-1 text-neutral-11">{t('claimableUsdc')}</p>
               <p className="font-medium">
                 {formatStablecoinMicro(data.totals.creditInStablecoin)}
               </p>
@@ -238,25 +241,32 @@ export const UserEnergySection = ({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
                     <p className="font-medium">
-                      {community.spaceTitle ?? 'Energy community'}
+                      {community.spaceTitle ?? t('communityFallback')}
                     </p>
                     {energyHref ? (
                       <Link
                         href={energyHref}
                         className="text-1 text-accent-11 hover:underline"
                       >
-                        Open space energy dashboard
+                        {t('openDashboard')}
                       </Link>
                     ) : null}
                     <p className="text-1 text-neutral-11">
-                      Activated{' '}
-                      {new Date(community.activatedAt).toLocaleDateString()}
+                      {t('activated', {
+                        date: new Date(
+                          community.activatedAt,
+                        ).toLocaleDateString(),
+                      })}
                     </p>
                     <p className="font-mono text-1 text-neutral-11 break-all">
-                      PPA {shortAddr(community.communityProxyAddress)}
+                      {t('ppa', {
+                        address: shortAddr(community.communityProxyAddress),
+                      })}
                     </p>
                     <p className="font-mono text-1 text-neutral-11 break-all">
-                      Energy token {shortAddr(community.energyTokenAddress)}
+                      {t('energyToken', {
+                        address: shortAddr(community.energyTokenAddress),
+                      })}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -277,7 +287,7 @@ export const UserEnergySection = ({
                         )
                       }
                     >
-                      Settle debt (USDC)
+                      {t('settleDebt')}
                     </Button>
                     <Button
                       disabled={
@@ -295,25 +305,29 @@ export const UserEnergySection = ({
                         )
                       }
                     >
-                      Claim credit
+                      {t('claimCredit')}
                     </Button>
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
-                    <p className="text-1 text-neutral-11">Energy credit</p>
+                    <p className="text-1 text-neutral-11">
+                      {t('energyCredit')}
+                    </p>
                     <p className="font-medium">
                       {formatInternalCredits(community.energyCreditBalance)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-1 text-neutral-11">Debt (USDC)</p>
+                    <p className="text-1 text-neutral-11">{t('debtUsdc')}</p>
                     <p className="font-medium">
                       {formatStablecoinMicro(community.debtInStablecoin)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-1 text-neutral-11">Claimable (USDC)</p>
+                    <p className="text-1 text-neutral-11">
+                      {t('claimableUsdc')}
+                    </p>
                     <p className="font-medium">
                       {formatStablecoinMicro(community.creditInStablecoin)}
                     </p>
@@ -321,7 +335,9 @@ export const UserEnergySection = ({
                 </div>
                 {community.sourceOwnerships.length > 0 ? (
                   <div className="mt-3">
-                    <p className="text-1 text-neutral-11">Source ownership</p>
+                    <p className="text-1 text-neutral-11">
+                      {t('sourceOwnership')}
+                    </p>
                     <div className="mt-1 flex flex-wrap gap-2">
                       {community.sourceOwnerships.map((ownership) => (
                         <span
@@ -346,9 +362,9 @@ export const UserEnergySection = ({
         </div>
         {isMyProfile ? (
           <p className="text-1 text-neutral-11">
-            Settle debt approves the PPA contract to pull the quoted USDC from
-            your smart wallet, then calls{' '}
-            <code className="text-1">settleOwnDebt</code>.
+            {t.rich('settleHint', {
+              code: (chunks) => <code>{chunks}</code>,
+            })}
           </p>
         ) : null}
       </CardContent>

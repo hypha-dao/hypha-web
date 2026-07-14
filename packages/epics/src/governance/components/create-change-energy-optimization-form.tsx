@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import {
   buildSetOptimizationTransactions,
@@ -13,18 +15,10 @@ import {
   basePurposeLabel,
   ENERGY_OPTIMIZATION_DEFAULTS,
   EnergyOptimizationFields,
-  energyOptimizationSchema,
+  createEnergyOptimizationSchema,
   optimizationFormToContract,
 } from '../../agreements/plugins/enable-energy-community/energy-form-fields';
 import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
-
-const schemaCreateChangeEnergyOptimizationForm = schemaCreateAgreementForm
-  .extend(createAgreementFiles)
-  .extend({
-    energyOptimization: energyOptimizationSchema,
-  });
-
-type FormValues = z.infer<typeof schemaCreateChangeEnergyOptimizationForm>;
 
 export const CreateChangeEnergyOptimizationForm = ({
   spaceId,
@@ -41,14 +35,28 @@ export const CreateChangeEnergyOptimizationForm = ({
   members?: Person[];
   spaces?: Space[];
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const t = useTranslations('Energy');
   const { data: spaceEnergy } = useSpaceEnergy();
   const communityProxyAddress = spaceEnergy?.activation?.communityProxyAddress;
 
+  const schema = React.useMemo(
+    () =>
+      schemaCreateAgreementForm.extend(createAgreementFiles).extend({
+        energyOptimization: createEnergyOptimizationSchema((key, values) =>
+          t(key, values),
+        ),
+      }),
+    [t],
+  );
+
+  type FormValues = z.infer<typeof schema>;
+
   return (
     <CreateEnergyProposalForm<FormValues>
-      schema={schemaCreateChangeEnergyOptimizationForm}
-      label="Change Energy Optimization"
-      stickyHeaderTitle="Create Change Energy Optimization Proposal"
+      schema={schema}
+      label={tAgreementFlow('labels.changeEnergyOptimization')}
+      stickyHeaderTitle={t('forms.stickyHeaders.changeEnergyOptimization')}
       resubmitTemplateSegment="change-energy-optimization"
       spaceId={spaceId}
       web3SpaceId={web3SpaceId}
@@ -66,19 +74,21 @@ export const CreateChangeEnergyOptimizationForm = ({
         );
         const social =
           optimization.socialMode === 'NONE'
-            ? 'Disabled'
+            ? t('optimization.socialDisabled')
             : optimization.socialMode === 'FIXED'
-            ? `Fixed: ${optimization.socialFixedKwh} kWh per interval`
-            : `Variable: ${(optimization.socialVariableBps / 100).toFixed(
-                2,
-              )}% of solar`;
+            ? t('optimization.socialFixed', {
+                kwh: optimization.socialFixedKwh,
+              })
+            : t('optimization.socialVariable', {
+                percent: (optimization.socialVariableBps / 100).toFixed(2),
+              });
 
         return {
           contractMethod: 'setOptimizationConfig',
-          communityProxyAddress: communityProxyAddress ?? 'Unknown',
+          communityProxyAddress: communityProxyAddress ?? t('forms.unknown'),
           optimization: {
             priorities: optimization.purposeRanking.map((purpose) =>
-              basePurposeLabel(purpose),
+              basePurposeLabel(purpose, (key, values) => t(key, values)),
             ),
             socialAllocation: social,
             goalWallets: optimization.socialWallets.map(
@@ -92,9 +102,7 @@ export const CreateChangeEnergyOptimizationForm = ({
       }}
       buildExtraTransactions={(values) => {
         if (!communityProxyAddress) {
-          throw new Error(
-            'This space does not have an energy community yet, or it is still syncing. Please retry in a moment.',
-          );
+          throw new Error(t('forms.noEnergyCommunity'));
         }
         const optimization = optimizationFormToContract(
           values.energyOptimization,

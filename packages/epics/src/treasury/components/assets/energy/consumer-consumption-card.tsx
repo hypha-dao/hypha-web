@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDownIcon } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { Skeleton } from '@hypha-platform/ui';
@@ -17,10 +18,6 @@ import {
 } from './granularity';
 import { GranularityToggle } from './granularity-toggle';
 
-/**
- * Rendered only while the card is expanded so the telemetry request fires
- * lazily. SWR dedupes across cards sharing the same period.
- */
 const ConsumerConsumptionChart = ({
   address,
   deviceIds,
@@ -28,6 +25,9 @@ const ConsumerConsumptionChart = ({
   address: string;
   deviceIds: number[] | null;
 }) => {
+  const locale = useLocale();
+  const t = useTranslations('Energy.consumerCard');
+  const tShared = useTranslations('Energy.shared');
   const [granularity, setGranularity] = React.useState<Granularity>('daily');
   const cfg = granularityConfig(granularity);
   const {
@@ -52,18 +52,16 @@ const ConsumerConsumptionChart = ({
       return { labels: telemetry!.labels, values, isPlaceholder: false };
     }
     return {
-      labels: granularityLabels(granularity),
+      labels: granularityLabels(granularity, locale),
       values: buildMemberConsumptionSeries(address, granularity),
       isPlaceholder: true,
     };
-  }, [useLiveTelemetry, telemetry, deviceIds, address, granularity]);
+  }, [useLiveTelemetry, telemetry, deviceIds, address, granularity, locale]);
 
   const total = values.reduce((a, b) => a + b, 0);
 
-  // Individual households move small amounts per bucket; render in Wh when
-  // the whole series fits under 10 kWh so bars and ticks stay readable.
   const useWh = values.every((v) => v < 10);
-  const unit = useWh ? 'Wh' : 'kWh';
+  const unit = useWh ? tShared('wh') : tShared('kwh');
   const displayValues = useWh
     ? values.map((v) => Math.round(v * 1000))
     : values;
@@ -72,7 +70,7 @@ const ConsumerConsumptionChart = ({
   const series: ChartSeries[] = [
     {
       key: 'consumption',
-      label: 'Consumption',
+      label: t('consumption'),
       color: ENERGY_PALETTE[2]!,
       values: displayValues,
     },
@@ -82,7 +80,10 @@ const ConsumerConsumptionChart = ({
     <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-1 text-neutral-11">
-          {displayTotal.toLocaleString()} {unit} over this window
+          {tShared('overWindow', {
+            total: displayTotal.toLocaleString(locale),
+            unit,
+          })}
         </p>
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
@@ -100,19 +101,13 @@ const ConsumerConsumptionChart = ({
       )}
       <p className="text-1 text-neutral-11">
         {isPlaceholder
-          ? 'Placeholder consumption — live metering data is not connected for this member yet.'
-          : `Live interval data across ${deviceIds?.length ?? 0} meter${
-              (deviceIds?.length ?? 0) === 1 ? '' : 's'
-            }.`}
+          ? t('placeholderConsumption')
+          : tShared('liveMeterData', { count: deviceIds?.length ?? 0 })}
       </p>
     </div>
   );
 };
 
-/**
- * Consumer row on the Overview tab. Click to expand and see the member's
- * individual consumption as a daily / weekly / monthly bar chart.
- */
 export const ConsumerConsumptionCard = ({
   address,
   person,
@@ -131,7 +126,6 @@ export const ConsumerConsumptionCard = ({
     <div
       className={cn(
         'rounded-xl border border-border bg-background-2 transition-shadow',
-        // Stretch across the grid while expanded so the chart gets full width.
         expanded && 'col-span-full shadow-md',
       )}
     >
