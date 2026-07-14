@@ -212,13 +212,13 @@ flowchart LR
 
 No municipality on source tokens (municipality only receives the 5% community fee at settlement).
 
-**Escola Básica e Secundária de Machico rooftop PV** — school + two investors:
+**Escola Básica e Secundária de Machico rooftop PV** — school + two individual investors:
 
 | Holder | % | BPS |
 |--------|---|-----|
-| Escola Básica e Secundária de Machico | 20% | 2,000 |
-| Ana Silva (individual investor) | 40% | 4,000 |
-| João Mendes (individual investor) | 40% | 4,000 |
+| Escola Básica e Secundária de Machico | 50% | 5,000 |
+| Ana Silva (individual investor) | 25% | 2,500 |
+| João Mendes (individual investor) | 25% | 2,500 |
 
 **Apartment rooftop PV** — eight households + two investors:
 
@@ -242,6 +242,72 @@ No municipality on source tokens (municipality only receives the 5% community fe
 | School PV | Escola Básica e Secundária de Machico, Ana, João |
 | Apartment PV | 8 residents, Ana, João |
 | Shared battery | Escola Básica e Secundária de Machico, 8 residents, Ana, João |
+
+**Rationale — school PV at 50%:** The array is on the school roof and the school is the primary operational beneficiary (lower bills + revenue share). Investors at 25% each provide capital while the school retains majority ownership of its own asset.
+
+### Alternative scenario — RWA fund instead of individual investors
+
+The **default demo** uses two named individuals (Ana Silva, João Mendes) as co-investors. An alternative pitch treats generation assets as **real-world assets (RWAs)** wrapped in a fund-like vehicle, where external investors buy units and receive **cash yield** from community energy settlement (similar to interest / coupon on production revenues).
+
+#### Legal vehicle options (EU / Portugal)
+
+| Vehicle | Best for | Notes |
+|---------|----------|-------|
+| **SPV** (e.g. Portuguese *sociedade por quotas*) | Single asset or small portfolio | SPV holds `RegularSpaceToken` shares; investors buy tokenized equity or debt in the SPV. Simplest for a pilot. |
+| **Energy cooperative** (*cooperativa de energia*) | Community members + local LPs | Strong fit for RED II / local energy communities; one member wallet replaces Ana + João. |
+| **AIF** (Alternative Investment Fund) | Professional / qualified investors | Regulated wrapper; on-chain tokens map to fund units. Higher setup cost. |
+| **ELTIF 2.0** | Retail, long-term (EU) | Allows broader investor access to illiquid infrastructure; long onboarding. |
+
+**Hypha on-chain layer:** Unchanged — the fund is a **single wallet address** (or SPV treasury) listed as ownership-token holder and settlement recipient, replacing the two individual investor rows. `RegularSpaceToken` revenue still flows pro-rata to holders; the fund distributes to LPs off-chain or via a tokenized share class.
+
+#### Example fund ownership (mirrors individual scenario economics)
+
+| Asset | School / residents | **Ponta do Sol Energy Fund** (replaces Ana + João) |
+|-------|-------------------|-----------------------------------------------------|
+| School PV | School **50%** | Fund **50%** |
+| Apartment PV | 8 residents **30%** | Fund **70%** |
+| Shared battery | School **10%** + residents **20%** | Fund **70%** |
+
+Energy members: replace investor rows 11–12 with one **Fund treasury** member (sentinel device ID, revenue only).
+
+#### Realistic ROI estimate (planning-level)
+
+Assumptions for Ponta do Sol scale:
+
+- School PV **75 kWp**, ~**110 MWh/yr**; apartment PV **18 kWp**, ~**26 MWh/yr**; battery **150 kWh**
+- Settlement reference **€0.10/kWh** (solar), **€0.15/kWh** (battery dispatch)
+- Installed cost order-of-magnitude: **€70k** school array, **€20k** apartment array, **€60k** battery (incl. BOS) → **~€150k** total
+- Fund finances **~70% of investor-side capital** (~€50–60k deployed across assets)
+- Community fee **5%** + aggregator **3%** deducted before source revenue
+- **0.5%/yr** degradation; **1%/yr** O&M on CAPEX
+
+**Simplified fund revenue (investor share of settlement, year 1):**
+
+| Source | Fund ownership | Est. fund revenue share |
+|--------|----------------|-------------------------|
+| School PV | 50% of source | ~€4,500–5,500/yr |
+| Apartment PV | 70% of source | ~€1,400–1,700/yr |
+| Battery | 70% of source | ~€800–1,500/yr (usage-dependent) |
+| **Total to fund** | | **~€7,000–8,500/yr** |
+
+On **~€55k** fund capital deployed → **~12–15% gross cash yield** in year 1 (high because school surplus dominates).
+
+**More realistic blended net targets** after fees, O&M, curtailment, and not all MWh settling at full tariff:
+
+| Metric | Range | Comment |
+|--------|-------|---------|
+| **Year 1–5 cash yield** | **7–10%** | Strong school surplus + local offtake (farm, apartments) |
+| **10-year average net yield** | **6–8%** | Degradation + battery replacement reserve |
+| **15-year project IRR (equity)** | **7–9%** | Typical for sub-MW EU community solar |
+| **Debt-like coupon (senior tranche)** | **5–7%** | If structured as loan to SPV backed by PPA/settlement cash flows |
+
+**How to pitch it to investors:**
+
+- **Equity / revenue-share (Hypha default):** Variable yield tied to production and community consumption — **target 7–9% net**, upside if export prices improve.
+- **Fixed-income style:** Senior note on school PV SPV only (stable school + farm offtake) — **5–6% coupon**; lower risk, lower return.
+- **Not a bank deposit:** Yield depends on sun, consumption, and settlement; illiquid; regulatory wrapper required for public retail.
+
+**Demo recommendation:** Keep **individual investors** for the live Hypha demo (human-readable cap table). Use the **fund scenario** in investor slides as the RWA scale-up story: *"Replace two wallets with one regulated SPV; same on-chain settlement, tokenized fund units, 7–9% target net yield."*
 
 ### Energy members (settlement accounts)
 
