@@ -107,7 +107,13 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
       </div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
-          <p>{tProfile('noAssetsFoundForUser')}</p>
+          <p>
+            {searchTerm.trim()
+              ? tTreasury('emptyAssetsSearch')
+              : isMyProfile
+              ? tTreasury('emptyAssetsWallet')
+              : tProfile('noAssetsFoundForUser')}
+          </p>
         </Empty>
       ) : (
         <AssetsList

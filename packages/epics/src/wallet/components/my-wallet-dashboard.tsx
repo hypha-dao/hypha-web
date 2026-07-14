@@ -132,7 +132,7 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
           </div>
           <WalletActionsToolbar
             basePath={basePath}
-            className="w-full @[52rem]:w-auto"
+            className="w-full @[52rem]:w-auto @[52rem]:shrink-0"
           />
         </div>
       </div>

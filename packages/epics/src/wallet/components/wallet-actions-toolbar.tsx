@@ -21,7 +21,7 @@ export function WalletActionsToolbar({
   return (
     <div
       className={cn(
-        'flex min-w-0 flex-wrap items-center justify-end gap-2',
+        'flex min-w-0 flex-nowrap items-center justify-start gap-2 overflow-x-auto',
         className,
       )}
     >

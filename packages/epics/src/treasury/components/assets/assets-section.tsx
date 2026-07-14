@@ -129,7 +129,11 @@ export const AssetsSection: FC<AssetSectionProps> = ({
       <div className="w-full">{renderFilterAndButtons()}</div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
-          <p>{tTreasury('listIsEmpty')}</p>
+          <p>
+            {searchTerm.trim()
+              ? tTreasury('emptyAssetsSearch')
+              : tTreasury('emptyAssetsTreasury')}
+          </p>
         </Empty>
       ) : (
         <AssetsList
