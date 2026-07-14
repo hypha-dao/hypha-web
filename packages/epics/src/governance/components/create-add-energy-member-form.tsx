@@ -4,6 +4,8 @@ import { z } from 'zod';
 import {
   createAgreementFiles,
   schemaCreateAgreementForm,
+  type Person,
+  type Space,
 } from '@hypha-platform/core/client';
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
 import { AddEnergyMemberPlugin } from '../../agreements/plugins/add-energy-member/plugin';
@@ -15,7 +17,7 @@ const schemaCreateAddEnergyMemberForm = schemaCreateAgreementForm
       memberAddress: z
         .string()
         .trim()
-        .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid member address'),
+        .regex(/^0x[a-fA-F0-9]{40}$/, 'Select a member or space'),
       metadataHash: z.string().trim().min(1, 'Metadata hash is required'),
       deviceIdsCsv: z
         .string()
@@ -46,11 +48,15 @@ export const CreateAddEnergyMemberForm = ({
   web3SpaceId,
   successfulUrl,
   backUrl,
+  members = [],
+  spaces = [],
 }: {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
   backUrl?: string;
+  members?: Person[];
+  spaces?: Space[];
 }) => {
   return (
     <CreateEnergyProposalForm<FormValues>
@@ -62,7 +68,7 @@ export const CreateAddEnergyMemberForm = ({
       web3SpaceId={web3SpaceId}
       successfulUrl={successfulUrl}
       backUrl={backUrl}
-      plugin={<AddEnergyMemberPlugin />}
+      plugin={<AddEnergyMemberPlugin members={members} spaces={spaces} />}
       mapPayload={(values) => ({
         memberAddress: values.energyMember.memberAddress,
         metadataHash: values.energyMember.metadataHash,

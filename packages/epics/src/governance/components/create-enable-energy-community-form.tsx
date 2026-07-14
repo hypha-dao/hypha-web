@@ -89,7 +89,7 @@ const internalUnitsToPriceDisplay = (units: string): string => {
 };
 
 const memberRowSchema = z.object({
-  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member'),
+  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member or space'),
   meterCount: z
     .string()
     .trim()
@@ -97,7 +97,7 @@ const memberRowSchema = z.object({
 });
 
 const ownerRowSchema = z.object({
-  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member'),
+  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member or space'),
   percentage: percentageString,
 });
 

@@ -114,7 +114,7 @@ export const percentageString = z
   }, 'Enter a percentage between 0 and 100');
 
 const memberPercentRow = z.object({
-  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member'),
+  recipient: z.string().trim().regex(ADDRESS_RE, 'Select a member or space'),
   percentage: percentageString,
 });
 
@@ -316,7 +316,6 @@ export const PercentageSplitFieldArray = ({
             members={members}
             spaces={spaces}
             defaultRecipientType="member"
-            showTabs={false}
           />
           <div className="flex items-end justify-between gap-2">
             <FormField
