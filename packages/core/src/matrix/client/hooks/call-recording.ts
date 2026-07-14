@@ -294,19 +294,10 @@ function drawVideoTile(
   ctx.drawImage(video, dx, dy, dw, dh);
 }
 
-type CallRecordingMediaSource = Room;
-
-type ResolveCallRecordingMedia = () =>
-  | CallRecordingMediaSource
-  | null
-  | undefined;
+type ResolveCallRecordingMedia = () => Room | null | undefined;
 
 function normalizeCallRecordingMediaResolver(
-  sourceOrResolver:
-    | CallRecordingMediaSource
-    | null
-    | undefined
-    | ResolveCallRecordingMedia,
+  sourceOrResolver: Room | null | undefined | ResolveCallRecordingMedia,
 ): ResolveCallRecordingMedia {
   if (typeof sourceOrResolver === 'function') {
     return sourceOrResolver as ResolveCallRecordingMedia;
@@ -395,18 +386,6 @@ function allLiveAudioTracksFromLiveKitRoom(lkRoom: Room): MediaStreamTrack[] {
   return tracks;
 }
 
-function collectCallVideoSourcesFromMedia(
-  source: CallRecordingMediaSource,
-): CallVideoSource[] {
-  return collectCallVideoSourcesFromLiveKitRoom(source);
-}
-
-function allLiveAudioTracksFromMedia(
-  source: CallRecordingMediaSource,
-): MediaStreamTrack[] {
-  return allLiveAudioTracksFromLiveKitRoom(source);
-}
-
 /**
  * Canvas compositor that redraws all participant feeds every frame. Keeps recording
  * in video/webm even when the call starts audio-only so camera can be enabled later.
@@ -435,7 +414,7 @@ function createCallVideoCompositor(
   let drawTimer: number | null = null;
   const disposers: Array<() => void> = [];
 
-  const bindMediaListeners = (source: CallRecordingMediaSource) => {
+  const bindMediaListeners = (source: Room) => {
     const onFeedsChanged = () => drawFrame();
     const events = [
       RoomEvent.TrackSubscribed,
@@ -487,7 +466,7 @@ function createCallVideoCompositor(
       CALL_RECORDING_COMPOSITOR_HEIGHT,
     );
 
-    const sources = collectCallVideoSourcesFromMedia(media);
+    const sources = collectCallVideoSourcesFromLiveKitRoom(media);
     const activeIds = new Set(sources.map((s) => s.track.id));
     for (const [trackId, el] of videoElements) {
       if (activeIds.has(trackId)) continue;
@@ -836,7 +815,7 @@ function buildCallRecordingStream(
 
   const mixer = createDynamicMixedAudioTrack(() => {
     const media = resolveMedia();
-    return media ? allLiveAudioTracksFromMedia(media) : [];
+    return media ? allLiveAudioTracksFromLiveKitRoom(media) : [];
   });
   if (mixer?.track) {
     output.addTrack(mixer.track);
@@ -857,11 +836,7 @@ function buildCallRecordingStream(
 }
 
 export async function createCallRecording(
-  mediaOrResolver:
-    | CallRecordingMediaSource
-    | null
-    | undefined
-    | ResolveCallRecordingMedia,
+  mediaOrResolver: Room | null | undefined | ResolveCallRecordingMedia,
 ): Promise<CallRecordingControls | null> {
   if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
     return null;
