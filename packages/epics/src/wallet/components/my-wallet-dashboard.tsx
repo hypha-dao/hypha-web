@@ -7,6 +7,8 @@ import { PendingRewardsSection } from '../../treasury/components/assets/pending-
 import { UserAssetsSection } from '../../treasury/components/assets/user-assets-section';
 import { UserTransactionsSection } from '../../treasury/components/requests/user-transactions-section';
 import { ProfileBankingSection } from '../../banking/components/profile-banking-section';
+import { SpaceAccessDenied } from '../../spaces/components/space-access-denied';
+import { UserSpaceState } from '../../spaces/hooks/use-user-space-state.web3.rpc';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { WalletActionsToolbar } from './wallet-actions-toolbar';
@@ -24,11 +26,7 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
   const basePath = `/${lang}/my-wallet`;
 
   if (!isAuthenticated) {
-    return (
-      <p className="text-center text-muted-foreground">
-        {tMyWallet('signInToViewWallet')}
-      </p>
-    );
+    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
   if (isLoading || !person?.slug) {
