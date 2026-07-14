@@ -43,6 +43,7 @@ import {
   ProposalUpdateToken,
   ProposalAcceptInvestmentData,
   ProposalExchangeStakesAndTokensData,
+  ProposalEnergyProposalData,
 } from '../../governance';
 import { parseExchangeDetailsFromDescription } from '../../governance/utils/exchange-details-parser';
 import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange-details-block';
@@ -63,6 +64,23 @@ import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
+import {
+  isEnergyProposalLabel,
+  parseEnergyProposalMarker,
+  stripEnergyProposalMarker,
+} from '../../governance/utils/energy-proposal-markers';
+
+/** Markdown body shown in the proposal view (strip embedded JSON / markers so MDX does not parse `{` from payloads as JSX). */
+function markdownBodyForProposalView(
+  label: string | undefined,
+  content: string | undefined,
+): string {
+  const c = content ?? '';
+  if (label === 'Investment') return stripHyphaInvestmentFormMarker(c);
+  if (label === 'Exchange') return stripExchangeDetailsBlock(c);
+  if (isEnergyProposalLabel(label)) return stripEnergyProposalMarker(c);
+  return c;
+}
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -629,11 +647,7 @@ export const ProposalDetail = ({
   const descriptionMarkdown = useMemo(
     () => (
       <MarkdownSuspense>
-        {label === 'Investment'
-          ? stripHyphaInvestmentFormMarker(content ?? '')
-          : label === 'Exchange'
-          ? stripExchangeDetailsBlock(content ?? '')
-          : content}
+        {markdownBodyForProposalView(label, content)}
       </MarkdownSuspense>
     ),
     [content, label],
@@ -1146,12 +1160,26 @@ export const ProposalDetail = ({
   // create form re-emits its own marker on submit; carrying the marker
   // through the editor caused doubled-marker descriptions and a JSON-in-MDX
   // crash when the resubmitted proposal was opened.
-  const resubmitDescription =
-    label === 'Investment'
-      ? stripHyphaInvestmentFormMarker(content ?? '')
-      : label === 'Exchange'
-      ? stripExchangeDetailsBlock(content ?? '')
-      : content;
+  const resubmitDescription = markdownBodyForProposalView(label, content);
+
+  const energyMarkerData = useMemo(() => {
+    if (!isEnergyProposalLabel(label)) {
+      return null;
+    }
+    const parsed = parseEnergyProposalMarker(content);
+    if (
+      !parsed ||
+      typeof parsed.payload !== 'object' ||
+      parsed.payload === null ||
+      Array.isArray(parsed.payload)
+    ) {
+      return null;
+    }
+    return {
+      proposalType: parsed.proposalType,
+      payload: parsed.payload as Record<string, unknown>,
+    };
+  }, [label, content]);
 
   const escrowAddr = getEscrowImplementationAddress();
 
@@ -1444,6 +1472,12 @@ export const ProposalDetail = ({
         <ProposalSpaceTokenPurchaseData
           dbTokens={dbTokens}
           {...proposalDetails.spaceTokenPurchaseData}
+        />
+      ) : null}
+      {energyMarkerData ? (
+        <ProposalEnergyProposalData
+          proposalType={energyMarkerData.proposalType}
+          payload={energyMarkerData.payload}
         />
       ) : null}
       <FormVoting

@@ -117,6 +117,7 @@ export default async function RootLayout({
   let humanChatEnabled = false;
 
   let navMySpacesLabel = 'My Spaces';
+  let navMyWalletLabel = 'My Wallet';
   let navNetworkLabel = 'Network';
   let navOpenMenuLabel = 'Open menu';
   let navCloseMenuLabel = 'Close menu';
@@ -176,6 +177,7 @@ export default async function RootLayout({
   if (navTranslationsResult.status === 'fulfilled') {
     const tNav = navTranslationsResult.value;
     navMySpacesLabel = tNav('mySpaces');
+    navMyWalletLabel = tNav('myWallet');
     navNetworkLabel = tNav('network');
     navOpenMenuLabel = tNav('openMenu');
     navCloseMenuLabel = tNav('closeMenu');
@@ -309,6 +311,10 @@ export default async function RootLayout({
                                       href: `/${locale}/my-spaces`,
                                     },
                                     {
+                                      label: navMyWalletLabel,
+                                      href: `/${locale}/my-wallet`,
+                                    },
+                                    {
                                       label: navNetworkLabel,
                                       href: `/${locale}/network`,
                                     },
@@ -335,6 +341,10 @@ export default async function RootLayout({
                                     {
                                       label: navMySpacesLabel,
                                       href: `/${locale}/my-spaces`,
+                                    },
+                                    {
+                                      label: navMyWalletLabel,
+                                      href: `/${locale}/my-wallet`,
                                     },
                                     {
                                       label: navNetworkLabel,

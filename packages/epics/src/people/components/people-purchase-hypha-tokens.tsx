@@ -38,6 +38,7 @@ import { useTranslations } from 'next-intl';
 interface PeoplePurchaseHyphaTokensProps {
   personSlug: string;
   spaces: Space[];
+  closePanelUrl?: string;
 }
 
 const HYPHA_PRICE_USD = 0.25;
@@ -50,6 +51,7 @@ type FormValues = z.infer<typeof schema>;
 export const PeoplePurchaseHyphaTokens = ({
   personSlug,
   spaces,
+  closePanelUrl,
 }: PeoplePurchaseHyphaTokensProps) => {
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -71,9 +73,9 @@ export const PeoplePurchaseHyphaTokens = ({
   const closePanelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const closePanelUrl = useMemo(
-    () => `/${lang}/profile/${personSlug}`,
-    [lang, personSlug],
+  const resolvedClosePanelUrl = useMemo(
+    () => closePanelUrl ?? `/${lang}/profile/${personSlug}`,
+    [closePanelUrl, lang, personSlug],
   );
 
   const tokens: Token[] = PAYMENT_TOKEN
@@ -222,7 +224,7 @@ export const PeoplePurchaseHyphaTokens = ({
         clearTimeout(closePanelTimeoutRef.current);
       }
       closePanelTimeoutRef.current = setTimeout(() => {
-        router.replace(closePanelUrl, { scroll: false });
+        router.replace(resolvedClosePanelUrl, { scroll: false });
       }, 3000);
       form.reset();
     } catch (error) {

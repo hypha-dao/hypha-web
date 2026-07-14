@@ -250,6 +250,7 @@ type PanelWrapLayoutProps = {
 const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
 const PANEL_COMPACT_ATTR = 'data-compact-panels';
 const PANEL_OPEN_ATTR = 'data-side-panels-open';
+const LEFT_PANEL_EXPANDED_ATTR = 'data-left-panel-expanded';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
 const RIGHT_SIDEBAR_WIDTH = '320px';
 // Mobile: keep only a slim gutter so chat/menu content uses almost full width.
@@ -393,6 +394,7 @@ export function PanelWrapLayout({
       root.removeAttribute(PANEL_COMPACT_ATTR);
       root.removeAttribute('data-mutually-exclusive-panels');
       root.removeAttribute(PANEL_OPEN_ATTR);
+      root.removeAttribute(LEFT_PANEL_EXPANDED_ATTR);
     };
   }, [isCompactPanels, isMutuallyExclusivePanels]);
 
@@ -403,6 +405,10 @@ export function PanelWrapLayout({
       Boolean(effectiveLeft && leftExpanded) ||
       Boolean(effectiveRight && rightOpen);
     root.setAttribute(PANEL_OPEN_ATTR, hasOpenSidePanel ? 'true' : 'false');
+    root.setAttribute(
+      LEFT_PANEL_EXPANDED_ATTR,
+      effectiveLeft && leftExpanded ? 'true' : 'false',
+    );
   }, [effectiveLeft, leftExpanded, effectiveRight, rightOpen]);
 
   useEffect(() => {
@@ -585,7 +591,7 @@ export function PanelWrapLayout({
           side="left"
           variant="sidebar"
           collapsible={leftCollapsibleMode}
-          mobileWidth={leftOpen || isOnboarding ? '100vw' : undefined}
+          mobileWidth={leftExpanded || isOnboarding ? '100vw' : undefined}
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}

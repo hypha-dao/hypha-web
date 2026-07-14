@@ -28,6 +28,7 @@ import {
   Shield,
   TrashIcon,
   UserRound,
+  Wallet,
 } from 'lucide-react';
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
@@ -82,6 +83,11 @@ function resolveNavItemIcon(href?: string) {
         className="size-4 shrink-0 text-muted-foreground"
         aria-hidden
       />
+    );
+  }
+  if (href.includes('/my-wallet')) {
+    return (
+      <Wallet className="size-4 shrink-0 text-muted-foreground" aria-hidden />
     );
   }
   if (href.includes('/network')) {

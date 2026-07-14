@@ -14,12 +14,14 @@ type UserAssetsSectionProps = {
   personSlug: string;
   basePath?: string;
   isMyProfile?: boolean;
+  showActionButtons?: boolean;
 };
 
 export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
   personSlug,
   basePath,
   isMyProfile,
+  showActionButtons = true,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tProfile = useTranslations('Profile');
@@ -36,50 +38,71 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
     setHideSmallBalances,
   } = useUserAssetsSection({ personSlug });
 
-  const renderFilterAndButtons = () => (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
-      <SectionFilter
-        count={totalBalance || 0}
-        label={tTreasury('balance')}
-        hasSearch
-        searchPlaceholder={tTreasury('searchTokens')}
-        onChangeSearch={setSearchTerm}
-      >
-        <label className="flex items-center gap-1">
-          <Input
-            type="checkbox"
-            checked={hideSmallBalances}
-            onChange={(e) => setHideSmallBalances(e.target.checked)}
-            className="h-4 w-4 accent-accent-9"
-          />
-          <span>{tTreasury('hideSmallBalances')}</span>
-        </label>
-      </SectionFilter>
-      <div className="flex gap-2 justify-end">
-        <Link
-          className={!isMyProfile ? 'cursor-not-allowed' : ''}
-          href={isMyProfile ? `${basePath}/actions/buy-space-tokens` : {}}
-          scroll={false}
-        >
-          <Button disabled={!isMyProfile}>{tProfile('buySpaceTokens')}</Button>
-        </Link>
-        <Link
-          className={!isMyProfile ? 'cursor-not-allowed' : ''}
-          href={isMyProfile ? `${basePath}/actions/purchase-hypha-tokens` : {}}
-          scroll={false}
-        >
-          <Button disabled={!isMyProfile}>{tProfile('buyHypha')}</Button>
-        </Link>
-        <Link href={isMyProfile ? `${basePath}/actions` : {}} scroll={false}>
-          <Button disabled={!isMyProfile}>{tProfile('actions')}</Button>
-        </Link>
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <div className="w-full">{renderFilterAndButtons()}</div>
+      <div
+        className={`flex w-full flex-col gap-2 ${
+          showActionButtons
+            ? 'md:flex-row md:items-center md:justify-between'
+            : ''
+        }`}
+      >
+        <SectionFilter
+          count={totalBalance || 0}
+          label={tTreasury('balance')}
+          hasSearch
+          inlineLabel={showActionButtons ? undefined : false}
+          searchPlaceholder={tTreasury('searchTokens')}
+          onChangeSearch={setSearchTerm}
+        >
+          <label className="flex items-center gap-1">
+            <Input
+              type="checkbox"
+              checked={hideSmallBalances}
+              onChange={(e) => setHideSmallBalances(e.target.checked)}
+              className="h-4 w-4 accent-accent-9"
+            />
+            <span>{tTreasury('hideSmallBalances')}</span>
+          </label>
+        </SectionFilter>
+        {showActionButtons ? (
+          <div className="flex justify-end gap-2">
+            {isMyProfile ? (
+              <Button asChild>
+                <Link
+                  href={`${basePath}/actions/buy-space-tokens`}
+                  scroll={false}
+                >
+                  {tProfile('buySpaceTokens')}
+                </Link>
+              </Button>
+            ) : (
+              <Button disabled>{tProfile('buySpaceTokens')}</Button>
+            )}
+            {isMyProfile ? (
+              <Button asChild>
+                <Link
+                  href={`${basePath}/actions/purchase-hypha-tokens`}
+                  scroll={false}
+                >
+                  {tProfile('buyHypha')}
+                </Link>
+              </Button>
+            ) : (
+              <Button disabled>{tProfile('buyHypha')}</Button>
+            )}
+            {isMyProfile ? (
+              <Button asChild>
+                <Link href={`${basePath}/actions`} scroll={false}>
+                  {tProfile('actions')}
+                </Link>
+              </Button>
+            ) : (
+              <Button disabled>{tProfile('actions')}</Button>
+            )}
+          </div>
+        ) : null}
+      </div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>
           <p>{tProfile('noAssetsFoundForUser')}</p>

@@ -25,5 +25,11 @@ export const DOCUMENT_LABEL_BADGE_KEYS: Partial<Record<string, string>> = {
   Investment: 'labels.investment',
   Exchange: 'labels.exchange',
   'Membership Exit': 'labels.membershipExit',
+  'Enable Energy Community': 'labels.enableEnergyCommunity',
+  'Energy Sharing': 'labels.energySharing',
+  'Register Energy Source': 'labels.registerEnergySource',
+  'Add Energy Member': 'labels.addEnergyMember',
+  'Change Energy Optimization': 'labels.changeEnergyOptimization',
+  'Whitelist Energy Settlement': 'labels.whitelistEnergySettlement',
   'Space Memory': 'labels.spaceMemory',
 };

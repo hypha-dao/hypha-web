@@ -29,6 +29,8 @@ interface ProfileTransferFundsProps {
   spaces: Space[];
   peoples: Person[];
   personSlug: string;
+  closeUrl?: string;
+  backUrl?: string;
 }
 
 export const ProfileTransferFunds = ({
@@ -36,6 +38,8 @@ export const ProfileTransferFunds = ({
   spaces,
   peoples,
   personSlug,
+  closeUrl,
+  backUrl,
 }: ProfileTransferFundsProps) => {
   const tActions = useTranslations('ProfileActions');
   const tModalAside = useTranslations('ModalAside');
@@ -77,13 +81,16 @@ export const ProfileTransferFunds = ({
       space: asset.space,
     }));
 
+  const resolvedCloseUrl = closeUrl ?? `/${lang}/profile/${personSlug}`;
+  const resolvedBackUrl = backUrl ?? `/${lang}/profile/${personSlug}/actions`;
+
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
           contextTitle={tModalAside('transferFunds')}
-          closeUrl={`/${lang}/profile/${personSlug}`}
-          backUrl={`/${lang}/profile/${personSlug}/actions`}
+          closeUrl={resolvedCloseUrl}
+          backUrl={resolvedBackUrl}
           backLabel={tActions('backToActions')}
         />
         <span className="text-2 text-neutral-11">
