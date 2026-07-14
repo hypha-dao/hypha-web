@@ -60,25 +60,18 @@ export const SectionFilter: FC<SectionFilterProps> = ({
           )}
         </>
       ) : (
-        <>
-          <div className="w-full flex flex-col gap-4">
-            <div className="flex flex-row w-full">
-              {hasLabel ? (
-                <Text className="text-4 capitalize text-nowrap">
-                  {label} {hasCount ? <>| {count}</> : null}
-                </Text>
-              ) : null}
-              {children && (
-                <div className={cn('flex items-center text-nowrap', className)}>
-                  {children}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-row w-full">
+        <div className="flex w-full min-w-0 flex-col gap-4">
+          {hasLabel ? (
+            <Text className="text-4 capitalize text-nowrap">
+              {label} {hasCount ? <>| {count}</> : null}
+            </Text>
+          ) : null}
+          {hasSearch || children ? (
+            <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               {hasSearch ? (
                 <Input
                   type="search"
-                  className="w-full"
+                  className="w-full min-w-0 flex-1"
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
                   leftIcon={
@@ -89,9 +82,19 @@ export const SectionFilter: FC<SectionFilterProps> = ({
                   onKeyDown={(e) => e.stopPropagation()}
                 />
               ) : null}
+              {children ? (
+                <div
+                  className={cn(
+                    'flex shrink-0 items-center text-nowrap',
+                    className,
+                  )}
+                >
+                  {children}
+                </div>
+              ) : null}
             </div>
-          </div>
-        </>
+          ) : null}
+        </div>
       )}
     </div>
   );
