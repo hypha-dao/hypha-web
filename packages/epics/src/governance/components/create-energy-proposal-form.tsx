@@ -148,7 +148,9 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
 
   const handleCreate = async (data: T) => {
     if (spaceId == null) {
-      form.setError('root', { message: 'Space is required to create a proposal.' });
+      form.setError('root', {
+        message: 'Space is required to create a proposal.',
+      });
       return;
     }
 

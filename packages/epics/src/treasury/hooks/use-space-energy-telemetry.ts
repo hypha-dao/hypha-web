@@ -54,7 +54,9 @@ export const useSpaceEnergyTelemetry = (period: TelemetryPeriod) => {
 
   const endpoint = React.useMemo(() => {
     if (isAuthLoading || !spaceSlug) return null;
-    return `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/energy/telemetry?period=${encodeURIComponent(period)}`;
+    return `/api/v1/spaces/${encodeURIComponent(
+      spaceSlug,
+    )}/energy/telemetry?period=${encodeURIComponent(period)}`;
   }, [isAuthLoading, period, spaceSlug]);
 
   const { data, isLoading, error, mutate } = useSWR(

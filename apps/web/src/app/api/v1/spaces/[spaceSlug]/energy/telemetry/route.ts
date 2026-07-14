@@ -54,7 +54,10 @@ export async function GET(
 
     const access = await checkSpaceAccess(request, space.web3SpaceId as number);
     if (!access.hasAccess) {
-      return access.response ?? NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return (
+        access.response ??
+        NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      );
     }
 
     const mapping = await findEnergyCommunityBySpaceId(space.id, { db });

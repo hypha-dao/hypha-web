@@ -721,7 +721,10 @@ async function main(): Promise<void> {
     Number.isFinite(parsedLoopMs) && parsedLoopMs > 0
       ? Math.max(MIN_LOOP_MS, Math.floor(parsedLoopMs))
       : 45000;
-  if (getEnv('ENERGY_DEMO_LOOP_MS') && (!Number.isFinite(parsedLoopMs) || parsedLoopMs <= 0)) {
+  if (
+    getEnv('ENERGY_DEMO_LOOP_MS') &&
+    (!Number.isFinite(parsedLoopMs) || parsedLoopMs <= 0)
+  ) {
     console.warn(`Invalid ENERGY_DEMO_LOOP_MS; using ${loopMs}ms`);
   }
 
@@ -754,17 +757,27 @@ async function main(): Promise<void> {
       throw new Error('No state file and ENERGY_DEMO_SKIP_DEPLOY=1');
 
     if (state && !forceDeploy) {
-      console.log('\n  Reusing existing demo state (set ENERGY_DEMO_FORCE=1 to redeploy).');
+      console.log(
+        '\n  Reusing existing demo state (set ENERGY_DEMO_FORCE=1 to redeploy).',
+      );
       if (command === 'deploy') {
         printSetup(state);
-        console.log('\nDeploy skipped. Run with ENERGY_DEMO_COMMAND=once or loop.');
+        console.log(
+          '\nDeploy skipped. Run with ENERGY_DEMO_COMMAND=once or loop.',
+        );
         return;
       }
     } else {
-      const actors = deriveActors(Number(network.chainId) === BASE_MAINNET_CHAIN_ID);
+      const actors = deriveActors(
+        Number(network.chainId) === BASE_MAINNET_CHAIN_ID,
+      );
       console.log('\n  Actors:');
-      actors.households.forEach((a, i) => console.log(`    HH ${i + 1}  : ${a}`));
-      actors.investors.forEach((a, i) => console.log(`    Inv ${i + 1} : ${a}`));
+      actors.households.forEach((a, i) =>
+        console.log(`    HH ${i + 1}  : ${a}`),
+      );
+      actors.investors.forEach((a, i) =>
+        console.log(`    Inv ${i + 1} : ${a}`),
+      );
       console.log(`    Comm   : ${actors.communityAddress}`);
       console.log(`    Aggr   : ${actors.aggregatorAddress}`);
       console.log(`    Grid Op: ${actors.gridOperator}`);

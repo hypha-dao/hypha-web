@@ -356,7 +356,7 @@ async function main(): Promise<void> {
   const communityId =
     communityIdEnv != null
       ? parseCommunityId(communityIdEnv, COMMUNITY_ID_DEFAULT)
-      : (state.communityId ?? COMMUNITY_ID_DEFAULT);
+      : state.communityId ?? COMMUNITY_ID_DEFAULT;
   const dbConfig = buildDbConfig();
 
   const [signer] = await ethers.getSigners();
