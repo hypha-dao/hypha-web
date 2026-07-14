@@ -323,6 +323,7 @@ contract EnergyPPAv2 is
       // ── Export ──
       if (r.deviceId == exportDeviceId) {
         require(r.sourceId != IMPORT_SOURCE_ID, 'Cannot export import');
+        require(sources[r.sourceId].active, 'Source not active');
         uint256 revenue = r.quantity * r.pricePerKwh;
         _addSourceRevenue(srcRevenues, r.sourceId, revenue);
         gridBalance += int256(revenue);

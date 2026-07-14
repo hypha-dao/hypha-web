@@ -147,6 +147,11 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: T) => {
+    if (spaceId == null) {
+      form.setError('root', { message: 'Space is required to create a proposal.' });
+      return;
+    }
+
     const payload = mapPayload(data);
     const descriptionWithMarker = appendEnergyProposalMarker(
       data.description,
@@ -162,7 +167,7 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
       ...data,
       label,
       description: descriptionWithMarker,
-      spaceId: spaceId as number,
+      spaceId,
       ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
       ...(extraTransactions && extraTransactions.length > 0
         ? { extraTransactions }

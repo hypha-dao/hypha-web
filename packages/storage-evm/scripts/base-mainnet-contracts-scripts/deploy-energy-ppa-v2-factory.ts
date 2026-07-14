@@ -28,6 +28,7 @@
  *   RPC_URL                  — Base mainnet RPC
  *   REGULAR_SPACE_TOKEN_IMPL — (optional) reuse an existing RST implementation
  *   ENERGY_PPAV2_FACTORY     — (optional) skip factory deploy, use existing
+ *   ENERGY_PPAV2_IMPL        — (optional) reuse an existing PPA implementation
  *   ENERGY_TEST_MNEMONIC     — derive 7 actor addresses (m/44'/60'/0'/0/0..6)
  *   ENERGY_ACTOR_PRIVATE_KEYS— or comma-separated 7 keys (5 HH + 2 investors)
  *   DRY_RUN                  — "true" to compile+validate only
@@ -416,11 +417,26 @@ async function main(): Promise<void> {
 
   // Step 1: EnergyPPAv2 implementation
   console.log('\n[1/4] EnergyPPAv2 implementation');
-  const existingFactory = getEnv('ENERGY_PPAV2_FACTORY');
+  const existingFactoryEnv = getEnv('ENERGY_PPAV2_FACTORY');
+  if (existingFactoryEnv && !ethers.isAddress(existingFactoryEnv)) {
+    throw new Error(`Invalid ENERGY_PPAV2_FACTORY: ${existingFactoryEnv}`);
+  }
+  const existingFactory = existingFactoryEnv;
+  const existingImplEnv = getEnv('ENERGY_PPAV2_IMPL');
+  if (existingImplEnv && !ethers.isAddress(existingImplEnv)) {
+    throw new Error(`Invalid ENERGY_PPAV2_IMPL: ${existingImplEnv}`);
+  }
   let energyPPAv2Impl: string;
   if (existingFactory) {
     console.log('  (skipped — reusing existing factory)');
     energyPPAv2Impl = 'see factory';
+  } else if (existingImplEnv) {
+    const code = await ethers.provider.getCode(existingImplEnv);
+    if (code === '0x') {
+      throw new Error(`EnergyPPAv2 impl has no code: ${existingImplEnv}`);
+    }
+    energyPPAv2Impl = existingImplEnv;
+    console.log(`  Reusing EnergyPPAv2 impl: ${energyPPAv2Impl}`);
   } else {
     console.log('  Deploying EnergyPPAv2 implementation...');
     const EnergyPPAv2 = await ethers.getContractFactory('EnergyPPAv2');

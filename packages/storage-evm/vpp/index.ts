@@ -31,5 +31,7 @@ export type {
   SourceAllocation,
   ExportAllocation,
   ConsumptionReading,
+  TraceEvent,
+  TraceFn,
 } from './types';
 export type { GridPrices, RunIntervalOptions } from './run-interval';

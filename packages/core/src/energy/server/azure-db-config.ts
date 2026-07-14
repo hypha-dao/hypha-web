@@ -16,9 +16,12 @@ export function getEnergyDbConfigFromEnv(): EnergyDbConfig | null {
   const password = process.env.ENERGY_DB_PASSWORD?.trim();
   if (!host || !database || !user || !password) return null;
 
+  const port = Number(process.env.ENERGY_DB_PORT ?? '5432');
+  if (!Number.isInteger(port) || port < 1 || port > 65535) return null;
+
   return {
     host,
-    port: Number(process.env.ENERGY_DB_PORT ?? '5432'),
+    port,
     database,
     user,
     password,

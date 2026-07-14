@@ -65,20 +65,10 @@ import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
 import {
+  isEnergyProposalLabel,
   parseEnergyProposalMarker,
   stripEnergyProposalMarker,
 } from '../../governance/utils/energy-proposal-markers';
-
-function isEnergyProposalLabel(label: string | undefined): boolean {
-  return (
-    label === 'Enable Energy Community' ||
-    label === 'Energy Sharing' ||
-    label === 'Register Energy Source' ||
-    label === 'Add Energy Member' ||
-    label === 'Change Energy Optimization' ||
-    label === 'Whitelist Energy Settlement'
-  );
-}
 
 /** Markdown body shown in the proposal view (strip embedded JSON / markers so MDX does not parse `{` from payloads as JSX). */
 function markdownBodyForProposalView(

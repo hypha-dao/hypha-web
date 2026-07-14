@@ -11,6 +11,24 @@ type JsonValue =
 const MARKER_START = '__hypha_energy_proposal__';
 const MARKER_END = '__end_hypha_energy_proposal__';
 
+/** Proposal labels that embed a JSON payload via {@link appendEnergyProposalMarker}. */
+export const ENERGY_PROPOSAL_LABELS = [
+  'Enable Energy Community',
+  'Energy Sharing',
+  'Register Energy Source',
+  'Add Energy Member',
+  'Change Energy Optimization',
+  'Whitelist Energy Settlement',
+] as const;
+
+export type EnergyProposalLabel = (typeof ENERGY_PROPOSAL_LABELS)[number];
+
+export const isEnergyProposalLabel = (
+  label: string | undefined,
+): label is EnergyProposalLabel =>
+  label != null &&
+  (ENERGY_PROPOSAL_LABELS as readonly string[]).includes(label);
+
 export const appendEnergyProposalMarker = (
   description: string,
   proposalType: string,

@@ -100,6 +100,37 @@ function getDbEnv(primary: string, legacy: string): string | undefined {
   return getEnv(primary) ?? getEnv(legacy);
 }
 
+function parsePositiveInt(
+  value: string | undefined,
+  fallback: number,
+  label: string,
+): number {
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid ${label}: ${value}`);
+  }
+  return parsed;
+}
+
+function parsePort(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+    throw new Error(`Invalid ENERGY_DB_PORT: ${value}`);
+  }
+  return parsed;
+}
+
+function parseCommunityId(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`Invalid ENERGY_DB_COMMUNITY_ID: ${value}`);
+  }
+  return parsed;
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -162,8 +193,9 @@ function buildDbConfig(): DbConfig {
   const sslFlag = getEnv('ENERGY_DB_SSL') ?? getEnv('ENERGY_RDS_SSL') ?? '1';
   return {
     host,
-    port: Number(
-      getEnv('ENERGY_DB_PORT') ?? getEnv('ENERGY_RDS_PORT') ?? '5432',
+    port: parsePort(
+      getEnv('ENERGY_DB_PORT') ?? getEnv('ENERGY_RDS_PORT'),
+      5432,
     ),
     database,
     user,
@@ -309,22 +341,22 @@ async function submitInterval(
 
 async function main(): Promise<void> {
   const command = (getEnv('ENERGY_DEMO_COMMAND') ?? 'loop').toLowerCase();
-  const pollMs = Number(
-    getEnv('ENERGY_DB_POLL_MS') ??
-      getEnv('ENERGY_RDS_POLL_MS') ??
-      `${POLL_MS_DEFAULT}`,
+  const pollMs = parsePositiveInt(
+    getEnv('ENERGY_DB_POLL_MS') ?? getEnv('ENERGY_RDS_POLL_MS'),
+    POLL_MS_DEFAULT,
+    'ENERGY_DB_POLL_MS',
   );
   const catchUp =
     (getEnv('ENERGY_DB_CATCH_UP') ?? getEnv('ENERGY_RDS_CATCH_UP') ?? '0') ===
     '1';
 
   const state = loadState();
-  const communityId = Number(
-    getEnv('ENERGY_DB_COMMUNITY_ID') ??
-      getEnv('ENERGY_RDS_COMMUNITY_ID') ??
-      state.communityId ??
-      COMMUNITY_ID_DEFAULT,
-  );
+  const communityIdEnv =
+    getEnv('ENERGY_DB_COMMUNITY_ID') ?? getEnv('ENERGY_RDS_COMMUNITY_ID');
+  const communityId =
+    communityIdEnv != null
+      ? parseCommunityId(communityIdEnv, COMMUNITY_ID_DEFAULT)
+      : (state.communityId ?? COMMUNITY_ID_DEFAULT);
   const dbConfig = buildDbConfig();
 
   const [signer] = await ethers.getSigners();

@@ -9,6 +9,30 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
+const disabledTelemetryPayload = (
+  period: ReturnType<typeof parseEnergyTelemetryPeriod>,
+) => ({
+  enabled: false,
+  configured: isEnergyDbConfigured(),
+  period,
+  labels: [],
+  consumptionKwh: [],
+  consumptionByMeter: [],
+  productionBySource: [],
+  gridImportKwh: [],
+  gridExportKwh: [],
+  totals: {
+    producedKwh: 0,
+    consumedKwh: 0,
+    netKwh: 0,
+    gridImportedKwh: 0,
+    gridExportedKwh: 0,
+  },
+  dataFrom: null,
+  dataTo: null,
+  communityId: null,
+});
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
@@ -25,64 +49,24 @@ export async function GET(
     }
 
     if (space.web3SpaceId == null) {
-      return NextResponse.json({
-        enabled: false,
-        configured: isEnergyDbConfigured(),
-        period,
-        labels: [],
-        consumptionKwh: [],
-        consumptionByMeter: [],
-        productionBySource: [],
-        gridImportKwh: [],
-        gridExportKwh: [],
-        totals: {
-          producedKwh: 0,
-          consumedKwh: 0,
-          netKwh: 0,
-          gridImportedKwh: 0,
-          gridExportedKwh: 0,
-        },
-        dataFrom: null,
-        dataTo: null,
-        communityId: null,
-      });
+      return NextResponse.json(disabledTelemetryPayload(period));
     }
 
     const access = await checkSpaceAccess(request, space.web3SpaceId as number);
-    if (!access.hasAccess && access.response) {
-      const status = access.response.status;
-      if (status === 401 || status === 403) {
-        return access.response;
-      }
+    if (!access.hasAccess) {
+      return access.response ?? NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const mapping = await findEnergyCommunityBySpaceId(space.id, { db });
     if (!mapping) {
-      return NextResponse.json({
-        enabled: false,
-        configured: isEnergyDbConfigured(),
-        period,
-        labels: [],
-        consumptionKwh: [],
-        consumptionByMeter: [],
-        productionBySource: [],
-        gridImportKwh: [],
-        gridExportKwh: [],
-        totals: {
-          producedKwh: 0,
-          consumedKwh: 0,
-          netKwh: 0,
-          gridImportedKwh: 0,
-          gridExportedKwh: 0,
-        },
-        dataFrom: null,
-        dataTo: null,
-        communityId: null,
-      });
+      return NextResponse.json(disabledTelemetryPayload(period));
     }
 
-    const communityId =
-      mapping.factoryCommunityId != null ? mapping.factoryCommunityId : 0;
+    if (mapping.factoryCommunityId == null) {
+      return NextResponse.json(disabledTelemetryPayload(period));
+    }
+
+    const communityId = mapping.factoryCommunityId;
 
     const telemetry = await fetchEnergyTelemetry({
       communityId,

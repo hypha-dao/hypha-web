@@ -6,11 +6,11 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 
 /**
  * @title EnergyToken
- * @dev ERC20 token representing positive energy credit balances in the energy distribution system
- * Only authorized settlement contracts can mint and burn tokens
+ * @dev ERC20 token representing positive energy credit balances in an EnergyPPAv2 community.
+ * Only authorized settlement contracts (the community PPA proxy) can mint and burn tokens.
  */
 contract EnergyToken is ERC20, Ownable {
-  // Mapping to track which addresses can mint/burn (only the EnergyDistribution contract)
+  // Mapping to track which addresses can mint/burn (only the EnergyPPAv2 PPA proxy)
   mapping(address => bool) public authorized;
 
   event AuthorizedUpdated(address indexed account, bool authorized);
@@ -47,7 +47,7 @@ contract EnergyToken is ERC20, Ownable {
 
   /**
    * @dev Burn tokens from an address (only authorized contracts)
-   * Primary burn function used by EnergyDistribution
+   * Primary burn function used by EnergyPPAv2
    * @param from Address to burn tokens from
    * @param amount Amount of tokens to burn
    */
