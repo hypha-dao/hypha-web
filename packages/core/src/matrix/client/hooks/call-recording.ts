@@ -1,6 +1,3 @@
-import type * as MatrixSdk from 'matrix-js-sdk';
-import { GroupCallEvent } from 'matrix-js-sdk';
-import type { CallFeed } from 'matrix-js-sdk/lib/webrtc/callFeed';
 import { Room, RoomEvent, Track } from 'livekit-client';
 
 import { uploadCallRecordingBlob } from '../../../assets/client/upload-call-recording';
@@ -211,85 +208,6 @@ export type CallVideoSource = {
   kind: CallVideoSourceKind;
 };
 
-type CallVideoFeedLike = {
-  stream: MediaStream;
-  isVideoMuted: () => boolean;
-  isLocal?: () => boolean;
-};
-
-function isLiveVideoTrack(
-  track: MediaStreamTrack | null | undefined,
-): track is MediaStreamTrack {
-  return Boolean(track && track.readyState === 'live');
-}
-
-function liveVideoFromFeed(
-  feed: CallVideoFeedLike,
-): { track: MediaStreamTrack; stream: MediaStream } | null {
-  if (feed.isVideoMuted()) return null;
-  const stream = feed.stream;
-  const track =
-    stream
-      .getVideoTracks()
-      .find((candidate) => candidate.readyState === 'live') ??
-    stream.getVideoTracks()[0];
-  if (!isLiveVideoTrack(track)) return null;
-  return { track, stream };
-}
-
-/** Every screenshare feed, including `localScreenshareFeed` when not yet listed. */
-export function iterCallScreenshareFeeds(
-  groupCall: MatrixSdk.GroupCall,
-): CallFeed[] {
-  const out: CallFeed[] = [];
-  const seen = new Set<string>();
-  const push = (feed: CallFeed | undefined) => {
-    if (!feed) return;
-    const key = `${feed.userId ?? ''}:${feed.deviceId ?? ''}:${feed.stream.id}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    out.push(feed);
-  };
-  for (const feed of groupCall.screenshareFeeds) push(feed);
-  push(groupCall.localScreenshareFeed);
-  return out.sort(
-    (a, b) => Number(a.isLocal?.() ?? false) - Number(b.isLocal?.() ?? false),
-  );
-}
-
-/** Collect every live camera + screenshare track from the active GroupCall. */
-export function collectCallVideoSources(
-  groupCall: MatrixSdk.GroupCall,
-): CallVideoSource[] {
-  const out: CallVideoSource[] = [];
-  const seen = new Set<string>();
-
-  for (const feed of iterCallScreenshareFeeds(groupCall)) {
-    const live = liveVideoFromFeed(feed);
-    if (!live || seen.has(live.track.id)) continue;
-    seen.add(live.track.id);
-    out.push({ ...live, kind: 'screenshare' });
-  }
-
-  const localFeed = groupCall.localCallFeed;
-  if (localFeed) {
-    const live = liveVideoFromFeed(localFeed);
-    if (live && !seen.has(live.track.id)) {
-      seen.add(live.track.id);
-      out.push({ ...live, kind: 'camera' });
-    }
-  }
-
-  for (const feed of groupCall.userMediaFeeds) {
-    const live = liveVideoFromFeed(feed);
-    if (!live || seen.has(live.track.id)) continue;
-    seen.add(live.track.id);
-    out.push({ ...live, kind: 'camera' });
-  }
-
-  return out;
-}
-
 /** Tile layout for composited call recording (screenshare + participant grid). */
 export function layoutCallRecordingTiles(
   sources: CallVideoSource[],
@@ -376,26 +294,10 @@ function drawVideoTile(
   ctx.drawImage(video, dx, dy, dw, dh);
 }
 
-type ResolveGroupCall = () => MatrixSdk.GroupCall | null | undefined;
-
-type CallRecordingMediaSource = MatrixSdk.GroupCall | Room;
-
-type ResolveCallRecordingMedia = () =>
-  | CallRecordingMediaSource
-  | null
-  | undefined;
-
-function isLiveKitRoom(source: CallRecordingMediaSource): source is Room {
-  return 'localParticipant' in source && 'remoteParticipants' in source;
-}
+type ResolveCallRecordingMedia = () => Room | null | undefined;
 
 function normalizeCallRecordingMediaResolver(
-  sourceOrResolver:
-    | CallRecordingMediaSource
-    | null
-    | undefined
-    | ResolveCallRecordingMedia
-    | ResolveGroupCall,
+  sourceOrResolver: Room | null | undefined | ResolveCallRecordingMedia,
 ): ResolveCallRecordingMedia {
   if (typeof sourceOrResolver === 'function') {
     return sourceOrResolver as ResolveCallRecordingMedia;
@@ -484,37 +386,6 @@ function allLiveAudioTracksFromLiveKitRoom(lkRoom: Room): MediaStreamTrack[] {
   return tracks;
 }
 
-function collectCallVideoSourcesFromMedia(
-  source: CallRecordingMediaSource,
-): CallVideoSource[] {
-  if (isLiveKitRoom(source)) {
-    return collectCallVideoSourcesFromLiveKitRoom(source);
-  }
-  return collectCallVideoSources(source);
-}
-
-function allLiveAudioTracksFromMedia(
-  source: CallRecordingMediaSource,
-): MediaStreamTrack[] {
-  if (isLiveKitRoom(source)) {
-    return allLiveAudioTracksFromLiveKitRoom(source);
-  }
-  return allLiveAudioTracks(source);
-}
-
-function normalizeGroupCallResolver(
-  groupCallOrResolver:
-    | MatrixSdk.GroupCall
-    | null
-    | undefined
-    | ResolveGroupCall,
-): ResolveGroupCall {
-  if (typeof groupCallOrResolver === 'function') {
-    return groupCallOrResolver;
-  }
-  return () => groupCallOrResolver;
-}
-
 /**
  * Canvas compositor that redraws all participant feeds every frame. Keeps recording
  * in video/webm even when the call starts audio-only so camera can be enabled later.
@@ -543,29 +414,17 @@ function createCallVideoCompositor(
   let drawTimer: number | null = null;
   const disposers: Array<() => void> = [];
 
-  const bindMediaListeners = (source: CallRecordingMediaSource) => {
+  const bindMediaListeners = (source: Room) => {
     const onFeedsChanged = () => drawFrame();
-    if (isLiveKitRoom(source)) {
-      const events = [
-        RoomEvent.TrackSubscribed,
-        RoomEvent.TrackUnsubscribed,
-        RoomEvent.TrackMuted,
-        RoomEvent.TrackUnmuted,
-        RoomEvent.LocalTrackPublished,
-        RoomEvent.LocalTrackUnpublished,
-        RoomEvent.ParticipantConnected,
-        RoomEvent.ParticipantDisconnected,
-      ] as const;
-      for (const eventName of events) {
-        source.on(eventName, onFeedsChanged);
-        disposers.push(() => source.off(eventName, onFeedsChanged));
-      }
-      return;
-    }
     const events = [
-      GroupCallEvent.UserMediaFeedsChanged,
-      GroupCallEvent.ScreenshareFeedsChanged,
-      GroupCallEvent.LocalScreenshareStateChanged,
+      RoomEvent.TrackSubscribed,
+      RoomEvent.TrackUnsubscribed,
+      RoomEvent.TrackMuted,
+      RoomEvent.TrackUnmuted,
+      RoomEvent.LocalTrackPublished,
+      RoomEvent.LocalTrackUnpublished,
+      RoomEvent.ParticipantConnected,
+      RoomEvent.ParticipantDisconnected,
     ] as const;
     for (const eventName of events) {
       source.on(eventName, onFeedsChanged);
@@ -607,7 +466,7 @@ function createCallVideoCompositor(
       CALL_RECORDING_COMPOSITOR_HEIGHT,
     );
 
-    const sources = collectCallVideoSourcesFromMedia(media);
+    const sources = collectCallVideoSourcesFromLiveKitRoom(media);
     const activeIds = new Set(sources.map((s) => s.track.id));
     for (const [trackId, el] of videoElements) {
       if (activeIds.has(trackId)) continue;
@@ -674,29 +533,6 @@ function createCallVideoCompositor(
       track.stop();
     },
   };
-}
-
-function allLiveAudioTracks(
-  groupCall: MatrixSdk.GroupCall,
-): MediaStreamTrack[] {
-  const tracks: MediaStreamTrack[] = [];
-  const seen = new Set<string>();
-  const addFromStream = (stream: MediaStream | undefined) => {
-    if (!stream) return;
-    for (const track of stream.getAudioTracks()) {
-      if (track.readyState !== 'live' || seen.has(track.id)) continue;
-      seen.add(track.id);
-      tracks.push(track);
-    }
-  };
-  addFromStream(groupCall.localCallFeed?.stream);
-  for (const feed of groupCall.userMediaFeeds) {
-    addFromStream(feed.stream);
-  }
-  for (const feed of iterCallScreenshareFeeds(groupCall)) {
-    addFromStream(feed.stream);
-  }
-  return tracks;
 }
 
 /**
@@ -979,7 +815,7 @@ function buildCallRecordingStream(
 
   const mixer = createDynamicMixedAudioTrack(() => {
     const media = resolveMedia();
-    return media ? allLiveAudioTracksFromMedia(media) : [];
+    return media ? allLiveAudioTracksFromLiveKitRoom(media) : [];
   });
   if (mixer?.track) {
     output.addTrack(mixer.track);
@@ -1000,12 +836,7 @@ function buildCallRecordingStream(
 }
 
 export async function createCallRecording(
-  mediaOrResolver:
-    | CallRecordingMediaSource
-    | null
-    | undefined
-    | ResolveCallRecordingMedia
-    | ResolveGroupCall,
+  mediaOrResolver: Room | null | undefined | ResolveCallRecordingMedia,
 ): Promise<CallRecordingControls | null> {
   if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
     return null;
@@ -1053,15 +884,6 @@ export function startStandaloneCallRecording() {
   return startMediaStreamRecording(output, () => {
     silentFallback?.dispose();
   });
-}
-
-export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
-  if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
-    return null;
-  }
-  const built = buildCallRecordingStream(() => groupCall);
-  if (!built) return null;
-  return startMediaStreamRecording(built.stream, built.dispose);
 }
 
 export async function uploadRecordedCallArtifact({
