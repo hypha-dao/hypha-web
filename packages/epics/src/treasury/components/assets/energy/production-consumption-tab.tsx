@@ -20,7 +20,7 @@ import {
 } from './dummy-data';
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
-import { prettySourceLabel } from './format';
+import { sourceCardLabel } from './format';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -48,13 +48,7 @@ export const ProductionConsumptionTab = ({
   const sourceLabels = React.useMemo(
     () =>
       (data.sources ?? []).map((s, i) =>
-        prettySourceLabel(
-          s.sourceLabel,
-          i,
-          s.sourceType,
-          sourceFallback,
-          sourceTypeLabels,
-        ),
+        sourceCardLabel(s, i, sourceFallback, sourceTypeLabels),
       ),
     [data.sources, sourceFallback, sourceTypeLabels],
   );

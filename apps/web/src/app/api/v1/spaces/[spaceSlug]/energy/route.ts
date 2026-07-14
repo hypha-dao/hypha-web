@@ -5,6 +5,9 @@ import {
   isMissingEnergyCommunitiesTableError,
   upsertEnergyCommunityActivation,
   web3Client,
+  resolveEnergyParticipants,
+  institutionalLabelsForSpace,
+  readOwnershipTokenName,
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import {
@@ -312,22 +315,30 @@ export async function GET(
       ),
     );
 
-    const sources = sourceResults
-      .map((value, index) => {
+    const sourcesWithTokens = await Promise.all(
+      sourceResults.map(async (value, index) => {
         const sourceId = sourceIdList[index];
         if (!sourceId || !value) {
           return null;
         }
+        const ownershipToken = value[1];
+        const tokenName = await readOwnershipTokenName(ownershipToken);
+        const decodedId = decodeSourceId(sourceId);
         return {
           sourceId,
-          sourceLabel: decodeSourceId(sourceId),
+          sourceLabel: decodedId,
+          sourceDisplayName: tokenName ?? decodedId,
           sourceType: SOURCE_TYPES[Number(value[0])] ?? 'UNKNOWN',
-          ownershipToken: value[1],
+          ownershipToken,
           basePricePerKwh: value[2].toString(),
           active: value[3],
         };
-      })
-      .filter((row): row is NonNullable<typeof row> => row !== null);
+      }),
+    );
+
+    const sources = sourcesWithTokens.filter(
+      (row): row is NonNullable<typeof row> => row !== null,
+    );
 
     const memberAddressList = memberAddresses ?? [];
 
@@ -379,6 +390,21 @@ export async function GET(
           })),
         };
       }),
+    );
+
+    const memberDeviceIds = new Map<string, number[] | null>();
+    for (const detail of memberDetails) {
+      memberDeviceIds.set(detail.address.toLowerCase(), detail.deviceIds);
+    }
+
+    const participantProfiles = await resolveEnergyParticipants(
+      {
+        addresses: memberAddressList.map((a) => a.toLowerCase()),
+        spaceSlug,
+        memberDeviceIds,
+        institutionalByDevice: institutionalLabelsForSpace(spaceSlug),
+      },
+      { db },
     );
 
     const [optimizationConfig, socialWalletsRaw] = await Promise.all([
@@ -450,6 +476,7 @@ export async function GET(
       },
       members: memberAddressList.map((a) => a.toLowerCase() as `0x${string}`),
       memberDetails,
+      participantProfiles,
       sources,
       optimization,
     });

@@ -132,7 +132,7 @@ export const SourceCard = ({
         <p className="text-1 text-neutral-11">{typeLabel}</p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-1 text-neutral-11">{t('basePerKwh')}</p>
+        <p className="text-1 text-neutral-11">{t('currentPerKwh')}</p>
         <p className="font-medium text-foreground">{basePrice}</p>
         <span
           className={cn(

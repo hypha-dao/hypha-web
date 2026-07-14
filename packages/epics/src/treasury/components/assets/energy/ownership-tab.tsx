@@ -12,15 +12,18 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
-import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
+import type {
+  SpaceEnergyResponse,
+  EnergyParticipantProfile,
+} from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
 import { useEnergyPeople, type EnergyPerson } from './use-energy-people';
 import {
   formatBpsPct,
-  personDisplayName,
-  shortAddr,
+  resolveEnergyParticipantDisplay,
   sourceDisplayName,
+  shortAddr,
 } from './format';
 import {
   buildSourceProductionSeries,
@@ -174,7 +177,8 @@ const OwnerEarningsChart = ({
 const OwnerEarningsRow = ({
   group,
   owner,
-  person,
+  displayName,
+  avatarUrl,
   isLoading,
   accent,
   totalEarned,
@@ -182,7 +186,8 @@ const OwnerEarningsRow = ({
 }: {
   group: SourceGroup;
   owner: Owner;
-  person?: EnergyPerson | null;
+  displayName: string;
+  avatarUrl?: string;
   isLoading?: boolean;
   accent: string;
   totalEarned: number;
@@ -190,7 +195,6 @@ const OwnerEarningsRow = ({
 }) => {
   const t = useTranslations('Energy.ownership');
   const [expanded, setExpanded] = React.useState(false);
-  const name = personDisplayName(person) ?? shortAddr(owner.address);
 
   return (
     <div className="rounded-xl border border-border bg-background-2">
@@ -201,14 +205,14 @@ const OwnerEarningsRow = ({
         aria-expanded={expanded}
       >
         <PersonAvatar
-          avatarSrc={person?.avatarUrl ?? undefined}
-          userName={personDisplayName(person) ?? undefined}
+          avatarSrc={avatarUrl}
+          userName={displayName}
           size="md"
           shape="circle"
           isLoading={isLoading}
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-foreground">{name}</p>
+          <p className="truncate font-medium text-foreground">{displayName}</p>
           <p className="truncate text-1 text-neutral-11">
             {t('earnedFromSource', {
               prefix: totalIsPlaceholder ? '≈ ' : '',
@@ -242,11 +246,13 @@ const SourceOwnershipCard = ({
   group,
   accent,
   people,
+  participantProfiles,
   peopleLoading,
 }: {
   group: SourceGroup;
   accent: string;
   people: Record<string, EnergyPerson | null>;
+  participantProfiles?: Record<string, EnergyParticipantProfile>;
   peopleLoading: boolean;
 }) => {
   const locale = useLocale();
@@ -272,22 +278,30 @@ const SourceOwnershipCard = ({
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
-        {group.owners.map((owner) => (
-          <OwnerEarningsRow
-            key={`${group.sourceId}-${owner.address}`}
-            group={group}
-            owner={owner}
-            person={people[owner.address.toLowerCase()]}
-            isLoading={peopleLoading}
-            accent={accent}
-            totalEarned={
-              totalProductionKwh *
-              (group.basePricePerKwh / 100) *
-              (owner.bps / 10_000)
-            }
-            totalIsPlaceholder={production.isPlaceholder}
-          />
-        ))}
+        {group.owners.map((owner) => {
+          const display = resolveEnergyParticipantDisplay(
+            owner.address,
+            people,
+            participantProfiles,
+          );
+          return (
+            <OwnerEarningsRow
+              key={`${group.sourceId}-${owner.address}`}
+              group={group}
+              owner={owner}
+              displayName={display.displayName}
+              avatarUrl={display.avatarUrl}
+              isLoading={peopleLoading}
+              accent={accent}
+              totalEarned={
+                totalProductionKwh *
+                (group.basePricePerKwh / 100) *
+                (owner.bps / 10_000)
+              }
+              totalIsPlaceholder={production.isPlaceholder}
+            />
+          );
+        })}
         <p className="text-1 text-neutral-11">
           {t('earningsHint', {
             dataType: production.isPlaceholder ? t('placeholder') : t('live'),
@@ -309,12 +323,19 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const sourceMeta = React.useMemo(() => {
     const map = new Map<
       string,
-      { type: string; label: string; index: number; basePricePerKwh: number }
+      {
+        type: string;
+        label: string;
+        displayName?: string;
+        index: number;
+        basePricePerKwh: number;
+      }
     >();
     (data.sources ?? []).forEach((source, index) => {
       map.set(source.sourceId.toLowerCase(), {
         type: source.sourceType,
         label: source.sourceLabel,
+        displayName: source.sourceDisplayName,
         index,
         basePricePerKwh: Number(source.basePricePerKwh) || 0,
       });
@@ -353,6 +374,7 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
               SOLAR: tShared('sourceTypeSolar'),
               BATTERY: tShared('sourceTypeBattery'),
             },
+            meta?.displayName,
           ),
           sourceIndex: meta?.index ?? index,
           basePricePerKwh: meta?.basePricePerKwh ?? 0,
@@ -363,6 +385,7 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
   }, [details, sourceMeta, tShared]);
 
   const { people, isLoading } = useEnergyPeople(allAddresses);
+  const participantProfiles = data.participantProfiles;
 
   if (!groups.length) {
     return <p className="text-2 text-neutral-11">{t('noOwnership')}</p>;
@@ -376,6 +399,7 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
           group={group}
           accent={ENERGY_PALETTE[index % ENERGY_PALETTE.length]!}
           people={people}
+          participantProfiles={participantProfiles}
           peopleLoading={isLoading}
         />
       ))}

@@ -83,7 +83,7 @@ Form: `packages/epics/src/governance/components/create-enable-energy-community-f
 ```markdown
 This proposal activates the Ponta do Sol energy community on Base mainnet via EnergyPPAv2.
 
-It registers rooftop solar on **Escola Básica e Secundária da Ponta do Sol** and the apartment block, a shared 150 kWh battery, eight households, Quinta da Bananeira, and two individual investors — with on-chain ownership and automated settlement.
+It registers rooftop solar on **Escola Básica e Secundária da Ponta do Sol** and the apartment block, a shared 150 kWh battery, eight households, Quinta da Bananeira, and two individual investors (Vlad Hramtsov, Suzana Souza) — with on-chain ownership and automated settlement.
 ```
 
 Correct Portuguese spelling: **Básica**, **Secundária**, lowercase **e**, **da Ponta do Sol**.
@@ -136,7 +136,7 @@ Generate **~15 team-controlled addresses** (see `energy-ppav2-mainnet-demo.ts` f
 
 - **Institutional:** `communityTreasury`, `escolaPontaDoSol`, `bananaFarm`, `gridOperator`, `hyphaAggregator`
 - **8 individual residents:** `resident01` … `resident08`
-- **2 individual investors:** `investorAna`, `investorJoao`
+- **2 individual investors:** `investorVlad`, `investorSuzana`
 - Store in `ponta-do-sol-demo-wallets.json` (gitignored) — **never commit private keys**
 
 ### What is NOT possible / not recommended
@@ -157,8 +157,8 @@ Ponta do Sol is a **village-scale local energy community** in Madeira. **Each bu
 - **Edifício de Apartamentos** (8 homes) — own rooftop PV (~18 kWp); hosts the shared battery and most evening load
 - **Escola Básica e Secundária da Ponta do Sol** — own rooftop PV (~75 kWp); surplus feeds shared battery, banana farm, and export
 - **Quinta da Bananeira** — consumer only (no rooftop); daytime agricultural load
-- **Two individual investors** — private citizens who co-invested in PV and battery
-- **Eight individual apartment residents** — each with own meter and ownership stake in apartment PV + shared battery
+- **Two individual investors** — Vlad Hramtsov and Suzana Souza, co-investors in PV and battery
+- **Eight individual apartment residents** — Sofia Costa, Miguel Pereira, Ana Rodrigues, João Ferreira, Inês Sousa, Beatriz Silva, Pedro Freire, Rogério Ivan (each with own meter and ownership stake)
 - **Município / community treasury** — receives community fee (5%); no source ownership tokens
 
 ### On-site generation assets (2 rooftop PV + 1 shared battery)
@@ -187,11 +187,17 @@ flowchart LR
   SharedBattery --> SchoolLoad
 ```
 
-| Source | Location | Type | Demo size | Est. production / role | Base price |
-|--------|----------|------|-----------|------------------------|------------|
-| `PONTA_SCHOOL_PV` | Escola Básica e Secundária da Ponta do Sol rooftop | SOLAR | 75 kWp | ~110,000 kWh/yr | €0.10/kWh |
-| `PONTA_APT_PV` | Apartment rooftop | SOLAR | ~18 kWp | ~26,000 kWh/yr | €0.10/kWh |
-| `PONTA_COMMUNITY_BATTERY` | Shared (school + apartment) | BATTERY | ~150 kWh | shifts ~15–20 MWh/yr | €0.15/kWh |
+| Source ID (form **Name**) | Token / display name (form **Token name**) | Type | Current price / kWh |
+|---------------------------|--------------------------------------------|------|---------------------|
+| `PONTA_SCHOOL_PV` | Ponta do Sol School Solar | SOLAR | `0.10` |
+| `PONTA_APT_PV` | Ponta Apartment Solar | SOLAR | `0.10` |
+| `PONTA_COMMUNITY_BATTERY` | Ponta Community Battery | BATTERY | `0.15` |
+
+| Source | Demo size | Est. production / role |
+|--------|-----------|------------------------|
+| School PV | 75 kWp | ~110,000 kWh/yr |
+| Apartment PV | ~18 kWp | ~26,000 kWh/yr |
+| Shared battery | ~150 kWh | shifts ~15–20 MWh/yr |
 
 ### Community energy balance (annual, planning-level)
 
@@ -212,42 +218,56 @@ flowchart LR
 
 No municipality on source tokens (municipality only receives the 5% community fee at settlement).
 
-**Escola Básica e Secundária da Ponta do Sol rooftop PV** — school + two individual investors:
+**Escola Básica e Secundária da Ponta do Sol rooftop PV** — school wallet + two investors:
 
 | Holder | % | BPS |
 |--------|---|-----|
-| Escola Básica e Secundária da Ponta do Sol | 50% | 5,000 |
-| Ana Silva (individual investor) | 25% | 2,500 |
-| João Mendes (individual investor) | 25% | 2,500 |
+| Escola Básica e Secundária da Ponta do Sol (institutional wallet) | 50% | 5,000 |
+| Vlad Hramtsov (individual investor) | 25% | 2,500 |
+| Suzana Souza (individual investor) | 25% | 2,500 |
 
 **Apartment rooftop PV** — eight households + two investors:
 
 | Holder | % | BPS |
 |--------|---|-----|
-| 8 apartment residents (3.75% each) | 30% | 375 × 8 |
-| Ana Silva (individual investor) | 35% | 3,500 |
-| João Mendes (individual investor) | 35% | 3,500 |
+| Sofia Costa | 8% | 800 |
+| Miguel Pereira | 7% | 700 |
+| Ana Rodrigues | 5% | 500 |
+| João Ferreira | 5% | 500 |
+| Inês Sousa | 6% | 600 |
+| Beatriz Silva | 10% | 1,000 |
+| Pedro Freire | 10% | 1,000 |
+| Rogério Ivan | 9% | 900 |
+| Vlad Hramtsov (individual investor) | 20% | 2,000 |
+| Suzana Souza (individual investor) | 20% | 2,000 |
 
 **Community shared battery** — school + eight households + two investors:
 
 | Holder | % | BPS |
 |--------|---|-----|
-| Escola Básica e Secundária da Ponta do Sol | 10% | 1,000 |
-| 8 apartment residents (2.5% each) | 20% | 250 × 8 |
-| Ana Silva (individual investor) | 35% | 3,500 |
-| João Mendes (individual investor) | 35% | 3,500 |
+| Escola Básica e Secundária da Ponta do Sol (institutional wallet) | 30% | 3,000 |
+| Sofia Costa | 5% | 500 |
+| Miguel Pereira | 5% | 500 |
+| Ana Rodrigues | 5% | 500 |
+| João Ferreira | 5% | 500 |
+| Inês Sousa | 5% | 500 |
+| Beatriz Silva | 5% | 500 |
+| Pedro Freire | 5% | 500 |
+| Rogério Ivan | 5% | 500 |
+| Vlad Hramtsov (individual investor) | 15% | 1,500 |
+| Suzana Souza (individual investor) | 15% | 1,500 |
 
 | Asset | Owners |
 |-------|--------|
-| School PV | Escola Básica e Secundária da Ponta do Sol, Ana, João |
-| Apartment PV | 8 residents, Ana, João |
-| Shared battery | Escola Básica e Secundária da Ponta do Sol, 8 residents, Ana, João |
+| School PV | Escola (wallet), Vlad, Suzana |
+| Apartment PV | 8 residents, Vlad, Suzana |
+| Shared battery | Escola (wallet), 8 residents, Vlad, Suzana |
 
 **Rationale — school PV at 50%:** The array is on the school roof and the school is the primary operational beneficiary (lower bills + revenue share). Investors at 25% each provide capital while the school retains majority ownership of its own asset.
 
 ### Alternative scenario — RWA fund instead of individual investors
 
-The **default demo** uses two named individuals (Ana Silva, João Mendes) as co-investors. An alternative pitch treats generation assets as **real-world assets (RWAs)** wrapped in a fund-like vehicle, where external investors buy units and receive **cash yield** from community energy settlement (similar to interest / coupon on production revenues).
+The **default demo** uses two named individuals (**Vlad Hramtsov**, **Suzana Souza**) as co-investors. An alternative pitch treats generation assets as **real-world assets (RWAs)** wrapped in a fund-like vehicle, where external investors buy units and receive **cash yield** from community energy settlement (similar to interest / coupon on production revenues).
 
 #### Legal vehicle options (EU / Portugal)
 
@@ -315,11 +335,18 @@ On **~€55k** fund capital deployed → **~12–15% gross cash yield** in year 
 
 | # | Role | device ID | Notes |
 |---|------|-----------|-------|
-| 1 | Escola Básica e Secundária da Ponta do Sol | `1` | School consumption meter |
-| 2–9 | Resident 1 … Resident 8 | `2`–`9` | 8 individual households |
-| 10 | Quinta da Bananeira (banana farm) | `10` | Daytime irrigation, packing, cold storage |
-| 11 | Ana Silva (individual investor) | `9101` | Revenue-only sentinel ID |
-| 12 | João Mendes (individual investor) | `9102` | Revenue-only sentinel ID |
+| 1 | Escola Básica e Secundária da Ponta do Sol | `1` | School consumption meter (institutional wallet, not a Hypha person) |
+| 2 | Sofia Costa | `2` | Apt 1 |
+| 3 | Miguel Pereira | `3` | Apt 2 |
+| 4 | Ana Rodrigues | `4` | Apt 3 |
+| 5 | João Ferreira | `5` | Apt 4 |
+| 6 | Inês Sousa | `6` | Apt 5 |
+| 7 | Beatriz Silva | `7` | Apt 6 |
+| 8 | Pedro Freire | `8` | Apt 7 |
+| 9 | Rogério Ivan | `9` | Apt 8 |
+| 10 | Quinta da Bananeira (banana farm) | `10` | Institutional wallet — daytime irrigation, packing, cold storage |
+| 11 | Vlad Hramtsov (individual investor) | `9101` | Revenue-only sentinel ID |
+| 12 | Suzana Souza (individual investor) | `9102` | Revenue-only sentinel ID |
 
 ### Fees and operators
 

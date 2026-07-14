@@ -3875,7 +3875,7 @@
     "shared": {
       "gridOperatorName": "Operador de red local",
       "gridOperatorSubtitle": "Proveedor externo de energía",
-      "basePerKwh": "Base / kWh",
+      "currentPerKwh": "Actual / kWh",
       "active": "Activo",
       "inactive": "Inactivo",
       "source": "Fuente",

@@ -8,7 +8,11 @@ import { ENERGY_PALETTE } from './charts';
 import { SourceCard, SectionTitle } from './shared';
 import { ConsumerConsumptionCard } from './consumer-consumption-card';
 import { useEnergyPeople } from './use-energy-people';
-import { prettySourceLabel } from './format';
+import {
+  formatEnergyPricePerKwh,
+  resolveEnergyParticipantDisplay,
+  sourceCardLabel,
+} from './format';
 
 export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
   const t = useTranslations('Energy.overview');
@@ -35,6 +39,7 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
   );
 
   const { people, isLoading } = useEnergyPeople(consumers);
+  const participantProfiles = data.participantProfiles;
   const sourceFallback = tShared('source');
   const sourceTypeLabels = {
     SOLAR: tShared('sourceTypeSolar'),
@@ -56,17 +61,26 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
         />
         {consumers.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {consumers.map((address) => (
-              <ConsumerConsumptionCard
-                key={address}
-                address={address}
-                person={people[address.toLowerCase()]}
-                isLoading={isLoading}
-                deviceIds={
-                  deviceIdsByAddress.get(address.toLowerCase()) ?? null
-                }
-              />
-            ))}
+            {consumers.map((address) => {
+              const display = resolveEnergyParticipantDisplay(
+                address,
+                people,
+                participantProfiles,
+              );
+              return (
+                <ConsumerConsumptionCard
+                  key={address}
+                  address={address}
+                  displayName={display.displayName}
+                  avatarUrl={display.avatarUrl}
+                  subtitle={display.subtitle}
+                  isLoading={isLoading}
+                  deviceIds={
+                    deviceIdsByAddress.get(address.toLowerCase()) ?? null
+                  }
+                />
+              );
+            })}
           </div>
         ) : (
           <p className="text-2 text-neutral-11">{t('noConsumers')}</p>
@@ -89,15 +103,14 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
             {sources.map((source, index) => (
               <SourceCard
                 key={source.sourceId}
-                label={prettySourceLabel(
-                  source.sourceLabel,
+                label={sourceCardLabel(
+                  source,
                   index,
-                  source.sourceType,
                   sourceFallback,
                   sourceTypeLabels,
                 )}
                 type={source.sourceType}
-                basePrice={source.basePricePerKwh}
+                basePrice={formatEnergyPricePerKwh(source.basePricePerKwh)}
                 active={source.active}
                 accent={ENERGY_PALETTE[index % ENERGY_PALETTE.length]!}
               />
