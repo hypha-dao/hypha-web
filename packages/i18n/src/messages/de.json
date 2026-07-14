@@ -263,8 +263,17 @@
     }
   },
   "MyWallet": {
+    "title": "Mein Wallet",
+    "allYourRewards": "Alle deine Belohnungen,",
+    "oneWallet": "Ein Wallet",
     "loading": "Wird geladen...",
-    "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen."
+    "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen.",
+    "tabs": {
+      "wallet": "Wallet",
+      "banking": "Bankdienste",
+      "transactions": "Transaktionen",
+      "rewards": "Belohnungen"
+    }
   },
   "NotificationCentre": {
     "title": "Benachrichtigungszentrale",
@@ -1195,6 +1204,9 @@
     "newToken": "Neuer Token",
     "depositFunds": "Mittel einzahlen",
     "listIsEmpty": "Liste ist leer",
+    "emptyAssetsTreasury": "Ihre Schatzkammer hat noch keine Assets. Zahlen Sie Mittel ein oder erstellen Sie einen Space-Token, um loszulegen.",
+    "emptyAssetsWallet": "Ihre Wallet hat noch keine Assets. Kaufen Sie Space-Tokens oder HYPHA, um Ihr Guthaben aufzubauen.",
+    "emptyAssetsSearch": "Keine Assets entsprechen Ihrer Suche.",
     "loadMoreAssets": "Mehr Assets laden",
     "transactions": "Transaktionen",
     "vaults": "Tresore",

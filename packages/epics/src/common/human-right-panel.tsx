@@ -3076,6 +3076,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (pathname.includes('/network')) {
       return `/${lang}/network/notification-centre`;
     }
+    if (pathname.includes('/my-wallet')) {
+      return `/${lang}/my-wallet/notification-centre`;
+    }
     if (pathname.includes('/my-spaces')) {
       return `/${lang}/my-spaces/notification-centre`;
     }

@@ -12,3 +12,4 @@ export * from './hooks';
 export * from './coherence';
 export * from './network-map';
 export * from './schedule';
+export * from './wallet';

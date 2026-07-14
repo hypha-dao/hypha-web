@@ -36,6 +36,8 @@ interface Token {
 interface ProfileRedeemTokensProps {
   lang: string;
   personSlug: string;
+  closeUrl?: string;
+  backUrl?: string;
 }
 
 type SpaceSummary = {
@@ -71,6 +73,8 @@ type RedeemDiscoveryDiagnostics = {
 export const ProfileRedeemTokens = ({
   lang,
   personSlug,
+  closeUrl,
+  backUrl,
 }: ProfileRedeemTokensProps) => {
   const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const tActions = useTranslations('ProfileActions');
@@ -363,13 +367,16 @@ export const ProfileRedeemTokens = ({
   const isCoreLoading = personLoading || spacesLoading;
   const isTokensLoading = Boolean(jwt) && !redeemableData;
 
+  const resolvedCloseUrl = closeUrl ?? `/${lang}/profile/${personSlug}`;
+  const resolvedBackUrl = backUrl ?? `/${lang}/profile/${personSlug}/actions`;
+
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
           contextTitle={tModalAside('redeemTokens')}
-          closeUrl={`/${lang}/profile/${personSlug}`}
-          backUrl={`/${lang}/profile/${personSlug}/actions`}
+          closeUrl={resolvedCloseUrl}
+          backUrl={resolvedBackUrl}
           backLabel={tActions('backToActions')}
         />
         <span className="text-2 text-neutral-11">{tRedeem('content')}</span>

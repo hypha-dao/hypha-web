@@ -1029,8 +1029,17 @@
     }
   },
   "MyWallet": {
+    "title": "Minha carteira",
+    "allYourRewards": "Todas as suas recompensas,",
+    "oneWallet": "Uma carteira",
     "loading": "Carregando...",
-    "signInToViewWallet": "Faça login para ver sua carteira."
+    "signInToViewWallet": "Faça login para ver sua carteira.",
+    "tabs": {
+      "wallet": "Carteira",
+      "banking": "Banco",
+      "transactions": "Transações",
+      "rewards": "Recompensas"
+    }
   },
   "NotificationCentre": {
     "title": "Central de Notificações",
@@ -1412,6 +1421,9 @@
     "newToken": "Novo token",
     "depositFunds": "Depositar fundos",
     "listIsEmpty": "A lista está vazia",
+    "emptyAssetsTreasury": "Seu tesouro ainda não tem ativos. Deposite fundos ou crie um token do espaço para começar.",
+    "emptyAssetsWallet": "Sua carteira ainda não tem ativos. Compre tokens do espaço ou HYPHA para começar a construir seu saldo.",
+    "emptyAssetsSearch": "Nenhum ativo corresponde à sua pesquisa.",
     "loadMoreAssets": "Carregar mais ativos",
     "transactions": "Transações",
     "vaults": "Cofres",
