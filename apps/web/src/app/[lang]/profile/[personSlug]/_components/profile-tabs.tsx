@@ -4,6 +4,7 @@ import { Person, useMe } from '@hypha-platform/core/client';
 import {
   ProfileBankingSection,
   UserAssetsSection,
+  UserEnergySection,
   UserTransactionsSection,
   PendingRewardsSection,
 } from '@hypha-platform/epics';
@@ -32,6 +33,11 @@ export const ProfileTabs = ({
       <PendingRewardsSection
         person={person as Person}
         isMyProfile={isMyProfile}
+      />
+      <UserEnergySection
+        personSlug={person?.slug || ''}
+        isMyProfile={isMyProfile}
+        lang={lang}
       />
       <UserAssetsSection
         isMyProfile={isMyProfile}

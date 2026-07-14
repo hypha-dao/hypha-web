@@ -34,3 +34,5 @@ export * from './common/decay-settings-toggle';
 export * from './common/transfer-section';
 export * from './common/authorized-minters-section';
 export * from './common/advanced-token-settings';
+export * from './assets/space-energy-section';
+export * from './assets/user-energy-section';

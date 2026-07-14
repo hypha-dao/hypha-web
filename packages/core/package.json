@@ -22,6 +22,7 @@
     "livekit-client": "^2.18.1",
     "matrix-js-sdk": "^40.0.0",
     "pdf-parse": "^1.1.1",
+    "pg": "^8.13.1",
     "rrule": "^2.8.1"
   },
   "exports": {

@@ -43,6 +43,12 @@ export function getCreateRouteSegmentForProposalLabel(
     'Space Transparency': 'space-settings-transparency',
     Investment: 'accept-investment',
     Exchange: 'exchange-stakes-and-tokens',
+    'Enable Energy Community': 'enable-energy-community',
+    'Energy Sharing': 'energy-sharing',
+    'Register Energy Source': 'register-energy-source',
+    'Add Energy Member': 'add-energy-member',
+    'Change Energy Optimization': 'change-energy-optimization',
+    'Whitelist Energy Settlement': 'whitelist-energy-settlement',
   };
 
   return labelToRoute[label] ?? '';

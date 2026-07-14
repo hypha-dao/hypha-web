@@ -139,16 +139,6 @@ jobs:
           vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
           pnpm run migrate
 
-      - name: Post Schema Diff Comment to PR
-        if: needs.detect-changes.outputs.has_migrations == 'true'
-        continue-on-error: true
-        timeout-minutes: 2
-        uses: neondatabase/schema-diff-action@v1
-        with:
-          project_id: ${{ secrets.NEON_PROJECT_ID }}
-          compare_branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
-          api_key: ${{ secrets.NEON_API_KEY }}
-
       - name: Build Project Artifacts
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
@@ -159,6 +149,26 @@ jobs:
           echo "NEXT_PUBLIC_ENABLE_NETWORK_MAP=true" >> apps/web/.env.local
           echo "NEXT_PUBLIC_ENABLE_ONBOARDING_VOICE_REALTIME=true" >> apps/web/.env.local
           vercel build --token=${{ env.VERCEL_TOKEN }}
+
+      # Run after `vercel build`: Neon’s schema-diff API often returns HTTP 408 when
+      # called seconds after migrations; the build buys ~minutes for the branch to settle.
+      - name: Post Schema Diff Comment to PR
+        id: schema_diff
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        continue-on-error: true
+        uses: neondatabase/schema-diff-action@v1
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          compare_branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
+          base_branch: main
+          database: ${{ env.NEON_DATABASE_NAME }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+          github-token: ${{ github.token }}
+
+      - name: Log Neon schema diff failure
+        if: always() && steps.schema_diff.outcome == 'failure'
+        run: |
+          echo "::warning::Neon schema-diff step failed (often HTTP 408). Preview deploy continues; re-run the workflow or check Neon status if you need the PR comment."
 
       - name: Deploy Preview to Vercel
         id: deploy

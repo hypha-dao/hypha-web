@@ -55,7 +55,9 @@ const config: HardhatUserConfig = {
       },
     },
     'base-mainnet': {
-      url: process.env.RPC_URL || '',
+      // Match scripts that fall back to publicnode when RPC_URL is unset; avoid
+      // mainnet.base.org (strict public rate limits) as the implicit default.
+      url: process.env.RPC_URL || 'https://base-rpc.publicnode.com',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },

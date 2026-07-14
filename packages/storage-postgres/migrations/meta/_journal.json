@@ -470,6 +470,20 @@
       "when": 1782900000000,
       "tag": "0066_coherence_board_general_default",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1783000000000,
+      "tag": "0067_energy_communities",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1783000000001,
+      "tag": "0068_energy_communities_authenticated_grants",
+      "breakpoints": true
     }
   ]
 }
