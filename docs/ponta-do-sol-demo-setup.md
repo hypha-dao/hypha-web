@@ -83,10 +83,10 @@ Form: `packages/epics/src/governance/components/create-enable-energy-community-f
 ```markdown
 This proposal activates the Ponta do Sol energy community on Base mainnet via EnergyPPAv2.
 
-It registers rooftop solar on **Escola Básica e Secundária de Machico** and the apartment block, a shared 150 kWh battery, eight households, Quinta da Bananeira, and two individual investors — with on-chain ownership and automated settlement.
+It registers rooftop solar on **Escola Básica e Secundária da Ponta do Sol** and the apartment block, a shared 150 kWh battery, eight households, Quinta da Bananeira, and two individual investors — with on-chain ownership and automated settlement.
 ```
 
-Correct Portuguese spelling: **Básica**, **Secundária**, lowercase **e**. Machico is the school location; Ponta do Sol remains the community name.
+Correct Portuguese spelling: **Básica**, **Secundária**, lowercase **e**, **da Ponta do Sol**.
 
 1. Submit proposal with Part 2 form values (see ownership and members below; full copy-paste wallet doc TBD).
 2. Set **voting duration = 0** if you are the sole voter initially.
@@ -105,7 +105,7 @@ Correct Portuguese spelling: **Básica**, **Secundária**, lowercase **e**. Mach
 Update `spaces` row for `ponta-do-sol`:
 
 - `logoUrl`, `leadImage`, `description`, `links`
-- **Full description** (Neon — operational): *"Ponta do Sol is a Madeira village energy community. Escola Básica e Secundária de Machico and the apartment block each host rooftop solar; a 150 kWh battery shared between both buildings stores midday surplus. During daylight hours, excess school generation supplies Quinta da Bananeira. In the evening, stored energy supports apartment EV charging. The school co-owns its rooftop with two investors; apartment residents co-own their rooftop with the same investors; the battery is co-owned by school, residents, and investors. The municipality receives community fees."*
+- **Full description** (Neon — operational): *"Ponta do Sol is a Madeira village energy community. Escola Básica e Secundária da Ponta do Sol and the apartment block each host rooftop solar; a 150 kWh battery shared between both buildings stores midday surplus. During daylight hours, excess school generation supplies Quinta da Bananeira. In the evening, stored energy supports apartment EV charging. The school co-owns its rooftop with two investors; apartment residents co-own their rooftop with the same investors; the battery is co-owned by school, residents, and investors. The municipality receives community fees."*
 - `latitude`, `longitude`, `locationLabel` = "Ponta do Sol, Madeira, Portugal"
 - `flags` = `["demo"]`
 
@@ -115,10 +115,10 @@ Per `packages/storage-evm/ENERGY_INTERVAL_DATA_FEED.md`, seed `accounting.interv
 
 | meter_id | Role |
 |---------:|------|
-| 1 | Escola Básica e Secundária de Machico (consumption) |
+| 1 | Escola Básica e Secundária da Ponta do Sol (consumption) |
 | 2–9 | 8 individual apartment residents (1 meter each) |
 | 10 | Quinta da Bananeira (banana farm) |
-| 9001 | Escola Básica e Secundária de Machico rooftop PV |
+| 9001 | Escola Básica e Secundária da Ponta do Sol rooftop PV |
 | 9002 | Apartment rooftop PV production |
 | 9003 | Community shared battery (school + apartment) |
 | 9999 | Grid export (computed by VPP) |
@@ -134,7 +134,7 @@ ENERGY_DEMO_COMMAND=loop npx hardhat run scripts/base-mainnet-contracts-scripts/
 
 Generate **~15 team-controlled addresses** (see `energy-ppav2-mainnet-demo.ts` for pattern):
 
-- **Institutional:** `communityTreasury`, `escolaMachico`, `bananaFarm`, `gridOperator`, `hyphaAggregator`
+- **Institutional:** `communityTreasury`, `escolaPontaDoSol`, `bananaFarm`, `gridOperator`, `hyphaAggregator`
 - **8 individual residents:** `resident01` … `resident08`
 - **2 individual investors:** `investorAna`, `investorJoao`
 - Store in `ponta-do-sol-demo-wallets.json` (gitignored) — **never commit private keys**
@@ -155,7 +155,7 @@ Ponta do Sol is a **village-scale local energy community** in Madeira. **Each bu
 
 - **Community shared battery** — single storage asset serving both school and apartment; charged from school PV midday surplus and apartment PV surplus; discharges for apartment evening EV load
 - **Edifício de Apartamentos** (8 homes) — own rooftop PV (~18 kWp); hosts the shared battery and most evening load
-- **Escola Básica e Secundária de Machico** — own rooftop PV (~75 kWp); surplus feeds shared battery, banana farm, and export
+- **Escola Básica e Secundária da Ponta do Sol** — own rooftop PV (~75 kWp); surplus feeds shared battery, banana farm, and export
 - **Quinta da Bananeira** — consumer only (no rooftop); daytime agricultural load
 - **Two individual investors** — private citizens who co-invested in PV and battery
 - **Eight individual apartment residents** — each with own meter and ownership stake in apartment PV + shared battery
@@ -165,8 +165,8 @@ Ponta do Sol is a **village-scale local energy community** in Madeira. **Each bu
 
 ```mermaid
 flowchart LR
-  subgraph schoolBuilding [Escola Basica e Secundaria de Machico]
-    SchoolRoof["Rooftop PV\nMACHICO_SCHOOL_PV\n~75 kWp SOLAR"]
+  subgraph schoolBuilding [Escola Basica e Secundaria da Ponta do Sol]
+    SchoolRoof["Rooftop PV\nPONTA_SCHOOL_PV\n~75 kWp SOLAR"]
     SchoolLoad["School meter"]
   end
   subgraph communityStorage [Community storage]
@@ -189,7 +189,7 @@ flowchart LR
 
 | Source | Location | Type | Demo size | Est. production / role | Base price |
 |--------|----------|------|-----------|------------------------|------------|
-| `MACHICO_SCHOOL_PV` | Escola Básica e Secundária de Machico rooftop | SOLAR | 75 kWp | ~110,000 kWh/yr | €0.10/kWh |
+| `PONTA_SCHOOL_PV` | Escola Básica e Secundária da Ponta do Sol rooftop | SOLAR | 75 kWp | ~110,000 kWh/yr | €0.10/kWh |
 | `PONTA_APT_PV` | Apartment rooftop | SOLAR | ~18 kWp | ~26,000 kWh/yr | €0.10/kWh |
 | `PONTA_COMMUNITY_BATTERY` | Shared (school + apartment) | BATTERY | ~150 kWh | shifts ~15–20 MWh/yr | €0.15/kWh |
 
@@ -206,17 +206,17 @@ flowchart LR
 | **Total demand** | **~86,000** |
 | **Net community surplus** | **~50,000** |
 
-**Investor pitch line:** *"The Escola de Machico roof powers the village — surplus solar runs the banana farm by day, stores energy for apartment EVs by night."*
+**Investor pitch line:** *"The school roof powers the village — surplus solar runs the banana farm by day, stores energy for apartment EVs by night."*
 
 ### Ownership split (basis points, total 10,000 per source)
 
 No municipality on source tokens (municipality only receives the 5% community fee at settlement).
 
-**Escola Básica e Secundária de Machico rooftop PV** — school + two individual investors:
+**Escola Básica e Secundária da Ponta do Sol rooftop PV** — school + two individual investors:
 
 | Holder | % | BPS |
 |--------|---|-----|
-| Escola Básica e Secundária de Machico | 50% | 5,000 |
+| Escola Básica e Secundária da Ponta do Sol | 50% | 5,000 |
 | Ana Silva (individual investor) | 25% | 2,500 |
 | João Mendes (individual investor) | 25% | 2,500 |
 
@@ -232,16 +232,16 @@ No municipality on source tokens (municipality only receives the 5% community fe
 
 | Holder | % | BPS |
 |--------|---|-----|
-| Escola Básica e Secundária de Machico | 10% | 1,000 |
+| Escola Básica e Secundária da Ponta do Sol | 10% | 1,000 |
 | 8 apartment residents (2.5% each) | 20% | 250 × 8 |
 | Ana Silva (individual investor) | 35% | 3,500 |
 | João Mendes (individual investor) | 35% | 3,500 |
 
 | Asset | Owners |
 |-------|--------|
-| School PV | Escola Básica e Secundária de Machico, Ana, João |
+| School PV | Escola Básica e Secundária da Ponta do Sol, Ana, João |
 | Apartment PV | 8 residents, Ana, João |
-| Shared battery | Escola Básica e Secundária de Machico, 8 residents, Ana, João |
+| Shared battery | Escola Básica e Secundária da Ponta do Sol, 8 residents, Ana, João |
 
 **Rationale — school PV at 50%:** The array is on the school roof and the school is the primary operational beneficiary (lower bills + revenue share). Investors at 25% each provide capital while the school retains majority ownership of its own asset.
 
@@ -315,7 +315,7 @@ On **~€55k** fund capital deployed → **~12–15% gross cash yield** in year 
 
 | # | Role | device ID | Notes |
 |---|------|-----------|-------|
-| 1 | Escola Básica e Secundária de Machico | `1` | School consumption meter |
+| 1 | Escola Básica e Secundária da Ponta do Sol | `1` | School consumption meter |
 | 2–9 | Resident 1 … Resident 8 | `2`–`9` | 8 individual households |
 | 10 | Quinta da Bananeira (banana farm) | `10` | Daytime irrigation, packing, cold storage |
 | 11 | Ana Silva (individual investor) | `9101` | Revenue-only sentinel ID |
