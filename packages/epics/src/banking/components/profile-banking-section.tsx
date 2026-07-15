@@ -273,29 +273,28 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="flex justify-end">
-        {canManage ? (
-          <BankingAdvancedDialog
-            basePath={basePath}
-            ownerContext="person"
-            status={status}
-            isLoading={false}
-            isRefreshing={false}
-            canManage={canManage}
-            blockerMessage={blockerMessage}
-            open={gearOpen}
-            onOpenChange={handleGearOpenChange}
-            onRefreshStatus={refreshBankingState}
-          />
-        ) : null}
-      </div>
-
       <BankAccountsSection
         isAuthenticated={isAuthenticated}
         canManage={canManage}
         ownerContext="person"
         openSpaceAccountDisabled={openSpaceAccountDisabled}
         openSpaceAccountDisabledReason={openSpaceAccountDisabledReason}
+        gearSlot={
+          canManage ? (
+            <BankingAdvancedDialog
+              basePath={basePath}
+              ownerContext="person"
+              status={status}
+              isLoading={false}
+              isRefreshing={false}
+              canManage={canManage}
+              blockerMessage={blockerMessage}
+              open={gearOpen}
+              onOpenChange={handleGearOpenChange}
+              onRefreshStatus={refreshBankingState}
+            />
+          ) : undefined
+        }
         onOpenSpaceAccount={() => {
           clearCreateAccountError();
           setAddCurrencyDialogOpen(true);
