@@ -7,7 +7,7 @@ import {
   web3Client,
   resolveEnergyParticipants,
   institutionalLabelsForSpace,
-  readOwnershipTokenName,
+  readOwnershipTokenNames,
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import {
@@ -315,15 +315,20 @@ export async function GET(
       ),
     );
 
-    const sourcesWithTokens = await Promise.all(
-      sourceResults.map(async (value, index) => {
+    const ownershipTokens = sourceResults.flatMap((value, index) =>
+      value && sourceIdList[index] ? [value[1]] : [],
+    );
+    const tokenNamesByAddress = await readOwnershipTokenNames(ownershipTokens);
+
+    const sources = sourceResults
+      .map((value, index) => {
         const sourceId = sourceIdList[index];
         if (!sourceId || !value) {
           return null;
         }
         const ownershipToken = value[1];
-        const tokenName = await readOwnershipTokenName(ownershipToken);
         const decodedId = decodeSourceId(sourceId);
+        const tokenName = tokenNamesByAddress[ownershipToken.toLowerCase()];
         return {
           sourceId,
           sourceLabel: decodedId,
@@ -333,12 +338,8 @@ export async function GET(
           basePricePerKwh: value[2].toString(),
           active: value[3],
         };
-      }),
-    );
-
-    const sources = sourcesWithTokens.filter(
-      (row): row is NonNullable<typeof row> => row !== null,
-    );
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
 
     const memberAddressList = memberAddresses ?? [];
 
@@ -397,15 +398,20 @@ export async function GET(
       memberDeviceIds.set(detail.address.toLowerCase(), detail.deviceIds);
     }
 
-    const participantProfiles = await resolveEnergyParticipants(
-      {
-        addresses: memberAddressList.map((a) => a.toLowerCase()),
-        spaceSlug,
-        memberDeviceIds,
-        institutionalByDevice: institutionalLabelsForSpace(spaceSlug),
-      },
-      { db },
-    );
+    const canResolveParticipantProfiles =
+      access.hasAccess && Boolean(access.authToken);
+
+    const participantProfiles = canResolveParticipantProfiles
+      ? await resolveEnergyParticipants(
+          {
+            addresses: memberAddressList.map((a) => a.toLowerCase()),
+            spaceSlug,
+            memberDeviceIds,
+            institutionalByDevice: institutionalLabelsForSpace(spaceSlug),
+          },
+          { db },
+        )
+      : undefined;
 
     const [optimizationConfig, socialWalletsRaw] = await Promise.all([
       safeRead<readonly [readonly number[], number, bigint, number, boolean]>(

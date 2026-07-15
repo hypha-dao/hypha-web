@@ -1,4 +1,6 @@
 import { formatUnits } from 'viem';
+import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
+import type { EnergyPerson } from './use-energy-people';
 
 export const UNAVAILABLE = '—';
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -128,26 +130,10 @@ export const sourceCardLabel = (
   );
 };
 
-export type EnergyParticipantProfile = {
-  displayName: string;
-  avatarUrl?: string | null;
-  subtitle?: string | null;
-  profileSlug?: string | null;
-  kind?: 'person' | 'space' | 'institutional';
-};
-
 /** Merge Hypha person lookup with server-resolved participant profiles. */
 export const resolveEnergyParticipantDisplay = (
   address: string,
-  people: Record<
-    string,
-    {
-      name?: string | null;
-      surname?: string | null;
-      nickname?: string | null;
-      avatarUrl?: string | null;
-    } | null
-  >,
+  people: Record<string, EnergyPerson | null>,
   profiles?: Record<string, EnergyParticipantProfile>,
 ) => {
   const key = address.toLowerCase();

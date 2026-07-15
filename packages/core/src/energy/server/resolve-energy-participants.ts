@@ -124,15 +124,15 @@ export const PONTA_DO_SOL_INSTITUTIONAL_BY_DEVICE: Record<
   number,
   { displayName: string; avatarUrl?: string; subtitle?: string }
 > = {
-  1: {
+  7: {
     displayName: 'Escola Básica e Secundária da Ponta do Sol',
-    subtitle: 'School consumption · meter 1',
+    subtitle: 'School consumption · meter 7',
     avatarUrl:
       'https://ui-avatars.com/api/?name=Escola+Ponta+do+Sol&background=2563eb&color=fff&size=128',
   },
-  10: {
+  8: {
     displayName: 'Quinta da Bananeira',
-    subtitle: 'Banana farm · meter 10',
+    subtitle: 'Banana farm · meter 8',
     avatarUrl:
       'https://ui-avatars.com/api/?name=Quinta+Bananeira&background=ca8a04&color=fff&size=128',
   },
@@ -146,7 +146,10 @@ export function institutionalLabelsForSpace(
       { displayName: string; avatarUrl?: string; subtitle?: string }
     >
   | undefined {
-  if (spaceSlug === 'ponta-do-sol') {
+  if (
+    spaceSlug === 'ponta-do-sol-energy-community' ||
+    spaceSlug === 'ponta-do-sol'
+  ) {
     return PONTA_DO_SOL_INSTITUTIONAL_BY_DEVICE;
   }
   return undefined;

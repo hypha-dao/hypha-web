@@ -40,17 +40,18 @@ export const ProductionConsumptionTab = ({
   } = useSpaceEnergyTelemetry(timeframe);
 
   const sourceFallback = tShared('source');
-  const sourceTypeLabels = {
-    SOLAR: tShared('sourceTypeSolar'),
-    BATTERY: tShared('sourceTypeBattery'),
-  };
 
   const sourceLabels = React.useMemo(
-    () =>
-      (data.sources ?? []).map((s, i) =>
+    () => {
+      const sourceTypeLabels = {
+        SOLAR: tShared('sourceTypeSolar'),
+        BATTERY: tShared('sourceTypeBattery'),
+      };
+      return (data.sources ?? []).map((s, i) =>
         sourceCardLabel(s, i, sourceFallback, sourceTypeLabels),
-      ),
-    [data.sources, sourceFallback, sourceTypeLabels],
+      );
+    },
+    [data.sources, sourceFallback, tShared],
   );
 
   const dummy = React.useMemo(
