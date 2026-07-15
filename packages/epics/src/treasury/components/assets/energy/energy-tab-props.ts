@@ -12,5 +12,4 @@ export const energyAvatarLoading = (
   peopleLoading: boolean,
   participantProfiles?: SpaceEnergyResponse['participantProfiles'],
 ) =>
-  peopleLoading &&
-  !participantProfiles?.[address.toLowerCase()]?.displayName;
+  peopleLoading && !participantProfiles?.[address.toLowerCase()]?.displayName;
