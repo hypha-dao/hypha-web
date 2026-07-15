@@ -62,7 +62,7 @@ export async function getBankVirtualAccountsForCustomer(
 
   return {
     accounts,
-    hasMore: listed.has_more ?? false,
+    hasMore: Boolean(listed.has_more && lastRaw),
     nextCursor: listed.has_more && lastRaw ? lastRaw.id : null,
   };
 }
