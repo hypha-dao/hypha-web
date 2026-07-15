@@ -8,11 +8,12 @@ import type {
   BankVirtualAccountCurrency,
   CreateBankAccountResult,
 } from './types';
-import { getBankCustomerStatusEndpoint } from './use-bank-customer-status';
-import { getVirtualAccountsEndpoint } from './use-virtual-accounts';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 type UseProvisionVirtualAccountOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
 };
 
 type UseProvisionVirtualAccountReturn = {
@@ -28,6 +29,7 @@ type UseProvisionVirtualAccountReturn = {
 
 export const useProvisionVirtualAccount = ({
   spaceSlug,
+  basePath,
 }: UseProvisionVirtualAccountOptions): UseProvisionVirtualAccountReturn => {
   const { getAccessToken } = useAuthentication();
   const { mutate } = useSWRConfig();
@@ -51,7 +53,11 @@ export const useProvisionVirtualAccount = ({
           throw new Error('Unauthorized');
         }
 
-        const endpoint = getVirtualAccountsEndpoint(spaceSlug);
+        const base = resolveBankingBasePath({ spaceSlug, basePath });
+        if (!base) {
+          throw new Error('Missing banking endpoint');
+        }
+        const endpoint = `${base}/accounts`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -81,7 +87,7 @@ export const useProvisionVirtualAccount = ({
         const result = body as CreateBankAccountResult;
         await Promise.all([
           mutate([endpoint, 'virtual-accounts']),
-          mutate(getBankCustomerStatusEndpoint(spaceSlug)),
+          mutate(`${base}/bank-customers`),
         ]);
         return result;
       } catch (err) {
@@ -94,7 +100,7 @@ export const useProvisionVirtualAccount = ({
         setCreatingCurrency(null);
       }
     },
-    [getAccessToken, mutate, spaceSlug],
+    [getAccessToken, mutate, spaceSlug, basePath],
   );
 
   const clearError = React.useCallback(() => setError(null), []);

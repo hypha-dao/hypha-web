@@ -4,31 +4,32 @@ import { FC, useCallback, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMe } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@hypha-platform/ui';
 
 import {
   useBankCustomerStatus,
+  useBankTransfers,
   useCreatePayoutAccount,
+  useCreateTransfer,
   usePayoutAccounts,
+  useProvisionVirtualAccount,
   useRequestBankOnboarding,
+  useVirtualAccounts,
 } from '../hooks';
 import {
+  hasAddAccountRailAvailable,
   hasApprovedBankCurrencies,
   isBankVerificationInProgress,
 } from '../banking-ui';
 import type { BankCurrencyCode } from '../bank-currency-display';
 import type { BankPayoutAccountPublic } from '../hooks/types';
+import { AddBankCurrencyDialog } from './add-bank-currency-dialog';
 import { AddPayoutAccountDialog } from './add-payout-account-dialog';
-import { ApprovedBankingPayouts } from './approved-banking-payouts';
+import { BankAccountsSection } from './bank-accounts-section';
 import { BankingAdvancedDialog } from './banking-advanced-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
+import { CreateTransferDialog } from './create-transfer-dialog';
 import { PayoutAccountDetailDialog } from './payout-account-detail-dialog';
 import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 
@@ -39,10 +40,10 @@ type ProfileBankingSectionProps = {
 };
 
 /**
- * Payouts-only banking for a member profile (individual off-ramp). Reuses the
- * space banking building blocks through the owner-agnostic `basePath`; there are
- * no deposits, transfers, or advanced dialog here (transfers reuse the existing
- * Profile → Actions → Transfer funds flow).
+ * Deposits/Payouts banking for a member profile (individual on-ramp/off-ramp).
+ * Reuses the space banking building blocks through the owner-agnostic
+ * `basePath` + `ownerContext="person"`, same convention as the payouts-only
+ * predecessor this replaces.
  */
 export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   personSlug,
@@ -51,8 +52,6 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   const t = useTranslations('BankingTab');
   const tCommon = useTranslations('Common');
   const tNotStarted = useTranslations('BankingTab.notStarted');
-  const tPayouts = useTranslations('BankingTab.payouts');
-  const tToolbar = useTranslations('BankingTab.toolbar');
   const { isAuthenticated } = useAuthentication();
   const { person } = useMe();
 
@@ -74,10 +73,26 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   const canManage = isAuthenticated && isMyProfile;
 
   const {
+    accounts: virtualAccounts,
+    isLoading: virtualAccountsLoading,
+    refresh: refreshVirtualAccounts,
+  } = useVirtualAccounts({
+    basePath,
+    enabled: isAuthenticated && isMyProfile && showBankingListings,
+  });
+  const {
     accounts: payoutAccounts,
     isLoading: payoutAccountsLoading,
     refresh: refreshPayoutAccounts,
   } = usePayoutAccounts({
+    basePath,
+    enabled: isAuthenticated && isMyProfile && showBankingListings,
+  });
+  const {
+    transfers,
+    isLoading: transfersLoading,
+    refresh: refreshTransfers,
+  } = useBankTransfers({
     basePath,
     enabled: isAuthenticated && isMyProfile && showBankingListings,
   });
@@ -90,31 +105,54 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   } = useRequestBankOnboarding({ basePath });
 
   const {
+    createTransfer,
+    isCreating: isCreatingTransfer,
+    error: createTransferError,
+    clearError: clearCreateTransferError,
+  } = useCreateTransfer({ basePath });
+
+  const {
+    createAccount,
+    creatingCurrency,
+    error: createAccountError,
+    clearError: clearCreateAccountError,
+  } = useProvisionVirtualAccount({ basePath });
+
+  const {
     createPayoutAccount,
     isCreating: isCreatingPayoutAccount,
     error: createPayoutAccountError,
     clearError: clearCreatePayoutAccountError,
   } = useCreatePayoutAccount({ basePath });
 
+  const [gearOpen, setGearOpen] = useState(false);
+  const [createTransferOpen, setCreateTransferOpen] = useState(false);
+  const [addCurrencyDialogOpen, setAddCurrencyDialogOpen] = useState(false);
   const [addPayoutDialogOpen, setAddPayoutDialogOpen] = useState(false);
   const [detailAccount, setDetailAccount] =
     useState<BankPayoutAccountPublic | null>(null);
-  const [advancedDialogOpen, setAdvancedDialogOpen] = useState(false);
-
-  const refreshBankingState = useCallback(async () => {
-    const updated = await refresh();
-    if (hasApprovedBankCurrencies(updated)) {
-      void refreshPayoutAccounts();
-    }
-    return updated;
-  }, [refresh, refreshPayoutAccounts]);
 
   const needsProviderStatusRefresh =
     hasCustomer && status != null && !status.approvalRegistered;
 
-  const handleAdvancedDialogOpenChange = useCallback(
+  const refreshBankingState = useCallback(async () => {
+    const updated = await refresh();
+    if (hasApprovedBankCurrencies(updated)) {
+      void refreshVirtualAccounts();
+      void refreshTransfers();
+      void refreshPayoutAccounts();
+    }
+    return updated;
+  }, [
+    refresh,
+    refreshPayoutAccounts,
+    refreshTransfers,
+    refreshVirtualAccounts,
+  ]);
+
+  const handleGearOpenChange = useCallback(
     (open: boolean) => {
-      setAdvancedDialogOpen(open);
+      setGearOpen(open);
       if (open && needsProviderStatusRefresh) {
         void refreshBankingState();
       }
@@ -122,19 +160,46 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     [needsProviderStatusRefresh, refreshBankingState],
   );
 
+  const hasWalletAddress = Boolean(person?.address);
+  const canManageDeposits = canManage && hasWalletAddress;
+
+  const blockerMessage = !isAuthenticated
+    ? tCommon('signIn')
+    : !isMyProfile
+    ? tNotStarted('person.description')
+    : null;
+
+  const verificationInProgress = isBankVerificationInProgress(status);
+
+  const openVerificationGear = useCallback(() => {
+    setGearOpen(true);
+    if (needsProviderStatusRefresh) {
+      void refreshBankingState();
+    }
+  }, [needsProviderStatusRefresh, refreshBankingState]);
+
   const fallbackLegalName = useMemo(() => {
     const parts = [person?.name, person?.surname].filter(Boolean);
     return parts.join(' ').trim();
   }, [person?.name, person?.surname]);
   const fallbackContactEmail = person?.email?.trim() ?? '';
 
-  const verificationInProgress = isBankVerificationInProgress(status);
+  const canAddAccount = hasAddAccountRailAvailable(status, virtualAccounts);
+
+  const openSpaceAccountDisabled =
+    verificationInProgress || !canAddAccount || !hasWalletAddress;
   const openPayoutAccountDisabled = verificationInProgress;
 
-  const blockerMessage = !isAuthenticated
-    ? tCommon('signIn')
-    : !isMyProfile
-    ? tNotStarted('person.description')
+  const openPayoutAccountDisabledReason = verificationInProgress
+    ? 'finishVerificationFirst'
+    : null;
+
+  const openSpaceAccountDisabledReason = verificationInProgress
+    ? 'finishVerificationFirst'
+    : !hasWalletAddress
+    ? 'finishVerificationFirst'
+    : !canAddAccount
+    ? 'allCurrenciesCovered'
     : null;
 
   const handleInitialSetupSubmit = useCallback(
@@ -206,79 +271,109 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
     );
   }
 
-  const addButton = (
-    <Button
-      type="button"
-      colorVariant="accent"
-      variant="outline"
-      className="shrink-0"
-      disabled={!canManage || openPayoutAccountDisabled}
-      onClick={
-        !canManage || openPayoutAccountDisabled
-          ? undefined
-          : () => {
-              clearCreatePayoutAccountError();
-              setAddPayoutDialogOpen(true);
-            }
-      }
-    >
-      {tPayouts('addCta')}
-    </Button>
-  );
-
   return (
-    <div className="flex w-full flex-col gap-2">
-      {canManage ? (
-        <div className="flex justify-end">
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex justify-end">
+        {canManage ? (
           <BankingAdvancedDialog
             basePath={basePath}
             ownerContext="person"
             status={status}
             isLoading={false}
-            isRefreshing={isStatusRefreshing}
+            isRefreshing={false}
             canManage={canManage}
             blockerMessage={blockerMessage}
-            open={advancedDialogOpen}
-            onOpenChange={handleAdvancedDialogOpenChange}
+            open={gearOpen}
+            onOpenChange={handleGearOpenChange}
             onRefreshStatus={refreshBankingState}
           />
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      <section className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h4 className="text-3 font-semibold tracking-tight text-foreground">
-              {tPayouts('section.title')}
-            </h4>
-            <p className="mt-1 max-w-3xl text-2 text-muted-foreground">
-              {tPayouts('section.person.description')}
-            </p>
-          </div>
-          {canManage ? (
-            <div className="flex shrink-0 items-center">
-              {openPayoutAccountDisabled ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex shrink-0">{addButton}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {tToolbar('finishVerificationFirst')}
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                addButton
-              )}
-            </div>
-          ) : null}
-        </div>
+      <BankAccountsSection
+        isAuthenticated={isAuthenticated}
+        canManage={canManage}
+        ownerContext="person"
+        openSpaceAccountDisabled={openSpaceAccountDisabled}
+        openSpaceAccountDisabledReason={openSpaceAccountDisabledReason}
+        onOpenSpaceAccount={() => {
+          clearCreateAccountError();
+          setAddCurrencyDialogOpen(true);
+        }}
+        onOpenPayoutAccount={() => {
+          clearCreatePayoutAccountError();
+          setAddPayoutDialogOpen(true);
+        }}
+        onPayoutAccountClick={(account) => setDetailAccount(account)}
+        openPayoutAccountDisabled={openPayoutAccountDisabled}
+        openPayoutAccountDisabledReason={openPayoutAccountDisabledReason}
+        payoutAccounts={payoutAccounts}
+        payoutAccountsLoading={payoutAccountsLoading}
+        depositsProps={{
+          virtualAccounts,
+          virtualAccountsLoading,
+          canManage: canManageDeposits,
+        }}
+        transfersProps={{
+          transfers,
+          transfersLoading,
+          hasBankCustomer: true,
+          canManage,
+          newTransferDisabled: verificationInProgress,
+          newTransferDisabledReason: verificationInProgress
+            ? 'finishVerificationFirst'
+            : null,
+          onNewTransfer: () => {
+            clearCreateTransferError();
+            setCreateTransferOpen(true);
+          },
+        }}
+      />
 
-        <ApprovedBankingPayouts
-          payoutAccounts={payoutAccounts}
-          payoutAccountsLoading={payoutAccountsLoading}
-          onCardClick={(account) => setDetailAccount(account)}
-        />
-      </section>
+      <CreateTransferDialog
+        open={createTransferOpen}
+        onOpenChange={setCreateTransferOpen}
+        spaceSlug={personSlug}
+        status={status}
+        isSubmitting={isCreatingTransfer}
+        error={createTransferError}
+        onOpenGear={openVerificationGear}
+        onSubmit={async (input) => {
+          try {
+            await createTransfer(input);
+            setCreateTransferOpen(false);
+            void refreshTransfers();
+            void refresh();
+          } catch (err) {
+            if (err instanceof Error && err.message.includes('verification')) {
+              openVerificationGear();
+            }
+            throw err;
+          }
+        }}
+      />
+
+      <AddBankCurrencyDialog
+        open={addCurrencyDialogOpen}
+        onOpenChange={setAddCurrencyDialogOpen}
+        spaceSlug={personSlug}
+        status={status}
+        existingAccounts={virtualAccounts}
+        submittingCurrency={creatingCurrency}
+        error={createAccountError}
+        onOpenGear={openVerificationGear}
+        onAddCurrency={async ({ currency, destinationCurrency }) => {
+          clearCreateAccountError();
+          try {
+            await createAccount(currency, { destinationCurrency });
+            setAddCurrencyDialogOpen(false);
+            void refreshVirtualAccounts();
+            void refresh();
+          } catch {
+            // hook sets error
+          }
+        }}
+      />
 
       <AddPayoutAccountDialog
         open={addPayoutDialogOpen}

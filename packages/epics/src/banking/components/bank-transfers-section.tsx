@@ -26,6 +26,8 @@ export type BankTransfersSectionProps = {
     | null;
   onNewTransfer?: () => void;
   hideListLoadingState?: boolean;
+  /** Selects `.person` sibling copy where it diverges. Defaults to the space wording. */
+  ownerContext?: 'space' | 'person';
 };
 
 export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
@@ -37,9 +39,12 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
   newTransferDisabledReason = null,
   onNewTransfer,
   hideListLoadingState = false,
+  ownerContext = 'space',
 }) => {
   const t = useTranslations('BankingTab.sections.transfers');
   const tToolbar = useTranslations('BankingTab.toolbar');
+  const description =
+    ownerContext === 'person' ? t('person.description') : t('description');
   const [detailsTransfer, setDetailsTransfer] =
     useState<BankTransferPublic | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -80,7 +85,7 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
             {t('title')}
           </h4>
           <p className="mt-1 max-w-3xl text-2 text-muted-foreground">
-            {t('description')}
+            {description}
           </p>
         </div>
         {showNewTransferCta ? (

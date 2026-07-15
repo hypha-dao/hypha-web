@@ -5,13 +5,16 @@ import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { PaginatedBankVirtualAccounts } from './types';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 export function getVirtualAccountsEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/banking/accounts`;
 }
 
 type UseVirtualAccountsOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
   enabled?: boolean;
 };
 
@@ -26,14 +29,15 @@ type UseVirtualAccountsReturn = {
 
 export const useVirtualAccounts = ({
   spaceSlug,
+  basePath,
   enabled = true,
 }: UseVirtualAccountsOptions): UseVirtualAccountsReturn => {
   const { getAccessToken, isAuthenticated } = useAuthentication();
 
-  const endpoint = React.useMemo(
-    () => (spaceSlug ? getVirtualAccountsEndpoint(spaceSlug) : null),
-    [spaceSlug],
-  );
+  const endpoint = React.useMemo(() => {
+    const base = resolveBankingBasePath({ spaceSlug, basePath });
+    return base ? `${base}/accounts` : null;
+  }, [spaceSlug, basePath]);
 
   const swrKey = React.useMemo(
     () =>

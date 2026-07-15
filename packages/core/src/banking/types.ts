@@ -174,6 +174,22 @@ export type CreateSpaceBankVirtualAccountResult = {
   account: BankVirtualAccountPublic;
 };
 
+export type CreatePersonalBankVirtualAccountInput = {
+  personSlug: string;
+  authToken: string;
+  currency: string;
+  destinationCurrency?: string;
+};
+
+export type CreatePersonalBankVirtualAccountResult =
+  CreateSpaceBankVirtualAccountResult;
+
+export type ListPersonalBankVirtualAccountsInput = {
+  personSlug: string;
+  limit?: number;
+  startingAfter?: string;
+};
+
 export type RequestEndorsementKycInput = {
   spaceSlug: string;
   authToken: string;
@@ -195,6 +211,26 @@ export type ListBankTransfersInput = {
   startingAfter?: string;
   endingBefore?: string;
 };
+
+export type ListPersonalBankTransfersInput = {
+  personSlug: string;
+  limit?: number;
+  startingAfter?: string;
+  endingBefore?: string;
+};
+
+export type RequestPersonalBankTransferInput = {
+  personSlug: string;
+  authToken: string;
+  railKey?: string;
+  corridorKey?: string;
+  currency?: string;
+  amount?: string;
+  destinationCurrency?: string;
+  idempotencyKey?: string;
+};
+
+export type CreatePersonalBankTransferResult = BankTransferPublic;
 
 export type ListBankVirtualAccountsInput = {
   spaceSlug: string;

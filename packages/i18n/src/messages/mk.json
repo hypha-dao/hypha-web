@@ -636,7 +636,10 @@
         "description": "Сметки за еднократен банкарски трансфер што автоматски ги пренасочуваат дојдовните средства кон USDC или EURC паричниците на просторот.",
         "emptyTitle": "Сè уште нема рути за еднократен трансфер",
         "newTransferCta": "Додај еднократна рута",
-        "loading": "Се вчитуваат трансферите…"
+        "loading": "Се вчитуваат трансферите…",
+        "person": {
+          "description": "Single-use bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+        }
       },
       "accounts": {
         "title": "Сметки за пренасочување депозити",
@@ -646,7 +649,10 @@
         "pendingDescription": "Завршете ја верификацијата во Bridge за да ги активирате избраните валути. Вашите сметки за пренасочување ќе бидат поставени автоматски по одобрувањето.",
         "continueVerificationCta": "Продолжи со верификацијата",
         "loadingAccounts": "Се вчитуваат банкарските сметки…",
-        "signInHint": "Најавете се за да управувате со банкарските рути."
+        "signInHint": "Најавете се за да управувате со банкарските рути.",
+        "person": {
+          "description": "Bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+        }
       }
     },
     "payouts": {

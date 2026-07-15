@@ -3156,7 +3156,10 @@
         "description": "Comptes de virement bancaire à usage unique qui acheminent automatiquement les fonds entrants vers les portefeuilles USDC ou EURC de l’espace.",
         "emptyTitle": "Aucun virement ponctuel pour l’instant",
         "newTransferCta": "Ajouter un virement ponctuel",
-        "loading": "Chargement des virements…"
+        "loading": "Chargement des virements…",
+        "person": {
+          "description": "Comptes de virement bancaire à usage unique qui acheminent automatiquement les fonds entrants vers votre propre portefeuille USDC ou EURC."
+        }
       },
       "accounts": {
         "title": "Comptes de routage des dépôts",
@@ -3166,7 +3169,10 @@
         "pendingDescription": "Terminez la vérification dans Bridge pour activer les devises sélectionnées. Vos comptes de routage seront configurés automatiquement une fois approuvés.",
         "continueVerificationCta": "Continuer la vérification",
         "loadingAccounts": "Chargement des comptes bancaires…",
-        "signInHint": "Connectez-vous pour gérer vos routes bancaires."
+        "signInHint": "Connectez-vous pour gérer vos routes bancaires.",
+        "person": {
+          "description": "Comptes de virement bancaire qui acheminent automatiquement les fonds entrants vers votre propre portefeuille USDC ou EURC."
+        }
       }
     },
     "payouts": {

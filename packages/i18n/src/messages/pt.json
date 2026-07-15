@@ -3158,7 +3158,10 @@
         "description": "Contas de transferência bancária de uso único que roteiam automaticamente os fundos recebidos para as carteiras USDC ou EURC do space.",
         "emptyTitle": "Nenhuma rota de transferência avulsa ainda",
         "newTransferCta": "Adicionar rota avulsa",
-        "loading": "Carregando transferências…"
+        "loading": "Carregando transferências…",
+        "person": {
+          "description": "Contas de transferência bancária de uso único que encaminham automaticamente os fundos recebidos para sua própria carteira USDC ou EURC."
+        }
       },
       "accounts": {
         "title": "Contas de roteamento de depósito",
@@ -3168,7 +3171,10 @@
         "pendingDescription": "Conclua a verificação no Bridge para ativar as moedas selecionadas. Suas contas de roteamento serão configuradas automaticamente após a aprovação.",
         "continueVerificationCta": "Continuar verificação",
         "loadingAccounts": "Carregando contas bancárias…",
-        "signInHint": "Faça login para gerenciar as rotas bancárias."
+        "signInHint": "Faça login para gerenciar as rotas bancárias.",
+        "person": {
+          "description": "Contas de transferência bancária que encaminham automaticamente os fundos recebidos para sua própria carteira USDC ou EURC."
+        }
       }
     },
     "payouts": {

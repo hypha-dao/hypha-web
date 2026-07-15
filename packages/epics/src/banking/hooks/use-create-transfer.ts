@@ -6,10 +6,12 @@ import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { BankTransferCorridorKey } from '../bank-currency-display';
 import type { BankTransferPublic } from './types';
-import { getTransfersEndpoint } from './use-transfers';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 type UseCreateTransferOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
 };
 
 type UseCreateTransferReturn = {
@@ -28,6 +30,7 @@ type UseCreateTransferReturn = {
 
 export const useCreateTransfer = ({
   spaceSlug,
+  basePath,
 }: UseCreateTransferOptions): UseCreateTransferReturn => {
   const { getAccessToken } = useAuthentication();
   const { mutate } = useSWRConfig();
@@ -52,7 +55,11 @@ export const useCreateTransfer = ({
           throw new Error('Unauthorized');
         }
 
-        const endpoint = getTransfersEndpoint(spaceSlug);
+        const base = resolveBankingBasePath({ spaceSlug, basePath });
+        if (!base) {
+          throw new Error('Missing banking endpoint');
+        }
+        const endpoint = `${base}/transfers`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -88,7 +95,7 @@ export const useCreateTransfer = ({
         setIsCreating(false);
       }
     },
-    [getAccessToken, mutate, spaceSlug],
+    [getAccessToken, mutate, spaceSlug, basePath],
   );
 
   const clearError = React.useCallback(() => setError(null), []);

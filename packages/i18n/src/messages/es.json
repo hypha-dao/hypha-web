@@ -3160,7 +3160,10 @@
         "description": "Cuentas de transferencia bancaria de un solo uso que enrutan automáticamente los fondos entrantes a las billeteras USDC o EURC del space.",
         "emptyTitle": "Aún no hay rutas de transferencia única",
         "newTransferCta": "Añadir ruta única",
-        "loading": "Cargando transferencias…"
+        "loading": "Cargando transferencias…",
+        "person": {
+          "description": "Cuentas de transferencia bancaria de un solo uso que enrutan automáticamente los fondos entrantes a su propia billetera USDC o EURC."
+        }
       },
       "accounts": {
         "title": "Cuentas de Enrutamiento de Depósito",
@@ -3170,7 +3173,10 @@
         "pendingDescription": "Complete la verificación en Bridge para activar las monedas seleccionadas. Las cuentas de enrutamiento se configurarán automáticamente una vez aprobadas.",
         "continueVerificationCta": "Continuar verificación",
         "loadingAccounts": "Cargando cuentas bancarias…",
-        "signInHint": "Inicie sesión para gestionar las rutas bancarias."
+        "signInHint": "Inicie sesión para gestionar las rutas bancarias.",
+        "person": {
+          "description": "Cuentas de transferencia bancaria que enrutan automáticamente los fondos entrantes a su propia billetera USDC o EURC."
+        }
       }
     },
     "payouts": {

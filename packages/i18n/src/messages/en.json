@@ -658,7 +658,10 @@
         "description": "Single-use bank transfer accounts that automatically route incoming funds to the space USDC or EURC wallets.",
         "emptyTitle": "No one-time transfer routes yet",
         "newTransferCta": "Add one-time route",
-        "loading": "Loading transfers…"
+        "loading": "Loading transfers…",
+        "person": {
+          "description": "Single-use bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+        }
       },
       "accounts": {
         "title": "Deposit Routing Accounts",
@@ -668,7 +671,10 @@
         "pendingDescription": "Finish verification in Bridge to activate the currencies you selected. Your routing accounts will be set up automatically once approved.",
         "continueVerificationCta": "Continue verification",
         "loadingAccounts": "Loading bank accounts…",
-        "signInHint": "Sign in to manage banking routes."
+        "signInHint": "Sign in to manage banking routes.",
+        "person": {
+          "description": "Bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+        }
       }
     },
     "payouts": {

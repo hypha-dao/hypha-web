@@ -727,7 +727,10 @@
         "description": "Einmalig nutzbare Bankkonten, die eingehende Gelder automatisch zu den USDC- oder EURC-Wallets des Spaces weiterleiten.",
         "emptyTitle": "Noch keine einmaligen Überweisungsrouten",
         "newTransferCta": "Einmalige Route hinzufügen",
-        "loading": "Überweisungen werden geladen…"
+        "loading": "Überweisungen werden geladen…",
+        "person": {
+          "description": "Einmalig nutzbare Bankkonten, die eingehende Gelder automatisch zu Ihrer eigenen USDC- oder EURC-Wallet weiterleiten."
+        }
       },
       "accounts": {
         "title": "Einzahlungs-Routing-Konten",
@@ -737,7 +740,10 @@
         "pendingDescription": "Schließen Sie die Verifizierung in Bridge ab, um die ausgewählten Währungen zu aktivieren. Ihre Routing-Konten werden nach der Genehmigung automatisch eingerichtet.",
         "continueVerificationCta": "Verifizierung fortsetzen",
         "loadingAccounts": "Bankkonten werden geladen…",
-        "signInHint": "Melden Sie sich an, um Banking-Routen zu verwalten."
+        "signInHint": "Melden Sie sich an, um Banking-Routen zu verwalten.",
+        "person": {
+          "description": "Bankkonten, die eingehende Gelder automatisch zu Ihrer eigenen USDC- oder EURC-Wallet weiterleiten."
+        }
       }
     },
     "payouts": {
