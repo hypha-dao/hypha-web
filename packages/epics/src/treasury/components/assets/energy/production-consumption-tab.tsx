@@ -20,7 +20,7 @@ import {
 } from './dummy-data';
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
-import { prettySourceLabel } from './format';
+import { sourceCardLabel } from './format';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -40,24 +40,16 @@ export const ProductionConsumptionTab = ({
   } = useSpaceEnergyTelemetry(timeframe);
 
   const sourceFallback = tShared('source');
-  const sourceTypeLabels = {
-    SOLAR: tShared('sourceTypeSolar'),
-    BATTERY: tShared('sourceTypeBattery'),
-  };
 
-  const sourceLabels = React.useMemo(
-    () =>
-      (data.sources ?? []).map((s, i) =>
-        prettySourceLabel(
-          s.sourceLabel,
-          i,
-          s.sourceType,
-          sourceFallback,
-          sourceTypeLabels,
-        ),
-      ),
-    [data.sources, sourceFallback, sourceTypeLabels],
-  );
+  const sourceLabels = React.useMemo(() => {
+    const sourceTypeLabels = {
+      SOLAR: tShared('sourceTypeSolar'),
+      BATTERY: tShared('sourceTypeBattery'),
+    };
+    return (data.sources ?? []).map((s, i) =>
+      sourceCardLabel(s, i, sourceFallback, sourceTypeLabels),
+    );
+  }, [data.sources, sourceFallback, tShared]);
 
   const dummy = React.useMemo(
     () =>

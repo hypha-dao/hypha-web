@@ -3871,7 +3871,7 @@
     "shared": {
       "gridOperatorName": "Gestionnaire de réseau local",
       "gridOperatorSubtitle": "Fournisseur d'énergie externe",
-      "basePerKwh": "Base / kWh",
+      "currentPerKwh": "Actuel / kWh",
       "active": "Actif",
       "inactive": "Inactif",
       "source": "Source",

@@ -3860,7 +3860,7 @@
     "shared": {
       "gridOperatorName": "Локален оператор на мрежата",
       "gridOperatorSubtitle": "Надворешен снабдувач со енергија",
-      "basePerKwh": "Основна / kWh",
+      "currentPerKwh": "Тековна / kWh",
       "active": "Активно",
       "inactive": "Неактивно",
       "source": "Извор",

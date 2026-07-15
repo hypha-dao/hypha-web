@@ -3856,7 +3856,7 @@
       "earnings": "Earnings",
       "earnedFromSource": "{prefix}{amount} EURC earned from this source",
       "placeholderEstimate": "Placeholder estimate — live production telemetry is not connected yet.",
-      "liveEstimate": "Estimated from live production telemetry × base price × ownership share.",
+      "liveEstimate": "Estimated from live production telemetry × current price × ownership share.",
       "earningsHint": "Earnings are estimated over the last 12 months from {dataType} production data. Click an owner for daily, weekly or monthly detail.",
       "placeholder": "placeholder",
       "live": "live",
@@ -3883,7 +3883,7 @@
     "shared": {
       "gridOperatorName": "Local grid operator",
       "gridOperatorSubtitle": "External energy supplier",
-      "basePerKwh": "Base / kWh",
+      "currentPerKwh": "Current / kWh",
       "active": "Active",
       "inactive": "Inactive",
       "source": "Source",

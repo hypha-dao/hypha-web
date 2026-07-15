@@ -8,7 +8,7 @@ import { Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import type { EnergyPerson } from './use-energy-people';
-import { personDisplayName, shortAddr } from './format';
+import { shortAddr } from './format';
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
 import {
   buildMemberConsumptionSeries,
@@ -110,17 +110,20 @@ const ConsumerConsumptionChart = ({
 
 export const ConsumerConsumptionCard = ({
   address,
-  person,
+  displayName,
+  avatarUrl,
+  subtitle,
   isLoading,
   deviceIds,
 }: {
   address: string;
-  person?: EnergyPerson | null;
+  displayName: string;
+  avatarUrl?: string;
+  subtitle?: string;
   isLoading?: boolean;
   deviceIds: number[] | null;
 }) => {
   const [expanded, setExpanded] = React.useState(false);
-  const name = personDisplayName(person) ?? shortAddr(address);
 
   return (
     <div
@@ -136,16 +139,16 @@ export const ConsumerConsumptionCard = ({
         aria-expanded={expanded}
       >
         <PersonAvatar
-          avatarSrc={person?.avatarUrl ?? undefined}
-          userName={personDisplayName(person) ?? undefined}
+          avatarSrc={avatarUrl}
+          userName={displayName}
           size="md"
           shape="circle"
           isLoading={isLoading}
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-foreground">{name}</p>
+          <p className="truncate font-medium text-foreground">{displayName}</p>
           <p className="truncate text-1 text-neutral-11">
-            {person?.nickname ? `@${person.nickname}` : shortAddr(address)}
+            {subtitle ?? shortAddr(address)}
           </p>
         </div>
         <ChevronDownIcon

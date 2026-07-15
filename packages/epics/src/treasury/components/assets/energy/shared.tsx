@@ -74,19 +74,25 @@ export const EnergyPersonCard = ({
   isLoading,
   right,
   subtitle,
+  displayName: displayNameProp,
+  avatarUrl: avatarUrlProp,
 }: {
   address: string;
   person?: EnergyPerson | null;
   isLoading?: boolean;
   right?: React.ReactNode;
   subtitle?: React.ReactNode;
+  displayName?: string;
+  avatarUrl?: string;
 }) => {
-  const name = personDisplayName(person) ?? shortAddr(address);
+  const name =
+    displayNameProp ?? personDisplayName(person) ?? shortAddr(address);
+  const avatarSrc = avatarUrlProp ?? person?.avatarUrl ?? undefined;
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
       <PersonAvatar
-        avatarSrc={person?.avatarUrl ?? undefined}
-        userName={personDisplayName(person) ?? undefined}
+        avatarSrc={avatarSrc}
+        userName={name}
         size="md"
         shape="circle"
         isLoading={isLoading}
@@ -132,7 +138,7 @@ export const SourceCard = ({
         <p className="text-1 text-neutral-11">{typeLabel}</p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-1 text-neutral-11">{t('basePerKwh')}</p>
+        <p className="text-1 text-neutral-11">{t('currentPerKwh')}</p>
         <p className="font-medium text-foreground">{basePrice}</p>
         <span
           className={cn(

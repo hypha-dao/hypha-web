@@ -5,6 +5,9 @@ import {
   isMissingEnergyCommunitiesTableError,
   upsertEnergyCommunityActivation,
   web3Client,
+  resolveEnergyParticipants,
+  institutionalLabelsForSpace,
+  readOwnershipTokenNames,
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import {
@@ -312,17 +315,26 @@ export async function GET(
       ),
     );
 
+    const ownershipTokens = sourceResults.flatMap((value, index) =>
+      value && sourceIdList[index] ? [value[1]] : [],
+    );
+    const tokenNamesByAddress = await readOwnershipTokenNames(ownershipTokens);
+
     const sources = sourceResults
       .map((value, index) => {
         const sourceId = sourceIdList[index];
         if (!sourceId || !value) {
           return null;
         }
+        const ownershipToken = value[1];
+        const decodedId = decodeSourceId(sourceId);
+        const tokenName = tokenNamesByAddress[ownershipToken.toLowerCase()];
         return {
           sourceId,
-          sourceLabel: decodeSourceId(sourceId),
+          sourceLabel: decodedId,
+          sourceDisplayName: tokenName ?? decodedId,
           sourceType: SOURCE_TYPES[Number(value[0])] ?? 'UNKNOWN',
-          ownershipToken: value[1],
+          ownershipToken,
           basePricePerKwh: value[2].toString(),
           active: value[3],
         };
@@ -380,6 +392,26 @@ export async function GET(
         };
       }),
     );
+
+    const memberDeviceIds = new Map<string, number[] | null>();
+    for (const detail of memberDetails) {
+      memberDeviceIds.set(detail.address.toLowerCase(), detail.deviceIds);
+    }
+
+    const canResolveParticipantProfiles =
+      access.hasAccess && Boolean(access.authToken);
+
+    const participantProfiles = canResolveParticipantProfiles
+      ? await resolveEnergyParticipants(
+          {
+            addresses: memberAddressList.map((a) => a.toLowerCase()),
+            spaceSlug,
+            memberDeviceIds,
+            institutionalByDevice: institutionalLabelsForSpace(spaceSlug),
+          },
+          { db },
+        )
+      : undefined;
 
     const [optimizationConfig, socialWalletsRaw] = await Promise.all([
       safeRead<readonly [readonly number[], number, bigint, number, boolean]>(
@@ -450,6 +482,7 @@ export async function GET(
       },
       members: memberAddressList.map((a) => a.toLowerCase() as `0x${string}`),
       memberDetails,
+      participantProfiles,
       sources,
       optimization,
     });

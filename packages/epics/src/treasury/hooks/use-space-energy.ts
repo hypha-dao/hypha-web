@@ -9,10 +9,20 @@ import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-fro
 export type SpaceEnergySource = {
   sourceId: `0x${string}`;
   sourceLabel: string;
+  /** Human-readable name from ownership token contract, when available. */
+  sourceDisplayName?: string;
   sourceType: string;
   ownershipToken: `0x${string}`;
   basePricePerKwh: string;
   active: boolean;
+};
+
+export type EnergyParticipantProfile = {
+  displayName: string;
+  avatarUrl?: string | null;
+  subtitle?: string | null;
+  profileSlug?: string | null;
+  kind: 'person' | 'space' | 'institutional';
 };
 
 export type SpaceEnergyMemberDetail = {
@@ -66,6 +76,8 @@ export type SpaceEnergyResponse = {
   };
   members?: `0x${string}`[];
   memberDetails?: SpaceEnergyMemberDetail[];
+  /** Server-resolved display info for people, spaces, and institutional wallets. */
+  participantProfiles?: Record<string, EnergyParticipantProfile>;
   optimization?: {
     configured: boolean;
     purposeRanking: string[];

@@ -18,6 +18,8 @@ import { EnergyOverviewTab } from './energy/overview-tab';
 import { ProductionConsumptionTab } from './energy/production-consumption-tab';
 import { OwnershipTab } from './energy/ownership-tab';
 import { CreditsTab } from './energy/credits-tab';
+import { useEnergyPeople } from './energy/use-energy-people';
+import { usePreloadImages } from './energy/use-preload-images';
 
 const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
 
@@ -26,6 +28,29 @@ export const SpaceEnergySection = () => {
   const tOverview = useTranslations('Energy.overview');
   const { data, isLoading } = useSpaceEnergy();
   const [tab, setTab] = React.useState<string>('overview');
+
+  const memberAddresses = React.useMemo(
+    () =>
+      data?.enabled && data.members
+        ? data.members.map((address) => address.toLowerCase())
+        : [],
+    [data?.enabled, data?.members],
+  );
+
+  const { people, isLoading: peopleLoading } = useEnergyPeople(memberAddresses);
+
+  const avatarUrls = React.useMemo(() => {
+    const urls = new Set<string>();
+    for (const profile of Object.values(data?.participantProfiles ?? {})) {
+      if (profile.avatarUrl) urls.add(profile.avatarUrl);
+    }
+    for (const person of Object.values(people)) {
+      if (person?.avatarUrl) urls.add(person.avatarUrl);
+    }
+    return [...urls];
+  }, [data?.participantProfiles, people]);
+
+  usePreloadImages(avatarUrls);
 
   if (isLoading) {
     return (
@@ -91,16 +116,28 @@ export const SpaceEnergySection = () => {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <EnergyOverviewTab data={data} />
+          <EnergyOverviewTab
+            data={data}
+            people={people}
+            peopleLoading={peopleLoading}
+          />
         </TabsContent>
         <TabsContent value="flows" className="mt-6">
           <ProductionConsumptionTab data={data} />
         </TabsContent>
         <TabsContent value="ownership" className="mt-6">
-          <OwnershipTab data={data} />
+          <OwnershipTab
+            data={data}
+            people={people}
+            peopleLoading={peopleLoading}
+          />
         </TabsContent>
         <TabsContent value="credits" className="mt-6">
-          <CreditsTab data={data} />
+          <CreditsTab
+            data={data}
+            people={people}
+            peopleLoading={peopleLoading}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,4 +1,6 @@
 import { formatUnits } from 'viem';
+import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
+import type { EnergyPerson } from './use-energy-people';
 
 export const UNAVAILABLE = '—';
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -78,8 +80,8 @@ export const prettySourceLabel = (
 };
 
 /**
- * Display name for an energy source preferring the human label, then the type
- * (e.g. "Solar", "Battery"), then a numbered fallback.
+ * Display name for an energy source preferring the ownership token name, then
+ * the human label, then the type (e.g. "Solar", "Battery"), then a numbered fallback.
  */
 export const sourceDisplayName = (
   type?: string,
@@ -87,12 +89,76 @@ export const sourceDisplayName = (
   index = 0,
   sourceFallback = 'Source',
   typeLabels?: { SOLAR?: string; BATTERY?: string },
+  tokenDisplayName?: string,
 ) => {
+  if (tokenDisplayName && isReadableLabel(tokenDisplayName)) {
+    return tokenDisplayName;
+  }
   if (label && isReadableLabel(label)) return label;
   const typeLabel = resolveTypeLabel(type, sourceFallback, typeLabels);
   return typeLabel === sourceFallback
     ? `${sourceFallback} ${index + 1}`
     : typeLabel;
+};
+
+export const formatEnergyPricePerKwh = (internalUnits: string | number) => {
+  const n =
+    typeof internalUnits === 'number' ? internalUnits : Number(internalUnits);
+  if (!Number.isFinite(n)) return UNAVAILABLE;
+  return (n / 100).toFixed(2);
+};
+
+export const sourceCardLabel = (
+  source: {
+    sourceDisplayName?: string;
+    sourceLabel: string;
+    sourceType?: string;
+  },
+  index: number,
+  sourceFallback = 'Source',
+  typeLabels?: { SOLAR?: string; BATTERY?: string },
+) => {
+  if (source.sourceDisplayName && isReadableLabel(source.sourceDisplayName)) {
+    return source.sourceDisplayName;
+  }
+  return prettySourceLabel(
+    source.sourceLabel,
+    index,
+    source.sourceType,
+    sourceFallback,
+    typeLabels,
+  );
+};
+
+/** Merge Hypha person lookup with server-resolved participant profiles. */
+export const resolveEnergyParticipantDisplay = (
+  address: string,
+  people: Record<string, EnergyPerson | null>,
+  profiles?: Record<string, EnergyParticipantProfile>,
+) => {
+  const key = address.toLowerCase();
+  const profile = profiles?.[key];
+  if (profile?.displayName) {
+    return {
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl ?? undefined,
+      subtitle: profile.subtitle ?? undefined,
+    };
+  }
+  const person = people[key];
+  const name = personDisplayName(person);
+  if (name) {
+    return {
+      displayName: name,
+      avatarUrl: person?.avatarUrl ?? undefined,
+      subtitle: person?.nickname ? `@${person.nickname}` : undefined,
+    };
+  }
+  return {
+    displayName: shortAddr(address),
+    avatarUrl: undefined,
+    subtitle: shortAddr(address),
+  };
 };
 
 export const personDisplayName = (
