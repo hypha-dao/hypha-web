@@ -658,7 +658,10 @@
         "description": "Single-use bank transfer accounts that automatically route incoming funds to the space USDC or EURC wallets.",
         "emptyTitle": "No one-time transfer routes yet",
         "newTransferCta": "Add one-time route",
-        "loading": "Loading transfers…"
+        "loading": "Loading transfers…",
+        "person": {
+          "description": "Single-use bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+        }
       },
       "accounts": {
         "title": "Deposit Routing Accounts",
@@ -668,7 +671,10 @@
         "pendingDescription": "Finish verification in Bridge to activate the currencies you selected. Your routing accounts will be set up automatically once approved.",
         "continueVerificationCta": "Continue verification",
         "loadingAccounts": "Loading bank accounts…",
-        "signInHint": "Sign in to manage banking routes."
+        "signInHint": "Sign in to manage banking routes.",
+        "person": {
+          "description": "Bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+        }
       }
     },
     "payouts": {
@@ -831,14 +837,19 @@
       "railsNeedVerificationHint": "These rails need provider verification before you can use them.",
       "provisioningProgress": "Creating {currency} account…",
       "redirectPendingTitle": "Continue in Bridge",
-      "redirectPendingDescription": "Accept terms and complete verification to activate your selected currencies."
+      "redirectPendingDescription": "Accept terms and complete verification to activate your selected currencies.",
+      "person": {
+        "descriptionAddCurrencySingle": "Create permanent deposit instructions for incoming transfers. Funds are automatically converted to USDC or EURC and settled in your own wallet.",
+        "noCurrenciesAvailable": "All supported deposit routing accounts are already set up for your profile."
+      }
     },
     "toolbar": {
       "addCurrency": "Add routing account",
       "finishVerificationFirst": "Finish the current verification first",
       "allCurrenciesCovered": "All supported currencies already have accounts",
       "loadingAccounts": "Loading bank accounts…",
-      "loadingTransfers": "Loading transfers…"
+      "loadingTransfers": "Loading transfers…",
+      "walletAddressRequired": "Add a wallet address to your profile first"
     },
     "operationStatus": {
       "pendingKyb": "Pending verification",
@@ -1085,7 +1096,11 @@
       "submit": "Create transfer",
       "submitting": "Creating…",
       "loadingOptions": "Loading rails…",
-      "noCorridorsAvailable": "No transfer rails are available for this space."
+      "noCorridorsAvailable": "No transfer rails are available for this space.",
+      "person": {
+        "description": "Create deposit instructions for a single incoming transfer. Funds are automatically converted to USDC or EURC and settled in your own wallet.",
+        "noCorridorsAvailable": "No transfer rails are available for your profile."
+      }
     },
     "transferStatus": {
       "awaiting_funds": "Awaiting payment",

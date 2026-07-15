@@ -1,8 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import type { DatabaseInstance } from '../../common/server/types';
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
-import type { Space } from '../../space/types';
 import {
   BRIDGE_DEFAULT_DESTINATION_CURRENCY,
   isAllowedBridgeDestinationCurrency,
@@ -12,8 +10,6 @@ import { BankOnboardingError } from './errors';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
-import { requireSpaceTreasuryAddress } from './require-space-treasury-address';
-import { resolveCustomerApproved } from './providers/bridge/banking-provider-state';
 
 function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -37,7 +33,7 @@ function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
 
 export type ExecuteBridgeBankTransferInput = {
   customer: BankCustomer;
-  space: Pick<Space, 'web3SpaceId' | 'title'>;
+  destinationAddress: `0x${string}`;
   currency: string;
   paymentRail: string;
   destinationCurrency?: string;
@@ -61,12 +57,16 @@ export type ExecuteBridgeBankTransferOptions = {
   kycProvider?: BankKycProvider;
 };
 
+/**
+ * Internal-only: assumes the caller (`createBankTransferForCustomer`) has
+ * already validated the customer's approval status. Only called from there,
+ * so it does not repeat that check.
+ */
 export async function executeBridgeBankTransfer(
   input: ExecuteBridgeBankTransferInput,
-  { db }: { db: DatabaseInstance },
   options?: ExecuteBridgeBankTransferOptions,
 ): Promise<ExecuteBridgeBankTransferResult> {
-  const { customer, space, currency, paymentRail, amount } = input;
+  const { customer, destinationAddress, currency, paymentRail, amount } = input;
   const destinationCurrency =
     input.destinationCurrency?.toLowerCase() ??
     BRIDGE_DEFAULT_DESTINATION_CURRENCY;
@@ -87,20 +87,11 @@ export async function executeBridgeBankTransfer(
     );
   }
 
-  const treasuryAddress = await requireSpaceTreasuryAddress(space);
-
-  if (!(await resolveCustomerApproved(customer))) {
-    throw new BankOnboardingError(
-      'KYB is not yet approved. Complete verification first.',
-      403,
-    );
-  }
-
   const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     throw new BankOnboardingError(
-      'Bridge customer is not ready yet. Try again after KYB approval completes.',
+      'Bridge customer is not ready yet. Try again after verification completes.',
       422,
     );
   }
@@ -113,7 +104,7 @@ export async function executeBridgeBankTransfer(
       customerId,
       currency,
       paymentRail,
-      destinationAddress: treasuryAddress,
+      destinationAddress,
       destinationCurrency,
       amount,
       idempotencyKey: input.idempotencyKey ?? randomUUID(),
@@ -133,7 +124,7 @@ export async function executeBridgeBankTransfer(
         },
       ),
       status: created.status,
-      destinationAddress: created.destination?.address ?? treasuryAddress,
+      destinationAddress: created.destination?.address ?? destinationAddress,
     };
   } catch (error) {
     const mapped = mapBridgeTransferError(error);

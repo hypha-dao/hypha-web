@@ -5,13 +5,16 @@ import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { PaginatedBankTransfers } from './types';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 export function getTransfersEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/banking/transfers`;
 }
 
 type UseTransfersOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
   enabled?: boolean;
 };
 
@@ -26,14 +29,15 @@ type UseTransfersReturn = {
 
 export const useTransfers = ({
   spaceSlug,
+  basePath,
   enabled = true,
 }: UseTransfersOptions): UseTransfersReturn => {
   const { getAccessToken, isAuthenticated } = useAuthentication();
 
-  const endpoint = React.useMemo(
-    () => (spaceSlug ? getTransfersEndpoint(spaceSlug) : null),
-    [spaceSlug],
-  );
+  const endpoint = React.useMemo(() => {
+    const base = resolveBankingBasePath({ spaceSlug, basePath });
+    return base ? `${base}/transfers` : null;
+  }, [spaceSlug, basePath]);
 
   const swrKey = React.useMemo(
     () =>

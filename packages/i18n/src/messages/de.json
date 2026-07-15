@@ -727,7 +727,10 @@
         "description": "Einmalig nutzbare Bankkonten, die eingehende Gelder automatisch zu den USDC- oder EURC-Wallets des Spaces weiterleiten.",
         "emptyTitle": "Noch keine einmaligen Überweisungsrouten",
         "newTransferCta": "Einmalige Route hinzufügen",
-        "loading": "Überweisungen werden geladen…"
+        "loading": "Überweisungen werden geladen…",
+        "person": {
+          "description": "Einmalig nutzbare Bankkonten, die eingehende Gelder automatisch zu Ihrer eigenen USDC- oder EURC-Wallet weiterleiten."
+        }
       },
       "accounts": {
         "title": "Einzahlungs-Routing-Konten",
@@ -737,7 +740,10 @@
         "pendingDescription": "Schließen Sie die Verifizierung in Bridge ab, um die ausgewählten Währungen zu aktivieren. Ihre Routing-Konten werden nach der Genehmigung automatisch eingerichtet.",
         "continueVerificationCta": "Verifizierung fortsetzen",
         "loadingAccounts": "Bankkonten werden geladen…",
-        "signInHint": "Melden Sie sich an, um Banking-Routen zu verwalten."
+        "signInHint": "Melden Sie sich an, um Banking-Routen zu verwalten.",
+        "person": {
+          "description": "Bankkonten, die eingehende Gelder automatisch zu Ihrer eigenen USDC- oder EURC-Wallet weiterleiten."
+        }
       }
     },
     "payouts": {
@@ -900,14 +906,19 @@
       "railsNeedVerificationHint": "Für diese Zahlungswege ist eine Anbieterverifizierung erforderlich, bevor Sie sie nutzen können.",
       "provisioningProgress": "{currency}-Konto wird erstellt…",
       "redirectPendingTitle": "In Bridge fortfahren",
-      "redirectPendingDescription": "Akzeptieren Sie die Bedingungen und schließen Sie die Verifizierung ab, um die ausgewählten Währungen zu aktivieren."
+      "redirectPendingDescription": "Akzeptieren Sie die Bedingungen und schließen Sie die Verifizierung ab, um die ausgewählten Währungen zu aktivieren.",
+      "person": {
+        "descriptionAddCurrencySingle": "Erstellen Sie dauerhafte Einzahlungsanweisungen für eingehende Überweisungen. Die Gelder werden automatisch in USDC oder EURC umgewandelt und in Ihrer eigenen Wallet verrechnet.",
+        "noCurrenciesAvailable": "Alle unterstützten Einzahlungs-Routing-Konten sind für Ihr Profil bereits eingerichtet."
+      }
     },
     "toolbar": {
       "addCurrency": "Routing-Konto hinzufügen",
       "finishVerificationFirst": "Schließen Sie zuerst die laufende Verifizierung ab",
       "allCurrenciesCovered": "Für alle unterstützten Währungen existieren bereits Konten",
       "loadingAccounts": "Bankkonten werden geladen…",
-      "loadingTransfers": "Überweisungen werden geladen…"
+      "loadingTransfers": "Überweisungen werden geladen…",
+      "walletAddressRequired": "Fügen Sie zuerst eine Wallet-Adresse zu Ihrem Profil hinzu"
     },
     "operationStatus": {
       "pendingKyb": "Verifizierung ausstehend",
@@ -1136,7 +1147,11 @@
       "submit": "Überweisung erstellen",
       "submitting": "Wird erstellt…",
       "loadingOptions": "Korridore werden geladen…",
-      "noCorridorsAvailable": "Für diesen Space sind keine Transferkorridore verfügbar."
+      "noCorridorsAvailable": "Für diesen Space sind keine Transferkorridore verfügbar.",
+      "person": {
+        "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Gelder werden automatisch in USDC oder EURC umgewandelt und in Ihrer eigenen Wallet verrechnet.",
+        "noCorridorsAvailable": "Für Ihr Profil sind keine Transferkorridore verfügbar."
+      }
     },
     "transferStatus": {
       "awaiting_funds": "Zahlung ausstehend",

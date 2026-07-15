@@ -3156,7 +3156,10 @@
         "description": "Comptes de virement bancaire à usage unique qui acheminent automatiquement les fonds entrants vers les portefeuilles USDC ou EURC de l’espace.",
         "emptyTitle": "Aucun virement ponctuel pour l’instant",
         "newTransferCta": "Ajouter un virement ponctuel",
-        "loading": "Chargement des virements…"
+        "loading": "Chargement des virements…",
+        "person": {
+          "description": "Comptes de virement bancaire à usage unique qui acheminent automatiquement les fonds entrants vers votre propre portefeuille USDC ou EURC."
+        }
       },
       "accounts": {
         "title": "Comptes de routage des dépôts",
@@ -3166,7 +3169,10 @@
         "pendingDescription": "Terminez la vérification dans Bridge pour activer les devises sélectionnées. Vos comptes de routage seront configurés automatiquement une fois approuvés.",
         "continueVerificationCta": "Continuer la vérification",
         "loadingAccounts": "Chargement des comptes bancaires…",
-        "signInHint": "Connectez-vous pour gérer vos routes bancaires."
+        "signInHint": "Connectez-vous pour gérer vos routes bancaires.",
+        "person": {
+          "description": "Comptes de virement bancaire qui acheminent automatiquement les fonds entrants vers votre propre portefeuille USDC ou EURC."
+        }
       }
     },
     "payouts": {
@@ -3329,14 +3335,19 @@
       "railsNeedVerificationHint": "Ces canaux nécessitent une vérification du fournisseur avant utilisation.",
       "provisioningProgress": "Création du compte {currency}…",
       "redirectPendingTitle": "Continuer dans Bridge",
-      "redirectPendingDescription": "Acceptez les conditions et terminez la vérification pour activer les devises sélectionnées."
+      "redirectPendingDescription": "Acceptez les conditions et terminez la vérification pour activer les devises sélectionnées.",
+      "person": {
+        "descriptionAddCurrencySingle": "Créez des instructions de dépôt permanentes pour les virements entrants. Les fonds sont automatiquement convertis en USDC ou EURC et réglés dans votre propre portefeuille.",
+        "noCurrenciesAvailable": "Tous les comptes de routage des dépôts pris en charge sont déjà configurés pour votre profil."
+      }
     },
     "toolbar": {
       "addCurrency": "Ajouter un compte de routage",
       "finishVerificationFirst": "Terminez d'abord la vérification en cours",
       "allCurrenciesCovered": "Toutes les devises prises en charge ont déjà des comptes",
       "loadingAccounts": "Chargement des comptes bancaires…",
-      "loadingTransfers": "Chargement des virements…"
+      "loadingTransfers": "Chargement des virements…",
+      "walletAddressRequired": "Ajoutez d'abord une adresse de portefeuille à votre profil"
     },
     "operationStatus": {
       "pendingKyb": "Vérification en attente",
@@ -3583,7 +3594,11 @@
       "submit": "Créer le virement",
       "submitting": "Création…",
       "loadingOptions": "Chargement des corridors…",
-      "noCorridorsAvailable": "Aucun corridor de virement n'est disponible pour ce space."
+      "noCorridorsAvailable": "Aucun corridor de virement n'est disponible pour ce space.",
+      "person": {
+        "description": "Créez des instructions de dépôt pour un seul virement entrant. Les fonds sont automatiquement convertis en USDC ou EURC et réglés dans votre propre portefeuille.",
+        "noCorridorsAvailable": "Aucun corridor de virement n'est disponible pour votre profil."
+      }
     },
     "transferStatus": {
       "awaiting_funds": "Paiement en attente",

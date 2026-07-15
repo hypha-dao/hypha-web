@@ -5,26 +5,26 @@ import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { BankTransferRailOption } from './types';
-import { getTransfersEndpoint } from './use-transfers';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 type UseTransferRailOptionsArgs = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
   enabled?: boolean;
 };
 
 export function useTransferRailOptions({
   spaceSlug,
+  basePath,
   enabled = true,
 }: UseTransferRailOptionsArgs) {
   const { getAccessToken, isAuthenticated } = useAuthentication();
 
-  const endpoint = React.useMemo(
-    () =>
-      spaceSlug
-        ? `${getTransfersEndpoint(spaceSlug)}?mode=transfer-options`
-        : null,
-    [spaceSlug],
-  );
+  const endpoint = React.useMemo(() => {
+    const base = resolveBankingBasePath({ spaceSlug, basePath });
+    return base ? `${base}/transfers?mode=transfer-options` : null;
+  }, [spaceSlug, basePath]);
 
   const swrKey = React.useMemo(
     () =>

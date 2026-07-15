@@ -3160,7 +3160,10 @@
         "description": "Cuentas de transferencia bancaria de un solo uso que enrutan automáticamente los fondos entrantes a las billeteras USDC o EURC del space.",
         "emptyTitle": "Aún no hay rutas de transferencia única",
         "newTransferCta": "Añadir ruta única",
-        "loading": "Cargando transferencias…"
+        "loading": "Cargando transferencias…",
+        "person": {
+          "description": "Cuentas de transferencia bancaria de un solo uso que enrutan automáticamente los fondos entrantes a su propia billetera USDC o EURC."
+        }
       },
       "accounts": {
         "title": "Cuentas de Enrutamiento de Depósito",
@@ -3170,7 +3173,10 @@
         "pendingDescription": "Complete la verificación en Bridge para activar las monedas seleccionadas. Las cuentas de enrutamiento se configurarán automáticamente una vez aprobadas.",
         "continueVerificationCta": "Continuar verificación",
         "loadingAccounts": "Cargando cuentas bancarias…",
-        "signInHint": "Inicie sesión para gestionar las rutas bancarias."
+        "signInHint": "Inicie sesión para gestionar las rutas bancarias.",
+        "person": {
+          "description": "Cuentas de transferencia bancaria que enrutan automáticamente los fondos entrantes a su propia billetera USDC o EURC."
+        }
       }
     },
     "payouts": {
@@ -3333,14 +3339,19 @@
       "railsNeedVerificationHint": "Estas vías requieren verificación del proveedor antes de poder usarlas.",
       "provisioningProgress": "Creando cuenta en {currency}…",
       "redirectPendingTitle": "Continuar en Bridge",
-      "redirectPendingDescription": "Acepte los términos y complete la verificación para activar las monedas seleccionadas."
+      "redirectPendingDescription": "Acepte los términos y complete la verificación para activar las monedas seleccionadas.",
+      "person": {
+        "descriptionAddCurrencySingle": "Cree instrucciones de depósito permanentes para transferencias entrantes. Los fondos se convierten automáticamente a USDC o EURC y se liquidan en su propia billetera.",
+        "noCurrenciesAvailable": "Todas las cuentas de enrutamiento de depósito compatibles ya están configuradas para su perfil."
+      }
     },
     "toolbar": {
       "addCurrency": "Añadir cuenta de enrutamiento",
       "finishVerificationFirst": "Complete primero la verificación en curso",
       "allCurrenciesCovered": "Todas las monedas compatibles ya tienen cuentas",
       "loadingAccounts": "Cargando cuentas bancarias…",
-      "loadingTransfers": "Cargando transferencias…"
+      "loadingTransfers": "Cargando transferencias…",
+      "walletAddressRequired": "Agregue primero una dirección de billetera a su perfil"
     },
     "operationStatus": {
       "pendingKyb": "Verificación pendiente",
@@ -3587,7 +3598,11 @@
       "submit": "Crear transferencia",
       "submitting": "Creando…",
       "loadingOptions": "Cargando corredores…",
-      "noCorridorsAvailable": "No hay corredores de transferencia disponibles para este space."
+      "noCorridorsAvailable": "No hay corredores de transferencia disponibles para este space.",
+      "person": {
+        "description": "Cree instrucciones de depósito para una sola transferencia entrante. Los fondos se convierten automáticamente a USDC o EURC y se liquidan en su propia billetera.",
+        "noCorridorsAvailable": "No hay corredores de transferencia disponibles para su perfil."
+      }
     },
     "transferStatus": {
       "awaiting_funds": "Pago pendiente",

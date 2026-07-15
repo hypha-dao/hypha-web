@@ -25,6 +25,7 @@ type OpenSpaceAccountDisabledReason =
   | 'loadingAccounts'
   | 'finishVerificationFirst'
   | 'allCurrenciesCovered'
+  | 'walletAddressRequired'
   | null;
 
 type BankAccountsSectionProps = {
@@ -45,6 +46,8 @@ type BankAccountsSectionProps = {
   gearSlot?: ReactNode;
   /** Parent shows page skeleton while lists load. */
   hideListLoadingState?: boolean;
+  /** Selects `.person` sibling copy where it diverges. Defaults to the space wording. */
+  ownerContext?: 'space' | 'person';
 };
 
 function BankingSubsectionHeader({
@@ -127,10 +130,19 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
   openPayoutAccountDisabledReason = null,
   gearSlot,
   hideListLoadingState = false,
+  ownerContext = 'space',
 }) => {
   const tAccounts = useTranslations('BankingTab.sections.accounts');
   const tPayouts = useTranslations('BankingTab.payouts');
   const tToolbar = useTranslations('BankingTab.toolbar');
+
+  const isPerson = ownerContext === 'person';
+  const accountsDescription = isPerson
+    ? tAccounts('person.description')
+    : tAccounts('description');
+  const payoutsDescription = isPerson
+    ? tPayouts('section.person.description')
+    : tPayouts('section.description');
 
   const [activeTab, setActiveTab] = useState<'deposits' | 'payouts'>(
     'deposits',
@@ -145,6 +157,8 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       ? tToolbar('finishVerificationFirst')
       : openSpaceAccountDisabledReason === 'allCurrenciesCovered'
       ? tToolbar('allCurrenciesCovered')
+      : openSpaceAccountDisabledReason === 'walletAddressRequired'
+      ? tToolbar('walletAddressRequired')
       : null;
 
   const payoutAccountTooltip =
@@ -154,6 +168,8 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       ? tToolbar('finishVerificationFirst')
       : openPayoutAccountDisabledReason === 'allCurrenciesCovered'
       ? tToolbar('allCurrenciesCovered')
+      : openPayoutAccountDisabledReason === 'walletAddressRequired'
+      ? tToolbar('walletAddressRequired')
       : null;
 
   return (
@@ -186,7 +202,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
             <section className="flex flex-col gap-4">
               <BankingSubsectionHeader
                 title={tAccounts('title')}
-                description={tAccounts('description')}
+                description={accountsDescription}
                 action={
                   showManageActions ? (
                     <SectionActionButton
@@ -207,13 +223,14 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
             <BankTransfersSection
               {...transfersProps}
               hideListLoadingState={hideListLoadingState}
+              ownerContext={ownerContext}
             />
           </div>
         ) : (
           <section className="flex flex-col gap-4">
             <BankingSubsectionHeader
               title={tPayouts('section.title')}
-              description={tPayouts('section.description')}
+              description={payoutsDescription}
               action={
                 showManageActions ? (
                   <SectionActionButton

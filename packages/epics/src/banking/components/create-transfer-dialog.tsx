@@ -51,6 +51,8 @@ type CreateTransferDialogProps = {
     destinationCurrency?: string;
     idempotencyKey?: string;
   }) => Promise<void>;
+  /** Selects `.person` sibling copy where it diverges. Defaults to the space wording. */
+  ownerContext?: 'space' | 'person';
 };
 
 export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
@@ -62,8 +64,14 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
   error,
   onOpenGear,
   onSubmit,
+  ownerContext = 'space',
 }) => {
   const t = useTranslations('BankingTab.createTransfer');
+  const isPerson = ownerContext === 'person';
+  const description = isPerson ? t('person.description') : t('description');
+  const noCorridorsAvailable = isPerson
+    ? t('person.noCorridorsAvailable')
+    : t('noCorridorsAvailable');
 
   const options = useMemo(
     () => (status ? getTransferRailOptionsFromStatus(status) : []),
@@ -158,7 +166,7 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
       >
         <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
           <DialogTitle>{t('title')}</DialogTitle>
-          <DialogDescription>{t('description')}</DialogDescription>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <BankingDialogBody>
@@ -173,7 +181,7 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
               </p>
             ) : pickerOptions.length === 0 ? (
               <p className="text-2 text-muted-foreground">
-                {t('noCorridorsAvailable')}
+                {noCorridorsAvailable}
               </p>
             ) : (
               <BankRailActionPicker

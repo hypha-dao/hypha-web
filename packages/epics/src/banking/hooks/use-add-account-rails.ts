@@ -5,26 +5,26 @@ import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { BankAddAccountRailOption } from './types';
-import { getVirtualAccountsEndpoint } from './use-virtual-accounts';
+import { resolveBankingBasePath } from './banking-endpoints';
 
 type UseAddAccountRailsOptions = {
-  spaceSlug: string;
+  spaceSlug?: string;
+  /** Owner-agnostic base path (e.g. person-scoped). Defaults to the space path. */
+  basePath?: string;
   enabled?: boolean;
 };
 
 export function useAddAccountRails({
   spaceSlug,
+  basePath,
   enabled = true,
 }: UseAddAccountRailsOptions) {
   const { getAccessToken, isAuthenticated } = useAuthentication();
 
-  const endpoint = React.useMemo(
-    () =>
-      spaceSlug
-        ? `${getVirtualAccountsEndpoint(spaceSlug)}?mode=add-options`
-        : null,
-    [spaceSlug],
-  );
+  const endpoint = React.useMemo(() => {
+    const base = resolveBankingBasePath({ spaceSlug, basePath });
+    return base ? `${base}/accounts?mode=add-options` : null;
+  }, [spaceSlug, basePath]);
 
   const swrKey = React.useMemo(
     () =>
