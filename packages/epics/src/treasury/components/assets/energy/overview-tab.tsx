@@ -3,18 +3,22 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { UsersIcon, ZapIcon } from 'lucide-react';
-import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { ENERGY_PALETTE } from './charts';
 import { SourceCard, SectionTitle } from './shared';
 import { ConsumerConsumptionCard } from './consumer-consumption-card';
-import { useEnergyPeople } from './use-energy-people';
 import {
   formatEnergyPricePerKwh,
   resolveEnergyParticipantDisplay,
   sourceCardLabel,
 } from './format';
+import type { EnergyTabProps } from './energy-tab-props';
+import { energyAvatarLoading } from './energy-tab-props';
 
-export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
+export const EnergyOverviewTab = ({
+  data,
+  people,
+  peopleLoading,
+}: EnergyTabProps) => {
   const t = useTranslations('Energy.overview');
   const tShared = useTranslations('Energy.shared');
   const sources = data.sources ?? [];
@@ -38,7 +42,6 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
     [data.members, deviceIdsByAddress],
   );
 
-  const { people, isLoading } = useEnergyPeople(consumers);
   const participantProfiles = data.participantProfiles;
   const sourceFallback = tShared('source');
   const sourceTypeLabels = {
@@ -74,7 +77,11 @@ export const EnergyOverviewTab = ({ data }: { data: SpaceEnergyResponse }) => {
                   displayName={display.displayName}
                   avatarUrl={display.avatarUrl}
                   subtitle={display.subtitle}
-                  isLoading={isLoading}
+                  isLoading={energyAvatarLoading(
+                    address,
+                    peopleLoading,
+                    participantProfiles,
+                  )}
                   deviceIds={
                     deviceIdsByAddress.get(address.toLowerCase()) ?? null
                   }

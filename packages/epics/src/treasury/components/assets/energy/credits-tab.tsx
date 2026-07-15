@@ -3,11 +3,14 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
-import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { EnergyPersonCard, GridOperatorCard } from './shared';
-import { useEnergyPeople } from './use-energy-people';
 import { ENERGY_PALETTE } from './charts';
-import { formatStablecoinMicro } from './format';
+import {
+  formatStablecoinMicro,
+  resolveEnergyParticipantDisplay,
+} from './format';
+import type { EnergyTabProps } from './energy-tab-props';
+import { energyAvatarLoading } from './energy-tab-props';
 
 type Row = {
   address: string;
@@ -53,26 +56,22 @@ const sortRows = (a: Row, b: Row) => {
   return 0;
 };
 
-export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
+export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
   const t = useTranslations('Energy.credits');
   const details = data.memberDetails ?? [];
+  const participantProfiles = data.participantProfiles;
   const gridOperator = data.roles?.gridOperator ?? null;
   const gridBalanceInternal = toSignedBigInt(data.overview?.gridBalance);
 
-  const { rows, addresses } = React.useMemo(() => {
+  const rows = React.useMemo(() => {
     const rows: Row[] = details.map((member) => ({
       address: member.address,
       toSettleMicro: toBigInt(member.debtInStablecoin),
       creditMicro: toBigInt(member.creditInStablecoin),
     }));
     rows.sort(sortRows);
-    return {
-      rows,
-      addresses: details.map((m) => m.address.toLowerCase()),
-    };
+    return rows;
   }, [details]);
-
-  const { people, isLoading } = useEnergyPeople(addresses);
 
   const gridToSettleMicro =
     gridBalanceInternal > 0n
@@ -162,44 +161,58 @@ export const CreditsTab = ({ data }: { data: SpaceEnergyResponse }) => {
             <CardTitle>{t('memberSettlement')}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {rows.map((row) => (
-              <div key={row.address}>
-                <EnergyPersonCard
-                  address={row.address}
-                  person={people[row.address.toLowerCase()]}
-                  isLoading={isLoading}
-                  right={
-                    <div className="text-right">
-                      {row.toSettleMicro > 0n ? (
-                        <p
-                          className="font-medium"
-                          style={{ color: ENERGY_PALETTE[4] }}
-                        >
-                          {t('toSettle', {
-                            amount: eurcAmount(row.toSettleMicro),
-                          })}
-                        </p>
-                      ) : null}
-                      {row.creditMicro > 0n ? (
-                        <p
-                          className="font-medium"
-                          style={{ color: ENERGY_PALETTE[1] }}
-                        >
-                          {t('credit', {
-                            amount: eurcAmount(row.creditMicro),
-                          })}
-                        </p>
-                      ) : null}
-                      {row.toSettleMicro === 0n && row.creditMicro === 0n ? (
-                        <p className="font-medium text-neutral-11">
-                          {t('zeroEurc')}
-                        </p>
-                      ) : null}
-                    </div>
-                  }
-                />
-              </div>
-            ))}
+            {rows.map((row) => {
+              const display = resolveEnergyParticipantDisplay(
+                row.address,
+                people,
+                participantProfiles,
+              );
+              return (
+                <div key={row.address}>
+                  <EnergyPersonCard
+                    address={row.address}
+                    person={people[row.address.toLowerCase()]}
+                    displayName={display.displayName}
+                    avatarUrl={display.avatarUrl}
+                    subtitle={display.subtitle}
+                    isLoading={energyAvatarLoading(
+                      row.address,
+                      peopleLoading,
+                      participantProfiles,
+                    )}
+                    right={
+                      <div className="text-right">
+                        {row.toSettleMicro > 0n ? (
+                          <p
+                            className="font-medium"
+                            style={{ color: ENERGY_PALETTE[4] }}
+                          >
+                            {t('toSettle', {
+                              amount: eurcAmount(row.toSettleMicro),
+                            })}
+                          </p>
+                        ) : null}
+                        {row.creditMicro > 0n ? (
+                          <p
+                            className="font-medium"
+                            style={{ color: ENERGY_PALETTE[1] }}
+                          >
+                            {t('credit', {
+                              amount: eurcAmount(row.creditMicro),
+                            })}
+                          </p>
+                        ) : null}
+                        {row.toSettleMicro === 0n && row.creditMicro === 0n ? (
+                          <p className="font-medium text-neutral-11">
+                            {t('zeroEurc')}
+                          </p>
+                        ) : null}
+                      </div>
+                    }
+                  />
+                </div>
+              );
+            })}
             <p className="text-1 text-neutral-11">{t('balancesHint')}</p>
           </CardContent>
         </Card>

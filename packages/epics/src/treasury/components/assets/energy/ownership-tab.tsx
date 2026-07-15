@@ -12,13 +12,10 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
-import type {
-  SpaceEnergyResponse,
-  EnergyParticipantProfile,
-} from '../../../hooks/use-space-energy';
+import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
-import { useEnergyPeople, type EnergyPerson } from './use-energy-people';
+import { type EnergyPerson } from './use-energy-people';
 import {
   formatBpsPct,
   resolveEnergyParticipantDisplay,
@@ -32,6 +29,8 @@ import {
   type Granularity,
 } from './granularity';
 import { GranularityToggle } from './granularity-toggle';
+import type { EnergyTabProps } from './energy-tab-props';
+import { energyAvatarLoading } from './energy-tab-props';
 
 type Owner = { address: string; bps: number };
 
@@ -291,7 +290,11 @@ const SourceOwnershipCard = ({
               owner={owner}
               displayName={display.displayName}
               avatarUrl={display.avatarUrl}
-              isLoading={peopleLoading}
+              isLoading={energyAvatarLoading(
+                owner.address,
+                peopleLoading,
+                participantProfiles,
+              )}
               accent={accent}
               totalEarned={
                 totalProductionKwh *
@@ -312,7 +315,11 @@ const SourceOwnershipCard = ({
   );
 };
 
-export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
+export const OwnershipTab = ({
+  data,
+  people,
+  peopleLoading,
+}: EnergyTabProps) => {
   const t = useTranslations('Energy.ownership');
   const tShared = useTranslations('Energy.shared');
   const details = data.memberDetails ?? [];
@@ -384,7 +391,6 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
     return { groups, allAddresses: Array.from(addresses) };
   }, [details, sourceMeta, tShared]);
 
-  const { people, isLoading } = useEnergyPeople(allAddresses);
   const participantProfiles = data.participantProfiles;
 
   if (!groups.length) {
@@ -400,7 +406,7 @@ export const OwnershipTab = ({ data }: { data: SpaceEnergyResponse }) => {
           accent={ENERGY_PALETTE[index % ENERGY_PALETTE.length]!}
           people={people}
           participantProfiles={participantProfiles}
-          peopleLoading={isLoading}
+          peopleLoading={peopleLoading}
         />
       ))}
     </div>
