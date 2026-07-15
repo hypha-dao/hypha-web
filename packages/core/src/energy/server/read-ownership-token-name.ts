@@ -58,24 +58,32 @@ export async function readOwnershipTokenNames(
 
   if (unique.length === 0) return {};
 
-  const results = await web3Client.multicall({
-    allowFailure: true,
-    contracts: unique.map((address) => ({
-      address,
-      abi: ownershipTokenNameAbi,
-      functionName: 'name' as const,
-    })),
-  });
+  try {
+    const results = await web3Client.multicall({
+      allowFailure: true,
+      contracts: unique.map((address) => ({
+        address,
+        abi: ownershipTokenNameAbi,
+        functionName: 'name' as const,
+      })),
+    });
 
-  const lookup: Record<string, string> = {};
-  for (const [index, address] of unique.entries()) {
-    const result = results[index];
-    if (result?.status !== 'success') continue;
-    const trimmed = String(result.result).trim();
-    if (trimmed.length > 0) {
-      lookup[address] = trimmed;
+    const lookup: Record<string, string> = {};
+    for (const [index, address] of unique.entries()) {
+      const result = results[index];
+      if (result?.status !== 'success') continue;
+      const trimmed = String(result.result).trim();
+      if (trimmed.length > 0) {
+        lookup[address] = trimmed;
+      }
     }
-  }
 
-  return lookup;
+    return lookup;
+  } catch (error) {
+    console.warn(
+      '[spaces/energy] readOwnershipTokenNames multicall failed',
+      error,
+    );
+    return {};
+  }
 }
