@@ -398,20 +398,15 @@ export async function GET(
       memberDeviceIds.set(detail.address.toLowerCase(), detail.deviceIds);
     }
 
-    const canResolveParticipantProfiles =
-      access.hasAccess && Boolean(access.authToken);
-
-    const participantProfiles = canResolveParticipantProfiles
-      ? await resolveEnergyParticipants(
-          {
-            addresses: memberAddressList.map((a) => a.toLowerCase()),
-            spaceSlug,
-            memberDeviceIds,
-            institutionalByDevice: institutionalLabelsForSpace(spaceSlug),
-          },
-          { db },
-        )
-      : undefined;
+    const participantProfiles = await resolveEnergyParticipants(
+      {
+        addresses: memberAddressList.map((a) => a.toLowerCase()),
+        spaceSlug,
+        memberDeviceIds,
+        institutionalByDevice: institutionalLabelsForSpace(spaceSlug),
+      },
+      { db },
+    );
 
     const [optimizationConfig, socialWalletsRaw] = await Promise.all([
       safeRead<readonly [readonly number[], number, bigint, number, boolean]>(
