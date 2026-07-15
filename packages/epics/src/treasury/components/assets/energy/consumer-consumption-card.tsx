@@ -7,7 +7,6 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
-import type { EnergyPerson } from './use-energy-people';
 import { shortAddr } from './format';
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
 import {
