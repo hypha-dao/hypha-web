@@ -68,12 +68,12 @@ export async function readOwnershipTokenNames(
   });
 
   const lookup: Record<string, string> = {};
-  for (let index = 0; index < unique.length; index += 1) {
+  for (const [index, address] of unique.entries()) {
     const result = results[index];
     if (result?.status !== 'success') continue;
     const trimmed = String(result.result).trim();
     if (trimmed.length > 0) {
-      lookup[unique[index]] = trimmed;
+      lookup[address] = trimmed;
     }
   }
 

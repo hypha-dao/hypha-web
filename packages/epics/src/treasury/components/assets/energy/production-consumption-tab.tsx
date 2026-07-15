@@ -41,18 +41,15 @@ export const ProductionConsumptionTab = ({
 
   const sourceFallback = tShared('source');
 
-  const sourceLabels = React.useMemo(
-    () => {
-      const sourceTypeLabels = {
-        SOLAR: tShared('sourceTypeSolar'),
-        BATTERY: tShared('sourceTypeBattery'),
-      };
-      return (data.sources ?? []).map((s, i) =>
-        sourceCardLabel(s, i, sourceFallback, sourceTypeLabels),
-      );
-    },
-    [data.sources, sourceFallback, tShared],
-  );
+  const sourceLabels = React.useMemo(() => {
+    const sourceTypeLabels = {
+      SOLAR: tShared('sourceTypeSolar'),
+      BATTERY: tShared('sourceTypeBattery'),
+    };
+    return (data.sources ?? []).map((s, i) =>
+      sourceCardLabel(s, i, sourceFallback, sourceTypeLabels),
+    );
+  }, [data.sources, sourceFallback, tShared]);
 
   const dummy = React.useMemo(
     () =>
