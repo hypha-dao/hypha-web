@@ -350,9 +350,8 @@ export const OwnershipTab = ({
     return map;
   }, [data.sources]);
 
-  const { groups, allAddresses } = React.useMemo(() => {
+  const { groups } = React.useMemo(() => {
     const map = new Map<string, { owners: Owner[] }>();
-    const addresses = new Set<string>();
     for (const member of details) {
       for (const ownership of member.ownerships) {
         // Hide members with no active share in the source.
@@ -363,7 +362,6 @@ export const OwnershipTab = ({
           bps: ownership.ownershipBps,
         });
         map.set(ownership.sourceId, existing);
-        addresses.add(member.address.toLowerCase());
       }
     }
     const groups: SourceGroup[] = Array.from(map.entries())
@@ -388,7 +386,7 @@ export const OwnershipTab = ({
           owners: value.owners.sort((a, b) => b.bps - a.bps),
         };
       });
-    return { groups, allAddresses: Array.from(addresses) };
+    return { groups };
   }, [details, sourceMeta, tShared]);
 
   const participantProfiles = data.participantProfiles;
