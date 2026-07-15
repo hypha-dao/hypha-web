@@ -197,9 +197,18 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
   const openSpaceAccountDisabledReason = verificationInProgress
     ? 'finishVerificationFirst'
     : !hasWalletAddress
-    ? 'finishVerificationFirst'
+    ? 'walletAddressRequired'
     : !canAddAccount
     ? 'allCurrenciesCovered'
+    : null;
+
+  // New Transfer reaches the same wallet-address destination as the
+  // permanent virtual account, so it needs the same gate.
+  const newTransferDisabled = verificationInProgress || !hasWalletAddress;
+  const newTransferDisabledReason = verificationInProgress
+    ? 'finishVerificationFirst'
+    : !hasWalletAddress
+    ? 'walletAddressRequired'
     : null;
 
   const handleInitialSetupSubmit = useCallback(
@@ -318,10 +327,8 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
           transfersLoading,
           hasBankCustomer: true,
           canManage,
-          newTransferDisabled: verificationInProgress,
-          newTransferDisabledReason: verificationInProgress
-            ? 'finishVerificationFirst'
-            : null,
+          newTransferDisabled,
+          newTransferDisabledReason,
           onNewTransfer: () => {
             clearCreateTransferError();
             setCreateTransferOpen(true);
@@ -337,6 +344,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
         isSubmitting={isCreatingTransfer}
         error={createTransferError}
         onOpenGear={openVerificationGear}
+        ownerContext="person"
         onSubmit={async (input) => {
           try {
             await createTransfer(input);
@@ -347,7 +355,6 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
             if (err instanceof Error && err.message.includes('verification')) {
               openVerificationGear();
             }
-            throw err;
           }
         }}
       />
@@ -361,6 +368,7 @@ export const ProfileBankingSection: FC<ProfileBankingSectionProps> = ({
         submittingCurrency={creatingCurrency}
         error={createAccountError}
         onOpenGear={openVerificationGear}
+        ownerContext="person"
         onAddCurrency={async ({ currency, destinationCurrency }) => {
           clearCreateAccountError();
           try {

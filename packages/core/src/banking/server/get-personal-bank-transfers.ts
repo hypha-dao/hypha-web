@@ -1,6 +1,6 @@
 import type { DatabaseInstance } from '../../common/server/types';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
-import { findPersonBySlug } from '../../people/server/queries';
+import type { Person } from '../../people/types';
 import type {
   ListPersonalBankTransfersInput,
   PaginatedBankTransfers,
@@ -9,7 +9,7 @@ import { findBankCustomerByPersonAndProvider } from './queries';
 import { getBankTransfersForCustomer } from './get-bank-transfers-for-customer';
 
 export async function getPersonalBankTransfers(
-  person: { id: number },
+  person: Pick<Person, 'id' | 'address'>,
   input: ListPersonalBankTransfersInput,
   { db }: { db: DatabaseInstance },
 ): Promise<PaginatedBankTransfers> {
@@ -22,10 +22,7 @@ export async function getPersonalBankTransfers(
     return { transfers: [], hasMore: false, nextCursor: null };
   }
 
-  const fullPerson = await findPersonBySlug({ slug: input.personSlug }, { db });
-  const walletAddress = fullPerson?.address ?? null;
-
-  return getBankTransfersForCustomer(customer, walletAddress, {
+  return getBankTransfersForCustomer(customer, person.address ?? null, {
     limit: input.limit,
     startingAfter: input.startingAfter,
     endingBefore: input.endingBefore,

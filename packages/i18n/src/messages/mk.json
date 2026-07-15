@@ -638,7 +638,7 @@
         "newTransferCta": "Додај еднократна рута",
         "loading": "Се вчитуваат трансферите…",
         "person": {
-          "description": "Single-use bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+          "description": "Сметки за еднократен банкарски трансфер што автоматски ги пренасочуваат дојдовните средства кон вашиот сопствен USDC или EURC паричник."
         }
       },
       "accounts": {
@@ -651,7 +651,7 @@
         "loadingAccounts": "Се вчитуваат банкарските сметки…",
         "signInHint": "Најавете се за да управувате со банкарските рути.",
         "person": {
-          "description": "Bank transfer accounts that automatically route incoming funds to your own USDC or EURC wallet."
+          "description": "Сметки за банкарски трансфер што автоматски ги пренасочуваат дојдовните средства кон вашиот сопствен USDC или EURC паричник."
         }
       }
     },
@@ -815,14 +815,19 @@
       "railsNeedVerificationHint": "Овие канали бараат верификација од провајдерот пред да можете да ги користите.",
       "provisioningProgress": "Се создава {currency} сметка…",
       "redirectPendingTitle": "Продолжете во Bridge",
-      "redirectPendingDescription": "Прифатете ги условите и завршете ја верификацијата за да ги активирате избраните валути."
+      "redirectPendingDescription": "Прифатете ги условите и завршете ја верификацијата за да ги активирате избраните валути.",
+      "person": {
+        "descriptionAddCurrencySingle": "Создајте трајни инструкции за депозит за дојдовни трансфери. Средствата автоматски се конвертираат во USDC или EURC и се порамнуваат во вашиот сопствен паричник.",
+        "noCurrenciesAvailable": "Сите поддржани сметки за пренасочување депозити се веќе поставени за вашиот профил."
+      }
     },
     "toolbar": {
       "addCurrency": "Додај сметка за пренасочување",
       "finishVerificationFirst": "Прво завршете ја тековната верификација",
       "allCurrenciesCovered": "Сите поддржани валути веќе имаат сметки",
       "loadingAccounts": "Се вчитуваат банкарските сметки…",
-      "loadingTransfers": "Се вчитуваат трансферите…"
+      "loadingTransfers": "Се вчитуваат трансферите…",
+      "walletAddressRequired": "Прво додадете адреса на паричник на вашиот профил"
     },
     "operationStatus": {
       "pendingKyb": "Верификација во исчекување",
@@ -1069,7 +1074,11 @@
       "submit": "Создај трансфер",
       "submitting": "Се создава…",
       "loadingOptions": "Се вчитуваат каналите…",
-      "noCorridorsAvailable": "Нема достапни трансфер-канали за овој простор."
+      "noCorridorsAvailable": "Нема достапни трансфер-канали за овој простор.",
+      "person": {
+        "description": "Создајте инструкции за депозит за еден дојдовен трансфер. Средствата автоматски се конвертираат во USDC или EURC и се порамнуваат во вашиот сопствен паричник.",
+        "noCorridorsAvailable": "Нема достапни трансфер-канали за вашиот профил."
+      }
     },
     "transferStatus": {
       "awaiting_funds": "Се чека уплата",

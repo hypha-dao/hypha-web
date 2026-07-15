@@ -23,6 +23,7 @@ export type BankTransfersSectionProps = {
   newTransferDisabledReason?:
     | 'loadingTransfers'
     | 'finishVerificationFirst'
+    | 'walletAddressRequired'
     | null;
   onNewTransfer?: () => void;
   hideListLoadingState?: boolean;
@@ -59,6 +60,8 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
       ? tToolbar('loadingTransfers')
       : newTransferDisabledReason === 'finishVerificationFirst'
       ? tToolbar('finishVerificationFirst')
+      : newTransferDisabledReason === 'walletAddressRequired'
+      ? tToolbar('walletAddressRequired')
       : null;
 
   const showNewTransferCta =

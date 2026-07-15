@@ -84,7 +84,7 @@ export async function createBankVirtualAccountForCustomer(
 
   if (!customerId) {
     throw new BankOnboardingError(
-      'Bridge customer is not ready yet. Try again after KYB approval completes.',
+      'Bridge customer is not ready yet. Try again after verification completes.',
       422,
     );
   }

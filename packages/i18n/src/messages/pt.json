@@ -3337,14 +3337,19 @@
       "railsNeedVerificationHint": "Essas vias exigem verificação do provedor antes de poderem ser usadas.",
       "provisioningProgress": "Criando conta em {currency}…",
       "redirectPendingTitle": "Continuar no Bridge",
-      "redirectPendingDescription": "Aceite os termos e conclua a verificação para ativar as moedas selecionadas."
+      "redirectPendingDescription": "Aceite os termos e conclua a verificação para ativar as moedas selecionadas.",
+      "person": {
+        "descriptionAddCurrencySingle": "Crie instruções de depósito permanentes para transferências recebidas. Os fundos são convertidos automaticamente para USDC ou EURC e liquidados na sua própria carteira.",
+        "noCurrenciesAvailable": "Todas as contas de roteamento de depósito compatíveis já estão configuradas para o seu perfil."
+      }
     },
     "toolbar": {
       "addCurrency": "Adicionar conta de roteamento",
       "finishVerificationFirst": "Conclua primeiro a verificação em andamento",
       "allCurrenciesCovered": "Todas as moedas compatíveis já possuem contas",
       "loadingAccounts": "Carregando contas bancárias…",
-      "loadingTransfers": "Carregando transferências…"
+      "loadingTransfers": "Carregando transferências…",
+      "walletAddressRequired": "Adicione um endereço de carteira ao seu perfil primeiro"
     },
     "operationStatus": {
       "pendingKyb": "Verificação pendente",
@@ -3591,7 +3596,11 @@
       "submit": "Criar transferência",
       "submitting": "Criando…",
       "loadingOptions": "Carregando corredores…",
-      "noCorridorsAvailable": "Nenhum corredor de transferência disponível para este space."
+      "noCorridorsAvailable": "Nenhum corredor de transferência disponível para este space.",
+      "person": {
+        "description": "Crie instruções de depósito para uma única transferência recebida. Os fundos são convertidos automaticamente para USDC ou EURC e liquidados na sua própria carteira.",
+        "noCorridorsAvailable": "Nenhum corredor de transferência disponível para o seu perfil."
+      }
     },
     "transferStatus": {
       "awaiting_funds": "Aguardando pagamento",

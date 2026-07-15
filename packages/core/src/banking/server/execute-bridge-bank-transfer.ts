@@ -10,7 +10,6 @@ import { BankOnboardingError } from './errors';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
-import { resolveCustomerApproved } from './providers/bridge/banking-provider-state';
 
 function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -58,6 +57,11 @@ export type ExecuteBridgeBankTransferOptions = {
   kycProvider?: BankKycProvider;
 };
 
+/**
+ * Internal-only: assumes the caller (`createBankTransferForCustomer`) has
+ * already validated the customer's approval status. Only called from there,
+ * so it does not repeat that check.
+ */
 export async function executeBridgeBankTransfer(
   input: ExecuteBridgeBankTransferInput,
   options?: ExecuteBridgeBankTransferOptions,
@@ -83,18 +87,11 @@ export async function executeBridgeBankTransfer(
     );
   }
 
-  if (!(await resolveCustomerApproved(customer))) {
-    throw new BankOnboardingError(
-      'KYB is not yet approved. Complete verification first.',
-      403,
-    );
-  }
-
   const customerId = customer.providerCustomerId;
 
   if (!customerId) {
     throw new BankOnboardingError(
-      'Bridge customer is not ready yet. Try again after KYB approval completes.',
+      'Bridge customer is not ready yet. Try again after verification completes.',
       422,
     );
   }

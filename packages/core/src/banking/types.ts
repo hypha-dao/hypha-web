@@ -185,7 +185,6 @@ export type CreatePersonalBankVirtualAccountResult =
   CreateSpaceBankVirtualAccountResult;
 
 export type ListPersonalBankVirtualAccountsInput = {
-  personSlug: string;
   limit?: number;
   startingAfter?: string;
 };
@@ -213,7 +212,6 @@ export type ListBankTransfersInput = {
 };
 
 export type ListPersonalBankTransfersInput = {
-  personSlug: string;
   limit?: number;
   startingAfter?: string;
   endingBefore?: string;

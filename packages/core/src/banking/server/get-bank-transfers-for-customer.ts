@@ -32,8 +32,13 @@ export async function getBankTransfersForCustomer(
     return { transfers: [], hasMore: false, nextCursor: null };
   }
 
+  const parsedLimit = input.limit ?? 25;
+  const limit = Number.isFinite(parsedLimit)
+    ? Math.min(Math.max(Math.trunc(parsedLimit), 1), 100)
+    : 25;
+
   const listed = await bridgeListTransfers(customerId, {
-    limit: input.limit ?? 25,
+    limit,
     starting_after: input.startingAfter,
     ending_before: input.endingBefore,
   });

@@ -55,11 +55,14 @@ export async function getBankVirtualAccountsForCustomer(
     );
   });
 
-  const last = scoped.at(-1);
+  // Cursor must come from the raw Bridge page, not the destination-filtered
+  // subset: if a page filters empty while Bridge still has_more, we must keep
+  // advancing or later matching accounts are silently hidden.
+  const lastRaw = listed.data.at(-1);
 
   return {
     accounts,
     hasMore: listed.has_more ?? false,
-    nextCursor: listed.has_more && last ? last.id : null,
+    nextCursor: listed.has_more && lastRaw ? lastRaw.id : null,
   };
 }

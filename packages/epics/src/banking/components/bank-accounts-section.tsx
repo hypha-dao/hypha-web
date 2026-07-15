@@ -25,6 +25,7 @@ type OpenSpaceAccountDisabledReason =
   | 'loadingAccounts'
   | 'finishVerificationFirst'
   | 'allCurrenciesCovered'
+  | 'walletAddressRequired'
   | null;
 
 type BankAccountsSectionProps = {
@@ -156,6 +157,8 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       ? tToolbar('finishVerificationFirst')
       : openSpaceAccountDisabledReason === 'allCurrenciesCovered'
       ? tToolbar('allCurrenciesCovered')
+      : openSpaceAccountDisabledReason === 'walletAddressRequired'
+      ? tToolbar('walletAddressRequired')
       : null;
 
   const payoutAccountTooltip =
@@ -165,6 +168,8 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       ? tToolbar('finishVerificationFirst')
       : openPayoutAccountDisabledReason === 'allCurrenciesCovered'
       ? tToolbar('allCurrenciesCovered')
+      : openPayoutAccountDisabledReason === 'walletAddressRequired'
+      ? tToolbar('walletAddressRequired')
       : null;
 
   return (

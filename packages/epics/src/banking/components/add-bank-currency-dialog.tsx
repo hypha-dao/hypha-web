@@ -44,6 +44,8 @@ type AddBankCurrencyDialogProps = {
     currency: BankCurrencyCode;
     destinationCurrency?: string;
   }) => Promise<void>;
+  /** Selects `.person` sibling copy where it diverges. Defaults to the space wording. */
+  ownerContext?: 'space' | 'person';
 };
 
 export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
@@ -56,9 +58,17 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
   error,
   onOpenGear,
   onAddCurrency,
+  ownerContext = 'space',
 }) => {
   const t = useTranslations('BankingTab.openAccount');
   const tOp = useTranslations('BankingTab.operationStatus');
+  const isPerson = ownerContext === 'person';
+  const descriptionAddCurrencySingle = isPerson
+    ? t('person.descriptionAddCurrencySingle')
+    : t('descriptionAddCurrencySingle');
+  const noCurrenciesAvailable = isPerson
+    ? t('person.noCurrenciesAvailable')
+    : t('noCurrenciesAvailable');
 
   const options = useMemo(
     () =>
@@ -125,9 +135,7 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
       <DialogContent className={cn(BANKING_DIALOG_CONTENT_CLASS, 'max-w-md')}>
         <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
           <DialogTitle>{t('titleAddCurrency')}</DialogTitle>
-          <DialogDescription>
-            {t('descriptionAddCurrencySingle')}
-          </DialogDescription>
+          <DialogDescription>{descriptionAddCurrencySingle}</DialogDescription>
         </DialogHeader>
 
         <BankingDialogBody className="flex flex-col gap-4">
@@ -137,7 +145,7 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
             </p>
           ) : pickerOptions.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {t('noCurrenciesAvailable')}
+              {noCurrenciesAvailable}
             </p>
           ) : (
             <BankRailActionPicker

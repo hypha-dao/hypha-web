@@ -1,6 +1,6 @@
 import type { DatabaseInstance } from '../../common/server/types';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
-import { findPersonBySlug } from '../../people/server/queries';
+import type { Person } from '../../people/types';
 import type {
   ListPersonalBankVirtualAccountsInput,
   PaginatedBankVirtualAccounts,
@@ -9,7 +9,7 @@ import { findBankCustomerByPersonAndProvider } from './queries';
 import { getBankVirtualAccountsForCustomer } from './get-bank-virtual-accounts-for-customer';
 
 export async function getPersonalBankVirtualAccounts(
-  person: { id: number },
+  person: Pick<Person, 'id' | 'address'>,
   input: ListPersonalBankVirtualAccountsInput,
   { db }: { db: DatabaseInstance },
 ): Promise<PaginatedBankVirtualAccounts> {
@@ -22,10 +22,7 @@ export async function getPersonalBankVirtualAccounts(
     return { accounts: [], hasMore: false, nextCursor: null };
   }
 
-  const fullPerson = await findPersonBySlug({ slug: input.personSlug }, { db });
-  const walletAddress = fullPerson?.address ?? null;
-
-  return getBankVirtualAccountsForCustomer(customer, walletAddress, {
+  return getBankVirtualAccountsForCustomer(customer, person.address ?? null, {
     limit: input.limit,
     startingAfter: input.startingAfter,
   });

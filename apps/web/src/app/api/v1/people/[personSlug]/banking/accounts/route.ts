@@ -47,7 +47,6 @@ export async function GET(
     const result = await getPersonalBankVirtualAccounts(
       authResult.person,
       {
-        personSlug,
         limit,
         startingAfter,
       },

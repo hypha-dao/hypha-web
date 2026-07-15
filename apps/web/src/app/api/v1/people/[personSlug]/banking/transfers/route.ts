@@ -44,7 +44,6 @@ export async function GET(
     const result = await getPersonalBankTransfers(
       authResult.person,
       {
-        personSlug,
         limit: Number.isFinite(limit) ? limit : 25,
         startingAfter,
         endingBefore,
