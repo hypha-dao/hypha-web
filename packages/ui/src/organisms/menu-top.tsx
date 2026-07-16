@@ -281,27 +281,30 @@ export const MenuTop = ({
         </div>
 
         {/* Desktop Nav + Trailing action (right-aligned group).
+            Always mount so desktopActionsRef is available on first paint —
+            a children/trailingAction guard would skip ResizeObserver setup and
+            leave isCompact stuck true if content appears later.
             When compact, keep `flex w-max` so intrinsic width stays measurable;
             dropping `flex` was collapsing scrollWidth on iPad WebKit and
             oscillating compact ↔ expanded every frame. */}
-        {(children || trailingAction) && (
-          <div
-            ref={desktopActionsRef}
-            id="menu-top-actions"
-            className={clsx(
-              'flex w-max items-center gap-2',
-              isCompact
-                ? // Keep flex + intrinsic width while out of flow. Zero-height clip
-                  // avoids document scroll growth; cache still guards WebKit quirks.
-                  'pointer-events-none absolute left-0 top-0 h-0 overflow-hidden opacity-0'
-                : 'relative',
-            )}
-            aria-hidden={isCompact || undefined}
-          >
-            {children}
-            {trailingAction}
-          </div>
-        )}
+        <div
+          ref={desktopActionsRef}
+          id="menu-top-actions"
+          className={clsx(
+            !(children || trailingAction)
+              ? 'hidden'
+              : 'flex w-max items-center gap-2',
+            isCompact
+              ? // Keep flex + intrinsic width while out of flow. Zero-height clip
+                // avoids document scroll growth; cache still guards WebKit quirks.
+                'pointer-events-none absolute left-0 top-0 h-0 overflow-hidden opacity-0'
+              : 'relative',
+          )}
+          aria-hidden={isCompact || undefined}
+        >
+          {children}
+          {trailingAction}
+        </div>
 
         {/* Compact action group (right side): chat, profile, optional hamburger.
             Always show below `md` so auth (e.g. Sign in) stays visible whenever the
