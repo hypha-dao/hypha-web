@@ -21,7 +21,6 @@ import {
   getMemberSpaces,
   Space,
 } from '@hypha-platform/core/client';
-import { ProfileTabs } from './_components/profile-tabs';
 import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -113,7 +112,6 @@ export default async function ProfilePage(props: PageProps) {
             spaces={spaces}
             profileView={true}
           />
-          <ProfileTabs person={person} lang={lang} />
         </div>
       ) : (
         <p>{tProfile('personNotFound')}</p>
