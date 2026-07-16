@@ -1007,7 +1007,9 @@ export function GlobalCallDockOverlay({
       closePip();
       return;
     }
-    void openPip();
+    openPip().catch(() => {
+      // Ignore open errors (e.g., NotAllowedError from browser)
+    });
   }, [closePip, isDocumentPipOpen, openPip]);
 
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
