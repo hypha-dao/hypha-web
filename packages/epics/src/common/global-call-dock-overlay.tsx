@@ -1030,9 +1030,11 @@ export function GlobalCallDockOverlay({
   const onOpenCallSpace = React.useCallback(async () => {
     if (!callSpaceSlug || !activeRoomId?.trim()) return;
 
-    if (isDocumentPipOpen) {
-      closePip();
-    }
+    /**
+     * Deliberately doesn't close Document PiP: "go to the call's space" and
+     * "stop floating the call" are independent actions — PiP is the whole
+     * point while navigating elsewhere, including to the space itself.
+     */
     window.focus();
 
     const normalizedPath = (pathname.split('?')[0] ?? '').replace(/\/$/, '');
@@ -1063,8 +1065,6 @@ export function GlobalCallDockOverlay({
   }, [
     activeRoomId,
     callSpaceSlug,
-    closePip,
-    isDocumentPipOpen,
     locale,
     openCoherenceChat,
     openHumanChatPanel,
@@ -1428,7 +1428,7 @@ export function GlobalCallDockOverlay({
           className={cn(
             'pointer-events-auto relative isolate shrink-0 touch-manipulation border-t border-border/50',
             inDocumentPip
-              ? 'z-40 h-8 overflow-hidden bg-background/95 px-1 py-0 backdrop-blur-sm'
+              ? 'z-40 h-8 overflow-visible bg-background/95 px-1 py-0 backdrop-blur-sm'
               : cn(
                   'z-30 overflow-visible py-2',
                   isTouchDock ? 'bg-background' : 'bg-muted/35',
