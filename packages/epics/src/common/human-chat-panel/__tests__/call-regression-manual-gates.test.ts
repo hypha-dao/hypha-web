@@ -501,10 +501,25 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     );
   });
 
-  it('hides Document PiP while share UX is stabilized', () => {
+  it('Document PiP is gated by the enable-call-document-pip feature flag, not a hardcoded const', () => {
     const source = readCommonSource('global-call-dock-overlay.tsx');
+    expect(source).toContain('getEnableCallDocumentPip');
     expect(source).toContain('CALL_DOCUMENT_PIP_ENABLED');
-    expect(source).toContain('!CALL_DOCUMENT_PIP_ENABLED');
+    expect(source).not.toContain('CALL_DOCUMENT_PIP_ENABLED = false');
+  });
+
+  it('Document PiP auto-opens on any active call, not only during screenshare', () => {
+    const source = readCommonSource('global-call-dock-overlay.tsx');
+    expect(source).toContain('openPip()');
+    expect(source).toContain('pipDismissedRef');
+    expect(source).not.toContain('pipDismissedDuringShareRef');
+  });
+
+  it('exposes an explicit pop-out / un-pop toggle for Document PiP', () => {
+    const source = readCommonSource('global-call-dock-overlay.tsx');
+    expect(source).toContain('onToggleDocumentPip');
+    expect(source).toContain('openFloatingWindowLabel');
+    expect(source).toContain('closeFloatingWindowLabel');
   });
 
   it('keeps the floating dock outside the screen-share capture root', () => {

@@ -4,6 +4,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
+  AppWindow,
   ArrowUpRight,
   Expand,
   Loader2,
@@ -11,6 +12,7 @@ import {
   Minimize2,
   Shrink,
 } from 'lucide-react';
+import { getEnableCallDocumentPip } from '@hypha-platform/feature-flags/client';
 import {
   useMatrix,
   useMe,
@@ -43,7 +45,6 @@ import {
 import { resolveScreenshareDockHeight } from './human-chat-panel/call-screenshare-filmstrip-geometry';
 import {
   CALL_DOCUMENT_PIP_CALL,
-  CALL_DOCUMENT_PIP_ENABLED,
   CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
   clampCallDocumentPipWindowSize,
   resolveCallDocumentPipViewportMaxHeight,
@@ -80,6 +81,9 @@ type ResizeHandle =
   | 'right'
   | 'bottom'
   | 'left';
+
+/** NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP is inlined at build time — safe to read once at module scope. */
+const CALL_DOCUMENT_PIP_ENABLED = getEnableCallDocumentPip();
 
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v2';
 const DOCK_MARGIN_PX = 16;
@@ -569,7 +573,8 @@ export function GlobalCallDockOverlay({
     geometry: DockGeometry;
     dockMode: 'thumbnail' | 'expanded' | 'fullscreen';
   } | null>(null);
-  const pipDismissedDuringShareRef = React.useRef(false);
+  /** Tracks whether the user un-popped Document PiP during the current call — resets per call, not persisted. */
+  const pipDismissedRef = React.useRef(false);
   const dockRef = React.useRef<HTMLDivElement | null>(null);
   const lastNonFullscreenModeRef = React.useRef<'thumbnail' | 'expanded'>(
     dockMode === 'fullscreen' ? 'thumbnail' : dockMode,
@@ -826,45 +831,55 @@ export function GlobalCallDockOverlay({
     showFloatingDock,
   ]);
 
+  /** PiP dismissal doesn't persist across calls — "no persisted preference" (decision #1). */
   React.useEffect(() => {
-    if (!isScreensharing) {
-      pipDismissedDuringShareRef.current = false;
-      if (isDocumentPipOpen) {
-        closePip();
-      }
+    if (!showFloatingDock) {
+      pipDismissedRef.current = false;
     }
-  }, [closePip, isDocumentPipOpen, isScreensharing]);
+  }, [showFloatingDock]);
 
   const prevDocumentPipOpenRef = React.useRef(false);
   React.useEffect(() => {
     if (
-      isScreensharing &&
+      showFloatingDock &&
       prevDocumentPipOpenRef.current &&
       !isDocumentPipOpen
     ) {
-      pipDismissedDuringShareRef.current = true;
+      pipDismissedRef.current = true;
     }
     prevDocumentPipOpenRef.current = isDocumentPipOpen;
-  }, [isDocumentPipOpen, isScreensharing]);
+  }, [isDocumentPipOpen, showFloatingDock]);
 
+  /**
+   * Default to popped-out whenever a call is active and PiP is supported (decision #1)
+   * — not screenshare-triggered. Fires once per call: once `isDocumentPipOpen` flips
+   * true the condition below goes false, so this can't loop or re-open after an
+   * explicit un-pop (`pipDismissedRef`).
+   */
   React.useEffect(() => {
     if (
       !CALL_DOCUMENT_PIP_ENABLED ||
-      !isScreensharing ||
       isMobile ||
       !isDocumentPipSupported ||
       isDocumentPipOpen ||
       !showFloatingDock ||
-      pipDismissedDuringShareRef.current
+      pipDismissedRef.current
     ) {
       return;
     }
-    void openPip();
+    /**
+     * Chrome requires transient user activation for `requestWindow()`. Auto-open here
+     * runs on call start rather than directly inside a click, so it can be rejected
+     * (`NotAllowedError`) — that's expected and falls back to the embedded dock; the
+     * explicit pop-out button (always inside a click handler) is the reliable path.
+     */
+    openPip().catch(() => {
+      // Falls back to the embedded floating dock — user can still pop out manually.
+    });
   }, [
     isDocumentPipOpen,
     isDocumentPipSupported,
     isMobile,
-    isScreensharing,
     openPip,
     showFloatingDock,
   ]);
@@ -983,6 +998,17 @@ export function GlobalCallDockOverlay({
       closePip();
     }
   }, [closePip, showFloatingDock]);
+
+  /** Explicit pop-out / un-pop toggle (decision #2) — required regardless of auto-open,
+   * since browsers mandate a user gesture to open Document PiP. */
+  const onToggleDocumentPip = React.useCallback(() => {
+    if (isDocumentPipOpen) {
+      pipDismissedRef.current = true;
+      closePip();
+      return;
+    }
+    void openPip();
+  }, [closePip, isDocumentPipOpen, openPip]);
 
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceSlug = React.useMemo(
@@ -1201,6 +1227,16 @@ export function GlobalCallDockOverlay({
                 </span>
               </button>
             ) : null}
+            <button
+              type="button"
+              data-no-dock-drag
+              onClick={onToggleDocumentPip}
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border/60 bg-background hover:bg-muted"
+              aria-label={t('closeFloatingWindowLabel')}
+              title={t('closeFloatingWindowLabel')}
+            >
+              <AppWindow className="h-3 w-3 shrink-0" />
+            </button>
           </div>
         ) : (
           <div
@@ -1254,6 +1290,23 @@ export function GlobalCallDockOverlay({
                 onValueChange={onShareLayoutModeChange}
                 className="shrink-0"
               />
+            ) : null}
+            {!isMobile && isDocumentPipSupported && !isDocumentPipOpen ? (
+              <button
+                type="button"
+                data-no-dock-drag
+                onClick={onToggleDocumentPip}
+                className={cn(
+                  'inline-flex shrink-0 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
+                  dockCompact ? 'h-6 w-6' : 'h-7 w-7',
+                )}
+                aria-label={t('openFloatingWindowLabel')}
+                title={t('openFloatingWindowLabel')}
+              >
+                <AppWindow
+                  className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                />
+              </button>
             ) : null}
             {!isMobile && !isScreensharing && !isDocumentPipOpen ? (
               <div

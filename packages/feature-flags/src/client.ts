@@ -12,3 +12,12 @@ export function getEnableOnboardingVoiceRealtime(): boolean {
     false
   );
 }
+
+/**
+ * Client-safe build-time gate for Document Picture-in-Picture during calls.
+ * Defaults on; set `NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP=false` as an instant
+ * rollback if it needs to come back down without a code change.
+ */
+export function getEnableCallDocumentPip(): boolean {
+  return parseBoolean(process.env.NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP) ?? true;
+}
