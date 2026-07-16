@@ -7,6 +7,10 @@ import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
+import {
+  resolveDesktopClusterWidth,
+  shouldUseCompactHeader,
+} from './menu-top-compact';
 
 type MenuTopProps = {
   children?: React.ReactNode;
@@ -28,6 +32,9 @@ type MenuTopProps = {
   forceCompactWhenLeftPanelExpanded?: boolean;
 };
 
+/** Gap reserved between leading cluster and desktop actions in the free-space math. */
+const ROW_CLUSTER_GAP_PX = 16;
+
 export const MenuTop = ({
   children,
   leadingAction,
@@ -40,8 +47,10 @@ export const MenuTop = ({
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
   showMobileHamburger = true,
+  // Wider band than the original 232/256: My Wallet widened the desktop cluster,
+  // so iPad-landscape widths sit near the threshold and need more hysteresis.
   compactSafeThresholdPx = 232,
-  compactReleaseThresholdPx = 256,
+  compactReleaseThresholdPx = 320,
   compactDataAttribute = 'data-compact-header',
   showLeadingActionOnlyWhenCompact = false,
   forceCompactWhenLeftPanelExpanded = true,
@@ -52,7 +61,10 @@ export const MenuTop = ({
   const leadingClusterRef = useRef<HTMLDivElement>(null);
   const desktopActionsRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
-  const [isCompact, setIsCompact] = useState(false);
+  // Conservative SSR/first-paint: prefer compact until measured (avoids overlap flash).
+  const [isCompact, setIsCompact] = useState(true);
+  const isCompactRef = useRef(true);
+  const desktopNeededRef = useRef(0);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -98,31 +110,44 @@ export const MenuTop = ({
     if (!rowEl || !leadEl || !desktopEl) return;
 
     let raf = 0;
-    let compactRef = isCompact;
+    const mobileMq = window.matchMedia('(max-width: 767px)');
+
     const evaluate = () => {
       raf = 0;
       const root = document.documentElement;
       const rowWidth = rowEl.getBoundingClientRect().width;
       const leadWidth = leadEl.getBoundingClientRect().width;
-      // Keep measurable even when visually hidden; use scrollWidth as "needed" width.
-      const desktopNeeded = Math.max(
+      const liveDesktopWidth = Math.max(
         desktopEl.scrollWidth,
+        desktopEl.offsetWidth,
         desktopEl.getBoundingClientRect().width,
       );
-      const freeSpace = rowWidth - leadWidth - desktopNeeded - 16;
+      const desktopNeeded = resolveDesktopClusterWidth({
+        measuredPx: liveDesktopWidth,
+        isCompact: isCompactRef.current,
+        cachedPx: desktopNeededRef.current,
+      });
+      if (desktopNeeded > 0) {
+        desktopNeededRef.current = desktopNeeded;
+      }
+
+      const freeSpace =
+        rowWidth - leadWidth - desktopNeeded - ROW_CLUSTER_GAP_PX;
       const leftPanelExpanded =
         forceCompactWhenLeftPanelExpanded &&
         root.getAttribute('data-left-panel-expanded') === 'true';
 
-      const shouldCompact = leftPanelExpanded
-        ? true
-        : compactRef
-        ? freeSpace < compactReleaseThresholdPx
-        : freeSpace < compactSafeThresholdPx;
+      const nextCompact = shouldUseCompactHeader({
+        freeSpacePx: freeSpace,
+        isCurrentlyCompact: isCompactRef.current,
+        leftPanelExpanded,
+        enterBelowPx: compactSafeThresholdPx,
+        exitBelowPx: compactReleaseThresholdPx,
+        forceCompactViewport: mobileMq.matches,
+      });
 
-      const nextCompact = shouldCompact;
-      if (nextCompact !== compactRef) {
-        compactRef = nextCompact;
+      if (nextCompact !== isCompactRef.current) {
+        isCompactRef.current = nextCompact;
         setIsCompact(nextCompact);
       }
     };
@@ -141,6 +166,13 @@ export const MenuTop = ({
       attributes: true,
       attributeFilter: ['data-left-panel-expanded'],
     });
+    const onMobileMq = () => schedule();
+    if (typeof mobileMq.addEventListener === 'function') {
+      mobileMq.addEventListener('change', onMobileMq);
+    } else {
+      // Safari < 14
+      mobileMq.addListener(onMobileMq);
+    }
     window.addEventListener('resize', schedule);
     schedule();
 
@@ -150,13 +182,19 @@ export const MenuTop = ({
       }
       ro.disconnect();
       panelObserver.disconnect();
+      if (typeof mobileMq.removeEventListener === 'function') {
+        mobileMq.removeEventListener('change', onMobileMq);
+      } else {
+        mobileMq.removeListener(onMobileMq);
+      }
       window.removeEventListener('resize', schedule);
     };
+    // Intentionally omit `isCompact`: hysteresis lives in isCompactRef so toggling
+    // compact does not tear down ResizeObserver (which itself caused re-entry jitter).
   }, [
     compactReleaseThresholdPx,
     compactSafeThresholdPx,
     forceCompactWhenLeftPanelExpanded,
-    isCompact,
   ]);
 
   useEffect(() => {
@@ -242,22 +280,31 @@ export const MenuTop = ({
           ) : null}
         </div>
 
-        {/* Desktop Nav + Trailing action (right-aligned group) */}
-        {(children || trailingAction) && (
-          <div
-            ref={desktopActionsRef}
-            id="menu-top-actions"
-            className={clsx(
-              'items-center gap-2',
-              isCompact
-                ? 'pointer-events-none invisible absolute'
-                : 'relative flex',
-            )}
-          >
-            {children}
-            {trailingAction}
-          </div>
-        )}
+        {/* Desktop Nav + Trailing action (right-aligned group).
+            Always mount so desktopActionsRef is available on first paint —
+            a children/trailingAction guard would skip ResizeObserver setup and
+            leave isCompact stuck true if content appears later.
+            When compact, keep `flex w-max` so intrinsic width stays measurable;
+            dropping `flex` was collapsing scrollWidth on iPad WebKit and
+            oscillating compact ↔ expanded every frame. */}
+        <div
+          ref={desktopActionsRef}
+          id="menu-top-actions"
+          className={clsx(
+            !(children || trailingAction)
+              ? 'hidden'
+              : 'flex w-max items-center gap-2',
+            isCompact
+              ? // Keep flex + intrinsic width while out of flow. Zero-height clip
+                // avoids document scroll growth; cache still guards WebKit quirks.
+                'pointer-events-none absolute left-0 top-0 h-0 overflow-hidden opacity-0'
+              : 'relative',
+          )}
+          aria-hidden={isCompact || undefined}
+        >
+          {children}
+          {trailingAction}
+        </div>
 
         {/* Compact action group (right side): chat, profile, optional hamburger.
             Always show below `md` so auth (e.g. Sign in) stays visible whenever the
