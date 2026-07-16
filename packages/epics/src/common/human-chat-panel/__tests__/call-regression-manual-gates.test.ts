@@ -559,8 +559,23 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('data-testid="call-react-popover-content"');
     expect(source).toContain('data-testid="call-raise-hand-button"');
     expect(source).toContain('data-testid="call-be-right-back-button"');
-    expect(source).toContain('absolute bottom-full right-0');
+    expect(source).toContain('absolute bottom-full');
     expect(source).not.toContain('PopoverTrigger');
+  });
+
+  it('react/audio/capture menus clamp to viewport width in PiP so they cannot be clipped by the PiP body', () => {
+    const reactPopover = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-react-popover.tsx',
+    );
+    expect(reactPopover).toContain('w-[calc(100dvw-1rem)]');
+    expect(reactPopover).toContain('-translate-x-1/2');
+
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(controls).toContain('isPipDensity');
+    expect(controls).toContain('w-[calc(100dvw-1rem)]');
+    expect(controls).toContain('-translate-x-1/2');
   });
 
   it('shows pause icon on capture toolbar button when recording is paused', () => {

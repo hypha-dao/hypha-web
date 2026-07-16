@@ -570,7 +570,10 @@ export function HumanChatPanelInCallControls({
         <div
           role="menu"
           className={cn(
-            'absolute bottom-full right-0 z-[60] mb-2 min-w-52 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            'absolute bottom-full z-[60] mb-2 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            isPipDensity
+              ? 'left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
+              : 'right-0 min-w-52',
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
@@ -680,7 +683,10 @@ export function HumanChatPanelInCallControls({
           role="menu"
           onPointerDown={(event) => event.stopPropagation()}
           className={cn(
-            'absolute bottom-full right-0 z-[70] mb-2 min-w-52 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            'absolute bottom-full z-[70] mb-2 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            isPipDensity
+              ? 'left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
+              : 'right-0 min-w-52',
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >

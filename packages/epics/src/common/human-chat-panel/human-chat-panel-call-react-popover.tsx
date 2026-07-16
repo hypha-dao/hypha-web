@@ -245,7 +245,18 @@ export function HumanChatPanelCallReactPopover({
   );
 
   const menuPanelClass = cn(
-    'absolute bottom-full right-0 z-[140] mb-2 w-[min(100vw-2rem,15.5rem)] min-w-56 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto overflow-x-hidden rounded-xl px-2 py-2 shadow-xl',
+    'absolute bottom-full z-[140] mb-2 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto overflow-x-hidden rounded-xl px-2 py-2 shadow-xl',
+    isPip
+      ? /**
+         * PiP windows can be narrower than the panel's normal min-width
+         * (e.g. 224px filmstrip mode). Anchoring to the trigger's right edge
+         * with a fixed min-width pushed the panel past the window's left
+         * edge, where the PiP body's `overflow: hidden` silently clipped it.
+         * Centering on the trigger and capping width to the viewport keeps
+         * the whole panel inside the window regardless of size.
+         */
+        'left-1/2 w-[calc(100dvw-1rem)] max-w-[15.5rem] -translate-x-1/2'
+      : 'right-0 w-[min(100vw-2rem,15.5rem)] min-w-56',
     popoverSurface,
   );
 
