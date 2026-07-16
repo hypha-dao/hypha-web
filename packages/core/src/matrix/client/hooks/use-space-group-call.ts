@@ -1776,6 +1776,21 @@ export function useSpaceGroupCall(
         ]);
         logJoinDebugStep('join-step:local-tracks-published');
 
+        /**
+         * `Promise.all` above can take a while (SFU negotiation); if the user
+         * left or the component unmounted during that window, joinEpoch has
+         * already moved on. Without this check we'd resurrect the aborted
+         * join here — assigning the stale room as active and leaking its
+         * just-published local tracks to other participants.
+         */
+        if (joinEpoch !== joinEpochRef.current) {
+          await lkRoom.disconnect().catch(() => undefined);
+          await session.leaveRoomSession(5000).catch(() => undefined);
+          isJoiningRef.current = false;
+          abortStaleJoinAttempt(setCallState);
+          return;
+        }
+
         liveKitRoomRef.current = lkRoom;
         activeCallRoomIdRef.current = activeRoomId;
         setRoom(lkRoom);
