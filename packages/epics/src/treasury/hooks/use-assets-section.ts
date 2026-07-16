@@ -37,10 +37,16 @@ export const useAssetsSection = ({
   )}`;
 
   const displayableAssets = React.useMemo(() => {
-    let result = assets.filter((asset) => asset.value > 0);
+    // Hide zero-balance noise, but always keep tokens issued by this space
+    // (newly created tokens often sit at 0 in the issuer treasury).
+    let result = assets.filter(
+      (asset) => asset.value > 0 || asset.issuedBySpace,
+    );
 
     if (hideSmallBalances) {
-      result = result.filter((asset) => asset.value >= 1);
+      result = result.filter(
+        (asset) => asset.value >= 1 || asset.issuedBySpace,
+      );
     }
 
     if (searchTerm.trim()) {
