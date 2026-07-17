@@ -117,6 +117,15 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableCallDocumentPip: {
+    key: 'enable-call-document-pip',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP) ?? true,
+    description:
+      'Document Picture-in-Picture pop-out for calls. Kill switch: NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP=false',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -227,4 +236,5 @@ export async function getEnableOnboardingVoiceRealtimeAsync(): Promise<boolean> 
 export {
   getEnableNetworkMap,
   getEnableOnboardingVoiceRealtime,
+  getEnableCallDocumentPip,
 } from './client';

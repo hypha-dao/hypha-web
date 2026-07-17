@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 
 import {
   clampCallDocumentPipWindowSize,
@@ -103,10 +109,27 @@ function copyDocumentAppearance(source: Document, target: Document) {
   targetHtml.style.userSelect = 'none';
 }
 
-function copyStylesIntoWindow(target: Window) {
+/**
+ * Cloning a `<link>` into a *different* document triggers a real fresh
+ * fetch/parse for that document — it isn't already "loaded" just because
+ * the source document had it cached. Callers await the returned promise
+ * before showing real content, so the PiP window doesn't flash an unstyled
+ * button list while the stylesheet is still in flight.
+ */
+function copyStylesIntoWindow(target: Window): Promise<void> {
   copyDocumentAppearance(document, target.document);
 
   const seenHrefs = new Set<string>();
+  const pendingLoads: Promise<void>[] = [];
+  const trackLoad = (link: HTMLLinkElement) => {
+    pendingLoads.push(
+      new Promise((resolve) => {
+        link.addEventListener('load', () => resolve(), { once: true });
+        link.addEventListener('error', () => resolve(), { once: true });
+      }),
+    );
+  };
+
   for (const node of document.head.querySelectorAll(
     'link[rel="stylesheet"], style',
   )) {
@@ -114,7 +137,9 @@ function copyStylesIntoWindow(target: Window) {
       if (seenHrefs.has(node.href)) continue;
       seenHrefs.add(node.href);
     }
-    target.document.head.appendChild(node.cloneNode(true));
+    const clone = node.cloneNode(true);
+    target.document.head.appendChild(clone);
+    if (clone instanceof HTMLLinkElement) trackLoad(clone);
   }
 
   for (const sheet of document.styleSheets) {
@@ -126,6 +151,7 @@ function copyStylesIntoWindow(target: Window) {
         link.rel = 'stylesheet';
         link.href = sheet.href;
         target.document.head.appendChild(link);
+        trackLoad(link);
         continue;
       }
       const owner = sheet.ownerNode;
@@ -139,9 +165,16 @@ function copyStylesIntoWindow(target: Window) {
         link.rel = 'stylesheet';
         link.href = sheet.href;
         target.document.head.appendChild(link);
+        trackLoad(link);
       }
     }
   }
+
+  const allLoaded = Promise.all(pendingLoads).then(() => undefined);
+  const safetyTimeout = new Promise<void>((resolve) => {
+    setTimeout(resolve, 1200);
+  });
+  return Promise.race([allLoaded, safetyTimeout]);
 }
 
 /**
@@ -159,6 +192,7 @@ export function useCallDockDocumentPip(
 ) {
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [isSupported, setIsSupported] = useState(false);
+  const [stylesReady, setStylesReady] = useState(false);
 
   useEffect(() => {
     setIsSupported(
@@ -179,6 +213,8 @@ export function useCallDockDocumentPip(
     applyPipWindowSize(pipWindow, windowSize, windowMode);
   }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
 
+  const styleLoadGenerationRef = useRef(0);
+
   const openPip = useCallback(async () => {
     const api = window.documentPictureInPicture;
     if (!api?.requestWindow) return false;
@@ -190,9 +226,20 @@ export function useCallDockDocumentPip(
       height: initialSize.height,
       preferInitialWindowPlacement: true,
     });
-    copyStylesIntoWindow(win);
+    setStylesReady(false);
     applyPipWindowSize(win, initialSize, windowMode);
     setPipWindow(win);
+    /**
+     * Guards against close+reopen within the load window: without this, the
+     * first window's stylesheets could finish loading after the second
+     * window opened and incorrectly mark it ready.
+     */
+    const generation = ++styleLoadGenerationRef.current;
+    void copyStylesIntoWindow(win).then(() => {
+      if (styleLoadGenerationRef.current === generation && !win.closed) {
+        setStylesReady(true);
+      }
+    });
     return true;
   }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
 
@@ -200,13 +247,16 @@ export function useCallDockDocumentPip(
     if (pipWindow && !pipWindow.closed) {
       pipWindow.close();
     }
+    styleLoadGenerationRef.current += 1;
     setPipWindow(null);
+    setStylesReady(false);
   }, [pipWindow]);
 
   return {
     pipWindow,
     isSupported,
     isOpen: Boolean(pipWindow),
+    stylesReady,
     openPip,
     closePip,
   };

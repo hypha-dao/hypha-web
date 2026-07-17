@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, type ReactNode, type RefObject } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { ChevronUp, Ellipsis, Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useIsMobile } from '@hypha-platform/ui';
@@ -187,6 +193,21 @@ export function HumanChatPanelCallReactPopover({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = openProp ?? uncontrolledOpen;
   const [emojiPicker, setEmojiPicker] = useState<EmojiPickerPanel>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const isFull = variant === 'fullView';
+  const isPip = density === 'pip';
+
+  /**
+   * PiP's panel has a small max-height, so raise-hand/be-right-back (the
+   * bottom row) start below the fold. They're the higher-value actions in a
+   * floating window, so land there by default instead of the top section.
+   */
+  useEffect(() => {
+    if (!open || !isPip || emojiPicker) return;
+    const node = panelRef.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [emojiPicker, isPip, open]);
 
   const setOpen = (next: boolean) => {
     onOpenChangeProp?.(next);
@@ -194,8 +215,6 @@ export function HumanChatPanelCallReactPopover({
       setUncontrolledOpen(next);
     }
   };
-  const isFull = variant === 'fullView';
-  const isPip = density === 'pip';
   const isTouchToolbar = useIsMobile() ?? false;
   const strokeWidth = iconStrokeWidth ?? (isFull ? 2 : 1.75);
 
@@ -220,7 +239,7 @@ export function HumanChatPanelCallReactPopover({
 
   const sectionDivider = isFull ? 'bg-zinc-700/60' : 'bg-neutral-6';
 
-  const emojiRowClass = 'flex min-h-0 flex-wrap items-center gap-1';
+  const emojiRowClass = 'flex w-full min-h-0 flex-wrap items-center gap-1.5';
 
   const actionRowBtn = cn(
     'flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2 py-1.5 text-xs font-medium leading-tight transition-colors disabled:opacity-50',
@@ -236,16 +255,53 @@ export function HumanChatPanelCallReactPopover({
     'inline-flex shrink-0 items-center justify-center gap-0.5 rounded-full border shadow-sm transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
     isFull
       ? 'box-border h-10 w-10 min-h-10 min-w-10 max-h-10 max-w-10 border-zinc-600/80 bg-zinc-900/90 px-0 text-white hover:bg-zinc-800/95'
-      : isPip
-      ? 'h-5 w-5 border-border/60 bg-background/95 px-0 text-foreground hover:bg-muted'
-      : cn(
+      : /** Same footprint in PiP as the embedded dock — no separate compact tier. */
+        cn(
           'border-border/60 bg-background text-foreground hover:bg-muted',
           isTouchToolbar ? 'h-11 w-11 px-0' : 'h-8 w-8 px-0',
         ),
   );
 
   const menuPanelClass = cn(
-    'absolute bottom-full right-0 z-[140] mb-2 w-[min(100vw-2rem,15.5rem)] min-w-56 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto overflow-x-hidden rounded-xl px-2 py-2 shadow-xl',
+    /**
+     * The embedded (non-PiP) floating dock is a resizable widget with
+     * `overflow-hidden`, much shorter than the viewport — `--hypha-call-dock-popover-max-h`
+     * (set on the dock root from its actual measured height) additionally
+     * caps this so a tall menu can't extend past the dock's own box and get
+     * clipped with no way to scroll to the rest. Falls back to effectively
+     * unset (9999px) wherever the dock doesn't set it (PiP, fullscreen).
+     */
+    'z-[140] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto overflow-x-hidden rounded-xl px-2 py-2 shadow-xl',
+    isPip
+      ? cn(
+          /**
+           * `absolute` centered on the *trigger* doesn't clamp to the PiP
+           * window: these triggers sit toward one side of the toolbar, so
+           * centering on one can still push the menu past the opposite
+           * window edge. `fixed` anchors to the PiP window's own viewport
+           * instead (no transformed/filtered ancestor between here and the
+           * window redirects it — the dock root deliberately avoids
+           * `transform`, see its own comment), so centering is correct
+           * regardless of which button opened it. `bottom-14` is safe as a
+           * fixed offset (not the usual trigger-relative `bottom-full`)
+           * because the PiP footer height is now deterministic — fixed
+           * 32px buttons + fixed padding, no longer content-dependent.
+           */
+          'fixed bottom-14 left-1/2 -translate-x-1/2',
+          /**
+           * A concrete width, not shrink-to-fit (`w-max`): the feedback row
+           * and raise-hand/be-right-back row use `flex-1` children, whose
+           * used `flex-basis: 0%` contributes ~nothing to a max-content
+           * calculation — under `w-max` the panel collapsed far narrower
+           * than its content needed, squashing those rows. The full
+           * emoji-mart grid (below) is separately `w-full` up to 352px, so
+           * needs the same concrete-width treatment, just a larger cap.
+           */
+          emojiPicker
+            ? 'w-[min(calc(100dvw-1rem),22rem)]'
+            : 'w-[min(calc(100dvw-1rem),15.5rem)]',
+        )
+      : 'absolute bottom-full mb-2 right-0 w-[min(100vw-2rem,15.5rem)] min-w-56',
     popoverSurface,
   );
 
@@ -270,28 +326,29 @@ export function HumanChatPanelCallReactPopover({
       >
         <Heart
           className={cn(
-            isFull ? 'h-4 w-4' : isPip ? 'h-2.5 w-2.5' : 'h-4 w-4',
+            'h-4 w-4',
             reactTriggerActive ? callAccentToolbarHeartActive : 'fill-none',
             isFull && !reactTriggerActive && 'text-white',
           )}
           strokeWidth={strokeWidth}
           aria-hidden
         />
-        {!isPip ? (
-          <ChevronUp
-            className={cn(
-              isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
-              'shrink-0 opacity-70 transition-transform duration-200',
-              open && 'rotate-180',
-            )}
-            strokeWidth={strokeWidth}
-            aria-hidden
-          />
-        ) : null}
+        <ChevronUp
+          className={cn(
+            isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
+            'shrink-0 opacity-70 transition-transform duration-200',
+            open && 'rotate-180',
+          )}
+          strokeWidth={strokeWidth}
+          aria-hidden
+        />
       </button>
       {open ? (
         <div
-          ref={menuContentRef}
+          ref={(node) => {
+            panelRef.current = node;
+            if (menuContentRef) menuContentRef.current = node;
+          }}
           role="menu"
           data-testid="call-react-popover-content"
           data-call-interactive
@@ -374,7 +431,7 @@ export function HumanChatPanelCallReactPopover({
 
               <section className="min-h-0">
                 <h3 className="sr-only">{t('callReactFeedbackSection')}</h3>
-                <div className="flex min-h-0 gap-1">
+                <div className="flex w-full min-h-0 gap-1">
                   {CALL_FEEDBACK_REACTIONS.map((item) => (
                     <FeedbackReactionButton
                       key={item.id}
@@ -390,7 +447,7 @@ export function HumanChatPanelCallReactPopover({
 
               <div
                 className={cn(
-                  'flex min-h-0 gap-1 border-t pt-1',
+                  'flex w-full min-h-0 gap-1 border-t pt-1',
                   sectionDivider,
                 )}
               >
