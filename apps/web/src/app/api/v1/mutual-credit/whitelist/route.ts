@@ -207,18 +207,26 @@ async function assertSignerCanManageCreditWhitelist(
     throw new Error('tokenAddress is not a contract');
   }
 
-  const [owner, executor] = await Promise.all([
-    publicClient.readContract({
-      address: tokenAddress,
-      abi: creditWhitelistAbi,
-      functionName: 'owner',
-    }),
-    publicClient.readContract({
-      address: tokenAddress,
-      abi: creditWhitelistAbi,
-      functionName: 'executor',
-    }),
-  ]);
+  let owner: `0x${string}`;
+  let executor: `0x${string}`;
+  try {
+    [owner, executor] = await Promise.all([
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: creditWhitelistAbi,
+        functionName: 'owner',
+      }),
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: creditWhitelistAbi,
+        functionName: 'executor',
+      }),
+    ]);
+  } catch {
+    throw new Error(
+      'tokenAddress does not expose owner and executor for credit-whitelist management',
+    );
+  }
 
   let isAuthorizedMinter = false;
   try {
@@ -247,6 +255,9 @@ async function assertSignerCanManageCreditWhitelist(
 function isClientError(message: string) {
   return (
     message.includes('tokenAddress is not a contract') ||
+    message.includes(
+      'tokenAddress does not expose owner and executor for credit-whitelist management',
+    ) ||
     message.includes('Signer is not owner, executor, or authorized minter')
   );
 }
