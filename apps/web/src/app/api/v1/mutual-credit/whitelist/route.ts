@@ -5,8 +5,11 @@ import {
   createPublicClient,
   createWalletClient,
   defineChain,
+  getAddress,
   http,
   isAddress,
+  isAddressEqual,
+  zeroAddress,
 } from 'viem';
 import { nonceManager, privateKeyToAccount } from 'viem/accounts';
 
@@ -14,7 +17,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const regularSpaceTokenAddress = '0x0692C428864A3e2775C4d4Db3a84124435C7913D';
 const maxBatchSize = 100;
 const signerQueues = new Map<string, Promise<void>>();
 
@@ -40,6 +42,27 @@ const creditWhitelistAbi = [
     ],
     outputs: [],
   },
+  {
+    type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'executor',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'isAuthorizedMinter',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+  },
 ] as const;
 
 const addressSchema = z
@@ -48,10 +71,16 @@ const addressSchema = z
   .refine((value) => isAddress(value), {
     message: 'Invalid EVM address',
   })
-  .transform((value) => value as `0x${string}`);
+  .transform((value) => getAddress(value));
+
+const tokenAddressSchema = addressSchema.refine(
+  (value) => !isAddressEqual(value, zeroAddress),
+  { message: 'tokenAddress must not be the zero address' },
+);
 
 const requestSchema = z
   .object({
+    tokenAddress: tokenAddressSchema,
     accounts: z.array(addressSchema).min(1).max(maxBatchSize),
     allowed: z.array(z.boolean()).min(1).max(maxBatchSize),
   })
@@ -168,6 +197,60 @@ async function withSignerQueue<T>(
   }
 }
 
+async function assertSignerCanManageCreditWhitelist(
+  publicClient: ReturnType<typeof createPublicClient>,
+  tokenAddress: `0x${string}`,
+  signerAddress: `0x${string}`,
+) {
+  const bytecode = await publicClient.getBytecode({ address: tokenAddress });
+  if (!bytecode || bytecode === '0x') {
+    throw new Error('tokenAddress is not a contract');
+  }
+
+  const [owner, executor] = await Promise.all([
+    publicClient.readContract({
+      address: tokenAddress,
+      abi: creditWhitelistAbi,
+      functionName: 'owner',
+    }),
+    publicClient.readContract({
+      address: tokenAddress,
+      abi: creditWhitelistAbi,
+      functionName: 'executor',
+    }),
+  ]);
+
+  let isAuthorizedMinter = false;
+  try {
+    isAuthorizedMinter = await publicClient.readContract({
+      address: tokenAddress,
+      abi: creditWhitelistAbi,
+      functionName: 'isAuthorizedMinter',
+      args: [signerAddress],
+    });
+  } catch {
+    // Older token implementations may not expose authorized minters.
+  }
+
+  const canManage =
+    isAddressEqual(owner, signerAddress) ||
+    isAddressEqual(executor, signerAddress) ||
+    isAuthorizedMinter;
+
+  if (!canManage) {
+    throw new Error(
+      'Signer is not owner, executor, or authorized minter on tokenAddress',
+    );
+  }
+}
+
+function isClientError(message: string) {
+  return (
+    message.includes('tokenAddress is not a contract') ||
+    message.includes('Signer is not owner, executor, or authorized minter')
+  );
+}
+
 export async function POST(request: Request) {
   if (!verifyApiKey(request)) {
     return unauthorized();
@@ -188,6 +271,8 @@ export async function POST(request: Request) {
     );
   }
 
+  const { tokenAddress, accounts, allowed } = parsed.data;
+
   try {
     const rpcUrl = getRpcUrl();
     const account = privateKeyToAccount(getSignerPrivateKey(), {
@@ -204,13 +289,19 @@ export async function POST(request: Request) {
       transport,
     });
 
+    await assertSignerCanManageCreditWhitelist(
+      publicClient,
+      tokenAddress,
+      account.address,
+    );
+
     const transactionHash = await withSignerQueue(account.address, async () => {
       const { request: contractRequest } = await publicClient.simulateContract({
         account,
-        address: regularSpaceTokenAddress,
+        address: tokenAddress,
         abi: creditWhitelistAbi,
         functionName: 'batchSetCreditWhitelistAddresses',
-        args: [parsed.data.accounts, parsed.data.allowed],
+        args: [accounts, allowed],
       });
 
       return await walletClient.writeContract(contractRequest);
@@ -218,13 +309,19 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       transactionHash,
-      contractAddress: regularSpaceTokenAddress,
-      accountCount: parsed.data.accounts.length,
+      contractAddress: tokenAddress,
+      accountCount: accounts.length,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('Failed to update mutual credit whitelist:', {
-      message: error instanceof Error ? error.message : String(error),
+      message,
+      tokenAddress,
     });
+
+    if (isClientError(message)) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
 
     return NextResponse.json(
       { error: 'Failed to update mutual credit whitelist' },
