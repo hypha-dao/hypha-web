@@ -271,18 +271,23 @@ export function HumanChatPanelCallReactPopover({
      * clipped with no way to scroll to the rest. Falls back to effectively
      * unset (9999px) wherever the dock doesn't set it (PiP, fullscreen).
      */
-    'absolute bottom-full z-[140] mb-2 max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto overflow-x-hidden rounded-xl px-2 py-2 shadow-xl',
+    'z-[140] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto overflow-x-hidden rounded-xl px-2 py-2 shadow-xl',
     isPip
       ? cn(
           /**
-           * PiP windows can be narrower than the panel's normal min-width
-           * (e.g. 224px filmstrip mode). Anchoring to the trigger's right
-           * edge with a fixed min-width pushed the panel past the window's
-           * left edge, where the PiP body's `overflow: hidden` silently
-           * clipped it. Centering on the trigger keeps it inside the
-           * window regardless of size.
+           * `absolute` centered on the *trigger* doesn't clamp to the PiP
+           * window: these triggers sit toward one side of the toolbar, so
+           * centering on one can still push the menu past the opposite
+           * window edge. `fixed` anchors to the PiP window's own viewport
+           * instead (no transformed/filtered ancestor between here and the
+           * window redirects it — the dock root deliberately avoids
+           * `transform`, see its own comment), so centering is correct
+           * regardless of which button opened it. `bottom-14` is safe as a
+           * fixed offset (not the usual trigger-relative `bottom-full`)
+           * because the PiP footer height is now deterministic — fixed
+           * 32px buttons + fixed padding, no longer content-dependent.
            */
-          'left-1/2 -translate-x-1/2',
+          'fixed bottom-14 left-1/2 -translate-x-1/2',
           /**
            * A concrete width, not shrink-to-fit (`w-max`): the feedback row
            * and raise-hand/be-right-back row use `flex-1` children, whose
@@ -296,7 +301,7 @@ export function HumanChatPanelCallReactPopover({
             ? 'w-[min(calc(100dvw-1rem),22rem)]'
             : 'w-[min(calc(100dvw-1rem),15.5rem)]',
         )
-      : 'right-0 w-[min(100vw-2rem,15.5rem)] min-w-56',
+      : 'absolute bottom-full mb-2 right-0 w-[min(100vw-2rem,15.5rem)] min-w-56',
     popoverSurface,
   );
 

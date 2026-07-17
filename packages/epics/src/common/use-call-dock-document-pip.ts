@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 
 import {
   clampCallDocumentPipWindowSize,
@@ -207,6 +213,8 @@ export function useCallDockDocumentPip(
     applyPipWindowSize(pipWindow, windowSize, windowMode);
   }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
 
+  const styleLoadGenerationRef = useRef(0);
+
   const openPip = useCallback(async () => {
     const api = window.documentPictureInPicture;
     if (!api?.requestWindow) return false;
@@ -221,7 +229,17 @@ export function useCallDockDocumentPip(
     setStylesReady(false);
     applyPipWindowSize(win, initialSize, windowMode);
     setPipWindow(win);
-    void copyStylesIntoWindow(win).then(() => setStylesReady(true));
+    /**
+     * Guards against close+reopen within the load window: without this, the
+     * first window's stylesheets could finish loading after the second
+     * window opened and incorrectly mark it ready.
+     */
+    const generation = ++styleLoadGenerationRef.current;
+    void copyStylesIntoWindow(win).then(() => {
+      if (styleLoadGenerationRef.current === generation && !win.closed) {
+        setStylesReady(true);
+      }
+    });
     return true;
   }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
 
@@ -229,6 +247,7 @@ export function useCallDockDocumentPip(
     if (pipWindow && !pipWindow.closed) {
       pipWindow.close();
     }
+    styleLoadGenerationRef.current += 1;
     setPipWindow(null);
     setStylesReady(false);
   }, [pipWindow]);

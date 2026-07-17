@@ -161,6 +161,12 @@ export function HumanChatPanelInCallControls({
   const [stopConfirmStep, setStopConfirmStep] = useState<
     'none' | 'recording' | 'transcript'
   >('none');
+  const stopConfirmCancelRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (stopConfirmStep !== 'none') {
+      stopConfirmCancelRef.current?.focus();
+    }
+  }, [stopConfirmStep]);
   const isFull = variant === 'fullView';
   const isCenteredInBanner =
     !isFull && !isCompact && inBannerLayout === 'centered';
@@ -555,10 +561,17 @@ export function HumanChatPanelInCallControls({
         <div
           role="menu"
           className={cn(
-            'absolute bottom-full z-[60] mb-2 max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            'z-[60] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
             isPipDensity
-              ? 'left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
-              : 'right-0 min-w-52',
+              ? /**
+                 * `fixed`, not `absolute` centered on the trigger — see the
+                 * matching comment in human-chat-panel-call-react-popover.tsx
+                 * (same bug, same fix: this trigger sits off-center in the
+                 * toolbar, so trigger-relative centering can still clip an
+                 * edge of the PiP window).
+                 */
+                'fixed bottom-14 left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
+              : 'absolute bottom-full mb-2 right-0 min-w-52',
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
@@ -668,10 +681,10 @@ export function HumanChatPanelInCallControls({
           role="menu"
           onPointerDown={(event) => event.stopPropagation()}
           className={cn(
-            'absolute bottom-full z-[70] mb-2 max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            'z-[70] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
             isPipDensity
-              ? 'left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
-              : 'right-0 min-w-52',
+              ? 'fixed bottom-14 left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
+              : 'absolute bottom-full mb-2 right-0 min-w-52',
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
@@ -680,19 +693,31 @@ export function HumanChatPanelInCallControls({
           </p>
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
           {isPipDensity && stopConfirmStep !== 'none' ? (
-            <div className="space-y-2 px-2 py-1.5">
-              <p className="text-xs font-medium leading-snug">
+            <div
+              role="alertdialog"
+              aria-labelledby="call-pip-stop-confirm-title"
+              aria-describedby="call-pip-stop-confirm-desc"
+              className="space-y-2 px-2 py-1.5"
+            >
+              <p
+                id="call-pip-stop-confirm-title"
+                className="text-xs font-medium leading-snug"
+              >
                 {stopConfirmStep === 'recording'
                   ? t('callCaptureConfirmStopRecordingTitle')
                   : t('callCaptureConfirmStopTranscriptTitle')}
               </p>
-              <p className="text-[11px] leading-snug text-muted-foreground">
+              <p
+                id="call-pip-stop-confirm-desc"
+                className="text-[11px] leading-snug text-muted-foreground"
+              >
                 {stopConfirmStep === 'recording'
                   ? t('callCaptureConfirmStopRecording')
                   : t('callCaptureConfirmStopTranscript')}
               </p>
               <div className="flex gap-1.5 pt-1">
                 <button
+                  ref={stopConfirmCancelRef}
                   type="button"
                   onClick={() => setStopConfirmStep('none')}
                   className="flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors hover:bg-muted/80"

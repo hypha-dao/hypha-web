@@ -94,11 +94,13 @@ const CALL_DOCUMENT_PIP_ENABLED = getEnableCallDocumentPip();
  * copied onto the PiP document synchronously, before the stylesheet link.
  */
 function CallDocumentPipLoadingView() {
+  const t = useTranslations('HumanChatPanel');
   return (
     <div
       role="status"
       aria-live="polite"
       aria-busy="true"
+      aria-label={t('loading')}
       style={{
         display: 'flex',
         flexDirection: 'column',
