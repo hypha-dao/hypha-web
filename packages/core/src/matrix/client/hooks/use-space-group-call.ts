@@ -1701,6 +1701,16 @@ export function useSpaceGroupCall(
         });
       };
 
+      /**
+       * Tracks the LiveKit room created for *this* join attempt, independent of
+       * `liveKitRoomRef` (which is only populated once the whole join succeeds).
+       * If `setMicrophoneEnabled`/`setCameraEnabled` partially fail below, one of
+       * the two can still have published a live track to the SFU before the other
+       * rejects — without this, that orphaned room/track was never disconnected,
+       * so the other participant kept seeing/hearing a "failed" local join.
+       */
+      let lkRoomForJoinAttempt: LiveKitRoom | null = null;
+
       try {
         const session = getMatrixRtcSession(client, matrixRoom);
         rtcSessionRef.current = session;
@@ -1722,6 +1732,7 @@ export function useSpaceGroupCall(
         );
         logJoinDebugStep('join-step:livekit-credentials-fetched');
         const lkRoom = createLiveKitRoom();
+        lkRoomForJoinAttempt = lkRoom;
         const detachRtcDebugListeners = attachLiveKitRtcDebugListeners(lkRoom, {
           roomId,
           kind,
@@ -1765,6 +1776,21 @@ export function useSpaceGroupCall(
         ]);
         logJoinDebugStep('join-step:local-tracks-published');
 
+        /**
+         * `Promise.all` above can take a while (SFU negotiation); if the user
+         * left or the component unmounted during that window, joinEpoch has
+         * already moved on. Without this check we'd resurrect the aborted
+         * join here — assigning the stale room as active and leaking its
+         * just-published local tracks to other participants.
+         */
+        if (joinEpoch !== joinEpochRef.current) {
+          await lkRoom.disconnect().catch(() => undefined);
+          await session.leaveRoomSession(5000).catch(() => undefined);
+          isJoiningRef.current = false;
+          abortStaleJoinAttempt(setCallState);
+          return;
+        }
+
         liveKitRoomRef.current = lkRoom;
         activeCallRoomIdRef.current = activeRoomId;
         setRoom(lkRoom);
@@ -1801,6 +1827,20 @@ export function useSpaceGroupCall(
           joinStartedAtRef.current = null;
         }
       } catch (e) {
+        /**
+         * `setMicrophoneEnabled`/`setCameraEnabled` ran concurrently above — one
+         * can already have published a live track to the SFU before the other
+         * rejected and this catch ran. `liveKitRoomRef` only gets set on full
+         * success, so without this the orphaned room (and its published track)
+         * would never be disconnected, leaking local audio/video to other
+         * participants after a failed join.
+         */
+        if (
+          lkRoomForJoinAttempt &&
+          liveKitRoomRef.current !== lkRoomForJoinAttempt
+        ) {
+          void lkRoomForJoinAttempt.disconnect().catch(() => undefined);
+        }
         if (joinEpoch !== joinEpochRef.current) {
           isJoiningRef.current = false;
           abortStaleJoinAttempt(setCallState);
