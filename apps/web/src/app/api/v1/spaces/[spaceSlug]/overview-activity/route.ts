@@ -267,26 +267,15 @@ export async function GET(
       rosterPage += 1;
     }
 
-    const membershipExitProposalDates = allProposals
-      .filter((proposal) => {
-        if (resolveProposalStatus(proposal) !== 'accepted') return false;
-        const label = proposal.label?.toLowerCase() ?? '';
-        return label.includes('membership exit');
-      })
-      .map((proposal) => toIsoIfValid(proposal.updatedAt));
-
+    // Build the series from the current roster only. Do not subtract accepted
+    // "Membership Exit" proposals: those members are already gone from the
+    // roster, so deducting them again undercounts people who are still members
+    // (and mismatches the Members tab).
     const months = buildTimelineMonthBuckets(
-      [
-        ...memberEntries.map((item) => item.resolved_joined_at),
-        ...membershipExitProposalDates,
-      ],
+      memberEntries.map((item) => item.resolved_joined_at),
       12,
     );
     const monthJoinDeltas = new Map<
-      string,
-      { people: number; spaces: number }
-    >();
-    const monthExitDeltas = new Map<
       string,
       { people: number; spaces: number }
     >();
@@ -305,17 +294,6 @@ export async function GET(
       monthJoinDeltas.set(key, current);
     }
 
-    for (const exitAt of membershipExitProposalDates) {
-      if (!exitAt) continue;
-      const exitDate = new Date(exitAt);
-      if (Number.isNaN(exitDate.getTime())) continue;
-      const key = toMonthKey(exitDate);
-      const current = monthExitDeltas.get(key) ?? { people: 0, spaces: 0 };
-      // Membership exit proposals currently target members; model as person exits.
-      current.people += 1;
-      monthExitDeltas.set(key, current);
-    }
-
     const firstBucketMonth = months[0]?.month;
     let runningPeople = 0;
     let runningSpaces = 0;
@@ -332,15 +310,6 @@ export async function GET(
           runningSpaces += 1;
         }
       }
-
-      for (const exitAt of membershipExitProposalDates) {
-        if (!exitAt) continue;
-        const exitDate = new Date(exitAt);
-        if (Number.isNaN(exitDate.getTime())) continue;
-        const exitMonth = toMonthKey(exitDate);
-        if (exitMonth >= firstBucketMonth) continue;
-        runningPeople = Math.max(0, runningPeople - 1);
-      }
     }
 
     for (const bucket of months) {
@@ -348,13 +317,9 @@ export async function GET(
         people: 0,
         spaces: 0,
       };
-      const exits = monthExitDeltas.get(bucket.month) ?? {
-        people: 0,
-        spaces: 0,
-      };
 
-      runningPeople = Math.max(0, runningPeople + joins.people - exits.people);
-      runningSpaces = Math.max(0, runningSpaces + joins.spaces - exits.spaces);
+      runningPeople += joins.people;
+      runningSpaces += joins.spaces;
 
       bucket.people = runningPeople;
       bucket.spaces = runningSpaces;
