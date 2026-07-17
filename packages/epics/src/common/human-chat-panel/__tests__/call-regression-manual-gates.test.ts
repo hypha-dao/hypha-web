@@ -567,7 +567,7 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     const reactPopover = readCommonSource(
       'human-chat-panel/human-chat-panel-call-react-popover.tsx',
     );
-    expect(reactPopover).toContain('w-[calc(100dvw-1rem)]');
+    expect(reactPopover).toContain('calc(100dvw-1rem)');
     expect(reactPopover).toContain('-translate-x-1/2');
 
     const controls = readCommonSource(
@@ -576,6 +576,55 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(controls).toContain('isPipDensity');
     expect(controls).toContain('w-[calc(100dvw-1rem)]');
     expect(controls).toContain('-translate-x-1/2');
+  });
+
+  it('capture and audio settings menus are not hidden in PiP density', () => {
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(controls).not.toContain(
+      'showAdvancedCallControls && !isPipDensity\n                    ? renderCaptureMenu',
+    );
+    expect(controls).toContain(
+      '{showAdvancedCallControls ? renderCaptureMenu : null}',
+    );
+    expect(controls).toContain(
+      '{showAdvancedCallControls ? renderAudioSettingsMenu : null}',
+    );
+  });
+
+  it('react popover menu panel uses a concrete width, not shrink-to-fit, in PiP', () => {
+    const reactPopover = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-react-popover.tsx',
+    );
+    // flex-1 rows (feedback, raise-hand/be-right-back) collapse under `w-max`.
+    expect(reactPopover).not.toContain("'w-max");
+  });
+
+  it('PiP toolbar buttons are not forced to a fixed square footprint by global CSS', () => {
+    // The toolbar now renders through the same grid+flex-wrapper JSX as the
+    // embedded dock, so buttons hold their own Tailwind sizing without a
+    // CSS override — one previously existed and forced every button
+    // (including ones inside dropdown menus, e.g. raise-hand) to 28-32px
+    // squares, which is wrong for non-square buttons like raise-hand.
+    const css = readFileSync(
+      resolve(commonDir, '../../../ui-utils/src/global.css'),
+      'utf8',
+    );
+    expect(css).not.toContain('[data-call-pip-toolbar]');
+
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(controls).not.toContain('data-call-pip-toolbar');
+  });
+
+  it('PiP toolbar uses the same symmetrical grid grouping as the embedded dock', () => {
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(controls).toContain('isPipDensity ||');
+    expect(controls).toContain('useSideAudioSettings');
   });
 
   it('shows pause icon on capture toolbar button when recording is paused', () => {

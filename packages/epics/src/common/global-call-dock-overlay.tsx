@@ -85,6 +85,52 @@ type ResizeHandle =
 /** NEXT_PUBLIC_ENABLE_CALL_DOCUMENT_PIP is inlined at build time — safe to read once at module scope. */
 const CALL_DOCUMENT_PIP_ENABLED = getEnableCallDocumentPip();
 
+/**
+ * Shown in the Document PiP window while its cloned stylesheets are still
+ * loading. Deliberately inline-styled instead of Tailwind classes or any
+ * shared component (e.g. `HumanChatPanelLoader`) — those depend on the very
+ * stylesheet this is standing in for, so they'd render just as unstyled
+ * during this window. CSS custom properties are safe to reference: those get
+ * copied onto the PiP document synchronously, before the stylesheet link.
+ */
+function CallDocumentPipLoadingView() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        width: '100%',
+        height: '100%',
+        minHeight: 180,
+        background: 'var(--background, #fff)',
+        color: 'var(--muted-foreground, #71717a)',
+      }}
+    >
+      <span
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: '9999px',
+          border: '2px solid var(--muted, #e4e4e7)',
+          borderTopColor: 'var(--color-accent-9, #4a65d8)',
+          animation: 'hypha-call-pip-loading-spin 0.8s linear infinite',
+        }}
+      />
+      <style>
+        {
+          '@keyframes hypha-call-pip-loading-spin { to { transform: rotate(360deg); } }'
+        }
+      </style>
+    </div>
+  );
+}
+
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v2';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
@@ -643,6 +689,7 @@ export function GlobalCallDockOverlay({
     pipWindow: pipWindowRaw,
     isSupported: isDocumentPipSupportedRaw,
     isOpen: isDocumentPipOpenRaw,
+    stylesReady: pipStylesReady,
     openPip,
     closePip,
   } = useCallDockDocumentPip(
@@ -1098,6 +1145,20 @@ export function GlobalCallDockOverlay({
         /** Avoid `transform` on the dock root — Safari/iOS WebRTC video fails to paint inside transformed ancestors. */
         right: DOCK_MARGIN_PX - geometry.x,
         bottom: DOCK_MARGIN_PX - geometry.y,
+        /**
+         * The react/audio/capture dropdowns float above the toolbar and cap
+         * their own height against the *viewport*, which is much taller
+         * than this floating widget itself — so a tall menu (e.g. the full
+         * emoji picker) can extend past the dock's own box and get clipped
+         * by its `overflow-hidden` with no way to scroll to the rest.
+         * Expose the dock's actual height so those menus can bound
+         * themselves against it instead. 72px is a rough allowance for the
+         * toolbar row + margins below the menu.
+         */
+        ['--hypha-call-dock-popover-max-h' as string]: `${Math.max(
+          140,
+          geometry.height - 72,
+        )}px`,
       };
 
   const onToggleMic = () => {
@@ -1177,7 +1238,7 @@ export function GlobalCallDockOverlay({
       : dockCompact
       ? 'inline'
       : 'centered';
-  const dockControlsDensity = 'default';
+  const dockControlsDensity = inDocumentPip ? 'pip' : 'default';
   const lockStagePointerEvents =
     !isScreensharing && !inDocumentPip && !isTouchDock;
 
@@ -1428,7 +1489,14 @@ export function GlobalCallDockOverlay({
           className={cn(
             'pointer-events-auto relative isolate shrink-0 touch-manipulation border-t border-border/50',
             inDocumentPip
-              ? 'z-40 h-8 overflow-visible bg-background/95 px-1 py-0 backdrop-blur-sm'
+              ? /**
+                 * Was a fixed h-8 with py-0 sized to exactly fit the 28px
+                 * buttons — flush top/bottom, no breathing room. Now that
+                 * the capture-consent banner floats above instead of
+                 * sharing this box, there's no reason to keep it pinned to
+                 * that minimum; let padding size it instead.
+                 */
+                'z-40 overflow-visible bg-background/95 px-1 py-1.5 backdrop-blur-sm'
               : cn(
                   'z-30 overflow-visible py-2',
                   isTouchDock ? 'bg-background' : 'bg-muted/35',
@@ -1454,7 +1522,17 @@ export function GlobalCallDockOverlay({
                   variant="inCall"
                   className={cn(
                     'rounded-none border-x-0 border-t-0',
-                    dockCompact
+                    inDocumentPip
+                      ? /**
+                         * The PiP footer is a fixed h-8 strip. Letting this
+                         * banner sit in normal flow pushed the toolbar
+                         * buttons below it — and out of the fixed-height,
+                         * overflow-hidden PiP window entirely, taking their
+                         * click targets with them. Float it above the
+                         * toolbar instead, like the dropdown menus do.
+                         */
+                        'absolute inset-x-0 bottom-full z-20 mb-0 max-h-[min(40vh,6rem)] overflow-y-auto border-b-0 border-t px-2 py-1 shadow-lg [&_p]:text-[10px] [&_p]:leading-tight'
+                      : dockCompact
                       ? '-mx-1 -mt-1 mb-1 px-2 py-1 [&_p]:text-[10px] [&_p]:leading-tight'
                       : '-mx-2 -mt-2 mb-2',
                   )}
@@ -1738,11 +1816,17 @@ export function GlobalCallDockOverlay({
   }
 
   const portalTarget = resolveCallDockPortalTarget(pipWindow, document);
+  const portalContent =
+    inDocumentPip && !pipStylesReady ? (
+      <CallDocumentPipLoadingView />
+    ) : (
+      dockContent
+    );
   return (
     <>
       {screenshareTabAudioPromptDialog}
       {screenshareTakeoverDialog}
-      {createPortal(dockContent, portalTarget)}
+      {createPortal(portalContent, portalTarget)}
     </>
   );
 }

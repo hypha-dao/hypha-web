@@ -178,9 +178,9 @@ export function HumanChatPanelInCallControls({
   const fullViewIcon = isPipDensity
     ? 'h-3.5 w-3.5 text-white stroke-white'
     : 'h-5 w-5 text-white stroke-white';
-  const compactBtn = isPipDensity
-    ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-    : 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+  /** Same size and styling in PiP as the embedded dock — no separate compact tier. */
+  const compactBtn =
+    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const baseBtn = isFull
     ? cn(
         fullViewControlSize,
@@ -201,13 +201,7 @@ export function HumanChatPanelInCallControls({
         'inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
         bannerCircleSize,
       );
-  const leaveIcon = isFull
-    ? fullViewIcon
-    : isPipDensity
-    ? 'h-2.5 w-2.5'
-    : isCompact
-    ? 'h-3 w-3'
-    : 'h-4 w-4';
+  const leaveIcon = isFull ? fullViewIcon : 'h-4 w-4';
   /**
    * End call — classic “hang up” red (explicit red-600/700, not `destructive` token
    * which can read as salmon in dark UIs on video chrome).
@@ -217,10 +211,6 @@ export function HumanChatPanelInCallControls({
         fullViewControlSize,
         'inline-flex items-center justify-center rounded-full border border-red-800/25 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-50',
       )
-    : isPipDensity
-    ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
-    : isCompact
-    ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : cn(
         'inline-flex shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40',
         bannerCircleSize,
@@ -270,13 +260,7 @@ export function HumanChatPanelInCallControls({
         'inline-flex shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20',
         bannerCircleSize,
       );
-  const icon = isFull
-    ? fullViewIcon
-    : isPipDensity
-    ? 'h-2.5 w-2.5'
-    : isCompact
-    ? 'h-3.5 w-3.5'
-    : 'h-4 w-4';
+  const icon = isFull ? fullViewIcon : 'h-4 w-4';
   /** Production in-banner toolbar uses lighter Lucide strokes than full-view chrome. */
   const lucideStroke = isFull ? 2 : 1.75;
   const menuChevronClass = (menuOpen: boolean) =>
@@ -293,10 +277,6 @@ export function HumanChatPanelInCallControls({
           ? pipToolbarBtn
           : 'box-border h-10 w-10 min-h-10 min-w-10 max-h-10 max-w-10 px-0',
       )
-    : isCompact
-    ? isPipDensity
-      ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background/95 px-0 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-      : 'inline-flex h-7 w-7 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-0 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
     : cn(
         'inline-flex shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
         isTouchToolbar ? 'h-11 w-11 px-0' : 'h-8 w-8 px-0',
@@ -307,9 +287,10 @@ export function HumanChatPanelInCallControls({
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
     showAdvancedCallControls &&
-    !isCompact &&
     !isFull &&
-    (inBannerLayout === 'balanced' || inBannerLayout === 'centered');
+    (isPipDensity ||
+      (!isCompact &&
+        (inBannerLayout === 'balanced' || inBannerLayout === 'centered')));
   /** Dock / fullscreen in-banner: mic+cam | share+hang up+react | record+sound. */
   const screenshareEssentialToolbar = controlsMode === 'screenshare_essential';
   const useSymmetricalDockToolbar =
@@ -342,13 +323,7 @@ export function HumanChatPanelInCallControls({
       : capturePending
       ? t('callCaptureStatusStarting')
       : t('callCaptureStatusIdle');
-  const captureIconClass = isFull
-    ? fullViewIcon
-    : isPipDensity
-    ? 'h-2.5 w-2.5'
-    : isCompact
-    ? 'h-3 w-3'
-    : 'h-4 w-4';
+  const captureIconClass = isFull ? fullViewIcon : 'h-4 w-4';
   const captureIdleIconClass = cn(
     captureIconClass,
     isFull
@@ -379,13 +354,7 @@ export function HumanChatPanelInCallControls({
     <span
       className={cn(
         'relative inline-flex items-center justify-center',
-        isFull
-          ? 'h-5 w-5'
-          : isPipDensity
-          ? 'h-3 w-3'
-          : isCompact
-          ? 'h-3.5 w-3.5'
-          : 'h-4 w-4',
+        isFull ? 'h-5 w-5' : 'h-4 w-4',
       )}
       aria-hidden
     >
@@ -486,6 +455,18 @@ export function HumanChatPanelInCallControls({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isAudioMenuOpen, isCaptureMenuOpen, isReactMenuOpen]);
 
+  /**
+   * In PiP, stop-capture confirmation renders inline inside this same menu
+   * (see below) instead of the page-level AlertDialog — Radix's dialog
+   * portal always mounts into the main window's `document.body`, so in the
+   * PiP window it would silently confirm on a page the user isn't looking
+   * at. Closing the menu any other way (outside click, Escape) should still
+   * discard an in-progress confirm instead of leaving it stale for next open.
+   */
+  useEffect(() => {
+    if (isPipDensity && !isCaptureMenuOpen) setStopConfirmStep('none');
+  }, [isCaptureMenuOpen, isPipDensity]);
+
   const selectVoicePreset = (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => {
@@ -530,7 +511,10 @@ export function HumanChatPanelInCallControls({
     recordingStatus === 'recording' || recordingStatus === 'paused';
   const requestStopCapture = () => {
     if (!captureStopReady) return;
-    setIsCaptureMenuOpen(false);
+    /** PiP shows the confirmation inline in this menu, so keep it open. */
+    if (!isPipDensity) {
+      setIsCaptureMenuOpen(false);
+    }
     if (captureMode === 'recording_with_transcript') {
       setStopConfirmStep('recording');
       return;
@@ -539,6 +523,7 @@ export function HumanChatPanelInCallControls({
   };
   const confirmStopCapture = () => {
     setStopConfirmStep('none');
+    setIsCaptureMenuOpen(false);
     onStopCapture();
   };
   const captureModeLabel = !captureActive
@@ -570,7 +555,7 @@ export function HumanChatPanelInCallControls({
         <div
           role="menu"
           className={cn(
-            'absolute bottom-full z-[60] mb-2 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            'absolute bottom-full z-[60] mb-2 max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
             isPipDensity
               ? 'left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
               : 'right-0 min-w-52',
@@ -683,7 +668,7 @@ export function HumanChatPanelInCallControls({
           role="menu"
           onPointerDown={(event) => event.stopPropagation()}
           className={cn(
-            'absolute bottom-full z-[70] mb-2 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            'absolute bottom-full z-[70] mb-2 max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
             isPipDensity
               ? 'left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
               : 'right-0 min-w-52',
@@ -694,7 +679,38 @@ export function HumanChatPanelInCallControls({
             {t('callCaptureLabel')}
           </p>
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
-          {captureMenuActive ? (
+          {isPipDensity && stopConfirmStep !== 'none' ? (
+            <div className="space-y-2 px-2 py-1.5">
+              <p className="text-xs font-medium leading-snug">
+                {stopConfirmStep === 'recording'
+                  ? t('callCaptureConfirmStopRecordingTitle')
+                  : t('callCaptureConfirmStopTranscriptTitle')}
+              </p>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {stopConfirmStep === 'recording'
+                  ? t('callCaptureConfirmStopRecording')
+                  : t('callCaptureConfirmStopTranscript')}
+              </p>
+              <div className="flex gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setStopConfirmStep('none')}
+                  className="flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors hover:bg-muted/80"
+                >
+                  {t('callCaptureConfirmCancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmStopCapture}
+                  className="flex-1 rounded-lg bg-rose-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-rose-700"
+                >
+                  {stopConfirmStep === 'recording'
+                    ? t('callCaptureConfirmStopRecordingAction')
+                    : t('callCaptureConfirmStopTranscriptAction')}
+                </button>
+              </div>
+            </div>
+          ) : captureMenuActive ? (
             <>
               <button
                 type="button"
@@ -787,7 +803,7 @@ export function HumanChatPanelInCallControls({
   return (
     <>
       <AlertDialog
-        open={stopConfirmStep === 'recording'}
+        open={!isPipDensity && stopConfirmStep === 'recording'}
         onOpenChange={(open) => {
           if (!open) setStopConfirmStep('none');
         }}
@@ -819,7 +835,7 @@ export function HumanChatPanelInCallControls({
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog
-        open={stopConfirmStep === 'transcript'}
+        open={!isPipDensity && stopConfirmStep === 'transcript'}
         onOpenChange={(open) => {
           if (!open) setStopConfirmStep('none');
         }}
@@ -857,7 +873,6 @@ export function HumanChatPanelInCallControls({
           (useWideToolbar || isPipDensity) && 'w-full',
           'touch-manipulation',
         )}
-        data-call-pip-toolbar={isPipDensity ? '' : undefined}
         onPointerDown={(event) => {
           event.stopPropagation();
         }}
@@ -1164,12 +1179,8 @@ export function HumanChatPanelInCallControls({
                       disabled={controlsDisabled}
                     />
                   ) : null}
-                  {showAdvancedCallControls && !isPipDensity
-                    ? renderCaptureMenu
-                    : null}
-                  {showAdvancedCallControls && !isPipDensity
-                    ? renderAudioSettingsMenu
-                    : null}
+                  {showAdvancedCallControls ? renderCaptureMenu : null}
+                  {showAdvancedCallControls ? renderAudioSettingsMenu : null}
                 </>
               ) : null}
               {leaveOnly && callReactionsToolbarVisible ? (
