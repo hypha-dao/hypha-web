@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  TOKENS,
-  isCatalogueToken,
-  isKnownTreasuryToken,
-} from '../tokens';
+import { TOKENS, isCatalogueToken, isKnownTreasuryToken } from '../tokens';
 
 describe('isCatalogueToken', () => {
   it('returns true for hardcoded catalogue addresses', () => {
