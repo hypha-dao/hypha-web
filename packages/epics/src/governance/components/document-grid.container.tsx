@@ -13,6 +13,7 @@ type DocumentGridContainerProps = {
     order?: Order<Document>;
   };
   documents: Document[];
+  isLoading?: boolean;
 };
 
 export const DocumentGridContainer = ({
@@ -20,6 +21,7 @@ export const DocumentGridContainer = ({
   web3SpaceId,
   pagination,
   documents,
+  isLoading = false,
 }: DocumentGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
   const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
@@ -44,7 +46,7 @@ export const DocumentGridContainer = ({
             />
           ) : null,
       }))}
-      isLoading={false}
+      isLoading={isLoading}
       basePath={basePath}
     />
   );

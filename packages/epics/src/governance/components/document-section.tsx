@@ -70,7 +70,28 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         ) : null}
       </div>
 
-      {pagination?.totalPages === 0 ? (
+      {isLoading && pagination?.totalPages === 0 ? (
+        <div className="w-full space-y-2">
+          <DocumentGridContainer
+            basePath={basePath}
+            web3SpaceId={web3SpaceId}
+            pagination={{
+              page: 1,
+              firstPageSize,
+              pageSize,
+              searchTerm,
+              order: [
+                {
+                  dir: DirectionType.DESC,
+                  name: 'createdAt',
+                },
+              ],
+            }}
+            documents={[]}
+            isLoading
+          />
+        </div>
+      ) : pagination?.totalPages === 0 ? (
         <Empty>
           <p>{tAgreements('listIsEmpty')}</p>
         </Empty>

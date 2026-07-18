@@ -72,6 +72,12 @@ const getDocumentBadges = (document: Document, t: (key: string) => string) => {
   return badges;
 };
 
+const emptyDocuments = {
+  accepted: [] as Document[],
+  rejected: [] as Document[],
+  onVoting: [] as Document[],
+};
+
 export const useSpaceDocumentsWithStatuses = ({
   spaceSlug,
   spaceId,
@@ -82,11 +88,20 @@ export const useSpaceDocumentsWithStatuses = ({
   order?: Order<Document>;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { getAccessToken } = useAuthentication();
-  const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
-  const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
-    spaceId: spaceId,
-  });
+  const {
+    getAccessToken,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
+  const {
+    spaceProposalsIds,
+    isLoading: isProposalsLoading,
+    error: proposalsError,
+  } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
+  const { withdrawnProposalsIds, isLoading: isWithdrawnLoading } =
+    useWithdrawnProposalsWeb3Rpc({
+      spaceId: spaceId,
+    });
 
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
@@ -109,15 +124,19 @@ export const useSpaceDocumentsWithStatuses = ({
     () => `/api/v1/spaces/${spaceSlug}/documents/all${queryParams}`,
     [spaceSlug, queryParams],
   );
-  const shouldFetchDocuments = Boolean(spaceSlug?.trim());
+
+  // Network/Org/Space activity levels require a Bearer token. Wait for Privy
+  // to finish hydrating and include auth state in the SWR key so we refetch
+  // once the session is ready (avoids a sticky empty list after a premature 401).
+  const shouldFetchDocuments = Boolean(spaceSlug?.trim()) && !isAuthLoading;
 
   const {
     data: documentsFromDb,
-    isLoading,
+    isLoading: isDocumentsLoading,
     mutate,
-    error,
+    error: documentsError,
   } = useSWR(
-    shouldFetchDocuments ? [endpoint] : null,
+    shouldFetchDocuments ? [endpoint, isAuthenticated ? 'auth' : 'anon'] : null,
     async ([endpoint]) => {
       const token = await getAccessToken();
       const headers: HeadersInit = {};
@@ -145,31 +164,32 @@ export const useSpaceDocumentsWithStatuses = ({
       refreshWhenOffline: false,
     },
   );
+
+  const hasValidSpaceId = spaceId != null && Number.isFinite(Number(spaceId));
+  const proposalsReady = !hasValidSpaceId || spaceProposalsIds != null;
+  const documentsReady = Array.isArray(documentsFromDb);
+
   const response = React.useMemo(() => {
-    if (
-      !documentsFromDb ||
-      !Array.isArray(documentsFromDb) ||
-      !spaceProposalsIds
-    ) {
-      return {
-        accepted: [],
-        rejected: [],
-        onVoting: [],
-      };
+    if (!documentsReady || !spaceProposalsIds) {
+      return emptyDocuments;
     }
 
     const withdrawnIdsSet = new Set(
-      Array.from(withdrawnProposalsIds ?? []).map((id) => Number(id)),
+      Array.from(withdrawnProposalsIds ?? []).map((id) => id.toString()),
+    );
+    const acceptedIdsSet = new Set(
+      Array.from(spaceProposalsIds.accepted ?? []).map((id) => id.toString()),
+    );
+    const rejectedIdsSet = new Set(
+      Array.from(spaceProposalsIds.rejected ?? []).map((id) => id.toString()),
     );
 
     const acceptedDocuments = (documentsFromDb as Document[])
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(doc.web3ProposalId) &&
-          Array.from(spaceProposalsIds?.accepted ?? []).includes(
-            BigInt(doc.web3ProposalId),
-          ),
+          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          acceptedIdsSet.has(String(doc.web3ProposalId)),
       )
       .map((doc) => {
         const documentWithStatus = { ...doc, status: 'accepted' } as Document;
@@ -183,10 +203,8 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(doc.web3ProposalId) &&
-          Array.from(spaceProposalsIds?.rejected ?? []).includes(
-            BigInt(doc.web3ProposalId),
-          ),
+          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          rejectedIdsSet.has(String(doc.web3ProposalId)),
       )
       .map((doc) => {
         const documentWithStatus = { ...doc, status: 'rejected' } as Document;
@@ -200,13 +218,9 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(doc.web3ProposalId) &&
-          !Array.from(spaceProposalsIds?.accepted ?? []).includes(
-            BigInt(doc.web3ProposalId),
-          ) &&
-          !Array.from(spaceProposalsIds?.rejected ?? []).includes(
-            BigInt(doc.web3ProposalId),
-          ),
+          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          !acceptedIdsSet.has(String(doc.web3ProposalId)) &&
+          !rejectedIdsSet.has(String(doc.web3ProposalId)),
       )
       .map((doc) => {
         const documentWithStatus = { ...doc, status: 'onVoting' } as Document;
@@ -222,14 +236,28 @@ export const useSpaceDocumentsWithStatuses = ({
     };
   }, [
     documentsFromDb,
+    documentsReady,
     spaceProposalsIds,
     withdrawnProposalsIds,
     tAgreementFlow,
   ]);
+
+  const isLoading =
+    isAuthLoading ||
+    (shouldFetchDocuments && isDocumentsLoading) ||
+    (hasValidSpaceId && isProposalsLoading) ||
+    isWithdrawnLoading ||
+    // Still assembling the intersection — keep the UI in a loading state so we
+    // never flash "List is empty" while chain proposal IDs are catching up.
+    (shouldFetchDocuments &&
+      !documentsError &&
+      !proposalsError &&
+      (!documentsReady || !proposalsReady));
+
   return {
     documents: response,
     isLoading,
     update: mutate,
-    error,
+    error: documentsError ?? proposalsError,
   };
 };
