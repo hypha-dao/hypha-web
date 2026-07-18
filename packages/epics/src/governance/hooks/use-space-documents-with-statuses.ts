@@ -103,6 +103,47 @@ export const useSpaceDocumentsWithStatuses = ({
       spaceId: spaceId,
     });
 
+  // Privy can report authenticated before getAccessToken() is ready. Network
+  // spaces 401 without a Bearer token; if we fetch then, SWR caches the error
+  // under the `auth` key and never retries when the token finally appears.
+  const [accessTokenReady, setAccessTokenReady] = React.useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+
+    if (isAuthLoading) {
+      setAccessTokenReady(false);
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setAccessTokenReady(true);
+      return;
+    }
+
+    setAccessTokenReady(false);
+    void (async () => {
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const token = await getAccessToken();
+        if (cancelled) return;
+        if (token) {
+          setAccessTokenReady(true);
+          return;
+        }
+        await new Promise((resolve) =>
+          setTimeout(resolve, 150 * (attempt + 1)),
+        );
+      }
+      if (!cancelled) {
+        // Proceed so we surface a real error instead of spinning forever.
+        setAccessTokenReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, isAuthenticated, getAccessToken]);
+
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
   };
@@ -126,9 +167,10 @@ export const useSpaceDocumentsWithStatuses = ({
   );
 
   // Network/Org/Space activity levels require a Bearer token. Wait for Privy
-  // to finish hydrating and include auth state in the SWR key so we refetch
-  // once the session is ready (avoids a sticky empty list after a premature 401).
-  const shouldFetchDocuments = Boolean(spaceSlug?.trim()) && !isAuthLoading;
+  // + an actual access token, and key SWR by auth state so we refetch when
+  // the session becomes usable.
+  const shouldFetchDocuments =
+    Boolean(spaceSlug?.trim()) && !isAuthLoading && accessTokenReady;
 
   const {
     data: documentsFromDb,
@@ -244,6 +286,7 @@ export const useSpaceDocumentsWithStatuses = ({
 
   const isLoading =
     isAuthLoading ||
+    !accessTokenReady ||
     (shouldFetchDocuments && isDocumentsLoading) ||
     (hasValidSpaceId && isProposalsLoading) ||
     isWithdrawnLoading ||

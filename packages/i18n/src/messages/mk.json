@@ -580,7 +580,8 @@
     "rejected": "Одбиени",
     "newProposal": "Нов предлог",
     "searchDocuments": "Пребарувај документи",
-    "listIsEmpty": "Листата е празна"
+    "listIsEmpty": "Листата е празна",
+    "listFailedToLoad": "Не можеа да се вчитаат документите. Обидете се да ја освежите страницата."
   },
   "MembersTab": {
     "member": "Член",

@@ -1367,7 +1367,8 @@
     "rejected": "Rechazado",
     "newProposal": "Nueva propuesta",
     "searchDocuments": "Buscar documentos",
-    "listIsEmpty": "La lista está vacía"
+    "listIsEmpty": "La lista está vacía",
+    "listFailedToLoad": "No se pudieron cargar los documentos. Prueba a actualizar la página."
   },
   "MembersTab": {
     "member": "Miembro",

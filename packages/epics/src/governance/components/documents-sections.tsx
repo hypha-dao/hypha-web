@@ -30,7 +30,7 @@ export function DocumentsSections({
   const format = useFormatter();
   const [activeTab, setActiveTab] = useState('on-voting');
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false);
-  const { documents, isLoading } = useSpaceDocumentsWithStatuses({
+  const { documents, isLoading, error } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
     spaceSlug,
     order,
@@ -109,6 +109,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
+          error={error}
           firstPageSize={12}
           pageSize={12}
         />
@@ -121,6 +122,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
+          error={error}
           firstPageSize={12}
           pageSize={12}
         />
@@ -133,6 +135,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
+          error={error}
           firstPageSize={12}
           pageSize={12}
         />
