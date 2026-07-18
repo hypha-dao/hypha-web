@@ -37,23 +37,26 @@ export const useAssetsSection = ({
   )}`;
 
   const displayableAssets = React.useMemo(() => {
-    let result = assets.filter((asset) => asset.value > 0);
+    // Hide zero-balance noise, but always keep tokens issued by this space
+    // (newly created tokens often sit at 0 in the issuer treasury).
+    const term = searchTerm.trim().toLowerCase();
 
-    if (hideSmallBalances) {
-      result = result.filter((asset) => asset.value >= 1);
-    }
+    return assets.filter((asset) => {
+      const isVisible =
+        asset.issuedBySpace ||
+        (hideSmallBalances ? asset.value >= 1 : asset.value > 0);
+      if (!isVisible) return false;
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (asset) =>
+      if (term) {
+        return (
           asset.name.toLowerCase().includes(term) ||
           asset.symbol.toLowerCase().includes(term) ||
-          (asset.address?.toLowerCase().includes(term) ?? false),
-      );
-    }
+          (asset.address?.toLowerCase().includes(term) ?? false)
+        );
+      }
 
-    return result;
+      return true;
+    });
   }, [assets, hideSmallBalances, searchTerm]);
 
   const filteredAssets = React.useMemo(

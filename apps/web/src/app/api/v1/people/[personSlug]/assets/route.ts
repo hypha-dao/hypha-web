@@ -20,6 +20,7 @@ import {
   getEnergyBalances,
   getMemberSpaces,
   isHiddenToken,
+  isKnownTreasuryToken,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -59,6 +60,8 @@ export async function GET(
      * Run independent top-level fetches in parallel: on-chain energy balance, on-chain
      * member-spaces, off-chain external token balances, and the in-DB tokens list. They
      * share no data dependencies and previously ran sequentially, dominating TTFB.
+     * Alchemy balances are only used to surface held DB-registered / catalogue tokens —
+     * unknown ERC-20 spam is dropped via isKnownTreasuryToken.
      */
     const [
       energyResult,
@@ -104,11 +107,19 @@ export async function GET(
         )
       : new Set();
 
+    /** All DB token addresses — used to allow Alchemy-held registered tokens through. */
+    const dbKnownAddresses = new Set(
+      rawDbTokensForSeed
+        .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
+        .map((t) => t.address!.toLowerCase()),
+    );
+
     const parsedExternalTokens: Token[] = externalTokens
       .filter(
         (token) =>
           token?.tokenAddress &&
-          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress),
+          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress) &&
+          isKnownTreasuryToken(token.tokenAddress, dbKnownAddresses),
       )
       .map((token) => ({
         symbol: token.symbol || 'UNKNOWN',
@@ -126,11 +137,6 @@ export async function GET(
     TOKENS.forEach((token) =>
       addressMap.set(token.address.toLowerCase(), token),
     );
-    filteredExternalTokens.forEach((token) => {
-      if (!addressMap.has(token.address.toLowerCase())) {
-        addressMap.set(token.address.toLowerCase(), token);
-      }
-    });
 
     if (energyTokenAddress) {
       const lower = energyTokenAddress.toLowerCase();
@@ -219,6 +225,15 @@ export async function GET(
           ? (t.type as TokenType)
           : 'utility',
       });
+    });
+
+    // Alchemy-held tokens that are DB-registered or catalogue (already filtered
+    // above) — covers holdings from spaces the user is not a member of.
+    filteredExternalTokens.forEach((token) => {
+      const lower = token.address.toLowerCase();
+      if (!addressMap.has(lower)) {
+        addressMap.set(lower, token);
+      }
     });
 
     const allTokens: Token[] = Array.from(addressMap.values()).filter(
@@ -369,7 +384,6 @@ export async function GET(
      */
     const knownAddresses = new Set<string>([
       ...TOKENS.map((t) => t.address.toLowerCase()),
-      ...filteredExternalTokens.map((t) => t.address.toLowerCase()),
       ...(energyTokenAddress ? [energyTokenAddress.toLowerCase()] : []),
     ]);
     const visibleAssets = validAssets.filter((a) => {

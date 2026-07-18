@@ -45,6 +45,12 @@ type AssetItem = {
   slug: string;
   address: string;
   createdAt?: Date;
+  /** True when this space issued the token — keep visible at 0 balance. */
+  issuedBySpace?: boolean;
+  space?: {
+    slug: string;
+    title: string;
+  };
 };
 
 type UseAssetsData = {

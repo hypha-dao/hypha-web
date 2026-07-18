@@ -3,7 +3,6 @@ import {
   web3Client,
   findSpaceBySlug,
   getTokenPrice,
-  getTokenBalancesByAddress,
   getBalance,
   getTokenMeta,
   findAllTokens,
@@ -143,27 +142,6 @@ export async function GET(
       );
     }
 
-    let externalTokens: any[] = [];
-    try {
-      externalTokens = await getTokenBalancesByAddress(spaceAddress);
-    } catch (error: unknown) {
-      console.warn('Failed to fetch external token balances:', error);
-    }
-
-    const parsedExternalTokens: Token[] = externalTokens
-      .filter(
-        (token) =>
-          token?.tokenAddress &&
-          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress),
-      )
-      .map((token) => ({
-        symbol: token.symbol || 'UNKNOWN',
-        name: token.name || 'Unnamed',
-        address: token.tokenAddress as `0x${string}`,
-        icon: token.logo || '/placeholder/token-icon.svg',
-        type: 'utility' as const,
-      }));
-
     spaceTokens = spaceTokens
       .filter(
         (response) =>
@@ -173,6 +151,8 @@ export async function GET(
       .flat() as `0x${string}`[];
 
     const addressMap = new Map<string, Token>();
+    /** Tokens issued by this space — always listed in its treasury, even at 0 balance. */
+    const issuedBySpaceAddresses = new Set<string>();
 
     const filteredTokens = TOKENS.filter((token) =>
       token.symbol === 'HYPHA' ? ALLOWED_SPACES.includes(spaceAddress) : true,
@@ -183,8 +163,10 @@ export async function GET(
     );
 
     spaceTokens.forEach((address) => {
-      if (!addressMap.has(address.toLowerCase())) {
-        addressMap.set(address.toLowerCase(), {
+      const lower = address.toLowerCase();
+      issuedBySpaceAddresses.add(lower);
+      if (!addressMap.has(lower)) {
+        addressMap.set(lower, {
           symbol: '',
           name: '',
           address,
@@ -194,11 +176,27 @@ export async function GET(
       }
     });
 
-    parsedExternalTokens.forEach((token) => {
-      if (!addressMap.has(token.address.toLowerCase())) {
-        addressMap.set(token.address.toLowerCase(), token);
+    // DB-registered tokens for this space (covers newly issued tokens before
+    // on-chain space-token lists / external balance indexers catch up).
+    rawDbTokens.forEach((token) => {
+      if (token.spaceId !== space.id || !token.address) return;
+      const lower = token.address.toLowerCase();
+      if (!/^0x[a-fA-F0-9]{40}$/.test(token.address)) return;
+      issuedBySpaceAddresses.add(lower);
+      if (!addressMap.has(lower)) {
+        addressMap.set(lower, {
+          symbol: token.symbol || '',
+          name: token.name || '',
+          address: token.address as `0x${string}`,
+          icon: token.iconUrl || '/placeholder/token-icon.svg',
+          type: (token.type as Token['type']) || 'utility',
+        });
       }
     });
+
+    // Do not merge Alchemy ERC-20 discovery here — it floods the treasury with
+    // spam tokens that have no DB row. Balances for known addresses come from
+    // getBalance below; catalogue + space-issued + DB cover legit assets.
 
     const allTokens: Token[] = Array.from(addressMap.values()).filter(
       (token) => !isHiddenToken(token.address),
@@ -249,6 +247,9 @@ export async function GET(
             transactions: [],
             closeUrl: [],
             slug: '',
+            issuedBySpace: issuedBySpaceAddresses.has(
+              token.address.toLowerCase(),
+            ),
             supply: totalSupply
               ? {
                   total: Number(totalSupply / 10n ** BigInt(decimals)),

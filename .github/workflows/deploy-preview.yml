@@ -30,7 +30,12 @@ jobs:
       has_migrations: ${{ steps.detect.outputs.has_migrations }}
       has_preview_deploy_changes: ${{ steps.detect.outputs.has_preview_deploy_changes }}
     steps:
-      - uses: actions/checkout@v4
+      # Full history so paths-filter can resolve merge-base via local git
+      # (detect-changes uses token: '' to avoid flaky GitHub API change listing).
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Detect Changes
         id: detect
         uses: ./.github/actions/detect-changes

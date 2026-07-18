@@ -16,6 +16,10 @@ runs:
     - uses: dorny/paths-filter@9d7afb8d214ad99e78fbd4247752c4caed2b6e4c # v4.0.0
       id: changes
       with:
+        # Empty token forces local git diff instead of GitHub REST API.
+        # Avoids hard failures when API Requests are degraded (unicorn/503).
+        token: ''
+        base: ${{ github.base_ref || github.event.repository.default_branch }}
         filters: |
           migrations:
             - 'packages/storage-postgres/migrations/**'
