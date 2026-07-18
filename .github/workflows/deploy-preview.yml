@@ -32,9 +32,10 @@ jobs:
     steps:
       # Full history so paths-filter can resolve merge-base via local git
       # (detect-changes uses token: '' to avoid flaky GitHub API change listing).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Detect Changes
         id: detect
         uses: ./.github/actions/detect-changes
