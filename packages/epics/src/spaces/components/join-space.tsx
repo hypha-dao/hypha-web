@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useSpaceDetailsWeb3Rpc,
+  useSpacesByWeb3Ids,
   useMe,
   useJwt,
   useAddMemberOrchestrator,
@@ -23,7 +24,8 @@ import { getDhoUrlAgreements } from '../../common';
 import type { Locale } from '@hypha-platform/i18n';
 
 type JoinSpaceProps = {
-  spaceId: number;
+  /** DB space id — optional; resolved from web3SpaceId when omitted (FR-4 / D-2). */
+  spaceId?: number;
   web3SpaceId: number;
   hideWhenMember?: boolean;
 };
@@ -33,7 +35,7 @@ function isBaseError(error: unknown): error is BaseError {
 }
 
 export const JoinSpace = ({
-  spaceId,
+  spaceId: spaceIdProp,
   web3SpaceId,
   hideWhenMember = false,
 }: JoinSpaceProps) => {
@@ -42,6 +44,11 @@ export const JoinSpace = ({
   const config = useConfig();
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
+  const { spaces: spacesByWeb3Id } = useSpacesByWeb3Ids(
+    spaceIdProp == null ? [BigInt(web3SpaceId)] : [],
+    false,
+  );
+  const spaceId = spaceIdProp ?? spacesByWeb3Id[0]?.id;
   const [joinError, setJoinError] = useState<BaseError | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [inviteRequested, setInviteRequested] = useState(false);
@@ -181,8 +188,15 @@ export const JoinSpace = ({
 
     try {
       if (isInviteOnly) {
+        if (spaceId == null) {
+          setJoinError({
+            shortMessage: 'Space data not available yet. Please try again.',
+          } as BaseError);
+          setIsProcessing(false);
+          return;
+        }
         await requestInvite({
-          spaceId: spaceId,
+          spaceId,
           title: 'Invite Member',
           description: `**${person.name} ${person.surname} has just requested to join as a member!**
 
@@ -199,7 +213,9 @@ export const JoinSpace = ({
         setIsProcessing(false);
       } else {
         await joinSpace();
-        await createJoinEvent({ spaceId, person });
+        if (spaceId != null) {
+          await createJoinEvent({ spaceId, person });
+        }
         setJustJoined(true);
         await revalidateIsMember();
         setIsProcessing(false);
@@ -247,17 +263,21 @@ export const JoinSpace = ({
   }, [isMember, justJoined, isInviteOnly, isInvitePending, t]);
 
   const showLoader = isProcessing || isJoiningSpace || isCreating;
+  const needsDbSpaceId = isInviteOnly && spaceId == null;
   const isButtonDisabled =
     isMember ||
     justJoined ||
     isMemberLoading ||
     isInviteLoading ||
     isInvitePending ||
+    needsDbSpaceId ||
     showLoader;
 
   const { isAuthenticated } = useAuthentication();
 
-  if (hideWhenMember && (isMemberLoading || isMember || justJoined)) {
+  // Only hide once membership is confirmed — never blank the CTA while loading
+  // (that regression made Become member / Request Invite disappear entirely).
+  if (hideWhenMember && !isMemberLoading && (isMember || justJoined)) {
     return null;
   }
 
