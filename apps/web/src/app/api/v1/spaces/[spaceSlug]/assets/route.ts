@@ -3,7 +3,6 @@ import {
   web3Client,
   findSpaceBySlug,
   getTokenPrice,
-  getTokenBalancesByAddress,
   getBalance,
   getTokenMeta,
   findAllTokens,
@@ -143,27 +142,6 @@ export async function GET(
       );
     }
 
-    let externalTokens: any[] = [];
-    try {
-      externalTokens = await getTokenBalancesByAddress(spaceAddress);
-    } catch (error: unknown) {
-      console.warn('Failed to fetch external token balances:', error);
-    }
-
-    const parsedExternalTokens: Token[] = externalTokens
-      .filter(
-        (token) =>
-          token?.tokenAddress &&
-          /^0x[a-fA-F0-9]{40}$/i.test(token.tokenAddress),
-      )
-      .map((token) => ({
-        symbol: token.symbol || 'UNKNOWN',
-        name: token.name || 'Unnamed',
-        address: token.tokenAddress as `0x${string}`,
-        icon: token.logo || '/placeholder/token-icon.svg',
-        type: 'utility' as const,
-      }));
-
     spaceTokens = spaceTokens
       .filter(
         (response) =>
@@ -216,11 +194,9 @@ export async function GET(
       }
     });
 
-    parsedExternalTokens.forEach((token) => {
-      if (!addressMap.has(token.address.toLowerCase())) {
-        addressMap.set(token.address.toLowerCase(), token);
-      }
-    });
+    // Do not merge Alchemy ERC-20 discovery here — it floods the treasury with
+    // spam tokens that have no DB row. Balances for known addresses come from
+    // getBalance below; catalogue + space-issued + DB cover legit assets.
 
     const allTokens: Token[] = Array.from(addressMap.values()).filter(
       (token) => !isHiddenToken(token.address),

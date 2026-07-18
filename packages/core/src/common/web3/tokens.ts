@@ -85,6 +85,26 @@ export function isHiddenToken(address?: string | null): boolean {
   return HIDDEN_TOKEN_ADDRESSES.has(address.toLowerCase());
 }
 
+/** True when `address` is in the hardcoded {@link TOKENS} catalogue (USDC/EURC/WETH/cbBTC/HYPHA). */
+export function isCatalogueToken(address?: string | null): boolean {
+  if (!address) return false;
+  const lower = address.toLowerCase();
+  return TOKENS.some((t) => t.address.toLowerCase() === lower);
+}
+
+/**
+ * True when a token should appear in treasury / wallet asset lists.
+ * `knownAddresses` is typically DB + space-issued addresses (lowercased) already
+ * seeded before Alchemy merge — catalogue tokens are always allowed.
+ */
+export function isKnownTreasuryToken(
+  address: string,
+  knownAddresses: ReadonlySet<string>,
+): boolean {
+  const lower = address.toLowerCase();
+  return knownAddresses.has(lower) || isCatalogueToken(lower);
+}
+
 export const ERC20_TOKEN_TRANSFER_ADDRESSES = [
   '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
   '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42',
