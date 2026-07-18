@@ -11,7 +11,7 @@ import {
 import { Document } from '@hypha-platform/core/client';
 import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
-import { useAuthentication } from '@hypha-platform/authentication';
+import { useAccessTokenReady } from '@hypha-platform/authentication';
 
 import {
   DOCUMENT_LABEL_BADGE_KEYS,
@@ -88,11 +88,8 @@ export const useSpaceDocumentsWithStatuses = ({
   order?: Order<Document>;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const {
-    getAccessToken,
-    isAuthenticated,
-    isLoading: isAuthLoading,
-  } = useAuthentication();
+  const { getAccessToken, isAuthenticated, isAuthLoading, accessTokenReady } =
+    useAccessTokenReady();
   const {
     spaceProposalsIds,
     isLoading: isProposalsLoading,
@@ -102,47 +99,6 @@ export const useSpaceDocumentsWithStatuses = ({
     useWithdrawnProposalsWeb3Rpc({
       spaceId: spaceId,
     });
-
-  // Privy can report authenticated before getAccessToken() is ready. Network
-  // spaces 401 without a Bearer token; if we fetch then, SWR caches the error
-  // under the `auth` key and never retries when the token finally appears.
-  const [accessTokenReady, setAccessTokenReady] = React.useState(false);
-  React.useEffect(() => {
-    let cancelled = false;
-
-    if (isAuthLoading) {
-      setAccessTokenReady(false);
-      return;
-    }
-
-    if (!isAuthenticated) {
-      setAccessTokenReady(true);
-      return;
-    }
-
-    setAccessTokenReady(false);
-    void (async () => {
-      for (let attempt = 0; attempt < 10; attempt++) {
-        const token = await getAccessToken();
-        if (cancelled) return;
-        if (token) {
-          setAccessTokenReady(true);
-          return;
-        }
-        await new Promise((resolve) =>
-          setTimeout(resolve, 150 * (attempt + 1)),
-        );
-      }
-      if (!cancelled) {
-        // Proceed so we surface a real error instead of spinning forever.
-        setAccessTokenReady(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthLoading, isAuthenticated, getAccessToken]);
 
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
