@@ -57,6 +57,12 @@ export const TOKENS: Token[] = [
   },
 ];
 
+/** Platform reference USD price for the catalogue HYPHA token when no market price exists. */
+export const HYPHA_USD_REFERENCE_PRICE = 0.25;
+
+export const HYPHA_TOKEN_ADDRESS =
+  '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3' as const;
+
 /**
  * Token contract addresses that must never be surfaced in the UI — treasury asset
  * lists, profile holdings, holder breakdowns, transfer pickers, vaults, etc.
