@@ -22,6 +22,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@hypha-platform/ui';
+import { parseSignalPriority } from './overview-drill-down';
+import { useOverviewDrillDown } from './use-overview-drill-down';
 
 const tokenHoldingSuccessSchema = z.object({
   found: z.boolean(),
@@ -1139,8 +1141,14 @@ function MembersEvolutionWidget({
 
 function SignalsPulseMapWidget({
   signals,
+  onCellClick,
 }: {
   signals: ActivityResponse['signals'];
+  onCellClick?: (params: {
+    priority: string;
+    recencyBucket: number;
+    count: number;
+  }) => void;
 }) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
@@ -1368,6 +1376,21 @@ function SignalsPulseMapWidget({
                         opacity={cellOpacity(count)}
                         stroke="var(--border)"
                         strokeOpacity={0.32}
+                        className={
+                          onCellClick && count > 0
+                            ? 'cursor-pointer'
+                            : undefined
+                        }
+                        onClick={
+                          onCellClick && count > 0
+                            ? () =>
+                                onCellClick({
+                                  priority,
+                                  recencyBucket: bucketIndex,
+                                  count,
+                                })
+                            : undefined
+                        }
                       >
                         <title>
                           {tTokenHoldings('signals.cellTitle', {
@@ -1457,6 +1480,26 @@ export function HomeTokenHoldingsDashboard({
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const drillDown = useOverviewDrillDown(spaceSlug);
+  const handleHeatMapCellClick = React.useCallback(
+    ({
+      priority,
+      recencyBucket,
+    }: {
+      priority: string;
+      recencyBucket: number;
+      count: number;
+    }) => {
+      const parsedPriority = parseSignalPriority(priority);
+      if (!parsedPriority) return;
+      drillDown({
+        screen: 'coherence',
+        priority: parsedPriority,
+        recencyBucket,
+      });
+    },
+    [drillDown],
+  );
   // Network-gated overview APIs need a Bearer token. Wait for Privy + token
   // and key SWR by auth so we don't cache a premature 401 as a sticky error.
   const authReady = !isAuthLoading && accessTokenReady;
@@ -1570,7 +1613,10 @@ export function HomeTokenHoldingsDashboard({
             >
               <div className="grid min-w-0 items-start gap-4">
                 {showSignalsWidget ? (
-                  <SignalsPulseMapWidget signals={activityData.signals} />
+                  <SignalsPulseMapWidget
+                    signals={activityData.signals}
+                    onCellClick={handleHeatMapCellClick}
+                  />
                 ) : null}
                 <MembersEvolutionWidget
                   monthly={activityData.members.monthly}

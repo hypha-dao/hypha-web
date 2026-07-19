@@ -16,12 +16,32 @@ import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
-import { useParams } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
 };
+
+const MEMORY_FILTER_VALUES: MemoryFilterValue[] = [
+  'general',
+  'proposals',
+  'conversations',
+  'calls',
+  'ai-chat',
+];
+
+function parseMemoryFilterParam(raw: string | null): MemoryFilterValue {
+  if (raw && MEMORY_FILTER_VALUES.includes(raw as MemoryFilterValue)) {
+    return raw as MemoryFilterValue;
+  }
+  return 'general';
+}
 
 export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   spaceSlug,
@@ -48,8 +68,28 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   });
   const matrixChatRoomId = space?.chatRoomId?.trim() || null;
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
-  const [activeFilter, setActiveFilter] =
-    React.useState<MemoryFilterValue>('general');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeFilter = React.useMemo(
+    () => parseMemoryFilterParam(searchParams.get('filter')),
+    [searchParams],
+  );
+  const handleFilterChange = React.useCallback(
+    (value: MemoryFilterValue) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      if (value === 'general') {
+        nextParams.delete('filter');
+      } else {
+        nextParams.set('filter', value);
+      }
+      const query = nextParams.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
 
   const isAiChatItem = React.useCallback(
     (row: (typeof items)[number]) =>
@@ -186,7 +226,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       </header>
       <MemoryFilters
         activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
+        onFilterChange={handleFilterChange}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         newMemoryHref={newMemoryHref}
