@@ -1,6 +1,11 @@
 'use server';
 
-import { TOKENS, Token, DbToken } from '@hypha-platform/core/client';
+import {
+  TOKENS,
+  Token,
+  DbToken,
+  getEnergyCommunityToken,
+} from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
 import { web3Client } from '../server';
 
@@ -8,6 +13,16 @@ export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
 ): Promise<Omit<Token, 'address'>> {
+  const energyCommunity = getEnergyCommunityToken(tokenAddress);
+  if (energyCommunity) {
+    return {
+      symbol: energyCommunity.symbol,
+      name: energyCommunity.name,
+      type: energyCommunity.type,
+      icon: energyCommunity.icon,
+    };
+  }
+
   const stableToken = TOKENS.find(
     (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
   );

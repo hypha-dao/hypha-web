@@ -21,6 +21,9 @@ import {
   getMemberSpaces,
   isHiddenToken,
   isKnownTreasuryToken,
+  getEnergyCommunityTokenAddresses,
+  getEnergyCommunityToken,
+  getEnergyCommunityTokensForSpace,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -113,6 +116,11 @@ export async function GET(
         .filter((t) => t.address && /^0x[a-fA-F0-9]{40}$/i.test(t.address))
         .map((t) => t.address!.toLowerCase()),
     );
+    // EnergyPPAv2 community tokens (not in Neon `tokens` yet) must still pass
+    // the Alchemy spam filter when the user holds a balance.
+    for (const address of getEnergyCommunityTokenAddresses()) {
+      dbKnownAddresses.add(address);
+    }
 
     const parsedExternalTokens: Token[] = externalTokens
       .filter(
@@ -193,6 +201,7 @@ export async function GET(
      * Non-credit tokens with 0 balance are filtered out below.
      */
     let memberDbSpaceIds: Set<number> = new Set();
+    let memberSpaceSlugs: string[] = [];
     if (memberWeb3SpaceIds.size > 0) {
       try {
         const memberSpaces = await findAllSpacesByWeb3SpaceIds(
@@ -203,6 +212,7 @@ export async function GET(
           { db: getDb({ authToken }) },
         );
         memberDbSpaceIds = new Set(memberSpaces.map((s) => s.id));
+        memberSpaceSlugs = memberSpaces.map((s) => s.slug);
       } catch (error) {
         console.warn('Failed to resolve member space db ids:', error);
       }
@@ -229,12 +239,22 @@ export async function GET(
 
     // Alchemy-held tokens that are DB-registered or catalogue (already filtered
     // above) — covers holdings from spaces the user is not a member of.
+    // Prefer energy-community catalogue metadata (icons/names) when present.
     filteredExternalTokens.forEach((token) => {
       const lower = token.address.toLowerCase();
       if (!addressMap.has(lower)) {
-        addressMap.set(lower, token);
+        addressMap.set(lower, getEnergyCommunityToken(lower) ?? token);
       }
     });
+
+    // Direct balance reads for EnergyPPAv2 tokens of spaces the user belongs to
+    // (Alchemy often lags on freshly deployed community tokens).
+    for (const slug of memberSpaceSlugs) {
+      for (const token of getEnergyCommunityTokensForSpace(slug)) {
+        const lower = token.address.toLowerCase();
+        if (!addressMap.has(lower)) addressMap.set(lower, token);
+      }
+    }
 
     const allTokens: Token[] = Array.from(addressMap.values()).filter(
       (token) => !isHiddenToken(token.address),

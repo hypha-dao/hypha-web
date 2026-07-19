@@ -18,6 +18,7 @@ import {
   ALLOWED_SPACES,
   getTokenDecimals,
   isHiddenToken,
+  getEnergyCommunityTokensForSpace,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -192,6 +193,14 @@ export async function GET(
           type: (token.type as Token['type']) || 'utility',
         });
       }
+    });
+
+    // EnergyPPAv2 community tokens (energy credit + source ownership) are
+    // deployed outside the space token factories — register them explicitly.
+    getEnergyCommunityTokensForSpace(space.slug).forEach((token) => {
+      const lower = token.address.toLowerCase();
+      issuedBySpaceAddresses.add(lower);
+      addressMap.set(lower, token);
     });
 
     // Do not merge Alchemy ERC-20 discovery here — it floods the treasury with
