@@ -1128,7 +1128,10 @@
     "filters": {
       "energy": "Energia",
       "activity": "Atividade",
-      "distribution": "Distribuição"
+      "distribution": "Distribuição",
+      "assets": "Ativos",
+      "flows": "Fluxos",
+      "signals": "Sinais"
     },
     "activity": {
       "title": "Não foi possível carregar os widgets de atividade",
@@ -1145,7 +1148,9 @@
       "delta": "Delta",
       "timeAxis": "Tempo",
       "error": "Não foi possível carregar o histórico de distribuição de tokens agora.",
-      "empty": "Nenhum histórico de transferência encontrado para os filtros selecionados."
+      "empty": "Nenhum histórico de transferência encontrado para os filtros selecionados.",
+      "shareLabel": "Token share",
+      "hoverHint": "Hover to inspect share at each transaction date."
     },
     "proposals": {
       "title": "Propostas",
@@ -1177,6 +1182,90 @@
     "energy": {
       "title": "Energia",
       "description": "Os widgets de energia aparecerão quando houver dados disponíveis."
+    },
+    "assets": {
+      "title": "Treasury summary",
+      "subtitle": "Value composition and concentration at a glance.",
+      "totalBalance": "Total treasury value",
+      "assetCount": "Tracked assets",
+      "largestHolding": "Largest holding",
+      "composition": "Asset composition",
+      "compositionSubtitle": "Share of treasury value by asset.",
+      "compositionAria": "Treasury composition chart for {title}",
+      "topHoldings": "Top holdings",
+      "topHoldingsSubtitle": "Largest assets by estimated USD value.",
+      "byType": "Value by token type",
+      "byTypeSubtitle": "How treasury value is distributed across token categories.",
+      "emptyTitle": "No treasury assets yet",
+      "emptyDescription": "This space does not currently hold any tracked treasury assets.",
+      "errorTitle": "Unable to load treasury summary",
+      "errorDescription": "Please retry in a moment. Treasury data may still be syncing."
+    },
+    "signalsDashboard": {
+      "error": "Unable to load signal analytics right now.",
+      "noData": "No signal data yet.",
+      "total": "Signals",
+      "totalHint": "{count} created in 7d",
+      "last24h": "Created in 24h",
+      "queuePending": "Queue pending",
+      "queueFailed": "Queue failed",
+      "byStatus": "Signals by status",
+      "byStatusSubtitle": "Where signals sit in the workflow.",
+      "byType": "Signals by type",
+      "byTypeSubtitle": "Opportunity, risk, tension, and insight mix.",
+      "byPriority": "Signals by priority",
+      "byPrioritySubtitle": "Severity distribution across the space.",
+      "weeklyVelocity": "Signal velocity",
+      "weeklyVelocitySubtitle": "New signals created per week (last 8 weeks).",
+      "emitted24h": "Signals emitted (24h)",
+      "relays24h": "Relays emitted (24h)",
+      "errorTitle": "Unable to load signals"
+    },
+    "governanceDashboard": {
+      "health": "Governance health",
+      "healthSubtitle": "Share of proposals accepted on-chain.",
+      "acceptanceRate": "Acceptance",
+      "acceptanceHint": "{percent}% accepted",
+      "mix": "Proposal mix",
+      "total": "Proposals"
+    },
+    "memoryDashboard": {
+      "error": "Unable to load space memory analytics right now.",
+      "title": "Space memory",
+      "items": "Items",
+      "noData": "No memory items yet.",
+      "summaries": "Summaries",
+      "summaries24h": "{count} in 24h",
+      "transcripts": "Transcripts",
+      "recordings": "Recordings",
+      "summaries7d": "Summaries (7d)",
+      "hasChat": "Chat enabled",
+      "noChat": "Chat not enabled",
+      "errorTitle": "Unable to load space memory"
+    },
+    "flowsDashboard": {
+      "errorTitle": "Unable to load platform flows",
+      "error": "Unable to load HYPHA paying spaces right now. This can take a minute on first load.",
+      "noData": "No HYPHA paying spaces yet.",
+      "hyphaPaidSpaces": "HYPHA-paid spaces",
+      "hyphaPaidSpacesHint": "{active} active · {expired} expired",
+      "totalHyphaBurned": "Total HYPHA burned",
+      "freeTrialOnly": "Free trial only",
+      "trackedSpaces": "Tracked spaces",
+      "paymentEvents": "{count} payment events (365d)",
+      "paymentEventsLabel": "Payment events (365d)",
+      "paymentsByMonth": "HYPHA activate-space payments by month",
+      "paymentsByMonthSubtitle": "Spaces activated per month across the platform.",
+      "breakdown": "Paying spaces breakdown",
+      "activePaid": "Active paid",
+      "expiredPaid": "Expired paid",
+      "payingSpacesTitle": "Paying spaces on Hypha",
+      "payingSpacesSubtitle": "{count} spaces have paid with HYPHA.",
+      "currentSpace": "this space",
+      "active": "Active",
+      "expired": "Expired",
+      "loadingTitle": "Loading platform flows",
+      "loading": "Fetching HYPHA paying spaces. First load may take a few seconds."
     }
   },
   "SpaceSettingsAction": {
@@ -4116,6 +4205,61 @@
       "allowanceTimeout": "Tempo esgotado à espera da autorização da stablecoin.",
       "usdcNotConfigured": "O token de pagamento USDC não está configurado para esta aplicação.",
       "deviceIdsCommaNumbers": "Os IDs de dispositivos devem ser números separados por vírgulas"
+    }
+  },
+  "PlatformOverview": {
+    "title": "Hypha Platform Dashboard",
+    "updatedAt": "Updated {date}",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "unavailable": "Dashboard unavailable",
+    "noData": "No data yet.",
+    "opsAccess": {
+      "title": "Platform metrics access",
+      "description": "Enter the Hypha ops secret to view platform-wide metrics. The secret stays in memory for this tab only.",
+      "placeholder": "Ops secret",
+      "continue": "Continue"
+    },
+    "activity": {
+      "heading": "Platform activity",
+      "signals": "Signals",
+      "signalsHint": "{count} created in 7d",
+      "spaceMemory": "Space memory items",
+      "spaceMemoryHint": "{count} spaces with chat",
+      "signalsByType": "Signals by type",
+      "signalsByPriority": "Signals by priority",
+      "topSpacesBySignals": "Top spaces by signals",
+      "orchestrator": "Signal orchestrator",
+      "queuePending": "Queue pending",
+      "queueFailed": "Queue failed",
+      "signalsEmitted24h": "Signals emitted (24h)",
+      "relaysEmitted24h": "Relays emitted (24h)",
+      "memoryBySpace": "Space memory summaries by space",
+      "memoryTotals": "Space memory totals",
+      "summaries": "Summaries",
+      "summaries24h": "{count} in 24h",
+      "transcripts": "Transcripts",
+      "recordings": "Recordings",
+      "summaries7d": "Summaries (7d)"
+    },
+    "distribution": {
+      "heading": "Platform distribution",
+      "hyphaPaidSpaces": "HYPHA-paid spaces",
+      "hyphaPaidSpacesHint": "{active} active · {expired} expired",
+      "totalHyphaBurned": "Total HYPHA burned",
+      "freeTrialOnly": "Free trial only",
+      "trackedSpaces": "Tracked spaces",
+      "paymentEvents": "{count} payment events (365d)",
+      "paymentEventsLabel": "Payment events (365d)",
+      "paymentsByMonth": "HYPHA activate-space payments by month",
+      "breakdown": "Paying spaces breakdown",
+      "activePaid": "Active paid",
+      "expiredPaid": "Expired paid"
+    },
+    "assets": {
+      "heading": "Platform assets",
+      "totalBalance": "Total platform balance",
+      "spacesTracked": "{count} spaces tracked"
     }
   }
 }

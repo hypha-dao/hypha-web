@@ -362,7 +362,10 @@
     "filters": {
       "energy": "Energie",
       "activity": "Aktivität",
-      "distribution": "Verteilung"
+      "distribution": "Verteilung",
+      "assets": "Vermögenswerte",
+      "flows": "Flüsse",
+      "signals": "Signale"
     },
     "activity": {
       "title": "Aktivitäts-Widgets konnten nicht geladen werden",
@@ -379,7 +382,9 @@
       "delta": "Delta",
       "timeAxis": "Zeit",
       "error": "Der Verlauf der Tokenverteilung kann derzeit nicht geladen werden.",
-      "empty": "Für die ausgewählten Filter wurde kein Transferverlauf gefunden."
+      "empty": "Für die ausgewählten Filter wurde kein Transferverlauf gefunden.",
+      "shareLabel": "Token-Anteil",
+      "hoverHint": "Zum Anzeigen des Anteils pro Transaktionsdatum mit der Maus darüberfahren."
     },
     "proposals": {
       "title": "Vorschläge",
@@ -411,6 +416,145 @@
     "energy": {
       "title": "Energie",
       "description": "Energie-Widgets werden angezeigt, sobald Energiedaten verfügbar sind."
+    },
+    "assets": {
+      "title": "Treasury-Zusammenfassung",
+      "subtitle": "Wertzusammensetzung und Konzentration auf einen Blick.",
+      "totalBalance": "Gesamter Treasury-Wert",
+      "assetCount": "Erfasste Vermögenswerte",
+      "largestHolding": "Größte Position",
+      "composition": "Vermögenszusammensetzung",
+      "compositionSubtitle": "Anteil des Treasury-Werts je Vermögenswert.",
+      "compositionAria": "Treasury-Zusammensetzungsdiagramm für {title}",
+      "topHoldings": "Top-Positionen",
+      "topHoldingsSubtitle": "Größte Vermögenswerte nach geschätztem USD-Wert.",
+      "byType": "Wert nach Token-Typ",
+      "byTypeSubtitle": "Wie der Treasury-Wert auf Token-Kategorien verteilt ist.",
+      "emptyTitle": "Noch keine Treasury-Vermögen",
+      "emptyDescription": "Dieser Space hält derzeit keine erfassten Treasury-Vermögen.",
+      "errorTitle": "Treasury-Zusammenfassung konnte nicht geladen werden",
+      "errorDescription": "Bitte versuchen Sie es in einem Moment erneut. Treasury-Daten werden möglicherweise noch synchronisiert."
+    },
+    "signalsDashboard": {
+      "error": "Signal-Analysen konnten nicht geladen werden.",
+      "noData": "Noch keine Signaldaten.",
+      "total": "Signale",
+      "totalHint": "{count} in 7 Tagen erstellt",
+      "last24h": "In 24h erstellt",
+      "queuePending": "Warteschlange ausstehend",
+      "queueFailed": "Warteschlange fehlgeschlagen",
+      "byStatus": "Signale nach Status",
+      "byStatusSubtitle": "Wo Signale im Workflow stehen.",
+      "byType": "Signale nach Typ",
+      "byTypeSubtitle": "Mix aus Chancen, Risiken, Spannungen und Erkenntnissen.",
+      "byPriority": "Signale nach Priorität",
+      "byPrioritySubtitle": "Schweregradverteilung im Space.",
+      "weeklyVelocity": "Signalgeschwindigkeit",
+      "weeklyVelocitySubtitle": "Neue Signale pro Woche (letzte 8 Wochen).",
+      "emitted24h": "Signale emittiert (24h)",
+      "relays24h": "Relays emittiert (24h)",
+      "errorTitle": "Signale konnten nicht geladen werden"
+    },
+    "governanceDashboard": {
+      "health": "Governance-Gesundheit",
+      "healthSubtitle": "Anteil der on-chain angenommenen Vorschläge.",
+      "acceptanceRate": "Annahme",
+      "acceptanceHint": "{percent}% angenommen",
+      "mix": "Vorschlagsmix",
+      "total": "Vorschläge"
+    },
+    "memoryDashboard": {
+      "error": "Space-Memory-Analysen konnten nicht geladen werden.",
+      "title": "Space Memory",
+      "items": "Einträge",
+      "noData": "Noch keine Memory-Einträge.",
+      "summaries": "Zusammenfassungen",
+      "summaries24h": "{count} in 24h",
+      "transcripts": "Transkripte",
+      "recordings": "Aufnahmen",
+      "summaries7d": "Zusammenfassungen (7d)",
+      "hasChat": "Chat aktiviert",
+      "noChat": "Chat nicht aktiviert",
+      "errorTitle": "Space Memory konnte nicht geladen werden"
+    },
+    "flowsDashboard": {
+      "errorTitle": "Plattform-Flüsse konnten nicht geladen werden",
+      "error": "HYPHA-zahlende Spaces konnten nicht geladen werden. Der erste Aufruf kann eine Minute dauern.",
+      "noData": "Noch keine HYPHA-zahlenden Spaces.",
+      "hyphaPaidSpaces": "Mit HYPHA bezahlte Spaces",
+      "hyphaPaidSpacesHint": "{active} aktiv · {expired} abgelaufen",
+      "totalHyphaBurned": "HYPHA insgesamt verbrannt",
+      "freeTrialOnly": "Nur kostenlose Testversion",
+      "trackedSpaces": "Erfasste Spaces",
+      "paymentEvents": "{count} Zahlungsereignisse (365d)",
+      "paymentEventsLabel": "Zahlungsereignisse (365d)",
+      "paymentsByMonth": "HYPHA Activate-Space-Zahlungen nach Monat",
+      "paymentsByMonthSubtitle": "Pro Monat auf der Plattform aktivierte Spaces.",
+      "breakdown": "Aufschlüsselung zahlender Spaces",
+      "activePaid": "Aktiv bezahlt",
+      "expiredPaid": "Abgelaufen bezahlt",
+      "payingSpacesTitle": "Zahlende Spaces auf Hypha",
+      "payingSpacesSubtitle": "{count} Spaces haben mit HYPHA bezahlt.",
+      "currentSpace": "dieser Space",
+      "active": "Aktiv",
+      "expired": "Abgelaufen",
+      "loadingTitle": "Plattform-Flüsse werden geladen",
+      "loading": "HYPHA-zahlende Spaces werden abgerufen. Der erste Aufruf kann einige Sekunden dauern."
+    }
+  },
+  "PlatformOverview": {
+    "title": "Hypha Platform Dashboard",
+    "updatedAt": "Aktualisiert {date}",
+    "refresh": "Aktualisieren",
+    "retry": "Erneut versuchen",
+    "unavailable": "Dashboard nicht verfügbar",
+    "noData": "Noch keine Daten.",
+    "opsAccess": {
+      "title": "Zugriff auf Plattformmetriken",
+      "description": "Geben Sie das Hypha-Ops-Geheimnis ein, um plattformweite Metriken anzuzeigen. Das Geheimnis bleibt nur für diesen Tab im Speicher.",
+      "placeholder": "Ops-Geheimnis",
+      "continue": "Weiter"
+    },
+    "activity": {
+      "heading": "Plattformaktivität",
+      "signals": "Signale",
+      "signalsHint": "{count} in 7 Tagen erstellt",
+      "spaceMemory": "Space-Memory-Einträge",
+      "spaceMemoryHint": "{count} Spaces mit Chat",
+      "signalsByType": "Signale nach Typ",
+      "signalsByPriority": "Signale nach Priorität",
+      "topSpacesBySignals": "Top-Spaces nach Signalen",
+      "orchestrator": "Signal-Orchestrator",
+      "queuePending": "Warteschlange ausstehend",
+      "queueFailed": "Warteschlange fehlgeschlagen",
+      "signalsEmitted24h": "Signale emittiert (24h)",
+      "relaysEmitted24h": "Relays emittiert (24h)",
+      "memoryBySpace": "Space-Memory-Zusammenfassungen nach Space",
+      "memoryTotals": "Space-Memory-Gesamtwerte",
+      "summaries": "Zusammenfassungen",
+      "summaries24h": "{count} in 24h",
+      "transcripts": "Transkripte",
+      "recordings": "Aufnahmen",
+      "summaries7d": "Zusammenfassungen (7d)"
+    },
+    "distribution": {
+      "heading": "Plattformverteilung",
+      "hyphaPaidSpaces": "Mit HYPHA bezahlte Spaces",
+      "hyphaPaidSpacesHint": "{active} aktiv · {expired} abgelaufen",
+      "totalHyphaBurned": "HYPHA insgesamt verbrannt",
+      "freeTrialOnly": "Nur kostenlose Testversion",
+      "trackedSpaces": "Verfolgte Spaces",
+      "paymentEvents": "{count} Zahlungsereignisse (365d)",
+      "paymentEventsLabel": "Zahlungsereignisse (365d)",
+      "paymentsByMonth": "HYPHA Activate-Space-Zahlungen nach Monat",
+      "breakdown": "Aufschlüsselung bezahlter Spaces",
+      "activePaid": "Aktiv bezahlt",
+      "expiredPaid": "Abgelaufen bezahlt"
+    },
+    "assets": {
+      "heading": "Plattformvermögen",
+      "totalBalance": "Gesamtsaldo der Plattform",
+      "spacesTracked": "{count} verfolgte Spaces"
     }
   },
   "SpaceSettingsAction": {
