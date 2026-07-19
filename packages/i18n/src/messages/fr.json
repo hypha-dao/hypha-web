@@ -495,7 +495,7 @@
       "recordingsDesc": "Enregistrements audio et vidéo.",
       "userCreatedMemoriesDesc": "Notes et entrées ajoutées par les membres en tant que mémoire de l'espace.",
       "summaryVelocity": "Vélocité des résumés",
-      "summaryVelocitySubtitle": "Résumés de discussion récents capturés depuis le chat.",
+      "summaryVelocitySubtitle": "Nouveaux résumés de discussion par semaine (8 dernières semaines).",
       "recentActivity": "Activité de capture récente",
       "recentActivitySubtitle": "Nouveaux résumés au cours des 7 et 24 dernières heures.",
       "noRecentActivity": "Aucune activité de résumé récente pour le moment.",

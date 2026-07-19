@@ -356,11 +356,10 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
           item.value > best.value ? item : best,
         )
       : null;
-  const summaryVelocityMax = Math.max(
-    summary.summariesTotal,
-    summary.summariesLast7d,
-    1,
-  );
+  const weeklySummaryPoints = (payload.weekly ?? []).map((row) => ({
+    label: row.week,
+    value: row.count,
+  }));
   const recentActivityPoints = [
     {
       label: t('memoryDashboard.summaries7dShort'),
@@ -476,13 +475,9 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
           subtitle={t('memoryDashboard.summaryVelocitySubtitle')}
           className="h-full"
         >
-          <RadialGauge
-            value={summary.summariesLast7d}
-            max={summaryVelocityMax}
-            label={t('memoryDashboard.summaries7dShort')}
-            hint={t('memoryDashboard.summaries24h', {
-              count: summary.summariesLast24h,
-            })}
+          <AreaTrendChart
+            points={weeklySummaryPoints}
+            emptyLabel={t('memoryDashboard.noData')}
           />
         </OverviewChartShell>
         <OverviewChartShell

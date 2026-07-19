@@ -1260,7 +1260,7 @@
       "recordingsDesc": "Grabaciones de audio y video.",
       "userCreatedMemoriesDesc": "Notas y entradas añadidas por miembros como memoria del espacio.",
       "summaryVelocity": "Velocidad de resúmenes",
-      "summaryVelocitySubtitle": "Resúmenes de discusión recientes capturados desde el chat.",
+      "summaryVelocitySubtitle": "Nuevos resúmenes de discusión por semana (últimas 8 semanas).",
       "recentActivity": "Actividad de captura reciente",
       "recentActivitySubtitle": "Nuevos resúmenes en las últimas 7 y 24 horas.",
       "noRecentActivity": "Aún no hay actividad reciente de resúmenes.",

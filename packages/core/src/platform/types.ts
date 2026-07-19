@@ -154,6 +154,7 @@ export type SpaceOverviewMemoryData = {
     summariesLast24h: number;
     summariesLast7d: number;
   };
+  weekly: Array<{ week: string; count: number }>;
 };
 
 export type SpaceOverviewFlowsData = {
