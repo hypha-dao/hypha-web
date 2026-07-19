@@ -1,10 +1,12 @@
 'use client';
 
+import { useAuthentication } from '@hypha-platform/authentication';
+import { Skeleton } from '@hypha-platform/ui';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useSpaceDiscoverability } from '../hooks/use-space-discoverability';
 import { useUserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 import { checkAccess } from '../utils/transparency-access';
 import { SpaceAccessDenied } from './space-access-denied';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 type SpaceTabAccessWrapperProps = {
   spaceId?: number;
@@ -17,6 +19,7 @@ export function SpaceTabAccessWrapper({
   spaceSlug,
   children,
 }: SpaceTabAccessWrapperProps) {
+  const { isLoading: isAuthLoading } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId || undefined;
 
@@ -25,18 +28,35 @@ export function SpaceTabAccessWrapper({
       spaceId: effectiveSpaceId ? BigInt(effectiveSpaceId) : undefined,
     });
 
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+  const { userState } = useUserSpaceState({
     spaceId: effectiveSpaceId,
     spaceSlug,
     space,
   });
 
-  const hasAccess = checkAccess(access, userState);
-  const isLoading = isDiscoverabilityLoading || isUserStateLoading;
+  // Wait only for auth hydration + on-chain access level. Do not block the
+  // deny path on slow org/sibling membership checks — those left Belica on an
+  // empty tab under the renewal banner with no Request Invite. If the user
+  // later resolves to LOGGED_IN_ORG / LOGGED_IN_SPACE, checkAccess flips and
+  // children mount.
+  const isAccessLevelPending =
+    !effectiveSpaceId || isAuthLoading || isDiscoverabilityLoading;
 
-  if (isLoading) {
-    return <>{children}</>;
+  if (isAccessLevelPending || access === undefined) {
+    return (
+      <div
+        className="flex min-h-[12rem] flex-col gap-3 py-4"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <Skeleton loading height={28} width="40%" />
+        <Skeleton loading height={120} width="100%" />
+        <Skeleton loading height={120} width="100%" />
+      </div>
+    );
   }
+
+  const hasAccess = checkAccess(access, userState);
 
   if (!hasAccess) {
     return (

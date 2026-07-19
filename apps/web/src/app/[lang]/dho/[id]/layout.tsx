@@ -1,6 +1,4 @@
 import {
-  SalesBanner,
-  SpaceEscrowDepositBanners,
   SpaceCallJoinHeroBanner,
   SpaceModeLabel,
   SubscriptionBadge,
@@ -24,6 +22,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
+import { SpaceActivityGatedBanners } from './_components/space-activity-gated-banners';
 import { SpaceMembershipCtaUnderHero } from './_components/space-membership-cta-under-hero';
 
 async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
@@ -185,8 +184,7 @@ export default async function DhoLayout({
               }
             />
             <div className="mt-4 flex flex-col gap-3">
-              <SalesBanner web3SpaceId={web3SpaceId} />
-              <SpaceEscrowDepositBanners
+              <SpaceActivityGatedBanners
                 web3SpaceId={web3SpaceId}
                 spaceDbId={spaceFromDb.id}
                 spaceSlug={daoSlug}

@@ -21,12 +21,15 @@ type SpaceMembershipCtaUnderHeroProps = {
  * Membership CTA under the space hero when activity content is visible.
  *
  * Transparency matrix:
- * - Show Become member / Request Invite for authenticated users who are not
- *   personal members/delegates of the target space, whenever they can see
- *   activity (Public / Network / Organisation-eligible).
+ * - Show Become member / Request Invite for authenticated personal non-members
+ *   whenever they can see activity (Public / Network / Organisation-eligible).
  * - Space-to-space participants may count as LOGGED_IN_SPACE for activity
  *   access but still need a personal join CTA (proposal/join boundary).
  * - When activity is denied, Join lives in SpaceAccessDenied instead.
+ *
+ * Do not wait on full `useUserSpaceState.isLoading`: after org membership
+ * resolves (content visible), sibling/participant checks can keep `isLoading`
+ * true and would hide this CTA — the Hypha Energy Iberia regression.
  */
 export function SpaceMembershipCtaUnderHero({
   spaceId,
@@ -34,7 +37,7 @@ export function SpaceMembershipCtaUnderHero({
   spaceSlug,
 }: SpaceMembershipCtaUnderHeroProps) {
   const { isAuthenticated } = useAuthentication();
-  const { userState, isLoading } = useUserSpaceState({
+  const { userState } = useUserSpaceState({
     spaceId: web3SpaceId,
     spaceSlug,
   });
@@ -51,20 +54,17 @@ export function SpaceMembershipCtaUnderHero({
   const hasActivityAccess = checkAccess(access, userState);
   const isPersonalMember = Boolean(isMember || isDelegate);
   const membershipResolved = !isMemberLoading && !isDelegateLoading;
+  const accessLevelResolved = !isAccessLoading && access !== undefined;
 
   // Guests never get Join here (sign-in lives in denied / auth surfaces).
   if (!isAuthenticated) {
     return null;
   }
 
-  // While access/user-state resolves, still render a disabled Join so the
-  // control never disappears (regression from blank loading states).
-  if (isLoading || isAccessLoading || !membershipResolved) {
-    return (
-      <div className="flex w-full items-center justify-end py-2">
-        <JoinSpace spaceId={spaceId} web3SpaceId={web3SpaceId} hideWhenMember />
-      </div>
-    );
+  // Wait only for on-chain activity level + personal membership. Full user-state
+  // loading includes org/participant checks that outlive activity becoming visible.
+  if (!accessLevelResolved || !membershipResolved) {
+    return null;
   }
 
   if (isPersonalMember) {
@@ -72,8 +72,8 @@ export function SpaceMembershipCtaUnderHero({
   }
 
   // Denied activity path owns the CTA (SpaceAccessDenied). Under-hero is for
-  // content-visible non-members — including space-to-space participants who
-  // are not personal members (userState may be LOGGED_IN_SPACE).
+  // content-visible non-members — including org members who are not yet
+  // personal members of this space (userState LOGGED_IN_ORG).
   const isContentVisibleNonMember =
     hasActivityAccess &&
     (userState === UserSpaceState.LOGGED_IN ||

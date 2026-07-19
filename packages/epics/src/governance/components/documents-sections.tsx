@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order } from '@hypha-platform/core/client';
@@ -29,7 +29,8 @@ export function DocumentsSections({
   const t = useTranslations('AgreementsTab');
   const format = useFormatter();
   const [activeTab, setActiveTab] = useState('on-voting');
-  const { documents, isLoading } = useSpaceDocumentsWithStatuses({
+  const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false);
+  const { documents, isLoading, error } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
     spaceSlug,
     order,
@@ -41,6 +42,16 @@ export function DocumentsSections({
   const onVotingCount = documents.onVoting.length;
   const acceptedCount = documents.accepted.length;
   const rejectedCount = documents.rejected.length;
+
+  // Header "Agreements | N" counts accepted on-chain proposals. Prefer the
+  // Accepted tab when On Voting is empty so that count isn't paired with an
+  // empty default list.
+  useEffect(() => {
+    if (isLoading || hasUserSelectedTab) return;
+    if (onVotingCount === 0 && acceptedCount > 0) {
+      setActiveTab('accepted');
+    }
+  }, [isLoading, hasUserSelectedTab, onVotingCount, acceptedCount]);
 
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
   const createProposalPath = `${basePath}/select-create-action`;
@@ -57,7 +68,10 @@ export function DocumentsSections({
   return (
     <Tabs
       value={activeTab}
-      onValueChange={setActiveTab}
+      onValueChange={(value) => {
+        setHasUserSelectedTab(true);
+        setActiveTab(value);
+      }}
       className="flex flex-col gap-4 py-0"
     >
       <TabsList triggerVariant="switch" className="w-fit">
@@ -95,6 +109,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
+          error={error}
           firstPageSize={12}
           pageSize={12}
         />
@@ -107,6 +122,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
+          error={error}
           firstPageSize={12}
           pageSize={12}
         />
@@ -119,6 +135,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
+          error={error}
           firstPageSize={12}
           pageSize={12}
         />

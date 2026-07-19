@@ -601,7 +601,8 @@
     "rejected": "Abgelehnt",
     "newProposal": "Neuer Vorschlag",
     "searchDocuments": "Dokumente suchen",
-    "listIsEmpty": "Liste ist leer"
+    "listIsEmpty": "Liste ist leer",
+    "listFailedToLoad": "Dokumente konnten nicht geladen werden. Bitte Seite neu laden."
   },
   "MembersTab": {
     "member": "Mitglied",

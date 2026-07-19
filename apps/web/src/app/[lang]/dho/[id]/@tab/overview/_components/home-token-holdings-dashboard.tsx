@@ -4,7 +4,7 @@ import * as React from 'react';
 import useSWR from 'swr';
 import * as d3 from 'd3';
 import { z } from 'zod';
-import { useAuthentication } from '@hypha-platform/authentication';
+import { useAccessTokenReady } from '@hypha-platform/authentication';
 import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
 import {
@@ -1451,25 +1451,33 @@ export function HomeTokenHoldingsDashboard({
 }: {
   spaceSlug: string;
 }) {
-  const { getAccessToken } = useAuthentication();
+  const { getAccessToken, isAuthenticated, isAuthLoading, accessTokenReady } =
+    useAccessTokenReady();
   const locale = useLocale();
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  // Network-gated overview APIs need a Bearer token. Wait for Privy + token
+  // and key SWR by auth so we don't cache a premature 401 as a sticky error.
+  const authReady = !isAuthLoading && accessTokenReady;
+  const authKey = isAuthenticated ? 'auth' : 'anon';
   const { data, error, isLoading } = useSWR(
-    ['space-token-holdings-home', spaceSlug],
+    authReady ? ['space-token-holdings-home', spaceSlug, authKey] : null,
     fetchHoldings(spaceSlug, getAccessToken),
     { revalidateOnFocus: true, refreshInterval: 60_000 },
   );
   const {
     data: activityData,
     error: activityError,
-    isLoading: activityLoading,
+    isLoading: activityLoadingRaw,
   } = useSWR(
-    ['space-overview-activity-home', spaceSlug],
+    authReady ? ['space-overview-activity-home', spaceSlug, authKey] : null,
     fetchOverviewActivity(spaceSlug, getAccessToken),
     { revalidateOnFocus: true, refreshInterval: 120_000 },
   );
+  // SWR reports isLoading=false when the key is null — treat auth wait as loading.
+  const activityLoading = !authReady || activityLoadingRaw;
+  const holdingsLoading = !authReady || isLoading;
 
   const [activeFilter, setActiveFilter] =
     React.useState<HomeSectionFilter>('activity');
@@ -1579,7 +1587,7 @@ export function HomeTokenHoldingsDashboard({
 
       {showDistribution ? (
         <>
-          {!isLoading && error ? (
+          {!holdingsLoading && error ? (
             <Card>
               <CardHeader>
                 <CardTitle>
@@ -1598,7 +1606,7 @@ export function HomeTokenHoldingsDashboard({
             </Card>
           ) : null}
 
-          {!isLoading && !error && data && data.tokens.length === 0 ? (
+          {!holdingsLoading && !error && data && data.tokens.length === 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
@@ -1609,7 +1617,7 @@ export function HomeTokenHoldingsDashboard({
             </Card>
           ) : null}
 
-          {!isLoading && !error && data && data.tokens.length > 0 ? (
+          {!holdingsLoading && !error && data && data.tokens.length > 0 ? (
             <div
               className={
                 showDistributionHistoryWidget

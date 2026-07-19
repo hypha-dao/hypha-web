@@ -600,7 +600,8 @@
     "rejected": "Rejected",
     "newProposal": "New Proposal",
     "searchDocuments": "Search documents",
-    "listIsEmpty": "List is empty"
+    "listIsEmpty": "List is empty",
+    "listFailedToLoad": "Could not load documents. Try refreshing the page."
   },
   "MembersTab": {
     "member": "Member",

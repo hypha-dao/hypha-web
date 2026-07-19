@@ -601,7 +601,8 @@
     "rejected": "Rejetés",
     "newProposal": "Nouvelle proposition",
     "searchDocuments": "Rechercher des documents",
-    "listIsEmpty": "La liste est vide"
+    "listIsEmpty": "La liste est vide",
+    "listFailedToLoad": "Impossible de charger les documents. Essayez d’actualiser la page."
   },
   "MembersTab": {
     "member": "Membre",

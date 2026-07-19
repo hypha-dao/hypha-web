@@ -19,6 +19,7 @@ type DocumentSectionProps = {
   headSectionButton?: React.ReactNode;
   hasSearch?: boolean;
   isLoading: boolean;
+  error?: Error | unknown;
   firstPageSize?: number;
   pageSize?: number;
 };
@@ -31,6 +32,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
   headSectionButton,
   hasSearch = false,
   isLoading,
+  error,
   firstPageSize = 3,
   pageSize = 3,
 }) => {
@@ -70,9 +72,34 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         ) : null}
       </div>
 
-      {pagination?.totalPages === 0 ? (
+      {isLoading && pagination?.totalPages === 0 ? (
+        <div className="w-full space-y-2">
+          <DocumentGridContainer
+            basePath={basePath}
+            web3SpaceId={web3SpaceId}
+            pagination={{
+              page: 1,
+              firstPageSize,
+              pageSize,
+              searchTerm,
+              order: [
+                {
+                  dir: DirectionType.DESC,
+                  name: 'createdAt',
+                },
+              ],
+            }}
+            documents={[]}
+            isLoading
+          />
+        </div>
+      ) : pagination?.totalPages === 0 ? (
         <Empty>
-          <p>{tAgreements('listIsEmpty')}</p>
+          <p>
+            {error
+              ? tAgreements('listFailedToLoad')
+              : tAgreements('listIsEmpty')}
+          </p>
         </Empty>
       ) : (
         <div className="w-full space-y-2">
