@@ -1063,7 +1063,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .outerRadius(112);
 
   return (
-    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
+    <Card className="flex h-full min-w-0 flex-col overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">
           {tTokenHoldings('proposals.title')}
@@ -1072,7 +1072,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 2xl:min-h-[420px] 2xl:grid-cols-[1fr_auto]">
+      <CardContent className="grid flex-1 grid-cols-1 items-center gap-3 2xl:grid-cols-[1fr_auto]">
         <svg
           viewBox="-130 -130 260 260"
           className="h-[240px] w-full sm:h-[280px] 2xl:h-[340px]"
@@ -1184,7 +1184,7 @@ function MembersEvolutionWidget({
   const gradientId = React.useId().replace(/:/g, '');
 
   return (
-    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
+    <Card className="flex h-full min-w-0 flex-col overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">
           {tTokenHoldings('members.title')}
@@ -1205,7 +1205,7 @@ function MembersEvolutionWidget({
           </span>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex flex-1 flex-col space-y-4">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
@@ -2192,7 +2192,7 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!activityLoading && !activityError && activityData ? (
-            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
               <MembersEvolutionWidget
                 monthly={activityData.members.monthly}
                 locale={locale}
