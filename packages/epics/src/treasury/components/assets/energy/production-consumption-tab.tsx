@@ -70,9 +70,12 @@ export const ProductionConsumptionTab = ({
   const labels = useLiveTelemetry
     ? telemetry!.labels
     : timeframeLabels(timeframe, locale);
+  // Prefer on-chain source display names (e.g. "School PV") over telemetry
+  // placeholder meter labels ("Solar park"). Match by index: production
+  // series are sorted by meter id, which follows activation source order.
   const perSource = useLiveTelemetry
-    ? telemetry!.productionBySource.map((s) => ({
-        label: s.label,
+    ? telemetry!.productionBySource.map((s, i) => ({
+        label: sourceLabels[i] ?? s.label,
         values: s.valuesKwh,
       }))
     : dummy.perSource;
