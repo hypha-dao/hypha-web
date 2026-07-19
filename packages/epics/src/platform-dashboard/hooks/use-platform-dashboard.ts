@@ -9,7 +9,7 @@ export function usePlatformDashboardAuth() {
 
   const fetchDashboard = React.useCallback(async () => {
     if (!activeSecret) {
-      throw new Error('Ops secret is required');
+      throw new Error('secret_required');
     }
     return fetch('/api/v1/ops/platform/dashboard', {
       headers: {
@@ -55,23 +55,17 @@ export function usePlatformDashboard(
     try {
       const response = await fetchDashboard();
       if (response.status === 503) {
-        throw new Error(
-          'Platform dashboard API is not configured on this environment (HYPHA_SPACE_MEMORY_OPS_SECRET missing).',
-        );
+        throw new Error('not_configured');
       }
       if (response.status === 401) {
-        throw new Error('Invalid ops secret. Check the value and try again.');
+        throw new Error('unauthorized');
       }
       if (!response.ok) {
-        throw new Error(`Failed to load dashboard (${response.status})`);
+        throw new Error('load_failed');
       }
       setData((await response.json()) as PlatformDashboardData);
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : 'Failed to load dashboard',
-      );
+      setError(loadError instanceof Error ? loadError.message : 'load_failed');
       setData(null);
     } finally {
       setIsLoading(false);

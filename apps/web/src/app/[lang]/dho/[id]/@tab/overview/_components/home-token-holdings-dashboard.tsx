@@ -1960,7 +1960,9 @@ export function HomeTokenHoldingsDashboard({
     error: assetsError,
     isLoading: assetsLoading,
   } = useSWR(
-    showAssets ? ['space-overview-assets', spaceSlug] : null,
+    showAssets && authReady
+      ? ['space-overview-assets', spaceSlug, authKey]
+      : null,
     fetchSpaceAssets(spaceSlug, getAccessToken),
     { revalidateOnFocus: true, refreshInterval: 60_000 },
   );
@@ -2015,6 +2017,8 @@ export function HomeTokenHoldingsDashboard({
 
           <OverviewSignalsDashboard
             spaceSlug={spaceSlug}
+            authReady={authReady}
+            authKey={authKey}
             afterSummary={
               !activityLoading && !activityError && activityData ? (
                 <SignalsPulseMapWidget signals={activityData.signals} />
@@ -2024,7 +2028,13 @@ export function HomeTokenHoldingsDashboard({
         </>
       ) : null}
 
-      {showMemory ? <OverviewMemoryDashboard spaceSlug={spaceSlug} /> : null}
+      {showMemory ? (
+        <OverviewMemoryDashboard
+          spaceSlug={spaceSlug}
+          authReady={authReady}
+          authKey={authKey}
+        />
+      ) : null}
 
       {showActivity ? (
         <>
@@ -2184,7 +2194,11 @@ export function HomeTokenHoldingsDashboard({
       ) : null}
 
       {showFlows && isHyphaPlatform ? (
-        <OverviewFlowsDashboard spaceSlug={spaceSlug} />
+        <OverviewFlowsDashboard
+          spaceSlug={spaceSlug}
+          authReady={authReady}
+          authKey={authKey}
+        />
       ) : null}
 
       {showAssets ? (

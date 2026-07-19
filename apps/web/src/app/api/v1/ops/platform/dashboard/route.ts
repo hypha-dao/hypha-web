@@ -1,7 +1,15 @@
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPlatformDashboard } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { readOpsSecret } from '../../_lib/ops-auth';
+
+function secretsMatch(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 export async function GET(request: NextRequest) {
   const configuredSecret =
@@ -12,7 +20,7 @@ export async function GET(request: NextRequest) {
       { status: 503 },
     );
   }
-  if (readOpsSecret(request) !== configuredSecret) {
+  if (!secretsMatch(readOpsSecret(request), configuredSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -30,12 +30,10 @@ export async function getSpaceOverviewMemory(
 
   const [
     hasChatRow,
-    summaryTotalRow,
+    summaryCountsRow,
     transcriptTotalRow,
     recordingTotalRow,
     userCreatedTotalRow,
-    summaries24h,
-    summaries7d,
     weeklySummaries,
   ] = await Promise.all([
     db
@@ -49,7 +47,11 @@ export async function getSpaceOverviewMemory(
         ),
       ),
     db
-      .select({ count: sql<number>`count(*)` })
+      .select({
+        total: sql<number>`count(*)`,
+        last24h: sql<number>`count(*) filter (where ${spaceDiscussionSummaries.createdAt} >= ${since24h})`,
+        last7d: sql<number>`count(*) filter (where ${spaceDiscussionSummaries.createdAt} >= ${since7d})`,
+      })
       .from(spaceDiscussionSummaries)
       .where(eq(spaceDiscussionSummaries.spaceId, spaceId)),
     db
@@ -64,24 +66,6 @@ export async function getSpaceOverviewMemory(
       .select({ count: sql<number>`count(*)` })
       .from(documents)
       .where(userCreatedMemoryFilter(spaceId)),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(spaceDiscussionSummaries)
-      .where(
-        and(
-          eq(spaceDiscussionSummaries.spaceId, spaceId),
-          gte(spaceDiscussionSummaries.createdAt, since24h),
-        ),
-      ),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(spaceDiscussionSummaries)
-      .where(
-        and(
-          eq(spaceDiscussionSummaries.spaceId, spaceId),
-          gte(spaceDiscussionSummaries.createdAt, since7d),
-        ),
-      ),
     db
       .select({
         week: sql<string>`to_char(date_trunc('week', ${spaceDiscussionSummaries.createdAt}), 'IYYY-"W"IW')`,
@@ -104,12 +88,12 @@ export async function getSpaceOverviewMemory(
   return {
     summary: {
       hasChat: Number(hasChatRow[0]?.count ?? 0) > 0,
-      summariesTotal: Number(summaryTotalRow[0]?.count ?? 0),
+      summariesTotal: Number(summaryCountsRow[0]?.total ?? 0),
       transcriptsTotal: Number(transcriptTotalRow[0]?.count ?? 0),
       recordingsTotal: Number(recordingTotalRow[0]?.count ?? 0),
       userCreatedTotal: Number(userCreatedTotalRow[0]?.count ?? 0),
-      summariesLast24h: Number(summaries24h[0]?.count ?? 0),
-      summariesLast7d: Number(summaries7d[0]?.count ?? 0),
+      summariesLast24h: Number(summaryCountsRow[0]?.last24h ?? 0),
+      summariesLast7d: Number(summaryCountsRow[0]?.last7d ?? 0),
     },
     weekly: weeklySummaries.map((row) => ({
       week: row.week,

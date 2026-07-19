@@ -4305,6 +4305,7 @@
   },
   "PlatformOverview": {
     "title": "Hypha Platform Dashboard",
+<<<<<<< HEAD
     "updatedAt": "Mis à jour {date}",
     "refresh": "Actualiser",
     "retry": "Réessayer",
@@ -4316,6 +4317,19 @@
       "load_failed": "Échec du chargement du tableau de bord"
     },
     "noData": "Aucune donnée pour le moment.",
+=======
+    "updatedAt": "Updated {date}",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "unavailable": "Dashboard unavailable",
+    "errors": {
+      "secret_required": "Ops secret is required",
+      "not_configured": "Platform dashboard API is not configured on this environment.",
+      "unauthorized": "Invalid ops secret. Check the value and try again.",
+      "load_failed": "Failed to load dashboard"
+    },
+    "noData": "No data yet.",
+>>>>>>> eaeff45f6 (fix: apply CodeRabbit auto-fixes for platform overview dashboard)
     "opsAccess": {
       "title": "Accès aux métriques de plateforme",
       "description": "Saisissez le secret ops Hypha pour afficher les métriques à l'échelle de la plateforme. Le secret reste en mémoire uniquement pour cet onglet.",

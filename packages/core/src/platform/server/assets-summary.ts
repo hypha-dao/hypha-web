@@ -6,6 +6,7 @@ import { getSpaceDetails } from '../../space/shared/web3/get-space-details';
 import { getTokenBalancesByAddress, getTokenPrice } from '../../common/server';
 import type { DbConfig } from '../../server';
 import { formatEther } from 'viem';
+import { mapInBatches } from './utils';
 
 export type PlatformSpaceAssetSummary = {
   spaceId: number;
@@ -20,20 +21,6 @@ export type PlatformSpaceAssetSummary = {
     usdEqual: number;
   }>;
 };
-
-async function mapInBatches<T, R>(
-  items: T[],
-  batchSize: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = [];
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    const batchResults = await Promise.all(batch.map(fn));
-    results.push(...batchResults);
-  }
-  return results;
-}
 
 async function getSpaceAssetSummary(space: {
   id: number;
@@ -105,7 +92,7 @@ async function getSpaceAssetSummary(space: {
       }
     }
 
-    const topAssets = [
+    const allAssets = [
       ...(ethAmount > 0
         ? [
             {
@@ -119,10 +106,10 @@ async function getSpaceAssetSummary(space: {
       ...tokenAssets,
     ]
       .filter((asset) => asset.value > 0)
-      .sort((a, b) => b.usdEqual - a.usdEqual)
-      .slice(0, 4);
+      .sort((a, b) => b.usdEqual - a.usdEqual);
+    const topAssets = allAssets.slice(0, 4);
 
-    const balanceUsd = topAssets.reduce(
+    const balanceUsd = allAssets.reduce(
       (sum, asset) => sum + asset.usdEqual,
       0,
     );

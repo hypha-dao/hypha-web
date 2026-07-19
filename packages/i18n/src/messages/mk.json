@@ -4318,6 +4318,7 @@
   },
   "PlatformOverview": {
     "title": "Hypha Platform Dashboard",
+<<<<<<< HEAD
     "updatedAt": "Ажурирано {date}",
     "refresh": "Освежи",
     "retry": "Обиди се повторно",
@@ -4329,6 +4330,19 @@
       "load_failed": "Неуспешно вчитување на контролната табла"
     },
     "noData": "Сè уште нема податоци.",
+=======
+    "updatedAt": "Updated {date}",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "unavailable": "Dashboard unavailable",
+    "errors": {
+      "secret_required": "Ops secret is required",
+      "not_configured": "Platform dashboard API is not configured on this environment.",
+      "unauthorized": "Invalid ops secret. Check the value and try again.",
+      "load_failed": "Failed to load dashboard"
+    },
+    "noData": "No data yet.",
+>>>>>>> eaeff45f6 (fix: apply CodeRabbit auto-fixes for platform overview dashboard)
     "opsAccess": {
       "title": "Пристап до метрики на платформата",
       "description": "Внесете го Hypha ops secret за да ги видите метриките низ целата платформа. Secret-от останува во меморија само за оваа јазиче.",

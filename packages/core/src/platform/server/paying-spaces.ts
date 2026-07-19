@@ -13,6 +13,7 @@ import { and, asc, count, eq, gt, isNotNull, not, sql } from 'drizzle-orm';
 import { formatUnits } from 'viem';
 
 import type { SpaceActivationClassification } from '../types';
+import { mapInBatches, toMonthKey } from './utils';
 
 export type PayingSpaceStatus = {
   spaceId: number;
@@ -80,26 +81,6 @@ let metricsCache: { expiresAt: number; data: PayingSpacesMetrics } | null =
   null;
 let eventsCache: { expiresAt: number; data: HyphaPaymentEvent[] } | null = null;
 let metricsInFlight: Promise<PayingSpacesMetrics> | null = null;
-
-async function mapInBatches<T, R>(
-  items: T[],
-  batchSize: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = [];
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    const batchResults = await Promise.all(batch.map(fn));
-    results.push(...batchResults);
-  }
-  return results;
-}
-
-function toMonthKey(date: Date): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
 
 function buildBlockChunks(fromBlock: bigint, currentBlock: bigint) {
   const chunks: Array<{ start: bigint; end: bigint }> = [];

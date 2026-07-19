@@ -19,6 +19,38 @@ import {
   PlatformMetricCard,
 } from './platform-dashboard-widgets';
 
+const PLATFORM_DASHBOARD_ERROR_CODES = [
+  'secret_required',
+  'not_configured',
+  'unauthorized',
+  'load_failed',
+] as const;
+
+type PlatformDashboardErrorCode =
+  (typeof PLATFORM_DASHBOARD_ERROR_CODES)[number];
+
+function isPlatformDashboardErrorCode(
+  value: string,
+): value is PlatformDashboardErrorCode {
+  return PLATFORM_DASHBOARD_ERROR_CODES.includes(
+    value as PlatformDashboardErrorCode,
+  );
+}
+
+export function translatePlatformDashboardError(
+  error: string,
+  t: ReturnType<typeof useTranslations<'PlatformOverview'>>,
+): string {
+  if (isPlatformDashboardErrorCode(error)) {
+    return t(`errors.${error}`);
+  }
+  return error;
+}
+
+function formatHumanUnit(value: string, locale: string): string {
+  return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
+}
+
 type PlatformDashboardState = {
   data: PlatformDashboardData | null;
   error: string | null;
@@ -83,7 +115,9 @@ function PlatformDashboardStatus({ state }: { state: PlatformDashboardState }) {
     return (
       <Card>
         <CardContent className="flex flex-col gap-3 pt-6">
-          <p className="text-destructive">{state.error}</p>
+          <p className="text-destructive">
+            {translatePlatformDashboardError(state.error, t)}
+          </p>
           <Button variant="outline" onClick={() => void state.refresh()}>
             {t('retry')}
           </Button>
@@ -257,6 +291,7 @@ export function PlatformDistributionSection({
 }: {
   state: PlatformDashboardState;
 }) {
+  const locale = useLocale();
   const t = useTranslations('PlatformOverview');
   const status = <PlatformDashboardStatus state={state} />;
   if (state.isLoading || state.error || !state.data) {
@@ -297,10 +332,7 @@ export function PlatformDistributionSection({
         />
         <PlatformMetricCard
           label={t('distribution.totalHyphaBurned')}
-          value={Number(payingSummary.totalHyphaBurned).toLocaleString(
-            undefined,
-            { maximumFractionDigits: 0 },
-          )}
+          value={formatHumanUnit(payingSummary.totalHyphaBurned, locale)}
         />
         <PlatformMetricCard
           label={t('distribution.freeTrialOnly')}
@@ -345,10 +377,7 @@ export function PlatformDistributionSection({
             />
             <PlatformMetricCard
               label={t('distribution.totalHyphaBurned')}
-              value={Number(payingSummary.totalHyphaBurned).toLocaleString(
-                undefined,
-                { maximumFractionDigits: 0 },
-              )}
+              value={formatHumanUnit(payingSummary.totalHyphaBurned, locale)}
             />
           </CardContent>
         </Card>
@@ -395,7 +424,7 @@ export function PlatformAssetsSection({
       <div className="grid gap-4 md:grid-cols-2">
         <PlatformMetricCard
           label={t('assets.totalBalance')}
-          value={formatCurrencyValue(data.assets.totalBalanceUsd)}
+          value={formatCurrencyValue(data.assets.totalBalanceUsd, locale)}
           hint={t('assets.spacesTracked', { count: data.assets.spaceCount })}
         />
       </div>
@@ -415,7 +444,7 @@ export function PlatformAssetsSection({
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-5 font-semibold">
-                {formatCurrencyValue(space.balanceUsd)}
+                {formatCurrencyValue(space.balanceUsd, locale)}
               </p>
               <div className="space-y-1">
                 {space.topAssets.map((asset) => (
@@ -424,7 +453,7 @@ export function PlatformAssetsSection({
                     className="flex justify-between text-2 text-muted-foreground"
                   >
                     <span>{asset.symbol}</span>
-                    <span>{formatCurrencyValue(asset.usdEqual)}</span>
+                    <span>{formatCurrencyValue(asset.usdEqual, locale)}</span>
                   </div>
                 ))}
               </div>

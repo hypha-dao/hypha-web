@@ -50,6 +50,11 @@ function createOverviewFetcher(
   };
 }
 
+type OverviewDashboardAuthProps = {
+  authReady: boolean;
+  authKey: string;
+};
+
 function OverviewMetricsSkeleton() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -114,20 +119,29 @@ function sortByPriority<T extends { priority: string; count: number }>(
 export function OverviewSignalsDashboard({
   spaceSlug,
   afterSummary,
+  authReady,
+  authKey,
 }: {
   spaceSlug: string;
   afterSummary?: React.ReactNode;
+  authReady: boolean;
+  authKey: string;
 }) {
   const { getAccessToken } = useAuthentication();
   const t = useTranslations('TokenHoldingsDashboard');
-  const { data, error, isLoading } = useSWR(
-    ['space-overview-signals', spaceSlug],
+  const {
+    data,
+    error,
+    isLoading: isLoadingRaw,
+  } = useSWR(
+    authReady ? ['space-overview-signals', spaceSlug, authKey] : null,
     createOverviewFetcher(
       `/api/v1/spaces/${spaceSlug}/overview-signals`,
       getAccessToken,
     ),
     { revalidateOnFocus: true, refreshInterval: 120_000 },
   );
+  const isLoading = !authReady || isLoadingRaw;
 
   if (isLoading) return <OverviewMetricsSkeleton />;
   if (error || !data) {
@@ -296,17 +310,30 @@ function MemoryTypeSpotlight({
   );
 }
 
-export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
+export function OverviewMemoryDashboard({
+  spaceSlug,
+  authReady,
+  authKey,
+}: {
+  spaceSlug: string;
+  authReady: boolean;
+  authKey: string;
+}) {
   const { getAccessToken } = useAuthentication();
   const t = useTranslations('TokenHoldingsDashboard');
-  const { data, error, isLoading } = useSWR(
-    ['space-overview-memory', spaceSlug],
+  const {
+    data,
+    error,
+    isLoading: isLoadingRaw,
+  } = useSWR(
+    authReady ? ['space-overview-memory', spaceSlug, authKey] : null,
     createOverviewFetcher(
       `/api/v1/spaces/${spaceSlug}/overview-memory`,
       getAccessToken,
     ),
     { revalidateOnFocus: true, refreshInterval: 120_000 },
   );
+  const isLoading = !authReady || isLoadingRaw;
 
   if (isLoading) return <OverviewMetricsSkeleton />;
   if (error || !data) {
@@ -501,8 +528,12 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
 
 export function OverviewActiveSpacesDashboard({
   spaceSlug,
+  authReady,
+  authKey,
 }: {
   spaceSlug: string;
+  authReady: boolean;
+  authKey: string;
 }) {
   const locale = useLocale();
   const { getAccessToken } = useAuthentication();
@@ -511,8 +542,12 @@ export function OverviewActiveSpacesDashboard({
   const [statusFilter, setStatusFilter] = React.useState<
     'all' | 'active_paid' | 'free_trial' | 'expiring' | 'expired'
   >('all');
-  const { data, error, isLoading } = useSWR(
-    ['space-overview-flows', spaceSlug],
+  const {
+    data,
+    error,
+    isLoading: isLoadingRaw,
+  } = useSWR(
+    authReady ? ['space-overview-flows', spaceSlug, authKey] : null,
     createOverviewFetcher(
       `/api/v1/spaces/${spaceSlug}/overview-flows`,
       getAccessToken,
@@ -523,6 +558,7 @@ export function OverviewActiveSpacesDashboard({
       dedupingInterval: 300_000,
     },
   );
+  const isLoading = !authReady || isLoadingRaw;
 
   const filteredSpaces = React.useMemo(() => {
     if (!data) return [];
