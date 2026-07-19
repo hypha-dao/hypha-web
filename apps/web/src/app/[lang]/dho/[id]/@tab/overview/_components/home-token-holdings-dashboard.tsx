@@ -1466,14 +1466,6 @@ function SignalsPulseMapWidget({
         <CardDescription className="text-xs">
           {tTokenHoldings('signals.subtitle')}
         </CardDescription>
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-            {tTokenHoldings('signals.count')} {validSignals.length}
-          </span>
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-            {tTokenHoldings('signals.peakCell')} {maxCellCount}
-          </span>
-        </div>
       </CardHeader>
       <CardContent className="min-h-[360px]">
         <div className="overflow-x-auto">
@@ -2055,7 +2047,7 @@ export function HomeTokenHoldingsDashboard({
   const tCommon = useTranslations('Common');
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const [activeFilter, setActiveFilter] =
-    React.useState<HomeSectionFilter>('activity');
+    React.useState<HomeSectionFilter>('signals');
   // Network-gated overview APIs need a Bearer token. Wait for Privy + token
   // and key SWR by auth so we don't cache a premature 401 as a sticky error.
   const authReady = !isAuthLoading && accessTokenReady;
@@ -2134,7 +2126,7 @@ export function HomeTokenHoldingsDashboard({
 
   React.useEffect(() => {
     if (activeFilter === 'energy' && !showEnergyWidget) {
-      setActiveFilter('activity');
+      setActiveFilter('signals');
     }
   }, [activeFilter, showEnergyWidget]);
 
@@ -2174,11 +2166,14 @@ export function HomeTokenHoldingsDashboard({
             </Card>
           ) : null}
 
-          {!activityLoading && !activityError && activityData ? (
-            <SignalsPulseMapWidget signals={activityData.signals} />
-          ) : null}
-
-          <OverviewSignalsDashboard spaceSlug={spaceSlug} />
+          <OverviewSignalsDashboard
+            spaceSlug={spaceSlug}
+            afterSummary={
+              !activityLoading && !activityError && activityData ? (
+                <SignalsPulseMapWidget signals={activityData.signals} />
+              ) : null
+            }
+          />
           <OverviewMemoryDashboard spaceSlug={spaceSlug} />
         </>
       ) : null}
