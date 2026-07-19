@@ -361,7 +361,7 @@
     "filters": {
       "energy": "Energy",
       "signals": "Signals",
-      "activity": "Activity",
+      "activity": "Agreements",
       "distribution": "Distribution",
       "assets": "Assets",
       "flows": "Flows"
