@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/space-memory-refresh-discussions",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/signals-orchestrate",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
