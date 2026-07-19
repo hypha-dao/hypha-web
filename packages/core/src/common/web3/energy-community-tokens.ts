@@ -6,13 +6,21 @@ import type { Token } from './tokens';
  * they never appear in space treasuries or profile wallets.
  *
  * `balanceDisplayDecimals` overrides on-chain ERC-20 decimals when formatting
- * balances for the UI. Legacy Ponta ownership tokens were minted as raw BPS
- * units (1% = 100) on an 18-decimal token, so they must be displayed with 0
- * decimals until communities are redeployed with scaled mint amounts.
+ * balances / supply for the UI:
+ * - Legacy ownership tokens were minted as raw BPS (1% = 100) on 18dp tokens.
+ * - Legacy EnergyToken (NRG) balances are internal credit units where
+ *   `units * 10_000` = stablecoin base units (6dp), i.e. 1 display NRG = 1 EURC
+ *   when formatted with 2 decimals (`units / 100`).
  */
 export type EnergyCommunityToken = Token & {
   balanceDisplayDecimals?: number;
 };
+
+/**
+ * Display decimals for EnergyPPAv2 credit tokens so 1 NRG ≈ 1 EURC/USDC.
+ * Internal credit * 10_000 = stablecoin base units (6dp) ⇒ divide by 10^2.
+ */
+export const ENERGY_CREDIT_DISPLAY_DECIMALS = 2;
 
 /**
  * Keys are issuer space slugs (always listed on that treasury).
@@ -26,6 +34,8 @@ const PONTA_TOKENS: readonly EnergyCommunityToken[] = [
     icon: '/placeholder/energy-credit-token-icon.svg',
     type: 'credits',
     transferable: true,
+    // Deployed EnergyToken.decimals() = 6; UI must use 2 so 1300 raw → 13 NRG.
+    balanceDisplayDecimals: ENERGY_CREDIT_DISPLAY_DECIMALS,
   },
   {
     name: 'School PV',
@@ -104,4 +114,13 @@ export function isEnergyCommunityToken(
 /** Flat list of all catalogue energy-community token addresses (lowercased). */
 export function getEnergyCommunityTokenAddresses(): ReadonlySet<string> {
   return new Set(ENERGY_COMMUNITY_TOKEN_BY_ADDRESS.keys());
+}
+
+/** Decimals to use when formatting balance/supply for the UI. */
+export function getEnergyCommunityDisplayDecimals(
+  address: string | null | undefined,
+  contractDecimals: number,
+): number {
+  const catalogue = getEnergyCommunityToken(address);
+  return catalogue?.balanceDisplayDecimals ?? contractDecimals;
 }

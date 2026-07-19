@@ -24,6 +24,7 @@ import {
   getEnergyCommunityTokenAddresses,
   getEnergyCommunityToken,
   getEnergyCommunityTokensForSpace,
+  getEnergyCommunityDisplayDecimals,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -341,9 +342,20 @@ export async function GET(
             amount = balanceRes ? balanceRes.amount : 0;
           }
           const totalSupply = supplyRes?.totalSupply;
+          const displayDecimals = getEnergyCommunityDisplayDecimals(
+            token.address,
+            decimals,
+          );
           let rate = isEnergyToken ? 1 : prices[token.address] || 0;
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+          }
+          // 1 display NRG ≈ 1 EURC/USDC after credit decimal normalization.
+          if (
+            rate === 0 &&
+            getEnergyCommunityToken(token.address)?.type === 'credits'
+          ) {
+            rate = 1;
           }
           return {
             ...meta,
@@ -357,7 +369,7 @@ export async function GET(
             slug: '',
             supply: totalSupply
               ? {
-                  total: Number(totalSupply / 10n ** BigInt(decimals)),
+                  total: Number(totalSupply / 10n ** BigInt(displayDecimals)),
                 }
               : undefined,
             space: meta.space
