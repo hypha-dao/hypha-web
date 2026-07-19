@@ -150,6 +150,7 @@ export type SpaceOverviewMemoryData = {
     summariesTotal: number;
     transcriptsTotal: number;
     recordingsTotal: number;
+    userCreatedTotal: number;
     summariesLast24h: number;
     summariesLast7d: number;
   };

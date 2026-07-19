@@ -1247,6 +1247,17 @@
       "transcripts": "Transcripciones",
       "recordings": "Grabaciones",
       "userCreatedMemories": "Memorias creadas por usuarios",
+<<<<<<< HEAD
+=======
+      "summaries7d": "Resúmenes (7d)",
+      "hasChat": "Chat habilitado",
+      "noChat": "Chat no habilitado",
+      "errorTitle": "No se pudo cargar la memoria del espacio",
+      "totalItems": "Elementos de memoria",
+      "totalHint": "{count} almacenados en este espacio",
+      "composition": "Composición de la memoria",
+      "compositionSubtitle": "Resúmenes, transcripciones, grabaciones y entradas creadas por miembros en este espacio.",
+>>>>>>> 50939300d (fix(overview): include user-created Space Memory in dashboard totals)
       "byType": "Elementos por tipo",
       "byTypeSubtitle": "Volumen relativo entre categorías de memoria.",
       "summariesDesc": "Resúmenes de discusión capturados por IA desde el chat.",

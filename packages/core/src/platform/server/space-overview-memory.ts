@@ -1,13 +1,25 @@
 import 'server-only';
 
-import { and, eq, gte, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, gte, isNotNull, or, sql } from 'drizzle-orm';
 import {
+  documents,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
   spaces,
 } from '@hypha-platform/storage-postgres';
+import { SPACE_MEMORY_DOCUMENT_LABEL } from '../../governance/space-memory-document-label';
 import type { DbConfig } from '../../server';
+
+function userCreatedMemoryFilter(spaceId: number) {
+  return and(
+    eq(documents.spaceId, spaceId),
+    or(
+      eq(documents.state, 'memory'),
+      eq(documents.label, SPACE_MEMORY_DOCUMENT_LABEL),
+    ),
+  );
+}
 
 export async function getSpaceOverviewMemory(
   { db }: DbConfig,
@@ -21,6 +33,7 @@ export async function getSpaceOverviewMemory(
     summaryTotalRow,
     transcriptTotalRow,
     recordingTotalRow,
+    userCreatedTotalRow,
     summaries24h,
     summaries7d,
   ] = await Promise.all([
@@ -48,6 +61,10 @@ export async function getSpaceOverviewMemory(
       .where(eq(spaceCallRecordings.spaceId, spaceId)),
     db
       .select({ count: sql<number>`count(*)` })
+      .from(documents)
+      .where(userCreatedMemoryFilter(spaceId)),
+    db
+      .select({ count: sql<number>`count(*)` })
       .from(spaceDiscussionSummaries)
       .where(
         and(
@@ -72,6 +89,7 @@ export async function getSpaceOverviewMemory(
       summariesTotal: Number(summaryTotalRow[0]?.count ?? 0),
       transcriptsTotal: Number(transcriptTotalRow[0]?.count ?? 0),
       recordingsTotal: Number(recordingTotalRow[0]?.count ?? 0),
+      userCreatedTotal: Number(userCreatedTotalRow[0]?.count ?? 0),
       summariesLast24h: Number(summaries24h[0]?.count ?? 0),
       summariesLast7d: Number(summaries7d[0]?.count ?? 0),
     },
