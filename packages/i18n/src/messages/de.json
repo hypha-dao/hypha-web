@@ -402,8 +402,8 @@
       "spaces": "Spaces"
     },
     "signals": {
-      "title": "Signale",
-      "subtitle": "Heatmap nach Priorität und Aktualität (neu links, älter rechts)",
+      "title": "Signal-Heatmap",
+      "subtitle": "Heatmap nach Priorität und Aktualität",
       "count": "Signale",
       "peakCell": "Maximale Zelle",
       "recent": "Neu",

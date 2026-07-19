@@ -403,8 +403,8 @@
       "spaces": "Espaces"
     },
     "signals": {
-      "title": "Signaux",
-      "subtitle": "Carte de chaleur par priorité et récence (récent à gauche, plus ancien à droite)",
+      "title": "Carte thermique des signaux",
+      "subtitle": "Carte de chaleur par priorité et récence",
       "count": "Signaux",
       "peakCell": "Cellule maximale",
       "recent": "Récent",

@@ -1168,8 +1168,8 @@
       "spaces": "Espaços"
     },
     "signals": {
-      "title": "Sinais",
-      "subtitle": "Mapa de calor por prioridade e recência (mais recente à esquerda, mais antigo à direita)",
+      "title": "Mapa de calor de sinais",
+      "subtitle": "Mapa de calor por prioridade e recência",
       "count": "Sinais",
       "peakCell": "Pico de célula",
       "recent": "Recente",

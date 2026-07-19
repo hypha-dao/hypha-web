@@ -382,8 +382,8 @@
       "spaces": "Простори"
     },
     "signals": {
-      "title": "Сигнали",
-      "subtitle": "Топлотна мапа по приоритет и скорешност (скорешни лево, постари десно)",
+      "title": "Signal Heat Map",
+      "subtitle": "Heat map by priority and recency",
       "count": "Сигнали",
       "peakCell": "Врвна ќелија",
       "recent": "Скорешни",

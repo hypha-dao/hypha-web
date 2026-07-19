@@ -1168,8 +1168,8 @@
       "spaces": "Espacios"
     },
     "signals": {
-      "title": "Señales",
-      "subtitle": "Mapa de calor por prioridad y recencia (reciente a la izquierda, más antiguo a la derecha)",
+      "title": "Mapa de calor de señales",
+      "subtitle": "Mapa de calor por prioridad y recencia",
       "count": "Señales",
       "peakCell": "Celda máxima",
       "recent": "Reciente",

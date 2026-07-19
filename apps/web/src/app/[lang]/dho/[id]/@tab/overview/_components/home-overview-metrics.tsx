@@ -87,7 +87,13 @@ function sortByPriority<T extends { priority: string; count: number }>(
   });
 }
 
-export function OverviewSignalsDashboard({ spaceSlug }: { spaceSlug: string }) {
+export function OverviewSignalsDashboard({
+  spaceSlug,
+  afterSummary,
+}: {
+  spaceSlug: string;
+  afterSummary?: React.ReactNode;
+}) {
   const { getAccessToken } = useAuthentication();
   const t = useTranslations('TokenHoldingsDashboard');
   const { data, error, isLoading } = useSWR(
@@ -157,6 +163,8 @@ export function OverviewSignalsDashboard({ spaceSlug }: { spaceSlug: string }) {
           },
         ]}
       />
+
+      {afterSummary}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <OverviewChartShell

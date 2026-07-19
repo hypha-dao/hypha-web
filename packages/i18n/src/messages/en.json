@@ -401,8 +401,8 @@
       "spaces": "Spaces"
     },
     "signals": {
-      "title": "Signals",
-      "subtitle": "Heat map by priority and recency (recent left, older right)",
+      "title": "Signal Heat Map",
+      "subtitle": "Heat map by priority and recency",
       "count": "Signals",
       "peakCell": "Peak cell",
       "recent": "Recent",
