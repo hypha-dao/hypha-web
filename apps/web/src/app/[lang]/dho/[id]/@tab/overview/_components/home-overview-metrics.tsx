@@ -4,19 +4,22 @@ import * as React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type {
+  SpaceActivationClassification,
   SpaceOverviewFlowsData,
   SpaceOverviewMemoryData,
   SpaceOverviewSignalsData,
 } from '@hypha-platform/core/client';
 import {
+  Badge,
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
   Skeleton,
 } from '@hypha-platform/ui';
 import { FileText, Mic, Video } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   AreaTrendChart,
   DonutChart,
@@ -468,9 +471,18 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
   );
 }
 
-export function OverviewFlowsDashboard({ spaceSlug }: { spaceSlug: string }) {
+export function OverviewActiveSpacesDashboard({
+  spaceSlug,
+}: {
+  spaceSlug: string;
+}) {
+  const locale = useLocale();
   const { getAccessToken } = useAuthentication();
   const t = useTranslations('TokenHoldingsDashboard');
+  const [search, setSearch] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<
+    'all' | 'active_paid' | 'free_trial' | 'expiring' | 'expired'
+  >('all');
   const { data, error, isLoading } = useSWR(
     ['space-overview-flows', spaceSlug],
     createOverviewFetcher(
@@ -483,6 +495,40 @@ export function OverviewFlowsDashboard({ spaceSlug }: { spaceSlug: string }) {
       dedupingInterval: 300_000,
     },
   );
+
+  const filteredSpaces = React.useMemo(() => {
+    if (!data) return [];
+    const payload = data as SpaceOverviewFlowsData;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const in30Days = nowSec + 30 * 86_400;
+    const query = search.trim().toLowerCase();
+
+    return payload.spaces.filter((space) => {
+      if (query) {
+        const haystack = `${space.title} ${space.slug}`.toLowerCase();
+        if (!haystack.includes(query)) return false;
+      }
+      if (statusFilter === 'all') return true;
+      if (statusFilter === 'active_paid') {
+        return space.classification === 'active_paid';
+      }
+      if (statusFilter === 'free_trial') {
+        return space.classification === 'free_trial' && space.isActive;
+      }
+      if (statusFilter === 'expiring') {
+        return (
+          space.isActive &&
+          space.expiryTime != null &&
+          space.expiryTime > nowSec &&
+          space.expiryTime <= in30Days
+        );
+      }
+      if (statusFilter === 'expired') {
+        return space.classification === 'expired_paid';
+      }
+      return true;
+    });
+  }, [data, search, statusFilter]);
 
   if (isLoading) {
     return (
@@ -507,28 +553,91 @@ export function OverviewFlowsDashboard({ spaceSlug }: { spaceSlug: string }) {
   }
 
   const payload = data as SpaceOverviewFlowsData;
-  const payingSummary = payload.summary;
-  const payingSpaces = payload.spaces;
-  const totalHyphaBurned = Number.parseFloat(payingSummary.totalHyphaBurned);
+  const summary = payload.summary;
+  const totalHyphaBurned = Number.parseFloat(summary.totalHyphaBurned);
   const hyphaBurnedDisplay = Number.isFinite(totalHyphaBurned)
     ? totalHyphaBurned.toLocaleString(undefined, { maximumFractionDigits: 0 })
-    : payingSummary.totalHyphaBurned;
-  const monthlyBars = payload.monthly.slice(-8).map((row, index) => ({
+    : summary.totalHyphaBurned;
+  const monthly = payload.monthly.slice(-12);
+  const activationBars = monthly.map((row, index) => ({
     label: row.month.slice(5),
     value: row.spacesActivated,
     color: accentColor(index),
   }));
+  const contributionBars = monthly.map((row, index) => ({
+    label: row.month.slice(5),
+    value: Math.round(Number.parseFloat(row.totalHypha) || 0),
+    color: accentColor(index + 2),
+  }));
+  const churnBars = monthly.map((row, index) => ({
+    label: row.month.slice(5),
+    value: row.spacesExpired,
+    color: accentColor(index + 4),
+  }));
+  const classificationSlices = [
+    {
+      label: t('flowsDashboard.classification.active_paid'),
+      value: summary.activePaidSpaces,
+      color: accentColor(0),
+    },
+    {
+      label: t('flowsDashboard.classification.free_trial'),
+      value: summary.activeFreeTrialSpaces,
+      color: accentColor(1),
+    },
+    {
+      label: t('flowsDashboard.classification.expired_paid'),
+      value: summary.expiredPaidSpaces,
+      color: accentColor(3),
+    },
+  ].filter((slice) => slice.value > 0);
+
+  const formatExpiry = (expiryTime: number | null, isActive: boolean) => {
+    if (!expiryTime) return t('flowsDashboard.noExpiry');
+    const date = new Date(expiryTime * 1000);
+    const formatted = new Intl.DateTimeFormat(locale, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+    return isActive
+      ? t('flowsDashboard.activeUntil', { date: formatted })
+      : t('flowsDashboard.expiredOn', { date: formatted });
+  };
+
+  const classificationLabel = (
+    classification: SpaceActivationClassification,
+  ) => {
+    switch (classification) {
+      case 'active_paid':
+        return t('flowsDashboard.classification.active_paid');
+      case 'free_trial':
+        return t('flowsDashboard.classification.free_trial');
+      case 'expired_paid':
+        return t('flowsDashboard.classification.expired_paid');
+      default:
+        return t('flowsDashboard.classification.inactive');
+    }
+  };
 
   return (
     <div className="space-y-4">
       <StatRibbon
         items={[
           {
+            label: t('flowsDashboard.totalSpaces'),
+            value: summary.totalSpaces,
+            hint: t('flowsDashboard.spaceStructureHint', {
+              ecosystems: summary.ecosystemSpaces,
+              members: summary.memberSpaces,
+            }),
+          },
+          {
             label: t('flowsDashboard.hyphaPaidSpaces'),
-            value: payingSummary.hyphaPaidSpaces,
+            value: summary.hyphaPaidSpaces,
             hint: t('flowsDashboard.hyphaPaidSpacesHint', {
-              active: payingSummary.activePaidSpaces,
-              expired: payingSummary.expiredPaidSpaces,
+              active: summary.activePaidSpaces,
+              expired: summary.expiredPaidSpaces,
             }),
           },
           {
@@ -536,68 +645,207 @@ export function OverviewFlowsDashboard({ spaceSlug }: { spaceSlug: string }) {
             value: hyphaBurnedDisplay,
           },
           {
-            label: t('flowsDashboard.trackedSpaces'),
-            value: payingSummary.totalSpaces,
-          },
-          {
             label: t('flowsDashboard.paymentEventsLabel'),
-            value: payingSummary.paymentEventsInRange,
+            value: summary.paymentEventsInRange,
           },
         ]}
       />
 
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <StatRibbon
+        items={[
+          {
+            label: t('flowsDashboard.activeFreeTrial'),
+            value: summary.activeFreeTrialSpaces,
+          },
+          {
+            label: t('flowsDashboard.expiringNext30Days'),
+            value: summary.expiringNext30Days,
+          },
+          {
+            label: t('flowsDashboard.justExpired30Days'),
+            value: summary.justExpired30Days,
+          },
+          {
+            label: t('flowsDashboard.churnRate'),
+            value: `${summary.churnRatePct}%`,
+            hint: t('flowsDashboard.churnRateHint'),
+          },
+        ]}
+      />
+
+      <div className="grid gap-4 xl:grid-cols-2">
         <OverviewChartShell
-          title={t('flowsDashboard.paymentsByMonth')}
-          subtitle={t('flowsDashboard.paymentsByMonthSubtitle')}
+          title={t('flowsDashboard.activationByMonth')}
+          subtitle={t('flowsDashboard.activationByMonthSubtitle')}
         >
           <VerticalBarsChart
-            items={monthlyBars}
+            items={activationBars}
             emptyLabel={t('flowsDashboard.noData')}
           />
         </OverviewChartShell>
-        <OverviewChartShell title={t('flowsDashboard.breakdown')}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <RadialGauge
-              value={payingSummary.activePaidSpaces}
-              max={Math.max(payingSummary.hyphaPaidSpaces, 1)}
-              label={t('flowsDashboard.activePaid')}
-              hint={`${payingSummary.activePaidSpaces} / ${payingSummary.hyphaPaidSpaces}`}
-            />
-            <RadialGauge
-              value={payingSummary.expiredPaidSpaces}
-              max={Math.max(payingSummary.hyphaPaidSpaces, 1)}
-              label={t('flowsDashboard.expiredPaid')}
-              hint={`${payingSummary.expiredPaidSpaces} / ${payingSummary.hyphaPaidSpaces}`}
-            />
-          </div>
+        <OverviewChartShell
+          title={t('flowsDashboard.contributionByMonth')}
+          subtitle={t('flowsDashboard.contributionByMonthSubtitle')}
+        >
+          <VerticalBarsChart
+            items={contributionBars}
+            emptyLabel={t('flowsDashboard.noData')}
+          />
+        </OverviewChartShell>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <OverviewChartShell
+          title={t('flowsDashboard.churnByMonth')}
+          subtitle={t('flowsDashboard.churnByMonthSubtitle')}
+        >
+          <VerticalBarsChart
+            items={churnBars}
+            emptyLabel={t('flowsDashboard.noData')}
+          />
+        </OverviewChartShell>
+        <OverviewChartShell
+          title={t('flowsDashboard.activeMix')}
+          subtitle={t('flowsDashboard.activeMixSubtitle')}
+        >
+          <DonutChart
+            data={classificationSlices}
+            centerValue={summary.hyphaPaidSpaces}
+            centerLabel={t('flowsDashboard.hyphaPaidSpaces')}
+            emptyLabel={t('flowsDashboard.noData')}
+          />
         </OverviewChartShell>
       </div>
 
       <OverviewChartShell
-        title={t('flowsDashboard.payingSpacesTitle')}
-        subtitle={t('flowsDashboard.payingSpacesSubtitle', {
-          count: payingSpaces.length,
+        title={t('flowsDashboard.registryTitle')}
+        subtitle={t('flowsDashboard.registrySubtitle', {
+          shown: filteredSpaces.length,
+          total: payload.spaces.length,
         })}
       >
-        {payingSpaces.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {t('flowsDashboard.noData')}
-          </p>
-        ) : (
-          <HorizontalBarsChart
-            items={payingSpaces.slice(0, 8).map((space, index) => ({
-              label: space.title,
-              value: Number.parseFloat(space.totalHyphaPaid) || 0,
-              color: accentColor(index),
-            }))}
-            emptyLabel={t('flowsDashboard.noData')}
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t('flowsDashboard.searchPlaceholder')}
+            className="max-w-md"
           />
-        )}
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                'all',
+                'active_paid',
+                'free_trial',
+                'expiring',
+                'expired',
+              ] as const
+            ).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setStatusFilter(filter)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  statusFilter === filter
+                    ? 'border-[color-mix(in_oklab,var(--space-accent,var(--accent-9))_40%,var(--border))] bg-[color-mix(in_oklab,var(--space-accent,var(--accent-9))_14%,transparent)] text-foreground'
+                    : 'border-border/60 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t(`flowsDashboard.filters.${filter}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-border/60">
+          <table className="min-w-full text-sm">
+            <thead className="bg-muted/30 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2.5">
+                  {t('flowsDashboard.table.space')}
+                </th>
+                <th className="px-3 py-2.5">
+                  {t('flowsDashboard.table.classification')}
+                </th>
+                <th className="px-3 py-2.5">
+                  {t('flowsDashboard.table.status')}
+                </th>
+                <th className="px-3 py-2.5">
+                  {t('flowsDashboard.table.activeUntil')}
+                </th>
+                <th className="px-3 py-2.5 text-right">
+                  {t('flowsDashboard.table.hyphaPaid')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSpaces.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-3 py-8 text-center text-muted-foreground"
+                  >
+                    {t('flowsDashboard.noMatches')}
+                  </td>
+                </tr>
+              ) : (
+                filteredSpaces.map((space) => (
+                  <tr
+                    key={space.spaceId}
+                    className="border-t border-border/50 hover:bg-muted/20"
+                  >
+                    <td className="px-3 py-2.5">
+                      <div className="font-medium text-foreground">
+                        {space.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {space.slug}
+                        {space.isEcosystem
+                          ? ` · ${t('flowsDashboard.ecosystemBadge')}`
+                          : ''}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <Badge variant="outline" className="border-border/60">
+                        {classificationLabel(space.classification)}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <Badge
+                        variant="outline"
+                        className={
+                          space.isActive
+                            ? 'border-[color-mix(in_oklab,var(--color-success-9,var(--success-9))_35%,var(--border))] text-[var(--color-success-11,var(--success-11))]'
+                            : 'border-border/60 text-muted-foreground'
+                        }
+                      >
+                        {space.isActive
+                          ? t('flowsDashboard.active')
+                          : t('flowsDashboard.expired')}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      {formatExpiry(space.expiryTime, space.isActive)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium tabular-nums">
+                      {Number.parseFloat(space.totalHyphaPaid).toLocaleString(
+                        locale,
+                        { maximumFractionDigits: 2 },
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </OverviewChartShell>
     </div>
   );
 }
+
+/** @deprecated Use OverviewActiveSpacesDashboard */
+export const OverviewFlowsDashboard = OverviewActiveSpacesDashboard;
 
 export function OverviewGovernanceDashboard({
   proposals,

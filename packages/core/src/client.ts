@@ -30,4 +30,6 @@ export type {
   SpaceOverviewSignalsData,
   SpaceOverviewMemoryData,
   SpaceOverviewFlowsData,
+  SpaceActivationClassification,
 } from './platform/types';
+export { isHyphaPlatformSpace } from './platform/is-hypha-platform-space';

@@ -1,12 +1,24 @@
+export type SpaceActivationClassification =
+  | 'free_trial'
+  | 'active_paid'
+  | 'expired_paid'
+  | 'inactive';
+
 export type PlatformDashboardData = {
   generatedAt: string;
   payingSpaces: {
     summary: {
       totalSpaces: number;
+      ecosystemSpaces: number;
+      memberSpaces: number;
       hyphaPaidSpaces: number;
       activePaidSpaces: number;
+      activeFreeTrialSpaces: number;
       expiredPaidSpaces: number;
       freeTrialOnly: number;
+      expiringNext30Days: number;
+      justExpired30Days: number;
+      churnRatePct: number;
       totalHyphaBurned: string;
       paymentEventsInRange: number;
     };
@@ -14,6 +26,7 @@ export type PlatformDashboardData = {
       month: string;
       paymentCount: number;
       spacesActivated: number;
+      spacesExpired: number;
       totalHypha: string;
     }>;
     spaces: Array<{
@@ -26,6 +39,8 @@ export type PlatformDashboardData = {
       expiryTime: number | null;
       freeTrialUsed: boolean;
       totalHyphaPaid: string;
+      classification: SpaceActivationClassification;
+      isEcosystem: boolean;
     }>;
   };
   assets: {
@@ -146,10 +161,16 @@ export type SpaceOverviewFlowsData = {
   asOf: string;
   summary: {
     totalSpaces: number;
+    ecosystemSpaces: number;
+    memberSpaces: number;
     hyphaPaidSpaces: number;
     activePaidSpaces: number;
+    activeFreeTrialSpaces: number;
     expiredPaidSpaces: number;
     freeTrialOnly: number;
+    expiringNext30Days: number;
+    justExpired30Days: number;
+    churnRatePct: number;
     totalHyphaBurned: string;
     paymentEventsInRange: number;
   };
@@ -157,6 +178,7 @@ export type SpaceOverviewFlowsData = {
     month: string;
     paymentCount: number;
     spacesActivated: number;
+    spacesExpired: number;
     totalHypha: string;
   }>;
   spaces: Array<{
@@ -169,5 +191,7 @@ export type SpaceOverviewFlowsData = {
     expiryTime: number | null;
     freeTrialUsed: boolean;
     totalHyphaPaid: string;
+    classification: SpaceActivationClassification;
+    isEcosystem: boolean;
   }>;
 };

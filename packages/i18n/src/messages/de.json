@@ -366,7 +366,8 @@
       "assets": "Vermögenswerte",
       "flows": "Flüsse",
       "signals": "Signale",
-      "memory": "Memory"
+      "memory": "Memory",
+      "activeSpaces": "Aktive Spaces"
     },
     "activity": {
       "title": "Aktivitäts-Widgets konnten nicht geladen werden",
@@ -503,28 +504,71 @@
       "emptyArchive": "Chat aktivieren, um Space Memory aufzubauen."
     },
     "flowsDashboard": {
-      "errorTitle": "Plattform-Flüsse konnten nicht geladen werden",
-      "error": "HYPHA-zahlende Spaces konnten nicht geladen werden. Der erste Aufruf kann eine Minute dauern.",
+      "errorTitle": "Aktive Spaces konnten nicht geladen werden",
+      "error": "Aktivierungs- und Churn-Analysen konnten nicht geladen werden. Der erste Aufruf kann eine Minute dauern.",
+      "loadingTitle": "Aktive Spaces werden geladen",
+      "loading": "Plattform-Aktivierungs- und Churn-Kennzahlen werden abgerufen. Der erste Aufruf kann einige Sekunden dauern.",
       "noData": "Noch keine HYPHA-zahlenden Spaces.",
+      "noMatches": "Keine Spaces entsprechen Ihren Filtern.",
       "hyphaPaidSpaces": "Mit HYPHA bezahlte Spaces",
       "hyphaPaidSpacesHint": "{active} aktiv · {expired} abgelaufen",
       "totalHyphaBurned": "HYPHA insgesamt verbrannt",
       "freeTrialOnly": "Nur kostenlose Testversion",
       "trackedSpaces": "Erfasste Spaces",
+      "totalSpaces": "Spaces insgesamt",
+      "spaceStructureHint": "{ecosystems} Ökosysteme · {members} Member-Spaces",
       "paymentEvents": "{count} Zahlungsereignisse (365d)",
       "paymentEventsLabel": "Zahlungsereignisse (365d)",
       "paymentsByMonth": "HYPHA Activate-Space-Zahlungen nach Monat",
       "paymentsByMonthSubtitle": "Pro Monat auf der Plattform aktivierte Spaces.",
+      "activationByMonth": "Space-Aktivierungen nach Monat",
+      "activationByMonthSubtitle": "Neue bezahlte Aktivierungen pro Monat (letzte 12 Monate).",
+      "contributionByMonth": "HYPHA-Beitrag nach Monat",
+      "contributionByMonthSubtitle": "Kumuliert verbranntes HYPHA durch Activate-Space-Zahlungen.",
+      "churnByMonth": "Abgelaufene Spaces nach Monat",
+      "churnByMonthSubtitle": "Spaces, deren bezahlte Periode in jedem Monat endete.",
+      "activeMix": "Aktive Space-Mix",
+      "activeMixSubtitle": "Klassifizierung der HYPHA-zahlenden Spaces heute.",
       "breakdown": "Aufschlüsselung zahlender Spaces",
       "activePaid": "Aktiv bezahlt",
+      "activeFreeTrial": "Aktive kostenlose Testversion",
       "expiredPaid": "Abgelaufen bezahlt",
+      "expiringNext30Days": "Läuft in 30 Tagen ab",
+      "justExpired30Days": "In 30 Tagen abgelaufen",
+      "churnRate": "Churn-Rate",
+      "churnRateHint": "Abgelaufen bezahlt ÷ HYPHA-zahlende Spaces",
       "payingSpacesTitle": "Zahlende Spaces auf Hypha",
       "payingSpacesSubtitle": "{count} Spaces haben mit HYPHA bezahlt.",
+      "registryTitle": "Aktives Space-Register",
+      "registrySubtitle": "{shown} von {total} HYPHA-zahlenden Spaces angezeigt.",
+      "searchPlaceholder": "Spaces nach Name oder Slug suchen",
+      "ecosystemBadge": "Ökosystem",
+      "noExpiry": "Kein Ablaufdatum hinterlegt",
+      "activeUntil": "Aktiv bis {date}",
+      "expiredOn": "Abgelaufen {date}",
       "currentSpace": "dieser Space",
       "active": "Aktiv",
       "expired": "Abgelaufen",
-      "loadingTitle": "Plattform-Flüsse werden geladen",
-      "loading": "HYPHA-zahlende Spaces werden abgerufen. Der erste Aufruf kann einige Sekunden dauern."
+      "classification": {
+        "active_paid": "Aktiv bezahlt",
+        "free_trial": "Kostenlose Testversion",
+        "expired_paid": "Abgelaufen bezahlt",
+        "inactive": "Inaktiv"
+      },
+      "filters": {
+        "all": "Alle",
+        "active_paid": "Aktiv bezahlt",
+        "free_trial": "Kostenlose Testversion",
+        "expiring": "Läuft bald ab",
+        "expired": "Abgelaufen"
+      },
+      "table": {
+        "space": "Space",
+        "classification": "Klassifizierung",
+        "status": "Status",
+        "activeUntil": "Aktiv bis",
+        "hyphaPaid": "HYPHA bezahlt"
+      }
     }
   },
   "PlatformOverview": {

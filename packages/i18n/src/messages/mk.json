@@ -346,7 +346,8 @@
       "assets": "Активи",
       "flows": "Flows",
       "signals": "Signals",
-      "memory": "Memory"
+      "memory": "Memory",
+      "activeSpaces": "Active Spaces"
     },
     "activity": {
       "title": "Не може да се вчитаат виџетите за активност",
@@ -483,28 +484,71 @@
       "emptyArchive": "Enable chat to start building space memory."
     },
     "flowsDashboard": {
-      "errorTitle": "Unable to load platform flows",
-      "error": "Unable to load HYPHA paying spaces right now. This can take a minute on first load.",
-      "noData": "No HYPHA paying spaces yet.",
+      "errorTitle": "Unable to load active spaces",
+      "error": "Unable to load active space analytics right now. First load may take a minute.",
+      "loadingTitle": "Loading active spaces",
+      "loading": "Fetching platform activation and churn metrics. First load may take a few seconds.",
+      "noData": "No HYPHA-paid spaces yet.",
+      "noMatches": "No spaces match your filters.",
       "hyphaPaidSpaces": "HYPHA-paid spaces",
       "hyphaPaidSpacesHint": "{active} active · {expired} expired",
       "totalHyphaBurned": "Total HYPHA burned",
       "freeTrialOnly": "Free trial only",
       "trackedSpaces": "Tracked spaces",
+      "totalSpaces": "Total spaces",
+      "spaceStructureHint": "{ecosystems} ecosystems · {members} member spaces",
       "paymentEvents": "{count} payment events (365d)",
       "paymentEventsLabel": "Payment events (365d)",
       "paymentsByMonth": "HYPHA activate-space payments by month",
       "paymentsByMonthSubtitle": "Spaces activated per month across the platform.",
+      "activationByMonth": "Space activations by month",
+      "activationByMonthSubtitle": "New paid activations per month (last 12 months).",
+      "contributionByMonth": "HYPHA contribution by month",
+      "contributionByMonthSubtitle": "Cumulative HYPHA burned through activate-space payments.",
+      "churnByMonth": "Expired spaces by month",
+      "churnByMonthSubtitle": "Spaces whose paid period ended in each month.",
+      "activeMix": "Active space mix",
+      "activeMixSubtitle": "Classification of HYPHA-paid spaces today.",
       "breakdown": "Paying spaces breakdown",
       "activePaid": "Active paid",
+      "activeFreeTrial": "Active free trial",
       "expiredPaid": "Expired paid",
+      "expiringNext30Days": "Expiring in 30 days",
+      "justExpired30Days": "Expired in 30 days",
+      "churnRate": "Churn rate",
+      "churnRateHint": "Expired paid ÷ HYPHA-paid spaces",
       "payingSpacesTitle": "Paying spaces on Hypha",
       "payingSpacesSubtitle": "{count} spaces have paid with HYPHA.",
+      "registryTitle": "Active space registry",
+      "registrySubtitle": "Showing {shown} of {total} HYPHA-paid spaces.",
+      "searchPlaceholder": "Search spaces by name or slug",
+      "ecosystemBadge": "Ecosystem",
+      "noExpiry": "No expiry on record",
+      "activeUntil": "Active until {date}",
+      "expiredOn": "Expired {date}",
       "currentSpace": "this space",
       "active": "Active",
       "expired": "Expired",
-      "loadingTitle": "Loading platform flows",
-      "loading": "Fetching HYPHA paying spaces. First load may take a few seconds."
+      "classification": {
+        "active_paid": "Active paid",
+        "free_trial": "Free trial",
+        "expired_paid": "Expired paid",
+        "inactive": "Inactive"
+      },
+      "filters": {
+        "all": "All",
+        "active_paid": "Active paid",
+        "free_trial": "Free trial",
+        "expiring": "Expiring soon",
+        "expired": "Expired"
+      },
+      "table": {
+        "space": "Space",
+        "classification": "Classification",
+        "status": "Status",
+        "activeUntil": "Active until",
+        "hyphaPaid": "HYPHA paid"
+      }
     }
   },
   "SpaceSettingsAction": {

@@ -6,29 +6,34 @@ import {
   spacePaymentTrackerAbi,
   spacePaymentTrackerAddress,
 } from '../../generated';
-import { findAllSpacesByWeb3SpaceIds } from '../../space/server/queries';
 import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../server';
 import { spaces } from '@hypha-platform/storage-postgres';
-import { and, count, eq, gt, isNotNull, not, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gt, isNotNull, not, sql } from 'drizzle-orm';
 import { formatUnits } from 'viem';
+
+import type { SpaceActivationClassification } from '../types';
 
 export type PayingSpaceStatus = {
   spaceId: number;
   web3SpaceId: number;
   slug: string;
   title: string;
+  parentId: number | null;
   hasPaidWithHypha: boolean;
   isActive: boolean;
   expiryTime: number | null;
   freeTrialUsed: boolean;
   totalHyphaPaid: string;
+  classification: SpaceActivationClassification;
+  isEcosystem: boolean;
 };
 
 export type HyphaPaymentMonthBucket = {
   month: string;
   paymentCount: number;
   spacesActivated: number;
+  spacesExpired: number;
   totalHypha: string;
 };
 
@@ -44,10 +49,16 @@ type HyphaPaymentEvent = {
 type PayingSpacesMetrics = {
   summary: {
     totalSpaces: number;
+    ecosystemSpaces: number;
+    memberSpaces: number;
     hyphaPaidSpaces: number;
     activePaidSpaces: number;
+    activeFreeTrialSpaces: number;
     expiredPaidSpaces: number;
     freeTrialOnly: number;
+    expiringNext30Days: number;
+    justExpired30Days: number;
+    churnRatePct: number;
     totalHyphaBurned: string;
     paymentEventsInRange: number;
   };
@@ -61,6 +72,7 @@ const HISTORY_DAYS = 365n;
 const EVENT_CHUNK_CONCURRENCY = 12;
 const BLOCK_FETCH_CONCURRENCY = 40;
 const PAYMENT_STATE_BATCH_SIZE = 30;
+const TRACKED_SPACE_PAYMENT_BATCH_SIZE = 40;
 const METRICS_CACHE_TTL_MS = 15 * 60 * 1000;
 const EVENTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
@@ -167,17 +179,68 @@ async function countTrackedSpaces({ db }: DbConfig): Promise<number> {
   const [row] = await db
     .select({ total: count() })
     .from(spaces)
-    .where(
-      and(
-        eq(spaces.isArchived, false),
-        isNotNull(spaces.web3SpaceId),
-        gt(spaces.web3SpaceId, 0),
-        not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`),
-        not(sql`${spaces.flags} @> '["archived"]'::jsonb`),
-      ),
-    );
+    .where(trackedSpaceFilter());
 
   return Number(row?.total ?? 0);
+}
+
+function trackedSpaceFilter() {
+  return and(
+    eq(spaces.isArchived, false),
+    isNotNull(spaces.web3SpaceId),
+    gt(spaces.web3SpaceId, 0),
+    not(sql`${spaces.flags} @> '["sandbox"]'::jsonb`),
+    not(sql`${spaces.flags} @> '["archived"]'::jsonb`),
+  );
+}
+
+async function countSpaceStructure({ db }: DbConfig) {
+  const [row] = await db
+    .select({
+      ecosystems: sql<number>`count(*) filter (where ${spaces.parentId} is null)`,
+      memberSpaces: sql<number>`count(*) filter (where ${spaces.parentId} is not null)`,
+    })
+    .from(spaces)
+    .where(trackedSpaceFilter());
+
+  return {
+    ecosystemSpaces: Number(row?.ecosystems ?? 0),
+    memberSpaces: Number(row?.memberSpaces ?? 0),
+  };
+}
+
+async function listTrackedSpaces({ db }: DbConfig) {
+  return db
+    .select({
+      id: spaces.id,
+      slug: spaces.slug,
+      title: spaces.title,
+      web3SpaceId: spaces.web3SpaceId,
+      parentId: spaces.parentId,
+    })
+    .from(spaces)
+    .where(trackedSpaceFilter())
+    .orderBy(asc(spaces.title));
+}
+
+function classifySpace(input: {
+  hasPaidWithHypha: boolean;
+  isActive: boolean;
+  freeTrialUsed: boolean;
+  totalHyphaPaid: string;
+}): SpaceActivationClassification {
+  const hyphaPaid =
+    input.hasPaidWithHypha || Number.parseFloat(input.totalHyphaPaid) > 0;
+
+  if (input.isActive) {
+    if (hyphaPaid) return 'active_paid';
+    if (input.freeTrialUsed) return 'free_trial';
+    return 'inactive';
+  }
+
+  if (hyphaPaid) return 'expired_paid';
+  if (input.freeTrialUsed) return 'free_trial';
+  return 'inactive';
 }
 
 async function fetchPaymentStatesForSpaces(
@@ -186,7 +249,9 @@ async function fetchPaymentStatesForSpaces(
     slug: string;
     title: string;
     web3SpaceId: number;
+    parentId: number | null;
   }>,
+  hyphaPaidByWeb3SpaceId: Map<number, bigint>,
 ): Promise<PayingSpaceStatus[]> {
   if (spacesToCheck.length === 0) {
     return [];
@@ -198,6 +263,10 @@ async function fetchPaymentStatesForSpaces(
     PAYMENT_STATE_BATCH_SIZE,
     async (space) => {
       const web3SpaceId = BigInt(space.web3SpaceId);
+      const totalHyphaPaid = formatUnits(
+        hyphaPaidByWeb3SpaceId.get(space.web3SpaceId) ?? 0n,
+        18,
+      );
       try {
         const [hasPaid, payment, isActive] = await web3Client.multicall({
           contracts: [
@@ -226,19 +295,29 @@ async function fetchPaymentStatesForSpaces(
           payment.status === 'success' ? Number(payment.result[0]) : null;
         const freeTrialUsed =
           payment.status === 'success' ? Boolean(payment.result[1]) : false;
+        const hasPaidWithHypha =
+          hasPaid.status === 'success' ? Boolean(hasPaid.result) : false;
+        const isActiveSpace =
+          isActive.status === 'success' ? Boolean(isActive.result) : false;
 
         return {
           spaceId: space.id,
           web3SpaceId: space.web3SpaceId,
           slug: space.slug,
           title: space.title,
-          hasPaidWithHypha:
-            hasPaid.status === 'success' ? Boolean(hasPaid.result) : false,
-          isActive:
-            isActive.status === 'success' ? Boolean(isActive.result) : false,
+          parentId: space.parentId,
+          hasPaidWithHypha,
+          isActive: isActiveSpace,
           expiryTime,
           freeTrialUsed,
-          totalHyphaPaid: '0',
+          totalHyphaPaid,
+          isEcosystem: space.parentId == null,
+          classification: classifySpace({
+            hasPaidWithHypha,
+            isActive: isActiveSpace,
+            freeTrialUsed,
+            totalHyphaPaid,
+          }),
         } satisfies PayingSpaceStatus;
       } catch (error) {
         console.warn(
@@ -250,11 +329,19 @@ async function fetchPaymentStatesForSpaces(
           web3SpaceId: space.web3SpaceId,
           slug: space.slug,
           title: space.title,
+          parentId: space.parentId,
           hasPaidWithHypha: false,
           isActive: false,
           expiryTime: null,
           freeTrialUsed: false,
-          totalHyphaPaid: '0',
+          totalHyphaPaid,
+          isEcosystem: space.parentId == null,
+          classification: classifySpace({
+            hasPaidWithHypha: false,
+            isActive: false,
+            freeTrialUsed: false,
+            totalHyphaPaid,
+          }),
         } satisfies PayingSpaceStatus;
       }
     },
@@ -266,10 +353,13 @@ async function fetchPaymentStatesForSpaces(
 async function computePayingSpacesMetrics({
   db,
 }: DbConfig): Promise<PayingSpacesMetrics> {
-  const [events, totalSpaces] = await Promise.all([
-    getHyphaPaymentEventsCached(),
-    countTrackedSpaces({ db }),
-  ]);
+  const [events, totalSpaces, spaceStructure, trackedSpaces] =
+    await Promise.all([
+      getHyphaPaymentEventsCached(),
+      countTrackedSpaces({ db }),
+      countSpaceStructure({ db }),
+      listTrackedSpaces({ db }),
+    ]);
 
   const hyphaPaidByWeb3SpaceId = new Map<number, bigint>();
   const monthBuckets = new Map<
@@ -322,38 +412,54 @@ async function computePayingSpacesMetrics({
     monthBuckets.set(month, bucket);
   }
 
-  const payingWeb3SpaceIds = [...hyphaPaidByWeb3SpaceId.entries()]
-    .filter(([, amount]) => amount > 0n)
-    .map(([web3SpaceId]) => web3SpaceId);
+  const trackedForPayment = trackedSpaces
+    .filter(
+      (space) =>
+        space.web3SpaceId != null &&
+        Number.isFinite(Number(space.web3SpaceId)) &&
+        Number(space.web3SpaceId) > 0,
+    )
+    .map((space) => ({
+      id: space.id,
+      slug: space.slug,
+      title: space.title,
+      web3SpaceId: Number(space.web3SpaceId),
+      parentId: space.parentId ?? null,
+    }));
 
-  const dbSpaces = await findAllSpacesByWeb3SpaceIds(
-    { web3SpaceIds: payingWeb3SpaceIds, parentOnly: false },
-    { db },
-  );
+  const paymentStateBatches: PayingSpaceStatus[] = [];
+  for (
+    let i = 0;
+    i < trackedForPayment.length;
+    i += TRACKED_SPACE_PAYMENT_BATCH_SIZE
+  ) {
+    const batch = trackedForPayment.slice(
+      i,
+      i + TRACKED_SPACE_PAYMENT_BATCH_SIZE,
+    );
+    const batchStates = await fetchPaymentStatesForSpaces(
+      batch,
+      hyphaPaidByWeb3SpaceId,
+    );
+    paymentStateBatches.push(...batchStates);
+  }
 
-  const paymentStates = await fetchPaymentStatesForSpaces(
-    dbSpaces
-      .filter(
-        (space) =>
-          space.web3SpaceId != null &&
-          Number.isFinite(Number(space.web3SpaceId)) &&
-          Number(space.web3SpaceId) > 0,
-      )
-      .map((space) => ({
-        id: space.id,
-        slug: space.slug,
-        title: space.title,
-        web3SpaceId: Number(space.web3SpaceId),
-      })),
-  );
+  const nowSec = Math.floor(Date.now() / 1000);
+  const in30Days = nowSec + 30 * 86_400;
+  const ago30Days = nowSec - 30 * 86_400;
+  const expiredByMonth = new Map<string, number>();
 
-  const spacesWithTotals = paymentStates.map((space) => ({
-    ...space,
-    totalHyphaPaid: formatUnits(
-      hyphaPaidByWeb3SpaceId.get(space.web3SpaceId) ?? 0n,
-      18,
-    ),
-  }));
+  for (const space of paymentStateBatches) {
+    if (
+      !space.expiryTime ||
+      space.expiryTime > nowSec ||
+      space.classification !== 'expired_paid'
+    ) {
+      continue;
+    }
+    const month = toMonthKey(new Date(space.expiryTime * 1000));
+    expiredByMonth.set(month, (expiredByMonth.get(month) ?? 0) + 1);
+  }
 
   const monthly: HyphaPaymentMonthBucket[] = [...monthBuckets.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -361,22 +467,65 @@ async function computePayingSpacesMetrics({
       month,
       paymentCount: bucket.paymentCount,
       spacesActivated: bucket.spaceIds.size,
+      spacesExpired: expiredByMonth.get(month) ?? 0,
       totalHypha: formatUnits(bucket.totalHypha, 18),
     }));
 
-  const hyphaPaidSpaces = spacesWithTotals.filter(
+  const hyphaPaidSpaces = paymentStateBatches.filter(
     (space) =>
-      space.hasPaidWithHypha || Number.parseFloat(space.totalHyphaPaid) > 0,
+      space.classification === 'active_paid' ||
+      space.classification === 'expired_paid' ||
+      space.hasPaidWithHypha ||
+      Number.parseFloat(space.totalHyphaPaid) > 0,
   );
-  const activePaidSpaces = hyphaPaidSpaces.filter((space) => space.isActive);
+  const activePaidSpaces = paymentStateBatches.filter(
+    (space) => space.classification === 'active_paid',
+  );
+  const activeFreeTrialSpaces = paymentStateBatches.filter(
+    (space) => space.classification === 'free_trial' && space.isActive,
+  );
+  const expiredPaidSpaces = paymentStateBatches.filter(
+    (space) => space.classification === 'expired_paid',
+  );
+  const freeTrialOnly = paymentStateBatches.filter(
+    (space) =>
+      space.classification === 'free_trial' &&
+      !space.hasPaidWithHypha &&
+      Number.parseFloat(space.totalHyphaPaid) <= 0,
+  ).length;
+  const expiringNext30Days = hyphaPaidSpaces.filter(
+    (space) =>
+      space.isActive &&
+      space.expiryTime != null &&
+      space.expiryTime > nowSec &&
+      space.expiryTime <= in30Days,
+  ).length;
+  const justExpired30Days = hyphaPaidSpaces.filter(
+    (space) =>
+      !space.isActive &&
+      space.expiryTime != null &&
+      space.expiryTime >= ago30Days &&
+      space.expiryTime < nowSec,
+  ).length;
+  const churnRatePct =
+    hyphaPaidSpaces.length > 0
+      ? Math.round((expiredPaidSpaces.length / hyphaPaidSpaces.length) * 1000) /
+        10
+      : 0;
 
   return {
     summary: {
       totalSpaces,
+      ecosystemSpaces: spaceStructure.ecosystemSpaces,
+      memberSpaces: spaceStructure.memberSpaces,
       hyphaPaidSpaces: hyphaPaidSpaces.length,
       activePaidSpaces: activePaidSpaces.length,
-      expiredPaidSpaces: hyphaPaidSpaces.length - activePaidSpaces.length,
-      freeTrialOnly: 0,
+      activeFreeTrialSpaces: activeFreeTrialSpaces.length,
+      expiredPaidSpaces: expiredPaidSpaces.length,
+      freeTrialOnly,
+      expiringNext30Days,
+      justExpired30Days,
+      churnRatePct,
       totalHyphaBurned: formatUnits(
         [...hyphaPaidByWeb3SpaceId.values()].reduce(
           (sum, value) => sum + value,
@@ -387,7 +536,14 @@ async function computePayingSpacesMetrics({
       paymentEventsInRange: events.length,
     },
     monthly,
-    spaces: hyphaPaidSpaces.sort((a, b) => a.title.localeCompare(b.title)),
+    spaces: hyphaPaidSpaces.sort((a, b) => {
+      const aExpiry = a.expiryTime ?? Number.MAX_SAFE_INTEGER;
+      const bExpiry = b.expiryTime ?? Number.MAX_SAFE_INTEGER;
+      if (a.isActive !== b.isActive) {
+        return a.isActive ? -1 : 1;
+      }
+      return aExpiry - bExpiry || a.title.localeCompare(b.title);
+    }),
   };
 }
 
