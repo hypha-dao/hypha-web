@@ -27,3 +27,9 @@ export {
   BANK_VIRTUAL_ACCOUNT_CURRENCIES,
 } from './banking/constants';
 export type { BankProvider } from './banking/types';
+export type { PlatformDashboardData } from './platform/types';
+export type {
+  SpaceOverviewSignalsData,
+  SpaceOverviewMemoryData,
+  SpaceOverviewFlowsData,
+} from './platform/types';

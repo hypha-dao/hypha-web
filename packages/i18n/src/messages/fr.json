@@ -60,8 +60,7 @@
       "genericUploadFallback": "<accent>Téléverser</accent> une image",
       "fileTooLarge": "Votre image est trop volumineuse (max. 16 Mo) et n’a pas pu être téléversée. Réduisez-la et réessayez.",
       "uploadFailed": "Le fichier n’a pas pu être téléversé."
-    },
-    "Pipeline": "Pipeline"
+    }
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",
@@ -362,8 +361,13 @@
     },
     "filters": {
       "energy": "Énergie",
-      "activity": "Activité",
-      "distribution": "Distribution"
+      "activity": "Accords",
+      "distribution": "Distribution",
+      "assets": "Actifs",
+      "flows": "Flux",
+      "signals": "Signaux",
+      "memory": "Mémoire",
+      "activeSpaces": "Espaces actifs"
     },
     "activity": {
       "title": "Impossible de charger les widgets d'activité",
@@ -380,7 +384,10 @@
       "delta": "Delta",
       "timeAxis": "Temps",
       "error": "Impossible de charger l'historique de distribution des tokens pour le moment.",
-      "empty": "Aucun historique de transfert trouvé pour les filtres sélectionnés."
+      "empty": "Aucun historique de transfert trouvé pour les filtres sélectionnés.",
+      "shareLabel": "Part du token",
+      "hoverHint": "Survolez pour inspecter la part à chaque date de transaction.",
+      "baselineHint": "La ligne pointillée marque la part initiale."
     },
     "proposals": {
       "title": "Propositions",
@@ -398,8 +405,8 @@
       "spaces": "Espaces"
     },
     "signals": {
-      "title": "Signaux",
-      "subtitle": "Carte de chaleur par priorité et récence (récent à gauche, plus ancien à droite)",
+      "title": "Carte thermique des signaux",
+      "subtitle": "Carte de chaleur par priorité et récence",
       "count": "Signaux",
       "peakCell": "Cellule maximale",
       "recent": "Récent",
@@ -412,6 +419,160 @@
     "energy": {
       "title": "Énergie",
       "description": "Les widgets énergie apparaîtront lorsque les données seront disponibles."
+    },
+    "assets": {
+      "title": "Résumé de trésorerie",
+      "subtitle": "Composition de la valeur et concentration en un coup d'œil.",
+      "totalBalance": "Valeur totale de la trésorerie",
+      "assetCount": "Actifs suivis",
+      "largestHolding": "Plus grande position",
+      "composition": "Composition des actifs",
+      "compositionSubtitle": "Part de la valeur de trésorerie par actif.",
+      "compositionAria": "Graphique de composition de trésorerie pour {title}",
+      "topHoldings": "Principales positions",
+      "topHoldingsSubtitle": "Plus grands actifs par valeur estimée en USD.",
+      "byType": "Valeur par type de token",
+      "byTypeSubtitle": "Répartition de la valeur de trésorerie entre les catégories de tokens.",
+      "valueLabel": "Valeur (USD)",
+      "quantityLabel": "Quantité",
+      "unitPrice": "Env. {price} par token",
+      "emptyTitle": "Aucun actif de trésorerie pour le moment",
+      "emptyDescription": "Cet espace ne détient actuellement aucun actif de trésorerie suivi.",
+      "errorTitle": "Impossible de charger le résumé de trésorerie",
+      "errorDescription": "Veuillez réessayer dans un instant. Les données de trésorerie sont peut-être encore en cours de synchronisation."
+    },
+    "signalsDashboard": {
+      "error": "Impossible de charger les analyses de signaux pour le moment.",
+      "noData": "Aucune donnée de signaux pour le moment.",
+      "total": "Signaux",
+      "totalHint": "{count} créés en 7j",
+      "last24h": "Créés en 24h",
+      "queuePending": "File d'attente en attente",
+      "queueFailed": "File d'attente échouée",
+      "byStatus": "Signaux par statut",
+      "byStatusSubtitle": "Où se situent les signaux dans le flux de travail.",
+      "byType": "Signaux par type",
+      "byTypeSubtitle": "Mix d'opportunités, risques, tensions et insights.",
+      "byPriority": "Signaux par priorité",
+      "byPrioritySubtitle": "Distribution de sévérité dans l'espace.",
+      "weeklyVelocity": "Vélocité des signaux",
+      "weeklyVelocitySubtitle": "Nouveaux signaux créés par semaine (8 dernières semaines).",
+      "emitted24h": "Signaux émis (24h)",
+      "relays24h": "Relays émis (24h)",
+      "errorTitle": "Impossible de charger les signaux"
+    },
+    "governanceDashboard": {
+      "health": "Santé de la gouvernance",
+      "healthSubtitle": "Part des propositions acceptées on-chain.",
+      "acceptanceRate": "Acceptation",
+      "acceptanceHint": "{percent}% acceptées",
+      "mix": "Mix de propositions",
+      "total": "Propositions"
+    },
+    "memoryDashboard": {
+      "error": "Impossible de charger les analyses de mémoire de l'espace pour le moment.",
+      "title": "Mémoire de l'espace",
+      "items": "Éléments",
+      "noData": "Aucun élément de mémoire pour le moment.",
+      "summaries": "Résumés",
+      "summaries24h": "{count} en 24h",
+      "summaries24hShort": "24h",
+      "summaries7dShort": "7j",
+      "transcripts": "Transcriptions",
+      "recordings": "Enregistrements",
+      "userCreatedMemories": "Mémoires créées par les membres",
+      "summaries7d": "Résumés (7j)",
+      "hasChat": "Chat activé",
+      "noChat": "Chat non activé",
+      "errorTitle": "Impossible de charger la mémoire de l'espace",
+      "totalItems": "Éléments de mémoire",
+      "totalHint": "{count} stockés pour cet espace",
+      "composition": "Composition de la mémoire",
+      "compositionSubtitle": "Résumés, transcriptions, enregistrements et entrées créées par les membres pour cet espace.",
+      "byType": "Éléments par type",
+      "byTypeSubtitle": "Volume relatif par catégorie de mémoire.",
+      "summariesDesc": "Résumés de discussion capturés par l'IA depuis le chat.",
+      "transcriptsDesc": "Transcriptions d'appels et de réunions.",
+      "recordingsDesc": "Enregistrements audio et vidéo.",
+      "userCreatedMemoriesDesc": "Notes et entrées ajoutées par les membres en tant que mémoire de l'espace.",
+      "summaryVelocity": "Vélocité des résumés",
+      "summaryVelocitySubtitle": "Nouveaux résumés de discussion par semaine (8 dernières semaines).",
+      "recentActivity": "Activité de capture récente",
+      "recentActivitySubtitle": "Nouveaux résumés au cours des 7 et 24 dernières heures.",
+      "noRecentActivity": "Aucune activité de résumé récente pour le moment.",
+      "chatStatus": "Chat humain",
+      "chatActive": "Actif",
+      "chatInactive": "Non configuré",
+      "dominantType": "Catégorie principale",
+      "shareOfArchive": "{percent}% de l'archive",
+      "emptyArchive": "Activez le chat pour commencer à construire la mémoire de l'espace."
+    },
+    "flowsDashboard": {
+      "errorTitle": "Impossible de charger les espaces actifs",
+      "error": "Impossible de charger les analyses d'activation et de churn. Le premier chargement peut prendre une minute.",
+      "loadingTitle": "Chargement des espaces actifs",
+      "loading": "Récupération des métriques d'activation et de churn. Le premier chargement peut prendre quelques secondes.",
+      "noData": "Aucun espace payant en HYPHA pour l'instant.",
+      "noMatches": "Aucun espace ne correspond à vos filtres.",
+      "hyphaPaidSpaces": "Espaces payants en HYPHA",
+      "hyphaPaidSpacesHint": "{active} actifs · {expired} expirés",
+      "totalHyphaBurned": "HYPHA total brûlé",
+      "freeTrialOnly": "Essai gratuit uniquement",
+      "trackedSpaces": "Espaces suivis",
+      "totalSpaces": "Espaces au total",
+      "spaceStructureHint": "{ecosystems} écosystèmes · {members} espaces membres",
+      "paymentEvents": "{count} événements de paiement (365j)",
+      "paymentEventsLabel": "Événements de paiement (365j)",
+      "paymentsByMonth": "Paiements activate-space HYPHA par mois",
+      "paymentsByMonthSubtitle": "Espaces activés par mois sur la plateforme.",
+      "activationByMonth": "Activations d'espaces par mois",
+      "activationByMonthSubtitle": "Nouvelles activations payantes par mois (12 derniers mois).",
+      "contributionByMonth": "Contribution HYPHA par mois",
+      "contributionByMonthSubtitle": "HYPHA brûlé cumulé via les paiements activate-space.",
+      "churnByMonth": "Espaces expirés par mois",
+      "churnByMonthSubtitle": "Espaces dont la période payante s'est terminée chaque mois.",
+      "activeMix": "Mix d'espaces actifs",
+      "activeMixSubtitle": "Classification des espaces payants en HYPHA aujourd'hui.",
+      "breakdown": "Répartition des espaces payants",
+      "activePaid": "Payant actif",
+      "activeFreeTrial": "Essai gratuit actif",
+      "expiredPaid": "Payant expiré",
+      "expiringNext30Days": "Expire dans 30 jours",
+      "justExpired30Days": "Expiré dans les 30 jours",
+      "churnRate": "Taux de churn",
+      "churnRateHint": "Payant expiré ÷ espaces payants en HYPHA",
+      "payingSpacesTitle": "Espaces payants sur Hypha",
+      "payingSpacesSubtitle": "{count} espaces ont payé en HYPHA.",
+      "registryTitle": "Registre des espaces actifs",
+      "registrySubtitle": "Affichage de {shown} sur {total} espaces payants en HYPHA.",
+      "searchPlaceholder": "Rechercher par nom ou slug",
+      "ecosystemBadge": "Écosystème",
+      "noExpiry": "Aucune date d'expiration enregistrée",
+      "activeUntil": "Actif jusqu'au {date}",
+      "expiredOn": "Expiré le {date}",
+      "currentSpace": "cet espace",
+      "active": "Actif",
+      "expired": "Expiré",
+      "classification": {
+        "active_paid": "Payant actif",
+        "free_trial": "Essai gratuit",
+        "expired_paid": "Payant expiré",
+        "inactive": "Inactif"
+      },
+      "filters": {
+        "all": "Tous",
+        "active_paid": "Payant actif",
+        "free_trial": "Essai gratuit",
+        "expiring": "Expire bientôt",
+        "expired": "Expiré"
+      },
+      "table": {
+        "space": "Espace",
+        "classification": "Classification",
+        "status": "Statut",
+        "activeUntil": "Actif jusqu'au",
+        "hyphaPaid": "HYPHA payé"
+      }
     }
   },
   "SpaceSettingsAction": {
@@ -425,8 +586,7 @@
       "members": "Membres",
       "treasury": "Trésorerie",
       "extensionsPlugins": "Extensions et plug-ins",
-      "ecosystemVerticals": "Secteurs de l'écosystème",
-      "energy": "Énergie"
+      "ecosystemVerticals": "Secteurs de l'écosystème"
     },
     "actions": {
       "spaceConfiguration": {
@@ -512,30 +672,6 @@
       "hyphaEnergy": {
         "title": "Hypha Energy",
         "description": "Une plateforme dédiée à votre communauté ou hub d'énergie renouvelable, permettant le partage local d'énergie, la copropriété d'actifs énergétiques, la gouvernance et une distribution équitable de la valeur entre les membres."
-      },
-      "enableEnergyCommunity": {
-        "title": "Activer la communauté énergétique",
-        "description": "Configurez le partage d'énergie pour cet espace afin que les membres puissent produire, consommer et régler l'énergie ensemble."
-      },
-      "energySharing": {
-        "title": "Politique de règlement d'énergie",
-        "description": "Définissez les conditions de paiement pour régler les soldes d'énergie de cette communauté."
-      },
-      "registerEnergySource": {
-        "title": "Enregistrer une source d'énergie",
-        "description": "Ajoutez une nouvelle source d'énergie (solaire, batterie, etc.) à la communauté."
-      },
-      "addEnergyMember": {
-        "title": "Ajouter un membre énergie",
-        "description": "Ajoutez un membre et ses compteurs intelligents pour la comptabilité énergétique."
-      },
-      "changeEnergyOptimization": {
-        "title": "Modifier l'optimisation énergétique",
-        "description": "Mettez à jour la façon dont la communauté priorise l'autoconsommation, le CO₂ et le prix — et ajustez les dons sociaux."
-      },
-      "whitelistEnergySettlement": {
-        "title": "Liste blanche de règlement énergétique",
-        "description": "Autorisez un portefeuille à soumettre des données de règlement énergétique pour cette communauté."
       }
     }
   },
@@ -1175,9 +1311,7 @@
     "escrowConfirmExchange": "Confirmer l'échange",
     "escrowDepositDepositing": "Dépôt en cours...",
     "escrowDepositApproving": "Approbation en cours...",
-    "escrowDepositInsufficientWallet": "Le solde de votre portefeuille est inférieur au montant requis.",
-    "pipelineEnabled": "Pipeline de deals",
-    "pipelineEnabledDescription": "Activez un pipeline Kanban de deals pour cet espace. Désactivé par défaut."
+    "escrowDepositInsufficientWallet": "Le solde de votre portefeuille est inférieur au montant requis."
   },
   "AgreementFlow": {
     "labels": {
@@ -1204,7 +1338,7 @@
       "investment": "Investissement",
       "exchange": "Échange",
       "enableEnergyCommunity": "Activer la communauté énergétique",
-      "energySharing": "Politique de règlement d'énergie",
+      "energySharing": "Partage d'énergie",
       "registerEnergySource": "Enregistrer une source d'énergie",
       "addEnergyMember": "Ajouter un membre énergie",
       "changeEnergyOptimization": "Modifier l'optimisation énergétique",
@@ -2534,8 +2668,6 @@
     "callVoiceProcessingStandard": "Voix",
     "callVoiceProcessingIsolation": "Isolation",
     "callVoiceProcessingMusic": "Musique",
-    "callVoiceProcessingNoiseSuppressionUnsupported": "Suppression du bruit non prise en charge sur cet appareil",
-    "callVoiceProcessingAutoGainUnsupported": "Contrôle automatique du gain non pris en charge sur cet appareil",
     "callVoiceBoostWhilePresenting": "Amplification vocale active pendant la présentation",
     "callCameraOn": "Allumer la caméra",
     "callCameraOff": "Éteindre la caméra",
@@ -3915,7 +4047,7 @@
     "shared": {
       "gridOperatorName": "Gestionnaire de réseau local",
       "gridOperatorSubtitle": "Fournisseur d'énergie externe",
-      "basePerKwh": "Base / kWh",
+      "currentPerKwh": "Actuel / kWh",
       "active": "Actif",
       "inactive": "Inactif",
       "source": "Source",
@@ -3958,8 +4090,7 @@
         "metadataHash": "Hash des métadonnées",
         "metadataHashPlaceholder": "0x... ou hash IPFS",
         "deviceIds": "ID des appareils (séparés par des virgules)",
-        "deviceIdsPlaceholder": "ex. 201,202,203",
-        "sectionDescription": "Choisissez un membre de cet espace et le nombre de ses compteurs intelligents. Les investisseurs sans compteur peuvent rester à zéro."
+        "deviceIdsPlaceholder": "ex. 201,202,203"
       },
       "energySharing": {
         "settlementWindow": "Période de règlement",
@@ -3980,19 +4111,18 @@
         "ownershipToken": "Adresse du jeton de propriété",
         "ownershipTokenPlaceholder": "0x...",
         "deviceIds": "ID des appareils (séparés par des virgules)",
-        "deviceIdsPlaceholder": "ex. 1001,1002,1003",
-        "sectionDescription": "Ajoutez un actif de production ou de stockage et répartissez sa propriété entre les membres (les parts totalisent 100 %)."
+        "deviceIdsPlaceholder": "ex. 1001,1002,1003"
       },
       "whitelistSettlement": {
         "settlementAddress": "Adresse de règlement",
-        "settlementAddressDescription": "Portefeuille autorisé à soumettre les données de règlement d'énergie pour cette communauté (par exemple un bot backend).",
+        "settlementAddressDescription": "Portefeuille autorisé à appeler consumeEnergy sur le PPA de la communauté (ex. votre bot backend).",
         "settlementAddressPlaceholder": "0x...",
         "whitelisted": "Sur liste blanche",
         "whitelistedDescription": "Désactivez pour retirer une adresse de la liste blanche de règlement."
       },
       "enableCommunity": {
         "membersTitle": "Membres",
-        "membersDescription": "Choisissez des membres de cet espace et le nombre de compteurs intelligents de chacun. Les investisseurs sans compteur peuvent rester à zéro.",
+        "membersDescription": "Choisissez les membres de la communauté et le nombre de compteurs intelligents de chacun. Les investisseurs sans compteur peuvent rester à zéro.",
         "numberOfMeters": "Nombre de compteurs",
         "meterPlaceholder": "0",
         "addMember": "Ajouter un membre",
@@ -4016,7 +4146,7 @@
         "tokenSymbolPlaceholder": "dérivé automatiquement",
         "advancedSettings": "Paramètres avancés",
         "adminAddress": "Adresse admin (exécuteur de l'espace)",
-        "adminHint": "Rempli automatiquement avec l'exécuteur de cet espace.",
+        "adminHint": "Rempli automatiquement avec l'exécuteur de cet espace. La proposition DAO exécute l'appel à la factory depuis cette adresse, elle doit donc posséder la nouvelle communauté pour que Hypha la découvre.",
         "stablecoinAddress": "Adresse du stablecoin",
         "stablecoinPlaceholder": "0x... (par défaut Base USDC)",
         "gridOperatorAddress": "Adresse du gestionnaire de réseau (facultatif)",
@@ -4039,15 +4169,15 @@
     },
     "optimization": {
       "optimizeFor": "Optimiser la communauté pour",
-      "optimizeDescription": "Choisissez ce qui compte le plus. Le système priorisera d'abord cet objectif, puis équilibrera les autres.",
+      "optimizeDescription": "Choisissez l'objectif principal de la communauté. Le système de gestion de l'énergie l'optimise en priorité, puis équilibre automatiquement les objectifs restants.",
       "primaryObjective": "Objectif principal",
       "selectObjective": "Sélectionner un objectif",
       "selfConsumption": "Autoconsommation maximale",
-      "selfConsumptionDescription": "Utiliser l'énergie produite localement dans la communauté avant d'acheter au réseau ou de lui vendre.",
+      "selfConsumptionDescription": "Utiliser l'énergie produite localement au sein de la communauté avant toute interaction avec le réseau.",
       "minCo2": "Émissions de CO₂ minimales",
-      "minCo2Description": "Privilégier l'énergie la plus propre disponible pour maintenir les émissions de carbone aussi basses que possible.",
+      "minCo2Description": "Minimiser l'intensité carbone sur le cycle de vie de chaque unité consommée.",
       "lowestPrice": "Prix le plus bas",
-      "lowestPriceDescription": "Maintenir les coûts d'énergie aussi bas que possible en utilisant les options les moins chères disponibles.",
+      "lowestPriceDescription": "Minimiser le coût total de l'énergie en exploitant activement la dynamique des prix du marché.",
       "socialAllocation": "Allocation sociale",
       "socialAllocationDescription": "Réserver une partie de la production solaire pour les portefeuilles d'objectifs communautaires avant l'exécution de l'optimisation.",
       "allocationMode": "Mode d'allocation",
@@ -4059,14 +4189,14 @@
       "kwhPerInterval": "kWh par intervalle de 15 minutes",
       "kwhPerIntervalPlaceholder": "ex. 1000",
       "shareOfSolar": "Part de la production solaire",
+      "goalWallets": "Portefeuilles d'objectifs",
+      "goalWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
+      "addGoalWallet": "Ajouter un portefeuille d'objectif",
       "share": "Part",
       "socialDisabled": "Désactivé",
       "socialFixed": "Fixe : {kwh} kWh par intervalle",
       "socialVariable": "Variable : {percent} % du solaire",
-      "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}",
-      "targetWallets": "Portefeuilles d'objectifs",
-      "targetWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
-      "addTargetWallet": "Ajouter un portefeuille d'objectif"
+      "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}"
     },
     "forms": {
       "spaceRequired": "L'espace est requis pour créer une proposition.",
@@ -4075,7 +4205,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Créer une proposition d'ajout de membre énergie",
         "enableEnergyCommunity": "Créer une proposition d'activation de communauté énergétique",
-        "energySharing": "Créer une politique de règlement d'énergie",
+        "energySharing": "Créer une proposition de partage d'énergie",
         "registerEnergySource": "Créer une proposition d'enregistrement de source d'énergie",
         "changeEnergyOptimization": "Créer une proposition de modification de l'optimisation énergétique",
         "whitelistEnergySettlement": "Créer une proposition de liste blanche de règlement énergétique"
@@ -4088,7 +4218,7 @@
       "optimization": "Optimisation",
       "priorities": "Priorités",
       "socialAllocation": "Allocation sociale",
-      "targetWallets": "Portefeuilles d'objectifs",
+      "goalWallets": "Portefeuilles d'objectifs",
       "energyToken": "Jeton énergétique",
       "members": "Membres",
       "sources": "Sources",
@@ -4117,6 +4247,8 @@
       "distinctPriorities": "Chaque priorité doit être un objectif différent",
       "selectSocialMode": "Sélectionnez un mode d'allocation sociale",
       "wholeKwhPerInterval": "Saisissez un nombre entier de kWh par intervalle",
+      "addGoalWallet": "Ajoutez au moins un portefeuille d'objectif",
+      "goalWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %",
       "metadataHashRequired": "Le hash des métadonnées est requis",
       "deviceIdsRequired": "Les ID des appareils sont requis",
       "deviceIdsCommaNumbers": "Les ID des appareils doivent être des nombres séparés par des virgules",
@@ -4138,14 +4270,73 @@
       "addOwner": "Ajoutez au moins un propriétaire",
       "ownershipTotal100": "Les parts de propriété doivent totaliser 100 %",
       "atLeastOneSource": "Au moins une source est requise",
-      "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus.",
-      "addTargetWallet": "Ajoutez au moins un portefeuille d'objectif",
-      "targetWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %"
+      "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus."
     },
     "errors": {
       "allowanceTimeout": "Délai d'attente dépassé pour l'autorisation du stablecoin.",
       "usdcNotConfigured": "Le jeton de paiement USDC n'est pas configuré pour cette application.",
       "deviceIdsCommaNumbers": "Les ID des appareils doivent être des nombres séparés par des virgules"
+    }
+  },
+  "PlatformOverview": {
+    "title": "Hypha Platform Dashboard",
+    "updatedAt": "Mis à jour {date}",
+    "refresh": "Actualiser",
+    "retry": "Réessayer",
+    "unavailable": "Tableau de bord indisponible",
+    "errors": {
+      "secret_required": "Le secret ops est requis",
+      "not_configured": "L'API du tableau de bord de plateforme n'est pas configurée dans cet environnement.",
+      "unauthorized": "Secret ops invalide. Vérifiez la valeur et réessayez.",
+      "load_failed": "Échec du chargement du tableau de bord"
+    },
+    "noData": "Aucune donnée pour le moment.",
+    "opsAccess": {
+      "title": "Accès aux métriques de plateforme",
+      "description": "Saisissez le secret ops Hypha pour afficher les métriques à l'échelle de la plateforme. Le secret reste en mémoire uniquement pour cet onglet.",
+      "placeholder": "Secret ops",
+      "continue": "Continuer"
+    },
+    "activity": {
+      "heading": "Activité de la plateforme",
+      "signals": "Signaux",
+      "signalsHint": "{count} créés en 7j",
+      "spaceMemory": "Éléments de mémoire de l'espace",
+      "spaceMemoryHint": "{count} espaces avec chat",
+      "signalsByType": "Signaux par type",
+      "signalsByPriority": "Signaux par priorité",
+      "topSpacesBySignals": "Principaux espaces par signaux",
+      "orchestrator": "Orchestrateur de signaux",
+      "queuePending": "File d'attente en attente",
+      "queueFailed": "File d'attente échouée",
+      "signalsEmitted24h": "Signaux émis (24h)",
+      "relaysEmitted24h": "Relays émis (24h)",
+      "memoryBySpace": "Résumés de mémoire de l'espace par espace",
+      "memoryTotals": "Totaux de mémoire de l'espace",
+      "summaries": "Résumés",
+      "summaries24h": "{count} en 24h",
+      "transcripts": "Transcriptions",
+      "recordings": "Enregistrements",
+      "summaries7d": "Résumés (7j)"
+    },
+    "distribution": {
+      "heading": "Distribution de la plateforme",
+      "hyphaPaidSpaces": "Espaces payants en HYPHA",
+      "hyphaPaidSpacesHint": "{active} actifs · {expired} expirés",
+      "totalHyphaBurned": "HYPHA total brûlé",
+      "freeTrialOnly": "Essai gratuit uniquement",
+      "trackedSpaces": "Espaces suivis",
+      "paymentEvents": "{count} événements de paiement (365j)",
+      "paymentEventsLabel": "Événements de paiement (365j)",
+      "paymentsByMonth": "Paiements activate-space HYPHA par mois",
+      "breakdown": "Répartition des espaces payants",
+      "activePaid": "Payant actif",
+      "expiredPaid": "Payant expiré"
+    },
+    "assets": {
+      "heading": "Actifs de la plateforme",
+      "totalBalance": "Solde total de la plateforme",
+      "spacesTracked": "{count} espaces suivis"
     }
   },
   "Pipeline": {
