@@ -1,10 +1,11 @@
 'use client';
 
+import { Skeleton } from '@hypha-platform/ui';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useSpaceDiscoverability } from '../hooks/use-space-discoverability';
 import { useUserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 import { checkAccess } from '../utils/transparency-access';
 import { SpaceAccessDenied } from './space-access-denied';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 type SpaceTabAccessWrapperProps = {
   spaceId?: number;
@@ -31,12 +32,24 @@ export function SpaceTabAccessWrapper({
     space,
   });
 
-  const hasAccess = checkAccess(access, userState);
-  const isLoading = isDiscoverabilityLoading || isUserStateLoading;
+  const isPending =
+    !effectiveSpaceId || isDiscoverabilityLoading || isUserStateLoading;
 
-  if (isLoading) {
-    return <>{children}</>;
+  if (isPending) {
+    return (
+      <div
+        className="flex min-h-[12rem] flex-col gap-3 py-4"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <Skeleton loading height={28} width="40%" />
+        <Skeleton loading height={120} width="100%" />
+        <Skeleton loading height={120} width="100%" />
+      </div>
+    );
   }
+
+  const hasAccess = checkAccess(access, userState);
 
   if (!hasAccess) {
     return (

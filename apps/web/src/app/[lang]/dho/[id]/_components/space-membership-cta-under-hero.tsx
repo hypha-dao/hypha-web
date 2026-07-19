@@ -51,20 +51,17 @@ export function SpaceMembershipCtaUnderHero({
   const hasActivityAccess = checkAccess(access, userState);
   const isPersonalMember = Boolean(isMember || isDelegate);
   const membershipResolved = !isMemberLoading && !isDelegateLoading;
+  const accessResolved = !isLoading && !isAccessLoading && access !== undefined;
 
   // Guests never get Join here (sign-in lives in denied / auth surfaces).
   if (!isAuthenticated) {
     return null;
   }
 
-  // While access/user-state resolves, still render a disabled Join so the
-  // control never disappears (regression from blank loading states).
-  if (isLoading || isAccessLoading || !membershipResolved) {
-    return (
-      <div className="flex w-full items-center justify-end py-2">
-        <JoinSpace spaceId={spaceId} web3SpaceId={web3SpaceId} hideWhenMember />
-      </div>
-    );
+  // Do not flash under-hero Join while access/membership are unknown.
+  // Denied activity owns the CTA in SpaceAccessDenied once resolved.
+  if (!accessResolved || !membershipResolved) {
+    return null;
   }
 
   if (isPersonalMember) {

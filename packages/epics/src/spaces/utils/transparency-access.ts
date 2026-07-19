@@ -43,8 +43,11 @@ export function checkAccess(
   accessLevel: TransparencyLevel | undefined,
   userState: UserSpaceState,
 ): boolean {
+  // Fail closed: unknown activity access must not render gated content.
+  // Callers should wait on discoverability loading before treating this as a
+  // final deny (e.g. SpaceTabAccessWrapper shows a skeleton while pending).
   if (accessLevel === undefined) {
-    return true;
+    return false;
   }
 
   switch (userState) {
