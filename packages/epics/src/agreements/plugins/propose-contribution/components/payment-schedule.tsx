@@ -20,7 +20,6 @@ import { Cross2Icon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
 import { resolveProposalErrorTranslation } from '../../../utils/proposal-error-translations';
 
-// TODO: will be implemented after MVP
 const options = ['Immediately', 'Future Payment', 'Milestones'] as const;
 type Option = (typeof options)[number];
 
