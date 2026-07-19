@@ -79,6 +79,25 @@ function OverviewMetricsError({
 
 const PRIORITY_ORDER = ['critical', 'high', 'medium', 'low'];
 
+function fillPriorityBuckets<T extends { priority: string; count: number }>(
+  rows: T[],
+): T[] {
+  const counts = new Map(
+    rows.map((row) => [row.priority.toLowerCase(), row.count]),
+  );
+  const known = PRIORITY_ORDER.map(
+    (priority) =>
+      ({
+        priority,
+        count: counts.get(priority) ?? 0,
+      } as T),
+  );
+  const extras = rows.filter(
+    (row) => !PRIORITY_ORDER.includes(row.priority.toLowerCase()),
+  );
+  return [...known, ...extras];
+}
+
 function sortByPriority<T extends { priority: string; count: number }>(
   rows: T[],
 ): T[] {
@@ -131,13 +150,13 @@ export function OverviewSignalsDashboard({
     value: row.count,
     color: accentColor(index),
   }));
-  const priorityItems = sortByPriority(payload.byPriority).map(
-    (row, index) => ({
-      label: row.priority,
-      value: row.count,
-      color: accentColor(index + 2),
-    }),
-  );
+  const priorityItems = sortByPriority(
+    fillPriorityBuckets(payload.byPriority),
+  ).map((row, index) => ({
+    label: row.priority,
+    value: row.count,
+    color: accentColor(index + 2),
+  }));
   const weeklyPoints = payload.weekly.map((row) => ({
     label: row.week,
     value: row.count,
@@ -210,6 +229,7 @@ export function OverviewSignalsDashboard({
           <HorizontalBarsChart
             items={priorityItems}
             emptyLabel={t('signalsDashboard.noData')}
+            includeZeroValues
           />
         </OverviewChartShell>
         <OverviewChartShell
