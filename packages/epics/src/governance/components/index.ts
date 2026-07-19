@@ -22,6 +22,8 @@ export * from './proposal-redeem-tokens-data';
 export * from './proposal-token-items';
 export * from './proposal-token-requirements-info';
 export * from './proposal-transaction-item';
+export * from './proposal-payment-schedule-info';
+export * from './proposal-contribution-payment-from-metadata';
 export * from './proposal-update-token';
 export * from './proposal-voting-info';
 export * from './proposal-energy-proposal-data';

@@ -16,6 +16,7 @@ import {
   TokenUpdateData,
   isTokenUpdateData,
 } from '../types';
+import { serializeDocumentMetadata } from '../contribution-metadata';
 import type { DatabaseInstance } from '../../common/server/types';
 import { findTokenUpdateByDocumentId } from './queries';
 import { CreateTokenInput, DeleteTokenInput } from '../types';
@@ -25,7 +26,13 @@ import {
 } from './token-update-apply';
 
 export const createAgreement = async (
-  { title, slug: maybeSlug, creatorId, ...rest }: CreateAgreementInput,
+  {
+    title,
+    slug: maybeSlug,
+    creatorId,
+    metadata,
+    ...rest
+  }: CreateAgreementInput,
   { db }: { db: DatabaseInstance },
 ) => {
   if (creatorId === undefined) {
@@ -41,6 +48,9 @@ export const createAgreement = async (
       title,
       slug,
       ...rest,
+      ...(metadata
+        ? { metadata: serializeDocumentMetadata(metadata) ?? {} }
+        : {}),
     })
     .returning();
 
@@ -52,12 +62,17 @@ export const createAgreement = async (
 };
 
 export const updateAgreementBySlug = async (
-  { slug, ...rest }: { slug: string } & UpdateAgreementInput,
+  { slug, metadata, ...rest }: { slug: string } & UpdateAgreementInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const [updatedAgreement] = await db
     .update(documents)
-    .set({ ...rest })
+    .set({
+      ...rest,
+      ...(metadata !== undefined
+        ? { metadata: serializeDocumentMetadata(metadata) ?? {} }
+        : {}),
+    })
     .where(eq(documents.slug, slug))
     .returning();
 

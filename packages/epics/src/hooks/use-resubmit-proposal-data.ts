@@ -682,6 +682,12 @@ export const useResubmitProposalData = <
               shouldValidate: true,
             });
           }
+          if (cl.paymentSchedule && typeof cl.paymentSchedule === 'object') {
+            form.setValue('paymentSchedule' as any, cl.paymentSchedule as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
         }
 
         if (issueInj && typeof issueInj === 'object') {

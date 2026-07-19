@@ -82,6 +82,9 @@ export const CreateProposeAContributionForm = ({
           token: '',
         },
       ],
+      paymentSchedule: {
+        option: 'Immediately',
+      },
       label: 'Contribution',
     },
   });
@@ -118,6 +121,7 @@ export const CreateProposeAContributionForm = ({
         amount: String(amount ?? '0'),
         token: token ?? '',
       })),
+      paymentSchedule: data.paymentSchedule,
     });
   };
 

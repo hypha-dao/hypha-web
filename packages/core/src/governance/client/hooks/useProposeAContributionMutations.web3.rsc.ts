@@ -7,6 +7,8 @@ import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { getProposalFromLogs } from '../web3';
 import {
+  agreementsImplementationAbi,
+  agreementsImplementationAddress,
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@hypha-platform/core/generated';
@@ -14,6 +16,7 @@ import {
   getTokenDecimals,
   getSpaceMinProposalDuration,
   publicClient,
+  type PaymentScheduleOption,
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
@@ -25,6 +28,7 @@ interface CreateProposeAContributionInput {
     token: string;
   }[];
   recipient: string;
+  paymentScheduleOption?: PaymentScheduleOption;
 }
 
 const chainId = getGovernanceChainId();
@@ -53,22 +57,50 @@ export const useProposeAContributionMutationsWeb3Rpc = ({
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
       );
 
-      const transactions = await Promise.all(
-        arg.payouts.map(async (payout) => {
-          const decimals = await getTokenDecimals(payout.token);
-          const amount = parseUnits(payout.amount, decimals);
+      const scheduleOption = arg.paymentScheduleOption ?? 'Immediately';
 
-          return {
-            target: payout.token as `0x${string}`,
+      let transactions: {
+        target: `0x${string}`;
+        value: bigint;
+        data: `0x${string}`;
+      }[];
+
+      if (scheduleOption === 'Immediately') {
+        transactions = await Promise.all(
+          arg.payouts.map(async (payout) => {
+            const decimals = await getTokenDecimals(payout.token);
+            const amount = parseUnits(payout.amount, decimals);
+
+            return {
+              target: payout.token as `0x${string}`,
+              value: BigInt(0),
+              data: encodeFunctionData({
+                abi: erc20Abi,
+                functionName: 'transfer',
+                args: [arg.recipient as `0x${string}`, amount],
+              }),
+            };
+          }),
+        );
+      } else {
+        const proposalCounter = await publicClient.readContract({
+          address: daoProposalsImplementationAddress[chainId],
+          abi: daoProposalsImplementationAbi,
+          functionName: 'proposalCounter',
+        });
+
+        transactions = [
+          {
+            target: agreementsImplementationAddress[chainId],
             value: BigInt(0),
             data: encodeFunctionData({
-              abi: erc20Abi,
-              functionName: 'transfer',
-              args: [arg.recipient as `0x${string}`, amount],
+              abi: agreementsImplementationAbi,
+              functionName: 'acceptAgreement',
+              args: [BigInt(arg.spaceId), proposalCounter + 1n],
             }),
-          } as const;
-        }),
-      );
+          },
+        ];
+      }
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),

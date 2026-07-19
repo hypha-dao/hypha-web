@@ -574,12 +574,13 @@
     "ecosystem": "Ecosystem",
     "tabs": {
       "nestedSpaces": "Nested Spaces",
+      "memberConnections": "Member Connections",
       "spaceToSpace": "Space-to-Space",
-      "valuesFlows": "Values Flows"
+      "valuesFlows": "Value Flows"
     },
     "comingSoon": {
       "spaceToSpaceVisualization": "Space-to-Space visualization coming soon",
-      "valuesFlowsVisualization": "Values Flows visualization coming soon"
+      "valuesFlowsVisualization": "Value Flows visualization coming soon"
     },
     "visibleSpaces": {
       "nestedRoot": "Root",
@@ -592,6 +593,52 @@
       "visitSpace": "Visit Space",
       "searchSpaces": "Search spaces",
       "noSpacesFound": "No spaces found"
+    },
+    "navigation": {
+      "breadcrumb": "Space path",
+      "memberCount": "{count} members",
+      "individuals": "Individuals",
+      "memberSpaces": "Member spaces",
+      "noIndividuals": "No individual members yet",
+      "noMemberSpaces": "No member spaces yet",
+      "nestedHint": "Click a space to focus. Background click zooms out. Member icons orbit the focused space."
+    },
+    "memberConnections": {
+      "title": "Member mycelium",
+      "description": "People in this space and the other discoverable spaces they belong to — a living map of collaboration.",
+      "hubMeta": "Active space",
+      "personMeta": "Space member",
+      "spaceMeta": "Discoverable space membership",
+      "stats": "{people} people · {spaces} spaces",
+      "empty": "No member connections to show yet"
+    },
+    "spaceToSpace": {
+      "title": "Space-to-space mycelium",
+      "description": "Connections between this space and its member spaces. Expand a discoverable space to grow the network outward.",
+      "hubMeta": "Active space",
+      "expandableMeta": "Discoverable — click + to expand relationships",
+      "privateMeta": "Member space",
+      "membership": "Membership",
+      "nestedMembership": "Nested membership",
+      "expanding": "Growing mycelium…",
+      "stats": "{spaces} member spaces · {expanded} expanded",
+      "empty": "No space-to-space memberships yet"
+    },
+    "valueFlows": {
+      "title": "Value flows",
+      "description": "Tokens distributed from this space to people and spaces — inside and outside the ecosystem.",
+      "hubMeta": "Distributing space",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "All tokens",
+      "stats": "{count} outgoing transfers",
+      "empty": "No outgoing value flows yet",
+      "details": "Flow details",
+      "amount": "Amount",
+      "recipient": "Recipient",
+      "date": "Date",
+      "memo": "Memo",
+      "tx": "Transaction",
+      "selectHint": "Select a recipient node to inspect a transfer."
     }
   },
   "AgreementsTab": {
@@ -2522,6 +2569,18 @@
       "fromWhitelist": "From Whitelist",
       "toWhitelist": "To Whitelist",
       "mutualCredit": "Mutual Credit"
+    },
+    "paymentSchedule": {
+      "title": "Payment Schedule",
+      "label": "Schedule",
+      "date": "Date",
+      "immediately": "Immediately (upon successful vote)",
+      "futurePayment": "Future Payment",
+      "milestones": "Milestones",
+      "milestoneLabel": "Milestone {index}",
+      "milestoneRow": "{percentage}% on {date}",
+      "datePending": "Date not set",
+      "deferredNote": "Payment will be requested when the scheduled date is reached."
     },
     "labels": {
       "unknown": "Unknown",
