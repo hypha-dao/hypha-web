@@ -1199,6 +1199,8 @@
       "topHoldingsSubtitle": "Largest assets by estimated USD value.",
       "byType": "Value by token type",
       "byTypeSubtitle": "How treasury value is distributed across token categories.",
+      "valueLabel": "Valor (USD)",
+      "quantityLabel": "Quantidade",
       "unitPrice": "Est. {price} per token",
       "emptyTitle": "No treasury assets yet",
       "emptyDescription": "This space does not currently hold any tracked treasury assets.",
