@@ -166,6 +166,14 @@ export function OverviewSignalsDashboard({
             label: t('signalsDashboard.queueFailed'),
             value: payload.orchestrator.queue_failed,
           },
+          {
+            label: t('signalsDashboard.emitted24h'),
+            value: payload.orchestrator.signals_emitted_last_24h,
+          },
+          {
+            label: t('signalsDashboard.relays24h'),
+            value: payload.orchestrator.relays_emitted_last_24h,
+          },
         ]}
       />
 
@@ -214,19 +222,6 @@ export function OverviewSignalsDashboard({
           />
         </OverviewChartShell>
       </div>
-
-      <StatRibbon
-        items={[
-          {
-            label: t('signalsDashboard.emitted24h'),
-            value: payload.orchestrator.signals_emitted_last_24h,
-          },
-          {
-            label: t('signalsDashboard.relays24h'),
-            value: payload.orchestrator.relays_emitted_last_24h,
-          },
-        ]}
-      />
     </div>
   );
 }

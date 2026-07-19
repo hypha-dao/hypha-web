@@ -68,7 +68,11 @@ export function StatRibbon({
 }) {
   return (
     <Card className="border-border/60 bg-card/95">
-      <CardContent className="grid gap-3 py-4 sm:grid-cols-2 xl:grid-cols-4">
+      <CardContent
+        className={`grid gap-3 py-4 sm:grid-cols-2 ${
+          items.length >= 6 ? 'xl:grid-cols-6' : 'xl:grid-cols-4'
+        }`}
+      >
         {items.map((item) => (
           <div
             key={item.label}
