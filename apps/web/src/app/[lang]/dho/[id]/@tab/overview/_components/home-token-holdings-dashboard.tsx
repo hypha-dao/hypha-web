@@ -302,6 +302,8 @@ type SpaceAssetsApiPayload = {
     symbol: string;
     name: string;
     usdEqual: number;
+    value?: number;
+    tokenPrice?: number;
     type?: string;
   }>;
   balance: number;
@@ -312,6 +314,8 @@ type SpaceAssetsResponse = {
     symbol: string;
     name: string;
     usdEqual: number;
+    value: number;
+    tokenPrice: number;
     type: string;
   }>;
   balance: number;
@@ -343,6 +347,8 @@ function fetchSpaceAssets(
             symbol: asset.symbol ?? '',
             name: asset.name ?? asset.symbol ?? 'Unknown',
             type: asset.type ?? 'other',
+            value: Number(asset.value) || 0,
+            tokenPrice: Number(asset.tokenPrice) || 0,
             usdEqual: Number(asset.usdEqual) || 0,
           }))
         : [],
@@ -1371,6 +1377,10 @@ function buildTreasuryAssetSlices(
     }))
     .sort((a, b) => b.usdEqual - a.usdEqual);
 
+  if (ranked.length <= 6) {
+    return ranked;
+  }
+
   const main = ranked.filter((asset) => asset.share_pct >= collapseBelowPct);
   const otherUsd = ranked
     .filter((asset) => asset.share_pct < collapseBelowPct)
@@ -1387,6 +1397,57 @@ function buildTreasuryAssetSlices(
   }
 
   return main;
+}
+
+function TreasuryAssetHoldingCard({
+  asset,
+  getTokenTypeLabel,
+}: {
+  asset: {
+    symbol: string;
+    name: string;
+    value: number;
+    tokenPrice: number;
+    usdEqual: number;
+    type: string;
+  };
+  getTokenTypeLabel: (type: string) => string;
+}) {
+  const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+
+  return (
+    <Card className="h-full min-w-0 overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_8%,transparent)]">
+      <CardHeader className="gap-3 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="truncate text-lg">{asset.name}</CardTitle>
+            <CardDescription className="text-xs uppercase tracking-wide">
+              {asset.symbol}
+            </CardDescription>
+          </div>
+          <Badge variant="outline" className="shrink-0 border-border/60">
+            {getTokenTypeLabel(asset.type)}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2 pt-0">
+        <p className="text-6 font-semibold tabular-nums">
+          {formatAmount(String(asset.value), locale)}
+        </p>
+        <p className="text-sm font-medium text-foreground">
+          {formatCurrencyValue(asset.usdEqual, locale)}
+        </p>
+        {asset.tokenPrice > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {tTokenHoldings('assets.unitPrice', {
+              price: formatCurrencyValue(asset.tokenPrice, locale),
+            })}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
 }
 
 function TreasuryCompositionDonut({
@@ -1624,6 +1685,8 @@ function TreasuryAssetsSummaryWidget({
     symbol: string;
     name: string;
     usdEqual: number;
+    value: number;
+    tokenPrice: number;
     type: string;
   }>;
   balance: number;
@@ -1633,16 +1696,23 @@ function TreasuryAssetsSummaryWidget({
 }) {
   const locale = useLocale();
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const holdings = React.useMemo(
+    () =>
+      [...assets]
+        .filter((asset) => (Number(asset.value) || 0) > 0)
+        .sort((a, b) => b.usdEqual - a.usdEqual || b.value - a.value),
+    [assets],
+  );
   const slices = React.useMemo(
     () =>
       buildTreasuryAssetSlices(
-        assets.map((asset) => ({
+        holdings.map((asset) => ({
           symbol: asset.symbol,
           name: asset.name,
           usdEqual: asset.usdEqual,
         })),
       ),
-    [assets],
+    [holdings],
   );
   const topHoldings = React.useMemo(
     () =>
@@ -1651,9 +1721,6 @@ function TreasuryAssetsSummaryWidget({
         .sort((a, b) => b.usdEqual - a.usdEqual)
         .slice(0, 8),
     [slices],
-  );
-  const trackedAssets = assets.filter(
-    (asset) => (Number(asset.usdEqual) || 0) > 0,
   );
   const topShare = slices[0]?.share_pct ?? 0;
 
@@ -1680,7 +1747,7 @@ function TreasuryAssetsSummaryWidget({
     );
   }
 
-  if (trackedAssets.length === 0) {
+  if (holdings.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -1715,7 +1782,7 @@ function TreasuryAssetsSummaryWidget({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-6 font-semibold">{trackedAssets.length}</p>
+            <p className="text-6 font-semibold">{holdings.length}</p>
           </CardContent>
         </Card>
         <Card className="border-border/60 bg-card/95">
@@ -1735,6 +1802,16 @@ function TreasuryAssetsSummaryWidget({
             ) : null}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid min-w-0 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {holdings.map((asset) => (
+          <TreasuryAssetHoldingCard
+            key={`${asset.symbol}-${asset.name}`}
+            asset={asset}
+            getTokenTypeLabel={getTokenTypeLabel}
+          />
+        ))}
       </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
@@ -1758,7 +1835,7 @@ function TreasuryAssetsSummaryWidget({
       </div>
 
       <TreasuryTypeBreakdownChart
-        assets={assets}
+        assets={holdings}
         getTokenTypeLabel={getTokenTypeLabel}
       />
     </div>

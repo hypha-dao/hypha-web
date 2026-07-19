@@ -432,6 +432,7 @@
       "topHoldingsSubtitle": "Größte Vermögenswerte nach geschätztem USD-Wert.",
       "byType": "Wert nach Token-Typ",
       "byTypeSubtitle": "Wie der Treasury-Wert auf Token-Kategorien verteilt ist.",
+      "unitPrice": "Ca. {price} pro Token",
       "emptyTitle": "Noch keine Treasury-Vermögen",
       "emptyDescription": "Dieser Space hält derzeit keine erfassten Treasury-Vermögen.",
       "errorTitle": "Treasury-Zusammenfassung konnte nicht geladen werden",
