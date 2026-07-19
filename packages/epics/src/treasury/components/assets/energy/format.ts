@@ -130,6 +130,20 @@ export const sourceCardLabel = (
   );
 };
 
+/** Readable on-chain metadata only — no "Source N" / type-index fallbacks. */
+export const readableSourceMetadataLabel = (source: {
+  sourceDisplayName?: string;
+  sourceLabel: string;
+}): string | undefined => {
+  if (source.sourceDisplayName && isReadableLabel(source.sourceDisplayName)) {
+    return source.sourceDisplayName;
+  }
+  if (isReadableLabel(source.sourceLabel)) {
+    return source.sourceLabel;
+  }
+  return undefined;
+};
+
 /** Merge Hypha person lookup with server-resolved participant profiles. */
 export const resolveEnergyParticipantDisplay = (
   address: string,

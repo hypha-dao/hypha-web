@@ -20,7 +20,7 @@ import {
 } from './dummy-data';
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
-import { sourceCardLabel } from './format';
+import { readableSourceMetadataLabel, sourceCardLabel } from './format';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -51,6 +51,11 @@ export const ProductionConsumptionTab = ({
     );
   }, [data.sources, sourceFallback, tShared]);
 
+  const metadataSourceLabels = React.useMemo(
+    () => (data.sources ?? []).map((s) => readableSourceMetadataLabel(s)),
+    [data.sources],
+  );
+
   const dummy = React.useMemo(
     () =>
       buildProductionSeries(
@@ -70,9 +75,12 @@ export const ProductionConsumptionTab = ({
   const labels = useLiveTelemetry
     ? telemetry!.labels
     : timeframeLabels(timeframe, locale);
+  // Prefer readable on-chain metadata (e.g. "School PV") over telemetry meter
+  // labels. Skip generated sourceCardLabel fallbacks ("Source 1"). Match by
+  // index: production series are sorted by meter id / activation order.
   const perSource = useLiveTelemetry
-    ? telemetry!.productionBySource.map((s) => ({
-        label: s.label,
+    ? telemetry!.productionBySource.map((s, i) => ({
+        label: metadataSourceLabels[i] ?? s.label,
         values: s.valuesKwh,
       }))
     : dummy.perSource;
