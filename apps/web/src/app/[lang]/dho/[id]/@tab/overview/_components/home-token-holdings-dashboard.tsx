@@ -155,6 +155,7 @@ type HomeSectionFilter =
   | 'energy'
   | 'signals'
   | 'activity'
+  | 'memory'
   | 'distribution'
   | 'assets'
   | 'flows';
@@ -2097,6 +2098,7 @@ export function HomeTokenHoldingsDashboard({
           : []),
         { value: 'signals', label: tTokenHoldings('filters.signals') },
         { value: 'activity', label: tTokenHoldings('filters.activity') },
+        { value: 'memory', label: tTokenHoldings('filters.memory') },
         {
           value: 'distribution',
           label: tTokenHoldings('filters.distribution'),
@@ -2108,6 +2110,7 @@ export function HomeTokenHoldingsDashboard({
   );
   const showSignals = activeFilter === 'signals';
   const showActivity = activeFilter === 'activity';
+  const showMemory = activeFilter === 'memory';
   const showDistribution = activeFilter === 'distribution';
   const showAssets = activeFilter === 'assets';
   const showFlows = activeFilter === 'flows';
@@ -2174,9 +2177,10 @@ export function HomeTokenHoldingsDashboard({
               ) : null
             }
           />
-          <OverviewMemoryDashboard spaceSlug={spaceSlug} />
         </>
       ) : null}
+
+      {showMemory ? <OverviewMemoryDashboard spaceSlug={spaceSlug} /> : null}
 
       {showActivity ? (
         <>

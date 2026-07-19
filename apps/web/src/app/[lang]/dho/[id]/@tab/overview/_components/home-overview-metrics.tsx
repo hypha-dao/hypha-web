@@ -15,6 +15,7 @@ import {
   CardTitle,
   Skeleton,
 } from '@hypha-platform/ui';
+import { FileText, Mic, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   AreaTrendChart,
@@ -22,6 +23,7 @@ import {
   HorizontalBarsChart,
   OverviewChartShell,
   RadialGauge,
+  SPACE_ACCENT,
   StatRibbon,
   VerticalBarsChart,
   accentColor,
@@ -226,6 +228,56 @@ export function OverviewSignalsDashboard({
   );
 }
 
+function MemoryTypeSpotlight({
+  icon: Icon,
+  label,
+  description,
+  value,
+  sharePercent,
+  color,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  description: string;
+  value: number;
+  sharePercent: number;
+  color: string;
+}) {
+  return (
+    <div className="group relative h-full overflow-hidden rounded-2xl border border-border/60 bg-card/95 p-4 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_8%,transparent)] transition-colors hover:border-border">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-80"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+        }}
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          style={{
+            background: `color-mix(in oklab, ${color} 18%, transparent)`,
+            color,
+          }}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+        <span className="rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+          {sharePercent}%
+        </span>
+      </div>
+      <p className="mt-4 text-[11px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
   const { getAccessToken } = useAuthentication();
   const t = useTranslations('TokenHoldingsDashboard');
@@ -249,55 +301,169 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
   }
 
   const payload = data as SpaceOverviewMemoryData;
+  const { summary } = payload;
   const memoryTotal =
-    payload.summary.summariesTotal +
-    payload.summary.transcriptsTotal +
-    payload.summary.recordingsTotal;
+    summary.summariesTotal + summary.transcriptsTotal + summary.recordingsTotal;
+  const typeSlices = [
+    {
+      label: t('memoryDashboard.summaries'),
+      value: summary.summariesTotal,
+      color: accentColor(0),
+    },
+    {
+      label: t('memoryDashboard.transcripts'),
+      value: summary.transcriptsTotal,
+      color: accentColor(1),
+    },
+    {
+      label: t('memoryDashboard.recordings'),
+      value: summary.recordingsTotal,
+      color: accentColor(2),
+    },
+  ];
+  const sharePercent = (value: number) =>
+    memoryTotal > 0 ? Math.round((value / memoryTotal) * 100) : 0;
+  const dominantSlice =
+    memoryTotal > 0
+      ? typeSlices.reduce((best, item) =>
+          item.value > best.value ? item : best,
+        )
+      : null;
+  const summaryVelocityMax = Math.max(
+    summary.summariesTotal,
+    summary.summariesLast7d,
+    1,
+  );
+  const recentActivityPoints = [
+    {
+      label: t('memoryDashboard.summaries7dShort'),
+      value: summary.summariesLast7d,
+    },
+    {
+      label: t('memoryDashboard.summaries24hShort'),
+      value: summary.summariesLast24h,
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <OverviewChartShell
-        title={t('memoryDashboard.title')}
-        subtitle={
-          payload.summary.hasChat
-            ? t('memoryDashboard.hasChat')
-            : t('memoryDashboard.noChat')
-        }
-      >
-        <DonutChart
-          data={[
-            {
-              label: t('memoryDashboard.summaries'),
-              value: payload.summary.summariesTotal,
-              color: accentColor(0),
-            },
-            {
-              label: t('memoryDashboard.transcripts'),
-              value: payload.summary.transcriptsTotal,
-              color: accentColor(1),
-            },
-            {
-              label: t('memoryDashboard.recordings'),
-              value: payload.summary.recordingsTotal,
-              color: accentColor(2),
-            },
-          ]}
-          centerValue={memoryTotal}
-          centerLabel={t('memoryDashboard.items')}
-          emptyLabel={t('memoryDashboard.noData')}
-        />
-      </OverviewChartShell>
       <StatRibbon
         items={[
           {
+            label: t('memoryDashboard.totalItems'),
+            value: memoryTotal,
+            hint: t('memoryDashboard.totalHint', { count: memoryTotal }),
+          },
+          {
             label: t('memoryDashboard.summaries7d'),
-            value: payload.summary.summariesLast7d,
+            value: summary.summariesLast7d,
             hint: t('memoryDashboard.summaries24h', {
-              count: payload.summary.summariesLast24h,
+              count: summary.summariesLast24h,
             }),
+          },
+          {
+            label: t('memoryDashboard.chatStatus'),
+            value: summary.hasChat
+              ? t('memoryDashboard.chatActive')
+              : t('memoryDashboard.chatInactive'),
+            hint: summary.hasChat
+              ? t('memoryDashboard.hasChat')
+              : t('memoryDashboard.noChat'),
+          },
+          {
+            label: t('memoryDashboard.dominantType'),
+            value: dominantSlice?.label ?? '—',
+            hint: dominantSlice
+              ? t('memoryDashboard.shareOfArchive', {
+                  percent: sharePercent(dominantSlice.value),
+                })
+              : t('memoryDashboard.emptyArchive'),
           },
         ]}
       />
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <OverviewChartShell
+          title={t('memoryDashboard.composition')}
+          subtitle={t('memoryDashboard.compositionSubtitle')}
+          className="h-full"
+        >
+          <DonutChart
+            data={typeSlices}
+            centerValue={memoryTotal}
+            centerLabel={t('memoryDashboard.items')}
+            emptyLabel={t('memoryDashboard.noData')}
+          />
+        </OverviewChartShell>
+        <OverviewChartShell
+          title={t('memoryDashboard.byType')}
+          subtitle={t('memoryDashboard.byTypeSubtitle')}
+          className="h-full"
+        >
+          <HorizontalBarsChart
+            items={typeSlices}
+            emptyLabel={t('memoryDashboard.noData')}
+          />
+        </OverviewChartShell>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <MemoryTypeSpotlight
+          icon={FileText}
+          label={t('memoryDashboard.summaries')}
+          description={t('memoryDashboard.summariesDesc')}
+          value={summary.summariesTotal}
+          sharePercent={sharePercent(summary.summariesTotal)}
+          color={accentColor(0)}
+        />
+        <MemoryTypeSpotlight
+          icon={Mic}
+          label={t('memoryDashboard.transcripts')}
+          description={t('memoryDashboard.transcriptsDesc')}
+          value={summary.transcriptsTotal}
+          sharePercent={sharePercent(summary.transcriptsTotal)}
+          color={accentColor(1)}
+        />
+        <MemoryTypeSpotlight
+          icon={Video}
+          label={t('memoryDashboard.recordings')}
+          description={t('memoryDashboard.recordingsDesc')}
+          value={summary.recordingsTotal}
+          sharePercent={sharePercent(summary.recordingsTotal)}
+          color={accentColor(2)}
+        />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <OverviewChartShell
+          title={t('memoryDashboard.summaryVelocity')}
+          subtitle={t('memoryDashboard.summaryVelocitySubtitle')}
+          className="h-full"
+        >
+          <RadialGauge
+            value={summary.summariesLast7d}
+            max={summaryVelocityMax}
+            label={t('memoryDashboard.summaries7dShort')}
+            hint={t('memoryDashboard.summaries24h', {
+              count: summary.summariesLast24h,
+            })}
+          />
+        </OverviewChartShell>
+        <OverviewChartShell
+          title={t('memoryDashboard.recentActivity')}
+          subtitle={t('memoryDashboard.recentActivitySubtitle')}
+          className="h-full"
+        >
+          <VerticalBarsChart
+            items={recentActivityPoints.map((point, index) => ({
+              label: point.label,
+              value: point.value,
+              color: index === 0 ? accentColor(0) : SPACE_ACCENT,
+            }))}
+            emptyLabel={t('memoryDashboard.noRecentActivity')}
+          />
+        </OverviewChartShell>
+      </div>
     </div>
   );
 }
