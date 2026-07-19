@@ -95,10 +95,13 @@ export const useSpaceDocumentsWithStatuses = ({
     isLoading: isProposalsLoading,
     error: proposalsError,
   } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
-  const { withdrawnProposalsIds, isLoading: isWithdrawnLoading } =
-    useWithdrawnProposalsWeb3Rpc({
-      spaceId: spaceId,
-    });
+  const {
+    withdrawnProposalsIds,
+    isLoading: isWithdrawnLoading,
+    error: withdrawnError,
+  } = useWithdrawnProposalsWeb3Rpc({
+    spaceId: spaceId,
+  });
 
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
@@ -251,12 +254,13 @@ export const useSpaceDocumentsWithStatuses = ({
     (shouldFetchDocuments &&
       !documentsError &&
       !proposalsError &&
+      !withdrawnError &&
       (!documentsReady || !proposalsReady));
 
   return {
     documents: response,
     isLoading,
     update: mutate,
-    error: documentsError ?? proposalsError,
+    error: documentsError ?? proposalsError ?? withdrawnError,
   };
 };

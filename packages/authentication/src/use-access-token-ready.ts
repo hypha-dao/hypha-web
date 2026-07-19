@@ -35,11 +35,16 @@ export function useAccessTokenReady() {
     setAccessTokenReady(false);
     void (async () => {
       for (let attempt = 0; attempt < 10; attempt++) {
-        const token = await getAccessToken();
-        if (cancelled) return;
-        if (token) {
-          setAccessTokenReady(true);
-          return;
+        try {
+          const token = await getAccessToken();
+          if (cancelled) return;
+          if (token) {
+            setAccessTokenReady(true);
+            return;
+          }
+        } catch {
+          // Privy may reject during refresh; keep retrying with backoff.
+          if (cancelled) return;
         }
         await new Promise((resolve) =>
           setTimeout(resolve, 150 * (attempt + 1)),

@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuthentication } from '@hypha-platform/authentication';
 import { Skeleton } from '@hypha-platform/ui';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useSpaceDiscoverability } from '../hooks/use-space-discoverability';
@@ -18,6 +19,7 @@ export function SpaceTabAccessWrapper({
   spaceSlug,
   children,
 }: SpaceTabAccessWrapperProps) {
+  const { isLoading: isAuthLoading } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId || undefined;
 
@@ -26,16 +28,21 @@ export function SpaceTabAccessWrapper({
       spaceId: effectiveSpaceId ? BigInt(effectiveSpaceId) : undefined,
     });
 
-  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+  const { userState } = useUserSpaceState({
     spaceId: effectiveSpaceId,
     spaceSlug,
     space,
   });
 
-  const isPending =
-    !effectiveSpaceId || isDiscoverabilityLoading || isUserStateLoading;
+  // Wait only for auth hydration + on-chain access level. Do not block the
+  // deny path on slow org/sibling membership checks — those left Belica on an
+  // empty tab under the renewal banner with no Request Invite. If the user
+  // later resolves to LOGGED_IN_ORG / LOGGED_IN_SPACE, checkAccess flips and
+  // children mount.
+  const isAccessLevelPending =
+    !effectiveSpaceId || isAuthLoading || isDiscoverabilityLoading;
 
-  if (isPending) {
+  if (isAccessLevelPending || access === undefined) {
     return (
       <div
         className="flex min-h-[12rem] flex-col gap-3 py-4"
