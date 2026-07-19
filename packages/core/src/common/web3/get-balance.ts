@@ -1,5 +1,6 @@
 import { publicClient } from '@hypha-platform/core/client';
 import { erc20Abi, formatUnits } from 'viem';
+import { getEnergyCommunityToken } from './energy-community-tokens';
 
 export async function getBalance(
   tokenAddress: `0x${string}`,
@@ -39,9 +40,16 @@ export async function getBalance(
       throw failure.error;
     }
 
+    const catalogue = getEnergyCommunityToken(tokenAddress);
+    const contractDecimals = decimals.result as number;
+    const displayDecimals =
+      catalogue?.balanceDisplayDecimals !== undefined
+        ? catalogue.balanceDisplayDecimals
+        : contractDecimals;
+
     // Result fields will always be valid because of the check above
     return {
-      amount: +formatUnits(amount.result as bigint, decimals.result as number),
+      amount: +formatUnits(amount.result as bigint, displayDecimals),
       symbol: symbol.result as string,
     };
   } catch (error: any) {
