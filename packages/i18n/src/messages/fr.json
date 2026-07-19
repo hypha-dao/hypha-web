@@ -386,7 +386,8 @@
       "error": "Impossible de charger l'historique de distribution des tokens pour le moment.",
       "empty": "Aucun historique de transfert trouvé pour les filtres sélectionnés.",
       "shareLabel": "Token share",
-      "hoverHint": "Hover to inspect share at each transaction date."
+      "hoverHint": "Hover to inspect share at each transaction date.",
+      "baselineHint": "Dashed line marks starting share."
     },
     "proposals": {
       "title": "Propositions",

@@ -383,6 +383,7 @@
       "timeAxis": "Time",
       "shareLabel": "Token share",
       "hoverHint": "Hover to inspect share at each transaction date.",
+      "baselineHint": "Dashed line marks starting share.",
       "error": "Unable to load token distribution history right now.",
       "empty": "No transfer history found for the selected filters."
     },

@@ -385,7 +385,8 @@
       "error": "Der Verlauf der Tokenverteilung kann derzeit nicht geladen werden.",
       "empty": "Für die ausgewählten Filter wurde kein Transferverlauf gefunden.",
       "shareLabel": "Token-Anteil",
-      "hoverHint": "Zum Anzeigen des Anteils pro Transaktionsdatum mit der Maus darüberfahren."
+      "hoverHint": "Zum Anzeigen des Anteils pro Transaktionsdatum mit der Maus darüberfahren.",
+      "baselineHint": "Gestrichelte Linie markiert den Startanteil."
     },
     "proposals": {
       "title": "Vorschläge",

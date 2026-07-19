@@ -365,7 +365,8 @@
       "error": "Историјата на распределбата на токените моментално не може да се вчита.",
       "empty": "Не е пронајдена историја на трансфери за избраните филтри.",
       "shareLabel": "Token share",
-      "hoverHint": "Hover to inspect share at each transaction date."
+      "hoverHint": "Hover to inspect share at each transaction date.",
+      "baselineHint": "Dashed line marks starting share."
     },
     "proposals": {
       "title": "Предлози",

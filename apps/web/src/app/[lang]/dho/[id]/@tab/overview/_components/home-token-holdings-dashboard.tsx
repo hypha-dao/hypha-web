@@ -14,6 +14,10 @@ import {
   OverviewSignalsDashboard,
 } from './home-overview-metrics';
 import {
+  ShareStepTimelineChart,
+  type ShareTimelinePoint,
+} from './home-overview-charts';
+import {
   Badge,
   Card,
   CardContent,
@@ -615,81 +619,14 @@ function DistributionOverTimeChart({
       ),
     [chartPoints],
   );
-  const chartModel = React.useMemo(() => {
-    if (!orderedPoints.length) return null;
-
-    const width = Math.max(720, orderedPoints.length * 24);
-    const height = 300;
-    const margin = { top: 14, right: 18, bottom: 46, left: 54 };
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-    const xDomain = d3.extent(orderedPoints, (point) => point.dateObj);
-    const x = d3
-      .scaleTime()
-      .domain(
-        xDomain[0] && xDomain[1]
-          ? [xDomain[0], xDomain[1]]
-          : [new Date(Date.now() - 86_400_000), new Date()],
-      )
-      .range([0, innerWidth]);
-    const maxY = Math.max(1, ...orderedPoints.map((point) => point.share_pct));
-    const minY = Math.min(...orderedPoints.map((point) => point.share_pct));
-    const spread = Math.max(1, maxY - minY);
-    const yPadding = Math.max(0.8, spread * 0.12);
-    const minYWithPadding = Math.max(0, minY - yPadding);
-    const y = d3
-      .scaleLinear()
-      .domain([minYWithPadding, maxY + yPadding])
-      .nice(5)
-      .range([innerHeight, 0]);
-    const area = d3
-      .area<(typeof orderedPoints)[number]>()
-      .x((point) => x(point.dateObj))
-      .y0(y(minYWithPadding))
-      .y1((point) => y(point.share_pct))
-      .curve(d3.curveMonotoneX);
-    const line = d3
-      .line<(typeof orderedPoints)[number]>()
-      .x((point) => x(point.dateObj))
-      .y((point) => y(point.share_pct))
-      .curve(d3.curveMonotoneX);
-    const xTicks =
-      orderedPoints.length <= 6
-        ? orderedPoints.map((point) => point.dateObj)
-        : (() => {
-            const step = Math.max(
-              1,
-              Math.floor((orderedPoints.length - 1) / 5),
-            );
-            const ticks = orderedPoints
-              .filter((_, index) => index % step === 0)
-              .map((point) => point.dateObj);
-            const lastDate = orderedPoints.at(-1)?.dateObj;
-            if (
-              lastDate &&
-              !ticks.some((value) => value.getTime() === lastDate.getTime())
-            ) {
-              ticks.push(lastDate);
-            }
-            return ticks;
-          })();
-
-    return {
-      width,
-      height,
-      margin,
-      innerWidth,
-      innerHeight,
-      minYWithPadding,
-      x,
-      y,
-      area,
-      line,
-      yTicks: y.ticks(),
-      xTicks,
-    };
-  }, [orderedPoints]);
-  const gradientId = React.useId().replace(/:/g, '');
+  const timelinePoints = React.useMemo<ShareTimelinePoint[]>(
+    () =>
+      orderedPoints.map((point) => ({
+        date: point.dateObj,
+        share_pct: point.share_pct,
+      })),
+    [orderedPoints],
+  );
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const memberOptions = history?.members ?? [
     { id: 'all', label: tTokenHoldings('distribution.memberAll') },
@@ -699,55 +636,16 @@ function DistributionOverTimeChart({
   const netChange =
     firstPoint && lastPoint ? lastPoint.share_pct - firstPoint.share_pct : 0;
   const netChangeSign = netChange >= 0 ? '+' : '';
-  const [hoveredPoint, setHoveredPoint] = React.useState<
-    (typeof orderedPoints)[number] | null
-  >(null);
-  const activePoint = hoveredPoint ?? lastPoint ?? null;
+  const [hoveredPoint, setHoveredPoint] =
+    React.useState<ShareTimelinePoint | null>(null);
+  const activeTimelinePoint = hoveredPoint ?? timelinePoints.at(-1) ?? null;
 
   React.useEffect(() => {
     setHoveredPoint(null);
   }, [selectedToken, selectedMember]);
 
-  const handlePointerMove = React.useCallback(
-    (event: React.PointerEvent<SVGRectElement>) => {
-      if (!chartModel || orderedPoints.length === 0) return;
-
-      const point = event.currentTarget.ownerSVGElement?.createSVGPoint();
-      const ctm = event.currentTarget.getScreenCTM();
-      if (!point || !ctm) return;
-
-      point.x = event.clientX;
-      point.y = event.clientY;
-      const svgPoint = point.matrixTransform(ctm.inverse());
-      const date = chartModel.x.invert(svgPoint.x);
-      const bisect = d3.bisector<(typeof orderedPoints)[number], Date>(
-        (entry) => entry.dateObj,
-      ).left;
-      const index = bisect(orderedPoints, date, 1);
-      const previous = orderedPoints[index - 1];
-      const next = orderedPoints[index];
-
-      if (!previous) {
-        setHoveredPoint(next ?? null);
-        return;
-      }
-      if (!next) {
-        setHoveredPoint(previous);
-        return;
-      }
-
-      setHoveredPoint(
-        date.getTime() - previous.dateObj.getTime() >
-          next.dateObj.getTime() - date.getTime()
-          ? next
-          : previous,
-      );
-    },
-    [chartModel, orderedPoints],
-  );
-
   return (
-    <Card className="h-fit min-w-0 self-start overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
+    <Card className="w-full overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -813,191 +711,18 @@ function DistributionOverTimeChart({
           <p className="text-sm text-muted-foreground">
             {tTokenHoldings('distribution.error')}
           </p>
-        ) : chartPoints.length === 0 || !chartModel ? (
+        ) : timelinePoints.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {tTokenHoldings('distribution.empty')}
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <svg
-                viewBox={`0 0 ${chartModel.width} ${chartModel.height}`}
-                className="min-w-[620px] w-full"
-                role="img"
-                aria-label={tTokenHoldings('distribution.title')}
-              >
-                <defs>
-                  <linearGradient
-                    id={`distribution-line-${gradientId}`}
-                    x1="0%"
-                    x2="100%"
-                    y1="0%"
-                    y2="0%"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 78%, white 22%)"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="var(--space-accent, var(--accent-9))"
-                    />
-                  </linearGradient>
-                  <linearGradient
-                    id={`distribution-area-${gradientId}`}
-                    x1="0%"
-                    x2="0%"
-                    y1="0%"
-                    y2="100%"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 22%, transparent)"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 4%, transparent)"
-                    />
-                  </linearGradient>
-                </defs>
-
-                <g
-                  transform={`translate(${chartModel.margin.left},${chartModel.margin.top})`}
-                >
-                  {chartModel.yTicks.map((tick) => (
-                    <g
-                      key={tick}
-                      transform={`translate(0,${chartModel.y(tick)})`}
-                    >
-                      <line
-                        x1={0}
-                        x2={chartModel.x.range()[1]}
-                        stroke="var(--border)"
-                        strokeDasharray="3 3"
-                        opacity={0.7}
-                      />
-                      <text
-                        x={-10}
-                        textAnchor="end"
-                        dominantBaseline="middle"
-                        className="fill-muted-foreground text-[11px]"
-                      >
-                        {PERCENTAGE_FORMATTER(tick)}%
-                      </text>
-                    </g>
-                  ))}
-
-                  <path
-                    d={chartModel.area(orderedPoints) ?? ''}
-                    fill={`url(#distribution-area-${gradientId})`}
-                  />
-                  <path
-                    d={chartModel.line(orderedPoints) ?? ''}
-                    fill="none"
-                    stroke={`url(#distribution-line-${gradientId})`}
-                    strokeWidth={3}
-                  />
-
-                  {orderedPoints.map((point) => (
-                    <circle
-                      key={point.date}
-                      cx={chartModel.x(point.dateObj)}
-                      cy={chartModel.y(point.share_pct)}
-                      r={activePoint?.date === point.date ? 5 : 3}
-                      fill="var(--space-accent, var(--accent-9))"
-                      stroke="var(--background)"
-                      strokeWidth={1.5}
-                      opacity={activePoint?.date === point.date ? 1 : 0.65}
-                    />
-                  ))}
-
-                  {activePoint ? (
-                    <g pointerEvents="none">
-                      <line
-                        x1={chartModel.x(activePoint.dateObj)}
-                        x2={chartModel.x(activePoint.dateObj)}
-                        y1={0}
-                        y2={chartModel.innerHeight}
-                        stroke="var(--space-accent, var(--accent-9))"
-                        strokeDasharray="4 4"
-                        opacity={0.45}
-                      />
-                      <rect
-                        x={Math.min(
-                          chartModel.innerWidth - 132,
-                          Math.max(0, chartModel.x(activePoint.dateObj) - 66),
-                        )}
-                        y={Math.max(
-                          8,
-                          chartModel.y(activePoint.share_pct) - 42,
-                        )}
-                        width={132}
-                        height={34}
-                        rx={8}
-                        fill="var(--card)"
-                        stroke="var(--border)"
-                      />
-                      <text
-                        x={Math.min(
-                          chartModel.innerWidth - 126,
-                          Math.max(6, chartModel.x(activePoint.dateObj) - 60),
-                        )}
-                        y={Math.max(
-                          24,
-                          chartModel.y(activePoint.share_pct) - 28,
-                        )}
-                        className="fill-muted-foreground text-[10px]"
-                      >
-                        {d3.timeFormat('%b %d, %Y')(activePoint.dateObj)}
-                      </text>
-                      <text
-                        x={Math.min(
-                          chartModel.innerWidth - 126,
-                          Math.max(6, chartModel.x(activePoint.dateObj) - 60),
-                        )}
-                        y={Math.max(
-                          38,
-                          chartModel.y(activePoint.share_pct) - 14,
-                        )}
-                        className="fill-foreground text-[12px] font-semibold"
-                      >
-                        {PERCENTAGE_FORMATTER(activePoint.share_pct)}%
-                      </text>
-                    </g>
-                  ) : null}
-
-                  {chartModel.xTicks.map((tick) => (
-                    <g
-                      key={tick.toISOString()}
-                      transform={`translate(${chartModel.x(tick)},0)`}
-                    >
-                      <line
-                        y1={chartModel.innerHeight}
-                        y2={chartModel.innerHeight + 6}
-                        stroke="var(--border)"
-                      />
-                      <text
-                        y={chartModel.innerHeight + 22}
-                        textAnchor="middle"
-                        className="fill-muted-foreground text-[11px]"
-                      >
-                        {d3.timeFormat('%b %d')(tick)}
-                      </text>
-                    </g>
-                  ))}
-
-                  <rect
-                    x={0}
-                    y={0}
-                    width={chartModel.innerWidth}
-                    height={chartModel.innerHeight}
-                    fill="transparent"
-                    onPointerMove={handlePointerMove}
-                    onPointerLeave={() => setHoveredPoint(null)}
-                  />
-                </g>
-              </svg>
-            </div>
+            <ShareStepTimelineChart
+              points={timelinePoints}
+              activePoint={activeTimelinePoint}
+              onActivePointChange={setHoveredPoint}
+              percentageFormatter={(value) => `${PERCENTAGE_FORMATTER(value)}%`}
+            />
 
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
@@ -1005,13 +730,17 @@ function DistributionOverTimeChart({
                   className="h-3 w-3 rounded-sm"
                   style={{
                     background:
-                      'linear-gradient(90deg, color-mix(in oklab, var(--space-accent, var(--accent-9)) 78%, white 22%), var(--space-accent, var(--accent-9)))',
+                      'linear-gradient(90deg, color-mix(in oklab, var(--space-accent, var(--accent-9)) 68%, white 32%), var(--space-accent, var(--accent-9)))',
                   }}
                 />
                 {tTokenHoldings('distribution.shareLabel')}
               </span>
               <span className="text-xs">
                 {tTokenHoldings('distribution.hoverHint')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs">
+                <span className="h-2 w-2 rounded-full border border-dashed border-border" />
+                {tTokenHoldings('distribution.baselineHint')}
               </span>
             </div>
           </>
@@ -2240,31 +1969,12 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!holdingsLoading && !error && data && data.tokens.length > 0 ? (
-            <div
-              className={
-                showDistributionHistoryWidget
-                  ? 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-4'
-              }
-            >
-              {showDistributionHistoryWidget ? (
-                <DistributionOverTimeChart
-                  spaceSlug={spaceSlug}
-                  tokens={data.tokens}
-                  getAccessToken={getAccessToken}
-                />
-              ) : null}
-              <div
-                className={
-                  showDistributionHistoryWidget
-                    ? 'grid min-w-0 items-start gap-4'
-                    : 'grid min-w-0 items-start gap-4 md:grid-cols-2'
-                }
-              >
+            <div className="flex flex-col gap-4">
+              <div className="grid min-w-0 items-stretch gap-4 md:grid-cols-2">
                 {data.tokens.map((token) => (
                   <Card
                     key={token.token_address}
-                    className="group min-w-0 overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm"
+                    className="group flex h-full min-w-0 flex-col overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm"
                   >
                     <CardHeader className="gap-3">
                       <div className="flex items-start justify-between gap-3">
@@ -2336,7 +2046,7 @@ export function HomeTokenHoldingsDashboard({
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="flex flex-1 flex-col pt-0">
                       <TokenDonutChart
                         title={token.symbol}
                         slices={token.holdings}
@@ -2345,6 +2055,14 @@ export function HomeTokenHoldingsDashboard({
                   </Card>
                 ))}
               </div>
+
+              {showDistributionHistoryWidget ? (
+                <DistributionOverTimeChart
+                  spaceSlug={spaceSlug}
+                  tokens={data.tokens}
+                  getAccessToken={getAccessToken}
+                />
+              ) : null}
             </div>
           ) : null}
         </>

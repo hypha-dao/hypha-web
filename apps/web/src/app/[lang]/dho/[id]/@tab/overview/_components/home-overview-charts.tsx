@@ -530,3 +530,366 @@ export function VerticalBarsChart({
     </svg>
   );
 }
+
+export type ShareTimelinePoint = {
+  date: Date;
+  share_pct: number;
+};
+
+export function ShareStepTimelineChart({
+  points,
+  activePoint,
+  onActivePointChange,
+  percentageFormatter = (value) => `${value.toFixed(1)}%`,
+}: {
+  points: ShareTimelinePoint[];
+  activePoint: ShareTimelinePoint | null;
+  onActivePointChange: (point: ShareTimelinePoint | null) => void;
+  percentageFormatter?: (value: number) => string;
+}) {
+  const gradientId = React.useId().replace(/:/g, '');
+  const width = 960;
+  const height = 320;
+  const margin = { top: 20, right: 24, bottom: 52, left: 56 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const chartModel = React.useMemo(() => {
+    if (!points.length) return null;
+
+    const xDomain = d3.extent(points, (point) => point.date);
+    const x = d3
+      .scaleTime()
+      .domain(
+        xDomain[0] && xDomain[1]
+          ? [xDomain[0], xDomain[1]]
+          : [new Date(Date.now() - 86_400_000), new Date()],
+      )
+      .range([0, innerWidth]);
+    const maxY = Math.max(1, ...points.map((point) => point.share_pct));
+    const minY = Math.min(...points.map((point) => point.share_pct));
+    const spread = Math.max(1, maxY - minY);
+    const yPadding = Math.max(0.8, spread * 0.14);
+    const baseline = points[0]?.share_pct ?? 0;
+    const minYWithPadding = Math.max(0, Math.min(minY, baseline) - yPadding);
+    const y = d3
+      .scaleLinear()
+      .domain([minYWithPadding, maxY + yPadding])
+      .nice(5)
+      .range([innerHeight, 0]);
+    const stepLine = d3
+      .line<ShareTimelinePoint>()
+      .x((point) => x(point.date))
+      .y((point) => y(point.share_pct))
+      .curve(d3.curveStepAfter);
+    const stepArea = d3
+      .area<ShareTimelinePoint>()
+      .x((point) => x(point.date))
+      .y0(y(baseline))
+      .y1((point) => y(point.share_pct))
+      .curve(d3.curveStepAfter);
+    const xTicks =
+      points.length <= 6
+        ? points.map((point) => point.date)
+        : (() => {
+            const step = Math.max(1, Math.floor((points.length - 1) / 5));
+            const ticks = points
+              .filter((_, index) => index % step === 0)
+              .map((point) => point.date);
+            const lastDate = points.at(-1)?.date;
+            if (
+              lastDate &&
+              !ticks.some((value) => value.getTime() === lastDate.getTime())
+            ) {
+              ticks.push(lastDate);
+            }
+            return ticks;
+          })();
+
+    return {
+      x,
+      y,
+      baseline,
+      minYWithPadding,
+      stepLine,
+      stepArea,
+      yTicks: y.ticks(5),
+      xTicks,
+    };
+  }, [innerHeight, innerWidth, points]);
+
+  const handlePointerMove = React.useCallback(
+    (event: React.PointerEvent<SVGRectElement>) => {
+      if (!chartModel || points.length === 0) return;
+
+      const point = event.currentTarget.ownerSVGElement?.createSVGPoint();
+      const ctm = event.currentTarget.getScreenCTM();
+      if (!point || !ctm) return;
+
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const svgPoint = point.matrixTransform(ctm.inverse());
+      const date = chartModel.x.invert(svgPoint.x);
+      const bisect = d3.bisector<ShareTimelinePoint, Date>(
+        (entry) => entry.date,
+      ).left;
+      const index = bisect(points, date, 1);
+      const previous = points[index - 1];
+      const next = points[index];
+
+      if (!previous) {
+        onActivePointChange(next ?? null);
+        return;
+      }
+      if (!next) {
+        onActivePointChange(previous);
+        return;
+      }
+
+      onActivePointChange(
+        date.getTime() - previous.date.getTime() >
+          next.date.getTime() - date.getTime()
+          ? next
+          : previous,
+      );
+    },
+    [chartModel, onActivePointChange, points],
+  );
+
+  if (!chartModel) return null;
+
+  const active = activePoint ?? points.at(-1) ?? null;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
+      <defs>
+        <linearGradient
+          id={`share-step-line-${gradientId}`}
+          x1="0%"
+          x2="100%"
+          y1="0%"
+          y2="0%"
+        >
+          <stop
+            offset="0%"
+            stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 68%, white 32%)"
+          />
+          <stop offset="100%" stopColor={SPACE_ACCENT} />
+        </linearGradient>
+        <linearGradient
+          id={`share-step-gain-${gradientId}`}
+          x1="0%"
+          x2="0%"
+          y1="0%"
+          y2="100%"
+        >
+          <stop
+            offset="0%"
+            stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 34%, transparent)"
+          />
+          <stop
+            offset="100%"
+            stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 6%, transparent)"
+          />
+        </linearGradient>
+        <linearGradient
+          id={`share-step-loss-${gradientId}`}
+          x1="0%"
+          x2="0%"
+          y1="100%"
+          y2="0%"
+        >
+          <stop
+            offset="0%"
+            stopColor="color-mix(in oklab, var(--color-warning-9, var(--warning-9)) 24%, transparent)"
+          />
+          <stop
+            offset="100%"
+            stopColor="color-mix(in oklab, var(--color-warning-9, var(--warning-9)) 6%, transparent)"
+          />
+        </linearGradient>
+        <filter
+          id={`share-step-glow-${gradientId}`}
+          x="-50%"
+          y="-50%"
+          width="200%"
+          height="200%"
+        >
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <g transform={`translate(${margin.left},${margin.top})`}>
+        {chartModel.yTicks.map((tick) => (
+          <g key={tick} transform={`translate(0,${chartModel.y(tick)})`}>
+            <line
+              x1={0}
+              x2={innerWidth}
+              stroke="var(--border)"
+              strokeDasharray="4 5"
+              opacity={0.55}
+            />
+            <text
+              x={-12}
+              textAnchor="end"
+              dominantBaseline="middle"
+              className="fill-muted-foreground text-[11px]"
+            >
+              {percentageFormatter(tick)}
+            </text>
+          </g>
+        ))}
+
+        <line
+          x1={0}
+          x2={innerWidth}
+          y1={chartModel.y(chartModel.baseline)}
+          y2={chartModel.y(chartModel.baseline)}
+          stroke="var(--border)"
+          strokeDasharray="2 4"
+          opacity={0.9}
+        />
+
+        {points.map((point, index) => {
+          const previous = points[index - 1];
+          const delta = previous
+            ? point.share_pct - previous.share_pct
+            : point.share_pct - chartModel.baseline;
+          const pillarHeight = Math.abs(
+            chartModel.y(Math.min(point.share_pct, chartModel.baseline)) -
+              chartModel.y(Math.max(point.share_pct, chartModel.baseline)),
+          );
+          return (
+            <g key={point.date.toISOString()}>
+              <rect
+                x={chartModel.x(point.date) - 1.5}
+                y={chartModel.y(Math.max(point.share_pct, chartModel.baseline))}
+                width={3}
+                height={Math.max(2, pillarHeight)}
+                rx={1.5}
+                fill={
+                  delta >= 0
+                    ? `url(#share-step-gain-${gradientId})`
+                    : `url(#share-step-loss-${gradientId})`
+                }
+                opacity={0.85}
+              />
+            </g>
+          );
+        })}
+
+        <path
+          d={chartModel.stepArea(points) ?? ''}
+          fill={`url(#share-step-gain-${gradientId})`}
+          opacity={0.95}
+        />
+        <path
+          d={chartModel.stepLine(points) ?? ''}
+          fill="none"
+          stroke={`url(#share-step-line-${gradientId})`}
+          strokeWidth={3.5}
+          strokeLinecap="round"
+        />
+
+        {points.map((point) => {
+          const isActive = active?.date.getTime() === point.date.getTime();
+          return (
+            <circle
+              key={`${point.date.toISOString()}-dot`}
+              cx={chartModel.x(point.date)}
+              cy={chartModel.y(point.share_pct)}
+              r={isActive ? 6 : 3.5}
+              fill={SPACE_ACCENT}
+              stroke="var(--background)"
+              strokeWidth={isActive ? 2 : 1.5}
+              opacity={isActive ? 1 : 0.7}
+              filter={
+                isActive ? `url(#share-step-glow-${gradientId})` : undefined
+              }
+            />
+          );
+        })}
+
+        {active ? (
+          <g pointerEvents="none">
+            <line
+              x1={chartModel.x(active.date)}
+              x2={chartModel.x(active.date)}
+              y1={0}
+              y2={innerHeight}
+              stroke={SPACE_ACCENT}
+              strokeDasharray="4 4"
+              opacity={0.35}
+            />
+            <rect
+              x={Math.min(
+                innerWidth - 148,
+                Math.max(0, chartModel.x(active.date) - 74),
+              )}
+              y={Math.max(6, chartModel.y(active.share_pct) - 48)}
+              width={148}
+              height={40}
+              rx={10}
+              fill="var(--card)"
+              stroke="var(--border)"
+            />
+            <text
+              x={Math.min(
+                innerWidth - 140,
+                Math.max(8, chartModel.x(active.date) - 66),
+              )}
+              y={Math.max(22, chartModel.y(active.share_pct) - 32)}
+              className="fill-muted-foreground text-[10px]"
+            >
+              {d3.timeFormat('%b %d, %Y')(active.date)}
+            </text>
+            <text
+              x={Math.min(
+                innerWidth - 140,
+                Math.max(8, chartModel.x(active.date) - 66),
+              )}
+              y={Math.max(38, chartModel.y(active.share_pct) - 16)}
+              className="fill-foreground text-[13px] font-semibold"
+            >
+              {percentageFormatter(active.share_pct)}
+            </text>
+          </g>
+        ) : null}
+
+        {chartModel.xTicks.map((tick) => (
+          <g
+            key={tick.toISOString()}
+            transform={`translate(${chartModel.x(tick)},0)`}
+          >
+            <line
+              y1={innerHeight}
+              y2={innerHeight + 8}
+              stroke="var(--border)"
+            />
+            <text
+              y={innerHeight + 24}
+              textAnchor="middle"
+              className="fill-muted-foreground text-[11px]"
+            >
+              {d3.timeFormat('%b %d')(tick)}
+            </text>
+          </g>
+        ))}
+
+        <rect
+          x={0}
+          y={0}
+          width={innerWidth}
+          height={innerHeight}
+          fill="transparent"
+          onPointerMove={handlePointerMove}
+          onPointerLeave={() => onActivePointChange(null)}
+        />
+      </g>
+    </svg>
+  );
+}
