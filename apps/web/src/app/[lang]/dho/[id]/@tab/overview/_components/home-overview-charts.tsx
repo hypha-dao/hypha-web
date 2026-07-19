@@ -224,14 +224,17 @@ export function DonutChart({
 export function HorizontalBarsChart({
   items,
   emptyLabel,
+  includeZeroValues = false,
 }: {
   items: ChartSlice[];
   emptyLabel: string;
+  includeZeroValues?: boolean;
 }) {
   const positive = items.filter((item) => item.value > 0);
+  const visibleItems = includeZeroValues ? items : positive;
   const max = Math.max(...positive.map((item) => item.value), 1);
 
-  if (!positive.length) {
+  if (!visibleItems.length) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
         {emptyLabel}
@@ -241,7 +244,7 @@ export function HorizontalBarsChart({
 
   return (
     <div className="space-y-3">
-      {positive.map((item, index) => (
+      {visibleItems.map((item, index) => (
         <div key={item.label} className="space-y-1.5">
           <div className="flex items-center justify-between gap-3 text-sm">
             <span className="truncate">{prettifyLabel(item.label)}</span>
@@ -253,7 +256,10 @@ export function HorizontalBarsChart({
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
-                width: `${Math.max(6, (item.value / max) * 100)}%`,
+                width:
+                  item.value > 0
+                    ? `${Math.max(6, (item.value / max) * 100)}%`
+                    : '0%',
                 background:
                   item.color ??
                   `linear-gradient(90deg, color-mix(in oklab, ${accentColor(
