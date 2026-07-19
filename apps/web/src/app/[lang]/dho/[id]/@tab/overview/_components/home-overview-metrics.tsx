@@ -18,7 +18,7 @@ import {
   Input,
   Skeleton,
 } from '@hypha-platform/ui';
-import { FileText, Mic, Video } from 'lucide-react';
+import { BookMarked, FileText, Mic, Video } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   AreaTrendChart,
@@ -320,8 +320,12 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
 
   const payload = data as SpaceOverviewMemoryData;
   const { summary } = payload;
+  const userCreatedTotal = summary.userCreatedTotal ?? 0;
   const memoryTotal =
-    summary.summariesTotal + summary.transcriptsTotal + summary.recordingsTotal;
+    summary.summariesTotal +
+    summary.transcriptsTotal +
+    summary.recordingsTotal +
+    userCreatedTotal;
   const typeSlices = [
     {
       label: t('memoryDashboard.summaries'),
@@ -337,6 +341,11 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
       label: t('memoryDashboard.recordings'),
       value: summary.recordingsTotal,
       color: accentColor(2),
+    },
+    {
+      label: t('memoryDashboard.userCreatedMemories'),
+      value: userCreatedTotal,
+      color: accentColor(3),
     },
   ];
   const sharePercent = (value: number) =>
@@ -421,11 +430,12 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
           <HorizontalBarsChart
             items={typeSlices}
             emptyLabel={t('memoryDashboard.noData')}
+            includeZeroValues
           />
         </OverviewChartShell>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MemoryTypeSpotlight
           icon={FileText}
           label={t('memoryDashboard.summaries')}
@@ -449,6 +459,14 @@ export function OverviewMemoryDashboard({ spaceSlug }: { spaceSlug: string }) {
           value={summary.recordingsTotal}
           sharePercent={sharePercent(summary.recordingsTotal)}
           color={accentColor(2)}
+        />
+        <MemoryTypeSpotlight
+          icon={BookMarked}
+          label={t('memoryDashboard.userCreatedMemories')}
+          description={t('memoryDashboard.userCreatedMemoriesDesc')}
+          value={userCreatedTotal}
+          sharePercent={sharePercent(userCreatedTotal)}
+          color={accentColor(3)}
         />
       </div>
 
