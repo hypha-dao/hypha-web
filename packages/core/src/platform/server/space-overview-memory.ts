@@ -36,6 +36,7 @@ export async function getSpaceOverviewMemory(
     userCreatedTotalRow,
     summaries24h,
     summaries7d,
+    weeklySummaries,
   ] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)` })
@@ -81,6 +82,23 @@ export async function getSpaceOverviewMemory(
           gte(spaceDiscussionSummaries.createdAt, since7d),
         ),
       ),
+    db
+      .select({
+        week: sql<string>`to_char(date_trunc('week', ${spaceDiscussionSummaries.createdAt}), 'IYYY-"W"IW')`,
+        count: sql<number>`count(*)`,
+      })
+      .from(spaceDiscussionSummaries)
+      .where(
+        and(
+          eq(spaceDiscussionSummaries.spaceId, spaceId),
+          gte(
+            spaceDiscussionSummaries.createdAt,
+            new Date(Date.now() - 8 * 7 * 24 * 60 * 60 * 1000),
+          ),
+        ),
+      )
+      .groupBy(sql`date_trunc('week', ${spaceDiscussionSummaries.createdAt})`)
+      .orderBy(sql`date_trunc('week', ${spaceDiscussionSummaries.createdAt})`),
   ]);
 
   return {
@@ -93,5 +111,9 @@ export async function getSpaceOverviewMemory(
       summariesLast24h: Number(summaries24h[0]?.count ?? 0),
       summariesLast7d: Number(summaries7d[0]?.count ?? 0),
     },
+    weekly: weeklySummaries.map((row) => ({
+      week: row.week,
+      count: Number(row.count ?? 0),
+    })),
   };
 }
