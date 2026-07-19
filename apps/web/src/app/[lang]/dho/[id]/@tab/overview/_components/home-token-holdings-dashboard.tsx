@@ -1607,24 +1607,29 @@ function TreasuryTopAssetsBarChart({ items }: { items: TreasuryAssetSlice[] }) {
             {tTokenHoldings('assets.emptyDescription')}
           </p>
         ) : (
-          items.map((item) => (
-            <div key={item.hover_key} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span>{item.label}</span>
-                <span className="font-medium text-muted-foreground">
-                  {formatUsdAmount(item.usdEqual, locale)}
-                </span>
+          items.map((item, index) => {
+            const barColor =
+              COLOR_RANGE[index % COLOR_RANGE.length] ?? COLOR_RANGE[0];
+            return (
+              <div key={item.hover_key} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span>{item.label}</span>
+                  <span className="font-medium text-muted-foreground">
+                    {formatUsdAmount(item.usdEqual, locale)}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-muted/80">
+                  <div
+                    className="h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.max(4, (item.usdEqual / max) * 100)}%`,
+                      background: `linear-gradient(90deg, color-mix(in oklab, ${barColor} 70%, white 30%), ${barColor})`,
+                    }}
+                  />
+                </div>
               </div>
-              <div className="h-2 rounded-full bg-muted">
-                <div
-                  className="h-2 rounded-full bg-primary"
-                  style={{
-                    width: `${Math.max(4, (item.usdEqual / max) * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </CardContent>
     </Card>
@@ -1670,24 +1675,29 @@ function TreasuryTypeBreakdownChart({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {rows.map((row) => (
-          <div key={row.type} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span>{row.label}</span>
-              <span className="font-medium text-muted-foreground">
-                {formatUsdAmount(row.usdEqual, locale)}
-              </span>
+        {rows.map((row, index) => {
+          const barColor =
+            COLOR_RANGE[index % COLOR_RANGE.length] ?? COLOR_RANGE[0];
+          return (
+            <div key={row.type} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span>{row.label}</span>
+                <span className="font-medium text-muted-foreground">
+                  {formatUsdAmount(row.usdEqual, locale)}
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-muted/80">
+                <div
+                  className="h-2 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.max(4, (row.usdEqual / max) * 100)}%`,
+                    background: `linear-gradient(90deg, color-mix(in oklab, ${barColor} 70%, white 30%), ${barColor})`,
+                  }}
+                />
+              </div>
             </div>
-            <div className="h-2 rounded-full bg-muted">
-              <div
-                className="h-2 rounded-full bg-primary"
-                style={{
-                  width: `${Math.max(4, (row.usdEqual / max) * 100)}%`,
-                }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );
