@@ -3,6 +3,7 @@ import {
   findSpaceBySlug,
   getPayingSpacesMetrics,
 } from '@hypha-platform/core/server';
+import { isHyphaPlatformSpace } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -29,6 +30,16 @@ export async function GET(
     );
     if (!hasAccess && response) {
       return response;
+    }
+
+    if (!isHyphaPlatformSpace({ slug: spaceSlug, title: space.title })) {
+      return NextResponse.json(
+        {
+          error:
+            'Active spaces dashboard is only available on the Hypha platform space',
+        },
+        { status: 403 },
+      );
     }
 
     const payingSpaces = await getPayingSpacesMetrics({ db });

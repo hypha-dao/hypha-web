@@ -13,6 +13,7 @@ import {
   OverviewMemoryDashboard,
   OverviewSignalsDashboard,
 } from './home-overview-metrics';
+import { isHyphaPlatformSpace } from '@hypha-platform/core/client';
 import {
   ShareStepTimelineChart,
   type ShareTimelinePoint,
@@ -1894,6 +1895,7 @@ export function HomeTokenHoldingsDashboard({
     [tModalAside],
   );
   const hasEnergyData = Boolean(activityData?.energy.available);
+  const isHyphaPlatform = isHyphaPlatformSpace({ slug: spaceSlug });
   // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
   const showEnergyWidget = false && hasEnergyData;
   const filterItems = React.useMemo(
@@ -1910,9 +1912,11 @@ export function HomeTokenHoldingsDashboard({
           label: tTokenHoldings('filters.distribution'),
         },
         { value: 'assets', label: tTokenHoldings('filters.assets') },
-        { value: 'flows', label: tTokenHoldings('filters.flows') },
+        ...(isHyphaPlatform
+          ? [{ value: 'flows', label: tTokenHoldings('filters.activeSpaces') }]
+          : []),
       ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [showEnergyWidget, tTokenHoldings],
+    [isHyphaPlatform, showEnergyWidget, tTokenHoldings],
   );
   const showSignals = activeFilter === 'signals';
   const showActivity = activeFilter === 'activity';
@@ -1937,7 +1941,10 @@ export function HomeTokenHoldingsDashboard({
     if (activeFilter === 'energy' && !showEnergyWidget) {
       setActiveFilter('signals');
     }
-  }, [activeFilter, showEnergyWidget]);
+    if (activeFilter === 'flows' && !isHyphaPlatform) {
+      setActiveFilter('signals');
+    }
+  }, [activeFilter, isHyphaPlatform, showEnergyWidget]);
 
   return (
     <div className="flex flex-col gap-5 py-4">
@@ -2145,7 +2152,9 @@ export function HomeTokenHoldingsDashboard({
         </>
       ) : null}
 
-      {showFlows ? <OverviewFlowsDashboard spaceSlug={spaceSlug} /> : null}
+      {showFlows && isHyphaPlatform ? (
+        <OverviewFlowsDashboard spaceSlug={spaceSlug} />
+      ) : null}
 
       {showAssets ? (
         <TreasuryAssetsSummaryWidget
