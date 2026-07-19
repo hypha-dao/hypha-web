@@ -8,6 +8,7 @@ import {
   PlatformActivitySection,
   PlatformAssetsSection,
   PlatformDistributionSection,
+  translatePlatformDashboardError,
 } from './platform-dashboard-sections';
 import { usePlatformDashboard } from '../hooks/use-platform-dashboard';
 
@@ -26,7 +27,11 @@ function PlatformDashboardContent({
   if (state.error || !state.data) {
     return (
       <div className="space-y-4 p-6">
-        <p className="text-destructive">{state.error ?? t('unavailable')}</p>
+        <p className="text-destructive">
+          {state.error
+            ? translatePlatformDashboardError(state.error, t)
+            : t('unavailable')}
+        </p>
         <Button onClick={() => void state.refresh()}>{t('retry')}</Button>
       </div>
     );

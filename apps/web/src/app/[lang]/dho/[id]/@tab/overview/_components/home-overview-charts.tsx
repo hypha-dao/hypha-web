@@ -410,7 +410,6 @@ export function RadialGauge({
     .innerRadius(radius * 0.72)
     .outerRadius(radius)
     .startAngle(-Math.PI * 0.75)
-    .endAngle(Math.PI * 0.75)
     .cornerRadius(8);
 
   const backgroundArc = arc({

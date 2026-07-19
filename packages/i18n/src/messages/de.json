@@ -581,6 +581,12 @@
     "refresh": "Aktualisieren",
     "retry": "Erneut versuchen",
     "unavailable": "Dashboard nicht verfügbar",
+    "errors": {
+      "secret_required": "Ops-Geheimnis ist erforderlich",
+      "not_configured": "Plattform-Dashboard-API ist in dieser Umgebung nicht konfiguriert.",
+      "unauthorized": "Ungültiges Ops-Geheimnis. Überprüfen Sie den Wert und versuchen Sie es erneut.",
+      "load_failed": "Dashboard konnte nicht geladen werden"
+    },
     "noData": "Noch keine Daten.",
     "opsAccess": {
       "title": "Zugriff auf Plattformmetriken",

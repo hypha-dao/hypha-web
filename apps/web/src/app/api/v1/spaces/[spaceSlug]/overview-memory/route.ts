@@ -21,14 +21,18 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
+    if (space.web3SpaceId == null || !canConvertToBigInt(space.web3SpaceId)) {
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    const { hasAccess, response } = await checkSpaceAccess(
+      request,
+      space.web3SpaceId as number,
+    );
+    if (!hasAccess) {
+      return (
+        response ?? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       );
-      if (!hasAccess && response) {
-        return response;
-      }
     }
 
     const memory = await getSpaceOverviewMemory({ db }, space.id);

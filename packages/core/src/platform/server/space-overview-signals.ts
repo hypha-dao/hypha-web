@@ -25,9 +25,7 @@ export async function getSpaceOverviewSignals(
     totalsByPriority,
     totalsByStatus,
     weeklyCreated,
-    totalRow,
-    createdLast24h,
-    createdLast7d,
+    summaryCountsRow,
     pending,
     failed,
     emitted,
@@ -75,17 +73,13 @@ export async function getSpaceOverviewSignals(
       .groupBy(sql`date_trunc('week', ${coherences.createdAt})`)
       .orderBy(sql`date_trunc('week', ${coherences.createdAt})`),
     db
-      .select({ count: sql<number>`count(*)` })
+      .select({
+        total: sql<number>`count(*)`,
+        last24h: sql<number>`count(*) filter (where ${coherences.createdAt} >= ${since24h})`,
+        last7d: sql<number>`count(*) filter (where ${coherences.createdAt} >= ${since7d})`,
+      })
       .from(coherences)
       .where(spaceFilter),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(coherences)
-      .where(and(spaceFilter, gte(coherences.createdAt, since24h))),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(coherences)
-      .where(and(spaceFilter, gte(coherences.createdAt, since7d))),
     db
       .select({ count: sql<number>`count(*)` })
       .from(signalOrchestratorQueue)
@@ -130,9 +124,9 @@ export async function getSpaceOverviewSignals(
 
   return {
     summary: {
-      totalSignals: Number(totalRow[0]?.count ?? 0),
-      createdLast24h: Number(createdLast24h[0]?.count ?? 0),
-      createdLast7d: Number(createdLast7d[0]?.count ?? 0),
+      totalSignals: Number(summaryCountsRow[0]?.total ?? 0),
+      createdLast24h: Number(summaryCountsRow[0]?.last24h ?? 0),
+      createdLast7d: Number(summaryCountsRow[0]?.last7d ?? 0),
     },
     byType: totalsByType.map((row) => ({
       type: row.type,

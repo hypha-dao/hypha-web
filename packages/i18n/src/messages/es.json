@@ -4288,6 +4288,12 @@
     "refresh": "Refresh",
     "retry": "Retry",
     "unavailable": "Dashboard unavailable",
+    "errors": {
+      "secret_required": "Ops secret is required",
+      "not_configured": "Platform dashboard API is not configured on this environment.",
+      "unauthorized": "Invalid ops secret. Check the value and try again.",
+      "load_failed": "Failed to load dashboard"
+    },
     "noData": "No data yet.",
     "opsAccess": {
       "title": "Platform metrics access",

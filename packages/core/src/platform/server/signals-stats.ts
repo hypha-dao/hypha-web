@@ -13,6 +13,7 @@ export async function getPlatformSignalsStats({ db }: DbConfig) {
     totalsByType,
     totalsByPriority,
     perSpaceTotals,
+    totalSignalsRow,
     createdLast24h,
     createdLast7d,
     orchestratorMetrics,
@@ -48,6 +49,10 @@ export async function getPlatformSignalsStats({ db }: DbConfig) {
     db
       .select({ count: sql<number>`count(*)` })
       .from(coherences)
+      .where(eq(coherences.archived, false)),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(coherences)
       .where(
         and(
           eq(coherences.archived, false),
@@ -63,10 +68,7 @@ export async function getPlatformSignalsStats({ db }: DbConfig) {
     getSignalOrchestratorMetrics({ db }),
   ]);
 
-  const totalSignals = perSpaceTotals.reduce(
-    (sum, row) => sum + Number(row.count ?? 0),
-    0,
-  );
+  const totalSignals = Number(totalSignalsRow[0]?.count ?? 0);
 
   return {
     summary: {

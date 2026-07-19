@@ -8,7 +8,9 @@ import { getPlatformSpaceMemoryStats } from './space-memory-stats';
 
 import type { PlatformDashboardData } from '../../platform/types';
 
-export async function getPlatformDashboard({ db }: DbConfig) {
+export async function getPlatformDashboard({
+  db,
+}: DbConfig): Promise<PlatformDashboardData> {
   const [payingSpaces, assets, signals, spaceMemory] = await Promise.all([
     getPayingSpacesMetrics({ db }),
     getPlatformAssetsSummary({ db }),

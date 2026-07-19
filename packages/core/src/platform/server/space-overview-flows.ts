@@ -8,12 +8,7 @@ import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../server';
 import { formatUnits } from 'viem';
 import { getHyphaPaymentEvents } from './paying-spaces';
-
-function toMonthKey(date: Date): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
+import { toMonthKey } from './utils';
 
 export async function getSpaceOverviewFlows(
   { db: _db }: DbConfig,

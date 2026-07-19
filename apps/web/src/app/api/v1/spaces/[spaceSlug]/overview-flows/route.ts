@@ -20,7 +20,7 @@ export async function GET(
 
   try {
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space?.web3SpaceId || !canConvertToBigInt(space.web3SpaceId)) {
+    if (space?.web3SpaceId == null || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
