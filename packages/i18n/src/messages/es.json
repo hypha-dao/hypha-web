@@ -1187,6 +1187,7 @@
       "description": "Los widgets de energía aparecerán cuando haya datos disponibles."
     },
     "assets": {
+<<<<<<< HEAD
       "title": "Resumen de tesorería",
       "subtitle": "Composición de valor y concentración de un vistazo.",
       "totalBalance": "Valor total de la tesorería",
@@ -1206,6 +1207,27 @@
       "emptyDescription": "Este espacio no tiene actualmente activos de tesorería rastreados.",
       "errorTitle": "No se pudo cargar el resumen de tesorería",
       "errorDescription": "Vuelve a intentarlo en un momento. Es posible que los datos de tesorería aún se estén sincronizando."
+=======
+      "title": "Treasury summary",
+      "subtitle": "Value composition and concentration at a glance.",
+      "totalBalance": "Total treasury value",
+      "assetCount": "Tracked assets",
+      "largestHolding": "Largest holding",
+      "composition": "Asset composition",
+      "compositionSubtitle": "Share of treasury value by asset.",
+      "compositionAria": "Treasury composition chart for {title}",
+      "topHoldings": "Top holdings",
+      "topHoldingsSubtitle": "Largest assets by estimated USD value.",
+      "byType": "Value by token type",
+      "byTypeSubtitle": "How treasury value is distributed across token categories.",
+      "valueLabel": "Valor (USD)",
+      "quantityLabel": "Cantidad",
+      "unitPrice": "Est. {price} per token",
+      "emptyTitle": "No treasury assets yet",
+      "emptyDescription": "This space does not currently hold any tracked treasury assets.",
+      "errorTitle": "Unable to load treasury summary",
+      "errorDescription": "Please retry in a moment. Treasury data may still be syncing."
+>>>>>>> ca927e46d (fix(overview): label USD value and token quantity on asset cards)
     },
     "signalsDashboard": {
       "error": "No se pudieron cargar las analíticas de señales en este momento.",

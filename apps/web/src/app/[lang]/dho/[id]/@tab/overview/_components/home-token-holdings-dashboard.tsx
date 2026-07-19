@@ -203,6 +203,15 @@ function formatAmount(raw: string, locale: string): string {
   }).format(parsed);
 }
 
+const USD_CURRENCY_OPTIONS: Intl.NumberFormatOptions = {
+  style: 'currency',
+  currency: 'USD',
+};
+
+function formatUsdAmount(value: number | string, locale: string): string {
+  return formatCurrencyValue(value, locale, USD_CURRENCY_OPTIONS);
+}
+
 function prettifyTokenType(type: string | undefined | null): string {
   if (!type) return 'Other';
   return type
@@ -1432,17 +1441,29 @@ function TreasuryAssetHoldingCard({
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2 pt-0">
-        <p className="text-6 font-semibold tabular-nums">
-          {formatAmount(String(asset.value), locale)}
-        </p>
-        <p className="text-sm font-medium text-foreground">
-          {formatCurrencyValue(asset.usdEqual, locale)}
-        </p>
+      <CardContent className="space-y-3 pt-0">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {tTokenHoldings('assets.valueLabel')}
+            </p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
+              {formatUsdAmount(asset.usdEqual, locale)}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {tTokenHoldings('assets.quantityLabel')}
+            </p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
+              {formatAmount(String(asset.value), locale)} {asset.symbol}
+            </p>
+          </div>
+        </div>
         {asset.tokenPrice > 0 ? (
           <p className="text-xs text-muted-foreground">
             {tTokenHoldings('assets.unitPrice', {
-              price: formatCurrencyValue(asset.tokenPrice, locale),
+              price: formatUsdAmount(asset.tokenPrice, locale),
             })}
           </p>
         ) : null}
@@ -1516,10 +1537,7 @@ function TreasuryCompositionDonut({
             >
               <title>{`${segment.data.label} — ${PERCENTAGE_FORMATTER(
                 segment.data.share_pct,
-              )}% (${formatCurrencyValue(
-                segment.data.usdEqual,
-                locale,
-              )})`}</title>
+              )}% (${formatUsdAmount(segment.data.usdEqual, locale)})`}</title>
             </path>
           ))}
           <text
@@ -1559,7 +1577,7 @@ function TreasuryCompositionDonut({
             </div>
             <span className="shrink-0 text-xs font-medium text-muted-foreground">
               {PERCENTAGE_FORMATTER(slice.share_pct)}% ·{' '}
-              {formatCurrencyValue(slice.usdEqual, locale)}
+              {formatUsdAmount(slice.usdEqual, locale)}
             </span>
           </button>
         ))}
@@ -1594,7 +1612,7 @@ function TreasuryTopAssetsBarChart({ items }: { items: TreasuryAssetSlice[] }) {
               <div className="flex items-center justify-between text-sm">
                 <span>{item.label}</span>
                 <span className="font-medium text-muted-foreground">
-                  {formatCurrencyValue(item.usdEqual, locale)}
+                  {formatUsdAmount(item.usdEqual, locale)}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-muted">
@@ -1657,7 +1675,7 @@ function TreasuryTypeBreakdownChart({
             <div className="flex items-center justify-between text-sm">
               <span>{row.label}</span>
               <span className="font-medium text-muted-foreground">
-                {formatCurrencyValue(row.usdEqual, locale)}
+                {formatUsdAmount(row.usdEqual, locale)}
               </span>
             </div>
             <div className="h-2 rounded-full bg-muted">
@@ -1771,8 +1789,11 @@ function TreasuryAssetsSummaryWidget({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-6 font-semibold">
-              {formatCurrencyValue(balance, locale)}
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {tTokenHoldings('assets.valueLabel')}
+            </p>
+            <p className="mt-1 text-6 font-semibold tabular-nums">
+              {formatUsdAmount(balance, locale)}
             </p>
           </CardContent>
         </Card>

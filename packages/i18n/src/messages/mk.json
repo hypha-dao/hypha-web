@@ -400,6 +400,7 @@
       "description": "Виџетите за енергија ќе се појават штом бидат достапни податоци за енергија."
     },
     "assets": {
+<<<<<<< HEAD
       "title": "Резиме на трезорот",
       "subtitle": "Состав на вредност и концентрација на еден поглед.",
       "totalBalance": "Вкупна вредност на трезорот",
@@ -419,6 +420,27 @@
       "emptyDescription": "Овој простор моментално не држи следени активи во трезорот.",
       "errorTitle": "Не може да се вчита резимето на трезорот",
       "errorDescription": "Обидете се повторно за момент. Податоците за трезорот можеби сè уште се синхронизираат."
+=======
+      "title": "Treasury summary",
+      "subtitle": "Value composition and concentration at a glance.",
+      "totalBalance": "Total treasury value",
+      "assetCount": "Tracked assets",
+      "largestHolding": "Largest holding",
+      "composition": "Asset composition",
+      "compositionSubtitle": "Share of treasury value by asset.",
+      "compositionAria": "Treasury composition chart for {title}",
+      "topHoldings": "Top holdings",
+      "topHoldingsSubtitle": "Largest assets by estimated USD value.",
+      "byType": "Value by token type",
+      "byTypeSubtitle": "How treasury value is distributed across token categories.",
+      "valueLabel": "Value (USD)",
+      "quantityLabel": "Quantity",
+      "unitPrice": "Est. {price} per token",
+      "emptyTitle": "No treasury assets yet",
+      "emptyDescription": "This space does not currently hold any tracked treasury assets.",
+      "errorTitle": "Unable to load treasury summary",
+      "errorDescription": "Please retry in a moment. Treasury data may still be syncing."
+>>>>>>> ca927e46d (fix(overview): label USD value and token quantity on asset cards)
     },
     "signalsDashboard": {
       "error": "Аналитиката за сигнали моментално не може да се вчита.",
