@@ -2,15 +2,10 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Skeleton,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@hypha-platform/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
+import { usePrefetchSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
 import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/charts';
 import { formatStablecoinMicro } from './energy/format';
@@ -20,6 +15,7 @@ import { OwnershipTab } from './energy/ownership-tab';
 import { CreditsTab } from './energy/credits-tab';
 import { useEnergyPeople } from './energy/use-energy-people';
 import { usePreloadImages } from './energy/use-preload-images';
+import { EnergySectionSkeleton } from './energy/loading-skeletons';
 
 const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
 
@@ -39,6 +35,10 @@ export const SpaceEnergySection = () => {
 
   const { people, isLoading: peopleLoading } = useEnergyPeople(memberAddresses);
 
+  // Warm telemetry for flows / ownership / consumer drill-downs as soon as
+  // Energy is available, so switching tabs does not wait on first fetch.
+  usePrefetchSpaceEnergyTelemetry(Boolean(data?.enabled));
+
   const avatarUrls = React.useMemo(() => {
     const urls = new Set<string>();
     for (const profile of Object.values(data?.participantProfiles ?? {})) {
@@ -53,17 +53,7 @@ export const SpaceEnergySection = () => {
   usePreloadImages(avatarUrls);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-        </div>
-        <Skeleton className="h-72 w-full rounded-xl" />
-      </div>
-    );
+    return <EnergySectionSkeleton />;
   }
 
   if (!data?.enabled || !data.overview) {
