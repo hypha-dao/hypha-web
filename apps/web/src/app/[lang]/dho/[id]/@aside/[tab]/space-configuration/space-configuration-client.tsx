@@ -62,7 +62,7 @@ export function SpaceConfigurationClient({
   );
 
   React.useEffect(() => {
-    if (progress === 100 && !isPending && newSpaceSlug) {
+    if (progress === 100 && !isPending && !isError && newSpaceSlug) {
       if (returnToNetworkMap) {
         router.push(getNetworkMapReturnPath(lang as Locale));
         return;
@@ -82,6 +82,7 @@ export function SpaceConfigurationClient({
   }, [
     progress,
     isPending,
+    isError,
     newSpaceSlug,
     lang,
     router,
@@ -90,7 +91,7 @@ export function SpaceConfigurationClient({
     searchParams,
   ]);
 
-  const isBusy = isLoadingJwt || isLoadingSpace || isPending;
+  const isBusy = isLoadingJwt || isLoadingSpace || isPending || isError;
 
   const pathname = usePathname();
   const closeUrl = React.useMemo(() => {
