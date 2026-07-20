@@ -3816,16 +3816,16 @@
     "credits": {
       "noBalances": "Aucun solde de règlement des membres disponible pour le moment.",
       "outstandingToSettle": "Montant à régler (EURC)",
-      "claimableCredit": "Crédit réclamable (EURC)",
+      "claimableCredit": "Créance réclamable (EURC)",
       "gridOperator": "Gestionnaire de réseau",
       "toSettle": "{amount} à régler",
       "receivable": "{amount} à recevoir",
       "balanced": "Équilibré",
       "gridOperatorHint": "Lorsque la communauté exporte un surplus d'énergie, le gestionnaire de réseau l'achète et doit régler ce montant. Lorsque la communauté importe depuis le réseau, le gestionnaire est créancier de l'énergie fournie.",
       "memberSettlement": "Règlement des membres",
-      "credit": "{amount} de crédit",
+      "credit": "{amount} à recevoir",
       "zeroEurc": "0 EURC",
-      "balancesHint": "Les soldes reflètent les crédits énergétiques en direct sur la chaîne depuis le contrat PPA. « À régler » correspond à la dette en cours ; « crédit » est réclamable une fois l'EURC déposé."
+      "balancesHint": "Les soldes reflètent les crédits énergétiques en direct sur la chaîne depuis le contrat PPA. « À régler » correspond à la dette en cours ; « à recevoir » est réclamable une fois l'EURC déposé."
     },
     "productionConsumption": {
       "loadingTelemetry": "Chargement de la télémétrie par intervalle…",

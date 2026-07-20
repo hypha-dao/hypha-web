@@ -197,7 +197,7 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
                             className="font-medium"
                             style={{ color: ENERGY_PALETTE[1] }}
                           >
-                            {t('credit', {
+                            {t('receivable', {
                               amount: eurcAmount(row.creditMicro),
                             })}
                           </p>

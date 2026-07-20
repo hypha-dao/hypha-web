@@ -3820,16 +3820,16 @@
     "credits": {
       "noBalances": "Noch keine Abrechnungssalden für Mitglieder verfügbar.",
       "outstandingToSettle": "Ausstehend zur Begleichung (EURC)",
-      "claimableCredit": "Beanspruchbares Guthaben (EURC)",
+      "claimableCredit": "Beanspruchbare Forderung (EURC)",
       "gridOperator": "Netzbetreiber",
       "toSettle": "{amount} zu begleichen",
       "receivable": "{amount} Forderung",
       "balanced": "Ausgeglichen",
       "gridOperatorHint": "Wenn die Gemeinschaft Überschussenergie exportiert, kauft der Netzbetreiber sie und muss diesen Betrag abrechnen. Wenn die Gemeinschaft aus dem Netz importiert, steht dem Betreiber die gelieferte Energie zu.",
       "memberSettlement": "Mitgliederabrechnung",
-      "credit": "{amount} Guthaben",
+      "credit": "{amount} Forderung",
       "zeroEurc": "0 EURC",
-      "balancesHint": "Salden spiegeln live On-Chain-Energieguthaben aus dem PPA-Vertrag wider. „Zu begleichen“ ist ausstehende Schuld; „Guthaben“ ist beanspruchbar, sobald EURC eingezahlt wurde."
+      "balancesHint": "Salden spiegeln live On-Chain-Energieguthaben aus dem PPA-Vertrag wider. „Zu begleichen“ ist ausstehende Schuld; „Forderung“ ist beanspruchbar, sobald EURC eingezahlt wurde."
     },
     "productionConsumption": {
       "loadingTelemetry": "Intervall-Telemetrie wird geladen…",

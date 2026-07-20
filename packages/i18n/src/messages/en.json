@@ -3828,16 +3828,16 @@
     "credits": {
       "noBalances": "No member settlement balances available yet.",
       "outstandingToSettle": "Outstanding to settle (EURC)",
-      "claimableCredit": "Claimable credit (EURC)",
+      "claimableCredit": "Claimable receivable (EURC)",
       "gridOperator": "Grid operator",
       "toSettle": "{amount} to settle",
       "receivable": "{amount} receivable",
       "balanced": "Balanced",
       "gridOperatorHint": "When the community exports surplus energy, the grid operator buys it and must settle that amount. When the community imports from the grid, the operator is owed for the energy supplied.",
       "memberSettlement": "Member settlement",
-      "credit": "{amount} credit",
+      "credit": "{amount} receivable",
       "zeroEurc": "0 EURC",
-      "balancesHint": "Balances reflect live on-chain energy credits from the PPA contract. “To settle” is outstanding debt; “credit” is claimable once EURC is deposited."
+      "balancesHint": "Balances reflect live on-chain energy credits from the PPA contract. “To settle” is outstanding debt; “receivable” is claimable once EURC is deposited."
     },
     "productionConsumption": {
       "loadingTelemetry": "Loading interval telemetry…",
