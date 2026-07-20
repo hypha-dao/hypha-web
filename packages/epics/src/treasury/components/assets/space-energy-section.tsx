@@ -11,7 +11,6 @@ import {
 } from '@hypha-platform/ui';
 import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
-import { usePrefetchSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
 import { StatCard } from './energy/shared';
 import { ENERGY_PALETTE } from './energy/charts';
 import { formatStablecoinMicro } from './energy/format';
@@ -39,10 +38,6 @@ export const SpaceEnergySection = () => {
   );
 
   const { people, isLoading: peopleLoading } = useEnergyPeople(memberAddresses);
-
-  // Warm telemetry for flows / ownership / consumer drill-downs as soon as
-  // Energy is available, so switching tabs does not wait on first fetch.
-  usePrefetchSpaceEnergyTelemetry(Boolean(data?.enabled));
 
   const avatarUrls = React.useMemo(() => {
     const urls = new Set<string>();
