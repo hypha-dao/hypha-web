@@ -257,6 +257,12 @@ const toSourceTypeEnum = (value: string): number => {
 };
 
 /**
+ * Scale applied to ownership BPS when minting source tokens (18 decimals).
+ * Form sends 1% as 100 BPS → mint 100 * 10^18 wei → UI shows 100 tokens.
+ */
+const ENERGY_OWNERSHIP_TOKEN_MINT_SCALE = 10n ** 18n;
+
+/**
  * Build the calldata for `EnergyPPAv2Factory.deployCommunity(p)` from form-shaped
  * inputs. Returns `{ target, value, data }` suitable for inclusion in a DAO
  * proposal `transactions[]` (executed by the space executor when the proposal
@@ -282,7 +288,11 @@ export const buildDeployCommunityTransaction = (
     energyTokenSymbol: input.energyTokenSymbol.trim(),
     sources: input.sources.map((source) => {
       const holders = source.holders.map((h) => toAddress(h));
-      const holderAmounts = source.holderAmounts.map((a) => toBigInt(a));
+      // Form ownership % is BPS (1% = 100, 100% = 10000). Ownership tokens use
+      // 18 decimals — scale so 1% mints 100 whole tokens (100 * 10^18 wei).
+      const holderAmounts = source.holderAmounts.map(
+        (a) => toBigInt(a) * ENERGY_OWNERSHIP_TOKEN_MINT_SCALE,
+      );
       if (holders.length !== holderAmounts.length) {
         throw new Error(
           `Source ${source.sourceId}: holders and holderAmounts length mismatch`,

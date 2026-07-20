@@ -2,6 +2,7 @@
 
 import { web3Client } from './client';
 import { erc20Abi, formatUnits } from 'viem';
+import { getEnergyCommunityDisplayDecimals } from '../../web3/energy-community-tokens';
 
 export async function getBalance(
   tokenAddress: `0x${string}`,
@@ -36,7 +37,10 @@ export async function getBalance(
     });
 
     return {
-      amount: +formatUnits(amount, decimals),
+      amount: +formatUnits(
+        amount,
+        getEnergyCommunityDisplayDecimals(tokenAddress, decimals),
+      ),
       symbol,
     };
   } catch (error: any) {

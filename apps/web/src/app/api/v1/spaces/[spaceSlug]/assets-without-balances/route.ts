@@ -13,6 +13,7 @@ import {
   TOKENS,
   ALLOWED_SPACES,
   isHiddenToken,
+  getEnergyCommunityTokensForSpace,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -179,6 +180,10 @@ export async function GET(
           type: 'voice',
         });
       }
+    });
+
+    getEnergyCommunityTokensForSpace(space.slug).forEach((token) => {
+      addressMap.set(token.address.toLowerCase(), token);
     });
 
     // Do not merge Alchemy ERC-20 discovery — spam tokens with no DB/on-chain

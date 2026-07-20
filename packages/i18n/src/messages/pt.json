@@ -3818,16 +3818,16 @@
     "credits": {
       "noBalances": "Ainda não há saldos de liquidação de membros disponíveis.",
       "outstandingToSettle": "Pendente de liquidar (EURC)",
-      "claimableCredit": "Crédito reclamável (EURC)",
+      "claimableCredit": "Valor a receber (EURC)",
       "gridOperator": "Operador de rede",
       "toSettle": "{amount} a liquidar",
       "receivable": "{amount} a receber",
       "balanced": "Equilibrado",
       "gridOperatorHint": "Quando a comunidade exporta energia excedente, o operador de rede compra-a e deve liquidar esse montante. Quando a comunidade importa da rede, o operador tem direito ao pagamento pela energia fornecida.",
       "memberSettlement": "Liquidação de membros",
-      "credit": "{amount} de crédito",
+      "credit": "{amount} a receber",
       "zeroEurc": "0 EURC",
-      "balancesHint": "Os saldos refletem créditos de energia em tempo real na cadeia, provenientes do contrato PPA. «A liquidar» é dívida pendente; «crédito» é reclamável assim que o EURC for depositado."
+      "balancesHint": "Os saldos refletem créditos de energia em tempo real na cadeia, provenientes do contrato PPA. «A liquidar» é dívida pendente; «a receber» é reclamável assim que o EURC for depositado."
     },
     "productionConsumption": {
       "loadingTelemetry": "A carregar telemetria por intervalos…",

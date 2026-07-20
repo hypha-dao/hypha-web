@@ -3,13 +3,7 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDownIcon } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Skeleton,
-} from '@hypha-platform/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
@@ -31,6 +25,7 @@ import {
 import { GranularityToggle } from './granularity-toggle';
 import type { EnergyTabProps } from './energy-tab-props';
 import { energyAvatarLoading } from './energy-tab-props';
+import { EnergyChartSkeleton, EnergyTextSkeleton } from './loading-skeletons';
 
 type Owner = { address: string; bps: number };
 
@@ -68,6 +63,16 @@ const useSourceProduction = (
   );
 
   return React.useMemo(() => {
+    // Do not fall back to placeholder series while the request is in flight —
+    // that briefly renders default/fake "earned from source" amounts.
+    if (isLoading) {
+      return {
+        labels: [] as string[],
+        values: [] as number[],
+        isPlaceholder: false,
+        isLoading: true,
+      };
+    }
     const liveSeries = live
       ? telemetry!.productionBySource[sourceIndex]
       : undefined;
@@ -76,14 +81,14 @@ const useSourceProduction = (
         labels: telemetry!.labels,
         values: liveSeries.valuesKwh,
         isPlaceholder: false,
-        isLoading,
+        isLoading: false,
       };
     }
     return {
       labels: granularityLabels(granularity, locale),
       values: buildSourceProductionSeries(sourceName, granularity),
       isPlaceholder: true,
-      isLoading,
+      isLoading: false,
     };
   }, [
     live,
@@ -146,13 +151,17 @@ const OwnerEarningsChart = ({
   return (
     <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-1 text-neutral-11">
-          {t('earningsOverWindow', { amount: formatEarnings(total) })}
-        </p>
+        {production.isLoading ? (
+          <EnergyTextSkeleton className="w-56" />
+        ) : (
+          <p className="text-1 text-neutral-11">
+            {t('earningsOverWindow', { amount: formatEarnings(total) })}
+          </p>
+        )}
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
       {production.isLoading ? (
-        <Skeleton className="h-40 w-full rounded-lg" />
+        <EnergyChartSkeleton height={200} bars={10} />
       ) : (
         <BarChart
           series={series}
@@ -164,11 +173,15 @@ const OwnerEarningsChart = ({
           showLegend={false}
         />
       )}
-      <p className="text-1 text-neutral-11">
-        {production.isPlaceholder
-          ? t('placeholderEstimate')
-          : t('liveEstimate')}
-      </p>
+      {production.isLoading ? (
+        <EnergyTextSkeleton className="w-72" />
+      ) : (
+        <p className="text-1 text-neutral-11">
+          {production.isPlaceholder
+            ? t('placeholderEstimate')
+            : t('liveEstimate')}
+        </p>
+      )}
     </div>
   );
 };
@@ -182,6 +195,7 @@ const OwnerEarningsRow = ({
   accent,
   totalEarned,
   totalIsPlaceholder,
+  earningsLoading,
 }: {
   group: SourceGroup;
   owner: Owner;
@@ -191,6 +205,7 @@ const OwnerEarningsRow = ({
   accent: string;
   totalEarned: number;
   totalIsPlaceholder: boolean;
+  earningsLoading?: boolean;
 }) => {
   const t = useTranslations('Energy.ownership');
   const [expanded, setExpanded] = React.useState(false);
@@ -212,12 +227,16 @@ const OwnerEarningsRow = ({
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
-          <p className="truncate text-1 text-neutral-11">
-            {t('earnedFromSource', {
-              prefix: totalIsPlaceholder ? '≈ ' : '',
-              amount: formatEarnings(totalEarned),
-            })}
-          </p>
+          {earningsLoading ? (
+            <EnergyTextSkeleton className="mt-1 w-48" />
+          ) : (
+            <p className="truncate text-1 text-neutral-11">
+              {t('earnedFromSource', {
+                prefix: totalIsPlaceholder ? '≈ ' : '',
+                amount: formatEarnings(totalEarned),
+              })}
+            </p>
+          )}
         </div>
         <span
           className="shrink-0 rounded-full px-2 py-1 text-1 font-medium"
@@ -302,14 +321,19 @@ const SourceOwnershipCard = ({
                 (owner.bps / 10_000)
               }
               totalIsPlaceholder={production.isPlaceholder}
+              earningsLoading={production.isLoading}
             />
           );
         })}
-        <p className="text-1 text-neutral-11">
-          {t('earningsHint', {
-            dataType: production.isPlaceholder ? t('placeholder') : t('live'),
-          })}
-        </p>
+        {production.isLoading ? (
+          <EnergyTextSkeleton className="w-64" />
+        ) : (
+          <p className="text-1 text-neutral-11">
+            {t('earningsHint', {
+              dataType: production.isPlaceholder ? t('placeholder') : t('live'),
+            })}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

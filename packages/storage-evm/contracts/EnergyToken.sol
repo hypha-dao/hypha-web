@@ -65,11 +65,15 @@ contract EnergyToken is ERC20, Ownable {
   }
 
   /**
-   * @dev Override decimals to match the configured stablecoin precision.
-   * Energy credits are converted to 6-decimal stablecoin base units by EnergyPPAv2.
+   * @dev Display decimals for 1:1 parity with EURC/USDC in wallets and the UI.
+   *
+   * EnergyPPAv2 stores credit balances in internal units where
+   * `internalUnits * 10_000 = stablecoin base units` (6dp). Using 2 decimals
+   * means `formatUnits(internalUnits, 2) = stablecoin human amount`, so
+   * 1 NRG ≈ 1 EURC. (Settlement math still uses raw internal units × 10_000.)
    */
   function decimals() public pure override returns (uint8) {
-    return 6;
+    return 2;
   }
 
   /**

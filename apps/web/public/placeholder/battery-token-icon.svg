@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="168" fill="none" viewBox="0 0 168 168">
+  <circle cx="84" cy="84" r="69" fill="#22C55E"/>
+  <!-- Terminal + body centered on (84, 84): top 41 → bottom 127 -->
+  <rect x="72" y="41" width="24" height="10" rx="3" fill="#fff"/>
+  <rect x="56" y="51" width="56" height="76" rx="10" fill="none" stroke="#fff" stroke-width="7"/>
+  <rect x="66" y="61" width="36" height="56" rx="5" fill="#fff"/>
+  <path fill="#22C55E" d="M91 70 77 92h9.5l-3.5 16 16.5-25H89Z"/>
+</svg>

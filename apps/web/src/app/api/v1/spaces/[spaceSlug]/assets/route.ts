@@ -18,6 +18,10 @@ import {
   ALLOWED_SPACES,
   getTokenDecimals,
   isHiddenToken,
+  getEnergyCommunityTokensForSpace,
+  getAllEnergyCommunityTokens,
+  getEnergyCommunityToken,
+  getEnergyCommunityDisplayDecimals,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -194,6 +198,22 @@ export async function GET(
       }
     });
 
+    // EnergyPPAv2 community tokens (energy credit + source ownership) are
+    // deployed outside the space token factories — register them explicitly
+    // on the issuer space, and also probe balances on every space so member
+    // treasuries (e.g. Escola) surface held ownership / credit tokens.
+    getEnergyCommunityTokensForSpace(space.slug).forEach((token) => {
+      const lower = token.address.toLowerCase();
+      issuedBySpaceAddresses.add(lower);
+      addressMap.set(lower, token);
+    });
+    getAllEnergyCommunityTokens().forEach((token) => {
+      const lower = token.address.toLowerCase();
+      if (!addressMap.has(lower)) {
+        addressMap.set(lower, token);
+      }
+    });
+
     // Do not merge Alchemy ERC-20 discovery here — it floods the treasury with
     // spam tokens that have no DB row. Balances for known addresses come from
     // getBalance below; catalogue + space-issued + DB cover legit assets.
@@ -233,7 +253,18 @@ export async function GET(
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
           }
-          const decimals = await getTokenDecimals(token.address);
+          // 1 display NRG ≈ 1 EURC/USDC after credit decimal normalization.
+          if (
+            rate === 0 &&
+            getEnergyCommunityToken(token.address)?.type === 'credits'
+          ) {
+            rate = 1;
+          }
+          const contractDecimals = await getTokenDecimals(token.address);
+          const displayDecimals = getEnergyCommunityDisplayDecimals(
+            token.address,
+            contractDecimals,
+          );
           const referenceCurrency =
             referenceCurrencyByAddress[token.address.toLowerCase()];
           return {
@@ -252,7 +283,7 @@ export async function GET(
             ),
             supply: totalSupply
               ? {
-                  total: Number(totalSupply / 10n ** BigInt(decimals)),
+                  total: Number(totalSupply / 10n ** BigInt(displayDecimals)),
                 }
               : undefined,
             space: meta.space
