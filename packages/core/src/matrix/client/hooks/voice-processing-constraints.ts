@@ -11,35 +11,26 @@ type AudioProcessingConstraints = {
 
 export function constraintsForVoicePreset(
   preset: SpaceGroupCallVoiceProcessingPreset,
-  options?: { isScreensharing?: boolean },
 ): AudioProcessingConstraints {
-  let base: AudioProcessingConstraints;
   switch (preset) {
     case 'voice_isolation':
-      base = {
+      return {
         autoGainControl: false,
         echoCancellation: true,
         noiseSuppression: true,
       };
-      break;
     case 'music':
-      base = {
+      return {
         autoGainControl: false,
         echoCancellation: true,
         noiseSuppression: false,
       };
-      break;
     case 'standard':
     default:
-      base = {
+      return {
         autoGainControl: true,
         echoCancellation: true,
-        noiseSuppression: true,
+        noiseSuppression: false,
       };
-      break;
   }
-  if (options?.isScreensharing) {
-    return { ...base, autoGainControl: true };
-  }
-  return base;
 }

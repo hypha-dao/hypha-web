@@ -89,6 +89,7 @@ import {
   isCallMobileViewport,
 } from './call-mobile-screenshare-policy';
 import type { SpaceGroupCallVoiceProcessingPreset } from './voice-processing-constraints';
+import { constraintsForVoicePreset } from './voice-processing-constraints';
 import {
   resolveLivekitJwtServiceUrl,
   fetchLivekitConnectCredentials,
@@ -269,8 +270,11 @@ function readVoiceProcessingPreset(): SpaceGroupCallVoiceProcessingPreset {
     const raw = window.localStorage
       .getItem(VOICE_PROCESSING_PRESET_KEY)
       ?.trim();
-    if (raw === 'standard' || raw === 'voice_isolation' || raw === 'music') {
+    if (raw === 'standard' || raw === 'voice_isolation') {
       return raw;
+    }
+    if (raw === 'music') {
+      return 'standard';
     }
   } catch {
     // ignore persistence read failures
@@ -408,6 +412,14 @@ export function useSpaceGroupCall(
     useRef<SpaceGroupCallVoiceProcessingPreset>('standard');
   const voicePresetRestoreAfterScreenshareRef =
     useRef<SpaceGroupCallVoiceProcessingPreset | null>(null);
+  const [
+    unsupportedVoiceProcessingConstraints,
+    setUnsupportedVoiceProcessingConstraints,
+  ] = useState<{
+    autoGainControl: boolean;
+    echoCancellation: boolean;
+    noiseSuppression: boolean;
+  } | null>(null);
   const [presenterVoiceBoostActive, setPresenterVoiceBoostActive] =
     useState(false);
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
@@ -1771,10 +1783,26 @@ export function useSpaceGroupCall(
           enableCamera,
         });
         await Promise.all([
-          lkRoom.localParticipant.setMicrophoneEnabled(true),
+          lkRoom.localParticipant.setMicrophoneEnabled(
+            true,
+            constraintsForVoicePreset(voiceProcessingPresetRef.current),
+          ),
           lkRoom.localParticipant.setCameraEnabled(enableCamera),
         ]);
         logJoinDebugStep('join-step:local-tracks-published');
+
+        const publishedMicTrack = lkRoom.localParticipant.getTrackPublication(
+          Track.Source.Microphone,
+        )?.track;
+        if (publishedMicTrack) {
+          const capabilities =
+            publishedMicTrack.mediaStreamTrack.getCapabilities?.();
+          setUnsupportedVoiceProcessingConstraints({
+            autoGainControl: capabilities?.autoGainControl === undefined,
+            echoCancellation: capabilities?.echoCancellation === undefined,
+            noiseSuppression: capabilities?.noiseSuppression === undefined,
+          });
+        }
 
         /**
          * `Promise.all` above can take a while (SFU negotiation); if the user
@@ -2241,6 +2269,16 @@ export function useSpaceGroupCall(
       setVoiceProcessingPresetState(preset);
       persistVoiceProcessingPreset(preset);
       voiceProcessingPresetRef.current = preset;
+
+      const micTrack =
+        liveKitRoomRef.current?.localParticipant.getTrackPublication(
+          Track.Source.Microphone,
+        )?.track;
+      if (micTrack) {
+        await micTrack.mediaStreamTrack
+          .applyConstraints(constraintsForVoicePreset(preset))
+          .catch(() => undefined);
+      }
     },
     [],
   );
@@ -2964,6 +3002,7 @@ export function useSpaceGroupCall(
     toggleScreensharing,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
+    unsupportedVoiceProcessingConstraints,
     /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */
     presenterVoiceBoostActive,
     isScreensharing,

@@ -1262,6 +1262,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setScreensharingEnabled: setSpaceCallScreensharingEnabled,
     voiceProcessingPreset: spaceCallVoiceProcessingPreset,
     setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
+    unsupportedVoiceProcessingConstraints:
+      spaceCallUnsupportedVoiceProcessingConstraints,
     presenterVoiceBoostActive: spaceCallPresenterVoiceBoostActive,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
@@ -4317,6 +4319,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   handleCallVoiceProcessingPresetChange
                 }
                 presenterVoiceBoostActive={spaceCallPresenterVoiceBoostActive}
+                unsupportedVoiceProcessingConstraints={
+                  spaceCallUnsupportedVoiceProcessingConstraints
+                }
                 captureMode={spaceCallCaptureMode}
                 capturePreference={spaceCallCapturePreference}
                 capturePreferenceSelected={spaceCallCapturePreferenceSelected}

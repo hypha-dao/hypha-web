@@ -74,6 +74,11 @@ type HumanChatPanelCallBannerProps = {
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
   presenterVoiceBoostActive?: boolean;
+  unsupportedVoiceProcessingConstraints?: {
+    autoGainControl: boolean;
+    echoCancellation: boolean;
+    noiseSuppression: boolean;
+  } | null;
   captureMode: SpaceGroupCallCaptureMode;
   capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
   capturePreferenceSelected: boolean;
@@ -175,6 +180,7 @@ export function HumanChatPanelCallBanner({
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
   presenterVoiceBoostActive = false,
+  unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
   capturePreferenceSelected,
@@ -563,6 +569,9 @@ export function HumanChatPanelCallBanner({
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
                 presenterVoiceBoostActive={presenterVoiceBoostActive}
+                unsupportedVoiceProcessingConstraints={
+                  unsupportedVoiceProcessingConstraints
+                }
                 captureMode={captureMode}
                 capturePreference={capturePreference}
                 capturePreferenceSelected={capturePreferenceSelected}

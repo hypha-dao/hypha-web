@@ -2506,6 +2506,8 @@
     "callVoiceProcessingStandard": "Voz",
     "callVoiceProcessingIsolation": "Aislamiento",
     "callVoiceProcessingMusic": "Música",
+    "callVoiceProcessingNoiseSuppressionUnsupported": "Cancelación de ruido no compatible con este dispositivo",
+    "callVoiceProcessingAutoGainUnsupported": "Control automático de ganancia no compatible con este dispositivo",
     "callVoiceBoostWhilePresenting": "Refuerzo de voz activo mientras presentas",
     "callCameraOn": "Encender cámara",
     "callCameraOff": "Apagar cámara",
