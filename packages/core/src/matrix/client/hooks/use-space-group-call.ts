@@ -293,6 +293,32 @@ function persistVoiceProcessingPreset(
   }
 }
 
+/**
+ * Applies a voice preset both to the currently published mic track (so the
+ * change is audible immediately) and to the room's `audioCaptureDefaults`
+ * (so a *new* track — e.g. from a mid-call input device switch — also picks
+ * up the preset instead of falling back to whatever constraints the room was
+ * created with).
+ */
+function applyVoiceProcessingPresetToRoom(
+  lkRoom: LiveKitRoom,
+  preset: SpaceGroupCallVoiceProcessingPreset,
+): void {
+  const constraints = constraintsForVoicePreset(preset);
+  lkRoom.options.audioCaptureDefaults = {
+    ...lkRoom.options.audioCaptureDefaults,
+    ...constraints,
+  };
+  const micTrack = lkRoom.localParticipant.getTrackPublication(
+    Track.Source.Microphone,
+  )?.track;
+  if (micTrack) {
+    void micTrack.mediaStreamTrack
+      .applyConstraints(constraints)
+      .catch(() => undefined);
+  }
+}
+
 async function tryRepairRoomCallPermissions(
   authToken: string | null | undefined,
   spaceSlug: string | null | undefined,
@@ -1336,6 +1362,7 @@ export function useSpaceGroupCall(
       if (plan.effectivePreset !== voiceProcessingPresetRef.current) {
         setVoiceProcessingPresetState(plan.effectivePreset);
         voiceProcessingPresetRef.current = plan.effectivePreset;
+        applyVoiceProcessingPresetToRoom(lkRoom, plan.effectivePreset);
       }
       const micPub = lkRoom.localParticipant.getTrackPublication(
         Track.Source.Microphone,
@@ -1406,7 +1433,7 @@ export function useSpaceGroupCall(
   );
 
   const restorePresenterVoiceAfterScreenshare = useCallback(
-    async (_lkRoom: LiveKitRoom) => {
+    async (lkRoom: LiveKitRoom) => {
       const restore = voicePresetRestoreAfterScreenshareRef.current;
       voicePresetRestoreAfterScreenshareRef.current = null;
       setPresenterVoiceBoostActive(false);
@@ -1414,6 +1441,7 @@ export function useSpaceGroupCall(
         setVoiceProcessingPresetState(restore);
         persistVoiceProcessingPreset(restore);
         voiceProcessingPresetRef.current = restore;
+        applyVoiceProcessingPresetToRoom(lkRoom, restore);
       }
       scheduleFeedBatched();
       refreshLocalPreview();
@@ -2071,7 +2099,10 @@ export function useSpaceGroupCall(
     async (muted: boolean) => {
       const lkRoom = liveKitRoomRef.current;
       if (!lkRoom) return;
-      await lkRoom.localParticipant.setMicrophoneEnabled(!muted);
+      await lkRoom.localParticipant.setMicrophoneEnabled(
+        !muted,
+        constraintsForVoicePreset(voiceProcessingPresetRef.current),
+      );
       syncLocalMuteState(lkRoom);
       scheduleFeedBatched();
     },
@@ -2285,14 +2316,8 @@ export function useSpaceGroupCall(
       persistVoiceProcessingPreset(preset);
       voiceProcessingPresetRef.current = preset;
 
-      const micTrack =
-        liveKitRoomRef.current?.localParticipant.getTrackPublication(
-          Track.Source.Microphone,
-        )?.track;
-      if (micTrack) {
-        await micTrack.mediaStreamTrack
-          .applyConstraints(constraintsForVoicePreset(preset))
-          .catch(() => undefined);
+      if (liveKitRoomRef.current) {
+        applyVoiceProcessingPresetToRoom(liveKitRoomRef.current, preset);
       }
     },
     [],
