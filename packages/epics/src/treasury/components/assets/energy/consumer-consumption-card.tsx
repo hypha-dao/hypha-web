@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDownIcon } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
+import { Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { shortAddr } from './format';
@@ -15,7 +16,6 @@ import {
   type Granularity,
 } from './granularity';
 import { GranularityToggle } from './granularity-toggle';
-import { EnergyChartSkeleton, EnergyTextSkeleton } from './loading-skeletons';
 
 const ConsumerConsumptionChart = ({
   address,
@@ -78,20 +78,16 @@ const ConsumerConsumptionChart = ({
   return (
     <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        {isLoading ? (
-          <EnergyTextSkeleton className="w-40" />
-        ) : (
-          <p className="text-1 text-neutral-11">
-            {tShared('overWindow', {
-              total: displayTotal.toLocaleString(locale),
-              unit,
-            })}
-          </p>
-        )}
+        <p className="text-1 text-neutral-11">
+          {tShared('overWindow', {
+            total: displayTotal.toLocaleString(locale),
+            unit,
+          })}
+        </p>
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
       {isLoading ? (
-        <EnergyChartSkeleton height={200} bars={10} />
+        <Skeleton className="h-40 w-full rounded-lg" />
       ) : (
         <BarChart
           series={series}
@@ -102,15 +98,11 @@ const ConsumerConsumptionChart = ({
           showLegend={false}
         />
       )}
-      {isLoading ? (
-        <EnergyTextSkeleton className="w-56" />
-      ) : (
-        <p className="text-1 text-neutral-11">
-          {isPlaceholder
-            ? t('placeholderConsumption')
-            : tShared('liveMeterData', { count: deviceIds?.length ?? 0 })}
-        </p>
-      )}
+      <p className="text-1 text-neutral-11">
+        {isPlaceholder
+          ? t('placeholderConsumption')
+          : tShared('liveMeterData', { count: deviceIds?.length ?? 0 })}
+      </p>
     </div>
   );
 };

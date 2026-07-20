@@ -3,7 +3,13 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDownIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
@@ -25,7 +31,6 @@ import {
 import { GranularityToggle } from './granularity-toggle';
 import type { EnergyTabProps } from './energy-tab-props';
 import { energyAvatarLoading } from './energy-tab-props';
-import { EnergyChartSkeleton, EnergyTextSkeleton } from './loading-skeletons';
 
 type Owner = { address: string; bps: number };
 
@@ -152,7 +157,7 @@ const OwnerEarningsChart = ({
     <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {production.isLoading ? (
-          <EnergyTextSkeleton className="w-56" />
+          <Skeleton className="h-4 w-56 max-w-full" />
         ) : (
           <p className="text-1 text-neutral-11">
             {t('earningsOverWindow', { amount: formatEarnings(total) })}
@@ -161,7 +166,7 @@ const OwnerEarningsChart = ({
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
       {production.isLoading ? (
-        <EnergyChartSkeleton height={200} bars={10} />
+        <Skeleton className="h-40 w-full rounded-lg" />
       ) : (
         <BarChart
           series={series}
@@ -174,7 +179,7 @@ const OwnerEarningsChart = ({
         />
       )}
       {production.isLoading ? (
-        <EnergyTextSkeleton className="w-72" />
+        <Skeleton className="h-4 w-72 max-w-full" />
       ) : (
         <p className="text-1 text-neutral-11">
           {production.isPlaceholder
@@ -228,7 +233,7 @@ const OwnerEarningsRow = ({
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
           {earningsLoading ? (
-            <EnergyTextSkeleton className="mt-1 w-48" />
+            <Skeleton className="mt-1 h-4 w-48 max-w-full" />
           ) : (
             <p className="truncate text-1 text-neutral-11">
               {t('earnedFromSource', {
@@ -326,7 +331,7 @@ const SourceOwnershipCard = ({
           );
         })}
         {production.isLoading ? (
-          <EnergyTextSkeleton className="w-64" />
+          <Skeleton className="h-4 w-64 max-w-full" />
         ) : (
           <p className="text-1 text-neutral-11">
             {t('earningsHint', {

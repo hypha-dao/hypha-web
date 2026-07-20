@@ -2,7 +2,13 @@
 
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from '@hypha-platform/ui';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
@@ -15,11 +21,6 @@ import {
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
 import { readableSourceMetadataLabel, sourceCardLabel } from './format';
-import {
-  EnergyChartSkeleton,
-  EnergyStatCardsSkeleton,
-  EnergyTextSkeleton,
-} from './loading-skeletons';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -180,16 +181,12 @@ export const ProductionConsumptionTab = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {telemetryLoading ? (
-          <EnergyTextSkeleton className="w-48" />
-        ) : (
-          <p className="text-1 text-neutral-11">{statusMessage}</p>
-        )}
+        <p className="text-1 text-neutral-11">{statusMessage}</p>
         <TimeframeToggle value={timeframe} onChange={setTimeframe} />
       </div>
 
       {telemetryLoading ? (
-        <EnergyStatCardsSkeleton count={3} />
+        <Skeleton className="h-24 w-full rounded-xl" />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatCard
@@ -223,7 +220,7 @@ export const ProductionConsumptionTab = ({
         </CardHeader>
         <CardContent>
           {telemetryLoading ? (
-            <EnergyChartSkeleton height={192} bars={12} />
+            <Skeleton className="h-48 w-full rounded-lg" />
           ) : (
             <BarChart
               series={productionVsConsumption}
@@ -241,7 +238,7 @@ export const ProductionConsumptionTab = ({
         </CardHeader>
         <CardContent>
           {telemetryLoading ? (
-            <EnergyChartSkeleton height={192} bars={12} />
+            <Skeleton className="h-48 w-full rounded-lg" />
           ) : (
             <BarChart
               series={bySource}
@@ -259,11 +256,7 @@ export const ProductionConsumptionTab = ({
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {telemetryLoading ? (
-            <>
-              <EnergyStatCardsSkeleton count={2} />
-              <EnergyChartSkeleton height={192} bars={12} />
-              <EnergyTextSkeleton className="w-64" />
-            </>
+            <Skeleton className="h-48 w-full rounded-lg" />
           ) : (
             <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

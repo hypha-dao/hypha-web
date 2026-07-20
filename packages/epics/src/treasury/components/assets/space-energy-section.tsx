@@ -2,7 +2,13 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  Skeleton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
 import { usePrefetchSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
@@ -15,7 +21,6 @@ import { OwnershipTab } from './energy/ownership-tab';
 import { CreditsTab } from './energy/credits-tab';
 import { useEnergyPeople } from './energy/use-energy-people';
 import { usePreloadImages } from './energy/use-preload-images';
-import { EnergySectionSkeleton } from './energy/loading-skeletons';
 
 const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
 
@@ -53,7 +58,17 @@ export const SpaceEnergySection = () => {
   usePreloadImages(avatarUrls);
 
   if (isLoading) {
-    return <EnergySectionSkeleton />;
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+        </div>
+        <Skeleton className="h-72 w-full rounded-xl" />
+      </div>
+    );
   }
 
   if (!data?.enabled || !data.overview) {
