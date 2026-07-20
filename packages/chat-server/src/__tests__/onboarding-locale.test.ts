@@ -11,6 +11,8 @@ describe('resolveSupportedUiLocale', () => {
     expect(resolveSupportedUiLocale('pt-BR')).toBe('pt');
     expect(resolveSupportedUiLocale('fr-FR')).toBe('fr');
     expect(resolveSupportedUiLocale('mk')).toBe('mk');
+    expect(resolveSupportedUiLocale('nl')).toBe('nl');
+    expect(resolveSupportedUiLocale('nl-NL')).toBe('nl');
   });
 
   it('rejects unsupported locales', () => {
@@ -24,6 +26,7 @@ describe('buildOnboardingLocaleDirective', () => {
     expect(buildOnboardingLocaleDirective('de')).toContain('German');
     expect(buildOnboardingLocaleDirective('pt')).toContain('Portuguese');
     expect(buildOnboardingLocaleDirective('fr-FR')).toContain('French');
+    expect(buildOnboardingLocaleDirective('nl')).toContain('Dutch');
   });
 
   it('lists all supported Hypha languages', () => {
@@ -34,7 +37,8 @@ describe('buildOnboardingLocaleDirective', () => {
     expect(directive).toContain('French');
     expect(directive).toContain('German');
     expect(directive).toContain('Macedonian');
-    expect(directive).toContain('ONLY these 6 languages');
+    expect(directive).toContain('Dutch');
+    expect(directive).toContain('ONLY these 7 languages');
   });
 
   it('allows switching among the supported languages', () => {

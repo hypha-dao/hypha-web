@@ -20,7 +20,15 @@ export type LocalizedVotingMethodOption = {
   description: string;
 };
 
-const CHAT_LOCALES: readonly Locale[] = ['en', 'pt', 'es', 'fr', 'de', 'mk'];
+const CHAT_LOCALES: readonly Locale[] = [
+  'en',
+  'pt',
+  'es',
+  'fr',
+  'de',
+  'mk',
+  'nl',
+];
 
 const ENTRY_METHOD_IDS: readonly EntryMethodId[] = [
   'open_access',
@@ -90,6 +98,7 @@ const ENTRY_METHOD_PROPOSAL_TITLE: Record<Locale, (label: string) => string> = {
   es: (label) => `Cambiar el método de entrada a ${label}`,
   pt: (label) => `Alterar o método de entrada para ${label}`,
   mk: (label) => `Промени го начинот на пристапување во ${label}`,
+  nl: (label) => `Toegangsmethode wijzigen naar ${label}`,
 };
 
 const VOTING_METHOD_PROPOSAL_TITLE: Record<Locale, (label: string) => string> =
@@ -100,6 +109,7 @@ const VOTING_METHOD_PROPOSAL_TITLE: Record<Locale, (label: string) => string> =
     es: (label) => `Cambiar el método de votación a ${label}`,
     pt: (label) => `Alterar o método de votação para ${label}`,
     mk: (label) => `Промени го начинот на гласање во ${label}`,
+    nl: (label) => `Stemmethode wijzigen naar ${label}`,
   };
 
 type AgreementFlowPlugins = {

@@ -7,7 +7,15 @@ import type { OnboardingSetupJourneyMessageLabels } from './onboarding-setup-jou
 type AiPanelRecord = Record<string, unknown>;
 type SetupJourneyKind = 'single_space' | 'ecosystem';
 
-const ONBOARDING_PICKER_LOCALES = ['en', 'pt', 'es', 'fr', 'de', 'mk'] as const;
+const ONBOARDING_PICKER_LOCALES = [
+  'en',
+  'pt',
+  'es',
+  'fr',
+  'de',
+  'mk',
+  'nl',
+] as const;
 
 const SETUP_JOURNEY_MESSAGE_KEYS: Record<SetupJourneyKind, readonly string[]> =
   {
