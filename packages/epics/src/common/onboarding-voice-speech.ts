@@ -41,6 +41,11 @@ const VOICE_INTERIM_ACK_PHRASES_BY_LOCALE: Record<string, readonly string[]> = {
     'Дајте ми секунда да погледнам.',
     'Веднаш ќе го најдам тоа за вас.',
   ],
+  nl: [
+    'Een moment, ik zoek dat voor u op.',
+    'Geef me even om dat te checken.',
+    'Ik haal dat meteen voor u op.',
+  ],
 };
 
 function resolveInterimAckLocale(locale?: string): string {
