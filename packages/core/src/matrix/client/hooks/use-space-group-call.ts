@@ -1774,6 +1774,21 @@ export function useSpaceGroupCall(
           return;
         }
 
+        /**
+         * `music` is situational to one call's content and must never carry
+         * into an unrelated future call. The mount-time `readVoiceProcessingPreset()`
+         * effect only catches a stale `music` value read from `localStorage` on
+         * first load — it doesn't re-run on a same-session rejoin, so without this
+         * check here a mid-call switch to `music` would still be active (in
+         * `voiceProcessingPresetRef.current`) the next time the user joins a call
+         * without reloading the page.
+         */
+        if (voiceProcessingPresetRef.current === 'music') {
+          voiceProcessingPresetRef.current = 'standard';
+          setVoiceProcessingPresetState('standard');
+          persistVoiceProcessingPreset('standard');
+        }
+
         // Enable concurrently (not sequentially) so livekit-client's internal
         // negotiation queue can coalesce both track publishes into a single
         // offer/answer round instead of two separate renegotiations racing
