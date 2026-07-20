@@ -68,6 +68,16 @@ const useSourceProduction = (
   );
 
   return React.useMemo(() => {
+    // Do not fall back to placeholder series while the request is in flight —
+    // that briefly renders default/fake "earned from source" amounts.
+    if (isLoading) {
+      return {
+        labels: [] as string[],
+        values: [] as number[],
+        isPlaceholder: false,
+        isLoading: true,
+      };
+    }
     const liveSeries = live
       ? telemetry!.productionBySource[sourceIndex]
       : undefined;
@@ -76,14 +86,14 @@ const useSourceProduction = (
         labels: telemetry!.labels,
         values: liveSeries.valuesKwh,
         isPlaceholder: false,
-        isLoading,
+        isLoading: false,
       };
     }
     return {
       labels: granularityLabels(granularity, locale),
       values: buildSourceProductionSeries(sourceName, granularity),
       isPlaceholder: true,
-      isLoading,
+      isLoading: false,
     };
   }, [
     live,
@@ -146,9 +156,13 @@ const OwnerEarningsChart = ({
   return (
     <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-1 text-neutral-11">
-          {t('earningsOverWindow', { amount: formatEarnings(total) })}
-        </p>
+        {production.isLoading ? (
+          <Skeleton className="h-4 w-56 max-w-full" />
+        ) : (
+          <p className="text-1 text-neutral-11">
+            {t('earningsOverWindow', { amount: formatEarnings(total) })}
+          </p>
+        )}
         <GranularityToggle value={granularity} onChange={setGranularity} />
       </div>
       {production.isLoading ? (
@@ -164,11 +178,15 @@ const OwnerEarningsChart = ({
           showLegend={false}
         />
       )}
-      <p className="text-1 text-neutral-11">
-        {production.isPlaceholder
-          ? t('placeholderEstimate')
-          : t('liveEstimate')}
-      </p>
+      {production.isLoading ? (
+        <Skeleton className="h-4 w-72 max-w-full" />
+      ) : (
+        <p className="text-1 text-neutral-11">
+          {production.isPlaceholder
+            ? t('placeholderEstimate')
+            : t('liveEstimate')}
+        </p>
+      )}
     </div>
   );
 };
@@ -182,6 +200,7 @@ const OwnerEarningsRow = ({
   accent,
   totalEarned,
   totalIsPlaceholder,
+  earningsLoading,
 }: {
   group: SourceGroup;
   owner: Owner;
@@ -191,6 +210,7 @@ const OwnerEarningsRow = ({
   accent: string;
   totalEarned: number;
   totalIsPlaceholder: boolean;
+  earningsLoading?: boolean;
 }) => {
   const t = useTranslations('Energy.ownership');
   const [expanded, setExpanded] = React.useState(false);
@@ -212,12 +232,16 @@ const OwnerEarningsRow = ({
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
-          <p className="truncate text-1 text-neutral-11">
-            {t('earnedFromSource', {
-              prefix: totalIsPlaceholder ? '≈ ' : '',
-              amount: formatEarnings(totalEarned),
-            })}
-          </p>
+          {earningsLoading ? (
+            <Skeleton className="mt-1 h-4 w-48 max-w-full" />
+          ) : (
+            <p className="truncate text-1 text-neutral-11">
+              {t('earnedFromSource', {
+                prefix: totalIsPlaceholder ? '≈ ' : '',
+                amount: formatEarnings(totalEarned),
+              })}
+            </p>
+          )}
         </div>
         <span
           className="shrink-0 rounded-full px-2 py-1 text-1 font-medium"
@@ -302,14 +326,19 @@ const SourceOwnershipCard = ({
                 (owner.bps / 10_000)
               }
               totalIsPlaceholder={production.isPlaceholder}
+              earningsLoading={production.isLoading}
             />
           );
         })}
-        <p className="text-1 text-neutral-11">
-          {t('earningsHint', {
-            dataType: production.isPlaceholder ? t('placeholder') : t('live'),
-          })}
-        </p>
+        {production.isLoading ? (
+          <Skeleton className="h-4 w-64 max-w-full" />
+        ) : (
+          <p className="text-1 text-neutral-11">
+            {t('earningsHint', {
+              dataType: production.isPlaceholder ? t('placeholder') : t('live'),
+            })}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
