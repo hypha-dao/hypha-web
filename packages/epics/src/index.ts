@@ -14,3 +14,4 @@ export * from './network-map';
 export * from './schedule';
 export * from './pipeline';
 export * from './wallet';
+export * from './highlights';

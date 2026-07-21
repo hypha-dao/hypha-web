@@ -8,7 +8,7 @@ function isNetworkMapView(pathname: string, view: string | null): boolean {
   if (!/\/network\/?$/.test(pathname)) {
     return false;
   }
-  return view !== 'list';
+  return view === 'map';
 }
 
 export function DeferredFooter(props: FooterProps) {
