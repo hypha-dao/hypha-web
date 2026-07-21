@@ -69,6 +69,14 @@ const agreementFlowEnergyLabels = {
     changeEnergyOptimization: 'Verander energieoptimalisatie',
     whitelistEnergySettlement: 'Energieafwikkeling op de witte lijst',
   },
+  no: {
+    enableEnergyCommunity: 'Aktiver energifellesskap',
+    energySharing: 'Energideling',
+    registerEnergySource: 'Registrer energikilde',
+    addEnergyMember: 'Legg til energimedlem',
+    changeEnergyOptimization: 'Endre energioptimalisering',
+    whitelistEnergySettlement: 'Hvitelist energioppgjør',
+  },
 };
 
 const commonEnergyLabel = {
@@ -79,9 +87,10 @@ const commonEnergyLabel = {
   fr: 'Énergie',
   mk: 'Енергија',
   nl: 'Energie',
+  no: 'Energi',
 };
 
-for (const locale of ['en', 'de', 'pt', 'es', 'fr', 'mk', 'nl']) {
+for (const locale of ['en', 'de', 'pt', 'es', 'fr', 'mk', 'nl', 'no']) {
   const filePath = join(messagesDir, `${locale}.json`);
   const data = JSON.parse(readFileSync(filePath, 'utf8'));
   const energyPath = join(energyDir, `${locale}.json`);

@@ -8,6 +8,7 @@ export const SUPPORTED_UI_LOCALES = [
   'de',
   'mk',
   'nl',
+  'no',
 ] as const;
 
 const localeCodeSchema = z.enum(SUPPORTED_UI_LOCALES);
@@ -22,6 +23,7 @@ const LANGUAGE_NAME_BY_LOCALE: Record<SupportedUiLocale, string> = {
   de: 'German',
   mk: 'Macedonian',
   nl: 'Dutch',
+  no: 'Norwegian',
 };
 
 const SUPPORTED_LANGUAGE_LIST = Object.values(LANGUAGE_NAME_BY_LOCALE).join(
