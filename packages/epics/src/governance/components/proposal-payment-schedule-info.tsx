@@ -24,8 +24,8 @@ export function ProposalPaymentScheduleInfo({
     schedule.option === 'Immediately'
       ? t('immediately')
       : schedule.option === 'Future Payment'
-        ? t('futurePayment')
-        : t('milestones');
+      ? t('futurePayment')
+      : t('milestones');
 
   return (
     <div className="flex flex-col gap-3">

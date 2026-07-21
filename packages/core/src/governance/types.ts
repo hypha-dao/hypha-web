@@ -31,10 +31,9 @@ export interface Attachment {
   url: string;
 }
 
-export type DocumentStatus = 'accepted' | 'rejected' | 'onVoting';
+import type { DocumentMetadata } from './contribution-metadata';
 
-export type DocumentMetadata =
-  import('./contribution-metadata').DocumentMetadata;
+export type DocumentStatus = 'accepted' | 'rejected' | 'onVoting';
 
 export type Document = {
   id: number;
