@@ -4,6 +4,7 @@ import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import {
   Avatar,
   AvatarImage,
+  Badge,
   Card,
   CardContent,
   CardHeader,
@@ -29,6 +30,7 @@ type SpaceCardProps = {
   isSandbox?: boolean;
   isDemo?: boolean;
   isArchived?: boolean;
+  hasPublishedHighlights?: boolean;
   configPath?: string;
   web3SpaceId?: number;
   createdAt: Date;
@@ -51,6 +53,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   isSandbox = false,
   isDemo = false,
   isArchived = false,
+  hasPublishedHighlights = false,
   configPath,
   web3SpaceId,
   createdAt,
@@ -59,6 +62,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
 }) => {
   const t = useTranslations('Spaces');
   const tCommon = useTranslations('Common');
+  const tHighlights = useTranslations('HighlightsTab');
   const format = useFormatter();
   return (
     <Card
@@ -174,14 +178,18 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               </div>
             </div>
             <div className="flex grow"></div>
-            <SpaceModeLabel
-              web3SpaceId={web3SpaceId}
-              isSandbox={isSandbox}
-              isDemo={isDemo}
-              isArchived={isArchived}
-              configPath={configPath}
-              className="ml-2"
-            />
+            <div className="ml-2 flex flex-col items-end gap-1">
+              {hasPublishedHighlights ? (
+                <Badge colorVariant="accent">{tHighlights('title')}</Badge>
+              ) : null}
+              <SpaceModeLabel
+                web3SpaceId={web3SpaceId}
+                isSandbox={isSandbox}
+                isDemo={isDemo}
+                isArchived={isArchived}
+                configPath={configPath}
+              />
+            </div>
           </div>
         </div>
       </CardContent>

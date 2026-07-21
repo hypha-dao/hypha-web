@@ -1,6 +1,7 @@
 'use client';
 
 const VALID_DHO_TABS = new Set([
+  'highlights',
   'overview',
   'ecosystem-navigation',
   'coherence',

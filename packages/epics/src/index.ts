@@ -13,3 +13,4 @@ export * from './coherence';
 export * from './network-map';
 export * from './schedule';
 export * from './wallet';
+export * from './highlights';

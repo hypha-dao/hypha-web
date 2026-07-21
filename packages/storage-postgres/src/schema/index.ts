@@ -34,6 +34,10 @@ import {
   spaceScheduledItemReminderDispatches,
   spaceScheduledItemInvitationDispatches,
 } from './space-scheduled-item';
+import {
+  spaceHighlightProfiles,
+  spaceHighlightProfilesRelations,
+} from './space-highlight-profile';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -56,6 +60,7 @@ export * from './bank-customer';
 export * from './call-artifacts';
 export * from './signal-orchestrator';
 export * from './space-scheduled-item';
+export * from './space-highlight-profile';
 
 export const schema = {
   documents,
@@ -88,4 +93,6 @@ export const schema = {
   spaceScheduledItems,
   spaceScheduledItemReminderDispatches,
   spaceScheduledItemInvitationDispatches,
+  spaceHighlightProfiles,
+  spaceHighlightProfilesRelations,
 };

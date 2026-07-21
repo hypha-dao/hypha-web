@@ -68,3 +68,5 @@ export {
   formatCategoryGroupLabels,
 } from './categories/infer-category-groups';
 export { SPACE_ORDERS, type SpaceOrder } from './categories/types';
+export * from './highlights/server';
+export * from './highlights';

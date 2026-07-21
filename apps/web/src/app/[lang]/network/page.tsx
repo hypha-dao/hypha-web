@@ -57,7 +57,12 @@ export default async function Index(props: PageProps) {
   const enableNetworkMap = await getEnableNetworkMapAsync();
   const viewParam = searchParams?.view;
 
-  if (enableNetworkMap && viewParam !== 'list' && viewParam !== 'map') {
+  if (
+    enableNetworkMap &&
+    viewParam !== 'list' &&
+    viewParam !== 'map' &&
+    viewParam !== 'marketplace'
+  ) {
     const nextParams = buildNetworkPageSearchParams({
       query,
       category: searchParams?.category,

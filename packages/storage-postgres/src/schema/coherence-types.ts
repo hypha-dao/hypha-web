@@ -5,4 +5,5 @@ export const COHERENCE_TYPES = [
   'Insight',
   'Trend',
   'Proposal',
+  'Story',
 ] as const;

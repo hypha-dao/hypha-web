@@ -5,6 +5,7 @@ export const COHERENCE_TYPES = [
   'Insight',
   'Trend',
   'Proposal',
+  'Story',
 ] as const;
 
 export type CoherenceType = (typeof COHERENCE_TYPES)[number];
@@ -14,6 +15,7 @@ export const COHERENCE_SIGNAL_TYPES = [
   'Risk',
   'Tension',
   'Insight',
+  'Story',
 ] as const;
 
 export type CoherenceSignalType = (typeof COHERENCE_SIGNAL_TYPES)[number];
@@ -66,5 +68,12 @@ export const COHERENCE_TYPE_OPTIONS: {
     type: 'Proposal',
     title: 'Proposal',
     description: 'Governance action or vote needed',
+  },
+  {
+    icon: 'BookOpen',
+    colorVariant: 'success',
+    type: 'Story',
+    title: 'Story',
+    description: 'Achievement, event, visit, or milestone',
   },
 ] as const;

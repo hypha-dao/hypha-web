@@ -60,7 +60,9 @@
       "genericUploadFallback": "<accent>Téléverser</accent> une image",
       "fileTooLarge": "Votre image est trop volumineuse (max. 16 Mo) et n’a pas pu être téléversée. Réduisez-la et réessayez.",
       "uploadFailed": "Le fichier n’a pas pu être téléversé."
-    }
+    },
+    "Highlights": "Temps forts",
+    "errorLoadHighlightsTab": "Oups, une erreur s’est produite. Impossible de charger l’onglet Temps forts."
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",
@@ -2764,7 +2766,8 @@
       "Tension": "Tension",
       "Insight": "Perspicacité",
       "Trend": "Tendance",
-      "Proposal": "Proposition"
+      "Proposal": "Proposition",
+      "Story": "Histoire"
     },
     "typeDescriptions": {
       "Opportunity": "Fenêtre de coordination ou ouverture positive",
@@ -2772,7 +2775,8 @@
       "Tension": "Conflit ou désaccord nécessitant une résolution",
       "Insight": "Observation ou découverte basée sur les données",
       "Trend": "Modèle émergent à travers les espaces",
-      "Proposal": "Action de gouvernance ou vote nécessaire"
+      "Proposal": "Action de gouvernance ou vote nécessaire",
+      "Story": "Réussite, événement, visite ou jalon"
     },
     "priorities": {
       "critical": "Critique",
@@ -3116,7 +3120,8 @@
     "addLocationLoading": "Chargement de vos espaces…",
     "addLocationNoSpaces": "Vous n'êtes membre d'aucun espace pour l'instant.",
     "clusterExpandTitle": "{count} espaces à cet emplacement",
-    "clusterZoomOut": "Dézoomer"
+    "clusterZoomOut": "Dézoomer",
+    "marketplaceView": "Marketplace"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",
@@ -4114,6 +4119,78 @@
       "allowanceTimeout": "Délai d'attente dépassé pour l'autorisation du stablecoin.",
       "usdcNotConfigured": "Le jeton de paiement USDC n'est pas configuré pour cette application.",
       "deviceIdsCommaNumbers": "Les ID des appareils doivent être des nombres séparés par des virgules"
+    }
+  },
+  "HighlightsTab": {
+    "title": "Highlights",
+    "edit": "Edit",
+    "doneEditing": "Done",
+    "loadError": "Could not load highlights.",
+    "actions": {
+      "donate": "Donate",
+      "invest": "Invest",
+      "support": "Support",
+      "custom": "Support"
+    },
+    "support": {
+      "goal": "Goal: {amount} {currency}",
+      "ctaPrompt": "Support this space",
+      "fundTitle": "Support this space",
+      "fundSubtitle": "Share this QR code or wallet address to send funds.",
+      "instructions": "Support instructions",
+      "contactSpace": "Contact the space for support details."
+    },
+    "publish": {
+      "title": "Marketplace visibility",
+      "description": "Share this ask on the Hypha Marketplace so supporters can find it.",
+      "shareOnMarketplace": "Share this ask on the Hypha Marketplace",
+      "unpublish": "Unpublish",
+      "failed": "Could not update publish settings."
+    },
+    "stories": {
+      "title": "What we've achieved",
+      "empty": "No stories yet.",
+      "add": "Add story",
+      "titlePlaceholder": "Story title",
+      "bodyPlaceholder": "What happened?",
+      "save": "Save story",
+      "required": "Title and description are required.",
+      "createFailed": "Could not create story."
+    },
+    "editor": {
+      "emptyRead": "No highlights content yet.",
+      "emptyEdit": "Start with a template to tell your story.",
+      "startFromTemplate": "Start from template",
+      "summaryPlaceholder": "Short summary for Marketplace cards (160 chars)",
+      "coverImagePlaceholder": "Cover image URL",
+      "goalAmountPlaceholder": "Goal amount",
+      "goalCurrencyPlaceholder": "Currency (e.g. EUR)",
+      "blockTitlePlaceholder": "Section title",
+      "blockBodyPlaceholder": "Write in markdown…",
+      "addImage": "Add image",
+      "addBlock": "Add section",
+      "save": "Save highlights",
+      "saveFailed": "Could not save highlights.",
+      "hide": "Hide",
+      "show": "Show"
+    },
+    "blockTypes": {
+      "about": "About us",
+      "mission": "Mission",
+      "needs": "What we need now",
+      "useOfFunds": "How resources will be used",
+      "whyNow": "Why support now",
+      "gallery": "Gallery",
+      "location": "Location",
+      "links": "Links",
+      "cta": "Support",
+      "stories": "Stories"
+    },
+    "marketplace": {
+      "seeking": "Seeking {amount} {currency}",
+      "viewHighlights": "View highlights →",
+      "empty": "No published marketplace asks yet.",
+      "loadError": "Could not load marketplace."
     }
   }
 }

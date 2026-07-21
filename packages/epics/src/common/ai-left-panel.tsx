@@ -564,6 +564,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const isSectionActive = useCallback(
     (
       section:
+        | 'highlights'
         | 'overview'
         | 'coherence'
         | 'ecosystem-navigation'
@@ -594,6 +595,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const sectionNavItems = useMemo<NavItem[]>(() => {
     if (!spaceSlug) return [];
     return [
+      {
+        key: 'highlights',
+        label: tCommon('Highlights'),
+        icon: Sparkles,
+        href: `/${lang}/dho/${spaceSlug}/highlights`,
+        active: isSectionActive('highlights'),
+      },
       {
         key: 'overview',
         label: tCommon('home'),

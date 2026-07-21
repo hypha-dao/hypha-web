@@ -14,6 +14,7 @@ type SpaceCardWithDiscoverabilityProps = {
   getHref: (slug: string) => string;
   isLoading?: boolean;
   showExitButton?: boolean;
+  hasPublishedHighlights?: boolean;
 };
 
 export function SpaceCardWithDiscoverability({
@@ -21,6 +22,7 @@ export function SpaceCardWithDiscoverability({
   getHref,
   isLoading,
   showExitButton,
+  hasPublishedHighlights,
 }: SpaceCardWithDiscoverabilityProps) {
   const { isMember } = useSpaceMember({
     spaceId: space.web3SpaceId ?? undefined,
@@ -41,6 +43,7 @@ export function SpaceCardWithDiscoverability({
         isSandbox={space.flags?.includes('sandbox') ?? false}
         isDemo={space.flags?.includes('demo') ?? false}
         isArchived={isSpaceArchived(space)}
+        hasPublishedHighlights={hasPublishedHighlights}
         web3SpaceId={space.web3SpaceId as number}
         configPath={`${getHref(space.slug).replace(
           /\/+$/,

@@ -1,9 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Locale } from '@hypha-platform/i18n';
 import { Space } from '@hypha-platform/core/client';
 import { getDhoPathDefaultLanding } from '../../common';
 import { SpaceCardWithDiscoverability } from './space-card-with-discoverability';
+import { useMarketplaceListings } from '../../highlights';
 import { cn } from '@hypha-platform/ui-utils';
 
 type SpaceCardContainerProps = {
@@ -20,6 +22,11 @@ export const SpaceCardContainer = ({
   gridClassName,
 }: SpaceCardContainerProps) => {
   const getHref = (slug: string) => getDhoPathDefaultLanding(lang, slug);
+  const { items } = useMarketplaceListings(true);
+  const publishedSlugs = useMemo(
+    () => new Set(items.map((item) => item.spaceSlug)),
+    [items],
+  );
 
   return (
     <div
@@ -37,6 +44,7 @@ export const SpaceCardContainer = ({
               getHref={getHref}
               isLoading={false}
               showExitButton={showExitButton}
+              hasPublishedHighlights={publishedSlugs.has(space.slug)}
             />
           </div>
         ) : null,
