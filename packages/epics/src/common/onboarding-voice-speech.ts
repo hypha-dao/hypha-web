@@ -46,6 +46,11 @@ const VOICE_INTERIM_ACK_PHRASES_BY_LOCALE: Record<string, readonly string[]> = {
     'Geef me even om dat te checken.',
     'Ik haal dat meteen voor u op.',
   ],
+  no: [
+    'Et øyeblikk, jeg sjekker det for deg.',
+    'Gi meg et sekund til å se på det.',
+    'Jeg henter det for deg med en gang.',
+  ],
 };
 
 function resolveInterimAckLocale(locale?: string): string {
