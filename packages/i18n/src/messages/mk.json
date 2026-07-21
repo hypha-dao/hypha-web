@@ -4130,16 +4130,24 @@
       "weightedValue": "Weighted value"
     },
     "filters": {
-      "search": "Search deals",
+      "search": "Пребарај по наслов, белешки, ознаки…",
       "swimlane": "Swimlane",
       "region": "Region",
       "priority": "Priority",
-      "status": "Status",
-      "deadline": "Deadline",
+      "status": "Статус на deal",
+      "deadline": "Рок за поднесување",
       "tag": "Tag",
       "all": "All",
       "hasDeadline": "Has deadline",
-      "noDeadline": "No deadline"
+      "noDeadline": "No deadline",
+      "searchLabel": "Пребарај",
+      "allSwimlanes": "Сите патеки",
+      "allRegions": "Сите региони",
+      "allPriorities": "Сите приоритети",
+      "allStatuses": "Сите статуси",
+      "anyDeadline": "Било кој рок",
+      "tagLabel": "Ознака на deal",
+      "tagPlaceholder": "Филтрирај по ознака"
     },
     "savedViews": {
       "save": "Save view",
@@ -4148,11 +4156,23 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Нов deal",
-      "titlePlaceholder": "Наслов",
-      "countryPlaceholder": "Country (ISO)",
-      "valuePlaceholder": "Value",
-      "create": "Создај deal"
+      "title": "Нова pipeline ставка",
+      "titlePlaceholder": "Компанија, deal или грант",
+      "countryPlaceholder": "Избери земја (опционално)",
+      "valuePlaceholder": "0",
+      "create": "Создај картичка",
+      "titleLabel": "Наслов",
+      "swimlaneLabel": "Патека",
+      "swimlanePlaceholder": "Избери патека",
+      "countryLabel": "Земја",
+      "countrySearch": "Пребарај земји…",
+      "regionLabel": "Регион",
+      "executionStatusLabel": "Статус на извршување",
+      "executionStatusPlaceholder": "Избери статус",
+      "valueLabel": "Вредност",
+      "priorityLabel": "Приоритет",
+      "validationRequired": "Наслов, патека, регион и статус на извршување се задолжителни.",
+      "createFailed": "Не можеше да се создаде картичката. Обидете се повторно."
     },
     "fields": {
       "swimlane": "Swimlane",
@@ -4188,6 +4208,21 @@
       "role": "Role",
       "primary": "Primary contact",
       "add": "Add contact"
+    },
+    "regions": {
+      "title": "Pipeline региони",
+      "description": "Додајте или отстранете територии што се користат при создавање и филтрирање deals (на пр. Benelux или Nordics).",
+      "default": "Стандардно",
+      "add": "Додај регион",
+      "addPlaceholder": "на пр. DACH",
+      "remove": "Отстрани регион",
+      "save": "Зачувај региони",
+      "saved": "Регионите се зачувани",
+      "saveFailed": "Не можеа да се зачуваат регионите",
+      "loading": "Се вчитуваат региони…",
+      "duplicate": "Тој регион веќе постои",
+      "atLeastOne": "Задржете барем еден регион",
+      "resetDefaults": "Врати стандардни"
     }
   }
 }

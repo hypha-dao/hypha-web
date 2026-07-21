@@ -34,7 +34,8 @@ export const DEAL_STATUSES = [
 
 export type DealStatus = (typeof DEAL_STATUSES)[number];
 
-export const REGIONS = [
+/** Default region list for new spaces; spaces can customize via pipelineConfig. */
+export const DEFAULT_PIPELINE_REGIONS = [
   'Benelux',
   'European Union',
   'Global',
@@ -44,7 +45,11 @@ export const REGIONS = [
   'UK',
 ] as const;
 
-export type Region = (typeof REGIONS)[number];
+/** @deprecated Prefer DEFAULT_PIPELINE_REGIONS — regions are space-configurable. */
+export const REGIONS = DEFAULT_PIPELINE_REGIONS;
+
+/** Space-configurable territory / owning-team label. */
+export type Region = string;
 
 export const PIPELINE_PROBABILITY: Record<
   PipelineSwimlane,
@@ -180,6 +185,7 @@ export const COUNTRY_GROUPS: Record<CountryGroupName, string[]> = {
 const EEA = new Set(COUNTRY_GROUPS.EEA);
 const ISLANDS = new Set(COUNTRY_GROUPS.Islands);
 
+/** Built-in country → region suggestion (independent of space config). */
 export function regionForCountry(code: string | null | undefined): Region {
   if (!code) return 'Global';
   const upper = code.toUpperCase();
@@ -192,6 +198,23 @@ export function regionForCountry(code: string | null | undefined): Region {
   if (EEA.has(upper)) return 'European Union';
   if (ISLANDS.has(upper)) return 'Islands';
   return 'Global';
+}
+
+/**
+ * Resolve a region for a country against the space's configured region list.
+ * Prefers the built-in suggestion when it exists in the space list.
+ */
+export function resolveRegionForSpace(
+  code: string | null | undefined,
+  regions: readonly string[],
+  fallback = 'Global',
+): Region {
+  const list =
+    regions.length > 0 ? [...regions] : [...DEFAULT_PIPELINE_REGIONS];
+  const suggested = regionForCountry(code);
+  if (list.includes(suggested)) return suggested;
+  if (list.includes(fallback)) return fallback;
+  return list[0] ?? fallback;
 }
 
 export function currencyForCountry(code: string | null | undefined): string {

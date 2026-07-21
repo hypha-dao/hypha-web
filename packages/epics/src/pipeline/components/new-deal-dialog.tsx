@@ -2,20 +2,25 @@
 
 import React from 'react';
 import {
+  COUNTRY_GROUPS,
   currencyForCountry,
+  DEAL_PRIORITIES,
+  isGrantOrTenderSwimlane,
   PIPELINE_STATUSES,
   PIPELINE_SWIMLANES,
-  REGIONS,
-  regionForCountry,
+  resolveRegionForSpace,
   useDealMutations,
+  usePipelineConfig,
+  usePipelineSettings,
+  type DealPriority,
   type PipelineStatus,
   type PipelineSwimlane,
   type Region,
-  type DealPriority,
-  DEAL_PRIORITIES,
 } from '@hypha-platform/core/client';
 import {
   Button,
+  Combobox,
+  COMBOBOX_TITLE,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -37,6 +42,30 @@ type NewDealDialogProps = {
   defaultSwimlane?: PipelineSwimlane;
 };
 
+function toDateOnly(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-1 text-neutral-11">
+      <span>
+        {label}
+        {required ? <span className="text-red-11"> *</span> : null}
+      </span>
+      {children}
+    </label>
+  );
+}
+
 export function NewDealDialog({
   spaceSlug,
   open,
@@ -46,39 +75,104 @@ export function NewDealDialog({
 }: NewDealDialogProps) {
   const t = useTranslations('Pipeline');
   const { createDeal, isCreating } = useDealMutations(spaceSlug);
+  const { countryFocus } = usePipelineSettings(spaceSlug);
+  const { regions, defaultRegion } = usePipelineConfig(spaceSlug);
+
   const [title, setTitle] = React.useState('');
-  const [swimlane, setSwimlane] =
-    React.useState<PipelineSwimlane>(defaultSwimlane);
+  const [swimlane, setSwimlane] = React.useState<PipelineSwimlane | ''>(
+    defaultSwimlane,
+  );
   const [status, setStatus] = React.useState<PipelineStatus>('Identified');
-  const [region, setRegion] = React.useState<Region>('Global');
+  const [region, setRegion] = React.useState<Region>(defaultRegion);
   const [country, setCountry] = React.useState('');
   const [value, setValue] = React.useState('');
   const [priority, setPriority] = React.useState<DealPriority>('medium');
+  const [error, setError] = React.useState<string | null>(null);
+
+  const resetForm = React.useCallback(() => {
+    setTitle('');
+    setSwimlane(defaultSwimlane);
+    setStatus('Identified');
+    setRegion(defaultRegion);
+    setCountry('');
+    setValue('');
+    setPriority('medium');
+    setError(null);
+  }, [defaultRegion, defaultSwimlane]);
 
   React.useEffect(() => {
     if (open) {
-      setSwimlane(defaultSwimlane);
+      resetForm();
     }
-  }, [defaultSwimlane, open]);
+  }, [open, resetForm]);
+
+  const countryOptions = React.useMemo(() => {
+    const allow = new Set(
+      (countryFocus ?? []).map((c) => c.toUpperCase()).filter(Boolean),
+    );
+    const options: Array<{
+      value: string;
+      label: string;
+      searchText?: string;
+    }> = [];
+
+    for (const [group, codes] of Object.entries(COUNTRY_GROUPS)) {
+      const filtered = allow.size
+        ? codes.filter((code) => allow.has(code))
+        : codes;
+      if (!filtered.length) continue;
+      options.push({ value: COMBOBOX_TITLE, label: group });
+      for (const code of filtered) {
+        options.push({
+          value: code,
+          label: code,
+          searchText: `${group} ${code}`,
+        });
+      }
+    }
+    return options;
+  }, [countryFocus]);
+
+  const canSubmit =
+    Boolean(title.trim()) &&
+    Boolean(swimlane) &&
+    Boolean(region) &&
+    Boolean(status);
 
   const submit = async () => {
-    if (!title.trim()) return;
+    if (!title.trim() || !swimlane || !region || !status) {
+      setError(t('newDeal.validationRequired'));
+      return;
+    }
+
     const countryCode = country.trim().toUpperCase() || null;
-    const deal = await createDeal({
-      title: title.trim(),
-      pipelineSwimlane: swimlane,
-      pipelineStatus: status,
-      region: countryCode ? regionForCountry(countryCode) : region,
-      country: countryCode,
-      value: value ? Number(value) : 0,
-      currency: currencyForCountry(countryCode),
-      priority,
-    });
-    setTitle('');
-    setValue('');
-    setCountry('');
-    onOpenChange(false);
-    onCreated(deal.id);
+    const today = new Date();
+    const nextActionDate = toDateOnly(today);
+    const deadlineDate = new Date(today);
+    deadlineDate.setMonth(deadlineDate.getMonth() + 1);
+
+    try {
+      const deal = await createDeal({
+        title: title.trim(),
+        pipelineSwimlane: swimlane,
+        pipelineStatus: status,
+        region,
+        country: countryCode,
+        value: value ? Number(value) : 0,
+        currency: currencyForCountry(countryCode),
+        priority,
+        status: 'active',
+        nextActionDate,
+        submissionDeadline: isGrantOrTenderSwimlane(swimlane)
+          ? toDateOnly(deadlineDate)
+          : null,
+      });
+      resetForm();
+      onOpenChange(false);
+      onCreated(deal.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('newDeal.createFailed'));
+    }
   };
 
   return (
@@ -88,18 +182,24 @@ export function NewDealDialog({
           <DialogTitle>{t('newDeal.title')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
-          <Input
-            placeholder={t('newDeal.titlePlaceholder')}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <div className="grid grid-cols-2 gap-2">
+          <Field label={t('newDeal.titleLabel')} required>
+            <Input
+              placeholder={t('newDeal.titlePlaceholder')}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </Field>
+
+          <Field label={t('newDeal.swimlaneLabel')} required>
             <Select
-              value={swimlane}
-              onValueChange={(v) => setSwimlane(v as PipelineSwimlane)}
+              value={swimlane || undefined}
+              onValueChange={(v) => {
+                setSwimlane(v as PipelineSwimlane);
+                setStatus('Identified');
+              }}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={t('newDeal.swimlanePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {PIPELINE_SWIMLANES.map((s) => (
@@ -109,12 +209,56 @@ export function NewDealDialog({
                 ))}
               </SelectContent>
             </Select>
+          </Field>
+
+          <Field label={t('newDeal.countryLabel')}>
+            <Combobox
+              options={countryOptions}
+              initialValue={country}
+              placeholder={t('newDeal.countryPlaceholder')}
+              searchPlaceholder={t('newDeal.countrySearch')}
+              allowEmptyChoice
+              popoverModal={false}
+              onChange={(code) => {
+                const next = code?.toUpperCase() ?? '';
+                setCountry(next);
+                if (next) {
+                  setRegion(
+                    resolveRegionForSpace(next, regions, defaultRegion),
+                  );
+                }
+              }}
+            />
+          </Field>
+
+          <Field label={t('newDeal.regionLabel')} required>
             <Select
-              value={status}
-              onValueChange={(v) => setStatus(v as PipelineStatus)}
+              value={region}
+              onValueChange={(v) => setRegion(v as Region)}
             >
               <SelectTrigger>
                 <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {regions.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field label={t('newDeal.executionStatusLabel')} required>
+            <Select
+              value={status}
+              disabled={!swimlane}
+              onValueChange={(v) => setStatus(v as PipelineStatus)}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={t('newDeal.executionStatusPlaceholder')}
+                />
               </SelectTrigger>
               <SelectContent>
                 {PIPELINE_STATUSES.map((s) => (
@@ -124,56 +268,43 @@ export function NewDealDialog({
                 ))}
               </SelectContent>
             </Select>
-            <Select
-              value={region}
-              onValueChange={(v) => setRegion(v as Region)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REGIONS.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder={t('newDeal.countryPlaceholder')}
-              value={country}
-              maxLength={2}
-              onChange={(e) => {
-                const next = e.target.value.toUpperCase();
-                setCountry(next);
-                if (next.length === 2) {
-                  setRegion(regionForCountry(next));
-                }
-              }}
-            />
-            <Input
-              type="number"
-              min={0}
-              placeholder={t('newDeal.valuePlaceholder')}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-            />
-            <Select
-              value={priority}
-              onValueChange={(v) => setPriority(v as DealPriority)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DEAL_PRIORITIES.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('newDeal.valueLabel')}>
+              <Input
+                type="number"
+                min={0}
+                placeholder={t('newDeal.valuePlaceholder')}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+              />
+            </Field>
+            <Field label={t('newDeal.priorityLabel')}>
+              <Select
+                value={priority}
+                onValueChange={(v) => setPriority(v as DealPriority)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEAL_PRIORITIES.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
           </div>
+
+          {error ? (
+            <p className="text-1 text-red-11" role="alert">
+              {error}
+            </p>
+          ) : null}
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -184,7 +315,7 @@ export function NewDealDialog({
             </Button>
             <Button
               type="button"
-              disabled={!title.trim() || isCreating}
+              disabled={!canSubmit || isCreating}
               onClick={submit}
             >
               {t('newDeal.create')}

@@ -80,6 +80,7 @@ export function TrackPage({
       </div>
 
       <FilterBar
+        spaceSlug={spaceSlug}
         filters={filters}
         onChange={setFilters}
         onExport={() =>

@@ -4,4 +4,5 @@ export * from './components/deal-panel';
 export * from './components/new-deal-dialog';
 export * from './components/kanban-board';
 export * from './components/filter-bar';
+export * from './components/pipeline-region-settings';
 export * from './utils/export-deals';

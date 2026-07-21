@@ -4,7 +4,6 @@ import {
   DEAL_STATUSES,
   PIPELINE_STATUSES,
   PIPELINE_SWIMLANES,
-  REGIONS,
 } from './constants';
 
 const dealContactSchema = z.object({
@@ -55,7 +54,7 @@ export const schemaCreateDeal = z.object({
   value: z.coerce.number().min(0).optional().default(0),
   currency: z.string().trim().min(1).max(8).optional().default('€'),
   country: countryCode,
-  region: z.enum(REGIONS).optional().default('Global'),
+  region: z.string().trim().min(1).max(80).optional().default('Global'),
   contacts: z.array(dealContactSchema).optional().default([]),
   contactPerson: optionalText,
   contactEmail: optionalText,
@@ -99,7 +98,12 @@ export const schemaDealFiltersQuery = z.object({
   swimlane: z
     .union([z.enum(PIPELINE_SWIMLANES), z.array(z.enum(PIPELINE_SWIMLANES))])
     .optional(),
-  region: z.union([z.enum(REGIONS), z.array(z.enum(REGIONS))]).optional(),
+  region: z
+    .union([
+      z.string().trim().min(1).max(80),
+      z.array(z.string().trim().min(1).max(80)),
+    ])
+    .optional(),
   priority: z
     .union([z.enum(DEAL_PRIORITIES), z.array(z.enum(DEAL_PRIORITIES))])
     .optional(),
@@ -132,4 +136,9 @@ export const schemaUpdatePipelineSavedView =
 
 export const schemaPipelineUserSettings = z.object({
   countryFocus: z.array(z.string().trim().length(2)).default([]),
+});
+
+export const schemaPipelineConfig = z.object({
+  regions: z.array(z.string().trim().min(1).max(80)).min(1).max(50),
+  defaultRegion: z.string().trim().min(1).max(80).optional(),
 });

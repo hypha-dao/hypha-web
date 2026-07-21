@@ -9,10 +9,10 @@ import {
   isGrantOrTenderSwimlane,
   PIPELINE_STATUSES,
   PIPELINE_SWIMLANES,
-  REGIONS,
-  regionForCountry,
+  resolveRegionForSpace,
   useDealMutations,
   useDeals,
+  usePipelineConfig,
   usePipelineSettings,
   type Deal,
   type DealContact,
@@ -81,6 +81,7 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { patchDeal, deleteDeal, isDeleting } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
+  const { regions, defaultRegion } = usePipelineConfig(spaceSlug);
   const deal = deals.find((d) => d.id === dealId) ?? null;
   const { schedule, saving, savedAt } = useDebouncedSave(dealId, patchDeal);
 
@@ -165,7 +166,7 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
               const country = v === 'none' ? null : v;
               schedule({
                 country,
-                region: regionForCountry(country),
+                region: resolveRegionForSpace(country, regions, defaultRegion),
                 currency: currencyForCountry(country),
               });
             }}
@@ -185,14 +186,20 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
         </Field>
         <Field label={t('fields.region')}>
           <Select
-            value={deal.region}
+            value={
+              regions.includes(deal.region) ? deal.region : regions[0] ?? ''
+            }
             onValueChange={(v) => schedule({ region: v as Region })}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {REGIONS.map((r) => (
+              {/* Keep legacy region visible if it was removed from config */}
+              {!regions.includes(deal.region) && deal.region ? (
+                <SelectItem value={deal.region}>{deal.region}</SelectItem>
+              ) : null}
+              {regions.map((r) => (
                 <SelectItem key={r} value={r}>
                   {r}
                 </SelectItem>

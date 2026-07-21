@@ -4143,16 +4143,24 @@
       "weightedValue": "Weighted value"
     },
     "filters": {
-      "search": "Search deals",
+      "search": "Nach Titel, Notizen, Tags suchen…",
       "swimlane": "Swimlane",
       "region": "Region",
       "priority": "Priority",
-      "status": "Status",
-      "deadline": "Deadline",
+      "status": "Deal-Status",
+      "deadline": "Einreichungsfrist",
       "tag": "Tag",
       "all": "All",
       "hasDeadline": "Has deadline",
-      "noDeadline": "No deadline"
+      "noDeadline": "No deadline",
+      "searchLabel": "Suche",
+      "allSwimlanes": "Alle Swimlanes",
+      "allRegions": "Alle Regionen",
+      "allPriorities": "Alle Prioritäten",
+      "allStatuses": "Alle Status",
+      "anyDeadline": "Beliebige Frist",
+      "tagLabel": "Deal-Tag",
+      "tagPlaceholder": "Nach einem Deal-Tag filtern"
     },
     "savedViews": {
       "save": "Save view",
@@ -4161,11 +4169,23 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Neuer Deal",
-      "titlePlaceholder": "Deal-Titel",
-      "countryPlaceholder": "Country (ISO)",
-      "valuePlaceholder": "Value",
-      "create": "Deal erstellen"
+      "title": "Neues Pipeline-Element",
+      "titlePlaceholder": "Unternehmen, Deal oder Ausschreibung",
+      "countryPlaceholder": "Land wählen (optional)",
+      "valuePlaceholder": "0",
+      "create": "Karte erstellen",
+      "titleLabel": "Titel",
+      "swimlaneLabel": "Swimlane",
+      "swimlanePlaceholder": "Swimlane wählen",
+      "countryLabel": "Land",
+      "countrySearch": "Länder suchen…",
+      "regionLabel": "Region",
+      "executionStatusLabel": "Ausführungsstatus",
+      "executionStatusPlaceholder": "Status wählen",
+      "valueLabel": "Wert",
+      "priorityLabel": "Priorität",
+      "validationRequired": "Titel, Swimlane, Region und Ausführungsstatus sind erforderlich.",
+      "createFailed": "Karte konnte nicht erstellt werden. Bitte erneut versuchen."
     },
     "fields": {
       "swimlane": "Swimlane",
@@ -4201,6 +4221,21 @@
       "role": "Role",
       "primary": "Primary contact",
       "add": "Add contact"
+    },
+    "regions": {
+      "title": "Pipeline-Regionen",
+      "description": "Fügen Sie Territorien hinzu oder entfernen Sie sie, die beim Erstellen und Filtern von Deals verwendet werden (z. B. Benelux oder Nordics).",
+      "default": "Standard",
+      "add": "Region hinzufügen",
+      "addPlaceholder": "z. B. DACH",
+      "remove": "Region entfernen",
+      "save": "Regionen speichern",
+      "saved": "Regionen gespeichert",
+      "saveFailed": "Regionen konnten nicht gespeichert werden",
+      "loading": "Regionen werden geladen…",
+      "duplicate": "Diese Region existiert bereits",
+      "atLeastOne": "Mindestens eine Region behalten",
+      "resetDefaults": "Standards wiederherstellen"
     }
   }
 }

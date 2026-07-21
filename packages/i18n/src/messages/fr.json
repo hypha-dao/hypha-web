@@ -4139,16 +4139,24 @@
       "weightedValue": "Weighted value"
     },
     "filters": {
-      "search": "Search deals",
+      "search": "Rechercher par titre, notes, tags…",
       "swimlane": "Swimlane",
       "region": "Region",
       "priority": "Priority",
-      "status": "Status",
-      "deadline": "Deadline",
+      "status": "Statut du deal",
+      "deadline": "Date limite de soumission",
       "tag": "Tag",
       "all": "All",
       "hasDeadline": "Has deadline",
-      "noDeadline": "No deadline"
+      "noDeadline": "No deadline",
+      "searchLabel": "Rechercher",
+      "allSwimlanes": "Toutes les pistes",
+      "allRegions": "Toutes les régions",
+      "allPriorities": "Toutes les priorités",
+      "allStatuses": "Tous les statuts",
+      "anyDeadline": "Toute échéance",
+      "tagLabel": "Tag du deal",
+      "tagPlaceholder": "Filtrer par un tag"
     },
     "savedViews": {
       "save": "Save view",
@@ -4157,11 +4165,23 @@
       "delete": "Delete view"
     },
     "newDeal": {
-      "title": "Nouveau deal",
-      "titlePlaceholder": "Titre du deal",
-      "countryPlaceholder": "Country (ISO)",
-      "valuePlaceholder": "Value",
-      "create": "Créer le deal"
+      "title": "Nouvel élément du pipeline",
+      "titlePlaceholder": "Entreprise, deal ou appel",
+      "countryPlaceholder": "Sélectionner un pays (optionnel)",
+      "valuePlaceholder": "0",
+      "create": "Créer la carte",
+      "titleLabel": "Titre",
+      "swimlaneLabel": "Piste",
+      "swimlanePlaceholder": "Sélectionner une piste",
+      "countryLabel": "Pays",
+      "countrySearch": "Rechercher des pays…",
+      "regionLabel": "Région",
+      "executionStatusLabel": "Statut d’exécution",
+      "executionStatusPlaceholder": "Sélectionner un statut",
+      "valueLabel": "Valeur",
+      "priorityLabel": "Priorité",
+      "validationRequired": "Titre, piste, région et statut d’exécution sont requis.",
+      "createFailed": "Impossible de créer la carte. Réessayez."
     },
     "fields": {
       "swimlane": "Swimlane",
@@ -4197,6 +4217,21 @@
       "role": "Role",
       "primary": "Primary contact",
       "add": "Add contact"
+    },
+    "regions": {
+      "title": "Régions du pipeline",
+      "description": "Ajoutez ou retirez les territoires utilisés à la création et au filtrage des deals (par ex. Benelux ou Nordics).",
+      "default": "Par défaut",
+      "add": "Ajouter une région",
+      "addPlaceholder": "ex. DACH",
+      "remove": "Supprimer la région",
+      "save": "Enregistrer les régions",
+      "saved": "Régions enregistrées",
+      "saveFailed": "Impossible d’enregistrer les régions",
+      "loading": "Chargement des régions…",
+      "duplicate": "Cette région existe déjà",
+      "atLeastOne": "Conservez au moins une région",
+      "resetDefaults": "Réinitialiser"
     }
   }
 }

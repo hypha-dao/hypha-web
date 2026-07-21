@@ -60,6 +60,7 @@ import {
   SignalWorkflowSettings,
   type SignalWorkflowSettingsHandle,
 } from '../../coherence/components/signal-workflow-settings';
+import { PipelineRegionSettings } from '../../pipeline/components/pipeline-region-settings';
 import {
   SpaceLocationPicker,
   type SpaceLocationPickerHandle,
@@ -190,6 +191,7 @@ export const SpaceForm = ({
   const parentSpaceId = form.watch('parentId');
   const watchedSpaceTitle = form.watch('title');
   const slug = form.watch('slug');
+  const pipelineEnabled = form.watch('pipelineEnabled');
   const isRootConfiguration = label === 'configure' && parentSpaceId === null;
   const spaceTitleForPlaceholder = React.useMemo(() => {
     const currentTitle = watchedSpaceTitle?.trim();
@@ -1079,6 +1081,12 @@ export const SpaceForm = ({
               ref={workflowSettingsRef}
               spaceSlug={spaceSlug}
             />
+            {pipelineEnabled ? (
+              <>
+                <Separator />
+                <PipelineRegionSettings spaceSlug={spaceSlug} />
+              </>
+            ) : null}
             <div className="flex justify-end w-full">
               <Button
                 type="submit"

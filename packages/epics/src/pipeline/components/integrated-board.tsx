@@ -74,6 +74,7 @@ export function IntegratedBoard({
       </div>
 
       <FilterBar
+        spaceSlug={spaceSlug}
         filters={filters}
         onChange={setFilters}
         onExport={() => exportDealsToXlsx(filtered, `${spaceSlug}-deals`)}
