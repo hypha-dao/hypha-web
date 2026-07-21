@@ -118,20 +118,15 @@ export const useUpdateSpaceOrchestrator = ({
   authToken,
 }: UseUpdateSpaceInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
-  const files = useSpaceFileUploads(authToken, async (uploadedFiles, id) => {
-    if (
-      !uploadedFiles.leadImage &&
-      !uploadedFiles.logoUrl &&
-      !uploadedFiles.ecosystemLogoUrlLight &&
-      !uploadedFiles.ecosystemLogoUrlDark
-    ) {
-      return;
-    }
-    await web2.updateSpaceById({
-      id,
-      ...uploadedFiles,
-    });
-  });
+  const {
+    resetUpdateSpaceByIdMutation,
+    resetUpdateSpaceConfigurationByIdMutation,
+    errorUpdateSpaceByIdMutation,
+    errorUpdateSpaceConfigurationByIdMutation,
+    updateSpaceById,
+    updateSpaceConfigurationById,
+  } = web2;
+  const files = useSpaceFileUploads(authToken);
 
   const [taskState, dispatch] = useReducer(
     progressStateReducer,
@@ -140,6 +135,9 @@ export const useUpdateSpaceOrchestrator = ({
   const [currentAction, setCurrentAction] = useState<string>();
 
   const progress = computeProgress(taskState);
+  const hasTaskError = Object.values(taskState).some(
+    (task) => task.status === TaskStatus.ERROR,
+  );
 
   const startTask = useCallback((task: TaskName) => {
     const message = taskActionDescriptions[task];
@@ -176,6 +174,12 @@ export const useUpdateSpaceOrchestrator = ({
     ) => {
       let activeTask: TaskName | null = null;
       try {
+        // Clear prior attempt errors so a retry can show progress, not a stale overlay.
+        resetUpdateSpaceByIdMutation();
+        resetUpdateSpaceConfigurationByIdMutation();
+        files.reset();
+        resetTasks();
+
         const { id, data } = arg;
         invariant(Number.isFinite(id) && id > 0, 'valid id is required');
 
@@ -186,10 +190,16 @@ export const useUpdateSpaceOrchestrator = ({
           ecosystemLogoUrlLight: data.ecosystemLogoUrlLight ?? undefined,
           ecosystemLogoUrlDark: data.ecosystemLogoUrlDark ?? undefined,
         });
+        let uploadedFiles: {
+          logoUrl?: string;
+          leadImage?: string;
+          ecosystemLogoUrlLight?: string;
+          ecosystemLogoUrlDark?: string;
+        } = {};
         if (Object.values(filesInput).some((file) => file instanceof File)) {
           activeTask = 'UPLOAD_FILES';
           startTask('UPLOAD_FILES');
-          await files.upload(
+          uploadedFiles = await files.upload(
             filesInput as z.infer<typeof schemaCreateSpaceFiles>,
             id,
           );
@@ -204,12 +214,18 @@ export const useUpdateSpaceOrchestrator = ({
 
         activeTask = 'UPDATE_WEB2_SPACE';
         startTask('UPDATE_WEB2_SPACE');
+        // Prefer freshly uploaded URLs over File values (which stringify as undefined).
         const updateInput = schemaUpdateSpace.parse({
           ...data,
-          logoUrl: toNullableString(data.logoUrl),
-          leadImage: toNullableString(data.leadImage),
-          ecosystemLogoUrlLight: toNullableString(data.ecosystemLogoUrlLight),
-          ecosystemLogoUrlDark: toNullableString(data.ecosystemLogoUrlDark),
+          logoUrl: uploadedFiles.logoUrl ?? toNullableString(data.logoUrl),
+          leadImage:
+            uploadedFiles.leadImage ?? toNullableString(data.leadImage),
+          ecosystemLogoUrlLight:
+            uploadedFiles.ecosystemLogoUrlLight ??
+            toNullableString(data.ecosystemLogoUrlLight),
+          ecosystemLogoUrlDark:
+            uploadedFiles.ecosystemLogoUrlDark ??
+            toNullableString(data.ecosystemLogoUrlDark),
         });
         const result = await applyUpdate({
           ...updateInput,
@@ -234,13 +250,22 @@ export const useUpdateSpaceOrchestrator = ({
         throw error;
       }
     },
-    [completeTask, errorTask, files, startTask],
+    [
+      completeTask,
+      errorTask,
+      files.reset,
+      files.upload,
+      resetTasks,
+      resetUpdateSpaceByIdMutation,
+      resetUpdateSpaceConfigurationByIdMutation,
+      startTask,
+    ],
   );
 
   const { trigger: updateSpace, isMutating: isMutatingSpace } = useSWRMutation(
     'updateSpaceMutation',
     async (_, { arg }: { arg: UpdateSpaceMutationArg }) =>
-      runSpaceUpdate(arg, web2.updateSpaceById),
+      runSpaceUpdate(arg, updateSpaceById),
   );
 
   const {
@@ -249,29 +274,48 @@ export const useUpdateSpaceOrchestrator = ({
   } = useSWRMutation(
     'updateSpaceConfigurationMutation',
     async (_, { arg }: { arg: UpdateSpaceMutationArg }) =>
-      runSpaceUpdate(arg, web2.updateSpaceConfigurationById),
+      runSpaceUpdate(arg, updateSpaceConfigurationById),
   );
 
   const isMutating = isMutatingSpace || isMutatingSpaceConfiguration;
 
+  const taskErrors = useMemo(
+    () =>
+      Object.values(taskState)
+        .filter((task) => task.status === TaskStatus.ERROR)
+        .map((task) => task.message)
+        .filter(
+          (message): message is string =>
+            typeof message === 'string' && message.length > 0,
+        ),
+    [taskState],
+  );
+
   const errors = useMemo(() => {
     return [
-      web2.errorUpdateSpaceByIdMutation,
-      web2.errorUpdateSpaceConfigurationByIdMutation,
+      errorUpdateSpaceByIdMutation,
+      errorUpdateSpaceConfigurationByIdMutation,
       files.error,
+      ...taskErrors,
     ].filter(Boolean);
   }, [
-    web2.errorUpdateSpaceByIdMutation,
-    web2.errorUpdateSpaceConfigurationByIdMutation,
+    errorUpdateSpaceByIdMutation,
+    errorUpdateSpaceConfigurationByIdMutation,
     files.error,
+    taskErrors,
   ]);
 
   const reset = useCallback(() => {
     resetTasks();
-    web2.resetUpdateSpaceByIdMutation();
-    web2.resetUpdateSpaceConfigurationByIdMutation();
+    resetUpdateSpaceByIdMutation();
+    resetUpdateSpaceConfigurationByIdMutation();
     files.reset();
-  }, [resetTasks, web2, files]);
+  }, [
+    files.reset,
+    resetTasks,
+    resetUpdateSpaceByIdMutation,
+    resetUpdateSpaceConfigurationByIdMutation,
+  ]);
 
   return {
     updateSpace,
@@ -281,7 +325,7 @@ export const useUpdateSpaceOrchestrator = ({
     currentAction,
     progress,
     isPending: progress > 0 && progress < 100,
-    isError: errors.length > 0,
+    isError: errors.length > 0 || hasTaskError,
     errors,
     reset,
   };

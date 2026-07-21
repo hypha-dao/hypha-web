@@ -245,6 +245,8 @@ export const updateSpaceProps = {
     .optional(),
   title: createSpaceWeb2Props.title.optional(),
   description: createSpaceWeb2Props.description.optional(),
+  // PATCH semantics: omit = leave unchanged; null = clear parent.
+  parentId: createSpaceWeb2Props.parentId.optional(),
   categories: createSpaceWeb2Props.categories.optional(),
   links: createSpaceWeb2Props.links.optional(),
   flags: createSpaceWeb2Props.flags.optional(),

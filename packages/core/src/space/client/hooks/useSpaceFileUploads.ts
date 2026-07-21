@@ -19,7 +19,10 @@ const getUploadResultUrl = (result: unknown): string | undefined => {
 export type UseSpaceFileUploadsReturn = {
   isLoading: boolean;
   files: { [K in keyof Files]?: string } | null;
-  upload: (fileInput: Files, id: number) => Promise<void>;
+  upload: (
+    fileInput: Files,
+    id: number,
+  ) => Promise<{ [K in keyof Files]?: string }>;
   error: string | null;
   reset: () => void;
 };
@@ -66,6 +69,7 @@ export const useSpaceFileUploads = (
       await Promise.all(uploadPromises);
       setFiles(uploadedFiles);
       await onSuccess?.(uploadedFiles, id);
+      return uploadedFiles;
     },
     [upload, onSuccess],
   );
