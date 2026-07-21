@@ -8,10 +8,19 @@ import {
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../server';
 
-export async function getSpaceOverviewSignals(
-  { db }: DbConfig,
-  spaceId: number,
-) {
+const SIGNALS_CACHE_TTL_MS = 15 * 60 * 1000;
+
+type SpaceOverviewSignals = Awaited<
+  ReturnType<typeof computeSpaceOverviewSignals>
+>;
+
+const signalsCache = new Map<
+  number,
+  { expiresAt: number; data: SpaceOverviewSignals }
+>();
+const signalsInFlight = new Map<number, Promise<SpaceOverviewSignals>>();
+
+async function computeSpaceOverviewSignals({ db }: DbConfig, spaceId: number) {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -153,4 +162,34 @@ export async function getSpaceOverviewSignals(
       relays_emitted_last_24h: Number(relays[0]?.count ?? 0),
     },
   };
+}
+
+export async function getSpaceOverviewSignals(
+  config: DbConfig,
+  spaceId: number,
+) {
+  const cached = signalsCache.get(spaceId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
+  const inFlight = signalsInFlight.get(spaceId);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const promise = computeSpaceOverviewSignals(config, spaceId)
+    .then((data) => {
+      signalsCache.set(spaceId, {
+        data,
+        expiresAt: Date.now() + SIGNALS_CACHE_TTL_MS,
+      });
+      return data;
+    })
+    .finally(() => {
+      signalsInFlight.delete(spaceId);
+    });
+
+  signalsInFlight.set(spaceId, promise);
+  return promise;
 }

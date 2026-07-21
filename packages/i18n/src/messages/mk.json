@@ -400,7 +400,6 @@
       "description": "Виџетите за енергија ќе се појават штом бидат достапни податоци за енергија."
     },
     "assets": {
-<<<<<<< HEAD
       "title": "Резиме на трезорот",
       "subtitle": "Состав на вредност и концентрација на еден поглед.",
       "totalBalance": "Вкупна вредност на трезорот",
@@ -420,27 +419,6 @@
       "emptyDescription": "Овој простор моментално не држи следени активи во трезорот.",
       "errorTitle": "Не може да се вчита резимето на трезорот",
       "errorDescription": "Обидете се повторно за момент. Податоците за трезорот можеби сè уште се синхронизираат."
-=======
-      "title": "Treasury summary",
-      "subtitle": "Value composition and concentration at a glance.",
-      "totalBalance": "Total treasury value",
-      "assetCount": "Tracked assets",
-      "largestHolding": "Largest holding",
-      "composition": "Asset composition",
-      "compositionSubtitle": "Share of treasury value by asset.",
-      "compositionAria": "Treasury composition chart for {title}",
-      "topHoldings": "Top holdings",
-      "topHoldingsSubtitle": "Largest assets by estimated USD value.",
-      "byType": "Value by token type",
-      "byTypeSubtitle": "How treasury value is distributed across token categories.",
-      "valueLabel": "Value (USD)",
-      "quantityLabel": "Quantity",
-      "unitPrice": "Est. {price} per token",
-      "emptyTitle": "No treasury assets yet",
-      "emptyDescription": "This space does not currently hold any tracked treasury assets.",
-      "errorTitle": "Unable to load treasury summary",
-      "errorDescription": "Please retry in a moment. Treasury data may still be syncing."
->>>>>>> ca927e46d (fix(overview): label USD value and token quantity on asset cards)
     },
     "signalsDashboard": {
       "error": "Аналитиката за сигнали моментално не може да се вчита.",
@@ -479,7 +457,6 @@
       "summaries24h": "{count} во 24h",
       "summaries24hShort": "24h",
       "summaries7dShort": "7d",
-<<<<<<< HEAD
       "transcripts": "Транскрипти",
       "recordings": "Снимки",
       "userCreatedMemories": "Мемории создадени од корисници",
@@ -502,30 +479,6 @@
       "recentActivity": "Скорешна активност на снимање",
       "recentActivitySubtitle": "Нови резимеа во последните 7 и 24 часа.",
       "noRecentActivity": "Сè уште нема скорешна активност на резимеа.",
-=======
-      "transcripts": "Transcripts",
-      "recordings": "Recordings",
-      "userCreatedMemories": "User-created memories",
-      "summaries7d": "Summaries (7d)",
-      "hasChat": "Chat enabled",
-      "noChat": "Chat not enabled",
-      "errorTitle": "Unable to load space memory",
-      "totalItems": "Memory items",
-      "totalHint": "{count} stored for this space",
-      "composition": "Memory composition",
-      "compositionSubtitle": "Summaries, transcripts, recordings, and member-created entries stored for this space.",
-      "byType": "Items by type",
-      "byTypeSubtitle": "Relative volume across memory categories.",
-      "summariesDesc": "AI-captured discussion summaries from chat.",
-      "transcriptsDesc": "Call and meeting transcripts.",
-      "recordingsDesc": "Audio and video recordings.",
-      "userCreatedMemoriesDesc": "Notes and entries added by members as Space Memory.",
-      "summaryVelocity": "Summary velocity",
-      "summaryVelocitySubtitle": "New discussion summaries per week (last 8 weeks).",
-      "recentActivity": "Recent capture activity",
-      "recentActivitySubtitle": "New summaries in the last 7 and 24 hours.",
-      "noRecentActivity": "No recent summary activity yet.",
->>>>>>> 50939300d (fix(overview): include user-created Space Memory in dashboard totals)
       "chatStatus": "Human chat",
       "chatActive": "Активен",
       "chatInactive": "Не е поставен",
@@ -4318,7 +4271,6 @@
   },
   "PlatformOverview": {
     "title": "Hypha Platform Dashboard",
-<<<<<<< HEAD
     "updatedAt": "Ажурирано {date}",
     "refresh": "Освежи",
     "retry": "Обиди се повторно",
@@ -4330,19 +4282,6 @@
       "load_failed": "Неуспешно вчитување на контролната табла"
     },
     "noData": "Сè уште нема податоци.",
-=======
-    "updatedAt": "Updated {date}",
-    "refresh": "Refresh",
-    "retry": "Retry",
-    "unavailable": "Dashboard unavailable",
-    "errors": {
-      "secret_required": "Ops secret is required",
-      "not_configured": "Platform dashboard API is not configured on this environment.",
-      "unauthorized": "Invalid ops secret. Check the value and try again.",
-      "load_failed": "Failed to load dashboard"
-    },
-    "noData": "No data yet.",
->>>>>>> eaeff45f6 (fix: apply CodeRabbit auto-fixes for platform overview dashboard)
     "opsAccess": {
       "title": "Пристап до метрики на платформата",
       "description": "Внесете го Hypha ops secret за да ги видите метриките низ целата платформа. Secret-от останува во меморија само за оваа јазиче.",

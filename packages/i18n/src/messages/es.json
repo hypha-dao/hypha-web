@@ -1187,7 +1187,6 @@
       "description": "Los widgets de energía aparecerán cuando haya datos disponibles."
     },
     "assets": {
-<<<<<<< HEAD
       "title": "Resumen de tesorería",
       "subtitle": "Composición de valor y concentración de un vistazo.",
       "totalBalance": "Valor total de la tesorería",
@@ -1207,27 +1206,6 @@
       "emptyDescription": "Este espacio no tiene actualmente activos de tesorería rastreados.",
       "errorTitle": "No se pudo cargar el resumen de tesorería",
       "errorDescription": "Vuelve a intentarlo en un momento. Es posible que los datos de tesorería aún se estén sincronizando."
-=======
-      "title": "Treasury summary",
-      "subtitle": "Value composition and concentration at a glance.",
-      "totalBalance": "Total treasury value",
-      "assetCount": "Tracked assets",
-      "largestHolding": "Largest holding",
-      "composition": "Asset composition",
-      "compositionSubtitle": "Share of treasury value by asset.",
-      "compositionAria": "Treasury composition chart for {title}",
-      "topHoldings": "Top holdings",
-      "topHoldingsSubtitle": "Largest assets by estimated USD value.",
-      "byType": "Value by token type",
-      "byTypeSubtitle": "How treasury value is distributed across token categories.",
-      "valueLabel": "Valor (USD)",
-      "quantityLabel": "Cantidad",
-      "unitPrice": "Est. {price} per token",
-      "emptyTitle": "No treasury assets yet",
-      "emptyDescription": "This space does not currently hold any tracked treasury assets.",
-      "errorTitle": "Unable to load treasury summary",
-      "errorDescription": "Please retry in a moment. Treasury data may still be syncing."
->>>>>>> ca927e46d (fix(overview): label USD value and token quantity on asset cards)
     },
     "signalsDashboard": {
       "error": "No se pudieron cargar las analíticas de señales en este momento.",
@@ -1269,8 +1247,6 @@
       "transcripts": "Transcripciones",
       "recordings": "Grabaciones",
       "userCreatedMemories": "Memorias creadas por usuarios",
-<<<<<<< HEAD
-=======
       "summaries7d": "Resúmenes (7d)",
       "hasChat": "Chat habilitado",
       "noChat": "Chat no habilitado",
@@ -1279,7 +1255,6 @@
       "totalHint": "{count} almacenados en este espacio",
       "composition": "Composición de la memoria",
       "compositionSubtitle": "Resúmenes, transcripciones, grabaciones y entradas creadas por miembros en este espacio.",
->>>>>>> 50939300d (fix(overview): include user-created Space Memory in dashboard totals)
       "byType": "Elementos por tipo",
       "byTypeSubtitle": "Volumen relativo entre categorías de memoria.",
       "summariesDesc": "Resúmenes de discusión capturados por IA desde el chat.",
@@ -4309,7 +4284,6 @@
   },
   "PlatformOverview": {
     "title": "Hypha Platform Dashboard",
-<<<<<<< HEAD
     "updatedAt": "Actualizado {date}",
     "refresh": "Actualizar",
     "retry": "Reintentar",
@@ -4321,19 +4295,6 @@
       "load_failed": "No se pudo cargar el panel"
     },
     "noData": "Aún no hay datos.",
-=======
-    "updatedAt": "Updated {date}",
-    "refresh": "Refresh",
-    "retry": "Retry",
-    "unavailable": "Dashboard unavailable",
-    "errors": {
-      "secret_required": "Ops secret is required",
-      "not_configured": "Platform dashboard API is not configured on this environment.",
-      "unauthorized": "Invalid ops secret. Check the value and try again.",
-      "load_failed": "Failed to load dashboard"
-    },
-    "noData": "No data yet.",
->>>>>>> eaeff45f6 (fix: apply CodeRabbit auto-fixes for platform overview dashboard)
     "opsAccess": {
       "title": "Acceso a métricas de plataforma",
       "description": "Introduce el secreto de ops de Hypha para ver métricas de toda la plataforma. El secreto permanece en memoria solo para esta pestaña.",

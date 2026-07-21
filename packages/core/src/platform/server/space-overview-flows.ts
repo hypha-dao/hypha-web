@@ -8,7 +8,9 @@ import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../server';
 import { formatUnits } from 'viem';
 import { getHyphaPaymentEvents } from './paying-spaces';
-import { toMonthKey } from './utils';
+import { mapInBatches, toMonthKey } from './utils';
+
+const BLOCK_FETCH_CONCURRENCY = 40;
 
 export async function getSpaceOverviewFlows(
   { db: _db }: DbConfig,
@@ -50,6 +52,9 @@ export async function getSpaceOverviewFlows(
     payment.status === 'success' ? Boolean(payment.result[1]) : false;
 
   const events = await getHyphaPaymentEvents();
+  const spaceEvents = events.filter((event) =>
+    event.args.spaceIds.some((id) => Number(id) === space.web3SpaceId),
+  );
   const monthBuckets = new Map<
     string,
     { paymentCount: number; totalHypha: bigint }
@@ -58,15 +63,19 @@ export async function getSpaceOverviewFlows(
   let totalHyphaPaid = 0n;
 
   const uniqueBlockNumbers = [
-    ...new Set(events.map((event) => event.blockNumber)),
+    ...new Set(spaceEvents.map((event) => event.blockNumber)),
   ];
   const blockTimestamps = new Map<bigint, number>();
-  for (const blockNumber of uniqueBlockNumbers) {
-    const block = await web3Client.getBlock({ blockNumber });
-    blockTimestamps.set(blockNumber, Number(block.timestamp));
-  }
+  await mapInBatches(
+    uniqueBlockNumbers,
+    BLOCK_FETCH_CONCURRENCY,
+    async (blockNumber) => {
+      const block = await web3Client.getBlock({ blockNumber });
+      blockTimestamps.set(blockNumber, Number(block.timestamp));
+    },
+  );
 
-  for (const event of events) {
+  for (const event of spaceEvents) {
     const { spaceIds, durationInDays, totalHyphaUsed } = event.args;
     const spaceIndex = spaceIds.findIndex(
       (id) => Number(id) === space.web3SpaceId,
