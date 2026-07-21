@@ -253,7 +253,8 @@ export const useUpdateSpaceOrchestrator = ({
     [
       completeTask,
       errorTask,
-      files,
+      files.reset,
+      files.upload,
       resetTasks,
       resetUpdateSpaceByIdMutation,
       resetUpdateSpaceConfigurationByIdMutation,
@@ -310,7 +311,7 @@ export const useUpdateSpaceOrchestrator = ({
     resetUpdateSpaceConfigurationByIdMutation();
     files.reset();
   }, [
-    files,
+    files.reset,
     resetTasks,
     resetUpdateSpaceByIdMutation,
     resetUpdateSpaceConfigurationByIdMutation,
