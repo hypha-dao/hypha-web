@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
@@ -18,13 +24,28 @@ type SpaceHierarchyNode = d3.HierarchyNode<SpaceNode> & {
   r?: number;
 };
 
+export type SpaceVisualizationHandle = {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  canZoomIn: () => boolean;
+  canZoomOut: () => boolean;
+};
+
 type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
   rootAccentHex?: string;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
+  /** Show the space name under each logo (ecosystem nested view). */
+  showLabels?: boolean;
 };
+
+function truncateLabel(name: string, max = 20): string {
+  const trimmed = name.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1)}…`;
+}
 
 const SPACE_ACCENT_FALLBACK = '#14b8a6';
 
@@ -164,717 +185,462 @@ function sanitizeHierarchyLayout(root: SpaceHierarchyNode): void {
   });
 }
 
-export function SpaceVisualization({
-  data,
-  currentSpaceId,
-  rootAccentHex,
-  onVisibleSpacesChange,
-  enableHoverActions = true,
-}: Props) {
-  const { resolvedTheme } = useTheme();
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const previousVisibleSpacesRef = useRef<string>('');
-  const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
-  const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
-  const themeRef = useRef(resolvedTheme);
-  const savedFocusIdRef = useRef<number | null>(null);
-  const [tooltip, setTooltip] = useState<{
-    visible: boolean;
-    x: number;
-    y: number;
-    text: string;
-    spaceId?: number;
-    spaceSlug?: string;
-  }>({ visible: false, x: 0, y: 0, text: '' });
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
-  const tooltipHideTimeoutRef = useRef<number | null>(null);
-  const introToRootTimeoutRef = useRef<number | null>(null);
-  const introSequenceActiveRef = useRef(false);
-  const introRanRef = useRef(false);
-  const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
-    new Map(),
-  );
+export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
+  function SpaceVisualization(
+    {
+      data,
+      currentSpaceId,
+      rootAccentHex,
+      onVisibleSpacesChange,
+      enableHoverActions = true,
+      showLabels = false,
+    },
+    ref,
+  ) {
+    const { resolvedTheme } = useTheme();
+    const svgRef = useRef<SVGSVGElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const previousVisibleSpacesRef = useRef<string>('');
+    const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
+    const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
+    const themeRef = useRef(resolvedTheme);
+    const savedFocusIdRef = useRef<number | null>(null);
+    const zoomApiRef = useRef<{
+      zoomIn: () => void;
+      zoomOut: () => void;
+      canZoomIn: () => boolean;
+      canZoomOut: () => boolean;
+    } | null>(null);
 
-  const clearTooltipHideTimeout = () => {
-    if (tooltipHideTimeoutRef.current == null) return;
-    window.clearTimeout(tooltipHideTimeoutRef.current);
-    tooltipHideTimeoutRef.current = null;
-  };
-
-  const scheduleTooltipHide = () => {
-    clearTooltipHideTimeout();
-    tooltipHideTimeoutRef.current = window.setTimeout(() => {
-      setTooltip((prev) => ({ ...prev, visible: false }));
-    }, 120);
-  };
-
-  const clearIntroTimeout = () => {
-    if (introToRootTimeoutRef.current == null) return;
-    window.clearTimeout(introToRootTimeoutRef.current);
-    introToRootTimeoutRef.current = null;
-  };
-
-  const cancelIntroSequence = () => {
-    introSequenceActiveRef.current = false;
-    clearIntroTimeout();
-  };
-
-  useEffect(() => {
-    themeRef.current = resolvedTheme;
-  }, [resolvedTheme]);
-
-  useEffect(() => {
-    onVisibleSpacesChangeRef.current = onVisibleSpacesChange;
-  }, [onVisibleSpacesChange]);
-
-  useEffect(() => {
-    previousVisibleSpacesRef.current = '';
-    // Re-arm the opening sequence whenever the focused space context changes.
-    introRanRef.current = false;
-    introSequenceActiveRef.current = false;
-    savedFocusIdRef.current = null;
-    clearIntroTimeout();
-  }, [data, currentSpaceId]);
-
-  useEffect(() => {
-    if (!tooltip.visible || !tooltipRef.current || !containerRef.current)
-      return;
-
-    const tooltipEl = tooltipRef.current;
-    const containerEl = containerRef.current;
-    const tooltipRect = tooltipEl.getBoundingClientRect();
-    const containerRect = containerEl.getBoundingClientRect();
-
-    let adjustedX = tooltip.x + 10;
-    let adjustedY = tooltip.y;
-
-    if (adjustedX + tooltipRect.width > containerRect.width) {
-      adjustedX = tooltip.x - tooltipRect.width - 10;
-    }
-
-    if (adjustedX < 0) {
-      adjustedX = 10;
-    }
-
-    if (adjustedY + tooltipRect.height / 2 > containerRect.height) {
-      adjustedY = containerRect.height - tooltipRect.height / 2;
-    }
-
-    if (adjustedY - tooltipRect.height / 2 < 0) {
-      adjustedY = tooltipRect.height / 2;
-    }
-
-    if (
-      Math.abs(adjustedX - 10 - tooltip.x) > 0.5 ||
-      Math.abs(adjustedY - tooltip.y) > 0.5
-    ) {
-      setTooltip((prev) => ({
-        ...prev,
-        x: adjustedX - 10,
-        y: adjustedY,
-      }));
-    }
-  }, [tooltip.visible, tooltip.x, tooltip.y]);
-
-  useEffect(() => {
-    if (!svgRef.current) return;
-
-    const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
-    const getRootFillColor = (accentColor: string) => {
-      const parsed = d3.hsl(accentColor);
-      if (!parsed) {
-        return themeRef.current === 'dark'
-          ? 'rgba(255,255,255,0.06)'
-          : 'rgba(15,23,42,0.08)';
-      }
-      // Keep root tint subtle and non-neon while preserving accent hue.
-      const softAccent = d3.hsl(
-        parsed.h,
-        Math.max(0.16, Math.min(parsed.s * 0.5, 0.36)),
-        themeRef.current === 'dark' ? 0.72 : 0.38,
-      );
-      softAccent.opacity = themeRef.current === 'dark' ? 0.2 : 0.12;
-      return softAccent.formatRgb();
-    };
-    const getDiagramFillColor = () => 'var(--color-background)';
-    const getOrbitStrokeAlpha = () =>
-      themeRef.current === 'dark' ? 0.99 : 0.95;
-    const ROOT_ORBIT_STROKE_WIDTH = 1.8;
-    // Dot-like orbit outlines with strong visibility tuning.
-    const ORBIT_DASH_PATTERN = '1 4.5';
-    const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
-    const pageBackdropLab = d3.lab(
-      themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
+    useImperativeHandle(ref, () => ({
+      zoomIn: () => zoomApiRef.current?.zoomIn(),
+      zoomOut: () => zoomApiRef.current?.zoomOut(),
+      canZoomIn: () => zoomApiRef.current?.canZoomIn() ?? false,
+      canZoomOut: () => zoomApiRef.current?.canZoomOut() ?? false,
+    }));
+    const [tooltip, setTooltip] = useState<{
+      visible: boolean;
+      x: number;
+      y: number;
+      text: string;
+      spaceId?: number;
+      spaceSlug?: string;
+    }>({ visible: false, x: 0, y: 0, text: '' });
+    const tooltipRef = useRef<HTMLDivElement | null>(null);
+    const tooltipHideTimeoutRef = useRef<number | null>(null);
+    const introToRootTimeoutRef = useRef<number | null>(null);
+    const introSequenceActiveRef = useRef(false);
+    const introRanRef = useRef(false);
+    const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
+      new Map(),
     );
-    const MIN_LIGHTNESS_DELTA = 22;
-    const getOrbitStrokeStyle = (
-      accentColor: string,
-    ): { color: string; width: number } => {
-      const parsed = d3.hsl(accentColor);
-      if (!parsed) {
-        return {
-          color: withAlpha(accentColor, getOrbitStrokeAlpha()),
-          width: 1.8,
-        };
+
+    const clearTooltipHideTimeout = () => {
+      if (tooltipHideTimeoutRef.current == null) return;
+      window.clearTimeout(tooltipHideTimeoutRef.current);
+      tooltipHideTimeoutRef.current = null;
+    };
+
+    const scheduleTooltipHide = () => {
+      clearTooltipHideTimeout();
+      tooltipHideTimeoutRef.current = window.setTimeout(() => {
+        setTooltip((prev) => ({ ...prev, visible: false }));
+      }, 120);
+    };
+
+    const clearIntroTimeout = () => {
+      if (introToRootTimeoutRef.current == null) return;
+      window.clearTimeout(introToRootTimeoutRef.current);
+      introToRootTimeoutRef.current = null;
+    };
+
+    const cancelIntroSequence = () => {
+      introSequenceActiveRef.current = false;
+      clearIntroTimeout();
+    };
+
+    useEffect(() => {
+      themeRef.current = resolvedTheme;
+    }, [resolvedTheme]);
+
+    useEffect(() => {
+      onVisibleSpacesChangeRef.current = onVisibleSpacesChange;
+    }, [onVisibleSpacesChange]);
+
+    useEffect(() => {
+      previousVisibleSpacesRef.current = '';
+      // Re-arm the opening sequence whenever the focused space context changes.
+      introRanRef.current = false;
+      introSequenceActiveRef.current = false;
+      savedFocusIdRef.current = null;
+      clearIntroTimeout();
+    }, [data, currentSpaceId]);
+
+    useEffect(() => {
+      if (!tooltip.visible || !tooltipRef.current || !containerRef.current)
+        return;
+
+      const tooltipEl = tooltipRef.current;
+      const containerEl = containerRef.current;
+      const tooltipRect = tooltipEl.getBoundingClientRect();
+      const containerRect = containerEl.getBoundingClientRect();
+
+      let adjustedX = tooltip.x + 10;
+      let adjustedY = tooltip.y;
+
+      if (adjustedX + tooltipRect.width > containerRect.width) {
+        adjustedX = tooltip.x - tooltipRect.width - 10;
       }
 
-      // Always normalize saturation/lightness for strong orbit readability in both themes.
-      const tuned = d3.hsl(
-        parsed.h,
-        Math.max(parsed.s, 0.78),
-        themeRef.current === 'dark'
-          ? Math.max(parsed.l, 0.74)
-          : Math.min(parsed.l, 0.28),
-      );
+      if (adjustedX < 0) {
+        adjustedX = 10;
+      }
 
-      const tunedLab = d3.lab(tuned.formatRgb());
-      const rootDelta = Math.abs(tunedLab.l - rootFillLab.l);
-      const backdropDelta = Math.abs(tunedLab.l - pageBackdropLab.l);
-      const minDelta = Math.min(rootDelta, backdropDelta);
-      const width = minDelta < MIN_LIGHTNESS_DELTA ? 1.95 : 1.8;
+      if (adjustedY + tooltipRect.height / 2 > containerRect.height) {
+        adjustedY = containerRect.height - tooltipRect.height / 2;
+      }
 
-      return {
-        color: withAlpha(tuned.formatRgb(), getOrbitStrokeAlpha()),
-        width,
+      if (adjustedY - tooltipRect.height / 2 < 0) {
+        adjustedY = tooltipRect.height / 2;
+      }
+
+      if (
+        Math.abs(adjustedX - 10 - tooltip.x) > 0.5 ||
+        Math.abs(adjustedY - tooltip.y) > 0.5
+      ) {
+        setTooltip((prev) => ({
+          ...prev,
+          x: adjustedX - 10,
+          y: adjustedY,
+        }));
+      }
+    }, [tooltip.visible, tooltip.x, tooltip.y]);
+
+    useEffect(() => {
+      if (!svgRef.current) return;
+
+      const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
+      const getRootFillColor = (accentColor: string) => {
+        const parsed = d3.hsl(accentColor);
+        if (!parsed) {
+          return themeRef.current === 'dark'
+            ? 'rgba(255,255,255,0.06)'
+            : 'rgba(15,23,42,0.08)';
+        }
+        // Keep root tint subtle and non-neon while preserving accent hue.
+        const softAccent = d3.hsl(
+          parsed.h,
+          Math.max(0.16, Math.min(parsed.s * 0.5, 0.36)),
+          themeRef.current === 'dark' ? 0.72 : 0.38,
+        );
+        softAccent.opacity = themeRef.current === 'dark' ? 0.2 : 0.12;
+        return softAccent.formatRgb();
       };
-    };
-
-    const getStrokeWidth = (depth: number): number => {
-      return (
-        VISUALIZATION_CONFIG.LOGO_STROKE_WIDTH *
-        Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
+      const getDiagramFillColor = () => 'var(--color-background)';
+      const getOrbitStrokeAlpha = () =>
+        themeRef.current === 'dark' ? 0.99 : 0.95;
+      const ROOT_ORBIT_STROKE_WIDTH = 1.35;
+      const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
+      const pageBackdropLab = d3.lab(
+        themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
       );
-    };
-
-    const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
-
-    const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
-
-    root.each((d) => {
-      (d as SpaceHierarchyNode).r =
-        VISUALIZATION_CONFIG.BASE_RADIUS *
-        Math.pow(VISUALIZATION_CONFIG.DEPTH_SCALE, d.depth);
-    });
-
-    root.x = 0;
-    root.y = 0;
-
-    root.eachBefore((d) => {
-      if (!d.children || d.children.length === 0) return;
-
-      const node = d as SpaceHierarchyNode;
-      const parentLogoRadius = node.r! * VISUALIZATION_CONFIG.LOGO_RATIO;
-      const parentStrokeWidth = getStrokeWidth(node.depth);
-      const parentLogoRadiusWithStroke =
-        parentLogoRadius + parentStrokeWidth / 2;
-      const children = d.children.map((child) => child as SpaceHierarchyNode);
-      const n = children.length;
-
-      const calculateMinOrbitRadius = (
-        childRadii: number[],
-        childNodes: SpaceHierarchyNode[],
-      ): number => {
-        let maxChildRadiusWithStroke = 0;
-        childRadii.forEach((radius, index) => {
-          const childNode = childNodes[index];
-          if (childNode) {
-            const childStrokeWidth = getStrokeWidth(childNode.depth);
-            const childRadiusWithStroke = radius + childStrokeWidth / 2;
-            maxChildRadiusWithStroke = Math.max(
-              maxChildRadiusWithStroke,
-              childRadiusWithStroke,
-            );
-          }
-        });
-        const baseMinOrbitRadius =
-          parentLogoRadiusWithStroke + maxChildRadiusWithStroke;
-
-        if (n <= 1) {
-          return baseMinOrbitRadius;
+      const MIN_LIGHTNESS_DELTA = 22;
+      const getOrbitStrokeStyle = (
+        accentColor: string,
+      ): { color: string; width: number; glow: string } => {
+        const parsed = d3.hsl(accentColor);
+        if (!parsed) {
+          return {
+            color: withAlpha(accentColor, getOrbitStrokeAlpha()),
+            width: 1.55,
+            glow: withAlpha(accentColor, 0.28),
+          };
         }
 
-        const minOrbitRadiusForSpacing =
-          maxChildRadiusWithStroke / Math.sin(Math.PI / n);
+        // Soft luminous rings — solid stroke + haze, not dotted outlines.
+        const tuned = d3.hsl(
+          parsed.h,
+          Math.max(parsed.s, 0.72),
+          themeRef.current === 'dark'
+            ? Math.max(parsed.l, 0.7)
+            : Math.min(parsed.l, 0.32),
+        );
 
-        return Math.max(baseMinOrbitRadius, minOrbitRadiusForSpacing);
+        const tunedLab = d3.lab(tuned.formatRgb());
+        const rootDelta = Math.abs(tunedLab.l - rootFillLab.l);
+        const backdropDelta = Math.abs(tunedLab.l - pageBackdropLab.l);
+        const minDelta = Math.min(rootDelta, backdropDelta);
+        const width = minDelta < MIN_LIGHTNESS_DELTA ? 1.7 : 1.5;
+
+        return {
+          color: withAlpha(tuned.formatRgb(), getOrbitStrokeAlpha()),
+          width,
+          glow: withAlpha(
+            tuned.formatRgb(),
+            themeRef.current === 'dark' ? 0.32 : 0.22,
+          ),
+        };
       };
 
-      children.forEach((childNode) => {
-        const childStrokeWidth = getStrokeWidth(childNode.depth);
-        const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
-        const minOrbitRadius =
-          parentLogoRadiusWithStroke + childRadiusWithStroke;
-        const maxOrbit = node.r! - childNode.r!;
+      const getStrokeWidth = (depth: number): number => {
+        return (
+          VISUALIZATION_CONFIG.LOGO_STROKE_WIDTH *
+          Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
+        );
+      };
 
-        if (minOrbitRadius > maxOrbit) {
-          childNode.r = clampSvgLength(
-            (node.r! - parentLogoRadiusWithStroke) / 2,
-          );
-        }
+      const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
+
+      const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
+
+      root.each((d) => {
+        (d as SpaceHierarchyNode).r =
+          VISUALIZATION_CONFIG.BASE_RADIUS *
+          Math.pow(VISUALIZATION_CONFIG.DEPTH_SCALE, d.depth);
       });
 
-      const childRadii = children.map((c) => c.r!);
-      let minOrbitRadius = calculateMinOrbitRadius(childRadii, children);
-      let maxOrbit = node.r! - Math.max(...childRadii);
+      root.x = 0;
+      root.y = 0;
 
-      if (minOrbitRadius > maxOrbit) {
-        let minChildRadius = 0;
-        let maxChildRadius = Math.max(...childRadii);
-        let bestChildRadius = maxChildRadius;
-        const tolerance = 0.1;
+      root.eachBefore((d) => {
+        if (!d.children || d.children.length === 0) return;
 
-        while (maxChildRadius - minChildRadius > tolerance) {
-          const testChildRadius = (minChildRadius + maxChildRadius) / 2;
-          const testRadii = children.map(() => testChildRadius);
-          const testMinOrbitRadius = calculateMinOrbitRadius(
-            testRadii,
-            children,
-          );
-          const testMaxOrbit = node.r! - testChildRadius;
+        const node = d as SpaceHierarchyNode;
+        const parentLogoRadius = node.r! * VISUALIZATION_CONFIG.LOGO_RATIO;
+        const parentStrokeWidth = getStrokeWidth(node.depth);
+        const parentLogoRadiusWithStroke =
+          parentLogoRadius + parentStrokeWidth / 2;
+        const children = d.children.map((child) => child as SpaceHierarchyNode);
+        const n = children.length;
 
-          if (testMinOrbitRadius <= testMaxOrbit) {
-            bestChildRadius = testChildRadius;
-            minChildRadius = testChildRadius;
-          } else {
-            maxChildRadius = testChildRadius;
+        const calculateMinOrbitRadius = (
+          childRadii: number[],
+          childNodes: SpaceHierarchyNode[],
+        ): number => {
+          let maxChildRadiusWithStroke = 0;
+          childRadii.forEach((radius, index) => {
+            const childNode = childNodes[index];
+            if (childNode) {
+              const childStrokeWidth = getStrokeWidth(childNode.depth);
+              const childRadiusWithStroke = radius + childStrokeWidth / 2;
+              maxChildRadiusWithStroke = Math.max(
+                maxChildRadiusWithStroke,
+                childRadiusWithStroke,
+              );
+            }
+          });
+          const baseMinOrbitRadius =
+            parentLogoRadiusWithStroke + maxChildRadiusWithStroke;
+
+          if (n <= 1) {
+            return baseMinOrbitRadius;
           }
-        }
+
+          const minOrbitRadiusForSpacing =
+            maxChildRadiusWithStroke / Math.sin(Math.PI / n);
+
+          return Math.max(baseMinOrbitRadius, minOrbitRadiusForSpacing);
+        };
 
         children.forEach((childNode) => {
-          childNode.r = clampSvgLength(bestChildRadius);
-        });
+          const childStrokeWidth = getStrokeWidth(childNode.depth);
+          const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
+          const minOrbitRadius =
+            parentLogoRadiusWithStroke + childRadiusWithStroke;
+          const maxOrbit = node.r! - childNode.r!;
 
-        const adjustedRadii = children.map((c) => c.r!);
-        minOrbitRadius = calculateMinOrbitRadius(adjustedRadii, children);
-      }
-
-      const maxChildRadius = Math.max(...children.map((c) => c.r!));
-      maxOrbit = node.r! - maxChildRadius;
-
-      const availableOrbit = Math.max(0, maxOrbit - minOrbitRadius);
-      let orbitRadius =
-        minOrbitRadius + availableOrbit * VISUALIZATION_CONFIG.ORBIT_RATIO;
-
-      if (n > 1) {
-        const minDistanceBetweenCenters =
-          2 * orbitRadius * Math.sin(Math.PI / n);
-        const requiredDistance = 2 * maxChildRadius;
-
-        if (minDistanceBetweenCenters < requiredDistance) {
-          let maxChildRadiusWithStroke = 0;
-          children.forEach((childNode) => {
-            const childStrokeWidth = getStrokeWidth(childNode.depth);
-            const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
-            maxChildRadiusWithStroke = Math.max(
-              maxChildRadiusWithStroke,
-              childRadiusWithStroke,
+          if (minOrbitRadius > maxOrbit) {
+            childNode.r = clampSvgLength(
+              (node.r! - parentLogoRadiusWithStroke) / 2,
             );
-          });
-          const safeOrbitRadius =
-            maxChildRadiusWithStroke / Math.sin(Math.PI / n);
-          orbitRadius = Math.max(
-            safeOrbitRadius,
-            parentLogoRadiusWithStroke + maxChildRadiusWithStroke,
-            orbitRadius,
-          );
-        }
-      }
-
-      const step = (2 * Math.PI) / n;
-      const safeOrbitRadius = Number.isFinite(orbitRadius)
-        ? Math.max(minOrbitRadius, orbitRadius)
-        : minOrbitRadius;
-      children.forEach((childNode, i) => {
-        const angle = i * step;
-        const parentX = finiteOr(d.x, 0);
-        const parentY = finiteOr(d.y, 0);
-        childNode.x = parentX + Math.cos(angle) * safeOrbitRadius;
-        childNode.y = parentY + Math.sin(angle) * safeOrbitRadius;
-      });
-    });
-
-    sanitizeHierarchyLayout(root);
-
-    const findNodeById = (
-      node: SpaceHierarchyNode,
-      id: number,
-    ): SpaceHierarchyNode | null => {
-      if (node.data.id === id) {
-        return node;
-      }
-      if (node.children) {
-        for (const child of node.children) {
-          const found = findNodeById(child as SpaceHierarchyNode, id);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    let focus = root;
-
-    if (savedFocusIdRef.current) {
-      const savedNode = findNodeById(root, savedFocusIdRef.current);
-      if (savedNode) {
-        focus = savedNode;
-      } else {
-        savedFocusIdRef.current = null;
-      }
-    }
-
-    if (!savedFocusIdRef.current && currentSpaceId) {
-      const currentSpaceNode = findNodeById(root, currentSpaceId);
-      if (currentSpaceNode) {
-        focus = currentSpaceNode;
-      }
-    }
-
-    focusRef.current = focus;
-    savedFocusIdRef.current = focus.data.id;
-    let view = sanitizeZoomView([
-      finiteOr(focus.x, 0),
-      finiteOr(focus.y, 0),
-      finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
-    ]);
-
-    const svg = d3
-      .select(svgRef.current)
-      .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
-      .style('shape-rendering', 'geometricPrecision')
-      .style('cursor', 'pointer');
-
-    svg.selectAll('*').remove();
-
-    const g = svg.append('g');
-    const nodeAccents = new Map<number, string>();
-    const getNodeAccent = (d: SpaceHierarchyNode): string =>
-      nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
-
-    const defs = svg.append('defs');
-    const orbits = g
-      .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
-      .data(root.descendants() as SpaceHierarchyNode[])
-      .join('circle')
-      .attr('class', 'orbit')
-      .style('fill', 'none')
-      .attr('stroke', (d: SpaceHierarchyNode) => {
-        const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-        return getOrbitStrokeStyle(accent).color;
-      })
-      .attr('stroke-width', (d: SpaceHierarchyNode) => {
-        if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-        return getOrbitStrokeStyle(getNodeAccent(d)).width;
-      })
-      .attr('stroke-linecap', 'round')
-      .attr('stroke-dasharray', ORBIT_DASH_PATTERN)
-      .attr('vector-effect', 'non-scaling-stroke')
-      .attr('shape-rendering', 'geometricPrecision')
-      .style('pointer-events', 'all')
-      .on('click', (event, d) => {
-        if (focus !== d) {
-          event.stopPropagation();
-          cancelIntroSequence();
-          zoom(d);
-        }
-      });
-
-    const logos = g
-      .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
-      .data(root.descendants() as SpaceHierarchyNode[])
-      .join('g')
-      .attr('class', 'logo')
-      .style('pointer-events', 'all')
-      .style('cursor', 'pointer')
-      .on('click', (event, d) => {
-        if (focus !== d) {
-          event.stopPropagation();
-          cancelIntroSequence();
-          zoom(d);
-        }
-      });
-
-    if (enableHoverActions) {
-      logos
-        .on('mouseenter', function (event: MouseEvent, d: SpaceHierarchyNode) {
-          clearTooltipHideTimeout();
-          if (!containerRef.current) return;
-          const rect = containerRef.current.getBoundingClientRect();
-          setTooltip((prev) => ({
-            ...prev,
-            visible: true,
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top,
-            text: d.data.name,
-            spaceId: d.data.id,
-            spaceSlug: d.data.slug,
-          }));
-        })
-        .on('mousemove', function (event: MouseEvent) {
-          clearTooltipHideTimeout();
-          if (!containerRef.current) return;
-          const rect = containerRef.current.getBoundingClientRect();
-          setTooltip((prev) => ({
-            ...prev,
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top,
-          }));
-        })
-        .on('mouseleave', function () {
-          scheduleTooltipHide();
+          }
         });
-    } else {
-      logos.on('mouseenter', null).on('mousemove', null).on('mouseleave', null);
-    }
 
-    logos.each(function (d: SpaceHierarchyNode) {
-      const logoGroup = d3.select(this);
-      const clipId = `clip-${d.data.id}`;
+        const childRadii = children.map((c) => c.r!);
+        let minOrbitRadius = calculateMinOrbitRadius(childRadii, children);
+        let maxOrbit = node.r! - Math.max(...childRadii);
 
-      const clipPath = defs.append('clipPath').attr('id', clipId);
+        if (minOrbitRadius > maxOrbit) {
+          let minChildRadius = 0;
+          let maxChildRadius = Math.max(...childRadii);
+          let bestChildRadius = maxChildRadius;
+          const tolerance = 0.1;
 
-      clipPath.append('circle').attr('r', 1);
+          while (maxChildRadius - minChildRadius > tolerance) {
+            const testChildRadius = (minChildRadius + maxChildRadius) / 2;
+            const testRadii = children.map(() => testChildRadius);
+            const testMinOrbitRadius = calculateMinOrbitRadius(
+              testRadii,
+              children,
+            );
+            const testMaxOrbit = node.r! - testChildRadius;
 
-      logoGroup
-        .append('circle')
-        .attr('fill', getDiagramFillColor())
-        .attr('stroke', 'none')
-        .attr('shape-rendering', 'geometricPrecision');
+            if (testMinOrbitRadius <= testMaxOrbit) {
+              bestChildRadius = testChildRadius;
+              minChildRadius = testChildRadius;
+            } else {
+              maxChildRadius = testChildRadius;
+            }
+          }
 
-      logoGroup
-        .append('image')
-        .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
-        .attr('preserveAspectRatio', 'xMidYMid slice')
-        .attr('alt', `${d.data.name} logo`)
-        .attr('clip-path', `url(#${clipId})`);
-    });
+          children.forEach((childNode) => {
+            childNode.r = clampSvgLength(bestChildRadius);
+          });
 
-    svg.on('click', () => {
-      if (focus.parent) {
-        cancelIntroSequence();
-        zoom(focus.parent);
-      }
-    });
-
-    function isDescendantOf(
-      node: SpaceHierarchyNode,
-      ancestor: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
-    function isDescendantOfOrSelf(
-      node: SpaceHierarchyNode,
-      ancestor: SpaceHierarchyNode,
-    ): boolean {
-      if (node === ancestor) return true;
-
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
-    function isAncestorOf(
-      ancestor: SpaceHierarchyNode,
-      node: SpaceHierarchyNode,
-    ): boolean {
-      let current = node.parent;
-      while (current) {
-        if (current === ancestor) return true;
-        current = current.parent;
-      }
-      return false;
-    }
-
-    function isVisibleForFocus(
-      d: SpaceHierarchyNode,
-      focusNode: SpaceHierarchyNode,
-    ): boolean {
-      if (d === focusNode) return true;
-
-      if (isDescendantOfOrSelf(d, focusNode)) {
-        return true;
-      }
-
-      if (isAncestorOf(d, focusNode)) {
-        return true;
-      }
-
-      let currentAncestor = focusNode.parent;
-      while (currentAncestor) {
-        if (isDescendantOfOrSelf(d, currentAncestor)) {
-          return true;
+          const adjustedRadii = children.map((c) => c.r!);
+          minOrbitRadius = calculateMinOrbitRadius(adjustedRadii, children);
         }
-        currentAncestor = currentAncestor.parent;
-      }
 
-      return false;
-    }
+        const maxChildRadius = Math.max(...children.map((c) => c.r!));
+        maxOrbit = node.r! - maxChildRadius;
 
-    function isVisible(d: SpaceHierarchyNode): boolean {
-      if (!focus) return false;
-      return isVisibleForFocus(d, focus);
-    }
+        const availableOrbit = Math.max(0, maxOrbit - minOrbitRadius);
+        let orbitRadius =
+          minOrbitRadius + availableOrbit * VISUALIZATION_CONFIG.ORBIT_RATIO;
 
-    function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
-      const visibleSpaces: VisibleSpace[] = [
-        {
-          id: focusNode.data.id,
-          name: focusNode.data.name,
-          slug: focusNode.data.slug,
-          logoUrl: focusNode.data.logoUrl,
-          parentId: focusNode.parent?.data.id ?? null,
-          root: true,
-        },
-      ];
+        if (n > 1) {
+          const minDistanceBetweenCenters =
+            2 * orbitRadius * Math.sin(Math.PI / n);
+          const requiredDistance = 2 * maxChildRadius;
 
-      function collectDescendants(node: SpaceHierarchyNode) {
-        if (node.children) {
-          node.children.forEach((child) => {
-            visibleSpaces.push({
-              id: child.data.id,
-              name: child.data.name,
-              slug: child.data.slug,
-              logoUrl: child.data.logoUrl,
-              parentId: child.parent?.data.id ?? null,
-              root: false,
+          if (minDistanceBetweenCenters < requiredDistance) {
+            let maxChildRadiusWithStroke = 0;
+            children.forEach((childNode) => {
+              const childStrokeWidth = getStrokeWidth(childNode.depth);
+              const childRadiusWithStroke = childNode.r! + childStrokeWidth / 2;
+              maxChildRadiusWithStroke = Math.max(
+                maxChildRadiusWithStroke,
+                childRadiusWithStroke,
+              );
             });
-            collectDescendants(child as SpaceHierarchyNode);
-          });
-        }
-      }
-
-      collectDescendants(focusNode);
-
-      return visibleSpaces;
-    }
-
-    function notifyVisibleSpaces(focusNode: SpaceHierarchyNode) {
-      const callback = onVisibleSpacesChangeRef.current;
-      if (callback) {
-        const visibleSpaces = getVisibleSpaces(focusNode);
-        const spacesKey = JSON.stringify(visibleSpaces.map((s) => s.id).sort());
-        if (previousVisibleSpacesRef.current !== spacesKey) {
-          previousVisibleSpacesRef.current = spacesKey;
-          callback(visibleSpaces);
-        }
-      }
-    }
-
-    orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
-    logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
-    orbits.style('display', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 'block' : 'none',
-    );
-    logos.style('display', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 'block' : 'none',
-    );
-
-    logos.each(function (d: SpaceHierarchyNode) {
-      d3.select(this)
-        .select('circle')
-        .attr('fill', getDiagramFillColor())
-        .attr('stroke', 'none');
-    });
-
-    zoomTo(view);
-    previousVisibleSpacesRef.current = '';
-    notifyVisibleSpaces(focus);
-
-    if (!introRanRef.current && focus !== root) {
-      introRanRef.current = true;
-      introSequenceActiveRef.current = true;
-
-      introToRootTimeoutRef.current = window.setTimeout(() => {
-        if (!introSequenceActiveRef.current) return;
-        zoom(root, {
-          onEnd: () => {
-            introSequenceActiveRef.current = false;
-          },
-        });
-      }, 1400);
-    }
-
-    function zoom(
-      target: SpaceHierarchyNode,
-      options?: {
-        onEnd?: () => void;
-      },
-    ) {
-      focus = target;
-      focusRef.current = focus;
-      savedFocusIdRef.current = focus.data.id;
-
-      const transition = svg
-        .transition()
-        .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-        .tween('zoom', () => {
-          const targetView = sanitizeZoomView([
-            finiteOr(focus.x, 0),
-            finiteOr(focus.y, 0),
-            finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
-          ]);
-          const startView = sanitizeZoomView(view);
-          const interpolator = d3.interpolateZoom(startView, targetView);
-          return (t) => {
-            const next = sanitizeZoomView(interpolator(t), targetView[2]);
-            zoomTo(next);
-          };
-        });
-
-      transition
-        .selectAll<SVGElement, SpaceHierarchyNode>('circle.orbit, g.logo')
-        .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
-        .on('start', function (d: SpaceHierarchyNode) {
-          if (isVisible(d) && this instanceof SVGElement) {
-            (this as SVGElement).style.display = 'block';
+            const safeOrbitRadius =
+              maxChildRadiusWithStroke / Math.sin(Math.PI / n);
+            orbitRadius = Math.max(
+              safeOrbitRadius,
+              parentLogoRadiusWithStroke + maxChildRadiusWithStroke,
+              orbitRadius,
+            );
           }
-        })
-        .on('end', function (d: SpaceHierarchyNode) {
-          if (!isVisible(d) && this instanceof SVGElement) {
-            (this as SVGElement).style.display = 'none';
-          }
-        });
+        }
 
-      logos.each(function (d: SpaceHierarchyNode) {
-        d3.select(this)
-          .select('circle')
-          .transition()
-          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', getDiagramFillColor())
-          .attr('stroke', 'none');
+        const step = (2 * Math.PI) / n;
+        const safeOrbitRadius = Number.isFinite(orbitRadius)
+          ? Math.max(minOrbitRadius, orbitRadius)
+          : minOrbitRadius;
+        children.forEach((childNode, i) => {
+          const angle = i * step;
+          const parentX = finiteOr(d.x, 0);
+          const parentY = finiteOr(d.y, 0);
+          childNode.x = parentX + Math.cos(angle) * safeOrbitRadius;
+          childNode.y = parentY + Math.sin(angle) * safeOrbitRadius;
+        });
       });
 
-      transition.on('end', () => {
-        notifyVisibleSpaces(focus);
-        options?.onEnd?.();
-      });
-    }
+      sanitizeHierarchyLayout(root);
 
-    function zoomTo(v: [number, number, number]) {
-      const safeView = sanitizeZoomView(v, view[2]);
-      const k = width / safeView[2];
-      view = safeView;
-
-      const nodeTransform = (d: SpaceHierarchyNode) => {
-        const tx = (finiteOr(d.x, 0) - safeView[0]) * k;
-        const ty = (finiteOr(d.y, 0) - safeView[1]) * k;
-        return `translate(${tx}, ${ty})`;
+      const findNodeById = (
+        node: SpaceHierarchyNode,
+        id: number,
+      ): SpaceHierarchyNode | null => {
+        if (node.data.id === id) {
+          return node;
+        }
+        if (node.children) {
+          for (const child of node.children) {
+            const found = findNodeById(child as SpaceHierarchyNode, id);
+            if (found) return found;
+          }
+        }
+        return null;
       };
 
-      orbits
-        .attr('transform', nodeTransform)
-        .attr('r', (d: SpaceHierarchyNode) =>
-          clampSvgLength(finiteOr(d.r, 0) * k),
+      let focus = root;
+
+      if (savedFocusIdRef.current) {
+        const savedNode = findNodeById(root, savedFocusIdRef.current);
+        if (savedNode) {
+          focus = savedNode;
+        } else {
+          savedFocusIdRef.current = null;
+        }
+      }
+
+      if (!savedFocusIdRef.current && currentSpaceId) {
+        const currentSpaceNode = findNodeById(root, currentSpaceId);
+        if (currentSpaceNode) {
+          focus = currentSpaceNode;
+        }
+      }
+
+      focusRef.current = focus;
+      savedFocusIdRef.current = focus.data.id;
+      let view = sanitizeZoomView([
+        finiteOr(focus.x, 0),
+        finiteOr(focus.y, 0),
+        finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
+      ]);
+
+      const svg = d3
+        .select(svgRef.current)
+        .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
+        .style('shape-rendering', 'geometricPrecision')
+        .style('cursor', 'pointer');
+
+      svg.selectAll('*').remove();
+
+      const g = svg.append('g');
+      const nodeAccents = new Map<number, string>();
+      const getNodeAccent = (d: SpaceHierarchyNode): string =>
+        nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
+
+      const defs = svg.append('defs');
+      const orbitGlow = defs
+        .append('filter')
+        .attr('id', 'orbit-glow')
+        .attr('x', '-35%')
+        .attr('y', '-35%')
+        .attr('width', '170%')
+        .attr('height', '170%');
+      orbitGlow
+        .append('feGaussianBlur')
+        .attr('stdDeviation', 2.2)
+        .attr('result', 'blur');
+      const orbitGlowMerge = orbitGlow.append('feMerge');
+      orbitGlowMerge.append('feMergeNode').attr('in', 'blur');
+      orbitGlowMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+      const orbitGroups = g
+        .selectAll<SVGGElement, SpaceHierarchyNode>('g.orbit-group')
+        .data(root.descendants() as SpaceHierarchyNode[])
+        .join('g')
+        .attr('class', 'orbit-group')
+        .style('pointer-events', 'all')
+        .on('click', (event, d) => {
+          if (focus !== d) {
+            event.stopPropagation();
+            cancelIntroSequence();
+            zoom(d);
+          }
+        });
+
+      // Soft halo underlay — gives orbits depth without dotted outlines.
+      orbitGroups
+        .append('circle')
+        .attr('class', 'orbit-halo')
+        .style('fill', 'none')
+        .attr('stroke', (d: SpaceHierarchyNode) => {
+          const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
+          return getOrbitStrokeStyle(accent).glow;
+        })
+        .attr('stroke-width', (d: SpaceHierarchyNode) =>
+          d.depth === 0 ? 7 : 5.5,
         )
+        .attr('vector-effect', 'non-scaling-stroke')
+        .style('pointer-events', 'none');
+
+      const orbits = orbitGroups
+        .append('circle')
+        .attr('class', 'orbit')
         .style('fill', 'none')
         .attr('stroke', (d: SpaceHierarchyNode) => {
           const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
@@ -884,99 +650,519 @@ export function SpaceVisualization({
           if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
           return getOrbitStrokeStyle(getNodeAccent(d)).width;
         })
-        .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
+        .attr('stroke-linecap', 'round')
+        .attr('filter', 'url(#orbit-glow)')
+        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('shape-rendering', 'geometricPrecision');
 
-      logos
-        .attr('transform', nodeTransform)
-        .each(function (d: SpaceHierarchyNode) {
-          const r = clampSvgLength(
-            finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
+      const logos = g
+        .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
+        .data(root.descendants() as SpaceHierarchyNode[])
+        .join('g')
+        .attr('class', 'logo')
+        .style('pointer-events', 'all')
+        .style('cursor', 'pointer')
+        .on('click', (event, d) => {
+          if (focus !== d) {
+            event.stopPropagation();
+            cancelIntroSequence();
+            zoom(d);
+          }
+        });
+
+      if (enableHoverActions) {
+        logos
+          .on(
+            'mouseenter',
+            function (event: MouseEvent, d: SpaceHierarchyNode) {
+              clearTooltipHideTimeout();
+              if (!containerRef.current) return;
+              const rect = containerRef.current.getBoundingClientRect();
+              setTooltip((prev) => ({
+                ...prev,
+                visible: true,
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top,
+                text: d.data.name,
+                spaceId: d.data.id,
+                spaceSlug: d.data.slug,
+              }));
+            },
+          )
+          .on('mousemove', function (event: MouseEvent) {
+            clearTooltipHideTimeout();
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            setTooltip((prev) => ({
+              ...prev,
+              x: event.clientX - rect.left,
+              y: event.clientY - rect.top,
+            }));
+          })
+          .on('mouseleave', function () {
+            scheduleTooltipHide();
+          });
+      } else {
+        logos
+          .on('mouseenter', null)
+          .on('mousemove', null)
+          .on('mouseleave', null);
+      }
+
+      logos.each(function (d: SpaceHierarchyNode) {
+        const logoGroup = d3.select(this);
+        const clipId = `clip-${d.data.id}`;
+
+        const clipPath = defs.append('clipPath').attr('id', clipId);
+
+        clipPath.append('circle').attr('r', 1);
+
+        logoGroup
+          .append('circle')
+          .attr('fill', getDiagramFillColor())
+          .attr('stroke', 'none')
+          .attr('shape-rendering', 'geometricPrecision');
+
+        logoGroup
+          .append('image')
+          .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
+          .attr('preserveAspectRatio', 'xMidYMid slice')
+          .attr('alt', `${d.data.name} logo`)
+          .attr('clip-path', `url(#${clipId})`);
+
+        if (showLabels) {
+          logoGroup
+            .append('text')
+            .attr('class', 'space-label')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'hanging')
+            .attr('fill', themeRef.current === 'dark' ? '#f8fafc' : '#0f172a')
+            .attr('font-weight', 600)
+            .attr('paint-order', 'stroke')
+            .attr(
+              'stroke',
+              themeRef.current === 'dark'
+                ? 'rgba(11,18,32,0.88)'
+                : 'rgba(255,255,255,0.92)',
+            )
+            .attr('stroke-width', 3.5)
+            .text(truncateLabel(d.data.name));
+        }
+      });
+
+      svg.on('click', () => {
+        if (focus.parent) {
+          cancelIntroSequence();
+          zoom(focus.parent);
+        }
+      });
+
+      function isDescendantOf(
+        node: SpaceHierarchyNode,
+        ancestor: SpaceHierarchyNode,
+      ): boolean {
+        let current = node.parent;
+        while (current) {
+          if (current === ancestor) return true;
+          current = current.parent;
+        }
+        return false;
+      }
+
+      function isDescendantOfOrSelf(
+        node: SpaceHierarchyNode,
+        ancestor: SpaceHierarchyNode,
+      ): boolean {
+        if (node === ancestor) return true;
+
+        let current = node.parent;
+        while (current) {
+          if (current === ancestor) return true;
+          current = current.parent;
+        }
+        return false;
+      }
+
+      function isAncestorOf(
+        ancestor: SpaceHierarchyNode,
+        node: SpaceHierarchyNode,
+      ): boolean {
+        let current = node.parent;
+        while (current) {
+          if (current === ancestor) return true;
+          current = current.parent;
+        }
+        return false;
+      }
+
+      function isVisibleForFocus(
+        d: SpaceHierarchyNode,
+        focusNode: SpaceHierarchyNode,
+      ): boolean {
+        if (d === focusNode) return true;
+
+        if (isDescendantOfOrSelf(d, focusNode)) {
+          return true;
+        }
+
+        if (isAncestorOf(d, focusNode)) {
+          return true;
+        }
+
+        let currentAncestor = focusNode.parent;
+        while (currentAncestor) {
+          if (isDescendantOfOrSelf(d, currentAncestor)) {
+            return true;
+          }
+          currentAncestor = currentAncestor.parent;
+        }
+
+        return false;
+      }
+
+      function isVisible(d: SpaceHierarchyNode): boolean {
+        if (!focus) return false;
+        return isVisibleForFocus(d, focus);
+      }
+
+      function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
+        const visibleSpaces: VisibleSpace[] = [
+          {
+            id: focusNode.data.id,
+            name: focusNode.data.name,
+            slug: focusNode.data.slug,
+            logoUrl: focusNode.data.logoUrl,
+            parentId: focusNode.parent?.data.id ?? null,
+            root: true,
+          },
+        ];
+
+        function collectDescendants(node: SpaceHierarchyNode) {
+          if (node.children) {
+            node.children.forEach((child) => {
+              visibleSpaces.push({
+                id: child.data.id,
+                name: child.data.name,
+                slug: child.data.slug,
+                logoUrl: child.data.logoUrl,
+                parentId: child.parent?.data.id ?? null,
+                root: false,
+              });
+              collectDescendants(child as SpaceHierarchyNode);
+            });
+          }
+        }
+
+        collectDescendants(focusNode);
+
+        return visibleSpaces;
+      }
+
+      function notifyVisibleSpaces(focusNode: SpaceHierarchyNode) {
+        const callback = onVisibleSpacesChangeRef.current;
+        if (callback) {
+          const visibleSpaces = getVisibleSpaces(focusNode);
+          const spacesKey = JSON.stringify(
+            visibleSpaces.map((s) => s.id).sort(),
           );
-          const clipId = `clip-${d.data.id}`;
-          const diameter = clampSvgLength(r * 2);
+          if (previousVisibleSpacesRef.current !== spacesKey) {
+            previousVisibleSpacesRef.current = spacesKey;
+            callback(visibleSpaces);
+          }
+        }
+      }
 
+      orbitGroups.style('opacity', (d: SpaceHierarchyNode) =>
+        isVisible(d) ? 1 : 0,
+      );
+      logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
+      orbitGroups.style('display', (d: SpaceHierarchyNode) =>
+        isVisible(d) ? 'block' : 'none',
+      );
+      logos.style('display', (d: SpaceHierarchyNode) =>
+        isVisible(d) ? 'block' : 'none',
+      );
+
+      logos.each(function (d: SpaceHierarchyNode) {
+        d3.select(this)
+          .select('circle')
+          .attr('fill', getDiagramFillColor())
+          .attr('stroke', 'none');
+      });
+
+      zoomTo(view);
+      previousVisibleSpacesRef.current = '';
+      notifyVisibleSpaces(focus);
+
+      if (!introRanRef.current && focus !== root) {
+        introRanRef.current = true;
+        introSequenceActiveRef.current = true;
+
+        introToRootTimeoutRef.current = window.setTimeout(() => {
+          if (!introSequenceActiveRef.current) return;
+          zoom(root, {
+            onEnd: () => {
+              introSequenceActiveRef.current = false;
+            },
+          });
+        }, 1400);
+      }
+
+      function zoom(
+        target: SpaceHierarchyNode,
+        options?: {
+          onEnd?: () => void;
+        },
+      ) {
+        focus = target;
+        focusRef.current = focus;
+        savedFocusIdRef.current = focus.data.id;
+
+        const transition = svg
+          .transition()
+          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+          .tween('zoom', () => {
+            const targetView = sanitizeZoomView([
+              finiteOr(focus.x, 0),
+              finiteOr(focus.y, 0),
+              finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
+            ]);
+            const startView = sanitizeZoomView(view);
+            const interpolator = d3.interpolateZoom(startView, targetView);
+            return (t) => {
+              const next = sanitizeZoomView(interpolator(t), targetView[2]);
+              zoomTo(next);
+            };
+          });
+
+        transition
+          .selectAll<SVGElement, SpaceHierarchyNode>('g.orbit-group, g.logo')
+          .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
+          .on('start', function (d: SpaceHierarchyNode) {
+            if (isVisible(d) && this instanceof SVGElement) {
+              (this as SVGElement).style.display = 'block';
+            }
+          })
+          .on('end', function (d: SpaceHierarchyNode) {
+            if (!isVisible(d) && this instanceof SVGElement) {
+              (this as SVGElement).style.display = 'none';
+            }
+          });
+
+        logos.each(function (d: SpaceHierarchyNode) {
           d3.select(this)
             .select('circle')
-            .attr('r', r)
+            .transition()
+            .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
             .attr('fill', getDiagramFillColor())
             .attr('stroke', 'none');
-
-          defs.select(`#${clipId} circle`).attr('r', r);
-
-          d3.select(this)
-            .select('image')
-            .attr('x', -r)
-            .attr('y', -r)
-            .attr('width', diameter)
-            .attr('height', diameter);
         });
-    }
-    let isCancelled = false;
-    root.each((node) => {
-      void (async () => {
-        const cacheKey = (node.data.logoUrl ?? '').trim();
-        let accentPromise = accentSampleCacheRef.current.get(cacheKey);
-        if (!accentPromise) {
-          accentPromise = sampleAccentHex(node.data.logoUrl);
-          accentSampleCacheRef.current.set(cacheKey, accentPromise);
-        }
-        const sampledAccent = await accentPromise;
-        if (isCancelled) return;
-        const resolvedAccent = sampledAccent ?? accentFromSpaceId(node.data.id);
-        nodeAccents.set(node.data.id, resolvedAccent);
-        orbits
-          .filter((d) => d.data.id === node.data.id)
+
+        transition.on('end', () => {
+          notifyVisibleSpaces(focus);
+          options?.onEnd?.();
+        });
+      }
+
+      function zoomTo(v: [number, number, number]) {
+        const safeView = sanitizeZoomView(v, view[2]);
+        const k = width / safeView[2];
+        view = safeView;
+
+        const nodeTransform = (d: SpaceHierarchyNode) => {
+          const tx = (finiteOr(d.x, 0) - safeView[0]) * k;
+          const ty = (finiteOr(d.y, 0) - safeView[1]) * k;
+          return `translate(${tx}, ${ty})`;
+        };
+
+        orbitGroups.attr('transform', nodeTransform);
+        orbitGroups
+          .select('circle.orbit-halo')
+          .attr('r', (d: SpaceHierarchyNode) =>
+            clampSvgLength(finiteOr(d.r, 0) * k),
+          )
           .style('fill', 'none')
           .attr('stroke', (d: SpaceHierarchyNode) => {
-            const accent = d.depth === 0 ? resolvedRootAccent : resolvedAccent;
+            const accent =
+              d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
+            return getOrbitStrokeStyle(accent).glow;
+          })
+          .attr('stroke-width', (d: SpaceHierarchyNode) =>
+            d.depth === 0 ? 7 : 5.5,
+          );
+        orbitGroups
+          .select('circle.orbit')
+          .attr('r', (d: SpaceHierarchyNode) =>
+            clampSvgLength(finiteOr(d.r, 0) * k),
+          )
+          .style('fill', 'none')
+          .attr('stroke', (d: SpaceHierarchyNode) => {
+            const accent =
+              d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
             return getOrbitStrokeStyle(accent).color;
           })
           .attr('stroke-width', (d: SpaceHierarchyNode) => {
             if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-            return getOrbitStrokeStyle(resolvedAccent).width;
-          })
-          .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
-      })();
-    });
-    return () => {
-      isCancelled = true;
-      svg.interrupt();
-      cancelIntroSequence();
-    };
-  }, [data, currentSpaceId, resolvedTheme, enableHoverActions, rootAccentHex]);
+            return getOrbitStrokeStyle(getNodeAccent(d)).width;
+          });
 
-  useEffect(() => {
-    return () => {
-      clearTooltipHideTimeout();
-      cancelIntroSequence();
-    };
-  }, []);
+        logos
+          .attr('transform', nodeTransform)
+          .each(function (d: SpaceHierarchyNode) {
+            const isFocus = focus && d.data.id === focus.data.id;
+            const r = clampSvgLength(
+              finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
+            );
+            const clipId = `clip-${d.data.id}`;
+            const diameter = clampSvgLength(r * 2);
+            const group = d3.select(this);
 
-  return (
-    <div ref={containerRef} className="relative w-full">
-      <svg
-        ref={svgRef}
-        className="h-auto w-full"
-        role="img"
-        aria-label="Space hierarchy visualization"
-      />
-      {enableHoverActions && tooltip.visible && (
-        <div
-          ref={tooltipRef}
-          onMouseEnter={clearTooltipHideTimeout}
-          onMouseLeave={scheduleTooltipHide}
-          className="absolute z-50 rounded-lg border border-border/70 bg-popover px-2 py-1.5 shadow-lg"
-          style={{
-            left: `${tooltip.x + 10}px`,
-            top: `${tooltip.y + 10}px`,
-            transform: 'translate(0, -50%)',
-          }}
-        >
-          <div className="rounded-md border border-border/60 bg-background-3/80 px-2.5 py-1 text-xs font-semibold text-foreground">
-            {tooltip.text}
+            // No ring around the focused logo — label underneath matches satellites.
+            group
+              .select('circle')
+              .attr('r', r)
+              .attr('fill', getDiagramFillColor())
+              .attr('stroke', 'none')
+              .attr('stroke-width', 0);
+
+            defs.select(`#${clipId} circle`).attr('r', r);
+
+            group
+              .select('image')
+              .attr('x', -r)
+              .attr('y', -r)
+              .attr('width', diameter)
+              .attr('height', diameter);
+
+            if (showLabels) {
+              const fontSize = isFocus
+                ? 15
+                : Math.max(10, Math.min(13, r * 0.42));
+              group
+                .select('text.space-label')
+                .attr('y', r + 6)
+                .attr('font-size', fontSize)
+                .attr('font-weight', isFocus ? 700 : 600)
+                .attr('opacity', isVisible(d) ? 1 : 0)
+                .text(truncateLabel(d.data.name, isFocus ? 28 : 16));
+            }
+          });
+      }
+
+      zoomApiRef.current = {
+        zoomIn: () => {
+          const current = focusRef.current as SpaceHierarchyNode | null;
+          const child = current?.children?.[0] as
+            | SpaceHierarchyNode
+            | undefined;
+          if (!child) return;
+          cancelIntroSequence();
+          zoom(child);
+        },
+        zoomOut: () => {
+          const current = focusRef.current as SpaceHierarchyNode | null;
+          if (!current?.parent) return;
+          cancelIntroSequence();
+          zoom(current.parent as SpaceHierarchyNode);
+        },
+        canZoomIn: () => {
+          const current = focusRef.current as SpaceHierarchyNode | null;
+          return Boolean(current?.children?.length);
+        },
+        canZoomOut: () => {
+          const current = focusRef.current as SpaceHierarchyNode | null;
+          return Boolean(current?.parent);
+        },
+      };
+
+      let isCancelled = false;
+      root.each((node) => {
+        void (async () => {
+          const cacheKey = (node.data.logoUrl ?? '').trim();
+          let accentPromise = accentSampleCacheRef.current.get(cacheKey);
+          if (!accentPromise) {
+            accentPromise = sampleAccentHex(node.data.logoUrl);
+            accentSampleCacheRef.current.set(cacheKey, accentPromise);
+          }
+          const sampledAccent = await accentPromise;
+          if (isCancelled) return;
+          const resolvedAccent =
+            sampledAccent ?? accentFromSpaceId(node.data.id);
+          nodeAccents.set(node.data.id, resolvedAccent);
+          const group = orbitGroups.filter((d) => d.data.id === node.data.id);
+          group
+            .select('circle.orbit-halo')
+            .style('fill', 'none')
+            .attr('stroke', (d: SpaceHierarchyNode) => {
+              const accent =
+                d.depth === 0 ? resolvedRootAccent : resolvedAccent;
+              return getOrbitStrokeStyle(accent).glow;
+            })
+            .attr('stroke-width', (d: SpaceHierarchyNode) =>
+              d.depth === 0 ? 7 : 5.5,
+            );
+          group
+            .select('circle.orbit')
+            .style('fill', 'none')
+            .attr('stroke', (d: SpaceHierarchyNode) => {
+              const accent =
+                d.depth === 0 ? resolvedRootAccent : resolvedAccent;
+              return getOrbitStrokeStyle(accent).color;
+            })
+            .attr('stroke-width', (d: SpaceHierarchyNode) => {
+              if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
+              return getOrbitStrokeStyle(resolvedAccent).width;
+            });
+        })();
+      });
+      return () => {
+        isCancelled = true;
+        svg.interrupt();
+        cancelIntroSequence();
+        zoomApiRef.current = null;
+      };
+    }, [
+      data,
+      currentSpaceId,
+      resolvedTheme,
+      enableHoverActions,
+      rootAccentHex,
+      showLabels,
+    ]);
+
+    useEffect(() => {
+      return () => {
+        clearTooltipHideTimeout();
+        cancelIntroSequence();
+      };
+    }, []);
+
+    return (
+      <div ref={containerRef} className="relative w-full">
+        <svg
+          ref={svgRef}
+          className="h-auto w-full"
+          role="img"
+          aria-label="Space hierarchy visualization"
+        />
+        {enableHoverActions && tooltip.visible && (
+          <div
+            ref={tooltipRef}
+            onMouseEnter={clearTooltipHideTimeout}
+            onMouseLeave={scheduleTooltipHide}
+            className="absolute z-50 rounded-lg border border-border/70 bg-popover px-2 py-1.5 shadow-lg"
+            style={{
+              left: `${tooltip.x + 10}px`,
+              top: `${tooltip.y + 10}px`,
+              transform: 'translate(0, -50%)',
+            }}
+          >
+            <div className="rounded-md border border-border/60 bg-background-3/80 px-2.5 py-1 text-xs font-semibold text-foreground">
+              {tooltip.text}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+        )}
+      </div>
+    );
+  },
+);
