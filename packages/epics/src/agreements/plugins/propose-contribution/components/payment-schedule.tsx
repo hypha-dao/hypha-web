@@ -1,7 +1,8 @@
 'use client';
 
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import { addDays, startOfDay } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -67,6 +68,7 @@ export function PaymentSchedule({
   const futureDateValidationMessage = translateValidationResult(
     futureDateValidationResult,
   );
+  const minFutureDate = useMemo(() => addDays(startOfDay(new Date()), 1), []);
 
   useEffect(() => {
     if (!selectedOption) {
@@ -141,9 +143,16 @@ export function PaymentSchedule({
             </Label>
             <DatePicker
               mode="single"
+              value={futureDate}
+              minDate={minFutureDate}
               placeholder={tAgreementFlow('plugins.paymentSchedule.selectDate')}
               className="w-fit"
-              onChange={(val) => setValue(`${name}.futureDate`, val as Date)}
+              onChange={(val) =>
+                setValue(`${name}.futureDate`, val as Date, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
             />
           </div>
           {futureDateValidationMessage !== true && (

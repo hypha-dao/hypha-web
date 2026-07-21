@@ -1,6 +1,8 @@
 'use client';
 
 import { useFormContext } from 'react-hook-form';
+import { useMemo } from 'react';
+import { addDays, startOfDay } from 'date-fns';
 import { Label, Input, DatePicker } from '@hypha-platform/ui';
 import { PercentIcon } from 'lucide-react';
 import { DateRange } from '../validation';
@@ -21,7 +23,9 @@ export const MilestoneField = ({
   const percentageFieldName = `${arrayFieldName}.${arrayFieldIndex}.percentage`;
   const dateRangeFieldName = `${arrayFieldName}.${arrayFieldIndex}.dateRange`;
 
-  const dateRangeValue = watch(dateRangeFieldName);
+  const dateRangeValue = watch(dateRangeFieldName) as DateRange | undefined;
+  const milestoneDate = dateRangeValue?.from;
+  const minFutureDate = useMemo(() => addDays(startOfDay(new Date()), 1), []);
 
   return (
     <div className="flex w-full justify-between items-center gap-2">
@@ -52,9 +56,20 @@ export const MilestoneField = ({
           type="number"
         />
         <DatePicker
-          mode="range"
-          value={dateRangeValue}
-          onChange={(val) => setValue(dateRangeFieldName, val as DateRange)}
+          mode="single"
+          value={milestoneDate}
+          minDate={minFutureDate}
+          placeholder={tAgreementFlow('plugins.paymentSchedule.selectDate')}
+          onChange={(val) =>
+            setValue(
+              dateRangeFieldName,
+              {
+                from: val as Date | undefined,
+                to: undefined,
+              },
+              { shouldDirty: true, shouldValidate: true },
+            )
+          }
           className="w-fit"
         />
       </div>

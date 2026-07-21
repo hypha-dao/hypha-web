@@ -32,16 +32,12 @@ function Calendar({
   const defaults = React.useMemo(() => getDefaultClassNames(), []);
 
   const disabled = React.useMemo(() => {
+    if (disabledProp !== undefined) {
+      return Array.isArray(disabledProp) ? disabledProp : [disabledProp];
+    }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const past = { before: today };
-    if (disabledProp === undefined) {
-      return past;
-    }
-    return [
-      past,
-      ...(Array.isArray(disabledProp) ? disabledProp : [disabledProp]),
-    ];
+    return { before: today };
   }, [disabledProp]);
 
   return (
@@ -92,7 +88,7 @@ function Calendar({
         ),
         [DayFlag.today]: cn(
           defaults[DayFlag.today],
-          'bg-accent text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground',
+          'font-semibold text-accent-9 data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground',
         ),
         [DayFlag.outside]: cn(
           defaults[DayFlag.outside],
