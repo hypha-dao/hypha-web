@@ -575,11 +575,12 @@
     "tabs": {
       "nestedSpaces": "Nested Spaces",
       "spaceToSpace": "Space-to-Space",
-      "valuesFlows": "Values Flows"
+      "valuesFlows": "Value Flows",
+      "memberConnections": "Member Connections"
     },
     "comingSoon": {
       "spaceToSpaceVisualization": "Space-to-Space visualization coming soon",
-      "valuesFlowsVisualization": "Values Flows visualization coming soon"
+      "valuesFlowsVisualization": "Value Flows visualization coming soon"
     },
     "visibleSpaces": {
       "nestedRoot": "Root",
@@ -592,6 +593,78 @@
       "visitSpace": "Visit Space",
       "searchSpaces": "Search spaces",
       "noSpacesFound": "No spaces found"
+    },
+    "navigation": {
+      "breadcrumb": "Space path",
+      "memberCount": "{count} members",
+      "individuals": "Individuals",
+      "memberSpaces": "Member spaces",
+      "noIndividuals": "No individual members yet",
+      "noMemberSpaces": "No member spaces yet",
+      "nestedHint": "Click a nested circle to zoom in · click the background to zoom out",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "focusLabel": "Viewing"
+    },
+    "memberConnections": {
+      "title": "Member mycelium",
+      "description": "People in this space, the discoverable spaces they belong to, and how those spaces connect outward across Hypha — the full collaboration mycelium.",
+      "hubMeta": "Active space",
+      "personMeta": "Space member",
+      "spaceMeta": "Discoverable space membership",
+      "stats": "{people} people · {spaces} spaces",
+      "empty": "No member connections to show yet",
+      "networkSpaceMeta": "Network space · hop {depth}",
+      "embeddedDescription": "Member connections for {space} — people and linked spaces beyond this ecosystem hierarchy.",
+      "legendPerson": "Member (circle)",
+      "legendSpace": "Space (square)"
+    },
+    "spaceToSpace": {
+      "title": "Space-to-space mycelium",
+      "description": "Full space-to-space membership map from this space outward. Discoverable spaces auto-expand so you can see the whole mycelium, not just the first hop.",
+      "hubMeta": "Active space",
+      "expandableMeta": "Part of the space membership network",
+      "privateMeta": "Member space",
+      "membership": "Membership",
+      "nestedMembership": "Nested membership",
+      "expanding": "Growing full mycelium…",
+      "stats": "{spaces} spaces · {links} links",
+      "empty": "No space-to-space memberships yet",
+      "networkMeta": "Network space · hop {depth}"
+    },
+    "valueFlows": {
+      "title": "Value flows",
+      "description": "Tokens distributed from this space to people and spaces — inside and outside the ecosystem.",
+      "hubMeta": "Distributing space",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "All tokens",
+      "stats": "{count} outgoing transfers",
+      "empty": "No outgoing value flows yet",
+      "details": "Flow details",
+      "amount": "Amount",
+      "recipient": "Recipient",
+      "date": "Date",
+      "memo": "Memo",
+      "tx": "Transaction",
+      "selectHint": "Select a recipient to see cumulative flows for the period.",
+      "period7d": "Last 7 days",
+      "period30d": "Last 30 days",
+      "period90d": "Last 90 days",
+      "period365d": "Last 365 days",
+      "periodAll": "All time",
+      "periodRange": "From {start}",
+      "statsCumulative": "{count} transfers · {recipients} recipients · {total} {symbol}",
+      "mixedTokens": "tokens",
+      "cumulativeAmount": "Cumulative amount",
+      "transferCount": "Transfers in period",
+      "dateRange": "Activity range",
+      "recentTransfers": "Recent transfers",
+      "legendPerson": "Member (circle)",
+      "legendSpace": "Space (square)",
+      "kindPerson": "Member",
+      "kindSpace": "Space",
+      "kindExternal": "External",
+      "statsCountOnly": "{count} transfers · {recipients} recipients"
     }
   },
   "AgreementsTab": {

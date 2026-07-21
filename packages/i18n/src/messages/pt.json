@@ -1342,11 +1342,12 @@
     "tabs": {
       "nestedSpaces": "Espaços aninhados",
       "spaceToSpace": "Espaço-a-Espaço",
-      "valuesFlows": "Fluxos de valores"
+      "valuesFlows": "Fluxos de valor",
+      "memberConnections": "Conexões de membros"
     },
     "comingSoon": {
       "spaceToSpaceVisualization": "Visualização espaço-a-espaço em breve",
-      "valuesFlowsVisualization": "Visualização de fluxos de valores em breve"
+      "valuesFlowsVisualization": "Visualização de fluxos de valor em breve"
     },
     "visibleSpaces": {
       "nestedRoot": "Raiz",
@@ -1359,6 +1360,78 @@
       "visitSpace": "Visite o Espaço",
       "searchSpaces": "Espaços de pesquisa",
       "noSpacesFound": "Nenhum espaço encontrado"
+    },
+    "navigation": {
+      "breadcrumb": "Caminho do espaço",
+      "memberCount": "{count} membros",
+      "individuals": "Pessoas",
+      "memberSpaces": "Espaços membros",
+      "noIndividuals": "Ainda sem pessoas",
+      "noMemberSpaces": "Ainda sem espaços membros",
+      "nestedHint": "Clique num círculo aninhado para ampliar · clique no fundo para reduzir",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar",
+      "focusLabel": "A ver"
+    },
+    "memberConnections": {
+      "title": "Micélio de membros",
+      "description": "Pessoas neste espaço, os espaços descobertos a que pertencem e como esses espaços se ligam para fora no Hypha — o micélio completo de colaboração.",
+      "hubMeta": "Espaço ativo",
+      "personMeta": "Membro do espaço",
+      "spaceMeta": "Associação a espaço descoberta",
+      "stats": "{people} pessoas · {spaces} espaços",
+      "empty": "Ainda sem conexões de membros",
+      "networkSpaceMeta": "Espaço da rede · salto {depth}",
+      "embeddedDescription": "Ligações de membros para {space} — pessoas e espaços ligados para além desta hierarquia do ecossistema.",
+      "legendPerson": "Membro (círculo)",
+      "legendSpace": "Espaço (quadrado)"
+    },
+    "spaceToSpace": {
+      "title": "Micélio espaço-a-espaço",
+      "description": "Mapa completo de adesões espaço-a-espaço a partir deste espaço para fora. Espaços descobertos expandem-se automaticamente para mostrar todo o micélio.",
+      "hubMeta": "Espaço ativo",
+      "expandableMeta": "Parte da rede de adesão entre espaços",
+      "privateMeta": "Espaço membro",
+      "membership": "Associação",
+      "nestedMembership": "Associação aninhada",
+      "expanding": "A crescer o micélio completo…",
+      "stats": "{spaces} espaços · {links} ligações",
+      "empty": "Ainda sem associações espaço-a-espaço",
+      "networkMeta": "Espaço da rede · salto {depth}"
+    },
+    "valueFlows": {
+      "title": "Fluxos de valor",
+      "description": "Tokens distribuídos por este espaço a pessoas e espaços — dentro e fora do ecossistema.",
+      "hubMeta": "Espaço distribuidor",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "Todos os tokens",
+      "stats": "{count} transferências de saída",
+      "empty": "Ainda sem fluxos de valor de saída",
+      "details": "Detalhes do fluxo",
+      "amount": "Montante",
+      "recipient": "Destinatário",
+      "date": "Data",
+      "memo": "Memo",
+      "tx": "Transação",
+      "selectHint": "Selecione um destinatário para ver os fluxos acumulados do período.",
+      "period7d": "Últimos 7 dias",
+      "period30d": "Últimos 30 dias",
+      "period90d": "Últimos 90 dias",
+      "period365d": "Últimos 365 dias",
+      "periodAll": "Todo o período",
+      "periodRange": "Desde {start}",
+      "statsCumulative": "{count} transferências · {recipients} destinatários · {total} {symbol}",
+      "mixedTokens": "tokens",
+      "cumulativeAmount": "Montante acumulado",
+      "transferCount": "Transferências no período",
+      "dateRange": "Intervalo de atividade",
+      "recentTransfers": "Transferências recentes",
+      "legendPerson": "Membro (círculo)",
+      "legendSpace": "Espaço (quadrado)",
+      "kindPerson": "Membro",
+      "kindSpace": "Espaço",
+      "kindExternal": "Externo",
+      "statsCountOnly": "{count} transferências · {recipients} destinatários"
     }
   },
   "AgreementsTab": {

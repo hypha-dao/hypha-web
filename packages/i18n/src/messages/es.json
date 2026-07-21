@@ -1342,11 +1342,12 @@
     "tabs": {
       "nestedSpaces": "Espacios anidados",
       "spaceToSpace": "Espacio-espacio",
-      "valuesFlows": "Flujos de valores"
+      "valuesFlows": "Flujos de valor",
+      "memberConnections": "Conexiones de miembros"
     },
     "comingSoon": {
       "spaceToSpaceVisualization": "Próximamente visualización espacio-espacio",
-      "valuesFlowsVisualization": "Próximamente visualización de flujos de valores"
+      "valuesFlowsVisualization": "Próximamente visualización de flujos de valor"
     },
     "visibleSpaces": {
       "nestedRoot": "Raíz",
@@ -1359,6 +1360,78 @@
       "visitSpace": "Visita el espacio",
       "searchSpaces": "Buscar espacios",
       "noSpacesFound": "No se encontraron espacios"
+    },
+    "navigation": {
+      "breadcrumb": "Ruta del espacio",
+      "memberCount": "{count} miembros",
+      "individuals": "Personas",
+      "memberSpaces": "Espacios miembros",
+      "noIndividuals": "Aún no hay personas",
+      "noMemberSpaces": "Aún no hay espacios miembros",
+      "nestedHint": "Haz clic en un círculo anidado para acercar · haz clic en el fondo para alejar",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "focusLabel": "Viendo"
+    },
+    "memberConnections": {
+      "title": "Micelio de miembros",
+      "description": "Personas de este espacio, los espacios descubribles a los que pertenecen y cómo esos espacios se conectan hacia afuera en Hypha — el micelio completo de colaboración.",
+      "hubMeta": "Espacio activo",
+      "personMeta": "Miembro del espacio",
+      "spaceMeta": "Membresía de espacio descubrible",
+      "stats": "{people} personas · {spaces} espacios",
+      "empty": "Aún no hay conexiones de miembros",
+      "networkSpaceMeta": "Espacio de red · salto {depth}",
+      "embeddedDescription": "Conexiones de miembros para {space} — personas y espacios vinculados más allá de esta jerarquía del ecosistema.",
+      "legendPerson": "Miembro (círculo)",
+      "legendSpace": "Espacio (cuadrado)"
+    },
+    "spaceToSpace": {
+      "title": "Micelio espacio-espacio",
+      "description": "Mapa completo de membresías espacio-a-espacio desde este espacio hacia afuera. Los espacios descubribles se expanden solos para mostrar todo el micelio.",
+      "hubMeta": "Espacio activo",
+      "expandableMeta": "Parte de la red de membresía entre espacios",
+      "privateMeta": "Espacio miembro",
+      "membership": "Membresía",
+      "nestedMembership": "Membresía anidada",
+      "expanding": "Creciendo el micelio completo…",
+      "stats": "{spaces} espacios · {links} enlaces",
+      "empty": "Aún no hay membresías espacio-espacio",
+      "networkMeta": "Espacio de red · salto {depth}"
+    },
+    "valueFlows": {
+      "title": "Flujos de valor",
+      "description": "Tokens distribuidos desde este espacio a personas y espacios — dentro y fuera del ecosistema.",
+      "hubMeta": "Espacio distribuidor",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "Todos los tokens",
+      "stats": "{count} transferencias salientes",
+      "empty": "Aún no hay flujos de valor salientes",
+      "details": "Detalles del flujo",
+      "amount": "Cantidad",
+      "recipient": "Destinatario",
+      "date": "Fecha",
+      "memo": "Memo",
+      "tx": "Transacción",
+      "selectHint": "Selecciona un destinatario para ver los flujos acumulados del periodo.",
+      "period7d": "Últimos 7 días",
+      "period30d": "Últimos 30 días",
+      "period90d": "Últimos 90 días",
+      "period365d": "Últimos 365 días",
+      "periodAll": "Todo el tiempo",
+      "periodRange": "Desde {start}",
+      "statsCumulative": "{count} transferencias · {recipients} destinatarios · {total} {symbol}",
+      "mixedTokens": "tokens",
+      "cumulativeAmount": "Importe acumulado",
+      "transferCount": "Transferencias en el periodo",
+      "dateRange": "Rango de actividad",
+      "recentTransfers": "Transferencias recientes",
+      "legendPerson": "Miembro (círculo)",
+      "legendSpace": "Espacio (cuadrado)",
+      "kindPerson": "Miembro",
+      "kindSpace": "Espacio",
+      "kindExternal": "Externo",
+      "statsCountOnly": "{count} transferencias · {recipients} destinatarios"
     }
   },
   "AgreementsTab": {

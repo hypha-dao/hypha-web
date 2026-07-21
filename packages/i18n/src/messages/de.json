@@ -576,7 +576,8 @@
     "tabs": {
       "nestedSpaces": "Verschachtelte Spaces",
       "spaceToSpace": "Space-zu-Space",
-      "valuesFlows": "Wertflüsse"
+      "valuesFlows": "Wertflüsse",
+      "memberConnections": "Mitgliederverbindungen"
     },
     "comingSoon": {
       "spaceToSpaceVisualization": "Space-zu-Space-Visualisierung bald verfügbar",
@@ -593,6 +594,78 @@
       "visitSpace": "Space besuchen",
       "searchSpaces": "Spaces durchsuchen",
       "noSpacesFound": "Keine Spaces gefunden"
+    },
+    "navigation": {
+      "breadcrumb": "Space-Pfad",
+      "memberCount": "{count} Mitglieder",
+      "individuals": "Personen",
+      "memberSpaces": "Mitglieds-Spaces",
+      "noIndividuals": "Noch keine Personen",
+      "noMemberSpaces": "Noch keine Mitglieds-Spaces",
+      "nestedHint": "Klicken Sie auf einen verschachtelten Kreis zum Reinzoomen · Klicken Sie auf den Hintergrund zum Rauszoomen",
+      "zoomIn": "Hereinzoomen",
+      "zoomOut": "Herauszoomen",
+      "focusLabel": "Ansicht"
+    },
+    "memberConnections": {
+      "title": "Mitglieder-Myzel",
+      "description": "Personen in diesem Space, die entdeckbaren Spaces, denen sie angehören, und wie diese Spaces weiter über Hypha verbunden sind — das volle Kollaborations-Myzel.",
+      "hubMeta": "Aktiver Space",
+      "personMeta": "Space-Mitglied",
+      "spaceMeta": "Entdeckbare Space-Mitgliedschaft",
+      "stats": "{people} Personen · {spaces} Spaces",
+      "empty": "Noch keine Mitgliederverbindungen",
+      "networkSpaceMeta": "Netzwerk-Space · Hop {depth}",
+      "embeddedDescription": "Mitgliederverbindungen für {space} — Personen und verknüpfte Spaces jenseits dieser Ökosystem-Hierarchie.",
+      "legendPerson": "Mitglied (Kreis)",
+      "legendSpace": "Space (Quadrat)"
+    },
+    "spaceToSpace": {
+      "title": "Space-zu-Space-Myzel",
+      "description": "Vollständige Space-zu-Space-Mitgliedschaftskarte von diesem Space nach außen. Entdeckbare Spaces erweitern sich automatisch, damit Sie das ganze Myzel sehen.",
+      "hubMeta": "Aktiver Space",
+      "expandableMeta": "Teil des Space-Mitgliedschaftsnetzwerks",
+      "privateMeta": "Mitglieds-Space",
+      "membership": "Mitgliedschaft",
+      "nestedMembership": "Verschachtelte Mitgliedschaft",
+      "expanding": "Volles Myzel wächst…",
+      "stats": "{spaces} Spaces · {links} Verbindungen",
+      "empty": "Noch keine Space-zu-Space-Mitgliedschaften",
+      "networkMeta": "Netzwerk-Space · Hop {depth}"
+    },
+    "valueFlows": {
+      "title": "Wertflüsse",
+      "description": "Token, die von diesem Space an Personen und Spaces verteilt werden — innerhalb und außerhalb des Ökosystems.",
+      "hubMeta": "Verteilender Space",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "Alle Token",
+      "stats": "{count} ausgehende Transfers",
+      "empty": "Noch keine ausgehenden Wertflüsse",
+      "details": "Flow-Details",
+      "amount": "Betrag",
+      "recipient": "Empfänger",
+      "date": "Datum",
+      "memo": "Memo",
+      "tx": "Transaktion",
+      "selectHint": "Wählen Sie einen Empfänger, um kumulative Flows für den Zeitraum zu sehen.",
+      "period7d": "Letzte 7 Tage",
+      "period30d": "Letzte 30 Tage",
+      "period90d": "Letzte 90 Tage",
+      "period365d": "Letzte 365 Tage",
+      "periodAll": "Gesamte Zeit",
+      "periodRange": "Ab {start}",
+      "statsCumulative": "{count} Transfers · {recipients} Empfänger · {total} {symbol}",
+      "mixedTokens": "Token",
+      "cumulativeAmount": "Kumulativer Betrag",
+      "transferCount": "Transfers im Zeitraum",
+      "dateRange": "Aktivitätszeitraum",
+      "recentTransfers": "Neueste Transfers",
+      "legendPerson": "Mitglied (Kreis)",
+      "legendSpace": "Space (Quadrat)",
+      "kindPerson": "Mitglied",
+      "kindSpace": "Space",
+      "kindExternal": "Extern",
+      "statsCountOnly": "{count} Transfers · {recipients} Empfänger"
     }
   },
   "AgreementsTab": {

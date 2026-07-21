@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import {
   Space,
   isSpaceArchived,
@@ -13,44 +12,25 @@ import {
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
 } from '@hypha-platform/epics';
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { SpaceVisualization } from './space-visualization';
-import { parseHex, sampleAccentHex } from './space-accent-utils';
+import { usePathname, useRouter } from 'next/navigation';
+import { sampleAccentHex } from './space-accent-utils';
 import type { VisibleSpace } from './types';
-import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
+import { NestedSpacesView } from './ecosystem/nested-spaces-view';
+import { MemberConnectionsView } from './ecosystem/member-connections-view';
+import { SpaceToSpaceView } from './ecosystem/space-to-space-view';
+import { ValueFlowsView } from './ecosystem/value-flows-view';
+import type { HierarchyNode } from './ecosystem/types';
 
 type EcosystemNavigationMainPanelProps = {
   daoSlug: string;
   lang: Locale;
 };
 
-type HierarchyNode = {
-  name: string;
-  logoUrl?: string | null;
-  id: number;
-  slug?: string;
-  value?: number;
-  children?: HierarchyNode[];
-};
-
 const SELECTED_SPACE_ACCENT_FALLBACK = '#14b8a6';
-
-function toRgba(hex: string, alpha: number): string {
-  const rgb = parseHex(hex);
-  if (!rgb) return `rgba(20,184,166,${alpha})`;
-  const [r, g, b] = rgb;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
@@ -91,6 +71,20 @@ function buildHierarchy(
   };
 }
 
+function buildBreadcrumb(selected: Space | null, allSpaces: Space[]): string[] {
+  if (!selected) return [];
+  const titles: string[] = [selected.title];
+  let current = selected;
+  const spaces = Array.isArray(allSpaces) ? allSpaces : [];
+  while (current.parentId) {
+    const parent = spaces.find((s) => s.id === current.parentId);
+    if (!parent) break;
+    titles.unshift(parent.title);
+    current = parent;
+  }
+  return titles;
+}
+
 export function EcosystemNavigationMainPanel({
   daoSlug,
   lang,
@@ -98,6 +92,7 @@ export function EcosystemNavigationMainPanel({
   const t = useTranslations('SelectNavigationAction');
   const format = useFormatter();
   const pathname = usePathname();
+  const router = useRouter();
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
@@ -230,6 +225,24 @@ export function EcosystemNavigationMainPanel({
       : [...nonArchivedSpaces, currentSpace];
     return findRootSpace(currentSpace, spacesWithCurrent);
   }, [currentSpace, nonArchivedSpaces]);
+
+  const breadcrumbTitles = useMemo(
+    () => buildBreadcrumb(selectedSpaceRecord, nonArchivedSpaces),
+    [selectedSpaceRecord, nonArchivedSpaces],
+  );
+
+  const handleVisitSpaceSlug = useCallback(
+    (slug: string) => {
+      const href = getDhoSpaceContextPath({
+        pathname,
+        lang,
+        spaceSlug: slug,
+      });
+      router.push(href);
+    },
+    [pathname, lang, router],
+  );
+
   useEffect(() => {
     let cancelled = false;
     setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
@@ -265,122 +278,94 @@ export function EcosystemNavigationMainPanel({
     };
   }, [rootSpaceRecord?.logoUrl, rootSpaceRecord?.leadImage]);
 
-  const iconOutlineStyle = useMemo(
-    () => ({
-      borderColor: toRgba(selectedSpaceAccent, 0.7),
-      color: resolvedTheme === 'dark' ? '#f8fafc' : selectedSpaceAccent,
-      backgroundColor: toRgba(selectedSpaceAccent, 0.12),
-    }),
-    [selectedSpaceAccent, resolvedTheme],
-  );
-
   const tabs = useMemo(
     () => [
       {
         value: 'nested-spaces',
         label: t('tabs.nestedSpaces'),
-        content: (
-          <div className="flex min-h-0 flex-col gap-4">
-            <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
-              {hierarchyData ? (
-                <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))] p-4 sm:p-6">
-                  {canVisitSpace && visitSpaceHref ? (
-                    <div className="pointer-events-none mb-[6px] flex justify-center">
-                      <div className="pointer-events-auto inline-flex w-fit max-w-[min(96vw,46rem)] items-center gap-1 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 dark:border-border/85 sm:gap-1.5 sm:px-2.5">
-                        <span
-                          className="block max-w-[min(62vw,30rem)] truncate pe-1 text-4 font-semibold tracking-tight text-foreground sm:max-w-[min(56vw,36rem)] sm:pe-1.5"
-                          title={selectedSpaceTitle}
-                        >
-                          {selectedSpaceTitle}
-                        </span>
-                        <Tooltip delayDuration={80}>
-                          <TooltipTrigger asChild>
-                            <Button
-                              asChild
-                              variant="outline"
-                              colorVariant="neutral"
-                              className="h-7 w-7 p-0"
-                              style={iconOutlineStyle}
-                              aria-label={t('visibleSpaces.visitSpace')}
-                            >
-                              <Link href={visitSpaceHref}>
-                                <ArrowTopRightIcon />
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t('visibleSpaces.visitSpace')}
-                          </TooltipContent>
-                        </Tooltip>
-                        {canAddSpace && addSpaceHref ? (
-                          <Tooltip delayDuration={80}>
-                            <TooltipTrigger asChild>
-                              <Button
-                                asChild
-                                variant="outline"
-                                colorVariant="neutral"
-                                className="h-7 w-7 p-0"
-                                style={iconOutlineStyle}
-                                aria-label={t('visibleSpaces.addSpace')}
-                              >
-                                <Link href={addSpaceHref}>
-                                  <PlusIcon />
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t('visibleSpaces.addSpace')}
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
-                  <SpaceVisualization
-                    data={hierarchyData}
-                    currentSpaceId={currentSpace?.id}
-                    rootAccentHex={rootSpaceAccent}
-                    enableHoverActions={false}
-                    onVisibleSpacesChange={handleVisibleSpacesChange}
-                  />
-                </div>
-              ) : (
-                <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
-                  {t('comingSoon.spaceToSpaceVisualization')}
-                </div>
-              )}
-            </div>
+        content: hierarchyData ? (
+          <NestedSpacesView
+            hierarchyData={hierarchyData}
+            currentSpaceId={currentSpace?.id}
+            rootAccentHex={rootSpaceAccent}
+            selectedSpaceTitle={selectedSpaceTitle}
+            selectedSpaceSlug={selectedSpaceSlug}
+            selectedSpaceRecord={selectedSpaceRecord}
+            selectedAccent={selectedSpaceAccent}
+            breadcrumbTitles={breadcrumbTitles}
+            visitHref={visitSpaceHref}
+            addHref={addSpaceHref}
+            canVisit={canVisitSpace}
+            canAdd={canAddSpace}
+            organisationSpaces={nonArchivedSpaces}
+            onVisitSpace={handleVisitSpaceSlug}
+            onVisibleSpacesChange={handleVisibleSpacesChange}
+          />
+        ) : (
+          <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
+            {t('visibleSpaces.spaceInfoNotAvailable')}
           </div>
+        ),
+      },
+      {
+        value: 'member-connections',
+        label: t('tabs.memberConnections'),
+        content: (
+          <MemberConnectionsView
+            spaceSlug={daoSlug}
+            spaceTitle={currentSpaceTitle || t('ecosystem')}
+            spaceLogoUrl={currentSpace?.logoUrl}
+            organisationSpaces={nonArchivedSpaces}
+            accentHex={selectedSpaceAccent}
+            onVisitSpace={handleVisitSpaceSlug}
+          />
         ),
       },
       {
         value: 'space-to-space',
         label: t('tabs.spaceToSpace'),
         content: (
-          <div className="flex min-h-[16rem] items-center justify-center rounded-lg border border-dashed border-border/70 bg-background-3/70 text-sm text-muted-foreground">
-            {t('comingSoon.spaceToSpaceVisualization')}
-          </div>
+          <SpaceToSpaceView
+            spaceSlug={daoSlug}
+            spaceTitle={currentSpaceTitle || t('ecosystem')}
+            spaceLogoUrl={currentSpace?.logoUrl}
+            organisationSpaces={nonArchivedSpaces}
+            accentHex={selectedSpaceAccent}
+            onVisitSpace={handleVisitSpaceSlug}
+          />
         ),
       },
       {
         value: 'values-flows',
         label: t('tabs.valuesFlows'),
         content: (
-          <div className="flex min-h-[16rem] items-center justify-center rounded-lg border border-dashed border-border/70 bg-background-3/70 text-sm text-muted-foreground">
-            {t('comingSoon.valuesFlowsVisualization')}
-          </div>
+          <ValueFlowsView
+            spaceSlug={daoSlug}
+            spaceTitle={currentSpaceTitle || t('ecosystem')}
+            spaceLogoUrl={currentSpace?.logoUrl}
+            accentHex={selectedSpaceAccent}
+          />
         ),
       },
     ],
     [
       addSpaceHref,
+      breadcrumbTitles,
       canAddSpace,
       canVisitSpace,
       currentSpace?.id,
+      currentSpace?.logoUrl,
+      currentSpaceTitle,
+      daoSlug,
+      handleVisitSpaceSlug,
       handleVisibleSpacesChange,
       hierarchyData,
+      nonArchivedSpaces,
+      rootSpaceAccent,
+      selectedSpaceAccent,
+      selectedSpaceRecord,
+      selectedSpaceSlug,
       selectedSpaceTitle,
-      iconOutlineStyle,
       t,
       visitSpaceHref,
     ],
