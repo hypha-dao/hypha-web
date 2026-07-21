@@ -55,6 +55,8 @@ export const spaces = pgTable(
       .$type<Record<string, unknown>>()
       .notNull()
       .default({}),
+    /** When true, Deal Pipeline tab and APIs are available for this space. */
+    pipelineEnabled: boolean('pipeline_enabled').notNull().default(false),
     ...commonDateFields,
   },
   (table) => [

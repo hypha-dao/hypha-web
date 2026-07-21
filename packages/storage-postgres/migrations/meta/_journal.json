@@ -484,6 +484,13 @@
       "when": 1783000000001,
       "tag": "0068_energy_communities_authenticated_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1784000000000,
+      "tag": "0069_deal_pipeline",
+      "breakpoints": true
     }
   ]
 }

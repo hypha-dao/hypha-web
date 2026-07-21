@@ -18,6 +18,7 @@ import {
   RequirementMark,
   Card,
   Separator,
+  Switch,
   COMBOBOX_TITLE,
   COMBOBOX_DELIMITER,
 } from '@hypha-platform/ui';
@@ -114,6 +115,7 @@ const DEFAULT_VALUES = {
   parentSpaceSlug: '',
   address: '',
   flags: ['sandbox'] as SpaceFlags[],
+  pipelineEnabled: false,
   latitude: null,
   longitude: null,
   locationLabel: null,
@@ -1027,6 +1029,35 @@ export const SpaceForm = ({
               </Card>
             )}
           </div>
+          {label === 'configure' ? (
+            <FormField
+              control={form.control}
+              name="pipelineEnabled"
+              render={({ field }) => (
+                <FormItem>
+                  <Card className="flex items-center justify-between gap-4 p-6">
+                    <div className="flex flex-col gap-1">
+                      <FormLabel className="text-2 font-medium">
+                        {tSpaces('pipelineEnabled')}
+                      </FormLabel>
+                      <span className="text-1 text-neutral-11">
+                        {tSpaces('pipelineEnabledDescription')}
+                      </span>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={Boolean(field.value)}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                        aria-label={tSpaces('pipelineEnabled')}
+                      />
+                    </FormControl>
+                  </Card>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
           {label !== 'configure' ? (
             <div className="flex justify-end w-full">
               <Button

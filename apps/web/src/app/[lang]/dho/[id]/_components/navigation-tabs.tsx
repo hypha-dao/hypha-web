@@ -12,12 +12,14 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 import { getDhoPathEnergy } from '../@tab/energy/constants';
 import { getDhoPathOverview } from '../@tab/overview/constants';
+import { getDhoPathPipeline } from '../@tab/pipeline/constants';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   getActiveTabFromPath,
   useMainColumnScrollY,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 import { getDhoPathCalendar } from '../@tab/calendar/constants';
 
@@ -56,6 +58,7 @@ export function NavigationTabs({
     [pathname],
   );
   const { data: spaceEnergy } = useSpaceEnergy();
+  const { space } = useSpaceBySlug(id);
 
   const mainScrollY = useMainColumnScrollY();
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
@@ -102,6 +105,15 @@ export function NavigationTabs({
       name: 'calendar',
       href: getDhoPathCalendar(lang as Locale, id as string),
     },
+    ...(space?.pipelineEnabled
+      ? [
+          {
+            title: t('Pipeline'),
+            name: 'pipeline',
+            href: getDhoPathPipeline(lang as Locale, id as string),
+          },
+        ]
+      : []),
     {
       title: t('Agreements'),
       name: 'agreements',

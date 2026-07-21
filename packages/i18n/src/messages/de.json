@@ -60,7 +60,8 @@
       "genericUploadFallback": "<accent>Hochladen</accent> eines Bildes",
       "fileTooLarge": "Ihr Bild ist zu groß (max. 16 MB) und konnte nicht hochgeladen werden. Bitte verkleinern Sie es und versuchen Sie es erneut.",
       "uploadFailed": "Die Datei konnte nicht hochgeladen werden."
-    }
+    },
+    "Pipeline": "Pipeline"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -1713,7 +1714,9 @@
     "escrowConfirmExchange": "Tausch bestätigen",
     "escrowDepositDepositing": "Einzahlung läuft...",
     "escrowDepositApproving": "Genehmigung läuft...",
-    "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag."
+    "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag.",
+    "pipelineEnabled": "Deal-Pipeline",
+    "pipelineEnabledDescription": "Aktivieren Sie eine Kanban-Deal-Pipeline für diesen Space. Standardmäßig aus."
   },
   "AgreementFlow": {
     "labels": {
@@ -4118,6 +4121,86 @@
       "allowanceTimeout": "Zeitüberschreitung beim Warten auf Stablecoin-Freigabe.",
       "usdcNotConfigured": "USDC-Zahlungstoken ist für diese App nicht konfiguriert.",
       "deviceIdsCommaNumbers": "Geräte-IDs müssen kommagetrennte Zahlen sein"
+    }
+  },
+  "Pipeline": {
+    "title": "Deal-Pipeline",
+    "dealDetails": "Deal-Details",
+    "loading": "Deals werden geladen…",
+    "notFound": "Deal nicht gefunden",
+    "saving": "Speichern…",
+    "saved": "Gespeichert",
+    "cancel": "Abbrechen",
+    "delete": "Deal löschen",
+    "exportXlsx": "XLSX exportieren",
+    "openTrack": "Track öffnen",
+    "backToBoard": "Zurück zum Board",
+    "trackTitle": "{swimlane}-Track",
+    "summary": {
+      "deals": "Deals",
+      "active": "Active",
+      "pipelineValue": "Pipeline value",
+      "weightedValue": "Weighted value"
+    },
+    "filters": {
+      "search": "Search deals",
+      "swimlane": "Swimlane",
+      "region": "Region",
+      "priority": "Priority",
+      "status": "Status",
+      "deadline": "Deadline",
+      "tag": "Tag",
+      "all": "All",
+      "hasDeadline": "Has deadline",
+      "noDeadline": "No deadline"
+    },
+    "savedViews": {
+      "save": "Save view",
+      "saveTitle": "Save current filters",
+      "namePlaceholder": "View name",
+      "delete": "Delete view"
+    },
+    "newDeal": {
+      "title": "Neuer Deal",
+      "titlePlaceholder": "Deal-Titel",
+      "countryPlaceholder": "Country (ISO)",
+      "valuePlaceholder": "Value",
+      "create": "Deal erstellen"
+    },
+    "fields": {
+      "swimlane": "Swimlane",
+      "status": "Pipeline status",
+      "country": "Country",
+      "noCountry": "No country",
+      "region": "Region",
+      "value": "Value",
+      "currency": "Currency",
+      "priority": "Priority",
+      "dealStatus": "Deal status",
+      "nextAction": "Next action",
+      "nextActionDate": "Next action date",
+      "notes": "Notes",
+      "tags": "Tags",
+      "tagsPlaceholder": "comma, separated, tags",
+      "submissionDeadline": "Submission deadline",
+      "fundingRateSme": "Funding rate (SME %)",
+      "maxProjectSize": "Max project size",
+      "callReference": "Call reference",
+      "programme": "Programme",
+      "expectedPartners": "Expected partners",
+      "eligibilityNotes": "Eligibility notes"
+    },
+    "grantTender": {
+      "title": "Grant / Tender details"
+    },
+    "contacts": {
+      "title": "Contacts",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "role": "Role",
+      "primary": "Primary contact",
+      "add": "Add contact"
     }
   }
 }

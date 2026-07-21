@@ -60,7 +60,8 @@
       "fileTooLarge": "Вашата слика е преголема (макс. 16 MB) и не можеше да се прикачи. Намалете ја и обидете се повторно.",
       "uploadFailed": "Датотеката не можеше да се прикачи."
     },
-    "Energy": "Енергија"
+    "Energy": "Енергија",
+    "Pipeline": "Пајплајн"
   },
   "ModalAside": {
     "spaceSettings": "Поставки на просторот",
@@ -1692,7 +1693,9 @@
     "escrowConfirmExchange": "Потврди размена",
     "escrowDepositDepositing": "Се депонира...",
     "escrowDepositApproving": "Се одобрува...",
-    "escrowDepositInsufficientWallet": "Салдото на твојот паричник е под потребниот износ."
+    "escrowDepositInsufficientWallet": "Салдото на твојот паричник е под потребниот износ.",
+    "pipelineEnabled": "Deal Pipeline",
+    "pipelineEnabledDescription": "Овозможете Kanban deal pipeline за овој простор. Исклучено по подразбирање."
   },
   "AgreementFlow": {
     "labels": {
@@ -4105,6 +4108,86 @@
       "allowanceTimeout": "Истече времето за чекање на одобрување за stablecoin.",
       "usdcNotConfigured": "USDC токенот за плаќање не е конфигуриран за оваа апликација.",
       "deviceIdsCommaNumbers": "ID на уредите мора да бидат броеви одделени со запирка"
+    }
+  },
+  "Pipeline": {
+    "title": "Deal Pipeline",
+    "dealDetails": "Детали за deal",
+    "loading": "Се вчитуваат deals…",
+    "notFound": "Deal не е пронајден",
+    "saving": "Се зачувува…",
+    "saved": "Зачувано",
+    "cancel": "Откажи",
+    "delete": "Избриши deal",
+    "exportXlsx": "Извези XLSX",
+    "openTrack": "Отвори трака",
+    "backToBoard": "Назад кон табла",
+    "trackTitle": "{swimlane} трака",
+    "summary": {
+      "deals": "Deals",
+      "active": "Active",
+      "pipelineValue": "Pipeline value",
+      "weightedValue": "Weighted value"
+    },
+    "filters": {
+      "search": "Search deals",
+      "swimlane": "Swimlane",
+      "region": "Region",
+      "priority": "Priority",
+      "status": "Status",
+      "deadline": "Deadline",
+      "tag": "Tag",
+      "all": "All",
+      "hasDeadline": "Has deadline",
+      "noDeadline": "No deadline"
+    },
+    "savedViews": {
+      "save": "Save view",
+      "saveTitle": "Save current filters",
+      "namePlaceholder": "View name",
+      "delete": "Delete view"
+    },
+    "newDeal": {
+      "title": "Нов deal",
+      "titlePlaceholder": "Наслов",
+      "countryPlaceholder": "Country (ISO)",
+      "valuePlaceholder": "Value",
+      "create": "Создај deal"
+    },
+    "fields": {
+      "swimlane": "Swimlane",
+      "status": "Pipeline status",
+      "country": "Country",
+      "noCountry": "No country",
+      "region": "Region",
+      "value": "Value",
+      "currency": "Currency",
+      "priority": "Priority",
+      "dealStatus": "Deal status",
+      "nextAction": "Next action",
+      "nextActionDate": "Next action date",
+      "notes": "Notes",
+      "tags": "Tags",
+      "tagsPlaceholder": "comma, separated, tags",
+      "submissionDeadline": "Submission deadline",
+      "fundingRateSme": "Funding rate (SME %)",
+      "maxProjectSize": "Max project size",
+      "callReference": "Call reference",
+      "programme": "Programme",
+      "expectedPartners": "Expected partners",
+      "eligibilityNotes": "Eligibility notes"
+    },
+    "grantTender": {
+      "title": "Grant / Tender details"
+    },
+    "contacts": {
+      "title": "Contacts",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "role": "Role",
+      "primary": "Primary contact",
+      "add": "Add contact"
     }
   }
 }
