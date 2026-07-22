@@ -5,6 +5,7 @@ import {
   defaultProbabilityMatrix,
   PIPELINE_STATUSES,
   PIPELINE_SWIMLANES,
+  TERMINAL_STAGE_PROBABILITIES,
   usePipelineConfig,
   type PipelineStatus,
   type PipelineSwimlane,
@@ -17,8 +18,6 @@ type PipelineProbabilitySettingsProps = {
   spaceSlug: string;
 };
 
-const TERMINAL: Record<string, number> = { Won: 100, Lost: 0 };
-
 function cloneMatrix(matrix: ProbabilityMatrix): ProbabilityMatrix {
   const clone = {} as ProbabilityMatrix;
   for (const swimlane of PIPELINE_SWIMLANES) {
@@ -29,7 +28,9 @@ function cloneMatrix(matrix: ProbabilityMatrix): ProbabilityMatrix {
 
 /** Lanes whose non-terminal stages are not monotonically increasing. */
 function nonMonotonicLanes(matrix: ProbabilityMatrix): PipelineSwimlane[] {
-  const stages = PIPELINE_STATUSES.filter((s) => !(s in TERMINAL));
+  const stages = PIPELINE_STATUSES.filter(
+    (s) => TERMINAL_STAGE_PROBABILITIES[s] === undefined,
+  );
   return PIPELINE_SWIMLANES.filter((swimlane) => {
     for (let i = 1; i < stages.length; i += 1) {
       if (matrix[swimlane][stages[i]!] < matrix[swimlane][stages[i - 1]!]) {
@@ -52,9 +53,15 @@ export function PipelineProbabilitySettings({
   const [error, setError] = React.useState<string | null>(null);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
 
+  // Sync the draft from the server config on initial load only. SWR
+  // revalidates on focus; syncing on every `probabilities` change would
+  // silently wipe unsaved edits (same pattern as the new-deal dialog reset).
+  const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
+    if (hasLoadedRef.current || isLoading) return;
+    hasLoadedRef.current = true;
     setDraft(cloneMatrix(probabilities));
-  }, [probabilities]);
+  }, [probabilities, isLoading]);
 
   const setCell = (
     swimlane: PipelineSwimlane,
@@ -134,7 +141,8 @@ export function PipelineProbabilitySettings({
                   {swimlane}
                 </td>
                 {PIPELINE_STATUSES.map((status) => {
-                  const terminal = status in TERMINAL;
+                  const terminalValue = TERMINAL_STAGE_PROBABILITIES[status];
+                  const terminal = terminalValue !== undefined;
                   return (
                     <td key={status} className="px-2 py-1.5">
                       <Input
@@ -144,7 +152,7 @@ export function PipelineProbabilitySettings({
                         step={5}
                         className="w-16"
                         value={
-                          terminal ? TERMINAL[status]! : draft[swimlane][status]
+                          terminal ? terminalValue : draft[swimlane][status]
                         }
                         disabled={terminal}
                         title={

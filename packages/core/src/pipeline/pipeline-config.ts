@@ -3,6 +3,7 @@ import {
   PIPELINE_PROBABILITY,
   PIPELINE_STATUSES,
   PIPELINE_SWIMLANES,
+  TERMINAL_STAGE_PROBABILITIES,
   type PipelineStatus,
   type PipelineSwimlane,
 } from './constants';
@@ -72,12 +73,9 @@ export function normalizeProbabilityMatrix(raw: unknown): ProbabilityMatrix {
         : {};
     const lane = {} as Record<PipelineStatus, number>;
     for (const status of PIPELINE_STATUSES) {
-      if (status === 'Won') {
-        lane[status] = 100;
-        continue;
-      }
-      if (status === 'Lost') {
-        lane[status] = 0;
+      const terminal = TERMINAL_STAGE_PROBABILITIES[status];
+      if (terminal !== undefined) {
+        lane[status] = terminal;
         continue;
       }
       lane[status] =

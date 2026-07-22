@@ -62,6 +62,14 @@ export const REGIONS = DEFAULT_PIPELINE_REGIONS;
 /** Space-configurable territory / owning-team label. */
 export type Region = string;
 
+/**
+ * Terminal stages have absolute probabilities regardless of configuration:
+ * a Won deal is certain, a Lost deal is not happening.
+ */
+export const TERMINAL_STAGE_PROBABILITIES: Readonly<
+  Partial<Record<PipelineStatus, number>>
+> = { Won: 100, Lost: 0 };
+
 export const PIPELINE_PROBABILITY: Record<
   PipelineSwimlane,
   Record<PipelineStatus, number>

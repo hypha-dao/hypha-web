@@ -121,8 +121,25 @@ export async function updateDealById(
     updates.pipelineSwimlane !== undefined
   ) {
     // Moving to another stage re-seeds the deal from the stage default:
-    // clear the per-deal override unless one is explicitly provided.
-    patch.successRate = null;
+    // clear the per-deal override unless one is explicitly provided. Only do
+    // so on an actual stage change — re-submitting the current stage must not
+    // discard the override.
+    const [existing] = await db
+      .select({
+        pipelineStatus: deals.pipelineStatus,
+        pipelineSwimlane: deals.pipelineSwimlane,
+      })
+      .from(deals)
+      .where(and(eq(deals.id, id), eq(deals.spaceId, spaceId)));
+    const stageChanged =
+      existing != null &&
+      ((updates.pipelineStatus !== undefined &&
+        updates.pipelineStatus !== existing.pipelineStatus) ||
+        (updates.pipelineSwimlane !== undefined &&
+          updates.pipelineSwimlane !== existing.pipelineSwimlane));
+    if (stageChanged) {
+      patch.successRate = null;
+    }
   }
   if (updates.nextAction !== undefined) patch.nextAction = updates.nextAction;
   if (updates.nextActionDate !== undefined) {

@@ -38,12 +38,29 @@ export function KanbanColumn({
   const format = useFormatter();
   const [isOver, setIsOver] = React.useState(false);
 
-  const totalValue = deals.reduce((sum, d) => sum + d.value, 0);
-  const weightedValue = deals.reduce(
-    (sum, d) => sum + (d.value * effectiveSuccessRate(d, probabilities)) / 100,
-    0,
-  );
-  const currency = deals[0]?.currency ?? '€';
+  // Deals can carry different currencies; never sum across currencies
+  // (same grouping pattern as pipeline-summary.tsx).
+  const byCurrency = new Map<string, { total: number; weighted: number }>();
+  for (const d of deals) {
+    const currency = d.currency || '€';
+    const totals = byCurrency.get(currency) ?? { total: 0, weighted: 0 };
+    totals.total += d.value;
+    totals.weighted += (d.value * effectiveSuccessRate(d, probabilities)) / 100;
+    byCurrency.set(currency, totals);
+  }
+  const formatTotals = (
+    pick: (totals: { total: number; weighted: number }) => number,
+  ): string => {
+    if (byCurrency.size === 0) return '€0';
+    return [...byCurrency.entries()]
+      .map(
+        ([currency, totals]) =>
+          `${currency}${format.number(pick(totals), {
+            maximumFractionDigits: 0,
+          })}`,
+      )
+      .join(' + ');
+  };
 
   return (
     <div
@@ -74,10 +91,8 @@ export function KanbanColumn({
       <div className="border-b border-neutral-5 px-3 py-2">
         <div className="text-2 font-medium text-neutral-12">{status}</div>
         <div className="mt-0.5 text-1 text-neutral-11">
-          {deals.length} · {currency}
-          {format.number(totalValue, { maximumFractionDigits: 0 })} · w{' '}
-          {currency}
-          {format.number(weightedValue, { maximumFractionDigits: 0 })}
+          {deals.length} · {formatTotals((totals) => totals.total)} · w{' '}
+          {formatTotals((totals) => totals.weighted)}
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">

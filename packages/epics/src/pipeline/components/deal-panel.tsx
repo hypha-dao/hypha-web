@@ -76,8 +76,16 @@ function useDebouncedSave(
   React.useEffect(
     () => () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      // Flush edits still waiting on the debounce timer so closing the panel
+      // within the window does not silently drop them. No state updates here —
+      // the component is unmounting.
+      const pending = pendingRef.current;
+      pendingRef.current = {};
+      if (Object.keys(pending).length > 0) {
+        void patchDeal(dealId, pending).catch(() => undefined);
+      }
     },
-    [],
+    [dealId, patchDeal],
   );
 
   return { schedule, saving, savedAt };
