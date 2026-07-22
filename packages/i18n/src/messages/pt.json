@@ -4206,7 +4206,8 @@
       "valueLabel": "Valor",
       "priorityLabel": "Prioridade",
       "validationRequired": "Título, faixa, região, estado de execução e nome do contacto são obrigatórios.",
-      "createFailed": "Não foi possível criar o cartão. Tente novamente."
+      "createFailed": "Não foi possível criar o cartão. Tente novamente.",
+      "noMembers": "Nenhum membro encontrado."
     },
     "fields": {
       "swimlane": "Swimlane",

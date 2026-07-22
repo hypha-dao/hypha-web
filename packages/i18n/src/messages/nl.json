@@ -4216,7 +4216,8 @@
       "valueLabel": "Waarde",
       "priorityLabel": "Prioriteit",
       "validationRequired": "Titel, swimlane, regio, uitvoeringsstatus en voornaam van het contact zijn verplicht.",
-      "createFailed": "Kaart kon niet worden aangemaakt. Probeer opnieuw."
+      "createFailed": "Kaart kon niet worden aangemaakt. Probeer opnieuw.",
+      "noMembers": "Geen leden gevonden."
     },
     "fields": {
       "swimlane": "Swimlane",

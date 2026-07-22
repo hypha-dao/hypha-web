@@ -27,7 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -35,10 +34,8 @@ import {
   SelectValue,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
-import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import type { UseMembers } from '../../spaces';
-
-const UNASSIGNED = '__unassigned__';
+import { SpaceMemberSelect } from './space-member-select';
 
 type NewDealDialogProps = {
   spaceSlug: string;
@@ -63,13 +60,13 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-1 text-neutral-11">
+    <div className="flex flex-col gap-1 text-1 text-neutral-11">
       <span>
         {label}
         {required ? <span className="text-red-11"> *</span> : null}
       </span>
       {children}
-    </label>
+    </div>
   );
 }
 
@@ -99,8 +96,9 @@ export function NewDealDialog({
   });
 
   const [title, setTitle] = React.useState('');
-  const [accountManagerId, setAccountManagerId] =
-    React.useState<string>(UNASSIGNED);
+  const [accountManagerId, setAccountManagerId] = React.useState<string | null>(
+    null,
+  );
   const [teamMemberIds, setTeamMemberIds] = React.useState<string[]>([]);
   const [swimlane, setSwimlane] = React.useState<PipelineSwimlane | ''>(
     defaultSwimlane,
@@ -125,47 +123,9 @@ export function NewDealDialog({
 
   const members = persons?.data ?? [];
 
-  const memberOptions = React.useMemo(
-    () =>
-      members.map((person) => {
-        const label = personRosterDisplayLabel(
-          person,
-          t('newDeal.unknownMember'),
-        );
-        return {
-          value: String(person.id),
-          label,
-          searchText: [label, person.nickname, person.email]
-            .filter(Boolean)
-            .join(' '),
-        };
-      }),
-    [members, t],
-  );
-
-  const accountManagerOptions = React.useMemo(
-    () => [
-      {
-        value: UNASSIGNED,
-        label: t('newDeal.accountManagerUnassigned'),
-      },
-      ...memberOptions,
-    ],
-    [memberOptions, t],
-  );
-
-  const teammateOptions = React.useMemo(
-    () =>
-      memberOptions.map(({ value, label }) => ({
-        value,
-        label,
-      })),
-    [memberOptions],
-  );
-
   const resetForm = React.useCallback(() => {
     setTitle('');
-    setAccountManagerId(UNASSIGNED);
+    setAccountManagerId(null);
     setTeamMemberIds([]);
     setSwimlane(defaultSwimlane);
     setStatus('Identified');
@@ -237,10 +197,9 @@ export function NewDealDialog({
     const deadlineDate = new Date(today);
     deadlineDate.setMonth(deadlineDate.getMonth() + 1);
 
-    const parsedAccountManagerId =
-      accountManagerId && accountManagerId !== UNASSIGNED
-        ? Number(accountManagerId)
-        : null;
+    const parsedAccountManagerId = accountManagerId
+      ? Number(accountManagerId)
+      : null;
     const parsedTeamMemberIds = teamMemberIds
       .map((id) => Number(id))
       .filter((id) => Number.isFinite(id) && id > 0);
@@ -310,33 +269,39 @@ export function NewDealDialog({
           </Field>
 
           <Field label={t('newDeal.accountManagerLabel')}>
-            <Combobox
-              options={accountManagerOptions}
-              initialValue={accountManagerId}
+            <SpaceMemberSelect
+              members={members}
+              value={accountManagerId}
+              onChange={setAccountManagerId}
+              allowUnassigned
+              unassignedLabel={t('newDeal.accountManagerUnassigned')}
               placeholder={
                 isLoadingMembers
                   ? t('newDeal.loadingMembers')
                   : t('newDeal.accountManagerUnassigned')
               }
               searchPlaceholder={t('newDeal.memberSearch')}
-              popoverModal={false}
-              onChange={(value) => setAccountManagerId(value || UNASSIGNED)}
+              emptyListMessage={t('newDeal.noMembers')}
+              unknownLabel={t('newDeal.unknownMember')}
+              disabled={isLoadingMembers}
             />
           </Field>
 
           <Field label={t('newDeal.teammatesLabel')}>
-            <MultiSelect
-              options={teammateOptions}
+            <SpaceMemberSelect
+              mode="multi"
+              members={members}
               value={teamMemberIds}
+              onChange={setTeamMemberIds}
               placeholder={
                 isLoadingMembers
                   ? t('newDeal.loadingMembers')
                   : t('newDeal.teammatesPlaceholder')
               }
               searchPlaceholder={t('newDeal.memberSearch')}
-              allowToggleAll={false}
-              modalPopover={false}
-              onValueChange={setTeamMemberIds}
+              emptyListMessage={t('newDeal.noMembers')}
+              unknownLabel={t('newDeal.unknownMember')}
+              disabled={isLoadingMembers}
             />
           </Field>
 

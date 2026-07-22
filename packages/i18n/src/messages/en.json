@@ -4192,6 +4192,7 @@
       "memberSearch": "Search members…",
       "loadingMembers": "Loading members…",
       "unknownMember": "Unknown member",
+      "noMembers": "No members found.",
       "companyUrlLabel": "Project / Company URL",
       "companyUrlPlaceholder": "https://...",
       "contact1": "Contact 1",

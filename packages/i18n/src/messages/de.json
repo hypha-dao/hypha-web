@@ -4208,7 +4208,8 @@
       "valueLabel": "Wert",
       "priorityLabel": "Priorität",
       "validationRequired": "Titel, Swimlane, Region, Ausführungsstatus und Vorname des Kontakts sind erforderlich.",
-      "createFailed": "Karte konnte nicht erstellt werden. Bitte erneut versuchen."
+      "createFailed": "Karte konnte nicht erstellt werden. Bitte erneut versuchen.",
+      "noMembers": "Keine Mitglieder gefunden."
     },
     "fields": {
       "swimlane": "Swimlane",

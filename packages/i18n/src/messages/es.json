@@ -4208,7 +4208,8 @@
       "valueLabel": "Valor",
       "priorityLabel": "Prioridad",
       "validationRequired": "Título, pista, región, estado de ejecución y nombre del contacto son obligatorios.",
-      "createFailed": "No se pudo crear la tarjeta. Inténtalo de nuevo."
+      "createFailed": "No se pudo crear la tarjeta. Inténtalo de nuevo.",
+      "noMembers": "No se encontraron miembros."
     },
     "fields": {
       "swimlane": "Swimlane",
