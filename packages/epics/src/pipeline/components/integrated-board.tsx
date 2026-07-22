@@ -53,6 +53,14 @@ export function IntegratedBoard({
     [deals, filters],
   );
 
+  const visibleSwimlanes = React.useMemo(() => {
+    if (!filters.swimlane) return PIPELINE_SWIMLANES;
+    const selected = Array.isArray(filters.swimlane)
+      ? filters.swimlane
+      : [filters.swimlane];
+    return PIPELINE_SWIMLANES.filter((swimlane) => selected.includes(swimlane));
+  }, [filters.swimlane]);
+
   const onMoveStatus = React.useCallback(
     async (dealId: number, status: PipelineStatus) => {
       const deal = deals.find((d) => d.id === dealId);
@@ -99,7 +107,7 @@ export function IntegratedBoard({
         <div className="text-2 text-neutral-11">{t('loading')}</div>
       ) : (
         <div className="flex flex-col gap-6">
-          {PIPELINE_SWIMLANES.map((swimlane) => {
+          {visibleSwimlanes.map((swimlane) => {
             const laneDeals = filtered.filter(
               (d) => d.pipelineSwimlane === swimlane,
             );
