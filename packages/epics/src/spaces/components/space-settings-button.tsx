@@ -30,10 +30,10 @@ export function SpaceSettingsButton({
       aria-label={t('spaceSettings')}
       title={t('spaceSettings')}
       className={cn(
-        'inline-flex size-8 shrink-0 items-center justify-center border transition-colors',
+        'inline-flex size-7 shrink-0 items-center justify-center border transition-colors',
         APP_CHROME_SUBTLE_SQUARE_RADIUS,
         variant === 'hero'
-          ? 'border-white/35 bg-black/55 text-white hover:border-white/55 hover:bg-black/70'
+          ? 'border-white/40 bg-black/25 text-white shadow-sm backdrop-blur-sm hover:border-white/55 hover:bg-black/35'
           : 'border-border bg-background text-foreground hover:bg-accent/40',
         className,
       )}
