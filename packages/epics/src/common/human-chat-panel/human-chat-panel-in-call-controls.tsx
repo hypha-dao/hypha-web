@@ -65,6 +65,12 @@ type HumanChatPanelInCallControlsProps = {
   ) => void;
   /** True when auto voice isolation is active during screen share (WCUX-SHARE-VOICE-5). */
   presenterVoiceBoostActive?: boolean;
+  /** Which audio constraints the local device/browser can't actually apply (detected via `getCapabilities()` at join). */
+  unsupportedVoiceProcessingConstraints?: {
+    autoGainControl: boolean;
+    echoCancellation: boolean;
+    noiseSuppression: boolean;
+  } | null;
   captureMode: SpaceGroupCallCaptureMode;
   capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
   capturePreferenceSelected: boolean;
@@ -117,6 +123,7 @@ export function HumanChatPanelInCallControls({
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
   presenterVoiceBoostActive = false,
+  unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
   capturePreferenceSelected,
@@ -479,6 +486,12 @@ export function HumanChatPanelInCallControls({
     onVoiceProcessingPresetChange(preset);
     setIsAudioMenuOpen(false);
   };
+  const isVoiceIsolationUnsupported = Boolean(
+    unsupportedVoiceProcessingConstraints?.noiseSuppression,
+  );
+  const isMusicPresetUnsupported = Boolean(
+    unsupportedVoiceProcessingConstraints?.autoGainControl,
+  );
   const selectCapturePreference = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
@@ -608,30 +621,56 @@ export function HumanChatPanelInCallControls({
             type="button"
             role="menuitemradio"
             aria-checked={voiceProcessingPreset === 'voice_isolation'}
+            disabled={isVoiceIsolationUnsupported}
             onClick={() => selectVoicePreset('voice_isolation')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+            className="flex w-full flex-col items-stretch gap-0.5 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
           >
-            <span className="inline-flex items-center gap-2">
-              <MicVocal className="h-4 w-4" />
-              {t('callVoiceProcessingIsolation')}
+            <span className="flex w-full items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-2">
+                <MicVocal className="h-4 w-4" />
+                {t('callVoiceProcessingIsolation')}
+              </span>
+              {voiceProcessingPreset === 'voice_isolation' ? (
+                <Check className={menuCheckIcon} />
+              ) : null}
             </span>
-            {voiceProcessingPreset === 'voice_isolation' ? (
-              <Check className={menuCheckIcon} />
+            {isVoiceIsolationUnsupported ? (
+              <span
+                className={cn(
+                  'text-[11px] leading-snug',
+                  isFull ? 'text-zinc-400' : 'text-muted-foreground',
+                )}
+              >
+                {t('callVoiceProcessingNoiseSuppressionUnsupported')}
+              </span>
             ) : null}
           </button>
           <button
             type="button"
             role="menuitemradio"
             aria-checked={voiceProcessingPreset === 'music'}
+            disabled={isMusicPresetUnsupported}
             onClick={() => selectVoicePreset('music')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+            className="flex w-full flex-col items-stretch gap-0.5 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
           >
-            <span className="inline-flex items-center gap-2">
-              <Music2 className="h-4 w-4" />
-              {t('callVoiceProcessingMusic')}
+            <span className="flex w-full items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-2">
+                <Music2 className="h-4 w-4" />
+                {t('callVoiceProcessingMusic')}
+              </span>
+              {voiceProcessingPreset === 'music' ? (
+                <Check className={menuCheckIcon} />
+              ) : null}
             </span>
-            {voiceProcessingPreset === 'music' ? (
-              <Check className={menuCheckIcon} />
+            {isMusicPresetUnsupported ? (
+              <span
+                className={cn(
+                  'text-[11px] leading-snug',
+                  isFull ? 'text-zinc-400' : 'text-muted-foreground',
+                )}
+              >
+                {t('callVoiceProcessingAutoGainUnsupported')}
+              </span>
             ) : null}
           </button>
         </div>

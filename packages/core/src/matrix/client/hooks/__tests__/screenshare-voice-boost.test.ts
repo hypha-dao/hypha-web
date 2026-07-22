@@ -6,18 +6,30 @@ import {
 } from '../screenshare-voice-boost';
 
 describe('constraintsForVoicePreset', () => {
-  it('forces autoGainControl while screensharing in voice_isolation mode', () => {
-    expect(
-      constraintsForVoicePreset('voice_isolation', { isScreensharing: true }),
-    ).toMatchObject({
+  it('returns standard preset constraints', () => {
+    expect(constraintsForVoicePreset('standard')).toEqual({
       autoGainControl: true,
-      noiseSuppression: true,
+      echoCancellation: true,
+      noiseSuppression: false,
+      voiceIsolation: false,
     });
   });
 
-  it('keeps voice_isolation defaults when not screensharing', () => {
-    expect(constraintsForVoicePreset('voice_isolation')).toMatchObject({
+  it('returns voice_isolation preset constraints', () => {
+    expect(constraintsForVoicePreset('voice_isolation')).toEqual({
       autoGainControl: false,
+      echoCancellation: true,
+      noiseSuppression: true,
+      voiceIsolation: true,
+    });
+  });
+
+  it('returns music preset constraints', () => {
+    expect(constraintsForVoicePreset('music')).toEqual({
+      autoGainControl: false,
+      echoCancellation: true,
+      noiseSuppression: false,
+      voiceIsolation: false,
     });
   });
 });

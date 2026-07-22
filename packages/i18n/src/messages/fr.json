@@ -2506,6 +2506,8 @@
     "callVoiceProcessingStandard": "Voix",
     "callVoiceProcessingIsolation": "Isolation",
     "callVoiceProcessingMusic": "Musique",
+    "callVoiceProcessingNoiseSuppressionUnsupported": "Suppression du bruit non prise en charge sur cet appareil",
+    "callVoiceProcessingAutoGainUnsupported": "Contrôle automatique du gain non pris en charge sur cet appareil",
     "callVoiceBoostWhilePresenting": "Amplification vocale active pendant la présentation",
     "callCameraOn": "Allumer la caméra",
     "callCameraOff": "Éteindre la caméra",

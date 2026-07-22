@@ -3070,6 +3070,8 @@
     "callVoiceProcessingStandard": "Sprache",
     "callVoiceProcessingIsolation": "Isolierung",
     "callVoiceProcessingMusic": "Musik",
+    "callVoiceProcessingNoiseSuppressionUnsupported": "Rauschunterdrückung wird auf diesem Gerät nicht unterstützt",
+    "callVoiceProcessingAutoGainUnsupported": "Automatische Verstärkungsregelung wird auf diesem Gerät nicht unterstützt",
     "callVoiceBoostWhilePresenting": "Sprachverstärkung ist während der Präsentation aktiv",
     "callCameraOn": "Kamera einschalten",
     "callCameraOff": "Kamera ausschalten",

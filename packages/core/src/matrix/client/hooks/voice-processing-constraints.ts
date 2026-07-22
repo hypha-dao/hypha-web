@@ -7,39 +7,39 @@ type AudioProcessingConstraints = {
   autoGainControl: boolean;
   echoCancellation: boolean;
   noiseSuppression: boolean;
+  /**
+   * Chrome-only, non-standard OS/platform-level voice isolation (distinct
+   * from the standard autoGainControl/echoCancellation/noiseSuppression
+   * trio above). Ignored by browsers/platforms that don't support it.
+   */
+  voiceIsolation: boolean;
 };
 
 export function constraintsForVoicePreset(
   preset: SpaceGroupCallVoiceProcessingPreset,
-  options?: { isScreensharing?: boolean },
 ): AudioProcessingConstraints {
-  let base: AudioProcessingConstraints;
   switch (preset) {
     case 'voice_isolation':
-      base = {
+      return {
         autoGainControl: false,
         echoCancellation: true,
         noiseSuppression: true,
+        voiceIsolation: true,
       };
-      break;
     case 'music':
-      base = {
+      return {
         autoGainControl: false,
         echoCancellation: true,
         noiseSuppression: false,
+        voiceIsolation: false,
       };
-      break;
     case 'standard':
     default:
-      base = {
+      return {
         autoGainControl: true,
         echoCancellation: true,
-        noiseSuppression: true,
+        noiseSuppression: false,
+        voiceIsolation: false,
       };
-      break;
   }
-  if (options?.isScreensharing) {
-    return { ...base, autoGainControl: true };
-  }
-  return base;
 }

@@ -3084,6 +3084,8 @@
     "callVoiceProcessingStandard": "Говор",
     "callVoiceProcessingIsolation": "Изолација",
     "callVoiceProcessingMusic": "Музика",
+    "callVoiceProcessingNoiseSuppressionUnsupported": "Отстранувањето бучава не е поддржано на овој уред",
+    "callVoiceProcessingAutoGainUnsupported": "Автоматската контрола на засилување не е поддржана на овој уред",
     "callCameraOn": "Вклучи камера",
     "callCameraOff": "Исклучи камера",
     "callErrorPermission": "Започнувањето на повикот беше блокирано од дозволи (камера/микрофон или дозволи за повици во собата).",
