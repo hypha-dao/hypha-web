@@ -20,10 +20,12 @@ import { PipelineSummary } from './pipeline-summary';
 import { KanbanBoard } from './kanban-board';
 import { NewDealDialog } from './new-deal-dialog';
 import { exportDealsToXlsx } from '../utils/export-deals';
+import type { UseMembers } from '../../spaces';
 
 type IntegratedBoardProps = {
   spaceSlug: string;
   lang: string;
+  useMembers: UseMembers;
   activeDealId?: number | null;
   onDealOpen: (dealId: number) => void;
   getTrackHref: (swimlane: PipelineSwimlane) => string;
@@ -31,6 +33,7 @@ type IntegratedBoardProps = {
 
 export function IntegratedBoard({
   spaceSlug,
+  useMembers,
   activeDealId,
   onDealOpen,
   getTrackHref,
@@ -140,6 +143,7 @@ export function IntegratedBoard({
 
       <NewDealDialog
         spaceSlug={spaceSlug}
+        useMembers={useMembers}
         open={newOpen}
         onOpenChange={setNewOpen}
         defaultSwimlane={newSwimlane}

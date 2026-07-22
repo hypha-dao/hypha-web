@@ -19,11 +19,13 @@ import { PipelineSummary } from './pipeline-summary';
 import { KanbanBoard } from './kanban-board';
 import { NewDealDialog } from './new-deal-dialog';
 import { exportDealsToXlsx } from '../utils/export-deals';
+import type { UseMembers } from '../../spaces';
 
 type TrackPageProps = {
   spaceSlug: string;
   swimlane: PipelineSwimlane;
   boardHref: string;
+  useMembers: UseMembers;
   activeDealId?: number | null;
   onDealOpen: (dealId: number) => void;
 };
@@ -32,6 +34,7 @@ export function TrackPage({
   spaceSlug,
   swimlane,
   boardHref,
+  useMembers,
   activeDealId,
   onDealOpen,
 }: TrackPageProps) {
@@ -111,6 +114,7 @@ export function TrackPage({
 
       <NewDealDialog
         spaceSlug={spaceSlug}
+        useMembers={useMembers}
         open={newOpen}
         onOpenChange={setNewOpen}
         defaultSwimlane={swimlane}

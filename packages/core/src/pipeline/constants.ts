@@ -24,6 +24,17 @@ export const DEAL_PRIORITIES = ['low', 'medium', 'high', 'critical'] as const;
 
 export type DealPriority = (typeof DEAL_PRIORITIES)[number];
 
+/** Common B2B contact roles for pipeline deal contacts. */
+export const DEAL_CONTACT_TYPES = [
+  'Decision Maker',
+  'Influencer',
+  'Champion',
+  'Gatekeeper',
+  'Other',
+] as const;
+
+export type DealContactType = (typeof DEAL_CONTACT_TYPES)[number];
+
 export const DEAL_STATUSES = [
   'active',
   'on_hold',
