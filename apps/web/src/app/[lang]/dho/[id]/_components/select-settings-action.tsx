@@ -62,14 +62,22 @@ export const SelectSettingsAction = ({
   const isEnergyCommunity = spaceEnergy?.enabled === true;
   const isActionDisabled = isMutateLoading || !canMutate;
 
-  // Hide the Energy Sharing card once an Energy Sharing agreement has passed.
+  // Hide the Energy Sharing card once an Energy Sharing proposal exists,
+  // unless every one of them was rejected (or withdrawn). Checking the raw
+  // document list — rather than only chain-confirmed "accepted" documents —
+  // keeps the card hidden even when the on-chain status read is unavailable.
   const { documents: spaceDocuments } = useSpaceDocumentsWithStatuses({
     spaceSlug: daoSlug,
     spaceId: space?.web3SpaceId ?? undefined,
     order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   });
-  const hasEnergySharingAgreement = spaceDocuments.accepted.some(
-    (doc) => normalizeProposalDocumentLabel(doc.label) === 'Energy Sharing',
+  const isEnergySharingDoc = (doc: { label?: string | null }) =>
+    normalizeProposalDocumentLabel(doc.label) === 'Energy Sharing';
+  const rejectedEnergySharingIds = new Set(
+    spaceDocuments.rejected.filter(isEnergySharingDoc).map((doc) => doc.id),
+  );
+  const hasEnergySharingProposal = spaceDocuments.all.some(
+    (doc) => isEnergySharingDoc(doc) && !rejectedEnergySharingIds.has(doc.id),
   );
 
   const SETTINGS_ACTIONS = [
@@ -246,7 +254,7 @@ export const SelectSettingsAction = ({
           },
         ]
       : []),
-    ...(isEnergyCommunity && !hasEnergySharingAgreement
+    ...(isEnergyCommunity && !hasEnergySharingProposal
       ? [
           {
             defaultDurationDays: 5,

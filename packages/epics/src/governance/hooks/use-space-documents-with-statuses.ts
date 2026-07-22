@@ -76,6 +76,15 @@ const emptyDocuments = {
   accepted: [] as Document[],
   rejected: [] as Document[],
   onVoting: [] as Document[],
+  /**
+   * Every non-withdrawn document from the DB with `status` attached when the
+   * on-chain proposal sets are available. Unlike the three buckets above this
+   * list is populated even when the chain read hasn't resolved (documents keep
+   * `status: undefined`), so consumers that only need existence checks (e.g.
+   * "has an Energy Sharing proposal ever been created?") don't silently see an
+   * empty list while chain data is loading or unavailable.
+   */
+  all: [] as Document[],
 };
 
 export const useSpaceDocumentsWithStatuses = ({
@@ -171,8 +180,17 @@ export const useSpaceDocumentsWithStatuses = ({
   const documentsReady = Array.isArray(documentsFromDb);
 
   const response = React.useMemo(() => {
-    if (!documentsReady || !spaceProposalsIds) {
+    if (!documentsReady) {
       return emptyDocuments;
+    }
+
+    if (!spaceProposalsIds) {
+      // Chain proposal sets not resolved (yet, or the read failed): statuses
+      // are unknown, but the documents themselves are — expose them via `all`.
+      return {
+        ...emptyDocuments,
+        all: documentsFromDb as Document[],
+      };
     }
 
     const withdrawnIdsSet = new Set(
@@ -230,10 +248,17 @@ export const useSpaceDocumentsWithStatuses = ({
           badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
+    const allDocuments = (documentsFromDb as Document[]).filter(
+      (doc: { web3ProposalId: number | null }) =>
+        doc.web3ProposalId == null ||
+        !withdrawnIdsSet.has(String(doc.web3ProposalId)),
+    );
+
     return {
       accepted: acceptedDocuments,
       rejected: rejectedDocuments,
       onVoting: onVotingDocuments,
+      all: allDocuments,
     };
   }, [
     documentsFromDb,
