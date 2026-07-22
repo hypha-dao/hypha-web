@@ -5,7 +5,7 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import { ClientEvent, RoomEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import type { Room as LiveKitRoom } from 'livekit-client';
-import { Track } from 'livekit-client';
+import { LocalAudioTrack, Track } from 'livekit-client';
 import {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,
@@ -299,11 +299,18 @@ function persistVoiceProcessingPreset(
  * (so a *new* track — e.g. from a mid-call input device switch — also picks
  * up the preset instead of falling back to whatever constraints the room was
  * created with).
+ *
+ * Chromium only honors `autoGainControl` / `echoCancellation` /
+ * `noiseSuppression` at `getUserMedia()` time — `applyConstraints()` on an
+ * already-live track accepts these silently but does not actually change
+ * them. `restartTrack()` stops the current track and re-acquires a fresh one
+ * via `getUserMedia()` with the new constraints, which is the only reliable
+ * way to change them mid-call.
  */
-function applyVoiceProcessingPresetToRoom(
+async function applyVoiceProcessingPresetToRoom(
   lkRoom: LiveKitRoom,
   preset: SpaceGroupCallVoiceProcessingPreset,
-): void {
+): Promise<void> {
   const constraints = constraintsForVoicePreset(preset);
   lkRoom.options.audioCaptureDefaults = {
     ...lkRoom.options.audioCaptureDefaults,
@@ -312,8 +319,10 @@ function applyVoiceProcessingPresetToRoom(
   const micTrack = lkRoom.localParticipant.getTrackPublication(
     Track.Source.Microphone,
   )?.track;
-  if (micTrack) {
-    void micTrack.mediaStreamTrack
+  if (micTrack instanceof LocalAudioTrack) {
+    await micTrack.restartTrack(constraints).catch(() => undefined);
+  } else if (micTrack) {
+    await micTrack.mediaStreamTrack
       .applyConstraints(constraints)
       .catch(() => undefined);
   }
@@ -1362,7 +1371,7 @@ export function useSpaceGroupCall(
       if (plan.effectivePreset !== voiceProcessingPresetRef.current) {
         setVoiceProcessingPresetState(plan.effectivePreset);
         voiceProcessingPresetRef.current = plan.effectivePreset;
-        applyVoiceProcessingPresetToRoom(lkRoom, plan.effectivePreset);
+        await applyVoiceProcessingPresetToRoom(lkRoom, plan.effectivePreset);
       }
       const micPub = lkRoom.localParticipant.getTrackPublication(
         Track.Source.Microphone,
@@ -1441,7 +1450,7 @@ export function useSpaceGroupCall(
         setVoiceProcessingPresetState(restore);
         persistVoiceProcessingPreset(restore);
         voiceProcessingPresetRef.current = restore;
-        applyVoiceProcessingPresetToRoom(lkRoom, restore);
+        await applyVoiceProcessingPresetToRoom(lkRoom, restore);
       }
       scheduleFeedBatched();
       refreshLocalPreview();
@@ -2317,7 +2326,7 @@ export function useSpaceGroupCall(
       voiceProcessingPresetRef.current = preset;
 
       if (liveKitRoomRef.current) {
-        applyVoiceProcessingPresetToRoom(liveKitRoomRef.current, preset);
+        await applyVoiceProcessingPresetToRoom(liveKitRoomRef.current, preset);
       }
     },
     [],
