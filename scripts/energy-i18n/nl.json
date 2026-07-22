@@ -232,14 +232,14 @@
     "kwhPerInterval": "kWh per interval van 15 minuten",
     "kwhPerIntervalPlaceholder": "bijv. 1000",
     "shareOfSolar": "Aandeel van de opwekking van zonne-energie",
-    "goalWallets": "Doel portemonnees",
-    "goalWalletsDescription": "Verdeel de sociale toewijzing over doelportefeuilles (aandelen totaal 100%).",
-    "addGoalWallet": "Doelportemonnee toevoegen",
     "share": "Deel",
     "socialDisabled": "Gehandicapt",
     "socialFixed": "Vast: {kwh} kWh ​​per interval",
     "socialVariable": "Variabel: {percent}% van zonne-energie",
-    "metersPerMember": "{address} — {count, plural, one {# meter} other {# meters}}"
+    "metersPerMember": "{address} — {count, plural, one {# meter} other {# meters}}",
+    "targetWallets": "Doel portemonnees",
+    "targetWalletsDescription": "Verdeel de sociale toewijzing over doelportefeuilles (aandelen totaal 100%).",
+    "addTargetWallet": "Doelportemonnee toevoegen"
   },
   "forms": {
     "spaceRequired": "Voor het maken van een voorstel is ruimte nodig.",
@@ -290,8 +290,6 @@
     "distinctPriorities": "Elke prioriteit moet een andere doelstelling zijn",
     "selectSocialMode": "Selecteer een sociale toewijzingsmodus",
     "wholeKwhPerInterval": "Voer een geheel aantal kWh per interval in",
-    "addGoalWallet": "Voeg ten minste één doelportemonnee toe",
-    "goalWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn",
     "metadataHashRequired": "Metagegevens-hash is vereist",
     "deviceIdsRequired": "Apparaat-ID's zijn vereist",
     "deviceIdsCommaNumbers": "Apparaat-ID's moeten door komma's gescheiden getallen zijn",
@@ -313,7 +311,9 @@
     "addOwner": "Voeg ten minste één eigenaar toe",
     "ownershipTotal100": "Eigendomsaandelen moeten in totaal 100% zijn",
     "atLeastOneSource": "Er is minimaal één bron vereist",
-    "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten."
+    "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten.",
+    "addTargetWallet": "Voeg ten minste één doelportemonnee toe",
+    "targetWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn"
   },
   "errors": {
     "allowanceTimeout": "Er is een time-out opgetreden tijdens het wachten op een stablecoin-limiet.",

@@ -232,14 +232,14 @@
     "kwhPerInterval": "kWh por intervalo de 15 minutos",
     "kwhPerIntervalPlaceholder": "p. ej. 1000",
     "shareOfSolar": "Participación de la generación solar",
-    "goalWallets": "Wallets de objetivos",
-    "goalWalletsDescription": "Distribuir la asignación social entre wallets de objetivos (las participaciones deben sumar 100 %).",
-    "addGoalWallet": "Añadir wallet de objetivo",
     "share": "Participación",
     "socialDisabled": "Desactivado",
     "socialFixed": "Fijo: {kwh} kWh por intervalo",
     "socialVariable": "Variable: {percent} % de solar",
-    "metersPerMember": "{address} — {count, plural, one {# contador} other {# contadores}}"
+    "metersPerMember": "{address} — {count, plural, one {# contador} other {# contadores}}",
+    "targetWallets": "Wallets de objetivos",
+    "targetWalletsDescription": "Distribuir la asignación social entre wallets de objetivos (las participaciones deben sumar 100 %).",
+    "addTargetWallet": "Añadir wallet de objetivo"
   },
   "forms": {
     "spaceRequired": "Se requiere un espacio para crear una propuesta.",
@@ -290,8 +290,6 @@
     "distinctPriorities": "Cada prioridad debe ser un objetivo diferente",
     "selectSocialMode": "Selecciona un modo de asignación social",
     "wholeKwhPerInterval": "Introduce un número entero de kWh por intervalo",
-    "addGoalWallet": "Añade al menos una wallet de objetivo",
-    "goalWalletsTotal100": "Las participaciones de las wallets de objetivos deben sumar 100 %",
     "metadataHashRequired": "El hash de metadatos es obligatorio",
     "deviceIdsRequired": "Los IDs de dispositivos son obligatorios",
     "deviceIdsCommaNumbers": "Los IDs de dispositivos deben ser números separados por comas",
@@ -313,7 +311,9 @@
     "addOwner": "Añade al menos un propietario",
     "ownershipTotal100": "Las participaciones de propiedad deben sumar 100 %",
     "atLeastOneSource": "Se requiere al menos una fuente",
-    "ownerMustBeMember": "Este propietario también debe añadirse como miembro (puede tener 0 contadores) o no recibirá ingresos."
+    "ownerMustBeMember": "Este propietario también debe añadirse como miembro (puede tener 0 contadores) o no recibirá ingresos.",
+    "addTargetWallet": "Añade al menos una wallet de objetivo",
+    "targetWalletsTotal100": "Las participaciones de las wallets de objetivos deben sumar 100 %"
   },
   "errors": {
     "allowanceTimeout": "Tiempo de espera agotado al esperar la autorización de stablecoin.",

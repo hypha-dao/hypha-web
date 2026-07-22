@@ -425,7 +425,8 @@
       "members": "Membres",
       "treasury": "Trésorerie",
       "extensionsPlugins": "Extensions et plug-ins",
-      "ecosystemVerticals": "Secteurs de l'écosystème"
+      "ecosystemVerticals": "Secteurs de l'écosystème",
+      "energy": "Énergie"
     },
     "actions": {
       "spaceConfiguration": {
@@ -511,6 +512,30 @@
       "hyphaEnergy": {
         "title": "Hypha Energy",
         "description": "Une plateforme dédiée à votre communauté ou hub d'énergie renouvelable, permettant le partage local d'énergie, la copropriété d'actifs énergétiques, la gouvernance et une distribution équitable de la valeur entre les membres."
+      },
+      "enableEnergyCommunity": {
+        "title": "Enable Energy Community",
+        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+      },
+      "energySharing": {
+        "title": "Energy Sharing Proposal",
+        "description": "Define how this community shares and settles energy balances."
+      },
+      "registerEnergySource": {
+        "title": "Register Energy Source",
+        "description": "Add a new energy source (solar, battery, etc.) to the community."
+      },
+      "addEnergyMember": {
+        "title": "Add Energy Member",
+        "description": "Add a member and their smart meters for energy accounting."
+      },
+      "changeEnergyOptimization": {
+        "title": "Change Energy Optimization",
+        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+      },
+      "whitelistEnergySettlement": {
+        "title": "Whitelist Energy Settlement",
+        "description": "Allow a wallet to submit energy settlement data for this community."
       }
     }
   },
@@ -3890,7 +3915,7 @@
     "shared": {
       "gridOperatorName": "Gestionnaire de réseau local",
       "gridOperatorSubtitle": "Fournisseur d'énergie externe",
-      "currentPerKwh": "Actuel / kWh",
+      "basePerKwh": "Base / kWh",
       "active": "Actif",
       "inactive": "Inactif",
       "source": "Source",
@@ -4032,14 +4057,14 @@
       "kwhPerInterval": "kWh par intervalle de 15 minutes",
       "kwhPerIntervalPlaceholder": "ex. 1000",
       "shareOfSolar": "Part de la production solaire",
-      "goalWallets": "Portefeuilles d'objectifs",
-      "goalWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
-      "addGoalWallet": "Ajouter un portefeuille d'objectif",
       "share": "Part",
       "socialDisabled": "Désactivé",
       "socialFixed": "Fixe : {kwh} kWh par intervalle",
       "socialVariable": "Variable : {percent} % du solaire",
-      "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}"
+      "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}",
+      "targetWallets": "Portefeuilles d'objectifs",
+      "targetWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
+      "addTargetWallet": "Ajouter un portefeuille d'objectif"
     },
     "forms": {
       "spaceRequired": "L'espace est requis pour créer une proposition.",
@@ -4090,8 +4115,6 @@
       "distinctPriorities": "Chaque priorité doit être un objectif différent",
       "selectSocialMode": "Sélectionnez un mode d'allocation sociale",
       "wholeKwhPerInterval": "Saisissez un nombre entier de kWh par intervalle",
-      "addGoalWallet": "Ajoutez au moins un portefeuille d'objectif",
-      "goalWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %",
       "metadataHashRequired": "Le hash des métadonnées est requis",
       "deviceIdsRequired": "Les ID des appareils sont requis",
       "deviceIdsCommaNumbers": "Les ID des appareils doivent être des nombres séparés par des virgules",
@@ -4113,7 +4136,9 @@
       "addOwner": "Ajoutez au moins un propriétaire",
       "ownershipTotal100": "Les parts de propriété doivent totaliser 100 %",
       "atLeastOneSource": "Au moins une source est requise",
-      "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus."
+      "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus.",
+      "addTargetWallet": "Ajoutez au moins un portefeuille d'objectif",
+      "targetWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %"
     },
     "errors": {
       "allowanceTimeout": "Délai d'attente dépassé pour l'autorisation du stablecoin.",

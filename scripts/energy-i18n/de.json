@@ -232,14 +232,14 @@
     "kwhPerInterval": "kWh pro 15-Minuten-Intervall",
     "kwhPerIntervalPlaceholder": "z. B. 1000",
     "shareOfSolar": "Anteil der Solarproduktion",
-    "goalWallets": "Ziel-Wallets",
-    "goalWalletsDescription": "Die soziale Zuweisung auf Ziel-Wallets verteilen (Anteile gesamt 100 %).",
-    "addGoalWallet": "Ziel-Wallet hinzufügen",
     "share": "Anteil",
     "socialDisabled": "Deaktiviert",
     "socialFixed": "Fest: {kwh} kWh pro Intervall",
     "socialVariable": "Variabel: {percent} % der Solarproduktion",
-    "metersPerMember": "{address} — {count, plural, one {# Zähler} other {# Zähler}}"
+    "metersPerMember": "{address} — {count, plural, one {# Zähler} other {# Zähler}}",
+    "targetWallets": "Ziel-Wallets",
+    "targetWalletsDescription": "Die soziale Zuweisung auf Ziel-Wallets verteilen (Anteile gesamt 100 %).",
+    "addTargetWallet": "Ziel-Wallet hinzufügen"
   },
   "forms": {
     "spaceRequired": "Ein Space ist erforderlich, um einen Vorschlag zu erstellen.",
@@ -290,8 +290,6 @@
     "distinctPriorities": "Jede Priorität muss ein anderes Ziel sein",
     "selectSocialMode": "Modus für soziale Zuweisung auswählen",
     "wholeKwhPerInterval": "Geben Sie eine ganze Zahl kWh pro Intervall ein",
-    "addGoalWallet": "Mindestens eine Ziel-Wallet hinzufügen",
-    "goalWalletsTotal100": "Anteile der Ziel-Wallets müssen insgesamt 100 % ergeben",
     "metadataHashRequired": "Metadaten-Hash ist erforderlich",
     "deviceIdsRequired": "Geräte-IDs sind erforderlich",
     "deviceIdsCommaNumbers": "Geräte-IDs müssen kommagetrennte Zahlen sein",
@@ -313,7 +311,9 @@
     "addOwner": "Mindestens einen Eigentümer hinzufügen",
     "ownershipTotal100": "Eigentumsanteile müssen insgesamt 100 % ergeben",
     "atLeastOneSource": "Mindestens eine Quelle ist erforderlich",
-    "ownerMustBeMember": "Dieser Eigentümer muss auch als Mitglied hinzugefügt werden (Zähleranzahl 0 ist in Ordnung), sonst erhält er keine Einnahmen."
+    "ownerMustBeMember": "Dieser Eigentümer muss auch als Mitglied hinzugefügt werden (Zähleranzahl 0 ist in Ordnung), sonst erhält er keine Einnahmen.",
+    "addTargetWallet": "Mindestens eine Ziel-Wallet hinzufügen",
+    "targetWalletsTotal100": "Anteile der Ziel-Wallets müssen insgesamt 100 % ergeben"
   },
   "errors": {
     "allowanceTimeout": "Zeitüberschreitung beim Warten auf Stablecoin-Freigabe.",

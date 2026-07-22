@@ -4,7 +4,7 @@ import {
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import {
   findEnergyCommunityBySpaceId,
   findSpaceBySlug,
@@ -24,7 +24,7 @@ export default async function CreateEnergySharingProposalPage({
   if (!spaceFromDb) notFound();
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
-  const backUrl = `${successfulUrl}${PATH_SELECT_CREATE_ACTION}`;
+  const backUrl = `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
   const energyMapping = await findEnergyCommunityBySpaceId(spaceFromDb.id, {
     db,
   });

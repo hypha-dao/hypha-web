@@ -232,14 +232,14 @@
     "kwhPerInterval": "kWh par intervalle de 15 minutes",
     "kwhPerIntervalPlaceholder": "ex. 1000",
     "shareOfSolar": "Part de la production solaire",
-    "goalWallets": "Portefeuilles d'objectifs",
-    "goalWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
-    "addGoalWallet": "Ajouter un portefeuille d'objectif",
     "share": "Part",
     "socialDisabled": "Désactivé",
     "socialFixed": "Fixe : {kwh} kWh par intervalle",
     "socialVariable": "Variable : {percent} % du solaire",
-    "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}"
+    "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}",
+    "targetWallets": "Portefeuilles d'objectifs",
+    "targetWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
+    "addTargetWallet": "Ajouter un portefeuille d'objectif"
   },
   "forms": {
     "spaceRequired": "L'espace est requis pour créer une proposition.",
@@ -290,8 +290,6 @@
     "distinctPriorities": "Chaque priorité doit être un objectif différent",
     "selectSocialMode": "Sélectionnez un mode d'allocation sociale",
     "wholeKwhPerInterval": "Saisissez un nombre entier de kWh par intervalle",
-    "addGoalWallet": "Ajoutez au moins un portefeuille d'objectif",
-    "goalWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %",
     "metadataHashRequired": "Le hash des métadonnées est requis",
     "deviceIdsRequired": "Les ID des appareils sont requis",
     "deviceIdsCommaNumbers": "Les ID des appareils doivent être des nombres séparés par des virgules",
@@ -313,7 +311,9 @@
     "addOwner": "Ajoutez au moins un propriétaire",
     "ownershipTotal100": "Les parts de propriété doivent totaliser 100 %",
     "atLeastOneSource": "Au moins une source est requise",
-    "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus."
+    "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus.",
+    "addTargetWallet": "Ajoutez au moins un portefeuille d'objectif",
+    "targetWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %"
   },
   "errors": {
     "allowanceTimeout": "Délai d'attente dépassé pour l'autorisation du stablecoin.",

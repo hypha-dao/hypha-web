@@ -423,7 +423,8 @@
       "members": "Medlemmer",
       "treasury": "Kasse",
       "extensionsPlugins": "Utvidelser og tillegg",
-      "ecosystemVerticals": "Økosystemvertikaler"
+      "ecosystemVerticals": "Økosystemvertikaler",
+      "energy": "Energi"
     },
     "actions": {
       "spaceConfiguration": {
@@ -509,6 +510,30 @@
       "hyphaEnergy": {
         "title": "Hypha Energy",
         "description": "En dedikert plattform for ditt fellesskap eller knutepunkt for fornybar energi, som muliggjør lokal energideling, sameie av energiressurser, styring og rettferdig verdifordeling mellom medlemmer."
+      },
+      "enableEnergyCommunity": {
+        "title": "Enable Energy Community",
+        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+      },
+      "energySharing": {
+        "title": "Energy Sharing Proposal",
+        "description": "Define how this community shares and settles energy balances."
+      },
+      "registerEnergySource": {
+        "title": "Register Energy Source",
+        "description": "Add a new energy source (solar, battery, etc.) to the community."
+      },
+      "addEnergyMember": {
+        "title": "Add Energy Member",
+        "description": "Add a member and their smart meters for energy accounting."
+      },
+      "changeEnergyOptimization": {
+        "title": "Change Energy Optimization",
+        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+      },
+      "whitelistEnergySettlement": {
+        "title": "Whitelist Energy Settlement",
+        "description": "Allow a wallet to submit energy settlement data for this community."
       }
     }
   },
@@ -4039,14 +4064,14 @@
       "kwhPerInterval": "kWh per 15-minuttersintervall",
       "kwhPerIntervalPlaceholder": "f.eks. 1000",
       "shareOfSolar": "Andel av solproduksjonen",
-      "goalWallets": "Mål-lommebøker",
-      "goalWalletsDescription": "Fordel den sosiale tildelingen mellom mål-lommebøker (andelene skal totalt utgjøre 100 %).",
-      "addGoalWallet": "Legg til mål-lommebok",
       "share": "Andel",
       "socialDisabled": "Deaktivert",
       "socialFixed": "Fast: {kwh} kWh per intervall",
       "socialVariable": "Variabel: {percent}% av sol",
-      "metersPerMember": "{address} — {count, plural, one {# måler} other {# målere}}"
+      "metersPerMember": "{address} — {count, plural, one {# måler} other {# målere}}",
+      "targetWallets": "Mål-lommebøker",
+      "targetWalletsDescription": "Fordel den sosiale tildelingen mellom mål-lommebøker (andelene skal totalt utgjøre 100 %).",
+      "addTargetWallet": "Legg til mål-lommebok"
     },
     "forms": {
       "spaceRequired": "Rom kreves for å opprette et forslag.",
@@ -4097,8 +4122,6 @@
       "distinctPriorities": "Hver prioritering må være et forskjellig mål",
       "selectSocialMode": "Velg en modus for sosial tildeling",
       "wholeKwhPerInterval": "Angi et helt antall kWh per intervall",
-      "addGoalWallet": "Legg til minst én mål-lommebok",
-      "goalWalletsTotal100": "Andelene til mål-lommebøkene må totalt utgjøre 100 %",
       "metadataHashRequired": "Metadata-hash er påkrevd",
       "deviceIdsRequired": "Enhets-ID-er er påkrevd",
       "deviceIdsCommaNumbers": "Enhets-ID-er må være kommaseparerte tall",
@@ -4120,7 +4143,9 @@
       "addOwner": "Legg til minst én eier",
       "ownershipTotal100": "Eierandelene må totalt utgjøre 100 %",
       "atLeastOneSource": "Minst én kilde er påkrevd",
-      "ownerMustBeMember": "Denne eieren må også legges til som medlem (målerantall 0 er greit), ellers vil de ikke motta inntekter."
+      "ownerMustBeMember": "Denne eieren må også legges til som medlem (målerantall 0 er greit), ellers vil de ikke motta inntekter.",
+      "addTargetWallet": "Legg til minst én mål-lommebok",
+      "targetWalletsTotal100": "Andelene til mål-lommebøkene må totalt utgjøre 100 %"
     },
     "errors": {
       "allowanceTimeout": "Tidsavbrudd under venting på stablecoin-godkjenning.",

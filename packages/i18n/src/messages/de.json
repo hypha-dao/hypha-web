@@ -425,7 +425,8 @@
       "members": "Mitglieder",
       "treasury": "Schatzkammer",
       "extensionsPlugins": "Erweiterungen & Plug-ins",
-      "ecosystemVerticals": "Ökosystem-Vertikalen"
+      "ecosystemVerticals": "Ökosystem-Vertikalen",
+      "energy": "Energie"
     },
     "actions": {
       "spaceConfiguration": {
@@ -511,6 +512,30 @@
       "hyphaEnergy": {
         "title": "Hypha Energy",
         "description": "Eine dedizierte Plattform für Ihre Community oder Ihren Hub für erneuerbare Energien, die lokales Energy Sharing, gemeinsames Eigentum an Energieanlagen, Governance und faire Wertverteilung zwischen Mitgliedern ermöglicht."
+      },
+      "enableEnergyCommunity": {
+        "title": "Enable Energy Community",
+        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+      },
+      "energySharing": {
+        "title": "Energy Sharing Proposal",
+        "description": "Define how this community shares and settles energy balances."
+      },
+      "registerEnergySource": {
+        "title": "Register Energy Source",
+        "description": "Add a new energy source (solar, battery, etc.) to the community."
+      },
+      "addEnergyMember": {
+        "title": "Add Energy Member",
+        "description": "Add a member and their smart meters for energy accounting."
+      },
+      "changeEnergyOptimization": {
+        "title": "Change Energy Optimization",
+        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+      },
+      "whitelistEnergySettlement": {
+        "title": "Whitelist Energy Settlement",
+        "description": "Allow a wallet to submit energy settlement data for this community."
       }
     }
   },
@@ -3894,7 +3919,7 @@
     "shared": {
       "gridOperatorName": "Lokaler Netzbetreiber",
       "gridOperatorSubtitle": "Externer Energielieferant",
-      "currentPerKwh": "Aktuell / kWh",
+      "basePerKwh": "Grundpreis / kWh",
       "active": "Aktiv",
       "inactive": "Inaktiv",
       "source": "Quelle",
@@ -4036,14 +4061,14 @@
       "kwhPerInterval": "kWh pro 15-Minuten-Intervall",
       "kwhPerIntervalPlaceholder": "z. B. 1000",
       "shareOfSolar": "Anteil der Solarproduktion",
-      "goalWallets": "Ziel-Wallets",
-      "goalWalletsDescription": "Die soziale Zuweisung auf Ziel-Wallets verteilen (Anteile gesamt 100 %).",
-      "addGoalWallet": "Ziel-Wallet hinzufügen",
       "share": "Anteil",
       "socialDisabled": "Deaktiviert",
       "socialFixed": "Fest: {kwh} kWh pro Intervall",
       "socialVariable": "Variabel: {percent} % der Solarproduktion",
-      "metersPerMember": "{address} — {count, plural, one {# Zähler} other {# Zähler}}"
+      "metersPerMember": "{address} — {count, plural, one {# Zähler} other {# Zähler}}",
+      "targetWallets": "Ziel-Wallets",
+      "targetWalletsDescription": "Die soziale Zuweisung auf Ziel-Wallets verteilen (Anteile gesamt 100 %).",
+      "addTargetWallet": "Ziel-Wallet hinzufügen"
     },
     "forms": {
       "spaceRequired": "Ein Space ist erforderlich, um einen Vorschlag zu erstellen.",
@@ -4094,8 +4119,6 @@
       "distinctPriorities": "Jede Priorität muss ein anderes Ziel sein",
       "selectSocialMode": "Modus für soziale Zuweisung auswählen",
       "wholeKwhPerInterval": "Geben Sie eine ganze Zahl kWh pro Intervall ein",
-      "addGoalWallet": "Mindestens eine Ziel-Wallet hinzufügen",
-      "goalWalletsTotal100": "Anteile der Ziel-Wallets müssen insgesamt 100 % ergeben",
       "metadataHashRequired": "Metadaten-Hash ist erforderlich",
       "deviceIdsRequired": "Geräte-IDs sind erforderlich",
       "deviceIdsCommaNumbers": "Geräte-IDs müssen kommagetrennte Zahlen sein",
@@ -4117,7 +4140,9 @@
       "addOwner": "Mindestens einen Eigentümer hinzufügen",
       "ownershipTotal100": "Eigentumsanteile müssen insgesamt 100 % ergeben",
       "atLeastOneSource": "Mindestens eine Quelle ist erforderlich",
-      "ownerMustBeMember": "Dieser Eigentümer muss auch als Mitglied hinzugefügt werden (Zähleranzahl 0 ist in Ordnung), sonst erhält er keine Einnahmen."
+      "ownerMustBeMember": "Dieser Eigentümer muss auch als Mitglied hinzugefügt werden (Zähleranzahl 0 ist in Ordnung), sonst erhält er keine Einnahmen.",
+      "addTargetWallet": "Mindestens eine Ziel-Wallet hinzufügen",
+      "targetWalletsTotal100": "Anteile der Ziel-Wallets müssen insgesamt 100 % ergeben"
     },
     "errors": {
       "allowanceTimeout": "Zeitüberschreitung beim Warten auf Stablecoin-Freigabe.",

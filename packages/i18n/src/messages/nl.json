@@ -424,7 +424,8 @@
       "members": "Leden",
       "treasury": "Schatkist",
       "extensionsPlugins": "Extensies en plug-ins",
-      "ecosystemVerticals": "Verticale ecosystemen"
+      "ecosystemVerticals": "Verticale ecosystemen",
+      "energy": "Energie"
     },
     "actions": {
       "spaceConfiguration": {
@@ -510,6 +511,30 @@
       "hyphaEnergy": {
         "title": "Hypha-energie",
         "description": "Een speciaal platform voor uw duurzame energiegemeenschap of -hub, dat het delen van lokale energie, mede-eigendom van energieactiva, bestuur en eerlijke waardeverdeling tussen leden mogelijk maakt."
+      },
+      "enableEnergyCommunity": {
+        "title": "Enable Energy Community",
+        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+      },
+      "energySharing": {
+        "title": "Energy Sharing Proposal",
+        "description": "Define how this community shares and settles energy balances."
+      },
+      "registerEnergySource": {
+        "title": "Register Energy Source",
+        "description": "Add a new energy source (solar, battery, etc.) to the community."
+      },
+      "addEnergyMember": {
+        "title": "Add Energy Member",
+        "description": "Add a member and their smart meters for energy accounting."
+      },
+      "changeEnergyOptimization": {
+        "title": "Change Energy Optimization",
+        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+      },
+      "whitelistEnergySettlement": {
+        "title": "Whitelist Energy Settlement",
+        "description": "Allow a wallet to submit energy settlement data for this community."
       }
     }
   },
@@ -4042,14 +4067,14 @@
       "kwhPerInterval": "kWh per interval van 15 minuten",
       "kwhPerIntervalPlaceholder": "bijv. 1000",
       "shareOfSolar": "Aandeel van de opwekking van zonne-energie",
-      "goalWallets": "Doel portemonnees",
-      "goalWalletsDescription": "Verdeel de sociale toewijzing over doelportefeuilles (aandelen totaal 100%).",
-      "addGoalWallet": "Doelportemonnee toevoegen",
       "share": "Deel",
       "socialDisabled": "Gehandicapt",
       "socialFixed": "Vast: {kwh} kWh ​​per interval",
       "socialVariable": "Variabel: {percent}% van zonne-energie",
-      "metersPerMember": "{address} — {count, plural, one {# meter} other {# meters}}"
+      "metersPerMember": "{address} — {count, plural, one {# meter} other {# meters}}",
+      "targetWallets": "Doel portemonnees",
+      "targetWalletsDescription": "Verdeel de sociale toewijzing over doelportefeuilles (aandelen totaal 100%).",
+      "addTargetWallet": "Doelportemonnee toevoegen"
     },
     "forms": {
       "spaceRequired": "Voor het maken van een voorstel is ruimte nodig.",
@@ -4100,8 +4125,6 @@
       "distinctPriorities": "Elke prioriteit moet een andere doelstelling zijn",
       "selectSocialMode": "Selecteer een sociale toewijzingsmodus",
       "wholeKwhPerInterval": "Voer een geheel aantal kWh per interval in",
-      "addGoalWallet": "Voeg ten minste één doelportemonnee toe",
-      "goalWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn",
       "metadataHashRequired": "Metagegevens-hash is vereist",
       "deviceIdsRequired": "Apparaat-ID's zijn vereist",
       "deviceIdsCommaNumbers": "Apparaat-ID's moeten door komma's gescheiden getallen zijn",
@@ -4123,7 +4146,9 @@
       "addOwner": "Voeg ten minste één eigenaar toe",
       "ownershipTotal100": "Eigendomsaandelen moeten in totaal 100% zijn",
       "atLeastOneSource": "Er is minimaal één bron vereist",
-      "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten."
+      "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten.",
+      "addTargetWallet": "Voeg ten minste één doelportemonnee toe",
+      "targetWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn"
     },
     "errors": {
       "allowanceTimeout": "Er is een time-out opgetreden tijdens het wachten op een stablecoin-limiet.",

@@ -232,14 +232,14 @@
     "kwhPerInterval": "kWh por intervalo de 15 minutos",
     "kwhPerIntervalPlaceholder": "ex.: 1000",
     "shareOfSolar": "Quota da geração solar",
-    "goalWallets": "Carteiras de objetivos",
-    "goalWalletsDescription": "Distribuir a alocação social pelas carteiras de objetivos (as quotas totalizam 100%).",
-    "addGoalWallet": "Adicionar carteira de objetivo",
     "share": "Quota",
     "socialDisabled": "Desativado",
     "socialFixed": "Fixo: {kwh} kWh por intervalo",
     "socialVariable": "Variável: {percent}% da solar",
-    "metersPerMember": "{address} — {count, plural, one {# contador} other {# contadores}}"
+    "metersPerMember": "{address} — {count, plural, one {# contador} other {# contadores}}",
+    "targetWallets": "Carteiras de objetivos",
+    "targetWalletsDescription": "Distribuir a alocação social pelas carteiras de objetivos (as quotas totalizam 100%).",
+    "addTargetWallet": "Adicionar carteira de objetivo"
   },
   "forms": {
     "spaceRequired": "O espaço é obrigatório para criar uma proposta.",
@@ -290,8 +290,6 @@
     "distinctPriorities": "Cada prioridade deve ser um objetivo diferente",
     "selectSocialMode": "Selecione um modo de alocação social",
     "wholeKwhPerInterval": "Introduza um número inteiro de kWh por intervalo",
-    "addGoalWallet": "Adicione pelo menos uma carteira de objetivo",
-    "goalWalletsTotal100": "As quotas das carteiras de objetivos devem totalizar 100%",
     "metadataHashRequired": "O hash de metadados é obrigatório",
     "deviceIdsRequired": "Os IDs de dispositivos são obrigatórios",
     "deviceIdsCommaNumbers": "Os IDs de dispositivos devem ser números separados por vírgulas",
@@ -313,7 +311,9 @@
     "addOwner": "Adicione pelo menos um proprietário",
     "ownershipTotal100": "As quotas de propriedade devem totalizar 100%",
     "atLeastOneSource": "É necessária pelo menos uma fonte",
-    "ownerMustBeMember": "Este proprietário também deve ser adicionado como membro (contagem de contadores 0 é aceitável), caso contrário não receberá receitas."
+    "ownerMustBeMember": "Este proprietário também deve ser adicionado como membro (contagem de contadores 0 é aceitável), caso contrário não receberá receitas.",
+    "addTargetWallet": "Adicione pelo menos uma carteira de objetivo",
+    "targetWalletsTotal100": "As quotas das carteiras de objetivos devem totalizar 100%"
   },
   "errors": {
     "allowanceTimeout": "Tempo esgotado à espera da autorização da stablecoin.",

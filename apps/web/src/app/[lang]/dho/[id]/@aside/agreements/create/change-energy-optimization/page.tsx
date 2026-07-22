@@ -4,10 +4,10 @@ import {
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { fetchMembersAndSpaces } from '@web/utils/fetch-users-members';
+import { fetchSpaceMemberRecipients } from '@web/utils/fetch-space-member-recipients';
 import { notFound } from 'next/navigation';
 
 type PageProps = {
@@ -22,11 +22,9 @@ export default async function CreateChangeEnergyOptimizationProposalPage({
   if (!spaceFromDb) notFound();
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
-  const backUrl = `${successfulUrl}${PATH_SELECT_CREATE_ACTION}`;
+  const backUrl = `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
-  const { members, spaces } = await fetchMembersAndSpaces({
-    activeSpaceId: spaceFromDb.id,
-  });
+  const { members, spaces } = await fetchSpaceMemberRecipients(id);
 
   return (
     <ProposalOverlayShell>

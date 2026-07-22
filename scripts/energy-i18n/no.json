@@ -232,14 +232,14 @@
     "kwhPerInterval": "kWh per 15-minuttersintervall",
     "kwhPerIntervalPlaceholder": "f.eks. 1000",
     "shareOfSolar": "Andel av solproduksjonen",
-    "goalWallets": "Mål-lommebøker",
-    "goalWalletsDescription": "Fordel den sosiale tildelingen mellom mål-lommebøker (andelene skal totalt utgjøre 100 %).",
-    "addGoalWallet": "Legg til mål-lommebok",
     "share": "Andel",
     "socialDisabled": "Deaktivert",
     "socialFixed": "Fast: {kwh} kWh per intervall",
     "socialVariable": "Variabel: {percent}% av sol",
-    "metersPerMember": "{address} — {count, plural, one {# måler} other {# målere}}"
+    "metersPerMember": "{address} — {count, plural, one {# måler} other {# målere}}",
+    "targetWallets": "Mål-lommebøker",
+    "targetWalletsDescription": "Fordel den sosiale tildelingen mellom mål-lommebøker (andelene skal totalt utgjøre 100 %).",
+    "addTargetWallet": "Legg til mål-lommebok"
   },
   "forms": {
     "spaceRequired": "Rom kreves for å opprette et forslag.",
@@ -290,8 +290,6 @@
     "distinctPriorities": "Hver prioritering må være et forskjellig mål",
     "selectSocialMode": "Velg en modus for sosial tildeling",
     "wholeKwhPerInterval": "Angi et helt antall kWh per intervall",
-    "addGoalWallet": "Legg til minst én mål-lommebok",
-    "goalWalletsTotal100": "Andelene til mål-lommebøkene må totalt utgjøre 100 %",
     "metadataHashRequired": "Metadata-hash er påkrevd",
     "deviceIdsRequired": "Enhets-ID-er er påkrevd",
     "deviceIdsCommaNumbers": "Enhets-ID-er må være kommaseparerte tall",
@@ -313,7 +311,9 @@
     "addOwner": "Legg til minst én eier",
     "ownershipTotal100": "Eierandelene må totalt utgjøre 100 %",
     "atLeastOneSource": "Minst én kilde er påkrevd",
-    "ownerMustBeMember": "Denne eieren må også legges til som medlem (målerantall 0 er greit), ellers vil de ikke motta inntekter."
+    "ownerMustBeMember": "Denne eieren må også legges til som medlem (målerantall 0 er greit), ellers vil de ikke motta inntekter.",
+    "addTargetWallet": "Legg til minst én mål-lommebok",
+    "targetWalletsTotal100": "Andelene til mål-lommebøkene må totalt utgjøre 100 %"
   },
   "errors": {
     "allowanceTimeout": "Tidsavbrudd under venting på stablecoin-godkjenning.",
