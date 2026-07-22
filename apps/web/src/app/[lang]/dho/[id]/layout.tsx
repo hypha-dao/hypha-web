@@ -153,6 +153,7 @@ export default async function DhoLayout({
                     daoSlug,
                   )}/select-settings-action`}
                   variant="hero"
+                  className="me-3"
                 />
                 {web3SpaceId !== undefined && (
                   <SubscriptionBadge
