@@ -4141,6 +4141,7 @@
     "cancel": "Cancel",
     "delete": "Delete deal",
     "exportXlsx": "Export XLSX",
+    "weightedAbbr": "w",
     "openTrack": "Open track",
     "backToBoard": "Back to board",
     "trackTitle": "{swimlane} track",

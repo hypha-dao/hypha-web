@@ -512,6 +512,13 @@
       "when": 1784000000003,
       "tag": "0072_deal_account_manager_set_null",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1784000000004,
+      "tag": "0073_deal_account_manager_fk_validate",
+      "breakpoints": true
     }
   ]
 }

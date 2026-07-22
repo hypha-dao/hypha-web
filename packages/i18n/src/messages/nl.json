@@ -4141,6 +4141,7 @@
     "cancel": "Annuleren",
     "delete": "Deal verwijderen",
     "exportXlsx": "Exporteer XLSX",
+    "weightedAbbr": "gew.",
     "openTrack": "Open track",
     "backToBoard": "Terug naar bord",
     "trackTitle": "{swimlane}-track",

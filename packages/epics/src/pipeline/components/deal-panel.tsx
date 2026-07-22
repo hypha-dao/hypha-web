@@ -82,7 +82,11 @@ function useDebouncedSave(
       const pending = pendingRef.current;
       pendingRef.current = {};
       if (Object.keys(pending).length > 0) {
-        void patchDeal(dealId, pending).catch(() => undefined);
+        // patchDeal revalidates the SWR cache on failure, so the board falls
+        // back to server state; log so the lost flush is observable.
+        void patchDeal(dealId, pending).catch((err) => {
+          console.error('[DealPanel] failed to flush pending edits', err);
+        });
       }
     },
     [dealId, patchDeal],

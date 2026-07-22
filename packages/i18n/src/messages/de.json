@@ -4133,6 +4133,7 @@
     "cancel": "Abbrechen",
     "delete": "Deal löschen",
     "exportXlsx": "XLSX exportieren",
+    "weightedAbbr": "gew.",
     "openTrack": "Track öffnen",
     "backToBoard": "Zurück zum Board",
     "trackTitle": "{swimlane}-Track",

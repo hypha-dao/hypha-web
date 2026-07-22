@@ -4131,6 +4131,7 @@
     "cancel": "Cancelar",
     "delete": "Eliminar negócio",
     "exportXlsx": "Exportar XLSX",
+    "weightedAbbr": "pond.",
     "openTrack": "Abrir faixa",
     "backToBoard": "Voltar ao quadro",
     "trackTitle": "Faixa {swimlane}",

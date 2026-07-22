@@ -4133,6 +4133,7 @@
     "cancel": "Cancelar",
     "delete": "Eliminar deal",
     "exportXlsx": "Exportar XLSX",
+    "weightedAbbr": "pond.",
     "openTrack": "Abrir pista",
     "backToBoard": "Volver al tablero",
     "trackTitle": "Pista {swimlane}",
