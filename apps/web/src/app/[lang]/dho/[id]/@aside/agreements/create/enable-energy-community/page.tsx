@@ -34,7 +34,7 @@ export default async function CreateEnableEnergyCommunityProposalPage({
     redirect(backUrl);
   }
 
-  const { members, spaces } = await fetchSpaceMemberRecipients(id);
+  const { members, spaces } = await fetchSpaceMemberRecipients(id, { db });
 
   return (
     <ProposalOverlayShell>

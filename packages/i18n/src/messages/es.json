@@ -1280,28 +1280,28 @@
         "description": "Una plataforma dedicada para su comunidad o centro de energía renovable, que permite compartir energía local, copropiedad de activos energéticos, gobernanza y distribución de valor justo entre los miembros."
       },
       "enableEnergyCommunity": {
-        "title": "Enable Energy Community",
-        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+        "title": "Activar comunidad energética",
+        "description": "Configura el intercambio de energía en este espacio para que los miembros puedan producir, consumir y liquidar energía juntos."
       },
       "energySharing": {
-        "title": "Energy Sharing Proposal",
-        "description": "Define how this community shares and settles energy balances."
+        "title": "Propuesta de compartir energía",
+        "description": "Define cómo esta comunidad comparte y liquida los saldos de energía."
       },
       "registerEnergySource": {
-        "title": "Register Energy Source",
-        "description": "Add a new energy source (solar, battery, etc.) to the community."
+        "title": "Registrar fuente de energía",
+        "description": "Añade una nueva fuente de energía (solar, batería, etc.) a la comunidad."
       },
       "addEnergyMember": {
-        "title": "Add Energy Member",
-        "description": "Add a member and their smart meters for energy accounting."
+        "title": "Añadir miembro de energía",
+        "description": "Añade un miembro y sus contadores inteligentes para la contabilidad energética."
       },
       "changeEnergyOptimization": {
-        "title": "Change Energy Optimization",
-        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+        "title": "Cambiar optimización energética",
+        "description": "Actualiza cómo la comunidad prioriza el autoconsumo, el CO₂ y el precio, y ajusta las donaciones sociales."
       },
       "whitelistEnergySettlement": {
-        "title": "Whitelist Energy Settlement",
-        "description": "Allow a wallet to submit energy settlement data for this community."
+        "title": "Lista blanca de liquidación energética",
+        "description": "Permite que una wallet envíe datos de liquidación de energía para esta comunidad."
       }
     }
   },
@@ -4090,7 +4090,7 @@
       "optimization": "Optimización",
       "priorities": "Prioridades",
       "socialAllocation": "Asignación social",
-      "goalWallets": "Wallets de objetivos",
+      "targetWallets": "Wallets de objetivos",
       "energyToken": "Token energético",
       "members": "Miembros",
       "sources": "Fuentes",

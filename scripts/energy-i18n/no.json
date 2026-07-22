@@ -90,7 +90,7 @@
   "shared": {
     "gridOperatorName": "Lokal nettoperatør",
     "gridOperatorSubtitle": "Ekstern energileverandør",
-    "currentPerKwh": "Gjeldende / kWh",
+    "basePerKwh": "Grunnpris / kWh",
     "active": "Aktiv",
     "inactive": "Inaktiv",
     "source": "Kilde",
@@ -261,7 +261,7 @@
     "optimization": "Optimalisering",
     "priorities": "Prioriteringer",
     "socialAllocation": "Sosial tildeling",
-    "goalWallets": "Mål-lommebøker",
+    "targetWallets": "Mål-lommebøker",
     "energyToken": "Energitoken",
     "members": "Medlemmer",
     "sources": "Kilder",

@@ -261,7 +261,7 @@
     "optimization": "Optimization",
     "priorities": "Priorities",
     "socialAllocation": "Social allocation",
-    "goalWallets": "Target wallets",
+    "targetWallets": "Target wallets",
     "energyToken": "Energy token",
     "members": "Members",
     "sources": "Sources",

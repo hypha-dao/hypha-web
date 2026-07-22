@@ -513,28 +513,28 @@
         "description": "Een speciaal platform voor uw duurzame energiegemeenschap of -hub, dat het delen van lokale energie, mede-eigendom van energieactiva, bestuur en eerlijke waardeverdeling tussen leden mogelijk maakt."
       },
       "enableEnergyCommunity": {
-        "title": "Enable Energy Community",
-        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+        "title": "Energiegemeenschap activeren",
+        "description": "Stel energiedeling in voor deze space zodat leden samen energie kunnen produceren, verbruiken en verrekenen."
       },
       "energySharing": {
-        "title": "Energy Sharing Proposal",
-        "description": "Define how this community shares and settles energy balances."
+        "title": "Voorstel energiedeling",
+        "description": "Bepaal hoe deze gemeenschap energiesaldi deelt en verrekent."
       },
       "registerEnergySource": {
-        "title": "Register Energy Source",
-        "description": "Add a new energy source (solar, battery, etc.) to the community."
+        "title": "Energiebron registreren",
+        "description": "Voeg een nieuwe energiebron (zonne-energie, batterij, enz.) toe aan de gemeenschap."
       },
       "addEnergyMember": {
-        "title": "Add Energy Member",
-        "description": "Add a member and their smart meters for energy accounting."
+        "title": "Energielid toevoegen",
+        "description": "Voeg een lid en zijn slimme meters toe voor de energieboekhouding."
       },
       "changeEnergyOptimization": {
-        "title": "Change Energy Optimization",
-        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+        "title": "Energieoptimalisatie wijzigen",
+        "description": "Werk bij hoe de gemeenschap eigen verbruik, CO₂ en prijs prioriteert — en pas sociale donaties aan."
       },
       "whitelistEnergySettlement": {
-        "title": "Whitelist Energy Settlement",
-        "description": "Allow a wallet to submit energy settlement data for this community."
+        "title": "Energieverrekening whitelisten",
+        "description": "Sta een wallet toe om verrekeningsgegevens voor deze gemeenschap in te dienen."
       }
     }
   },
@@ -3925,7 +3925,7 @@
     "shared": {
       "gridOperatorName": "Lokale netbeheerder",
       "gridOperatorSubtitle": "Externe energieleverancier",
-      "currentPerKwh": "Stroom / kWh",
+      "basePerKwh": "Basis / kWh",
       "active": "Actief",
       "inactive": "Inactief",
       "source": "Bron",
@@ -4096,7 +4096,7 @@
       "optimization": "Optimalisatie",
       "priorities": "Prioriteiten",
       "socialAllocation": "Sociale toewijzing",
-      "goalWallets": "Doel portemonnees",
+      "targetWallets": "Doel portemonnees",
       "energyToken": "Energiefiche",
       "members": "Leden",
       "sources": "Bronnen",

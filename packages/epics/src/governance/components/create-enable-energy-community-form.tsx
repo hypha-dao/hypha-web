@@ -403,7 +403,7 @@ export const CreateEnableEnergyCommunityForm = ({
               basePurposeLabel(purpose, (key, values) => t(key, values)),
             ),
             socialAllocation: social,
-            goalWallets: optimization.socialWallets.map(
+            targetWallets: optimization.socialWallets.map(
               (wallet, index) =>
                 `${wallet}: ${(
                   (optimization.socialWalletShares[index] ?? 0) / 100

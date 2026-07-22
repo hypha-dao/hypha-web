@@ -24,7 +24,7 @@ export default async function CreateChangeEnergyOptimizationProposalPage({
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
   const backUrl = `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
-  const { members, spaces } = await fetchSpaceMemberRecipients(id);
+  const { members, spaces } = await fetchSpaceMemberRecipients(id, { db });
 
   return (
     <ProposalOverlayShell>

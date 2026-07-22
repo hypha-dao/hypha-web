@@ -514,28 +514,28 @@
         "description": "Une plateforme dédiée à votre communauté ou hub d'énergie renouvelable, permettant le partage local d'énergie, la copropriété d'actifs énergétiques, la gouvernance et une distribution équitable de la valeur entre les membres."
       },
       "enableEnergyCommunity": {
-        "title": "Enable Energy Community",
-        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+        "title": "Activer la communauté énergétique",
+        "description": "Configurez le partage d'énergie pour cet espace afin que les membres puissent produire, consommer et régler l'énergie ensemble."
       },
       "energySharing": {
-        "title": "Energy Sharing Proposal",
-        "description": "Define how this community shares and settles energy balances."
+        "title": "Proposition de partage d'énergie",
+        "description": "Définissez comment cette communauté partage et règle les soldes d'énergie."
       },
       "registerEnergySource": {
-        "title": "Register Energy Source",
-        "description": "Add a new energy source (solar, battery, etc.) to the community."
+        "title": "Enregistrer une source d'énergie",
+        "description": "Ajoutez une nouvelle source d'énergie (solaire, batterie, etc.) à la communauté."
       },
       "addEnergyMember": {
-        "title": "Add Energy Member",
-        "description": "Add a member and their smart meters for energy accounting."
+        "title": "Ajouter un membre énergie",
+        "description": "Ajoutez un membre et ses compteurs intelligents pour la comptabilité énergétique."
       },
       "changeEnergyOptimization": {
-        "title": "Change Energy Optimization",
-        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+        "title": "Modifier l'optimisation énergétique",
+        "description": "Mettez à jour la façon dont la communauté priorise l'autoconsommation, le CO₂ et le prix — et ajustez les dons sociaux."
       },
       "whitelistEnergySettlement": {
-        "title": "Whitelist Energy Settlement",
-        "description": "Allow a wallet to submit energy settlement data for this community."
+        "title": "Liste blanche de règlement énergétique",
+        "description": "Autorisez un portefeuille à soumettre des données de règlement énergétique pour cette communauté."
       }
     }
   },
@@ -4086,7 +4086,7 @@
       "optimization": "Optimisation",
       "priorities": "Priorités",
       "socialAllocation": "Allocation sociale",
-      "goalWallets": "Portefeuilles d'objectifs",
+      "targetWallets": "Portefeuilles d'objectifs",
       "energyToken": "Jeton énergétique",
       "members": "Membres",
       "sources": "Sources",

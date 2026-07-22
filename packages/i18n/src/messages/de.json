@@ -514,28 +514,28 @@
         "description": "Eine dedizierte Plattform für Ihre Community oder Ihren Hub für erneuerbare Energien, die lokales Energy Sharing, gemeinsames Eigentum an Energieanlagen, Governance und faire Wertverteilung zwischen Mitgliedern ermöglicht."
       },
       "enableEnergyCommunity": {
-        "title": "Enable Energy Community",
-        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+        "title": "Energiegemeinschaft aktivieren",
+        "description": "Richten Sie Energy Sharing für diesen Space ein, damit Mitglieder gemeinsam Energie erzeugen, verbrauchen und abrechnen können."
       },
       "energySharing": {
-        "title": "Energy Sharing Proposal",
-        "description": "Define how this community shares and settles energy balances."
+        "title": "Energieteilungs-Vorschlag",
+        "description": "Legen Sie fest, wie diese Gemeinschaft Energiesalden teilt und abrechnet."
       },
       "registerEnergySource": {
-        "title": "Register Energy Source",
-        "description": "Add a new energy source (solar, battery, etc.) to the community."
+        "title": "Energiequelle registrieren",
+        "description": "Fügen Sie der Gemeinschaft eine neue Energiequelle (Solar, Batterie usw.) hinzu."
       },
       "addEnergyMember": {
-        "title": "Add Energy Member",
-        "description": "Add a member and their smart meters for energy accounting."
+        "title": "Energiemitglied hinzufügen",
+        "description": "Fügen Sie ein Mitglied und seine Smart Meter für die Energieabrechnung hinzu."
       },
       "changeEnergyOptimization": {
-        "title": "Change Energy Optimization",
-        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+        "title": "Energieoptimierung ändern",
+        "description": "Passen Sie an, wie die Gemeinschaft Eigenverbrauch, CO₂ und Preis priorisiert — und passen Sie soziale Spenden an."
       },
       "whitelistEnergySettlement": {
-        "title": "Whitelist Energy Settlement",
-        "description": "Allow a wallet to submit energy settlement data for this community."
+        "title": "Energieabrechnung whitelisten",
+        "description": "Erlauben Sie einer Wallet, Abrechnungsdaten für diese Gemeinschaft einzureichen."
       }
     }
   },
@@ -4090,7 +4090,7 @@
       "optimization": "Optimierung",
       "priorities": "Prioritäten",
       "socialAllocation": "Soziale Zuweisung",
-      "goalWallets": "Ziel-Wallets",
+      "targetWallets": "Ziel-Wallets",
       "energyToken": "Energietoken",
       "members": "Mitglieder",
       "sources": "Quellen",

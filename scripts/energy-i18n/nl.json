@@ -90,7 +90,7 @@
   "shared": {
     "gridOperatorName": "Lokale netbeheerder",
     "gridOperatorSubtitle": "Externe energieleverancier",
-    "currentPerKwh": "Stroom / kWh",
+    "basePerKwh": "Basis / kWh",
     "active": "Actief",
     "inactive": "Inactief",
     "source": "Bron",
@@ -261,7 +261,7 @@
     "optimization": "Optimalisatie",
     "priorities": "Prioriteiten",
     "socialAllocation": "Sociale toewijzing",
-    "goalWallets": "Doel portemonnees",
+    "targetWallets": "Doel portemonnees",
     "energyToken": "Energiefiche",
     "members": "Leden",
     "sources": "Bronnen",

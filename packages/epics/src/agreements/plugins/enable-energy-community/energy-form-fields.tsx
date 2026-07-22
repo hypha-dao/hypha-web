@@ -390,65 +390,63 @@ const PrimaryObjectiveField = () => {
     <FormField
       control={control}
       name="energyOptimization.purpose1"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{t('optimization.primaryObjective')}</FormLabel>
-          <FormControl>
-            <div className="flex flex-col gap-3">
-              {basePurposeOptions.map(({ value, label, description, icon }) => {
-                const selected = field.value === value;
-                return (
-                  <Card
-                    key={value}
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={selected}
-                    className={clsx(
-                      'flex cursor-pointer items-center space-x-4 border-2 p-5',
-                      {
-                        'border-accent-9': selected,
-                        'hover:border-accent-5': !selected,
-                      },
-                    )}
-                    onClick={() => {
-                      field.onChange(value);
-                      const [, second, third] = completeRanking(value);
-                      setValue('energyOptimization.purpose2', second, {
-                        shouldValidate: true,
-                      });
-                      setValue('energyOptimization.purpose3', third, {
-                        shouldValidate: true,
-                      });
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        field.onChange(value);
-                        const [, second, third] = completeRanking(value);
-                        setValue('energyOptimization.purpose2', second, {
-                          shouldValidate: true,
-                        });
-                        setValue('energyOptimization.purpose3', third, {
-                          shouldValidate: true,
-                        });
-                      }
-                    }}
-                  >
-                    <div>{icon}</div>
-                    <div className="flex flex-col">
-                      <span className="text-3 font-medium">{label}</span>
-                      <span className="text-1 text-neutral-11">
-                        {description}
-                      </span>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        const selectPurpose = (value: EnergyBasePurpose) => {
+          field.onChange(value);
+          const [, second, third] = completeRanking(value);
+          setValue('energyOptimization.purpose2', second, {
+            shouldValidate: true,
+          });
+          setValue('energyOptimization.purpose3', third, {
+            shouldValidate: true,
+          });
+        };
+        return (
+          <FormItem>
+            <FormLabel>{t('optimization.primaryObjective')}</FormLabel>
+            <FormControl>
+              <div className="flex flex-col gap-3">
+                {basePurposeOptions.map(
+                  ({ value, label, description, icon }) => {
+                    const selected = field.value === value;
+                    return (
+                      <Card
+                        key={value}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={selected}
+                        className={clsx(
+                          'flex cursor-pointer items-center space-x-4 border-2 p-5',
+                          {
+                            'border-accent-9': selected,
+                            'hover:border-accent-5': !selected,
+                          },
+                        )}
+                        onClick={() => selectPurpose(value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            selectPurpose(value);
+                          }
+                        }}
+                      >
+                        <div>{icon}</div>
+                        <div className="flex flex-col">
+                          <span className="text-3 font-medium">{label}</span>
+                          <span className="text-1 text-neutral-11">
+                            {description}
+                          </span>
+                        </div>
+                      </Card>
+                    );
+                  },
+                )}
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };

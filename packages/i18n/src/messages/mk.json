@@ -493,28 +493,28 @@
         "description": "Наменска платформа за вашата заедница или хаб за обновлива енергија, која овозможува локално споделување енергија, заедничка сопственост на енергетски средства, управување и фер распределба на вредноста меѓу членовите."
       },
       "enableEnergyCommunity": {
-        "title": "Enable Energy Community",
-        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+        "title": "Активирај енергетска заедница",
+        "description": "Поставете споделување енергија за овој простор за членовите заедно да произведуваат, трошат и порамнуваат енергија."
       },
       "energySharing": {
-        "title": "Energy Sharing Proposal",
-        "description": "Define how this community shares and settles energy balances."
+        "title": "Предлог за споделување енергија",
+        "description": "Дефинирајте како оваа заедница споделува и порамнува енергетски салда."
       },
       "registerEnergySource": {
-        "title": "Register Energy Source",
-        "description": "Add a new energy source (solar, battery, etc.) to the community."
+        "title": "Регистрирај енергетски извор",
+        "description": "Додајте нов енергетски извор (соларен, батерија итн.) во заедницата."
       },
       "addEnergyMember": {
-        "title": "Add Energy Member",
-        "description": "Add a member and their smart meters for energy accounting."
+        "title": "Додај енергетски член",
+        "description": "Додајте член и неговите паметни бројачи за енергетско сметководство."
       },
       "changeEnergyOptimization": {
-        "title": "Change Energy Optimization",
-        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+        "title": "Промени енергетска оптимизација",
+        "description": "Ажурирајте како заедницата ги приоритизира сопствената потрошувачка, CO₂ и цената — и приспособете ги социјалните донации."
       },
       "whitelistEnergySettlement": {
-        "title": "Whitelist Energy Settlement",
-        "description": "Allow a wallet to submit energy settlement data for this community."
+        "title": "Whitelist на енергетско порамнување",
+        "description": "Дозволете паричник да поднесува податоци за енергетско порамнување за оваа заедница."
       }
     }
   },
@@ -4077,7 +4077,7 @@
       "optimization": "Оптимизација",
       "priorities": "Приоритети",
       "socialAllocation": "Социјална алокација",
-      "goalWallets": "Паричници со цели",
+      "targetWallets": "Паричници со цели",
       "energyToken": "Енергетски токен",
       "members": "Членови",
       "sources": "Извори",

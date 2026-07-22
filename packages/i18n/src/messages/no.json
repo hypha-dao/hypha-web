@@ -512,28 +512,28 @@
         "description": "En dedikert plattform for ditt fellesskap eller knutepunkt for fornybar energi, som muliggjør lokal energideling, sameie av energiressurser, styring og rettferdig verdifordeling mellom medlemmer."
       },
       "enableEnergyCommunity": {
-        "title": "Enable Energy Community",
-        "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
+        "title": "Aktiver energifellesskap",
+        "description": "Sett opp energideling for dette området slik at medlemmene kan produsere, forbruke og avregne energi sammen."
       },
       "energySharing": {
-        "title": "Energy Sharing Proposal",
-        "description": "Define how this community shares and settles energy balances."
+        "title": "Forslag om energideling",
+        "description": "Definer hvordan dette fellesskapet deler og avregner energibalanser."
       },
       "registerEnergySource": {
-        "title": "Register Energy Source",
-        "description": "Add a new energy source (solar, battery, etc.) to the community."
+        "title": "Registrer energikilde",
+        "description": "Legg til en ny energikilde (sol, batteri osv.) i fellesskapet."
       },
       "addEnergyMember": {
-        "title": "Add Energy Member",
-        "description": "Add a member and their smart meters for energy accounting."
+        "title": "Legg til energimedlem",
+        "description": "Legg til et medlem og deres smarte målere for energiregnskap."
       },
       "changeEnergyOptimization": {
-        "title": "Change Energy Optimization",
-        "description": "Update how the community prioritises self-consumption, CO₂, and price — and adjust social donations."
+        "title": "Endre energioptimalisering",
+        "description": "Oppdater hvordan fellesskapet prioriterer egenforbruk, CO₂ og pris — og juster sosiale donasjoner."
       },
       "whitelistEnergySettlement": {
-        "title": "Whitelist Energy Settlement",
-        "description": "Allow a wallet to submit energy settlement data for this community."
+        "title": "Hvitelist energiavregning",
+        "description": "Tillat en lommebok å sende inn avregningsdata for dette fellesskapet."
       }
     }
   },
@@ -3922,7 +3922,7 @@
     "shared": {
       "gridOperatorName": "Lokal nettoperatør",
       "gridOperatorSubtitle": "Ekstern energileverandør",
-      "currentPerKwh": "Gjeldende / kWh",
+      "basePerKwh": "Grunnpris / kWh",
       "active": "Aktiv",
       "inactive": "Inaktiv",
       "source": "Kilde",
@@ -4093,7 +4093,7 @@
       "optimization": "Optimalisering",
       "priorities": "Prioriteringer",
       "socialAllocation": "Sosial tildeling",
-      "goalWallets": "Mål-lommebøker",
+      "targetWallets": "Mål-lommebøker",
       "energyToken": "Energitoken",
       "members": "Medlemmer",
       "sources": "Kilder",

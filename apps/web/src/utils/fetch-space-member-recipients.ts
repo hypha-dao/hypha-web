@@ -1,18 +1,26 @@
+import 'server-only';
+
 import {
   computeSpaceMemberEntries,
   findPeopleBySpaceSlug,
+  type DbConfig,
   type Person,
   type Space,
 } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
 
-const SPACE_MEMBER_FETCH_LIMIT = 1000;
+const SPACE_MEMBER_PAGE_SIZE = 1000;
 
 /**
  * Recipients for energy forms: only people and spaces that are members of the
  * host space (on-chain roster when available, otherwise DB memberships).
+ *
+ * Note: the DB fallback returns `spaces: []` by design — space-to-space
+ * memberships are recorded on-chain only and have no database source.
  */
-export async function fetchSpaceMemberRecipients(spaceSlug: string): Promise<{
+export async function fetchSpaceMemberRecipients(
+  spaceSlug: string,
+  { db }: DbConfig,
+): Promise<{
   members: Person[];
   spaces: Space[];
 }> {
@@ -38,15 +46,20 @@ export async function fetchSpaceMemberRecipients(spaceSlug: string): Promise<{
     return { members, spaces };
   }
 
-  const peopleResult = await findPeopleBySpaceSlug(
-    { spaceSlug },
-    { db, pagination: { page: 1, pageSize: SPACE_MEMBER_FETCH_LIMIT } },
-  );
+  const members: Person[] = [];
+  let page = 1;
+  let hasNextPage = true;
+  while (hasNextPage) {
+    const peopleResult = await findPeopleBySpaceSlug(
+      { spaceSlug },
+      { db, pagination: { page, pageSize: SPACE_MEMBER_PAGE_SIZE } },
+    );
+    members.push(
+      ...peopleResult.data.filter((person) => Boolean(person.address?.trim())),
+    );
+    hasNextPage = peopleResult.pagination.hasNextPage;
+    page += 1;
+  }
 
-  return {
-    members: peopleResult.data.filter((person) =>
-      Boolean(person.address?.trim()),
-    ),
-    spaces: [],
-  };
+  return { members, spaces: [] };
 }
