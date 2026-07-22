@@ -11,6 +11,7 @@ describe('constraintsForVoicePreset', () => {
       autoGainControl: true,
       echoCancellation: true,
       noiseSuppression: false,
+      voiceIsolation: false,
     });
   });
 
@@ -19,6 +20,7 @@ describe('constraintsForVoicePreset', () => {
       autoGainControl: false,
       echoCancellation: true,
       noiseSuppression: true,
+      voiceIsolation: true,
     });
   });
 
@@ -27,6 +29,7 @@ describe('constraintsForVoicePreset', () => {
       autoGainControl: false,
       echoCancellation: true,
       noiseSuppression: false,
+      voiceIsolation: false,
     });
   });
 });
