@@ -224,7 +224,27 @@ export function NewDealDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        className="max-h-[85vh] overflow-y-auto"
+        onPointerDownOutside={(event) => {
+          const target = event.target as HTMLElement | null;
+          if (target?.closest('[data-pipeline-select-content="true"]')) {
+            event.preventDefault();
+          }
+        }}
+        onInteractOutside={(event) => {
+          const target = event.target as HTMLElement | null;
+          if (target?.closest('[data-pipeline-select-content="true"]')) {
+            event.preventDefault();
+          }
+        }}
+        onFocusOutside={(event) => {
+          const target = event.target as HTMLElement | null;
+          if (target?.closest('[data-pipeline-select-content="true"]')) {
+            event.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{t('newDeal.title')}</DialogTitle>
         </DialogHeader>
@@ -245,6 +265,7 @@ export function NewDealDialog({
               value={accountManagerId}
               onChange={setAccountManagerId}
               allowUnassigned
+              popoverModal={false}
               unassignedLabel={t('newDeal.accountManagerUnassigned')}
               placeholder={
                 isLoadingMembers
@@ -264,6 +285,7 @@ export function NewDealDialog({
               members={members}
               value={teamMemberIds}
               onChange={setTeamMemberIds}
+              popoverModal={false}
               placeholder={
                 isLoadingMembers
                   ? t('newDeal.loadingMembers')
@@ -301,6 +323,7 @@ export function NewDealDialog({
             <CountrySelect
               value={country}
               countryFocus={countryFocus}
+              popoverModal={false}
               placeholder={t('newDeal.countryPlaceholder')}
               searchPlaceholder={t('newDeal.countrySearch')}
               noneLabel={t('fields.noCountry')}

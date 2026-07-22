@@ -118,9 +118,10 @@ export function FilterBar({
         </FilterField>
         <FilterField label={t('filters.country')}>
           <CountrySelect
-            className="w-[180px]"
+            className="w-[160px]"
             value={typeof filters.country === 'string' ? filters.country : null}
             countryFocus={countryFocus}
+            popoverModal
             placeholder={t('filters.allCountries')}
             searchPlaceholder={t('filters.countrySearch')}
             noneLabel={t('filters.allCountries')}

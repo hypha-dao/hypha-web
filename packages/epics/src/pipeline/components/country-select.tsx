@@ -1,16 +1,20 @@
 'use client';
 
 import React from 'react';
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { Check, Search } from 'lucide-react';
+import { ChevronDownIcon } from '@radix-ui/themes';
 import { COUNTRY_GROUPS } from '@hypha-platform/core/client';
 import {
-  Button,
   Input,
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+
+/** Match `@hypha-platform/ui` SelectTrigger sizing/look. */
+const TRIGGER_CLASS =
+  'h-6 flex w-full items-center justify-between rounded border border-input bg-neutral-1 px-3 py-2 text-2 font-normal ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
 
 type CountryOption = {
   code: string;
@@ -29,6 +33,8 @@ type CountrySelectProps = {
   allowNone?: boolean;
   disabled?: boolean;
   className?: string;
+  /** Use true outside dialogs; false inside modal dialogs. */
+  popoverModal?: boolean;
 };
 
 export function CountrySelect({
@@ -42,6 +48,7 @@ export function CountrySelect({
   allowNone = true,
   disabled = false,
   className,
+  popoverModal = true,
 }: CountrySelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -84,16 +91,29 @@ export function CountrySelect({
 
   const selected = options.find((option) => option.code === value) ?? null;
 
-  const select = (code: string | null) => {
-    if (disabled) return;
-    onChange(code);
-    setOpen(false);
-    setSearchTerm('');
+  const select = React.useCallback(
+    (code: string | null) => {
+      if (disabled) return;
+      onChange(code);
+      setOpen(false);
+      setSearchTerm('');
+    },
+    [disabled, onChange],
+  );
+
+  const onOptionPointerDown = (
+    event: React.PointerEvent,
+    code: string | null,
+  ) => {
+    // Commit on pointerdown so Dialog/DismissableLayer cannot swallow the click.
+    event.preventDefault();
+    event.stopPropagation();
+    select(code);
   };
 
   return (
     <Popover
-      modal={false}
+      modal={popoverModal}
       open={open && !disabled}
       onOpenChange={(next) => {
         if (disabled) return;
@@ -102,18 +122,12 @@ export function CountrySelect({
       }}
     >
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="outline"
-          colorVariant="neutral"
           role="combobox"
           aria-expanded={open && !disabled}
           disabled={disabled}
-          className={cn(
-            'h-auto min-h-10 w-full justify-between py-2 font-normal',
-            disabled && 'pointer-events-none opacity-50',
-            className,
-          )}
+          className={cn(TRIGGER_CLASS, className)}
         >
           <span className="truncate text-left">
             {selected
@@ -122,79 +136,95 @@ export function CountrySelect({
               ? value
               : placeholder}
           </span>
-          <ChevronDown className="ml-2 size-4 shrink-0 opacity-60" />
-        </Button>
+          <span className="w-2 shrink-0">
+            <ChevronDownIcon className="size-2" />
+          </span>
+        </button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[100] w-[var(--radix-popover-trigger-width)] p-0"
+        className="z-[200] w-[var(--radix-popover-trigger-width)] min-w-[12rem] p-0"
         align="start"
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => {
+          // Keep open when interacting with nested portaled UI; otherwise default close.
+          const target = event.target as HTMLElement | null;
+          if (target?.closest('[data-pipeline-select-content="true"]')) {
+            event.preventDefault();
+          }
+        }}
       >
-        <div className="flex items-center gap-2 border-b border-neutral-5 px-3 py-2">
-          <Search className="size-4 shrink-0 text-neutral-10" />
-          <Input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={searchPlaceholder}
-            className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
-            disabled={disabled}
-          />
-        </div>
-        <div className="max-h-60 overflow-y-auto p-1">
-          {allowNone ? (
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => select(null)}
-            >
-              <span className="flex-1 truncate">{noneLabel}</span>
-              <Check
-                className={cn(
-                  'ml-auto size-4',
-                  !value ? 'opacity-100' : 'opacity-0',
-                )}
-              />
-            </button>
-          ) : null}
+        <div
+          data-pipeline-select-content="true"
+          className="flex flex-col"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-center gap-2 border-b border-neutral-5 px-2 py-1.5">
+            <Search className="size-3.5 shrink-0 text-neutral-10" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder={searchPlaceholder}
+              className="h-6 border-0 bg-transparent px-0 text-2 shadow-none focus-visible:ring-0"
+              disabled={disabled}
+              onKeyDown={(event) => event.stopPropagation()}
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto p-1">
+            {allowNone ? (
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3"
+                onPointerDown={(event) => onOptionPointerDown(event, null)}
+              >
+                <span className="flex-1 truncate">{noneLabel}</span>
+                <Check
+                  className={cn(
+                    'ml-auto size-3.5',
+                    !value ? 'opacity-100' : 'opacity-0',
+                  )}
+                />
+              </button>
+            ) : null}
 
-          {grouped.length === 0 ? (
-            <p className="px-2 py-3 text-2 text-neutral-11">
-              {emptyListMessage}
-            </p>
-          ) : (
-            grouped.map(([group, codes]) => (
-              <div key={group} className="mb-1">
-                <div className="px-2 py-1 text-1 font-medium uppercase tracking-wide text-neutral-10">
-                  {group}
-                </div>
-                {codes.map((option) => {
-                  const isSelected = value === option.code;
-                  return (
-                    <button
-                      key={option.code}
-                      type="button"
-                      className={cn(
-                        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3',
-                        isSelected && 'bg-accent-3/60',
-                      )}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => select(option.code)}
-                    >
-                      <span className="flex-1 truncate">{option.code}</span>
-                      <Check
+            {grouped.length === 0 ? (
+              <p className="px-2 py-3 text-2 text-neutral-11">
+                {emptyListMessage}
+              </p>
+            ) : (
+              grouped.map(([group, codes]) => (
+                <div key={group} className="mb-1">
+                  <div className="px-2 py-1 text-1 font-medium uppercase tracking-wide text-neutral-10">
+                    {group}
+                  </div>
+                  {codes.map((option) => {
+                    const isSelected = value === option.code;
+                    return (
+                      <button
+                        key={option.code}
+                        type="button"
                         className={cn(
-                          'ml-auto size-4',
-                          isSelected ? 'opacity-100' : 'opacity-0',
+                          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3',
+                          isSelected && 'bg-accent-3/60',
                         )}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            ))
-          )}
+                        onPointerDown={(event) =>
+                          onOptionPointerDown(event, option.code)
+                        }
+                      >
+                        <span className="flex-1 truncate">{option.code}</span>
+                        <Check
+                          className={cn(
+                            'ml-auto size-3.5',
+                            isSelected ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </PopoverContent>
     </Popover>

@@ -153,6 +153,7 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
           <CountrySelect
             value={deal.country}
             countryFocus={countryFocus}
+            popoverModal
             placeholder={t('fields.noCountry')}
             noneLabel={t('fields.noCountry')}
             onChange={(country) => {
