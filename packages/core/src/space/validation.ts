@@ -108,6 +108,7 @@ const createSpaceWeb2Props = {
     .default([]),
   address: z.string().optional(),
   flags: z.array(z.enum(SPACE_FLAGS)).default([]),
+  pipelineEnabled: z.boolean().optional(),
   latitude: spaceLatitudeSchema.nullable().optional(),
   longitude: spaceLongitudeSchema.nullable().optional(),
   locationLabel: spaceLocationLabelSchema.nullable().optional(),
@@ -250,6 +251,7 @@ export const updateSpaceProps = {
   categories: createSpaceWeb2Props.categories.optional(),
   links: createSpaceWeb2Props.links.optional(),
   flags: createSpaceWeb2Props.flags.optional(),
+  pipelineEnabled: z.boolean().optional(),
   chatRoomId: matrixRoomIdSchema.nullable().optional(),
 };
 

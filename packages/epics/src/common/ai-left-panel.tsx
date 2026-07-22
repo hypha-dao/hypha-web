@@ -21,6 +21,7 @@ import {
   Coins,
   FileCheck2,
   House,
+  KanbanSquare,
   Navigation,
   Menu,
   PanelLeftClose,
@@ -570,6 +571,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         | 'agreements'
         | 'members'
         | 'calendar'
+        | 'pipeline'
         | 'treasury'
         | 'energy'
         | 'rewards'
@@ -622,6 +624,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         href: `/${lang}/dho/${spaceSlug}/calendar`,
         active: isSectionActive('calendar'),
       },
+      ...(space?.pipelineEnabled
+        ? [
+            {
+              key: 'pipeline',
+              label: tCommon('Pipeline'),
+              icon: KanbanSquare,
+              href: `/${lang}/dho/${spaceSlug}/pipeline`,
+              active: isSectionActive('pipeline'),
+            },
+          ]
+        : []),
       {
         key: 'agreements',
         label: tCommon('Agreements'),
@@ -677,6 +690,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     enableSpaceMemory,
     isSectionActive,
     lang,
+    space?.pipelineEnabled,
     spaceEnergyData?.enabled,
     spaceSlug,
     tCommon,

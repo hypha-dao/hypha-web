@@ -32,6 +32,8 @@ export interface Space {
   locatedAt?: Date | null;
   /** Matrix room id for space chat when provisioned. */
   chatRoomId?: string | null;
+  /** When true, Deal Pipeline is available for this space. */
+  pipelineEnabled?: boolean;
   flags: SpaceFlags[];
   parent?: Space | null;
   organisationSpaces?: Space[];
@@ -74,6 +76,7 @@ export interface UpdateSpaceInput {
   locationSource?: SpaceLocationSource | null;
   chatRoomId?: string | null;
   flags?: SpaceFlags[];
+  pipelineEnabled?: boolean;
 }
 
 export type UpdateSpaceBySlugInput = { slug: string } & UpdateSpaceInput;

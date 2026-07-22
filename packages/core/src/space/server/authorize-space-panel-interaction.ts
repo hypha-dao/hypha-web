@@ -1,5 +1,6 @@
 import { db } from '@hypha-platform/storage-postgres';
 
+import type { Person } from '../../people/types';
 import { resolvePersonFromAuthToken } from '../../people/server/resolve-person-from-auth-token';
 import { findSpaceBySlug } from './queries';
 import { hasPostgresSpaceMembership } from './check-space-access-for-roster';
@@ -11,7 +12,9 @@ export async function authorizeSpacePanelInteraction({
 }: {
   spaceSlug: string;
   authToken: string;
-}): Promise<{ authorized: true } | { authorized: false; message: string }> {
+}): Promise<
+  { authorized: true; person: Person } | { authorized: false; message: string }
+> {
   try {
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
@@ -24,7 +27,7 @@ export async function authorizeSpacePanelInteraction({
     }
 
     if (await hasPostgresSpaceMembership(space.id, authToken)) {
-      return { authorized: true };
+      return { authorized: true, person };
     }
 
     if (space.web3SpaceId == null) {
@@ -45,7 +48,7 @@ export async function authorizeSpacePanelInteraction({
         person.address as `0x${string}`,
       );
       if (allowed) {
-        return { authorized: true };
+        return { authorized: true, person };
       }
     } catch (onChainError) {
       console.error(
@@ -72,7 +75,7 @@ export async function authorizeSpacePanelInteraction({
       }
 
       if (await hasPostgresSpaceMembership(space.id, authToken)) {
-        return { authorized: true };
+        return { authorized: true, person };
       }
 
       if (
@@ -83,7 +86,7 @@ export async function authorizeSpacePanelInteraction({
           person.address as `0x${string}`,
         ))
       ) {
-        return { authorized: true };
+        return { authorized: true, person };
       }
     } catch (fallbackError) {
       console.error(

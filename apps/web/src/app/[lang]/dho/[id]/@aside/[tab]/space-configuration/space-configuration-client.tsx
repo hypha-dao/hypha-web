@@ -182,6 +182,7 @@ export function SpaceConfigurationClient({
       parentId: space.parentId || null,
       address: space.address || '',
       flags: space.flags ?? [],
+      pipelineEnabled: space.pipelineEnabled ?? false,
       latitude: space.latitude ?? null,
       longitude: space.longitude ?? null,
       locationLabel: space.locationLabel ?? null,

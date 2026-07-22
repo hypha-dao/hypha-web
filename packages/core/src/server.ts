@@ -39,6 +39,8 @@ export {
 } from './coherence/validation';
 export * from './schedule/server';
 export * from './schedule';
+export * from './pipeline/server';
+export * from './pipeline';
 export * from './matrix/server';
 export * from './matrix/types';
 export * from './energy/server';

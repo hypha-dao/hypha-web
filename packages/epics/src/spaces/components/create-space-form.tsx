@@ -18,6 +18,7 @@ import {
   RequirementMark,
   Card,
   Separator,
+  Switch,
   COMBOBOX_TITLE,
   COMBOBOX_DELIMITER,
 } from '@hypha-platform/ui';
@@ -59,6 +60,8 @@ import {
   SignalWorkflowSettings,
   type SignalWorkflowSettingsHandle,
 } from '../../coherence/components/signal-workflow-settings';
+import { PipelineRegionSettings } from '../../pipeline/components/pipeline-region-settings';
+import { PipelineProbabilitySettings } from '../../pipeline/components/pipeline-probability-settings';
 import {
   SpaceLocationPicker,
   type SpaceLocationPickerHandle,
@@ -114,6 +117,7 @@ const DEFAULT_VALUES = {
   parentSpaceSlug: '',
   address: '',
   flags: ['sandbox'] as SpaceFlags[],
+  pipelineEnabled: false,
   latitude: null,
   longitude: null,
   locationLabel: null,
@@ -188,6 +192,7 @@ export const SpaceForm = ({
   const parentSpaceId = form.watch('parentId');
   const watchedSpaceTitle = form.watch('title');
   const slug = form.watch('slug');
+  const pipelineEnabled = form.watch('pipelineEnabled');
   const isRootConfiguration = label === 'configure' && parentSpaceId === null;
   const spaceTitleForPlaceholder = React.useMemo(() => {
     const currentTitle = watchedSpaceTitle?.trim();
@@ -1027,6 +1032,35 @@ export const SpaceForm = ({
               </Card>
             )}
           </div>
+          {label === 'configure' ? (
+            <FormField
+              control={form.control}
+              name="pipelineEnabled"
+              render={({ field }) => (
+                <FormItem>
+                  <Card className="flex items-center justify-between gap-4 p-6">
+                    <div className="flex flex-col gap-1">
+                      <FormLabel className="text-2 font-medium">
+                        {tSpaces('pipelineEnabled')}
+                      </FormLabel>
+                      <span className="text-1 text-neutral-11">
+                        {tSpaces('pipelineEnabledDescription')}
+                      </span>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={Boolean(field.value)}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                        aria-label={tSpaces('pipelineEnabled')}
+                      />
+                    </FormControl>
+                  </Card>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
           {label !== 'configure' ? (
             <div className="flex justify-end w-full">
               <Button
@@ -1048,6 +1082,13 @@ export const SpaceForm = ({
               ref={workflowSettingsRef}
               spaceSlug={spaceSlug}
             />
+            {pipelineEnabled ? (
+              <>
+                <Separator />
+                <PipelineRegionSettings spaceSlug={spaceSlug} />
+                <PipelineProbabilitySettings spaceSlug={spaceSlug} />
+              </>
+            ) : null}
             <div className="flex justify-end w-full">
               <Button
                 type="submit"
