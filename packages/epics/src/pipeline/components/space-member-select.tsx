@@ -121,7 +121,7 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
     unknownLabel = 'Unknown member',
     disabled = false,
     className,
-    popoverModal = false,
+    popoverModal = true,
   } = props;
 
   const isMulti = props.mode === 'multi';

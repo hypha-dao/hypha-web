@@ -265,7 +265,7 @@ export function NewDealDialog({
               value={accountManagerId}
               onChange={setAccountManagerId}
               allowUnassigned
-              popoverModal={false}
+              popoverModal
               unassignedLabel={t('newDeal.accountManagerUnassigned')}
               placeholder={
                 isLoadingMembers
@@ -285,7 +285,7 @@ export function NewDealDialog({
               members={members}
               value={teamMemberIds}
               onChange={setTeamMemberIds}
-              popoverModal={false}
+              popoverModal
               placeholder={
                 isLoadingMembers
                   ? t('newDeal.loadingMembers')
@@ -323,7 +323,7 @@ export function NewDealDialog({
             <CountrySelect
               value={country}
               countryFocus={countryFocus}
-              popoverModal={false}
+              popoverModal
               placeholder={t('newDeal.countryPlaceholder')}
               searchPlaceholder={t('newDeal.countrySearch')}
               noneLabel={t('fields.noCountry')}
