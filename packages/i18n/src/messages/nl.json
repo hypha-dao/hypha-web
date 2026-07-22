@@ -4168,7 +4168,10 @@
       "allStatuses": "Alle statussen",
       "anyDeadline": "Elke deadline",
       "tagLabel": "Deal-tag",
-      "tagPlaceholder": "Filter op een deal-tag"
+      "tagPlaceholder": "Filter op een deal-tag",
+      "country": "Land",
+      "countrySearch": "Zoek landen…",
+      "allCountries": "Alle landen"
     },
     "savedViews": {
       "save": "Save view",
@@ -4217,7 +4220,8 @@
       "priorityLabel": "Prioriteit",
       "validationRequired": "Titel, swimlane, regio, uitvoeringsstatus en voornaam van het contact zijn verplicht.",
       "createFailed": "Kaart kon niet worden aangemaakt. Probeer opnieuw.",
-      "noMembers": "Geen leden gevonden."
+      "noMembers": "Geen leden gevonden.",
+      "noCountries": "Geen landen gevonden."
     },
     "fields": {
       "swimlane": "Swimlane",

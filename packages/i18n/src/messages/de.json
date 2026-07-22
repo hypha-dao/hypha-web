@@ -4160,7 +4160,10 @@
       "allStatuses": "Alle Status",
       "anyDeadline": "Beliebige Frist",
       "tagLabel": "Deal-Tag",
-      "tagPlaceholder": "Nach einem Deal-Tag filtern"
+      "tagPlaceholder": "Nach einem Deal-Tag filtern",
+      "country": "Land",
+      "countrySearch": "Länder suchen…",
+      "allCountries": "Alle Länder"
     },
     "savedViews": {
       "save": "Save view",
@@ -4209,7 +4212,8 @@
       "priorityLabel": "Priorität",
       "validationRequired": "Titel, Swimlane, Region, Ausführungsstatus und Vorname des Kontakts sind erforderlich.",
       "createFailed": "Karte konnte nicht erstellt werden. Bitte erneut versuchen.",
-      "noMembers": "Keine Mitglieder gefunden."
+      "noMembers": "Keine Mitglieder gefunden.",
+      "noCountries": "Keine Länder gefunden."
     },
     "fields": {
       "swimlane": "Swimlane",

@@ -7,7 +7,10 @@ import {
   PIPELINE_SWIMLANES,
   usePipelineConfig,
   type DealFilters,
+  type DealPriority,
+  type DealStatus,
   type PipelineSwimlane,
+  type Region,
 } from '@hypha-platform/core/client';
 import {
   Button,
@@ -20,6 +23,7 @@ import {
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { Download } from 'lucide-react';
+import { CountrySelect } from './country-select';
 
 type FilterBarProps = {
   spaceSlug: string;
@@ -27,6 +31,8 @@ type FilterBarProps = {
   onChange: (filters: DealFilters) => void;
   onExport: () => void;
   savedViewsSlot?: React.ReactNode;
+  /** Optional country allow-list from user settings. */
+  countryFocus?: string[];
 };
 
 function FilterField({
@@ -37,11 +43,22 @@ function FilterField({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex min-w-[140px] flex-col gap-1">
+    <div className="flex min-w-[140px] flex-col gap-1">
       <span className="text-1 text-neutral-11">{label}</span>
       {children}
-    </label>
+    </div>
   );
+}
+
+function formatStatusLabel(status: DealStatus): string {
+  return status
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatPriorityLabel(priority: DealPriority): string {
+  return priority.charAt(0).toUpperCase() + priority.slice(1);
 }
 
 export function FilterBar({
@@ -50,6 +67,7 @@ export function FilterBar({
   onChange,
   onExport,
   savedViewsSlot,
+  countryFocus,
 }: FilterBarProps) {
   const t = useTranslations('Pipeline');
   const { regions } = usePipelineConfig(spaceSlug);
@@ -98,16 +116,30 @@ export function FilterBar({
             </SelectContent>
           </Select>
         </FilterField>
+        <FilterField label={t('filters.country')}>
+          <CountrySelect
+            className="w-[180px]"
+            value={typeof filters.country === 'string' ? filters.country : null}
+            countryFocus={countryFocus}
+            placeholder={t('filters.allCountries')}
+            searchPlaceholder={t('filters.countrySearch')}
+            noneLabel={t('filters.allCountries')}
+            emptyListMessage={t('newDeal.noCountries')}
+            onChange={(code) =>
+              onChange({
+                ...filters,
+                country: code ?? undefined,
+              })
+            }
+          />
+        </FilterField>
         <FilterField label={t('filters.region')}>
           <Select
             value={(filters.region as string) || 'all'}
             onValueChange={(value) =>
               onChange({
                 ...filters,
-                region:
-                  value === 'all'
-                    ? undefined
-                    : (value as DealFilters['region']),
+                region: value === 'all' ? undefined : (value as Region),
               })
             }
           >
@@ -130,10 +162,7 @@ export function FilterBar({
             onValueChange={(value) =>
               onChange({
                 ...filters,
-                priority:
-                  value === 'all'
-                    ? undefined
-                    : (value as DealFilters['priority']),
+                priority: value === 'all' ? undefined : (value as DealPriority),
               })
             }
           >
@@ -144,7 +173,7 @@ export function FilterBar({
               <SelectItem value="all">{t('filters.allPriorities')}</SelectItem>
               {DEAL_PRIORITIES.map((p) => (
                 <SelectItem key={p} value={p}>
-                  {p}
+                  {formatPriorityLabel(p)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -156,21 +185,22 @@ export function FilterBar({
             onValueChange={(value) =>
               onChange({
                 ...filters,
-                status:
-                  value === 'all'
-                    ? undefined
-                    : (value as DealFilters['status']),
+                status: value === 'all' ? undefined : (value as DealStatus),
               })
             }
           >
             <SelectTrigger className="w-[160px]">
-              <SelectValue />
+              <SelectValue>
+                {filters.status
+                  ? formatStatusLabel(filters.status as DealStatus)
+                  : t('filters.allStatuses')}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('filters.allStatuses')}</SelectItem>
               {DEAL_STATUSES.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s}
+                  {formatStatusLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>

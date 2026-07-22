@@ -8,6 +8,9 @@ function asArray<T>(value: T | T[] | undefined): T[] | undefined {
 export function filterDeals(deals: Deal[], filters: DealFilters = {}): Deal[] {
   const swimlanes = asArray(filters.swimlane);
   const regions = asArray(filters.region);
+  const countries = asArray(filters.country)
+    ?.map((code) => code.trim().toUpperCase())
+    .filter(Boolean);
   const priorities = asArray(filters.priority);
   const statuses = asArray(filters.status);
   const pipelineStatuses = asArray(filters.pipelineStatus);
@@ -32,6 +35,12 @@ export function filterDeals(deals: Deal[], filters: DealFilters = {}): Deal[] {
     }
     if (swimlanes && !swimlanes.includes(deal.pipelineSwimlane)) return false;
     if (regions && !regions.includes(deal.region)) return false;
+    if (
+      countries &&
+      !countries.includes((deal.country ?? '').trim().toUpperCase())
+    ) {
+      return false;
+    }
     if (priorities && !priorities.includes(deal.priority)) return false;
     if (statuses && !statuses.includes(deal.status)) return false;
     if (pipelineStatuses && !pipelineStatuses.includes(deal.pipelineStatus)) {

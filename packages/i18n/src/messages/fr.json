@@ -4156,7 +4156,10 @@
       "allStatuses": "Tous les statuts",
       "anyDeadline": "Toute échéance",
       "tagLabel": "Tag du deal",
-      "tagPlaceholder": "Filtrer par un tag"
+      "tagPlaceholder": "Filtrer par un tag",
+      "country": "Pays",
+      "countrySearch": "Rechercher des pays…",
+      "allCountries": "Tous les pays"
     },
     "savedViews": {
       "save": "Save view",
@@ -4205,7 +4208,8 @@
       "priorityLabel": "Priorité",
       "validationRequired": "Titre, piste, région, statut d’exécution et prénom du contact sont requis.",
       "createFailed": "Impossible de créer la carte. Réessayez.",
-      "noMembers": "Aucun membre trouvé."
+      "noMembers": "Aucun membre trouvé.",
+      "noCountries": "Aucun pays trouvé."
     },
     "fields": {
       "swimlane": "Swimlane",

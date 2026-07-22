@@ -7,6 +7,7 @@ import {
   PIPELINE_SWIMLANES,
   useDealMutations,
   useDeals,
+  usePipelineSettings,
   type DealFilters,
   type PipelineStatus,
   type PipelineSwimlane,
@@ -45,6 +46,7 @@ export function IntegratedBoard({
     React.useState<PipelineSwimlane>('Sales');
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
+  const { countryFocus } = usePipelineSettings(spaceSlug);
 
   const filtered = React.useMemo(
     () => filterDeals(deals, filters),
@@ -80,6 +82,7 @@ export function IntegratedBoard({
         spaceSlug={spaceSlug}
         filters={filters}
         onChange={setFilters}
+        countryFocus={countryFocus}
         onExport={() => exportDealsToXlsx(filtered, `${spaceSlug}-deals`)}
         savedViewsSlot={
           <SavedViewsMenu

@@ -4147,7 +4147,10 @@
       "allStatuses": "Сите статуси",
       "anyDeadline": "Било кој рок",
       "tagLabel": "Ознака на deal",
-      "tagPlaceholder": "Филтрирај по ознака"
+      "tagPlaceholder": "Филтрирај по ознака",
+      "country": "Земја",
+      "countrySearch": "Пребарај земји…",
+      "allCountries": "Сите земји"
     },
     "savedViews": {
       "save": "Save view",
@@ -4196,7 +4199,8 @@
       "priorityLabel": "Приоритет",
       "validationRequired": "Наслов, патека, регион, статус на извршување и име на контакт се задолжителни.",
       "createFailed": "Не можеше да се создаде картичката. Обидете се повторно.",
-      "noMembers": "Нема пронајдени членови."
+      "noMembers": "Нема пронајдени членови.",
+      "noCountries": "Нема пронајдени земји."
     },
     "fields": {
       "swimlane": "Swimlane",

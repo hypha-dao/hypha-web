@@ -6,6 +6,7 @@ import {
   filterDeals,
   useDealMutations,
   useDeals,
+  usePipelineSettings,
   type DealFilters,
   type PipelineStatus,
   type PipelineSwimlane,
@@ -43,6 +44,7 @@ export function TrackPage({
   const [newOpen, setNewOpen] = React.useState(false);
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
+  const { countryFocus } = usePipelineSettings(spaceSlug);
 
   React.useEffect(() => {
     setFilters((prev) => ({ ...prev, swimlane }));
@@ -86,6 +88,7 @@ export function TrackPage({
         spaceSlug={spaceSlug}
         filters={filters}
         onChange={setFilters}
+        countryFocus={countryFocus}
         onExport={() =>
           exportDealsToXlsx(filtered, `${spaceSlug}-${swimlane}-deals`)
         }

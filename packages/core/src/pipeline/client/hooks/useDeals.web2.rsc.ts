@@ -43,6 +43,7 @@ function buildDealsUrl(spaceSlug: string, filters?: DealFilters): string {
   };
   appendList('swimlane', filters?.swimlane);
   appendList('region', filters?.region);
+  appendList('country', filters?.country);
   appendList('priority', filters?.priority);
   appendList('status', filters?.status);
   appendList('pipelineStatus', filters?.pipelineStatus);

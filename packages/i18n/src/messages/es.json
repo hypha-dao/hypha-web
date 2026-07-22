@@ -4160,7 +4160,10 @@
       "allStatuses": "Todos los estados",
       "anyDeadline": "Cualquier plazo",
       "tagLabel": "Etiqueta del deal",
-      "tagPlaceholder": "Filtrar por una etiqueta"
+      "tagPlaceholder": "Filtrar por una etiqueta",
+      "country": "País",
+      "countrySearch": "Buscar países…",
+      "allCountries": "Todos los países"
     },
     "savedViews": {
       "save": "Save view",
@@ -4209,7 +4212,8 @@
       "priorityLabel": "Prioridad",
       "validationRequired": "Título, pista, región, estado de ejecución y nombre del contacto son obligatorios.",
       "createFailed": "No se pudo crear la tarjeta. Inténtalo de nuevo.",
-      "noMembers": "No se encontraron miembros."
+      "noMembers": "No se encontraron miembros.",
+      "noCountries": "No se encontraron países."
     },
     "fields": {
       "swimlane": "Swimlane",

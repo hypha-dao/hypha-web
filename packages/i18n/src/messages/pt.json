@@ -4158,7 +4158,10 @@
       "allStatuses": "Todos os estados",
       "anyDeadline": "Qualquer prazo",
       "tagLabel": "Etiqueta do negócio",
-      "tagPlaceholder": "Filtrar por uma etiqueta"
+      "tagPlaceholder": "Filtrar por uma etiqueta",
+      "country": "País",
+      "countrySearch": "Pesquisar países…",
+      "allCountries": "Todos os países"
     },
     "savedViews": {
       "save": "Save view",
@@ -4207,7 +4210,8 @@
       "priorityLabel": "Prioridade",
       "validationRequired": "Título, faixa, região, estado de execução e nome do contacto são obrigatórios.",
       "createFailed": "Não foi possível criar o cartão. Tente novamente.",
-      "noMembers": "Nenhum membro encontrado."
+      "noMembers": "Nenhum membro encontrado.",
+      "noCountries": "Nenhum país encontrado."
     },
     "fields": {
       "swimlane": "Swimlane",

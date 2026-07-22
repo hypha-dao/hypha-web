@@ -2,7 +2,6 @@
 
 import React from 'react';
 import {
-  COUNTRY_GROUPS,
   currencyForCountry,
   DEAL_CONTACT_TYPES,
   DEAL_PRIORITIES,
@@ -20,8 +19,6 @@ import {
 } from '@hypha-platform/core/client';
 import {
   Button,
-  Combobox,
-  COMBOBOX_TITLE,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -35,6 +32,7 @@ import {
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import type { UseMembers } from '../../spaces';
+import { CountrySelect } from './country-select';
 import { SpaceMemberSelect } from './space-member-select';
 
 type NewDealDialogProps = {
@@ -105,7 +103,7 @@ export function NewDealDialog({
   );
   const [status, setStatus] = React.useState<PipelineStatus>('Identified');
   const [region, setRegion] = React.useState<Region>(defaultRegion);
-  const [country, setCountry] = React.useState('');
+  const [country, setCountry] = React.useState<string | null>(null);
   const [value, setValue] = React.useState('');
   const [priority, setPriority] = React.useState<DealPriority>('medium');
   const [contactUrl, setContactUrl] = React.useState('');
@@ -130,7 +128,7 @@ export function NewDealDialog({
     setSwimlane(defaultSwimlane);
     setStatus('Identified');
     setRegion(defaultRegion);
-    setCountry('');
+    setCountry(null);
     setValue('');
     setPriority('medium');
     setContactUrl('');
@@ -151,33 +149,6 @@ export function NewDealDialog({
     }
   }, [open, resetForm]);
 
-  const countryOptions = React.useMemo(() => {
-    const allow = new Set(
-      (countryFocus ?? []).map((c) => c.toUpperCase()).filter(Boolean),
-    );
-    const options: Array<{
-      value: string;
-      label: string;
-      searchText?: string;
-    }> = [];
-
-    for (const [group, codes] of Object.entries(COUNTRY_GROUPS)) {
-      const filtered = allow.size
-        ? codes.filter((code) => allow.has(code))
-        : codes;
-      if (!filtered.length) continue;
-      options.push({ value: COMBOBOX_TITLE, label: group });
-      for (const code of filtered) {
-        options.push({
-          value: code,
-          label: code,
-          searchText: `${group} ${code}`,
-        });
-      }
-    }
-    return options;
-  }, [countryFocus]);
-
   const canSubmit =
     Boolean(title.trim()) &&
     Boolean(swimlane) &&
@@ -191,7 +162,7 @@ export function NewDealDialog({
       return;
     }
 
-    const countryCode = country.trim().toUpperCase() || null;
+    const countryCode = country?.trim().toUpperCase() || null;
     const today = new Date();
     const nextActionDate = toDateOnly(today);
     const deadlineDate = new Date(today);
@@ -327,19 +298,18 @@ export function NewDealDialog({
           </Field>
 
           <Field label={t('newDeal.countryLabel')}>
-            <Combobox
-              options={countryOptions}
-              initialValue={country}
+            <CountrySelect
+              value={country}
+              countryFocus={countryFocus}
               placeholder={t('newDeal.countryPlaceholder')}
               searchPlaceholder={t('newDeal.countrySearch')}
-              allowEmptyChoice
-              popoverModal={false}
+              noneLabel={t('fields.noCountry')}
+              emptyListMessage={t('newDeal.noCountries')}
               onChange={(code) => {
-                const next = code?.toUpperCase() ?? '';
-                setCountry(next);
-                if (next) {
+                setCountry(code);
+                if (code) {
                   setRegion(
-                    resolveRegionForSpace(next, regions, defaultRegion),
+                    resolveRegionForSpace(code, regions, defaultRegion),
                   );
                 }
               }}

@@ -104,6 +104,22 @@ export const schemaDealFiltersQuery = z.object({
       z.array(z.string().trim().min(1).max(80)),
     ])
     .optional(),
+  country: z
+    .union([
+      z
+        .string()
+        .trim()
+        .length(2)
+        .transform((v) => v.toUpperCase()),
+      z.array(
+        z
+          .string()
+          .trim()
+          .length(2)
+          .transform((v) => v.toUpperCase()),
+      ),
+    ])
+    .optional(),
   priority: z
     .union([z.enum(DEAL_PRIORITIES), z.array(z.enum(DEAL_PRIORITIES))])
     .optional(),

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import {
-  COUNTRY_GROUPS,
   currencyForCountry,
   DEAL_PRIORITIES,
   DEAL_STATUSES,
@@ -35,6 +34,7 @@ import {
   Separator,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { CountrySelect } from './country-select';
 
 type DealPanelProps = {
   spaceSlug: string;
@@ -84,16 +84,6 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
   const { regions, defaultRegion } = usePipelineConfig(spaceSlug);
   const deal = deals.find((d) => d.id === dealId) ?? null;
   const { schedule, saving, savedAt } = useDebouncedSave(dealId, patchDeal);
-
-  const countryOptions = React.useMemo(() => {
-    const allow = new Set(
-      (countryFocus ?? []).map((c) => c.toUpperCase()).filter(Boolean),
-    );
-    return Object.entries(COUNTRY_GROUPS).flatMap(([group, codes]) => {
-      const filtered = allow.size ? codes.filter((c) => allow.has(c)) : codes;
-      return filtered.map((code) => ({ group, code }));
-    });
-  }, [countryFocus]);
 
   if (isLoading && !deal) {
     return <div className="p-4 text-2 text-neutral-11">{t('loading')}</div>;
@@ -160,29 +150,19 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
           </Select>
         </Field>
         <Field label={t('fields.country')}>
-          <Select
-            value={deal.country ?? 'none'}
-            onValueChange={(v) => {
-              const country = v === 'none' ? null : v;
+          <CountrySelect
+            value={deal.country}
+            countryFocus={countryFocus}
+            placeholder={t('fields.noCountry')}
+            noneLabel={t('fields.noCountry')}
+            onChange={(country) => {
               schedule({
                 country,
                 region: resolveRegionForSpace(country, regions, defaultRegion),
                 currency: currencyForCountry(country),
               });
             }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">{t('fields.noCountry')}</SelectItem>
-              {countryOptions.map(({ group, code }) => (
-                <SelectItem key={code} value={code}>
-                  {group}: {code}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </Field>
         <Field label={t('fields.region')}>
           <Select
@@ -412,10 +392,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-1 text-neutral-11">
+    <div className="flex flex-col gap-1 text-1 text-neutral-11">
       <span>{label}</span>
       {children}
-    </label>
+    </div>
   );
 }
 

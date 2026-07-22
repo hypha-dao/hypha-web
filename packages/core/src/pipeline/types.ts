@@ -103,6 +103,7 @@ export interface DealFilters {
   q?: string;
   swimlane?: PipelineSwimlane | PipelineSwimlane[];
   region?: Region | Region[];
+  country?: string | string[];
   priority?: DealPriority | DealPriority[];
   status?: DealStatus | DealStatus[];
   pipelineStatus?: PipelineStatus | PipelineStatus[];
