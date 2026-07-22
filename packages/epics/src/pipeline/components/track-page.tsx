@@ -91,13 +91,13 @@ export function TrackPage({
         filters={filters}
         onChange={setFilters}
         countryFocus={countryFocus}
-        onExport={() =>
-          exportDealsToXlsx(
+        onExport={() => {
+          void exportDealsToXlsx(
             filtered,
             `${spaceSlug}-${swimlane}-deals`,
             probabilities,
-          )
-        }
+          );
+        }}
         savedViewsSlot={
           <SavedViewsMenu
             spaceSlug={spaceSlug}

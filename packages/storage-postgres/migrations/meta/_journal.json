@@ -505,6 +505,13 @@
       "when": 1784000000002,
       "tag": "0071_deal_success_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1784000000003,
+      "tag": "0072_deal_account_manager_set_null",
+      "breakpoints": true
     }
   ]
 }

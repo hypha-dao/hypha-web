@@ -1,12 +1,13 @@
-import * as XLSX from 'xlsx';
 import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
 import { effectiveSuccessRate } from '@hypha-platform/core/client';
 
-export function exportDealsToXlsx(
+export async function exportDealsToXlsx(
   deals: Deal[],
   filenamePrefix = 'deals',
   probabilities?: ProbabilityMatrix,
 ) {
+  // xlsx is heavy — load it only when an export is actually triggered.
+  const XLSX = await import('xlsx');
   const rows = deals.map((d) => ({
     Title: d.title,
     Swimlane: d.pipelineSwimlane,

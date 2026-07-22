@@ -48,16 +48,22 @@ function useDebouncedSave(
   patchDeal: (id: number, patch: UpdateDealInput) => Promise<Deal>,
 ) {
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Accumulate edits made within the debounce window so quick successive
+  // field changes are merged into one patch instead of overwriting each other.
+  const pendingRef = React.useRef<UpdateDealInput>({});
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
 
   const schedule = React.useCallback(
     (patch: UpdateDealInput) => {
+      pendingRef.current = { ...pendingRef.current, ...patch };
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(async () => {
+        const merged = pendingRef.current;
+        pendingRef.current = {};
         setSaving(true);
         try {
-          await patchDeal(dealId, patch);
+          await patchDeal(dealId, merged);
           setSavedAt(new Date());
         } finally {
           setSaving(false);

@@ -168,18 +168,38 @@ const probabilityLane = z
   )
   .partial();
 
-export const schemaPipelineConfig = z.object({
-  regions: z.array(z.string().trim().min(1).max(80)).min(1).max(50).optional(),
-  defaultRegion: z.string().trim().min(1).max(80).optional(),
-  probabilities: z
-    .object(
-      Object.fromEntries(
-        PIPELINE_SWIMLANES.map((lane) => [lane, probabilityLane.optional()]),
-      ) as Record<
-        (typeof PIPELINE_SWIMLANES)[number],
-        z.ZodOptional<typeof probabilityLane>
-      >,
-    )
-    .partial()
-    .optional(),
-});
+export const schemaPipelineConfig = z
+  .object({
+    regions: z
+      .array(z.string().trim().min(1).max(80))
+      .min(1)
+      .max(50)
+      .optional(),
+    defaultRegion: z.string().trim().min(1).max(80).optional(),
+    probabilities: z
+      .object(
+        Object.fromEntries(
+          PIPELINE_SWIMLANES.map((lane) => [lane, probabilityLane.optional()]),
+        ) as Record<
+          (typeof PIPELINE_SWIMLANES)[number],
+          z.ZodOptional<typeof probabilityLane>
+        >,
+      )
+      .partial()
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.defaultRegion &&
+      data.regions &&
+      !data.regions.some(
+        (region) => region.toLowerCase() === data.defaultRegion!.toLowerCase(),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['defaultRegion'],
+        message: 'defaultRegion must be one of the configured regions',
+      });
+    }
+  });

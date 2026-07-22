@@ -222,9 +222,13 @@ export function resolveRegionForSpace(
 ): Region {
   const list =
     regions.length > 0 ? [...regions] : [...DEFAULT_PIPELINE_REGIONS];
-  const suggested = regionForCountry(code);
-  if (list.includes(suggested)) return suggested;
-  if (list.includes(fallback)) return fallback;
+  // Configured region names are normalized case-insensitively; match likewise.
+  const findConfigured = (name: string) =>
+    list.find((region) => region.toLowerCase() === name.toLowerCase());
+  const suggested = findConfigured(regionForCountry(code));
+  if (suggested) return suggested;
+  const fallbackMatch = findConfigured(fallback);
+  if (fallbackMatch) return fallbackMatch;
   return list[0] ?? fallback;
 }
 

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   authorizeSpacePanelInteraction,
   findSpaceBySlug,
-  resolvePersonFromAuthToken,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { parseBearerToken } from '@web/utils/parse-bearer-token';
@@ -53,13 +52,7 @@ export async function assertPipelineWriteAccess(
     };
   }
 
-  const person = await resolvePersonFromAuthToken(authToken);
-  if (!person?.id) {
-    return {
-      person: null,
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  return { person, error: null, authToken };
+  // Reuse the person resolved during authorization instead of verifying the
+  // token a second time.
+  return { person: interactionAuth.person, error: null, authToken };
 }

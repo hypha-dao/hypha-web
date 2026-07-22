@@ -51,7 +51,10 @@ export function usePipelineConfig(spaceSlug?: string) {
         { headers: await authHeaders(getAccessToken) },
       );
       if (!response.ok) {
-        throw new Error(`Failed to fetch pipeline config: ${response.status}`);
+        const body = await response.json().catch(() => ({}));
+        throw new Error(
+          body.error || `Failed to fetch pipeline config: ${response.status}`,
+        );
       }
       const payload = (await response.json()) as { data: PipelineConfig };
       return payload.data;
@@ -76,8 +79,12 @@ export function usePipelineConfig(spaceSlug?: string) {
           body.error || `Failed to save pipeline config: ${response.status}`,
         );
       }
-      await revalidatePipelineConfig(slug!);
       const payload = (await response.json()) as { data: PipelineConfig };
+      // The PUT response already carries the fresh config; write it to the
+      // cache directly instead of triggering an extra GET revalidation.
+      await mutate([PIPELINE_CONFIG_SWR_KEY, slug!], payload.data, {
+        revalidate: false,
+      });
       return payload.data;
     },
   );

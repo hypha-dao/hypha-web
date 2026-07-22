@@ -93,9 +93,9 @@ export function IntegratedBoard({
         filters={filters}
         onChange={setFilters}
         countryFocus={countryFocus}
-        onExport={() =>
-          exportDealsToXlsx(filtered, `${spaceSlug}-deals`, probabilities)
-        }
+        onExport={() => {
+          void exportDealsToXlsx(filtered, `${spaceSlug}-deals`, probabilities);
+        }}
         savedViewsSlot={
           <SavedViewsMenu
             spaceSlug={spaceSlug}

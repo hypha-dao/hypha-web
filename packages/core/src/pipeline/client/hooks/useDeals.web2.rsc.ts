@@ -205,7 +205,13 @@ export function useDealMutations(spaceSlug?: string) {
       },
       { revalidate: false },
     );
-    return patchMutation.trigger({ id, ...patch });
+    try {
+      return await patchMutation.trigger({ id, ...patch });
+    } catch (err) {
+      // Roll the optimistic write back to server state on failure.
+      await revalidateDeals(slug);
+      throw err;
+    }
   };
 
   const moveDealToStatus = (id: number, pipelineStatus: PipelineStatus) =>

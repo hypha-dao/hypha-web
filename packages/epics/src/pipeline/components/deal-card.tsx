@@ -3,6 +3,7 @@
 import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
 import { effectiveSuccessRate } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
+import { useFormatter } from 'next-intl';
 import { setDealDragData } from '../utils/deal-dnd-utils';
 
 type DealCardProps = {
@@ -27,6 +28,7 @@ export function DealCard({
   active = false,
   probabilities,
 }: DealCardProps) {
+  const format = useFormatter();
   const probability = effectiveSuccessRate(deal, probabilities);
   const weighted = (deal.value * probability) / 100;
   const isOverride = deal.successRate != null;
@@ -62,7 +64,7 @@ export function DealCard({
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-neutral-11">
         <span>
           {deal.currency}
-          {deal.value.toLocaleString()}
+          {format.number(deal.value)}
         </span>
         <span>·</span>
         <span title={isOverride ? 'Deal-specific success rate' : undefined}>
@@ -71,7 +73,7 @@ export function DealCard({
         <span>·</span>
         <span>
           w {deal.currency}
-          {weighted.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          {format.number(weighted, { maximumFractionDigits: 0 })}
         </span>
       </div>
       {(deal.region || deal.country) && (

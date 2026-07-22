@@ -96,7 +96,7 @@ export async function updateDealById(
   if (updates.region !== undefined) {
     patch.region = updates.region;
   } else if (updates.country !== undefined) {
-    patch.region = regionForCountry(updates.country);
+    patch.region = regionForCountry(updates.country) ?? 'Global';
   }
   if (updates.contacts !== undefined) patch.contacts = updates.contacts;
   if (updates.contactPerson !== undefined) {

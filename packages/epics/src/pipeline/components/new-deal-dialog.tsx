@@ -143,8 +143,14 @@ export function NewDealDialog({
     setError(null);
   }, [defaultRegion, defaultSwimlane]);
 
+  // Reset only on the closed → open transition. `resetForm`'s identity can
+  // change while the dialog is open (async pipeline config resolving); that
+  // must not wipe in-progress input.
+  const wasOpenRef = React.useRef(false);
   React.useEffect(() => {
-    if (open) {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (open && !wasOpen) {
       resetForm();
     }
   }, [open, resetForm]);

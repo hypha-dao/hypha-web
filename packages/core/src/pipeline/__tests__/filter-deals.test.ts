@@ -47,7 +47,12 @@ function makeDeal(overrides: Partial<Deal> = {}): Deal {
 
 describe('filterDeals', () => {
   const deals = [
-    makeDeal({ id: 1, title: 'NL sales', country: 'NL', region: 'Benelux' }),
+    makeDeal({
+      id: 1,
+      title: 'Amsterdam sales',
+      country: 'NL',
+      region: 'Benelux',
+    }),
     makeDeal({
       id: 2,
       title: 'UK grant',
@@ -115,7 +120,15 @@ describe('filterDeals', () => {
 
   it('filters by search query across title and country', () => {
     expect(filterDeals(deals, { q: 'grant' }).map((d) => d.id)).toEqual([2]);
-    expect(filterDeals(deals, { q: 'nl' }).map((d) => d.id)).toEqual([1]);
+    // 'gb' appears only in deal 2's country field, so this isolates
+    // country matching from title/region matches.
+    expect(filterDeals(deals, { q: 'gb' }).map((d) => d.id)).toEqual([2]);
+  });
+
+  it('treats empty filter arrays as no filter', () => {
+    expect(filterDeals(deals, { country: [] })).toHaveLength(3);
+    expect(filterDeals(deals, { swimlane: [] })).toHaveLength(3);
+    expect(filterDeals(deals, { status: [] })).toHaveLength(3);
   });
 
   it('combines multiple filters', () => {

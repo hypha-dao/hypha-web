@@ -43,6 +43,7 @@ export async function GET(
       q: url.searchParams.get('q') ?? undefined,
       swimlane: parseListParam<PipelineSwimlane>(url, 'swimlane'),
       region: parseListParam<Region>(url, 'region'),
+      country: parseListParam<string>(url, 'country'),
       priority: parseListParam<DealPriority>(url, 'priority'),
       status: parseListParam<DealStatus>(url, 'status'),
       pipelineStatus: parseListParam<PipelineStatus>(url, 'pipelineStatus'),

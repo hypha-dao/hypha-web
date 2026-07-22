@@ -54,7 +54,10 @@ export const deals = pgTable(
       .$type<number[]>()
       .notNull()
       .default([]),
-    accountManagerId: integer('account_manager_id').references(() => people.id),
+    accountManagerId: integer('account_manager_id').references(
+      () => people.id,
+      { onDelete: 'set null' },
+    ),
     /** Per-deal success-rate override (0–100); null = use stage default. */
     successRate: integer('success_rate'),
     nextAction: text('next_action'),

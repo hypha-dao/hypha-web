@@ -2,15 +2,18 @@ import type { Deal, DealFilters } from './types';
 
 function asArray<T>(value: T | T[] | undefined): T[] | undefined {
   if (value == null) return undefined;
-  return Array.isArray(value) ? value : [value];
+  const list = Array.isArray(value) ? value : [value];
+  // Treat an empty selection as "no filter" rather than rejecting everything.
+  return list.length > 0 ? list : undefined;
 }
 
 export function filterDeals(deals: Deal[], filters: DealFilters = {}): Deal[] {
   const swimlanes = asArray(filters.swimlane);
   const regions = asArray(filters.region);
-  const countries = asArray(filters.country)
+  const countryCodes = asArray(filters.country)
     ?.map((code) => code.trim().toUpperCase())
     .filter(Boolean);
+  const countries = countryCodes?.length ? countryCodes : undefined;
   const priorities = asArray(filters.priority);
   const statuses = asArray(filters.status);
   const pipelineStatuses = asArray(filters.pipelineStatus);

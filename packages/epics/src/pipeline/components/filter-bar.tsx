@@ -50,6 +50,15 @@ function FilterField({
   );
 }
 
+/**
+ * Saved views can restore array-valued filters; single-select controls need a
+ * scalar, so bind the first value (or none) in that case.
+ */
+function firstValue<T>(value: T | T[] | undefined): T | undefined {
+  if (value == null) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function formatStatusLabel(status: DealStatus): string {
   return status
     .split('_')
@@ -94,7 +103,7 @@ export function FilterBar({
         </FilterField>
         <FilterField label={t('filters.swimlane')}>
           <Select
-            value={(filters.swimlane as string) || 'all'}
+            value={firstValue(filters.swimlane) ?? 'all'}
             onValueChange={(value) =>
               onChange({
                 ...filters,
@@ -119,7 +128,7 @@ export function FilterBar({
         <FilterField label={t('filters.country')}>
           <CountrySelect
             className="w-[160px]"
-            value={typeof filters.country === 'string' ? filters.country : null}
+            value={firstValue(filters.country) ?? null}
             countryFocus={countryFocus}
             popoverModal
             placeholder={t('filters.allCountries')}
@@ -136,7 +145,7 @@ export function FilterBar({
         </FilterField>
         <FilterField label={t('filters.region')}>
           <Select
-            value={(filters.region as string) || 'all'}
+            value={firstValue(filters.region) ?? 'all'}
             onValueChange={(value) =>
               onChange({
                 ...filters,
@@ -159,7 +168,7 @@ export function FilterBar({
         </FilterField>
         <FilterField label={t('filters.priority')}>
           <Select
-            value={(filters.priority as string) || 'all'}
+            value={firstValue(filters.priority) ?? 'all'}
             onValueChange={(value) =>
               onChange({
                 ...filters,
@@ -182,7 +191,7 @@ export function FilterBar({
         </FilterField>
         <FilterField label={t('filters.status')}>
           <Select
-            value={(filters.status as string) || 'all'}
+            value={firstValue(filters.status) ?? 'all'}
             onValueChange={(value) =>
               onChange({
                 ...filters,
@@ -192,9 +201,12 @@ export function FilterBar({
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue>
-                {filters.status
-                  ? formatStatusLabel(filters.status as DealStatus)
-                  : t('filters.allStatuses')}
+                {(() => {
+                  const status = firstValue(filters.status);
+                  return status
+                    ? formatStatusLabel(status)
+                    : t('filters.allStatuses');
+                })()}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import {
   deals,
   pipelineSavedViews,
@@ -11,12 +11,16 @@ import type {
   PipelineSavedViewRecord,
   PipelineUserSettingsRecord,
 } from '../types';
-import type {
-  PipelineStatus,
-  PipelineSwimlane,
-  Region,
-  DealPriority,
-  DealStatus,
+import {
+  DEAL_PRIORITIES,
+  DEAL_STATUSES,
+  PIPELINE_STATUSES,
+  PIPELINE_SWIMLANES,
+  type PipelineStatus,
+  type PipelineSwimlane,
+  type Region,
+  type DealPriority,
+  type DealStatus,
 } from '../constants';
 import { filterDeals } from '../filter-deals';
 
@@ -26,16 +30,43 @@ function toNumber(value: string | number | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Guard for values read from unconstrained text columns: keep known values,
+ * warn (rather than silently mistype) and fall back for anything else.
+ */
+function asEnumValue<T extends string>(
+  value: string,
+  allowed: readonly T[],
+  fallback: T,
+  field: string,
+): T {
+  if ((allowed as readonly string[]).includes(value)) return value as T;
+  console.warn(
+    `[pipeline] Unknown ${field} value "${value}" in DB row; falling back to "${fallback}"`,
+  );
+  return fallback;
+}
+
 export function mapDealRow(row: typeof deals.$inferSelect): Deal {
   return {
     id: row.id,
     spaceId: row.spaceId,
     ownerId: row.ownerId,
     title: row.title,
-    pipelineSwimlane: row.pipelineSwimlane as PipelineSwimlane,
-    pipelineStatus: row.pipelineStatus as PipelineStatus,
-    status: row.status as DealStatus,
-    priority: row.priority as DealPriority,
+    pipelineSwimlane: asEnumValue(
+      row.pipelineSwimlane,
+      PIPELINE_SWIMLANES,
+      'Sales',
+      'pipelineSwimlane',
+    ),
+    pipelineStatus: asEnumValue(
+      row.pipelineStatus,
+      PIPELINE_STATUSES,
+      'Identified',
+      'pipelineStatus',
+    ),
+    status: asEnumValue(row.status, DEAL_STATUSES, 'active', 'status'),
+    priority: asEnumValue(row.priority, DEAL_PRIORITIES, 'medium', 'priority'),
     value: toNumber(row.value) ?? 0,
     currency: row.currency,
     country: row.country,
@@ -106,10 +137,35 @@ export async function findDealsBySpaceId(
   },
   { db }: DbConfig,
 ): Promise<Deal[]> {
+  // Push simple equality filters into the WHERE clause (uses the composite
+  // (spaceId, …) indexes); q/tag/hasDeadline/country stay in filterDeals.
+  const conditions = [eq(deals.spaceId, spaceId)];
+  const addListCondition = (
+    column:
+      | typeof deals.pipelineSwimlane
+      | typeof deals.region
+      | typeof deals.priority
+      | typeof deals.status
+      | typeof deals.pipelineStatus,
+    value: string | string[] | undefined,
+  ) => {
+    if (value == null) return;
+    const list = Array.isArray(value) ? value : [value];
+    if (list.length > 0) conditions.push(inArray(column, list));
+  };
+  addListCondition(deals.pipelineSwimlane, filters?.swimlane);
+  addListCondition(deals.region, filters?.region);
+  addListCondition(deals.priority, filters?.priority);
+  addListCondition(deals.status, filters?.status);
+  addListCondition(deals.pipelineStatus, filters?.pipelineStatus);
+  if (filters?.ownerId != null) {
+    conditions.push(eq(deals.ownerId, filters.ownerId));
+  }
+
   const rows = await db
     .select()
     .from(deals)
-    .where(eq(deals.spaceId, spaceId))
+    .where(and(...conditions))
     .orderBy(desc(deals.updatedAt));
 
   const mapped = rows.map(mapDealRow);

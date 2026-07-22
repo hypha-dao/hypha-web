@@ -174,6 +174,15 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
     action();
   };
 
+  // Keyboard activation (Enter/Space) fires `click`, not `pointerdown`.
+  const onOptionKeyDown = (event: React.KeyboardEvent, action: () => void) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      action();
+    }
+  };
+
   const hasChips = isMulti && selectedOptions.length > 0;
 
   return (
@@ -189,7 +198,7 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          role="combobox"
+          aria-haspopup="dialog"
           aria-expanded={open && !disabled}
           disabled={disabled}
           className={cn(
@@ -270,7 +279,10 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
               placeholder={searchPlaceholder}
               className="h-6 border-0 bg-transparent px-0 text-2 shadow-none focus-visible:ring-0"
               disabled={disabled}
-              onKeyDown={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                // Let Escape reach the popover so it can close; contain the rest.
+                if (event.key !== 'Escape') event.stopPropagation();
+              }}
             />
           </div>
           <div className="max-h-60 overflow-y-auto p-1">
@@ -280,6 +292,9 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3"
                 onPointerDown={(event) =>
                   onOptionPointerDown(event, () => selectSingle(null))
+                }
+                onKeyDown={(event) =>
+                  onOptionKeyDown(event, () => selectSingle(null))
                 }
               >
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-neutral-4 text-1 text-neutral-11">
@@ -312,6 +327,13 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
                     )}
                     onPointerDown={(event) =>
                       onOptionPointerDown(event, () =>
+                        isMulti
+                          ? toggleMulti(option.value)
+                          : selectSingle(option.value),
+                      )
+                    }
+                    onKeyDown={(event) =>
+                      onOptionKeyDown(event, () =>
                         isMulti
                           ? toggleMulti(option.value)
                           : selectSingle(option.value),

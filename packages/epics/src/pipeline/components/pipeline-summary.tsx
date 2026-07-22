@@ -5,27 +5,47 @@ import {
   effectiveSuccessRate,
   PIPELINE_SWIMLANES,
 } from '@hypha-platform/core/client';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 type PipelineSummaryProps = {
   deals: Deal[];
   probabilities?: ProbabilityMatrix;
 };
 
+type CurrencyTotals = { total: number; weighted: number };
+
 export function PipelineSummary({
   deals,
   probabilities,
 }: PipelineSummaryProps) {
   const t = useTranslations('Pipeline');
+  const format = useFormatter();
   const active = deals.filter(
     (d) => d.pipelineStatus !== 'Won' && d.pipelineStatus !== 'Lost',
   );
-  const totalValue = active.reduce((sum, d) => sum + d.value, 0);
-  const weighted = active.reduce(
-    (sum, d) => sum + (d.value * effectiveSuccessRate(d, probabilities)) / 100,
-    0,
-  );
-  const currency = deals[0]?.currency ?? '€';
+
+  // Deals can carry different currencies; never sum across currencies.
+  const byCurrency = new Map<string, CurrencyTotals>();
+  for (const deal of active) {
+    const currency = deal.currency || '€';
+    const totals = byCurrency.get(currency) ?? { total: 0, weighted: 0 };
+    totals.total += deal.value;
+    totals.weighted +=
+      (deal.value * effectiveSuccessRate(deal, probabilities)) / 100;
+    byCurrency.set(currency, totals);
+  }
+
+  const formatTotals = (pick: (totals: CurrencyTotals) => number): string => {
+    if (byCurrency.size === 0) return '€0';
+    return [...byCurrency.entries()]
+      .map(
+        ([currency, totals]) =>
+          `${currency}${format.number(pick(totals), {
+            maximumFractionDigits: 0,
+          })}`,
+      )
+      .join(' + ');
+  };
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -33,15 +53,11 @@ export function PipelineSummary({
       <SummaryCard label={t('summary.active')} value={String(active.length)} />
       <SummaryCard
         label={t('summary.pipelineValue')}
-        value={`${currency}${totalValue.toLocaleString(undefined, {
-          maximumFractionDigits: 0,
-        })}`}
+        value={formatTotals((totals) => totals.total)}
       />
       <SummaryCard
         label={t('summary.weightedValue')}
-        value={`${currency}${weighted.toLocaleString(undefined, {
-          maximumFractionDigits: 0,
-        })}`}
+        value={formatTotals((totals) => totals.weighted)}
       />
       <div className="col-span-2 md:col-span-4 flex flex-wrap gap-2 text-1 text-neutral-11">
         {PIPELINE_SWIMLANES.map((swimlane) => {

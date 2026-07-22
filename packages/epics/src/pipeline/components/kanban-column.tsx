@@ -7,6 +7,7 @@ import {
   type PipelineStatus,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
+import { useFormatter } from 'next-intl';
 import { DealCard } from './deal-card';
 import {
   getDealDragId,
@@ -34,6 +35,7 @@ export function KanbanColumn({
   probabilities,
 }: KanbanColumnProps) {
   const columnRef = React.useRef<HTMLDivElement>(null);
+  const format = useFormatter();
   const [isOver, setIsOver] = React.useState(false);
 
   const totalValue = deals.reduce((sum, d) => sum + d.value, 0);
@@ -73,11 +75,9 @@ export function KanbanColumn({
         <div className="text-2 font-medium text-neutral-12">{status}</div>
         <div className="mt-0.5 text-1 text-neutral-11">
           {deals.length} · {currency}
-          {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} ·
-          w {currency}
-          {weightedValue.toLocaleString(undefined, {
-            maximumFractionDigits: 0,
-          })}
+          {format.number(totalValue, { maximumFractionDigits: 0 })} · w{' '}
+          {currency}
+          {format.number(weightedValue, { maximumFractionDigits: 0 })}
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">

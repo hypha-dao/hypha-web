@@ -111,6 +111,15 @@ export function CountrySelect({
     select(code);
   };
 
+  // Keyboard activation (Enter/Space) fires `click`, not `pointerdown`.
+  const onOptionKeyDown = (event: React.KeyboardEvent, code: string | null) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      select(code);
+    }
+  };
+
   return (
     <Popover
       modal={popoverModal}
@@ -124,7 +133,7 @@ export function CountrySelect({
       <PopoverTrigger asChild>
         <button
           type="button"
-          role="combobox"
+          aria-haspopup="dialog"
           aria-expanded={open && !disabled}
           disabled={disabled}
           className={cn(TRIGGER_CLASS, className)}
@@ -167,7 +176,10 @@ export function CountrySelect({
               placeholder={searchPlaceholder}
               className="h-6 border-0 bg-transparent px-0 text-2 shadow-none focus-visible:ring-0"
               disabled={disabled}
-              onKeyDown={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                // Let Escape reach the popover so it can close; contain the rest.
+                if (event.key !== 'Escape') event.stopPropagation();
+              }}
             />
           </div>
           <div className="max-h-60 overflow-y-auto p-1">
@@ -176,6 +188,7 @@ export function CountrySelect({
                 type="button"
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-2 hover:bg-accent-3"
                 onPointerDown={(event) => onOptionPointerDown(event, null)}
+                onKeyDown={(event) => onOptionKeyDown(event, null)}
               >
                 <span className="flex-1 truncate">{noneLabel}</span>
                 <Check
@@ -209,6 +222,9 @@ export function CountrySelect({
                         )}
                         onPointerDown={(event) =>
                           onOptionPointerDown(event, option.code)
+                        }
+                        onKeyDown={(event) =>
+                          onOptionKeyDown(event, option.code)
                         }
                       >
                         <span className="flex-1 truncate">{option.code}</span>
