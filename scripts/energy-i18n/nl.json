@@ -133,7 +133,8 @@
       "metadataHash": "Metagegevens-hash",
       "metadataHashPlaceholder": "0x... of ipfs-hash",
       "deviceIds": "Apparaat-ID's (door komma's gescheiden)",
-      "deviceIdsPlaceholder": "bijv. 201.202.203"
+      "deviceIdsPlaceholder": "bijv. 201.202.203",
+      "sectionDescription": "Kies een lid van deze space en hoeveel slimme meters het heeft. Beleggers zonder meter kunnen op nul blijven staan."
     },
     "energySharing": {
       "settlementWindow": "Afrekeningsvenster",
@@ -154,7 +155,8 @@
       "ownershipToken": "Eigendomstokenadres",
       "ownershipTokenPlaceholder": "0x...",
       "deviceIds": "Apparaat-ID's (door komma's gescheiden)",
-      "deviceIdsPlaceholder": "bijv. 1001,1002,1003"
+      "deviceIdsPlaceholder": "bijv. 1001,1002,1003",
+      "sectionDescription": "Voeg een opwek- of opslagmiddel toe en verdeel het eigendom ervan over de leden (aandelen totaal 100%)."
     },
     "whitelistSettlement": {
       "settlementAddress": "Afrekeningsadres",

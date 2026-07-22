@@ -133,7 +133,8 @@
       "metadataHash": "Hash des métadonnées",
       "metadataHashPlaceholder": "0x... ou hash IPFS",
       "deviceIds": "ID des appareils (séparés par des virgules)",
-      "deviceIdsPlaceholder": "ex. 201,202,203"
+      "deviceIdsPlaceholder": "ex. 201,202,203",
+      "sectionDescription": "Choisissez un membre de cet espace et le nombre de ses compteurs intelligents. Les investisseurs sans compteur peuvent rester à zéro."
     },
     "energySharing": {
       "settlementWindow": "Période de règlement",
@@ -154,7 +155,8 @@
       "ownershipToken": "Adresse du jeton de propriété",
       "ownershipTokenPlaceholder": "0x...",
       "deviceIds": "ID des appareils (séparés par des virgules)",
-      "deviceIdsPlaceholder": "ex. 1001,1002,1003"
+      "deviceIdsPlaceholder": "ex. 1001,1002,1003",
+      "sectionDescription": "Ajoutez un actif de production ou de stockage et répartissez sa propriété entre les membres (les parts totalisent 100 %)."
     },
     "whitelistSettlement": {
       "settlementAddress": "Adresse de règlement",

@@ -10,6 +10,7 @@ import {
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { fetchSpaceMemberRecipients } from '@web/utils/fetch-space-member-recipients';
 import { notFound, redirect } from 'next/navigation';
 
 type PageProps = {
@@ -33,6 +34,8 @@ export default async function CreateRegisterEnergySourceProposalPage({
     redirect(backUrl);
   }
 
+  const { members, spaces } = await fetchSpaceMemberRecipients(id, { db });
+
   return (
     <ProposalOverlayShell>
       <CreateRegisterEnergySourceForm
@@ -40,6 +43,8 @@ export default async function CreateRegisterEnergySourceProposalPage({
         backUrl={backUrl}
         spaceId={spaceFromDb.id}
         web3SpaceId={spaceFromDb.web3SpaceId}
+        members={members}
+        spaces={spaces}
       />
     </ProposalOverlayShell>
   );

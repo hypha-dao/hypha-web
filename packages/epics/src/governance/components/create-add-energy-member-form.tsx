@@ -12,13 +12,7 @@ import {
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
 import { AddEnergyMemberPlugin } from '../../agreements/plugins/add-energy-member/plugin';
 
-const parseDeviceIds = (csv: string) => {
-  const parsed = csv.split(',').map((value) => Number(value.trim()));
-  if (parsed.some((value) => !Number.isFinite(value))) {
-    throw new Error('Device IDs must be comma-separated numbers');
-  }
-  return parsed;
-};
+const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
 export const CreateAddEnergyMemberForm = ({
   spaceId,
@@ -42,24 +36,16 @@ export const CreateAddEnergyMemberForm = ({
     () =>
       schemaCreateAgreementForm.extend(createAgreementFiles).extend({
         energyMember: z.object({
-          memberAddress: z
+          recipient: z
             .string()
             .trim()
-            .regex(/^0x[a-fA-F0-9]{40}$/, t('validation.selectMemberOrSpace')),
-          metadataHash: z
+            .regex(ADDRESS_RE, t('validation.selectMemberOrSpace')),
+          meterCount: z
             .string()
             .trim()
-            .min(1, t('validation.metadataHashRequired')),
-          deviceIdsCsv: z
-            .string()
-            .trim()
-            .min(1, t('validation.deviceIdsRequired'))
             .refine(
-              (csv) =>
-                csv
-                  .split(',')
-                  .every((value) => Number.isFinite(Number(value.trim()))),
-              t('validation.deviceIdsCommaNumbers'),
+              (value) => /^\d+$/.test(value),
+              t('validation.wholeMeters'),
             ),
         }),
       }),
@@ -79,10 +65,18 @@ export const CreateAddEnergyMemberForm = ({
       successfulUrl={successfulUrl}
       backUrl={backUrl}
       plugin={<AddEnergyMemberPlugin members={members} spaces={spaces} />}
+      defaultValues={
+        {
+          energyMember: { recipient: '', meterCount: '0' },
+        } as Partial<FormValues>
+      }
       mapPayload={(values) => ({
-        memberAddress: values.energyMember.memberAddress,
-        metadataHash: values.energyMember.metadataHash,
-        deviceIds: parseDeviceIds(values.energyMember.deviceIdsCsv),
+        members: [
+          t('optimization.metersPerMember', {
+            address: values.energyMember.recipient,
+            count: Number(values.energyMember.meterCount || '0'),
+          }),
+        ],
       })}
     />
   );

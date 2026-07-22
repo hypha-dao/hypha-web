@@ -3962,7 +3962,8 @@
         "metadataHash": "Metadaten-Hash",
         "metadataHashPlaceholder": "0x... oder IPFS-Hash",
         "deviceIds": "Geräte-IDs (kommagetrennt)",
-        "deviceIdsPlaceholder": "z. B. 201,202,203"
+        "deviceIdsPlaceholder": "z. B. 201,202,203",
+        "sectionDescription": "Wählen Sie ein Mitglied dieses Spaces und wie viele Smart Meter es hat. Investoren ohne Zähler können bei null bleiben."
       },
       "energySharing": {
         "settlementWindow": "Abrechnungszeitraum",
@@ -3983,7 +3984,8 @@
         "ownershipToken": "Eigentumstoken-Adresse",
         "ownershipTokenPlaceholder": "0x...",
         "deviceIds": "Geräte-IDs (kommagetrennt)",
-        "deviceIdsPlaceholder": "z. B. 1001,1002,1003"
+        "deviceIdsPlaceholder": "z. B. 1001,1002,1003",
+        "sectionDescription": "Fügen Sie eine Erzeugungs- oder Speicheranlage hinzu und verteilen Sie das Eigentum auf Mitglieder (Anteile insgesamt 100 %)."
       },
       "whitelistSettlement": {
         "settlementAddress": "Abrechnungsadresse",

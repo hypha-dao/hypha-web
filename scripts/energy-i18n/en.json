@@ -133,7 +133,8 @@
       "metadataHash": "Metadata Hash",
       "metadataHashPlaceholder": "0x... or ipfs hash",
       "deviceIds": "Device IDs (comma separated)",
-      "deviceIdsPlaceholder": "e.g. 201,202,203"
+      "deviceIdsPlaceholder": "e.g. 201,202,203",
+      "sectionDescription": "Choose a member of this space and how many smart meters they have. Investors with no meter can be left at zero."
     },
     "energySharing": {
       "settlementWindow": "Settlement Window",
@@ -154,7 +155,8 @@
       "ownershipToken": "Ownership Token Address",
       "ownershipTokenPlaceholder": "0x...",
       "deviceIds": "Device IDs (comma separated)",
-      "deviceIdsPlaceholder": "e.g. 1001,1002,1003"
+      "deviceIdsPlaceholder": "e.g. 1001,1002,1003",
+      "sectionDescription": "Add a generation or storage asset and split its ownership across members (shares total 100%)."
     },
     "whitelistSettlement": {
       "settlementAddress": "Settlement address",

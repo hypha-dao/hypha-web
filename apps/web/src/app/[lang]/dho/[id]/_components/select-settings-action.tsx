@@ -1,13 +1,16 @@
 'use client';
 
 import {
+  PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   SelectAction,
   useActionGating,
   useCanMutateInSpace,
+  useSpaceDocumentsWithStatuses,
   useSpaceEnergy,
   type ActionProps,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
+import { normalizeProposalDocumentLabel } from '@hypha-platform/core/client';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import {
@@ -58,6 +61,16 @@ export const SelectSettingsAction = ({
   const { data: spaceEnergy } = useSpaceEnergy();
   const isEnergyCommunity = spaceEnergy?.enabled === true;
   const isActionDisabled = isMutateLoading || !canMutate;
+
+  // Hide the Energy Sharing card once an Energy Sharing agreement has passed.
+  const { documents: spaceDocuments } = useSpaceDocumentsWithStatuses({
+    spaceSlug: daoSlug,
+    spaceId: space?.web3SpaceId ?? undefined,
+    order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
+  });
+  const hasEnergySharingAgreement = spaceDocuments.accepted.some(
+    (doc) => normalizeProposalDocumentLabel(doc.label) === 'Energy Sharing',
+  );
 
   const SETTINGS_ACTIONS = [
     {
@@ -233,7 +246,7 @@ export const SelectSettingsAction = ({
           },
         ]
       : []),
-    ...(isEnergyCommunity
+    ...(isEnergyCommunity && !hasEnergySharingAgreement
       ? [
           {
             defaultDurationDays: 5,
@@ -245,6 +258,10 @@ export const SelectSettingsAction = ({
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
+        ]
+      : []),
+    ...(isEnergyCommunity
+      ? [
           {
             defaultDurationDays: 5,
             group: t('groups.energy'),

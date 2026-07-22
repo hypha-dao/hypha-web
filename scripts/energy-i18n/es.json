@@ -133,7 +133,8 @@
       "metadataHash": "Hash de metadatos",
       "metadataHashPlaceholder": "0x... o hash ipfs",
       "deviceIds": "IDs de dispositivos (separados por comas)",
-      "deviceIdsPlaceholder": "p. ej. 201,202,203"
+      "deviceIdsPlaceholder": "p. ej. 201,202,203",
+      "sectionDescription": "Elige un miembro de este espacio y cuántos contadores inteligentes tiene. Los inversores sin contador pueden dejarse en cero."
     },
     "energySharing": {
       "settlementWindow": "Ventana de liquidación",
@@ -154,7 +155,8 @@
       "ownershipToken": "Dirección del token de propiedad",
       "ownershipTokenPlaceholder": "0x...",
       "deviceIds": "IDs de dispositivos (separados por comas)",
-      "deviceIdsPlaceholder": "p. ej. 1001,1002,1003"
+      "deviceIdsPlaceholder": "p. ej. 1001,1002,1003",
+      "sectionDescription": "Añade un activo de generación o almacenamiento y reparte su propiedad entre los miembros (las participaciones deben sumar 100 %)."
     },
     "whitelistSettlement": {
       "settlementAddress": "Dirección de liquidación",

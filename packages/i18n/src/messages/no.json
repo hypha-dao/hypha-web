@@ -3965,7 +3965,8 @@
         "metadataHash": "Metadata-hash",
         "metadataHashPlaceholder": "0x... eller ipfs-hash",
         "deviceIds": "Enhets-ID-er (kommaseparert)",
-        "deviceIdsPlaceholder": "f.eks. 201,202,203"
+        "deviceIdsPlaceholder": "f.eks. 201,202,203",
+        "sectionDescription": "Velg et medlem av dette området og hvor mange smartmålere de har. Investorer uten måler kan stå på null."
       },
       "energySharing": {
         "settlementWindow": "Avregningsvindu",
@@ -3986,7 +3987,8 @@
         "ownershipToken": "Adresse for eierskapstoken",
         "ownershipTokenPlaceholder": "0x...",
         "deviceIds": "Enhets-ID-er (kommaseparert)",
-        "deviceIdsPlaceholder": "f.eks. 1001,1002,1003"
+        "deviceIdsPlaceholder": "f.eks. 1001,1002,1003",
+        "sectionDescription": "Legg til et produksjons- eller lagringsanlegg og fordel eierskapet mellom medlemmene (andelene skal totalt utgjøre 100 %)."
       },
       "whitelistSettlement": {
         "settlementAddress": "Avregningsadresse",

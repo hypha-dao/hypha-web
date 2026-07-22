@@ -97,6 +97,13 @@ export const LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL: Record<string, string> = {
   'Changer de délégué': 'Change Delegate',
   'Cambiar delegado': 'Change Delegate',
   'Alterar delegado': 'Change Delegate',
+  'Energie teilen': 'Energy Sharing',
+  'Compartir energía': 'Energy Sharing',
+  "Partage d'énergie": 'Energy Sharing',
+  'Споделување енергија': 'Energy Sharing',
+  'Energie delen': 'Energy Sharing',
+  Energideling: 'Energy Sharing',
+  'Compartilhar energia': 'Energy Sharing',
 };
 
 /**

@@ -133,7 +133,8 @@
       "metadataHash": "Хаш на метаподатоци",
       "metadataHashPlaceholder": "0x... или ipfs хаш",
       "deviceIds": "ID на уреди (одделени со запирка)",
-      "deviceIdsPlaceholder": "на пр. 201,202,203"
+      "deviceIdsPlaceholder": "на пр. 201,202,203",
+      "sectionDescription": "Изберете член на овој простор и колку паметни бројачи има. Инвеститорите без бројач можат да останат на нула."
     },
     "energySharing": {
       "settlementWindow": "Период на порамнување",
@@ -154,7 +155,8 @@
       "ownershipToken": "Адреса на токен за сопственост",
       "ownershipTokenPlaceholder": "0x...",
       "deviceIds": "ID на уреди (одделени со запирка)",
-      "deviceIdsPlaceholder": "на пр. 1001,1002,1003"
+      "deviceIdsPlaceholder": "на пр. 1001,1002,1003",
+      "sectionDescription": "Додајте објект за производство или складирање и распределете ја сопственоста меѓу членовите (уделите вкупно 100%)."
     },
     "whitelistSettlement": {
       "settlementAddress": "Адреса за порамнување",
