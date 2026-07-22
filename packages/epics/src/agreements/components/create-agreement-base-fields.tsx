@@ -44,7 +44,6 @@ import { useProposalNotifications } from '../../governance/hooks';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { RotateCcw } from 'lucide-react';
-import { SpaceSettingsButton } from '../../spaces/components/space-settings-button';
 import {
   RESUBMIT_FORM_DATA_KEY,
   RESUBMIT_PROPOSAL_DATA_KEY,
@@ -427,12 +426,6 @@ export function CreateAgreementBaseFields({
             {stickyHeaderTitle ?? resolvedLabel}
           </h2>
           <div className="flex shrink-0 items-center justify-end gap-1">
-            {spaceSlug ? (
-              <SpaceSettingsButton
-                href={`/${lang}/dho/${spaceSlug}/agreements/select-settings-action`}
-                variant="chrome"
-              />
-            ) : null}
             {backUrl && (
               <ButtonBack
                 label={resolvedBackLabel}
