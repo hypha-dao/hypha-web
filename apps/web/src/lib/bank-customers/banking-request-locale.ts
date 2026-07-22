@@ -2,7 +2,7 @@ import { routing } from '@hypha-platform/i18n';
 
 export function getLocaleFromRequest(request: Request): string {
   const referer = request.headers.get('referer') ?? '';
-  const match = referer.match(/\/(en|pt|es|fr|de|mk|nl)\//);
+  const match = referer.match(/\/(en|pt|es|fr|de|mk|nl|no)\//);
   const locale = match?.[1];
   if (locale && (routing.locales as readonly string[]).includes(locale)) {
     return locale;

@@ -28,6 +28,7 @@ const CHAT_LOCALES: readonly Locale[] = [
   'de',
   'mk',
   'nl',
+  'no',
 ];
 
 const ENTRY_METHOD_IDS: readonly EntryMethodId[] = [
@@ -99,6 +100,7 @@ const ENTRY_METHOD_PROPOSAL_TITLE: Record<Locale, (label: string) => string> = {
   pt: (label) => `Alterar o método de entrada para ${label}`,
   mk: (label) => `Промени го начинот на пристапување во ${label}`,
   nl: (label) => `Toegangsmethode wijzigen naar ${label}`,
+  no: (label) => `Endre tilgangsmetode til ${label}`,
 };
 
 const VOTING_METHOD_PROPOSAL_TITLE: Record<Locale, (label: string) => string> =
@@ -110,6 +112,7 @@ const VOTING_METHOD_PROPOSAL_TITLE: Record<Locale, (label: string) => string> =
     pt: (label) => `Alterar o método de votação para ${label}`,
     mk: (label) => `Промени го начинот на гласање во ${label}`,
     nl: (label) => `Stemmethode wijzigen naar ${label}`,
+    no: (label) => `Endre avstemningsmetode til ${label}`,
   };
 
 type AgreementFlowPlugins = {

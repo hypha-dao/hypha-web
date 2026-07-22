@@ -15,6 +15,7 @@ const ONBOARDING_PICKER_LOCALES = [
   'de',
   'mk',
   'nl',
+  'no',
 ] as const;
 
 const SETUP_JOURNEY_MESSAGE_KEYS: Record<SetupJourneyKind, readonly string[]> =

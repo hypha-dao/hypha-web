@@ -14,4 +14,5 @@ export const localeMetadata: Record<Locale, LocaleMetadata> = {
   de: { code: 'de', label: 'Deutsch', shortLabel: 'DE' },
   mk: { code: 'mk', label: 'Македонски', shortLabel: 'MK' },
   nl: { code: 'nl', label: 'Nederlands', shortLabel: 'NL' },
+  no: { code: 'no', label: 'Norsk', shortLabel: 'NO' },
 };

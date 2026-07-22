@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  type Space,
   useJwt,
   useMe,
   useSpaceBySlug,
@@ -30,6 +31,56 @@ type SpaceConfigurationClientProps = {
   enableNetworkMap: boolean;
 };
 
+function isSpaceRecord(value: unknown): value is Space {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    typeof (value as { id: unknown }).id === 'number' &&
+    'slug' in value &&
+    typeof (value as { slug: unknown }).slug === 'string'
+  );
+}
+
+async function refreshSpaceCaches({
+  previousSlug,
+  nextSlug,
+  updatedSpace,
+}: {
+  previousSlug: string;
+  nextSlug: string;
+  updatedSpace: Space | null;
+}) {
+  const refreshKeys = new Set<string>([
+    `/api/v1/spaces/${previousSlug}`,
+    `/api/v1/spaces/${nextSlug}`,
+    '/api/v1/spaces?parentOnly=false',
+    `/api/v1/spaces?slugs=${nextSlug}&parentOnly=false`,
+  ]);
+
+  const results = await Promise.allSettled(
+    [...refreshKeys].map((key) => {
+      if (
+        updatedSpace &&
+        (key === `/api/v1/spaces/${previousSlug}` ||
+          key === `/api/v1/spaces/${nextSlug}`)
+      ) {
+        return mutate(key, updatedSpace, { revalidate: true });
+      }
+      return mutate(key);
+    }),
+  );
+
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(
+        '[SpaceConfiguration] Failed to refresh space cache before navigation',
+        { key: [...refreshKeys][index], error: result.reason },
+      );
+    }
+  });
+}
+
 export function SpaceConfigurationClient({
   enableNetworkMap,
 }: SpaceConfigurationClientProps) {
@@ -50,7 +101,6 @@ export function SpaceConfigurationClient({
     progress,
     reset,
   } = useUpdateSpaceOrchestrator({ authToken: jwt });
-  const [newSpaceSlug, setNewSpaceSlug] = React.useState(spaceSlug);
   const searchParams = useSearchParams();
   const returnToNetworkMap = React.useMemo(
     () => isNetworkAddLocationReturn(searchParams),
@@ -60,37 +110,14 @@ export function SpaceConfigurationClient({
     () => isSignalWorkflowConfigurationReturn(searchParams),
     [searchParams],
   );
+  const [isRefreshingCaches, setIsRefreshingCaches] = React.useState(false);
 
-  React.useEffect(() => {
-    if (progress === 100 && !isPending && newSpaceSlug) {
-      if (returnToNetworkMap) {
-        router.push(getNetworkMapReturnPath(lang as Locale));
-        return;
-      }
-      if (returnToSignals) {
-        router.push(
-          getSignalWorkflowReturnPath(
-            lang as Locale,
-            newSpaceSlug,
-            searchParams,
-          ),
-        );
-        return;
-      }
-      router.push(getDhoPathAgreements(lang as Locale, newSpaceSlug));
-    }
-  }, [
-    progress,
-    isPending,
-    newSpaceSlug,
-    lang,
-    router,
-    returnToNetworkMap,
-    returnToSignals,
-    searchParams,
-  ]);
-
-  const isBusy = isLoadingJwt || isLoadingSpace || isPending;
+  const isBusy =
+    isLoadingJwt ||
+    isLoadingSpace ||
+    isPending ||
+    isRefreshingCaches ||
+    isError;
 
   const pathname = usePathname();
   const closeUrl = React.useMemo(() => {
@@ -174,27 +201,49 @@ export function SpaceConfigurationClient({
         const normalizedUpdatedSpace = willBeArchived
           ? { ...updatedSpace, parentId: null }
           : updatedSpace;
+        const nextSlug = normalizedUpdatedSpace.slug || space.slug;
 
-        setNewSpaceSlug(normalizedUpdatedSpace.slug || '');
-        await updateSpaceConfiguration({
+        const result = await updateSpaceConfiguration({
           id: space.id,
           data: normalizedUpdatedSpace,
         });
 
-        const mutateRequests = [mutate('/api/v1/spaces?parentOnly=false')];
-        if (normalizedUpdatedSpace.slug) {
-          mutateRequests.push(
-            mutate(
-              `/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}&parentOnly=false`,
-            ),
-          );
+        setIsRefreshingCaches(true);
+        const savedSpace = isSpaceRecord(result) ? result : null;
+        await refreshSpaceCaches({
+          previousSlug: spaceSlug,
+          nextSlug,
+          updatedSpace: savedSpace,
+        });
+        // Banner/logo in the DHO layout come from RSC props — refresh so they update live.
+        router.refresh();
+
+        if (returnToNetworkMap) {
+          router.push(getNetworkMapReturnPath(lang as Locale));
+          return;
         }
-        await Promise.all(mutateRequests);
+        if (returnToSignals) {
+          router.push(
+            getSignalWorkflowReturnPath(lang as Locale, nextSlug, searchParams),
+          );
+          return;
+        }
+        router.push(getDhoPathAgreements(lang as Locale, nextSlug));
       } catch (e) {
         console.warn(e);
+        setIsRefreshingCaches(false);
       }
     },
-    [space, updateSpaceConfiguration],
+    [
+      lang,
+      returnToNetworkMap,
+      returnToSignals,
+      router,
+      searchParams,
+      space,
+      spaceSlug,
+      updateSpaceConfiguration,
+    ],
   );
 
   return (
@@ -220,7 +269,7 @@ export function SpaceConfigurationClient({
             </div>
           ) : (
             <div>
-              {isPending
+              {isPending || isRefreshingCaches
                 ? tAgreementFlow('spaceConfiguration.updating')
                 : currentAction}
             </div>

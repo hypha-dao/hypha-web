@@ -105,7 +105,7 @@
     "continueAdventure": "Vervolg je avontuur"
   },
   "NetworkFeedback": {
-    "triggerLabel": "Vorm Hyfa",
+    "triggerLabel": "Ondersteun Hypha",
     "triggerAriaLabel": "Help mee vorm te geven aan Hypha — gemeenschap en bestuur",
     "title": "Help vormgeven aan Hypha",
     "subtitle": "Kies hoe u wilt deelnemen aan het netwerk.",
@@ -384,7 +384,7 @@
       "title": "Voorstellen",
       "subtitle": "Bij het stemmen, geaccepteerd, geweigerd",
       "ariaLabel": "Distributie van voorstellen",
-      "onVoting": "Over stemmen",
+      "onVoting": "In stemming",
       "accepted": "Geaccepteerd",
       "refused": "Geweigerd",
       "noData": "Geen gegevens"
@@ -574,7 +574,7 @@
     "ecosystem": "Ecosysteem",
     "tabs": {
       "nestedSpaces": "Geneste ruimtes",
-      "spaceToSpace": "Ruimte-naar-ruimte",
+      "spaceToSpace": "Tussen ruimtes",
       "valuesFlows": "Waardenstromen"
     },
     "comingSoon": {
@@ -595,7 +595,7 @@
     }
   },
   "AgreementsTab": {
-    "onVoting": "Over stemmen",
+    "onVoting": "In stemming",
     "accepted": "Geaccepteerd",
     "rejected": "Afgewezen",
     "newProposal": "Nieuw voorstel",
@@ -615,7 +615,7 @@
     "memberDetail": {
       "statusBadge": {
         "active": "Actief",
-        "voting": "Over stemmen",
+        "voting": "In stemming",
         "completed": "Voltooid",
         "rejected": "Afgewezen",
         "inactive": "Inactief",
@@ -1209,10 +1209,10 @@
   },
   "TreasuryTab": {
     "bankingRoutes": "Bankieren",
-    "balance": "Evenwicht",
+    "balance": "Saldo",
     "wallet": "Portemonnee",
     "searchTokens": "Zoek tokens",
-    "hideSmall": "Klein verbergen",
+    "hideSmall": "Kleine bedragen verbergen",
     "hideSmallBalances": "Verberg kleine saldi",
     "newToken": "Nieuw token",
     "depositFunds": "Stort geld",
@@ -1750,7 +1750,7 @@
       "buyHyphaTokens": "Koop Hypha-tokens",
       "redeemTokens": "Tokens inwisselen",
       "updateToken": "Token bijwerken",
-      "statusOnVoting": "Over stemmen",
+      "statusOnVoting": "In stemming",
       "statusAccepted": "Geaccepteerd",
       "statusRejected": "Afgewezen"
     },
@@ -2042,7 +2042,7 @@
               "description": "gebruikt voor toegang of functionaliteit binnen de ruimte"
             },
             "ownership": {
-              "label": "Eigendomsteken",
+              "label": "Eigendomstoken",
               "description": "weerspiegelt het aandeel of het eigen vermogen in de ruimte"
             },
             "impact": {
@@ -2507,7 +2507,7 @@
     "status": {
       "accepted": "Geaccepteerd",
       "rejected": "Afgewezen",
-      "onVoting": "Over stemmen"
+      "onVoting": "In stemming"
     },
     "badges": {
       "space": "Ruimte",
@@ -2729,7 +2729,7 @@
       "nextSignal": "Volgende signaal",
       "blindSpot": "Blinde vlek",
       "summarizeDiscussion": "Discussie samenvatten",
-      "spaceMemory": "Ruimte geheugen",
+      "spaceMemory": "Ruimtegeheugen",
       "valueFlows": "Waardestromen"
     },
     "welcome": "Ik ben jouw ruimte-AI om samenhang te brengen in de strategie, beweging in operaties en betekenis aan impact, waarbij gespecialiseerde agenten binnenkomen wanneer je daarom vraagt.",
@@ -3248,7 +3248,7 @@
     "mostMessages": "De meeste berichten",
     "mostRecent": "Meest recent",
     "searchConversation": "Zoek gesprek",
-    "hideArchived": "Gearchiveerd verbergen",
+    "hideArchived": "Verberg gearchiveerde",
     "messageCount": "{count, plural, one {# bericht} other {# berichten}}",
     "priorityVisualAlt": "Prioriteitsniveau {priority}",
     "typeSignalBannerAlt": "{type} signaal, {priority} prioriteit",
@@ -3280,7 +3280,7 @@
     "archiveConfirm": "Wil je dit gesprek echt archiveren?",
     "yesArchive": "Ja, archief",
     "errorCoherenceTab": "Oeps, er is iets misgegaan. Kan het tabblad Signalen niet laden.",
-    "spaceMemory": "Ruimte geheugen",
+    "spaceMemory": "Ruimtegeheugen",
     "searchSpaceMemory": "Zoek ruimtegeheugen...",
     "spaceMemoryLoading": "Activa laden…",
     "spaceMemoryEmpty": "Nog geen geüploade bestanden. Hier vindt u bijlagen over voorstellen en overeenkomsten.",
@@ -3433,9 +3433,9 @@
       "memory": "Geheugen"
     },
     "types": {
-      "Opportunity": "Mogelijkheid",
+      "Opportunity": "Kans",
       "Risk": "Risico",
-      "Tension": "Spanning",
+      "Tension": "Knelpunt",
       "Insight": "Inzicht",
       "Trend": "Trend",
       "Proposal": "Voorstel"
@@ -3449,7 +3449,7 @@
       "Proposal": "Bestuursactie of stemming nodig"
     },
     "priorities": {
-      "critical": "Kritisch",
+      "critical": "Kritiek",
       "high": "Hoog",
       "medium": "Medium",
       "low": "Laag"
@@ -3562,7 +3562,7 @@
     "boardDelete": "Bord verwijderen {boardName}",
     "signalViewBoard": "Kanban",
     "signalWorkflowSettings": "Configureer statussen en borden",
-    "signalViewSwimlane": "Zwembaan",
+    "signalViewSwimlane": "Swimlane-weergave",
     "signalViewList": "Lijst",
     "signalViewGrid": "Stem omhoog",
     "signalBoardUncategorized": "Niet gecategoriseerd",
@@ -3583,7 +3583,7 @@
     "signalFormDueDateHint": "Optionele streefdatum voor het volgen van deze signaaltaak.",
     "signalFormVotingPower": "Jouw stemkracht",
     "signalFormVotingPowerHint": "Een deel van uw stemrecht steunt dit signaal. Maakt standaard gebruik van uw volledige stemrecht; je kunt het later aanpassen of verwijderen.",
-    "scheduleOnCalendar": "Schema op kalender",
+    "scheduleOnCalendar": "Plannen in kalender",
     "linkedCalendarEventsTitle": "Gekoppelde agenda-evenementen",
     "linkedCalendarEventsHint": "Oproepen en vergaderingen gepland om aan dit signaal te werken.",
     "linkedCalendarEventsLoading": "Gekoppelde evenementen laden...",
@@ -3709,7 +3709,7 @@
     "upvote": "Stem omhoog",
     "updateUpvote": "Upvote bijwerken",
     "removeUpvote": "Verwijder de stem",
-    "upvoteDetails": "Ondersteuningsdetails",
+    "upvoteDetails": "Supportdetails",
     "totalSupport": "Totale stem omhoog",
     "yourVotingPowerShare": "Stem omhoog met een % van uw stemkracht",
     "supportersCount": "{count, plural, =0 {Nog geen UpVoters} one {# UpVoter} other {# UpVoters}}",
