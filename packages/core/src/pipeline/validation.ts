@@ -131,6 +131,7 @@ export const schemaDealFiltersQuery = z.object({
     .union([z.enum(PIPELINE_STATUSES), z.array(z.enum(PIPELINE_STATUSES))])
     .optional(),
   ownerId: z.coerce.number().int().positive().optional(),
+  accountManagerId: z.coerce.number().int().positive().optional(),
   tag: z.string().trim().optional(),
   hasDeadline: z
     .union([z.literal('true'), z.literal('false'), z.boolean()])

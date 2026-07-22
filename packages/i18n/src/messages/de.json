@@ -4164,7 +4164,9 @@
       "tagPlaceholder": "Nach einem Deal-Tag filtern",
       "country": "Land",
       "countrySearch": "Länder suchen…",
-      "allCountries": "Alle Länder"
+      "allCountries": "Alle Länder",
+      "accountManager": "Account-Manager",
+      "allAccountManagers": "Alle Account-Manager"
     },
     "savedViews": {
       "save": "Save view",
@@ -4241,7 +4243,9 @@
       "callReference": "Call reference",
       "programme": "Programme",
       "expectedPartners": "Expected partners",
-      "eligibilityNotes": "Eligibility notes"
+      "eligibilityNotes": "Eligibility notes",
+      "accountManager": "Account-Manager",
+      "teamMembers": "Teammitglieder"
     },
     "grantTender": {
       "title": "Grant / Tender details"

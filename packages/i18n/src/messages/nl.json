@@ -4172,7 +4172,9 @@
       "tagPlaceholder": "Filter op een deal-tag",
       "country": "Land",
       "countrySearch": "Zoek landen…",
-      "allCountries": "Alle landen"
+      "allCountries": "Alle landen",
+      "accountManager": "Accountmanager",
+      "allAccountManagers": "Alle accountmanagers"
     },
     "savedViews": {
       "save": "Save view",
@@ -4249,7 +4251,9 @@
       "callReference": "Call reference",
       "programme": "Programme",
       "expectedPartners": "Expected partners",
-      "eligibilityNotes": "Eligibility notes"
+      "eligibilityNotes": "Eligibility notes",
+      "accountManager": "Accountmanager",
+      "teamMembers": "Teamleden"
     },
     "grantTender": {
       "title": "Grant / Tender details"

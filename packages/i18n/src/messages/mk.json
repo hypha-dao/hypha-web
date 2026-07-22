@@ -4151,7 +4151,9 @@
       "tagPlaceholder": "Филтрирај по ознака",
       "country": "Земја",
       "countrySearch": "Пребарај земји…",
-      "allCountries": "Сите земји"
+      "allCountries": "Сите земји",
+      "accountManager": "Менаџер на сметка",
+      "allAccountManagers": "Сите менаџери на сметки"
     },
     "savedViews": {
       "save": "Save view",
@@ -4228,7 +4230,9 @@
       "callReference": "Call reference",
       "programme": "Programme",
       "expectedPartners": "Expected partners",
-      "eligibilityNotes": "Eligibility notes"
+      "eligibilityNotes": "Eligibility notes",
+      "accountManager": "Менаџер на сметка",
+      "teamMembers": "Членови на тимот"
     },
     "grantTender": {
       "title": "Grant / Tender details"

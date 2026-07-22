@@ -90,6 +90,7 @@ export function TrackPage({
         spaceSlug={spaceSlug}
         filters={filters}
         onChange={setFilters}
+        useMembers={useMembers}
         countryFocus={countryFocus}
         onExport={() => {
           void exportDealsToXlsx(

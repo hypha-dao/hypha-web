@@ -4164,7 +4164,9 @@
       "tagPlaceholder": "Filtrar por una etiqueta",
       "country": "País",
       "countrySearch": "Buscar países…",
-      "allCountries": "Todos los países"
+      "allCountries": "Todos los países",
+      "accountManager": "Gestor de cuenta",
+      "allAccountManagers": "Todos los gestores de cuenta"
     },
     "savedViews": {
       "save": "Save view",
@@ -4241,7 +4243,9 @@
       "callReference": "Call reference",
       "programme": "Programme",
       "expectedPartners": "Expected partners",
-      "eligibilityNotes": "Eligibility notes"
+      "eligibilityNotes": "Eligibility notes",
+      "accountManager": "Gestor de cuenta",
+      "teamMembers": "Miembros del equipo"
     },
     "grantTender": {
       "title": "Grant / Tender details"

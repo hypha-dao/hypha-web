@@ -52,6 +52,7 @@ describe('filterDeals', () => {
       title: 'Amsterdam sales',
       country: 'NL',
       region: 'Benelux',
+      accountManagerId: 5,
     }),
     makeDeal({
       id: 2,
@@ -112,6 +113,13 @@ describe('filterDeals', () => {
     expect(filterDeals(deals, { hasDeadline: false }).map((d) => d.id)).toEqual(
       [2],
     );
+  });
+
+  it('filters by account manager', () => {
+    expect(
+      filterDeals(deals, { accountManagerId: 5 }).map((d) => d.id),
+    ).toEqual([1]);
+    expect(filterDeals(deals, { accountManagerId: 99 })).toHaveLength(0);
   });
 
   it('filters by tag', () => {

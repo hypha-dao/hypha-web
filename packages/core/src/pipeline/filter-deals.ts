@@ -52,6 +52,12 @@ export function filterDeals(deals: Deal[], filters: DealFilters = {}): Deal[] {
     if (filters.ownerId != null && deal.ownerId !== filters.ownerId) {
       return false;
     }
+    if (
+      filters.accountManagerId != null &&
+      deal.accountManagerId !== filters.accountManagerId
+    ) {
+      return false;
+    }
     if (filters.tag) {
       const tag = filters.tag.toLowerCase();
       if (!deal.tags.some((t) => t.toLowerCase() === tag)) return false;

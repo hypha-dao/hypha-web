@@ -161,6 +161,9 @@ export async function findDealsBySpaceId(
   if (filters?.ownerId != null) {
     conditions.push(eq(deals.ownerId, filters.ownerId));
   }
+  if (filters?.accountManagerId != null) {
+    conditions.push(eq(deals.accountManagerId, filters.accountManagerId));
+  }
 
   const rows = await db
     .select()

@@ -4172,7 +4172,9 @@
       "allStatuses": "All statuses",
       "anyDeadline": "Any deadline",
       "tagLabel": "Deal tag",
-      "tagPlaceholder": "Filter by a deal tag"
+      "tagPlaceholder": "Filter by a deal tag",
+      "accountManager": "Account manager",
+      "allAccountManagers": "All account managers"
     },
     "savedViews": {
       "save": "Save view",
@@ -4249,7 +4251,9 @@
       "callReference": "Call reference",
       "programme": "Programme",
       "expectedPartners": "Expected partners",
-      "eligibilityNotes": "Eligibility notes"
+      "eligibilityNotes": "Eligibility notes",
+      "accountManager": "Account manager",
+      "teamMembers": "Team members"
     },
     "grantTender": {
       "title": "Grant / Tender details"

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { DealPanel, ButtonClose } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
+import { useMembers } from '@web/hooks/use-members';
 
 export function PipelineDealAsideClient({
   spaceSlug,
@@ -26,6 +27,7 @@ export function PipelineDealAsideClient({
         <DealPanel
           spaceSlug={spaceSlug}
           dealId={dealId}
+          useMembers={useMembers}
           onDeleted={() => router.push(closeUrl)}
         />
       </div>

@@ -35,11 +35,14 @@ import {
   Separator,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import type { UseMembers } from '../../spaces';
 import { CountrySelect } from './country-select';
+import { SpaceMemberSelect } from './space-member-select';
 
 type DealPanelProps = {
   spaceSlug: string;
   dealId: number;
+  useMembers: UseMembers;
   onDeleted?: () => void;
 };
 
@@ -95,13 +98,20 @@ function useDebouncedSave(
   return { schedule, saving, savedAt };
 }
 
-export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
+export function DealPanel({
+  spaceSlug,
+  dealId,
+  useMembers,
+  onDeleted,
+}: DealPanelProps) {
   const t = useTranslations('Pipeline');
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { patchDeal, deleteDeal, isDeleting } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
   const { regions, defaultRegion, probabilities } =
     usePipelineConfig(spaceSlug);
+  const { persons } = useMembers({ spaceSlug, paginationDisabled: true });
+  const members = persons?.data ?? [];
   const deal = deals.find((d) => d.id === dealId) ?? null;
   const { schedule, saving, savedAt } = useDebouncedSave(dealId, patchDeal);
 
@@ -265,6 +275,35 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
               ))}
             </SelectContent>
           </Select>
+        </Field>
+        <Field label={t('fields.accountManager')}>
+          <SpaceMemberSelect
+            members={members}
+            value={
+              deal.accountManagerId != null
+                ? String(deal.accountManagerId)
+                : null
+            }
+            onChange={(id) =>
+              schedule({ accountManagerId: id ? Number(id) : null })
+            }
+            unassignedLabel={t('newDeal.accountManagerUnassigned')}
+            searchPlaceholder={t('newDeal.memberSearch')}
+            emptyListMessage={t('newDeal.noMembers')}
+            unknownLabel={t('newDeal.unknownMember')}
+          />
+        </Field>
+        <Field label={t('fields.teamMembers')}>
+          <SpaceMemberSelect
+            mode="multi"
+            members={members}
+            value={deal.teamMemberIds.map(String)}
+            onChange={(ids) => schedule({ teamMemberIds: ids.map(Number) })}
+            placeholder={t('newDeal.teammatesPlaceholder')}
+            searchPlaceholder={t('newDeal.memberSearch')}
+            emptyListMessage={t('newDeal.noMembers')}
+            unknownLabel={t('newDeal.unknownMember')}
+          />
         </Field>
         <Field label={t('fields.successRate')}>
           <Input

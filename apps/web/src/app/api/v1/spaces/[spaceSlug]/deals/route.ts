@@ -48,6 +48,7 @@ export async function GET(
       status: parseListParam<DealStatus>(url, 'status'),
       pipelineStatus: parseListParam<PipelineStatus>(url, 'pipelineStatus'),
       ownerId: url.searchParams.get('ownerId') ?? undefined,
+      accountManagerId: url.searchParams.get('accountManagerId') ?? undefined,
       tag: url.searchParams.get('tag') ?? undefined,
       hasDeadline: url.searchParams.get('hasDeadline') ?? undefined,
     });

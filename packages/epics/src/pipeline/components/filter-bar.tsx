@@ -23,13 +23,16 @@ import {
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { Download } from 'lucide-react';
+import type { UseMembers } from '../../spaces';
 import { CountrySelect } from './country-select';
+import { SpaceMemberSelect } from './space-member-select';
 
 type FilterBarProps = {
   spaceSlug: string;
   filters: DealFilters;
   onChange: (filters: DealFilters) => void;
   onExport: () => void;
+  useMembers: UseMembers;
   savedViewsSlot?: React.ReactNode;
   /** Optional country allow-list from user settings. */
   countryFocus?: string[];
@@ -75,11 +78,14 @@ export function FilterBar({
   filters,
   onChange,
   onExport,
+  useMembers,
   savedViewsSlot,
   countryFocus,
 }: FilterBarProps) {
   const t = useTranslations('Pipeline');
   const { regions } = usePipelineConfig(spaceSlug);
+  const { persons } = useMembers({ spaceSlug, paginationDisabled: true });
+  const members = persons?.data ?? [];
 
   return (
     <div className="flex flex-col gap-3">
@@ -165,6 +171,27 @@ export function FilterBar({
               ))}
             </SelectContent>
           </Select>
+        </FilterField>
+        <FilterField label={t('filters.accountManager')}>
+          <SpaceMemberSelect
+            className="w-[180px]"
+            members={members}
+            value={
+              filters.accountManagerId != null
+                ? String(filters.accountManagerId)
+                : null
+            }
+            onChange={(id) =>
+              onChange({
+                ...filters,
+                accountManagerId: id ? Number(id) : undefined,
+              })
+            }
+            unassignedLabel={t('filters.allAccountManagers')}
+            searchPlaceholder={t('newDeal.memberSearch')}
+            emptyListMessage={t('newDeal.noMembers')}
+            unknownLabel={t('newDeal.unknownMember')}
+          />
         </FilterField>
         <FilterField label={t('filters.priority')}>
           <Select

@@ -114,6 +114,7 @@ export interface DealFilters {
   status?: DealStatus | DealStatus[];
   pipelineStatus?: PipelineStatus | PipelineStatus[];
   ownerId?: number;
+  accountManagerId?: number;
   tag?: string;
   hasDeadline?: boolean;
 }

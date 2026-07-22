@@ -32,6 +32,9 @@ function buildDealsUrl(spaceSlug: string, filters?: DealFilters): string {
   const params = new URLSearchParams();
   if (filters?.q) params.set('q', filters.q);
   if (filters?.ownerId != null) params.set('ownerId', String(filters.ownerId));
+  if (filters?.accountManagerId != null) {
+    params.set('accountManagerId', String(filters.accountManagerId));
+  }
   if (filters?.tag) params.set('tag', filters.tag);
   if (filters?.hasDeadline != null) {
     params.set('hasDeadline', String(filters.hasDeadline));
