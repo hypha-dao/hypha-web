@@ -4233,6 +4233,9 @@
       "currency": "Currency",
       "priority": "Priority",
       "dealStatus": "Deal status",
+      "successRate": "Success rate (%)",
+      "successRateOverride": "Deal-specific override — clear to use the stage default",
+      "successRateDefault": "Using stage default ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
       "notes": "Notes",
@@ -4271,6 +4274,18 @@
       "loading": "Loading regions…",
       "duplicate": "That region already exists",
       "atLeastOne": "Keep at least one region",
+      "resetDefaults": "Reset to defaults"
+    },
+    "probabilities": {
+      "title": "Stage success rates",
+      "description": "Default success probability (%) per track and stage. New deals and deals moved to a stage start from these values; each deal can still be overridden individually.",
+      "track": "Track",
+      "terminalHint": "Won is always 100% and Lost is always 0%.",
+      "monotonicWarning": "Probabilities should increase from left to right. Check: {lanes}",
+      "save": "Save success rates",
+      "saved": "Success rates saved",
+      "saveFailed": "Could not save success rates",
+      "loading": "Loading success rates…",
       "resetDefaults": "Reset to defaults"
     }
   }

@@ -5,6 +5,7 @@ import {
   currencyForCountry,
   DEAL_PRIORITIES,
   DEAL_STATUSES,
+  getDealProbability,
   isGrantOrTenderSwimlane,
   PIPELINE_STATUSES,
   PIPELINE_SWIMLANES,
@@ -81,7 +82,8 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { patchDeal, deleteDeal, isDeleting } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { regions, defaultRegion } = usePipelineConfig(spaceSlug);
+  const { regions, defaultRegion, probabilities } =
+    usePipelineConfig(spaceSlug);
   const deal = deals.find((d) => d.id === dealId) ?? null;
   const { schedule, saving, savedAt } = useDebouncedSave(dealId, patchDeal);
 
@@ -245,6 +247,46 @@ export function DealPanel({ spaceSlug, dealId, onDeleted }: DealPanelProps) {
               ))}
             </SelectContent>
           </Select>
+        </Field>
+        <Field label={t('fields.successRate')}>
+          <Input
+            key={`success-rate-${deal.pipelineSwimlane}-${
+              deal.pipelineStatus
+            }-${deal.successRate ?? 'default'}`}
+            type="number"
+            min={0}
+            max={100}
+            defaultValue={deal.successRate ?? ''}
+            placeholder={String(
+              getDealProbability(
+                deal.pipelineSwimlane,
+                deal.pipelineStatus,
+                probabilities,
+              ),
+            )}
+            onBlur={(e) => {
+              const raw = e.target.value.trim();
+              if (!raw) {
+                if (deal.successRate != null) schedule({ successRate: null });
+                return;
+              }
+              const n = Math.min(100, Math.max(0, Math.round(Number(raw))));
+              if (Number.isFinite(n) && n !== deal.successRate) {
+                schedule({ successRate: n });
+              }
+            }}
+          />
+          <span className="text-1 text-neutral-10">
+            {deal.successRate != null
+              ? t('fields.successRateOverride')
+              : t('fields.successRateDefault', {
+                  rate: getDealProbability(
+                    deal.pipelineSwimlane,
+                    deal.pipelineStatus,
+                    probabilities,
+                  ),
+                })}
+          </span>
         </Field>
       </div>
 

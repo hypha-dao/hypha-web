@@ -1,15 +1,42 @@
-import { DEFAULT_PIPELINE_REGIONS } from './constants';
+import {
+  DEFAULT_PIPELINE_REGIONS,
+  PIPELINE_PROBABILITY,
+  PIPELINE_STATUSES,
+  PIPELINE_SWIMLANES,
+  type PipelineStatus,
+  type PipelineSwimlane,
+} from './constants';
+
+/** Success probability (%) per swimlane (track) × pipeline stage. */
+export type ProbabilityMatrix = Record<
+  PipelineSwimlane,
+  Record<PipelineStatus, number>
+>;
 
 export type PipelineConfig = {
   /** Configurable territory / owning-team labels for deals. */
   regions: string[];
   /** Preferred default when creating deals (must be in regions when set). */
   defaultRegion: string;
+  /**
+   * Stage default success rates (%) per swimlane. Seeds a deal's
+   * successRate when it enters a stage; deals can override per deal.
+   */
+  probabilities: ProbabilityMatrix;
 };
+
+export function defaultProbabilityMatrix(): ProbabilityMatrix {
+  const matrix = {} as ProbabilityMatrix;
+  for (const swimlane of PIPELINE_SWIMLANES) {
+    matrix[swimlane] = { ...PIPELINE_PROBABILITY[swimlane] };
+  }
+  return matrix;
+}
 
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   regions: [...DEFAULT_PIPELINE_REGIONS],
   defaultRegion: 'Benelux',
+  probabilities: defaultProbabilityMatrix(),
 };
 
 function normalizeRegionName(value: unknown): string | null {
@@ -17,6 +44,49 @@ function normalizeRegionName(value: unknown): string | null {
   const trimmed = value.trim().replace(/\s+/g, ' ');
   if (!trimmed || trimmed.length > 80) return null;
   return trimmed;
+}
+
+function normalizeProbability(value: unknown): number | null {
+  const n = typeof value === 'string' ? Number(value) : value;
+  if (typeof n !== 'number' || !Number.isFinite(n)) return null;
+  return Math.min(100, Math.max(0, Math.round(n)));
+}
+
+/**
+ * Normalizes a raw probability matrix, falling back to seed defaults for
+ * missing/invalid cells. Terminal stages are absolute: Won=100, Lost=0.
+ */
+export function normalizeProbabilityMatrix(raw: unknown): ProbabilityMatrix {
+  const source =
+    raw && typeof raw === 'object' && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
+
+  const matrix = {} as ProbabilityMatrix;
+  for (const swimlane of PIPELINE_SWIMLANES) {
+    const rawLane =
+      source[swimlane] &&
+      typeof source[swimlane] === 'object' &&
+      !Array.isArray(source[swimlane])
+        ? (source[swimlane] as Record<string, unknown>)
+        : {};
+    const lane = {} as Record<PipelineStatus, number>;
+    for (const status of PIPELINE_STATUSES) {
+      if (status === 'Won') {
+        lane[status] = 100;
+        continue;
+      }
+      if (status === 'Lost') {
+        lane[status] = 0;
+        continue;
+      }
+      lane[status] =
+        normalizeProbability(rawLane[status]) ??
+        PIPELINE_PROBABILITY[swimlane][status];
+    }
+    matrix[swimlane] = lane;
+  }
+  return matrix;
 }
 
 export function normalizePipelineConfig(raw: unknown): PipelineConfig {
@@ -62,12 +132,45 @@ export function normalizePipelineConfig(raw: unknown): PipelineConfig {
   return {
     regions: resolvedRegions,
     defaultRegion,
+    probabilities: normalizeProbabilityMatrix(source.probabilities),
   };
 }
 
-export function sanitizePipelineConfig(input: {
-  regions: string[];
+export type PipelineConfigPatch = {
+  regions?: string[];
   defaultRegion?: string;
-}): PipelineConfig {
-  return normalizePipelineConfig(input);
+  probabilities?: Partial<
+    Record<PipelineSwimlane, Partial<Record<PipelineStatus, number>>>
+  >;
+};
+
+/**
+ * Merges a partial config update onto the current config and normalizes.
+ * Sections not present in the patch are preserved.
+ */
+export function mergePipelineConfig(
+  current: unknown,
+  patch: PipelineConfigPatch,
+): PipelineConfig {
+  const base = normalizePipelineConfig(current);
+  return normalizePipelineConfig({
+    regions: patch.regions ?? base.regions,
+    defaultRegion: patch.defaultRegion ?? base.defaultRegion,
+    probabilities: patch.probabilities
+      ? mergeProbabilities(base.probabilities, patch.probabilities)
+      : base.probabilities,
+  });
+}
+
+function mergeProbabilities(
+  base: ProbabilityMatrix,
+  patch: Partial<
+    Record<PipelineSwimlane, Partial<Record<PipelineStatus, number>>>
+  >,
+): ProbabilityMatrix {
+  const merged = {} as ProbabilityMatrix;
+  for (const swimlane of PIPELINE_SWIMLANES) {
+    merged[swimlane] = { ...base[swimlane], ...(patch[swimlane] ?? {}) };
+  }
+  return merged;
 }

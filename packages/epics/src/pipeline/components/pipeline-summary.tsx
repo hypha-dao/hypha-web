@@ -1,27 +1,28 @@
 'use client';
 
-import type { Deal } from '@hypha-platform/core/client';
+import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
 import {
-  getDealProbability,
+  effectiveSuccessRate,
   PIPELINE_SWIMLANES,
 } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 
 type PipelineSummaryProps = {
   deals: Deal[];
+  probabilities?: ProbabilityMatrix;
 };
 
-export function PipelineSummary({ deals }: PipelineSummaryProps) {
+export function PipelineSummary({
+  deals,
+  probabilities,
+}: PipelineSummaryProps) {
   const t = useTranslations('Pipeline');
   const active = deals.filter(
     (d) => d.pipelineStatus !== 'Won' && d.pipelineStatus !== 'Lost',
   );
   const totalValue = active.reduce((sum, d) => sum + d.value, 0);
   const weighted = active.reduce(
-    (sum, d) =>
-      sum +
-      (d.value * getDealProbability(d.pipelineSwimlane, d.pipelineStatus)) /
-        100,
+    (sum, d) => sum + (d.value * effectiveSuccessRate(d, probabilities)) / 100,
     0,
   );
   const currency = deals[0]?.currency ?? '€';

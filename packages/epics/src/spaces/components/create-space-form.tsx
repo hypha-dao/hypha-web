@@ -61,6 +61,7 @@ import {
   type SignalWorkflowSettingsHandle,
 } from '../../coherence/components/signal-workflow-settings';
 import { PipelineRegionSettings } from '../../pipeline/components/pipeline-region-settings';
+import { PipelineProbabilitySettings } from '../../pipeline/components/pipeline-probability-settings';
 import {
   SpaceLocationPicker,
   type SpaceLocationPickerHandle,
@@ -1085,6 +1086,7 @@ export const SpaceForm = ({
               <>
                 <Separator />
                 <PipelineRegionSettings spaceSlug={spaceSlug} />
+                <PipelineProbabilitySettings spaceSlug={spaceSlug} />
               </>
             ) : null}
             <div className="flex justify-end w-full">

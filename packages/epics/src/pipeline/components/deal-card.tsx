@@ -1,10 +1,7 @@
 'use client';
 
-import type { Deal } from '@hypha-platform/core/client';
-import {
-  getDealProbability,
-  getWeightedValue,
-} from '@hypha-platform/core/client';
+import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
+import { effectiveSuccessRate } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { setDealDragData } from '../utils/deal-dnd-utils';
 
@@ -13,6 +10,7 @@ type DealCardProps = {
   onClick?: (deal: Deal) => void;
   draggable?: boolean;
   active?: boolean;
+  probabilities?: ProbabilityMatrix;
 };
 
 const priorityClass: Record<string, string> = {
@@ -27,16 +25,11 @@ export function DealCard({
   onClick,
   draggable = true,
   active = false,
+  probabilities,
 }: DealCardProps) {
-  const probability = getDealProbability(
-    deal.pipelineSwimlane,
-    deal.pipelineStatus,
-  );
-  const weighted = getWeightedValue(
-    deal.value,
-    deal.pipelineSwimlane,
-    deal.pipelineStatus,
-  );
+  const probability = effectiveSuccessRate(deal, probabilities);
+  const weighted = (deal.value * probability) / 100;
+  const isOverride = deal.successRate != null;
 
   return (
     <button
@@ -72,7 +65,9 @@ export function DealCard({
           {deal.value.toLocaleString()}
         </span>
         <span>·</span>
-        <span>{probability}%</span>
+        <span title={isOverride ? 'Deal-specific success rate' : undefined}>
+          {probability}%{isOverride ? '*' : ''}
+        </span>
         <span>·</span>
         <span>
           w {deal.currency}

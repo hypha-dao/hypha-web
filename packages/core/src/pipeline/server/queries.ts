@@ -47,6 +47,7 @@ export function mapDealRow(row: typeof deals.$inferSelect): Deal {
     contactUrl: row.contactUrl,
     teamMemberIds: row.teamMemberIds ?? [],
     accountManagerId: row.accountManagerId,
+    successRate: row.successRate,
     nextAction: row.nextAction,
     nextActionDate: row.nextActionDate,
     notes: row.notes,

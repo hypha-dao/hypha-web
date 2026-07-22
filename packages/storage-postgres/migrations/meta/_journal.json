@@ -498,6 +498,13 @@
       "when": 1784000000001,
       "tag": "0070_pipeline_config",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1784000000002,
+      "tag": "0071_deal_success_rate",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import {
   DEFAULT_PIPELINE_CONFIG,
   type PipelineConfig,
+  type PipelineConfigPatch,
 } from '../../pipeline-config';
 
 export const PIPELINE_CONFIG_SWR_KEY = 'pipeline-config' as const;
@@ -60,10 +61,7 @@ export function usePipelineConfig(spaceSlug?: string) {
 
   const saveMutation = useSWRMutation(
     slug ? [PIPELINE_CONFIG_SWR_KEY, slug, 'save'] : null,
-    async (
-      _key,
-      { arg }: { arg: { regions: string[]; defaultRegion?: string } },
-    ) => {
+    async (_key, { arg }: { arg: PipelineConfigPatch }) => {
       const response = await fetch(
         `/api/v1/spaces/${encodeURIComponent(slug!)}/pipeline/config`,
         {
@@ -90,6 +88,7 @@ export function usePipelineConfig(spaceSlug?: string) {
     config,
     regions: config.regions,
     defaultRegion: config.defaultRegion,
+    probabilities: config.probabilities,
     isLoading,
     error,
     refresh,

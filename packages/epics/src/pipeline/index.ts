@@ -5,4 +5,5 @@ export * from './components/new-deal-dialog';
 export * from './components/kanban-board';
 export * from './components/filter-bar';
 export * from './components/pipeline-region-settings';
+export * from './components/pipeline-probability-settings';
 export * from './utils/export-deals';

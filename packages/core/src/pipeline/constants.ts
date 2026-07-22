@@ -250,16 +250,44 @@ export function currencyForCountry(code: string | null | undefined): string {
 export function getDealProbability(
   swimlane: PipelineSwimlane,
   status: PipelineStatus,
+  probabilities?: Record<PipelineSwimlane, Record<PipelineStatus, number>>,
 ): number {
-  return PIPELINE_PROBABILITY[swimlane][status];
+  return (
+    probabilities?.[swimlane]?.[status] ??
+    PIPELINE_PROBABILITY[swimlane][status]
+  );
+}
+
+/**
+ * Success rate (%) actually used in weighted-value math: the deal's own
+ * override when set, otherwise the stage default from the (space-configured)
+ * probability matrix.
+ */
+export function effectiveSuccessRate(
+  deal: {
+    successRate?: number | null;
+    pipelineSwimlane: PipelineSwimlane;
+    pipelineStatus: PipelineStatus;
+  },
+  probabilities?: Record<PipelineSwimlane, Record<PipelineStatus, number>>,
+): number {
+  return (
+    deal.successRate ??
+    getDealProbability(
+      deal.pipelineSwimlane,
+      deal.pipelineStatus,
+      probabilities,
+    )
+  );
 }
 
 export function getWeightedValue(
   value: number,
   swimlane: PipelineSwimlane,
   status: PipelineStatus,
+  probabilities?: Record<PipelineSwimlane, Record<PipelineStatus, number>>,
 ): number {
-  return (value * getDealProbability(swimlane, status)) / 100;
+  return (value * getDealProbability(swimlane, status, probabilities)) / 100;
 }
 
 export function isGrantOrTenderSwimlane(swimlane: string): boolean {

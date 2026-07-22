@@ -4225,6 +4225,9 @@
       "currency": "Currency",
       "priority": "Priority",
       "dealStatus": "Deal status",
+      "successRate": "Success rate (%)",
+      "successRateOverride": "Deal-specific override — clear to use the stage default",
+      "successRateDefault": "Using stage default ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
       "notes": "Notes",
@@ -4263,6 +4266,18 @@
       "loading": "Cargando regiones…",
       "duplicate": "Esa región ya existe",
       "atLeastOne": "Mantén al menos una región",
+      "resetDefaults": "Restablecer valores"
+    },
+    "probabilities": {
+      "title": "Tasas de éxito por etapa",
+      "description": "Probabilidad de éxito predeterminada (%) por track y etapa. Los nuevos negocios y los movidos a una etapa parten de estos valores; cada negocio puede ajustarse individualmente.",
+      "track": "Track",
+      "terminalHint": "Won siempre es 100% y Lost siempre es 0%.",
+      "monotonicWarning": "Las probabilidades deben aumentar de izquierda a derecha. Revisa: {lanes}",
+      "save": "Guardar tasas de éxito",
+      "saved": "Tasas de éxito guardadas",
+      "saveFailed": "No se pudieron guardar las tasas de éxito",
+      "loading": "Cargando tasas de éxito…",
       "resetDefaults": "Restablecer valores"
     }
   }

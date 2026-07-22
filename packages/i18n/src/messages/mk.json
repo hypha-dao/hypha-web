@@ -4212,6 +4212,9 @@
       "currency": "Currency",
       "priority": "Priority",
       "dealStatus": "Deal status",
+      "successRate": "Success rate (%)",
+      "successRateOverride": "Deal-specific override — clear to use the stage default",
+      "successRateDefault": "Using stage default ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
       "notes": "Notes",
@@ -4250,6 +4253,18 @@
       "loading": "Се вчитуваат региони…",
       "duplicate": "Тој регион веќе постои",
       "atLeastOne": "Задржете барем еден регион",
+      "resetDefaults": "Врати стандардни"
+    },
+    "probabilities": {
+      "title": "Стапки на успех по фаза",
+      "description": "Стандардна веројатност за успех (%) по track и фаза. Новите зделки и зделките преместени во фаза почнуваат со овие вредности; секоја зделка може да се промени поединечно.",
+      "track": "Track",
+      "terminalHint": "Won е секогаш 100%, а Lost секогаш 0%.",
+      "monotonicWarning": "Веројатностите треба да растат од лево кон десно. Проверете: {lanes}",
+      "save": "Зачувај стапки на успех",
+      "saved": "Стапките на успех се зачувани",
+      "saveFailed": "Не можеше да се зачуваат стапките на успех",
+      "loading": "Се вчитуваат стапки на успех…",
       "resetDefaults": "Врати стандардни"
     }
   }

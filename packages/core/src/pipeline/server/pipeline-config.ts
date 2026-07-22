@@ -2,9 +2,10 @@ import { eq } from 'drizzle-orm';
 import { spaces } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '@hypha-platform/core/server';
 import {
+  mergePipelineConfig,
   normalizePipelineConfig,
-  sanitizePipelineConfig,
   type PipelineConfig,
+  type PipelineConfigPatch,
 } from '../pipeline-config';
 
 export async function readPipelineConfig(
@@ -30,11 +31,22 @@ export async function updatePipelineConfig(
     config,
   }: {
     spaceId: number;
-    config: { regions: string[]; defaultRegion?: string };
+    config: PipelineConfigPatch;
   },
   { db }: DbConfig,
 ): Promise<PipelineConfig> {
-  const normalized = sanitizePipelineConfig(config);
+  const [space] = await db
+    .select({ pipelineConfig: spaces.pipelineConfig })
+    .from(spaces)
+    .where(eq(spaces.id, spaceId))
+    .limit(1);
+
+  if (!space) {
+    throw new Error(`Space not found for id=${spaceId}`);
+  }
+
+  // Partial update: sections missing from the patch keep their stored value.
+  const normalized = mergePipelineConfig(space.pipelineConfig, config);
 
   const [updated] = await db
     .update(spaces)

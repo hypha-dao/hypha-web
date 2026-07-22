@@ -62,6 +62,7 @@ export const schemaCreateDeal = z.object({
   contactUrl: optionalText,
   teamMemberIds: z.array(z.number().int().positive()).optional().default([]),
   accountManagerId: z.number().int().positive().optional().nullable(),
+  successRate: z.coerce.number().int().min(0).max(100).optional().nullable(),
   nextAction: optionalText,
   nextActionDate: optionalDateString,
   notes: z
@@ -154,7 +155,31 @@ export const schemaPipelineUserSettings = z.object({
   countryFocus: z.array(z.string().trim().length(2)).default([]),
 });
 
+const probabilityValue = z.coerce.number().int().min(0).max(100);
+
+const probabilityLane = z
+  .object(
+    Object.fromEntries(
+      PIPELINE_STATUSES.map((status) => [status, probabilityValue.optional()]),
+    ) as Record<
+      (typeof PIPELINE_STATUSES)[number],
+      z.ZodOptional<typeof probabilityValue>
+    >,
+  )
+  .partial();
+
 export const schemaPipelineConfig = z.object({
-  regions: z.array(z.string().trim().min(1).max(80)).min(1).max(50),
+  regions: z.array(z.string().trim().min(1).max(80)).min(1).max(50).optional(),
   defaultRegion: z.string().trim().min(1).max(80).optional(),
+  probabilities: z
+    .object(
+      Object.fromEntries(
+        PIPELINE_SWIMLANES.map((lane) => [lane, probabilityLane.optional()]),
+      ) as Record<
+        (typeof PIPELINE_SWIMLANES)[number],
+        z.ZodOptional<typeof probabilityLane>
+      >,
+    )
+    .partial()
+    .optional(),
 });

@@ -55,6 +55,8 @@ export const deals = pgTable(
       .notNull()
       .default([]),
     accountManagerId: integer('account_manager_id').references(() => people.id),
+    /** Per-deal success-rate override (0–100); null = use stage default. */
+    successRate: integer('success_rate'),
     nextAction: text('next_action'),
     nextActionDate: date('next_action_date'),
     notes: text('notes'),

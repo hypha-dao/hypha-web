@@ -4233,6 +4233,9 @@
       "currency": "Currency",
       "priority": "Priority",
       "dealStatus": "Deal status",
+      "successRate": "Success rate (%)",
+      "successRateOverride": "Deal-specific override — clear to use the stage default",
+      "successRateDefault": "Using stage default ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
       "notes": "Notes",
@@ -4271,6 +4274,18 @@
       "loading": "Regio’s laden…",
       "duplicate": "Die regio bestaat al",
       "atLeastOne": "Houd minstens één regio",
+      "resetDefaults": "Standaard herstellen"
+    },
+    "probabilities": {
+      "title": "Succespercentages per fase",
+      "description": "Standaard succeskans (%) per track en fase. Nieuwe deals en deals die naar een fase worden verplaatst starten met deze waarden; per deal kan dit worden overschreven.",
+      "track": "Track",
+      "terminalHint": "Won is altijd 100% en Lost altijd 0%.",
+      "monotonicWarning": "Kansen moeten van links naar rechts toenemen. Controleer: {lanes}",
+      "save": "Succespercentages opslaan",
+      "saved": "Succespercentages opgeslagen",
+      "saveFailed": "Kon succespercentages niet opslaan",
+      "loading": "Succespercentages laden…",
       "resetDefaults": "Standaard herstellen"
     }
   }

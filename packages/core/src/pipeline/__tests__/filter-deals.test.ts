@@ -23,6 +23,7 @@ function makeDeal(overrides: Partial<Deal> = {}): Deal {
     contactUrl: null,
     teamMemberIds: [],
     accountManagerId: null,
+    successRate: null,
     nextAction: null,
     nextActionDate: null,
     notes: null,

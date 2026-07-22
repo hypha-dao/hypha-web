@@ -6,6 +6,7 @@ import {
   filterDeals,
   useDealMutations,
   useDeals,
+  usePipelineConfig,
   usePipelineSettings,
   type DealFilters,
   type PipelineStatus,
@@ -45,6 +46,7 @@ export function TrackPage({
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
+  const { probabilities } = usePipelineConfig(spaceSlug);
 
   React.useEffect(() => {
     setFilters((prev) => ({ ...prev, swimlane }));
@@ -90,7 +92,11 @@ export function TrackPage({
         onChange={setFilters}
         countryFocus={countryFocus}
         onExport={() =>
-          exportDealsToXlsx(filtered, `${spaceSlug}-${swimlane}-deals`)
+          exportDealsToXlsx(
+            filtered,
+            `${spaceSlug}-${swimlane}-deals`,
+            probabilities,
+          )
         }
         savedViewsSlot={
           <SavedViewsMenu
@@ -101,7 +107,7 @@ export function TrackPage({
         }
       />
 
-      <PipelineSummary deals={filtered} />
+      <PipelineSummary deals={filtered} probabilities={probabilities} />
 
       {isLoading && deals.length === 0 ? (
         <div className="text-2 text-neutral-11">{t('loading')}</div>
@@ -112,6 +118,7 @@ export function TrackPage({
           onMoveStatus={onMoveStatus}
           activeDealId={activeDealId}
           wide
+          probabilities={probabilities}
         />
       )}
 

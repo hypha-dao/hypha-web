@@ -38,6 +38,11 @@ export interface Deal {
   contactUrl: string | null;
   teamMemberIds: number[];
   accountManagerId: number | null;
+  /**
+   * Per-deal success-rate override (0–100). When null the stage default
+   * from the space's probability matrix applies.
+   */
+  successRate: number | null;
   nextAction: string | null;
   nextActionDate: string | null;
   notes: string | null;
@@ -76,6 +81,7 @@ export interface CreateDealInput {
   contactUrl?: string | null;
   teamMemberIds?: number[];
   accountManagerId?: number | null;
+  successRate?: number | null;
   nextAction?: string | null;
   nextActionDate?: string | null;
   notes?: string | null;

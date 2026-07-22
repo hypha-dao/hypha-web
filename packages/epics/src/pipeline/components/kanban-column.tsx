@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import type { Deal } from '@hypha-platform/core/client';
+import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
 import {
-  getDealProbability,
+  effectiveSuccessRate,
   type PipelineStatus,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
@@ -21,6 +21,7 @@ type KanbanColumnProps = {
   onDropDeal: (dealId: number, status: PipelineStatus) => void;
   activeDealId?: number | null;
   wide?: boolean;
+  probabilities?: ProbabilityMatrix;
 };
 
 export function KanbanColumn({
@@ -30,14 +31,14 @@ export function KanbanColumn({
   onDropDeal,
   activeDealId,
   wide = false,
+  probabilities,
 }: KanbanColumnProps) {
   const columnRef = React.useRef<HTMLDivElement>(null);
   const [isOver, setIsOver] = React.useState(false);
 
   const totalValue = deals.reduce((sum, d) => sum + d.value, 0);
   const weightedValue = deals.reduce(
-    (sum, d) =>
-      sum + (d.value * getDealProbability(d.pipelineSwimlane, status)) / 100,
+    (sum, d) => sum + (d.value * effectiveSuccessRate(d, probabilities)) / 100,
     0,
   );
   const currency = deals[0]?.currency ?? '€';
@@ -86,6 +87,7 @@ export function KanbanColumn({
             deal={deal}
             onClick={onDealClick}
             active={activeDealId === deal.id}
+            probabilities={probabilities}
           />
         ))}
       </div>

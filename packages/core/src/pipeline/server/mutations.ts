@@ -43,6 +43,7 @@ export async function createDeal(input: CreateDealInput, { db }: DbConfig) {
       contactUrl: input.contactUrl ?? null,
       teamMemberIds: input.teamMemberIds ?? [],
       accountManagerId: input.accountManagerId ?? null,
+      successRate: input.successRate ?? null,
       nextAction: input.nextAction ?? null,
       nextActionDate: input.nextActionDate ?? null,
       notes: input.notes ?? null,
@@ -112,6 +113,16 @@ export async function updateDealById(
   }
   if (updates.accountManagerId !== undefined) {
     patch.accountManagerId = updates.accountManagerId;
+  }
+  if (updates.successRate !== undefined) {
+    patch.successRate = updates.successRate;
+  } else if (
+    updates.pipelineStatus !== undefined ||
+    updates.pipelineSwimlane !== undefined
+  ) {
+    // Moving to another stage re-seeds the deal from the stage default:
+    // clear the per-deal override unless one is explicitly provided.
+    patch.successRate = null;
   }
   if (updates.nextAction !== undefined) patch.nextAction = updates.nextAction;
   if (updates.nextActionDate !== undefined) {

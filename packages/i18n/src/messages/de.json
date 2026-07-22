@@ -4225,6 +4225,9 @@
       "currency": "Currency",
       "priority": "Priority",
       "dealStatus": "Deal status",
+      "successRate": "Success rate (%)",
+      "successRateOverride": "Deal-specific override — clear to use the stage default",
+      "successRateDefault": "Using stage default ({rate}%)",
       "nextAction": "Next action",
       "nextActionDate": "Next action date",
       "notes": "Notes",
@@ -4263,6 +4266,18 @@
       "loading": "Regionen werden geladen…",
       "duplicate": "Diese Region existiert bereits",
       "atLeastOne": "Mindestens eine Region behalten",
+      "resetDefaults": "Standards wiederherstellen"
+    },
+    "probabilities": {
+      "title": "Erfolgsraten pro Phase",
+      "description": "Standard-Erfolgswahrscheinlichkeit (%) pro Track und Phase. Neue Deals und in eine Phase verschobene Deals starten mit diesen Werten; jeder Deal kann individuell überschrieben werden.",
+      "track": "Track",
+      "terminalHint": "Won ist immer 100 % und Lost immer 0 %.",
+      "monotonicWarning": "Die Wahrscheinlichkeiten sollten von links nach rechts steigen. Prüfen: {lanes}",
+      "save": "Erfolgsraten speichern",
+      "saved": "Erfolgsraten gespeichert",
+      "saveFailed": "Erfolgsraten konnten nicht gespeichert werden",
+      "loading": "Erfolgsraten werden geladen…",
       "resetDefaults": "Standards wiederherstellen"
     }
   }

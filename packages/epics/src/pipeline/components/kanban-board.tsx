@@ -1,6 +1,6 @@
 'use client';
 
-import type { Deal } from '@hypha-platform/core/client';
+import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
 import {
   PIPELINE_STATUSES,
   type PipelineStatus,
@@ -13,6 +13,7 @@ type KanbanBoardProps = {
   onMoveStatus: (dealId: number, status: PipelineStatus) => void;
   activeDealId?: number | null;
   wide?: boolean;
+  probabilities?: ProbabilityMatrix;
 };
 
 export function KanbanBoard({
@@ -21,6 +22,7 @@ export function KanbanBoard({
   onMoveStatus,
   activeDealId,
   wide = false,
+  probabilities,
 }: KanbanBoardProps) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-2">
@@ -33,6 +35,7 @@ export function KanbanBoard({
           onDropDeal={onMoveStatus}
           activeDealId={activeDealId}
           wide={wide}
+          probabilities={probabilities}
         />
       ))}
     </div>

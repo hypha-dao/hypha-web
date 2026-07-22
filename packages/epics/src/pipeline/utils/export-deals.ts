@@ -1,12 +1,20 @@
 import * as XLSX from 'xlsx';
-import type { Deal } from '@hypha-platform/core/client';
+import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
+import { effectiveSuccessRate } from '@hypha-platform/core/client';
 
-export function exportDealsToXlsx(deals: Deal[], filenamePrefix = 'deals') {
+export function exportDealsToXlsx(
+  deals: Deal[],
+  filenamePrefix = 'deals',
+  probabilities?: ProbabilityMatrix,
+) {
   const rows = deals.map((d) => ({
     Title: d.title,
     Swimlane: d.pipelineSwimlane,
     Status: d.pipelineStatus,
     Value: d.value,
+    SuccessRatePct: effectiveSuccessRate(d, probabilities),
+    WeightedValue:
+      Math.round(d.value * effectiveSuccessRate(d, probabilities)) / 100,
     Currency: d.currency,
     Country: d.country ?? '',
     Region: d.region,

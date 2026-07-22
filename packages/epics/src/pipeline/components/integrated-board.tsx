@@ -7,6 +7,7 @@ import {
   PIPELINE_SWIMLANES,
   useDealMutations,
   useDeals,
+  usePipelineConfig,
   usePipelineSettings,
   type DealFilters,
   type PipelineStatus,
@@ -47,6 +48,7 @@ export function IntegratedBoard({
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
+  const { probabilities } = usePipelineConfig(spaceSlug);
 
   const filtered = React.useMemo(
     () => filterDeals(deals, filters),
@@ -91,7 +93,9 @@ export function IntegratedBoard({
         filters={filters}
         onChange={setFilters}
         countryFocus={countryFocus}
-        onExport={() => exportDealsToXlsx(filtered, `${spaceSlug}-deals`)}
+        onExport={() =>
+          exportDealsToXlsx(filtered, `${spaceSlug}-deals`, probabilities)
+        }
         savedViewsSlot={
           <SavedViewsMenu
             spaceSlug={spaceSlug}
@@ -101,7 +105,7 @@ export function IntegratedBoard({
         }
       />
 
-      <PipelineSummary deals={filtered} />
+      <PipelineSummary deals={filtered} probabilities={probabilities} />
 
       {isLoading && deals.length === 0 ? (
         <div className="text-2 text-neutral-11">{t('loading')}</div>
@@ -145,6 +149,7 @@ export function IntegratedBoard({
                   onDealClick={(deal) => onDealOpen(deal.id)}
                   onMoveStatus={onMoveStatus}
                   activeDealId={activeDealId}
+                  probabilities={probabilities}
                 />
               </section>
             );
