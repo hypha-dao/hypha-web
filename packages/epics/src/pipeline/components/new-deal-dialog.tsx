@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { Check } from 'lucide-react';
 import type { UseMembers } from '../../spaces';
 import { CountrySelect } from './country-select';
 import { SpaceMemberSelect } from './space-member-select';
@@ -40,7 +41,6 @@ type NewDealDialogProps = {
   useMembers: UseMembers;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: (dealId: number) => void;
   defaultSwimlane?: PipelineSwimlane;
 };
 
@@ -81,7 +81,6 @@ export function NewDealDialog({
   useMembers,
   open,
   onOpenChange,
-  onCreated,
   defaultSwimlane = 'Sales',
 }: NewDealDialogProps) {
   const t = useTranslations('Pipeline');
@@ -118,6 +117,17 @@ export function NewDealDialog({
   const [mobile, setMobile] = React.useState('');
   const [linkedin, setLinkedin] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = React.useState(false);
+  const successTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  React.useEffect(
+    () => () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    },
+    [],
+  );
 
   const members = persons?.data ?? [];
 
@@ -186,7 +196,7 @@ export function NewDealDialog({
       .join(' ');
 
     try {
-      const deal = await createDeal({
+      await createDeal({
         title: title.trim(),
         pipelineSwimlane: swimlane,
         pipelineStatus: status,
@@ -222,7 +232,10 @@ export function NewDealDialog({
       });
       resetForm();
       onOpenChange(false);
-      onCreated(deal.id);
+      // Brief success notice instead of opening the deal details panel.
+      setShowSuccess(true);
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => setShowSuccess(false), 3500);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('newDeal.createFailed'));
     }
@@ -532,6 +545,17 @@ export function NewDealDialog({
           </div>
         </div>
       </DialogContent>
+
+      {showSuccess ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 right-4 z-[300] flex items-center gap-2 rounded-md border border-neutral-6 bg-neutral-1 px-4 py-2.5 text-2 text-neutral-12 shadow-lg"
+        >
+          <Check className="size-4 text-accent-11" />
+          {t('newDeal.created')}
+        </div>
+      ) : null}
     </Dialog>
   );
 }

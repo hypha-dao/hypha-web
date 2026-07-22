@@ -128,7 +128,6 @@ export function TrackPage({
         open={newOpen}
         onOpenChange={setNewOpen}
         defaultSwimlane={swimlane}
-        onCreated={onDealOpen}
       />
     </div>
   );

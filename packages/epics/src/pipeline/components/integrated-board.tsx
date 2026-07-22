@@ -163,7 +163,6 @@ export function IntegratedBoard({
         open={newOpen}
         onOpenChange={setNewOpen}
         defaultSwimlane={newSwimlane}
-        onCreated={onDealOpen}
       />
     </div>
   );

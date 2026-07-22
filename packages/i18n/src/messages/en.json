@@ -4186,6 +4186,7 @@
       "countryPlaceholder": "Select country (optional)",
       "valuePlaceholder": "0",
       "create": "Create card",
+      "created": "Deal created",
       "titleLabel": "Title",
       "overviewSection": "Overview",
       "contactSection": "Contact",
