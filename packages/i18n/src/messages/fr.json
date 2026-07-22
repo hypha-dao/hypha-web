@@ -575,6 +575,7 @@
     "ecosystem": "Écosystème",
     "tabs": {
       "nestedSpaces": "Espaces imbriqués",
+      "memberConnections": "Connexions des membres",
       "spaceToSpace": "Espace-à-espace",
       "valuesFlows": "Flux de valeur"
     },
@@ -593,6 +594,52 @@
       "visitSpace": "Visiter l'espace",
       "searchSpaces": "Rechercher des espaces",
       "noSpacesFound": "Aucun espace trouvé"
+    },
+    "navigation": {
+      "breadcrumb": "Chemin de l'espace",
+      "memberCount": "{count} membres",
+      "individuals": "Personnes",
+      "memberSpaces": "Espaces membres",
+      "noIndividuals": "Aucune personne pour le moment",
+      "noMemberSpaces": "Aucun espace membre pour le moment",
+      "nestedHint": "Cliquez sur un espace pour le centrer. Cliquez sur le fond pour zoomer en arrière. Les icônes des membres orbitent autour de l'espace focalisé."
+    },
+    "memberConnections": {
+      "title": "Mycélium des membres",
+      "description": "Les personnes de cet espace et les autres espaces découvrables auxquels elles appartiennent — une carte vivante de collaboration.",
+      "hubMeta": "Espace actif",
+      "personMeta": "Membre de l'espace",
+      "spaceMeta": "Adhésion à un espace découvrable",
+      "stats": "{people} personnes · {spaces} espaces",
+      "empty": "Aucune connexion de membres pour le moment"
+    },
+    "spaceToSpace": {
+      "title": "Mycélium espace-à-espace",
+      "description": "Connexions entre cet espace et ses espaces membres. Développez un espace découvrable pour faire croître le réseau.",
+      "hubMeta": "Espace actif",
+      "expandableMeta": "Découvrable — cliquez sur + pour développer",
+      "privateMeta": "Espace membre",
+      "membership": "Adhésion",
+      "nestedMembership": "Adhésion imbriquée",
+      "expanding": "Croissance du mycélium…",
+      "stats": "{spaces} espaces membres · {expanded} développés",
+      "empty": "Aucune adhésion espace-à-espace pour le moment"
+    },
+    "valueFlows": {
+      "title": "Flux de valeur",
+      "description": "Jetons distribués par cet espace aux personnes et espaces — à l'intérieur et à l'extérieur de l'écosystème.",
+      "hubMeta": "Espace distributeur",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "Tous les jetons",
+      "stats": "{count} transferts sortants",
+      "empty": "Aucun flux de valeur sortant pour le moment",
+      "details": "Détails du flux",
+      "amount": "Montant",
+      "recipient": "Destinataire",
+      "date": "Date",
+      "memo": "Mémo",
+      "tx": "Transaction",
+      "selectHint": "Sélectionnez un nœud destinataire pour inspecter un transfert."
     }
   },
   "AgreementsTab": {
@@ -1956,6 +2003,18 @@
       "fromWhitelist": "À partir de la liste blanche",
       "toWhitelist": "Vers la liste blanche",
       "mutualCredit": "Crédit mutuel"
+    },
+    "paymentSchedule": {
+      "title": "Calendrier de paiement",
+      "label": "Calendrier",
+      "date": "Date",
+      "immediately": "Immédiatement (après vote réussi)",
+      "futurePayment": "Paiement futur",
+      "milestones": "Jalons",
+      "milestoneLabel": "Jalon {index}",
+      "milestoneRow": "{percentage}% le {date}",
+      "datePending": "Date non définie",
+      "deferredNote": "Le paiement sera demandé lorsque la date prévue sera atteinte."
     },
     "labels": {
       "unknown": "Inconnu",

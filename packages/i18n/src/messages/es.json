@@ -1341,12 +1341,13 @@
     "ecosystem": "Ecosistema",
     "tabs": {
       "nestedSpaces": "Espacios anidados",
+      "memberConnections": "Conexiones de miembros",
       "spaceToSpace": "Espacio-espacio",
-      "valuesFlows": "Flujos de valores"
+      "valuesFlows": "Flujos de valor"
     },
     "comingSoon": {
       "spaceToSpaceVisualization": "Próximamente visualización espacio-espacio",
-      "valuesFlowsVisualization": "Próximamente visualización de flujos de valores"
+      "valuesFlowsVisualization": "Próximamente visualización de flujos de valor"
     },
     "visibleSpaces": {
       "nestedRoot": "Raíz",
@@ -1359,6 +1360,52 @@
       "visitSpace": "Visita el espacio",
       "searchSpaces": "Buscar espacios",
       "noSpacesFound": "No se encontraron espacios"
+    },
+    "navigation": {
+      "breadcrumb": "Ruta del espacio",
+      "memberCount": "{count} miembros",
+      "individuals": "Personas",
+      "memberSpaces": "Espacios miembros",
+      "noIndividuals": "Aún no hay personas",
+      "noMemberSpaces": "Aún no hay espacios miembros",
+      "nestedHint": "Haz clic en un espacio para enfocarlo. Clic en el fondo para alejar. Los iconos de miembros orbitan el espacio enfocado."
+    },
+    "memberConnections": {
+      "title": "Micelio de miembros",
+      "description": "Personas de este espacio y los otros espacios descubribles a los que pertenecen — un mapa vivo de colaboración.",
+      "hubMeta": "Espacio activo",
+      "personMeta": "Miembro del espacio",
+      "spaceMeta": "Membresía de espacio descubrible",
+      "stats": "{people} personas · {spaces} espacios",
+      "empty": "Aún no hay conexiones de miembros"
+    },
+    "spaceToSpace": {
+      "title": "Micelio espacio-espacio",
+      "description": "Conexiones entre este espacio y sus espacios miembros. Expande un espacio descubrible para hacer crecer la red.",
+      "hubMeta": "Espacio activo",
+      "expandableMeta": "Descubrible — haz clic en + para expandir",
+      "privateMeta": "Espacio miembro",
+      "membership": "Membresía",
+      "nestedMembership": "Membresía anidada",
+      "expanding": "Creciendo el micelio…",
+      "stats": "{spaces} espacios miembros · {expanded} expandidos",
+      "empty": "Aún no hay membresías espacio-espacio"
+    },
+    "valueFlows": {
+      "title": "Flujos de valor",
+      "description": "Tokens distribuidos desde este espacio a personas y espacios — dentro y fuera del ecosistema.",
+      "hubMeta": "Espacio distribuidor",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "Todos los tokens",
+      "stats": "{count} transferencias salientes",
+      "empty": "Aún no hay flujos de valor salientes",
+      "details": "Detalles del flujo",
+      "amount": "Cantidad",
+      "recipient": "Destinatario",
+      "date": "Fecha",
+      "memo": "Memo",
+      "tx": "Transacción",
+      "selectHint": "Selecciona un nodo destinatario para inspeccionar una transferencia."
     }
   },
   "AgreementsTab": {
@@ -1956,6 +2003,18 @@
       "fromWhitelist": "De la lista blanca",
       "toWhitelist": "A la lista blanca",
       "mutualCredit": "Crédito mutuo"
+    },
+    "paymentSchedule": {
+      "title": "Calendario de pagos",
+      "label": "Calendario",
+      "date": "Fecha",
+      "immediately": "Inmediatamente (tras la votación exitosa)",
+      "futurePayment": "Pago futuro",
+      "milestones": "Hitos",
+      "milestoneLabel": "Hito {index}",
+      "milestoneRow": "{percentage}% el {date}",
+      "datePending": "Fecha no establecida",
+      "deferredNote": "El pago se solicitará cuando se alcance la fecha programada."
     },
     "labels": {
       "unknown": "Desconocido",

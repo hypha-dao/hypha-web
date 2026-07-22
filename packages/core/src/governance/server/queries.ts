@@ -20,6 +20,7 @@ import {
   PaginationParams,
 } from '@hypha-platform/core/client';
 import { Document } from '../types';
+import { parseDocumentMetadata } from '../contribution-metadata';
 import { extractExchangeDepositEscrowId } from '../exchange-deposit-marker';
 import { alias } from 'drizzle-orm/pg-core';
 
@@ -80,6 +81,7 @@ export const mapToDocument = (
     web3ProposalId: dbDocument.web3ProposalId,
     creator: actualCreator,
     label: dbDocument.label || '',
+    metadata: parseDocumentMetadata(dbDocument.metadata),
   };
 };
 

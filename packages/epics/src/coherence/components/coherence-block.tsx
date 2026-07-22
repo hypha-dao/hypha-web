@@ -26,6 +26,11 @@ import { setSignalSearchParam } from '../../common/human-chat-panel/human-chat-m
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useCoherenceSignalDeepLink } from '../hooks/use-coherence-signal-deep-link';
+import {
+  computeSignalRecencyExtent,
+  getSignalRecencyBucketIndex,
+  parseSignalRecencyBucketParam,
+} from '../lib/signal-recency-bucket';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -168,12 +173,45 @@ export function CoherenceBlock({
     includeArchived: !hideArchived,
     orderBy: order,
   });
+  const recencyBucketFilter = React.useMemo(
+    () => parseSignalRecencyBucketParam(searchParams.get('recencyBucket')),
+    [searchParams],
+  );
+  const statusFilter = React.useMemo(
+    () => searchParams.get('status')?.trim() || null,
+    [searchParams],
+  );
+  const recencyExtent = React.useMemo(
+    () => computeSignalRecencyExtent(signals ?? []),
+    [signals],
+  );
   const filteredSignals = React.useMemo(
     () =>
-      (signals ?? []).filter((signal) =>
-        priorityFilter === 'all' ? true : signal.priority === priorityFilter,
-      ),
-    [priorityFilter, signals],
+      (signals ?? []).filter((signal) => {
+        if (priorityFilter !== 'all' && signal.priority !== priorityFilter) {
+          return false;
+        }
+        if (statusFilter) {
+          const signalStatus = signal.progressStatus?.trim() || 'backlog';
+          if (signalStatus !== statusFilter) {
+            return false;
+          }
+        }
+        if (recencyBucketFilter != null) {
+          if (!recencyExtent) {
+            return false;
+          }
+          const bucket = getSignalRecencyBucketIndex(
+            signal.createdAt,
+            recencyExtent,
+          );
+          if (bucket !== recencyBucketFilter) {
+            return false;
+          }
+        }
+        return true;
+      }),
+    [priorityFilter, recencyBucketFilter, recencyExtent, signals, statusFilter],
   );
   const priorityCounts = React.useMemo(() => {
     const items = signals ?? [];
@@ -237,9 +275,11 @@ export function CoherenceBlock({
     setHideArchived(false);
   }, []);
 
-  const handleClearPriorityFilter = React.useCallback(() => {
+  const handleClearDrillDownFilters = React.useCallback(() => {
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete('priority');
+    nextParams.delete('recencyBucket');
+    nextParams.delete('status');
     const query = nextParams.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, {
       scroll: false,
@@ -255,7 +295,7 @@ export function CoherenceBlock({
     priorityFilter,
     activeCoherenceSlug: coherenceSlug,
     onRevealArchivedSignal: handleRevealArchivedSignal,
-    onClearPriorityFilter: handleClearPriorityFilter,
+    onClearPriorityFilter: handleClearDrillDownFilters,
     onRefreshSignals: refresh,
   });
 

@@ -3,12 +3,12 @@
 import * as React from 'react';
 import { format, Locale } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { DateRange, type Matcher } from 'react-day-picker';
 
 import { cn } from '@hypha-platform/ui-utils';
 import { Button } from './button';
 import { Calendar } from './calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
-import { DateRange } from 'react-day-picker';
 
 interface DatePickerProps {
   mode?: 'single' | 'range';
@@ -17,6 +17,9 @@ interface DatePickerProps {
   placeholder?: string;
   className?: string;
   locale?: Locale;
+  /** Earliest selectable date (inclusive). Dates before this are disabled. */
+  minDate?: Date;
+  disabled?: Matcher | Matcher[];
 }
 
 export function DatePicker({
@@ -26,14 +29,49 @@ export function DatePicker({
   placeholder = 'Select a date',
   className,
   locale,
+  minDate,
+  disabled,
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false);
   const [internalValue, setInternalValue] = React.useState<
     Date | DateRange | undefined
   >(value);
 
+  React.useEffect(() => {
+    setInternalValue(value);
+  }, [value]);
+
+  const calendarDisabled = React.useMemo(() => {
+    const matchers: Matcher[] = [];
+    if (minDate) {
+      matchers.push({ before: minDate });
+    }
+    if (disabled) {
+      matchers.push(...(Array.isArray(disabled) ? disabled : [disabled]));
+    }
+    return matchers.length > 0 ? matchers : undefined;
+  }, [minDate, disabled]);
+
   const handleSelect = (date: Date | DateRange | undefined) => {
     setInternalValue(date);
     onChange?.(date);
+
+    if (mode === 'single' && date instanceof Date) {
+      setOpen(false);
+      return;
+    }
+
+    if (
+      mode === 'range' &&
+      date &&
+      typeof date === 'object' &&
+      'from' in date
+    ) {
+      const range = date as DateRange;
+      if (range.from && range.to) {
+        setOpen(false);
+      }
+    }
   };
 
   const selected = value ?? internalValue;
@@ -52,35 +90,39 @@ export function DatePicker({
           locale,
         })}`;
       }
-      if (from) return `${format(from, 'PPP', { locale })} - ...`;
+      if (from) return format(from, 'PPP', { locale });
     }
 
     return placeholder;
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           colorVariant="neutral"
           className={cn(
-            'w-fit justify-start text-left font-normal',
+            'w-fit justify-between gap-2 text-left font-normal',
             !selected && 'text-muted-foreground',
             className,
           )}
         >
-          {renderLabel()}
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          <span className="truncate">{renderLabel()}</span>
+          <CalendarIcon className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent className="w-auto p-0" align="end">
         {mode === 'single' ? (
           <Calendar
             mode="single"
             selected={selected instanceof Date ? selected : undefined}
             onSelect={(date) => handleSelect(date)}
             locale={locale}
+            disabled={calendarDisabled}
+            defaultMonth={
+              selected instanceof Date ? selected : minDate ?? new Date()
+            }
           />
         ) : (
           <Calendar
@@ -94,6 +136,15 @@ export function DatePicker({
             }
             onSelect={(range) => handleSelect(range)}
             locale={locale}
+            disabled={calendarDisabled}
+            defaultMonth={
+              selected &&
+              typeof selected === 'object' &&
+              !('getTime' in selected) &&
+              (selected as DateRange).from
+                ? (selected as DateRange).from
+                : minDate ?? new Date()
+            }
           />
         )}
       </PopoverContent>

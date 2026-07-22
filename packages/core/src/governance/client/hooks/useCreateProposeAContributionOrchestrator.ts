@@ -12,6 +12,10 @@ import {
   schemaCreateAgreementWeb2,
   schemaCreateAgreementFiles,
 } from '../../validation';
+import {
+  buildProposeContributionMetadata,
+  type PaymentSchedule,
+} from '../../contribution-metadata';
 
 import { useAgreementFileUploads } from './useAgreementFileUploads';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
@@ -21,6 +25,7 @@ type CreateProposeAContributionArg = z.infer<typeof schemaCreateAgreement> & {
   payouts: { amount: string; token: string }[];
   recipient: string;
   web3SpaceId?: number;
+  paymentSchedule?: PaymentSchedule;
 };
 
 type TaskName =
@@ -166,7 +171,15 @@ export const useCreateProposeAContributionOrchestrator = ({
     async (_: string, { arg }: { arg: CreateProposeAContributionArg }) => {
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
-      const createdAgreement = await web2.createAgreement(inputWeb2);
+      const contributionMetadata = buildProposeContributionMetadata({
+        recipient: arg.recipient,
+        payouts: arg.payouts,
+        paymentSchedule: arg.paymentSchedule,
+      });
+      const createdAgreement = await web2.createAgreement({
+        ...inputWeb2,
+        metadata: contributionMetadata,
+      });
       completeTask('CREATE_WEB2_AGREEMENT');
 
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
@@ -179,6 +192,7 @@ export const useCreateProposeAContributionOrchestrator = ({
             spaceId: web3SpaceId,
             payouts: arg.payouts,
             recipient: arg.recipient,
+            paymentScheduleOption: arg.paymentSchedule?.option ?? 'Immediately',
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }

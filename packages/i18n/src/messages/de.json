@@ -575,6 +575,7 @@
     "ecosystem": "Ökosystem",
     "tabs": {
       "nestedSpaces": "Verschachtelte Spaces",
+      "memberConnections": "Mitgliederverbindungen",
       "spaceToSpace": "Space-zu-Space",
       "valuesFlows": "Wertflüsse"
     },
@@ -593,6 +594,52 @@
       "visitSpace": "Space besuchen",
       "searchSpaces": "Spaces durchsuchen",
       "noSpacesFound": "Keine Spaces gefunden"
+    },
+    "navigation": {
+      "breadcrumb": "Space-Pfad",
+      "memberCount": "{count} Mitglieder",
+      "individuals": "Personen",
+      "memberSpaces": "Mitglieds-Spaces",
+      "noIndividuals": "Noch keine Personen",
+      "noMemberSpaces": "Noch keine Mitglieds-Spaces",
+      "nestedHint": "Klicken Sie auf einen Space zum Fokussieren. Klick auf den Hintergrund zoomt heraus. Mitglieder-Icons umkreisen den fokussierten Space."
+    },
+    "memberConnections": {
+      "title": "Mitglieder-Myzel",
+      "description": "Personen in diesem Space und die anderen entdeckbaren Spaces, denen sie angehören — eine lebendige Kollaborationskarte.",
+      "hubMeta": "Aktiver Space",
+      "personMeta": "Space-Mitglied",
+      "spaceMeta": "Entdeckbare Space-Mitgliedschaft",
+      "stats": "{people} Personen · {spaces} Spaces",
+      "empty": "Noch keine Mitgliederverbindungen"
+    },
+    "spaceToSpace": {
+      "title": "Space-zu-Space-Myzel",
+      "description": "Verbindungen zwischen diesem Space und seinen Mitglieds-Spaces. Erweitern Sie einen entdeckbaren Space, um das Netzwerk wachsen zu lassen.",
+      "hubMeta": "Aktiver Space",
+      "expandableMeta": "Entdeckbar — + klicken zum Erweitern",
+      "privateMeta": "Mitglieds-Space",
+      "membership": "Mitgliedschaft",
+      "nestedMembership": "Verschachtelte Mitgliedschaft",
+      "expanding": "Myzel wächst…",
+      "stats": "{spaces} Mitglieds-Spaces · {expanded} erweitert",
+      "empty": "Noch keine Space-zu-Space-Mitgliedschaften"
+    },
+    "valueFlows": {
+      "title": "Wertflüsse",
+      "description": "Token, die von diesem Space an Personen und Spaces verteilt werden — innerhalb und außerhalb des Ökosystems.",
+      "hubMeta": "Verteilender Space",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "Alle Token",
+      "stats": "{count} ausgehende Transfers",
+      "empty": "Noch keine ausgehenden Wertflüsse",
+      "details": "Flow-Details",
+      "amount": "Betrag",
+      "recipient": "Empfänger",
+      "date": "Datum",
+      "memo": "Memo",
+      "tx": "Transaktion",
+      "selectHint": "Wählen Sie einen Empfängerknoten, um einen Transfer zu prüfen."
     }
   },
   "AgreementsTab": {
@@ -2520,6 +2567,18 @@
       "fromWhitelist": "Von der Whitelist",
       "toWhitelist": "Zur Whitelist",
       "mutualCredit": "Mutual Credit"
+    },
+    "paymentSchedule": {
+      "title": "Zahlungsplan",
+      "label": "Plan",
+      "date": "Datum",
+      "immediately": "Sofort (nach erfolgreicher Abstimmung)",
+      "futurePayment": "Zukünftige Zahlung",
+      "milestones": "Meilensteine",
+      "milestoneLabel": "Meilenstein {index}",
+      "milestoneRow": "{percentage}% am {date}",
+      "datePending": "Datum nicht festgelegt",
+      "deferredNote": "Die Zahlung wird angefordert, sobald das geplante Datum erreicht ist."
     },
     "labels": {
       "unknown": "Unbekannt",

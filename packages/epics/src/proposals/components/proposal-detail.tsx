@@ -44,6 +44,8 @@ import {
   ProposalAcceptInvestmentData,
   ProposalExchangeStakesAndTokensData,
   ProposalEnergyProposalData,
+  ProposalPaymentScheduleInfo,
+  ProposalContributionPaymentFromMetadata,
 } from '../../governance';
 import { parseExchangeDetailsFromDescription } from '../../governance/utils/exchange-details-parser';
 import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange-details-block';
@@ -511,6 +513,17 @@ export const ProposalDetail = ({
     spaceSlug,
     order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   });
+  const contributionMetadata = useMemo(() => {
+    const allDocuments = [
+      ...documentsArrays.accepted,
+      ...documentsArrays.rejected,
+      ...documentsArrays.onVoting,
+    ];
+    const document =
+      allDocuments.find((doc) => doc.slug === documentSlug) ??
+      allDocuments.find((doc) => doc.id === documentId);
+    return document?.metadata?.proposeContribution;
+  }, [documentsArrays, documentSlug, documentId]);
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
 
   const updateTokenTypeFromDb = useMemo(() => {
@@ -1030,8 +1043,28 @@ export const ProposalDetail = ({
       const fromTransfers = buildRecipientPayoutsFromTransfers(
         proposalDetails.transfers,
       );
-      if (!fromTransfers) return undefined;
-      return { proposeContributionForm: fromTransfers };
+      if (fromTransfers) {
+        return {
+          proposeContributionForm: {
+            ...fromTransfers,
+            ...(contributionMetadata?.paymentSchedule
+              ? { paymentSchedule: contributionMetadata.paymentSchedule }
+              : {}),
+          },
+        };
+      }
+
+      if (contributionMetadata) {
+        return {
+          proposeContributionForm: {
+            recipient: contributionMetadata.recipient,
+            payouts: contributionMetadata.payouts,
+            paymentSchedule: contributionMetadata.paymentSchedule,
+          },
+        };
+      }
+
+      return undefined;
     }
 
     if (label === 'Expenses') {
@@ -1336,6 +1369,26 @@ export const ProposalDetail = ({
             ))}
           </div>
         )}
+      {!proposalDetails?.transfers?.length &&
+      label === 'Contribution' &&
+      contributionMetadata?.payouts?.length ? (
+        <div className="flex flex-col gap-4">
+          <span className="text-neutral-11 text-2 font-medium">
+            {tProposalDetails('sections.payment')}
+          </span>
+          <ProposalContributionPaymentFromMetadata
+            contribution={contributionMetadata}
+            spaceSlug={spaceSlug}
+          />
+        </div>
+      ) : null}
+      {label === 'Contribution' &&
+      contributionMetadata?.paymentSchedule &&
+      contributionMetadata.paymentSchedule.option !== 'Immediately' ? (
+        <ProposalPaymentScheduleInfo
+          schedule={contributionMetadata.paymentSchedule}
+        />
+      ) : null}
       {proposalDetails?.mintings.map((mint, idx) => (
         <ProposalMintItem
           key={idx}

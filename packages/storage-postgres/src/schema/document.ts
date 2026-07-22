@@ -39,6 +39,10 @@ export const documents = pgTable(
       .default([]),
     web3ProposalId: integer('web3_proposal_id'),
     label: text('label'),
+    metadata: jsonb('metadata')
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
     ...commonDateFields,
   },
   (table) => [

@@ -1,4 +1,5 @@
 export * from './client';
+export * from './contribution-metadata';
 export * from './document-label-badge-keys';
 export * from './proposal-document-label';
 export * from './space-memory-document-label';

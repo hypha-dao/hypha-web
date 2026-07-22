@@ -31,6 +31,8 @@ export interface Attachment {
   url: string;
 }
 
+import type { DocumentMetadata } from './contribution-metadata';
+
 export type DocumentStatus = 'accepted' | 'rejected' | 'onVoting';
 
 export type Document = {
@@ -47,6 +49,7 @@ export type Document = {
   attachments?: (string | Attachment)[];
   web3ProposalId: number | null;
   label?: string;
+  metadata?: DocumentMetadata;
   status?: DocumentStatus;
 };
 
@@ -61,6 +64,7 @@ export interface CreateAgreementInput {
   spaceId: number;
   creatorId: number;
   label?: string;
+  metadata?: DocumentMetadata;
 }
 
 export interface UpdateAgreementInput {
@@ -68,6 +72,7 @@ export interface UpdateAgreementInput {
   slug?: string;
   attachments?: (string | Attachment)[];
   web3ProposalId?: number | null;
+  metadata?: DocumentMetadata;
 }
 
 export type UpdateAgreementBySlugInput = {
