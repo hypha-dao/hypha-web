@@ -17,6 +17,8 @@ import {
   Token,
   ALLOWED_SPACES,
   getTokenDecimals,
+  HYPHA_TOKEN_ADDRESS,
+  HYPHA_USD_REFERENCE_PRICE,
   isHiddenToken,
   getEnergyCommunityTokensForSpace,
   getAllEnergyCommunityTokens,
@@ -252,6 +254,12 @@ export async function GET(
           }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+          }
+          if (
+            rate === 0 &&
+            token.address.toLowerCase() === HYPHA_TOKEN_ADDRESS.toLowerCase()
+          ) {
+            rate = HYPHA_USD_REFERENCE_PRICE;
           }
           // 1 display NRG ≈ 1 EURC/USDC after credit decimal normalization.
           if (

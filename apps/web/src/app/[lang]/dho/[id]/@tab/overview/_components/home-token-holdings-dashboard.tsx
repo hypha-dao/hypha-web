@@ -7,6 +7,17 @@ import { z } from 'zod';
 import { useAccessTokenReady } from '@hypha-platform/authentication';
 import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import {
+  OverviewFlowsDashboard,
+  OverviewMemoryDashboard,
+  OverviewSignalsDashboard,
+} from './home-overview-metrics';
+import { isHyphaPlatformSpace } from '@hypha-platform/core/client';
+import {
+  ShareStepTimelineChart,
+  type ShareTimelinePoint,
+} from './home-overview-charts';
 import {
   Badge,
   Card,
@@ -145,7 +156,14 @@ type DistributionHistoryResponse = {
   }>;
 };
 
-type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
+type HomeSectionFilter =
+  | 'energy'
+  | 'signals'
+  | 'activity'
+  | 'memory'
+  | 'distribution'
+  | 'assets'
+  | 'flows';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 const COLOR_RANGE = [
@@ -185,7 +203,17 @@ function formatAmount(raw: string, locale: string): string {
   }).format(parsed);
 }
 
-function prettifyTokenType(type: string): string {
+const USD_CURRENCY_OPTIONS: Intl.NumberFormatOptions = {
+  style: 'currency',
+  currency: 'USD',
+};
+
+function formatUsdAmount(value: number | string, locale: string): string {
+  return formatCurrencyValue(value, locale, USD_CURRENCY_OPTIONS);
+}
+
+function prettifyTokenType(type: string | undefined | null): string {
+  if (!type) return 'Other';
   return type
     .split('_')
     .filter(Boolean)
@@ -276,6 +304,65 @@ function fetchOverviewActivity(
       throw new Error(`Failed to load overview activity (${response.status})`);
     }
     return (await response.json()) as ActivityResponse;
+  };
+}
+
+type SpaceAssetsApiPayload = {
+  assets: Array<{
+    symbol: string;
+    name: string;
+    usdEqual: number;
+    value?: number;
+    tokenPrice?: number;
+    type?: string;
+  }>;
+  balance: number;
+};
+
+type SpaceAssetsResponse = {
+  assets: Array<{
+    symbol: string;
+    name: string;
+    usdEqual: number;
+    value: number;
+    tokenPrice: number;
+    type: string;
+  }>;
+  balance: number;
+};
+
+function fetchSpaceAssets(
+  slug: string,
+  getAccessToken: (() => Promise<string | null>) | undefined,
+) {
+  return async (): Promise<SpaceAssetsResponse> => {
+    const token = await getAccessToken?.();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`/api/v1/spaces/${slug}/assets`, { headers });
+    if (!response.ok) {
+      throw new Error(`Failed to load space assets (${response.status})`);
+    }
+    const payload = (await response.json()) as SpaceAssetsApiPayload;
+    return {
+      balance:
+        typeof payload.balance === 'number' && Number.isFinite(payload.balance)
+          ? payload.balance
+          : 0,
+      assets: Array.isArray(payload.assets)
+        ? payload.assets.map((asset) => ({
+            symbol: asset.symbol ?? '',
+            name: asset.name ?? asset.symbol ?? 'Unknown',
+            type: asset.type ?? 'other',
+            value: Number(asset.value) || 0,
+            tokenPrice: Number(asset.tokenPrice) || 0,
+            usdEqual: Number(asset.usdEqual) || 0,
+          }))
+        : [],
+    };
   };
 }
 
@@ -541,11 +628,6 @@ function DistributionOverTimeChart({
     [history?.points],
   );
 
-  const width = Math.max(720, chartPoints.length * 24);
-  const height = 300;
-  const margin = { top: 14, right: 18, bottom: 46, left: 54 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
   const orderedPoints = React.useMemo(
     () =>
       [...chartPoints].sort(
@@ -553,37 +635,14 @@ function DistributionOverTimeChart({
       ),
     [chartPoints],
   );
-  const xDomain = d3.extent(orderedPoints, (point) => point.dateObj);
-  const x = d3
-    .scaleTime()
-    .domain(
-      xDomain[0] && xDomain[1]
-        ? [xDomain[0], xDomain[1]]
-        : [new Date(Date.now() - 86_400_000), new Date()],
-    )
-    .range([0, innerWidth]);
-  const maxY = Math.max(1, ...orderedPoints.map((point) => point.share_pct));
-  const minY = Math.min(...orderedPoints.map((point) => point.share_pct));
-  const spread = Math.max(1, maxY - minY);
-  const yPadding = Math.max(0.8, spread * 0.12);
-  const minYWithPadding = Math.max(0, minY - yPadding);
-  const y = d3
-    .scaleLinear()
-    .domain([minYWithPadding, maxY + yPadding])
-    .nice(5)
-    .range([innerHeight, 0]);
-  const area = d3
-    .area<(typeof orderedPoints)[number]>()
-    .x((point) => x(point.dateObj))
-    .y0(y(minYWithPadding))
-    .y1((point) => y(point.share_pct))
-    .curve(d3.curveMonotoneX);
-  const line = d3
-    .line<(typeof orderedPoints)[number]>()
-    .x((point) => x(point.dateObj))
-    .y((point) => y(point.share_pct))
-    .curve(d3.curveMonotoneX);
-  const gradientId = React.useId().replace(/:/g, '');
+  const timelinePoints = React.useMemo<ShareTimelinePoint[]>(
+    () =>
+      orderedPoints.map((point) => ({
+        date: point.dateObj,
+        share_pct: point.share_pct,
+      })),
+    [orderedPoints],
+  );
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const memberOptions = history?.members ?? [
     { id: 'all', label: tTokenHoldings('distribution.memberAll') },
@@ -593,27 +652,16 @@ function DistributionOverTimeChart({
   const netChange =
     firstPoint && lastPoint ? lastPoint.share_pct - firstPoint.share_pct : 0;
   const netChangeSign = netChange >= 0 ? '+' : '';
-  const xTickValues = React.useMemo(() => {
-    if (!orderedPoints.length) return [] as Date[];
-    if (orderedPoints.length <= 6) {
-      return orderedPoints.map((point) => point.dateObj);
-    }
-    const step = Math.max(1, Math.floor((orderedPoints.length - 1) / 5));
-    const ticks = orderedPoints
-      .filter((_, index) => index % step === 0)
-      .map((point) => point.dateObj);
-    const lastDate = orderedPoints.at(-1)?.dateObj;
-    if (
-      lastDate &&
-      !ticks.some((value) => value.getTime() === lastDate.getTime())
-    ) {
-      ticks.push(lastDate);
-    }
-    return ticks;
-  }, [orderedPoints]);
+  const [hoveredPoint, setHoveredPoint] =
+    React.useState<ShareTimelinePoint | null>(null);
+  const activeTimelinePoint = hoveredPoint ?? timelinePoints.at(-1) ?? null;
+
+  React.useEffect(() => {
+    setHoveredPoint(null);
+  }, [selectedToken, selectedMember]);
 
   return (
-    <Card className="h-fit min-w-0 self-start overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
+    <Card className="w-full overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -672,143 +720,46 @@ function DistributionOverTimeChart({
           </span>
         </div>
       </CardHeader>
-      <CardContent className="pt-1">
+      <CardContent className="space-y-4 pt-1">
         {historyLoading ? (
-          <Skeleton className="h-[280px] w-full" />
+          <Skeleton className="h-[360px] w-full" />
         ) : historyError ? (
           <p className="text-sm text-muted-foreground">
             {tTokenHoldings('distribution.error')}
           </p>
-        ) : chartPoints.length === 0 ? (
+        ) : timelinePoints.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {tTokenHoldings('distribution.empty')}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <svg
-              viewBox={`0 0 ${width} ${height}`}
-              className="h-[320px] min-w-[620px] w-full"
-            >
-              <defs>
-                <linearGradient
-                  id={`distribution-over-time-${gradientId}`}
-                  x1="0%"
-                  x2="0%"
-                  y1="0%"
-                  y2="100%"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 24%, transparent)"
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 8%, transparent)"
-                  />
-                </linearGradient>
-              </defs>
-              <g transform={`translate(${margin.left},${margin.top})`}>
-                {y.ticks(5).map((tick) => (
-                  <g key={tick} transform={`translate(0,${y(tick)})`}>
-                    <line
-                      x1={0}
-                      x2={innerWidth}
-                      stroke="var(--border)"
-                      strokeDasharray="2 4"
-                      opacity={0.55}
-                    />
-                    <text
-                      x={-8}
-                      textAnchor="end"
-                      dominantBaseline="middle"
-                      className="fill-muted-foreground text-[11px]"
-                    >
-                      {PERCENTAGE_FORMATTER(tick)}%
-                    </text>
-                  </g>
-                ))}
+          <>
+            <ShareStepTimelineChart
+              points={timelinePoints}
+              activePoint={activeTimelinePoint}
+              onActivePointChange={setHoveredPoint}
+              percentageFormatter={(value) => `${PERCENTAGE_FORMATTER(value)}%`}
+            />
 
-                <path
-                  d={area(orderedPoints) ?? ''}
-                  fill={`url(#distribution-over-time-${gradientId})`}
-                  opacity={0.95}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-3 w-3 rounded-sm"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, color-mix(in oklab, var(--space-accent, var(--accent-9)) 68%, white 32%), var(--space-accent, var(--accent-9)))',
+                  }}
                 />
-                <path
-                  d={line(orderedPoints) ?? ''}
-                  fill="none"
-                  stroke="var(--space-accent, var(--accent-9))"
-                  strokeWidth={2.5}
-                />
-
-                {orderedPoints
-                  .filter(
-                    (_, index) =>
-                      index %
-                        Math.max(1, Math.floor(orderedPoints.length / 12)) ===
-                      0,
-                  )
-                  .map((point) => (
-                    <circle
-                      key={point.date}
-                      cx={x(point.dateObj)}
-                      cy={y(point.share_pct)}
-                      r={2.8}
-                      fill="var(--space-accent, var(--accent-9))"
-                      className="opacity-90"
-                    />
-                  ))}
-
-                {lastPoint ? (
-                  <g>
-                    <circle
-                      cx={x(lastPoint.dateObj)}
-                      cy={y(lastPoint.share_pct)}
-                      r={6}
-                      fill="var(--space-accent, var(--accent-9))"
-                      opacity={0.2}
-                    />
-                    <text
-                      x={Math.min(innerWidth - 8, x(lastPoint.dateObj) + 10)}
-                      y={y(lastPoint.share_pct) - 10}
-                      textAnchor="start"
-                      className="fill-foreground text-[11px] font-semibold"
-                    >
-                      {PERCENTAGE_FORMATTER(lastPoint.share_pct)}%
-                    </text>
-                  </g>
-                ) : null}
-
-                {xTickValues.map((tick) => (
-                  <g
-                    key={tick.toISOString()}
-                    transform={`translate(${x(tick)},0)`}
-                  >
-                    <line
-                      y1={innerHeight}
-                      y2={innerHeight + 5}
-                      stroke="var(--border)"
-                    />
-                    <text
-                      y={innerHeight + 18}
-                      textAnchor="middle"
-                      className="fill-muted-foreground text-[11px]"
-                    >
-                      {d3.timeFormat('%b %d')(tick)}
-                    </text>
-                  </g>
-                ))}
-
-                <text
-                  x={innerWidth / 2}
-                  y={innerHeight + 40}
-                  textAnchor="middle"
-                  className="fill-muted-foreground text-[11px]"
-                >
-                  {tTokenHoldings('distribution.timeAxis')}
-                </text>
-              </g>
-            </svg>
-          </div>
+                {tTokenHoldings('distribution.shareLabel')}
+              </span>
+              <span className="text-xs">
+                {tTokenHoldings('distribution.hoverHint')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs">
+                <span className="h-2 w-2 rounded-full border border-dashed border-border" />
+                {tTokenHoldings('distribution.baselineHint')}
+              </span>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
@@ -858,7 +809,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .outerRadius(112);
 
   return (
-    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
+    <Card className="flex h-full min-w-0 flex-col overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">
           {tTokenHoldings('proposals.title')}
@@ -867,7 +818,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 2xl:min-h-[420px] 2xl:grid-cols-[1fr_auto]">
+      <CardContent className="grid flex-1 grid-cols-1 items-center gap-3 2xl:grid-cols-[1fr_auto]">
         <svg
           viewBox="-130 -130 260 260"
           className="h-[240px] w-full sm:h-[280px] 2xl:h-[340px]"
@@ -979,7 +930,7 @@ function MembersEvolutionWidget({
   const gradientId = React.useId().replace(/:/g, '');
 
   return (
-    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
+    <Card className="flex h-full min-w-0 flex-col overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">
           {tTokenHoldings('members.title')}
@@ -1000,7 +951,7 @@ function MembersEvolutionWidget({
           </span>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex flex-1 flex-col space-y-4">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
@@ -1143,7 +1094,6 @@ function SignalsPulseMapWidget({
   signals: ActivityResponse['signals'];
 }) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const priorityRank = React.useMemo(
     () =>
       new Map(
@@ -1174,22 +1124,16 @@ function SignalsPulseMapWidget({
     }),
     [],
   );
-  const filteredSignals = React.useMemo(() => {
-    if (!selectedTags.length) return signals.items;
-    return signals.items.filter((item) =>
-      selectedTags.every((tag) => item.tags.includes(tag)),
-    );
-  }, [selectedTags, signals.items]);
   const validSignals = React.useMemo(
     () =>
-      filteredSignals
+      signals.items
         .map((signal) => ({
           ...signal,
           timestamp: new Date(signal.created_at).getTime(),
           priorityKey: signal.priority.toLowerCase(),
         }))
         .filter((signal) => Number.isFinite(signal.timestamp)),
-    [filteredSignals],
+    [signals.items],
   );
   const bucketCount = 6;
   const width = 760;
@@ -1268,42 +1212,6 @@ function SignalsPulseMapWidget({
         <CardDescription className="text-xs">
           {tTokenHoldings('signals.subtitle')}
         </CardDescription>
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-            {tTokenHoldings('signals.count')} {validSignals.length}
-          </span>
-          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-            {tTokenHoldings('signals.peakCell')} {maxCellCount}
-          </span>
-        </div>
-        {signals.tags.length ? (
-          <div className="flex flex-wrap gap-2">
-            {signals.tags.map((tag) => {
-              const selected = selectedTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() =>
-                    setSelectedTags((current) =>
-                      selected
-                        ? current.filter((item) => item !== tag)
-                        : [...current, tag],
-                    )
-                  }
-                  className="rounded-full border border-border px-2.5 py-1 text-xs text-foreground/85 transition hover:border-foreground/30"
-                  style={{
-                    background: selected
-                      ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 20%, transparent)'
-                      : 'transparent',
-                  }}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
       </CardHeader>
       <CardContent className="min-h-[360px]">
         <div className="overflow-x-auto">
@@ -1446,6 +1354,526 @@ function SignalsPulseMapWidget({
   );
 }
 
+type TreasuryAssetSlice = {
+  label: string;
+  symbol: string;
+  usdEqual: number;
+  share_pct: number;
+  hover_key: string;
+};
+
+function buildTreasuryAssetSlices(
+  assets: Array<{ symbol: string; name: string; usdEqual: number }>,
+  collapseBelowPct = 3,
+): TreasuryAssetSlice[] {
+  const positive = assets
+    .map((asset) => ({
+      ...asset,
+      usdEqual: Number(asset.usdEqual) || 0,
+    }))
+    .filter((asset) => asset.usdEqual > 0);
+  const total = positive.reduce((sum, asset) => sum + asset.usdEqual, 0);
+  if (total <= 0) {
+    return [];
+  }
+
+  const ranked = positive
+    .map((asset) => ({
+      label: asset.symbol || asset.name,
+      symbol: asset.symbol || asset.name,
+      usdEqual: asset.usdEqual,
+      share_pct: (asset.usdEqual / total) * 100,
+      hover_key: `${asset.symbol}-${asset.name}`,
+    }))
+    .sort((a, b) => b.usdEqual - a.usdEqual);
+
+  if (ranked.length <= 6) {
+    return ranked;
+  }
+
+  const main = ranked.filter((asset) => asset.share_pct >= collapseBelowPct);
+  const otherUsd = ranked
+    .filter((asset) => asset.share_pct < collapseBelowPct)
+    .reduce((sum, asset) => sum + asset.usdEqual, 0);
+
+  if (otherUsd > 0) {
+    main.push({
+      label: 'Other',
+      symbol: 'Other',
+      usdEqual: otherUsd,
+      share_pct: (otherUsd / total) * 100,
+      hover_key: 'other',
+    });
+  }
+
+  return main;
+}
+
+function TreasuryAssetHoldingCard({
+  asset,
+  getTokenTypeLabel,
+}: {
+  asset: {
+    symbol: string;
+    name: string;
+    value: number;
+    tokenPrice: number;
+    usdEqual: number;
+    type: string;
+  };
+  getTokenTypeLabel: (type: string) => string;
+}) {
+  const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+
+  return (
+    <Card className="h-full min-w-0 overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_8%,transparent)]">
+      <CardHeader className="gap-3 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="truncate text-lg">{asset.name}</CardTitle>
+            <CardDescription className="text-xs uppercase tracking-wide">
+              {asset.symbol}
+            </CardDescription>
+          </div>
+          <Badge variant="outline" className="shrink-0 border-border/60">
+            {getTokenTypeLabel(asset.type)}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-0">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {tTokenHoldings('assets.valueLabel')}
+            </p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
+              {formatUsdAmount(asset.usdEqual, locale)}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {tTokenHoldings('assets.quantityLabel')}
+            </p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
+              {formatAmount(String(asset.value), locale)} {asset.symbol}
+            </p>
+          </div>
+        </div>
+        {asset.tokenPrice > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {tTokenHoldings('assets.unitPrice', {
+              price: formatUsdAmount(asset.tokenPrice, locale),
+            })}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TreasuryCompositionDonut({
+  slices,
+  title,
+}: {
+  slices: TreasuryAssetSlice[];
+  title: string;
+}) {
+  const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const [hoveredSliceKey, setHoveredSliceKey] = React.useState<string | null>(
+    null,
+  );
+
+  const pieData = React.useMemo(
+    () => d3.pie<TreasuryAssetSlice>().value((item) => item.usdEqual)(slices),
+    [slices],
+  );
+
+  const outerRadius = 128;
+  const innerRadius = 74;
+  const arcGenerator = React.useMemo(
+    () =>
+      d3
+        .arc<d3.PieArcDatum<TreasuryAssetSlice>>()
+        .innerRadius(innerRadius)
+        .outerRadius(outerRadius),
+    [],
+  );
+
+  const colorScale = React.useMemo(() => {
+    const domain = slices.map((slice) => slice.label);
+    return d3.scaleOrdinal<string, string>().domain(domain).range(COLOR_RANGE);
+  }, [slices]);
+
+  const hasHoveredSlice = hoveredSliceKey !== null;
+  const centerLabel =
+    slices.find((slice) => slice.hover_key === hoveredSliceKey)?.label ?? title;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="relative flex w-full items-center justify-center xl:w-auto xl:flex-none">
+        <svg
+          viewBox="-145 -145 290 290"
+          role="img"
+          aria-label={tTokenHoldings('assets.compositionAria', { title })}
+          className="h-auto w-full max-w-[260px] sm:max-w-[300px] xl:max-w-[320px]"
+        >
+          {pieData.map((segment) => (
+            <path
+              key={`${segment.data.hover_key}-${segment.index}`}
+              d={arcGenerator(segment) ?? ''}
+              fill={colorScale(segment.data.label)}
+              stroke="var(--background)"
+              strokeWidth={hoveredSliceKey === segment.data.hover_key ? 2 : 1}
+              opacity={
+                !hasHoveredSlice || hoveredSliceKey === segment.data.hover_key
+                  ? 1
+                  : 0.3
+              }
+              className="cursor-pointer transition-opacity duration-150"
+              onMouseEnter={() => setHoveredSliceKey(segment.data.hover_key)}
+              onMouseLeave={() => setHoveredSliceKey(null)}
+            >
+              <title>{`${segment.data.label} — ${PERCENTAGE_FORMATTER(
+                segment.data.share_pct,
+              )}% (${formatUsdAmount(segment.data.usdEqual, locale)})`}</title>
+            </path>
+          ))}
+          <text
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="fill-foreground text-[15px] font-semibold"
+          >
+            {centerLabel}
+          </text>
+        </svg>
+      </div>
+
+      <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+        {slices.map((slice) => (
+          <button
+            type="button"
+            key={slice.hover_key}
+            className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border-0 bg-transparent px-1 py-0.5 text-left"
+            style={{
+              opacity:
+                !hasHoveredSlice || hoveredSliceKey === slice.hover_key
+                  ? 1
+                  : 0.45,
+            }}
+            onMouseEnter={() => setHoveredSliceKey(slice.hover_key)}
+            onMouseLeave={() => setHoveredSliceKey(null)}
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: colorScale(slice.label) }}
+              />
+              <span className="truncate text-sm text-foreground/90">
+                {slice.label}
+              </span>
+            </div>
+            <span className="shrink-0 text-xs font-medium text-muted-foreground">
+              {PERCENTAGE_FORMATTER(slice.share_pct)}% ·{' '}
+              {formatUsdAmount(slice.usdEqual, locale)}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TreasuryTopAssetsBarChart({ items }: { items: TreasuryAssetSlice[] }) {
+  const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const max = Math.max(...items.map((item) => item.usdEqual), 1);
+
+  return (
+    <Card className="h-full min-w-0 overflow-hidden border-border/60 bg-card/95">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">
+          {tTokenHoldings('assets.topHoldings')}
+        </CardTitle>
+        <CardDescription className="text-xs">
+          {tTokenHoldings('assets.topHoldingsSubtitle')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {tTokenHoldings('assets.emptyDescription')}
+          </p>
+        ) : (
+          items.map((item, index) => {
+            const barColor =
+              COLOR_RANGE[index % COLOR_RANGE.length] ?? COLOR_RANGE[0];
+            return (
+              <div key={item.hover_key} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span>{item.label}</span>
+                  <span className="font-medium text-muted-foreground">
+                    {formatUsdAmount(item.usdEqual, locale)}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-muted/80">
+                  <div
+                    className="h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.max(4, (item.usdEqual / max) * 100)}%`,
+                      background: `linear-gradient(90deg, color-mix(in oklab, ${barColor} 70%, white 30%), ${barColor})`,
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TreasuryTypeBreakdownChart({
+  assets,
+  getTokenTypeLabel,
+}: {
+  assets: Array<{ type: string; usdEqual: number }>;
+  getTokenTypeLabel: (type: string) => string;
+}) {
+  const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const rows = React.useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const asset of assets) {
+      const usdEqual = Number(asset.usdEqual) || 0;
+      if (usdEqual <= 0) continue;
+      const type = asset.type?.trim() || 'other';
+      totals.set(type, (totals.get(type) ?? 0) + usdEqual);
+    }
+    return Array.from(totals.entries())
+      .map(([type, usdEqual]) => ({
+        type,
+        label: getTokenTypeLabel(type),
+        usdEqual,
+      }))
+      .sort((a, b) => b.usdEqual - a.usdEqual);
+  }, [assets, getTokenTypeLabel]);
+
+  const max = Math.max(...rows.map((row) => row.usdEqual), 1);
+
+  return (
+    <Card className="h-full min-w-0 overflow-hidden border-border/60 bg-card/95">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">
+          {tTokenHoldings('assets.byType')}
+        </CardTitle>
+        <CardDescription className="text-xs">
+          {tTokenHoldings('assets.byTypeSubtitle')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {rows.map((row, index) => {
+          const barColor =
+            COLOR_RANGE[index % COLOR_RANGE.length] ?? COLOR_RANGE[0];
+          return (
+            <div key={row.type} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span>{row.label}</span>
+                <span className="font-medium text-muted-foreground">
+                  {formatUsdAmount(row.usdEqual, locale)}
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-muted/80">
+                <div
+                  className="h-2 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.max(4, (row.usdEqual / max) * 100)}%`,
+                    background: `linear-gradient(90deg, color-mix(in oklab, ${barColor} 70%, white 30%), ${barColor})`,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TreasuryAssetsSummaryWidget({
+  assets,
+  balance,
+  isLoading,
+  error,
+  getTokenTypeLabel,
+}: {
+  assets: Array<{
+    symbol: string;
+    name: string;
+    usdEqual: number;
+    value: number;
+    tokenPrice: number;
+    type: string;
+  }>;
+  balance: number;
+  isLoading: boolean;
+  error?: string | null;
+  getTokenTypeLabel: (type: string) => string;
+}) {
+  const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const holdings = React.useMemo(
+    () =>
+      [...assets]
+        .filter((asset) => (Number(asset.value) || 0) > 0)
+        .sort((a, b) => b.usdEqual - a.usdEqual || b.value - a.value),
+    [assets],
+  );
+  const slices = React.useMemo(
+    () =>
+      buildTreasuryAssetSlices(
+        holdings.map((asset) => ({
+          symbol: asset.symbol,
+          name: asset.name,
+          usdEqual: asset.usdEqual,
+        })),
+      ),
+    [holdings],
+  );
+  const topHoldings = React.useMemo(
+    () =>
+      [...slices]
+        .filter((slice) => slice.hover_key !== 'other')
+        .sort((a, b) => b.usdEqual - a.usdEqual)
+        .slice(0, 8),
+    [slices],
+  );
+  const topShare = slices[0]?.share_pct ?? 0;
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-28" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{tTokenHoldings('assets.errorTitle')}</CardTitle>
+          <CardDescription>
+            {tTokenHoldings('assets.errorDescription')}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (holdings.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{tTokenHoldings('assets.emptyTitle')}</CardTitle>
+          <CardDescription>
+            {tTokenHoldings('assets.emptyDescription')}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Card className="border-border/60 bg-card/95">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-3 font-normal text-muted-foreground">
+              {tTokenHoldings('assets.totalBalance')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {tTokenHoldings('assets.valueLabel')}
+            </p>
+            <p className="mt-1 text-6 font-semibold tabular-nums">
+              {formatUsdAmount(balance, locale)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-card/95">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-3 font-normal text-muted-foreground">
+              {tTokenHoldings('assets.assetCount')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-6 font-semibold">{holdings.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-card/95">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-3 font-normal text-muted-foreground">
+              {tTokenHoldings('assets.largestHolding')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-6 font-semibold">
+              {PERCENTAGE_FORMATTER(topShare)}%
+            </p>
+            {slices[0] ? (
+              <p className="mt-1 text-2 text-muted-foreground">
+                {slices[0].label}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid min-w-0 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {holdings.map((asset) => (
+          <TreasuryAssetHoldingCard
+            key={`${asset.symbol}-${asset.name}`}
+            asset={asset}
+            getTokenTypeLabel={getTokenTypeLabel}
+          />
+        ))}
+      </div>
+
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">
+              {tTokenHoldings('assets.composition')}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {tTokenHoldings('assets.compositionSubtitle')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TreasuryCompositionDonut
+              title={tTokenHoldings('assets.composition')}
+              slices={slices}
+            />
+          </CardContent>
+        </Card>
+        <TreasuryTopAssetsBarChart items={topHoldings} />
+      </div>
+
+      <TreasuryTypeBreakdownChart
+        assets={holdings}
+        getTokenTypeLabel={getTokenTypeLabel}
+      />
+    </div>
+  );
+}
+
 export function HomeTokenHoldingsDashboard({
   spaceSlug,
 }: {
@@ -1457,6 +1885,8 @@ export function HomeTokenHoldingsDashboard({
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const [activeFilter, setActiveFilter] =
+    React.useState<HomeSectionFilter>('signals');
   // Network-gated overview APIs need a Bearer token. Wait for Privy + token
   // and key SWR by auth so we don't cache a premature 401 as a sticky error.
   const authReady = !isAuthLoading && accessTokenReady;
@@ -1479,25 +1909,24 @@ export function HomeTokenHoldingsDashboard({
   const activityLoading = !authReady || activityLoadingRaw;
   const holdingsLoading = !authReady || isLoading;
 
-  const [activeFilter, setActiveFilter] =
-    React.useState<HomeSectionFilter>('activity');
-
   const getTokenTypeLabel = React.useCallback(
-    (type: string) => {
-      const translationKey = `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`;
+    (type: string | undefined | null) => {
+      const normalizedType = type?.trim() || 'other';
+      const translationKey = `plugins.issueNewToken.general.tokenTypeOptions.${normalizedType}.label`;
       try {
         const translated = tModalAside(translationKey);
         if (isLikelyI18nKey(translated)) {
-          return prettifyTokenType(type);
+          return prettifyTokenType(normalizedType);
         }
         return capitalizeWords(translated);
       } catch {
-        return prettifyTokenType(type);
+        return prettifyTokenType(normalizedType);
       }
     },
     [tModalAside],
   );
   const hasEnergyData = Boolean(activityData?.energy.available);
+  const isHyphaPlatform = isHyphaPlatformSpace({ slug: spaceSlug });
   // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
   const showEnergyWidget = false && hasEnergyData;
   const filterItems = React.useMemo(
@@ -1506,25 +1935,49 @@ export function HomeTokenHoldingsDashboard({
         ...(showEnergyWidget
           ? [{ value: 'energy', label: tTokenHoldings('filters.energy') }]
           : []),
+        { value: 'signals', label: tTokenHoldings('filters.signals') },
         { value: 'activity', label: tTokenHoldings('filters.activity') },
+        { value: 'memory', label: tTokenHoldings('filters.memory') },
         {
           value: 'distribution',
           label: tTokenHoldings('filters.distribution'),
         },
+        { value: 'assets', label: tTokenHoldings('filters.assets') },
+        ...(isHyphaPlatform
+          ? [{ value: 'flows', label: tTokenHoldings('filters.activeSpaces') }]
+          : []),
       ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [showEnergyWidget, tTokenHoldings],
+    [isHyphaPlatform, showEnergyWidget, tTokenHoldings],
   );
+  const showSignals = activeFilter === 'signals';
   const showActivity = activeFilter === 'activity';
+  const showMemory = activeFilter === 'memory';
   const showDistribution = activeFilter === 'distribution';
-  // Temporarily hidden for deployment; keep components wired for quick re-enable.
-  const showSignalsWidget = false;
-  const showDistributionHistoryWidget = false;
+  const showAssets = activeFilter === 'assets';
+  const showFlows = activeFilter === 'flows';
+  const {
+    data: assetsData,
+    error: assetsError,
+    isLoading: assetsLoading,
+  } = useSWR(
+    showAssets && authReady
+      ? ['space-overview-assets', spaceSlug, authKey]
+      : null,
+    fetchSpaceAssets(spaceSlug, getAccessToken),
+    { revalidateOnFocus: true, refreshInterval: 60_000 },
+  );
+  const treasuryAssets = assetsData?.assets ?? [];
+  const treasuryBalance = assetsData?.balance ?? 0;
+  const showDistributionHistoryWidget = true;
 
   React.useEffect(() => {
     if (activeFilter === 'energy' && !showEnergyWidget) {
-      setActiveFilter('activity');
+      setActiveFilter('signals');
     }
-  }, [activeFilter, showEnergyWidget]);
+    if (activeFilter === 'flows' && !isHyphaPlatform) {
+      setActiveFilter('signals');
+    }
+  }, [activeFilter, isHyphaPlatform, showEnergyWidget]);
 
   return (
     <div className="flex flex-col gap-5 py-4">
@@ -1547,6 +2000,42 @@ export function HomeTokenHoldingsDashboard({
         </TabsList>
       </Tabs>
 
+      {showSignals ? (
+        <>
+          {!activityLoading && activityError ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {tTokenHoldings('signalsDashboard.errorTitle')}
+                </CardTitle>
+                <CardDescription>
+                  {tTokenHoldings('activity.error')}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+
+          <OverviewSignalsDashboard
+            spaceSlug={spaceSlug}
+            authReady={authReady}
+            authKey={authKey}
+            afterSummary={
+              !activityLoading && !activityError && activityData ? (
+                <SignalsPulseMapWidget signals={activityData.signals} />
+              ) : null
+            }
+          />
+        </>
+      ) : null}
+
+      {showMemory ? (
+        <OverviewMemoryDashboard
+          spaceSlug={spaceSlug}
+          authReady={authReady}
+          authKey={authKey}
+        />
+      ) : null}
+
       {showActivity ? (
         <>
           {!activityLoading && activityError ? (
@@ -1561,25 +2050,12 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!activityLoading && !activityError && activityData ? (
-            <div
-              className={
-                showSignalsWidget
-                  ? 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
-              }
-            >
-              <div className="grid min-w-0 items-start gap-4">
-                {showSignalsWidget ? (
-                  <SignalsPulseMapWidget signals={activityData.signals} />
-                ) : null}
-                <MembersEvolutionWidget
-                  monthly={activityData.members.monthly}
-                  locale={locale}
-                />
-              </div>
-              <div className="grid min-w-0 items-start gap-4">
-                <ProposalsPieWidget data={activityData.proposals} />
-              </div>
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+              <MembersEvolutionWidget
+                monthly={activityData.members.monthly}
+                locale={locale}
+              />
+              <ProposalsPieWidget data={activityData.proposals} />
             </div>
           ) : null}
         </>
@@ -1618,31 +2094,12 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!holdingsLoading && !error && data && data.tokens.length > 0 ? (
-            <div
-              className={
-                showDistributionHistoryWidget
-                  ? 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-4'
-              }
-            >
-              {showDistributionHistoryWidget ? (
-                <DistributionOverTimeChart
-                  spaceSlug={spaceSlug}
-                  tokens={data.tokens}
-                  getAccessToken={getAccessToken}
-                />
-              ) : null}
-              <div
-                className={
-                  showDistributionHistoryWidget
-                    ? 'grid min-w-0 items-start gap-4'
-                    : 'grid min-w-0 items-start gap-4 md:grid-cols-2'
-                }
-              >
+            <div className="flex flex-col gap-4">
+              <div className="grid min-w-0 items-stretch gap-4 md:grid-cols-2">
                 {data.tokens.map((token) => (
                   <Card
                     key={token.token_address}
-                    className="group min-w-0 overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm"
+                    className="group flex h-full min-w-0 flex-col overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm"
                   >
                     <CardHeader className="gap-3">
                       <div className="flex items-start justify-between gap-3">
@@ -1714,7 +2171,7 @@ export function HomeTokenHoldingsDashboard({
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="flex flex-1 flex-col pt-0">
                       <TokenDonutChart
                         title={token.symbol}
                         slices={token.holdings}
@@ -1723,9 +2180,35 @@ export function HomeTokenHoldingsDashboard({
                   </Card>
                 ))}
               </div>
+
+              {showDistributionHistoryWidget ? (
+                <DistributionOverTimeChart
+                  spaceSlug={spaceSlug}
+                  tokens={data.tokens}
+                  getAccessToken={getAccessToken}
+                />
+              ) : null}
             </div>
           ) : null}
         </>
+      ) : null}
+
+      {showFlows && isHyphaPlatform ? (
+        <OverviewFlowsDashboard
+          spaceSlug={spaceSlug}
+          authReady={authReady}
+          authKey={authKey}
+        />
+      ) : null}
+
+      {showAssets ? (
+        <TreasuryAssetsSummaryWidget
+          assets={treasuryAssets}
+          balance={treasuryBalance}
+          isLoading={assetsLoading}
+          error={assetsError?.message ?? null}
+          getTokenTypeLabel={getTokenTypeLabel}
+        />
       ) : null}
 
       {activeFilter === 'energy' && showEnergyWidget ? (
