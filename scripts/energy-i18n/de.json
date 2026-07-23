@@ -250,7 +250,7 @@
     "stickyHeaders": {
       "addEnergyMember": "Vorschlag „Energiemitglied hinzufügen“ erstellen",
       "enableEnergyCommunity": "Vorschlag „Energiegemeinschaft aktivieren“ erstellen",
-      "energySharing": "Vorschlag „Energieteilung“ erstellen",
+      "energySharing": "Energieabrechnungsrichtlinie erstellen",
       "registerEnergySource": "Vorschlag „Energiequelle registrieren“ erstellen",
       "changeEnergyOptimization": "Vorschlag „Energieoptimierung ändern“ erstellen",
       "whitelistEnergySettlement": "Vorschlag „Energieabrechnung whitelisten“ erstellen"

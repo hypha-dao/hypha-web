@@ -518,8 +518,8 @@
         "description": "Configurez le partage d'énergie pour cet espace afin que les membres puissent produire, consommer et régler l'énergie ensemble."
       },
       "energySharing": {
-        "title": "Proposition de partage d'énergie",
-        "description": "Définissez comment cette communauté partage et règle les soldes d'énergie."
+        "title": "Politique de règlement d'énergie",
+        "description": "Définissez les conditions de paiement pour régler les soldes d'énergie de cette communauté."
       },
       "registerEnergySource": {
         "title": "Enregistrer une source d'énergie",
@@ -1204,7 +1204,7 @@
       "investment": "Investissement",
       "exchange": "Échange",
       "enableEnergyCommunity": "Activer la communauté énergétique",
-      "energySharing": "Partage d'énergie",
+      "energySharing": "Politique de règlement d'énergie",
       "registerEnergySource": "Enregistrer une source d'énergie",
       "addEnergyMember": "Ajouter un membre énergie",
       "changeEnergyOptimization": "Modifier l'optimisation énergétique",
@@ -4075,7 +4075,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Créer une proposition d'ajout de membre énergie",
         "enableEnergyCommunity": "Créer une proposition d'activation de communauté énergétique",
-        "energySharing": "Créer une proposition de partage d'énergie",
+        "energySharing": "Créer une politique de règlement d'énergie",
         "registerEnergySource": "Créer une proposition d'enregistrement de source d'énergie",
         "changeEnergyOptimization": "Créer une proposition de modification de l'optimisation énergétique",
         "whitelistEnergySettlement": "Créer une proposition de liste blanche de règlement énergétique"

@@ -518,8 +518,8 @@
         "description": "Richten Sie Energy Sharing für diesen Space ein, damit Mitglieder gemeinsam Energie erzeugen, verbrauchen und abrechnen können."
       },
       "energySharing": {
-        "title": "Energieteilungs-Vorschlag",
-        "description": "Legen Sie fest, wie diese Gemeinschaft Energiesalden teilt und abrechnet."
+        "title": "Energieabrechnungsrichtlinie",
+        "description": "Legen Sie die Zahlungsbedingungen für die Abrechnung der Energiesalden in dieser Gemeinschaft fest."
       },
       "registerEnergySource": {
         "title": "Energiequelle registrieren",
@@ -1768,7 +1768,7 @@
       "investment": "Investition",
       "exchange": "Exchange",
       "enableEnergyCommunity": "Energiegemeinschaft aktivieren",
-      "energySharing": "Energie teilen",
+      "energySharing": "Energieabrechnungsrichtlinie",
       "registerEnergySource": "Energiequelle registrieren",
       "addEnergyMember": "Energiemitglied hinzufügen",
       "changeEnergyOptimization": "Energieoptimierung ändern",
@@ -4079,7 +4079,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Vorschlag „Energiemitglied hinzufügen“ erstellen",
         "enableEnergyCommunity": "Vorschlag „Energiegemeinschaft aktivieren“ erstellen",
-        "energySharing": "Vorschlag „Energieteilung“ erstellen",
+        "energySharing": "Energieabrechnungsrichtlinie erstellen",
         "registerEnergySource": "Vorschlag „Energiequelle registrieren“ erstellen",
         "changeEnergyOptimization": "Vorschlag „Energieoptimierung ändern“ erstellen",
         "whitelistEnergySettlement": "Vorschlag „Energieabrechnung whitelisten“ erstellen"

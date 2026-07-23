@@ -250,7 +250,7 @@
     "stickyHeaders": {
       "addEnergyMember": "Создај предлог за додавање енергетски член",
       "enableEnergyCommunity": "Создај предлог за активирање енергетска заедница",
-      "energySharing": "Создај предлог за споделување енергија",
+      "energySharing": "Креирај политика за порамнување на енергија",
       "registerEnergySource": "Создај предлог за регистрација на енергетски извор",
       "changeEnergyOptimization": "Создај предлог за промена на енергетска оптимизација",
       "whitelistEnergySettlement": "Создај предлог за whitelist на енергетско порамнување"

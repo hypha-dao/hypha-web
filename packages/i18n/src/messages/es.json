@@ -685,7 +685,7 @@
       "investment": "Inversión",
       "exchange": "Intercambio",
       "enableEnergyCommunity": "Activar comunidad energética",
-      "energySharing": "Compartir energía",
+      "energySharing": "Política de liquidación de energía",
       "registerEnergySource": "Registrar fuente de energía",
       "addEnergyMember": "Añadir miembro de energía",
       "changeEnergyOptimization": "Cambiar optimización energética",
@@ -1284,8 +1284,8 @@
         "description": "Configura el intercambio de energía en este espacio para que los miembros puedan producir, consumir y liquidar energía juntos."
       },
       "energySharing": {
-        "title": "Propuesta de compartir energía",
-        "description": "Define cómo esta comunidad comparte y liquida los saldos de energía."
+        "title": "Política de liquidación de energía",
+        "description": "Define las condiciones de pago para liquidar los saldos de energía de esta comunidad."
       },
       "registerEnergySource": {
         "title": "Registrar fuente de energía",
@@ -4079,7 +4079,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Crear propuesta de añadir miembro de energía",
         "enableEnergyCommunity": "Crear propuesta de activar comunidad energética",
-        "energySharing": "Crear propuesta de compartir energía",
+        "energySharing": "Crear política de liquidación de energía",
         "registerEnergySource": "Crear propuesta de registrar fuente de energía",
         "changeEnergyOptimization": "Crear propuesta de cambiar optimización energética",
         "whitelistEnergySettlement": "Crear propuesta de lista blanca de liquidación energética"

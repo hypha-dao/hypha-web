@@ -250,7 +250,7 @@
     "stickyHeaders": {
       "addEnergyMember": "Create Add Energy Member Proposal",
       "enableEnergyCommunity": "Create Enable Energy Community Proposal",
-      "energySharing": "Create Energy Sharing Proposal",
+      "energySharing": "Create Energy Settlement Policy",
       "registerEnergySource": "Create Register Energy Source Proposal",
       "changeEnergyOptimization": "Create Change Energy Optimization Proposal",
       "whitelistEnergySettlement": "Create Whitelist Energy Settlement Proposal"

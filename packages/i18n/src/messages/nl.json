@@ -517,8 +517,8 @@
         "description": "Stel energiedeling in voor deze space zodat leden samen energie kunnen produceren, verbruiken en verrekenen."
       },
       "energySharing": {
-        "title": "Voorstel energiedeling",
-        "description": "Bepaal hoe deze gemeenschap energiesaldi deelt en verrekent."
+        "title": "Beleid voor energieverrekening",
+        "description": "Stel de betalingsvoorwaarden in voor het verrekenen van energiesaldi in deze community."
       },
       "registerEnergySource": {
         "title": "Energiebron registreren",
@@ -1767,7 +1767,7 @@
       "investment": "Investering",
       "exchange": "Aandelenbeurs",
       "enableEnergyCommunity": "Schakel de Energiegemeenschap in",
-      "energySharing": "Energie delen",
+      "energySharing": "Beleid voor energieverrekening",
       "registerEnergySource": "Registreer energiebron",
       "addEnergyMember": "Energielid toevoegen",
       "changeEnergyOptimization": "Verander energieoptimalisatie",
@@ -4085,7 +4085,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Creëer voorstel voor energielid toevoegen",
         "enableEnergyCommunity": "Maak een voorstel voor de Enable Energy Community",
-        "energySharing": "Creëer een voorstel voor het delen van energie",
+        "energySharing": "Beleid voor energieverrekening aanmaken",
         "registerEnergySource": "Register-energiebronvoorstel maken",
         "changeEnergyOptimization": "Creëer een wijzigingsvoorstel voor energieoptimalisatie",
         "whitelistEnergySettlement": "Maak een voorstel voor een energieschikking op de witte lijst"

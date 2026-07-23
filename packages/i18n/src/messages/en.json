@@ -517,8 +517,8 @@
         "description": "Set up energy sharing for this space so members can produce, consume, and settle energy together."
       },
       "energySharing": {
-        "title": "Energy Sharing Proposal",
-        "description": "Define how this community shares and settles energy balances."
+        "title": "Energy Settlement Policy",
+        "description": "Set the payment conditions for settling energy balances in this community."
       },
       "registerEnergySource": {
         "title": "Register Energy Source",
@@ -1767,7 +1767,7 @@
       "investment": "Investment",
       "exchange": "Exchange",
       "enableEnergyCommunity": "Enable Energy Community",
-      "energySharing": "Energy Sharing",
+      "energySharing": "Energy Settlement Policy",
       "registerEnergySource": "Register Energy Source",
       "addEnergyMember": "Add Energy Member",
       "changeEnergyOptimization": "Change Energy Optimization",
@@ -4087,7 +4087,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Create Add Energy Member Proposal",
         "enableEnergyCommunity": "Create Enable Energy Community Proposal",
-        "energySharing": "Create Energy Sharing Proposal",
+        "energySharing": "Create Energy Settlement Policy",
         "registerEnergySource": "Create Register Energy Source Proposal",
         "changeEnergyOptimization": "Create Change Energy Optimization Proposal",
         "whitelistEnergySettlement": "Create Whitelist Energy Settlement Proposal"

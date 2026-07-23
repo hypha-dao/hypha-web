@@ -250,7 +250,7 @@
     "stickyHeaders": {
       "addEnergyMember": "Criar proposta de adicionar membro de energia",
       "enableEnergyCommunity": "Criar proposta de ativar comunidade de energia",
-      "energySharing": "Criar proposta de partilha de energia",
+      "energySharing": "Criar política de liquidação de energia",
       "registerEnergySource": "Criar proposta de registar fonte de energia",
       "changeEnergyOptimization": "Criar proposta de alterar otimização de energia",
       "whitelistEnergySettlement": "Criar proposta de whitelist de liquidação de energia"

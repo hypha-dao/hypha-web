@@ -1,16 +1,13 @@
 'use client';
 
 import {
-  PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   SelectAction,
   useActionGating,
   useCanMutateInSpace,
-  useSpaceDocumentsWithStatuses,
   useSpaceEnergy,
   type ActionProps,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { normalizeProposalDocumentLabel } from '@hypha-platform/core/client';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import {
@@ -61,35 +58,6 @@ export const SelectSettingsAction = ({
   const { data: spaceEnergy } = useSpaceEnergy();
   const isEnergyCommunity = spaceEnergy?.enabled === true;
   const isActionDisabled = isMutateLoading || !canMutate;
-
-  // Hide the Energy Sharing card once an Energy Sharing proposal exists,
-  // unless every one of them was rejected (or withdrawn). Checking the raw
-  // document list — rather than only chain-confirmed "accepted" documents —
-  // keeps the card hidden even when the on-chain status read is unavailable.
-  const {
-    documents: spaceDocuments,
-    isLoading: isSpaceDocumentsLoading,
-    error: spaceDocumentsError,
-  } = useSpaceDocumentsWithStatuses({
-    spaceSlug: daoSlug,
-    spaceId: space?.web3SpaceId ?? undefined,
-    order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
-  });
-  const isEnergySharingDoc = (doc: { label?: string | null }) =>
-    normalizeProposalDocumentLabel(doc.label) === 'Energy Sharing';
-  const rejectedEnergySharingIds = new Set(
-    spaceDocuments.rejected.filter(isEnergySharingDoc).map((doc) => doc.id),
-  );
-  const hasEnergySharingProposal = spaceDocuments.all.some(
-    (doc) => isEnergySharingDoc(doc) && !rejectedEnergySharingIds.has(doc.id),
-  );
-  // While documents are loading (or the query failed) we can't know whether a
-  // sharing proposal exists — keep the card hidden rather than risk offering a
-  // duplicate Energy Sharing flow on a transiently empty list.
-  const showEnergySharingCard =
-    !isSpaceDocumentsLoading &&
-    !spaceDocumentsError &&
-    !hasEnergySharingProposal;
 
   const SETTINGS_ACTIONS = [
     {
@@ -265,7 +233,7 @@ export const SelectSettingsAction = ({
           },
         ]
       : []),
-    ...(isEnergyCommunity && showEnergySharingCard
+    ...(isEnergyCommunity
       ? [
           {
             defaultDurationDays: 5,
@@ -277,10 +245,6 @@ export const SelectSettingsAction = ({
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
-        ]
-      : []),
-    ...(isEnergyCommunity
-      ? [
           {
             defaultDurationDays: 5,
             group: t('groups.energy'),

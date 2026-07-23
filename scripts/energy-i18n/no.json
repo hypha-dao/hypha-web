@@ -250,7 +250,7 @@
     "stickyHeaders": {
       "addEnergyMember": "Opprett forslag om å legge til energimedlem",
       "enableEnergyCommunity": "Opprett forslag om å aktivere energifellesskap",
-      "energySharing": "Opprett forslag om energideling",
+      "energySharing": "Opprett retningslinjer for energioppgjør",
       "registerEnergySource": "Opprett forslag om å registrere energikilde",
       "changeEnergyOptimization": "Opprett forslag om å endre energioptimalisering",
       "whitelistEnergySettlement": "Opprett forslag om å hviteliste energiavregning"

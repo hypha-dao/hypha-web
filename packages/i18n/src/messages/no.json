@@ -516,8 +516,8 @@
         "description": "Sett opp energideling for dette området slik at medlemmene kan produsere, forbruke og avregne energi sammen."
       },
       "energySharing": {
-        "title": "Forslag om energideling",
-        "description": "Definer hvordan dette fellesskapet deler og avregner energibalanser."
+        "title": "Retningslinjer for energioppgjør",
+        "description": "Angi betalingsvilkårene for oppgjør av energibalanser i dette fellesskapet."
       },
       "registerEnergySource": {
         "title": "Registrer energikilde",
@@ -1764,7 +1764,7 @@
       "investment": "Investering",
       "exchange": "Bytte",
       "enableEnergyCommunity": "Aktiver energifellesskap",
-      "energySharing": "Energideling",
+      "energySharing": "Retningslinjer for energioppgjør",
       "registerEnergySource": "Registrer energikilde",
       "addEnergyMember": "Legg til energimedlem",
       "changeEnergyOptimization": "Endre energioptimalisering",
@@ -4082,7 +4082,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Opprett forslag om å legge til energimedlem",
         "enableEnergyCommunity": "Opprett forslag om å aktivere energifellesskap",
-        "energySharing": "Opprett forslag om energideling",
+        "energySharing": "Opprett retningslinjer for energioppgjør",
         "registerEnergySource": "Opprett forslag om å registrere energikilde",
         "changeEnergyOptimization": "Opprett forslag om å endre energioptimalisering",
         "whitelistEnergySettlement": "Opprett forslag om å hviteliste energiavregning"
