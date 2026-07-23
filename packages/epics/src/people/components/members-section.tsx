@@ -170,10 +170,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
         ) : (
           <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
             {aiAgents.map((agent) => (
-              <div
-                key={agent.id}
-                className="craft-card p-4"
-              >
+              <div key={agent.id} className="craft-card p-4">
                 <div className="mb-3 flex items-start gap-3">
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${tagGroupAccentClass(
