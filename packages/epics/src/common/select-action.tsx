@@ -135,14 +135,14 @@ export const SelectAction = ({
                   const card = (
                     <Card
                       className={clsx(
-                        'group flex h-full items-start gap-3 rounded-lg border border-border/80 bg-background-2 p-4 transition-[border-color,background-color] duration-200 ease-out',
+                        'craft-card group flex h-full items-start gap-3 p-3.5 transition-[border-color,background-color] duration-200 ease-out',
                         !action.disabled && 'cursor-pointer',
                         !action.disabled &&
-                          'hover:border-accent-9 hover:bg-background-3/70',
+                          'hover:border-border hover:bg-muted/15',
                         !action.disabled &&
                           'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
                         {
-                          'pointer-events-none cursor-not-allowed border-border/70 bg-background-2 opacity-90':
+                          'pointer-events-none cursor-not-allowed opacity-90':
                             action.disabled,
                         },
                       )}
@@ -153,8 +153,7 @@ export const SelectAction = ({
                         className={clsx(
                           'flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:size-4 [&_svg]:shrink-0',
                           !action.disabled &&
-                            /* Outline-style hover: border step — no solid fill */
-                            'group-hover:border-accent-9 group-hover:text-foreground group-focus-within:text-foreground',
+                            'group-hover:border-border group-hover:text-foreground group-focus-within:text-foreground',
                         )}
                         aria-hidden
                       >

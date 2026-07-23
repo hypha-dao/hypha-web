@@ -135,8 +135,8 @@ export const ConsumerConsumptionCard = ({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-background-2 transition-shadow',
-        expanded && 'col-span-full shadow-md',
+        'craft-card',
+        expanded && 'col-span-full',
       )}
     >
       <button

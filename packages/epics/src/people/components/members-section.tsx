@@ -172,7 +172,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             {aiAgents.map((agent) => (
               <div
                 key={agent.id}
-                className="rounded-xl border border-border bg-background-2 p-4"
+                className="craft-card p-4"
               >
                 <div className="mb-3 flex items-start gap-3">
                   <div

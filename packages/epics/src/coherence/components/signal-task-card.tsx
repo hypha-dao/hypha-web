@@ -165,9 +165,8 @@ export function SignalTaskCard({
           : undefined
       }
       className={cn(
-        'group relative flex flex-col rounded-xl border border-border/60 bg-card shadow-sm',
-        'transition-all duration-200 ease-out',
-        !isActive && 'hover:border-accent-8/45 hover:bg-background-3/50',
+        'craft-card-interactive group relative flex flex-col',
+        !isActive && 'hover:border-border hover:bg-muted/15',
         signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',
@@ -176,7 +175,7 @@ export function SignalTaskCard({
     >
       <div
         className={cn(
-          'absolute inset-y-0 left-0 w-1 rounded-l-xl',
+          'absolute inset-y-0 left-0 w-1 rounded-l-lg',
           priorityLeftBorderClass(signal.priority),
         )}
         title={priorityLabel}
