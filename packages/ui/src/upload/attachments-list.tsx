@@ -10,7 +10,7 @@ interface Attachment {
   url: string;
 }
 
-interface AttachmentListProps {
+export interface AttachmentListProps {
   attachments: (string | Attachment)[];
   /** Section heading; pass a translated string (defaults to English). */
   label?: React.ReactNode;
