@@ -95,17 +95,6 @@ function ComposerRecOnAirIndicator() {
       `}</style>
       <span className="relative flex h-[18px] w-[18px] items-center justify-center">
         <span
-          data-hypha-rec-halo=""
-          className="pointer-events-none absolute h-3 w-3 rounded-full bg-red-500/35 blur-[2px]"
-          style={{
-            animationName: 'hypha-rec-halo',
-            animationDuration: '1.2s',
-            animationTimingFunction: 'ease-in-out',
-            animationIterationCount: 'infinite',
-          }}
-          aria-hidden
-        />
-        <span
           data-hypha-rec-on-air=""
           className="motion-safe:relative inline-block h-2 w-2 rounded-full bg-error-9 ring-1 ring-error-11/40 dark:ring-error-8/50"
           style={{

@@ -212,17 +212,19 @@ export const MenuTop = ({
     <header
       ref={headerRef}
       className={clsx(
-        'relative flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
-        'bg-background-2 px-4 py-3 z-30',
+        'relative z-30 flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
+        /* Continuous instrument chrome — slightly translucent over page atmosphere */
+        'bg-background-2/92 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80',
         /*
          * Span the flex gap between SidebarInset and the fixed left rail so the underline meets
          * the sidebar seam cleanly. The right panel draws its own matching border, which avoids
          * a doubled or awkward underline where the main top menu and right panel meet.
          */
-        'after:pointer-events-none after:absolute after:bottom-0 after:h-px after:bg-border',
+        'after:pointer-events-none after:absolute after:bottom-0 after:h-px after:bg-border/80',
         'after:left-[calc(-1_*_var(--sidebar-left-width,0px))]',
         'after:right-0',
       )}
+      data-craft-icons
     >
       <div
         ref={rowRef}

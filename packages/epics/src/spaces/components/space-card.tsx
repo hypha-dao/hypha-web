@@ -63,7 +63,9 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   return (
     <Card
       className={cn(
-        'group relative w-full h-full flex flex-col @container/spacecard',
+        'group relative flex h-full w-full flex-col @container/spacecard',
+        'transition-[border-color,background-color] duration-200 ease-out',
+        'hover:border-border hover:bg-background-3/40',
         className,
       )}
     >

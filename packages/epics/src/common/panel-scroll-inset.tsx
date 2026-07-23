@@ -49,7 +49,7 @@ export const PanelScrollInset = React.forwardRef<
       ref={setRefs}
       className={cn(
         /* No scrollbar-gutter — horizontal rules span full column width (may cross overlay scrollbar). */
-        'overflow-y-auto narrow-scrollbar',
+        'craft-content-plane overflow-y-auto narrow-scrollbar',
         className,
       )}
       style={

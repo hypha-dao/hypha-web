@@ -19,6 +19,7 @@
 @import './theme/tokens/space.css';
 
 @import './theme/typography/variables.css';
+@import './theme/craft.css';
 
 @import './theme/scrollbar/narrow.css';
 

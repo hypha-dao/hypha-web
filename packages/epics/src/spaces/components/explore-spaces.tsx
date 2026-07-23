@@ -449,16 +449,18 @@ export function ExploreSpaces({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <Heading
-        size="9"
-        color="secondary"
-        weight="medium"
-        align="center"
-        className="mb-6 flex flex-col sm:mb-8"
-      >
-        <span>{t('manySpaces')}</span>
-        <span>{t('oneVibrantNetwork')}</span>
-      </Heading>
+      <header className="craft-hero craft-rise mb-8 sm:mb-10">
+        <Heading
+          size="9"
+          color="secondary"
+          weight="medium"
+          align="center"
+          className="craft-hero-title"
+        >
+          <span>{t('manySpaces')}</span>
+          <span>{t('oneVibrantNetwork')}</span>
+        </Heading>
+      </header>
 
       {sharedHeader}
 

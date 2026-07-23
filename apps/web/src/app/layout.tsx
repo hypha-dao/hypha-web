@@ -1,7 +1,7 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { Lato, Source_Sans_3 } from 'next/font/google';
+import { Fraunces, IBM_Plex_Sans } from 'next/font/google';
 import clsx from 'clsx';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -48,17 +48,18 @@ import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
 
-const lato = Lato({
+/** Organic display face — mycelial / craft brand signal */
+const fraunces = Fraunces({
   subsets: ['latin'],
   display: 'swap',
-  weight: ['900', '700', '400', '300'],
   variable: '--font-heading',
 });
 
-const sourceSans = Source_Sans_3({
+/** Refined UI grotesque — clear at small sizes, not Inter/Lato-generic */
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
   display: 'swap',
-  weight: ['900', '700', '400', '300'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-body',
 });
 
@@ -233,7 +234,10 @@ export default async function RootLayout({
   }
 
   return (
-    <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
+    <Html
+      lang={locale}
+      className={clsx(fraunces.variable, ibmPlexSans.variable)}
+    >
       <ScrollUp />
       <SeamlessScrollPolyfill />
       <AuthProvider

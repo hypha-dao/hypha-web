@@ -71,9 +71,17 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 
 ### Fonts
 
-- Heading: Lato via `--font-heading` / `--font-family-heading` (see `Heading` atom)
-- Body: Source Sans 3 via `--font-body` / `--font-family-text`
-- Do not hardcode SF Pro or leave Next fonts unwired
+- Display / headings: **Fraunces** via `--font-heading` → `--font-family-heading` (`Heading` atom, heroes, panel titles)
+- UI / body: **IBM Plex Sans** via `--font-body` → `--font-family-text`
+- Do not leave Next font CSS variables unwired
+
+### Atmosphere & motion
+
+- Page air + content plane: `packages/ui-utils/src/theme/craft.css` (`.craft-content-plane`, body washes)
+- Heroes: `.craft-hero` / `.craft-hero-title`
+- Signature motion: `.craft-rise`, `.craft-rise-stagger`, `.craft-settle` (`prefers-reduced-motion` safe)
+- Icon language: `data-craft-icons` / `.craft-icon` (stroke ~1.75)
+- Empty states: `.craft-empty-mark` via `Empty` component
 
 ### Cards & elevation
 
@@ -86,12 +94,12 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 ### Accent dialects (three)
 
 1. **Global indigo** — Radix `accent-*` (buttons, focus, mention chips, links)
-2. **Space** — `--space-accent*` from imagery (`space-accent.css`); keep intact inside DHO/profile scope
+2. **Space** — `--space-accent*` from imagery; inside `[data-space-accent-scope]` CTAs/tabs/focus own the space hue (`space-accent.css`)
 3. **Mycelium teal** — ecosystem / viz only; do not use as app chrome accent
 
 ## References
 
 - `packages/ui-utils/src/global.css` — full theme and tokens
-- `packages/ui-utils/src/theme/` — color CSS files
+- `packages/ui-utils/src/theme/craft.css` — atmosphere + motion
 - `packages/ui/src/button.tsx` — variant pattern reference
 - `packages/epics/src/common/chrome-radius.ts` — chrome control radius token
