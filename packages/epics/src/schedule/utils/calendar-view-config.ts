@@ -19,10 +19,10 @@ export function viewToModifierClass(view: CalendarView): string {
 
 export function calendarLayoutForView(view: CalendarView): {
   contentHeight?: number;
-  height?: 'auto';
+  height?: 'auto' | '100%';
   slotMinTime: string;
   slotMaxTime: string;
-  dayMaxEvents: number;
+  dayMaxEvents: number | boolean;
 } {
   switch (view) {
     case 'timeGridWeek':
@@ -47,11 +47,12 @@ export function calendarLayoutForView(view: CalendarView): {
         dayMaxEvents: 4,
       };
     default:
+      // Fill the parent so month rows share height and the grid fits the page.
       return {
-        contentHeight: 620,
+        height: '100%',
         slotMinTime: '06:00:00',
         slotMaxTime: '22:00:00',
-        dayMaxEvents: 4,
+        dayMaxEvents: 3,
       };
   }
 }
