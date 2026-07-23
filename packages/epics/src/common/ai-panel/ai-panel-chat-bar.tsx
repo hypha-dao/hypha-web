@@ -83,12 +83,8 @@ function ComposerRecOnAirIndicator() {
           0%, 100% { opacity: 1; transform: scale(1); filter: brightness(1); }
           50% { opacity: 0.88; transform: scale(0.94); filter: brightness(1.08); }
         }
-        @keyframes hypha-rec-halo {
-          0%, 100% { opacity: 0.55; transform: scale(1); }
-          50% { opacity: 0.2; transform: scale(1.35); }
-        }
         @media (prefers-reduced-motion: reduce) {
-          [data-hypha-rec-on-air], [data-hypha-rec-halo] {
+          [data-hypha-rec-on-air] {
             animation: none !important;
           }
         }

@@ -166,7 +166,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           width="250px"
         >
           <Image
-            className="rounded-tl-lg rounded-tr-lg object-cover w-full h-full"
+            className="rounded-tl-md rounded-tr-md object-cover w-full h-full"
             src={leadImage || '/placeholder/document-lead-image.webp'}
             alt={title || ''}
             width={250}
