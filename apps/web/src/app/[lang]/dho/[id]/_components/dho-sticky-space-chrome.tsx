@@ -163,10 +163,10 @@ export function DhoStickySpaceChrome({
           'overflow-hidden border-x border-b border-border/75',
           'supports-[backdrop-filter]:backdrop-blur-md',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10',
-          'transition-[opacity,transform,box-shadow] duration-250 ease-linear motion-reduce:transition-none',
+          'transition-[opacity,transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           stuck
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
+            ? 'craft-settle pointer-events-auto translate-y-0 opacity-100'
+            : '-translate-y-1.5 opacity-0 motion-reduce:translate-y-0',
         )}
         style={{
           top: 'var(--menu-top-height, 70px)',
@@ -174,11 +174,11 @@ export function DhoStickySpaceChrome({
             ? 'rgba(7,10,16,0.92)'
             : 'rgba(248,250,252,0.94)',
           backgroundImage: isDark
-            ? 'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 14%, transparent), transparent 55%)'
-            : 'linear-gradient(to right, rgba(255,255,255,0.78), rgba(255,255,255,0.64), rgba(255,255,255,0.74)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 11%, transparent), transparent 58%)',
+            ? 'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--space-accent, var(--color-accent-11)) 18%, transparent), transparent 55%)'
+            : 'linear-gradient(to right, rgba(255,255,255,0.78), rgba(255,255,255,0.64), rgba(255,255,255,0.74)), linear-gradient(to bottom right, color-mix(in srgb, var(--space-accent, var(--color-accent-11)) 14%, transparent), transparent 58%)',
           boxShadow: isDark
-            ? '0 10px 28px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)'
-            : '0 10px 24px -20px rgba(15,23,42,0.26), inset 0 1px 0 rgba(255,255,255,0.78)',
+            ? '0 8px 22px -18px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
+            : '0 8px 20px -20px rgba(15,23,42,0.22), inset 0 1px 0 rgba(255,255,255,0.78)',
         }}
         aria-hidden={!stuck}
       >

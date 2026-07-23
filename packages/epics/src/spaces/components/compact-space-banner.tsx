@@ -17,8 +17,8 @@ export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
 
 /** Title size on the banner — reuse on sticky; heading face + regular weight for calmer hero */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
-  'text-balance text-6 font-normal tracking-tight sm:text-7',
-  '[font-family:var(--font-family-heading)]',
+  'text-balance text-6 font-medium tracking-[-0.025em] sm:text-7',
+  '[font-family:var(--font-family-heading)] [font-optical-sizing:auto]',
 );
 
 /** Smaller footprint for the DHO sticky space chrome row — circular logo like the hero banner */
@@ -28,8 +28,8 @@ export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
 );
 
 export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
-  'text-balance text-4 font-medium tracking-tight sm:text-5',
-  '[font-family:var(--font-family-heading)]',
+  'text-balance text-4 font-medium tracking-[-0.02em] sm:text-5',
+  '[font-family:var(--font-family-heading)] [font-optical-sizing:auto]',
 );
 
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */

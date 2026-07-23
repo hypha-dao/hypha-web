@@ -1643,7 +1643,7 @@ export function HumanChatPanelChatBar({
         ref={composerShellRef}
         onKeyDownCapture={handleComposerShellKeyDownCapture}
         className={cn(
-          'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
+          'relative flex min-w-0 flex-col rounded-lg border border-border/80 bg-background-2/70 shadow-sm',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
           isComposerDropActive && 'border-primary/50 ring-2 ring-primary/25',
         )}
