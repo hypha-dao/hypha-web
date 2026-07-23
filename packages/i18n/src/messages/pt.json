@@ -2751,7 +2751,7 @@
     "spaceMemoryLoadMoreError": "Não foi possível carregar mais itens. Tente novamente.",
     "spaceMemoryRetry": "Tentar novamente",
     "spaceMemoryRefresh": "Atualizar",
-    "openDocument": "Abrir documento",
+    "openDocument": "Abrir",
     "spaceMemoryContext": "De «{title}» · {state}",
     "spaceMemoryContextMemory": "Memória · «{title}»",
     "spaceMemoryContextMatrix": "Do chat Matrix",

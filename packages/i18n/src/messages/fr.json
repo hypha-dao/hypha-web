@@ -2749,7 +2749,7 @@
     "spaceMemoryLoadMoreError": "Impossible de charger d'autres éléments. Veuillez réessayer.",
     "spaceMemoryRetry": "Réessayer",
     "spaceMemoryRefresh": "Actualiser",
-    "openDocument": "Ouvrir le document",
+    "openDocument": "Ouvrir",
     "spaceMemoryContext": "Depuis «{title}» · {state}",
     "spaceMemoryContextMemory": "Mémoire · «{title}»",
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",

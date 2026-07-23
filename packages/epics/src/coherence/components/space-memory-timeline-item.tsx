@@ -8,9 +8,8 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { ExternalLink, FileIcon, Image as ImageIcon, Play } from 'lucide-react';
-import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { ResolvedCallTranscriptExcerpt } from './resolved-call-transcript-excerpt';
 import { SpaceMemoryCallRecordingPlayer } from './space-memory-call-recording-player';
 
@@ -35,7 +34,7 @@ function CallRecordingStaticPreview({
           muted
           playsInline
           preload="metadata"
-          className="max-h-full max-w-full object-contain"
+          className="h-full w-full object-cover"
         >
           <track kind="captions" />
         </video>
@@ -45,20 +44,20 @@ function CallRecordingStaticPreview({
         </audio>
       )}
       <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white shadow-md ring-1 ring-white/20">
-          <Play className="h-6 w-6 fill-current" aria-hidden />
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/15">
+          <Play className="h-5 w-5 fill-current" aria-hidden />
         </span>
       </span>
-      <span className="pointer-events-none absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white/95">
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/50 px-2 py-1 text-[10px] font-medium text-white/90">
         <span className="line-clamp-1">{playLabel}</span>
       </span>
     </div>
   );
 }
 
-/** Matches Human Chat image slot: rounded shell with safe media preview. */
-const THUMB_SHELL =
-  'relative flex min-h-[160px] w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30';
+/** Fixed media frame — equal card rows, cover-cropped previews. */
+const MEDIA_SHELL =
+  'relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/20';
 
 function isSafeAssetUrl(url: string): boolean {
   try {
@@ -185,8 +184,8 @@ function PdfPreview({
         aria-label={fallbackLabel}
         className="h-full w-full"
       >
-        <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
-          <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
+          <FileIcon className="h-7 w-7 opacity-60" strokeWidth={1.25} />
           <span className="line-clamp-2 text-center text-[10px]">
             {unavailableLabel}
           </span>
@@ -197,8 +196,8 @@ function PdfPreview({
 
   if (renderState === 'error') {
     return (
-      <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
-        <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
+        <FileIcon className="h-7 w-7 opacity-60" strokeWidth={1.25} />
         <span className="line-clamp-2 text-center text-[10px]">
           {unavailableLabel}
         </span>
@@ -207,7 +206,7 @@ function PdfPreview({
   }
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-muted/10">
       <canvas
         ref={canvasRef}
         aria-label={fallbackLabel}
@@ -217,9 +216,9 @@ function PdfPreview({
         )}
       />
       {renderState === 'loading' ? (
-        <div className="absolute inset-0 flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
+        <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
           <FileIcon
-            className="h-8 w-8 animate-pulse opacity-70"
+            className="h-7 w-7 animate-pulse opacity-60"
             strokeWidth={1.25}
           />
           <span className="line-clamp-2 text-center text-[10px]">
@@ -273,8 +272,17 @@ export function SpaceMemoryTimelineItem({
   openLabel,
 }: SpaceMemoryTimelineItemProps) {
   const t = useTranslations('CoherenceTab');
+  const format = useFormatter();
   const { client, isMatrixAvailable } = useMatrix();
-  const uploaded = formatDate(new Date(item.uploadedAt), true);
+  const uploaded = useMemo(() => {
+    const parsed = new Date(item.uploadedAt);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return format.dateTime(parsed, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  }, [format, item.uploadedAt]);
   const displayName = useMemo(
     () =>
       deriveSpaceMemoryDisplayTitle({
@@ -352,6 +360,12 @@ export function SpaceMemoryTimelineItem({
     ? t('spaceMemoryPlayCallRecording')
     : t('openDocument');
 
+  const emptyMediaIcon = (
+    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+      <FileIcon className="h-8 w-8 opacity-60" strokeWidth={1.25} />
+    </div>
+  );
+
   const thumbPreview = (() => {
     if (isMemoryBody || isCallTranscriptBody) {
       const excerpt =
@@ -359,15 +373,15 @@ export function SpaceMemoryTimelineItem({
         item.context.documentTitle?.trim() ||
         displayName;
       return (
-        <div className="flex min-h-[120px] w-full flex-col justify-start gap-2 overflow-y-auto px-3 py-3 text-left">
+        <div className="absolute inset-0 flex flex-col justify-start overflow-hidden bg-background-3/40 px-3 py-2.5 text-left">
           {isCallTranscriptBody ? (
             <ResolvedCallTranscriptExcerpt
               excerpt={excerpt}
               roomId={matrixChatRoomId}
-              className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground"
+              className="line-clamp-5 whitespace-pre-wrap text-1 leading-relaxed text-foreground/90"
             />
           ) : (
-            <p className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground">
+            <p className="line-clamp-5 whitespace-pre-wrap text-1 leading-relaxed text-foreground/90">
               {excerpt}
             </p>
           )}
@@ -386,9 +400,9 @@ export function SpaceMemoryTimelineItem({
       }
       if (!isMatrixAvailable || !client) {
         return (
-          <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] text-muted-foreground">
-            <FileIcon className="h-10 w-10 opacity-70" strokeWidth={1.25} />
-            <span className="line-clamp-3">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 px-3 text-center text-[10px] text-muted-foreground">
+            <FileIcon className="h-8 w-8 opacity-60" strokeWidth={1.25} />
+            <span className="line-clamp-2">
               {t('spaceMemoryMatrixPreviewNeedsChat')}
             </span>
           </div>
@@ -406,20 +420,13 @@ export function SpaceMemoryTimelineItem({
       }
       if (item.kind === 'image' && !imageFailed) {
         const src = imageSrcForMatrix;
-        if (!src) {
-          return (
-            <FileIcon
-              className="h-12 w-12 text-muted-foreground"
-              strokeWidth={1.25}
-            />
-          );
-        }
+        if (!src) return emptyMediaIcon;
         return (
           <img
             key={`${item.id}-${matrixImagePhase}`}
             src={src}
             alt=""
-            className="max-h-full max-w-full object-contain"
+            className="h-full w-full object-cover"
             loading="lazy"
             onError={() => {
               if (
@@ -437,8 +444,8 @@ export function SpaceMemoryTimelineItem({
       }
       if (item.kind === 'image' && imageFailed) {
         return (
-          <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
-            <ImageIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 px-3 text-muted-foreground">
+            <ImageIcon className="h-7 w-7 opacity-60" strokeWidth={1.25} />
             <span className="line-clamp-2 text-center text-[10px]">
               {displayName}
             </span>
@@ -447,18 +454,18 @@ export function SpaceMemoryTimelineItem({
       }
       if (item.kind === 'video' && videoSrcForMatrix) {
         return (
-          <div className="relative flex h-full w-full items-center justify-center">
+          <div className="relative h-full w-full">
             <video
               src={videoSrcForMatrix}
               poster={mxcPreview ?? undefined}
               muted
               playsInline
               preload="metadata"
-              className="max-h-full max-w-full object-contain bg-black"
+              className="h-full w-full object-cover bg-black"
             >
               <track kind="captions" />
             </video>
-            <span className="pointer-events-none absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white/95">
+            <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1 bg-black/50 px-2 py-1 text-[10px] font-medium text-white/90">
               <Play className="h-3 w-3 shrink-0" aria-hidden />
               <span className="line-clamp-1">
                 {t('spaceMemoryMatrixVideoPlayHint')}
@@ -467,30 +474,10 @@ export function SpaceMemoryTimelineItem({
           </div>
         );
       }
-      if (item.kind === 'document' && looksLikePdf(item.name, item.url)) {
-        return (
-          <FileIcon
-            className="h-12 w-12 text-muted-foreground"
-            strokeWidth={1.25}
-          />
-        );
-      }
-      return (
-        <FileIcon
-          className="h-12 w-12 text-muted-foreground"
-          strokeWidth={1.25}
-        />
-      );
+      return emptyMediaIcon;
     }
 
-    if (!httpSafe) {
-      return (
-        <FileIcon
-          className="h-12 w-12 text-muted-foreground"
-          strokeWidth={1.25}
-        />
-      );
-    }
+    if (!httpSafe) return emptyMediaIcon;
     if (isCallRecording) {
       return (
         <CallRecordingStaticPreview
@@ -509,17 +496,14 @@ export function SpaceMemoryTimelineItem({
             unavailableLabel={t('spaceMemoryPdfPreviewUnavailable')}
           />
         ) : (
-          <FileIcon
-            className="h-12 w-12 text-muted-foreground"
-            strokeWidth={1.25}
-          />
+          emptyMediaIcon
         );
       }
       return (
         <img
           src={item.url}
           alt=""
-          className="max-h-full max-w-full object-contain"
+          className="h-full w-full object-cover"
           loading="lazy"
           onError={() => setImageFailed(true)}
         />
@@ -527,8 +511,8 @@ export function SpaceMemoryTimelineItem({
     }
     if (item.kind === 'image' && imageFailed) {
       return (
-        <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
-          <ImageIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 px-3 text-muted-foreground">
+          <ImageIcon className="h-7 w-7 opacity-60" strokeWidth={1.25} />
           <span className="line-clamp-2 text-center text-[10px]">
             {displayName}
           </span>
@@ -542,7 +526,7 @@ export function SpaceMemoryTimelineItem({
           muted
           playsInline
           preload="none"
-          className="max-h-full max-w-full object-contain bg-black"
+          className="h-full w-full object-cover bg-black"
         >
           <track kind="captions" />
         </video>
@@ -556,24 +540,16 @@ export function SpaceMemoryTimelineItem({
           unavailableLabel={t('spaceMemoryPdfPreviewUnavailable')}
         />
       ) : (
-        <FileIcon
-          className="h-12 w-12 text-muted-foreground"
-          strokeWidth={1.25}
-        />
+        emptyMediaIcon
       );
     }
-    return (
-      <FileIcon
-        className="h-12 w-12 text-muted-foreground"
-        strokeWidth={1.25}
-      />
-    );
+    return emptyMediaIcon;
   })();
 
   const linkClass =
-    'group flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
-  const filenameRowClass =
-    'inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
+    'group/open flex min-h-0 flex-1 flex-col gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  const openRowClass =
+    'mt-auto inline-flex items-center gap-1 text-1 text-muted-foreground transition-colors group-hover/open:text-foreground';
 
   const sourceLabel = (() => {
     if (item.source === 'memory') return t('spaceMemory');
@@ -587,29 +563,32 @@ export function SpaceMemoryTimelineItem({
     return t('spaceMemory');
   })();
 
+  const showTitle = !isCallRecording || showCallRecordingTitle;
+
   return (
-    <li className="flex h-full w-full flex-col rounded-lg border border-border bg-card p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="inline-flex items-center rounded-md bg-accent-9 px-2 py-0.5 text-[11px] font-semibold text-accent-contrast">
+    <li className="craft-card-interactive group flex h-full w-full flex-col gap-2.5 p-3.5">
+      <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
+        <span className="craft-meta truncate text-[11px] font-medium">
           {sourceLabel}
         </span>
         <time
           dateTime={item.uploadedAt}
-          className="text-[10px] font-medium leading-tight text-muted-foreground"
+          className="craft-meta shrink-0 text-[11px] tabular-nums"
         >
           {uploaded}
         </time>
       </div>
-      <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">
-        {contextLine}
-      </p>
-      {(!isCallRecording || showCallRecordingTitle) && (
-        <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
-          {cardTitle}
-        </p>
-      )}
 
-      <div className="mt-3 flex flex-1 flex-col gap-2">
+      <div className="flex min-h-[2.75rem] min-w-0 flex-col gap-0.5">
+        {showTitle ? (
+          <p className="line-clamp-2 text-3 font-medium leading-snug tracking-tight text-foreground">
+            {cardTitle}
+          </p>
+        ) : null}
+        <p className="craft-meta line-clamp-1 leading-snug">{contextLine}</p>
+      </div>
+
+      <div className="mt-auto flex min-h-0 flex-1 flex-col gap-2">
         {isCallRecording && canOpen && openHref ? (
           <SpaceMemoryCallRecordingPlayer
             src={openHref}
@@ -618,7 +597,7 @@ export function SpaceMemoryTimelineItem({
             title={cardTitle}
             contextLine={contextLine}
             openHref={openHref}
-            thumbShellClass={THUMB_SHELL}
+            thumbShellClass={MEDIA_SHELL}
           />
         ) : canOpen ? (
           <a
@@ -628,22 +607,18 @@ export function SpaceMemoryTimelineItem({
             className={linkClass}
             aria-label={isCallRecording ? openLinkLabel : openLabel}
           >
-            <div className={cn(THUMB_SHELL, 'aspect-[16/10]')}>
-              {thumbPreview}
-            </div>
-            <span className={filenameRowClass}>
+            <div className={MEDIA_SHELL}>{thumbPreview}</div>
+            <span className={openRowClass}>
               <span>{openLinkLabel}</span>
-              <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
+              <ExternalLink className="h-3 w-3 shrink-0 opacity-50" />
             </span>
           </a>
         ) : (
           <div
-            className="flex flex-col gap-2 rounded-lg"
+            className="flex flex-1 flex-col gap-2"
             title={mxc && !canOpen ? t('spaceMemoryMatrixOpenHint') : undefined}
           >
-            <div className={cn(THUMB_SHELL, 'aspect-[16/10]')}>
-              {thumbPreview}
-            </div>
+            <div className={MEDIA_SHELL}>{thumbPreview}</div>
           </div>
         )}
       </div>

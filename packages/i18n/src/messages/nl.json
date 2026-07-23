@@ -3317,7 +3317,7 @@
     "spaceMemoryLoadMoreError": "Kan niet meer items laden. Probeer het opnieuw.",
     "spaceMemoryRetry": "Opnieuw proberen",
     "spaceMemoryRefresh": "Vernieuwen",
-    "openDocument": "Document openen",
+    "openDocument": "Openen",
     "spaceMemoryContext": "Van «{title}» · {state}",
     "spaceMemoryContextMemory": "Geheugen · «{title}»",
     "spaceMemoryContextMatrix": "Van Matrix-chat",

@@ -3319,7 +3319,7 @@
     "spaceMemoryLoadMoreError": "Could not load more items. Try again.",
     "spaceMemoryRetry": "Retry",
     "spaceMemoryRefresh": "Refresh",
-    "openDocument": "Open document",
+    "openDocument": "Open",
     "spaceMemoryContext": "From «{title}» · {state}",
     "spaceMemoryContextMemory": "Memory · «{title}»",
     "spaceMemoryContextMatrix": "From Matrix chat",

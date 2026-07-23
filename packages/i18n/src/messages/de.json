@@ -3315,7 +3315,7 @@
     "spaceMemoryLoadMoreError": "Weitere Einträge konnten nicht geladen werden. Bitte erneut versuchen.",
     "spaceMemoryRetry": "Erneut versuchen",
     "spaceMemoryRefresh": "Aktualisieren",
-    "openDocument": "Dokument öffnen",
+    "openDocument": "Öffnen",
     "spaceMemoryContext": "Aus «{title}» · {state}",
     "spaceMemoryContextMemory": "Erinnerung · «{title}»",
     "spaceMemoryContextMatrix": "Aus Matrix-Chat",

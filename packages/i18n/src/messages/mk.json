@@ -3298,7 +3298,7 @@
     "spaceMemoryLoadMoreError": "Не можеше да се вчитаат повеќе ставки. Обидете се повторно.",
     "spaceMemoryRetry": "Обиди се повторно",
     "spaceMemoryRefresh": "Освежи",
-    "openDocument": "Отвори документ",
+    "openDocument": "Отвори",
     "spaceMemoryContext": "Од «{title}» · {state}",
     "spaceMemoryContextMemory": "Меморија · «{title}»",
     "spaceMemoryContextMatrix": "Од Matrix разговор",

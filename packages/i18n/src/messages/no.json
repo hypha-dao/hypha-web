@@ -3314,7 +3314,7 @@
     "spaceMemoryLoadMoreError": "Kunne ikke laste flere elementer. Prøv igjen.",
     "spaceMemoryRetry": "Prøv igjen",
     "spaceMemoryRefresh": "Oppdater",
-    "openDocument": "Åpne dokument",
+    "openDocument": "Åpne",
     "spaceMemoryContext": "Fra «{title}» · {state}",
     "spaceMemoryContextMemory": "Minne · «{title}»",
     "spaceMemoryContextMatrix": "Fra Matrix-chat",
