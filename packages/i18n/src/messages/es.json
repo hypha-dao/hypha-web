@@ -61,7 +61,9 @@
       "fileTooLarge": "Tu imagen es demasiado grande (máx. 16 MB) y no se pudo subir. Reduce el tamaño e inténtalo de nuevo.",
       "uploadFailed": "No se pudo subir el archivo."
     },
-    "Pipeline": "Pipeline"
+    "Pipeline": "Pipeline",
+    "durationHours": "{count, plural, one {# hora} other {# horas}}",
+    "durationDays": "{count, plural, one {# día} other {# días}}"
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",
@@ -466,7 +468,8 @@
           "vaultLine": "En la bóveda: {amount} {symbol}",
           "priceLine": "Precio: {currency}{price}",
           "requestedLine": "Solicitado: {currency}{amount}"
-        }
+        },
+        "redemptionAmountLabel": "Importe de canje"
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Convertido en",
@@ -782,8 +785,8 @@
       "proposalMinimumVotingIconAlt": "Ícono de votación mínima de propuesta",
       "autoExecution": "Ejecución automática",
       "toVote": "{duration} para votar",
-      "quorumLabel": "Quórum",
-      "unityLabel": "Unidad",
+      "quorumLabel": "QUÓRUM",
+      "unityLabel": "UNIDAD",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Subir</accent> una imagen",
       "addAttachmentLabel": "Agregar archivo adjunto (JPEG, PNG, WebP o PDF, máximo 16 MB)",
@@ -1668,7 +1671,8 @@
       "title": "Transferir fondos",
       "content": "Envía fondos fácilmente desde tu billetera a un miembro o un espacio.",
       "form": {
-        "amountLabel": "Cantidad"
+        "amountLabel": "Cantidad",
+        "submitLabel": "Transferir"
       }
     },
     "redeemTokens": {
@@ -2070,7 +2074,8 @@
       "mutualCreditEligibleSpaces": "Espacios elegibles",
       "mutualCreditEligibleSpacesAdded": "Espacios elegibles añadidos",
       "mutualCreditEligibleSpacesRemoved": "Espacios elegibles eliminados",
-      "spaceLogoAlt": "Logo de {title}"
+      "spaceLogoAlt": "Logo de {title}",
+      "attachments": "Adjuntos"
     },
     "entryMethods": {
       "openAccess": "Acceso abierto",
@@ -2170,7 +2175,14 @@
     "selectReferenceCurrency": "Selecciona una moneda de referencia",
     "tokenPriceGreaterThanZero": "Introduce un precio de token mayor que 0",
     "updateTokenLabel": "Actualizar token",
-    "spaceInformationMissing": "Falta información del espacio. Inténtalo de nuevo."
+    "spaceInformationMissing": "Falta información del espacio. Inténtalo de nuevo.",
+    "voteButton": {
+      "voteNow": "Votar ahora",
+      "youVotedYes": "Votaste Sí",
+      "youVotedNo": "Votaste No",
+      "noVote": "Sin voto",
+      "confirmDecision": "Confirmar decisión"
+    }
   },
   "AiPanel": {
     "title": "Hypha AI",

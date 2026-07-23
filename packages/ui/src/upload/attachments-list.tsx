@@ -12,6 +12,8 @@ interface Attachment {
 
 interface AttachmentListProps {
   attachments: (string | Attachment)[];
+  /** Section heading; pass a translated string (defaults to English). */
+  label?: React.ReactNode;
 }
 
 function isString(variable: unknown): variable is string {
@@ -58,6 +60,7 @@ function AttachmentRowImage({ src }: { src: string }) {
 
 export const AttachmentList: React.FC<AttachmentListProps> = ({
   attachments,
+  label = 'Attachments',
 }) => {
   const renderFileIcon = (url: string, displayFileName: string) => {
     const extFromName = extensionFromFileName(displayFileName);
@@ -77,7 +80,7 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
 
   return (
     <div className="flex flex-col w-full">
-      {attachments.length > 0 && <Label>Attachments</Label>}
+      {attachments.length > 0 && <Label>{label}</Label>}
       <div className="space-y-2 mt-2 w-full">
         {attachments.map((attachment, idx) => {
           const fileName = isString(attachment)
