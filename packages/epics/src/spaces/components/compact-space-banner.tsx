@@ -39,7 +39,7 @@ const DESCRIPTION_SCROLL_BOX = cn(
   'max-md:max-h-[2lh] max-md:overflow-hidden',
   /* md+: scrollable up to four lines */
   'md:max-h-[4lh] md:overflow-y-auto md:overscroll-y-contain md:touch-pan-y',
-  'text-2 leading-[1.5]',
+  'text-2 leading-relaxed',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
@@ -131,7 +131,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         'relative overflow-hidden rounded-lg border border-border/70',
         'shadow-sm',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
-        'px-3.5 pt-3 pb-0 md:px-5 md:pt-4',
+        'px-4 pt-4 pb-0 md:px-6 md:pt-5',
         className,
       )}
       aria-label={title}
@@ -150,9 +150,9 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         </>
       )}
 
-      <div className="relative z-10 flex flex-col gap-2.5 md:gap-3">
+      <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
         {/* Row 1: avatar + title/links */}
-        <div className="flex flex-wrap items-center gap-2.5 md:items-start md:gap-3.5">
+        <div className="flex flex-wrap items-center gap-3 md:items-start md:gap-4">
           <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
               src={safeLogoSrc}
@@ -161,7 +161,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             />
           </Avatar>
 
-          <div className="min-w-0 flex-1 basis-[16rem] space-y-0.5 md:space-y-1">
+          <div className="min-w-0 flex-1 basis-[16rem] space-y-1.5 md:space-y-2">
             <h1
               className={cn(
                 COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
@@ -171,7 +171,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               {title}
             </h1>
             {safeLinks.length > 0 ? (
-              <div className="hidden flex-wrap gap-x-4 gap-y-1.5 md:flex">
+              <div className="hidden flex-wrap gap-x-5 gap-y-2 md:flex">
                 {safeLinks.map((link, index) => (
                   <a
                     key={`${link}_${index}`}
@@ -205,7 +205,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
           >
-            <p className="line-clamp-2 text-pretty text-2 font-normal leading-snug text-white/72 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
+            <p className="line-clamp-2 text-pretty text-2 font-normal leading-relaxed text-white/72 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
           </div>
@@ -218,8 +218,8 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               className="h-px w-full shrink-0 bg-white/10"
               role="presentation"
             />
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2 md:gap-2.5 md:py-2.5">
-              <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/60 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 md:gap-3 md:py-3.5">
+              <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2.5 gap-y-1 text-1 text-white/60 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
                 {footerLeading ? (
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     {footerLeading}

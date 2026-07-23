@@ -6,7 +6,8 @@
  * Contrast roles (do not conflate):
  * - `--space-accent-fg` / `--color-accent-11` — readable accent text on light surfaces
  * - `--space-accent-contrast` / `--color-accent-contrast` — text on solid accent fills
- * - `--space-accent-gradient` — accent-9 → accent-10 ramp for CTA fills + outline borders
+ * - `--space-accent-gradient` — accent-8 → 9 → 10 ramp for CTA fills + outline borders
+ *   (must span enough of the palette to read as a gradient, not a flat chip)
  */
 [data-space-accent-scope] {
   --space-tab-active-border: var(--space-accent, var(--color-accent-9));
@@ -14,12 +15,13 @@
   --space-accent-fg: var(--color-accent-11, var(--space-accent));
   --space-accent-gradient: linear-gradient(
     135deg,
-    var(--color-accent-9, var(--space-accent, var(--color-accent-9))) 0%,
+    var(--color-accent-8, var(--space-accent, var(--color-accent-9))) 0%,
+    var(--color-accent-9, var(--space-accent, var(--color-accent-9))) 48%,
     var(
         --color-accent-10,
         color-mix(
           in oklab,
-          var(--space-accent, var(--color-accent-9)) 88%,
+          var(--space-accent, var(--color-accent-9)) 82%,
           black
         )
       )
@@ -51,7 +53,7 @@
   opacity: 0.92;
 }
 
-/* Primary fills: space accent ramp (accent-9 → accent-10) */
+/* Primary fills: space accent ramp (accent-8 → 9 → 10) */
 [data-space-accent-scope] .bg-accent-9 {
   background-color: transparent !important;
   background-image: var(--space-accent-gradient) !important;
@@ -61,16 +63,17 @@
   background-color: transparent !important;
   background-image: linear-gradient(
     135deg,
+    var(--color-accent-9, var(--space-accent, var(--color-accent-9))) 0%,
     var(
         --color-accent-10,
         color-mix(
           in oklab,
-          var(--space-accent, var(--color-accent-9)) 88%,
+          var(--space-accent, var(--color-accent-9)) 82%,
           black
         )
       )
-      0%,
-    color-mix(in oklab, var(--space-accent, var(--color-accent-9)) 72%, black)
+      55%,
+    color-mix(in oklab, var(--space-accent, var(--color-accent-9)) 68%, black)
       100%
   ) !important;
 }
@@ -80,13 +83,13 @@
   color: var(--space-accent-contrast, var(--color-accent-contrast)) !important;
 }
 
-/* Solid outline colour for general accent chrome (chips, cards, tabs) */
-[data-space-accent-scope] .border-accent-9,
-[data-space-accent-scope] .border-accent-8,
-[data-space-accent-scope] .border-accent-8\/70 {
+/* Solid outline colour for general accent chrome (chips, cards) — NOT CTAs */
+[data-space-accent-scope] .border-accent-9:not(.space-accent-outline),
+[data-space-accent-scope] .border-accent-8:not(.space-accent-outline),
+[data-space-accent-scope] .border-accent-8\/70:not(.space-accent-outline) {
   border-color: color-mix(
     in oklab,
-    var(--space-accent, var(--color-accent-9)) 85%,
+    var(--space-accent, var(--color-accent-9)) 88%,
     transparent
   ) !important;
 }
@@ -104,6 +107,9 @@
  * CTA utilities — gradient fill / gradient outline (rounded-safe dual-layer).
  * Prefer these on Renew, sales, and other key accent buttons; do not paint every
  * border-accent-* surface (chips/cards keep solid borders above).
+ *
+ * Specificity must beat `[data-space-accent-scope] .border-accent-*` so the
+ * gradient border is not replaced by a flat solid.
  */
 .space-accent-fill {
   background-color: transparent;
@@ -111,24 +117,28 @@
     --space-accent-gradient,
     linear-gradient(
       135deg,
-      var(--space-accent, var(--color-accent-9)),
-      color-mix(in oklab, var(--space-accent, var(--color-accent-9)) 88%, black)
+      var(--color-accent-8, var(--space-accent, var(--color-accent-9))),
+      var(--color-accent-9, var(--space-accent, var(--color-accent-9))),
+      color-mix(in oklab, var(--space-accent, var(--color-accent-9)) 82%, black)
     )
   );
   color: var(--space-accent-contrast, var(--color-accent-contrast));
 }
 
+[data-space-accent-scope] .space-accent-outline,
 .space-accent-outline {
+  border-width: 1.5px;
   border-color: transparent !important;
   background-image: linear-gradient(#0000, #0000) padding-box,
     var(
         --space-accent-gradient,
         linear-gradient(
           135deg,
-          var(--space-accent, var(--color-accent-9)),
+          var(--color-accent-8, var(--space-accent, var(--color-accent-9))),
+          var(--color-accent-9, var(--space-accent, var(--color-accent-9))),
           color-mix(
             in oklab,
-            var(--space-accent, var(--color-accent-9)) 88%,
+            var(--space-accent, var(--color-accent-9)) 82%,
             black
           )
         )
@@ -139,8 +149,14 @@
   color: var(--space-accent-fg, var(--color-accent-11, var(--space-accent)));
 }
 
-/* Outline accent Buttons inside space scope pick up the gradient border */
-[data-space-accent-scope] button.border-accent-8 {
+/**
+ * Outline accent Buttons inside space scope pick up the gradient border.
+ * Badge CTAs (Renew, etc.) use `.space-accent-outline` above — that selector
+ * must stay more specific than the solid `.border-accent-*` rules.
+ */
+[data-space-accent-scope] button.border-accent-8,
+[data-space-accent-scope] button.border-accent-8\/70 {
+  border-width: 1.5px;
   border-color: transparent !important;
   background-image: linear-gradient(#0000, #0000) padding-box,
     var(--space-accent-gradient) border-box;
@@ -148,23 +164,25 @@
   background-clip: padding-box, border-box;
 }
 
-[data-space-accent-scope] button.border-accent-8:hover {
+[data-space-accent-scope] button.border-accent-8:hover,
+[data-space-accent-scope] button.border-accent-8\/70:hover {
   border-color: transparent !important;
   background-image: linear-gradient(#0000, #0000) padding-box,
     linear-gradient(
         135deg,
+        var(--color-accent-9, var(--space-accent, var(--color-accent-9))) 0%,
         var(
             --color-accent-10,
             color-mix(
               in oklab,
-              var(--space-accent, var(--color-accent-9)) 88%,
+              var(--space-accent, var(--color-accent-9)) 82%,
               black
             )
           )
-          0%,
+          55%,
         color-mix(
             in oklab,
-            var(--space-accent, var(--color-accent-9)) 70%,
+            var(--space-accent, var(--color-accent-9)) 68%,
             black
           )
           100%
@@ -180,15 +198,15 @@
 .bg-accent-surface-mix {
   background-color: color-mix(
     in oklab,
-    var(--color-accent-surface) 90%,
-    var(--color-accent-9) 10%
+    var(--color-accent-surface) 88%,
+    var(--color-accent-9) 12%
   );
 }
 
 [data-space-accent-scope] .bg-accent-surface-mix {
   background-color: color-mix(
     in oklab,
-    var(--color-accent-surface) 86%,
-    var(--space-accent, var(--color-accent-9)) 14%
+    var(--color-accent-surface) 82%,
+    var(--space-accent, var(--color-accent-9)) 18%
   );
 }
