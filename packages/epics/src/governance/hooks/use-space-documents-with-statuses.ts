@@ -184,18 +184,30 @@ export const useSpaceDocumentsWithStatuses = ({
       return emptyDocuments;
     }
 
-    if (!spaceProposalsIds) {
-      // Chain proposal sets not resolved (yet, or the read failed): statuses
-      // are unknown, but the documents themselves are — expose them via `all`.
-      return {
-        ...emptyDocuments,
-        all: documentsFromDb as Document[],
-      };
-    }
-
+    // Shared non-withdrawn filter used by every readiness path. While the
+    // withdrawal read is still unresolved (`withdrawnProposalsIds` undefined)
+    // nothing is filtered out yet — but the hook's `isLoading` includes
+    // `isWithdrawnLoading`, so consumers that gate on readiness never act on
+    // that intermediate state.
     const withdrawnIdsSet = new Set(
       Array.from(withdrawnProposalsIds ?? []).map((id) => id.toString()),
     );
+    const isNotWithdrawn = (doc: { web3ProposalId: number | null }) =>
+      doc.web3ProposalId == null ||
+      !withdrawnIdsSet.has(String(doc.web3ProposalId));
+
+    const allDocuments = (documentsFromDb as Document[]).filter(isNotWithdrawn);
+
+    if (!spaceProposalsIds) {
+      // Chain proposal sets not resolved (yet, or the read failed): statuses
+      // are unknown, but the documents themselves are — expose them via `all`,
+      // still excluding any known-withdrawn proposals.
+      return {
+        ...emptyDocuments,
+        all: allDocuments,
+      };
+    }
+
     const acceptedIdsSet = new Set(
       Array.from(spaceProposalsIds.accepted ?? []).map((id) => id.toString()),
     );
@@ -207,7 +219,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          isNotWithdrawn(doc) &&
           acceptedIdsSet.has(String(doc.web3ProposalId)),
       )
       .map((doc) => {
@@ -222,7 +234,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          isNotWithdrawn(doc) &&
           rejectedIdsSet.has(String(doc.web3ProposalId)),
       )
       .map((doc) => {
@@ -237,7 +249,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          isNotWithdrawn(doc) &&
           !acceptedIdsSet.has(String(doc.web3ProposalId)) &&
           !rejectedIdsSet.has(String(doc.web3ProposalId)),
       )
@@ -248,11 +260,6 @@ export const useSpaceDocumentsWithStatuses = ({
           badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
-    const allDocuments = (documentsFromDb as Document[]).filter(
-      (doc: { web3ProposalId: number | null }) =>
-        doc.web3ProposalId == null ||
-        !withdrawnIdsSet.has(String(doc.web3ProposalId)),
-    );
 
     return {
       accepted: acceptedDocuments,

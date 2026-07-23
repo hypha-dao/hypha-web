@@ -66,7 +66,11 @@ export const SelectSettingsAction = ({
   // unless every one of them was rejected (or withdrawn). Checking the raw
   // document list — rather than only chain-confirmed "accepted" documents —
   // keeps the card hidden even when the on-chain status read is unavailable.
-  const { documents: spaceDocuments } = useSpaceDocumentsWithStatuses({
+  const {
+    documents: spaceDocuments,
+    isLoading: isSpaceDocumentsLoading,
+    error: spaceDocumentsError,
+  } = useSpaceDocumentsWithStatuses({
     spaceSlug: daoSlug,
     spaceId: space?.web3SpaceId ?? undefined,
     order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
@@ -79,6 +83,13 @@ export const SelectSettingsAction = ({
   const hasEnergySharingProposal = spaceDocuments.all.some(
     (doc) => isEnergySharingDoc(doc) && !rejectedEnergySharingIds.has(doc.id),
   );
+  // While documents are loading (or the query failed) we can't know whether a
+  // sharing proposal exists — keep the card hidden rather than risk offering a
+  // duplicate Energy Sharing flow on a transiently empty list.
+  const showEnergySharingCard =
+    !isSpaceDocumentsLoading &&
+    !spaceDocumentsError &&
+    !hasEnergySharingProposal;
 
   const SETTINGS_ACTIONS = [
     {
@@ -254,7 +265,7 @@ export const SelectSettingsAction = ({
           },
         ]
       : []),
-    ...(isEnergyCommunity && !hasEnergySharingProposal
+    ...(isEnergyCommunity && showEnergySharingCard
       ? [
           {
             defaultDurationDays: 5,
