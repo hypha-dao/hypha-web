@@ -27,7 +27,7 @@ export const DocumentGrid = ({
 }: DocumentGridProps) => {
   if (isLoading && documents.length === 0) {
     return (
-      <div className="grid w-full grid-cols-1 items-start gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={`document-skeleton-${index}`} className="w-full min-h-0">
             <DocumentCard isLoading />
@@ -38,7 +38,7 @@ export const DocumentGrid = ({
   }
 
   return (
-    <div className="grid w-full grid-cols-1 items-start gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {documents.map((document) => (
         <Link
           href={`${basePath}/${document.slug}`}
