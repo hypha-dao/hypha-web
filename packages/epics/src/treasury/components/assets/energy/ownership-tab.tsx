@@ -211,7 +211,7 @@ const OwnerEarningsRow = ({
   const [expanded, setExpanded] = React.useState(false);
 
   return (
-    <div className="rounded-xl border border-border bg-background-2">
+    <div className="craft-card">
       <button
         type="button"
         className="flex w-full items-center gap-3 p-3 text-left"

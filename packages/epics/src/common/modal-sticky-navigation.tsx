@@ -114,7 +114,7 @@ export function ModalStickyNavigation({
   return (
     <div
       className={cn(
-        'sticky top-0 z-[5] -mx-4 mb-4 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7',
+        'sticky top-0 z-[5] -mx-4 mb-4 border-b border-border bg-background-2 lg:-mx-7',
         className,
       )}
     >

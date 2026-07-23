@@ -73,7 +73,7 @@ export function SignalLinkedCalendarEvents({
   });
 
   return (
-    <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+    <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-foreground">

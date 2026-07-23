@@ -3,6 +3,7 @@
 import {
   ProposalDetail,
   ProposalOverlayShell,
+  resolveInviteLeadImage,
   useSpaceDocumentsWithStatuses,
   PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   useDbTokens,
@@ -22,7 +23,7 @@ import {
   extractRevertReason,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop, Button } from '@hypha-platform/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 function parseRevertReason(
@@ -92,6 +93,16 @@ export default function Agreements() {
     order: PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   });
   const { tokens } = useDbTokens();
+  const proposalLeadImage = useMemo(
+    () =>
+      resolveInviteLeadImage({
+        leadImage: document?.leadImage,
+        label: document?.label,
+        title: document?.title,
+        spaceLeadImage: space?.leadImage,
+      }),
+    [document?.leadImage, document?.label, document?.title, space?.leadImage],
+  );
   const [isVoting, setIsVoting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [voteMessage, setVoteMessage] = useState(
@@ -210,7 +221,7 @@ export default function Agreements() {
           title={document?.title}
           status={document?.state}
           isLoading={isLoading || isProposalDataPending}
-          leadImage={document?.leadImage}
+          leadImage={proposalLeadImage}
           attachments={document?.attachments}
           proposalId={document?.web3ProposalId}
           web3SpaceId={space?.web3SpaceId ?? undefined}

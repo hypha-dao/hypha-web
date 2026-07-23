@@ -296,6 +296,8 @@ export const SpaceEscrowDepositBanner = ({
         <Button
           onClick={handleClick}
           disabled={isCreatingDepositProposal || isWaitingReceipt}
+          variant="outline"
+          colorVariant="accent"
           className="w-full lg:w-fit text-wrap justify-center"
         >
           {(isCreatingDepositProposal || isWaitingReceipt) && (

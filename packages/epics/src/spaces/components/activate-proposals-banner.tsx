@@ -78,7 +78,12 @@ export const ActivateProposalsBanner = ({
         <span className={cn('text-2', 'text-foreground')}>
           {dict.banners.activateProposals.subtitle}
         </span>
-        <Button onClick={handleAction} className="w-fit">
+        <Button
+          onClick={handleAction}
+          variant="outline"
+          colorVariant="accent"
+          className="space-accent-outline w-fit"
+        >
           {dict.banners.activateProposals.buttonText}
         </Button>
       </div>

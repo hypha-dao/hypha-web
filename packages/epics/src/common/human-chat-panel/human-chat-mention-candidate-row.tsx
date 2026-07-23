@@ -1,7 +1,7 @@
 'use client';
 
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';

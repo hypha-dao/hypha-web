@@ -8,6 +8,8 @@ import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
+import { PersonAvatar } from '../../people/components/person-avatar';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
 type ConfirmationActionResult = {
@@ -48,6 +50,11 @@ type AiPanelMessageBubbleProps = {
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
   suppressWalletSignaturePrompt?: boolean;
+  /** Signed-in Hypha profile photo for user bubbles. */
+  userAvatarUrl?: string | null;
+  userDisplayName?: string | null;
+  /** Space logo (or other brand mark) for assistant bubbles — not letter initials. */
+  assistantAvatarUrl?: string | null;
 };
 
 type OlListItem = {
@@ -150,7 +157,7 @@ function renderVisualAssetsCard(output: unknown) {
   if (!logoUrl && !bannerUrl) return null;
 
   return (
-    <div className="rounded-xl border border-border/70 bg-background/80 px-3 py-3 text-xs shadow-sm">
+    <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-3 text-xs shadow-sm">
       <div className="font-semibold text-foreground">Generated visuals</div>
       <div className="mt-3 flex flex-wrap items-start gap-4">
         {logoUrl ? (
@@ -161,7 +168,7 @@ function renderVisualAssetsCard(output: unknown) {
             <img
               src={logoUrl}
               alt="Generated space logo"
-              className="h-24 w-24 rounded-xl border border-border/60 object-cover shadow-sm"
+              className="h-24 w-24 rounded-lg border border-border/60 object-cover shadow-sm"
             />
           </div>
         ) : null}
@@ -173,7 +180,7 @@ function renderVisualAssetsCard(output: unknown) {
             <img
               src={bannerUrl}
               alt="Generated space banner"
-              className="max-h-36 w-full max-w-md rounded-xl border border-border/60 object-cover shadow-sm"
+              className="max-h-36 w-full max-w-md rounded-lg border border-border/60 object-cover shadow-sm"
             />
           </div>
         ) : null}
@@ -524,18 +531,27 @@ export function AiPanelMessageBubble({
   isStreaming,
   onActionReplySelect,
   suppressWalletSignaturePrompt = false,
+  userAvatarUrl,
+  userDisplayName,
+  assistantAvatarUrl,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
   const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [assistantImageFailed, setAssistantImageFailed] = useState(false);
+  const assistantAvatarSrc = assistantAvatarUrl?.trim() || null;
 
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    setAssistantImageFailed(false);
+  }, [assistantAvatarSrc]);
 
   const isUser = message.role === 'user';
   const textParts =
@@ -729,7 +745,7 @@ export function AiPanelMessageBubble({
       const hasQuickActions =
         Boolean(confirmationToken) && Boolean(onActionReplySelect);
       return (
-        <div className="rounded-xl border border-accent-8/55 bg-accent-3/30 px-3 py-3 text-xs shadow-[0_8px_22px_-18px_rgba(0,0,0,0.7)]">
+        <div className="rounded-lg border border-accent-8/55 bg-accent-3/30 px-3 py-3 text-xs shadow-sm">
           <div className="font-semibold text-accent-11">
             {t('pendingAction')}
           </div>
@@ -808,32 +824,62 @@ export function AiPanelMessageBubble({
   return (
     <div
       className={cn(
-        'flex gap-2',
+        // Top-align avatar + bubble so photo intrinsic size / stretch cannot
+        // inflate the message row (and the filled bubble) vertically.
+        'flex items-start gap-2',
         isUser && 'flex-row-reverse',
         isSingleLineAssistantText && 'items-center',
       )}
     >
-      {!isUser && (
+      {isUser ? (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary',
+            'mt-0.5 h-7 w-7 shrink-0 self-start overflow-hidden',
+            APP_CHROME_SUBTLE_SQUARE_RADIUS,
+          )}
+        >
+          <PersonAvatar
+            size="sm"
+            avatarSrc={userAvatarUrl?.trim() || undefined}
+            userName={userDisplayName?.trim() || undefined}
+            className={cn('h-full w-full', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
+          />
+        </div>
+      ) : (
+        <div
+          className={cn(
+            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden border border-border/60 bg-muted/25',
+            APP_CHROME_SUBTLE_SQUARE_RADIUS,
             isSingleLineAssistantText ? 'mt-0' : 'mt-0.5',
           )}
         >
-          <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+          {assistantAvatarSrc && !assistantImageFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN
+            <img
+              src={assistantAvatarSrc}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={() => setAssistantImageFailed(true)}
+            />
+          ) : (
+            <Sparkles className="craft-icon-sm text-muted-foreground" />
+          )}
         </div>
       )}
       <div
-        className={cn('group max-w-[85%]', isUser && 'flex flex-col items-end')}
+        className={cn(
+          'group max-w-[85%] min-w-0',
+          isUser && 'flex flex-col items-end',
+        )}
       >
         <div
           className={cn(
-            'flex flex-col gap-1 rounded-2xl px-3 py-2 text-sm leading-snug',
+            // Asymmetric chat silhouette: three rounded + one sharp toward the
+            // speaker. inline-flex + w-fit keeps the fill hugging copy.
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-xl px-2.5 py-1.5 text-sm leading-snug',
             isUser
-              ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
-              : isTypingOnly
-              ? 'rounded-tl-sm border border-border/70 bg-background/70 px-3 py-2 text-foreground shadow-sm'
-              : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
+              ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_40%,transparent)] bg-[color:var(--space-accent,var(--color-accent-9))] text-[color:var(--space-accent-contrast,var(--color-accent-contrast))]'
+              : 'rounded-tl-none border border-border/70 bg-muted/45 text-foreground',
           )}
         >
           {!isUser && mobilizedAgents.length > 0 ? (
@@ -843,10 +889,10 @@ export function AiPanelMessageBubble({
             />
           ) : null}
           {hasVisibleText && (
-            <div className="flex flex-col gap-1">
+            <div className="flex h-fit w-full min-w-0 flex-col gap-1">
               <div
                 className={cn(
-                  'space-y-0.5 break-words text-[14px] leading-5',
+                  'space-y-0.5 break-words text-[14px] leading-snug [&_p]:m-0',
                   showExpandToggle && !expanded && 'line-clamp-8',
                 )}
               >
@@ -856,11 +902,14 @@ export function AiPanelMessageBubble({
                       <div
                         key={`${message.id}-heading-${index}`}
                         className={cn(
-                          'font-semibold tracking-tight text-foreground',
+                          'font-semibold tracking-tight',
+                          isUser ? 'text-inherit' : 'text-foreground',
                           block.level === 1 && 'text-lg',
                           block.level === 2 && 'text-base',
                           block.level >= 3 &&
-                            'text-sm uppercase text-muted-foreground',
+                            (isUser
+                              ? 'text-sm uppercase opacity-90'
+                              : 'text-sm uppercase text-muted-foreground'),
                         )}
                       >
                         {renderInlineMarkdown(block.text)}
@@ -871,7 +920,10 @@ export function AiPanelMessageBubble({
                     return (
                       <ul
                         key={`${message.id}-ul-${index}`}
-                        className="space-y-0.5 pl-4 text-foreground"
+                        className={cn(
+                          'space-y-0.5 pl-4',
+                          isUser ? 'text-inherit' : 'text-foreground',
+                        )}
                       >
                         {block.items.map((item, itemIndex) => (
                           <li
@@ -888,7 +940,10 @@ export function AiPanelMessageBubble({
                     return (
                       <ol
                         key={`${message.id}-ol-${index}`}
-                        className="space-y-0.5 pl-4 text-foreground"
+                        className={cn(
+                          'space-y-0.5 pl-4',
+                          isUser ? 'text-inherit' : 'text-foreground',
+                        )}
                       >
                         {block.items.map((item, itemIndex) => (
                           <li
@@ -918,7 +973,7 @@ export function AiPanelMessageBubble({
                   return (
                     <p
                       key={`${message.id}-p-${index}`}
-                      className="text-foreground/95"
+                      className={isUser ? 'text-inherit' : 'text-foreground/95'}
                     >
                       {renderInlineMarkdown(block.lines.join(' '))}
                     </p>
@@ -990,7 +1045,7 @@ export function AiPanelMessageBubble({
             </div>
           )}
           {walletSignaturePending && !suppressWalletSignaturePrompt ? (
-            <div className="rounded-xl border border-accent-8/40 bg-accent-2/40 px-3 py-2 text-xs text-foreground">
+            <div className="rounded-lg border border-accent-8/40 bg-accent-2/40 px-3 py-2 text-xs text-foreground">
               {t('walletSignaturePending')}
             </div>
           ) : null}
@@ -998,13 +1053,12 @@ export function AiPanelMessageBubble({
             <span
               className={cn(
                 'inline-flex items-center gap-0.5',
-                isTypingOnly && 'rounded-full bg-muted/70 px-2 py-1',
                 !isTypingOnly && 'ml-1',
               )}
             >
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:0.2s]" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:0.4s]" />
             </span>
           )}
         </div>

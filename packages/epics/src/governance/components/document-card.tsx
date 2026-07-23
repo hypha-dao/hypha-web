@@ -11,7 +11,11 @@ import { Image } from '@hypha-platform/ui';
 import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
-import { stripMarkdown } from '@hypha-platform/ui-utils';
+import {
+  cn,
+  LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+  stripMarkdown,
+} from '@hypha-platform/ui-utils';
 import {
   DocumentStatus,
   stripHyphaInvestmentFormMarker,
@@ -21,6 +25,9 @@ import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block
 import { stripEnergyProposalMarker } from '../utils/energy-proposal-markers';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
+
+/** Compact lead strip — tall enough to read as media, short enough for dense grids. */
+const LEAD_IMAGE_HEIGHT_PX = 80;
 
 interface Document {
   id?: number;
@@ -131,14 +138,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
       return '';
     }
 
-    return format.dateTime(parsedDate, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
+    return format.dateTime(parsedDate, LOCAL_DATE_SHORT_FORMAT_OPTIONS);
   };
   const type = React.useMemo(() => {
     switch (status) {
@@ -157,56 +157,70 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   });
   const event = !isLoadingEvents && events instanceof Array ? events[0] : null;
   return (
-    <Card className="h-full w-full space-y-5">
-      <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
+    <Card
+      className={cn('craft-card-interactive group flex h-full w-full flex-col')}
+    >
+      <CardHeader
+        className="flex-shrink-0 overflow-hidden rounded-tl-lg rounded-tr-lg p-0"
+        style={{ height: LEAD_IMAGE_HEIGHT_PX }}
+      >
         <Skeleton
           loading={isLoading}
-          className="min-w-full"
-          height="150px"
+          className="h-full min-w-full"
+          height={`${LEAD_IMAGE_HEIGHT_PX}px`}
           width="250px"
         >
           <Image
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+            className="h-full w-full rounded-tl-lg rounded-tr-lg object-cover"
             src={leadImage || '/placeholder/document-lead-image.webp'}
             alt={title || ''}
             width={250}
-            height={150}
+            height={LEAD_IMAGE_HEIGHT_PX}
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="relative space-y-4">
-        <div className="flex flex-col items-start space-y-2">
-          <BadgesList isLoading={isLoading} badges={badges ?? []} />
+      <CardContent className="relative flex flex-1 flex-col gap-2 p-3.5 pt-3">
+        <div className="flex min-w-0 flex-col items-start gap-1">
+          {(badges?.length ?? 0) > 0 || isLoading ? (
+            <BadgesList
+              isLoading={isLoading}
+              badges={(badges ?? []).slice(0, 2)}
+            />
+          ) : null}
           <Skeleton
             className="min-w-full"
             width="120px"
             height="18px"
             loading={isLoading}
           >
-            <CardTitle>{title}</CardTitle>
+            <CardTitle className="line-clamp-2 text-3 font-medium tracking-tight">
+              {title}
+            </CardTitle>
           </Skeleton>
           <PersonLabel isLoading={isLoading} creator={creator} />
         </div>
-        <div className="flex flex-grow text-1 text-neutral-11">
-          <Skeleton
-            className="min-w-full"
-            width="200px"
-            height="48px"
-            loading={isLoading}
-          >
-            <div className="line-clamp-3 w-full">
-              {stripMarkdown(stripDescription(description ?? ''), {
-                orderedListMarkers: false,
-                unorderedListMarkers: false,
-              })}
-            </div>
-          </Skeleton>
+        <div className="min-h-4">
+          {description ? (
+            <Skeleton
+              className="min-w-full"
+              width="200px"
+              height="16px"
+              loading={isLoading}
+            >
+              <p className="craft-meta line-clamp-1 w-full">
+                {stripMarkdown(stripDescription(description ?? ''), {
+                  orderedListMarkers: false,
+                  unorderedListMarkers: false,
+                })}
+              </p>
+            </Skeleton>
+          ) : null}
         </div>
-        <div className="flex flex-grow text-1 text-neutral-11">
+        <div className="craft-meta min-h-4">
           <Skeleton
             className="min-w-full"
-            width="200px"
-            height="48px"
+            width="160px"
+            height="16px"
             loading={isLoading || isLoadingEvents}
           >
             {type === 'executeProposal' && event && (
@@ -232,7 +246,9 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             )}
           </Skeleton>
         </div>
-        {interactions}
+        {interactions ? (
+          <div className="mt-auto pt-1">{interactions}</div>
+        ) : null}
       </CardContent>
     </Card>
   );

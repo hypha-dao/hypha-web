@@ -1,10 +1,13 @@
 import { Order, Document } from '@hypha-platform/core/client';
 import { DocumentGrid } from './document-grid';
 import { VoteProposalButton } from './vote-proposal-button';
+import { resolveInviteLeadImage } from '../utils/resolve-invite-lead-image';
 
 type DocumentGridContainerProps = {
   basePath: string;
   web3SpaceId: number;
+  /** Hosting space banner — used when Invite docs have no leadImage. */
+  spaceLeadImage?: string | null;
   pagination: {
     page: number;
     firstPageSize: number;
@@ -19,6 +22,7 @@ type DocumentGridContainerProps = {
 export const DocumentGridContainer = ({
   basePath,
   web3SpaceId,
+  spaceLeadImage,
   pagination,
   documents,
   isLoading = false,
@@ -35,6 +39,13 @@ export const DocumentGridContainer = ({
     <DocumentGrid
       documents={paginatedDocuments.map((doc) => ({
         ...doc,
+        leadImage:
+          resolveInviteLeadImage({
+            leadImage: doc.leadImage,
+            label: doc.label,
+            title: doc.title,
+            spaceLeadImage,
+          }) ?? doc.leadImage,
         interactions:
           doc && doc.web3ProposalId ? (
             <VoteProposalButton

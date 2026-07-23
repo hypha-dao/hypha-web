@@ -31,9 +31,9 @@ function SkeletonCard({ delayMs = 0 }: { delayMs?: number }) {
       <div className="h-3 w-3/4 rounded bg-muted" />
       <div className="mt-2 h-3 w-1/2 rounded bg-muted/80" />
       <div className="mt-4 flex items-center gap-2">
-        <div className="h-5 w-14 rounded-full bg-muted/80" />
-        <div className="h-5 w-9 rounded-full bg-muted/60" />
-        <div className="ml-auto h-5 w-5 rounded-full bg-muted/80" />
+        <div className="h-5 w-14 rounded-md bg-muted/80" />
+        <div className="h-5 w-9 rounded-md bg-muted/60" />
+        <div className="ml-auto h-5 w-5 rounded-md bg-muted/80" />
       </div>
     </div>
   );
@@ -58,7 +58,7 @@ export function SignalSectionSkeleton({
           {[0, 1, 2, 3].map((column) => (
             <div
               key={column}
-              className="flex min-w-0 flex-1 flex-col gap-2 rounded-xl border border-border/50 bg-muted/10 p-2"
+              className="flex min-w-0 flex-1 flex-col gap-2 rounded-lg border border-border/50 bg-muted/10 p-2"
             >
               <SkeletonBlock className="h-6 w-24" delayMs={column * 120} />
               {Array.from({ length: 3 - (column % 2) }, (_, card) => (
@@ -72,7 +72,7 @@ export function SignalSectionSkeleton({
           {[0, 1, 2].map((lane) => (
             <div
               key={lane}
-              className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/10 p-2"
+              className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/10 p-2"
             >
               <SkeletonBlock className="h-6 w-32" delayMs={lane * 140} />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">

@@ -14,7 +14,7 @@ import { AnimatedSourceIcon } from './animated-source-icons';
 export const GridOperatorCard = ({ right }: { right?: React.ReactNode }) => {
   const t = useTranslations('Energy.shared');
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
+    <div className="craft-card flex items-center gap-3 p-3">
       <span
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
         style={{
@@ -25,12 +25,10 @@ export const GridOperatorCard = ({ right }: { right?: React.ReactNode }) => {
         <UtilityPoleIcon className="h-5 w-5" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground">
+        <p className="truncate text-2 font-medium tracking-tight text-foreground">
           {t('gridOperatorName')}
         </p>
-        <p className="truncate text-1 text-neutral-11">
-          {t('gridOperatorSubtitle')}
-        </p>
+        <p className="craft-meta truncate">{t('gridOperatorSubtitle')}</p>
       </div>
       {right ? <div className="shrink-0 text-right">{right}</div> : null}
     </div>
@@ -50,21 +48,23 @@ export const StatCard = ({
   accent?: string;
   icon?: React.ReactNode;
 }) => (
-  <div className="relative overflow-hidden rounded-xl border border-border bg-background-2 p-4">
+  <div className="craft-card relative overflow-hidden p-3.5">
     <span
       className="absolute inset-x-0 top-0 h-0.5"
       style={{ backgroundColor: accent }}
     />
     <div className="flex items-start justify-between gap-2">
-      <p className="text-1 text-neutral-11">{label}</p>
+      <p className="craft-meta">{label}</p>
       {icon ? (
         <span style={{ color: accent }} className="opacity-80">
           {icon}
         </span>
       ) : null}
     </div>
-    <p className="mt-1 text-5 font-semibold text-foreground">{value}</p>
-    {hint ? <p className="mt-0.5 text-1 text-neutral-11">{hint}</p> : null}
+    <p className="mt-1 text-4 font-semibold tracking-tight text-foreground">
+      {value}
+    </p>
+    {hint ? <p className="craft-meta mt-0.5">{hint}</p> : null}
   </div>
 );
 
@@ -89,7 +89,7 @@ export const EnergyPersonCard = ({
     displayNameProp ?? personDisplayName(person) ?? shortAddr(address);
   const avatarSrc = avatarUrlProp ?? person?.avatarUrl ?? undefined;
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
+    <div className="craft-card flex items-center gap-3 p-3">
       <PersonAvatar
         avatarSrc={avatarSrc}
         userName={name}
@@ -98,9 +98,11 @@ export const EnergyPersonCard = ({
         isLoading={isLoading}
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground">{name}</p>
+        <p className="truncate text-2 font-medium tracking-tight text-foreground">
+          {name}
+        </p>
         {subtitle ?? (
-          <p className="truncate text-1 text-neutral-11">
+          <p className="craft-meta truncate">
             {person?.nickname ? `@${person.nickname}` : shortAddr(address)}
           </p>
         )}
@@ -131,21 +133,23 @@ export const SourceCard = ({
       ? t('sourceTypeBattery')
       : type;
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3">
+    <div className="craft-card flex items-center gap-3 p-3">
       <AnimatedSourceIcon type={type} accent={accent} />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground">{label}</p>
-        <p className="text-1 text-neutral-11">{typeLabel}</p>
+        <p className="truncate text-2 font-medium tracking-tight text-foreground">
+          {label}
+        </p>
+        <p className="craft-meta">{typeLabel}</p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-1 text-neutral-11">{t('basePerKwh')}</p>
-        <p className="font-medium text-foreground">{basePrice}</p>
+        <p className="craft-meta">{t('basePerKwh')}</p>
+        <p className="text-2 font-medium text-foreground">{basePrice}</p>
         <span
           className={cn(
-            'mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
+            'mt-0.5 inline-block rounded-md border border-border/70 px-1.5 py-0.5 text-[10px] font-medium',
             active
               ? 'bg-success-3 text-success-11'
-              : 'bg-neutral-3 text-neutral-11',
+              : 'bg-muted/40 text-muted-foreground',
           )}
         >
           {active ? t('active') : t('inactive')}

@@ -22,7 +22,7 @@ export default async function CalendarPage(props: PageProps) {
       spaceId={spaceFromDb.web3SpaceId ?? undefined}
       spaceSlug={id}
     >
-      <div className="flex flex-col gap-4 py-4">
+      <div className="flex flex-col py-2">
         <SpaceCalendar
           spaceSlug={id}
           spaceId={spaceFromDb.id}

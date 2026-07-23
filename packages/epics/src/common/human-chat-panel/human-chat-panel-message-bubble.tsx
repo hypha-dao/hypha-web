@@ -38,7 +38,7 @@ import {
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import {
@@ -1227,7 +1227,7 @@ const chatBodyLinkClass =
 
 /** Discord-style compact chip for Hypha chat deep links (short `?msg=` URLs). */
 const chatDeepLinkPillClass =
-  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-indigo-100 px-2 py-0.5 text-[13px] font-semibold leading-snug text-indigo-950 ring-1 ring-inset ring-indigo-300/40 dark:bg-indigo-950/50 dark:text-indigo-50 dark:ring-indigo-400/25';
+  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-accent-3 px-2 py-0.5 text-[13px] font-semibold leading-snug text-accent-12 ring-1 ring-inset ring-accent-8/40 dark:bg-accent-3/50 dark:text-accent-12 dark:ring-accent-8/25';
 
 function shortMatrixEventLabel(id: string): string {
   const t = id.trim();
@@ -1677,9 +1677,9 @@ export function HumanChatPanelMessageBubble({
   const senderName = resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
   const mainAvatarSrc =
-    message.role === 'member' && senderPerson?.avatarUrl
-      ? senderPerson.avatarUrl
-      : message.avatarUrl;
+    message.role === 'user'
+      ? currentUserAvatarUrl?.trim() || message.avatarUrl
+      : senderPerson?.avatarUrl?.trim() || message.avatarUrl;
   const replyHeaderAvatarResolved =
     replyTo &&
     currentUserId &&
@@ -1866,7 +1866,7 @@ export function HumanChatPanelMessageBubble({
               aria-live="polite"
               aria-busy="true"
               data-testid="chat-message-send-pending"
-              className="relative mt-1.5 max-w-md overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/30 shadow-sm"
+              className="relative mt-1.5 max-w-md overflow-hidden rounded-lg border border-border bg-gradient-to-b from-card to-muted/30 shadow-sm"
             >
               {onCancelSendPending && (
                 <button

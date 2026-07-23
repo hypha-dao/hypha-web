@@ -1,10 +1,10 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { Lato, Source_Sans_3 } from 'next/font/google';
-import clsx from 'clsx';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+
+import { hyphaFontVariables } from '@web/lib/hypha-fonts';
 
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
@@ -47,20 +47,6 @@ import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
-
-const lato = Lato({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['900', '700', '400', '300'],
-  variable: '--font-heading',
-});
-
-const sourceSans = Source_Sans_3({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['900', '700', '400', '300'],
-  variable: '--font-body',
-});
 
 export const metadata: Metadata = {
   title: 'Hypha',
@@ -233,7 +219,7 @@ export default async function RootLayout({
   }
 
   return (
-    <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
+    <Html lang={locale} className={hyphaFontVariables}>
       <ScrollUp />
       <SeamlessScrollPolyfill />
       <AuthProvider
@@ -288,7 +274,7 @@ export default async function RootLayout({
                               closeMenuLabel={navCloseMenuLabel}
                               leadingAction={
                                 aiChatEnabled ? (
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1.5 sm:gap-2">
                                     <div className="md:hidden">
                                       <AiSidebarTrigger />
                                     </div>

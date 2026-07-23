@@ -784,12 +784,7 @@ function toUIMessage(
       replyAuthorId === currentUserId &&
       currentUserAvatarUrl
         ? currentUserAvatarUrl
-        : matrixMemberAvatarSquare(
-            clientForAvatars ?? null,
-            roomIdForAvatars ?? null,
-            replyAuthorId,
-            64,
-          ) ?? resolveAvatarForUser(replyAuthorId);
+        : resolveAvatarForUser(replyAuthorId);
     replyTo = {
       authorLabel,
       excerpt,
@@ -1661,6 +1656,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return m;
   }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId, t]);
 
+  /** Hypha profile photos keyed by Matrix MXID — preferred over Matrix MXC avatars in the timeline. */
+  const matrixUserIdToPersonAvatar = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of spaceMembers) {
+      const url = p.avatarUrl?.trim();
+      if (!url) continue;
+      let mxid = personIdToMatrixUserId[p.id]?.trim();
+      if (!mxid) {
+        const sub = p.sub?.trim();
+        if (sub) mxid = subToMatrixUserId[sub]?.trim();
+      }
+      if (!mxid) continue;
+      m.set(mxid, url);
+    }
+    return m;
+  }, [spaceMembers, personIdToMatrixUserId, subToMatrixUserId]);
+
   /** Fallback roster lookup using Matrix localpart == Privy sub (same `useMembers` roster source as chat Members tab). */
   const personLabelByPrivySub = useMemo(() => {
     const m = new Map<string, string>();
@@ -1671,6 +1683,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     return m;
   }, [spaceMembers, t]);
+
+  const personAvatarByPrivySub = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of spaceMembers) {
+      const sub = p.sub?.trim();
+      const url = p.avatarUrl?.trim();
+      if (!sub || !url) continue;
+      m.set(sub, url);
+    }
+    return m;
+  }, [spaceMembers]);
 
   const matrixLocalpartToPrivySub = useCallback(
     (userId: string): string | null => {
@@ -1723,6 +1746,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       personLabelByPrivySub,
       roomId,
       t,
+    ],
+  );
+
+  /** Hypha `Person.avatarUrl` first — Matrix MXC is only a fallback in `toUIMessage`. */
+  const resolveMemberAvatar = useCallback(
+    (userId: string | undefined) => {
+      if (!userId) return undefined;
+      if (currentUserId && userId === currentUserId) {
+        return currentUserAvatarUrl?.trim() || undefined;
+      }
+      const fromRoster = matrixUserIdToPersonAvatar.get(userId)?.trim();
+      if (fromRoster) return fromRoster;
+      const localpartSub = matrixLocalpartToPrivySub(userId);
+      if (localpartSub) {
+        const bySub = personAvatarByPrivySub.get(localpartSub)?.trim();
+        if (bySub) return bySub;
+      }
+      return undefined;
+    },
+    [
+      currentUserAvatarUrl,
+      currentUserId,
+      matrixLocalpartToPrivySub,
+      matrixUserIdToPersonAvatar,
+      personAvatarByPrivySub,
     ],
   );
 
@@ -2020,7 +2068,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           currentUserIdRef.current,
           resolveMemberLabelRef.current,
           currentUserAvatarUrlRef.current,
-          undefined,
+          resolveMemberAvatarRef.current,
           targetRoomId,
           matrixRef.current.client ?? null,
           formatSignalTeamNoticeRef.current,
@@ -2348,6 +2396,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
+  const resolveMemberAvatarRef = useRef(resolveMemberAvatar);
+  resolveMemberAvatarRef.current = resolveMemberAvatar;
   const formatSignalTeamNotice = useMemo(
     () => createSignalTeamNoticeFormatter(t),
     [t],
@@ -2382,12 +2432,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         } else if (m.role === 'member' && sid) {
           newSenderName = resolveMemberLabelRef.current(sid);
           nextMemberAvatar =
+            resolveMemberAvatarRef.current(sid) ??
             matrixMemberAvatarSquare(
               matrixClientRef.current,
               roomIdRef.current,
               sid,
               96,
-            ) ?? m.avatarUrl;
+            ) ??
+            m.avatarUrl;
         }
 
         const newAuthorLabel =
@@ -2405,12 +2457,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   m.replyTo.sourceUserId === currentUserIdRef.current &&
                   currentUserAvatarUrlRef.current
                     ? currentUserAvatarUrlRef.current
-                    : matrixMemberAvatarSquare(
+                    : resolveMemberAvatarRef.current(m.replyTo.sourceUserId) ??
+                      matrixMemberAvatarSquare(
                         matrixClientRef.current,
                         roomIdRef.current,
                         m.replyTo.sourceUserId,
                         64,
-                      ) ?? m.replyTo.authorAvatarUrl,
+                      ) ??
+                      m.replyTo.authorAvatarUrl,
               }
             : m.replyTo;
 
@@ -2441,6 +2495,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     currentUserId,
     currentUserAvatarUrl,
     matrixUserIdToPersonLabel,
+    matrixUserIdToPersonAvatar,
     matrixProfileLabelByUserId,
     subToMatrixUserId,
     memberLabelEpoch,
@@ -2646,7 +2701,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
-                undefined,
+                resolveMemberAvatarRef.current,
                 targetRoomId,
                 matrixRef.current.client ?? null,
                 formatSignalTeamNoticeRef.current,
@@ -2839,7 +2894,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
-                undefined,
+                resolveMemberAvatarRef.current,
                 targetRoomId,
                 matrixRef.current.client ?? null,
                 formatSignalTeamNoticeRef.current,
@@ -2906,7 +2961,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               currentUserIdRef.current,
               resolveMemberLabelRef.current,
               currentUserAvatarUrlRef.current,
-              undefined,
+              resolveMemberAvatarRef.current,
               roomId,
               matrixRef.current.client ?? null,
               formatSignalTeamNoticeRef.current,
@@ -4796,7 +4851,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 bg-background-2 p-0">
-            <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
+            <div className="rounded-t-lg border border-border/60 border-b-0 bg-card/35 shadow-sm backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:supports-[backdrop-filter]:bg-card/35">
               <HumanChatPanelChatBar
                 value={input}
                 onChange={setInput}

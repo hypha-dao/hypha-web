@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 import { feature } from 'topojson-client';
 
-export const GEO_LAND_URL = '/geo/land-110m.json';
+/** Natural Earth 50m — cleaner coasts than 110m without 10m payload weight. */
+export const GEO_LAND_URL = '/geo/land-50m.json';
 
 type LandTopology = Parameters<typeof feature>[0] & {
   objects: { land: Parameters<typeof feature>[1] };

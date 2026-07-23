@@ -32,7 +32,6 @@ import { Badge, Heading, Separator, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { cva } from 'class-variance-authority';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { readClientSearchParams } from '../read-client-search-params';
@@ -158,6 +157,7 @@ export function ExploreSpaces({
     useFilterSpacesListWithDiscoverability({
       spaces: categoryFilteredSpaces,
       useGeneralState: true,
+      excludeSpaceLevelFromNetwork: true,
     });
 
   // Discoverability is resolved on-chain, so the filtered set (and therefore the
@@ -254,26 +254,6 @@ export function ExploreSpaces({
     [pathname],
   );
 
-  const multiSelectVariants = cva(
-    'transition ease-in-out delay-150 duration-300 max-sm:hover:translate-y-0 max-sm:hover:scale-100 sm:hover:-translate-y-1 sm:hover:scale-110',
-    {
-      variants: {
-        variant: {
-          default:
-            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
-          secondary:
-            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          destructive:
-            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-          inverted: 'inverted',
-        },
-      },
-      defaultVariants: {
-        variant: 'default',
-      },
-    },
-  );
-
   const sortedSpaces = React.useMemo(
     () => sortSpacesByOrder(selectedSpaces, order ?? 'mostmembers'),
     [selectedSpaces, order],
@@ -300,7 +280,7 @@ export function ExploreSpaces({
 
   const renderMapToolbar = React.useCallback(
     (layerControls: React.ReactNode) => (
-      <div className="mb-4 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+      <div className="mb-3 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
         <div className="min-w-0 w-full sm:flex-1">{layerControls}</div>
         <NetworkAddLocationButton
           lang={lang}
@@ -308,7 +288,7 @@ export function ExploreSpaces({
           isAuthenticated={isAuthenticated}
           className={cn(
             spaceToolbarPrimaryButtonClassName,
-            'w-fit shrink-0 self-start sm:self-auto',
+            'w-fit shrink-0 self-start border-border bg-background shadow-none hover:bg-muted/15 sm:self-auto',
           )}
         />
       </div>
@@ -323,13 +303,14 @@ export function ExploreSpaces({
         return (
           <Badge
             key={tag.id}
+            variant="outline"
+            colorVariant={isSelected ? 'accent' : 'neutral'}
+            size={1}
             className={cn(
-              'shrink-0',
-              multiSelectVariants({
-                variant: isSelected ? 'secondary' : 'default',
-              }),
+              'craft-chip craft-chip-interactive shrink-0 cursor-pointer',
+              isSelected &&
+                'border-accent-8/55 bg-accent-2/35 text-foreground hover:bg-accent-3/40',
             )}
-            style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
               const nextCategoryGroups = isSelected ? [] : [tag.id];
               setCategoryGroups(nextCategoryGroups);
@@ -448,45 +429,47 @@ export function ExploreSpaces({
   );
 
   return (
-    <div className="flex min-w-0 flex-col">
+    <div className="flex min-w-0 flex-col gap-9">
       <Heading
         size="9"
         color="secondary"
         weight="medium"
         align="center"
-        className="mb-6 flex flex-col sm:mb-8"
+        className="flex flex-col"
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>
       </Heading>
 
-      {sharedHeader}
+      <div className="flex min-w-0 flex-col">
+        {sharedHeader}
 
-      {enableNetworkMap ? (
-        <>
-          <div className={cn(view !== 'map' && 'hidden')}>
-            <NetworkGlobeMap
-              lang={lang}
-              spaces={mapSpaces}
-              className="w-full"
-              renderToolbar={renderMapToolbar}
-              isActive={view === 'map'}
-            />
-          </div>
-          <div className={cn(view !== 'list' && 'hidden')}>
+        {enableNetworkMap ? (
+          <>
+            <div className={cn(view !== 'map' && 'hidden')}>
+              <NetworkGlobeMap
+                lang={lang}
+                spaces={mapSpaces}
+                className="w-full"
+                renderToolbar={renderMapToolbar}
+                isActive={view === 'map'}
+              />
+            </div>
+            <div className={cn(view !== 'list' && 'hidden')}>
+              {listMetaRow}
+              {spacesListContent}
+            </div>
+            <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
+              {metricsSection}
+            </div>
+          </>
+        ) : (
+          <>
             {listMetaRow}
             {spacesListContent}
-          </div>
-          <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
-            {metricsSection}
-          </div>
-        </>
-      ) : (
-        <>
-          {listMetaRow}
-          {spacesListContent}
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

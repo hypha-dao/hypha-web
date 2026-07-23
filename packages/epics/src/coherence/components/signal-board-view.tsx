@@ -210,7 +210,7 @@ export function SignalBoardView({
             <div
               key={status.slug}
               className={cn(
-                'flex flex-col rounded-2xl border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
+                'flex flex-col rounded-lg border border-t-[3px] bg-gradient-to-b from-muted/25 to-muted/5 transition-[border-color,box-shadow]',
                 statusColumnTopBorderClass(status.color),
                 isMobile ? 'w-full min-w-0' : 'min-w-[17.5rem] flex-1',
                 SIGNAL_KANBAN_COLUMN_SHELL_CLASS,
@@ -233,7 +233,7 @@ export function SignalBoardView({
                     {status.name}
                   </span>
                 </div>
-                <span className="rounded-full bg-background/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                <span className="rounded-md bg-background/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
                   {columnSignals.length}
                 </span>
               </div>
@@ -334,24 +334,6 @@ export function SignalBoardView({
                     onClick={
                       onSignalClick ? () => onSignalClick(signal) : undefined
                     }
-                    statusOptions={readOnly ? undefined : statuses}
-                    onStatusChange={
-                      readOnly
-                        ? undefined
-                        : (progressStatus) => {
-                            if (signal.progressStatus === progressStatus) {
-                              return;
-                            }
-                            void onMoveStatus(signal, progressStatus).catch(
-                              (error) => {
-                                console.error(
-                                  '[SignalBoardView] Failed to move signal',
-                                  error,
-                                );
-                              },
-                            );
-                          }
-                    }
                     className={cn(
                       SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS,
                       draggingSignal?.slug === signal.slug &&
@@ -367,7 +349,7 @@ export function SignalBoardView({
                 {columnSignals.length === 0 && !showPlaceholder ? (
                   <div
                     className={cn(
-                      'flex flex-1 items-center justify-center rounded-xl border border-dashed px-3 py-6 text-center text-xs text-muted-foreground',
+                      'flex flex-1 items-center justify-center rounded-lg border border-dashed px-3 py-6 text-center text-xs text-muted-foreground',
                       isDropTarget
                         ? 'border-accent-8/50 bg-accent-2/20'
                         : 'border-border/50',

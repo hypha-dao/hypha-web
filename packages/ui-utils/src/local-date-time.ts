@@ -14,6 +14,13 @@ export const LOCAL_DATE_FORMAT_OPTIONS = {
   day: 'numeric',
 } as const satisfies Intl.DateTimeFormatOptions;
 
+/** Compact date for card grids — date-only, short month (no noisy timestamps). */
+export const LOCAL_DATE_SHORT_FORMAT_OPTIONS = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+} as const satisfies Intl.DateTimeFormatOptions;
+
 const FALLBACK_TIME_ZONE = 'UTC';
 
 /** Returns true when `value` looks like a valid IANA timezone identifier. */

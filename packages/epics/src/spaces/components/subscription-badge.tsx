@@ -118,21 +118,22 @@ export function SubscriptionBadge({
   > = {
     active: { colorVariant: 'success' },
     activeFreeTrial: { colorVariant: 'success' },
-    activeFreeTrialExpiring: { colorVariant: 'warn' },
-    activate: { colorVariant: 'warn' },
+    /* Renew / trial-expiring: space accent (not warn amber) so CTAs match imagery */
+    activeFreeTrialExpiring: { colorVariant: 'accent' },
+    activate: { colorVariant: 'accent' },
     expired: { colorVariant: 'error' },
   };
 
-  /** Single readable border on dark hero; `!` beats outline compound tokens */
+  /** Hero plate: keep outline craft; renew uses space-accent gradient border */
   const heroBannerClassByStatus: Record<NonNullable<typeof status>, string> = {
     active:
       'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
     activeFreeTrial:
       'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
     activeFreeTrialExpiring:
-      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-amber-400/90 !text-amber-50 hover:!border-amber-300/90 hover:bg-black/35 hover:!text-amber-50',
+      'space-accent-outline bg-black/25 shadow-sm !ring-0 hover:!ring-0 !text-white hover:bg-black/35 hover:!text-white',
     activate:
-      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-amber-400/90 !text-amber-50 hover:!border-amber-300/90 hover:bg-black/35 hover:!text-amber-50',
+      'space-accent-outline bg-black/25 shadow-sm !ring-0 hover:!ring-0 !text-white hover:bg-black/35 hover:!text-white',
     expired:
       'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-red-400/90 !text-red-50 hover:!border-red-300/90 hover:bg-black/35 hover:!text-red-50',
   };

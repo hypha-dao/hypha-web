@@ -44,7 +44,7 @@ function CallRecordingMediaPreview({
           muted
           playsInline
           preload="metadata"
-          className="max-h-full max-w-full object-contain"
+          className="h-full w-full object-cover"
         >
           <track kind="captions" />
         </video>
@@ -53,9 +53,9 @@ function CallRecordingMediaPreview({
           <audio src={src} preload="metadata" className="sr-only">
             <track kind="captions" />
           </audio>
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-muted/20 to-black px-4">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/20">
-              <Play className="h-7 w-7 fill-current" aria-hidden />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted/30 px-4">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/15">
+              <Play className="h-5 w-5 fill-current" aria-hidden />
             </span>
             <span className="line-clamp-2 text-center text-[11px] font-medium text-white/90">
               {playLabel}
@@ -65,16 +65,16 @@ function CallRecordingMediaPreview({
       )}
       {variant === 'video' ? (
         <>
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/15">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white shadow-md ring-1 ring-white/20">
-              <Play className="h-6 w-6 fill-current" aria-hidden />
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/15">
+              <Play className="h-5 w-5 fill-current" aria-hidden />
             </span>
           </span>
-          <span className="pointer-events-none absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white/95">
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/50 px-2 py-1 text-[10px] font-medium text-white/90">
             <span className="line-clamp-1">{playLabel}</span>
           </span>
-          <span className="pointer-events-none absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/55 text-white/95 shadow-sm">
-            <Maximize2 className="h-3.5 w-3.5" aria-hidden />
+          <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-md border border-white/15 bg-black/50 text-white/90">
+            <Maximize2 className="h-3 w-3" aria-hidden />
           </span>
         </>
       ) : null}
@@ -322,8 +322,8 @@ export function SpaceMemoryCallRecordingPlayer({
 
   return (
     <>
-      <div className="group flex flex-col gap-2 rounded-lg">
-        <div className={cn(thumbShellClass, 'aspect-[16/10]')}>
+      <div className="group/open flex min-h-0 flex-1 flex-col gap-2">
+        <div className={cn(thumbShellClass)}>
           <CallRecordingMediaPreview
             src={src}
             poster={poster}
@@ -332,21 +332,21 @@ export function SpaceMemoryCallRecordingPlayer({
             onOpen={() => setViewerOpen(true)}
           />
         </div>
-        <div className="flex items-center justify-between gap-2">
+        <div className="mt-auto flex items-center justify-between gap-2">
           <Button
             type="button"
             variant="ghost"
-            className="h-auto gap-1.5 px-0 py-0 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:bg-transparent hover:text-primary"
+            className="h-auto gap-1 px-0 py-0 text-1 text-muted-foreground hover:bg-transparent hover:text-foreground"
             onClick={() => setViewerOpen(true)}
           >
-            <Maximize2 className="h-3.5 w-3.5" aria-hidden />
+            <Maximize2 className="h-3 w-3" aria-hidden />
             {playLabel}
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
             asChild
           >
             <a

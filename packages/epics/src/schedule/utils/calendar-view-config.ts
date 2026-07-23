@@ -19,10 +19,10 @@ export function viewToModifierClass(view: CalendarView): string {
 
 export function calendarLayoutForView(view: CalendarView): {
   contentHeight?: number;
-  height?: 'auto';
+  height?: 'auto' | '100%';
   slotMinTime: string;
   slotMaxTime: string;
-  dayMaxEvents: number;
+  dayMaxEvents: number | boolean;
 } {
   switch (view) {
     case 'timeGridWeek':
@@ -47,8 +47,9 @@ export function calendarLayoutForView(view: CalendarView): {
         dayMaxEvents: 4,
       };
     default:
+      // Auto height: show every week row (no clipped last week). Page scrolls if needed.
       return {
-        contentHeight: 620,
+        height: 'auto',
         slotMinTime: '06:00:00',
         slotMaxTime: '22:00:00',
         dayMaxEvents: 4,

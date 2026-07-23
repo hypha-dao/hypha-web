@@ -64,7 +64,7 @@ const FullCalendar = dynamic(() => import('./full-calendar-widget'), {
   loading: () => (
     <div
       aria-hidden
-      className="min-h-[520px] animate-pulse rounded-xl border border-border/60 bg-muted/15"
+      className="h-full min-h-[20rem] animate-pulse rounded-lg border border-border/60 bg-muted/15"
     />
   ),
 });
@@ -308,6 +308,21 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     [dateFnsLocale],
   );
 
+  const formatEventTimeRange = React.useCallback(
+    (arg: EventContentArg) => {
+      if (arg.event.allDay) return '';
+      const start = arg.event.start;
+      if (!start) return arg.timeText?.trim() ?? '';
+      const startLabel = formatDate(start, 'H:mm', { locale: dateFnsLocale });
+      const end = arg.event.end;
+      if (!end) return startLabel;
+      const endLabel = formatDate(end, 'H:mm', { locale: dateFnsLocale });
+      if (startLabel === endLabel) return startLabel;
+      return `${startLabel}–${endLabel}`;
+    },
+    [dateFnsLocale],
+  );
+
   const renderEventContent = React.useCallback(
     (arg: EventContentArg) => {
       const item = isScheduledItem(arg.event.extendedProps.scheduledItem)
@@ -317,21 +332,23 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
       const icon = scheduledItemTypeIconHtml(itemType);
       const typeLabel = item ? t(`type_${item.type}` as 'type_call') : '';
       const title = escapeCalendarHtml(arg.event.title);
-      const time = escapeCalendarHtml(arg.timeText);
+      const timeRange = escapeCalendarHtml(formatEventTimeRange(arg));
 
       if (arg.view.type === 'dayGridMonth') {
-        const timeMarkup = time
-          ? `<span class="hypha-cal-month-event__time">${time}</span>`
+        const timeMarkup = timeRange
+          ? `<span class="hypha-cal-month-event__time">${timeRange}</span>`
           : '';
         return {
-          html: `<div class="hypha-cal-month-event">${icon}${timeMarkup}<span class="hypha-cal-month-event__title">${title}</span></div>`,
+          html: `<div class="hypha-cal-month-event">${timeMarkup}<span class="hypha-cal-month-event__title">${title}</span></div>`,
         };
       }
 
       if (arg.view.type === 'listWeek') {
         return {
           html: `<article class="hypha-cal-agenda-card">
-            <div class="hypha-cal-agenda-card__time">${time}</div>
+            <div class="hypha-cal-agenda-card__time">${
+              timeRange || escapeCalendarHtml(arg.timeText)
+            }</div>
             <div class="hypha-cal-agenda-card__body">
               ${
                 typeLabel
@@ -351,8 +368,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
           <div class="hypha-cal-time-event__row">
             ${icon}
             ${
-              time
-                ? `<span class="hypha-cal-time-event__time">${time}</span>`
+              timeRange
+                ? `<span class="hypha-cal-time-event__time">${timeRange}</span>`
                 : ''
             }
           </div>
@@ -360,7 +377,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         </div>`,
       };
     },
-    [t],
+    [formatEventTimeRange, t],
   );
 
   const openCreate = (startsAt: Date, endsAt: Date, allDay: boolean) => {
@@ -422,8 +439,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     if (accent) {
       info.el.style.setProperty('--hypha-cal-accent', accent);
     }
-    info.el.style.backgroundColor = 'transparent';
-    info.el.style.borderColor = 'transparent';
   }, []);
 
   const persistAfterMutation = async () => {
@@ -503,7 +518,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     syncCalendarDate(next);
   };
 
-  const headerLabel = formatDate(anchorDate, 'MMMM yyyy', {
+  const headerLabel = formatDate(anchorDate, 'MMMM', {
     locale: dateFnsLocale,
   });
 
@@ -514,18 +529,18 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const itemCount = scheduledItems?.length;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-7 font-semibold tracking-tight text-foreground">
+          <h1 className="text-6 font-medium tracking-tight text-foreground">
             {t('title')}
             {typeof itemCount === 'number' ? (
-              <span className="ml-2 text-5 font-medium text-muted-foreground">
-                | {intlFormat.number(itemCount)}
+              <span className="ml-2 text-3 font-normal text-muted-foreground">
+                {intlFormat.number(itemCount)}
               </span>
             ) : isLoading ? (
-              <span className="ml-2 text-5 font-medium text-muted-foreground">
-                | …
+              <span className="ml-2 text-3 font-normal text-muted-foreground">
+                …
               </span>
             ) : null}
           </h1>
@@ -533,7 +548,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         {isAuthenticated ? (
           <Button
             type="button"
-            className="shadow-[0_8px_24px_-12px_hsl(var(--accent-9)/0.65)]"
             onClick={() =>
               openCreate(new Date(), new Date(Date.now() + 3_600_000), false)
             }
@@ -546,24 +560,20 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
       <div
         className={cn(
-          'hypha-space-calendar relative overflow-hidden rounded-2xl border border-border/35 bg-card/75 p-3 shadow-[0_20px_48px_-28px_hsl(var(--accent-9)/0.45)] backdrop-blur-sm md:p-4',
+          'hypha-space-calendar relative overflow-hidden rounded-lg border border-border/70 bg-background-2 p-2.5 md:p-3',
           viewToModifierClass(view),
         )}
       >
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--accent-9)/0.14),transparent_70%)]"
-          aria-hidden
-        />
         <div className="relative">
-          <div className="mb-4 flex flex-col gap-4">
+          <div className="mb-2.5 flex flex-col gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex h-10 items-stretch overflow-hidden rounded-xl border border-border/50 bg-muted/20 shadow-sm">
+              <div className="flex h-9 items-stretch overflow-hidden rounded-lg border border-border/70 bg-background">
                 <Button
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
                   size="icon"
-                  className="size-10 min-h-0 shrink-0 rounded-none"
+                  className="size-9 min-h-0 shrink-0 rounded-none"
                   aria-label={t('previous')}
                   onClick={() => shiftAnchor(-1)}
                 >
@@ -574,7 +584,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                   variant="ghost"
                   colorVariant="neutral"
                   size="sm"
-                  className="h-10 min-h-0 rounded-none px-3 py-0 text-xs font-semibold uppercase tracking-wide"
+                  className="h-9 min-h-0 rounded-none px-3 py-0 text-xs font-medium uppercase tracking-wide"
                   onClick={() => {
                     const today = new Date();
                     setAnchorDate(today);
@@ -588,7 +598,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                   variant="ghost"
                   colorVariant="neutral"
                   size="icon"
-                  className="size-10 min-h-0 shrink-0 rounded-none"
+                  className="size-9 min-h-0 shrink-0 rounded-none"
                   aria-label={t('next')}
                   onClick={() => shiftAnchor(1)}
                 >
@@ -596,41 +606,39 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                 </Button>
               </div>
 
-              <div className="flex min-w-0 items-center gap-3 pl-1">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-accent-8/25 bg-gradient-to-br from-accent-3/80 to-accent-2/30 text-accent-11 shadow-sm">
-                  <CalendarDays className="size-5" aria-hidden />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    {headerContextLabel}
-                  </p>
-                  <p className="truncate text-lg font-semibold tracking-tight text-foreground md:text-xl">
-                    {headerLabel}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/35 pb-4">
-            {TYPE_LEGEND.map(({ type, key }) => (
-              <span
-                key={type}
-                className="inline-flex items-center gap-1.5 text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground"
-              >
-                <span
-                  className={`hypha-cal-legend-dot hypha-cal-legend-dot--${type}`}
+              <div className="flex min-w-0 items-center gap-2 pl-1">
+                <CalendarDays
+                  className="size-4 shrink-0 text-muted-foreground"
                   aria-hidden
                 />
-                {t(key)}
-              </span>
-            ))}
+                <p className="truncate text-4 font-medium tracking-tight text-foreground">
+                  {headerLabel}
+                  <span className="ms-2 text-2 font-normal text-muted-foreground">
+                    {headerContextLabel}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/50 pb-2.5">
+              {TYPE_LEGEND.map(({ type, key }) => (
+                <span
+                  key={type}
+                  className="inline-flex items-center gap-1.5 text-1 font-medium uppercase tracking-wide text-muted-foreground"
+                >
+                  <span
+                    className={`hypha-cal-legend-dot hypha-cal-legend-dot--${type}`}
+                    aria-hidden
+                  />
+                  {t(key)}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div
             className={cn(
-              'relative overflow-hidden rounded-xl border border-border/30 bg-gradient-to-b from-background/40 via-card/30 to-muted/10',
-              view === 'listWeek' ? 'min-h-[480px]' : 'min-h-[520px]',
+              'relative overflow-hidden rounded-lg border border-border/50 bg-background',
               resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
             )}
           >
@@ -647,12 +655,13 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               editable={isAuthenticated}
               droppable={false}
               eventResizableFromStart={isAuthenticated}
+              eventDisplay="block"
+              displayEventEnd
               dayMaxEvents={calendarLayout.dayMaxEvents}
               nowIndicator
               slotMinTime={calendarLayout.slotMinTime}
               slotMaxTime={calendarLayout.slotMaxTime}
               slotDuration="00:30:00"
-              expandRows
               stickyHeaderDates
               allDaySlot
               weekends
@@ -676,7 +685,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               eventTimeFormat={{
                 hour: 'numeric',
                 minute: '2-digit',
-                meridiem: 'short',
+                meridiem: false,
+                hour12: false,
               }}
             />
           </div>

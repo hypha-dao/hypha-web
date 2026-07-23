@@ -95,7 +95,7 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-background-2 p-4">
+        <div className="craft-card p-4">
           <p className="text-1 text-neutral-11">{t('outstandingToSettle')}</p>
           <p
             className="mt-1 text-5 font-semibold"
@@ -104,7 +104,7 @@ export const CreditsTab = ({ data, people, peopleLoading }: EnergyTabProps) => {
             {formatStablecoinMicro(totalToSettle.toString())}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-background-2 p-4">
+        <div className="craft-card p-4">
           <p className="text-1 text-neutral-11">{t('claimableCredit')}</p>
           <p
             className="mt-1 text-5 font-semibold"

@@ -42,10 +42,7 @@ export function EnergyTextSkeleton({
 /** Matches {@link StatCard} layout (label + large value). */
 export function EnergyStatCardSkeleton({ delayMs = 0 }: { delayMs?: number }) {
   return (
-    <div
-      className="relative overflow-hidden rounded-xl border border-border bg-background-2 p-4"
-      aria-hidden
-    >
+    <div className="relative overflow-hidden craft-card p-4" aria-hidden>
       <span className="absolute inset-x-0 top-0 h-0.5 bg-muted" />
       <Pulse className="h-3 w-24" delayMs={delayMs} />
       <Pulse className="mt-3 h-7 w-32" delayMs={delayMs + 80} />
@@ -124,10 +121,7 @@ export function EnergyChartSkeleton({
 /** Person/list row placeholder (avatar + two text lines). */
 export function EnergyPersonRowSkeleton({ delayMs = 0 }: { delayMs?: number }) {
   return (
-    <div
-      className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3"
-      aria-hidden
-    >
+    <div className="flex items-center gap-3 craft-card p-3" aria-hidden>
       <Pulse className="h-10 w-10 shrink-0 rounded-full" delayMs={delayMs} />
       <div className="min-w-0 flex-1 space-y-2">
         <Pulse className="h-4 w-36 max-w-full" delayMs={delayMs + 60} />

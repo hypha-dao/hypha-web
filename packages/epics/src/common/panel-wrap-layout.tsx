@@ -27,6 +27,7 @@ import {
 import { useIsSpaceContext } from './use-is-space-context';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
+import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
 
 // ─── Panel Providers ─────────────────────────────────────────────────────────
 // Owns the open/close state for both panels and wraps children with the
@@ -155,14 +156,14 @@ export function AiSidebarTrigger() {
         showAiOverlay();
       }}
       aria-expanded={isMenuOpen}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      className={APP_CHROME_ICON_TRIGGER}
       title={isMenuOpen ? t('closePanel') : t('openPanel')}
       aria-label={isMenuOpen ? t('closePanel') : t('openPanel')}
     >
       {isMenuOpen ? (
-        <PanelLeftClose className="h-4 w-4" />
+        <PanelLeftClose className="craft-icon" />
       ) : (
-        <Menu className="h-4 w-4" />
+        <Menu className="craft-icon" />
       )}
     </button>
   );
@@ -192,11 +193,11 @@ export function AiPanelTrigger() {
         setAiOverlayVisible(false);
       }}
       aria-expanded={open}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      className={APP_CHROME_ICON_TRIGGER}
       title={open ? t('closeAiPanel') : t('openAiPanel')}
       aria-label={open ? t('closeAiPanel') : t('openAiPanel')}
     >
-      <Sparkles className="h-4 w-4" />
+      <Sparkles className="craft-icon" />
     </button>
   );
 }
@@ -225,11 +226,11 @@ export function HumanSidebarTrigger() {
         openHumanChatPanel();
       }}
       aria-expanded={open}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      className={APP_CHROME_ICON_TRIGGER}
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
-      <MessageCircle className="h-4 w-4" />
+      <MessageCircle className="craft-icon" />
     </button>
   );
 }

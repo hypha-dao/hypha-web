@@ -14,8 +14,8 @@ export function SignalUpvoteIcon({
 }: SignalUpvoteIconProps) {
   return (
     <ArrowBigUp
-      className={cn('shrink-0', className)}
-      strokeWidth={2}
+      className={cn('craft-icon shrink-0', className)}
+      strokeWidth={1.5}
       fill={active ? 'currentColor' : 'none'}
       aria-hidden
     />

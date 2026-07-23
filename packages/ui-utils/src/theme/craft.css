@@ -1,0 +1,94 @@
+/**
+ * Precision-tool craft layer — quiet utilities only.
+ * No page washes, frosted theater, stagger motion, or empty-state glow.
+ */
+
+@layer components {
+  /* App page headers: tool first, not marketing hero */
+  .craft-page-header {
+    @apply flex w-full flex-col items-start gap-1 text-left;
+  }
+
+  .craft-page-title {
+    @apply m-0 text-balance font-semibold tracking-[-0.02em] text-foreground;
+    font-family: var(--font-family-heading);
+  }
+
+  .craft-empty-mark {
+    @apply flex size-8 items-center justify-center rounded-lg border border-border/70 bg-background-2 text-muted-foreground;
+  }
+
+  /* Secondary copy — one visual weight below titles */
+  .craft-meta {
+    @apply text-1 font-normal text-muted-foreground;
+  }
+
+  /*
+   * Shared card chrome for grids / panels.
+   * Prefer these over one-off rounded-xl + shadow stacks.
+   */
+  .craft-card {
+    @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
+  }
+
+  .craft-card-interactive {
+    @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
+    @apply transition-[border-color,background-color] duration-200 ease-out;
+    @apply hover:border-border hover:bg-muted/15;
+  }
+
+  /*
+   * Icon optical system — Lucide stroke feel + chrome boxes.
+   * Prefer these over ad-hoc size/stroke/rounded-full on tool chrome.
+   */
+  .craft-icon {
+    @apply block size-4 shrink-0;
+    stroke-width: 1.5;
+  }
+
+  .craft-icon-sm {
+    @apply block size-3.5 shrink-0;
+    stroke-width: 1.5;
+  }
+
+  /*
+   * Square icon well for action cards / chrome.
+   * Grid + block SVG kills inline-baseline drift (icons looking bottom-heavy).
+   */
+  .craft-icon-box {
+    @apply grid size-8 shrink-0 place-items-center overflow-hidden rounded-chrome border border-border/70 bg-muted/25 text-muted-foreground;
+  }
+
+  .craft-icon-box > svg {
+    display: block !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem;
+    max-height: 1rem;
+    flex-shrink: 0;
+    stroke-width: 1.5;
+  }
+
+  /*
+   * Quiet outline chip — hairline border, no gray slab / hover lift.
+   * Used for category filters, compact space switchers, tag chrome.
+   */
+  .craft-chip {
+    @apply rounded-md border border-border/60 bg-transparent font-normal text-muted-foreground shadow-none;
+  }
+
+  .craft-chip-interactive {
+    @apply transition-[border-color,background-color,color] duration-150 ease-out;
+    @apply hover:border-border hover:bg-muted/30 hover:text-foreground;
+  }
+
+  /*
+   * Unread / notification count chip — flat accent fill, no orb shadow.
+   * Prefer CountBadge; this class is the shared visual contract.
+   */
+  .craft-count-chip {
+    @apply shadow-none;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+}

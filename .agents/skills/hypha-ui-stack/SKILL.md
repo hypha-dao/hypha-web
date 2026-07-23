@@ -1,6 +1,6 @@
 ---
 name: hypha-ui-stack
-description: "Hypha UI stack: Tailwind CSS 4, shadcn/ui, Radix UI colors. Use when working with packages/ui, design tokens, component specs, or styling in hypha-web."
+description: 'Hypha UI stack: Tailwind CSS 4, shadcn/ui, Radix UI colors. Use when working with packages/ui, design tokens, component specs, or styling in hypha-web.'
 ---
 
 # Hypha UI Stack
@@ -43,13 +43,13 @@ The hypha-web design system is built on Tailwind CSS 4, shadcn/ui, and Radix UI 
 
 ### Scale Mapping (Radix convention)
 
-| Step | Use |
-|------|-----|
-| 1–2 | App backgrounds, subtle surfaces |
-| 3–5 | Interactive component backgrounds |
-| 6–8 | Borders, separators |
-| 9–10 | Solid backgrounds (buttons, badges) |
-| 11–12 | Text (low/high contrast) |
+| Step  | Use                                 |
+| ----- | ----------------------------------- |
+| 1–2   | App backgrounds, subtle surfaces    |
+| 3–5   | Interactive component backgrounds   |
+| 6–8   | Borders, separators                 |
+| 9–10  | Solid backgrounds (buttons, badges) |
+| 11–12 | Text (low/high contrast)            |
 
 ### Usage
 
@@ -57,8 +57,70 @@ The hypha-web design system is built on Tailwind CSS 4, shadcn/ui, and Radix UI 
 - Use `text-accent-11` for links; `text-accent-12` for strong emphasis
 - Use `--accent-contrast` for text on accent backgrounds
 
+## Craft rules
+
+Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
+
+### Radius family
+
+| Surface                                                     | Prefer                                                                                                                   |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Cards / panels / menus / dialogs                            | `rounded-lg` → `--radius-lg`                                                                                             |
+| Chrome controls (header icon buttons, small square avatars) | `APP_CHROME_SUBTLE_SQUARE_RADIUS` (`rounded-chrome` → `--radius-chrome`) in `packages/epics/src/common/chrome-radius.ts` |
+| Avoid on product chrome                                     | `rounded-xl`, `rounded-2xl`                                                                                              |
+
+### Fonts
+
+Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVariables` on root + signin `<Html>`).
+
+| Role             | Face                | next/font var      | Token                                |
+| ---------------- | ------------------- | ------------------ | ------------------------------------ |
+| Body / UI chrome | **IBM Plex Sans**   | `--font-body`      | `--font-sans` / `--font-family-text` |
+| Titles           | **Instrument Sans** | `--font-heading`   | `--font-family-heading`              |
+| Code / addresses | **IBM Plex Mono**   | `--font-code-face` | `--font-mono` / `--font-family-code` |
+
+**Where Instrument Sans applies (heading face only):**
+
+- `.craft-page-title` / page-level `h1` tool titles
+- `CardTitle` / `Heading` atom (`--font-family-heading`)
+- Rare marketing-scale titles that already use `[font-family:var(--font-family-heading)]`
+
+**Stay on IBM Plex Sans (body):** nav, buttons, labels, form fields, meta (`.craft-meta`), table cells, dialog body, tabs, badges — do **not** sprinkle heading face into dense UI chrome.
+
+**Mono only:** wallet addresses, hashes, code (`font-mono` / `--font-family-code`).
+
+- **No** decorative display serifs (Fraunces, Times, Georgia, etc.) — emphasis/quote tokens alias the body sans
+- Weights: `400`/`500` UI, `600` page titles / emphasis, `700` large display only; title tracking slightly tight (`-0.015em`–`-0.02em`)
+- Do not leave Next font CSS variables unwired; do not add ad-hoc fourth faces per feature
+
+### Precision-tool craft (anti-decorative)
+
+- Flat chrome: solid `bg-background-2`, hairline borders — **no** page washes, frosted blur bars, or empty-state glow
+- Page headers: `.craft-page-header` / `.craft-page-title` — left-aligned, tool-sized (not centered marketing heroes)
+- Empty states: quiet `.craft-empty-mark` (border only)
+- Avoid stagger enter animations and accent-tinted title lines
+
+### Cards & elevation
+
+- Shared chrome: `.craft-card` / `.craft-card-interactive` in `craft.css` (flat `bg-background-2`, `border-border/70`, quiet hover)
+- Prefer those utilities over one-off `rounded-xl` + shadow stacks on product grids
+- Cards are interaction containers: border + subtle `hover:bg-muted/15` step
+- No default `hover:shadow-md` lift or glow stacks (`shadow-[0_0_…]`)
+- Prefer `shadow-sm` / `shadow-md` when depth is needed; avoid `shadow-xl` / `shadow-2xl`
+- Padding density for grid cards: `p-3.5` (CardHeader/Content defaults match)
+- Grid dates: `LOCAL_DATE_SHORT_FORMAT_OPTIONS` (date-only, short month) — no noisy timestamps in card grids
+- Borders: `border-border` / `border-border/70` — not raw hex (e.g. `#30363d`)
+- Raw `indigo-*` and `border-blue-500` → `accent-*` / `border-accent-9`
+
+### Accent dialects (three)
+
+1. **Global indigo** — Radix `accent-*` (buttons, focus, mention chips, links)
+2. **Space** — `--space-accent*` from imagery; inside `[data-space-accent-scope]` CTAs/tabs/focus own the space hue (`space-accent.css`)
+3. **Mycelium teal** — ecosystem / viz only; do not use as app chrome accent
+
 ## References
 
 - `packages/ui-utils/src/global.css` — full theme and tokens
-- `packages/ui-utils/src/theme/` — color CSS files
+- `packages/ui-utils/src/theme/craft.css` — quiet page-header / empty utilities
 - `packages/ui/src/button.tsx` — variant pattern reference
+- `packages/epics/src/common/chrome-radius.ts` — chrome control radius token

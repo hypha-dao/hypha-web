@@ -59,7 +59,7 @@ function ProgressCard({
   return (
     <div
       className={cn(
-        'flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-lg ring-1 ring-accent-9/12 dark:ring-accent-9/20 md:max-w-lg',
+        'flex w-full max-w-md flex-col gap-4 rounded-lg border border-border bg-card px-6 py-5 text-card-foreground shadow-md md:max-w-lg',
         cardClassName,
       )}
     >
@@ -95,9 +95,9 @@ function ModalShellLoadingStatus({
   return (
     <div
       className={cn(
-        'mx-auto w-full max-w-sm space-y-3 rounded-2xl px-5 py-4',
-        'ring-1 ring-border/40 bg-muted/25 backdrop-blur-md',
-        'dark:bg-white/5 dark:ring-white/15',
+        'mx-auto w-full max-w-sm space-y-3 rounded-lg px-5 py-4',
+        'border border-border/40 bg-muted/25 backdrop-blur-md',
+        'dark:bg-white/5 dark:border-white/15',
       )}
     >
       <Progress

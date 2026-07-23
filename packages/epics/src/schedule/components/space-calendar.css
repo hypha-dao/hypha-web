@@ -23,8 +23,7 @@
   display: inline-block;
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
-  box-shadow: 0 0 0 2px hsl(var(--background) / 0.8);
+  border-radius: 0.125rem;
 }
 
 .hypha-cal-legend-dot--call {
@@ -146,13 +145,40 @@
 
 /* ── Month grid ── */
 
+/* Unbalanced (height:auto) month: every week row fully visible, no clip. */
 .hypha-space-calendar--month .fc .fc-daygrid-day-frame {
-  min-height: 7.25rem;
+  min-height: 6.75rem;
+  height: auto;
   transition: background-color 140ms ease;
   border-right: 1px solid hsl(var(--border) / 0.28);
 }
 
-.hypha-space-calendar--month .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
+.hypha-space-calendar--month .fc .fc-daygrid-day-events {
+  margin-top: 0.125rem;
+}
+
+/*
+ * Single-day harnesses: stack from the top. FullCalendar can leave a large
+ * marginTop when other columns reserved a level (looked like mid-cell events).
+ * Leave .fc-daygrid-event-harness-abs alone so multi-day spans still work.
+ */
+.hypha-space-calendar--month
+  .fc
+  .fc-daygrid-event-harness:not(.fc-daygrid-event-harness-abs) {
+  margin-top: 0 !important;
+}
+
+.hypha-space-calendar--month
+  .fc
+  .fc-daygrid-event-harness:not(.fc-daygrid-event-harness-abs)
+  + .fc-daygrid-event-harness:not(.fc-daygrid-event-harness-abs) {
+  margin-top: 0.125rem !important;
+}
+
+.hypha-space-calendar--month
+  .fc
+  .fc-daygrid-day.fc-day-today
+  .fc-daygrid-day-frame {
   background: hsl(var(--accent-3) / 0.32);
   box-shadow: inset 0 0 0 1px hsl(var(--accent-8) / 0.4);
 }
@@ -213,29 +239,24 @@
   opacity: 0.38;
 }
 
-.hypha-space-calendar--month .fc .fc-daygrid-event-harness {
-  margin-top: 0.0625rem;
-}
-
 /* ── Event cards (shared) ── */
 
 .hypha-space-calendar .fc .fc-event.hypha-cal-event {
   position: relative;
   overflow: hidden;
-  border: 1px solid hsl(var(--border) / 0.5) !important;
-  border-radius: 0.5rem;
+  border: none !important;
+  border-left: 3px solid var(--hypha-cal-accent, #6366f1) !important;
+  border-radius: 0.375rem;
   background: color-mix(
     in srgb,
-    var(--hypha-cal-accent, #6366f1) 12%,
-    hsl(var(--card))
+    var(--hypha-cal-accent, #6366f1) 24%,
+    hsl(var(--background))
   ) !important;
-  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.05),
-    inset 0 1px 0 hsl(var(--foreground) / 0.04);
+  box-shadow: none;
   cursor: pointer;
-  margin-bottom: 0.125rem;
+  margin: 0 0.2rem 0.2rem;
   padding: 0 !important;
-  transition: transform 140ms ease, box-shadow 140ms ease,
-    border-color 140ms ease;
+  transition: background-color 140ms ease, filter 140ms ease;
 }
 
 .hypha-cal-event-icon {
@@ -256,20 +277,24 @@
 
 .hypha-cal-month-event {
   display: flex;
-  align-items: center;
-  gap: 0.3125rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.0625rem;
   min-width: 0;
   overflow: hidden;
-  padding: 0.125rem 0.375rem;
+  padding: 0.25rem 0.375rem 0.3rem;
 }
 
 .hypha-cal-month-event__time {
   flex-shrink: 0;
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
   color: color-mix(
     in srgb,
-    var(--hypha-cal-accent, #6366f1) 58%,
+    var(--hypha-cal-accent, #6366f1) 45%,
     hsl(var(--foreground))
   );
 }
@@ -279,24 +304,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.25;
+  color: hsl(var(--foreground));
+}
+
+.hypha-space-calendar--month .fc .fc-daygrid-event.hypha-cal-event {
+  min-height: 2.25rem;
 }
 
 .hypha-space-calendar .fc .fc-event.hypha-cal-event:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(
+  filter: brightness(1.08);
+  background: color-mix(
     in srgb,
-    var(--hypha-cal-accent, #6366f1) 40%,
-    hsl(var(--border))
+    var(--hypha-cal-accent, #6366f1) 32%,
+    hsl(var(--background))
   ) !important;
-  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(
-            --hypha-cal-accent,
-            #6366f1
-          )
-          35%, transparent),
-    inset 0 1px 0 hsl(var(--foreground) / 0.05);
 }
 
 .hypha-space-calendar .fc .fc-event.hypha-cal-event .fc-event-main,
@@ -515,7 +539,10 @@
   color: hsl(var(--foreground));
 }
 
-.hypha-space-calendar--agenda .fc .fc-list-day.fc-day-today .fc-list-day-cushion {
+.hypha-space-calendar--agenda
+  .fc
+  .fc-list-day.fc-day-today
+  .fc-list-day-cushion {
   border-color: hsl(var(--accent-9));
   background: linear-gradient(
     90deg,

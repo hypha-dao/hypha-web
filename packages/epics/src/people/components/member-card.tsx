@@ -1,6 +1,5 @@
 'use client';
 
-import { Text } from '@radix-ui/themes';
 import { Card, StatusBadge, Skeleton, Button, Badge } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 import { PersonAvatar } from './person-avatar';
@@ -18,6 +17,7 @@ import { useIsDelegate } from '@hypha-platform/core/client';
 import { useEffect } from 'react';
 import { mutate as mutateCache, type Key } from 'swr';
 import { useFormatter, useTranslations } from 'next-intl';
+import { LOCAL_DATE_SHORT_FORMAT_OPTIONS } from '@hypha-platform/ui-utils';
 
 export type MemberCardProps = {
   spaceId?: number;
@@ -98,48 +98,54 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   }, [isDelegate]);
 
   return (
-    <Card className="w-full h-full p-5 mb-2 flex gap-3 flex-col">
-      <div className="flex items-center">
+    <Card className="craft-card-interactive flex h-full w-full flex-col gap-2.5 p-3.5">
+      <div className="flex items-start gap-3">
         <PersonAvatar
           avatarSrc={avatarUrl}
           userName={nickname}
           size={minimize ? 'sm' : 'lg'}
           isLoading={isLoading}
           shape="rounded"
-          className="mr-3"
+          className="shrink-0"
         />
 
-        <div className="flex justify-between items-center w-full">
-          <div className="flex flex-col">
-            <Badge className="w-fit" variant="outline" colorVariant="accent">
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <Badge
+              className="w-fit"
+              size={1}
+              variant="outline"
+              colorVariant="neutral"
+            >
               {tCommon('memberRoleLabel')}
             </Badge>
             {!minimize ? (
-              <div className="flex gap-x-1">
-                <StatusBadge isLoading={isLoading} status={status} />
-              </div>
+              <StatusBadge isLoading={isLoading} status={status} />
             ) : null}
 
             <Skeleton
-              height="26px"
+              height="22px"
               width="160px"
               loading={isLoading}
-              className="my-1"
+              className="my-0.5"
             >
-              <Text className="text-4">
+              <p className="truncate text-3 font-medium tracking-tight text-foreground">
                 {name} {surname}
-              </Text>
+              </p>
             </Skeleton>
 
             <Skeleton height="16px" width="80px" loading={isLoading}>
-              <Text className="text-1 text-gray-500">@{nickname}</Text>
+              <p className="craft-meta truncate">@{nickname}</p>
             </Skeleton>
           </div>
 
-          <div className="flex justify-between flex-col gap-6 items-end">
+          <div className="flex shrink-0 flex-col items-end gap-2">
             {localIsDelegate ? (
               <Skeleton width="96px" height="32px" loading={isLoading}>
                 <Button
+                  size="sm"
+                  variant="outline"
+                  colorVariant="neutral"
                   disabled={isDisabled}
                   onClick={async (e) => {
                     e.stopPropagation();
@@ -162,52 +168,51 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                 </Button>
               </Skeleton>
             ) : (
-              <div className="w-[130px] h-[40px]" />
+              <div className="h-8 w-[7.5rem]" aria-hidden />
             )}
+            <Skeleton width="96px" height="16px" loading={isLoading}>
+              <div className="craft-meta flex items-center">
+                <SewingPinFilledIcon className="mr-1 size-3.5" />
+                <span className="text-1">{location}</span>
+              </div>
+            </Skeleton>
             <Skeleton
               width="96px"
               height="16px"
-              loading={isLoading}
-              className={localIsDelegate ? 'mt-2' : ''}
+              loading={isLoading || isLoadingEvents}
             >
-              <div className="flex items-center text-gray-500">
-                <SewingPinFilledIcon className="mr-1" />
-                <Text className="text-1">{location}</Text>
+              <div className="flex h-4 items-center">
+                {joinEvent ? (
+                  <span
+                    className="craft-meta whitespace-nowrap"
+                    title={format.dateTime(new Date(joinEvent.createdAt), {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  >
+                    {tCommon('joinedSpaceOn', {
+                      date: format.dateTime(
+                        new Date(joinEvent.createdAt),
+                        LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+                      ),
+                    })}
+                  </span>
+                ) : null}
               </div>
             </Skeleton>
-            {joinEvent && (
-              <Skeleton
-                width="96px"
-                height="16px"
-                loading={isLoading}
-                className={localIsDelegate ? 'mt-2' : ''}
-              >
-                <div className="flex items-center text-gray-500">
-                  <Text className="text-1">
-                    {tCommon('joinedSpaceOn', {
-                      date: format.dateTime(new Date(joinEvent.createdAt), {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      }),
-                    })}
-                  </Text>
-                </div>
-              </Skeleton>
-            )}
           </div>
         </div>
       </div>
-      {localIsDelegate && (
-        <div>
-          <span className="text-1 text-neutral-11 font-medium">
+      <div className="min-h-5">
+        {localIsDelegate ? (
+          <span className="craft-meta font-medium">
             {tCommon('delegatedVotingMemberLabel')}
           </span>
-        </div>
-      )}
+        ) : null}
+      </div>
     </Card>
   );
 };

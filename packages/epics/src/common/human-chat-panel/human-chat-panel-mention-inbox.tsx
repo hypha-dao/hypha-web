@@ -5,7 +5,7 @@ import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
 import { Bell, ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { Skeleton } from '@hypha-platform/ui';
+import { CountBadge, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -190,10 +190,10 @@ function gatherMentionEvents(
 }
 
 const MENTION_INBOX_ROW_CLASS =
-  'group flex w-full cursor-pointer flex-col gap-1 rounded-xl border border-border/70 bg-card px-3 py-2.5 text-left text-foreground shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-muted/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'group flex w-full cursor-pointer flex-col gap-1 rounded-lg border border-border/60 bg-background-2 px-3 py-2 text-left text-foreground shadow-none transition-[border-color,background-color] duration-150 hover:border-border hover:bg-muted/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 const MENTION_INBOX_NAV_ICON_CLASS =
-  'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/80 text-muted-foreground shadow-sm transition-colors group-hover:border-accent-8/60 group-hover:bg-accent-2/80 group-hover:text-foreground';
+  'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/50 bg-transparent text-muted-foreground shadow-none transition-colors group-hover:border-border/70 group-hover:bg-muted/30 group-hover:text-foreground';
 
 function MentionInboxNavigateIcon({ label }: { label: string }) {
   return (
@@ -293,8 +293,8 @@ export function HumanChatPanelMentionTab({
               onCallJoinAlertsUnmutedChange?.(!callJoinAlertsUnmuted)
             }
             className={cn(
-              'inline-flex h-auto min-h-7 w-full max-w-full items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-left text-xs font-medium leading-snug text-foreground transition-colors hover:bg-muted',
-              callAlertsMuted && 'text-muted-foreground',
+              'inline-flex h-auto min-h-7 w-full max-w-full items-center gap-1.5 rounded-md border border-border/60 bg-transparent px-2 py-1 text-left text-xs font-normal leading-snug text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground',
+              callAlertsMuted && 'text-muted-foreground/80',
             )}
             aria-pressed={callAlertsMuted}
             aria-label={
@@ -468,10 +468,10 @@ export function HumanChatPanelMentionBell({
     <button
       type="button"
       className={cn(
-        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         mentionsTabActive
-          ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:ring-accent-10/30'
-          : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
+          ? 'border border-accent-9/40 bg-accent-9/10 text-foreground dark:border-accent-10/40 dark:bg-accent-9/14'
+          : 'border border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground',
       )}
       aria-pressed={mentionsTabActive}
       aria-label={
@@ -485,11 +485,15 @@ export function HumanChatPanelMentionBell({
       onClick={onOpenMentions}
     >
       <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-      {badgeLabel != null && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-0.5 text-[9px] font-semibold leading-none text-accent-contrast shadow-sm">
-          {badgeLabel}
-        </span>
-      )}
+      {badgeLabel != null ? (
+        <CountBadge
+          size="sm"
+          label={badgeLabel}
+          count={unreadCount}
+          capped={countIsCapped}
+          className="absolute -right-0.5 -top-0.5"
+        />
+      ) : null}
     </button>
   );
 }

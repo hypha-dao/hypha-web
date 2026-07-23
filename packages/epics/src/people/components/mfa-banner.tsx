@@ -30,6 +30,8 @@ export const MFABanner = () => {
       <div className="flex gap-2 w-full md:w-auto justify-between md:justify-normal">
         <Button
           onClick={showMfaEnrollmentModal}
+          variant="outline"
+          colorVariant="accent"
           className="w-full md:w-fit text-wrap justify-center"
         >
           Activate MFA

@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { SpaceAccentSpinner } from '../space-accent-loader';
+import { SpaceAccentLoader } from '../space-accent-loader';
 
 type HumanChatPanelLoaderProps = {
   label?: string;
@@ -45,7 +45,7 @@ function ChatLoaderSkeletonRow({
           loading
           width={bubbleWidth}
           height={40}
-          className="rounded-2xl"
+          className="rounded-lg"
         />
       </div>
     </div>
@@ -66,22 +66,25 @@ export function HumanChatPanelLoader({
         'relative flex min-h-0 flex-1 flex-col items-center justify-center',
         className,
       )}
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-      aria-label={message}
     >
       {showPreview ? (
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-5 px-4 opacity-45">
-          <ChatLoaderSkeletonRow align="start" bubbleWidth={200} />
-          <ChatLoaderSkeletonRow align="end" bubbleWidth={152} />
-          <ChatLoaderSkeletonRow align="start" bubbleWidth={176} />
-        </div>
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-5 px-4 opacity-35"
+            aria-hidden
+          >
+            <ChatLoaderSkeletonRow align="start" bubbleWidth={200} />
+            <ChatLoaderSkeletonRow align="end" bubbleWidth={152} />
+            <ChatLoaderSkeletonRow align="start" bubbleWidth={176} />
+          </div>
+          {/* Soft veil so label/spinner stay readable without a heavy dark scrim */}
+          <div
+            className="pointer-events-none absolute inset-0 bg-background/40"
+            aria-hidden
+          />
+        </>
       ) : null}
-      <div className="flex flex-col items-center gap-3 text-center">
-        <SpaceAccentSpinner size="md" />
-        <p className="text-sm font-medium text-muted-foreground">{message}</p>
-      </div>
+      <SpaceAccentLoader label={message} size="md" className="relative z-[1]" />
     </div>
   );
 }

@@ -521,7 +521,7 @@ export const SpaceForm = ({
           onSubmit={handleFormSubmit}
           className={clsx('flex flex-col gap-5', isSubmitting && 'opacity-50')}
         >
-          <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+          <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border bg-background-2 lg:-mx-7">
             <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
               <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
                 {modalContextTitle}

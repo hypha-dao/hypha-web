@@ -105,7 +105,7 @@ body > .mdxeditor-popup-container {
   }
 
   .mdxeditor-root-contenteditable {
-    font-family: var(--font-text);
+    font-family: var(--font-family-text);
     padding: 0 12px;
     min-height: 120px;
     line-height: 1.6;
@@ -152,7 +152,7 @@ body > .mdxeditor-popup-container {
       font-size: 1.25em !important;
     }
     h3 {
-      font-size: 1.0em !important;
+      font-size: 1em !important;
     }
     h4 {
       font-size: 0.8em !important;
@@ -171,7 +171,7 @@ body > .mdxeditor-popup-container {
       border: 1px solid var(--border);
       border-radius: calc(var(--radius) - 2px);
       padding: 0.2em 0.4em;
-      font-family: var(--font-code);
+      font-family: var(--font-family-code);
       font-size: 0.9em;
     }
 

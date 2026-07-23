@@ -41,7 +41,7 @@ export function NetworkMapPinHoverCard({
         data-network-map-hover-card
       >
         <Link href={href} className="pointer-events-auto block">
-          <Card className="flex items-center gap-3 border bg-background/95 p-3 shadow-lg backdrop-blur-sm">
+          <Card className="flex items-center gap-3 border border-border bg-background p-3 shadow-sm">
             <Avatar className="size-10 shrink-0">
               <AvatarImage
                 src={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}
@@ -77,7 +77,7 @@ export function NetworkMapPinHoverCard({
   return (
     <div
       className={cn(
-        'pointer-events-none absolute z-20 w-[min(100%,280px)] shadow-lg',
+        'pointer-events-none absolute z-20 w-[min(100%,280px)] shadow-sm',
       )}
       data-network-map-hover-card
       style={{ left, top }}
