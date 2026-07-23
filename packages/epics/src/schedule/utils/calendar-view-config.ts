@@ -47,12 +47,12 @@ export function calendarLayoutForView(view: CalendarView): {
         dayMaxEvents: 4,
       };
     default:
-      // Fill the parent so month rows share height and the grid fits the page.
+      // Auto height: show every week row (no clipped last week). Page scrolls if needed.
       return {
-        height: '100%',
+        height: 'auto',
         slotMinTime: '06:00:00',
         slotMaxTime: '22:00:00',
-        dayMaxEvents: 3,
+        dayMaxEvents: 4,
       };
   }
 }
