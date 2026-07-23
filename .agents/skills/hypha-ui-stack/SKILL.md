@@ -71,9 +71,14 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 
 ### Fonts
 
-- Single UI face: **IBM Plex Sans** via `--font-body` → `--font-family-text` / `--font-family-heading`
-- Avoid decorative display serifs (Fraunces, etc.) inside the app — they read as AI brand kits
-- Do not leave Next font CSS variables unwired
+- Single UI face: **IBM Plex Sans** — `next/font` sets `--font-body` on `<html>` in `apps/web` root + signin layouts
+- Token map (prefer these; do not add per-component `font-family` spam):
+  - `--font-sans` / `--font-family-text` / `--font-family-heading` → body UI + headings (same face)
+  - `--font-mono` / `--font-family-code` → code, wallet addresses, hashes only (`font-mono`)
+  - `--font-heading` aliases `--font-body` for any legacy `family-name` refs
+- **No** decorative display serifs in-app (Fraunces, Times, Georgia, etc.) — emphasis/quote tokens alias the sans stack
+- Weights: prefer `400`/`500` for UI, `600` for emphasis, `700` for large display titles; avoid mixing heavy tracking + bold in a way that reads as a second face
+- Do not leave Next font CSS variables unwired; do not load a second `next/font` family for product chrome
 
 ### Precision-tool craft (anti-decorative)
 

@@ -206,17 +206,24 @@
   --radius-lg: 2.5px;
   --radius-chrome: 6px;
 
-  /* Font Families — single UI face (IBM Plex); avoid decorative display serifs in-app */
-  --font-family-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-family-heading: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-family-code: ui-monospace, 'Menlo', monospace;
-  --font-family-emphasis: 'Times New Roman', serif;
-  --font-family-quote: 'Times New Roman', serif;
+  /*
+   * Font Families — single UI face: IBM Plex Sans
+   * next/font sets --font-body on <html>; Tailwind font-sans / font-mono map here.
+   * Mono only for code / addresses; no decorative serifs in-app.
+   */
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Menlo', monospace;
+  --font-family-text: var(--font-sans);
+  --font-family-heading: var(--font-sans);
+  --font-family-code: var(--font-mono);
+  --font-family-emphasis: var(--font-sans);
+  --font-family-quote: var(--font-sans);
 
-  /* Font Weights */
+  /* Font Weights — prefer 400/500 UI, 600 emphasis, 700 display titles only */
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
+  --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
   /* Font Sizes with Line Heights */
