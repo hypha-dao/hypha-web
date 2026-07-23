@@ -251,10 +251,12 @@ export async function getTokenHoldingsBySpaceSlug(
     typeof holderLimit === 'number' && Number.isFinite(holderLimit)
       ? Math.max(1, Math.min(1000, Math.floor(holderLimit)))
       : undefined;
+  // Default 0.5%: keep small-but-named holders visible; callers can raise
+  // collapse or set holderLimit to keep the long tail in "Other".
   const safeCollapseBelowPct =
     typeof collapseBelowPct === 'number' && Number.isFinite(collapseBelowPct)
       ? Math.max(0, Math.min(100, collapseBelowPct))
-      : 3;
+      : 0.5;
 
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
   if (!host) {

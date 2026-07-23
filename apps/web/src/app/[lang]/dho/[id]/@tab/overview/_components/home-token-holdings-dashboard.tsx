@@ -219,8 +219,10 @@ function fetchHoldings(
       headers.Authorization = `Bearer ${token}`;
     }
 
+    // Show more named holders before the long-tail "Other" bucket:
+    // keep slices ≥0.5% share, capped at top 10 (+ Other for the rest).
     const response = await fetch(
-      `/api/v1/spaces/${slug}/token-holdings?include_treasury=true&collapse_below_pct=3`,
+      `/api/v1/spaces/${slug}/token-holdings?include_treasury=true&collapse_below_pct=0.5&holder_limit=10`,
       { headers },
     );
     const payload = await response.json();
@@ -359,6 +361,7 @@ function TokenDonutChart({
   );
 
   const outerRadius = 118;
+  const activeOuterRadius = 122;
   const innerRadius = 78;
   const arcGenerator = React.useMemo(
     () =>
@@ -366,7 +369,15 @@ function TokenDonutChart({
         .arc<d3.PieArcDatum<ChartSlice>>()
         .innerRadius(innerRadius)
         .outerRadius(outerRadius)
-        .cornerRadius(2)
+        .padAngle(0.018),
+    [],
+  );
+  const activeArcGenerator = React.useMemo(
+    () =>
+      d3
+        .arc<d3.PieArcDatum<ChartSlice>>()
+        .innerRadius(innerRadius)
+        .outerRadius(activeOuterRadius)
         .padAngle(0.018),
     [],
   );
@@ -393,33 +404,33 @@ function TokenDonutChart({
           aria-label={tTokenHoldings('chartAria', { title })}
           className="h-auto w-full max-w-[240px] sm:max-w-[280px]"
         >
-          {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
-            <path
-              key={`${segment.data.display_name}-${segment.index}`}
-              d={arcGenerator(segment) ?? ''}
-              fill={colorScale(segment.data.display_name)}
-              stroke="var(--color-background-2, var(--background))"
-              strokeWidth={1.25}
-              tabIndex={0}
-              aria-label={`${segment.data.display_name}: ${PERCENTAGE_FORMATTER(
-                segment.data.share_pct,
-              )}% (${formatAmount(segment.data.balance, locale)})`}
-              opacity={
-                !hasHoveredSlice || hoveredSliceKey === segment.data.hover_key
-                  ? 1
-                  : 0.28
-              }
-              className="cursor-pointer transition-opacity duration-150"
-              onMouseEnter={() => setHoveredSliceKey(segment.data.hover_key)}
-              onMouseLeave={() => setHoveredSliceKey(null)}
-              onFocus={() => setHoveredSliceKey(segment.data.hover_key)}
-              onBlur={() => setHoveredSliceKey(null)}
-            >
-              <title>{`${segment.data.display_name} — ${PERCENTAGE_FORMATTER(
-                segment.data.share_pct,
-              )}% (${formatAmount(segment.data.balance, locale)})`}</title>
-            </path>
-          ))}
+          {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => {
+            const isActive = hoveredSliceKey === segment.data.hover_key;
+            return (
+              <path
+                key={`${segment.data.display_name}-${segment.index}`}
+                d={
+                  (isActive
+                    ? activeArcGenerator(segment)
+                    : arcGenerator(segment)) ?? ''
+                }
+                fill={colorScale(segment.data.display_name)}
+                stroke="var(--color-background-2, var(--background))"
+                strokeWidth={1.25}
+                // Not keyboard-focusable: browser focus rings clip arc paths into
+                // a rectangular wedge artifact. Legend buttons handle a11y focus.
+                aria-hidden="true"
+                opacity={!hasHoveredSlice || isActive ? 1 : 0.28}
+                className="cursor-pointer transition-opacity duration-150"
+                onMouseEnter={() => setHoveredSliceKey(segment.data.hover_key)}
+                onMouseLeave={() => setHoveredSliceKey(null)}
+              >
+                <title>{`${segment.data.display_name} — ${PERCENTAGE_FORMATTER(
+                  segment.data.share_pct,
+                )}% (${formatAmount(segment.data.balance, locale)})`}</title>
+              </path>
+            );
+          })}
           <text
             textAnchor="middle"
             dominantBaseline="middle"
@@ -446,7 +457,7 @@ function TokenDonutChart({
           <button
             type="button"
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
-            className="flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-md border-0 bg-transparent px-1 py-1 text-left transition-colors duration-150 hover:bg-muted/40"
+            className="flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-md border-0 bg-transparent px-1 py-1 text-left transition-colors duration-150 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border"
             style={{
               background:
                 hoveredSliceKey === slice.hover_key
