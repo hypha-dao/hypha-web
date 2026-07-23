@@ -382,6 +382,7 @@
 
   body {
     @apply bg-page-background text-foreground text-base;
+
     font-family: var(--font-family-text);
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
