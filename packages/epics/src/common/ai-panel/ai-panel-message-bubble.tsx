@@ -865,12 +865,12 @@ export function AiPanelMessageBubble({
       >
         <div
           className={cn(
-            'flex flex-col gap-1 rounded-lg px-3 py-2 text-sm leading-snug',
+            // Asymmetric chat silhouette: three rounded corners + one sharp
+            // toward the speaker (assistant left → TL, user right → TR).
+            'flex flex-col gap-1 rounded-2xl px-3 py-2 text-sm leading-snug',
             isUser
-              ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
-              : isTypingOnly
-              ? 'rounded-tl-sm border border-border/70 bg-background/70 px-3 py-2 text-foreground shadow-sm'
-              : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
+              ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_40%,transparent)] bg-[color:var(--space-accent,var(--color-accent-9))] text-[color:var(--space-accent-contrast,var(--color-accent-contrast))]'
+              : 'rounded-tl-none border border-border/70 bg-muted/45 text-foreground',
           )}
         >
           {!isUser && mobilizedAgents.length > 0 ? (
@@ -893,11 +893,14 @@ export function AiPanelMessageBubble({
                       <div
                         key={`${message.id}-heading-${index}`}
                         className={cn(
-                          'font-semibold tracking-tight text-foreground',
+                          'font-semibold tracking-tight',
+                          isUser ? 'text-inherit' : 'text-foreground',
                           block.level === 1 && 'text-lg',
                           block.level === 2 && 'text-base',
                           block.level >= 3 &&
-                            'text-sm uppercase text-muted-foreground',
+                            (isUser
+                              ? 'text-sm uppercase opacity-90'
+                              : 'text-sm uppercase text-muted-foreground'),
                         )}
                       >
                         {renderInlineMarkdown(block.text)}
@@ -908,7 +911,10 @@ export function AiPanelMessageBubble({
                     return (
                       <ul
                         key={`${message.id}-ul-${index}`}
-                        className="space-y-0.5 pl-4 text-foreground"
+                        className={cn(
+                          'space-y-0.5 pl-4',
+                          isUser ? 'text-inherit' : 'text-foreground',
+                        )}
                       >
                         {block.items.map((item, itemIndex) => (
                           <li
@@ -925,7 +931,10 @@ export function AiPanelMessageBubble({
                     return (
                       <ol
                         key={`${message.id}-ol-${index}`}
-                        className="space-y-0.5 pl-4 text-foreground"
+                        className={cn(
+                          'space-y-0.5 pl-4',
+                          isUser ? 'text-inherit' : 'text-foreground',
+                        )}
                       >
                         {block.items.map((item, itemIndex) => (
                           <li
@@ -955,7 +964,7 @@ export function AiPanelMessageBubble({
                   return (
                     <p
                       key={`${message.id}-p-${index}`}
-                      className="text-foreground/95"
+                      className={isUser ? 'text-inherit' : 'text-foreground/95'}
                     >
                       {renderInlineMarkdown(block.lines.join(' '))}
                     </p>
@@ -1035,13 +1044,12 @@ export function AiPanelMessageBubble({
             <span
               className={cn(
                 'inline-flex items-center gap-0.5',
-                isTypingOnly && 'rounded-full bg-muted/70 px-2 py-1',
                 !isTypingOnly && 'ml-1',
               )}
             >
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:0.2s]" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:0.4s]" />
             </span>
           )}
         </div>
