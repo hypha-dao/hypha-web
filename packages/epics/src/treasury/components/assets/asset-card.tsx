@@ -240,39 +240,39 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </Skeleton>
           ) : null}
 
-          {hasMutualCreditRow ? (
+          {mutualCredit && symbol ? (
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
-              {mutualCredit!.netBalance !== 0 ? (
+              {mutualCredit.netBalance !== 0 ? (
                 <Badge
                   size={1}
                   colorVariant={
-                    mutualCredit!.netBalance < 0 ? 'warn' : 'neutral'
+                    mutualCredit.netBalance < 0 ? 'warn' : 'neutral'
                   }
                   variant="soft"
                   className="h-fit w-fit font-normal"
                 >
-                  {mutualCredit!.netBalance < 0
+                  {mutualCredit.netBalance < 0
                     ? tTreasury('assetCard.mutualCredit.debtBadge', {
                         amount: formatCurrencyValue(
-                          Math.abs(mutualCredit!.netBalance),
+                          Math.abs(mutualCredit.netBalance),
                           lang,
                         ),
                         symbol,
                       })
                     : tTreasury('assetCard.mutualCredit.netBadge', {
                         amount: formatCurrencyValue(
-                          mutualCredit!.netBalance,
+                          mutualCredit.netBalance,
                           lang,
                         ),
                         symbol,
                       })}
                 </Badge>
               ) : null}
-              {mutualCredit!.defaultCreditLimit > 0 ? (
+              {mutualCredit.defaultCreditLimit > 0 ? (
                 <span className="truncate tabular-nums">
                   {tTreasury('assetCard.mutualCredit.limit', {
                     limit: formatCurrencyValue(
-                      mutualCredit!.defaultCreditLimit,
+                      mutualCredit.defaultCreditLimit,
                       lang,
                     ),
                     symbol,
