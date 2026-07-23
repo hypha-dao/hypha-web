@@ -194,7 +194,7 @@ export function SignalUpvoteControl({
           pillHeightClass,
           hasVoted
             ? 'border-accent-8/85 bg-background/55 shadow-sm'
-            : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25 hover:shadow-md',
+            : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25',
           isMutating && 'pointer-events-none opacity-65',
           !canVote && 'opacity-55',
         )}
@@ -290,7 +290,7 @@ export function SignalUpvoteControl({
           <PopoverContent
             align="start"
             sideOffset={8}
-            className="w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border/90 bg-background-2 p-0 shadow-xl ring-1 ring-white/5 dark:ring-white/10"
+            className="w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border/90 bg-background-2 p-0 shadow-md"
             style={spaceAccentPortalStyle}
             data-space-accent-scope
             onClick={stopPropagation}

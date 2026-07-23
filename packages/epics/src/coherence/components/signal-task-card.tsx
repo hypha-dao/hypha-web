@@ -167,8 +167,7 @@ export function SignalTaskCard({
       className={cn(
         'group relative flex flex-col rounded-xl border border-border/60 bg-card shadow-sm',
         'transition-all duration-200 ease-out',
-        !isActive &&
-          'hover:-translate-y-px hover:border-accent-8/45 hover:shadow-md',
+        !isActive && 'hover:border-accent-8/45 hover:bg-background-3/50',
         signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',

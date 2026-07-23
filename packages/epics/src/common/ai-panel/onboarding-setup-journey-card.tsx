@@ -40,7 +40,7 @@ export function OnboardingSetupJourneyCard({
   ];
 
   return (
-    <div className="rounded-xl border border-border/80 bg-background/90 p-4 shadow-sm">
+    <div className="rounded-lg border border-border/80 bg-background/90 p-4 shadow-sm">
       <p className="mb-1 text-sm font-medium text-foreground">
         {tAi('onboardingSetupJourneyTitle')}
       </p>

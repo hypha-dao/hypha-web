@@ -5,25 +5,21 @@ import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { CompactSpaceBannerLead } from './compact-space-banner-lead';
 import { isSafeExternalUrl, isSafeImageUrl } from '../utils/safe-image-url';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../common/chrome-radius';
+
+export { APP_CHROME_SUBTLE_SQUARE_RADIUS };
 
 /** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
 export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
   'h-16 w-16 shrink-0 rounded-full sm:h-[72px] sm:w-[72px]',
-  'shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/15',
+  'shadow-md ring-1 ring-white/12',
 );
 
-/** Title size on the banner — reuse on sticky; regular weight (no semibold) for calmer hero + chrome */
+/** Title size on the banner — reuse on sticky; heading face + regular weight for calmer hero */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
   'text-balance text-6 font-normal tracking-tight sm:text-7',
-  /* Use design-token text stack from packages/ui-utils @theme (--font-family-text) */
-  '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
+  '[font-family:var(--font-family-heading)]',
 );
-
-/**
- * Subtle square corners — matches outlined header controls (language, Space Settings) and small square avatars.
- * (~6px; not pill, not large card radius.)
- */
-export const APP_CHROME_SUBTLE_SQUARE_RADIUS = 'rounded-[6px]';
 
 /** Smaller footprint for the DHO sticky space chrome row — circular logo like the hero banner */
 export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
@@ -33,7 +29,7 @@ export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
 
 export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
   'text-balance text-4 font-medium tracking-tight sm:text-5',
-  '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
+  '[font-family:var(--font-family-heading)]',
 );
 
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
@@ -132,8 +128,8 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-xl',
-        'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
+        'relative overflow-hidden rounded-lg border border-border/70',
+        'shadow-md',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-4 pt-4 pb-0 md:px-8 md:pt-8',
         className,
@@ -164,7 +160,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
           <Avatar
             className={cn(
               COMPACT_SPACE_BANNER_AVATAR_CLASSNAME,
-              'max-md:h-11 max-md:w-11 max-md:shadow-[0_10px_24px_-8px_rgba(0,0,0,0.5)]',
+              'max-md:h-11 max-md:w-11 max-md:shadow-sm',
             )}
           >
             <AvatarImage

@@ -58,10 +58,10 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           width="100%"
           height="100%"
           loading={isLoading}
-          className="rounded-tl-xl rounded-tr-xl object-cover"
+          className="rounded-tl-lg rounded-tr-lg object-cover"
         >
           <Image
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+            className="rounded-tl-lg rounded-tr-lg object-cover w-full h-full"
             src={leadImageUrl as string}
             alt={title as string}
             width={1200}

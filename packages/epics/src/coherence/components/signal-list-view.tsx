@@ -149,7 +149,7 @@ export function SignalListView({
   const intlFormat = useFormatter();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-border/50 bg-card">
       <div
         className={cn(
           'hidden gap-2 border-b border-l-[3px] border-border/40 border-l-transparent bg-muted/20 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:grid lg:px-4',

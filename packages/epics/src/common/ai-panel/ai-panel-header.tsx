@@ -223,7 +223,7 @@ export function AiPanelHeader({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-[background-color,border-color,box-shadow,gap,padding] duration-200 ease-out hover:border-border/65 hover:bg-background-4/85"
+                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground transition-[background-color,border-color,gap,padding] duration-200 ease-out hover:border-border/65 hover:bg-background-4/85"
                   aria-label={tNavigation('mySpaces')}
                 >
                   <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
@@ -253,7 +253,7 @@ export function AiPanelHeader({
                 align="center"
                 sideOffset={4}
                 collisionPadding={8}
-                className="relative isolate z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
+                className="relative isolate z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-border/60 bg-background-2 p-0 shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="flex max-h-[24.5rem] min-h-0 flex-col">
                   <div className="shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1">
@@ -296,7 +296,7 @@ export function AiPanelHeader({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground/90 transition-[background-color,border-color,box-shadow,gap,padding] duration-200 ease-out">
+            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground/90 transition-[background-color,border-color,gap,padding] duration-200 ease-out">
               <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
                 {currentIcon ? (
                   <>
@@ -328,7 +328,7 @@ export function AiPanelHeader({
           <button
             type="button"
             onClick={onCloseButtonClick ?? closeAiPanel}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >

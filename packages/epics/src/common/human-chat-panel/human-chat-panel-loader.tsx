@@ -45,7 +45,7 @@ function ChatLoaderSkeletonRow({
           loading
           width={bubbleWidth}
           height={40}
-          className="rounded-2xl"
+          className="rounded-lg"
         />
       </div>
     </div>

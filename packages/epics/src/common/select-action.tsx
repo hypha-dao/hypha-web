@@ -135,10 +135,10 @@ export const SelectAction = ({
                   const card = (
                     <Card
                       className={clsx(
-                        'group flex h-full items-start gap-4 rounded-2xl border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
+                        'group flex h-full items-start gap-4 rounded-lg border border-border/80 bg-background-2 p-5 shadow-sm transition-[border-color,background-color] duration-200 ease-out md:p-6',
                         !action.disabled && 'cursor-pointer',
                         !action.disabled &&
-                          'hover:border-accent-9 hover:bg-background-3/70 hover:shadow-md hover:ring-accent-10/45',
+                          'hover:border-accent-9 hover:bg-background-3/70',
                         !action.disabled &&
                           'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
                         {
@@ -151,10 +151,10 @@ export const SelectAction = ({
                     >
                       <div
                         className={clsx(
-                          'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 [&_svg]:shrink-0',
+                          'flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:shrink-0',
                           !action.disabled &&
-                            /* Outline-style hover: ring + border — no solid fill */
-                            'group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 group-focus-within:text-foreground',
+                            /* Outline-style hover: border step — no solid fill */
+                            'group-hover:border-accent-9 group-hover:text-foreground group-focus-within:text-foreground',
                         )}
                         aria-hidden
                       >
@@ -196,7 +196,7 @@ export const SelectAction = ({
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
+          <div className="rounded-lg border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
             {noResultsLabel || tCommon('noMenusFound')}
           </div>
         )}

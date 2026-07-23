@@ -137,7 +137,7 @@ export function ProposalOverlayShell({
             {/*
               Outer shell: border-radius + overflow-hidden clips the scrollable
               region so the WebKit scrollbar thumb does not stick past rounded corners.
-              Inner div alone with both rounded-2xl and overflow-y-auto does not clip
+              Inner div alone with both rounded-lg and overflow-y-auto does not clip
               native scrollbars reliably in Chromium/Safari.
             */}
             <div
@@ -145,8 +145,8 @@ export function ProposalOverlayShell({
                 'pointer-events-auto relative flex w-full min-h-0 flex-col outline-none md:mx-auto',
                 'md:z-10 md:flex-initial md:max-h-[min(640px,calc(100dvh_-_var(--menu-top-height,70px)_-_2.5rem))] md:max-w-[min(768px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2.5rem))]',
                 'max-md:max-h-[calc(100dvh_-_var(--menu-top-height,70px))]',
-                'overflow-hidden rounded-2xl md:border md:border-border/90 md:bg-background-2 md:shadow-2xl md:ring-1 md:ring-white/5 dark:md:ring-white/10',
-                'max-md:rounded-none max-md:border-0 max-md:bg-background-2 max-md:shadow-none max-md:ring-0',
+                'overflow-hidden rounded-lg md:border md:border-border/90 md:bg-background-2 md:shadow-md',
+                'max-md:rounded-none max-md:border-0 max-md:bg-background-2 max-md:shadow-none',
                 className,
               )}
               style={spaceAccentPortalStyle}

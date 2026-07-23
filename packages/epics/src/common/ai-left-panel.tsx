@@ -304,9 +304,9 @@ const MENU_ROW_LINK_BASE_CLASS = 'flex h-full w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
-  'relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70';
+  'relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-muted p-0 ring-1 ring-border/70';
 const MENU_CLOSE_BUTTON_CLASS =
-  'flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
+  'flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 

@@ -1,8 +1,9 @@
 :root {
-  --font-text: 'SF Pro';
-  --font-code: 'Menlo';
-  --font-emphasis: 'Times New Roman';
-  --font-quote: 'Times New Roman';
+  /* --font-body / --font-heading are set by next/font on <html>; do not redefine them */
+  --font-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-code: ui-monospace, 'Menlo', monospace;
+  --font-emphasis: 'Times New Roman', serif;
+  --font-quote: 'Times New Roman', serif;
 
   --font-weight-light: 300;
   --font-weight-regular: 400;

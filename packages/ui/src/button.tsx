@@ -12,7 +12,7 @@ const buttonVariants = cva(
         default: '',
         outline:
           /* ring-2 reserved so hover highlight does not shift layout */
-          'border bg-transparent shadow-sm ring-2 ring-transparent hover:shadow-md active:shadow-sm',
+          'border bg-transparent shadow-sm ring-2 ring-transparent hover:border-border active:shadow-sm',
         link: 'underline-offset-4 hover:underline bg-transparent font-medium',
         ghost: 'bg-transparent font-medium',
       },
@@ -42,7 +42,7 @@ const buttonVariants = cva(
         variant: 'default',
         colorVariant: 'accent',
         className:
-          'bg-accent-9 text-accent-contrast shadow-sm hover:bg-accent-10 hover:shadow-md active:scale-[0.99] active:shadow-sm dark:shadow-black/25',
+          'bg-accent-9 text-accent-contrast shadow-sm hover:bg-accent-10 active:scale-[0.99] active:shadow-sm dark:shadow-black/20',
       },
       {
         variant: 'default',

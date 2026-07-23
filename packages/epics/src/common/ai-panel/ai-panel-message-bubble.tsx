@@ -150,7 +150,7 @@ function renderVisualAssetsCard(output: unknown) {
   if (!logoUrl && !bannerUrl) return null;
 
   return (
-    <div className="rounded-xl border border-border/70 bg-background/80 px-3 py-3 text-xs shadow-sm">
+    <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-3 text-xs shadow-sm">
       <div className="font-semibold text-foreground">Generated visuals</div>
       <div className="mt-3 flex flex-wrap items-start gap-4">
         {logoUrl ? (
@@ -161,7 +161,7 @@ function renderVisualAssetsCard(output: unknown) {
             <img
               src={logoUrl}
               alt="Generated space logo"
-              className="h-24 w-24 rounded-xl border border-border/60 object-cover shadow-sm"
+              className="h-24 w-24 rounded-lg border border-border/60 object-cover shadow-sm"
             />
           </div>
         ) : null}
@@ -173,7 +173,7 @@ function renderVisualAssetsCard(output: unknown) {
             <img
               src={bannerUrl}
               alt="Generated space banner"
-              className="max-h-36 w-full max-w-md rounded-xl border border-border/60 object-cover shadow-sm"
+              className="max-h-36 w-full max-w-md rounded-lg border border-border/60 object-cover shadow-sm"
             />
           </div>
         ) : null}
@@ -729,7 +729,7 @@ export function AiPanelMessageBubble({
       const hasQuickActions =
         Boolean(confirmationToken) && Boolean(onActionReplySelect);
       return (
-        <div className="rounded-xl border border-accent-8/55 bg-accent-3/30 px-3 py-3 text-xs shadow-[0_8px_22px_-18px_rgba(0,0,0,0.7)]">
+        <div className="rounded-lg border border-accent-8/55 bg-accent-3/30 px-3 py-3 text-xs shadow-sm">
           <div className="font-semibold text-accent-11">
             {t('pendingAction')}
           </div>
@@ -816,7 +816,7 @@ export function AiPanelMessageBubble({
       {!isUser && (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary',
             isSingleLineAssistantText ? 'mt-0' : 'mt-0.5',
           )}
         >
@@ -828,7 +828,7 @@ export function AiPanelMessageBubble({
       >
         <div
           className={cn(
-            'flex flex-col gap-1 rounded-2xl px-3 py-2 text-sm leading-snug',
+            'flex flex-col gap-1 rounded-lg px-3 py-2 text-sm leading-snug',
             isUser
               ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
               : isTypingOnly
@@ -990,7 +990,7 @@ export function AiPanelMessageBubble({
             </div>
           )}
           {walletSignaturePending && !suppressWalletSignaturePrompt ? (
-            <div className="rounded-xl border border-accent-8/40 bg-accent-2/40 px-3 py-2 text-xs text-foreground">
+            <div className="rounded-lg border border-accent-8/40 bg-accent-2/40 px-3 py-2 text-xs text-foreground">
               {t('walletSignaturePending')}
             </div>
           ) : null}

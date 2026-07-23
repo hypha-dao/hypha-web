@@ -107,7 +107,7 @@ function ComposerRecOnAirIndicator() {
         />
         <span
           data-hypha-rec-on-air=""
-          className="motion-safe:relative inline-block h-2 w-2 rounded-full bg-gradient-to-br from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-white/25 dark:ring-white/15"
+          className="motion-safe:relative inline-block h-2 w-2 rounded-full bg-error-9 ring-1 ring-error-11/40 dark:ring-error-8/50"
           style={{
             animationName: 'hypha-rec-on-air',
             animationDuration: '1s',

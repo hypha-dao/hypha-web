@@ -99,7 +99,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
           <Image
             width={454}
             height={150}
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+            className="rounded-tl-lg rounded-tr-lg object-cover w-full h-full"
             src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title}
           />
