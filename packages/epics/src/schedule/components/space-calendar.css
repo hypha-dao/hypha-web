@@ -145,27 +145,34 @@
 
 /* ── Month grid ── */
 
-.hypha-space-calendar--month .fc,
-.hypha-space-calendar--month .fc .fc-view-harness,
-.hypha-space-calendar--month .fc .fc-scrollgrid,
-.hypha-space-calendar--month .fc .fc-scrollgrid-sync-table {
-  height: 100% !important;
-}
-
-.hypha-space-calendar--month .fc .fc-scroller {
-  overflow: hidden !important;
-}
-
-.hypha-space-calendar--month .fc .fc-daygrid-body,
-.hypha-space-calendar--month .fc .fc-daygrid-body table {
-  height: 100% !important;
-}
-
+/* Unbalanced (height:auto) month: every week row fully visible, no clip. */
 .hypha-space-calendar--month .fc .fc-daygrid-day-frame {
-  min-height: 0;
-  height: 100%;
+  min-height: 6.75rem;
+  height: auto;
   transition: background-color 140ms ease;
   border-right: 1px solid hsl(var(--border) / 0.28);
+}
+
+.hypha-space-calendar--month .fc .fc-daygrid-day-events {
+  margin-top: 0.125rem;
+}
+
+/*
+ * Single-day harnesses: stack from the top. FullCalendar can leave a large
+ * marginTop when other columns reserved a level (looked like mid-cell events).
+ * Leave .fc-daygrid-event-harness-abs alone so multi-day spans still work.
+ */
+.hypha-space-calendar--month
+  .fc
+  .fc-daygrid-event-harness:not(.fc-daygrid-event-harness-abs) {
+  margin-top: 0 !important;
+}
+
+.hypha-space-calendar--month
+  .fc
+  .fc-daygrid-event-harness:not(.fc-daygrid-event-harness-abs)
+  + .fc-daygrid-event-harness:not(.fc-daygrid-event-harness-abs) {
+  margin-top: 0.125rem !important;
 }
 
 .hypha-space-calendar--month
@@ -230,10 +237,6 @@
 
 .hypha-space-calendar--month .fc .fc-day-other .fc-daygrid-day-top {
   opacity: 0.38;
-}
-
-.hypha-space-calendar--month .fc .fc-daygrid-event-harness {
-  margin-top: 0.0625rem;
 }
 
 /* ── Event cards (shared) ── */
