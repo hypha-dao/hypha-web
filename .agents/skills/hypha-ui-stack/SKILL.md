@@ -71,14 +71,27 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 
 ### Fonts
 
-- Single UI face: **IBM Plex Sans** — `next/font` sets `--font-body` on `<html>` in `apps/web` root + signin layouts
-- Token map (prefer these; do not add per-component `font-family` spam):
-  - `--font-sans` / `--font-family-text` / `--font-family-heading` → body UI + headings (same face)
-  - `--font-mono` / `--font-family-code` → code, wallet addresses, hashes only (`font-mono`)
-  - `--font-heading` aliases `--font-body` for any legacy `family-name` refs
-- **No** decorative display serifs in-app (Fraunces, Times, Georgia, etc.) — emphasis/quote tokens alias the sans stack
-- Weights: prefer `400`/`500` for UI, `600` for emphasis, `700` for large display titles; avoid mixing heavy tracking + bold in a way that reads as a second face
-- Do not leave Next font CSS variables unwired; do not load a second `next/font` family for product chrome
+Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVariables` on root + signin `<Html>`).
+
+| Role             | Face                | next/font var      | Token                                |
+| ---------------- | ------------------- | ------------------ | ------------------------------------ |
+| Body / UI chrome | **IBM Plex Sans**   | `--font-body`      | `--font-sans` / `--font-family-text` |
+| Titles           | **Instrument Sans** | `--font-heading`   | `--font-family-heading`              |
+| Code / addresses | **IBM Plex Mono**   | `--font-code-face` | `--font-mono` / `--font-family-code` |
+
+**Where Instrument Sans applies (heading face only):**
+
+- `.craft-page-title` / page-level `h1` tool titles
+- `CardTitle` / `Heading` atom (`--font-family-heading`)
+- Rare marketing-scale titles that already use `[font-family:var(--font-family-heading)]`
+
+**Stay on IBM Plex Sans (body):** nav, buttons, labels, form fields, meta (`.craft-meta`), table cells, dialog body, tabs, badges — do **not** sprinkle heading face into dense UI chrome.
+
+**Mono only:** wallet addresses, hashes, code (`font-mono` / `--font-family-code`).
+
+- **No** decorative display serifs (Fraunces, Times, Georgia, etc.) — emphasis/quote tokens alias the body sans
+- Weights: `400`/`500` UI, `600` page titles / emphasis, `700` large display only; title tracking slightly tight (`-0.015em`–`-0.02em`)
+- Do not leave Next font CSS variables unwired; do not add ad-hoc fourth faces per feature
 
 ### Precision-tool craft (anti-decorative)
 

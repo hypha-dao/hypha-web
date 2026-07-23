@@ -207,14 +207,15 @@
   --radius-chrome: 6px;
 
   /*
-   * Font Families — single UI face: IBM Plex Sans
-   * next/font sets --font-body on <html>; Tailwind font-sans / font-mono map here.
-   * Mono only for code / addresses; no decorative serifs in-app.
+   * Font Families — 2 sans + mono (see apps/web/src/lib/hypha-fonts.ts)
+   * next/font sets --font-body / --font-heading / --font-code-face on <html>.
+   * Tailwind font-sans → body; font-mono → code. Headings use --font-family-heading.
    */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, 'Menlo', monospace;
+  --font-mono: var(--font-code-face), ui-monospace, 'Menlo', monospace;
   --font-family-text: var(--font-sans);
-  --font-family-heading: var(--font-sans);
+  --font-family-heading: var(--font-heading), var(--font-body), ui-sans-serif,
+    system-ui, sans-serif;
   --font-family-code: var(--font-mono);
   --font-family-emphasis: var(--font-sans);
   --font-family-quote: var(--font-sans);

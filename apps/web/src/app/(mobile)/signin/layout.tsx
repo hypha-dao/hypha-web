@@ -1,8 +1,5 @@
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { IBM_Plex_Sans } from 'next/font/google';
-import clsx from 'clsx';
-
 import { Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { EvmProvider } from '@hypha-platform/evm';
@@ -12,13 +9,7 @@ import { MenuTop } from '@hypha-platform/ui';
 
 import '@hypha-platform/ui-utils/global.css';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
-
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-body',
-});
+import { hyphaFontVariables } from '@web/lib/hypha-fonts';
 
 export const metadata = {
   title: 'Hypha - Sign in',
@@ -34,7 +25,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Html className={clsx(ibmPlexSans.variable)}>
+    <Html className={hyphaFontVariables}>
       <AuthProvider
         config={{
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,

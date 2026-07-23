@@ -1,11 +1,13 @@
 :root {
   /*
-   * --font-body is set by next/font on <html> (IBM Plex Sans).
-   * --font-heading aliases the same face so legacy family-name refs stay wired.
+   * next/font on <html> (apps/web):
+   *   --font-body       → IBM Plex Sans (UI / body)
+   *   --font-heading    → Instrument Sans (page + card titles)
+   *   --font-code-face  → IBM Plex Mono (code / addresses)
    */
-  --font-heading: var(--font-body);
   --font-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-code: ui-monospace, 'Menlo', monospace;
+  --font-code: var(--font-code-face), ui-monospace, 'Menlo', monospace;
+  /* Emphasis / quote stay on body — no decorative serifs in-app */
   --font-emphasis: var(--font-text);
   --font-quote: var(--font-text);
 

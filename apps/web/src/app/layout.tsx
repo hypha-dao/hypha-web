@@ -1,10 +1,10 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { IBM_Plex_Sans } from 'next/font/google';
-import clsx from 'clsx';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+
+import { hyphaFontVariables } from '@web/lib/hypha-fonts';
 
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { defaultMessages } from '@hypha-platform/i18n/messages';
@@ -47,14 +47,6 @@ import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
-
-/** Single quiet UI face — precision tool, not decorative brand kit */
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-body',
-});
 
 export const metadata: Metadata = {
   title: 'Hypha',
@@ -227,7 +219,7 @@ export default async function RootLayout({
   }
 
   return (
-    <Html lang={locale} className={clsx(ibmPlexSans.variable)}>
+    <Html lang={locale} className={hyphaFontVariables}>
       <ScrollUp />
       <SeamlessScrollPolyfill />
       <AuthProvider
