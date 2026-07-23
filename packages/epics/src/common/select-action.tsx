@@ -76,7 +76,7 @@ export const SelectAction = ({
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       {showTitle ? (
         <header className="flex flex-col gap-2">
           <Skeleton width="100px" height="24px" loading={isLoading}>
@@ -108,14 +108,14 @@ export const SelectAction = ({
         />
       ) : null}
       <Separator />
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full flex-col gap-6">
         {Object.entries(groupedActions || {}).length > 0 ? (
           Object.entries(groupedActions || {}).map(([group, groupActions]) => (
-            <div key={group} className="flex flex-col gap-3">
+            <div key={group} className="flex w-full flex-col gap-3">
               {group && (
                 <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
               )}
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
                 {groupActions.map((action) => {
                   const isLink = !action.onAction && !!action.href;
 
@@ -135,10 +135,11 @@ export const SelectAction = ({
                   const card = (
                     <Card
                       className={clsx(
-                        'craft-card group flex h-full items-start gap-3 p-3.5 transition-[border-color,background-color] duration-200 ease-out',
+                        /* Full card tiles — not dense left-flush list rows */
+                        'craft-card group flex h-full w-full items-center gap-4 p-5 transition-[border-color,background-color] duration-200 ease-out md:p-6',
                         !action.disabled && 'cursor-pointer',
                         !action.disabled &&
-                          'hover:border-border hover:bg-muted/15',
+                          'hover:border-accent-9 hover:bg-background-3/70',
                         /* Inset ring — no offset so focus/selection does not optically shift content */
                         !action.disabled &&
                           'focus-within:border-accent-9 focus-within:ring-1 focus-within:ring-inset focus-within:ring-accent-9/45',
@@ -152,25 +153,25 @@ export const SelectAction = ({
                     >
                       <div
                         className={clsx(
-                          'craft-icon-box size-9 text-accent-11 transition-[border-color,background-color,color] duration-200',
+                          'flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:size-5 [&_svg]:shrink-0',
                           !action.disabled &&
-                            'group-hover:border-border group-hover:bg-muted/35 group-hover:text-foreground group-focus-within:text-foreground',
+                            'group-hover:border-accent-9 group-hover:text-foreground group-focus-within:text-foreground',
                         )}
                         aria-hidden
                       >
                         {action.icon}
                       </div>
-                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="flex flex-wrap items-center gap-2 text-2 font-medium leading-snug text-foreground">
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
                           {action.title}
                           {comingSoon ? (
-                            <span className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wide text-muted-foreground">
+                            <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                               {tCommon('comingSoonBadge')}
                             </span>
                           ) : null}
                         </span>
                         {action.description ? (
-                          <span className="line-clamp-1 text-1 font-normal leading-snug text-muted-foreground">
+                          <span className="line-clamp-2 text-1 font-normal leading-relaxed text-muted-foreground">
                             <TextWithLinks text={action.description} />
                           </span>
                         ) : null}
@@ -184,12 +185,12 @@ export const SelectAction = ({
                       onClick={handleClick}
                       key={action.title}
                       aria-disabled={action.disabled}
-                      className="block h-full"
+                      className="block h-full w-full min-w-0"
                     >
                       {card}
                     </Link>
                   ) : (
-                    <div key={action.title} className="h-full">
+                    <div key={action.title} className="h-full w-full min-w-0">
                       {card}
                     </div>
                   );
