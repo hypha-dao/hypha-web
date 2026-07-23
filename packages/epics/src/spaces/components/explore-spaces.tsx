@@ -429,45 +429,47 @@ export function ExploreSpaces({
   );
 
   return (
-    <div className="flex min-w-0 flex-col">
+    <div className="flex min-w-0 flex-col gap-9">
       <Heading
         size="9"
         color="secondary"
         weight="medium"
         align="center"
-        className="mb-5 flex flex-col"
+        className="flex flex-col"
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>
       </Heading>
 
-      {sharedHeader}
+      <div className="flex min-w-0 flex-col">
+        {sharedHeader}
 
-      {enableNetworkMap ? (
-        <>
-          <div className={cn(view !== 'map' && 'hidden')}>
-            <NetworkGlobeMap
-              lang={lang}
-              spaces={mapSpaces}
-              className="w-full"
-              renderToolbar={renderMapToolbar}
-              isActive={view === 'map'}
-            />
-          </div>
-          <div className={cn(view !== 'list' && 'hidden')}>
+        {enableNetworkMap ? (
+          <>
+            <div className={cn(view !== 'map' && 'hidden')}>
+              <NetworkGlobeMap
+                lang={lang}
+                spaces={mapSpaces}
+                className="w-full"
+                renderToolbar={renderMapToolbar}
+                isActive={view === 'map'}
+              />
+            </div>
+            <div className={cn(view !== 'list' && 'hidden')}>
+              {listMetaRow}
+              {spacesListContent}
+            </div>
+            <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
+              {metricsSection}
+            </div>
+          </>
+        ) : (
+          <>
             {listMetaRow}
             {spacesListContent}
-          </div>
-          <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
-            {metricsSection}
-          </div>
-        </>
-      ) : (
-        <>
-          {listMetaRow}
-          {spacesListContent}
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
