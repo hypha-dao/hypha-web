@@ -1,13 +1,18 @@
 :root {
-  /* --font-body / --font-heading are set by next/font on <html>; do not redefine them */
+  /*
+   * --font-body is set by next/font on <html> (IBM Plex Sans).
+   * --font-heading aliases the same face so legacy family-name refs stay wired.
+   */
+  --font-heading: var(--font-body);
   --font-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-code: ui-monospace, 'Menlo', monospace;
-  --font-emphasis: 'Times New Roman', serif;
-  --font-quote: 'Times New Roman', serif;
+  --font-emphasis: var(--font-text);
+  --font-quote: var(--font-text);
 
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
+  --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
   --line-height-1: 16px;
