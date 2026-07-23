@@ -84,10 +84,14 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 
 ### Cards & elevation
 
-- Cards are interaction containers: border + subtle `hover:bg-muted/…` step
+- Shared chrome: `.craft-card` / `.craft-card-interactive` in `craft.css` (flat `bg-background-2`, `border-border/70`, quiet hover)
+- Prefer those utilities over one-off `rounded-xl` + shadow stacks on product grids
+- Cards are interaction containers: border + subtle `hover:bg-muted/15` step
 - No default `hover:shadow-md` lift or glow stacks (`shadow-[0_0_…]`)
 - Prefer `shadow-sm` / `shadow-md` when depth is needed; avoid `shadow-xl` / `shadow-2xl`
-- Borders: `border-border` / `border-border/80` — not raw hex (e.g. `#30363d`)
+- Padding density for grid cards: `p-3.5` (CardHeader/Content defaults match)
+- Grid dates: `LOCAL_DATE_SHORT_FORMAT_OPTIONS` (date-only, short month) — no noisy timestamps in card grids
+- Borders: `border-border` / `border-border/70` — not raw hex (e.g. `#30363d`)
 - Raw `indigo-*` and `border-blue-500` → `accent-*` / `border-accent-9`
 
 ### Accent dialects (three)
