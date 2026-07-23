@@ -255,7 +255,6 @@ export function SignalTaskCard({
               slug={signal.slug}
               upvotes={signal.upvotes}
               refresh={refresh}
-              compact
               disabled={Boolean(signal.archived)}
             />
             {hasValidDue ? (

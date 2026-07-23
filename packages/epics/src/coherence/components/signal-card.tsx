@@ -521,7 +521,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             slug={slug}
             upvotes={upvotes}
             refresh={refresh}
-            compact
             disabled={isLoading || Boolean(archived)}
           />
           {onOpenConversation && !archived ? (
