@@ -44,11 +44,14 @@ export const JoinSpace = ({
   const config = useConfig();
   const { jwt } = useJwt();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
+  // Always resolve the space record so invite proposals can reuse its banner
+  // even when callers already pass a DB spaceId.
   const { spaces: spacesByWeb3Id } = useSpacesByWeb3Ids(
-    spaceIdProp == null ? [BigInt(web3SpaceId)] : [],
+    [BigInt(web3SpaceId)],
     false,
   );
   const spaceId = spaceIdProp ?? spacesByWeb3Id[0]?.id;
+  const spaceLeadImage = spacesByWeb3Id[0]?.leadImage?.trim() || undefined;
   const [joinError, setJoinError] = useState<BaseError | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [inviteRequested, setInviteRequested] = useState(false);
@@ -207,6 +210,7 @@ export const JoinSpace = ({
           memberAddress: person.address as `0x${string}`,
           slug: `invite-request-${spaceId}-${Date.now()}`,
           label: 'Invite',
+          ...(spaceLeadImage ? { leadImage: spaceLeadImage } : {}),
         });
         setInviteRequested(true);
         revalidateInviteStatus();
@@ -238,6 +242,7 @@ export const JoinSpace = ({
     joinSpace,
     revalidateIsMember,
     spaceId,
+    spaceLeadImage,
     person,
     profilePageUrl,
     revalidateInviteStatus,
