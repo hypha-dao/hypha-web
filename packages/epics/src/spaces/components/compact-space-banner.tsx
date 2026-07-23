@@ -11,13 +11,13 @@ export { APP_CHROME_SUBTLE_SQUARE_RADIUS };
 
 /** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
 export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
-  'h-16 w-16 shrink-0 rounded-full sm:h-[72px] sm:w-[72px]',
-  'shadow-md ring-1 ring-white/12',
+  'h-12 w-12 shrink-0 rounded-full sm:h-14 sm:w-14',
+  'shadow-sm ring-1 ring-white/12',
 );
 
-/** Title size on the banner — reuse on sticky; heading face + regular weight for calmer hero */
+/** Title size on the banner — reuse on sticky; tool-sized, not marketing hero */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
-  'text-balance text-6 font-medium tracking-tight sm:text-7',
+  'text-balance text-5 font-medium tracking-tight sm:text-6',
   '[font-family:var(--font-family-text)]',
 );
 
@@ -129,9 +129,9 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     <section
       className={cn(
         'relative overflow-hidden rounded-lg border border-border/70',
-        'shadow-md',
+        'shadow-sm',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
-        'px-4 pt-4 pb-0 md:px-8 md:pt-8',
+        'px-3.5 pt-3 pb-0 md:px-5 md:pt-4',
         className,
       )}
       aria-label={title}
@@ -144,25 +144,16 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       ) : (
         <>
           <div
-            className="pointer-events-none absolute inset-0 bg-white dark:bg-black"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)] dark:bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)]"
+            className="pointer-events-none absolute inset-0 bg-neutral-3 dark:bg-neutral-2"
             aria-hidden
           />
         </>
       )}
 
-      <div className="relative z-10 flex flex-col gap-3 md:gap-5">
-        {/* Row 1: avatar + title/links — avatar size matches PR #2165 */}
-        <div className="flex flex-wrap items-center gap-3 md:items-start md:gap-4 sm:gap-6">
-          <Avatar
-            className={cn(
-              COMPACT_SPACE_BANNER_AVATAR_CLASSNAME,
-              'max-md:h-11 max-md:w-11 max-md:shadow-sm',
-            )}
-          >
+      <div className="relative z-10 flex flex-col gap-2.5 md:gap-3">
+        {/* Row 1: avatar + title/links */}
+        <div className="flex flex-wrap items-center gap-2.5 md:items-start md:gap-3.5">
+          <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
               src={safeLogoSrc}
               alt={logoAlt}
@@ -170,26 +161,26 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             />
           </Avatar>
 
-          <div className="min-w-0 flex-1 basis-[16rem] space-y-1 md:space-y-2">
+          <div className="min-w-0 flex-1 basis-[16rem] space-y-0.5 md:space-y-1">
             <h1
               className={cn(
                 COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
-                'text-white drop-shadow-sm max-md:text-5',
+                'text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]',
               )}
             >
               {title}
             </h1>
             {safeLinks.length > 0 ? (
-              <div className="hidden flex-wrap gap-x-5 gap-y-2 md:flex">
+              <div className="hidden flex-wrap gap-x-4 gap-y-1.5 md:flex">
                 {safeLinks.map((link, index) => (
                   <a
                     key={`${link}_${index}`}
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-1 text-white/80 hover:text-white"
+                    className="inline-flex items-center gap-1.5 text-1 text-white/65 hover:text-white/90"
                   >
-                    <span className="text-white/80 [&_svg]:h-4 [&_svg]:w-4">
+                    <span className="text-white/65 [&_svg]:h-3.5 [&_svg]:w-3.5">
                       <LinkIcon url={link} />
                     </span>
                     <LinkLabel
@@ -214,55 +205,55 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
           >
-            <p className="line-clamp-2 text-pretty text-2 font-normal leading-snug text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
+            <p className="line-clamp-2 text-pretty text-2 font-normal leading-snug text-white/72 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
           </div>
         ) : null}
 
-        {/* Hairline + metadata: one flex item so gap-5 does not double-space above the strip */}
+        {/* Hairline + metadata: one flex item so gap does not double-space above the strip */}
         {footerLeading || showSpaceStats || footerTrailing ? (
           <div className="flex flex-col">
             <div
-              className="h-px w-full shrink-0 bg-white/12"
+              className="h-px w-full shrink-0 bg-white/10"
               role="presentation"
             />
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 md:gap-3 md:py-5">
-              <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2 md:gap-2.5 md:py-2.5">
+              <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/60 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
                 {footerLeading ? (
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     {footerLeading}
                   </div>
                 ) : null}
                 {footerLeading && showSpaceStats ? (
-                  <span className="hidden text-white/45 sm:inline" aria-hidden>
+                  <span className="hidden text-white/30 sm:inline" aria-hidden>
                     ·
                   </span>
                 ) : null}
                 {showSpaceStats ? (
                   <>
                     <span className="inline-flex items-baseline gap-1">
-                      <span className="tabular-nums text-white/95">
+                      <span className="tabular-nums text-white/75">
                         {memberCount ?? '—'}
                       </span>{' '}
-                      <span className="text-white/70">{membersLabel}</span>
+                      <span className="text-white/50">{membersLabel}</span>
                     </span>
-                    <span className="text-white/35" aria-hidden>
+                    <span className="text-white/25" aria-hidden>
                       ·
                     </span>
                     <span className="inline-flex items-baseline gap-1">
-                      <span className="tabular-nums text-white/95">
+                      <span className="tabular-nums text-white/75">
                         {agreementCount ?? '—'}
                       </span>{' '}
-                      <span className="text-white/70">{agreementsLabel}</span>
+                      <span className="text-white/50">{agreementsLabel}</span>
                     </span>
                     <span
-                      className="hidden text-white/45 md:inline"
+                      className="hidden text-white/30 md:inline"
                       aria-hidden
                     >
                       ·
                     </span>
-                    <span className="text-white/88 max-md:hidden">
+                    <span className="text-white/50 max-md:hidden">
                       {createdOnText}
                     </span>
                   </>
