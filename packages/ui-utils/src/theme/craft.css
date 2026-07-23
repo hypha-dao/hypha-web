@@ -10,8 +10,8 @@
   }
 
   .craft-page-title {
-    @apply m-0 text-balance text-foreground tracking-tight;
-    font-family: var(--font-family-text);
+    @apply m-0 text-balance font-semibold tracking-[-0.02em] text-foreground;
+    font-family: var(--font-family-heading);
   }
 
   .craft-empty-mark {
