@@ -214,7 +214,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
           >
-            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)] max-md:line-clamp-2">
+            <p className="line-clamp-2 text-pretty text-2 font-normal leading-snug text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
           </div>
@@ -241,20 +241,20 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                 ) : null}
                 {showSpaceStats ? (
                   <>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <span className="font-bold tabular-nums text-white">
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="tabular-nums text-white/95">
                         {memberCount ?? '—'}
                       </span>{' '}
-                      <span className="text-white/92">{membersLabel}</span>
+                      <span className="text-white/70">{membersLabel}</span>
                     </span>
-                    <span className="text-white/45" aria-hidden>
+                    <span className="text-white/35" aria-hidden>
                       ·
                     </span>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <span className="font-bold tabular-nums text-white">
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="tabular-nums text-white/95">
                         {agreementCount ?? '—'}
                       </span>{' '}
-                      <span className="text-white/92">{agreementsLabel}</span>
+                      <span className="text-white/70">{agreementsLabel}</span>
                     </span>
                     <span
                       className="hidden text-white/45 md:inline"
