@@ -37,23 +37,26 @@ export const useAddMemberOrchestrator = ({
     async (_, { arg }: { arg: z.infer<typeof schemaRequestInvite> }) => {
       setIsCreating(true);
       try {
-        const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse({
-          title: arg.title,
-          description: arg.description,
+        const parsed = schemaRequestInvite.parse({
+          ...arg,
           slug: arg.slug || `invite-request-${arg.spaceId}-${Date.now()}`,
-          creatorId: arg.creatorId,
-          spaceId: arg.spaceId,
-          web3ProposalId: arg.web3ProposalId,
-          label: arg.label,
         });
-        const createdAgreement = await web2.createAgreement(
-          inputCreateAgreementWeb2,
-        );
-
-        const { memberAddress } = arg;
+        const {
+          memberAddress: inviteMemberAddress,
+          leadImage,
+          ...web2Fields
+        } = parsed;
+        // schemaCreateAgreementWeb2 omits leadImage; re-attach so invite cards
+        // persist the hosting space banner instead of the Hypha placeholder.
+        const inputCreateAgreementWeb2 =
+          schemaCreateAgreementWeb2.parse(web2Fields);
+        const createdAgreement = await web2.createAgreement({
+          ...inputCreateAgreementWeb2,
+          ...(leadImage ? { leadImage } : {}),
+        });
 
         if (config && spaceId) {
-          if (!memberAddress) {
+          if (!inviteMemberAddress) {
             throw new Error('memberAddress is required');
           }
           await web3.addMember();
