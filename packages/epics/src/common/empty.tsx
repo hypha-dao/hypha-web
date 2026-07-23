@@ -17,14 +17,14 @@ export const Empty = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col items-center justify-center gap-3 py-8 text-center text-muted-foreground',
+        'flex w-full flex-col items-center justify-center gap-2.5 py-8 text-center',
         className,
       )}
     >
       <div className="craft-empty-mark" aria-hidden>
-        <Icon className="size-5" />
+        <Icon className="size-4" />
       </div>
-      <div className="max-w-sm text-2 leading-relaxed text-neutral-11">
+      <div className="max-w-xs text-1 font-normal leading-snug text-muted-foreground">
         {children}
       </div>
     </div>

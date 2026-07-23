@@ -133,11 +133,8 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
 
     return format.dateTime(parsedDate, {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
     });
   };
   const type = React.useMemo(() => {
@@ -174,39 +171,44 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="relative space-y-4">
-        <div className="flex flex-col items-start space-y-2">
-          <BadgesList isLoading={isLoading} badges={badges ?? []} />
+      <CardContent className="relative space-y-2.5 pt-4">
+        <div className="flex flex-col items-start gap-1.5">
+          {(badges?.length ?? 0) > 0 || isLoading ? (
+            <BadgesList
+              isLoading={isLoading}
+              badges={(badges ?? []).slice(0, 2)}
+            />
+          ) : null}
           <Skeleton
             className="min-w-full"
             width="120px"
             height="18px"
             loading={isLoading}
           >
-            <CardTitle>{title}</CardTitle>
+            <CardTitle className="line-clamp-2 text-3">{title}</CardTitle>
           </Skeleton>
           <PersonLabel isLoading={isLoading} creator={creator} />
         </div>
-        <div className="flex flex-grow text-1 text-neutral-11">
+        {description ? (
           <Skeleton
             className="min-w-full"
             width="200px"
-            height="48px"
+            height="16px"
             loading={isLoading}
           >
-            <div className="line-clamp-3 w-full">
+            <p className="line-clamp-1 w-full text-1 font-normal text-muted-foreground">
               {stripMarkdown(stripDescription(description ?? ''), {
                 orderedListMarkers: false,
                 unorderedListMarkers: false,
               })}
-            </div>
+            </p>
           </Skeleton>
-        </div>
-        <div className="flex flex-grow text-1 text-neutral-11">
+        ) : null}
+        <div className="text-1 font-normal text-muted-foreground">
           <Skeleton
             className="min-w-full"
-            width="200px"
-            height="48px"
+            width="160px"
+            height="16px"
             loading={isLoading || isLoadingEvents}
           >
             {type === 'executeProposal' && event && (

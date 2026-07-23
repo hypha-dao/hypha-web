@@ -107,82 +107,63 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="flex flex-col flex-1 pt-5 relative">
+      <CardContent className="relative flex flex-1 flex-col pt-4">
         <div>
-          <Avatar className="w-[64px] h-[64px] absolute top-[-54px]">
-            <Skeleton width="64px" height="64px" loading={isLoading}>
+          <Avatar className="absolute top-[-48px] h-14 w-14">
+            <Skeleton width="56px" height="56px" loading={isLoading}>
               <AvatarImage src={icon} alt="logo" />
             </Skeleton>
           </Avatar>
         </div>
-        <div className="flex flex-col flex-1">
-          <div className="mb-4 flex-shrink-0">
-            <Skeleton loading={isLoading} width="40px" height="26px">
-              <CardTitle className="font-medium tracking-normal text-4">
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="min-w-0 shrink-0 pt-1">
+            <Skeleton loading={isLoading} width="40px" height="22px">
+              <CardTitle className="truncate text-3 font-medium tracking-tight">
                 {title}
               </CardTitle>
             </Skeleton>
           </div>
-          <div className="flex flex-col flex-1 flex-grow">
-            <Skeleton
-              loading={isLoading}
-              className="mb-4"
-              width="100%"
-              height="26px"
-            >
-              <div className="text-1 text-neutral-11 mb-4 line-clamp-2">
+          {description ? (
+            <Skeleton loading={isLoading} width="100%" height="16px">
+              <p className="line-clamp-1 text-1 font-normal text-muted-foreground">
                 {description}
-              </div>
+              </p>
             </Skeleton>
-          </div>
-          <div className="flex gap-2 text-xs items-center">
-            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap">
-              <div className="flex flex-col gap-y-2 gap-x-4 @min-[22rem]:flex-row">
-                <div className="flex flex-row">
-                  <Skeleton loading={isLoading} height="16px" width="80px">
-                    <div className="font-bold text-1">{members}</div>
-                    <div className="text-neutral-11 ml-1 text-1">
-                      {tCommon('Members')}
-                    </div>
-                  </Skeleton>
-                </div>
-                <div className="flex flex-row">
-                  <Skeleton loading={isLoading} height="16px" width="80px">
-                    <div className="font-bold text-1">{agreements}</div>
-                    <div className="text-neutral-11 ml-1 text-1">
-                      {tCommon('Agreements')}
-                    </div>
-                  </Skeleton>
-                </div>
-              </div>
-              <div className="flex flex-row">
-                {createdAt instanceof Date &&
-                  !Number.isNaN(createdAt.getTime()) && (
-                    <Skeleton loading={isLoading} height="16px" width="80px">
-                      <div className="text-neutral-11 text-1">
-                        {tCommon('createdOn', {
-                          date: format.dateTime(createdAt, {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          }),
-                        })}
-                      </div>
-                    </Skeleton>
-                  )}
-              </div>
+          ) : null}
+          <div className="mt-auto flex items-end gap-2 pt-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-1 font-normal text-muted-foreground">
+              <Skeleton loading={isLoading} height="16px" width="72px">
+                <span>
+                  <span className="text-foreground/80">{members}</span>{' '}
+                  {tCommon('Members')}
+                </span>
+              </Skeleton>
+              <Skeleton loading={isLoading} height="16px" width="72px">
+                <span>
+                  <span className="text-foreground/80">{agreements}</span>{' '}
+                  {tCommon('Agreements')}
+                </span>
+              </Skeleton>
+              {createdAt instanceof Date &&
+              !Number.isNaN(createdAt.getTime()) ? (
+                <Skeleton loading={isLoading} height="16px" width="88px">
+                  <span className="truncate">
+                    {format.dateTime(createdAt, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </Skeleton>
+              ) : null}
             </div>
-            <div className="flex grow"></div>
             <SpaceModeLabel
               web3SpaceId={web3SpaceId}
               isSandbox={isSandbox}
               isDemo={isDemo}
               isArchived={isArchived}
               configPath={configPath}
-              className="ml-2"
+              className="shrink-0"
             />
           </div>
         </div>
