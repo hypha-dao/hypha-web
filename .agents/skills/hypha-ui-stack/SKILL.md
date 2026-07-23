@@ -63,11 +63,11 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 
 ### Radius family
 
-| Surface                                                     | Prefer                                                                                                |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Cards / panels / menus / dialogs                            | `rounded-lg` (maps to `--radius`)                                                                     |
-| Chrome controls (header icon buttons, small square avatars) | `APP_CHROME_SUBTLE_SQUARE_RADIUS` (`rounded-[6px]`) from `packages/epics/src/common/chrome-radius.ts` |
-| Avoid on product chrome                                     | `rounded-xl`, `rounded-2xl`                                                                           |
+| Surface                                                     | Prefer                                                                                                                   |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Cards / panels / menus / dialogs                            | `rounded-lg` → `--radius-lg`                                                                                             |
+| Chrome controls (header icon buttons, small square avatars) | `APP_CHROME_SUBTLE_SQUARE_RADIUS` (`rounded-chrome` → `--radius-chrome`) in `packages/epics/src/common/chrome-radius.ts` |
+| Avoid on product chrome                                     | `rounded-xl`, `rounded-2xl`                                                                                              |
 
 ### Fonts
 

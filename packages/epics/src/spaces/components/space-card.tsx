@@ -95,7 +95,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
       )}
       <CardHeader
         style={customCardHeaderStyles}
-        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
+        className="flex-shrink-0 overflow-hidden rounded-tl-lg rounded-tr-lg p-0"
       >
         <Skeleton loading={isLoading} className="w-full h-full">
           <Image
