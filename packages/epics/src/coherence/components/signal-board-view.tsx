@@ -334,24 +334,6 @@ export function SignalBoardView({
                     onClick={
                       onSignalClick ? () => onSignalClick(signal) : undefined
                     }
-                    statusOptions={readOnly ? undefined : statuses}
-                    onStatusChange={
-                      readOnly
-                        ? undefined
-                        : (progressStatus) => {
-                            if (signal.progressStatus === progressStatus) {
-                              return;
-                            }
-                            void onMoveStatus(signal, progressStatus).catch(
-                              (error) => {
-                                console.error(
-                                  '[SignalBoardView] Failed to move signal',
-                                  error,
-                                );
-                              },
-                            );
-                          }
-                    }
                     className={cn(
                       SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS,
                       draggingSignal?.slug === signal.slug &&
