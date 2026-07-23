@@ -98,7 +98,8 @@ export function HumanChatPanelCallJoinStrip({
       ) : null}
       <Button
         type="button"
-        variant={useProminentJoinBanner ? 'default' : 'outline'}
+        variant="outline"
+        colorVariant="accent"
         size="sm"
         onClick={onJoinVideo}
         disabled={disabled || busy}
