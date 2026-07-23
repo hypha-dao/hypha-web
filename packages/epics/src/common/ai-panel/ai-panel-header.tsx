@@ -203,7 +203,10 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-3 border-b border-border bg-background-2 ps-4 pe-5 py-2">
+    <div
+      className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-3 border-b border-border/80 bg-background-2/92 ps-4 pe-5 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80"
+      data-craft-icons
+    >
       {leftSlot ? (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center">
           {leftSlot}
@@ -223,7 +226,7 @@ export function AiPanelHeader({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground transition-[background-color,border-color,gap,padding] duration-200 ease-out hover:border-border/65 hover:bg-background-4/85"
+                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold tracking-tight text-foreground transition-[background-color,border-color,gap,padding] duration-200 ease-out hover:border-border/65 hover:bg-background-4/85"
                   aria-label={tNavigation('mySpaces')}
                 >
                   <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
@@ -242,7 +245,7 @@ export function AiPanelHeader({
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[16rem] truncate text-center transition-[max-width] duration-200 ease-out">
+                  <span className="max-w-[16rem] truncate text-center [font-family:var(--font-family-heading)] transition-[max-width] duration-200 ease-out">
                     {currentTitle}
                   </span>
                   <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
