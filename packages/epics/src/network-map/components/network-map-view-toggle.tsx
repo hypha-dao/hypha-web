@@ -32,13 +32,22 @@ export function NetworkMapViewToggle({
     >
       <TabsList
         className={segmentedListClass}
+        triggerVariant="switch"
         aria-label={t('viewToggleLabel')}
       >
-        <TabsTrigger value="map" className={segmentedTriggerClass}>
+        <TabsTrigger
+          value="map"
+          variant="switch"
+          className={segmentedTriggerClass}
+        >
           <Map className="size-3.5 shrink-0" aria-hidden />
           {t('mapView')}
         </TabsTrigger>
-        <TabsTrigger value="list" className={segmentedTriggerClass}>
+        <TabsTrigger
+          value="list"
+          variant="switch"
+          className={segmentedTriggerClass}
+        >
           <LayoutList className="size-3.5 shrink-0" aria-hidden />
           {t('listView')}
         </TabsTrigger>

@@ -68,37 +68,53 @@ type MapPalette = {
   landFill: string;
   landStroke: string;
   grid: string;
+  clusterFill: string;
+  clusterRing: string;
+  pinStroke: string;
+  spiderfyStroke: string;
   sphereShadow: string | null;
 };
 
-/** Pinned dark-mode globe colors — pale ocean + dark land on black page background. */
+/**
+ * Dark: pale ocean + dark land (readable on black page).
+ * Light: cool water vs warmer land — clear separation without neon.
+ */
 const DARK_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(90.334% 0.04675 220.665)',
-  landFill: 'oklch(34.655% 0.01033 254.043)',
-  landStroke: 'oklch(53.701% 0.01538 262.385)',
-  grid: 'oklch(48.932% 0.01557 251.766)',
+  ocean: 'oklch(88% 0.042 220)',
+  landFill: 'oklch(32% 0.012 254)',
+  landStroke: 'oklch(48% 0.014 262)',
+  grid: 'oklch(46% 0.014 252)',
+  clusterFill: 'var(--accent-9)',
+  clusterRing: 'var(--accent-8)',
+  pinStroke: 'var(--background-1)',
+  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 55%, transparent)',
   sphereShadow: null,
 };
 
-function mapPaletteForTheme(theme: string | undefined): MapPalette {
-  if (theme === 'light') {
-    return {
-      ocean: 'var(--info-5)',
-      landFill: 'var(--neutral-7)',
-      landStroke: 'var(--neutral-9)',
-      grid: 'var(--neutral-8)',
-      sphereShadow:
-        'drop-shadow(0 10px 28px color-mix(in oklab, var(--info-9) 18%, transparent))',
-    };
-  }
+const LIGHT_GLOBE_PALETTE: MapPalette = {
+  ocean: 'var(--info-4)',
+  landFill: 'var(--neutral-3)',
+  landStroke: 'var(--neutral-8)',
+  grid: 'var(--neutral-7)',
+  clusterFill: 'var(--accent-9)',
+  clusterRing: 'var(--accent-8)',
+  pinStroke: 'var(--background-1)',
+  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 35%, transparent)',
+  sphereShadow:
+    'drop-shadow(0 2px 6px color-mix(in oklab, var(--neutral-12) 12%, transparent))',
+};
 
-  return DARK_GLOBE_PALETTE;
+function mapPaletteForTheme(theme: string | undefined): MapPalette {
+  return theme === 'light' ? LIGHT_GLOBE_PALETTE : DARK_GLOBE_PALETTE;
 }
 
+/** Stable per-space accent hues for pin dots (not chrome). */
 function pinColor(id: number): string {
   const hue = Math.abs((id * 47) % 360);
-  return `hsl(${hue} 68% 58%)`;
+  return `oklch(62% 0.14 ${hue})`;
 }
+
+const MINI_GLOBE_SIZE = 88;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') {
@@ -213,6 +229,7 @@ export function NetworkGlobeMap({
   const initialCenter = useInitialGlobeCenter();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
+  const miniGlobeRef = React.useRef<SVGSVGElement>(null);
 
   const mapPalette = React.useMemo(
     () => mapPaletteForTheme(resolvedTheme),
@@ -286,6 +303,7 @@ export function NetworkGlobeMap({
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
+  const renderMiniGlobeRef = React.useRef<() => void>(() => {});
 
   morphRef.current = morphProgress;
   layersRef.current = layers;
@@ -433,10 +451,10 @@ export function NetworkGlobeMap({
           .attr('y1', centerY)
           .attr('x2', (_, index) => centerX + offsets[index]!.x)
           .attr('y2', (_, index) => centerY + offsets[index]!.y)
-          .attr('stroke', 'white')
-          .attr('stroke-opacity', 0.35 * spread)
-          .attr('stroke-width', 1.25)
-          .attr('stroke-dasharray', '4 4')
+          .attr('stroke', palette.spiderfyStroke)
+          .attr('stroke-opacity', 0.9 * spread)
+          .attr('stroke-width', 1)
+          .attr('stroke-dasharray', '3 3')
           .attr('pointer-events', 'none');
       }
     }
@@ -463,8 +481,8 @@ export function NetworkGlobeMap({
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
         .attr('stroke', palette.grid)
-        .attr('stroke-width', 0.4)
-        .attr('opacity', 0.45)
+        .attr('stroke-width', 0.35)
+        .attr('opacity', 0.55)
         .style('display', null);
     } else {
       gridPath.attr('d', null).style('display', 'none');
@@ -476,7 +494,7 @@ export function NetworkGlobeMap({
         .attr('d', path(land) ?? '')
         .attr('fill', palette.landFill)
         .attr('stroke', palette.landStroke)
-        .attr('stroke-width', 0.5)
+        .attr('stroke-width', 0.6)
         .style('display', null);
     } else {
       landPath.attr('d', null).style('display', 'none');
@@ -585,39 +603,40 @@ export function NetworkGlobeMap({
 
     pinsEnter.each(function (datum) {
       const group = d3.select(this);
+      const palette = mapPaletteRef.current;
       if (datum.kind === 'cluster') {
         group
           .append('circle')
           .attr('class', 'map-pin-hit')
-          .attr('r', 14)
+          .attr('r', 15)
           .attr('fill', 'transparent')
           .attr('pointer-events', 'all');
         group
           .append('circle')
-          .attr('class', 'map-pin-cluster-pulse')
+          .attr('class', 'map-pin-cluster-ring')
           .attr('r', 12)
           .attr('fill', 'none')
-          .attr('stroke', '#3b82f6')
-          .attr('stroke-width', 2)
+          .attr('stroke', palette.clusterRing)
+          .attr('stroke-width', 1.5)
+          .attr('opacity', 0.55)
           .attr('pointer-events', 'none');
         group
           .append('circle')
-          .attr('r', 11)
-          .attr('fill', 'white')
-          .attr('opacity', 0.92)
-          .attr('pointer-events', 'none');
-        group
-          .append('circle')
-          .attr('r', 8)
-          .attr('fill', '#2563eb')
+          .attr('class', 'map-pin-cluster-core')
+          .attr('r', 9)
+          .attr('fill', palette.clusterFill)
+          .attr('stroke', palette.pinStroke)
+          .attr('stroke-width', 1.5)
           .attr('pointer-events', 'none');
         group
           .append('text')
+          .attr('class', 'map-pin-cluster-count')
           .attr('text-anchor', 'middle')
           .attr('dy', '0.35em')
-          .attr('font-size', 10)
+          .attr('font-size', datum.count > 9 ? 9 : 10)
           .attr('font-weight', 600)
-          .attr('fill', 'white')
+          .attr('font-family', 'var(--font-family-text, sans-serif)')
+          .attr('fill', 'var(--accent-contrast, white)')
           .attr('pointer-events', 'none')
           .text(String(datum.count));
         group
@@ -633,16 +652,24 @@ export function NetworkGlobeMap({
 
       group
         .append('circle')
+        .attr('class', 'map-pin-hit')
         .attr('r', 12)
         .attr('fill', 'transparent')
         .attr('pointer-events', 'all');
       group
         .append('circle')
+        .attr('class', 'map-pin-halo')
+        .attr('r', 7)
+        .attr('fill', pinColor(space.id))
+        .attr('opacity', 0)
+        .attr('pointer-events', 'none');
+      group
+        .append('circle')
         .attr('class', 'map-pin-dot')
         .attr('r', 5)
         .attr('fill', pinColor(space.id))
-        .attr('stroke', 'white')
-        .attr('stroke-width', 1.5)
+        .attr('stroke', palette.pinStroke)
+        .attr('stroke-width', 1.75)
         .attr('pointer-events', 'none');
       group.append('title').text(space.locationLabel ?? space.title);
     });
@@ -721,6 +748,52 @@ export function NetworkGlobeMap({
 
   renderMapRef.current = renderMap;
 
+  const renderMiniGlobe = React.useCallback(() => {
+    const svg = d3.select(miniGlobeRef.current);
+    const land = landRef.current;
+    if (!miniGlobeRef.current || !land) {
+      return;
+    }
+
+    const size = MINI_GLOBE_SIZE;
+    const palette = mapPaletteRef.current;
+    const projection = d3
+      .geoOrthographic()
+      .scale(size / 2 - 4)
+      .translate([size / 2, size / 2])
+      .rotate(savedGlobeRotateRef.current)
+      .clipAngle(90);
+    const path = d3.geoPath(projection);
+
+    svg
+      .attr('width', size)
+      .attr('height', size)
+      .attr('viewBox', `0 0 ${size} ${size}`);
+
+    let root = svg.select<SVGGElement>('g.mini-globe-root');
+    if (root.empty()) {
+      root = svg.append('g').attr('class', 'mini-globe-root');
+      root.append('path').attr('class', 'mini-globe-ocean');
+      root.append('path').attr('class', 'mini-globe-land');
+    }
+
+    root
+      .select<SVGPathElement>('path.mini-globe-ocean')
+      .attr('d', path({ type: 'Sphere' }) ?? '')
+      .attr('fill', palette.ocean)
+      .attr('stroke', palette.landStroke)
+      .attr('stroke-width', 0.75);
+
+    root
+      .select<SVGPathElement>('path.mini-globe-land')
+      .attr('d', path(land) ?? '')
+      .attr('fill', palette.landFill)
+      .attr('stroke', palette.landStroke)
+      .attr('stroke-width', 0.4);
+  }, []);
+
+  renderMiniGlobeRef.current = renderMiniGlobe;
+
   const isActiveRef = React.useRef(isActive);
   isActiveRef.current = isActive;
 
@@ -734,6 +807,7 @@ export function NetworkGlobeMap({
     renderFrameRef.current = requestAnimationFrame(() => {
       renderFrameRef.current = null;
       renderMapRef.current();
+      renderMiniGlobeRef.current();
     });
   }, []);
 
@@ -960,16 +1034,30 @@ export function NetworkGlobeMap({
 
   React.useEffect(() => {
     renderMap();
+    renderMiniGlobe();
   }, [
     layers,
     morphProgress,
     projectionMode,
+    selectedProjection,
     locatedSpaces,
     mapPinData,
     clusterSpread,
     mapPalette,
     renderMap,
+    renderMiniGlobe,
   ]);
+
+  React.useEffect(() => {
+    if (selectedProjection !== 'flat' || isLoadingGeo || loadError) {
+      return;
+    }
+    // Mini-globe SVG mounts with flat mode — paint after commit.
+    const id = requestAnimationFrame(() => {
+      renderMiniGlobeRef.current();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [selectedProjection, isLoadingGeo, loadError, mapPalette]);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -1240,7 +1328,7 @@ export function NetworkGlobeMap({
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 gap-1.5 bg-neutral-2/90 shadow-sm backdrop-blur-sm"
+        className="h-8 gap-1.5 border-border bg-background shadow-sm"
         onClick={clearClusterFocus}
       >
         <Minus className="size-3.5" aria-hidden />
@@ -1249,58 +1337,101 @@ export function NetworkGlobeMap({
     </div>
   ) : null;
 
+  const showMiniGlobe =
+    selectedProjection === 'flat' && !isLoadingGeo && !loadError;
+
+  const miniGlobeInset = showMiniGlobe ? (
+    <button
+      type="button"
+      className={cn(
+        'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
+        'transition-[border-color,background-color] duration-150',
+        'hover:border-border hover:bg-muted/15',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+      )}
+      style={{ width: MINI_GLOBE_SIZE, height: MINI_GLOBE_SIZE }}
+      aria-label={t('globeView')}
+      title={t('globeView')}
+      onClick={() => animateProjection('globe')}
+    >
+      <svg
+        ref={miniGlobeRef}
+        className="block size-full"
+        role="img"
+        aria-hidden
+      />
+    </button>
+  ) : null;
+
   const mapClusterStyles = (
     <style>{`
       g.map-pin:focus,
       g.map-pin:focus-visible {
         outline: none;
       }
-      @keyframes network-map-cluster-pulse {
-        0% { transform: scale(0.9); opacity: 0.55; }
-        70% { transform: scale(1.45); opacity: 0; }
-        100% { transform: scale(1.45); opacity: 0; }
+      g.map-pin .map-pin-dot,
+      g.map-pin .map-pin-halo,
+      g.map-pin .map-pin-cluster-core,
+      g.map-pin .map-pin-cluster-ring {
+        transition: r 140ms ease-out, opacity 140ms ease-out, stroke-width 140ms ease-out;
       }
-      g.map-pin-cluster .map-pin-cluster-pulse {
-        transform-box: fill-box;
-        transform-origin: center;
-        animation: network-map-cluster-pulse 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+      @media (hover: hover) and (pointer: fine) {
+        g.map-pin:hover .map-pin-dot {
+          r: 6;
+        }
+        g.map-pin:hover .map-pin-halo {
+          opacity: 0.22;
+        }
+        g.map-pin-cluster:hover .map-pin-cluster-core {
+          r: 10;
+        }
+        g.map-pin-cluster:hover .map-pin-cluster-ring {
+          opacity: 0.85;
+        }
       }
     `}</style>
   );
 
+  const mapStage = (
+    <div
+      ref={containerRef}
+      className="relative min-h-[360px] w-full overflow-hidden rounded-lg border border-border/70 bg-background-2"
+    >
+      {isLoadingGeo ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
+          <Loader2 className="size-5 animate-spin" />
+          <span>{t('loadingMap')}</span>
+        </div>
+      ) : null}
+      {loadError ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
+          {loadError}
+        </div>
+      ) : null}
+      {mapClusterStyles}
+      {clusterControls}
+      <svg
+        ref={svgRef}
+        className={cn(
+          'block w-full touch-none select-none',
+          projectionMode === 'globe'
+            ? 'cursor-grab active:cursor-grabbing'
+            : 'cursor-default',
+          isLoadingGeo ? 'invisible' : undefined,
+        )}
+        role="img"
+        aria-label={t('mapAriaLabel')}
+      />
+      {miniGlobeInset}
+      {hoverCard}
+    </div>
+  );
+
   if (locatedSpaces.length === 0) {
     return (
-      <div className={cn('flex min-w-0 flex-col gap-4', className)}>
+      <div className={cn('flex min-w-0 flex-col gap-3', className)}>
         {toolbar}
-        <div
-          ref={containerRef}
-          className="relative min-h-[360px] w-full overflow-hidden"
-        >
-          {isLoadingGeo ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
-              <Loader2 className="size-5 animate-spin" />
-              <span>{t('loadingMap')}</span>
-            </div>
-          ) : null}
-          {loadError ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
-              {loadError}
-            </div>
-          ) : null}
-          <svg
-            ref={svgRef}
-            className={cn(
-              'block w-full touch-none select-none',
-              projectionMode === 'globe'
-                ? 'cursor-grab active:cursor-grabbing'
-                : 'cursor-default',
-              isLoadingGeo ? 'invisible' : undefined,
-            )}
-            role="img"
-            aria-label={t('mapAriaLabel')}
-          />
-          {hoverCard}
-        </div>
+        {mapStage}
         <div className="px-0 py-2 text-center">
           <p className="text-4 text-neutral-11">{t('noSpacesWithLocation')}</p>
           <p className="text-2 text-neutral-10">
@@ -1312,39 +1443,9 @@ export function NetworkGlobeMap({
   }
 
   return (
-    <div className={cn('flex min-w-0 flex-col gap-4', className)}>
+    <div className={cn('flex min-w-0 flex-col gap-3', className)}>
       {toolbar}
-      <div
-        ref={containerRef}
-        className="relative min-h-[360px] w-full overflow-hidden"
-      >
-        {isLoadingGeo ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
-            <Loader2 className="size-5 animate-spin" />
-            <span>{t('loadingMap')}</span>
-          </div>
-        ) : null}
-        {loadError ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
-            {loadError}
-          </div>
-        ) : null}
-        {mapClusterStyles}
-        {clusterControls}
-        <svg
-          ref={svgRef}
-          className={cn(
-            'block w-full touch-none select-none',
-            projectionMode === 'globe'
-              ? 'cursor-grab active:cursor-grabbing'
-              : 'cursor-default',
-            isLoadingGeo ? 'invisible' : undefined,
-          )}
-          role="img"
-          aria-label={t('mapAriaLabel')}
-        />
-        {hoverCard}
-      </div>
+      {mapStage}
     </div>
   );
 }
