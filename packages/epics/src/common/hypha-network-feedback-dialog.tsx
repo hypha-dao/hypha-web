@@ -150,7 +150,7 @@ export function HyphaNetworkFeedbackDialog({
           </DialogHeader>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <FeedbackOption
-              icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
+              icon={<Radio className="craft-icon" strokeWidth={1.5} />}
               title={t('community.title')}
               tagline={t('community.tagline')}
               description={t('community.description')}
@@ -159,7 +159,7 @@ export function HyphaNetworkFeedbackDialog({
               onNavigate={close}
             />
             <FeedbackOption
-              icon={<Scale className="size-[22px]" strokeWidth={1.75} />}
+              icon={<Scale className="craft-icon" strokeWidth={1.5} />}
               title={t('governance.title')}
               tagline={t('governance.tagline')}
               hasInlineLink

@@ -134,7 +134,7 @@ export function SignalSwimlaneView({
                   {lane.board.name}
                 </h3>
               </div>
-              <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+              <span className="rounded-md bg-muted/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
                 {laneCount}
               </span>
             </header>

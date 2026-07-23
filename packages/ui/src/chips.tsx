@@ -600,7 +600,7 @@ export const MultiSelect = React.forwardRef<
                     key={value}
                     className={cn(
                       multiSelectVariants({ variant }),
-                      'rounded-full border-neutral-7 bg-neutral-3 text-neutral-12',
+                      'rounded-md border-neutral-7 bg-neutral-3 text-neutral-12',
                     )}
                     style={{ animationDuration: `${animation}s` }}
                   >
@@ -623,7 +623,7 @@ export const MultiSelect = React.forwardRef<
               {selectedValues.length > maxCount ? (
                 <Badge
                   className={cn(
-                    'rounded-full bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
+                    'rounded-md bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
                     multiSelectVariants({ variant }),
                   )}
                   style={{ animationDuration: `${animation}s` }}

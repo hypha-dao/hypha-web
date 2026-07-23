@@ -70,7 +70,7 @@ export function NetworkMapLayerControls({
             variant="switch"
             className={segmentedTriggerClass}
           >
-            <Globe className="size-3.5 shrink-0" aria-hidden />
+            <Globe className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
             {t('globeView')}
           </TabsTrigger>
           <TabsTrigger
@@ -78,7 +78,7 @@ export function NetworkMapLayerControls({
             variant="switch"
             className={segmentedTriggerClass}
           >
-            <Map className="size-3.5 shrink-0" aria-hidden />
+            <Map className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
             {t('flatView')}
           </TabsTrigger>
         </TabsList>
@@ -106,7 +106,7 @@ export function NetworkMapLayerControls({
               onClick={() => onLayerChange(layerId, !active)}
               className={segmentedButtonClass(active)}
             >
-              <Icon className="size-3.5 shrink-0" aria-hidden />
+              <Icon className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
               <span>{t(`${layerId}Layer`)}</span>
             </button>
           );

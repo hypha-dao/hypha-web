@@ -36,4 +36,36 @@
     @apply transition-[border-color,background-color] duration-200 ease-out;
     @apply hover:border-border hover:bg-muted/15;
   }
+
+  /*
+   * Icon optical system — Lucide stroke feel + chrome boxes.
+   * Prefer these over ad-hoc size/stroke/rounded-full on tool chrome.
+   */
+  .craft-icon {
+    @apply block size-4 shrink-0;
+    stroke-width: 1.5;
+  }
+
+  .craft-icon-sm {
+    @apply block size-3.5 shrink-0;
+    stroke-width: 1.5;
+  }
+
+  /*
+   * Square icon well for action cards / chrome.
+   * Grid + block SVG kills inline-baseline drift (icons looking bottom-heavy).
+   */
+  .craft-icon-box {
+    @apply grid size-8 shrink-0 place-items-center overflow-hidden rounded-chrome border border-border/70 bg-muted/25 text-muted-foreground;
+  }
+
+  .craft-icon-box > svg {
+    display: block !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem;
+    max-height: 1rem;
+    flex-shrink: 0;
+    stroke-width: 1.5;
+  }
 }
