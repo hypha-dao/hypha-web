@@ -518,7 +518,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     syncCalendarDate(next);
   };
 
-  const headerLabel = formatDate(anchorDate, 'MMMM yyyy', {
+  const headerLabel = formatDate(anchorDate, 'MMMM', {
     locale: dateFnsLocale,
   });
 
