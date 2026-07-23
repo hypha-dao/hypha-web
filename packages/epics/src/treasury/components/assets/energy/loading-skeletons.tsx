@@ -43,7 +43,7 @@ export function EnergyTextSkeleton({
 export function EnergyStatCardSkeleton({ delayMs = 0 }: { delayMs?: number }) {
   return (
     <div
-      className="relative overflow-hidden rounded-xl border border-border bg-background-2 p-4"
+      className="relative overflow-hidden craft-card p-4"
       aria-hidden
     >
       <span className="absolute inset-x-0 top-0 h-0.5 bg-muted" />
@@ -125,7 +125,7 @@ export function EnergyChartSkeleton({
 export function EnergyPersonRowSkeleton({ delayMs = 0 }: { delayMs?: number }) {
   return (
     <div
-      className="flex items-center gap-3 rounded-xl border border-border bg-background-2 p-3"
+      className="flex items-center gap-3 craft-card p-3"
       aria-hidden
     >
       <Pulse className="h-10 w-10 shrink-0 rounded-full" delayMs={delayMs} />

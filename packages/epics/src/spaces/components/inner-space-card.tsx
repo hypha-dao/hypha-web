@@ -11,8 +11,7 @@ import {
   Skeleton,
   Image,
 } from '@hypha-platform/ui';
-import { Text } from '@radix-ui/themes';
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, LOCAL_DATE_SHORT_FORMAT_OPTIONS } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 
@@ -47,13 +46,21 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   createdAt,
   className,
 }) => {
-  const avatarSize = 'w-[24px] h-[24px]';
+  const avatarSize = 'size-6';
   const skeletonSize = '24px';
   const tCommon = useTranslations('Common');
   const format = useFormatter();
+  const hasValidCreatedAt =
+    createdAt instanceof Date && !Number.isNaN(createdAt.getTime());
+
   return (
-    <Card className={cn('h-full w-full', className)}>
-      <CardHeader className="h-[150px] overflow-hidden rounded-tl-lg rounded-tr-lg p-0">
+    <Card
+      className={cn(
+        'craft-card-interactive flex h-full w-full flex-col',
+        className,
+      )}
+    >
+      <CardHeader className="h-[120px] flex-shrink-0 overflow-hidden rounded-tl-lg rounded-tr-lg p-0">
         <Skeleton
           width="100%"
           height="100%"
@@ -61,7 +68,7 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           className="rounded-tl-lg rounded-tr-lg object-cover"
         >
           <Image
-            className="rounded-tl-lg rounded-tr-lg object-cover w-full h-full"
+            className="h-full w-full rounded-tl-lg rounded-tr-lg object-cover"
             src={leadImageUrl as string}
             alt={title as string}
             width={1200}
@@ -70,14 +77,14 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
         </Skeleton>
       </CardHeader>
 
-      <CardContent className="pt-5 relative">
-        <div className="flex flex-col items-start mb-5">
+      <CardContent className="relative flex flex-1 flex-col gap-2 p-3.5 pt-3.5">
+        <div className="min-w-0 shrink-0">
           <Skeleton width="150px" height="18px" loading={isLoading}>
-            <CardTitle>
+            <CardTitle className="line-clamp-2 text-3 font-medium tracking-tight">
               {title}
               {parentTitle ? (
                 <Link
-                  className="text-accent-11 text-3 text-ellipsis overflow-hidden"
+                  className="text-3 font-normal text-accent-11"
                   href={parentPath || '#'}
                 >
                   {' '}
@@ -88,75 +95,74 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           </Skeleton>
         </div>
 
-        {description ? (
-          <div className="mb-3 flex-grow text-1 font-normal text-muted-foreground">
+        <div className="min-h-4">
+          {description ? (
             <Skeleton width="200px" height="16px" loading={isLoading}>
-              <p className="line-clamp-1">{description}</p>
+              <p className="craft-meta line-clamp-1">{description}</p>
             </Skeleton>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
-        <div className="flex gap-1 mb-4">
-          <Skeleton
-            width={skeletonSize}
-            height={skeletonSize}
-            loading={isLoading}
-            className="rounded-lg"
-          >
-            <div className="flex gap-1">
-              {members
-                ? members.slice(0, 3).map((member, index) => (
-                    <Avatar
-                      key={`${member.name} ${member.surname} - ${index}`}
-                      className={`${avatarSize} rounded-lg`}
-                    >
-                      <AvatarImage
+        <div className="mt-auto flex flex-col gap-2 pt-1">
+          <div className="flex min-h-6 items-center gap-1">
+            <Skeleton
+              width={skeletonSize}
+              height={skeletonSize}
+              loading={isLoading}
+              className="rounded-lg"
+            >
+              <div className="flex gap-1">
+                {members
+                  ? members.slice(0, 3).map((member, index) => (
+                      <Avatar
+                        key={`${member.name} ${member.surname} - ${index}`}
                         className={`${avatarSize} rounded-lg`}
-                        src={member.avatar}
-                        width={20}
-                        height={20}
-                      />
-                      <AvatarFallback className={`${avatarSize} rounded-lg`}>
-                        <Image
+                      >
+                        <AvatarImage
+                          className={`${avatarSize} rounded-lg`}
+                          src={member.avatar}
                           width={20}
                           height={20}
-                          className={`${avatarSize} rounded-lg`}
-                          src={DEFAULT_AVATAR_PATH}
-                          alt={`${member.name} ${member.surname}`}
                         />
-                      </AvatarFallback>
-                    </Avatar>
-                  ))
-                : null}
-            </div>
-          </Skeleton>
-
-          <Skeleton width="106px" height={skeletonSize} loading={isLoading}>
-            {members && members.length > 3 ? (
-              <Text className="ml-2 flex items-center text-1 text-action-light text-nowrap">
-                {tCommon('otherMembers', { count: members.length - 3 })}
-              </Text>
-            ) : null}
-          </Skeleton>
-        </div>
-        {createdAt && (
-          <div className="flex flex-row">
-            <Skeleton loading={isLoading} height="16px" width="80px">
-              <div className="text-neutral-11 text-1">
-                {tCommon('createdOn', {
-                  date: format.dateTime(createdAt, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  }),
-                })}
+                        <AvatarFallback className={`${avatarSize} rounded-lg`}>
+                          <Image
+                            width={20}
+                            height={20}
+                            className={`${avatarSize} rounded-lg`}
+                            src={DEFAULT_AVATAR_PATH}
+                            alt={`${member.name} ${member.surname}`}
+                          />
+                        </AvatarFallback>
+                      </Avatar>
+                    ))
+                  : null}
               </div>
             </Skeleton>
+
+            <Skeleton width="106px" height={skeletonSize} loading={isLoading}>
+              {members && members.length > 3 ? (
+                <span className="craft-meta ml-1 truncate">
+                  {tCommon('otherMembers', { count: members.length - 3 })}
+                </span>
+              ) : null}
+            </Skeleton>
           </div>
-        )}
+
+          <div className="min-h-4">
+            <Skeleton loading={isLoading} height="16px" width="80px">
+              {hasValidCreatedAt ? (
+                <p className="craft-meta">
+                  {tCommon('createdOn', {
+                    date: format.dateTime(
+                      createdAt,
+                      LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+                    ),
+                  })}
+                </p>
+              ) : null}
+            </Skeleton>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

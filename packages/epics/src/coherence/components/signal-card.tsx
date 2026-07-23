@@ -296,7 +296,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group relative flex h-full w-full min-h-0 flex-col rounded-lg border-border/70 bg-background-2 shadow-none',
+        'craft-card group relative flex h-full w-full min-h-0 flex-col',
         'transition-[border-color,background-color] duration-200 ease-out',
         !isActive && 'hover:border-border hover:bg-muted/15',
         !isActive && 'focus-within:border-border focus-within:bg-muted/15',

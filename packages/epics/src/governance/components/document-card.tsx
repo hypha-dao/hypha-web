@@ -11,7 +11,11 @@ import { Image } from '@hypha-platform/ui';
 import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
-import { cn, stripMarkdown } from '@hypha-platform/ui-utils';
+import {
+  cn,
+  LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+  stripMarkdown,
+} from '@hypha-platform/ui-utils';
 import {
   DocumentStatus,
   stripHyphaInvestmentFormMarker,
@@ -134,11 +138,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
       return '';
     }
 
-    return format.dateTime(parsedDate, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    return format.dateTime(parsedDate, LOCAL_DATE_SHORT_FORMAT_OPTIONS);
   };
   const type = React.useMemo(() => {
     switch (status) {
@@ -158,11 +158,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   const event = !isLoadingEvents && events instanceof Array ? events[0] : null;
   return (
     <Card
-      className={cn(
-        'group flex h-full w-full flex-col',
-        'transition-[border-color,background-color] duration-200 ease-out',
-        'hover:border-border hover:bg-background-3/40',
-      )}
+      className={cn('craft-card-interactive group flex h-full w-full flex-col')}
     >
       <CardHeader
         className="flex-shrink-0 overflow-hidden rounded-tl-lg rounded-tr-lg p-0"
@@ -183,7 +179,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="relative flex flex-1 flex-col gap-2 p-3 pt-3">
+      <CardContent className="relative flex flex-1 flex-col gap-2 p-3.5 pt-3">
         <div className="flex min-w-0 flex-col items-start gap-1">
           {(badges?.length ?? 0) > 0 || isLoading ? (
             <BadgesList
@@ -203,22 +199,24 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           </Skeleton>
           <PersonLabel isLoading={isLoading} creator={creator} />
         </div>
-        {description ? (
-          <Skeleton
-            className="min-w-full"
-            width="200px"
-            height="16px"
-            loading={isLoading}
-          >
-            <p className="line-clamp-1 w-full text-1 font-normal text-muted-foreground">
-              {stripMarkdown(stripDescription(description ?? ''), {
-                orderedListMarkers: false,
-                unorderedListMarkers: false,
-              })}
-            </p>
-          </Skeleton>
-        ) : null}
-        <div className="text-1 font-normal text-muted-foreground">
+        <div className="min-h-4">
+          {description ? (
+            <Skeleton
+              className="min-w-full"
+              width="200px"
+              height="16px"
+              loading={isLoading}
+            >
+              <p className="craft-meta line-clamp-1 w-full">
+                {stripMarkdown(stripDescription(description ?? ''), {
+                  orderedListMarkers: false,
+                  unorderedListMarkers: false,
+                })}
+              </p>
+            </Skeleton>
+          ) : null}
+        </div>
+        <div className="craft-meta min-h-4">
           <Skeleton
             className="min-w-full"
             width="160px"

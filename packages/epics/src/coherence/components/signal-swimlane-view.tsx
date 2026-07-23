@@ -161,7 +161,7 @@ export function SignalSwimlaneView({
                     key={dropKey}
                     className={cn(
                       SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
-                      'min-h-[6rem] rounded-xl border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
+                      'min-h-[6rem] rounded-lg border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
                       statusColumnTopBorderClass(status.color),
                       isDropTarget
                         ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'
