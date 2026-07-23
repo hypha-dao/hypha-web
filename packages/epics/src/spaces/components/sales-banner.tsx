@@ -69,31 +69,36 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const { title, subtitle, actionText } = bannerStates[status];
 
   return (
-    <div className="bg-accent-surface-mix rounded-[8px] border-1 border-accent-6 bg-center p-5 flex flex-col lg:flex-row gap-4 lg:gap-5 items-start lg:items-center justify-between">
-      <div className="flex items-center gap-3 lg:gap-5 w-full lg:w-auto">
+    <div className="flex flex-col items-stretch gap-3 rounded-lg border border-border/80 bg-background-2 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:items-center">
         <ExclamationTriangleIcon
-          width={16}
-          height={16}
-          className="text-foreground flex-shrink-0 mt-0.5"
+          width={14}
+          height={14}
+          className="mt-0.5 shrink-0 text-muted-foreground sm:mt-0"
+          aria-hidden
         />
-        <div className="flex flex-col gap-2 flex-1">
-          <span className="text-2 text-foreground font-bold">{title}</span>
-          <span className="text-2 text-foreground">{subtitle}</span>
+        <div className="min-w-0 flex-1">
+          <p className="text-2 font-medium leading-snug text-foreground">
+            {title}
+          </p>
+          <p
+            className="mt-0.5 line-clamp-1 text-1 font-normal text-muted-foreground"
+            title={subtitle}
+          >
+            {subtitle}
+          </p>
         </div>
       </div>
-      <div className="flex gap-2 w-full lg:w-auto justify-between lg:justify-normal">
+      <div className="flex shrink-0 items-center justify-end gap-1.5">
         <Link
-          title={tooltipMessage || ''}
-          className={
-            isDisabled
-              ? 'cursor-not-allowed flex-1 lg:flex-auto'
-              : 'flex-1 lg:flex-auto'
-          }
+          title={tooltipMessage || subtitle}
+          className={isDisabled ? 'cursor-not-allowed' : undefined}
           href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}
         >
           <Button
             disabled={isDisabled}
-            className="w-full lg:w-fit text-wrap justify-center"
+            size="sm"
+            className="min-h-8 px-3 text-xs"
           >
             {actionText}
           </Button>
@@ -101,13 +106,11 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
         <Button
           onClick={onClose}
           variant="ghost"
-          className="group rounded-full w-fit flex-shrink-0 text-foreground"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={tCommon('close')}
         >
-          <Cross1Icon
-            width={16}
-            height={16}
-            className="transition-colors group-hover:text-white dark:group-hover:text-foreground"
-          />
+          <Cross1Icon width={14} height={14} />
         </Button>
       </div>
     </div>
