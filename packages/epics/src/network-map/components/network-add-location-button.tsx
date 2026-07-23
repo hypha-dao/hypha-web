@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { MapPinIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -102,11 +103,14 @@ export function NetworkAddLocationButton({
         <Button
           type="button"
           variant="outline"
-          className={className}
+          className={cn(
+            'font-medium text-neutral-11 hover:text-foreground',
+            className,
+          )}
           disabled={!isAuthenticated}
           title={!isAuthenticated ? tCommon('signIn') : undefined}
         >
-          <MapPinIcon className="size-4" />
+          <MapPinIcon className="size-3.5 shrink-0" aria-hidden />
           {t('addLocation')}
         </Button>
       </DialogTrigger>
