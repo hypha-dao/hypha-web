@@ -175,39 +175,45 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                 <Text className="text-1">{location}</Text>
               </div>
             </Skeleton>
-            {joinEvent && (
-              <Skeleton
-                width="96px"
-                height="16px"
-                loading={isLoading}
-                className={localIsDelegate ? 'mt-2' : ''}
-              >
-                <div className="flex items-center text-gray-500">
-                  <Text className="text-1">
+            <Skeleton
+              width="96px"
+              height="16px"
+              loading={isLoading || isLoadingEvents}
+              className={localIsDelegate ? 'mt-2' : ''}
+            >
+              <div className="flex h-4 items-center text-gray-500">
+                {joinEvent ? (
+                  <Text
+                    className="text-1 whitespace-nowrap"
+                    title={format.dateTime(new Date(joinEvent.createdAt), {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  >
                     {tCommon('joinedSpaceOn', {
                       date: format.dateTime(new Date(joinEvent.createdAt), {
                         year: 'numeric',
-                        month: 'long',
+                        month: 'short',
                         day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
                       }),
                     })}
                   </Text>
-                </div>
-              </Skeleton>
-            )}
+                ) : null}
+              </div>
+            </Skeleton>
           </div>
         </div>
       </div>
-      {localIsDelegate && (
-        <div>
-          <span className="text-1 text-neutral-11 font-medium">
+      <div className="min-h-5">
+        {localIsDelegate ? (
+          <span className="text-1 font-medium text-neutral-11">
             {tCommon('delegatedVotingMemberLabel')}
           </span>
-        </div>
-      )}
+        ) : null}
+      </div>
     </Card>
   );
 };
