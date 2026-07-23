@@ -529,8 +529,8 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   const itemCount = scheduledItems?.length;
 
   return (
-    <div className="flex h-[calc(100dvh-9.5rem)] min-h-[28rem] flex-col gap-3">
-      <header className="flex shrink-0 flex-wrap items-end justify-between gap-3">
+    <div className="flex flex-col gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-6 font-medium tracking-tight text-foreground">
             {t('title')}
@@ -560,12 +560,12 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
       <div
         className={cn(
-          'hypha-space-calendar relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/70 bg-background-2 p-2.5 md:p-3',
+          'hypha-space-calendar relative overflow-hidden rounded-lg border border-border/70 bg-background-2 p-2.5 md:p-3',
           viewToModifierClass(view),
         )}
       >
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div className="mb-2.5 flex shrink-0 flex-col gap-2.5">
+        <div className="relative">
+          <div className="mb-2.5 flex flex-col gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex h-9 items-stretch overflow-hidden rounded-lg border border-border/70 bg-background">
                 <Button
@@ -638,7 +638,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
           <div
             className={cn(
-              'relative min-h-0 flex-1 overflow-hidden rounded-lg border border-border/50 bg-background',
+              'relative overflow-hidden rounded-lg border border-border/50 bg-background',
               resolvedTheme === 'dark' ? 'fc-theme-dark' : 'fc-theme-light',
             )}
           >
@@ -662,7 +662,6 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               slotMinTime={calendarLayout.slotMinTime}
               slotMaxTime={calendarLayout.slotMaxTime}
               slotDuration="00:30:00"
-              expandRows
               stickyHeaderDates
               allDaySlot
               weekends
