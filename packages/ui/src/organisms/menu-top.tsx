@@ -227,19 +227,20 @@ export const MenuTop = ({
       <div
         ref={rowRef}
         className={clsx(
-          'w-full mx-auto flex min-w-0 items-center',
+          'mx-auto flex w-full min-w-0 items-center gap-x-2',
           children ? 'justify-between' : 'justify-center',
         )}
       >
         <div
           ref={leadingClusterRef}
-          className="flex min-w-0 items-center gap-2"
+          className="flex min-w-0 items-center gap-1.5 sm:gap-2"
         >
           {leadingAction ? (
             <div
-              className={
-                showLeadingActionOnlyWhenCompact && !isCompact ? 'hidden' : ''
-              }
+              className={clsx(
+                'flex shrink-0 items-center gap-1.5 sm:gap-2',
+                showLeadingActionOnlyWhenCompact && !isCompact ? 'hidden' : '',
+              )}
             >
               {leadingAction}
             </div>
@@ -252,11 +253,14 @@ export const MenuTop = ({
                 rel={
                   hrefTarget === '_blank' ? 'noopener noreferrer' : undefined
                 }
+                className="inline-flex min-w-0 shrink items-center"
               >
                 {logoNode}
               </Link>
             ) : (
-              logoNode
+              <div className="inline-flex min-w-0 shrink items-center">
+                {logoNode}
+              </div>
             )
           ) : logoText ? (
             logoHref ? (
@@ -266,17 +270,17 @@ export const MenuTop = ({
                 rel={
                   hrefTarget === '_blank' ? 'noopener noreferrer' : undefined
                 }
-                className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground"
+                className="inline-flex h-[36px] max-w-[min(12rem,40vw)] items-center truncate text-xl font-medium leading-none tracking-tight text-foreground sm:max-w-[22rem] sm:text-3xl"
               >
                 {logoText}
               </Link>
             ) : (
-              <span className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground">
+              <span className="inline-flex h-[36px] max-w-[min(12rem,40vw)] items-center truncate text-xl font-medium leading-none tracking-tight text-foreground sm:max-w-[22rem] sm:text-3xl">
                 {logoText}
               </span>
             )
           ) : logoHref ? (
-            <Logo width={110} href={logoHref} target={hrefTarget} />
+            <Logo width={96} href={logoHref} target={hrefTarget} />
           ) : null}
         </div>
 
@@ -312,7 +316,7 @@ export const MenuTop = ({
             md+ when the desktop group is collapsed into this column. */}
         <div
           className={clsx(
-            'ml-auto items-center gap-2 max-md:flex',
+            'ml-auto items-center gap-1.5 max-md:flex sm:gap-2',
             isCompact ? 'md:flex' : 'md:hidden',
           )}
         >
@@ -325,14 +329,14 @@ export const MenuTop = ({
           {showMobileHamburger ? (
             <button
               type="button"
-              className="flex h-10 w-10 items-center justify-center"
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-chrome text-muted-foreground ring-1 ring-border/70 transition-colors hover:bg-muted/80 hover:text-foreground"
               aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
               onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
             >
-              {!isMobileMenuOpen && <Menu className="size-5" />}
-              {isMobileMenuOpen && <RxCross1 className="size-5" />}
+              {!isMobileMenuOpen && <Menu className="craft-icon" />}
+              {isMobileMenuOpen && <RxCross1 className="craft-icon" />}
             </button>
           ) : null}
         </div>
