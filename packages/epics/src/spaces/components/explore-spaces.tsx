@@ -126,7 +126,6 @@ export function ExploreSpaces({
   enableNetworkMap = false,
 }: ExploreSpacesProps) {
   const t = useTranslations('Network');
-  const tNav = useTranslations('Navigation');
   const tCommon = useTranslations('Common');
 
   const pathname = usePathname();
@@ -452,13 +451,16 @@ export function ExploreSpaces({
     <div className="flex min-w-0 flex-col">
       <header className="craft-page-header mb-5">
         <Heading
-          size="5"
+          size="6"
           color="secondary"
           weight="medium"
           align="left"
-          className="craft-page-title"
+          className="craft-page-title flex flex-col gap-0.5"
         >
-          {tNav('network')}
+          <span>{t('manySpaces')}</span>
+          <span className="text-muted-foreground">
+            {t('oneVibrantNetwork')}
+          </span>
         </Heading>
       </header>
 

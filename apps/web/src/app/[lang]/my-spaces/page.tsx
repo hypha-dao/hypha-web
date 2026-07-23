@@ -69,20 +69,20 @@ export default async function Index(props: PageProps) {
   }
 
   const t = await getTranslations('Spaces');
-  const tNav = await getTranslations('Navigation');
 
   return (
     <div className="w-full overflow-auto">
       <Container className="flex flex-col gap-5 py-6 md:gap-6 md:py-8">
         <header className="craft-page-header">
           <Heading
-            size="5"
+            size="6"
             color="secondary"
             weight="medium"
             align="left"
-            className="craft-page-title"
+            className="craft-page-title flex flex-col gap-0.5"
           >
-            {tNav('mySpaces')}
+            <span>{t('allYourSpaces')}</span>
+            <span className="text-muted-foreground">{t('inOnePlace')}</span>
           </Heading>
         </header>
         <Suspense fallback={null}>
