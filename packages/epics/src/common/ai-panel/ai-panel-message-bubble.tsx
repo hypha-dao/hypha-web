@@ -8,6 +8,8 @@ import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
+import { PersonAvatar } from '../../people/components/person-avatar';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
 type ConfirmationActionResult = {
@@ -48,6 +50,11 @@ type AiPanelMessageBubbleProps = {
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
   suppressWalletSignaturePrompt?: boolean;
+  /** Signed-in Hypha profile photo for user bubbles. */
+  userAvatarUrl?: string | null;
+  userDisplayName?: string | null;
+  /** Space logo (or other brand mark) for assistant bubbles — not letter initials. */
+  assistantAvatarUrl?: string | null;
 };
 
 type OlListItem = {
@@ -524,18 +531,27 @@ export function AiPanelMessageBubble({
   isStreaming,
   onActionReplySelect,
   suppressWalletSignaturePrompt = false,
+  userAvatarUrl,
+  userDisplayName,
+  assistantAvatarUrl,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
   const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [assistantImageFailed, setAssistantImageFailed] = useState(false);
+  const assistantAvatarSrc = assistantAvatarUrl?.trim() || null;
 
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    setAssistantImageFailed(false);
+  }, [assistantAvatarSrc]);
 
   const isUser = message.role === 'user';
   const textParts =
@@ -813,14 +829,35 @@ export function AiPanelMessageBubble({
         isSingleLineAssistantText && 'items-center',
       )}
     >
-      {!isUser && (
+      {isUser ? (
+        <PersonAvatar
+          size="sm"
+          avatarSrc={userAvatarUrl?.trim() || undefined}
+          userName={userDisplayName?.trim() || undefined}
+          className={cn(
+            'mt-0.5 h-7 w-7 shrink-0',
+            APP_CHROME_SUBTLE_SQUARE_RADIUS,
+          )}
+        />
+      ) : (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary',
+            'flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden border border-border/60 bg-muted/25',
+            APP_CHROME_SUBTLE_SQUARE_RADIUS,
             isSingleLineAssistantText ? 'mt-0' : 'mt-0.5',
           )}
         >
-          <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+          {assistantAvatarSrc && !assistantImageFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN
+            <img
+              src={assistantAvatarSrc}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={() => setAssistantImageFailed(true)}
+            />
+          ) : (
+            <Sparkles className="craft-icon-sm text-muted-foreground" />
+          )}
         </div>
       )}
       <div

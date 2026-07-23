@@ -39,7 +39,7 @@ export function HumanChatPanelHeader({
   const displayDescription = description;
 
   return (
-    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
+    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border/70 bg-background-2 px-4 py-2.5">
       <div className="flex shrink-0 items-center gap-1">
         {onBack ? (
           <button
@@ -85,14 +85,12 @@ export function HumanChatPanelHeader({
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
         {displayDescription && (
-          <p className="line-clamp-2 text-xs text-muted-foreground">
-            {displayDescription}
-          </p>
+          <p className="craft-meta line-clamp-1">{displayDescription}</p>
         )}
         <span className="min-w-0 truncate text-sm font-medium text-foreground">
           {displayTitle}
         </span>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-chrome bg-muted p-0 ring-1 ring-border/60">
+        <div className="craft-icon-box">
           <MessageCircle className="craft-icon text-muted-foreground" />
         </div>
       </div>

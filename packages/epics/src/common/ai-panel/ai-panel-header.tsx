@@ -223,10 +223,10 @@ export function AiPanelHeader({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold tracking-tight text-foreground transition-[background-color,border-color,gap,padding] duration-200 ease-out hover:border-border/65 hover:bg-background-4/85"
+                  className="craft-chip craft-chip-interactive inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 px-2.5 text-sm tracking-tight"
                   aria-label={tNavigation('mySpaces')}
                 >
-                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
+                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md border border-border/50">
                     {currentIcon ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -237,15 +237,15 @@ export function AiPanelHeader({
                         />
                       </>
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center bg-muted">
-                        <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="flex h-full w-full items-center justify-center bg-muted/40">
+                        <Sparkles className="craft-icon-sm text-muted-foreground" />
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[16rem] truncate text-center font-medium transition-[max-width] duration-200 ease-out">
+                  <span className="min-w-0 max-w-[14rem] truncate text-center font-medium">
                     {currentTitle}
                   </span>
-                  <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <ChevronsUpDown className="craft-icon-sm shrink-0 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -296,8 +296,8 @@ export function AiPanelHeader({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground/90 transition-[background-color,border-color,gap,padding] duration-200 ease-out">
-              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
+            <div className="craft-chip inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 px-3 text-sm text-foreground/90">
+              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md ring-1 ring-border/50">
                 {currentIcon ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -308,12 +308,12 @@ export function AiPanelHeader({
                     />
                   </>
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center bg-muted">
-                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="flex h-full w-full items-center justify-center bg-muted/40">
+                    <Sparkles className="craft-icon-sm text-muted-foreground" />
                   </span>
                 )}
               </span>
-              <span className="max-w-[16rem] truncate text-center transition-[max-width] duration-200 ease-out">
+              <span className="min-w-0 max-w-[16rem] truncate text-center font-medium">
                 {fallbackTitle}
               </span>
             </div>

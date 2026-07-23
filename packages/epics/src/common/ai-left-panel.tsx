@@ -40,6 +40,7 @@ import {
   useCreateAgreementOrchestrator,
   useJwt,
   useMatrix,
+  useMe,
   useSpaceBySlug,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
@@ -468,10 +469,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     spaceSlug ? [spaceSlug] : [],
     false,
   );
+  const { person: me } = useMe();
   const { data: spaceEnergyData } = useSpaceEnergy();
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
+  const userAvatarUrl = me?.avatarUrl?.trim() || null;
+  const userDisplayName =
+    [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+    me?.nickname?.trim() ||
+    null;
+  const assistantAvatarUrl = resolveSpaceDisplayLogoUrl(
+    activeSpaces?.[0],
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
   const [input, setInput] = useState('');
   const aiWalletCreateInFlightRef = useRef(false);
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
@@ -3185,6 +3196,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             blockSpaceAiForInteraction ? undefined : handleActionReplySelect
           }
           activeSpaceName={activeSpaceName}
+          userAvatarUrl={userAvatarUrl}
+          userDisplayName={userDisplayName}
+          assistantAvatarUrl={assistantAvatarUrl}
           isStreaming={isStreaming}
           onboardingContext={onboardingContext}
           onOnboardingLocationConfirm={

@@ -25,21 +25,26 @@ import {
  * Variants for the multi-select component to handle different styles.
  * Uses class-variance-authority (cva) to define different styles based on "variant" prop.
  */
-const multiSelectVariants = cva('m-1', {
-  variants: {
-    variant: {
-      default: 'border-foreground/10 text-foreground bg-card hover:bg-card/80',
-      secondary:
-        'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
-      destructive:
-        'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-      inverted: 'inverted',
+/** Quiet outline chips — hairline, no gray slabs / hover lift. */
+const multiSelectVariants = cva(
+  'm-0 max-w-[10rem] gap-1 truncate rounded-md border shadow-none font-normal',
+  {
+    variants: {
+      variant: {
+        default:
+          'border-border/60 bg-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground',
+        secondary:
+          'border-accent-8/50 bg-accent-9/8 text-foreground hover:bg-accent-9/12',
+        destructive:
+          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+        inverted: 'inverted',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
     },
   },
-  defaultVariants: {
-    variant: 'default',
-  },
-});
+);
 
 const TAG_USAGE_STORAGE_KEY = 'hypha:tag-picker-usage';
 
@@ -598,47 +603,52 @@ export const MultiSelect = React.forwardRef<
                 return (
                   <Badge
                     key={value}
-                    className={cn(
-                      multiSelectVariants({ variant }),
-                      'rounded-md border-neutral-7 bg-neutral-3 text-neutral-12',
-                    )}
+                    variant="outline"
+                    colorVariant="neutral"
+                    size={1}
+                    className={cn(multiSelectVariants({ variant }))}
                     style={{ animationDuration: `${animation}s` }}
                   >
-                    <span className="text-neutral-10">#</span>
-                    <span>{option?.label ?? value}</span>
+                    <span className="shrink-0 text-muted-foreground">#</span>
+                    <span className="min-w-0 truncate">
+                      {option?.label ?? value}
+                    </span>
                     <button
                       type="button"
-                      className="ml-1 inline-flex h-4 w-4 items-center justify-center text-neutral-10 hover:text-neutral-12"
+                      className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
                       aria-label={`Remove ${option?.label ?? value}`}
                       onClick={(event) => {
                         event.stopPropagation();
                         toggleOption(value);
                       }}
                     >
-                      <XCircle className="h-4 w-4" />
+                      <XCircle className="h-3.5 w-3.5" />
                     </button>
                   </Badge>
                 );
               })}
               {selectedValues.length > maxCount ? (
                 <Badge
+                  size={1}
+                  variant="outline"
+                  colorVariant="neutral"
                   className={cn(
-                    'rounded-md bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
                     multiSelectVariants({ variant }),
+                    'max-w-none px-1.5 py-0.5 text-muted-foreground',
                   )}
                   style={{ animationDuration: `${animation}s` }}
                 >
                   {resolvedLabels.more(selectedValues.length - maxCount)}
                   <button
                     type="button"
-                    className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                    className="ml-1 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
                     aria-label="Clear extra selected options"
                     onClick={(event) => {
                       event.stopPropagation();
                       clearExtraOptions();
                     }}
                   >
-                    <XCircle className="h-4 w-4" />
+                    <XCircle className="h-3.5 w-3.5" />
                   </button>
                 </Badge>
               ) : null}
@@ -706,46 +716,54 @@ export const MultiSelect = React.forwardRef<
                       return (
                         <Badge
                           key={value}
+                          variant="outline"
+                          colorVariant="neutral"
+                          size={1}
                           className={cn(multiSelectVariants({ variant }))}
                           style={{ animationDuration: `${animation}s` }}
                         >
                           {IconComponent && (
-                            <IconComponent className="h-4 w-4 mr-2" />
+                            <IconComponent className="mr-1 h-3.5 w-3.5 shrink-0" />
                           )}
-                          {option?.label ?? value}
+                          <span className="min-w-0 truncate">
+                            {option?.label ?? value}
+                          </span>
                           <button
                             type="button"
-                            className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                            className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
                             aria-label={`Remove ${option?.label ?? value}`}
                             onClick={(event) => {
                               event.stopPropagation();
                               toggleOption(value);
                             }}
                           >
-                            <XCircle className="h-4 w-4" />
+                            <XCircle className="h-3.5 w-3.5" />
                           </button>
                         </Badge>
                       );
                     })}
                     {selectedValues.length > maxCount && (
                       <Badge
+                        size={1}
+                        variant="outline"
+                        colorVariant="neutral"
                         className={cn(
-                          'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
                           multiSelectVariants({ variant }),
+                          'max-w-none text-muted-foreground',
                         )}
                         style={{ animationDuration: `${animation}s` }}
                       >
                         {`+ ${selectedValues.length - maxCount} more`}
                         <button
                           type="button"
-                          className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                          className="ml-1 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
                           aria-label="Clear extra selected options"
                           onClick={(event) => {
                             event.stopPropagation();
                             clearExtraOptions();
                           }}
                         >
-                          <XCircle className="h-4 w-4" />
+                          <XCircle className="h-3.5 w-3.5" />
                         </button>
                       </Badge>
                     )}
