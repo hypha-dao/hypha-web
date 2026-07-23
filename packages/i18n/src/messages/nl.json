@@ -1271,7 +1271,7 @@
     },
     "assetCard": {
       "fromSpace": "vanaf {spaceTitle}",
-      "totalIssuance": "Totale uitgifte: {value}",
+      "totalIssuance": "Uitgifte {value}",
       "createdOn": "Gemaakt op {date}",
       "mutualCredit": {
         "debtBadge": "Schulden {amount} {symbol}",

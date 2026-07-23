@@ -1,8 +1,7 @@
 'use client';
 
-import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
-import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { cn, formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathDefaultLanding } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
@@ -50,7 +49,6 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   valueDisplay,
   tokenPrice,
   referenceCurrency,
-  usdEqual,
   isLoading,
   supply,
   space,
@@ -76,131 +74,154 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         )
       : type;
 
+  const hasPrice = tokenPrice !== undefined && tokenPrice > 0;
+  const hasSupply = supply?.total !== undefined;
+  const hasValidCreatedAt =
+    createdAt instanceof Date && !Number.isNaN(createdAt.getTime());
+  const priceLabel = hasPrice
+    ? `${formatCurrencyValue(tokenPrice)} ${referenceCurrency?.trim() || 'USD'}`
+    : null;
+
   return (
-    <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
-      <div className="w-full flex flex-row items-center mb-2">
-        <div className="mr-3">
-          <Skeleton
-            width="40px"
-            height="40px"
-            loading={isLoading}
-            className="rounded-full"
-          >
-            <Image
-              className="rounded-full min-w-7 min-h-7"
-              src={icon ? icon : ''}
-              height={32}
-              width={32}
-              alt={name ? name : ''}
-            />
-          </Skeleton>
-        </div>
-        <div className="flex flex-col justify-center">
-          <Skeleton
-            width="80px"
-            height="16px"
-            loading={isLoading}
-            className="mb-1 flex gap-1"
-          >
-            <Text className="text-4 font-medium text-secondary-foreground">
+    <Card
+      className={cn(
+        'group flex h-full w-full min-h-[10.5rem] flex-col gap-3 p-3.5',
+        'rounded-lg border-border/70 bg-background-2 shadow-none',
+        'transition-[border-color,background-color] duration-200 ease-out',
+        'hover:border-border hover:bg-muted/15',
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <Skeleton
+          width="32px"
+          height="32px"
+          loading={isLoading}
+          className="shrink-0 rounded-full"
+        >
+          <Image
+            className="size-8 min-h-8 min-w-8 rounded-full"
+            src={icon ? icon : ''}
+            height={32}
+            width={32}
+            alt={name ? name : ''}
+          />
+        </Skeleton>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <Skeleton width="96px" height="20px" loading={isLoading}>
+            <p className="truncate text-3 font-medium tracking-tight text-foreground tabular-nums">
               {valueDisplay ?? formatCurrencyValue(value ?? 0, lang)}
-            </Text>
+            </p>
           </Skeleton>
-          <Skeleton width="80px" height="16px" loading={isLoading}>
-            <span className="flex gap-2 items-center">
-              <span className="flex gap-2 items-center">
-                <Text className="text-1 text-gray-500">{symbol}</Text>
-                {type && (
-                  <Badge
-                    colorVariant="accent"
-                    variant="outline"
-                    className="w-fit h-fit"
-                  >
-                    {tokenTypeLabel}
-                  </Badge>
-                )}
+          <Skeleton width="88px" height="16px" loading={isLoading}>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate text-1 text-muted-foreground">
+                {symbol}
               </span>
-              {space?.title ? (
-                <Link
-                  href={getDhoPathDefaultLanding(lang as Locale, space.slug)}
-                  className="text-accent-11 text-1 text-ellipsis overflow-hidden hover:underline"
+              {type ? (
+                <Badge
+                  size={1}
+                  colorVariant="neutral"
+                  variant="soft"
+                  className="h-fit w-fit shrink-0 font-normal"
                 >
-                  {tTreasury('assetCard.fromSpace', {
-                    spaceTitle: space.title,
-                  })}
-                </Link>
+                  {tokenTypeLabel}
+                </Badge>
               ) : null}
-            </span>
+            </div>
           </Skeleton>
         </div>
       </div>
-      <div className="w-full flex flex-row gap-1">
-        <Text className="text-1">{name}</Text>
-        {tokenPrice !== undefined && tokenPrice > 0 && (
-          <Text className="text-1 text-neutral-11">
-            {`${formatCurrencyValue(tokenPrice)} ${
-              referenceCurrency?.trim() || 'USD'
-            }`}
-          </Text>
-        )}
-        {supply?.total !== undefined && (
-          <Text className="text-1 text-neutral-11">
-            {tTreasury('assetCard.totalIssuance', {
-              value: formatCurrencyValue(supply.total, lang),
-            })}
-          </Text>
-        )}
-      </div>
-      {mutualCredit && symbol ? (
-        <div className="w-full flex flex-row gap-2 flex-wrap items-center mt-1">
-          {mutualCredit.netBalance !== 0 ? (
-            <Badge
-              colorVariant={mutualCredit.netBalance < 0 ? 'warn' : 'accent'}
-              variant="outline"
-              className="w-fit h-fit"
-            >
-              {mutualCredit.netBalance < 0
-                ? tTreasury('assetCard.mutualCredit.debtBadge', {
-                    amount: formatCurrencyValue(
-                      Math.abs(mutualCredit.netBalance),
-                      lang,
-                    ),
-                    symbol,
-                  })
-                : tTreasury('assetCard.mutualCredit.netBadge', {
-                    amount: formatCurrencyValue(mutualCredit.netBalance, lang),
-                    symbol,
-                  })}
-            </Badge>
-          ) : null}
-          {mutualCredit.defaultCreditLimit > 0 && (
-            <Text className="text-1 text-neutral-11">
-              {tTreasury('assetCard.mutualCredit.limit', {
-                limit: formatCurrencyValue(
-                  mutualCredit.defaultCreditLimit,
-                  lang,
-                ),
-                symbol,
-              })}
-            </Text>
-          )}
-        </div>
-      ) : null}
-      <div className="w-full flex flex-row gap-1">
-        {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
-          <Text className="text-1 text-neutral-11">
-            {tTreasury('assetCard.createdOn', {
-              date: format.dateTime(createdAt, {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              }),
-            })}
-          </Text>
-        )}
+
+      <div className="mt-auto flex min-h-[4.5rem] flex-col justify-end gap-0.5 text-1 text-muted-foreground">
+        <Skeleton width="100%" height="14px" loading={isLoading}>
+          <div className="flex h-4 min-w-0 items-baseline gap-x-1.5 truncate">
+            {name ? (
+              <span className="truncate text-foreground/75">{name}</span>
+            ) : null}
+            {priceLabel ? (
+              <span className="shrink-0 tabular-nums">· {priceLabel}</span>
+            ) : null}
+          </div>
+        </Skeleton>
+
+        <Skeleton width="100%" height="14px" loading={isLoading}>
+          <div className="h-4 min-w-0 truncate tabular-nums">
+            {hasSupply && supply
+              ? tTreasury('assetCard.totalIssuance', {
+                  value: formatCurrencyValue(supply.total, lang),
+                })
+              : null}
+          </div>
+        </Skeleton>
+
+        <Skeleton width="100%" height="14px" loading={isLoading}>
+          <div className="flex h-4 min-w-0 items-center gap-x-2 truncate">
+            {space?.title ? (
+              <Link
+                href={getDhoPathDefaultLanding(lang as Locale, space.slug)}
+                className="min-w-0 truncate text-muted-foreground transition-colors hover:text-foreground hover:underline"
+              >
+                {tTreasury('assetCard.fromSpace', {
+                  spaceTitle: space.title,
+                })}
+              </Link>
+            ) : null}
+            {hasValidCreatedAt && createdAt ? (
+              <span
+                className={cn(
+                  'shrink-0 tabular-nums',
+                  space?.title && 'before:mr-2 before:content-["·"]',
+                )}
+              >
+                {format.dateTime(createdAt, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+            ) : null}
+          </div>
+        </Skeleton>
+
+        {mutualCredit && symbol ? (
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+            {mutualCredit.netBalance !== 0 ? (
+              <Badge
+                size={1}
+                colorVariant={mutualCredit.netBalance < 0 ? 'warn' : 'neutral'}
+                variant="soft"
+                className="h-fit w-fit font-normal"
+              >
+                {mutualCredit.netBalance < 0
+                  ? tTreasury('assetCard.mutualCredit.debtBadge', {
+                      amount: formatCurrencyValue(
+                        Math.abs(mutualCredit.netBalance),
+                        lang,
+                      ),
+                      symbol,
+                    })
+                  : tTreasury('assetCard.mutualCredit.netBadge', {
+                      amount: formatCurrencyValue(
+                        mutualCredit.netBalance,
+                        lang,
+                      ),
+                      symbol,
+                    })}
+              </Badge>
+            ) : null}
+            {mutualCredit.defaultCreditLimit > 0 ? (
+              <span className="truncate tabular-nums">
+                {tTreasury('assetCard.mutualCredit.limit', {
+                  limit: formatCurrencyValue(
+                    mutualCredit.defaultCreditLimit,
+                    lang,
+                  ),
+                  symbol,
+                })}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </Card>
   );

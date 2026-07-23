@@ -1270,7 +1270,7 @@
     },
     "assetCard": {
       "fromSpace": "fra {spaceTitle}",
-      "totalIssuance": "Total utstedelse: {value}",
+      "totalIssuance": "Utstedelse {value}",
       "createdOn": "Opprettet {date}",
       "mutualCredit": {
         "debtBadge": "Skylder {amount} {symbol}",

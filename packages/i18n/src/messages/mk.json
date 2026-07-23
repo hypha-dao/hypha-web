@@ -1251,7 +1251,7 @@
     },
     "assetCard": {
       "fromSpace": "од {spaceTitle}",
-      "totalIssuance": "Вкупна емисија: {value}",
+      "totalIssuance": "Емисија {value}",
       "createdOn": "Создадено на {date}",
       "mutualCredit": {
         "debtBadge": "Должи {amount} {symbol}",

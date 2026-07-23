@@ -708,7 +708,7 @@
     },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Émission totale : {value}",
+      "totalIssuance": "Émission {value}",
       "createdOn": "Créé le {date}",
       "mutualCredit": {
         "debtBadge": "Doit {amount} {symbol}",
