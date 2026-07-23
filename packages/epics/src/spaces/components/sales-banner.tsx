@@ -97,6 +97,8 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
         >
           <Button
             disabled={isDisabled}
+            variant="outline"
+            colorVariant="accent"
             size="sm"
             className="min-h-8 px-3 text-xs"
           >

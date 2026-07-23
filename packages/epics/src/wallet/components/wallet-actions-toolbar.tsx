@@ -27,6 +27,8 @@ export function WalletActionsToolbar({
     >
       {disabled ? (
         <Button
+          variant="outline"
+          colorVariant="accent"
           className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
           disabled
         >
@@ -35,6 +37,8 @@ export function WalletActionsToolbar({
       ) : (
         <Button
           asChild
+          variant="outline"
+          colorVariant="accent"
           className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
         >
           <Link href={`${basePath}/actions/buy-space-tokens`} scroll={false}>
@@ -44,6 +48,8 @@ export function WalletActionsToolbar({
       )}
       {disabled ? (
         <Button
+          variant="outline"
+          colorVariant="accent"
           className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
           disabled
         >
@@ -52,6 +58,8 @@ export function WalletActionsToolbar({
       ) : (
         <Button
           asChild
+          variant="outline"
+          colorVariant="accent"
           className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
         >
           <Link
@@ -64,6 +72,8 @@ export function WalletActionsToolbar({
       )}
       {disabled ? (
         <Button
+          variant="outline"
+          colorVariant="accent"
           className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
           disabled
         >
@@ -72,6 +82,8 @@ export function WalletActionsToolbar({
       ) : (
         <Button
           asChild
+          variant="outline"
+          colorVariant="accent"
           className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
         >
           <Link href={`${basePath}/actions`} scroll={false}>
