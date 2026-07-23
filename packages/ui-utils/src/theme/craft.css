@@ -1,171 +1,20 @@
 /**
- * World-class craft layer: atmosphere, signature motion, icon language.
- * Loaded from global.css — keep effects subtle and motion-reduce safe.
+ * Precision-tool craft layer — quiet utilities only.
+ * No page washes, frosted theater, stagger motion, or empty-state glow.
  */
 
-@layer base {
-  body {
-    background-color: var(--page-background);
-    /* Layered air — cool mycelial wash, not purple mesh */
-    background-image: radial-gradient(
-        ellipse 130% 70% at 50% -25%,
-        color-mix(in oklab, var(--accent-9) 14%, transparent),
-        transparent 58%
-      ),
-      radial-gradient(
-        ellipse 70% 45% at 100% 110%,
-        color-mix(in oklab, var(--success-9) 6%, transparent),
-        transparent 52%
-      );
-    background-attachment: fixed;
-  }
-
-  :root:not(.dark) body {
-    background-image: radial-gradient(
-        ellipse 120% 60% at 50% -20%,
-        color-mix(in oklab, var(--accent-9) 8%, transparent),
-        transparent 55%
-      ),
-      radial-gradient(
-        ellipse 60% 40% at 0% 100%,
-        color-mix(in oklab, var(--neutral-8) 10%, transparent),
-        transparent 50%
-      );
-  }
-}
-
 @layer components {
-  /* Main content plane — slightly raised vs page air */
-  .craft-content-plane {
-    background-color: color-mix(
-      in oklab,
-      var(--background-1) 92%,
-      var(--page-background)
-    );
+  /* App page headers: tool first, not marketing hero */
+  .craft-page-header {
+    @apply flex w-full flex-col items-start gap-1 text-left;
   }
 
-  .dark .craft-content-plane {
-    background-color: color-mix(
-      in oklab,
-      var(--background-2) 88%,
-      var(--page-background)
-    );
+  .craft-page-title {
+    @apply m-0 text-balance tracking-tight text-foreground;
+    font-family: var(--font-family-text);
   }
 
-  /* Discovery / page heroes */
-  .craft-hero {
-    @apply flex flex-col items-center text-center;
-  }
-
-  .craft-hero-title {
-    @apply m-0 flex flex-col gap-1 text-balance tracking-[-0.03em];
-    font-family: var(--font-family-heading);
-    font-optical-sizing: auto;
-  }
-
-  .craft-hero-title > span:last-child {
-    color: color-mix(in oklab, var(--foreground) 72%, var(--accent-11));
-  }
-
-  .craft-hero-lede {
-    @apply mt-3 max-w-xl text-2 leading-relaxed text-muted-foreground;
-    letter-spacing: -0.01em;
-  }
-
-  /* Lucide / SVG icon language — slightly heavier, calmer */
-  .craft-icon,
-  [data-craft-icons] svg {
-    stroke-width: 1.75;
-  }
-
-  /* Signature enter for card grids */
-  @keyframes craft-rise {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .craft-rise {
-    animation: craft-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  .craft-rise-stagger > * {
-    animation: craft-rise 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  .craft-rise-stagger > *:nth-child(1) {
-    animation-delay: 0ms;
-  }
-  .craft-rise-stagger > *:nth-child(2) {
-    animation-delay: 40ms;
-  }
-  .craft-rise-stagger > *:nth-child(3) {
-    animation-delay: 80ms;
-  }
-  .craft-rise-stagger > *:nth-child(4) {
-    animation-delay: 120ms;
-  }
-  .craft-rise-stagger > *:nth-child(5) {
-    animation-delay: 160ms;
-  }
-  .craft-rise-stagger > *:nth-child(6) {
-    animation-delay: 200ms;
-  }
-  .craft-rise-stagger > *:nth-child(n + 7) {
-    animation-delay: 220ms;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .craft-rise,
-    .craft-rise-stagger > * {
-      animation: none;
-    }
-  }
-
-  /* Panel / sticky settle */
-  @keyframes craft-settle {
-    from {
-      opacity: 0.55;
-      transform: translateY(-6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .craft-settle {
-    animation: craft-settle 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .craft-settle {
-      animation: none;
-    }
-  }
-
-  /* Empty state mark */
   .craft-empty-mark {
-    @apply relative flex size-14 items-center justify-center rounded-lg border border-border/70 bg-background-2 text-muted-foreground;
-    box-shadow: inset 0 1px 0 color-mix(in oklab, white 6%, transparent);
-  }
-
-  .craft-empty-mark::after {
-    content: '';
-    position: absolute;
-    inset: -10px;
-    border-radius: 10px;
-    background: radial-gradient(
-      circle at 50% 40%,
-      color-mix(in oklab, var(--accent-9) 12%, transparent),
-      transparent 65%
-    );
-    z-index: -1;
-    pointer-events: none;
+    @apply flex size-10 items-center justify-center rounded-lg border border-border/70 bg-background-2 text-muted-foreground;
   }
 }

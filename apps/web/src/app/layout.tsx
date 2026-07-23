@@ -1,7 +1,7 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { Fraunces, IBM_Plex_Sans } from 'next/font/google';
+import { IBM_Plex_Sans } from 'next/font/google';
 import clsx from 'clsx';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -48,14 +48,7 @@ import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { SwrProvider } from '@web/components/swr-provider';
 import '@web/utils/initialize-proxy';
 
-/** Organic display face — mycelial / craft brand signal */
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-heading',
-});
-
-/** Refined UI grotesque — clear at small sizes, not Inter/Lato-generic */
+/** Single quiet UI face — precision tool, not decorative brand kit */
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
   display: 'swap',
@@ -234,10 +227,7 @@ export default async function RootLayout({
   }
 
   return (
-    <Html
-      lang={locale}
-      className={clsx(fraunces.variable, ibmPlexSans.variable)}
-    >
+    <Html lang={locale} className={clsx(ibmPlexSans.variable)}>
       <ScrollUp />
       <SeamlessScrollPolyfill />
       <AuthProvider

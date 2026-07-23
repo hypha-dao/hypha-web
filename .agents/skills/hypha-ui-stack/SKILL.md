@@ -71,17 +71,16 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 
 ### Fonts
 
-- Display / headings: **Fraunces** via `--font-heading` → `--font-family-heading` (`Heading` atom, heroes, panel titles)
-- UI / body: **IBM Plex Sans** via `--font-body` → `--font-family-text`
+- Single UI face: **IBM Plex Sans** via `--font-body` → `--font-family-text` / `--font-family-heading`
+- Avoid decorative display serifs (Fraunces, etc.) inside the app — they read as AI brand kits
 - Do not leave Next font CSS variables unwired
 
-### Atmosphere & motion
+### Precision-tool craft (anti-decorative)
 
-- Page air + content plane: `packages/ui-utils/src/theme/craft.css` (`.craft-content-plane`, body washes)
-- Heroes: `.craft-hero` / `.craft-hero-title`
-- Signature motion: `.craft-rise`, `.craft-rise-stagger`, `.craft-settle` (`prefers-reduced-motion` safe)
-- Icon language: `data-craft-icons` / `.craft-icon` (stroke ~1.75)
-- Empty states: `.craft-empty-mark` via `Empty` component
+- Flat chrome: solid `bg-background-2`, hairline borders — **no** page washes, frosted blur bars, or empty-state glow
+- Page headers: `.craft-page-header` / `.craft-page-title` — left-aligned, tool-sized (not centered marketing heroes)
+- Empty states: quiet `.craft-empty-mark` (border only)
+- Avoid stagger enter animations and accent-tinted title lines
 
 ### Cards & elevation
 
@@ -100,6 +99,6 @@ Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
 ## References
 
 - `packages/ui-utils/src/global.css` — full theme and tokens
-- `packages/ui-utils/src/theme/craft.css` — atmosphere + motion
+- `packages/ui-utils/src/theme/craft.css` — quiet page-header / empty utilities
 - `packages/ui/src/button.tsx` — variant pattern reference
 - `packages/epics/src/common/chrome-radius.ts` — chrome control radius token

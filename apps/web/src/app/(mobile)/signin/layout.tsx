@@ -1,6 +1,6 @@
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import { extractRouterConfig } from 'uploadthing/server';
-import { Fraunces, IBM_Plex_Sans } from 'next/font/google';
+import { IBM_Plex_Sans } from 'next/font/google';
 import clsx from 'clsx';
 
 import { Html, ThemeProvider } from '@hypha-platform/ui/server';
@@ -12,12 +12,6 @@ import { MenuTop } from '@hypha-platform/ui';
 
 import '@hypha-platform/ui-utils/global.css';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-heading',
-});
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -40,7 +34,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Html className={clsx(fraunces.variable, ibmPlexSans.variable)}>
+    <Html className={clsx(ibmPlexSans.variable)}>
       <AuthProvider
         config={{
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,

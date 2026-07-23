@@ -39,16 +39,13 @@ export function HumanChatPanelHeader({
   const displayDescription = description;
 
   return (
-    <div
-      className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border/80 bg-background-2/92 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80"
-      data-craft-icons
-    >
+    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
       <div className="flex shrink-0 items-center gap-1">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="craft-icon flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={t('backToSpaceChat')}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -61,7 +58,7 @@ export function HumanChatPanelHeader({
               setOpen(false);
               setOpenMobile(false);
             }}
-            className="craft-icon flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
@@ -78,7 +75,7 @@ export function HumanChatPanelHeader({
               setOpenMobile(false);
               router.push(notificationSettingsHref);
             }}
-            className="craft-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={t('mentionInboxNotificationSettings')}
             title={t('mentionInboxNotificationSettings')}
           >
@@ -88,14 +85,14 @@ export function HumanChatPanelHeader({
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
         {displayDescription && (
-          <p className="line-clamp-2 text-xs tracking-tight text-muted-foreground">
+          <p className="line-clamp-2 text-xs text-muted-foreground">
             {displayDescription}
           </p>
         )}
-        <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground [font-family:var(--font-family-heading)]">
+        <span className="min-w-0 truncate text-sm font-medium text-foreground">
           {displayTitle}
         </span>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/80 p-0 ring-1 ring-border/60">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted p-0 ring-1 ring-border/60">
           <MessageCircle className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>

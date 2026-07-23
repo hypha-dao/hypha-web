@@ -25,7 +25,7 @@ export const SpaceCardContainer = ({
     <div
       data-testid="member-spaces-container"
       className={cn(
-        'craft-rise-stagger grid auto-rows-fr grid-cols-1 items-stretch gap-3 sm:grid-cols-3',
+        'grid auto-rows-fr grid-cols-1 items-stretch gap-2 sm:grid-cols-3',
         gridClassName,
       )}
     >
