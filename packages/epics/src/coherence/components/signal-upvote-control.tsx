@@ -190,11 +190,11 @@ export function SignalUpvoteControl({
     >
       <div
         className={cn(
-          'group/upvote inline-flex items-center overflow-hidden rounded-md border transition-[border-color,background-color,opacity] duration-200 ease-out',
+          'group/upvote inline-flex items-stretch overflow-hidden rounded-full border transition-[border-color,background-color,opacity] duration-200 ease-out',
           pillHeightClass,
           hasVoted
-            ? 'border-border/80 bg-muted/30'
-            : 'border-border/60 bg-transparent hover:border-border hover:bg-muted/25',
+            ? 'border-accent-8/80 bg-background/60'
+            : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25',
           isMutating && 'pointer-events-none opacity-65',
           !canVote && 'opacity-55',
         )}
@@ -210,7 +210,7 @@ export function SignalUpvoteControl({
             'flex items-center justify-center',
             compact ? 'min-w-[2.75rem] px-2' : 'min-w-[3rem] px-2.5',
             hasVoted
-              ? 'text-foreground hover:bg-muted/30 active:bg-muted/40'
+              ? 'text-accent-11 hover:bg-muted/30 active:bg-muted/40'
               : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground active:bg-muted/50',
           )}
           disabled={!canVote || isMutating}
@@ -232,22 +232,28 @@ export function SignalUpvoteControl({
           <SignalUpvoteIcon
             className={cn(
               iconSizeClass,
-              hasVoted ? 'text-foreground' : 'text-muted-foreground',
+              'transition-transform duration-200 ease-out group-hover/upvote:scale-105',
+              hasVoted ? 'text-accent-11' : 'text-muted-foreground',
             )}
             active={hasVoted}
           />
           <span
             className={cn(
               compact ? 'text-[11px]' : 'text-1',
-              hasVoted || hasAnyVotes
+              hasVoted
+                ? 'font-semibold text-accent-11'
+                : hasAnyVotes
                 ? 'font-medium text-foreground'
-                : 'font-normal text-muted-foreground',
+                : 'font-medium text-muted-foreground',
             )}
           >
             {totalLabel}
           </span>
         </Button>
-        <span className="mx-0.5 h-4 w-px shrink-0 bg-border/80" aria-hidden />
+        <span
+          className="my-1 w-px shrink-0 self-stretch bg-border/80"
+          aria-hidden
+        />
         <Popover
           open={popoverOpen}
           onOpenChange={(open) => {
@@ -267,7 +273,7 @@ export function SignalUpvoteControl({
               className={cn(
                 pillHeightClass,
                 'flex w-7 items-center justify-center rounded-none border-0 px-0 text-muted-foreground shadow-none ring-0 hover:bg-muted/35 hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/45 data-[state=open]:text-foreground',
-                hasVoted && 'text-foreground',
+                hasVoted && 'text-accent-11 hover:text-accent-11',
               )}
               aria-haspopup="dialog"
               aria-label={t('upvoteDetails')}
