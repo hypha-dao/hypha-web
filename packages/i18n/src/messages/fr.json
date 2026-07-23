@@ -577,7 +577,8 @@
     "tabs": {
       "nestedSpaces": "Espaces imbriqués",
       "spaceToSpace": "Espace-à-espace",
-      "valuesFlows": "Flux de valeur"
+      "valuesFlows": "Flux de valeur",
+      "memberConnections": "Connexions des membres"
     },
     "comingSoon": {
       "spaceToSpaceVisualization": "Visualisation espace-à-espace bientôt disponible",
@@ -594,6 +595,78 @@
       "visitSpace": "Visiter l'espace",
       "searchSpaces": "Rechercher des espaces",
       "noSpacesFound": "Aucun espace trouvé"
+    },
+    "navigation": {
+      "breadcrumb": "Chemin de l'espace",
+      "memberCount": "{count} membres",
+      "individuals": "Personnes",
+      "memberSpaces": "Espaces membres",
+      "noIndividuals": "Aucune personne pour le moment",
+      "noMemberSpaces": "Aucun espace membre pour le moment",
+      "nestedHint": "Cliquez sur un cercle imbriqué pour zoomer · cliquez sur l’arrière-plan pour dézoomer",
+      "zoomIn": "Zoom avant",
+      "zoomOut": "Zoom arrière",
+      "focusLabel": "Affichage"
+    },
+    "memberConnections": {
+      "title": "Mycélium des membres",
+      "description": "Personnes de cet espace, les espaces découvrables auxquels elles appartiennent, et comment ces espaces se relient plus loin sur Hypha — le mycélium complet de collaboration.",
+      "hubMeta": "Espace actif",
+      "personMeta": "Membre de l'espace",
+      "spaceMeta": "Adhésion à un espace découvrable",
+      "stats": "{people} personnes · {spaces} espaces",
+      "empty": "Aucune connexion de membres pour le moment",
+      "networkSpaceMeta": "Espace réseau · saut {depth}",
+      "embeddedDescription": "Connexions des membres pour {space} — personnes et espaces liés au-delà de cette hiérarchie d’écosystème.",
+      "legendPerson": "Membre (cercle)",
+      "legendSpace": "Espace (carré)"
+    },
+    "spaceToSpace": {
+      "title": "Mycélium espace-à-espace",
+      "description": "Carte complète des adhésions espace-à-espace depuis cet espace vers l’extérieur. Les espaces découvrables s’étendent automatiquement pour montrer tout le mycélium.",
+      "hubMeta": "Espace actif",
+      "expandableMeta": "Fait partie du réseau d’adhésion entre espaces",
+      "privateMeta": "Espace membre",
+      "membership": "Adhésion",
+      "nestedMembership": "Adhésion imbriquée",
+      "expanding": "Mycélium complet en croissance…",
+      "stats": "{spaces} espaces · {links} liens",
+      "empty": "Aucune adhésion espace-à-espace pour le moment",
+      "networkMeta": "Espace réseau · saut {depth}"
+    },
+    "valueFlows": {
+      "title": "Flux de valeur",
+      "description": "Jetons distribués par cet espace aux personnes et espaces — à l'intérieur et à l'extérieur de l'écosystème.",
+      "hubMeta": "Espace distributeur",
+      "recipientMeta": "{amount} {symbol}",
+      "allTokens": "Tous les jetons",
+      "stats": "{count} transferts sortants",
+      "empty": "Aucun flux de valeur sortant pour le moment",
+      "details": "Détails du flux",
+      "amount": "Montant",
+      "recipient": "Destinataire",
+      "date": "Date",
+      "memo": "Mémo",
+      "tx": "Transaction",
+      "selectHint": "Sélectionnez un destinataire pour voir les flux cumulés de la période.",
+      "period7d": "7 derniers jours",
+      "period30d": "30 derniers jours",
+      "period90d": "90 derniers jours",
+      "period365d": "365 derniers jours",
+      "periodAll": "Tout",
+      "periodRange": "Depuis {start}",
+      "statsCumulative": "{count} transferts · {recipients} destinataires · {total} {symbol}",
+      "mixedTokens": "jetons",
+      "cumulativeAmount": "Montant cumulé",
+      "transferCount": "Transferts sur la période",
+      "dateRange": "Plage d'activité",
+      "recentTransfers": "Transferts récents",
+      "legendPerson": "Membre (cercle)",
+      "legendSpace": "Espace (carré)",
+      "kindPerson": "Membre",
+      "kindSpace": "Espace",
+      "kindExternal": "Externe",
+      "statsCountOnly": "{count} transferts · {recipients} destinataires"
     }
   },
   "AgreementsTab": {
