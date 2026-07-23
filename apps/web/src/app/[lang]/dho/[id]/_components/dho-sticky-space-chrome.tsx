@@ -9,7 +9,6 @@ import {
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { useTheme } from 'next-themes';
 
 const STICKY_APPEAR_OFFSET_PX = 0;
 const STICKY_HYSTERESIS_PX = 16;
@@ -89,7 +88,6 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
-  const { resolvedTheme } = useTheme();
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
@@ -146,9 +144,6 @@ export function DhoStickySpaceChrome({
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : null;
-  // During hydration `resolvedTheme` can be undefined briefly; default to dark
-  // to avoid flashing a light (white) secondary banner in dark mode sessions.
-  const isDark = resolvedTheme !== 'light';
 
   return (
     <>
@@ -160,26 +155,13 @@ export function DhoStickySpaceChrome({
            */
           'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
           'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
-          'overflow-hidden border-x border-b border-border/75',
-          'supports-[backdrop-filter]:backdrop-blur-md',
-          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10',
-          'transition-[opacity,transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+          'overflow-hidden border-x border-b border-border bg-background-2',
+          'transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
           stuck
-            ? 'craft-settle pointer-events-auto translate-y-0 opacity-100'
-            : '-translate-y-1.5 opacity-0 motion-reduce:translate-y-0',
+            ? 'pointer-events-auto translate-y-0 opacity-100'
+            : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
-        style={{
-          top: 'var(--menu-top-height, 70px)',
-          backgroundColor: isDark
-            ? 'rgba(7,10,16,0.92)'
-            : 'rgba(248,250,252,0.94)',
-          backgroundImage: isDark
-            ? 'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--space-accent, var(--color-accent-11)) 18%, transparent), transparent 55%)'
-            : 'linear-gradient(to right, rgba(255,255,255,0.78), rgba(255,255,255,0.64), rgba(255,255,255,0.74)), linear-gradient(to bottom right, color-mix(in srgb, var(--space-accent, var(--color-accent-11)) 14%, transparent), transparent 58%)',
-          boxShadow: isDark
-            ? '0 8px 22px -18px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
-            : '0 8px 20px -20px rgba(15,23,42,0.22), inset 0 1px 0 rgba(255,255,255,0.78)',
-        }}
+        style={{ top: 'var(--menu-top-height, 70px)' }}
         aria-hidden={!stuck}
       >
         <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">

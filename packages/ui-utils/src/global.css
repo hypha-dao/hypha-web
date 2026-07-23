@@ -206,10 +206,9 @@
   --radius-lg: 2.5px;
   --radius-chrome: 6px;
 
-  /* Font Families — next/font sets --font-body / --font-heading on <html> */
+  /* Font Families — single UI face (IBM Plex); avoid decorative display serifs in-app */
   --font-family-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-family-heading: var(--font-heading), ui-sans-serif, system-ui,
-    sans-serif;
+  --font-family-heading: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-family-code: ui-monospace, 'Menlo', monospace;
   --font-family-emphasis: 'Times New Roman', serif;
   --font-family-quote: 'Times New Roman', serif;
