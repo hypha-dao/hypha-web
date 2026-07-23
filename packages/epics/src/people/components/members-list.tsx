@@ -45,7 +45,7 @@ export const MembersList: FC<MembersListProps> = ({
             href={`${basePath}/${member.slug}`}
             key={member.slug}
             scroll={false}
-            className="block"
+            className="block h-full"
           >
             <MemberCard
               spaceId={spaceId}
@@ -64,7 +64,12 @@ export const MembersList: FC<MembersListProps> = ({
               spaceSlug: space.slug,
             }) ?? `/${lang}/dho/${space.slug}/agreements`;
           return (
-            <Link href={href} key={space.slug} scroll={false} className="block">
+            <Link
+              href={href}
+              key={space.slug}
+              scroll={false}
+              className="block h-full"
+            >
               <SpaceMemberCard
                 hostSpaceId={spaceId}
                 space={space}

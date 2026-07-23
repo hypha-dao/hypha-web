@@ -73,38 +73,42 @@ export const SpaceMemberCard: React.FC<{
             <Text className="text-1 text-neutral-11">{space.description}</Text>
           </Skeleton>
         </div>
-        {(isLoadingEvents || joinEvent) && (
-          <div className="flex justify-between flex-col gap-6 items-end">
-            <Skeleton
-              height="16px"
-              width="120px"
-              loading={isLoading || isLoadingEvents}
-            >
-              <Text className="text-1 text-gray-500">
-                {joinEvent && (
-                  <>
-                    {tCommon('joinedSpaceOn', {
-                      date: format.dateTime(new Date(joinEvent.createdAt), {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      }),
-                    })}
-                  </>
-                )}
-              </Text>
-            </Skeleton>
-          </div>
-        )}
+        <div className="flex shrink-0 flex-col items-end justify-between gap-6">
+          <Skeleton
+            height="16px"
+            width="120px"
+            loading={isLoading || isLoadingEvents}
+          >
+            <div className="flex h-4 items-center">
+              {joinEvent ? (
+                <Text
+                  className="text-1 whitespace-nowrap text-gray-500"
+                  title={format.dateTime(new Date(joinEvent.createdAt), {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                >
+                  {tCommon('joinedSpaceOn', {
+                    date: format.dateTime(new Date(joinEvent.createdAt), {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    }),
+                  })}
+                </Text>
+              ) : null}
+            </div>
+          </Skeleton>
+        </div>
       </div>
       <div>
         {delegator ? (
           <div className="flex flex-col gap-2">
-            <span className="text-1 text-neutral-11 font-bold">Delegate</span>
-            <div className="flex gap-3 items-center">
+            <span className="text-1 font-bold text-neutral-11">Delegate</span>
+            <div className="flex items-center gap-3">
               <Image
                 className="h-[32px] w-[32px] rounded-lg"
                 src={delegator?.avatarUrl || '/placeholder/default-space.svg'}
@@ -112,7 +116,7 @@ export const SpaceMemberCard: React.FC<{
                 width={32}
                 alt={delegator?.nickname}
               />
-              <div className="flex gap-1 flex-col">
+              <div className="flex flex-col gap-1">
                 <span className="text-1 font-bold text-bg-foreground">
                   {delegator?.name} {delegator?.surname}
                 </span>
