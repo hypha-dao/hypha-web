@@ -824,25 +824,31 @@ export function AiPanelMessageBubble({
   return (
     <div
       className={cn(
-        'flex gap-2',
+        // Top-align avatar + bubble so photo intrinsic size / stretch cannot
+        // inflate the message row (and the filled bubble) vertically.
+        'flex items-start gap-2',
         isUser && 'flex-row-reverse',
         isSingleLineAssistantText && 'items-center',
       )}
     >
       {isUser ? (
-        <PersonAvatar
-          size="sm"
-          avatarSrc={userAvatarUrl?.trim() || undefined}
-          userName={userDisplayName?.trim() || undefined}
+        <div
           className={cn(
-            'mt-0.5 h-7 w-7 shrink-0',
+            'mt-0.5 h-7 w-7 shrink-0 self-start overflow-hidden',
             APP_CHROME_SUBTLE_SQUARE_RADIUS,
           )}
-        />
+        >
+          <PersonAvatar
+            size="sm"
+            avatarSrc={userAvatarUrl?.trim() || undefined}
+            userName={userDisplayName?.trim() || undefined}
+            className={cn('h-full w-full', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
+          />
+        </div>
       ) : (
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden border border-border/60 bg-muted/25',
+            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden border border-border/60 bg-muted/25',
             APP_CHROME_SUBTLE_SQUARE_RADIUS,
             isSingleLineAssistantText ? 'mt-0' : 'mt-0.5',
           )}
@@ -861,13 +867,16 @@ export function AiPanelMessageBubble({
         </div>
       )}
       <div
-        className={cn('group max-w-[85%]', isUser && 'flex flex-col items-end')}
+        className={cn(
+          'group max-w-[85%] min-w-0',
+          isUser && 'flex flex-col items-end',
+        )}
       >
         <div
           className={cn(
-            // Asymmetric chat silhouette: three rounded corners + one sharp
-            // toward the speaker (assistant left → TL, user right → TR).
-            'flex flex-col gap-1 rounded-2xl px-3 py-2 text-sm leading-snug',
+            // Asymmetric chat silhouette: three rounded + one sharp toward the
+            // speaker. inline-flex + w-fit keeps the fill hugging copy.
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-xl px-2.5 py-1.5 text-sm leading-snug',
             isUser
               ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_40%,transparent)] bg-[color:var(--space-accent,var(--color-accent-9))] text-[color:var(--space-accent-contrast,var(--color-accent-contrast))]'
               : 'rounded-tl-none border border-border/70 bg-muted/45 text-foreground',
@@ -880,10 +889,10 @@ export function AiPanelMessageBubble({
             />
           ) : null}
           {hasVisibleText && (
-            <div className="flex flex-col gap-1">
+            <div className="flex h-fit w-full min-w-0 flex-col gap-1">
               <div
                 className={cn(
-                  'space-y-0.5 break-words text-[14px] leading-5',
+                  'space-y-0.5 break-words text-[14px] leading-snug [&_p]:m-0',
                   showExpandToggle && !expanded && 'line-clamp-8',
                 )}
               >
