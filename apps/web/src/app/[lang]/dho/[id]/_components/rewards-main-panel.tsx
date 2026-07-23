@@ -23,7 +23,7 @@ export function RewardsMainPanel({
   const [rewardCount, setRewardCount] = useState(0);
 
   return (
-    <div className="flex flex-col gap-4 py-4">
+    <div className="flex flex-col gap-5 py-4">
       <TabScreenTitle
         title={tTreasury('rewardsSection.title')}
         count={rewardCount}
@@ -31,6 +31,7 @@ export function RewardsMainPanel({
       />
       <SpacePendingRewardsSection
         web3SpaceId={web3SpaceId}
+        compactHeader
         onVisibleRewardCountChange={setRewardCount}
         toolbarActions={
           <Button asChild>
