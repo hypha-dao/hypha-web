@@ -95,10 +95,10 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           </Skeleton>
         </div>
 
-        <div className="min-h-4">
+        <div className="min-h-8">
           {description ? (
-            <Skeleton width="200px" height="16px" loading={isLoading}>
-              <p className="craft-meta line-clamp-1">{description}</p>
+            <Skeleton width="200px" height="32px" loading={isLoading}>
+              <p className="craft-meta line-clamp-2">{description}</p>
             </Skeleton>
           ) : null}
         </div>

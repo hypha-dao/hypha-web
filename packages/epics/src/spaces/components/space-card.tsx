@@ -121,10 +121,10 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               </CardTitle>
             </Skeleton>
           </div>
-          <div className="min-h-4">
+          <div className="min-h-8">
             {description ? (
-              <Skeleton loading={isLoading} width="100%" height="16px">
-                <p className="craft-meta line-clamp-1">{description}</p>
+              <Skeleton loading={isLoading} width="100%" height="32px">
+                <p className="craft-meta line-clamp-2">{description}</p>
               </Skeleton>
             ) : null}
           </div>
