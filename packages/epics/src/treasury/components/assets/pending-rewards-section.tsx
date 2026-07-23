@@ -1,7 +1,6 @@
 'use client';
 
 import { FC, useCallback, useEffect, useState } from 'react';
-import { SectionFilter } from '@hypha-platform/ui/server';
 import { type Person, usePendingRewards } from '@hypha-platform/core/client';
 import { AssetCard } from './asset-card';
 import { useUserAssetsSection } from '../../hooks';
@@ -103,12 +102,16 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   }, [claim, waitForClaimReceipt, updatePendingRewards, updateUserAssets]);
 
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-3">
-      <div className="w-full flex justify-between">
-        <SectionFilter
-          label={tProfile('rewards')}
-          count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
-        />
+    <div className="flex w-full flex-col items-stretch gap-3">
+      <div className="flex w-full flex-wrap items-center justify-between gap-2">
+        <header className="craft-page-header min-w-0 flex-1">
+          <h2 className="craft-page-title text-4 font-medium">
+            {tProfile('rewards')}
+            <span className="ml-2 text-3 font-normal text-muted-foreground tabular-nums">
+              | {formatCurrencyValue(parsedRewardValue)} HYPHA
+            </span>
+          </h2>
+        </header>
         <Button
           title={
             !isMyProfile
@@ -126,15 +129,15 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       </div>
       <div className="w-full">
         {isLoading ? (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-            <AssetCard isLoading />
+          <div className="mt-1 w-full max-w-sm">
+            <AssetCard isLoading layout="solo" />
           </div>
         ) : !isAuthenticated ? (
           <Empty>
             <p>{tProfile('noRewardsFoundForUser')}</p>
           </Empty>
         ) : (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="mt-1 w-full max-w-sm">
             <AssetCard
               {...(hyphaTokenAsset ?? {
                 ...HYPHA_REWARDS_FALLBACK,
@@ -142,6 +145,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
                 value: 0,
               })}
               isLoading={isLoadingAssets}
+              layout="solo"
             />
           </div>
         )}
