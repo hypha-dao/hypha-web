@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
-import { Document, Order } from '@hypha-platform/core/client';
+import { Document, Order, useSpaceBySlug } from '@hypha-platform/core/client';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import Link from 'next/link';
@@ -35,6 +35,8 @@ export function DocumentsSections({
     spaceSlug,
     order,
   });
+  const { space } = useSpaceBySlug(spaceSlug);
+  const spaceLeadImage = space?.leadImage ?? null;
   const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
     spaceId: web3SpaceId,
     spaceSlug,
@@ -105,6 +107,7 @@ export function DocumentsSections({
         <DocumentSection
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
+          spaceLeadImage={spaceLeadImage}
           documents={documents.onVoting}
           headSectionButton={createProposalButton}
           hasSearch={true}
@@ -118,6 +121,7 @@ export function DocumentsSections({
         <DocumentSection
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
+          spaceLeadImage={spaceLeadImage}
           documents={documents.accepted}
           headSectionButton={createProposalButton}
           hasSearch={true}
@@ -131,6 +135,7 @@ export function DocumentsSections({
         <DocumentSection
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
+          spaceLeadImage={spaceLeadImage}
           documents={documents.rejected}
           headSectionButton={createProposalButton}
           hasSearch={true}
