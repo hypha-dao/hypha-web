@@ -22,4 +22,18 @@
   .craft-meta {
     @apply text-1 font-normal text-muted-foreground;
   }
+
+  /*
+   * Shared card chrome for grids / panels.
+   * Prefer these over one-off rounded-xl + shadow stacks.
+   */
+  .craft-card {
+    @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
+  }
+
+  .craft-card-interactive {
+    @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
+    @apply transition-[border-color,background-color] duration-200 ease-out;
+    @apply hover:border-border hover:bg-muted/15;
+  }
 }
