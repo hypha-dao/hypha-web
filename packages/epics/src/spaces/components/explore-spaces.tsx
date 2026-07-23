@@ -300,7 +300,7 @@ export function ExploreSpaces({
 
   const renderMapToolbar = React.useCallback(
     (layerControls: React.ReactNode) => (
-      <div className="mb-4 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+      <div className="mb-3 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
         <div className="min-w-0 w-full sm:flex-1">{layerControls}</div>
         <NetworkAddLocationButton
           lang={lang}
@@ -308,7 +308,7 @@ export function ExploreSpaces({
           isAuthenticated={isAuthenticated}
           className={cn(
             spaceToolbarPrimaryButtonClassName,
-            'w-fit shrink-0 self-start sm:self-auto',
+            'w-fit shrink-0 self-start border-border bg-background shadow-none hover:bg-muted/15 sm:self-auto',
           )}
         />
       </div>

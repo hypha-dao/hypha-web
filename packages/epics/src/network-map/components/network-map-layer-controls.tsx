@@ -51,7 +51,7 @@ export function NetworkMapLayerControls({
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 max-w-full flex-row flex-wrap items-center gap-2 sm:inline-flex sm:w-fit sm:gap-2',
+        'flex w-full min-w-0 max-w-full flex-row flex-wrap items-center gap-2 sm:inline-flex sm:w-fit sm:gap-2.5',
         className,
       )}
       role="toolbar"
@@ -64,12 +64,20 @@ export function NetworkMapLayerControls({
         }
         className="w-fit max-w-full"
       >
-        <TabsList className={segmentedListClass}>
-          <TabsTrigger value="globe" className={segmentedTriggerClass}>
+        <TabsList className={segmentedListClass} triggerVariant="switch">
+          <TabsTrigger
+            value="globe"
+            variant="switch"
+            className={segmentedTriggerClass}
+          >
             <Globe className="size-3.5 shrink-0" aria-hidden />
             {t('globeView')}
           </TabsTrigger>
-          <TabsTrigger value="flat" className={segmentedTriggerClass}>
+          <TabsTrigger
+            value="flat"
+            variant="switch"
+            className={segmentedTriggerClass}
+          >
             <Map className="size-3.5 shrink-0" aria-hidden />
             {t('flatView')}
           </TabsTrigger>
@@ -78,11 +86,11 @@ export function NetworkMapLayerControls({
 
       <Separator
         orientation="vertical"
-        className="mx-0.5 hidden h-6 shrink-0 self-center bg-neutral-7 sm:block"
+        className="mx-0.5 hidden h-6 shrink-0 self-center bg-border sm:block"
       />
 
       <div
-        className="flex w-fit max-w-full min-w-0 items-center gap-1"
+        className="flex w-fit max-w-full min-w-0 items-center gap-1 rounded-lg bg-neutral-3 p-0.5"
         role="group"
         aria-label={t('layersLabel')}
       >
