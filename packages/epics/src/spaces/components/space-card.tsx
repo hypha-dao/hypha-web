@@ -14,7 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { ExitIcon } from '@radix-ui/react-icons';
 import { SpaceModeLabel } from './space-mode-label';
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, LOCAL_DATE_SHORT_FORMAT_OPTIONS } from '@hypha-platform/ui-utils';
 import { ExitSpace } from './exit-space';
 import { useFormatter, useTranslations } from 'next-intl';
 
@@ -37,7 +37,7 @@ type SpaceCardProps = {
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
-  height: '150px',
+  height: '120px',
 };
 
 export const SpaceCard: React.FC<SpaceCardProps> = ({
@@ -63,9 +63,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   return (
     <Card
       className={cn(
-        'group relative flex h-full w-full flex-col @container/spacecard',
-        'transition-[border-color,background-color] duration-200 ease-out',
-        'hover:border-border hover:bg-background-3/40',
+        'craft-card-interactive group relative flex h-full w-full flex-col @container/spacecard',
         className,
       )}
     >
@@ -100,14 +98,14 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
         <Skeleton loading={isLoading} className="w-full h-full">
           <Image
             width={454}
-            height={150}
+            height={120}
             className="rounded-tl-lg rounded-tr-lg object-cover w-full h-full"
             src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title}
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="relative flex flex-1 flex-col pt-4">
+      <CardContent className="relative flex flex-1 flex-col p-3.5 pt-4">
         <div>
           <Avatar className="absolute top-[-48px] h-14 w-14">
             <Skeleton width="56px" height="56px" loading={isLoading}>
@@ -123,15 +121,15 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               </CardTitle>
             </Skeleton>
           </div>
-          {description ? (
-            <Skeleton loading={isLoading} width="100%" height="16px">
-              <p className="line-clamp-1 text-1 font-normal text-muted-foreground">
-                {description}
-              </p>
-            </Skeleton>
-          ) : null}
+          <div className="min-h-4">
+            {description ? (
+              <Skeleton loading={isLoading} width="100%" height="16px">
+                <p className="craft-meta line-clamp-1">{description}</p>
+              </Skeleton>
+            ) : null}
+          </div>
           <div className="mt-auto flex items-end gap-2 pt-2">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-1 font-normal text-muted-foreground">
+            <div className="craft-meta flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
               <Skeleton loading={isLoading} height="16px" width="72px">
                 <span>
                   <span className="text-foreground/80">{members}</span>{' '}
@@ -144,18 +142,17 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                   {tCommon('Agreements')}
                 </span>
               </Skeleton>
-              {createdAt instanceof Date &&
-              !Number.isNaN(createdAt.getTime()) ? (
-                <Skeleton loading={isLoading} height="16px" width="88px">
-                  <span className="truncate">
-                    {format.dateTime(createdAt, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </span>
-                </Skeleton>
-              ) : null}
+              <Skeleton loading={isLoading} height="16px" width="88px">
+                <span className="min-h-4 truncate">
+                  {createdAt instanceof Date &&
+                  !Number.isNaN(createdAt.getTime())
+                    ? format.dateTime(
+                        createdAt,
+                        LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+                      )
+                    : null}
+                </span>
+              </Skeleton>
             </div>
             <SpaceModeLabel
               web3SpaceId={web3SpaceId}

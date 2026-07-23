@@ -367,7 +367,7 @@ export function SignalBoardView({
                 {columnSignals.length === 0 && !showPlaceholder ? (
                   <div
                     className={cn(
-                      'flex flex-1 items-center justify-center rounded-xl border border-dashed px-3 py-6 text-center text-xs text-muted-foreground',
+                      'flex flex-1 items-center justify-center rounded-lg border border-dashed px-3 py-6 text-center text-xs text-muted-foreground',
                       isDropTarget
                         ? 'border-accent-8/50 bg-accent-2/20'
                         : 'border-border/50',
