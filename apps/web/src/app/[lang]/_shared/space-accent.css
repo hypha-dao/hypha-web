@@ -2,13 +2,15 @@
  * Space-scoped accent from imagery (--space-* set by SpaceAccentFromImages).
  * Brand moment: inside a space, accent owns emotion (tabs, CTAs, focus, links).
  * Shared by DHO and profile layouts.
+ *
+ * Contrast roles (do not conflate):
+ * - `--space-accent-fg` / `--color-accent-11` — readable accent text on light surfaces
+ * - `--space-accent-contrast` / `--color-accent-contrast` — text on solid accent fills
  */
 [data-space-accent-scope] {
   --space-tab-active-border: var(--space-accent, var(--color-accent-9));
-  --space-accent-fg: var(
-    --space-accent-foreground,
-    var(--space-accent, var(--color-accent-11))
-  );
+  /* Never use solid-on-accent contrast here — that is near-white and breaks light mode */
+  --space-accent-fg: var(--color-accent-11, var(--space-accent));
   --ring: color-mix(
     in oklab,
     var(--space-accent, var(--color-accent-9)) 75%,
@@ -16,8 +18,14 @@
   );
 }
 
+/* Ghost/underline tabs tint the active label; switch pills keep their own foreground */
 [data-space-accent-scope] .tabs-root [data-state='active'] {
   border-bottom-color: var(--space-tab-active-border) !important;
+}
+
+[data-space-accent-scope]
+  .tabs-root
+  [data-state='active']:not([data-tabs-variant='switch']) {
   color: var(--space-accent-fg) !important;
 }
 
@@ -29,7 +37,7 @@
   opacity: 0.92;
 }
 
-/* Primary fills / links pick up space accent when in scope */
+/* Primary fills pick up space accent when in scope */
 [data-space-accent-scope] .bg-accent-9 {
   background-color: var(--space-accent, var(--color-accent-9)) !important;
 }
@@ -42,9 +50,9 @@
   ) !important;
 }
 
-[data-space-accent-scope] .text-accent-11,
-[data-space-accent-scope] a.text-accent-11 {
-  color: var(--space-accent-fg) !important;
+/* Solid CTAs: pair forced fill with contrast computed for the raw space accent */
+[data-space-accent-scope] .text-accent-contrast {
+  color: var(--space-accent-contrast, var(--color-accent-contrast)) !important;
 }
 
 [data-space-accent-scope] .border-accent-9,

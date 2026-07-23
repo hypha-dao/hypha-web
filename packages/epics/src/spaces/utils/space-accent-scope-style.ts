@@ -48,7 +48,12 @@ export function buildSpaceScopeStyle(input: {
     ...overlayVars,
     ...palette,
     '--space-accent': accent,
-    '--space-accent-foreground': foreground,
+    /**
+     * Readable accent-colored text on light surfaces (tabs, outline labels, links).
+     * Solid-on-accent ink lives in `--space-accent-contrast` — do not reuse that here.
+     */
+    '--space-accent-foreground':
+      palette['--color-accent-11'] ?? palette['--color-accent-12'] ?? accent,
     '--space-accent-muted': muted,
     '--space-accent-contrast': foreground,
     '--space-tab-active-border': accent,

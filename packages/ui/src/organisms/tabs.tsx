@@ -60,6 +60,7 @@ const TabsTrigger = React.forwardRef<
 >(({ className, variant = 'default', ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
+    data-tabs-variant={variant}
     className={cn(
       'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
       variant === 'ghost' &&
@@ -69,7 +70,7 @@ const TabsTrigger = React.forwardRef<
       variant === 'outlined' &&
         'mr-2 rounded-lg border data-[state=active]:bg-secondary-foreground data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm',
       variant === 'switch' &&
-        'bg-neutral-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        'rounded-lg bg-transparent text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
       className,
     )}
     {...props}
