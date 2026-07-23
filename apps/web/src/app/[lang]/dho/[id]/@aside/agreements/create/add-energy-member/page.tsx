@@ -4,13 +4,13 @@ import {
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import {
   findEnergyCommunityBySpaceId,
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { fetchMembersAndSpaces } from '@web/utils/fetch-users-members';
+import { fetchSpaceMemberRecipients } from '@web/utils/fetch-space-member-recipients';
 import { notFound, redirect } from 'next/navigation';
 
 type PageProps = {
@@ -25,7 +25,7 @@ export default async function CreateAddEnergyMemberProposalPage({
   if (!spaceFromDb) notFound();
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
-  const backUrl = `${successfulUrl}${PATH_SELECT_CREATE_ACTION}`;
+  const backUrl = `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
   const energyMapping = await findEnergyCommunityBySpaceId(spaceFromDb.id, {
     db,
   });
@@ -34,9 +34,7 @@ export default async function CreateAddEnergyMemberProposalPage({
     redirect(backUrl);
   }
 
-  const { members, spaces } = await fetchMembersAndSpaces({
-    activeSpaceId: spaceFromDb.id,
-  });
+  const { members, spaces } = await fetchSpaceMemberRecipients(id, { db });
 
   return (
     <ProposalOverlayShell>

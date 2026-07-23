@@ -1,3 +1,5 @@
+import { normalizeProposalDocumentLabel } from '@hypha-platform/core/client';
+
 type JsonValue =
   | string
   | number
@@ -23,11 +25,18 @@ export const ENERGY_PROPOSAL_LABELS = [
 
 export type EnergyProposalLabel = (typeof ENERGY_PROPOSAL_LABELS)[number];
 
+/**
+ * Whether a document label marks an energy proposal. Stored labels are
+ * localized (e.g. "Energy Settlement Policy", "Energie teilen"), so the label
+ * is normalized to its canonical English form before comparison.
+ */
 export const isEnergyProposalLabel = (
   label: string | undefined,
 ): label is EnergyProposalLabel =>
   label != null &&
-  (ENERGY_PROPOSAL_LABELS as readonly string[]).includes(label);
+  (ENERGY_PROPOSAL_LABELS as readonly string[]).includes(
+    normalizeProposalDocumentLabel(label),
+  );
 
 export const appendEnergyProposalMarker = (
   description: string,

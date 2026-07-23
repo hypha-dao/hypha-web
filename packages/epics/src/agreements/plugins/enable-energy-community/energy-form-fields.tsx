@@ -4,8 +4,10 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+import clsx from 'clsx';
 import {
   Button,
+  Card,
   FormControl,
   FormField,
   FormItem,
@@ -29,6 +31,7 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
+import { Coins, Leaf, Zap } from 'lucide-react';
 import { RecipientField } from '../components/common/recipient-field';
 import { ConversionPercentageInput } from '../components/common/token-percentage-field';
 
@@ -47,16 +50,21 @@ export const getBasePurposeOptions = (t: EnergyTranslate) =>
       value: 'SELF_CONSUMPTION' as const,
       label: t('optimization.selfConsumption'),
       description: t('optimization.selfConsumptionDescription'),
+      icon: <Zap className="size-5 shrink-0" strokeWidth={1.75} aria-hidden />,
     },
     {
       value: 'MIN_CO2' as const,
       label: t('optimization.minCo2'),
       description: t('optimization.minCo2Description'),
+      icon: <Leaf className="size-5 shrink-0" strokeWidth={1.75} aria-hidden />,
     },
     {
       value: 'LOWEST_PRICE' as const,
       label: t('optimization.lowestPrice'),
       description: t('optimization.lowestPriceDescription'),
+      icon: (
+        <Coins className="size-5 shrink-0" strokeWidth={1.75} aria-hidden />
+      ),
     },
   ] as const;
 
@@ -188,7 +196,7 @@ export const createEnergyOptimizationSchema = (t: EnergyTranslate) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['socialWallets'],
-          message: t('validation.addGoalWallet'),
+          message: t('validation.addTargetWallet'),
         });
         return;
       }
@@ -206,7 +214,7 @@ export const createEnergyOptimizationSchema = (t: EnergyTranslate) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['socialWallets'],
-          message: t('validation.goalWalletsTotal100'),
+          message: t('validation.targetWalletsTotal100'),
         });
       }
     });
@@ -382,50 +390,86 @@ const PrimaryObjectiveField = () => {
     <FormField
       control={control}
       name="energyOptimization.purpose1"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{t('optimization.primaryObjective')}</FormLabel>
-          <FormControl>
-            <Select
-              value={field.value}
-              onValueChange={(value) => {
-                field.onChange(value);
-                const [, second, third] = completeRanking(
-                  value as EnergyBasePurpose,
-                );
-                setValue('energyOptimization.purpose2', second, {
-                  shouldValidate: true,
-                });
-                setValue('energyOptimization.purpose3', third, {
-                  shouldValidate: true,
-                });
-              }}
-            >
-              <SelectTrigger className="h-auto">
-                <SelectValue placeholder={t('optimization.selectObjective')} />
-              </SelectTrigger>
-              <SelectContent className="p-2">
-                {basePurposeOptions.map(({ value, label, description }) => (
-                  <SelectItem key={value} value={value}>
-                    <div className="flex flex-col text-left">
-                      <span className="text-1 font-medium">{label}</span>
-                      <span className="text-1 text-neutral-11">
-                        {description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        const selectPurpose = (value: EnergyBasePurpose) => {
+          field.onChange(value);
+          const [, second, third] = completeRanking(value);
+          setValue('energyOptimization.purpose2', second, {
+            shouldValidate: true,
+          });
+          setValue('energyOptimization.purpose3', third, {
+            shouldValidate: true,
+          });
+        };
+        return (
+          <FormItem>
+            <FormLabel>{t('optimization.primaryObjective')}</FormLabel>
+            <FormControl>
+              <div className="flex flex-col gap-3">
+                {basePurposeOptions.map(
+                  ({ value, label, description, icon }) => {
+                    const selected = field.value === value;
+                    return (
+                      <Card
+                        key={value}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={selected}
+                        className={clsx(
+                          'flex cursor-pointer items-center space-x-4 border-2 p-5',
+                          {
+                            'border-accent-9': selected,
+                            'hover:border-accent-5': !selected,
+                          },
+                        )}
+                        onClick={() => selectPurpose(value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            selectPurpose(value);
+                          }
+                        }}
+                      >
+                        <div>{icon}</div>
+                        <div className="flex flex-col">
+                          <span className="text-3 font-medium">{label}</span>
+                          <span className="text-1 text-neutral-11">
+                            {description}
+                          </span>
+                        </div>
+                      </Card>
+                    );
+                  },
+                )}
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };
 
-export const EnergyOptimizationFields = ({
+export const EnergyOptimizationFields = () => {
+  const t = useTranslations('Energy');
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+      <div className="flex flex-col gap-1">
+        <div className="text-1 font-medium">
+          {t('optimization.optimizeFor')}
+        </div>
+        <p className="text-2 text-secondary-foreground">
+          {t('optimization.optimizeDescription')}
+        </p>
+      </div>
+      <PrimaryObjectiveField />
+    </div>
+  );
+};
+
+export const EnergySocialAllocationFields = ({
   members,
   spaces,
 }: {
@@ -447,151 +491,133 @@ export const EnergyOptimizationFields = ({
   }) as 'FIXED' | 'VARIABLE' | undefined;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
-        <div className="flex flex-col gap-1">
-          <div className="text-1 font-medium">
-            {t('optimization.optimizeFor')}
-          </div>
-          <p className="text-2 text-secondary-foreground">
-            {t('optimization.optimizeDescription')}
-          </p>
-        </div>
-        <PrimaryObjectiveField />
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
-        <FormField
-          control={control}
-          name="energyOptimization.socialEnabled"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <FormLabel className="text-1 font-medium">
-                    {t('optimization.socialAllocation')}
-                  </FormLabel>
-                  <p className="text-2 text-secondary-foreground">
-                    {t('optimization.socialAllocationDescription')}
-                  </p>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={Boolean(field.value)}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
+    <div className="flex flex-col gap-3">
+      <FormField
+        control={control}
+        name="energyOptimization.socialEnabled"
+        render={({ field }) => (
+          <FormItem>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <FormLabel className="text-1 font-medium">
+                  {t('optimization.socialAllocation')}
+                </FormLabel>
+                <p className="text-2 text-secondary-foreground">
+                  {t('optimization.socialAllocationDescription')}
+                </p>
               </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              <FormControl>
+                <Switch
+                  checked={Boolean(field.value)}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        {socialEnabled && (
-          <div className="flex flex-col gap-3">
+      {socialEnabled && (
+        <div className="flex flex-col gap-3">
+          <FormField
+            control={control}
+            name="energyOptimization.socialMode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('optimization.allocationMode')}</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="h-auto">
+                      <SelectValue placeholder={t('optimization.selectMode')} />
+                    </SelectTrigger>
+                    <SelectContent className="p-2">
+                      {socialModeOptions.map(
+                        ({ value, label, description }) => (
+                          <SelectItem key={value} value={value}>
+                            <div className="flex flex-col text-left">
+                              <span className="text-1 font-medium">
+                                {label}
+                              </span>
+                              <span className="text-1 text-neutral-11">
+                                {description}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {socialMode === 'FIXED' && (
             <FormField
               control={control}
-              name="energyOptimization.socialMode"
+              name="energyOptimization.socialFixedKwh"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('optimization.allocationMode')}</FormLabel>
+                  <FormLabel>{t('optimization.kwhPerInterval')}</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="h-auto">
-                        <SelectValue
-                          placeholder={t('optimization.selectMode')}
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="p-2">
-                        {socialModeOptions.map(
-                          ({ value, label, description }) => (
-                            <SelectItem key={value} value={value}>
-                              <div className="flex flex-col text-left">
-                                <span className="text-1 font-medium">
-                                  {label}
-                                </span>
-                                <span className="text-1 text-neutral-11">
-                                  {description}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder={t('optimization.kwhPerIntervalPlaceholder')}
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          )}
 
-            {socialMode === 'FIXED' && (
-              <FormField
-                control={control}
-                name="energyOptimization.socialFixedKwh"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('optimization.kwhPerInterval')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder={t(
-                          'optimization.kwhPerIntervalPlaceholder',
-                        )}
-                        value={field.value ?? ''}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+          {socialMode === 'VARIABLE' && (
+            <FormField
+              control={control}
+              name="energyOptimization.socialVariablePercent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('optimization.shareOfSolar')}</FormLabel>
+                  <FormControl>
+                    <ConversionPercentageInput
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
-            {socialMode === 'VARIABLE' && (
-              <FormField
-                control={control}
-                name="energyOptimization.socialVariablePercent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('optimization.shareOfSolar')}</FormLabel>
-                    <FormControl>
-                      <ConversionPercentageInput
-                        value={field.value ?? ''}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <div className="flex flex-col gap-2">
-              <FormLabel>{t('optimization.goalWallets')}</FormLabel>
-              <p className="text-2 text-secondary-foreground">
-                {t('optimization.goalWalletsDescription')}
-              </p>
-              <PercentageSplitFieldArray
-                name="energyOptimization.socialWallets"
-                members={members}
-                spaces={spaces}
-                addLabel={t('optimization.addGoalWallet')}
-              />
-              <FormField
-                control={control}
-                name="energyOptimization.socialWallets"
-                render={() => (
-                  <FormItem>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="flex flex-col gap-2">
+            <FormLabel>{t('optimization.targetWallets')}</FormLabel>
+            <p className="text-2 text-secondary-foreground">
+              {t('optimization.targetWalletsDescription')}
+            </p>
+            <PercentageSplitFieldArray
+              name="energyOptimization.socialWallets"
+              members={members}
+              spaces={spaces}
+              addLabel={t('optimization.addTargetWallet')}
+            />
+            <FormField
+              control={control}
+              name="energyOptimization.socialWallets"
+              render={() => (
+                <FormItem>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

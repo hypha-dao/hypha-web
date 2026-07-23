@@ -133,7 +133,8 @@
       "metadataHash": "Hash de metadados",
       "metadataHashPlaceholder": "0x... ou hash IPFS",
       "deviceIds": "IDs de dispositivos (separados por vírgulas)",
-      "deviceIdsPlaceholder": "ex.: 201,202,203"
+      "deviceIdsPlaceholder": "ex.: 201,202,203",
+      "sectionDescription": "Escolha um membro deste espaço e quantos contadores inteligentes tem. Investidores sem contador podem ficar a zero."
     },
     "energySharing": {
       "settlementWindow": "Janela de liquidação",
@@ -154,18 +155,19 @@
       "ownershipToken": "Endereço do token de propriedade",
       "ownershipTokenPlaceholder": "0x...",
       "deviceIds": "IDs de dispositivos (separados por vírgulas)",
-      "deviceIdsPlaceholder": "ex.: 1001,1002,1003"
+      "deviceIdsPlaceholder": "ex.: 1001,1002,1003",
+      "sectionDescription": "Adicione um ativo de produção ou armazenamento e distribua a sua propriedade pelos membros (as quotas totalizam 100%)."
     },
     "whitelistSettlement": {
       "settlementAddress": "Endereço de liquidação",
-      "settlementAddressDescription": "Carteira autorizada a chamar consumeEnergy no PPA da comunidade (ex.: o seu bot de backend).",
+      "settlementAddressDescription": "Carteira autorizada a submeter dados de liquidação de energia para esta comunidade (por exemplo, um bot de backend).",
       "settlementAddressPlaceholder": "0x...",
       "whitelisted": "Na whitelist",
       "whitelistedDescription": "Desative para remover um endereço da whitelist de liquidação."
     },
     "enableCommunity": {
       "membersTitle": "Membros",
-      "membersDescription": "Escolha os membros da comunidade e quantos contadores inteligentes cada um tem. Investidores sem contador podem ficar a zero.",
+      "membersDescription": "Escolha membros deste espaço e quantos contadores inteligentes cada um tem. Investidores sem contador podem ficar a zero.",
       "numberOfMeters": "Número de contadores",
       "meterPlaceholder": "0",
       "addMember": "Adicionar membro",
@@ -189,7 +191,7 @@
       "tokenSymbolPlaceholder": "derivado automaticamente",
       "advancedSettings": "Definições avançadas",
       "adminAddress": "Endereço de administrador (executor do espaço)",
-      "adminHint": "Preenchido automaticamente com o executor deste espaço. A proposta DAO executa a chamada à fábrica a partir deste endereço, pelo que deve ser proprietário da nova comunidade para a Hypha a descobrir.",
+      "adminHint": "Preenchido automaticamente com o executor deste espaço.",
       "stablecoinAddress": "Endereço da stablecoin",
       "stablecoinPlaceholder": "0x... (por defeito, USDC na Base)",
       "gridOperatorAddress": "Endereço do operador de rede (opcional)",
@@ -212,15 +214,15 @@
   },
   "optimization": {
     "optimizeFor": "Otimizar comunidade para",
-    "optimizeDescription": "Escolha o principal objetivo da comunidade. O sistema de gestão de energia otimiza primeiro para este objetivo e depois equilibra automaticamente os restantes.",
+    "optimizeDescription": "Escolha o que mais importa. O sistema dará prioridade a esse objetivo primeiro e depois equilibrará os restantes.",
     "primaryObjective": "Objetivo principal",
     "selectObjective": "Selecione um objetivo",
     "selfConsumption": "Autoconsumo máximo",
-    "selfConsumptionDescription": "Utilizar a energia gerada localmente dentro da comunidade antes de qualquer interação com a rede.",
+    "selfConsumptionDescription": "Utilizar a energia gerada localmente na comunidade antes de comprar à rede ou vender-lhe.",
     "minCo2": "Emissões mínimas de CO₂",
-    "minCo2Description": "Minimizar a intensidade de carbono do ciclo de vida de cada unidade consumida.",
+    "minCo2Description": "Preferir a energia mais limpa disponível para manter as emissões de carbono o mais baixas possível.",
     "lowestPrice": "Preço mais baixo",
-    "lowestPriceDescription": "Minimizar o custo total da energia, explorando ativamente a dinâmica de preços do mercado.",
+    "lowestPriceDescription": "Manter os custos de energia o mais baixos possível utilizando as opções mais baratas disponíveis.",
     "socialAllocation": "Alocação social",
     "socialAllocationDescription": "Reservar parte da produção solar para carteiras de objetivos da comunidade antes de a otimização ser executada.",
     "allocationMode": "Modo de alocação",
@@ -232,14 +234,14 @@
     "kwhPerInterval": "kWh por intervalo de 15 minutos",
     "kwhPerIntervalPlaceholder": "ex.: 1000",
     "shareOfSolar": "Quota da geração solar",
-    "goalWallets": "Carteiras de objetivos",
-    "goalWalletsDescription": "Distribuir a alocação social pelas carteiras de objetivos (as quotas totalizam 100%).",
-    "addGoalWallet": "Adicionar carteira de objetivo",
     "share": "Quota",
     "socialDisabled": "Desativado",
     "socialFixed": "Fixo: {kwh} kWh por intervalo",
     "socialVariable": "Variável: {percent}% da solar",
-    "metersPerMember": "{address} — {count, plural, one {# contador} other {# contadores}}"
+    "metersPerMember": "{address} — {count, plural, one {# contador} other {# contadores}}",
+    "targetWallets": "Carteiras de objetivos",
+    "targetWalletsDescription": "Distribuir a alocação social pelas carteiras de objetivos (as quotas totalizam 100%).",
+    "addTargetWallet": "Adicionar carteira de objetivo"
   },
   "forms": {
     "spaceRequired": "O espaço é obrigatório para criar uma proposta.",
@@ -248,7 +250,7 @@
     "stickyHeaders": {
       "addEnergyMember": "Criar proposta de adicionar membro de energia",
       "enableEnergyCommunity": "Criar proposta de ativar comunidade de energia",
-      "energySharing": "Criar proposta de partilha de energia",
+      "energySharing": "Criar política de liquidação de energia",
       "registerEnergySource": "Criar proposta de registar fonte de energia",
       "changeEnergyOptimization": "Criar proposta de alterar otimização de energia",
       "whitelistEnergySettlement": "Criar proposta de whitelist de liquidação de energia"
@@ -261,7 +263,7 @@
     "optimization": "Otimização",
     "priorities": "Prioridades",
     "socialAllocation": "Alocação social",
-    "goalWallets": "Carteiras de objetivos",
+    "targetWallets": "Carteiras de objetivos",
     "energyToken": "Token de energia",
     "members": "Membros",
     "sources": "Fontes",
@@ -290,8 +292,6 @@
     "distinctPriorities": "Cada prioridade deve ser um objetivo diferente",
     "selectSocialMode": "Selecione um modo de alocação social",
     "wholeKwhPerInterval": "Introduza um número inteiro de kWh por intervalo",
-    "addGoalWallet": "Adicione pelo menos uma carteira de objetivo",
-    "goalWalletsTotal100": "As quotas das carteiras de objetivos devem totalizar 100%",
     "metadataHashRequired": "O hash de metadados é obrigatório",
     "deviceIdsRequired": "Os IDs de dispositivos são obrigatórios",
     "deviceIdsCommaNumbers": "Os IDs de dispositivos devem ser números separados por vírgulas",
@@ -313,7 +313,9 @@
     "addOwner": "Adicione pelo menos um proprietário",
     "ownershipTotal100": "As quotas de propriedade devem totalizar 100%",
     "atLeastOneSource": "É necessária pelo menos uma fonte",
-    "ownerMustBeMember": "Este proprietário também deve ser adicionado como membro (contagem de contadores 0 é aceitável), caso contrário não receberá receitas."
+    "ownerMustBeMember": "Este proprietário também deve ser adicionado como membro (contagem de contadores 0 é aceitável), caso contrário não receberá receitas.",
+    "addTargetWallet": "Adicione pelo menos uma carteira de objetivo",
+    "targetWalletsTotal100": "As quotas das carteiras de objetivos devem totalizar 100%"
   },
   "errors": {
     "allowanceTimeout": "Tempo esgotado à espera da autorização da stablecoin.",

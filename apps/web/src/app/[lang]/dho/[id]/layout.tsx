@@ -1,6 +1,7 @@
 import {
   SpaceCallJoinHeroBanner,
   SpaceModeLabel,
+  SpaceSettingsButton,
   SubscriptionBadge,
   SpaceAccentPortalBridge,
   SpaceCreatedOnText,
@@ -146,6 +147,14 @@ export default async function DhoLayout({
             })}
             footerTrailing={
               <>
+                <SpaceSettingsButton
+                  href={`${getDhoPathAgreements(
+                    lang,
+                    daoSlug,
+                  )}/select-settings-action`}
+                  variant="hero"
+                  className="me-3"
+                />
                 {web3SpaceId !== undefined && (
                   <SubscriptionBadge
                     web3SpaceId={web3SpaceId}

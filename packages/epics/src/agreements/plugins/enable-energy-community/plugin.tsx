@@ -26,6 +26,7 @@ import {
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import {
   EnergyOptimizationFields,
+  EnergySocialAllocationFields,
   PercentageSplitFieldArray,
 } from './energy-form-fields';
 import { RecipientField } from '../components/common/recipient-field';
@@ -37,10 +38,13 @@ type EnableEnergyCommunityPluginProps = {
 
 const SOURCE_TYPE_VALUES = ['SOLAR', 'BATTERY'] as const;
 
+/** Fixed settlement price (human units); matches form default / deploy mapping. */
+export const DEFAULT_BASE_PRICE_PER_KWH = '0.1';
+
 const emptySource = {
   name: '',
   sourceType: 'SOLAR',
-  basePricePerKwh: '',
+  basePricePerKwh: DEFAULT_BASE_PRICE_PER_KWH,
   owners: [],
   tokenName: '',
   tokenSymbol: '',
@@ -80,10 +84,9 @@ export const EnableEnergyCommunityPlugin = ({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Section 1 + 2 — Optimize for + Social allocation */}
-      <EnergyOptimizationFields members={members} spaces={spaces} />
+      <EnergyOptimizationFields />
 
-      {/* Section 3 — Members */}
+      {/* Section — Members */}
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
         <div className="flex flex-col gap-1">
           <div className="text-1 font-medium">{t('membersTitle')}</div>
@@ -207,25 +210,6 @@ export const EnableEnergyCommunityPlugin = ({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={control}
-                name={`energyCommunityActivation.sources.${index}.basePricePerKwh`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('basePricePerKwh')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder={t('basePricePlaceholder')}
-                        value={field.value ?? ''}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -323,185 +307,189 @@ export const EnableEnergyCommunityPlugin = ({
         </Button>
 
         {showAdvanced && (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <FormField
-              control={control}
-              name="energyCommunityActivation.admin"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>{t('adminAddress')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="0x..."
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                      readOnly
-                    />
-                  </FormControl>
-                  <p className="text-2 text-secondary-foreground">
-                    {t('adminHint')}
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.stablecoin"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('stablecoinAddress')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('stablecoinPlaceholder')}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.gridOperator"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('gridOperatorAddress')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('gridOperatorPlaceholder')}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.communityAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('communityFeeAddress')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('communityFeePlaceholder')}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.communityFeePercent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('communityFee')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('communityFeePercentPlaceholder')}
-                      rightIcon={<>%</>}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.aggregatorAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('aggregatorFeeAddress')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('aggregatorFeePlaceholder')}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.aggregatorFeePercent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('aggregatorFee')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('aggregatorFeePercentPlaceholder')}
-                      rightIcon={<>%</>}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.exportDeviceId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('exportDeviceId')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder={t('exportDeviceIdPlaceholder')}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.energyTokenName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('energyTokenName')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('energyTokenNamePlaceholder')}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="energyCommunityActivation.energyTokenSymbol"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('energyTokenSymbol')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('energyTokenSymbolPlaceholder')}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="flex flex-col gap-4">
+            <EnergySocialAllocationFields members={members} spaces={spaces} />
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <FormField
+                control={control}
+                name="energyCommunityActivation.admin"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>{t('adminAddress')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="0x..."
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        readOnly
+                      />
+                    </FormControl>
+                    <p className="text-2 text-secondary-foreground">
+                      {t('adminHint')}
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.stablecoin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('stablecoinAddress')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('stablecoinPlaceholder')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.gridOperator"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('gridOperatorAddress')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('gridOperatorPlaceholder')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.communityAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('communityFeeAddress')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('communityFeePlaceholder')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.communityFeePercent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('communityFee')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('communityFeePercentPlaceholder')}
+                        rightIcon={<>%</>}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.aggregatorAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('aggregatorFeeAddress')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('aggregatorFeePlaceholder')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.aggregatorFeePercent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('aggregatorFee')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('aggregatorFeePercentPlaceholder')}
+                        rightIcon={<>%</>}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.exportDeviceId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('exportDeviceId')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder={t('exportDeviceIdPlaceholder')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.energyTokenName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('energyTokenName')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('energyTokenNamePlaceholder')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="energyCommunityActivation.energyTokenSymbol"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('energyTokenSymbol')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('energyTokenSymbolPlaceholder')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         )}
       </div>

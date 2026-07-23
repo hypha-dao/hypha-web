@@ -28,6 +28,7 @@ export * from './space-card.container';
 export * from './space-card';
 export * from './space-card-with-discoverability';
 export * from './space-mode-label';
+export * from './space-settings-button';
 export * from './space-search';
 export * from './subspace-section';
 export * from './sales-banner';

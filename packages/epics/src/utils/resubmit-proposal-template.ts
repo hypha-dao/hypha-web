@@ -1,3 +1,5 @@
+import { normalizeProposalDocumentLabel } from '@hypha-platform/core/client';
+
 /**
  * URL segment after `/agreements/create/` (empty string for collective agreement create root).
  * Used to scope resubmit session data so one template's draft does not hydrate another.
@@ -51,7 +53,9 @@ export function getCreateRouteSegmentForProposalLabel(
     'Whitelist Energy Settlement': 'whitelist-energy-settlement',
   };
 
-  return labelToRoute[label] ?? '';
+  // Stored labels are localized (e.g. "Energy Settlement Policy",
+  // "Energie teilen") — normalize to the canonical English form first.
+  return labelToRoute[normalizeProposalDocumentLabel(label)] ?? '';
 }
 
 /**
