@@ -88,11 +88,13 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
           </Skeleton>
         </div>
 
-        <div className="flex flex-grow text-1 text-gray-500 mb-4">
-          <Skeleton width="200px" height="48px" loading={isLoading}>
-            <div className="line-clamp-3">{description}</div>
-          </Skeleton>
-        </div>
+        {description ? (
+          <div className="mb-3 flex-grow text-1 font-normal text-muted-foreground">
+            <Skeleton width="200px" height="16px" loading={isLoading}>
+              <p className="line-clamp-1">{description}</p>
+            </Skeleton>
+          </div>
+        ) : null}
 
         <div className="flex gap-1 mb-4">
           <Skeleton

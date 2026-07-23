@@ -69,19 +69,20 @@ export default async function Index(props: PageProps) {
   }
 
   const t = await getTranslations('Spaces');
+  const tNav = await getTranslations('Navigation');
 
   return (
     <div className="w-full overflow-auto">
-      <Container className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
+      <Container className="flex flex-col gap-5 py-6 md:gap-6 md:py-8">
         <header className="craft-page-header">
           <Heading
-            size="6"
+            size="5"
             color="secondary"
             weight="medium"
             align="left"
             className="craft-page-title"
           >
-            {t('allYourSpaces')} {t('inOnePlace')}
+            {tNav('mySpaces')}
           </Heading>
         </header>
         <Suspense fallback={null}>
@@ -100,12 +101,12 @@ export default async function Index(props: PageProps) {
         />
         <div
           data-testid="recommended-spaces-container"
-          className="w-full space-y-6"
+          className="w-full space-y-4"
         >
-          <Text className="text-4 font-medium pb-4 pt-4">
+          <Text className="text-2 font-normal text-muted-foreground">
             {t('spacesYouMightLike')}
           </Text>
-          <Carousel className="mt-6">
+          <Carousel className="mt-2">
             <CarouselContent className="pb-5" showScrollbar>
               {allSpaces.map((space) => (
                 <CarouselItem

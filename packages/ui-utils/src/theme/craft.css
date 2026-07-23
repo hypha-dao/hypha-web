@@ -10,11 +10,16 @@
   }
 
   .craft-page-title {
-    @apply m-0 text-balance tracking-tight text-foreground;
+    @apply m-0 text-balance text-foreground tracking-tight;
     font-family: var(--font-family-text);
   }
 
   .craft-empty-mark {
-    @apply flex size-10 items-center justify-center rounded-lg border border-border/70 bg-background-2 text-muted-foreground;
+    @apply flex size-8 items-center justify-center rounded-lg border border-border/70 bg-background-2 text-muted-foreground;
+  }
+
+  /* Secondary copy — one visual weight below titles */
+  .craft-meta {
+    @apply text-1 font-normal text-muted-foreground;
   }
 }

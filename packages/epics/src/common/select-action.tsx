@@ -135,7 +135,7 @@ export const SelectAction = ({
                   const card = (
                     <Card
                       className={clsx(
-                        'group flex h-full items-start gap-4 rounded-lg border border-border/80 bg-background-2 p-5 shadow-sm transition-[border-color,background-color] duration-200 ease-out md:p-6',
+                        'group flex h-full items-start gap-3 rounded-lg border border-border/80 bg-background-2 p-4 transition-[border-color,background-color] duration-200 ease-out',
                         !action.disabled && 'cursor-pointer',
                         !action.disabled &&
                           'hover:border-accent-9 hover:bg-background-3/70',
@@ -151,7 +151,7 @@ export const SelectAction = ({
                     >
                       <div
                         className={clsx(
-                          'flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:shrink-0',
+                          'flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:size-4 [&_svg]:shrink-0',
                           !action.disabled &&
                             /* Outline-style hover: border step — no solid fill */
                             'group-hover:border-accent-9 group-hover:text-foreground group-focus-within:text-foreground',
@@ -160,18 +160,20 @@ export const SelectAction = ({
                       >
                         {action.icon}
                       </div>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="flex flex-wrap items-center gap-2 text-2 font-medium leading-snug text-foreground">
                           {action.title}
                           {comingSoon ? (
-                            <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            <span className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wide text-muted-foreground">
                               {tCommon('comingSoonBadge')}
                             </span>
                           ) : null}
                         </span>
-                        <span className="text-1 leading-relaxed text-muted-foreground">
-                          <TextWithLinks text={action.description} />
-                        </span>
+                        {action.description ? (
+                          <span className="line-clamp-1 text-1 font-normal leading-snug text-muted-foreground">
+                            <TextWithLinks text={action.description} />
+                          </span>
+                        ) : null}
                       </div>
                     </Card>
                   );
