@@ -67,6 +67,10 @@ type MapPalette = {
   ocean: string;
   landFill: string;
   landStroke: string;
+  /** Soft water-side band under coast lines — reads as shoreline, not outline chrome. */
+  coastHalo: string;
+  /** Globe disk / flat map limb against the page (no stage frame). */
+  sphereEdge: string;
   grid: string;
   clusterFill: string;
   clusterRing: string;
@@ -76,32 +80,36 @@ type MapPalette = {
 };
 
 /**
- * Dark: pale ocean + dark land (readable on black page).
- * Light: cool water vs warmer land — clear separation without neon.
+ * Cartographic contrast without neon: deep water, elevated land, thin coast.
+ * Disk edge carries silhouette so the map can sit frameless on the page.
  */
 const DARK_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(88% 0.042 220)',
-  landFill: 'oklch(32% 0.012 254)',
-  landStroke: 'oklch(48% 0.014 262)',
-  grid: 'oklch(46% 0.014 252)',
+  ocean: 'oklch(23% 0.034 236)',
+  landFill: 'oklch(36% 0.018 98)',
+  landStroke: 'oklch(54% 0.022 232)',
+  coastHalo: 'oklch(28% 0.03 236)',
+  sphereEdge: 'oklch(48% 0.022 236)',
+  grid: 'oklch(42% 0.02 236)',
   clusterFill: 'var(--accent-9)',
   clusterRing: 'var(--accent-8)',
-  pinStroke: 'var(--background-1)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 55%, transparent)',
+  pinStroke: 'oklch(97% 0.005 250)',
+  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 45%, transparent)',
   sphereShadow: null,
 };
 
 const LIGHT_GLOBE_PALETTE: MapPalette = {
-  ocean: 'var(--info-4)',
-  landFill: 'var(--neutral-3)',
-  landStroke: 'var(--neutral-8)',
+  ocean: 'oklch(93% 0.022 232)',
+  landFill: 'oklch(87% 0.014 95)',
+  landStroke: 'oklch(58% 0.02 250)',
+  coastHalo: 'oklch(88% 0.028 230)',
+  sphereEdge: 'oklch(74% 0.018 250)',
   grid: 'var(--neutral-7)',
   clusterFill: 'var(--accent-9)',
   clusterRing: 'var(--accent-8)',
-  pinStroke: 'var(--background-1)',
-  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 35%, transparent)',
+  pinStroke: 'oklch(99% 0.002 250)',
+  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 30%, transparent)',
   sphereShadow:
-    'drop-shadow(0 2px 6px color-mix(in oklab, var(--neutral-12) 12%, transparent))',
+    'drop-shadow(0 1px 3px color-mix(in oklab, var(--neutral-12) 10%, transparent))',
 };
 
 function mapPaletteForTheme(theme: string | undefined): MapPalette {
@@ -178,7 +186,8 @@ function buildProjection(
   const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
   const zoom = Math.max(0.75, Math.min(zoomScale, MAX_MAP_ZOOM));
-  const globeScale = (minDim / 2 - 24) * zoom;
+  // Frameless stage — keep a small inset so the disk limb isn’t clipped.
+  const globeScale = (minDim / 2 - 10) * zoom;
   const flatScale = (width / (2 * Math.PI)) * zoom;
   const center: [number, number] = [width / 2, height / 2];
 
@@ -408,16 +417,26 @@ export function NetworkGlobeMap({
     let root = svg.select<SVGGElement>('g.map-root');
     if (root.empty()) {
       root = svg.append('g').attr('class', 'map-root');
-      root.append('path').attr('class', 'map-ocean');
-      root.append('path').attr('class', 'map-grid');
-      root.append('path').attr('class', 'map-land');
-      root.append('g').attr('class', 'map-spiderfy');
-      root.append('g').attr('class', 'map-pins');
     }
 
+    const ensurePath = (className: string, before: string) => {
+      if (root.select(`path.${className}`).empty()) {
+        root.insert('path', before).attr('class', className);
+      }
+    };
+
+    if (root.select('g.map-pins').empty()) {
+      root.append('g').attr('class', 'map-pins');
+    }
     if (root.select('g.map-spiderfy').empty()) {
       root.insert('g', 'g.map-pins').attr('class', 'map-spiderfy');
     }
+
+    ensurePath('map-land', 'g.map-spiderfy');
+    ensurePath('map-land-coast', 'path.map-land');
+    ensurePath('map-grid', 'path.map-land-coast');
+    ensurePath('map-sphere-edge', 'path.map-grid');
+    ensurePath('map-ocean', 'path.map-sphere-edge');
 
     const spiderfyLayer = root.select<SVGGElement>('g.map-spiderfy');
     spiderfyLayer.selectAll('line').remove();
@@ -464,10 +483,12 @@ export function NetworkGlobeMap({
       isGlobeView && palette.sphereShadow ? palette.sphereShadow : 'none',
     );
 
+    const spherePath = path({ type: 'Sphere' }) ?? '';
+
     const ocean = root.select<SVGPathElement>('path.map-ocean');
     if (layerState.water) {
       ocean
-        .attr('d', path({ type: 'Sphere' }) ?? '')
+        .attr('d', spherePath)
         .attr('fill', palette.ocean)
         .attr('stroke', 'none')
         .style('display', null);
@@ -475,28 +496,53 @@ export function NetworkGlobeMap({
       ocean.attr('d', null).style('display', 'none');
     }
 
+    const sphereEdge = root.select<SVGPathElement>('path.map-sphere-edge');
+    sphereEdge
+      .attr('d', spherePath)
+      .attr('fill', 'none')
+      .attr('stroke', palette.sphereEdge)
+      .attr('stroke-width', isGlobeView ? 1.1 : 0.7)
+      .attr('opacity', isGlobeView ? 0.85 : 0.45)
+      .attr('pointer-events', 'none')
+      .style('display', null);
+
     const gridPath = root.select<SVGPathElement>('path.map-grid');
     if (layerState.grid) {
       gridPath
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
         .attr('stroke', palette.grid)
-        .attr('stroke-width', 0.35)
-        .attr('opacity', 0.55)
+        .attr('stroke-width', 0.3)
+        .attr('opacity', isGlobeView ? 0.4 : 0.5)
         .style('display', null);
     } else {
       gridPath.attr('d', null).style('display', 'none');
     }
 
+    const landCoast = root.select<SVGPathElement>('path.map-land-coast');
     const landPath = root.select<SVGPathElement>('path.map-land');
     if (layerState.land) {
+      const landD = path(land) ?? '';
+      landCoast
+        .attr('d', landD)
+        .attr('fill', 'none')
+        .attr('stroke', palette.coastHalo)
+        .attr('stroke-width', 2.25)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
+        .attr('opacity', 0.9)
+        .attr('pointer-events', 'none')
+        .style('display', null);
       landPath
-        .attr('d', path(land) ?? '')
+        .attr('d', landD)
         .attr('fill', palette.landFill)
         .attr('stroke', palette.landStroke)
-        .attr('stroke-width', 0.6)
+        .attr('stroke-width', 0.55)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
         .style('display', null);
     } else {
+      landCoast.attr('d', null).style('display', 'none');
       landPath.attr('d', null).style('display', 'none');
     }
 
@@ -774,22 +820,37 @@ export function NetworkGlobeMap({
     if (root.empty()) {
       root = svg.append('g').attr('class', 'mini-globe-root');
       root.append('path').attr('class', 'mini-globe-ocean');
+      root.append('path').attr('class', 'mini-globe-edge');
       root.append('path').attr('class', 'mini-globe-land');
     }
+    if (root.select('path.mini-globe-edge').empty()) {
+      root
+        .insert('path', 'path.mini-globe-land')
+        .attr('class', 'mini-globe-edge');
+    }
+
+    const spherePath = path({ type: 'Sphere' }) ?? '';
 
     root
       .select<SVGPathElement>('path.mini-globe-ocean')
-      .attr('d', path({ type: 'Sphere' }) ?? '')
+      .attr('d', spherePath)
       .attr('fill', palette.ocean)
-      .attr('stroke', palette.landStroke)
-      .attr('stroke-width', 0.75);
+      .attr('stroke', 'none');
+
+    root
+      .select<SVGPathElement>('path.mini-globe-edge')
+      .attr('d', spherePath)
+      .attr('fill', 'none')
+      .attr('stroke', palette.sphereEdge)
+      .attr('stroke-width', 1);
 
     root
       .select<SVGPathElement>('path.mini-globe-land')
       .attr('d', path(land) ?? '')
       .attr('fill', palette.landFill)
       .attr('stroke', palette.landStroke)
-      .attr('stroke-width', 0.4);
+      .attr('stroke-width', 0.35)
+      .attr('stroke-linejoin', 'round');
   }, []);
 
   renderMiniGlobeRef.current = renderMiniGlobe;
@@ -1395,7 +1456,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative min-h-[360px] w-full overflow-hidden rounded-lg border border-border/70 bg-background-2"
+      className="relative min-h-[360px] w-full overflow-hidden bg-transparent"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">

@@ -87,9 +87,12 @@ function useGeneralUserState(): UserSpaceState {
 export function useFilterSpacesListWithDiscoverability({
   spaces,
   useGeneralState = false,
+  /** Network explore: never list Space-level discoverability (even for members). */
+  excludeSpaceLevelFromNetwork = false,
 }: {
   spaces: Space[];
   useGeneralState?: boolean;
+  excludeSpaceLevelFromNetwork?: boolean;
 }): {
   filteredSpaces: Space[];
   isLoading: boolean;
@@ -166,6 +169,11 @@ export function useFilterSpacesListWithDiscoverability({
 
       if (useGeneralState) {
         if (discoverability === TransparencyLevel.SPACE) {
+          // Network is a public discovery surface: Space-level spaces belong
+          // on My Spaces (and in-space navigation), not the Network list/map.
+          if (excludeSpaceLevelFromNetwork) {
+            return false;
+          }
           return userMemberSpaceIdsSet.has(space.web3SpaceId);
         }
 
@@ -201,6 +209,7 @@ export function useFilterSpacesListWithDiscoverability({
     discoverabilityMap,
     userState,
     useGeneralState,
+    excludeSpaceLevelFromNetwork,
     userMemberSpaceIdsSet,
   ]);
 

@@ -1677,9 +1677,9 @@ export function HumanChatPanelMessageBubble({
   const senderName = resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
   const mainAvatarSrc =
-    message.role === 'member' && senderPerson?.avatarUrl
-      ? senderPerson.avatarUrl
-      : message.avatarUrl;
+    message.role === 'user'
+      ? currentUserAvatarUrl?.trim() || message.avatarUrl
+      : senderPerson?.avatarUrl?.trim() || message.avatarUrl;
   const replyHeaderAvatarResolved =
     replyTo &&
     currentUserId &&

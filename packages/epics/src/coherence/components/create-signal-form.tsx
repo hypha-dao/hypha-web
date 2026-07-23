@@ -1105,6 +1105,7 @@ export const CreateSignalForm = ({
                         value={field.value}
                         allowToggleAll={false}
                         allowCreate={true}
+                        maxCount={2}
                         uiStyle="tag-picker"
                         labels={{
                           more: (count) =>

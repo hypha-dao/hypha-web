@@ -32,7 +32,6 @@ import { Badge, Heading, Separator, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { cva } from 'class-variance-authority';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { readClientSearchParams } from '../read-client-search-params';
@@ -158,6 +157,7 @@ export function ExploreSpaces({
     useFilterSpacesListWithDiscoverability({
       spaces: categoryFilteredSpaces,
       useGeneralState: true,
+      excludeSpaceLevelFromNetwork: true,
     });
 
   // Discoverability is resolved on-chain, so the filtered set (and therefore the
@@ -303,13 +303,14 @@ export function ExploreSpaces({
         return (
           <Badge
             key={tag.id}
+            variant="outline"
+            colorVariant={isSelected ? 'accent' : 'neutral'}
+            size={1}
             className={cn(
-              'shrink-0',
-              multiSelectVariants({
-                variant: isSelected ? 'secondary' : 'default',
-              }),
+              'craft-chip craft-chip-interactive shrink-0 cursor-pointer',
+              isSelected &&
+                'border-accent-8/55 bg-accent-2/35 text-foreground hover:bg-accent-3/40',
             )}
-            style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
               const nextCategoryGroups = isSelected ? [] : [tag.id];
               setCategoryGroups(nextCategoryGroups);
