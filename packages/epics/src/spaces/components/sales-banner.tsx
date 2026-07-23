@@ -89,10 +89,10 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
           </p>
         </div>
       </div>
-      <div className="flex shrink-0 items-center justify-end gap-1.5">
+      <div className="relative z-[1] flex shrink-0 items-center justify-end gap-3 overflow-visible">
         <Link
           title={tooltipMessage || subtitle}
-          className={isDisabled ? 'cursor-not-allowed' : undefined}
+          className={isDisabled ? 'cursor-not-allowed shrink-0' : 'shrink-0'}
           href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}
         >
           <Button
@@ -100,7 +100,7 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
             variant="outline"
             colorVariant="accent"
             size="sm"
-            className="min-h-8 px-3 text-xs"
+            className="relative min-h-8 shrink-0 px-3 text-xs"
           >
             {actionText}
           </Button>
@@ -109,7 +109,7 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
           onClick={onClose}
           variant="ghost"
           size="icon"
-          className="h-8 w-8 min-h-8 min-w-8 shrink-0 rounded-chrome text-muted-foreground hover:text-foreground"
+          className="relative z-[1] h-8 w-8 min-h-8 min-w-8 shrink-0 rounded-chrome text-muted-foreground hover:bg-muted/60 hover:text-foreground"
           aria-label={tCommon('close')}
         >
           <Cross1Icon className="craft-icon-sm" width={14} height={14} />
