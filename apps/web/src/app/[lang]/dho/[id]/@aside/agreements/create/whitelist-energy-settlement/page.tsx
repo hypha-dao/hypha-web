@@ -4,7 +4,7 @@ import {
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound } from 'next/navigation';
@@ -21,7 +21,7 @@ export default async function CreateWhitelistEnergySettlementProposalPage({
   if (!spaceFromDb) notFound();
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
-  const backUrl = `${successfulUrl}${PATH_SELECT_CREATE_ACTION}`;
+  const backUrl = `${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
   return (
     <ProposalOverlayShell>

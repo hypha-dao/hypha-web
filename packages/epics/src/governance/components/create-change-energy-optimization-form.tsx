@@ -10,15 +10,49 @@ import {
   type Person,
   type Space,
 } from '@hypha-platform/core/client';
+import { Button } from '@hypha-platform/ui';
+import { ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
 import {
   basePurposeLabel,
   ENERGY_OPTIMIZATION_DEFAULTS,
   EnergyOptimizationFields,
+  EnergySocialAllocationFields,
   createEnergyOptimizationSchema,
   optimizationFormToContract,
 } from '../../agreements/plugins/enable-energy-community/energy-form-fields';
 import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
+
+const ChangeEnergyOptimizationPlugin = ({
+  members,
+  spaces,
+}: {
+  members: Person[];
+  spaces?: Space[];
+}) => {
+  const t = useTranslations('Energy.plugins.enableCommunity');
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <EnergyOptimizationFields />
+      <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+        <Button
+          type="button"
+          variant="ghost"
+          className="self-start px-0"
+          onClick={() => setShowAdvanced((prev) => !prev)}
+        >
+          {showAdvanced ? <ChevronDownIcon /> : <ChevronRightIcon />}
+          {t('advancedSettings')}
+        </Button>
+        {showAdvanced ? (
+          <EnergySocialAllocationFields members={members} spaces={spaces} />
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 export const CreateChangeEnergyOptimizationForm = ({
   spaceId,
@@ -62,7 +96,9 @@ export const CreateChangeEnergyOptimizationForm = ({
       web3SpaceId={web3SpaceId}
       successfulUrl={successfulUrl}
       backUrl={backUrl}
-      plugin={<EnergyOptimizationFields members={members} spaces={spaces} />}
+      plugin={
+        <ChangeEnergyOptimizationPlugin members={members} spaces={spaces} />
+      }
       defaultValues={
         {
           energyOptimization: ENERGY_OPTIMIZATION_DEFAULTS,
@@ -91,7 +127,7 @@ export const CreateChangeEnergyOptimizationForm = ({
               basePurposeLabel(purpose, (key, values) => t(key, values)),
             ),
             socialAllocation: social,
-            goalWallets: optimization.socialWallets.map(
+            targetWallets: optimization.socialWallets.map(
               (wallet, index) =>
                 `${wallet}: ${(
                   (optimization.socialWalletShares[index] ?? 0) / 100

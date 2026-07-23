@@ -2,6 +2,7 @@ import {
   ActivateProposalsBanner,
   ModalStickyNavigation,
   ProposalOverlayShell,
+  SpaceSettingsButton,
 } from '@hypha-platform/epics';
 import { SelectCreateAction } from '../../../_components/select-create-action';
 import { Locale } from '@hypha-platform/i18n';
@@ -25,6 +26,12 @@ export default async function SelectCreateActions({
           contextTitle={tModalAside('createProposal')}
           closeDropSegment={PATH_SELECT_CREATE_ACTION}
           backToParent
+          beforeNavActions={
+            <SpaceSettingsButton
+              href={`/${lang}/dho/${daoSlug}/agreements/select-settings-action`}
+              variant="chrome"
+            />
+          }
         />
         <SelectCreateAction lang={lang} daoSlug={daoSlug}>
           <ActivateProposalsBanner

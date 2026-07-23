@@ -424,7 +424,8 @@
       "members": "Leden",
       "treasury": "Schatkist",
       "extensionsPlugins": "Extensies en plug-ins",
-      "ecosystemVerticals": "Verticale ecosystemen"
+      "ecosystemVerticals": "Verticale ecosystemen",
+      "energy": "Energie"
     },
     "actions": {
       "spaceConfiguration": {
@@ -510,6 +511,30 @@
       "hyphaEnergy": {
         "title": "Hypha-energie",
         "description": "Een speciaal platform voor uw duurzame energiegemeenschap of -hub, dat het delen van lokale energie, mede-eigendom van energieactiva, bestuur en eerlijke waardeverdeling tussen leden mogelijk maakt."
+      },
+      "enableEnergyCommunity": {
+        "title": "Energiegemeenschap activeren",
+        "description": "Stel energiedeling in voor deze space zodat leden samen energie kunnen produceren, verbruiken en verrekenen."
+      },
+      "energySharing": {
+        "title": "Beleid voor energieverrekening",
+        "description": "Stel de betalingsvoorwaarden in voor het verrekenen van energiesaldi in deze community."
+      },
+      "registerEnergySource": {
+        "title": "Energiebron registreren",
+        "description": "Voeg een nieuwe energiebron (zonne-energie, batterij, enz.) toe aan de gemeenschap."
+      },
+      "addEnergyMember": {
+        "title": "Energielid toevoegen",
+        "description": "Voeg een lid en zijn slimme meters toe voor de energieboekhouding."
+      },
+      "changeEnergyOptimization": {
+        "title": "Energieoptimalisatie wijzigen",
+        "description": "Werk bij hoe de gemeenschap eigen verbruik, CO₂ en prijs prioriteert — en pas sociale donaties aan."
+      },
+      "whitelistEnergySettlement": {
+        "title": "Energieverrekening whitelisten",
+        "description": "Sta een wallet toe om verrekeningsgegevens voor deze gemeenschap in te dienen."
       }
     }
   },
@@ -1742,7 +1767,7 @@
       "investment": "Investering",
       "exchange": "Aandelenbeurs",
       "enableEnergyCommunity": "Schakel de Energiegemeenschap in",
-      "energySharing": "Energie delen",
+      "energySharing": "Beleid voor energieverrekening",
       "registerEnergySource": "Registreer energiebron",
       "addEnergyMember": "Energielid toevoegen",
       "changeEnergyOptimization": "Verander energieoptimalisatie",
@@ -3900,7 +3925,7 @@
     "shared": {
       "gridOperatorName": "Lokale netbeheerder",
       "gridOperatorSubtitle": "Externe energieleverancier",
-      "currentPerKwh": "Stroom / kWh",
+      "basePerKwh": "Basis / kWh",
       "active": "Actief",
       "inactive": "Inactief",
       "source": "Bron",
@@ -3943,7 +3968,8 @@
         "metadataHash": "Metagegevens-hash",
         "metadataHashPlaceholder": "0x... of ipfs-hash",
         "deviceIds": "Apparaat-ID's (door komma's gescheiden)",
-        "deviceIdsPlaceholder": "bijv. 201.202.203"
+        "deviceIdsPlaceholder": "bijv. 201,202,203",
+        "sectionDescription": "Kies een lid van deze space en hoeveel slimme meters het heeft. Beleggers zonder meter kunnen op nul blijven staan."
       },
       "energySharing": {
         "settlementWindow": "Afrekeningsvenster",
@@ -3964,18 +3990,19 @@
         "ownershipToken": "Eigendomstokenadres",
         "ownershipTokenPlaceholder": "0x...",
         "deviceIds": "Apparaat-ID's (door komma's gescheiden)",
-        "deviceIdsPlaceholder": "bijv. 1001,1002,1003"
+        "deviceIdsPlaceholder": "bijv. 1001,1002,1003",
+        "sectionDescription": "Voeg een opwek- of opslagmiddel toe en verdeel het eigendom ervan over de leden (aandelen totaal 100%)."
       },
       "whitelistSettlement": {
         "settlementAddress": "Afrekeningsadres",
-        "settlementAddressDescription": "Wallet mag consumerEnergy bellen op de community-PPA (bijvoorbeeld uw backend-bot).",
+        "settlementAddressDescription": "Wallet die energieverrekeningsgegevens voor deze community mag indienen (bijvoorbeeld een backend-bot).",
         "settlementAddressPlaceholder": "0x...",
         "whitelisted": "Op de witte lijst gezet",
         "whitelistedDescription": "Schakel dit uit om een ​​adres van de witte lijst met schikkingen te verwijderen."
       },
       "enableCommunity": {
         "membersTitle": "Leden",
-        "membersDescription": "Kies communityleden en hoeveel slimme meters iedereen heeft. Beleggers zonder meter kunnen op nul blijven staan.",
+        "membersDescription": "Kies leden van deze space en hoeveel slimme meters elk lid heeft. Investeerders zonder meter kunnen op nul blijven staan.",
         "numberOfMeters": "Aantal meter",
         "meterPlaceholder": "0",
         "addMember": "Lid toevoegen",
@@ -3999,7 +4026,7 @@
         "tokenSymbolPlaceholder": "automatisch afgeleid",
         "advancedSettings": "Geavanceerde instellingen",
         "adminAddress": "Beheerdersadres (ruimte-uitvoerder)",
-        "adminHint": "Automatisch gevuld met de uitvoerder van deze ruimte. Het DAO-voorstel voert de fabrieksoproep uit vanaf dit adres, dus het moet eigenaar zijn van de nieuwe community zodat Hypha het kan ontdekken.",
+        "adminHint": "Automatisch ingevuld met de executor van deze space.",
         "stablecoinAddress": "Stablecoin-adres",
         "stablecoinPlaceholder": "0x... (standaard ingesteld op Basis USDC)",
         "gridOperatorAddress": "Adres netbeheerder (optioneel)",
@@ -4022,15 +4049,15 @@
     },
     "optimization": {
       "optimizeFor": "Optimaliseer de community voor",
-      "optimizeDescription": "Kies het hoofddoel van de community. Het energiemanagementsysteem optimaliseert hiervoor eerst en brengt vervolgens de resterende doelstellingen automatisch in evenwicht.",
+      "optimizeDescription": "Kies wat het belangrijkst is. Het systeem geeft dat doel eerst prioriteit en brengt daarna de overige doelen in balans.",
       "primaryObjective": "Primaire doelstelling",
       "selectObjective": "Selecteer een doelstelling",
       "selfConsumption": "Maximaal eigen verbruik",
-      "selfConsumptionDescription": "Gebruik lokaal opgewekte energie binnen de gemeenschap vóór enige interactie met het elektriciteitsnet.",
+      "selfConsumptionDescription": "Gebruik lokaal opgewekte energie binnen de community voordat er van het net wordt gekocht of aan het net wordt verkocht.",
       "minCo2": "Minimale CO₂-uitstoot",
-      "minCo2Description": "Minimaliseer de koolstofintensiteit gedurende de levenscyclus van elke verbruikte eenheid.",
+      "minCo2Description": "Geef de voorkeur aan de schoonste beschikbare energie om de CO₂-uitstoot zo laag mogelijk te houden.",
       "lowestPrice": "Laagste prijs",
-      "lowestPriceDescription": "Minimaliseer de totale energiekosten en maak actief gebruik van de marktprijsdynamiek.",
+      "lowestPriceDescription": "Houd de energiekosten zo laag mogelijk door de goedkoopste beschikbare opties te gebruiken.",
       "socialAllocation": "Sociale toewijzing",
       "socialAllocationDescription": "Scherm een ​​deel van de zonneproductie af voor portemonnees van gemeenschapsdoelen voordat de optimalisatie wordt uitgevoerd.",
       "allocationMode": "Toewijzingsmodus",
@@ -4042,14 +4069,14 @@
       "kwhPerInterval": "kWh per interval van 15 minuten",
       "kwhPerIntervalPlaceholder": "bijv. 1000",
       "shareOfSolar": "Aandeel van de opwekking van zonne-energie",
-      "goalWallets": "Doel portemonnees",
-      "goalWalletsDescription": "Verdeel de sociale toewijzing over doelportefeuilles (aandelen totaal 100%).",
-      "addGoalWallet": "Doelportemonnee toevoegen",
       "share": "Deel",
       "socialDisabled": "Gehandicapt",
       "socialFixed": "Vast: {kwh} kWh ​​per interval",
       "socialVariable": "Variabel: {percent}% van zonne-energie",
-      "metersPerMember": "{address} — {count, plural, one {# meter} other {# meters}}"
+      "metersPerMember": "{address} — {count, plural, one {# meter} other {# meters}}",
+      "targetWallets": "Doel portemonnees",
+      "targetWalletsDescription": "Verdeel de sociale toewijzing over doelportefeuilles (aandelen totaal 100%).",
+      "addTargetWallet": "Doelportemonnee toevoegen"
     },
     "forms": {
       "spaceRequired": "Voor het maken van een voorstel is ruimte nodig.",
@@ -4058,7 +4085,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Creëer voorstel voor energielid toevoegen",
         "enableEnergyCommunity": "Maak een voorstel voor de Enable Energy Community",
-        "energySharing": "Creëer een voorstel voor het delen van energie",
+        "energySharing": "Beleid voor energieverrekening aanmaken",
         "registerEnergySource": "Register-energiebronvoorstel maken",
         "changeEnergyOptimization": "Creëer een wijzigingsvoorstel voor energieoptimalisatie",
         "whitelistEnergySettlement": "Maak een voorstel voor een energieschikking op de witte lijst"
@@ -4071,7 +4098,7 @@
       "optimization": "Optimalisatie",
       "priorities": "Prioriteiten",
       "socialAllocation": "Sociale toewijzing",
-      "goalWallets": "Doel portemonnees",
+      "targetWallets": "Doel portemonnees",
       "energyToken": "Energiefiche",
       "members": "Leden",
       "sources": "Bronnen",
@@ -4100,8 +4127,6 @@
       "distinctPriorities": "Elke prioriteit moet een andere doelstelling zijn",
       "selectSocialMode": "Selecteer een sociale toewijzingsmodus",
       "wholeKwhPerInterval": "Voer een geheel aantal kWh per interval in",
-      "addGoalWallet": "Voeg ten minste één doelportemonnee toe",
-      "goalWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn",
       "metadataHashRequired": "Metagegevens-hash is vereist",
       "deviceIdsRequired": "Apparaat-ID's zijn vereist",
       "deviceIdsCommaNumbers": "Apparaat-ID's moeten door komma's gescheiden getallen zijn",
@@ -4123,7 +4148,9 @@
       "addOwner": "Voeg ten minste één eigenaar toe",
       "ownershipTotal100": "Eigendomsaandelen moeten in totaal 100% zijn",
       "atLeastOneSource": "Er is minimaal één bron vereist",
-      "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten."
+      "ownerMustBeMember": "Deze eigenaar moet ook als lid worden toegevoegd (meterstand 0 is prima), anders ontvangt hij geen inkomsten.",
+      "addTargetWallet": "Voeg ten minste één doelportemonnee toe",
+      "targetWalletsTotal100": "Doelportefeuilleaandelen moeten in totaal 100% zijn"
     },
     "errors": {
       "allowanceTimeout": "Er is een time-out opgetreden tijdens het wachten op een stablecoin-limiet.",

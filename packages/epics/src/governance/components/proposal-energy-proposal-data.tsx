@@ -15,7 +15,9 @@ const PROPOSAL_DATA_KEY_MAP: Record<string, string> = {
   optimization: 'optimization',
   priorities: 'priorities',
   socialAllocation: 'socialAllocation',
-  goalWallets: 'goalWallets',
+  // `goalWallets` kept for proposals created before the target-wallet rename.
+  goalWallets: 'targetWallets',
+  targetWallets: 'targetWallets',
   energyToken: 'energyToken',
   members: 'members',
   sources: 'sources',

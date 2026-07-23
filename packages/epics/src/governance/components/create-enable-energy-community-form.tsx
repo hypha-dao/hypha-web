@@ -20,7 +20,10 @@ import {
   daoSpaceFactoryImplementationAddress,
 } from '@hypha-platform/core/generated';
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
-import { EnableEnergyCommunityPlugin } from '../../agreements/plugins/enable-energy-community/plugin';
+import {
+  DEFAULT_BASE_PRICE_PER_KWH,
+  EnableEnergyCommunityPlugin,
+} from '../../agreements/plugins/enable-energy-community/plugin';
 import {
   basePurposeLabel,
   ENERGY_OPTIMIZATION_DEFAULTS,
@@ -363,7 +366,7 @@ export const CreateEnableEnergyCommunityForm = ({
               {
                 name: '',
                 sourceType: 'SOLAR',
-                basePricePerKwh: '',
+                basePricePerKwh: DEFAULT_BASE_PRICE_PER_KWH,
                 owners: [],
                 tokenName: '',
                 tokenSymbol: '',
@@ -400,7 +403,7 @@ export const CreateEnableEnergyCommunityForm = ({
               basePurposeLabel(purpose, (key, values) => t(key, values)),
             ),
             socialAllocation: social,
-            goalWallets: optimization.socialWallets.map(
+            targetWallets: optimization.socialWallets.map(
               (wallet, index) =>
                 `${wallet}: ${(
                   (optimization.socialWalletShares[index] ?? 0) / 100

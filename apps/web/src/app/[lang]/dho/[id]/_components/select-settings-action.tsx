@@ -223,10 +223,9 @@ export const SelectSettingsAction = ({
       ? [
           {
             defaultDurationDays: 5,
-            group: 'Energy',
-            title: 'Enable Energy Community',
-            description:
-              'Deploy an EnergyPPAv2 community via factory deployCommunity to activate energy features for this space.',
+            group: t('groups.energy'),
+            title: t('actions.enableEnergyCommunity.title'),
+            description: t('actions.enableEnergyCommunity.description'),
             href: 'create/enable-energy-community',
             baseTab: 'agreements',
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
@@ -238,10 +237,9 @@ export const SelectSettingsAction = ({
       ? [
           {
             defaultDurationDays: 5,
-            group: 'Energy',
-            title: 'Energy Sharing Proposal',
-            description:
-              'Define or update how this community shares and settles energy balances.',
+            group: t('groups.energy'),
+            title: t('actions.energySharing.title'),
+            description: t('actions.energySharing.description'),
             href: 'create/energy-sharing',
             baseTab: 'agreements',
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
@@ -249,10 +247,9 @@ export const SelectSettingsAction = ({
           },
           {
             defaultDurationDays: 5,
-            group: 'Energy',
-            title: 'Register Energy Source',
-            description:
-              'Propose onboarding a new source (solar, battery, etc.) into the energy mix.',
+            group: t('groups.energy'),
+            title: t('actions.registerEnergySource.title'),
+            description: t('actions.registerEnergySource.description'),
             href: 'create/register-energy-source',
             baseTab: 'agreements',
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
@@ -260,10 +257,9 @@ export const SelectSettingsAction = ({
           },
           {
             defaultDurationDays: 5,
-            group: 'Energy',
-            title: 'Add Energy Member',
-            description:
-              'Propose adding a member with device mapping for energy accounting.',
+            group: t('groups.energy'),
+            title: t('actions.addEnergyMember.title'),
+            description: t('actions.addEnergyMember.description'),
             href: 'create/add-energy-member',
             baseTab: 'agreements',
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
@@ -271,10 +267,9 @@ export const SelectSettingsAction = ({
           },
           {
             defaultDurationDays: 5,
-            group: 'Energy',
-            title: 'Change Energy Optimization',
-            description:
-              'Re-rank the community optimisation objectives and update social allocation on-chain.',
+            group: t('groups.energy'),
+            title: t('actions.changeEnergyOptimization.title'),
+            description: t('actions.changeEnergyOptimization.description'),
             href: 'create/change-energy-optimization',
             baseTab: 'agreements',
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
@@ -282,10 +277,9 @@ export const SelectSettingsAction = ({
           },
           {
             defaultDurationDays: 5,
-            group: 'Energy',
-            title: 'Whitelist Energy Settlement',
-            description:
-              'Allow a backend wallet to submit consumeEnergy interval settlements on the community PPA.',
+            group: t('groups.energy'),
+            title: t('actions.whitelistEnergySettlement.title'),
+            description: t('actions.whitelistEnergySettlement.description'),
             href: 'create/whitelist-energy-settlement',
             baseTab: 'agreements',
             icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,

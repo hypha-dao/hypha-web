@@ -133,7 +133,8 @@
       "metadataHash": "Hash des métadonnées",
       "metadataHashPlaceholder": "0x... ou hash IPFS",
       "deviceIds": "ID des appareils (séparés par des virgules)",
-      "deviceIdsPlaceholder": "ex. 201,202,203"
+      "deviceIdsPlaceholder": "ex. 201,202,203",
+      "sectionDescription": "Choisissez un membre de cet espace et le nombre de ses compteurs intelligents. Les investisseurs sans compteur peuvent rester à zéro."
     },
     "energySharing": {
       "settlementWindow": "Période de règlement",
@@ -154,18 +155,19 @@
       "ownershipToken": "Adresse du jeton de propriété",
       "ownershipTokenPlaceholder": "0x...",
       "deviceIds": "ID des appareils (séparés par des virgules)",
-      "deviceIdsPlaceholder": "ex. 1001,1002,1003"
+      "deviceIdsPlaceholder": "ex. 1001,1002,1003",
+      "sectionDescription": "Ajoutez un actif de production ou de stockage et répartissez sa propriété entre les membres (les parts totalisent 100 %)."
     },
     "whitelistSettlement": {
       "settlementAddress": "Adresse de règlement",
-      "settlementAddressDescription": "Portefeuille autorisé à appeler consumeEnergy sur le PPA de la communauté (ex. votre bot backend).",
+      "settlementAddressDescription": "Portefeuille autorisé à soumettre les données de règlement d'énergie pour cette communauté (par exemple un bot backend).",
       "settlementAddressPlaceholder": "0x...",
       "whitelisted": "Sur liste blanche",
       "whitelistedDescription": "Désactivez pour retirer une adresse de la liste blanche de règlement."
     },
     "enableCommunity": {
       "membersTitle": "Membres",
-      "membersDescription": "Choisissez les membres de la communauté et le nombre de compteurs intelligents de chacun. Les investisseurs sans compteur peuvent rester à zéro.",
+      "membersDescription": "Choisissez des membres de cet espace et le nombre de compteurs intelligents de chacun. Les investisseurs sans compteur peuvent rester à zéro.",
       "numberOfMeters": "Nombre de compteurs",
       "meterPlaceholder": "0",
       "addMember": "Ajouter un membre",
@@ -189,7 +191,7 @@
       "tokenSymbolPlaceholder": "dérivé automatiquement",
       "advancedSettings": "Paramètres avancés",
       "adminAddress": "Adresse admin (exécuteur de l'espace)",
-      "adminHint": "Rempli automatiquement avec l'exécuteur de cet espace. La proposition DAO exécute l'appel à la factory depuis cette adresse, elle doit donc posséder la nouvelle communauté pour que Hypha la découvre.",
+      "adminHint": "Rempli automatiquement avec l'exécuteur de cet espace.",
       "stablecoinAddress": "Adresse du stablecoin",
       "stablecoinPlaceholder": "0x... (par défaut Base USDC)",
       "gridOperatorAddress": "Adresse du gestionnaire de réseau (facultatif)",
@@ -212,15 +214,15 @@
   },
   "optimization": {
     "optimizeFor": "Optimiser la communauté pour",
-    "optimizeDescription": "Choisissez l'objectif principal de la communauté. Le système de gestion de l'énergie l'optimise en priorité, puis équilibre automatiquement les objectifs restants.",
+    "optimizeDescription": "Choisissez ce qui compte le plus. Le système priorisera d'abord cet objectif, puis équilibrera les autres.",
     "primaryObjective": "Objectif principal",
     "selectObjective": "Sélectionner un objectif",
     "selfConsumption": "Autoconsommation maximale",
-    "selfConsumptionDescription": "Utiliser l'énergie produite localement au sein de la communauté avant toute interaction avec le réseau.",
+    "selfConsumptionDescription": "Utiliser l'énergie produite localement dans la communauté avant d'acheter au réseau ou de lui vendre.",
     "minCo2": "Émissions de CO₂ minimales",
-    "minCo2Description": "Minimiser l'intensité carbone sur le cycle de vie de chaque unité consommée.",
+    "minCo2Description": "Privilégier l'énergie la plus propre disponible pour maintenir les émissions de carbone aussi basses que possible.",
     "lowestPrice": "Prix le plus bas",
-    "lowestPriceDescription": "Minimiser le coût total de l'énergie en exploitant activement la dynamique des prix du marché.",
+    "lowestPriceDescription": "Maintenir les coûts d'énergie aussi bas que possible en utilisant les options les moins chères disponibles.",
     "socialAllocation": "Allocation sociale",
     "socialAllocationDescription": "Réserver une partie de la production solaire pour les portefeuilles d'objectifs communautaires avant l'exécution de l'optimisation.",
     "allocationMode": "Mode d'allocation",
@@ -232,14 +234,14 @@
     "kwhPerInterval": "kWh par intervalle de 15 minutes",
     "kwhPerIntervalPlaceholder": "ex. 1000",
     "shareOfSolar": "Part de la production solaire",
-    "goalWallets": "Portefeuilles d'objectifs",
-    "goalWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
-    "addGoalWallet": "Ajouter un portefeuille d'objectif",
     "share": "Part",
     "socialDisabled": "Désactivé",
     "socialFixed": "Fixe : {kwh} kWh par intervalle",
     "socialVariable": "Variable : {percent} % du solaire",
-    "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}"
+    "metersPerMember": "{address} — {count, plural, one {# compteur} other {# compteurs}}",
+    "targetWallets": "Portefeuilles d'objectifs",
+    "targetWalletsDescription": "Répartir l'allocation sociale entre les portefeuilles d'objectifs (les parts totalisent 100 %).",
+    "addTargetWallet": "Ajouter un portefeuille d'objectif"
   },
   "forms": {
     "spaceRequired": "L'espace est requis pour créer une proposition.",
@@ -248,7 +250,7 @@
     "stickyHeaders": {
       "addEnergyMember": "Créer une proposition d'ajout de membre énergie",
       "enableEnergyCommunity": "Créer une proposition d'activation de communauté énergétique",
-      "energySharing": "Créer une proposition de partage d'énergie",
+      "energySharing": "Créer une politique de règlement d'énergie",
       "registerEnergySource": "Créer une proposition d'enregistrement de source d'énergie",
       "changeEnergyOptimization": "Créer une proposition de modification de l'optimisation énergétique",
       "whitelistEnergySettlement": "Créer une proposition de liste blanche de règlement énergétique"
@@ -261,7 +263,7 @@
     "optimization": "Optimisation",
     "priorities": "Priorités",
     "socialAllocation": "Allocation sociale",
-    "goalWallets": "Portefeuilles d'objectifs",
+    "targetWallets": "Portefeuilles d'objectifs",
     "energyToken": "Jeton énergétique",
     "members": "Membres",
     "sources": "Sources",
@@ -290,8 +292,6 @@
     "distinctPriorities": "Chaque priorité doit être un objectif différent",
     "selectSocialMode": "Sélectionnez un mode d'allocation sociale",
     "wholeKwhPerInterval": "Saisissez un nombre entier de kWh par intervalle",
-    "addGoalWallet": "Ajoutez au moins un portefeuille d'objectif",
-    "goalWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %",
     "metadataHashRequired": "Le hash des métadonnées est requis",
     "deviceIdsRequired": "Les ID des appareils sont requis",
     "deviceIdsCommaNumbers": "Les ID des appareils doivent être des nombres séparés par des virgules",
@@ -313,7 +313,9 @@
     "addOwner": "Ajoutez au moins un propriétaire",
     "ownershipTotal100": "Les parts de propriété doivent totaliser 100 %",
     "atLeastOneSource": "Au moins une source est requise",
-    "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus."
+    "ownerMustBeMember": "Ce propriétaire doit aussi être ajouté comme membre (0 compteur est acceptable), sinon il ne recevra pas de revenus.",
+    "addTargetWallet": "Ajoutez au moins un portefeuille d'objectif",
+    "targetWalletsTotal100": "Les parts des portefeuilles d'objectifs doivent totaliser 100 %"
   },
   "errors": {
     "allowanceTimeout": "Délai d'attente dépassé pour l'autorisation du stablecoin.",

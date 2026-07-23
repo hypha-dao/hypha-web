@@ -178,6 +178,10 @@ export const useSpaceDocumentsWithStatuses = ({
     const withdrawnIdsSet = new Set(
       Array.from(withdrawnProposalsIds ?? []).map((id) => id.toString()),
     );
+    const isNotWithdrawn = (doc: { web3ProposalId: number | null }) =>
+      doc.web3ProposalId == null ||
+      !withdrawnIdsSet.has(String(doc.web3ProposalId));
+
     const acceptedIdsSet = new Set(
       Array.from(spaceProposalsIds.accepted ?? []).map((id) => id.toString()),
     );
@@ -189,7 +193,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          isNotWithdrawn(doc) &&
           acceptedIdsSet.has(String(doc.web3ProposalId)),
       )
       .map((doc) => {
@@ -204,7 +208,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          isNotWithdrawn(doc) &&
           rejectedIdsSet.has(String(doc.web3ProposalId)),
       )
       .map((doc) => {
@@ -219,7 +223,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
-          !withdrawnIdsSet.has(String(doc.web3ProposalId)) &&
+          isNotWithdrawn(doc) &&
           !acceptedIdsSet.has(String(doc.web3ProposalId)) &&
           !rejectedIdsSet.has(String(doc.web3ProposalId)),
       )
@@ -230,6 +234,7 @@ export const useSpaceDocumentsWithStatuses = ({
           badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
+
     return {
       accepted: acceptedDocuments,
       rejected: rejectedDocuments,

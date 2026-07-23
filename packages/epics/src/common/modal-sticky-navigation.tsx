@@ -22,6 +22,8 @@ export type ModalStickyNavigationProps = {
   backLabel?: string;
   /** When false, hide back even if a URL could be resolved. */
   showBack?: boolean;
+  /** Rendered immediately before Back / Close (e.g. space settings gear). */
+  beforeNavActions?: ReactNode;
   className?: string;
 };
 
@@ -37,6 +39,7 @@ export function ModalStickyNavigation({
   backToParent,
   backLabel,
   showBack = true,
+  beforeNavActions,
   className,
 }: ModalStickyNavigationProps) {
   const pathname = usePathname();
@@ -132,6 +135,7 @@ export function ModalStickyNavigation({
           <span className="min-w-0 flex-1" aria-hidden />
         )}
         <div className="flex shrink-0 items-center justify-end gap-1">
+          {beforeNavActions}
           {showBack && backUrl ? (
             <ButtonBack
               label={resolvedBackLabel}
