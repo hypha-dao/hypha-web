@@ -546,7 +546,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
       <div
         className={cn(
-          'hypha-space-calendar relative overflow-hidden rounded-2xl border border-border/35 bg-card/75 p-3 shadow-[0_20px_48px_-28px_hsl(var(--accent-9)/0.45)] backdrop-blur-sm md:p-4',
+          'hypha-space-calendar relative overflow-hidden rounded-lg border border-border/35 bg-card/75 p-3 shadow-[0_20px_48px_-28px_hsl(var(--accent-9)/0.45)] backdrop-blur-sm md:p-4',
           viewToModifierClass(view),
         )}
       >

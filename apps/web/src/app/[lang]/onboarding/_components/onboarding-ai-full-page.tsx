@@ -1045,7 +1045,7 @@ export function OnboardingAiFullPage({
               />
             </div>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/70 bg-background/70">
             <AiPanelMessages
               messages={messages as ChatMessage[]}
               suggestionItems={suggestionItems}
