@@ -125,7 +125,7 @@ export function SignalSwimlaneView({
         return (
           <section
             key={lane.slug}
-            className="w-full overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm"
+            className="w-full overflow-hidden rounded-lg border border-border/50 bg-card"
           >
             <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 bg-gradient-to-r from-muted/35 via-muted/15 to-transparent px-4 py-3">
               <div className="flex min-w-0 items-center gap-2.5">

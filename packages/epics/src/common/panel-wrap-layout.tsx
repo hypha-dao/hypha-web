@@ -155,7 +155,7 @@ export function AiSidebarTrigger() {
         showAiOverlay();
       }}
       aria-expanded={isMenuOpen}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={isMenuOpen ? t('closePanel') : t('openPanel')}
       aria-label={isMenuOpen ? t('closePanel') : t('openPanel')}
     >
@@ -192,7 +192,7 @@ export function AiPanelTrigger() {
         setAiOverlayVisible(false);
       }}
       aria-expanded={open}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={open ? t('closeAiPanel') : t('openAiPanel')}
       aria-label={open ? t('closeAiPanel') : t('openAiPanel')}
     >
@@ -225,7 +225,7 @@ export function HumanSidebarTrigger() {
         openHumanChatPanel();
       }}
       aria-expanded={open}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >

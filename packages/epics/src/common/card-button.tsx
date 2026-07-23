@@ -71,8 +71,7 @@ const cardButtonVariants = cva(
       {
         colorVariant: 'subtle',
         selected: true,
-        className:
-          'border-accent-9 bg-muted/45 shadow-md ring-2 ring-accent-10/45',
+        className: 'border-accent-9 bg-muted/45',
       },
       {
         colorVariant: 'subtle',

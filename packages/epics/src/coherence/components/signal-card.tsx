@@ -409,17 +409,17 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group relative flex h-full w-full min-h-0 flex-col rounded-xl border-border/70 bg-card shadow-sm',
-        'transition-[border-color,box-shadow] duration-200 ease-out',
-        !isActive && 'hover:border-accent-8/75 hover:shadow-md',
-        !isActive && 'focus-within:border-accent-8/75 focus-within:shadow-md',
+        'group relative flex h-full w-full min-h-0 flex-col rounded-lg border-border/70 bg-card shadow-sm',
+        'transition-[border-color,background-color] duration-200 ease-out',
+        !isActive && 'hover:border-accent-8/75 hover:bg-muted/20',
+        !isActive && 'focus-within:border-accent-8/75 focus-within:bg-muted/20',
         signalCardActiveClass(isActive),
         className,
       )}
     >
       <div
         className={cn(
-          'absolute inset-y-0 left-0 w-1 rounded-l-xl',
+          'absolute inset-y-0 left-0 w-1 rounded-l-lg',
           priorityLeftBorderClass(priority),
         )}
         title={priorityStripeLabel}
@@ -584,14 +584,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
             <DialogContent
               className={cn(
-                'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-2xl backdrop-blur-sm sm:max-w-lg',
+                'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-md sm:max-w-lg',
                 'border-l-[3px] border-l-[var(--space-accent)]',
               )}
               style={spaceAccentPortalStyle}
               onClick={(e) => e.stopPropagation()}
               onPointerDownOutside={(e) => e.stopPropagation()}
             >
-              <DialogHeader className="shrink-0 space-y-1.5 border-b border-border/60 bg-gradient-to-b from-muted/25 to-transparent px-6 pb-4 pt-6">
+              <DialogHeader className="shrink-0 space-y-1.5 border-b border-border/60 bg-muted/15 px-6 pb-4 pt-6">
                 <DialogTitle className="pr-10 text-balance text-lg font-semibold leading-snug tracking-tight">
                   {title}
                 </DialogTitle>

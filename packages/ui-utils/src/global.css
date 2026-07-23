@@ -199,16 +199,19 @@
   --color-action-light: var(--action-light);
   --color-action-light-foreground: var(--action-light);
 
-  /* Border Radius */
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  /* Border Radius — crisp craft family (avoid soft xl/2xl product surfaces) */
+  --radius-sm: 2px;
+  --radius-md: 2.5px;
+  --radius-lg: 2.5px;
+  --radius-chrome: 6px;
 
-  /* Font Families */
-  --font-family-text: 'SF Pro';
-  --font-family-code: 'Menlo';
-  --font-family-emphasis: 'Times New Roman';
-  --font-family-quote: 'Times New Roman';
+  /* Font Families — next/font sets --font-body / --font-heading on <html> */
+  --font-family-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-family-heading: var(--font-heading), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-family-code: ui-monospace, 'Menlo', monospace;
+  --font-family-emphasis: 'Times New Roman', serif;
+  --font-family-quote: 'Times New Roman', serif;
 
   /* Font Weights */
   --font-weight-light: 300;
@@ -378,6 +381,7 @@
 
   body {
     @apply bg-page-background text-foreground text-base;
+    font-family: var(--font-family-text);
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 }

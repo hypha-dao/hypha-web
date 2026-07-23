@@ -174,7 +174,7 @@ export function ConnectedMenuTop({
         <Link
           href={rootSpaceHref ?? '#'}
           prefetch={true}
-          className="group relative -ml-0.5 inline-flex h-9 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-md border border-border/70 bg-background px-3.5 text-sm font-semibold text-muted-foreground shadow-sm transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-border hover:bg-muted/40 hover:text-foreground hover:shadow-md"
+          className="group relative -ml-0.5 inline-flex h-9 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-md border border-border/70 bg-background px-3.5 text-sm font-semibold text-muted-foreground shadow-sm transition-[background-color,border-color,color] duration-200 hover:border-border hover:bg-muted/40 hover:text-foreground"
           aria-label={logoA11yLabel}
           title={logoA11yLabel}
         >

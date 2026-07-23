@@ -93,9 +93,9 @@ export function QuorumAndUnityChangerField({
                   </div>
                   <div className="w-full space-y-3 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <div className="relative h-5 flex-1 rounded-2xl bg-muted">
+                      <div className="relative h-5 flex-1 rounded-lg bg-muted">
                         <div
-                          className="h-5 rounded-2xl bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
+                          className="h-5 rounded-lg bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
                           style={{
                             width: `${preset.quorum}%`,
                           }}
@@ -110,9 +110,9 @@ export function QuorumAndUnityChangerField({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="relative h-5 flex-1 rounded-2xl bg-muted">
+                      <div className="relative h-5 flex-1 rounded-lg bg-muted">
                         <div
-                          className="h-5 rounded-2xl bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
+                          className="h-5 rounded-lg bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
                           style={{
                             width: `${preset.unity}%`,
                           }}
