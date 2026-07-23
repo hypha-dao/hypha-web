@@ -6,13 +6,10 @@ import { cn } from '@hypha-platform/ui-utils';
 
 export type SpaceAccentLoaderSize = 'sm' | 'md' | 'lg';
 
-const SPINNER_SIZE: Record<
-  SpaceAccentLoaderSize,
-  { container: string; icon: string; inset: string }
-> = {
-  sm: { container: 'h-8 w-8', icon: 'h-4 w-4', inset: 'inset-[2px]' },
-  md: { container: 'h-11 w-11', icon: 'h-5 w-5', inset: 'inset-[3px]' },
-  lg: { container: 'h-14 w-14', icon: 'h-7 w-7', inset: 'inset-[4px]' },
+const SPINNER_ICON: Record<SpaceAccentLoaderSize, string> = {
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
 };
 
 type SpaceAccentSpinnerProps = {
@@ -20,37 +17,24 @@ type SpaceAccentSpinnerProps = {
   className?: string;
 };
 
-/** Accent ring + spinner — matches Human Chat room loading. */
+/**
+ * Quiet hairline spinner tinted with space accent.
+ * No glow badge / pulse halo — readable in light and dark.
+ */
 export function SpaceAccentSpinner({
   size = 'md',
   className,
 }: SpaceAccentSpinnerProps) {
-  const dimensions = SPINNER_SIZE[size];
-
   return (
-    <div
+    <Loader2
       className={cn(
-        'relative flex items-center justify-center',
-        dimensions.container,
+        'motion-reduce:animate-none animate-spin text-[color:var(--space-accent,var(--color-accent-9,#4a65d8))]',
+        SPINNER_ICON[size],
         className,
       )}
+      strokeWidth={1.75}
       aria-hidden
-    >
-      <div className="absolute inset-0 animate-pulse rounded-full bg-[color:color-mix(in_srgb,var(--space-accent,#4a65d8)_22%,transparent)]" />
-      <div
-        className={cn(
-          'absolute rounded-full border border-[color:color-mix(in_srgb,var(--space-accent,#4a65d8)_35%,transparent)]',
-          dimensions.inset,
-        )}
-      />
-      <Loader2
-        className={cn(
-          'animate-spin text-[color:var(--space-accent,#4a65d8)]',
-          dimensions.icon,
-        )}
-        strokeWidth={2.25}
-      />
-    </div>
+    />
   );
 }
 
@@ -71,7 +55,10 @@ export function SpaceAccentLoader({
 
   return (
     <div
-      className={cn('flex flex-col items-center gap-3 text-center', className)}
+      className={cn(
+        'flex flex-col items-center gap-2.5 text-center',
+        className,
+      )}
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -79,7 +66,9 @@ export function SpaceAccentLoader({
     >
       <SpaceAccentSpinner size={size} />
       {shouldShowLabel ? (
-        <p className="text-sm font-medium text-muted-foreground">{message}</p>
+        <p className="font-sans text-sm font-medium tracking-wide text-neutral-11">
+          {message}
+        </p>
       ) : null}
     </div>
   );
