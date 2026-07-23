@@ -82,7 +82,7 @@ export const ActivateProposalsBanner = ({
           onClick={handleAction}
           variant="outline"
           colorVariant="accent"
-          className="w-fit"
+          className="space-accent-outline w-fit"
         >
           {dict.banners.activateProposals.buttonText}
         </Button>

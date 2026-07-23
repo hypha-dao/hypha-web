@@ -100,7 +100,7 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
             variant="outline"
             colorVariant="accent"
             size="sm"
-            className="relative min-h-8 shrink-0 px-3 text-xs"
+            className="space-accent-outline relative min-h-8 shrink-0 px-3 text-xs"
           >
             {actionText}
           </Button>
