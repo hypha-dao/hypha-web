@@ -134,7 +134,7 @@ export function ConnectedMenuTop({
   const { overlayVisible } = useAiPanel();
 
   const resolvedLeadingAction = aiChatEnabled ? (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2">
       {!overlayVisible ? (
         <div className="md:hidden">
           <AiSidebarTrigger />
@@ -155,7 +155,7 @@ export function ConnectedMenuTop({
         <Link
           href={rootSpaceHref ?? '#'}
           prefetch={true}
-          className="group relative -ml-0.5 inline-flex h-9 max-w-[12rem] items-center justify-start overflow-hidden rounded-md px-0.5 transition-colors hover:bg-muted/40"
+          className="group relative inline-flex h-[36px] max-w-[min(10.5rem,36vw)] items-center justify-start overflow-hidden rounded-chrome px-0.5 transition-colors hover:bg-muted/40 sm:max-w-[12rem]"
           aria-label={logoA11yLabel}
           title={logoA11yLabel}
         >
@@ -164,7 +164,7 @@ export function ConnectedMenuTop({
             src={rootLogoUrl}
             alt={rootTitle || tNavigation('ecosystemLogo')}
             loading="eager"
-            className="max-h-8 w-auto bg-transparent object-contain"
+            className="max-h-[28px] w-auto bg-transparent object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             <Pencil className="h-2.5 w-2.5" />
@@ -174,7 +174,7 @@ export function ConnectedMenuTop({
         <Link
           href={rootSpaceHref ?? '#'}
           prefetch={true}
-          className="group relative -ml-0.5 inline-flex h-9 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-md border border-border/70 bg-background px-3.5 text-sm font-semibold text-muted-foreground shadow-sm transition-[background-color,border-color,color] duration-200 hover:border-border hover:bg-muted/40 hover:text-foreground"
+          className="group relative inline-flex h-[36px] max-w-[min(11rem,40vw)] items-center justify-center overflow-hidden rounded-chrome border border-border/70 bg-background px-2.5 text-sm font-semibold text-muted-foreground transition-[background-color,border-color,color] duration-200 hover:border-border hover:bg-muted/40 hover:text-foreground sm:max-w-[13.5rem] sm:px-3.5"
           aria-label={logoA11yLabel}
           title={logoA11yLabel}
         >
@@ -190,7 +190,7 @@ export function ConnectedMenuTop({
       )
     ) : (
       <span
-        className="-ml-0.5 inline-flex h-9 w-[12rem]"
+        className="inline-flex h-[36px] w-[12rem]"
         aria-hidden
         title={tNavigation('ecosystemLogo')}
       />

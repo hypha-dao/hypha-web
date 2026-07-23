@@ -68,7 +68,7 @@ export function AiPanelSubscriptionBanner({
           onClick={handleExpiredAction}
           variant="outline"
           colorVariant="accent"
-          className="w-fit"
+          className="space-accent-outline w-fit"
         >
           {tSpaces('reactivateNow')}
         </Button>
