@@ -1263,6 +1263,8 @@
       "atLeastOnePayoutRequired": "Au moins un paiement est requis",
       "atLeastOneAirdropRecipient": "Au moins un destinataire de l'airdrop est requis",
       "tooManyAirdropRecipients": "Trop de destinataires pour une seule proposition d'airdrop.",
+      "airdropOwnershipRecipientsMustBeMembers": "Les destinataires d’un airdrop de jetons d’ownership doivent être membres de l’espace.",
+      "airdropOwnershipMembershipCheckFailed": "Impossible de vérifier l’appartenance des destinataires du jeton d’ownership. Veuillez réessayer.",
       "purchaseAmountRequired": "Veuillez saisir un montant d'achat.",
       "selectSpaceToActivate": "Veuillez sélectionner un espace à activer.",
       "monthsToActivateRequired": "Veuillez saisir le nombre de mois à activer.",

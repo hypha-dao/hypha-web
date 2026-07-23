@@ -1824,6 +1824,8 @@
       "atLeastOnePayoutRequired": "Er is minimaal één uitbetaling vereist",
       "atLeastOneAirdropRecipient": "Er is minimaal één airdrop-ontvanger vereist",
       "tooManyAirdropRecipients": "Te veel ontvangers voor één airdrop-voorstel.",
+      "airdropOwnershipRecipientsMustBeMembers": "Ontvangers van een ownership-token-airdrop moeten space-leden zijn.",
+      "airdropOwnershipMembershipCheckFailed": "Kon het lidmaatschap van de ownership-token-ontvangers niet verifiëren. Probeer het opnieuw.",
       "purchaseAmountRequired": "Vul een aankoopbedrag in.",
       "selectSpaceToActivate": "Selecteer een ruimte om te activeren.",
       "monthsToActivateRequired": "Voer het aantal maanden in dat u wilt activeren.",

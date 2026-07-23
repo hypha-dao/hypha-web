@@ -98,6 +98,8 @@
       "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",
       "atLeastOneAirdropRecipient": "É necessário pelo menos um destinatário do airdrop",
       "tooManyAirdropRecipients": "Muitos destinatários para uma proposta de airdrop.",
+      "airdropOwnershipRecipientsMustBeMembers": "Os destinatários do airdrop de tokens de ownership devem ser membros do espaço.",
+      "airdropOwnershipMembershipCheckFailed": "Não foi possível verificar a associação dos destinatários do token de ownership. Tente novamente.",
       "purchaseAmountRequired": "Digite um valor de compra.",
       "selectSpaceToActivate": "Selecione um espaço para ativar.",
       "monthsToActivateRequired": "Digite o número de meses para ativar.",
