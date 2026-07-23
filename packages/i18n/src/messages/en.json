@@ -1273,7 +1273,7 @@
     },
     "assetCard": {
       "fromSpace": "from {spaceTitle}",
-      "totalIssuance": "Total Issuance: {value}",
+      "totalIssuance": "Issuance {value}",
       "createdOn": "Created on {date}",
       "mutualCredit": {
         "debtBadge": "Owes {amount} {symbol}",
