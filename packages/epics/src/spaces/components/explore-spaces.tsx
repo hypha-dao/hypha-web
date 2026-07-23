@@ -254,26 +254,6 @@ export function ExploreSpaces({
     [pathname],
   );
 
-  const multiSelectVariants = cva(
-    'transition ease-in-out delay-150 duration-300 max-sm:hover:translate-y-0 max-sm:hover:scale-100 sm:hover:-translate-y-1 sm:hover:scale-110',
-    {
-      variants: {
-        variant: {
-          default:
-            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
-          secondary:
-            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          destructive:
-            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-          inverted: 'inverted',
-        },
-      },
-      defaultVariants: {
-        variant: 'default',
-      },
-    },
-  );
-
   const sortedSpaces = React.useMemo(
     () => sortSpacesByOrder(selectedSpaces, order ?? 'mostmembers'),
     [selectedSpaces, order],
@@ -449,20 +429,16 @@ export function ExploreSpaces({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <header className="craft-page-header mb-5">
-        <Heading
-          size="6"
-          color="secondary"
-          weight="medium"
-          align="left"
-          className="craft-page-title flex flex-col gap-0.5"
-        >
-          <span>{t('manySpaces')}</span>
-          <span className="text-muted-foreground">
-            {t('oneVibrantNetwork')}
-          </span>
-        </Heading>
-      </header>
+      <Heading
+        size="9"
+        color="secondary"
+        weight="medium"
+        align="center"
+        className="mb-5 flex flex-col"
+      >
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
+      </Heading>
 
       {sharedHeader}
 
