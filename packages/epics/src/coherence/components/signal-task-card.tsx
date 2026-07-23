@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { isValid } from 'date-fns';
-import { CalendarDays, MessageSquare, MoreHorizontal } from 'lucide-react';
+import { CalendarDays, MessageSquare } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
   Coherence,
@@ -10,17 +10,7 @@ import {
   SignalStatusDefinition,
   usePersonById,
 } from '@hypha-platform/core/client';
-import {
-  Badge,
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@hypha-platform/ui';
+import { Badge } from '@hypha-platform/ui';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { SignalCardActions } from './signal-card-actions';
@@ -48,8 +38,6 @@ type SignalTaskCardProps = {
   onDragEnd?: (event: React.DragEvent<HTMLDivElement>) => void;
   onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
   refresh?: () => Promise<void>;
-  statusOptions?: SignalStatusDefinition[];
-  onStatusChange?: (progressStatus: string) => void;
   className?: string;
 };
 
@@ -98,8 +86,6 @@ export function SignalTaskCard({
   onDragEnd,
   onDragOver,
   refresh,
-  statusOptions,
-  onStatusChange,
   className,
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
@@ -155,11 +141,6 @@ export function SignalTaskCard({
   );
   const hasDescription = plainDescription.trim().length > 0;
 
-  const canChangeStatus =
-    Boolean(statusOptions?.length) && typeof onStatusChange === 'function';
-  const currentStatusSlug =
-    signal.progressStatus ?? status?.slug ?? statusOptions?.[0]?.slug ?? '';
-
   const stopCardActivation = (event: React.SyntheticEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -209,68 +190,19 @@ export function SignalTaskCard({
             <p className="line-clamp-2 min-w-0 flex-1 text-3 font-medium leading-snug tracking-tight text-foreground">
               {signal.title}
             </p>
-            <div
-              className="flex shrink-0 items-center gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-              onClick={stopCardActivation}
-              onKeyDown={stopCardActivation}
-            >
-              {canChangeStatus ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                      aria-label={t('signalFormStatus')}
-                      title={t('signalFormStatus')}
-                      onClick={stopCardActivation}
-                    >
-                      <MoreHorizontal className="h-3.5 w-3.5" aria-hidden />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="min-w-[10.5rem]"
-                    onClick={stopCardActivation}
-                  >
-                    <DropdownMenuLabel className="text-1 font-normal text-muted-foreground">
-                      {t('signalFormStatus')}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuRadioGroup
-                      value={currentStatusSlug}
-                      onValueChange={onStatusChange}
-                    >
-                      {statusOptions!.map((option) => (
-                        <DropdownMenuRadioItem
-                          key={option.slug}
-                          value={option.slug}
-                          className="gap-2 text-2"
-                        >
-                          <span
-                            className={cn(
-                              'h-1.5 w-1.5 shrink-0 rounded-full',
-                              statusColorDotClass(option.color),
-                            )}
-                            aria-hidden
-                          />
-                          {option.name}
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
-              {refresh ? (
+            {refresh ? (
+              <div
+                className="flex shrink-0 items-center gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+                onClick={stopCardActivation}
+                onKeyDown={stopCardActivation}
+              >
                 <SignalCardActions
                   signal={signal}
                   refresh={refresh}
                   className="shrink-0"
                 />
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </div>
 
           <p className="truncate text-1 text-muted-foreground">

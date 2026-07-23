@@ -294,28 +294,6 @@ export function SignalSwimlaneView({
                               ? () => onSignalClick(signal)
                               : undefined
                           }
-                          statusOptions={
-                            readOnly ? undefined : workflow.statuses
-                          }
-                          onStatusChange={
-                            readOnly
-                              ? undefined
-                              : (progressStatus) => {
-                                  if (
-                                    signal.progressStatus === progressStatus
-                                  ) {
-                                    return;
-                                  }
-                                  void onPatch(signal, {
-                                    progressStatus,
-                                  }).catch((error) => {
-                                    console.error(
-                                      '[SignalSwimlaneView] Failed to move signal',
-                                      error,
-                                    );
-                                  });
-                                }
-                          }
                           className={cn(
                             SIGNAL_SWIMLANE_TASK_CARD_SHELL_CLASS,
                             draggingSignal?.slug === signal.slug &&
