@@ -34,7 +34,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, ArchiveRestore, Pencil } from 'lucide-react';
+import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -404,7 +404,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   <span className="mx-1.5 text-border" aria-hidden>
                     ·
                   </span>
-                  <span className="tabular-nums">{createdAtShort}</span>
+                  <span className="inline-flex items-center gap-1 tabular-nums">
+                    <CalendarDays
+                      className="h-3 w-3 shrink-0 opacity-70"
+                      aria-hidden
+                    />
+                    {createdAtShort}
+                  </span>
                 </>
               ) : null}
               {normalizedMessagesCount > 0 ? (
