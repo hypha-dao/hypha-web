@@ -72,17 +72,16 @@ export default async function Index(props: PageProps) {
 
   return (
     <div className="w-full overflow-auto">
-      <Container className="flex flex-col gap-9 py-9 md:py-12">
-        <header className="craft-hero craft-rise">
+      <Container className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
+        <header className="craft-page-header">
           <Heading
-            size="9"
+            size="6"
             color="secondary"
             weight="medium"
-            align="center"
-            className="craft-hero-title"
+            align="left"
+            className="craft-page-title"
           >
-            <span>{t('allYourSpaces')}</span>
-            <span>{t('inOnePlace')}</span>
+            {t('allYourSpaces')} {t('inOnePlace')}
           </Heading>
         </header>
         <Suspense fallback={null}>
