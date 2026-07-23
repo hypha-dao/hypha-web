@@ -328,11 +328,11 @@ export function AiPanelHeader({
           <button
             type="button"
             onClick={onCloseButtonClick ?? closeAiPanel}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
-            <PanelLeftClose className="h-4 w-4" />
+            <PanelLeftClose className="craft-icon" />
           </button>
         ) : null}
       </div>

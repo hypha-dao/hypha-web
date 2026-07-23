@@ -107,10 +107,10 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
           onClick={onClose}
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 min-h-8 min-w-8 shrink-0 rounded-chrome text-muted-foreground hover:text-foreground"
           aria-label={tCommon('close')}
         >
-          <Cross1Icon width={14} height={14} />
+          <Cross1Icon className="craft-icon-sm" width={14} height={14} />
         </Button>
       </div>
     </div>

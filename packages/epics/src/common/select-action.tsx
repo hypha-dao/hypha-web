@@ -139,8 +139,9 @@ export const SelectAction = ({
                         !action.disabled && 'cursor-pointer',
                         !action.disabled &&
                           'hover:border-border hover:bg-muted/15',
+                        /* Inset ring — no offset so focus/selection does not optically shift content */
                         !action.disabled &&
-                          'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
+                          'focus-within:border-accent-9 focus-within:ring-1 focus-within:ring-inset focus-within:ring-accent-9/45',
                         {
                           'pointer-events-none cursor-not-allowed opacity-90':
                             action.disabled,
@@ -151,9 +152,9 @@ export const SelectAction = ({
                     >
                       <div
                         className={clsx(
-                          'flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:size-4 [&_svg]:shrink-0',
+                          'craft-icon-box size-9 text-accent-11 transition-[border-color,background-color,color] duration-200',
                           !action.disabled &&
-                            'group-hover:border-border group-hover:text-foreground group-focus-within:text-foreground',
+                            'group-hover:border-border group-hover:bg-muted/35 group-hover:text-foreground group-focus-within:text-foreground',
                         )}
                         aria-hidden
                       >

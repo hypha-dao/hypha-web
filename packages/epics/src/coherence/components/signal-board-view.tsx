@@ -233,7 +233,7 @@ export function SignalBoardView({
                     {status.name}
                   </span>
                 </div>
-                <span className="rounded-full bg-background/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                <span className="rounded-md bg-background/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
                   {columnSignals.length}
                 </span>
               </div>

@@ -31,9 +31,9 @@ function SkeletonCard({ delayMs = 0 }: { delayMs?: number }) {
       <div className="h-3 w-3/4 rounded bg-muted" />
       <div className="mt-2 h-3 w-1/2 rounded bg-muted/80" />
       <div className="mt-4 flex items-center gap-2">
-        <div className="h-5 w-14 rounded-full bg-muted/80" />
-        <div className="h-5 w-9 rounded-full bg-muted/60" />
-        <div className="ml-auto h-5 w-5 rounded-full bg-muted/80" />
+        <div className="h-5 w-14 rounded-md bg-muted/80" />
+        <div className="h-5 w-9 rounded-md bg-muted/60" />
+        <div className="ml-auto h-5 w-5 rounded-md bg-muted/80" />
       </div>
     </div>
   );
