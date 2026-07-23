@@ -3,8 +3,7 @@ import { cn } from '@hypha-platform/ui-utils';
 /** Accent ring for the signal the user is currently viewing in coherence chat. */
 export function signalCardActiveClass(isActive: boolean, className?: string) {
   return cn(
-    isActive &&
-      'border-accent-9 ring-2 ring-accent-9/45 shadow-md [outline:none]',
+    isActive && 'border-accent-9 bg-muted/20 shadow-none [outline:none]',
     className,
   );
 }
