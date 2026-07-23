@@ -1,7 +1,6 @@
 'use client';
 
 import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
-import { SectionFilter } from '@hypha-platform/ui/server';
 import {
   usePendingRewards,
   useSpaceDetailsWeb3Rpc,
@@ -13,7 +12,6 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Empty } from '../../../common';
 import { useSpaceMember } from '../../../spaces';
 import { useParams } from 'next/navigation';
 import { useSWRConfig } from 'swr';
@@ -33,11 +31,18 @@ type SpacePendingRewardsSectionProps = {
   web3SpaceId: number;
   toolbarActions?: ReactNode;
   onVisibleRewardCountChange?: (count: number) => void;
+  /** When the page already shows a Rewards title, demote this to amount-only meta. */
+  compactHeader?: boolean;
 };
 
 export const SpacePendingRewardsSection: FC<
   SpacePendingRewardsSectionProps
-> = ({ web3SpaceId, toolbarActions, onVisibleRewardCountChange }) => {
+> = ({
+  web3SpaceId,
+  toolbarActions,
+  onVisibleRewardCountChange,
+  compactHeader = false,
+}) => {
   const tTreasury = useTranslations('TreasuryTab');
   const { id: spaceSlug } = useParams<{ id: string }>();
   const { mutate } = useSWRConfig();
@@ -164,12 +169,22 @@ export const SpacePendingRewardsSection: FC<
   ]);
 
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-3">
+    <div className="flex w-full flex-col items-stretch gap-3">
       <div className="flex w-full flex-wrap items-center justify-between gap-2">
-        <SectionFilter
-          label={tTreasury('rewardsSection.title')}
-          count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
-        />
+        {compactHeader ? (
+          <p className="craft-meta min-w-0 flex-1 tabular-nums">
+            {formatCurrencyValue(parsedRewardValue)} HYPHA
+          </p>
+        ) : (
+          <header className="craft-page-header min-w-0 flex-1">
+            <h2 className="craft-page-title text-4 font-medium">
+              {tTreasury('rewardsSection.title')}
+              <span className="ml-2 text-3 font-normal text-muted-foreground tabular-nums">
+                | {formatCurrencyValue(parsedRewardValue)} HYPHA
+              </span>
+            </h2>
+          </header>
+        )}
         <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
           {toolbarActions}
           <Button
@@ -190,26 +205,23 @@ export const SpacePendingRewardsSection: FC<
           </Button>
         </div>
       </div>
-      <div className="w-full">
+      <div className="w-full max-w-sm">
         {isLoading || !executor ? (
-          <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            <AssetCard isLoading />
-          </div>
+          <AssetCard isLoading layout="solo" />
         ) : (
-          <div className="mt-2 grid w-full grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            <AssetCard
-              {...(hyphaTokenAsset ?? {
-                ...HYPHA_REWARDS_FALLBACK,
-                address: hyphaTokenAddressForDisplay,
-                value: parsedRewardValue,
-                supply:
-                  hyphaTotalSupply !== undefined
-                    ? { total: hyphaTotalSupply }
-                    : undefined,
-              })}
-              isLoading={isLoadingAssets}
-            />
-          </div>
+          <AssetCard
+            {...(hyphaTokenAsset ?? {
+              ...HYPHA_REWARDS_FALLBACK,
+              address: hyphaTokenAddressForDisplay,
+              value: parsedRewardValue,
+              supply:
+                hyphaTotalSupply !== undefined
+                  ? { total: hyphaTotalSupply }
+                  : undefined,
+            })}
+            isLoading={isLoadingAssets}
+            layout="solo"
+          />
         )}
       </div>
     </div>
