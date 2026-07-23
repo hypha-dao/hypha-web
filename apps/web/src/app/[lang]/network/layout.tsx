@@ -14,7 +14,7 @@ export default async function RootLayout({
     <>
       <link
         rel="preload"
-        href="/geo/land-110m.json"
+        href="/geo/land-50m.json"
         as="fetch"
         crossOrigin="anonymous"
       />

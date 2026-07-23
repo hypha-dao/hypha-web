@@ -53,6 +53,11 @@ type AiPanelMessagesProps = {
   showInlineSuggestions?: boolean;
   onSuggestionSelect?: (text: string) => void;
   activeSpaceName?: string;
+  /** Signed-in profile photo for user bubbles. */
+  userAvatarUrl?: string | null;
+  userDisplayName?: string | null;
+  /** Active space logo for assistant bubbles. */
+  assistantAvatarUrl?: string | null;
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
   onboardingContext?: OnboardingConversationContext;
@@ -78,6 +83,9 @@ export function AiPanelMessages({
   suggestionItems,
   showInlineSuggestions = false,
   onSuggestionSelect,
+  userAvatarUrl,
+  userDisplayName,
+  assistantAvatarUrl,
   isStreaming = false,
   onActionReplySelect,
   onboardingContext,
@@ -171,6 +179,9 @@ export function AiPanelMessages({
           <AiPanelMessageBubble
             key={msg.id}
             message={msg}
+            userAvatarUrl={userAvatarUrl}
+            userDisplayName={userDisplayName}
+            assistantAvatarUrl={assistantAvatarUrl}
             mobilizedAgents={
               msg.role === 'assistant' && msg.id !== 'welcome'
                 ? [

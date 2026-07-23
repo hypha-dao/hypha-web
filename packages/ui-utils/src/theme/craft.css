@@ -68,4 +68,27 @@
     flex-shrink: 0;
     stroke-width: 1.5;
   }
+
+  /*
+   * Quiet outline chip — hairline border, no gray slab / hover lift.
+   * Used for category filters, compact space switchers, tag chrome.
+   */
+  .craft-chip {
+    @apply rounded-md border border-border/60 bg-transparent font-normal text-muted-foreground shadow-none;
+  }
+
+  .craft-chip-interactive {
+    @apply transition-[border-color,background-color,color] duration-150 ease-out;
+    @apply hover:border-border hover:bg-muted/30 hover:text-foreground;
+  }
+
+  /*
+   * Unread / notification count chip — flat accent fill, no orb shadow.
+   * Prefer CountBadge; this class is the shared visual contract.
+   */
+  .craft-count-chip {
+    @apply shadow-none;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
 }
