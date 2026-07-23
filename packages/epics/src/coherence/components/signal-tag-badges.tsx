@@ -50,7 +50,7 @@ export function SignalTagBadges({
         <Badge
           key={tag}
           variant="outline"
-          colorVariant="accent"
+          colorVariant="neutral"
           className={cn(SIGNAL_TAG_BADGE_CLASS, sizeClassName)}
         >
           {showHashPrefix
