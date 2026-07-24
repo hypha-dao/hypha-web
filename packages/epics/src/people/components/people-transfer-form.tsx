@@ -217,7 +217,7 @@ export const PeopleTransferForm = ({
               </div>
             ) : (
               <Button type="submit" disabled={isTransferring}>
-                Transfer
+                {tActions('transferFunds.form.submitLabel')}
               </Button>
             )}
           </div>

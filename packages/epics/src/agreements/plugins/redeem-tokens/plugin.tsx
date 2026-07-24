@@ -772,7 +772,7 @@ export const RedeemTokensPlugin = ({
         <TokenPayoutFieldArray
           tokens={redeemableTokens}
           name="redemptions"
-          label="Redemption Amount"
+          label={tProposal('redemptionAmountLabel')}
           allowAddOrRemove={false}
           showTreasuryBalanceHint
           selectedTokenPriceHint={selectedTokenPriceHint}

@@ -61,7 +61,9 @@
       "uploadFailed": "Датотеката не можеше да се прикачи."
     },
     "Energy": "Енергија",
-    "Pipeline": "Пајплајн"
+    "Pipeline": "Пајплајн",
+    "durationHours": "{count, plural, one {# час} other {# часа}}",
+    "durationDays": "{count, plural, one {# ден} other {# дена}}"
   },
   "ModalAside": {
     "spaceSettings": "Поставки на просторот",
@@ -1445,7 +1447,8 @@
       "title": "Префрли средства",
       "content": "Лесно испрати средства од твојот паричник до член или простор.",
       "form": {
-        "amountLabel": "Износ"
+        "amountLabel": "Износ",
+        "submitLabel": "Пренеси"
       }
     },
     "redeemTokens": {
@@ -1886,8 +1889,8 @@
       "proposalMinimumVotingIconAlt": "Икона за минимално гласање на предлогот",
       "autoExecution": "Автоматско извршување",
       "toVote": "{duration} за гласање",
-      "quorumLabel": "Кворум",
-      "unityLabel": "Единство",
+      "quorumLabel": "КВОРУМ",
+      "unityLabel": "ЕДИНСТВО",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Прикачете</accent> слика",
       "addAttachmentLabel": "Додај прилог (JPEG, PNG, WebP или PDF — макс. 16MB)",
@@ -2275,7 +2278,8 @@
           "vaultLine": "Во сефот: {amount} {symbol}",
           "priceLine": "Цена: {currency}{price}",
           "requestedLine": "Побарано: {currency}{amount}"
-        }
+        },
+        "redemptionAmountLabel": "Износ за откуп"
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Конвертирано во",
@@ -2616,7 +2620,8 @@
       "mutualCreditEligibleSpaces": "Квалификувани простори",
       "mutualCreditEligibleSpacesAdded": "Додадени квалификувани простори",
       "mutualCreditEligibleSpacesRemoved": "Отстранети квалификувани простори",
-      "spaceLogoAlt": "Лого на {title}"
+      "spaceLogoAlt": "Лого на {title}",
+      "attachments": "Прилози"
     },
     "entryMethods": {
       "openAccess": "Отворен пристап",
@@ -2716,7 +2721,14 @@
     "selectReferenceCurrency": "Те молиме избери референтна валута",
     "tokenPriceGreaterThanZero": "Те молиме внеси цена на токенот поголема од 0",
     "updateTokenLabel": "Ажурирај токен",
-    "spaceInformationMissing": "Недостасуваат информации за просторот. Те молиме обиди се повторно."
+    "spaceInformationMissing": "Недостасуваат информации за просторот. Те молиме обиди се повторно.",
+    "voteButton": {
+      "voteNow": "Гласај сега",
+      "youVotedYes": "Гласавте Да",
+      "youVotedNo": "Гласавте Не",
+      "noVote": "Без глас",
+      "confirmDecision": "Потврди одлука"
+    }
   },
   "AiPanel": {
     "title": "Hypha AI",

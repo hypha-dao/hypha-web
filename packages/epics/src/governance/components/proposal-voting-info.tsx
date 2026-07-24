@@ -3,7 +3,7 @@
 import { useTokens } from '../../treasury';
 import { Token } from '@hypha-platform/core/client';
 import { Image } from '@hypha-platform/ui';
-import { formatDuration } from '@hypha-platform/ui-utils';
+import { getDurationParts } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 import { VOTING_METHOD_TEMPLATES } from '../hooks';
 import { useTranslations } from 'next-intl';
@@ -46,6 +46,7 @@ export const ProposalVotingInfo = ({
 }: ProposalVotingInfoProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tCommon = useTranslations('Common');
   const { tokens } = useTokens({ spaceSlug });
   const parsedTokenData = tokens.find(
     (t: Token) => t.address.toLowerCase() === token.token?.toLowerCase(),
@@ -144,7 +145,15 @@ export const ProposalVotingInfo = ({
                 alt={tProposalDetails('voting.proposalVotingIconAlt')}
               />{' '}
               {tProposalDetails('voting.toVote', {
-                duration: formatDuration(Number(minimumProposalVotingDuration)),
+                duration: (() => {
+                  const { unit, count } = getDurationParts(
+                    Number(minimumProposalVotingDuration),
+                  );
+                  return tCommon(
+                    unit === 'hours' ? 'durationHours' : 'durationDays',
+                    { count },
+                  );
+                })(),
               })}
             </span>
           ) : (

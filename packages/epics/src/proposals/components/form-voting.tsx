@@ -25,7 +25,7 @@ import {
   type UpdateTokenProposalSnapshot,
 } from '../update-issued-token-resubmit';
 import { useSpaceMember } from '../../spaces';
-import { formatDuration } from '@hypha-platform/ui-utils';
+import { getDurationParts } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -542,7 +542,15 @@ export const FormVoting = ({
                   <div className="flex flex-col">
                     <span className="text-1 text-accent-11 text-nowrap font-medium">
                       {tProposalDetails('voting.toVote', {
-                        duration: formatDuration(Number(duration)),
+                        duration: (() => {
+                          const { unit, count } = getDurationParts(
+                            Number(duration),
+                          );
+                          return tCommon(
+                            unit === 'hours' ? 'durationHours' : 'durationDays',
+                            { count },
+                          );
+                        })(),
                       })}
                     </span>
                     <span className="text-[9px] text-accent-11 text-nowrap font-medium">

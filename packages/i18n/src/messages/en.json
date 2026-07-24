@@ -61,7 +61,9 @@
       "fileTooLarge": "Your image is too large (max 16 MB) and could not be uploaded. Resize it and try again.",
       "uploadFailed": "File could not be uploaded."
     },
-    "Pipeline": "Pipeline"
+    "Pipeline": "Pipeline",
+    "durationHours": "{count, plural, one {# Hour} other {# Hours}}",
+    "durationDays": "{count, plural, one {# Day} other {# Days}}"
   },
   "ModalAside": {
     "spaceSettings": "Space Settings",
@@ -1465,7 +1467,8 @@
       "title": "Transfer Funds",
       "content": "Easily send funds from your wallet to a member or a space.",
       "form": {
-        "amountLabel": "Amount"
+        "amountLabel": "Amount",
+        "submitLabel": "Transfer"
       }
     },
     "redeemTokens": {
@@ -1906,8 +1909,8 @@
       "proposalMinimumVotingIconAlt": "Proposal minimum voting icon",
       "autoExecution": "Auto-Execution",
       "toVote": "{duration} to Vote",
-      "quorumLabel": "Quorum",
-      "unityLabel": "Unity",
+      "quorumLabel": "QUORUM",
+      "unityLabel": "UNITY",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Upload</accent> an image",
       "addAttachmentLabel": "Add Attachment (JPEG, PNG, WebP, or PDF — max 16MB)",
@@ -2295,7 +2298,8 @@
           "vaultLine": "In vault: {amount} {symbol}",
           "priceLine": "Price: {currency}{price}",
           "requestedLine": "Requested: {currency}{amount}"
-        }
+        },
+        "redemptionAmountLabel": "Redemption Amount"
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Converted into",
@@ -2636,7 +2640,8 @@
       "mutualCreditEligibleSpaces": "Eligible Spaces",
       "mutualCreditEligibleSpacesAdded": "Eligible Spaces Added",
       "mutualCreditEligibleSpacesRemoved": "Eligible Spaces Removed",
-      "spaceLogoAlt": "{title} logo"
+      "spaceLogoAlt": "{title} logo",
+      "attachments": "Attachments"
     },
     "entryMethods": {
       "openAccess": "Open Access",
@@ -2736,7 +2741,14 @@
     "selectReferenceCurrency": "Please select a reference currency",
     "tokenPriceGreaterThanZero": "Please enter a token price greater than 0",
     "updateTokenLabel": "Update Token",
-    "spaceInformationMissing": "Space information is missing. Please try again."
+    "spaceInformationMissing": "Space information is missing. Please try again.",
+    "voteButton": {
+      "voteNow": "Vote Now",
+      "youVotedYes": "You Voted Yes",
+      "youVotedNo": "You Voted No",
+      "noVote": "No Vote",
+      "confirmDecision": "Confirm Decision"
+    }
   },
   "AiPanel": {
     "title": "Hypha AI",
