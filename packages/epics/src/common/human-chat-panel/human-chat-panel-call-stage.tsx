@@ -379,6 +379,8 @@ type CallSpeakerPrimaryStripProps = {
   isPortrait?: boolean;
   /** Resizable dock panel — preserve 16:9 tiles; scroll strip instead of clipping. */
   panelDock?: boolean;
+  /** Direction of the non-speaker strip itself (independent of the speaker/strip split axis). */
+  stripDirection?: 'row' | 'col';
   stripPage?: number;
   onStripPageChange?: (page: number) => void;
   showStripPagination?: boolean;
@@ -398,6 +400,7 @@ function CallSpeakerPrimaryStrip({
   overflowLabel,
   isPortrait = false,
   panelDock = false,
+  stripDirection = 'col',
   stripPage = 0,
   onStripPageChange,
   showStripPagination = false,
@@ -460,7 +463,11 @@ function CallSpeakerPrimaryStrip({
             panelDock
               ? singleStripTileInDock
                 ? 'flex min-h-0 flex-1 flex-col'
+                : stripDirection === 'row'
+                ? 'flex flex-row overflow-x-auto'
                 : 'flex flex-col overflow-y-auto'
+              : stripDirection === 'row'
+              ? 'flex flex-row overflow-x-auto'
               : 'flex flex-col overflow-y-auto',
             cellClassName,
           )}
@@ -1426,7 +1433,11 @@ function HumanChatPanelCallStageMain({
                             ? 'w-full border-b border-border/20 pb-0 lg:min-h-0 lg:w-auto lg:border-b-0 lg:border-r lg:pb-0'
                             : 'min-h-0 border-r border-border/20',
                         )}
-                        style={{ flex: `${a} 1 0%` }}
+                        style={
+                          isFull
+                            ? { flex: `1 1 ${a * 100}%` }
+                            : { flex: '1 1 0%' }
+                        }
                       >
                         {renderSharePane(0)}
                       </div>
@@ -1457,7 +1468,9 @@ function HumanChatPanelCallStageMain({
                             ? 'w-full min-h-[4.5rem] max-h-[min(50dvh,20rem)] flex-1 lg:max-w-none'
                             : 'w-[min(50%,15rem)] min-w-[9.5rem] shrink-0',
                         )}
-                        style={isFull ? { flex: `${1 - a} 1 0%` } : undefined}
+                        style={
+                          isFull ? { flex: `1 1 ${(1 - a) * 100}%` } : undefined
+                        }
                         role="group"
                         aria-label={t('callLayoutSideBySide')}
                       >
@@ -1781,6 +1794,7 @@ function HumanChatPanelCallStageMain({
               cellClassName={userGridCellClass}
               panelDock={!isFull}
               isPortrait={isDocumentPipOpen}
+              stripDirection="row"
               renderTile={renderRemoteUserTile}
               overflowLabel={(count) => `+${count}`}
               stripPage={galleryPage}
