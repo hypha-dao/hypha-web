@@ -28,7 +28,7 @@
     "otherMembers": "+ andere {count} leden",
     "exploreSpaces": "Verken ruimtes",
     "findCategory": "Zoek een categorie",
-    "noSpacesYet": "Er zijn nog geen ruimtes aangemaakt of lid geworden. Verken ons netwerk en sluit u aan bij een Space, of creëer uw eigen Space.",
+    "noSpacesYet": "Er zijn nog geen ruimtes aangemaakt of lid geworden. Verken ons netwerk en sluit u aan bij een ruimte, of creëer uw eigen ruimte.",
     "close": "Sluiten",
     "comingSoonBadge": "Binnenkort",
     "notFoundOops": "Oeps!",
@@ -61,7 +61,9 @@
       "fileTooLarge": "Uw afbeelding is te groot (max. 16 MB) en kan niet worden geüpload. Pas het formaat aan en probeer het opnieuw.",
       "uploadFailed": "Bestand kon niet worden geüpload."
     },
-    "Pipeline": "Pipeline"
+    "Pipeline": "Pipeline",
+    "durationHours": "{count, plural, one {# uur} other {# uur}}",
+    "durationDays": "{count, plural, one {# dag} other {# dagen}}"
   },
   "ModalAside": {
     "spaceSettings": "Ruimte-instellingen",
@@ -134,10 +136,10 @@
     "subtitle": "Maak er een moedige, intelligente organisatie van die ernaar handelt.",
     "returnSubtitle": "Vervolg uw reis — of vraag Hypha AI wat u vervolgens moet doen.",
     "heroPill": {
-      "build": "Bouwen",
-      "together": ", Samen.",
+      "build": "Bouw",
+      "together": ", samen.",
       "rotating": {
-        "anything": "Iets",
+        "anything": "iets",
         "projects": "Projecten",
         "startUps": "Start-ups",
         "ventures": "Ondernemingen",
@@ -223,9 +225,9 @@
     },
     "spacePlaceholder": "Selecteer een ruimte",
     "spaceSearchPlaceholder": "Zoek ruimtes...",
-    "searchToSeeSpaces": "Begin met typen om overeenkomende spaties te zien.",
+    "searchToSeeSpaces": "Begin met typen om overeenkomende ruimtes te zien.",
     "selected": "Gekozen",
-    "noSpacesFound": "Geen spaties gevonden.",
+    "noSpacesFound": "Geen ruimtes gevonden.",
     "loadingSpaces": "Laadruimtes...",
     "explore": {
       "title": "Verken het netwerk",
@@ -416,7 +418,7 @@
   "SpaceSettingsAction": {
     "title": "Ruimte-instellingen",
     "content": "Open en beheer de instellingen voor uw ruimte, inclusief het uiterlijk, de structuur, de methoden, het lidmaatschap en de schatkist.",
-    "searchMenus": "Zoekmenu's",
+    "searchMenus": "Zoek instellingen",
     "noMenusFound": "Geen menu's gevonden",
     "groups": {
       "overview": "Overzicht",
@@ -543,7 +545,7 @@
     "content": "Selecteer een actie om bij te dragen, samen te werken, beslissingen te nemen of bronnen binnen uw ruimte te beheren.",
     "actions": {
       "makeCollectiveAgreement": {
-        "title": "Maak een CAO",
+        "title": "Beleidsvoorstel",
         "description": "Definieer en formaliseer een wederzijds begrip, beleid of besluit tussen de leden van de ruimte."
       },
       "proposeContribution": {
@@ -577,7 +579,7 @@
     }
   },
   "SelectActivateAction": {
-    "title": "Activeer Spatie",
+    "title": "Activeer ruimte",
     "content": "Kies een van de onderstaande opties om uw Space te activeren en alle functies te ontgrendelen die beschikbaar zijn op het Hypha Network.",
     "actions": {
       "depositFunds": {
@@ -617,7 +619,7 @@
       "noAccessAddSpace": "U heeft geen toegang om ruimtes toe te voegen aan deze organisatie.",
       "visitSpace": "Bezoek Ruimte",
       "searchSpaces": "Zoek ruimtes",
-      "noSpacesFound": "Geen spaties gevonden"
+      "noSpacesFound": "Geen ruimtes gevonden"
     }
   },
   "AgreementsTab": {
@@ -655,7 +657,7 @@
       "delegatedVotingMember": "Gedelegeerd stemgerechtigd lid",
       "findMember": "Vind lid",
       "noMembersFound": "Geen leden gevonden.",
-      "save": "Redden",
+      "save": "Opslaan",
       "delegating": "Delegeren...",
       "undelegate": "Niet-delegeren",
       "undelegating": "Delegeren ongedaan maken...",
@@ -1244,7 +1246,7 @@
     "depositFunds": "Stort geld",
     "listIsEmpty": "Lijst is leeg",
     "emptyAssetsTreasury": "Uw schatkist bevat nog geen activa. Stort geld of maak een ruimtetoken om aan de slag te gaan.",
-    "emptyAssetsWallet": "Uw portemonnee bevat nog geen activa. Koop ruimtefiches of HYPHA om te beginnen met het opbouwen van uw saldo.",
+    "emptyAssetsWallet": "Uw portemonnee bevat nog geen activa. Koop ruimtetokens of HYPHA om te beginnen met het opbouwen van uw saldo.",
     "emptyAssetsSearch": "Er zijn geen items die overeenkomen met uw zoekopdracht.",
     "loadMoreAssets": "Laad meer items",
     "transactions": "Transacties",
@@ -1351,7 +1353,7 @@
       },
       "actions": {
         "retry": "Opnieuw proberen",
-        "save": "Redden"
+        "save": "Opslaan"
       },
       "errors": {
         "firstNameRequired": "Voer uw voornaam in",
@@ -1396,7 +1398,7 @@
         "description": "Sponsor en activeer uw favoriete ruimte(s) door een bijdrage te leveren aan HYPHA of USDC, ter ondersteuning van het Hypha-netwerk."
       },
       "migrateHyphaTokens": {
-        "title": "Hypha-tokens migreren (Telos → Basis)",
+        "title": "Hypha-tokens migreren (Telos → Base)",
         "description": "Verplaats uw Hypha-tokens van de Telos-blockchain naar het basisnetwerk. Initieert de migratie-ervaring."
       },
       "redeemTokens": {
@@ -1449,7 +1451,7 @@
         "errors": {
           "selectSpaceToActivate": "Selecteer een ruimte om te activeren.",
           "monthsRequired": "Voer het aantal maanden in dat u wilt activeren.",
-          "atLeastOneSpace": "Er moet minimaal één spatie worden toegevoegd",
+          "atLeastOneSpace": "Er moet minimaal één ruimte worden toegevoegd",
           "recipientRequired": "Voeg een ontvanger of portefeuilleadres toe",
           "invalidEthereumAddress": "Ongeldig Ethereum-adres",
           "invalidWalletAddress": "Ongeldig portemonnee-adres",
@@ -1465,7 +1467,8 @@
       "title": "Geld overmaken",
       "content": "Stuur eenvoudig geld vanuit uw portemonnee naar een lid of een ruimte.",
       "form": {
-        "amountLabel": "Hoeveelheid"
+        "amountLabel": "Hoeveelheid",
+        "submitLabel": "Overmaken"
       }
     },
     "redeemTokens": {
@@ -1513,7 +1516,7 @@
           "profileLoadFailed": "Kan profielgegevens niet laden",
           "noWalletAddress": "Profiel heeft geen portemonnee-adres",
           "spacesLoadFailed": "Kan ledenruimten niet laden",
-          "spacesFallback": "Het opzoeken van lidmaatschapsruimten leverde geen spaties op; gebruik makend van een fallback voor wallet-tokenruimtes",
+          "spacesFallback": "Het opzoeken van lidmaatschapsruimten leverde geen ruimtes op; gebruik makend van een fallback voor wallet-tokenruimtes",
           "noSpaces": "Er zijn geen ruimtes gevonden voor dit lid",
           "balanceReadFailed": "Kan het saldo in de keten niet lezen voor {failed}/{total} kluistoken(s)",
           "noVaultTokens": "Er zijn geen kluistokens gevonden die inwisselen mogelijk maken",
@@ -1523,7 +1526,7 @@
       }
     },
     "errors": {
-      "loadSpaces": "Kan spaties niet laden. Probeer het later opnieuw."
+      "loadSpaces": "Kan ruimtes niet laden. Probeer het later opnieuw."
     }
   },
   "Network": {
@@ -1597,7 +1600,7 @@
       "amountRequired": "Voer een bedrag in",
       "amountPositive": "Bedrag moet groter zijn dan 0"
     },
-    "empty": "Er zijn momenteel geen ruimtefiches te koop.",
+    "empty": "Er zijn momenteel geen ruimtetokens te koop.",
     "eligibilityLoadError": "Kan niet controleren welke tokens beschikbaar zijn. Probeer het opnieuw.",
     "selectToken": "Selecteer Token",
     "selectPlaceholder": "Selecteer een token",
@@ -1627,8 +1630,8 @@
     "configureSpace": "Configureer ruimte",
     "nameYourSpace": "Geef uw ruimte een naam...",
     "createdBy": "Gemaakt door",
-    "uploadSpaceBanner": "Uploaden",
-    "spaceBanner": "ruimte spandoek",
+    "uploadSpaceBanner": "Ruimtebanner",
+    "spaceBanner": "uploaden",
     "purpose": "Doel",
     "purposePlaceholder": "Typ hier uw ruimtedoel...",
     "organisationLevel": "Organisatieniveau",
@@ -1652,7 +1655,7 @@
     "selectParentError": "Selecteer een gekoppelde ruimte of schakel 'Rootruimte' in",
     "slugFieldRegex": "Dit veld mag alleen kleine letters, cijfers, koppeltekens en apostrofs bevatten.",
     "slugAlreadyExists": "Ruimte-ID bestaat al",
-    "slugAlreadyExistsLong": "Er bestaat al een spatie met deze naam. Kies een andere naam voor uw ruimte.",
+    "slugAlreadyExistsLong": "Er bestaat al een ruimte met deze naam. Kies een andere naam voor uw ruimte.",
     "alreadyMember": "Al lid",
     "invitePending": "Uitnodiging in behandeling",
     "requestInvite": "Vraag uitnodiging aan",
@@ -1672,7 +1675,7 @@
     "getStarted": "Aan de slag",
     "accessDeniedNotMember": "Om toegang te krijgen tot deze functie moet u lid worden. Word nu lid van de ruimte om de activiteit van deze ruimte te bekijken.",
     "accessDenied": "Toegang geweigerd",
-    "noSpaces": "Geen spaties",
+    "noSpaces": "Geen ruimtes",
     "errorOhSnap": "O knap! Er is een fout opgetreden",
     "reset": "Opnieuw instellen",
     "backToSettings": "Terug naar Instellingen",
@@ -1715,7 +1718,7 @@
     "ecosystemLogoLightDescription": "Upload een lichtmoduslogo voor uw ecosysteem (PNG, JPG, GIF of WEBP).",
     "ecosystemLogoDarkDescription": "Upload een logo in de donkere modus voor uw ecosysteem (PNG, JPG, GIF of WEBP).",
     "search": "Zoekopdracht...",
-    "noSpacesFound": "Geen spaties gevonden",
+    "noSpacesFound": "Geen ruimtes gevonden",
     "addYourUrl": "Voeg uw URL toe",
     "exchangeDepositProposalTitleBanner": "Voltooi de zijde van een uitwisseling op dit veld",
     "exchangeDepositProposalBody": "Een ruilvoorstel vermeldt deze ruimte als tegenpartij (escrow #{escrowId}). Maak een voorstel om <send></send> te storten en <receive></receive> te ontvangen van de andere partij.",
@@ -1744,7 +1747,7 @@
   },
   "AgreementFlow": {
     "labels": {
-      "activateSpaces": "Activeer spaties",
+      "activateSpaces": "Activeer ruimtes",
       "votingMethod": "Stemmethode",
       "entryMethod": "Invoermethode",
       "membershipExit": "Lidmaatschap verlaten",
@@ -1786,7 +1789,7 @@
       "publish": "Publiceren"
     },
     "pageErrors": {
-      "loadSpaces": "Kan spaties niet laden. Probeer het later opnieuw."
+      "loadSpaces": "Kan ruimtes niet laden. Probeer het later opnieuw."
     },
     "spaceConfiguration": {
       "update": "Update",
@@ -1906,10 +1909,10 @@
       "proposalMinimumVotingIconAlt": "Voorstel minimum stempictogram",
       "autoExecution": "Automatische uitvoering",
       "toVote": "{duration} om te stemmen",
-      "quorumLabel": "Quorum",
-      "unityLabel": "Eenheid",
+      "quorumLabel": "quorum",
+      "unityLabel": "eenheid",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
-      "uploadImageLabel": "<accent>Upload</accent> een afbeelding",
+      "uploadImageLabel": "<accent>Voorbeeldafbeelding</accent> uploaden",
       "addAttachmentLabel": "Bijlage toevoegen (JPEG, PNG, WebP of PDF – max. 16 MB)",
       "proposalContent": "Voorstel Inhoud",
       "proposalContentPlaceholder": "Typ hier de inhoud van uw voorstel...",
@@ -2144,7 +2147,7 @@
             "selectMemberPlaceholder": "Lid selecteren...",
             "selectSpacePlaceholder": "Selecteer ruimte...",
             "noMembersFound": "Er zijn geen leden die overeenkomen met uw zoekopdracht.",
-            "noSpacesFound": "Er zijn geen spaties die overeenkomen met uw zoekopdracht.",
+            "noSpacesFound": "Er zijn geen ruimtes die overeenkomen met uw zoekopdracht.",
             "blockchainAddress": "Blockchain-adres",
             "spaceAccessScope": "Toegangsbereik ruimte",
             "spaceAccessScopeDescription": "Schakel in of overdrachten het volledige lidmaatschap van de ruimte moeten omvatten of alleen het ruimte-account.",
@@ -2197,7 +2200,7 @@
           "eligibleSpacesLabel": "In aanmerking komende ruimtes",
           "eligibleSpacesDescription": "Leden van deze ruimtes kunnen gebruik maken van de kredietlijn. De uitgifteruimte is altijd inbegrepen.",
           "currentSpaceTag": "ruimte uitgeven",
-          "addSpacePlaceholder": "Voeg een spatie toe...",
+          "addSpacePlaceholder": "Voeg een ruimte toe...",
           "removeSpace": "Ruimte verwijderen"
         },
         "authorizedMinters": {
@@ -2295,7 +2298,8 @@
           "vaultLine": "In kluis: {amount} {symbol}",
           "priceLine": "Prijs: {currency}{price}",
           "requestedLine": "Gevraagd: {currency}{amount}"
-        }
+        },
+        "redemptionAmountLabel": "Inwisselbedrag"
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Omgezet in",
@@ -2411,7 +2415,7 @@
         "currentSpaceTag": "Huidige ruimte",
         "allBalance": "Allemaal balans",
         "noMembersFound": "Geen leden gevonden.",
-        "noSpacesFound": "Geen spaties gevonden.",
+        "noSpacesFound": "Geen ruimtes gevonden.",
         "allBalanceWarning": "Wanneer 'Alle saldo' is geselecteerd, wordt het volledige tokensaldo voor dit lid of deze ruimte permanent verbrand.",
         "add": "Toevoegen",
         "remove": "Verwijderen"
@@ -2420,7 +2424,7 @@
         "spaces": "Ruimte(n)",
         "contribution": "Bijdrage:",
         "contributionPerMonthPerSpace": "$ 11 per maand per ruimte",
-        "removeSpace": "Verwijder de spatie",
+        "removeSpace": "Verwijder de ruimte",
         "addSpace": "Voeg ruimte toe",
         "selectSpace": "Selecteer Ruimte",
         "selectSpacePlaceholder": "Selecteer ruimte...",
@@ -2635,8 +2639,9 @@
       "mutualCreditLimit": "Standaard kredietlimiet",
       "mutualCreditEligibleSpaces": "In aanmerking komende ruimtes",
       "mutualCreditEligibleSpacesAdded": "In aanmerking komende ruimtes toegevoegd",
-      "mutualCreditEligibleSpacesRemoved": "In aanmerking komende spaties verwijderd",
-      "spaceLogoAlt": "{title}-logo"
+      "mutualCreditEligibleSpacesRemoved": "In aanmerking komende ruimtes verwijderd",
+      "spaceLogoAlt": "{title}-logo",
+      "attachments": "Bijlagen"
     },
     "entryMethods": {
       "openAccess": "Open toegang",
@@ -2736,7 +2741,14 @@
     "selectReferenceCurrency": "Selecteer een referentievaluta",
     "tokenPriceGreaterThanZero": "Voer een tokenprijs in die groter is dan 0",
     "updateTokenLabel": "Token bijwerken",
-    "spaceInformationMissing": "Ruimte-informatie ontbreekt. Probeer het opnieuw."
+    "spaceInformationMissing": "Ruimte-informatie ontbreekt. Probeer het opnieuw.",
+    "voteButton": {
+      "voteNow": "Stem nu",
+      "youVotedYes": "Je stemde Ja",
+      "youVotedNo": "Je stemde Nee",
+      "noVote": "Geen stem",
+      "confirmDecision": "Bevestig beslissing"
+    }
   },
   "AiPanel": {
     "title": "Hypha AI",
@@ -2779,11 +2791,11 @@
     "copyButton": "Kopiëren",
     "copiedButton": "Gekopieerd!",
     "toolLookingUp": "Ruimte opzoeken...",
-    "toolLookingUpSlug": "Spatie opzoeken \"{slug}\"...",
+    "toolLookingUpSlug": "Ruimte opzoeken \"{slug}\"...",
     "toolCompleted": "Gereedschapsoproep voltooid.",
     "toolFoundSpace": "{title} ({slug}) - {memberCount} leden, {documentCount} overeenkomsten gevonden",
     "toolNoSpace": "Geen ruimte gevonden voor naaktslak \"{slug}\"",
-    "toolTokens": "{count} token(s) opgehaald voor spatie \"{slug}\".",
+    "toolTokens": "{count} token(s) opgehaald voor ruimte \"{slug}\".",
     "toolError": "Fout: {message}",
     "pendingAction": "Actie in behandeling",
     "confirmWith": "Bevestig met:",
@@ -3606,7 +3618,7 @@
     "signalFormStatus": "Status",
     "signalFormStatusHint": "Workflowfase voor dit signaal (weergegeven als kolommen in Kanban Board- en Swimlane-weergaven).",
     "signalFormBoard": "Categorie bord",
-    "signalFormBoardHint": "Organisatorische zwembaan: groepeert signalen per team, initiatief of werkstroom. Niet hetzelfde als Type (Opportunity/Risk/Insight) of Tags.",
+    "signalFormBoardHint": "Organisatorische swimlane: groepeert signalen per team, initiatief of werkstroom. Niet hetzelfde als Type (Kans/Risico/Inzicht) of Tags.",
     "signalFormDueDate": "Deadline",
     "signalFormDueDateHint": "Optionele streefdatum voor het volgen van deze signaaltaak.",
     "signalFormVotingPower": "Jouw stemkracht",
@@ -3618,7 +3630,7 @@
     "linkedCalendarEventsEmpty": "Er zijn nog geen agenda-evenementen gekoppeld.",
     "linkedCalendarEventsOpenCalendar": "Kalender openen",
     "signalWorkflowSettingsTitle": "Signaalworkflow",
-    "signalWorkflowSettingsDescription": "Pas Kanban-kolommen (statussen) en zwembaanrijen (bordcategorieën) aan voor signalen in deze ruimte.",
+    "signalWorkflowSettingsDescription": "Pas Kanban-kolommen (statussen) en swimlane-rijen (bordcategorieën) aan voor signalen in deze ruimte.",
     "signalWorkflowStatuses": "Kanban-statussen",
     "signalWorkflowBoards": "Bordcategorieën",
     "signalWorkflowAddStatus": "Status toevoegen",
@@ -3785,7 +3797,7 @@
     "fieldDescriptionPlaceholder": "Agenda, deelnemers of context",
     "createdAt": "Gemaakt {date}",
     "cancel": "Annuleren",
-    "save": "Redden",
+    "save": "Opslaan",
     "saving": "Besparing…",
     "delete": "Verwijderen",
     "deleteConfirmTitle": "Gepland item verwijderen",
@@ -4028,7 +4040,7 @@
         "adminAddress": "Beheerdersadres (ruimte-uitvoerder)",
         "adminHint": "Automatisch ingevuld met de executor van deze space.",
         "stablecoinAddress": "Stablecoin-adres",
-        "stablecoinPlaceholder": "0x... (standaard ingesteld op Basis USDC)",
+        "stablecoinPlaceholder": "0x... (standaard ingesteld op Base USDC)",
         "gridOperatorAddress": "Adres netbeheerder (optioneel)",
         "gridOperatorPlaceholder": "0x... (standaard ingesteld op uitvoerder)",
         "communityFeeAddress": "Adres gemeenschapsbijdrage (optioneel)",
