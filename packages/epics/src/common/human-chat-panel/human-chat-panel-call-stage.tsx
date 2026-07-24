@@ -1455,9 +1455,9 @@ function HumanChatPanelCallStageMain({
                           'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
                           isFull
                             ? 'w-full min-h-[4.5rem] max-h-[min(50dvh,20rem)] flex-1 lg:max-w-none'
-                            : 'min-w-[9.5rem] shrink-0',
+                            : 'w-[min(50%,15rem)] min-w-[9.5rem] shrink-0',
                         )}
-                        style={{ flex: `${1 - a} 1 0%` }}
+                        style={isFull ? { flex: `${1 - a} 1 0%` } : undefined}
                         role="group"
                         aria-label={t('callLayoutSideBySide')}
                       >
