@@ -1804,6 +1804,8 @@
       "atLeastOnePayoutRequired": "Потребна е барем една исплата",
       "atLeastOneAirdropRecipient": "Потребен е барем еден примач на ердропот",
       "tooManyAirdropRecipients": "Премногу примачи за еден предлог за ердроп.",
+      "airdropOwnershipRecipientsMustBeMembers": "Примачите на аирдроп со ownership токени мора да бидат членови на просторот.",
+      "airdropOwnershipMembershipCheckFailed": "Не можеше да се провери членството на примачите на ownership токенот. Обидете се повторно.",
       "purchaseAmountRequired": "Ве молиме внесете износ за купување.",
       "selectSpaceToActivate": "Ве молиме изберете простор за активирање.",
       "monthsToActivateRequired": "Ве молиме внесете број на месеци за активирање.",
