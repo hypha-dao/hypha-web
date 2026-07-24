@@ -1220,7 +1220,7 @@ function HumanChatPanelCallStageMain({
       ? 'h-full w-full flex-1'
       : isFull
       ? 'min-h-[4.5rem] w-full flex-1 lg:max-w-none'
-      : 'ml-auto w-[min(50%,15rem)] min-w-[9.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]';
+      : 'ml-auto w-[7.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]';
 
     return (
       <div
@@ -1466,7 +1466,7 @@ function HumanChatPanelCallStageMain({
                           'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
                           isFull
                             ? 'w-full min-h-[4.5rem] max-h-[min(50dvh,20rem)] flex-1 lg:max-w-none'
-                            : 'w-[min(50%,15rem)] min-w-[9.5rem] shrink-0',
+                            : 'w-[7.5rem] shrink-0',
                         )}
                         style={
                           isFull ? { flex: `1 1 ${(1 - a) * 100}%` } : undefined
@@ -1793,7 +1793,6 @@ function HumanChatPanelCallStageMain({
               stripMaxVisible={layoutPlan.stripMaxVisible}
               cellClassName={userGridCellClass}
               panelDock={!isFull}
-              isPortrait={isDocumentPipOpen}
               stripDirection="row"
               renderTile={renderRemoteUserTile}
               overflowLabel={(count) => `+${count}`}
