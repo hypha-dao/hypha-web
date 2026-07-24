@@ -1827,6 +1827,8 @@
       "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",
       "atLeastOneAirdropRecipient": "Mindestens ein Airdrop-Empfänger ist erforderlich",
       "tooManyAirdropRecipients": "Zu viele Empfänger für einen einzigen Airdrop-Vorschlag.",
+      "airdropOwnershipRecipientsMustBeMembers": "Empfänger von Ownership-Token-Airdrops müssen Space-Mitglieder sein.",
+      "airdropOwnershipMembershipCheckFailed": "Die Mitgliedschaft der Ownership-Token-Empfänger konnte nicht geprüft werden. Bitte versuche es erneut.",
       "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
       "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
       "monthsToActivateRequired": "Bitte geben Sie die Anzahl der Monate für die Aktivierung ein.",

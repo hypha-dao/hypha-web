@@ -370,6 +370,16 @@ export const AirdropRecipientsFieldArray = ({
             </div>
           ))}
 
+          <FormField
+            control={control}
+            name={`${name}.recipients`}
+            render={() => (
+              <FormItem>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className="flex justify-end w-full">
             <Button
               className="w-fit"

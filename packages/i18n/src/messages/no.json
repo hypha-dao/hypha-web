@@ -1821,6 +1821,8 @@
       "atLeastOnePayoutRequired": "Minst én utbetaling er påkrevd",
       "atLeastOneAirdropRecipient": "Minst én airdrop-mottaker er påkrevd",
       "tooManyAirdropRecipients": "For mange mottakere for ett airdrop-forslag.",
+      "airdropOwnershipRecipientsMustBeMembers": "Mottakere av ownership-token-airdrop må være space-medlemmer.",
+      "airdropOwnershipMembershipCheckFailed": "Kunne ikke bekrefte medlemskap for mottakere av ownership-token. Prøv igjen.",
       "purchaseAmountRequired": "Angi et kjøpsbeløp.",
       "selectSpaceToActivate": "Velg et rom som skal aktiveres.",
       "monthsToActivateRequired": "Angi antall måneder som skal aktiveres.",
