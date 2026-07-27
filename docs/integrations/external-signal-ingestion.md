@@ -16,7 +16,7 @@ Community app
   ▼
 Hypha ingestion route
   ├─ verify per-space API key + scope
-  ├─ resolve the author to an existing Hypha person
+  ├─ credit a known Hypha person, else the space itself
   └─ insert into coherences (source = <your source slug>)
         │
         ▼
@@ -101,19 +101,35 @@ curl -X DELETE https://<hypha-host>/api/v1/ops/spaces/<spaceSlug>/api-keys/12 \
 
 ---
 
-## Authors must already exist in Hypha
+## Attribution: a known member, or the space itself
 
-A signal is attributed to a real Hypha person, so the board shows who raised it. Your app identifies
-that person by **wallet address** or **email**:
+The board shows who raised a signal. Your app names that person by **wallet address** or **email**:
 
 ```json
 "author": { "walletAddress": "0xAbC...123" }
 "author": { "email": "member@example.org" }
 ```
 
-If both are supplied, the wallet is tried first. If neither matches an existing Hypha profile the
-request fails with `422` and nothing is written — **ingestion never creates people**. Have your
-members connect the same wallet or use the same email on their Hypha profile first.
+If both are supplied, the wallet is tried first.
+
+When the author matches an existing Hypha profile, the signal is credited to that member. **When it
+matches nobody — or you omit `author` entirely — the signal is still created, credited to the space
+itself.** It appears on the board authored by the space, using the space's name and logo, and it
+carries **no voting power**: the space stands in as a publisher, not as a member, so it holds no
+tokens and cannot vote or be assigned work.
+
+Ingestion still **never creates member profiles**. The stand-in is a single non-human record per
+space, hidden from member directories and impossible to sign in as.
+
+Every create response says which of the two happened, so you can spot a broken identity mapping:
+
+```json
+{ "attributedTo": "author" }   // matched a Hypha member
+{ "attributedTo": "space" }    // published as the space
+```
+
+If you expect signals to be credited to individuals, have your members connect the same wallet or use
+the same email on their Hypha profile, then re-check `attributedTo`.
 
 ---
 
@@ -151,7 +167,7 @@ curl -X POST https://<hypha-host>/api/v1/spaces/acme-dao/signals \
 | `board` | no | A board (swimlane) slug configured for the space. Defaults to the space's default board. |
 | `dueAt` | no | ISO 8601 timestamp, or `null`. |
 | `externalId` | no | Your own record id. Strongly recommended — see idempotency below. |
-| `author` | yes | `{ walletAddress }` or `{ email }`. |
+| `author` | no | `{ walletAddress }` or `{ email }`. Omit, or send an unknown one, to publish as the space. |
 
 Unknown fields are rejected with `400`, so a typo fails loudly rather than being silently dropped.
 Assignees are Hypha person ids and stay a Hypha-side concern; they cannot be set through this API.
@@ -267,7 +283,7 @@ gets `422`. This mirrors Hypha's own upvote path exactly, since both call the sa
 | `403` | Key belongs to another space, lacks the required scope, or the signal is not yours. |
 | `404` | Space or signal not found. |
 | `409` | Signal is archived, or the space is not linked to an on-chain space (upvotes only). |
-| `422` | The author or voter has no matching Hypha profile, or the voter has no voting power. |
+| `422` | The voter has no matching Hypha profile, or no voting power. (Authors never fail — they fall back to the space.) |
 | `500` | Unexpected server error. |
 
 ---
@@ -276,8 +292,10 @@ gets `422`. This mirrors Hypha's own upvote path exactly, since both call the sa
 
 1. Ask Hypha for a key, choosing a stable `source` slug for your app.
 2. Store the key in server-side secrets only.
-3. Make sure your members' Hypha profiles carry the wallet address or email your app knows them by.
+3. Make sure your members' Hypha profiles carry the wallet address or email your app knows them by —
+   otherwise their signals are published as the space.
 4. Send `externalId` on every create so retries are safe and updates are possible.
 5. Treat ingestion as best-effort in your own flow: never fail a user action because Hypha was
    briefly unreachable — queue and retry instead.
-6. On `422`, surface a "connect your Hypha profile" prompt rather than retrying blindly.
+6. Watch `attributedTo` on creates; a run of `"space"` means your identity mapping has drifted.
+7. On `422` from an upvote, surface a "connect your Hypha profile" prompt rather than retrying blindly.

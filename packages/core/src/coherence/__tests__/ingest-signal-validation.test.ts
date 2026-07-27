@@ -23,10 +23,18 @@ describe('schemaIngestSignal', () => {
     expect(parsed.tags).toEqual([]);
   });
 
-  it('requires an author identified by wallet or email', () => {
+  it('requires a wallet or email when an author is given', () => {
     expect(() =>
       schemaIngestSignal.parse({ ...validSignal, author: {} }),
     ).toThrow(/walletAddress or email/);
+  });
+
+  it('allows omitting the author, to publish as the space', () => {
+    const parsed = schemaIngestSignal.parse({
+      ...validSignal,
+      author: undefined,
+    });
+    expect(parsed.author).toBeUndefined();
   });
 
   it('accepts an email author', () => {
@@ -34,7 +42,7 @@ describe('schemaIngestSignal', () => {
       ...validSignal,
       author: { email: 'Member@Example.org' },
     });
-    expect(parsed.author.email).toBe('Member@Example.org');
+    expect(parsed.author?.email).toBe('Member@Example.org');
   });
 
   it('rejects a malformed wallet address', () => {

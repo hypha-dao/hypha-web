@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   authenticateSpaceApiKey,
+  ensureSpaceActorPerson,
   findCoherenceBySlug,
   findPersonByEmail,
   findPersonByWeb3Address,
@@ -57,32 +58,58 @@ export async function authorizeIngestion(
   return { context: { space, apiKey: auth.apiKey } };
 }
 
-export type SignalAuthorRef = {
+export type PersonRef = {
   walletAddress?: string;
   email?: string;
 };
 
+export type ResolvedSignalAuthor = {
+  personId: number;
+  /** True when the payload's author was unknown and the space stood in. */
+  attributedToSpace: boolean;
+};
+
 /**
- * Map an integration's identifier for a person onto an existing Hypha person.
- * Returns null when there is no match — signals are never attributed to a
- * placeholder, and ingestion never writes to the `people` table.
+ * Map an integration's identifier for someone onto an existing Hypha person.
+ * The wallet is tried first when both are given. Returns null when neither
+ * matches — no person is ever created to satisfy a lookup.
  */
-export async function resolveSignalAuthor(
-  author: SignalAuthorRef,
-): Promise<Person | null> {
-  if (author.walletAddress) {
+export async function resolvePersonRef(ref: PersonRef): Promise<Person | null> {
+  if (ref.walletAddress) {
     const byWallet = await findPersonByWeb3Address(
-      { address: author.walletAddress },
+      { address: ref.walletAddress },
       { db },
     );
     if (byWallet) return byWallet;
   }
 
-  if (author.email) {
-    return findPersonByEmail({ email: author.email }, { db });
+  if (ref.email) {
+    return findPersonByEmail({ email: ref.email }, { db });
   }
 
   return null;
+}
+
+/**
+ * Decide who an ingested signal is attributed to.
+ *
+ * An author Hypha already knows is used directly. When the author is omitted or
+ * matches nobody, the signal is attributed to the space itself, so an
+ * integration is never blocked by a contributor who has not linked the wallet or
+ * email the external app knows them by. The space actor holds no wallet and no
+ * membership, so the signal carries no voting power and cannot vote.
+ */
+export async function resolveSignalAuthorOrSpace(
+  author: PersonRef | undefined,
+  space: Space,
+): Promise<ResolvedSignalAuthor> {
+  const person = author ? await resolvePersonRef(author) : null;
+  if (person?.id) {
+    return { personId: person.id, attributedToSpace: false };
+  }
+
+  const spaceActor = await ensureSpaceActorPerson({ space }, { db });
+  return { personId: spaceActor.id, attributedToSpace: true };
 }
 
 /**
@@ -122,14 +149,4 @@ export async function loadOwnedSignal({
   }
 
   return { signal: normalizeCoherence(row), spaceId: row.spaceId };
-}
-
-export function authorNotFoundResponse(author: SignalAuthorRef) {
-  const identifier = author.walletAddress ?? author.email ?? 'the given author';
-  return NextResponse.json(
-    {
-      error: `No Hypha person matches ${identifier}. The author must have a Hypha profile with a matching wallet address or email before their signals can be ingested.`,
-    },
-    { status: 422 },
-  );
 }

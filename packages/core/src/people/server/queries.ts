@@ -10,12 +10,20 @@ import {
   spaces,
   documents,
 } from '@hypha-platform/storage-postgres';
-import { sql, eq, inArray, and } from 'drizzle-orm';
+import { sql, eq, inArray, and, notLike, or, isNull } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
 import { DatabaseInstance, DbConfig } from '../../server';
+import { SPACE_ACTOR_SUB_PREFIX } from './space-actor-person';
 
 const nullToUndefined = <T>(value: T | null): T | undefined =>
   value === null ? undefined : value;
+
+/**
+ * Keep the pseudo-people that represent spaces out of human-facing directories.
+ * They exist only to own signals a space authored on an integration's behalf.
+ */
+const isHumanPerson = () =>
+  or(isNull(people.sub), notLike(people.sub, `${SPACE_ACTOR_SUB_PREFIX}%`));
 
 export const getDefaultFields = () => {
   return {
@@ -77,6 +85,7 @@ export const findAllPeople = async (config: FindAllPeopleConfig) => {
   const dbPeople = (await db
     .select(getDefaultFields())
     .from(people)
+    .where(isHumanPerson())
     .limit(pageSize)
     .offset(offset)) as ResultRow[];
 
@@ -120,7 +129,8 @@ export const findAllPeopleWithoutPagination = async ({
       address: people.address,
       leadImageUrl: people.leadImageUrl,
     })
-    .from(people)) as ResultRow[];
+    .from(people)
+    .where(isHumanPerson())) as ResultRow[];
 
   return dbPeople.map(mapToDomainPerson);
 };

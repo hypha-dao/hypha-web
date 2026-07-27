@@ -4,6 +4,7 @@ import {
   buildAiSignalNavigation,
   createCoherence,
   findCoherenceBySourceExternalId,
+  findSpaceActorPerson,
   normalizeCoherence,
   schemaIngestSignal,
   type Coherence,
@@ -11,9 +12,8 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 
 import {
-  authorNotFoundResponse,
   authorizeIngestion,
-  resolveSignalAuthor,
+  resolveSignalAuthorOrSpace,
 } from './_lib/authorize-ingestion';
 
 export const runtime = 'nodejs';
@@ -31,10 +31,17 @@ function withExternalTag(tags: string[]): string[] {
   return alreadyTagged ? tags : [...tags, EXTERNAL_SIGNAL_TAG];
 }
 
+/**
+ * Who the board credits for a signal: the reported author when Hypha knows
+ * them, otherwise the space itself.
+ */
+type Attribution = 'author' | 'space';
+
 function toIngestionResponse(
   request: NextRequest,
   signal: Coherence,
   spaceSlug: string,
+  attributedTo: Attribution,
 ) {
   const signalSlug = signal.slug ?? '';
   const { href } = buildAiSignalNavigation({
@@ -49,6 +56,7 @@ function toIngestionResponse(
     slug: signalSlug,
     spaceSlug,
     url: new URL(href, request.url).toString(),
+    attributedTo,
     signal,
   };
 }
@@ -93,11 +101,8 @@ export async function POST(
       throw error;
     }
 
-    const author = await resolveSignalAuthor(payload.author);
-    if (!author?.id) {
-      return authorNotFoundResponse(payload.author);
-    }
-
+    // Replay check first, so a repeated request neither writes nor creates the
+    // space actor person that attribution may fall back to.
     if (payload.externalId) {
       const existing = await findCoherenceBySourceExternalId(
         {
@@ -108,20 +113,27 @@ export async function POST(
         { db },
       );
       if (existing) {
+        const spaceActor = await findSpaceActorPerson(
+          { spaceId: space.id },
+          { db },
+        );
         return NextResponse.json(
           toIngestionResponse(
             request,
             normalizeCoherence(existing),
             space.slug,
+            existing.creatorId === spaceActor?.id ? 'space' : 'author',
           ),
           { status: 200 },
         );
       }
     }
 
+    const author = await resolveSignalAuthorOrSpace(payload.author, space);
+
     const created = await createCoherence(
       {
-        creatorId: author.id,
+        creatorId: author.personId,
         spaceId: space.id,
         type: payload.type,
         priority: payload.priority,
@@ -139,7 +151,12 @@ export async function POST(
     );
 
     return NextResponse.json(
-      toIngestionResponse(request, normalizeCoherence(created), space.slug),
+      toIngestionResponse(
+        request,
+        normalizeCoherence(created),
+        space.slug,
+        author.attributedToSpace ? 'space' : 'author',
+      ),
       { status: 201 },
     );
   } catch (error) {

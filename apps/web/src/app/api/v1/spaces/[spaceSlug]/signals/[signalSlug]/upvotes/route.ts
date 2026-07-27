@@ -11,7 +11,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import {
   authorizeIngestion,
   loadOwnedSignal,
-  resolveSignalAuthor,
+  resolvePersonRef,
 } from '../../_lib/authorize-ingestion';
 
 export const runtime = 'nodejs';
@@ -118,7 +118,9 @@ export async function PUT(
       throw error;
     }
 
-    const voter = await resolveSignalAuthor(payload.voter);
+    // Unlike authorship, a voter cannot fall back to the space: an upvote only
+    // means something as one member's weight, and upvotes are unique per person.
+    const voter = await resolvePersonRef(payload.voter);
     if (!voter?.id) {
       return NextResponse.json(
         {
@@ -171,7 +173,7 @@ export async function DELETE(
       );
     }
 
-    const voter = await resolveSignalAuthor({ walletAddress });
+    const voter = await resolvePersonRef({ walletAddress });
     if (!voter?.id) {
       return NextResponse.json(
         { error: `No Hypha person matches ${walletAddress}.` },

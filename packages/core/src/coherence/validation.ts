@@ -128,8 +128,9 @@ const evmAddressSchema = z
   .regex(/^0x[0-9a-fA-F]{40}$/, 'walletAddress must be an EVM address');
 
 /**
- * The author of an externally ingested signal must already exist in Hypha —
- * an integration identifies them by wallet or email, it never creates people.
+ * An integration identifies an author by wallet or email; it never creates
+ * people. When the author is omitted, or matches nobody in Hypha, the signal is
+ * attributed to the space itself.
  */
 const ingestedSignalAuthorSchema = z
   .object({
@@ -181,7 +182,8 @@ export const schemaIngestSignal = z
     dueAt: optionalDueAtSchema,
     /** The integration's own record id, used to make retries idempotent. */
     externalId: z.string().trim().min(1).max(200).optional(),
-    author: ingestedSignalAuthorSchema,
+    /** Omit to publish as the space rather than on behalf of a person. */
+    author: ingestedSignalAuthorSchema.optional(),
   })
   .strict();
 
