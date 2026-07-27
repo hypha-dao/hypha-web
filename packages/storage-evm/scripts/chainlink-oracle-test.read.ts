@@ -33,6 +33,10 @@ const FEEDS_RAW: { name: string; address: string }[] = [
   { name: 'CAD/USD', address: '0xA840145F87572E82519d578b1F36340368a25D5d' },
   { name: 'CHF/USD', address: '0x3A1d6444fb6a402470098E23DaD0B7E86E14252F' },
   { name: 'NZD/USD', address: '0x06bdFe07E71C476157FC025d3cCD4BBe08e83EF9' },
+
+  // XPF/USD is not published by Chainlink — served by the XpfUsdOracle adapter,
+  // which derives it from EUR/USD at the fixed CFP franc peg (1000 XPF = 8.38 EUR).
+  { name: 'XPF/USD', address: '0x98f1459F80a70C1fB624b0da0BE7c92F173090fE' },
 ];
 
 // Normalize addresses to proper checksums

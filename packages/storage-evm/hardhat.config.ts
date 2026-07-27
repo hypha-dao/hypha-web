@@ -70,6 +70,27 @@ const config: HardhatUserConfig = {
       url: 'http://127.0.0.1:8545',
     },
   },
+  etherscan: {
+    apiKey: {
+      base: process.env.BASESCAN_API_KEY || process.env.ETHERSCAN_API_KEY || '',
+    },
+    // hardhat-verify 2.0.x still targets the retired Etherscan V1 endpoint;
+    // point Base at the V2 multichain API explicitly.
+    customChains: [
+      {
+        network: 'base',
+        chainId: 8453,
+        urls: {
+          apiURL: 'https://api.etherscan.io/v2/api?chainid=8453',
+          browserURL: 'https://basescan.org',
+        },
+      },
+    ],
+  },
+  // Keyless verification fallback — Basescan needs a real ETHERSCAN_API_KEY.
+  sourcify: {
+    enabled: true,
+  },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: 'USD',
