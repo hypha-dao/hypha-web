@@ -36,7 +36,12 @@ export * from './coherence/signal-workflow';
 export {
   schemaPatchCoherenceTaskBySlug,
   schemaSignalWorkflowConfig,
+  schemaIngestSignal,
+  schemaPatchIngestedSignal,
+  schemaIngestedSignalUpvote,
 } from './coherence/validation';
+export * from './space-api-key/server';
+export * from './space-api-key';
 export * from './schedule/server';
 export * from './schedule';
 export * from './pipeline/server';

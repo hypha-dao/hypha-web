@@ -24,6 +24,8 @@ export function normalizeCoherence({
   progressStatus,
   board,
   assigneeIds,
+  source,
+  externalId,
   ...rest
 }: DbCoherence): Coherence {
   return {
@@ -50,6 +52,8 @@ export function normalizeCoherence({
     progressStatus: progressStatus?.trim() || DEFAULT_SIGNAL_PROGRESS_STATUS,
     board: board?.trim() || null,
     assigneeIds: normalizeAssigneeIds(assigneeIds),
+    source: source?.trim() || null,
+    externalId: externalId?.trim() || null,
     ...rest,
   };
 }

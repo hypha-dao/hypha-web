@@ -1,5 +1,6 @@
 export const COHERENCE_TAGS = [
   'AI Signal',
+  'External Signal',
   'Purpose',
   'North Star',
   'Vision',

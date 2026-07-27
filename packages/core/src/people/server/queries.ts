@@ -179,6 +179,26 @@ export const findPeopleByWeb3Addresses = async (
   return dbPeople.map(mapToDomainPerson);
 };
 
+export type FindPersonByEmailInput = {
+  email: string;
+};
+export const findPersonByEmail = async (
+  { email }: FindPersonByEmailInput,
+  { db }: DbConfig,
+) => {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const [person] = await db
+    .select()
+    .from(people)
+    .where(eq(sql`lower(${people.email})`, normalized))
+    .limit(1);
+  if (!person) return null;
+
+  return mapToDomainPerson(person);
+};
+
 export type FindPersonBySpaceIdInput = { spaceId: number };
 export type FindPersonBySpaceIdConfig = {
   db: DatabaseInstance;

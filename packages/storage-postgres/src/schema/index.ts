@@ -37,6 +37,7 @@ import {
 import { deals } from './deal';
 import { pipelineSavedViews } from './pipeline-saved-view';
 import { pipelineUserSettings } from './pipeline-user-settings';
+import { spaceApiKeys } from './space-api-key';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -62,6 +63,7 @@ export * from './space-scheduled-item';
 export * from './deal';
 export * from './pipeline-saved-view';
 export * from './pipeline-user-settings';
+export * from './space-api-key';
 
 export const schema = {
   documents,
@@ -97,4 +99,5 @@ export const schema = {
   deals,
   pipelineSavedViews,
   pipelineUserSettings,
+  spaceApiKeys,
 };

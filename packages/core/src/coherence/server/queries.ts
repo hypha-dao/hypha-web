@@ -141,6 +141,32 @@ export const findCoherenceBySlug = async (
   };
 };
 
+/**
+ * Resolve a signal previously written by an integration, so a retried POST
+ * returns the original record instead of creating a duplicate.
+ */
+export const findCoherenceBySourceExternalId = async (
+  {
+    spaceId,
+    source,
+    externalId,
+  }: { spaceId: number; source: string; externalId: string },
+  { db }: DbConfig,
+): Promise<Coherence | null> => {
+  const [row] = await db
+    .select()
+    .from(coherences)
+    .where(
+      and(
+        eq(coherences.spaceId, spaceId),
+        eq(coherences.source, source),
+        eq(coherences.externalId, externalId),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+};
+
 type CheckCoherenceSlugExistsInput = {
   slug: string;
 };
