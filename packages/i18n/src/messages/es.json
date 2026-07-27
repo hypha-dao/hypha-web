@@ -347,7 +347,8 @@
             "jpy": "yen japonés",
             "nzd": "dólar neozelandés",
             "aud": "dólar australiano",
-            "hkd": "dólar de hong kong"
+            "hkd": "dólar de hong kong",
+            "xpf": "franco CFP"
           }
         },
         "decay": {
