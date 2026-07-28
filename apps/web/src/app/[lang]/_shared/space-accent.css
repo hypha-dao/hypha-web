@@ -29,14 +29,8 @@
   );
   --ring: color-mix(
     in oklab,
-    var(--space-accent, var(--color-accent-9)) 62%,
-    var(--background, white)
-  );
-  /* Soft space-tint on raised surfaces — material, not frosted wash */
-  --surface-raised: color-mix(
-    in oklab,
-    var(--card) 94%,
-    var(--space-accent, var(--color-accent-9)) 6%
+    var(--space-accent, var(--color-accent-9)) 75%,
+    white
   );
 }
 
