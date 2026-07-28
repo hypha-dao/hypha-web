@@ -3,14 +3,16 @@
 This folder contains Solidity (EVM) implementations of the Seeds/Rainbows token ecosystem, originally written in C++ for EOSIO/Antelope blockchains.
 
 > **Reference code — not deployed.** None of these contracts have deployment addresses in
-> `contracts/addresses.txt`, deploy scripts, or tests, and they are excluded from `wagmi.config.ts`,
-> so they generate no bindings in `packages/core/src/generated.ts`.
+> `contracts/addresses.txt`, and they are excluded from `wagmi.config.ts`, so they generate no
+> bindings in `packages/core/src/generated.ts`. `OSwaps.sol` has a deploy script
+> (`scripts/oswaps.deploy.ts`) and a test suite (`test/OSwaps.test.ts`); the Rainbow contracts have
+> neither. Nothing here has been audited.
 
 ## Further documentation on OSwaps
 
 - **[`OSwaps.docs.md`](./OSwaps.docs.md)** — complete contract reference: full external surface,
-  role model, bootstrap sequence, pricing math with a bit-exact TypeScript port for off-chain
-  quoting, revert catalogue, and known defects. Written for implementing a UI against the contract.
+  role model, bootstrap sequence, pricing math with measured accuracy bounds, revert catalogue, and
+  the constraints a UI has to handle. Written for implementing a UI against the contract.
 - **[`OSwaps.EOSIO-PARITY.md`](./OSwaps.EOSIO-PARITY.md)** — how faithfully the Solidity port
   reproduces the original Antelope/EOSIO protocol, action by action, including where it diverges and
   why.
@@ -34,10 +36,17 @@ A decentralized token swap protocol implementing a multi-token liquidity pool us
 
 - `createAsset()` - Register a token in the pool
 - `addLiquidity()` - Add liquidity and receive LIQ tokens
-- `withdraw()` - Withdraw liquidity by burning LIQ tokens
-- `swapExactIn()` - Swap with known input amount
-- `swapExactOut()` - Swap with known output amount
+- `withdraw()` - Withdraw liquidity by burning LIQ tokens (manager only)
+- `swapExactIn()` - Swap with known input amount, with a `minOutAmount` slippage floor
+- `swapExactOut()` - Swap with known output amount, with a `maxInAmount` cap
+- `quoteExactIn()` / `quoteExactOut()` - Price a swap without executing it
 - `queryPool()` - Get pool status for tokens
+- `getTokenIds()` / `getAsset()` - Enumerate and read registered assets
+- `setManager()` - Hand the manager role to a replacement (manager only)
+
+See [`OSwaps.docs.md`](./OSwaps.docs.md) for the full surface. Note the bootstrap sequence: a new
+asset needs `createAsset` → `unfreeze` → `addLiquidity` with a non-zero weight → `unfreeze` again
+before it can be swapped.
 
 ### 2. RainbowToken.sol
 
@@ -104,8 +113,10 @@ Factory contract for deploying new RainbowToken instances.
 
 - Removed chain ID validation (EVM is single-chain)
 - Simplified transaction validation (no "prep + transfer" pattern)
-- Direct token transfers using ERC20 standard
-- Natural logarithm approximation for gas efficiency
+- Direct token transfers using the ERC20 standard, via `SafeERC20`
+- Fixed-point `pow` in place of the original's `log()`/`exp()` on doubles
+- Slippage protection and reentrancy guards, which a public mempool makes necessary
+- Fee-on-transfer and rebasing tokens rejected rather than mispriced
 
 #### RainbowToken
 
@@ -117,21 +128,20 @@ Factory contract for deploying new RainbowToken instances.
 
 ### Mathematical Implementations
 
-Both contracts use approximations for mathematical operations:
-
-**Natural Logarithm (ln)**
-
-```solidity
-// Taylor series: ln(x) ≈ (x-1) - (x-1)²/2 + (x-1)³/3 - ...
-```
-
-**Exponential (e^x)**
+The Balancer invariant needs a fractional power, which the original computed as
+`exp(y * log(x))` using the C standard library on IEEE doubles. OSwaps evaluates the same expression
+with [PRBMath](https://github.com/PaulRBerg/prb-math)'s `UD60x18.pow` in 18-decimal fixed point:
 
 ```solidity
-// Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
+UD60x18 ratio  = ud(inBalAfter).div(ud(inBalBefore));
+UD60x18 factor = ratio.pow(ud(wIn).div(ud(wOut)));
 ```
 
-These provide reasonable accuracy for typical swap amounts while remaining gas-efficient.
+Each formula is rearranged so the base always exceeds one and the exponent is always positive, which
+keeps every intermediate value unsigned. Measured relative error is below 1e-10 across trade sizes
+from a millionth of the pool balance up to a hundred times it, and truncation is biased so leftover
+wei stay in the pool. See [`OSwaps.docs.md`](./OSwaps.docs.md) §6 for the measured bounds and the
+one domain limit that remains (extreme weight ratios cap the trade size).
 
 ## Usage Examples
 
@@ -148,15 +158,18 @@ uint64 token1Id = oswaps.createAsset(
 // 2. Approve tokens
 token1.approve(address(oswaps), amount);
 
-// 3. Add liquidity
+// 3. Add liquidity — the asset must be unfrozen first, and the initial
+//    weight must be non-zero, which freezes it again pending manager review
 oswaps.addLiquidity(token1Id, amount, initialWeight);
 
-// 4. Perform swap
+// 4. Quote, then swap with a slippage floor derived from the quote
+uint256 expected = oswaps.quoteExactIn(inputTokenId, outputTokenId, inputAmount);
 oswaps.swapExactIn(
     recipient,
     inputTokenId,
     outputTokenId,
-    inputAmount
+    inputAmount,
+    (expected * 995) / 1000 // 0.5% tolerance
 );
 ```
 
@@ -207,23 +220,29 @@ token.retire(amount, true);
 2. **Access Control**: Role-based access using modifiers
 3. **Integer Overflow**: Solidity 0.8+ has built-in overflow protection
 4. **Backing Escrow**: Escrow accounts must approve the token contract for redemption
-5. **Mathematical Precision**: Taylor series approximations have limited precision for extreme values
+5. **Mathematical Precision**: OSwaps delegates its fractional powers to PRBMath; residual error is
+   below 1e-10 relative and has no guaranteed sign, so per-swap invariant drift is bounded rather
+   than eliminated (measured below 1e-12 of pool value)
+6. **Single point of control**: every OSwaps operational power sits with one `manager` address, and
+   liquidity providers cannot exit without it. Deploy the manager as a multisig or space `Executor`,
+   never an EOA
+7. **Unaudited**: none of these contracts has had a third-party review
 
 ## Testing
 
-**No tests exist for any contract in this folder.** The following are recommended scenarios still to
-be written, not a record of coverage. Note in particular that the accuracy of the Balancer formula
-has never been exercised on-chain — see [`OSwaps.EOSIO-PARITY.md`](./OSwaps.EOSIO-PARITY.md) §6 for
-measured error bounds.
+`test/OSwaps.test.ts` covers OSwaps with 85 cases: the full external surface and access-control
+matrix, the bootstrap and retirement sequences, weight rescaling, LIQ receipt behaviour, reentrancy
+and misbehaving-token handling, and a pricing-math section that checks accuracy against a
+double-precision reference, invariant preservation, exact-in/exact-out duality, and the domain limit.
 
-### OSwaps
+Run it with:
 
-- Create assets and add liquidity
-- Single-sided liquidity additions
-- Swaps with exact input/output
-- Weight adjustments
-- Freeze/unfreeze functionality
-- Mathematical accuracy of Balancer formula
+```bash
+cd packages/storage-evm && npx hardhat test test/OSwaps.test.ts
+```
+
+**No tests exist for the Rainbow contracts.** The following are recommended scenarios still to be
+written, not a record of coverage.
 
 ### RainbowToken
 
