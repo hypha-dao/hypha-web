@@ -883,7 +883,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .padAngle(0.02);
 
   return (
-    <Card className={CHART_CARD_CLASS}>
+    <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-4 font-medium tracking-tight">
           {tTokenHoldings('proposals.title')}
@@ -892,7 +892,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center gap-5 pb-5 pt-1">
+      <CardContent className="flex flex-1 flex-col items-center justify-center gap-5 pb-5 pt-1">
         <svg
           viewBox="-120 -120 240 240"
           className="h-[200px] w-full max-w-[220px] sm:h-[220px]"
@@ -1013,7 +1013,7 @@ function MembersEvolutionWidget({
     .curve(d3.curveMonotoneX);
 
   return (
-    <Card className={CHART_CARD_CLASS}>
+    <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-4 font-medium tracking-tight">
           {tTokenHoldings('members.title')}
@@ -1040,7 +1040,7 @@ function MembersEvolutionWidget({
           </span>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 pb-5">
+      <CardContent className="flex flex-1 flex-col space-y-3 pb-5">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
@@ -1573,11 +1573,11 @@ export function HomeTokenHoldingsDashboard({
             <div
               className={
                 showSignalsWidget
-                  ? 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
+                  ? 'grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
+                  : 'grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
               }
             >
-              <div className="grid min-w-0 items-start gap-4">
+              <div className="grid min-w-0 content-start gap-4">
                 {showSignalsWidget ? (
                   <SignalsPulseMapWidget signals={activityData.signals} />
                 ) : null}
@@ -1586,7 +1586,7 @@ export function HomeTokenHoldingsDashboard({
                   locale={locale}
                 />
               </div>
-              <div className="grid min-w-0 items-start gap-4">
+              <div className="flex min-h-0 min-w-0 flex-col">
                 <ProposalsPieWidget data={activityData.proposals} />
               </div>
             </div>
