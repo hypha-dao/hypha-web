@@ -24,12 +24,12 @@ export type BannerToneMetrics = {
   edgeEnergy: number;
 };
 
-/** Neutral metrics → calm baseline (readable scrim without crushing the plate) */
+/** Neutral metrics → static PR #2165–style reference (single source of truth) */
 export const BANNER_OVERLAY_FALLBACK_METRICS: BannerToneMetrics = {
-  luminanceMean: 0.4,
-  luminanceStd: 0.11,
-  saturationMean: 0.3,
-  edgeEnergy: 0.22,
+  luminanceMean: 0.42,
+  luminanceStd: 0.12,
+  saturationMean: 0.35,
+  edgeEnergy: 0.25,
 };
 
 /**
@@ -151,8 +151,8 @@ export function analyzeBannerToneFromImageData(
 
 export type BannerOverlayCssVars = Record<string, string>;
 
-/** Portion of image-driven deviation from baseline (kept low — prefer calm scrim). */
-const OVERLAY_DYNAMIC_STRENGTH = 0.28;
+/** Portion of image-driven deviation from baseline we apply (lower = truer hero colour). */
+const OVERLAY_DYNAMIC_STRENGTH = 0.42;
 
 function overlayCssVarsFromToneRaw(m: BannerToneMetrics): BannerOverlayCssVars {
   const {
@@ -163,50 +163,40 @@ function overlayCssVarsFromToneRaw(m: BannerToneMetrics): BannerOverlayCssVars {
   } = m;
 
   /**
-   * brighter / more saturated image → slightly stronger neutral scrim
-   * (kept modest so landscape plates stay luminous)
+   * brighter image → slightly stronger scrim (subtle; was overpowering photos)
    */
-  const brightNeed = clamp01((L - 0.36) / 0.52) * 0.7;
-  const satNeed = clamp01((S - 0.3) / 0.55) * 0.4;
+  const brightNeed = clamp01((L - 0.38) / 0.52) * 0.72;
   /**
    * very dark hero → ease the bottom crush
    */
-  const darkEase = clamp01((0.22 - L) / 0.22) * 0.4;
+  const darkEase = clamp01((0.22 - L) / 0.22) * 0.42;
   /**
-   * Busy plates need a touch more vignette, not glow
+   * Radiance — keep light touches only so overlays don’t dominate the plate
    */
-  const busy = clamp01(0.5 * spread + 0.5 * E);
-
+  const radiance = clamp01(0.35 * S + 0.35 * L + 0.3 * E);
   /**
-   * Vertical gradient — restore pre-densify mid/top light so the photo reads;
-   * keep a firm bottom stop for footer meta.
+   * Busy / high-frequency → soften film grain & glow
    */
-  const vBottom = clamp01(
-    0.7 + brightNeed * 0.08 + satNeed * 0.04 - darkEase * 0.1,
-  );
-  const vMid = clamp01(
-    0.4 + brightNeed * 0.06 + satNeed * 0.04 - darkEase * 0.05,
-  );
-  const vTop = clamp01(
-    0.24 + brightNeed * 0.05 + satNeed * 0.03 - darkEase * 0.04,
-  );
+  const calmGrain = clamp01(0.55 * spread + 0.45 * E);
 
-  const hFrom = clamp01(
-    0.34 + brightNeed * 0.06 + satNeed * 0.03 - darkEase * 0.04,
-  );
-  const hTo = clamp01(0.2 + brightNeed * 0.05 + satNeed * 0.02);
+  /** Vertical gradient — smaller deltas than before */
+  const vBottom = clamp01(0.88 + brightNeed * 0.05 - darkEase * 0.09);
+  const vMid = clamp01(0.42 + brightNeed * 0.06 - darkEase * 0.05);
+  const vTop = clamp01(0.22 + brightNeed * 0.05 - darkEase * 0.04);
 
-  /** Decorative layers retired — keep vars at near-zero for any legacy consumers */
-  const accentWash = 0.02;
-  const skylightOpacity = 0.05;
-  const sheenOpacity = 0.02;
-  const vignetteStrength = clamp01(
-    0.68 + brightNeed * 0.06 + busy * 0.05 - darkEase * 0.06,
-  );
-  const grainOpacity = 0.02;
+  const hFrom = clamp01(0.58 + brightNeed * 0.07 - darkEase * 0.04);
+  const hTo = clamp01(0.4 + brightNeed * 0.05);
 
-  const innerTop = clamp01(0.05 + brightNeed * 0.01);
-  const innerBot = clamp01(0.16 + brightNeed * 0.03);
+  /** Tint wash — cap so original image chroma reads through */
+  const accentWash = clamp01(0.1 + radiance * 0.05);
+
+  const skylightOpacity = clamp01(0.78 + radiance * 0.06 - calmGrain * 0.08);
+  const sheenOpacity = clamp01(0.05 + radiance * 0.025);
+  const vignetteStrength = clamp01(0.92 + brightNeed * 0.08 - darkEase * 0.07);
+  const grainOpacity = clamp01(0.048 + radiance * 0.015 - calmGrain * 0.02);
+
+  const innerTop = clamp01(0.085 + radiance * 0.022);
+  const innerBot = clamp01(0.17 + brightNeed * 0.025);
 
   return {
     '--banner-ov-v-bottom': String(vBottom),

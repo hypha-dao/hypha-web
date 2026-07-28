@@ -296,10 +296,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'craft-card group relative flex h-full w-full min-h-0 flex-col',
-        'transition-[border-color,background-color] duration-200 ease-out',
-        !isActive && 'hover:border-border hover:bg-muted/15',
-        !isActive && 'focus-within:border-border focus-within:bg-muted/15',
+        'craft-card-interactive group relative flex h-full w-full min-h-0 flex-col',
         signalCardActiveClass(isActive),
         className,
       )}

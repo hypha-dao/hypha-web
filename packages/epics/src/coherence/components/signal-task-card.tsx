@@ -168,7 +168,6 @@ export function SignalTaskCard({
       }
       className={cn(
         'craft-card-interactive group relative flex flex-col',
-        !isActive && 'hover:border-border hover:bg-muted/15',
         signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',
