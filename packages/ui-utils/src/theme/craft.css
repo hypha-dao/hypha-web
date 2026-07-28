@@ -1,0 +1,112 @@
+/**
+ * Craft + organic layer — quiet utilities and tactile feel.
+ * No page washes, frosted theater, stagger motion, neon glow, or empty-state halo.
+ */
+
+@layer components {
+  /* App page headers: tool first, not marketing hero */
+  .craft-page-header {
+    @apply flex w-full flex-col items-start gap-1 text-left;
+  }
+
+  .craft-page-title {
+    @apply m-0 text-balance font-semibold tracking-[-0.02em] text-foreground;
+    font-family: var(--font-family-heading);
+  }
+
+  .craft-empty-mark {
+    @apply flex size-8 items-center justify-center rounded-lg border border-border/70 bg-background-2 text-muted-foreground;
+  }
+
+  /* Secondary copy — one visual weight below titles */
+  .craft-meta {
+    @apply text-1 font-normal text-muted-foreground;
+  }
+
+  /*
+   * Shared card chrome for grids / panels.
+   * Material step via surface tokens — not shadow stacks.
+   */
+  .craft-card {
+    @apply rounded-lg border border-border/70 shadow-none;
+    background: var(--surface-raised, var(--background-2));
+  }
+
+  .craft-card-interactive {
+    @apply rounded-lg border border-border/70 shadow-none;
+    background: var(--surface-raised, var(--background-2));
+    transition: border-color var(--duration-organic, 180ms)
+        var(--ease-organic, ease-out),
+      background-color var(--duration-organic, 180ms)
+        var(--ease-organic, ease-out),
+      transform var(--duration-organic, 180ms) var(--ease-organic, ease-out);
+  }
+
+  .craft-card-interactive:hover {
+    border-color: var(--border);
+    background: color-mix(
+      in oklab,
+      var(--surface-raised, var(--background-2)) 88%,
+      var(--muted) 12%
+    );
+  }
+
+  .craft-card-interactive:active {
+    transform: scale(0.995);
+  }
+
+  /*
+   * Icon optical system — Lucide stroke feel + chrome boxes.
+   */
+  .craft-icon {
+    @apply block size-4 shrink-0;
+    stroke-width: 1.5;
+  }
+
+  .craft-icon-sm {
+    @apply block size-3.5 shrink-0;
+    stroke-width: 1.5;
+  }
+
+  .craft-icon-box {
+    @apply grid size-8 shrink-0 place-items-center overflow-hidden rounded-chrome border border-border/70 bg-muted/25 text-muted-foreground;
+  }
+
+  .craft-icon-box > svg {
+    display: block !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem;
+    max-height: 1rem;
+    flex-shrink: 0;
+    stroke-width: 1.5;
+  }
+
+  /*
+   * Quiet outline chip — hairline border, no gray slab / hover lift.
+   */
+  .craft-chip {
+    @apply rounded-md border border-border/60 bg-transparent font-normal text-muted-foreground shadow-none;
+  }
+
+  .craft-chip-interactive {
+    transition: border-color var(--duration-organic, 180ms)
+        var(--ease-organic, ease-out),
+      background-color var(--duration-organic, 180ms)
+        var(--ease-organic, ease-out),
+      color var(--duration-organic, 180ms) var(--ease-organic, ease-out);
+  }
+
+  .craft-chip-interactive:hover {
+    @apply border-border bg-muted/30 text-foreground;
+  }
+
+  /*
+   * Unread / notification count chip — flat accent fill, no orb shadow.
+   */
+  .craft-count-chip {
+    @apply shadow-none;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+}
