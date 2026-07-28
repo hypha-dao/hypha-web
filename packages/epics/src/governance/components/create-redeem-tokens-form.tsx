@@ -245,7 +245,7 @@ const CreateRedeemTokensFormInner = ({
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label="Redeem Tokens"
+            label={tAgreementFlow('documentBadges.redeemTokens')}
             progress={progress}
           />
           {React.isValidElement(plugin)
@@ -257,7 +257,7 @@ const CreateRedeemTokensFormInner = ({
           <Separator />
           <div className="flex justify-end w-full">
             <Button type="submit" disabled={web3SpaceId == null}>
-              Publish
+              {tAgreementFlow('buttons.publish')}
             </Button>
           </div>
         </form>

@@ -60,7 +60,9 @@
       "genericUploadFallback": "<accent>Last opp</accent> et bilde",
       "fileTooLarge": "Bildet ditt er for stort (maks 16 MB) og kunne ikke lastes opp. Endre størrelsen og prøv igjen.",
       "uploadFailed": "Filen kunne ikke lastes opp."
-    }
+    },
+    "durationHours": "{count, plural, one {# time} other {# timer}}",
+    "durationDays": "{count, plural, one {# dag} other {# dager}}"
   },
   "ModalAside": {
     "spaceSettings": "Rominnstillinger",
@@ -1464,7 +1466,8 @@
       "title": "Overfør midler",
       "content": "Send enkelt midler fra lommeboken din til et medlem eller et rom.",
       "form": {
-        "amountLabel": "Beløp"
+        "amountLabel": "Beløp",
+        "submitLabel": "Overfør"
       }
     },
     "redeemTokens": {
@@ -1818,6 +1821,8 @@
       "atLeastOnePayoutRequired": "Minst én utbetaling er påkrevd",
       "atLeastOneAirdropRecipient": "Minst én airdrop-mottaker er påkrevd",
       "tooManyAirdropRecipients": "For mange mottakere for ett airdrop-forslag.",
+      "airdropOwnershipRecipientsMustBeMembers": "Mottakere av ownership-token-airdrop må være space-medlemmer.",
+      "airdropOwnershipMembershipCheckFailed": "Kunne ikke bekrefte medlemskap for mottakere av ownership-token. Prøv igjen.",
       "purchaseAmountRequired": "Angi et kjøpsbeløp.",
       "selectSpaceToActivate": "Velg et rom som skal aktiveres.",
       "monthsToActivateRequired": "Angi antall måneder som skal aktiveres.",
@@ -1903,8 +1908,8 @@
       "proposalMinimumVotingIconAlt": "Ikon for minste avstemning for forslag",
       "autoExecution": "Automatisk utførelse",
       "toVote": "{duration} til å stemme",
-      "quorumLabel": "Quorum",
-      "unityLabel": "Enighet",
+      "quorumLabel": "QUORUM",
+      "unityLabel": "ENIGHET",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Last opp</accent> et bilde",
       "addAttachmentLabel": "Legg til vedlegg (JPEG, PNG, WebP eller PDF — maks 16 MB)",
@@ -2169,7 +2174,8 @@
             "jpy": "Japansk yen",
             "nzd": "Newzealandsk dollar",
             "aud": "Australsk dollar",
-            "hkd": "Hongkong-dollar"
+            "hkd": "Hongkong-dollar",
+            "xpf": "CFP-franc"
           }
         },
         "decay": {
@@ -2292,7 +2298,8 @@
           "vaultLine": "I hvelvet: {amount} {symbol}",
           "priceLine": "Pris: {currency}{price}",
           "requestedLine": "Forespurt: {currency}{amount}"
-        }
+        },
+        "redemptionAmountLabel": "Innløsningsbeløp"
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Konvertert til",
@@ -2633,7 +2640,8 @@
       "mutualCreditEligibleSpaces": "Kvalifiserte rom",
       "mutualCreditEligibleSpacesAdded": "Kvalifiserte rom lagt til",
       "mutualCreditEligibleSpacesRemoved": "Kvalifiserte rom fjernet",
-      "spaceLogoAlt": "{title}-logo"
+      "spaceLogoAlt": "{title}-logo",
+      "attachments": "Vedlegg"
     },
     "entryMethods": {
       "openAccess": "Åpen tilgang",
@@ -2733,7 +2741,14 @@
     "selectReferenceCurrency": "Velg en referansevaluta",
     "tokenPriceGreaterThanZero": "Angi en tokenpris større enn 0",
     "updateTokenLabel": "Oppdater token",
-    "spaceInformationMissing": "Informasjon om rommet mangler. Prøv igjen."
+    "spaceInformationMissing": "Informasjon om rommet mangler. Prøv igjen.",
+    "voteButton": {
+      "voteNow": "Stem nå",
+      "youVotedYes": "Du stemte Ja",
+      "youVotedNo": "Du stemte Nei",
+      "noVote": "Ingen stemme",
+      "confirmDecision": "Bekreft beslutning"
+    }
   },
   "AiPanel": {
     "title": "Hypha AI",

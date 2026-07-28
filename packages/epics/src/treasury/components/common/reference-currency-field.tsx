@@ -15,7 +15,11 @@ import {
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
-/** Match TOKEN_PRICE_REFERENCE_CURRENCIES — no Chainlink X/USD feed for CNY, JPY, HKD on Base */
+/**
+ * Match TOKEN_PRICE_REFERENCE_CURRENCIES — every entry needs an X/USD feed.
+ * CNY, JPY and HKD are absent because Base has none. XPF is served by the
+ * XpfUsdOracle adapter (EUR/USD at the fixed CFP franc peg).
+ */
 const CURRENCY_OPTIONS = [
   { value: 'USD', key: 'usd' },
   { value: 'GBP', key: 'gbp' },
@@ -24,6 +28,7 @@ const CURRENCY_OPTIONS = [
   { value: 'CHF', key: 'chf' },
   { value: 'AUD', key: 'aud' },
   { value: 'NZD', key: 'nzd' },
+  { value: 'XPF', key: 'xpf' },
 ] as const;
 
 export const ReferenceCurrencyField = () => {

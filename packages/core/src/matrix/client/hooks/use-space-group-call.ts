@@ -4,8 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { ClientEvent, RoomEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
-import type { Room as LiveKitRoom } from 'livekit-client';
-import { LocalAudioTrack, Track } from 'livekit-client';
+import type {
+  Room as LiveKitRoom,
+  ScreenShareCaptureOptions,
+  TrackPublishOptions,
+} from 'livekit-client';
+import { LocalAudioTrack, ScreenSharePresets, Track } from 'livekit-client';
 import {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,
@@ -188,6 +192,22 @@ async function stopLiveKitLocalPublishing(lkRoom: LiveKitRoom): Promise<void> {
     }
   }
 }
+
+/**
+ * Screen content (text/UI) needs sharper encoding than motion video, and the standard
+ * `adaptiveStream`/`dynacast` mechanism only degrades layer selection correctly if a low
+ * fallback layer actually exists — see #2425 decision 31.
+ */
+const SCREEN_SHARE_CAPTURE_OPTIONS: ScreenShareCaptureOptions = {
+  contentHint: 'detail',
+};
+
+const SCREEN_SHARE_PUBLISH_OPTIONS: TrackPublishOptions = {
+  simulcast: true,
+  screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
+  screenShareSimulcastLayers: [ScreenSharePresets.h360fps15],
+  degradationPreference: 'maintain-resolution',
+};
 
 const CAPTURE_START_STALL_MS = 10_000;
 /** Minimum time capture must run before finalize produces a non-empty blob. */
@@ -1393,7 +1413,12 @@ export function useSpaceGroupCall(
         try {
           await withEnhancedScreenshareCapture(
             client,
-            () => lkRoom.localParticipant.setScreenShareEnabled(true),
+            () =>
+              lkRoom.localParticipant.setScreenShareEnabled(
+                true,
+                SCREEN_SHARE_CAPTURE_OPTIONS,
+                SCREEN_SHARE_PUBLISH_OPTIONS,
+              ),
             screenshareSurfaceModeRef.current,
           );
         } catch (e) {

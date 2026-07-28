@@ -61,7 +61,9 @@
       "fileTooLarge": "Ihr Bild ist zu groß (max. 16 MB) und konnte nicht hochgeladen werden. Bitte verkleinern Sie es und versuchen Sie es erneut.",
       "uploadFailed": "Die Datei konnte nicht hochgeladen werden."
     },
-    "Pipeline": "Pipeline"
+    "Pipeline": "Pipeline",
+    "durationHours": "{count, plural, one {# Stunde} other {# Stunden}}",
+    "durationDays": "{count, plural, one {# Tag} other {# Tage}}"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -1689,7 +1691,8 @@
       "title": "Mittel übertragen",
       "content": "Senden Sie ganz einfach Mittel aus Ihrer Wallet an ein Mitglied oder einen Space.",
       "form": {
-        "amountLabel": "Betrag"
+        "amountLabel": "Betrag",
+        "submitLabel": "Überweisen"
       }
     },
     "redeemTokens": {
@@ -2047,6 +2050,8 @@
       "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",
       "atLeastOneAirdropRecipient": "Mindestens ein Airdrop-Empfänger ist erforderlich",
       "tooManyAirdropRecipients": "Zu viele Empfänger für einen einzigen Airdrop-Vorschlag.",
+      "airdropOwnershipRecipientsMustBeMembers": "Empfänger von Ownership-Token-Airdrops müssen Space-Mitglieder sein.",
+      "airdropOwnershipMembershipCheckFailed": "Die Mitgliedschaft der Ownership-Token-Empfänger konnte nicht geprüft werden. Bitte versuche es erneut.",
       "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
       "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
       "monthsToActivateRequired": "Bitte geben Sie die Anzahl der Monate für die Aktivierung ein.",
@@ -2130,8 +2135,8 @@
       "proposalMinimumVotingIconAlt": "Symbol für minimale Abstimmungsdauer",
       "autoExecution": "Automatische Ausführung",
       "toVote": "{duration} zum Abstimmen",
-      "quorumLabel": "Quorum",
-      "unityLabel": "Einheit",
+      "quorumLabel": "QUORUM",
+      "unityLabel": "EINHEIT",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Bild</accent> hochladen",
       "addAttachmentLabel": "Anhang hinzufügen (JPEG, PNG, WebP oder PDF — max. 16 MB)",
@@ -2393,7 +2398,8 @@
             "jpy": "Japanischer Yen",
             "nzd": "Neuseeländischer Dollar",
             "aud": "Australischer Dollar",
-            "hkd": "Hongkong-Dollar"
+            "hkd": "Hongkong-Dollar",
+            "xpf": "CFP-Franc"
           }
         },
         "decay": {
@@ -2516,7 +2522,8 @@
           "vaultLine": "Im Vault: {amount} {symbol}",
           "priceLine": "Preis: {currency}{price}",
           "requestedLine": "Angefordert: {currency}{amount}"
-        }
+        },
+        "redemptionAmountLabel": "Einlösungsbetrag"
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Umgewandelt in",
@@ -2857,7 +2864,8 @@
       "mutualCreditEligibleSpaces": "Berechtigte Spaces",
       "mutualCreditEligibleSpacesAdded": "Hinzugefügte berechtigte Spaces",
       "mutualCreditEligibleSpacesRemoved": "Entfernte berechtigte Spaces",
-      "spaceLogoAlt": "Logo von {title}"
+      "spaceLogoAlt": "Logo von {title}",
+      "attachments": "Anhänge"
     },
     "entryMethods": {
       "openAccess": "Open Access",
@@ -2957,7 +2965,14 @@
     "selectReferenceCurrency": "Bitte wählen Sie eine Referenzwährung",
     "tokenPriceGreaterThanZero": "Bitte geben Sie einen Token-Preis größer als 0 ein",
     "updateTokenLabel": "Token aktualisieren",
-    "spaceInformationMissing": "Space-Informationen fehlen. Bitte versuchen Sie es erneut."
+    "spaceInformationMissing": "Space-Informationen fehlen. Bitte versuchen Sie es erneut.",
+    "voteButton": {
+      "voteNow": "Jetzt abstimmen",
+      "youVotedYes": "Sie haben mit Ja gestimmt",
+      "youVotedNo": "Sie haben mit Nein gestimmt",
+      "noVote": "Keine Stimme",
+      "confirmDecision": "Entscheidung bestätigen"
+    }
   },
   "AiPanel": {
     "title": "Hypha AI",

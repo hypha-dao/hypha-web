@@ -111,9 +111,33 @@ Use these when a community token is denominated in a non-USD fiat currency. Pass
 | **Swiss Franc (CHF)** | CHF/USD | `0x3A1d6444fb6a402470098E23DaD0B7E86E14252F` | 0.5% | Low | Yes |
 | **Australian Dollar (AUD)** | AUD/USD | `0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229` | 0.5% | Low | Yes |
 | **New Zealand Dollar (NZD)** | NZD/USD | `0x06bdFe07E71C476157FC025d3cCD4BBe08e83EF9` | 0.5% | Low | Yes |
+| **CFP Franc (XPF)** | XPF/USD | `0x98f1459F80a70C1fB624b0da0BE7c92F173090fE` | inherits EUR/USD (0.1%) | Low | Yes — via Hypha adapter |
 | **Chinese Yuan (CNY)** | — | — | — | — | **No** |
 | **Japanese Yen (JPY)** | — | — | — | — | **No** |
 | **Hong Kong Dollar (HKD)** | — | — | — | — | **No** |
+
+#### XPF is a Hypha adapter, not a native Chainlink feed
+
+Chainlink does not publish an XPF/USD feed. The CFP franc has been pegged to the euro since 1999
+at the parity set by the Institut d'émission d'outre-mer — **1000 XPF = 8.38 EUR** (≈ 119.3317 XPF
+per EUR) — so [`XpfUsdOracle`](oracles/XpfUsdOracle.sol) derives the rate from the Chainlink
+EUR/USD feed:
+
+```
+XPF/USD = EUR/USD × 838 / 100000
+```
+
+It implements the full `AggregatorV3Interface` and forwards `roundId`, `startedAt`, `updatedAt` and
+`answeredInRound` unchanged from EUR/USD, so staleness checks behave exactly as they do against
+Chainlink directly. `decimals()` mirrors the EUR/USD feed (8). The peg and the underlying feed are
+immutable — if the CFP franc is ever repegged, deploy a new adapter and repoint `CURRENCY_FEEDS`.
+
+Use it exactly like any other currency feed:
+
+```typescript
+// Token worth 1000 XPF
+await token.setPriceWithCurrency(1000_000_000, XPF_USD_ORACLE);
+```
 
 ### Asset Price Feeds (for oracle-priced backing tokens in the vault)
 
@@ -637,7 +661,7 @@ No Solidity changes are required for these two dropdown behaviors.
 
 6. **Stale oracle prices revert.** If a Chainlink feed hasn't updated in 24 hours, redemptions using that backing token will fail.
 
-7. **`priceCurrencyFeed = address(0)` means USD.** Only set a feed address for non-USD currencies (EUR, GBP, CAD, CHF, AUD).
+7. **`priceCurrencyFeed = address(0)` means USD.** Only set a feed address for non-USD currencies (EUR, GBP, CAD, CHF, AUD, NZD, XPF).
 
 8. **Hypha backing tokens use `address(0)` as their price feed** in `addBackingToken`. Their price is read from `tokenPrice()` + `priceCurrencyFeed()` on the token contract, not from Chainlink.
 

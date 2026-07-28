@@ -7,6 +7,8 @@ import {
   useJwt,
   useMe,
   useCreateAirdropOrchestrator,
+  assertAirdropOwnershipRecipientsAreMembers,
+  AIRDROP_OWNERSHIP_RECIPIENT_NOT_MEMBER,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -112,6 +114,30 @@ export const CreateAirdropForm = ({
     if (!recipients || recipients.length === 0) {
       console.error('Airdrop recipients are missing');
       return;
+    }
+
+    // Ownership tokens only allow executor transfers/mints to on-chain members.
+    // Validate before starting the orchestrator so we never create a doomed
+    // Web2/Web3 proposal (hard gate also lives in useAirdropMutationsWeb3Rpc).
+    if (typeof web3SpaceId === 'number' && token) {
+      try {
+        await assertAirdropOwnershipRecipientsAreMembers({
+          spaceId: web3SpaceId,
+          tokenAddress: token,
+          recipients: recipients.map((row) => row.recipient),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const translationKey =
+          message === AIRDROP_OWNERSHIP_RECIPIENT_NOT_MEMBER
+            ? 'proposalErrors.airdropOwnershipRecipientsMustBeMembers'
+            : 'proposalErrors.airdropOwnershipMembershipCheckFailed';
+        form.setError('airdrop.recipients', {
+          type: 'manual',
+          message: tAgreementFlow(translationKey),
+        });
+        return;
+      }
     }
 
     // The token and method are chosen once; expand into one allocation per

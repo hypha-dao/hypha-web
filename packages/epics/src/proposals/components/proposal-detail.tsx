@@ -1237,7 +1237,10 @@ export const ProposalDetail = ({
         web3SpaceId={proposalDetails?.spaceId}
       />
       {descriptionMarkdown}
-      <AttachmentList attachments={attachments || []} />
+      <AttachmentList
+        attachments={attachments || []}
+        label={tProposalDetails('labels.attachments')}
+      />
       {label === 'Investment' ? (
         <ProposalAcceptInvestmentData
           descriptionMarkdown={content}

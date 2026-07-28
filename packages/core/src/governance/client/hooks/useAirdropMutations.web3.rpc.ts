@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
+import { assertAirdropOwnershipRecipientsAreMembers } from './assert-airdrop-ownership-recipients';
 
 export type AirdropMethod = 'transfer' | 'mint';
 
@@ -32,6 +33,12 @@ interface CreateAirdropInput {
   spaceId: number;
   airdrop: AirdropAllocation[];
 }
+
+export {
+  AIRDROP_OWNERSHIP_RECIPIENT_NOT_MEMBER,
+  AIRDROP_OWNERSHIP_MEMBERSHIP_CHECK_FAILED,
+  assertAirdropOwnershipRecipientsAreMembers,
+} from './assert-airdrop-ownership-recipients';
 
 const chainId = getGovernanceChainId();
 
@@ -62,6 +69,17 @@ export const useAirdropMutationsWeb3Rpc = ({
     async (_, { arg }: { arg: CreateAirdropInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
+      }
+
+      // Ownership tokens revert executor transfers/mints to non-members. Block
+      // proposal creation up front so Auto-Execution cannot fail at vote time.
+      const tokenAddress = arg.airdrop[0]?.token;
+      if (tokenAddress) {
+        await assertAirdropOwnershipRecipientsAreMembers({
+          spaceId: arg.spaceId,
+          tokenAddress,
+          recipients: arg.airdrop.map((allocation) => allocation.recipient),
+        });
       }
 
       // readContract can throw (RPC/contract errors); fall back to a safe

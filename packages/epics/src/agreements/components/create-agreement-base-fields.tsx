@@ -35,7 +35,7 @@ import {
   PostNotifyProposalCreatedInput,
 } from '@hypha-platform/core/client';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { formatDuration } from '@hypha-platform/ui-utils';
+import { getDurationParts } from '@hypha-platform/ui-utils';
 
 import { useTheme } from 'next-themes';
 import { Locale } from '@hypha-platform/i18n';
@@ -272,6 +272,13 @@ export function CreateAgreementBaseFields({
   const durationNumber =
     duration !== undefined && duration !== null ? Number(duration) : NaN;
   const hasVotingDuration = Number.isFinite(durationNumber);
+
+  const formatVotingDuration = (seconds: number) => {
+    const { unit, count } = getDurationParts(seconds);
+    return tCommon(unit === 'hours' ? 'durationHours' : 'durationDays', {
+      count,
+    });
+  };
 
   const quorumPct =
     spaceDetails?.quorum != null ? Number(spaceDetails.quorum) : NaN;
@@ -525,7 +532,7 @@ export function CreateAgreementBaseFields({
                             )}
                           </span>
                           {votingThresholdSummary ? (
-                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-nowrap tabular-nums">
+                            <span className="text-[10px] font-medium tracking-wider text-muted-foreground text-nowrap tabular-nums">
                               {votingThresholdSummary}
                             </span>
                           ) : null}
@@ -551,12 +558,12 @@ export function CreateAgreementBaseFields({
                             {tAgreementFlow(
                               'createAgreementBaseFields.toVote',
                               {
-                                duration: formatDuration(durationNumber),
+                                duration: formatVotingDuration(durationNumber),
                               },
                             )}
                           </span>
                           {votingThresholdSummary ? (
-                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-nowrap tabular-nums">
+                            <span className="text-[10px] font-medium tracking-wider text-muted-foreground text-nowrap tabular-nums">
                               {votingThresholdSummary}
                             </span>
                           ) : null}

@@ -9,6 +9,9 @@ import {
   enUS,
   es,
   fr,
+  mk,
+  nb,
+  nl,
   ptBR,
   type Locale as DateFnsLocale,
 } from 'date-fns/locale';
@@ -18,6 +21,9 @@ const DATE_FNS_LOCALES: Record<string, DateFnsLocale> = {
   de,
   fr,
   es,
+  mk,
+  nl,
+  no: nb,
   pt: ptBR,
   'pt-br': ptBR,
 };

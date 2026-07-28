@@ -6,6 +6,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { useSpaceMember } from '../../spaces';
 import { formatISO, isPast } from 'date-fns';
 
@@ -22,6 +23,7 @@ export const VoteProposalButton = ({
   proposalStatus?: DocumentStatus;
   className?: string;
 }) => {
+  const t = useTranslations('ProposalDetails.voteButton');
   const { myVote } = useMyVote(documentSlug);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: web3ProposalId,
@@ -43,7 +45,7 @@ export const VoteProposalButton = ({
     if (proposalStatus === 'onVoting' && needsDecision) {
       return (
         <Button className={className} variant="outline" colorVariant="accent">
-          Confirm Decision
+          {t('confirmDecision')}
         </Button>
       );
     }
@@ -58,7 +60,7 @@ export const VoteProposalButton = ({
             colorVariant="success"
             disabled={isSettled}
           >
-            You Voted Yes
+            {t('youVotedYes')}
           </Button>
         );
       case 'no':
@@ -69,7 +71,7 @@ export const VoteProposalButton = ({
             colorVariant="error"
             disabled={isSettled}
           >
-            You Voted No
+            {t('youVotedNo')}
           </Button>
         );
       default:
@@ -80,10 +82,18 @@ export const VoteProposalButton = ({
             colorVariant="accent"
             disabled={isSettled}
           >
-            {isSettled ? 'No Vote' : 'Vote Now'}
+            {isSettled ? t('noVote') : t('voteNow')}
           </Button>
         );
     }
-  }, [proposalStatus, myVote, proposalDetails, isMember, isDelegate]);
+  }, [
+    proposalStatus,
+    myVote,
+    proposalDetails,
+    isMember,
+    isDelegate,
+    t,
+    className,
+  ]);
   return output;
 };

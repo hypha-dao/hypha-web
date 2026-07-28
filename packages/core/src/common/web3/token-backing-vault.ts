@@ -10,7 +10,14 @@ export const ASSET_PRICE_FEED_BY_TOKEN: Record<string, `0x${string}`> = {
     '0x64c911996D3c6aC71f9b455B1E8E7266BcbD848F' as `0x${string}`,
 };
 
-/** Chainlink currency feeds for redemption price (X/USD, address(0) = USD) */
+/**
+ * Chainlink currency feeds for redemption price (X/USD, address(0) = USD).
+ *
+ * XPF is not published by Chainlink. It is served by XpfUsdOracle, a Hypha
+ * adapter that derives XPF/USD from the Chainlink EUR/USD feed using the fixed
+ * CFP franc peg (1000 XPF = 8.38 EUR). It exposes the same AggregatorV3
+ * interface, so consumers treat it like any other feed.
+ */
 export const CURRENCY_FEEDS = {
   USD: '0x0000000000000000000000000000000000000000' as const,
   EUR: '0xc91D87E81faB8f93699ECf7Ee9B44D11e1D53F0F' as const,
@@ -19,6 +26,7 @@ export const CURRENCY_FEEDS = {
   CHF: '0x3A1d6444fb6a402470098E23DaD0B7E86E14252F' as const,
   AUD: '0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229' as const,
   NZD: '0x06bdFe07E71C476157FC025d3cCD4BBe08e83EF9' as const,
+  XPF: '0x98f1459F80a70C1fB624b0da0BE7c92F173090fE' as const,
 } as const;
 
 export const CURRENCY_FEED_OPTIONS = [
@@ -29,6 +37,7 @@ export const CURRENCY_FEED_OPTIONS = [
   { value: CURRENCY_FEEDS.CHF, label: 'CHF' },
   { value: CURRENCY_FEEDS.AUD, label: 'AUD' },
   { value: CURRENCY_FEEDS.NZD, label: 'NZD' },
+  { value: CURRENCY_FEEDS.XPF, label: 'XPF' },
 ] as const;
 
 /** address(0) for Hypha tokens — price read from token contract */
@@ -43,7 +52,7 @@ export const MAX_REDEMPTION_PERIOD_OPTIONS = [
   { value: 90, label: '90 days' },
 ] as const;
 
-/** Map reference currency code to Chainlink feed (address(0) = USD). CNY, JPY, HKD fallback to USD. */
+/** Map reference currency code to its X/USD feed (address(0) = USD). CNY, JPY, HKD fallback to USD. */
 export function getPriceCurrencyFeed(currency?: string | null): `0x${string}` {
   if (!currency || currency === 'USD') return CURRENCY_FEEDS.USD;
   const feed = CURRENCY_FEEDS[currency as keyof typeof CURRENCY_FEEDS];

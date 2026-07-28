@@ -48,6 +48,10 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'proposalErrors.atLeastOneAirdropRecipient',
   'Too many recipients for one airdrop proposal.':
     'proposalErrors.tooManyAirdropRecipients',
+  'Ownership token airdrop recipients must be space members.':
+    'proposalErrors.airdropOwnershipRecipientsMustBeMembers',
+  'Could not verify ownership token recipient membership. Please try again.':
+    'proposalErrors.airdropOwnershipMembershipCheckFailed',
   'Please enter a purchase amount.': 'proposalErrors.purchaseAmountRequired',
   'Please select a space to activate.': 'proposalErrors.selectSpaceToActivate',
   'Please enter the number of months to activate.':

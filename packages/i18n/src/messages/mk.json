@@ -60,7 +60,10 @@
       "fileTooLarge": "Вашата слика е преголема (макс. 16 MB) и не можеше да се прикачи. Намалете ја и обидете се повторно.",
       "uploadFailed": "Датотеката не можеше да се прикачи."
     },
-    "Energy": "Енергија"
+    "Energy": "Енергија",
+    "Pipeline": "Пајплајн",
+    "durationHours": "{count, plural, one {# час} other {# часа}}",
+    "durationDays": "{count, plural, one {# ден} other {# дена}}"
   },
   "ModalAside": {
     "spaceSettings": "Поставки на просторот",
@@ -243,7 +246,6 @@
     "title": "Мој паричник",
     "allYourRewards": "Сите ваши награди,",
     "oneWallet": "Еден паричник",
-
     "loading": "Се вчитува...",
     "signInToViewWallet": "Најавете се за да го видите вашиот паричник.",
     "tabs": {
@@ -566,7 +568,8 @@
       "members": "Членови",
       "treasury": "Трезор",
       "extensionsPlugins": "Екстензии и приклучоци",
-      "ecosystemVerticals": "Вертикали на екосистемот"
+      "ecosystemVerticals": "Вертикали на екосистемот",
+      "energy": "Енергија"
     },
     "actions": {
       "spaceConfiguration": {
@@ -652,6 +655,30 @@
       "hyphaEnergy": {
         "title": "Hypha Energy",
         "description": "Наменска платформа за вашата заедница или хаб за обновлива енергија, која овозможува локално споделување енергија, заедничка сопственост на енергетски средства, управување и фер распределба на вредноста меѓу членовите."
+      },
+      "enableEnergyCommunity": {
+        "title": "Активирај енергетска заедница",
+        "description": "Поставете споделување енергија за овој простор за членовите заедно да произведуваат, трошат и порамнуваат енергија."
+      },
+      "energySharing": {
+        "title": "Политика за порамнување на енергија",
+        "description": "Определете ги условите за плаќање за порамнување на енергетските салда во оваа заедница."
+      },
+      "registerEnergySource": {
+        "title": "Регистрирај енергетски извор",
+        "description": "Додајте нов енергетски извор (соларен, батерија итн.) во заедницата."
+      },
+      "addEnergyMember": {
+        "title": "Додај енергетски член",
+        "description": "Додајте член и неговите паметни бројачи за енергетско сметководство."
+      },
+      "changeEnergyOptimization": {
+        "title": "Промени енергетска оптимизација",
+        "description": "Ажурирајте како заедницата ги приоритизира сопствената потрошувачка, CO₂ и цената — и приспособете ги социјалните донации."
+      },
+      "whitelistEnergySettlement": {
+        "title": "Whitelist на енергетско порамнување",
+        "description": "Дозволете паричник да поднесува податоци за енергетско порамнување за оваа заедница."
       }
     }
   },
@@ -1582,7 +1609,8 @@
       "title": "Префрли средства",
       "content": "Лесно испрати средства од твојот паричник до член или простор.",
       "form": {
-        "amountLabel": "Износ"
+        "amountLabel": "Износ",
+        "submitLabel": "Пренеси"
       }
     },
     "redeemTokens": {
@@ -1855,7 +1883,9 @@
     "escrowConfirmExchange": "Потврди размена",
     "escrowDepositDepositing": "Се депонира...",
     "escrowDepositApproving": "Се одобрува...",
-    "escrowDepositInsufficientWallet": "Салдото на твојот паричник е под потребниот износ."
+    "escrowDepositInsufficientWallet": "Салдото на твојот паричник е под потребниот износ.",
+    "pipelineEnabled": "Deal Pipeline",
+    "pipelineEnabledDescription": "Овозможете Kanban deal pipeline за овој простор. Исклучено по подразбирање."
   },
   "AgreementFlow": {
     "labels": {
@@ -1882,7 +1912,7 @@
       "investment": "Инвестиција",
       "exchange": "Размена",
       "enableEnergyCommunity": "Активирај енергетска заедница",
-      "energySharing": "Споделување енергија",
+      "energySharing": "Политика за порамнување на енергија",
       "registerEnergySource": "Регистрирај енергетски извор",
       "addEnergyMember": "Додај енергетски член",
       "changeEnergyOptimization": "Промени енергетска оптимизација",
@@ -1936,6 +1966,8 @@
       "atLeastOnePayoutRequired": "Потребна е барем една исплата",
       "atLeastOneAirdropRecipient": "Потребен е барем еден примач на ердропот",
       "tooManyAirdropRecipients": "Премногу примачи за еден предлог за ердроп.",
+      "airdropOwnershipRecipientsMustBeMembers": "Примачите на аирдроп со ownership токени мора да бидат членови на просторот.",
+      "airdropOwnershipMembershipCheckFailed": "Не можеше да се провери членството на примачите на ownership токенот. Обидете се повторно.",
       "purchaseAmountRequired": "Ве молиме внесете износ за купување.",
       "selectSpaceToActivate": "Ве молиме изберете простор за активирање.",
       "monthsToActivateRequired": "Ве молиме внесете број на месеци за активирање.",
@@ -2021,8 +2053,8 @@
       "proposalMinimumVotingIconAlt": "Икона за минимално гласање на предлогот",
       "autoExecution": "Автоматско извршување",
       "toVote": "{duration} за гласање",
-      "quorumLabel": "Кворум",
-      "unityLabel": "Единство",
+      "quorumLabel": "КВОРУМ",
+      "unityLabel": "ЕДИНСТВО",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Прикачете</accent> слика",
       "addAttachmentLabel": "Додај прилог (JPEG, PNG, WebP или PDF — макс. 16MB)",
@@ -2287,7 +2319,8 @@
             "jpy": "Јапонски јен",
             "nzd": "Новозеландски долар",
             "aud": "Австралиски долар",
-            "hkd": "Хонгконшки долар"
+            "hkd": "Хонгконшки долар",
+            "xpf": "Тихоокеански франк"
           }
         },
         "decay": {
@@ -2410,7 +2443,8 @@
           "vaultLine": "Во сефот: {amount} {symbol}",
           "priceLine": "Цена: {currency}{price}",
           "requestedLine": "Побарано: {currency}{amount}"
-        }
+        },
+        "redemptionAmountLabel": "Износ за откуп"
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Конвертирано во",
@@ -2751,7 +2785,8 @@
       "mutualCreditEligibleSpaces": "Квалификувани простори",
       "mutualCreditEligibleSpacesAdded": "Додадени квалификувани простори",
       "mutualCreditEligibleSpacesRemoved": "Отстранети квалификувани простори",
-      "spaceLogoAlt": "Лого на {title}"
+      "spaceLogoAlt": "Лого на {title}",
+      "attachments": "Прилози"
     },
     "entryMethods": {
       "openAccess": "Отворен пристап",
@@ -2851,7 +2886,14 @@
     "selectReferenceCurrency": "Те молиме избери референтна валута",
     "tokenPriceGreaterThanZero": "Те молиме внеси цена на токенот поголема од 0",
     "updateTokenLabel": "Ажурирај токен",
-    "spaceInformationMissing": "Недостасуваат информации за просторот. Те молиме обиди се повторно."
+    "spaceInformationMissing": "Недостасуваат информации за просторот. Те молиме обиди се повторно.",
+    "voteButton": {
+      "voteNow": "Гласај сега",
+      "youVotedYes": "Гласавте Да",
+      "youVotedNo": "Гласавте Не",
+      "noVote": "Без глас",
+      "confirmDecision": "Потврди одлука"
+    }
   },
   "AiPanel": {
     "title": "Hypha AI",
@@ -3247,6 +3289,8 @@
     "callVoiceProcessingStandard": "Говор",
     "callVoiceProcessingIsolation": "Изолација",
     "callVoiceProcessingMusic": "Музика",
+    "callVoiceProcessingNoiseSuppressionUnsupported": "Отстранувањето бучава не е поддржано на овој уред",
+    "callVoiceProcessingAutoGainUnsupported": "Автоматската контрола на засилување не е поддржана на овој уред",
     "callCameraOn": "Вклучи камера",
     "callCameraOff": "Исклучи камера",
     "callErrorPermission": "Започнувањето на повикот беше блокирано од дозволи (камера/микрофон или дозволи за повици во собата).",
@@ -4039,7 +4083,7 @@
     "shared": {
       "gridOperatorName": "Локален оператор на мрежата",
       "gridOperatorSubtitle": "Надворешен снабдувач со енергија",
-      "currentPerKwh": "Тековна / kWh",
+      "basePerKwh": "Основна / kWh",
       "active": "Активно",
       "inactive": "Неактивно",
       "source": "Извор",
@@ -4082,7 +4126,8 @@
         "metadataHash": "Хаш на метаподатоци",
         "metadataHashPlaceholder": "0x... или ipfs хаш",
         "deviceIds": "ID на уреди (одделени со запирка)",
-        "deviceIdsPlaceholder": "на пр. 201,202,203"
+        "deviceIdsPlaceholder": "на пр. 201,202,203",
+        "sectionDescription": "Изберете член на овој простор и колку паметни бројачи има. Инвеститорите без бројач можат да останат на нула."
       },
       "energySharing": {
         "settlementWindow": "Период на порамнување",
@@ -4103,18 +4148,19 @@
         "ownershipToken": "Адреса на токен за сопственост",
         "ownershipTokenPlaceholder": "0x...",
         "deviceIds": "ID на уреди (одделени со запирка)",
-        "deviceIdsPlaceholder": "на пр. 1001,1002,1003"
+        "deviceIdsPlaceholder": "на пр. 1001,1002,1003",
+        "sectionDescription": "Додајте објект за производство или складирање и распределете ја сопственоста меѓу членовите (уделите вкупно 100%)."
       },
       "whitelistSettlement": {
         "settlementAddress": "Адреса за порамнување",
-        "settlementAddressDescription": "Паричник што може да повика consumeEnergy на PPA на заедницата (на пр. вашиот backend бот).",
+        "settlementAddressDescription": "Паричник овластен да поднесува податоци за порамнување на енергија за оваа заедница (на пример backend бот).",
         "settlementAddressPlaceholder": "0x...",
         "whitelisted": "На whitelist",
         "whitelistedDescription": "Исклучете за да ја отстраните адресата од whitelist за порамнување."
       },
       "enableCommunity": {
         "membersTitle": "Членови",
-        "membersDescription": "Изберете членови на заедницата и колку паметни бројачи има секој. Инвеститорите без бројач можат да останат на нула.",
+        "membersDescription": "Изберете членови на овој простор и колку паметни бројачи има секој. Инвеститорите без бројач можат да останат на нула.",
         "numberOfMeters": "Број на бројачи",
         "meterPlaceholder": "0",
         "addMember": "Додај член",
@@ -4138,7 +4184,7 @@
         "tokenSymbolPlaceholder": "автоматски изведено",
         "advancedSettings": "Напредни поставки",
         "adminAddress": "Адреса на администратор (извршител на просторот)",
-        "adminHint": "Автоматски пополнето со извршителот на овој простор. DAO предлогот го извршува повикот кон фабриката од оваа адреса, па мора да ја поседува новата заедница за Hypha да ја открие.",
+        "adminHint": "Автоматски пополнето со извршителот на овој простор.",
         "stablecoinAddress": "Адреса на stablecoin",
         "stablecoinPlaceholder": "0x... (стандардно Base USDC)",
         "gridOperatorAddress": "Адреса на оператор на мрежата (опционално)",
@@ -4161,15 +4207,15 @@
     },
     "optimization": {
       "optimizeFor": "Оптимизирај ја заедницата за",
-      "optimizeDescription": "Изберете главна цел на заедницата. Системот за управување со енергија прво оптимизира за неа, а потоа автоматски ги балансира преостанатите цели.",
+      "optimizeDescription": "Изберете што е најважно. Системот прво ќе ја приоритизира таа цел, а потоа ќе ги балансира останатите.",
       "primaryObjective": "Главна цел",
       "selectObjective": "Изберете цел",
       "selfConsumption": "Максимална сопствена потрошувачка",
-      "selfConsumptionDescription": "Користете локално произведена енергија во заедницата пред каква било интеракција со мрежата.",
+      "selfConsumptionDescription": "Користете локално произведена енергија во заедницата пред да купувате од или продавате на мрежата.",
       "minCo2": "Минимални CO₂ емисии",
-      "minCo2Description": "Минимизирајте ја јаглеродната интензивност во животниот циклус на секоја потрошена единица.",
+      "minCo2Description": "Претпочитајте ја најчистата достапна енергија за да ги одржите емисиите на јаглерод што е можно пониски.",
       "lowestPrice": "Најниска цена",
-      "lowestPriceDescription": "Минимизирајте ги вкупните трошоци за енергија, активно искористувајќи ја динамиката на пазарните цени.",
+      "lowestPriceDescription": "Одржувајте ги трошоците за енергија што е можно пониски со користење на најевтините достапни опции.",
       "socialAllocation": "Социјална алокација",
       "socialAllocationDescription": "Резервирајте дел од соларното производство за паричници со цели на заедницата пред да започне оптимизацијата.",
       "allocationMode": "Режим на алокација",
@@ -4181,14 +4227,14 @@
       "kwhPerInterval": "kWh по 15-минутен интервал",
       "kwhPerIntervalPlaceholder": "на пр. 1000",
       "shareOfSolar": "Удел од соларното производство",
-      "goalWallets": "Паричници со цели",
-      "goalWalletsDescription": "Распределете ја социјалната алокација низ паричници со цели (уделите вкупно 100%).",
-      "addGoalWallet": "Додај паричник со цел",
       "share": "Удел",
       "socialDisabled": "Исклучено",
       "socialFixed": "Фиксно: {kwh} kWh по интервал",
       "socialVariable": "Променливо: {percent}% од соларно",
-      "metersPerMember": "{address} — {count, plural, one {# бројач} other {# бројачи}}"
+      "metersPerMember": "{address} — {count, plural, one {# бројач} other {# бројачи}}",
+      "targetWallets": "Паричници со цели",
+      "targetWalletsDescription": "Распределете ја социјалната алокација низ паричници со цели (уделите вкупно 100%).",
+      "addTargetWallet": "Додај паричник со цел"
     },
     "forms": {
       "spaceRequired": "Просторот е задолжителен за создавање предлог.",
@@ -4197,7 +4243,7 @@
       "stickyHeaders": {
         "addEnergyMember": "Создај предлог за додавање енергетски член",
         "enableEnergyCommunity": "Создај предлог за активирање енергетска заедница",
-        "energySharing": "Создај предлог за споделување енергија",
+        "energySharing": "Креирај политика за порамнување на енергија",
         "registerEnergySource": "Создај предлог за регистрација на енергетски извор",
         "changeEnergyOptimization": "Создај предлог за промена на енергетска оптимизација",
         "whitelistEnergySettlement": "Создај предлог за whitelist на енергетско порамнување"
@@ -4210,7 +4256,7 @@
       "optimization": "Оптимизација",
       "priorities": "Приоритети",
       "socialAllocation": "Социјална алокација",
-      "goalWallets": "Паричници со цели",
+      "targetWallets": "Паричници со цели",
       "energyToken": "Енергетски токен",
       "members": "Членови",
       "sources": "Извори",
@@ -4239,8 +4285,6 @@
       "distinctPriorities": "Секој приоритет мора да биде различна цел",
       "selectSocialMode": "Изберете режим на социјална алокација",
       "wholeKwhPerInterval": "Внесете цел број kWh по интервал",
-      "addGoalWallet": "Додајте барем еден паричник со цел",
-      "goalWalletsTotal100": "Уделите на паричниците со цели мора да изнесуваат 100%",
       "metadataHashRequired": "Хашот на метаподатоци е задолжителен",
       "deviceIdsRequired": "ID на уредите се задолжителни",
       "deviceIdsCommaNumbers": "ID на уредите мора да бидат броеви одделени со запирка",
@@ -4262,73 +4306,14 @@
       "addOwner": "Додајте барем еден сопственик",
       "ownershipTotal100": "Уделите во сопственост мора да изнесуваат 100%",
       "atLeastOneSource": "Потребен е барем еден извор",
-      "ownerMustBeMember": "Овој сопственик мора да биде додаден и како член (број на бројачи 0 е во ред), инаку нема да добива приход."
+      "ownerMustBeMember": "Овој сопственик мора да биде додаден и како член (број на бројачи 0 е во ред), инаку нема да добива приход.",
+      "addTargetWallet": "Додајте барем еден паричник со цел",
+      "targetWalletsTotal100": "Уделите на паричниците со цели мора да изнесуваат 100%"
     },
     "errors": {
       "allowanceTimeout": "Истече времето за чекање на одобрување за stablecoin.",
       "usdcNotConfigured": "USDC токенот за плаќање не е конфигуриран за оваа апликација.",
       "deviceIdsCommaNumbers": "ID на уредите мора да бидат броеви одделени со запирка"
-    }
-  },
-  "PlatformOverview": {
-    "title": "Hypha Platform Dashboard",
-    "updatedAt": "Ажурирано {date}",
-    "refresh": "Освежи",
-    "retry": "Обиди се повторно",
-    "unavailable": "Контролната табла е недостапна",
-    "errors": {
-      "secret_required": "Потребен е ops secret",
-      "not_configured": "API-то за контролна табла на платформата не е конфигурирано во оваа околина.",
-      "unauthorized": "Невалиден ops secret. Проверете ја вредноста и обидете се повторно.",
-      "load_failed": "Неуспешно вчитување на контролната табла"
-    },
-    "noData": "Сè уште нема податоци.",
-    "opsAccess": {
-      "title": "Пристап до метрики на платформата",
-      "description": "Внесете го Hypha ops secret за да ги видите метриките низ целата платформа. Secret-от останува во меморија само за оваа јазиче.",
-      "placeholder": "Ops secret",
-      "continue": "Продолжи"
-    },
-    "activity": {
-      "heading": "Активност на платформата",
-      "signals": "Сигнали",
-      "signalsHint": "{count} создадени во 7d",
-      "spaceMemory": "Ставки од Space Memory",
-      "spaceMemoryHint": "{count} простори со chat",
-      "signalsByType": "Сигнали по тип",
-      "signalsByPriority": "Сигнали по приоритет",
-      "topSpacesBySignals": "Најдобри простори по сигнали",
-      "orchestrator": "Оркестратор на сигнали",
-      "queuePending": "Ред на чекање",
-      "queueFailed": "Неуспешен ред",
-      "signalsEmitted24h": "Емитирани сигнали (24h)",
-      "relaysEmitted24h": "Емитирани relays (24h)",
-      "memoryBySpace": "Резимеа од Space Memory по простор",
-      "memoryTotals": "Вкупно Space Memory",
-      "summaries": "Резимеа",
-      "summaries24h": "{count} во 24h",
-      "transcripts": "Транскрипти",
-      "recordings": "Снимки",
-      "summaries7d": "Резимеа (7d)"
-    },
-    "distribution": {
-      "heading": "Распределба на платформата",
-      "hyphaPaidSpaces": "Простори платени со HYPHA",
-      "hyphaPaidSpacesHint": "{active} активни · {expired} истечени",
-      "totalHyphaBurned": "Вкупно HYPHA согорено",
-      "freeTrialOnly": "Само бесплатен пробен период",
-      "trackedSpaces": "Следени простори",
-      "paymentEvents": "{count} настани на плаќање (365d)",
-      "paymentEventsLabel": "Настани на плаќање (365d)",
-      "paymentsByMonth": "HYPHA activate-space плаќања по месец",
-      "breakdown": "Распределба на платени простори",
-      "activePaid": "Активно платено",
-      "expiredPaid": "Истечено платено"
-    },
-    "assets": {
-      "heading": "Активи на платформата",
-      "totalBalance": "Вкупен баланс на платформата",
-      "spacesTracked": "{count} следени простори"
     }
   },
   "Pipeline": {
@@ -4493,6 +4478,67 @@
       "saveFailed": "Не можеше да се зачуваат стапките на успех",
       "loading": "Се вчитуваат стапки на успех…",
       "resetDefaults": "Врати стандардни"
+    }
+  },
+  "PlatformOverview": {
+    "title": "Hypha Platform Dashboard",
+    "updatedAt": "Ажурирано {date}",
+    "refresh": "Освежи",
+    "retry": "Обиди се повторно",
+    "unavailable": "Контролната табла е недостапна",
+    "errors": {
+      "secret_required": "Потребен е ops secret",
+      "not_configured": "API-то за контролна табла на платформата не е конфигурирано во оваа околина.",
+      "unauthorized": "Невалиден ops secret. Проверете ја вредноста и обидете се повторно.",
+      "load_failed": "Неуспешно вчитување на контролната табла"
+    },
+    "noData": "Сè уште нема податоци.",
+    "opsAccess": {
+      "title": "Пристап до метрики на платформата",
+      "description": "Внесете го Hypha ops secret за да ги видите метриките низ целата платформа. Secret-от останува во меморија само за оваа јазиче.",
+      "placeholder": "Ops secret",
+      "continue": "Продолжи"
+    },
+    "activity": {
+      "heading": "Активност на платформата",
+      "signals": "Сигнали",
+      "signalsHint": "{count} создадени во 7d",
+      "spaceMemory": "Ставки од Space Memory",
+      "spaceMemoryHint": "{count} простори со chat",
+      "signalsByType": "Сигнали по тип",
+      "signalsByPriority": "Сигнали по приоритет",
+      "topSpacesBySignals": "Најдобри простори по сигнали",
+      "orchestrator": "Оркестратор на сигнали",
+      "queuePending": "Ред на чекање",
+      "queueFailed": "Неуспешен ред",
+      "signalsEmitted24h": "Емитирани сигнали (24h)",
+      "relaysEmitted24h": "Емитирани relays (24h)",
+      "memoryBySpace": "Резимеа од Space Memory по простор",
+      "memoryTotals": "Вкупно Space Memory",
+      "summaries": "Резимеа",
+      "summaries24h": "{count} во 24h",
+      "transcripts": "Транскрипти",
+      "recordings": "Снимки",
+      "summaries7d": "Резимеа (7d)"
+    },
+    "distribution": {
+      "heading": "Распределба на платформата",
+      "hyphaPaidSpaces": "Простори платени со HYPHA",
+      "hyphaPaidSpacesHint": "{active} активни · {expired} истечени",
+      "totalHyphaBurned": "Вкупно HYPHA согорено",
+      "freeTrialOnly": "Само бесплатен пробен период",
+      "trackedSpaces": "Следени простори",
+      "paymentEvents": "{count} настани на плаќање (365d)",
+      "paymentEventsLabel": "Настани на плаќање (365d)",
+      "paymentsByMonth": "HYPHA activate-space плаќања по месец",
+      "breakdown": "Распределба на платени простори",
+      "activePaid": "Активно платено",
+      "expiredPaid": "Истечено платено"
+    },
+    "assets": {
+      "heading": "Активи на платформата",
+      "totalBalance": "Вкупен баланс на платформата",
+      "spacesTracked": "{count} следени простори"
     }
   }
 }
