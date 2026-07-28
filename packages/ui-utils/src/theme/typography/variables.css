@@ -51,14 +51,13 @@
   --font-size-8xl: 96px;
   --font-size-9xl: 128px;
 
-  /* Organic type rhythm — body slightly open; titles slightly tight */
-  --letter-spacing-1: 0.01em;
-  --letter-spacing-2: 0.005em;
+  --letter-spacing-1: 0.025px;
+  --letter-spacing-2: 0em;
   --letter-spacing-3: 0em;
-  --letter-spacing-4: -0.01em;
-  --letter-spacing-5: -0.015em;
-  --letter-spacing-6: -0.02em;
-  --letter-spacing-7: -0.022em;
-  --letter-spacing-8: -0.025em;
-  --letter-spacing-9: -0.03em;
+  --letter-spacing-4: -0.025px;
+  --letter-spacing-5: -0.05px;
+  --letter-spacing-6: -0.0625px;
+  --letter-spacing-7: -0.075px;
+  --letter-spacing-8: -0.1px;
+  --letter-spacing-9: -0.25px;
 }
