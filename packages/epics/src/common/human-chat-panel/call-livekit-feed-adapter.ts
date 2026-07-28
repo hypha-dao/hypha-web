@@ -126,6 +126,15 @@ class LiveKitAdaptedCallFeed {
     return this.isLocalFeed;
   }
 
+  /**
+   * Underlying LiveKit `Track` for this feed's source, so callers can use LiveKit's own
+   * `track.attach()` instead of the manually-rebuilt `stream` — needed for remote screenshare
+   * tiles so `adaptiveStream` can see the rendered element size (#2425).
+   */
+  getLiveKitTrack(): Track | undefined {
+    return this.participant.getTrackPublication(this.trackSource)?.track;
+  }
+
   isVideoMuted(): boolean {
     if (this.trackSource === Track.Source.ScreenShare) {
       const pub = this.participant.getTrackPublication(
@@ -229,4 +238,13 @@ export function buildCallFeedsFromLiveKitRoom(room: Room | null): {
 /** LiveKit identity is the Matrix user id — no device suffix. */
 export function feedKeyForActive(feed: Pick<CallFeed, 'userId'>): string {
   return feed.userId?.trim() || '';
+}
+
+/**
+ * Every `CallFeed` handed to the call stage is actually a `LiveKitAdaptedCallFeed` (see
+ * `buildCallFeedsFromLiveKitRoom` — the only feed source). Narrow back to it so callers can
+ * reach the underlying LiveKit `Track` for `.attach()`.
+ */
+export function liveKitTrackFromCallFeed(feed: CallFeed): Track | undefined {
+  return (feed as unknown as LiveKitAdaptedCallFeed).getLiveKitTrack?.();
 }

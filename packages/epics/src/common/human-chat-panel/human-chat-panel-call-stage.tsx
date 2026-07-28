@@ -98,6 +98,7 @@ import { CallRaiseHandBadge } from './call-raise-hand-badge';
 import {
   buildCallFeedsFromLiveKitRoom,
   feedKeyForActive,
+  liveKitTrackFromCallFeed,
 } from './call-livekit-feed-adapter';
 import type { CallFloatingReaction } from './use-call-reactions';
 
@@ -2561,6 +2562,14 @@ const FeedContent = ({
   };
   const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed, feedVideoOptions);
   const hasVideo = liveVideoTrack !== null;
+  /**
+   * Remote screenshare tiles bind via LiveKit's own `track.attach()` instead of the
+   * manually-rebuilt `MediaStream`, so `adaptiveStream` can see the rendered tile size and pick
+   * simulcast layers accordingly (#2425). Camera tiles and local screenshare preview are
+   * unaffected — they keep the existing `srcObject` path.
+   */
+  const remoteShareLiveKitTrack =
+    isShare && !feed.isLocal() ? liveKitTrackFromCallFeed(feed) : undefined;
   const isAudioOnlyTile = !isShare && !hasVideo;
   const {
     text: resolvedName,
@@ -2617,8 +2626,12 @@ const FeedContent = ({
     const el = ref.current;
     if (!el || !liveVideoTrack) return;
 
-    const videoStream = createCallFeedVideoStream(liveVideoTrack);
-    el.srcObject = videoStream;
+    if (remoteShareLiveKitTrack) {
+      remoteShareLiveKitTrack.attach(el);
+    } else {
+      const videoStream = createCallFeedVideoStream(liveVideoTrack);
+      el.srcObject = videoStream;
+    }
     el.disablePictureInPicture = true;
 
     const markReady = () => {
@@ -2685,9 +2698,13 @@ const FeedContent = ({
       window.clearInterval(retryTimer);
       window.clearTimeout(giveUpTimer);
       resizeObserver?.disconnect();
-      el.srcObject = null;
+      if (remoteShareLiveKitTrack) {
+        remoteShareLiveKitTrack.detach(el);
+      } else {
+        el.srcObject = null;
+      }
     };
-  }, [liveVideoTrack?.id, streamBindVersion]);
+  }, [liveVideoTrack?.id, streamBindVersion, remoteShareLiveKitTrack]);
 
   const showVideoElement = hasVideo && !warmingVideoTrack;
   /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
@@ -2781,7 +2798,11 @@ const FeedContent = ({
       rerenderOnFeed();
       const el = ref.current;
       if (el && liveVideoTrack) {
-        el.srcObject = createCallFeedVideoStream(liveVideoTrack);
+        if (remoteShareLiveKitTrack) {
+          remoteShareLiveKitTrack.attach(el);
+        } else {
+          el.srcObject = createCallFeedVideoStream(liveVideoTrack);
+        }
         void el.play().catch(() => undefined);
       }
       const audioEl = audioRef.current;
@@ -2794,7 +2815,7 @@ const FeedContent = ({
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [liveVideoTrack?.id, mountRemoteAudio, stream]);
+  }, [liveVideoTrack?.id, mountRemoteAudio, stream, remoteShareLiveKitTrack]);
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const hasLiveAudioTrack =
