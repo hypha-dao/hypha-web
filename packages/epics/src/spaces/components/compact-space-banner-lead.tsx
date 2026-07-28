@@ -45,8 +45,8 @@ function shouldUseUnoptimizedRemoteImage(src: string): boolean {
  * Avoids the grey flash from CSS background-image decoding on first paint.
  * Optional scroll parallax on the photo layer (overlays stay fixed for readable text).
  *
- * Craft: calm the plate (desaturate / dim) and use a dark neutral scrim — no mint
- * skylight, accent wash, or soft-light neon amplification.
+ * Craft: soft plate grade + neutral scrim for readable type — no mint skylight,
+ * accent wash, or soft-light neon amplification.
  */
 export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
@@ -123,7 +123,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
         )}
         style={{
           backgroundImage:
-            'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.28) 100%)',
+            'linear-gradient(to top, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.28) 52%, rgba(0,0,0,0.14) 100%)',
         }}
         aria-hidden
       />
@@ -147,9 +147,9 @@ export function CompactSpaceBannerLead({ src }: Props) {
             quality={88}
             sizes="100vw"
             className={cn(
-              /* Calm neon lead plates: dim + desaturate so space hue stays, without eye-strain blast */
+              /* Soft plate grade — keep hue calm without crushing landscape light */
               'object-cover object-center transition-opacity duration-320 ease-out',
-              'brightness-[0.78] contrast-[0.96] saturate-[0.58]',
+              'brightness-[0.92] contrast-[0.98] saturate-[0.78]',
               imageFailed
                 ? 'pointer-events-none opacity-0'
                 : imageVisible
@@ -173,7 +173,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           />
         </div>
       </div>
-      {/* Shared calm scrim — readable white type without tinted neon overlays */}
+      {/* Shared calm scrim — readable white type; mid/top dialed back so the photo shows */}
       <div
         className="pointer-events-none absolute inset-0 transition-opacity duration-320 ease-out"
         style={{ opacity: loadedOverlayOpacity }}
@@ -183,7 +183,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           className="absolute inset-0"
           style={{
             backgroundImage:
-              'linear-gradient(to top, rgba(0,0,0,var(--banner-ov-v-bottom, 0.78)) 0%, rgba(0,0,0,var(--banner-ov-v-mid, 0.52)) var(--banner-ov-v-mid-at, 48%), rgba(0,0,0,var(--banner-ov-v-top, 0.38)) 100%)',
+              'linear-gradient(to top, rgba(0,0,0,var(--banner-ov-v-bottom, 0.7)) 0%, rgba(0,0,0,var(--banner-ov-v-mid, 0.4)) var(--banner-ov-v-mid-at, 52%), rgba(0,0,0,var(--banner-ov-v-top, 0.24)) 100%)',
           }}
           aria-hidden
         />
@@ -191,7 +191,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           className="absolute inset-0"
           style={{
             backgroundImage:
-              'linear-gradient(to right, rgba(0,0,0,var(--banner-ov-h-from, 0.42)), transparent 42%, rgba(0,0,0,var(--banner-ov-h-to, 0.28)))',
+              'linear-gradient(to right, rgba(0,0,0,var(--banner-ov-h-from, 0.34)), transparent 42%, rgba(0,0,0,var(--banner-ov-h-to, 0.2)))',
           }}
           aria-hidden
         />
@@ -199,7 +199,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           className="absolute inset-0"
           style={{
             backgroundImage:
-              'radial-gradient(ellipse 120% 90% at 50% 78%, transparent 28%, rgba(0,0,0,calc(0.45 * var(--banner-ov-vignette-strength, 1))) 100%)',
+              'radial-gradient(ellipse 120% 90% at 50% 78%, transparent 32%, rgba(0,0,0,calc(0.32 * var(--banner-ov-vignette-strength, 1))) 100%)',
           }}
           aria-hidden
         />
@@ -207,7 +207,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           className="absolute inset-0 rounded-[inherit]"
           style={{
             boxShadow:
-              'inset 0 1px 0 rgba(255,255,255,var(--banner-ov-inner-top, 0.04)), inset 0 -1px 0 rgba(0,0,0,var(--banner-ov-inner-bot, 0.22))',
+              'inset 0 1px 0 rgba(255,255,255,var(--banner-ov-inner-top, 0.05)), inset 0 -1px 0 rgba(0,0,0,var(--banner-ov-inner-bot, 0.16))',
           }}
           aria-hidden
         />

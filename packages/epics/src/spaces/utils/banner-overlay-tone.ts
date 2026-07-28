@@ -24,12 +24,12 @@ export type BannerToneMetrics = {
   edgeEnergy: number;
 };
 
-/** Neutral metrics → calm precision-tool baseline (darker scrim, less chroma) */
+/** Neutral metrics → calm baseline (readable scrim without crushing the plate) */
 export const BANNER_OVERLAY_FALLBACK_METRICS: BannerToneMetrics = {
-  luminanceMean: 0.38,
-  luminanceStd: 0.1,
-  saturationMean: 0.28,
-  edgeEnergy: 0.2,
+  luminanceMean: 0.4,
+  luminanceStd: 0.11,
+  saturationMean: 0.3,
+  edgeEnergy: 0.22,
 };
 
 /**
@@ -163,52 +163,56 @@ function overlayCssVarsFromToneRaw(m: BannerToneMetrics): BannerOverlayCssVars {
   } = m;
 
   /**
-   * brighter / more saturated image → stronger neutral scrim (eye-strain guard)
+   * brighter / more saturated image → slightly stronger neutral scrim
+   * (kept modest so landscape plates stay luminous)
    */
-  const brightNeed = clamp01((L - 0.32) / 0.55) * 0.85;
-  const satNeed = clamp01((S - 0.28) / 0.55) * 0.55;
+  const brightNeed = clamp01((L - 0.36) / 0.52) * 0.7;
+  const satNeed = clamp01((S - 0.3) / 0.55) * 0.4;
   /**
-   * very dark hero → ease the bottom crush slightly
+   * very dark hero → ease the bottom crush
    */
-  const darkEase = clamp01((0.2 - L) / 0.2) * 0.35;
+  const darkEase = clamp01((0.22 - L) / 0.22) * 0.4;
   /**
    * Busy plates need a touch more vignette, not glow
    */
   const busy = clamp01(0.5 * spread + 0.5 * E);
 
-  /** Vertical gradient — darker baseline so neon lead plates stay quiet */
+  /**
+   * Vertical gradient — restore pre-densify mid/top light so the photo reads;
+   * keep a firm bottom stop for footer meta.
+   */
   const vBottom = clamp01(
-    0.78 + brightNeed * 0.1 + satNeed * 0.06 - darkEase * 0.1,
+    0.7 + brightNeed * 0.08 + satNeed * 0.04 - darkEase * 0.1,
   );
   const vMid = clamp01(
-    0.52 + brightNeed * 0.08 + satNeed * 0.05 - darkEase * 0.06,
+    0.4 + brightNeed * 0.06 + satNeed * 0.04 - darkEase * 0.05,
   );
   const vTop = clamp01(
-    0.38 + brightNeed * 0.08 + satNeed * 0.04 - darkEase * 0.05,
+    0.24 + brightNeed * 0.05 + satNeed * 0.03 - darkEase * 0.04,
   );
 
   const hFrom = clamp01(
-    0.42 + brightNeed * 0.08 + satNeed * 0.04 - darkEase * 0.04,
+    0.34 + brightNeed * 0.06 + satNeed * 0.03 - darkEase * 0.04,
   );
-  const hTo = clamp01(0.28 + brightNeed * 0.06 + satNeed * 0.03);
+  const hTo = clamp01(0.2 + brightNeed * 0.05 + satNeed * 0.02);
 
   /** Decorative layers retired — keep vars at near-zero for any legacy consumers */
   const accentWash = 0.02;
   const skylightOpacity = 0.05;
   const sheenOpacity = 0.02;
   const vignetteStrength = clamp01(
-    0.85 + brightNeed * 0.08 + busy * 0.06 - darkEase * 0.06,
+    0.68 + brightNeed * 0.06 + busy * 0.05 - darkEase * 0.06,
   );
   const grainOpacity = 0.02;
 
-  const innerTop = clamp01(0.04 + brightNeed * 0.01);
-  const innerBot = clamp01(0.2 + brightNeed * 0.04);
+  const innerTop = clamp01(0.05 + brightNeed * 0.01);
+  const innerBot = clamp01(0.16 + brightNeed * 0.03);
 
   return {
     '--banner-ov-v-bottom': String(vBottom),
     '--banner-ov-v-mid': String(vMid),
     '--banner-ov-v-top': String(vTop),
-    '--banner-ov-v-mid-at': '48%',
+    '--banner-ov-v-mid-at': '52%',
     '--banner-ov-h-from': String(hFrom),
     '--banner-ov-h-to': String(hTo),
     '--banner-ov-accent-wash': String(accentWash),
