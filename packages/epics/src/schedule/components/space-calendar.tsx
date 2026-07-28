@@ -531,16 +531,16 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
   return (
     <div className="flex flex-col gap-3">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-6 font-medium tracking-tight text-foreground">
+        <div className="craft-page-header">
+          <h1 className="craft-page-title text-6 font-medium">
             {t('title')}
             {typeof itemCount === 'number' ? (
-              <span className="ml-2 text-3 font-normal text-muted-foreground">
-                {intlFormat.number(itemCount)}
+              <span className="ml-2 text-4 font-normal text-muted-foreground">
+                | {intlFormat.number(itemCount)}
               </span>
             ) : isLoading ? (
-              <span className="ml-2 text-3 font-normal text-muted-foreground">
-                …
+              <span className="ml-2 text-4 font-normal text-muted-foreground">
+                | …
               </span>
             ) : null}
           </h1>
