@@ -179,7 +179,13 @@ function ProcedureRow({
               {getProcedureLinkHint(kind, procedure, tAdvanced, ownerContext)}
             </p>
           ) : (
-            <Button colorVariant="accent" size="sm" className="w-fit" asChild>
+            <Button
+              variant="outline"
+              colorVariant="accent"
+              size="sm"
+              className="w-fit"
+              asChild
+            >
               <Link
                 href={procedure.action?.url ?? procedure.link ?? '#'}
                 target="_blank"
@@ -300,8 +306,10 @@ function EndorsementValidationsList({
                   >
                     <Button
                       type="button"
+                      variant="outline"
                       colorVariant="accent"
-                      className="h-auto min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight"
+                      size="sm"
+                      className="shrink-0"
                       disabled
                     >
                       {tOpenAccount('requestRail')}
@@ -310,8 +318,10 @@ function EndorsementValidationsList({
                 ) : (
                   <Button
                     type="button"
+                    variant="outline"
                     colorVariant="accent"
-                    className="h-auto min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight"
+                    size="sm"
+                    className="shrink-0"
                     disabled={isVerifying}
                     onClick={() => void handleVerify(entry.endorsement)}
                   >
@@ -321,8 +331,10 @@ function EndorsementValidationsList({
               ) : entry.validation?.action?.url &&
                 !entry.validation.linkDisabled ? (
                 <Button
+                  variant="outline"
                   colorVariant="accent"
-                  className="h-auto min-h-0 shrink-0 px-2 py-0.5 text-1 leading-tight"
+                  size="sm"
+                  className="shrink-0"
                   asChild
                 >
                   <Link
