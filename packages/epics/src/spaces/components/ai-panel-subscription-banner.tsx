@@ -53,7 +53,7 @@ export function AiPanelSubscriptionBanner({
   return (
     <div
       className={cn(
-        'border-1 rounded-[8px] bg-center border-accent-6 bg-[color-mix(in_oklab,var(--color-accent-surface)_90%,var(--color-accent-9)_10%)]',
+        'border-1 rounded-[8px] bg-center border-accent-6 bg-accent-surface-mix',
         className,
       )}
     >
@@ -64,7 +64,12 @@ export function AiPanelSubscriptionBanner({
         <span className="text-2 text-foreground">
           {tAi('assistantExpiredSubtitle', { expiredElapsed })}
         </span>
-        <Button onClick={handleExpiredAction} className="w-fit">
+        <Button
+          onClick={handleExpiredAction}
+          variant="outline"
+          colorVariant="accent"
+          className="space-accent-outline w-fit"
+        >
           {tSpaces('reactivateNow')}
         </Button>
       </div>

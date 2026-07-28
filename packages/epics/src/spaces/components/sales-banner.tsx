@@ -93,7 +93,9 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
         >
           <Button
             disabled={isDisabled}
-            className="w-full lg:w-fit text-wrap justify-center"
+            variant="outline"
+            colorVariant="accent"
+            className="space-accent-outline w-full lg:w-fit text-wrap justify-center"
           >
             {actionText}
           </Button>
