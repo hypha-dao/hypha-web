@@ -104,10 +104,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   return (
     <Card
       className={cn(
-        'group flex w-full flex-col gap-3 p-3.5',
-        'rounded-lg border-border/70 bg-background-2 shadow-none',
-        'transition-[border-color,background-color] duration-200 ease-out',
-        'hover:border-border hover:bg-muted/15',
+        'craft-card-interactive group flex w-full flex-col gap-3 p-3.5',
         isSolo ? 'h-auto' : 'h-full min-h-[10.5rem]',
       )}
     >

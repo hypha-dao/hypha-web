@@ -31,10 +31,26 @@
     @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
   }
 
+  /*
+   * Interactive grids: quiet at rest; gain space/theme accent on hover.
+   * Avoid muted hover that washes out any accent tint (feels inverted).
+   */
   .craft-card-interactive {
     @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
     @apply transition-[border-color,background-color] duration-200 ease-out;
-    @apply hover:border-border hover:bg-muted/15;
+  }
+
+  .craft-card-interactive:hover {
+    border-color: color-mix(
+      in oklab,
+      var(--space-accent, var(--color-accent-9, var(--border))) 28%,
+      var(--border)
+    );
+    background: color-mix(
+      in oklab,
+      var(--background-2, var(--card)) 90%,
+      var(--space-accent, var(--color-accent-9, var(--muted))) 10%
+    );
   }
 
   /*
