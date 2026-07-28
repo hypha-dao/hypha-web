@@ -2,6 +2,19 @@
 
 This folder contains Solidity (EVM) implementations of the Seeds/Rainbows token ecosystem, originally written in C++ for EOSIO/Antelope blockchains.
 
+> **Reference code — not deployed.** None of these contracts have deployment addresses in
+> `contracts/addresses.txt`, deploy scripts, or tests, and they are excluded from `wagmi.config.ts`,
+> so they generate no bindings in `packages/core/src/generated.ts`.
+
+## Further documentation on OSwaps
+
+- **[`OSwaps.docs.md`](./OSwaps.docs.md)** — complete contract reference: full external surface,
+  role model, bootstrap sequence, pricing math with a bit-exact TypeScript port for off-chain
+  quoting, revert catalogue, and known defects. Written for implementing a UI against the contract.
+- **[`OSwaps.EOSIO-PARITY.md`](./OSwaps.EOSIO-PARITY.md)** — how faithfully the Solidity port
+  reproduces the original Antelope/EOSIO protocol, action by action, including where it diverges and
+  why.
+
 ## Contracts
 
 ### 1. OSwaps.sol
@@ -198,27 +211,30 @@ token.retire(amount, true);
 
 ## Testing
 
-Recommended test scenarios:
+**No tests exist for any contract in this folder.** The following are recommended scenarios still to
+be written, not a record of coverage. Note in particular that the accuracy of the Balancer formula
+has never been exercised on-chain — see [`OSwaps.EOSIO-PARITY.md`](./OSwaps.EOSIO-PARITY.md) §6 for
+measured error bounds.
 
 ### OSwaps
 
-- ✓ Create assets and add liquidity
-- ✓ Single-sided liquidity additions
-- ✓ Swaps with exact input/output
-- ✓ Weight adjustments
-- ✓ Freeze/unfreeze functionality
-- ✓ Mathematical accuracy of Balancer formula
+- Create assets and add liquidity
+- Single-sided liquidity additions
+- Swaps with exact input/output
+- Weight adjustments
+- Freeze/unfreeze functionality
+- Mathematical accuracy of Balancer formula
 
 ### RainbowToken
 
-- ✓ Token creation and approval
-- ✓ Backing operations (add/remove)
-- ✓ Issue and retire with backing
-- ✓ Credit limits (negative balances)
-- ✓ Positive limits
-- ✓ Membership restrictions
-- ✓ Demurrage calculations
-- ✓ Valuation tracking
+- Token creation and approval
+- Backing operations (add/remove)
+- Issue and retire with backing
+- Credit limits (negative balances)
+- Positive limits
+- Membership restrictions
+- Demurrage calculations
+- Valuation tracking
 
 ## Original Contracts
 
