@@ -5,16 +5,16 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color,border-color,--tw-ring-color,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]',
+  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color,--tw-ring-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         default: '',
         outline:
           /* ring-2 reserved so hover highlight does not shift layout */
-          'border bg-transparent shadow-none ring-2 ring-transparent hover:border-border',
+          'border bg-transparent shadow-sm ring-2 ring-transparent hover:shadow-md active:shadow-sm',
         link: 'underline-offset-4 hover:underline bg-transparent font-medium',
-        ghost: 'bg-transparent font-medium hover:opacity-90',
+        ghost: 'bg-transparent font-medium',
       },
       size: {
         /** Standard actions — matches modal/footer CTAs (touch-friendly min height). */
@@ -42,7 +42,7 @@ const buttonVariants = cva(
         variant: 'default',
         colorVariant: 'accent',
         className:
-          'bg-accent-9 text-accent-contrast shadow-none hover:bg-accent-10 hover:brightness-[1.03]',
+          'bg-accent-9 text-accent-contrast shadow-sm hover:bg-accent-10 hover:shadow-md active:scale-[0.99] active:shadow-sm dark:shadow-black/25',
       },
       {
         variant: 'default',
@@ -64,7 +64,7 @@ const buttonVariants = cva(
         colorVariant: 'accent',
         className:
           /* Outline hover: emphasize border + ring — no solid fill (matches status chips) */
-          'border-accent-8 text-accent-11 hover:border-accent-10 hover:text-foreground hover:ring-accent-10/75',
+          'border-accent-8 text-accent-11 hover:border-accent-10 hover:text-foreground hover:ring-accent-10/75 active:scale-[0.99]',
       },
       {
         variant: 'outline',
