@@ -439,6 +439,10 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
     if (accent) {
       info.el.style.setProperty('--hypha-cal-accent', accent);
     }
+    // Let CSS own surface + text colors (FC defaults text to #fff).
+    info.el.style.backgroundColor = '';
+    info.el.style.borderColor = '';
+    info.el.style.color = '';
   }, []);
 
   const persistAfterMutation = async () => {

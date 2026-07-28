@@ -18,7 +18,7 @@ const headingVariants = cva('m-0 [font-family:var(--font-family-heading)]', {
     weight: {
       regular: 'font-normal',
       medium: 'font-medium',
-      bold: 'font-bold',
+      bold: 'font-semibold',
     },
     align: {
       left: 'text-left',
