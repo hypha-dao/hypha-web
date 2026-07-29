@@ -1116,10 +1116,10 @@ function splitPlainTextMatrixMentions(
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'mention-pill inline-block max-w-full align-baseline rounded px-1 py-0 text-[13px] font-medium leading-[inherit] whitespace-nowrap',
+    'mention-pill inline-block max-w-full align-baseline rounded px-1 py-0 text-[12px] font-medium leading-[inherit] whitespace-nowrap',
     onViewerMentionTintRow
-      ? 'border border-accent-9/50 bg-background/95 text-foreground shadow-sm dark:border-accent-10/55 dark:bg-background/90'
-      : 'border border-border/70 bg-muted/95 text-foreground shadow-sm dark:border-border/65 dark:bg-muted/90',
+      ? 'border border-accent-9/50 bg-background/95 text-foreground shadow-none dark:border-accent-10/55 dark:bg-background/90'
+      : 'border border-border/60 bg-muted/90 text-foreground shadow-none dark:border-border/55 dark:bg-muted/85',
   );
 }
 
@@ -1227,7 +1227,7 @@ const chatBodyLinkClass =
 
 /** Discord-style compact chip for Hypha chat deep links (short `?msg=` URLs). */
 const chatDeepLinkPillClass =
-  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-accent-3 px-2 py-0.5 text-[13px] font-semibold leading-snug text-accent-12 ring-1 ring-inset ring-accent-8/40 dark:bg-accent-3/50 dark:text-accent-12 dark:ring-accent-8/25';
+  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-accent-3 px-1.5 py-0.5 text-xs font-semibold leading-snug text-accent-12 ring-1 ring-inset ring-accent-8/40 dark:bg-accent-3/50 dark:text-accent-12 dark:ring-accent-8/25';
 
 function shortMatrixEventLabel(id: string): string {
   const t = id.trim();
@@ -1743,8 +1743,9 @@ export function HumanChatPanelMessageBubble({
     Boolean(message.media) ||
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
   const textBodyClassName = cn(
-    'text-sm leading-snug text-foreground',
-    hasInlineMedia ? 'mt-1' : 'mt-0',
+    /* Mentions inbox density: text-xs + snug leading (readable, not airy) */
+    'text-xs leading-snug text-foreground/90',
+    hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );
 
@@ -1774,7 +1775,7 @@ export function HumanChatPanelMessageBubble({
       data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex flex-col overflow-visible rounded-sm px-3 py-0.5 transition-colors',
+        'group relative -mx-3 flex flex-col overflow-visible rounded-sm px-3 py-px transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
         highlightMentionForViewer &&
@@ -1796,7 +1797,7 @@ export function HumanChatPanelMessageBubble({
       {replyTo && (
         <div
           data-testid="chat-message-reply-context"
-          className="relative z-[1] mb-1 flex min-h-[22px] items-center gap-1.5 pl-[52px]"
+          className="relative z-[1] mb-0.5 flex min-h-[20px] items-center gap-1.5 pl-12"
         >
           <div ref={replyAvatarMeasureRef} className="shrink-0">
             <PersonAvatar
@@ -1824,10 +1825,10 @@ export function HumanChatPanelMessageBubble({
         </div>
       )}
 
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2">
         {/* Main avatar: first row in this column is sender name — aligns with "You" */}
         <div
-          className="relative z-[1] flex w-10 shrink-0 flex-col items-center pt-0.5"
+          className="relative z-[1] flex w-10 shrink-0 flex-col items-center pt-px"
           data-testid="chat-message-avatar"
         >
           <div ref={mainAvatarMeasureRef} className="relative">
@@ -1841,22 +1842,24 @@ export function HumanChatPanelMessageBubble({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="relative z-[1] flex min-w-0 flex-1 flex-col">
-          {/* Name + Timestamp */}
-          <div className="flex items-baseline gap-2">
+        {/* Content — Mentions-dense stack (gap-1 header→body) */}
+        <div className="relative z-[1] flex min-w-0 flex-1 flex-col gap-0.5">
+          {/* Name + Timestamp — Mentions inbox type scale (time stays after name for hover bar) */}
+          <div className="flex min-w-0 items-baseline gap-1.5">
             <Skeleton
-              className="inline-block rounded"
+              className="inline-block min-w-0 rounded"
               loading={senderProfileLoading}
               width={120}
               height={14}
             >
-              <span className="font-semibold text-sm text-foreground">
+              <span className="truncate text-xs font-semibold text-foreground">
                 {senderName}
               </span>
             </Skeleton>
             {timestamp && (
-              <span className="text-xs text-muted-foreground">{timestamp}</span>
+              <span className="shrink-0 text-[11px] tabular-nums text-foreground/60">
+                {timestamp}
+              </span>
             )}
           </div>
 
@@ -1948,7 +1951,7 @@ export function HumanChatPanelMessageBubble({
                   jumboLayout.sizeClass,
                   message.media ||
                     (message.mediaSlots && message.mediaSlots.length > 0)
-                    ? 'mt-1'
+                    ? 'mt-0.5'
                     : 'mt-0',
                 )}
                 aria-label={textContent.trim()}
@@ -1975,7 +1978,7 @@ export function HumanChatPanelMessageBubble({
           {textContent && textCanExpand && jumboLayout.mode !== 'jumbo' ? (
             <button
               type="button"
-              className="mt-1 w-fit text-xs font-medium text-accent-11 underline-offset-4 hover:underline"
+              className="mt-0.5 w-fit text-[11px] font-medium text-accent-11 underline-offset-2 hover:underline"
               onClick={() => setTextExpanded((v) => !v)}
             >
               {textExpanded ? t('messageShowLess') : t('messageReadMore')}
@@ -1984,7 +1987,7 @@ export function HumanChatPanelMessageBubble({
 
           {message.mediaSlots && message.mediaSlots.length > 1 && (
             <div
-              className="mt-1 max-w-md space-y-2"
+              className="mt-0.5 max-w-md space-y-1.5"
               data-testid="chat-message-media-bundle"
             >
               {(() => {
@@ -2054,7 +2057,7 @@ export function HumanChatPanelMessageBubble({
             message.media &&
             message.media.msgtype === 'm.image' && (
               <div
-                className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
+                className="relative mt-0.5 max-w-md overflow-hidden rounded-lg border border-border/60 bg-muted/30"
                 data-testid="chat-message-media-image"
                 style={
                   message.media.mediaInfo?.w &&
@@ -2147,7 +2150,7 @@ export function HumanChatPanelMessageBubble({
             !isChatPanelVideoFile(message.media) &&
             !isChatPanelAudioFile(message.media) && (
               <div
-                className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
+                className="mt-0.5 max-w-md rounded-lg border border-border/60 bg-card px-2.5 py-1.5"
                 data-testid="chat-message-media-file"
               >
                 <div className="flex items-start gap-3">
@@ -2215,18 +2218,18 @@ export function HumanChatPanelMessageBubble({
 
           {/* Streaming indicator */}
           {isStreaming && (
-            <span className="mt-1 inline-flex items-center gap-0.5">
+            <span className="mt-0.5 inline-flex items-center gap-0.5">
               <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
               <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
               <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
             </span>
           )}
 
-          {/* Reactions — Discord-style pills; inline add-reaction only when ≥1 reaction exists */}
+          {/* Reactions — craft hairline chips; inline add-reaction only when ≥1 reaction exists */}
           {visibleReactions.length > 0 && (
             <div
               data-testid="chat-message-reactions"
-              className="mt-1 flex flex-wrap items-center gap-0.5"
+              className="mt-0.5 flex flex-wrap items-center gap-0.5"
             >
               {visibleReactions.map((reaction) => {
                 const tooltip =
@@ -2243,23 +2246,23 @@ export function HumanChatPanelMessageBubble({
                       }
                     }}
                     className={cn(
-                      /* Discord: rounded rectangle frame, not a full pill */
-                      'inline-flex h-5 min-w-0 shrink-0 items-center gap-0.5 rounded-md border px-1.5 text-xs tabular-nums leading-none transition-colors',
+                      /* Quiet Mentions-adjacent chips: hairline border, compact height */
+                      'inline-flex h-[18px] min-w-0 shrink-0 items-center gap-0.5 rounded-md border px-1 text-[11px] tabular-nums leading-none transition-colors',
                       reaction.includesCurrentUser
-                        ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
-                        : 'border-border bg-muted/80 hover:bg-muted',
+                        ? 'border-accent-9/40 bg-accent-9/10 hover:bg-accent-9/15 dark:border-accent-10/35 dark:bg-accent-9/14'
+                        : 'border-border/50 bg-transparent hover:bg-muted/40',
                       canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
                     )}
                   >
-                    <span className="text-[13px] leading-none" aria-hidden>
+                    <span className="text-xs leading-none" aria-hidden>
                       {reaction.emoji}
                     </span>
                     <span
                       className={cn(
                         'text-[10px] font-medium leading-none',
                         reaction.includesCurrentUser
-                          ? 'text-[#5865f2] dark:text-[#949cf7]'
-                          : 'text-muted-foreground',
+                          ? 'text-accent-11'
+                          : 'text-foreground/60',
                       )}
                     >
                       {reaction.count}
@@ -2301,13 +2304,13 @@ export function HumanChatPanelMessageBubble({
                   <button
                     type="button"
                     className={cn(
-                      'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border',
-                      'bg-muted/80 text-muted-foreground transition-colors hover:bg-muted',
+                      'inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border border-border/50',
+                      'bg-transparent text-foreground/60 transition-colors hover:bg-muted/40 hover:text-foreground',
                     )}
                     aria-label={t('addReactionButton')}
                     aria-expanded={inlineReactPickerOpen}
                   >
-                    <SmilePlus className="h-3 w-3" strokeWidth={2} />
+                    <SmilePlus className="h-2.5 w-2.5" strokeWidth={2} />
                   </button>
                 </HumanChatPanelEmojiPicker>
               )}
@@ -2320,7 +2323,7 @@ export function HumanChatPanelMessageBubble({
       <div
         className={cn(
           'absolute right-3 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
-          replyTo ? 'top-[calc(1.375rem+0.25rem)]' : 'top-0',
+          replyTo ? 'top-[calc(1.25rem+0.125rem)]' : 'top-0',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
