@@ -14,7 +14,10 @@ import { parseBearerToken } from '@web/utils/parse-bearer-token';
 
 type Params = { spaceSlug: string };
 
-async function canEditHighlights(spaceSlug: string, authToken: string | null) {
+async function canEditHighlights(
+  spaceSlug: string,
+  authToken: string | null | undefined,
+) {
   if (!authToken) return false;
   const result = await authorizeSpacePanelInteraction({
     spaceSlug,

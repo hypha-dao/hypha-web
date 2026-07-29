@@ -41,6 +41,9 @@ export const upsertHighlightProfile = async (
     })
     .returning();
 
+  if (!row) {
+    throw new Error('Failed to upsert highlights profile');
+  }
   return row;
 };
 
@@ -84,6 +87,13 @@ export const setHighlightProfilePublished = async (
     })
     .where(eq(spaceHighlightProfiles.spaceId, spaceId))
     .returning();
+
+  if (!row) {
+    return {
+      ok: false as const,
+      errors: ['Failed to update publish state.'],
+    };
+  }
 
   return { ok: true as const, profile: row };
 };
