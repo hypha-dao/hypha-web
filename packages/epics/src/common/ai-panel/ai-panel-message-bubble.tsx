@@ -878,7 +878,7 @@ export function AiPanelMessageBubble({
             // speaker. inline-flex + w-fit keeps the fill hugging copy.
             'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-xl px-2.5 py-1.5 text-sm leading-snug',
             isUser
-              ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_40%,transparent)] bg-[color:var(--space-accent,var(--color-accent-9))] text-[color:var(--space-accent-contrast,var(--color-accent-contrast))]'
+              ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_10%,transparent)] text-foreground'
               : 'rounded-tl-none border border-border/70 bg-muted/45 text-foreground',
           )}
         >
