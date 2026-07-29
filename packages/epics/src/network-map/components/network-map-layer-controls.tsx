@@ -19,6 +19,7 @@ import {
 } from '../lib/types';
 import {
   segmentedButtonClass,
+  segmentedLayerGroupClass,
   segmentedListClass,
   segmentedTriggerClass,
 } from '../lib/segmented-control-styles';
@@ -86,11 +87,11 @@ export function NetworkMapLayerControls({
 
       <Separator
         orientation="vertical"
-        className="mx-0.5 hidden h-6 shrink-0 self-center bg-border sm:block"
+        className="mx-0.5 hidden h-4 w-px shrink-0 self-center bg-border/70 sm:block"
       />
 
       <div
-        className="flex w-fit max-w-full min-w-0 items-center gap-1 rounded-lg bg-neutral-3 p-0.5"
+        className={segmentedLayerGroupClass}
         role="group"
         aria-label={t('layersLabel')}
       >
