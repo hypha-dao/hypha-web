@@ -148,29 +148,42 @@ type DistributionHistoryResponse = {
 type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
-/** Stepped space-accent scale — distinct slices without rainbow mixes. */
+/**
+ * Holder donut ramp: space-accent base with readable luminance steps.
+ * Soft white tints up top; floor at solid neutral-9 (no black / charcoal
+ * mixes that vanish on dark surfaces). A light info wash adds quiet
+ * differentiation without a rainbow.
+ */
 const COLOR_RANGE = [
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 55%, white 45%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, white 28%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 36%, white 64%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 50%, white 50%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 66%, white 34%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 82%, white 18%)',
   'var(--space-accent, var(--accent-9))',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 82%, black 18%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 68%, black 32%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 54%, black 46%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 42%, var(--neutral-9) 58%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 28%, var(--neutral-8) 72%)',
-  'var(--neutral-8)',
-  'var(--neutral-7)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 78%, var(--info-9) 22%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 52%, var(--info-9) 48%)',
+  'color-mix(in oklab, var(--info-9) 62%, var(--neutral-9) 38%)',
+  'color-mix(in oklab, var(--neutral-9) 72%, var(--space-accent, var(--accent-9)) 28%)',
+  'var(--neutral-9)',
 ];
+/** Proposals: semantic status hues, muted — not three close accent shades. */
 const PROPOSALS_COLOR_RANGE = [
+  // on voting — space accent (active)
   'var(--space-accent, var(--accent-9))',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 48%, white 52%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 45%, var(--neutral-9) 55%)',
+  // accepted — muted success
+  'color-mix(in oklab, var(--success-9) 68%, var(--neutral-9) 32%)',
+  // refused — muted error
+  'color-mix(in oklab, var(--error-9) 58%, var(--neutral-9) 42%)',
 ];
 const MEMBERS_COLOR_RANGE = {
   people: 'var(--space-accent, var(--accent-9))',
   spaces:
-    'color-mix(in oklab, var(--space-accent, var(--accent-9)) 38%, var(--neutral-11) 62%)',
+    'color-mix(in oklab, var(--neutral-9) 70%, var(--space-accent, var(--accent-9)) 30%)',
 };
+/** Soft segment gaps — card bg stroke, thin enough to avoid harsh black cuts. */
+const DONUT_SEGMENT_STROKE = 'var(--color-background-2, var(--background))';
+const DONUT_SEGMENT_STROKE_WIDTH = 0.75;
+const DONUT_PAD_ANGLE = 0.012;
 const CHART_CARD_CLASS =
   'min-w-0 overflow-hidden rounded-lg border border-border/70 bg-background-2 shadow-none';
 
@@ -354,7 +367,7 @@ function TokenDonutChart({
     () =>
       d3
         .pie<ChartSlice>()
-        .padAngle(0.018)
+        .padAngle(DONUT_PAD_ANGLE)
         .sort(null)
         .value((item: ChartSlice) => item.numeric)(chartData),
     [chartData],
@@ -369,7 +382,8 @@ function TokenDonutChart({
         .arc<d3.PieArcDatum<ChartSlice>>()
         .innerRadius(innerRadius)
         .outerRadius(outerRadius)
-        .padAngle(0.018),
+        .cornerRadius(1.5)
+        .padAngle(DONUT_PAD_ANGLE),
     [],
   );
   const activeArcGenerator = React.useMemo(
@@ -378,7 +392,8 @@ function TokenDonutChart({
         .arc<d3.PieArcDatum<ChartSlice>>()
         .innerRadius(innerRadius)
         .outerRadius(activeOuterRadius)
-        .padAngle(0.018),
+        .cornerRadius(1.5)
+        .padAngle(DONUT_PAD_ANGLE),
     [],
   );
 
@@ -415,8 +430,8 @@ function TokenDonutChart({
                     : arcGenerator(segment)) ?? ''
                 }
                 fill={colorScale(segment.data.display_name)}
-                stroke="var(--color-background-2, var(--background))"
-                strokeWidth={1.25}
+                stroke={DONUT_SEGMENT_STROKE}
+                strokeWidth={DONUT_SEGMENT_STROKE_WIDTH}
                 // Not keyboard-focusable: browser focus rings clip arc paths into
                 // a rectangular wedge artifact. Legend buttons handle a11y focus.
                 aria-hidden="true"
@@ -874,13 +889,14 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
   const arcs = d3
     .pie<(typeof chartInput)[number]>()
     .value((item) => item.value)
+    .padAngle(DONUT_PAD_ANGLE)
     .sort(null)(chartInput);
   const arc = d3
     .arc<d3.PieArcDatum<(typeof chartInput)[number]>>()
     .innerRadius(72)
     .outerRadius(104)
-    .cornerRadius(2)
-    .padAngle(0.02);
+    .cornerRadius(1.5)
+    .padAngle(DONUT_PAD_ANGLE);
 
   return (
     <Card className={`${CHART_CARD_CLASS} flex h-full flex-col`}>
@@ -903,8 +919,8 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
               key={`${slice.data.label}-${index}`}
               d={arc(slice) ?? ''}
               fill={slice.data.color}
-              stroke="var(--color-background-2, var(--background))"
-              strokeWidth={1.25}
+              stroke={DONUT_SEGMENT_STROKE}
+              strokeWidth={DONUT_SEGMENT_STROKE_WIDTH}
             />
           ))}
           <text
