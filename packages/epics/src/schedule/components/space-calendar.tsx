@@ -560,31 +560,31 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
 
       <div
         className={cn(
-          'hypha-space-calendar relative overflow-hidden rounded-lg border border-border/70 bg-background-2 p-2.5 md:p-3',
+          'hypha-space-calendar relative overflow-hidden rounded-lg border border-border/70 bg-background-2 p-2 md:p-2.5',
           viewToModifierClass(view),
         )}
       >
         <div className="relative">
-          <div className="mb-2.5 flex flex-col gap-2.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex h-9 items-stretch overflow-hidden rounded-lg border border-border/70 bg-background">
+          <div className="mb-1.5 flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex h-8 items-stretch overflow-hidden rounded-md border border-border/70 bg-background">
                 <Button
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
                   size="icon"
-                  className="size-9 min-h-0 shrink-0 rounded-none"
+                  className="size-8 min-h-0 shrink-0 rounded-none"
                   aria-label={t('previous')}
                   onClick={() => shiftAnchor(-1)}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
                   size="sm"
-                  className="h-9 min-h-0 rounded-none px-3 py-0 text-xs font-medium uppercase tracking-wide"
+                  className="h-8 min-h-0 rounded-none px-2.5 py-0 text-xs font-medium uppercase tracking-wide"
                   onClick={() => {
                     const today = new Date();
                     setAnchorDate(today);
@@ -598,33 +598,33 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
                   variant="ghost"
                   colorVariant="neutral"
                   size="icon"
-                  className="size-9 min-h-0 shrink-0 rounded-none"
+                  className="size-8 min-h-0 shrink-0 rounded-none"
                   aria-label={t('next')}
                   onClick={() => shiftAnchor(1)}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
-              <div className="flex min-w-0 items-center gap-2 pl-1">
+              <div className="flex min-w-0 items-center gap-1.5 pl-0.5">
                 <CalendarDays
-                  className="size-4 shrink-0 text-muted-foreground"
+                  className="size-3.5 shrink-0 text-muted-foreground"
                   aria-hidden
                 />
-                <p className="truncate text-4 font-medium tracking-tight text-foreground">
+                <p className="truncate text-3 font-medium tracking-tight text-foreground">
                   {headerLabel}
-                  <span className="ms-2 text-2 font-normal text-muted-foreground">
+                  <span className="ms-1.5 text-1 font-normal text-muted-foreground">
                     {headerContextLabel}
                   </span>
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/50 pb-2.5">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-border/50 pb-1.5">
               {TYPE_LEGEND.map(({ type, key }) => (
                 <span
                   key={type}
-                  className="inline-flex items-center gap-1.5 text-1 font-medium uppercase tracking-wide text-muted-foreground"
+                  className="inline-flex items-center gap-1 text-1 font-medium uppercase tracking-wide text-muted-foreground"
                 >
                   <span
                     className={`hypha-cal-legend-dot hypha-cal-legend-dot--${type}`}

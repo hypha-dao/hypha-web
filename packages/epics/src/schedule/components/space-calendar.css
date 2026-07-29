@@ -73,18 +73,19 @@
 }
 
 .hypha-space-calendar .fc .fc-col-header-cell-cushion {
-  padding: 0.5rem 0.35rem;
+  padding: 0.25rem 0.35rem;
   text-decoration: none;
   color: inherit;
 }
 
 .hypha-cal-month-head {
   display: block;
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: hsl(var(--muted-foreground));
+  line-height: 1.2;
 }
 
 .hypha-cal-col-head {
