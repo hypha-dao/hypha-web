@@ -40,7 +40,7 @@ import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
-import { priorityLeftBorderClass } from '../utils/signal-priority-styles';
+import { priorityTopBarClass } from '../utils/signal-priority-styles';
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
@@ -303,8 +303,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     >
       <div
         className={cn(
-          'absolute inset-y-0 left-0 w-0.5 rounded-l-lg opacity-80',
-          priorityLeftBorderClass(priority),
+          'absolute inset-x-0 top-0 h-0.5 rounded-t-lg opacity-80',
+          priorityTopBarClass(priority),
         )}
         title={priorityLabel}
         aria-label={priorityLabel}

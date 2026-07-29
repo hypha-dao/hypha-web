@@ -16,7 +16,7 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 import { SignalCardActions } from './signal-card-actions';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
-  priorityLeftBorderClass,
+  priorityTopBarClass,
   statusColorDotClass,
 } from '../utils/signal-priority-styles';
 import { SignalTagBadges } from './signal-tag-badges';
@@ -176,14 +176,14 @@ export function SignalTaskCard({
     >
       <div
         className={cn(
-          'absolute inset-y-0 left-0 w-0.5 rounded-l-lg opacity-80',
-          priorityLeftBorderClass(signal.priority),
+          'absolute inset-x-0 top-0 h-0.5 rounded-t-lg opacity-80',
+          priorityTopBarClass(signal.priority),
         )}
         title={priorityLabel}
         aria-label={priorityLabel}
       />
 
-      <div className="relative flex flex-1 flex-col gap-2 pl-3.5 pr-3 py-3">
+      <div className="relative flex flex-1 flex-col gap-2 px-3.5 py-3">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex min-w-0 items-start justify-between gap-2">
             <p className="line-clamp-2 min-w-0 flex-1 text-3 font-medium leading-snug tracking-tight text-foreground">
