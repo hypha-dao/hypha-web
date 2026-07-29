@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { MyceliumForceGraph } from './mycelium-force-graph';
 import type { MyceliumGraph, MyceliumNode } from './types';
 import { fetchSpaceMemberSpaces, mapPool } from './fetch-space-member-spaces';
+import { resolveEdgeSource } from './resolve-edge-source';
 import { useSpaceMembershipNetwork } from './use-space-membership-network';
 
 type MemberConnectionsViewProps = {
@@ -61,7 +62,9 @@ export function MemberConnectionsView({
       setIsLoadingSpaces(true);
       try {
         const token = await getAccessToken();
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
         if (token) headers.Authorization = `Bearer ${token}`;
 
         const pairs = await mapPool(people, CONCURRENCY, async (person) => {
@@ -72,8 +75,11 @@ export function MemberConnectionsView({
               { headers },
             );
             if (!res.ok) return [String(person.id), [] as Space[]] as const;
-            const spaces = (await res.json()) as Space[];
-            return [String(person.id), spaces] as const;
+            const spaces = (await res.json()) as unknown;
+            return [
+              String(person.id),
+              Array.isArray(spaces) ? spaces : [],
+            ] as const;
           } catch {
             return [String(person.id), [] as Space[]] as const;
           }
@@ -160,7 +166,9 @@ export function MemberConnectionsView({
       }
       try {
         const token = await getAccessToken();
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
         if (token) headers.Authorization = `Bearer ${token}`;
 
         const results = await mapPool(
@@ -205,7 +213,9 @@ export function MemberConnectionsView({
     ];
     const links: MyceliumGraph['links'] = [];
     const spaceNodes = new Map<number, string>();
+    const spaceIdToNode = spaceNodes;
     const seenLinks = new Set<string>();
+    const hubId = `hub-${spaceSlug}`;
 
     const ensureSpace = (space: Space, meta: string) => {
       let spaceNodeId = spaceNodes.get(space.id);
@@ -243,7 +253,7 @@ export function MemberConnectionsView({
         [person.name, person.surname].filter(Boolean).join(' ') ||
         person.nickname ||
         person.slug ||
-        'Member';
+        t('memberConnections.unknownMember');
       nodes.push({
         id: personId,
         kind: 'person',
@@ -281,23 +291,23 @@ export function MemberConnectionsView({
         edge.child,
         t('memberConnections.networkSpaceMeta', { depth: edge.depth }),
       );
-      const sourceId =
-        edge.parentSlug == null || edge.parentId == null
-          ? `hub-${spaceSlug}`
-          : spaceNodes.get(edge.parentId) ??
-            (() => {
-              const parent = networkEdges.find(
-                (e) => e.child.id === edge.parentId,
-              )?.child;
-              return parent
-                ? ensureSpace(
-                    parent,
-                    t('memberConnections.networkSpaceMeta', {
-                      depth: edge.depth - 1,
-                    }),
-                  )
-                : `hub-${spaceSlug}`;
-            })();
+      const sourceId = resolveEdgeSource({
+        edge,
+        edges: networkEdges,
+        hubId,
+        spaceIdToNode,
+        ensureSpace: (space, depth) =>
+          ensureSpace(
+            space,
+            t('memberConnections.networkSpaceMeta', { depth }),
+          ),
+        canMaterializeParent: (space) => {
+          const parentEdge = networkEdges.find((e) => e.child.id === space.id);
+          return parentEdge
+            ? parentEdge.depth === 1 || networkDiscoverableIds.has(space.id)
+            : networkDiscoverableIds.has(space.id);
+        },
+      });
 
       addLink(
         `net-${sourceId}-${childId}-${edge.depth}`,
@@ -411,6 +421,7 @@ export function MemberConnectionsView({
       <MyceliumForceGraph
         graph={graph}
         accentHex={accentHex}
+        ariaLabel={t('memberConnections.graphAria')}
         emptyLabel={t('memberConnections.empty')}
         onNodeClick={handleNodeClick}
       />

@@ -624,7 +624,9 @@
     },
     "navigation": {
       "breadcrumb": "Space path",
-      "memberCount": "{count} members",
+      "memberCount": "{count, plural, one {# member} other {# members}}",
+      "unnamedMember": "Member",
+      "graphAria": "Space hierarchy visualization",
       "individuals": "Individuals",
       "memberSpaces": "Member spaces",
       "noIndividuals": "No individual members yet",
@@ -645,7 +647,9 @@
       "networkSpaceMeta": "Network space · hop {depth}",
       "embeddedDescription": "Member connections for {space} — people and linked spaces beyond this ecosystem hierarchy.",
       "legendPerson": "Member (circle)",
-      "legendSpace": "Space (square)"
+      "legendSpace": "Space (square)",
+      "unknownMember": "Member",
+      "graphAria": "Member connections mycelium graph"
     },
     "spaceToSpace": {
       "title": "Space-to-space mycelium",
@@ -658,7 +662,8 @@
       "expanding": "Growing full mycelium…",
       "stats": "{spaces} spaces · {links} links",
       "empty": "No space-to-space memberships yet",
-      "networkMeta": "Network space · hop {depth}"
+      "networkMeta": "Network space · hop {depth}",
+      "graphAria": "Space-to-space membership mycelium graph"
     },
     "valueFlows": {
       "title": "Value flows",
@@ -666,7 +671,7 @@
       "hubMeta": "Distributing space",
       "recipientMeta": "{amount} {symbol}",
       "allTokens": "All tokens",
-      "stats": "{count} outgoing transfers",
+      "stats": "{count, plural, one {# outgoing transfer} other {# outgoing transfers}}",
       "empty": "No outgoing value flows yet",
       "details": "Flow details",
       "amount": "Amount",
@@ -681,7 +686,7 @@
       "period365d": "Last 365 days",
       "periodAll": "All time",
       "periodRange": "From {start}",
-      "statsCumulative": "{count} transfers · {recipients} recipients · {total} {symbol}",
+      "statsCumulative": "{count, plural, one {# transfer} other {# transfers}} · {recipients, plural, one {# recipient} other {# recipients}} · {total} {symbol}",
       "mixedTokens": "tokens",
       "cumulativeAmount": "Cumulative amount",
       "transferCount": "Transfers in period",
@@ -692,7 +697,9 @@
       "kindPerson": "Member",
       "kindSpace": "Space",
       "kindExternal": "External",
-      "statsCountOnly": "{count} transfers · {recipients} recipients"
+      "statsCountOnly": "{count, plural, one {# transfer} other {# transfers}} · {recipients, plural, one {# recipient} other {# recipients}}",
+      "graphAria": "Value flows mycelium graph",
+      "loadError": "Could not load transfers. Try refreshing."
     }
   },
   "AgreementsTab": {

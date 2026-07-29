@@ -625,7 +625,9 @@
     },
     "navigation": {
       "breadcrumb": "Space-Pfad",
-      "memberCount": "{count} Mitglieder",
+      "memberCount": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
+      "unnamedMember": "Mitglied",
+      "graphAria": "Space-Hierarchie-Visualisierung",
       "individuals": "Personen",
       "memberSpaces": "Mitglieds-Spaces",
       "noIndividuals": "Noch keine Personen",
@@ -646,7 +648,9 @@
       "networkSpaceMeta": "Netzwerk-Space · Hop {depth}",
       "embeddedDescription": "Mitgliederverbindungen für {space} — Personen und verknüpfte Spaces jenseits dieser Ökosystem-Hierarchie.",
       "legendPerson": "Mitglied (Kreis)",
-      "legendSpace": "Space (Quadrat)"
+      "legendSpace": "Space (Quadrat)",
+      "unknownMember": "Mitglied",
+      "graphAria": "Mitgliederverbindungen-Myzel-Graph"
     },
     "spaceToSpace": {
       "title": "Space-zu-Space-Myzel",
@@ -659,7 +663,8 @@
       "expanding": "Volles Myzel wächst…",
       "stats": "{spaces} Spaces · {links} Verbindungen",
       "empty": "Noch keine Space-zu-Space-Mitgliedschaften",
-      "networkMeta": "Netzwerk-Space · Hop {depth}"
+      "networkMeta": "Netzwerk-Space · Hop {depth}",
+      "graphAria": "Space-zu-Space-Mitgliedschafts-Myzel-Graph"
     },
     "valueFlows": {
       "title": "Wertflüsse",
@@ -667,7 +672,7 @@
       "hubMeta": "Verteilender Space",
       "recipientMeta": "{amount} {symbol}",
       "allTokens": "Alle Token",
-      "stats": "{count} ausgehende Transfers",
+      "stats": "{count, plural, one {# ausgehender Transfer} other {# ausgehende Transfers}}",
       "empty": "Noch keine ausgehenden Wertflüsse",
       "details": "Flow-Details",
       "amount": "Betrag",
@@ -682,7 +687,7 @@
       "period365d": "Letzte 365 Tage",
       "periodAll": "Gesamte Zeit",
       "periodRange": "Ab {start}",
-      "statsCumulative": "{count} Transfers · {recipients} Empfänger · {total} {symbol}",
+      "statsCumulative": "{count, plural, one {# Transfer} other {# Transfers}} · {recipients, plural, one {# Empfänger} other {# Empfänger}} · {total} {symbol}",
       "mixedTokens": "Token",
       "cumulativeAmount": "Kumulativer Betrag",
       "transferCount": "Transfers im Zeitraum",
@@ -693,7 +698,9 @@
       "kindPerson": "Mitglied",
       "kindSpace": "Space",
       "kindExternal": "Extern",
-      "statsCountOnly": "{count} Transfers · {recipients} Empfänger"
+      "statsCountOnly": "{count, plural, one {# Transfer} other {# Transfers}} · {recipients, plural, one {# Empfänger} other {# Empfänger}}",
+      "graphAria": "Wertflüsse-Myzel-Graph",
+      "loadError": "Transfers konnten nicht geladen werden. Bitte aktualisieren."
     }
   },
   "AgreementsTab": {

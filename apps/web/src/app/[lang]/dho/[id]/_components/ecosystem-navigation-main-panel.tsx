@@ -76,11 +76,17 @@ function buildBreadcrumb(selected: Space | null, allSpaces: Space[]): string[] {
   const titles: string[] = [selected.title];
   let current = selected;
   const spaces = Array.isArray(allSpaces) ? allSpaces : [];
-  while (current.parentId) {
+  const visited = new Set<number>([selected.id]);
+  const MAX_DEPTH = 64;
+  let depth = 0;
+  while (current.parentId && depth < MAX_DEPTH) {
     const parent = spaces.find((s) => s.id === current.parentId);
     if (!parent) break;
+    if (visited.has(parent.id)) break;
+    visited.add(parent.id);
     titles.unshift(parent.title);
     current = parent;
+    depth += 1;
   }
   return titles;
 }

@@ -24,6 +24,7 @@ type MyceliumForceGraphProps = {
   graph: MyceliumGraph;
   className?: string;
   emptyLabel?: string;
+  ariaLabel?: string;
   /** Space/brand accent used for hypha links and node rings. */
   accentHex?: string;
   onNodeClick?: (node: MyceliumNode) => void;
@@ -54,10 +55,23 @@ function hyphaPath(
   }`;
 }
 
+function activateNode(
+  d: SimNode,
+  onNodeExpand: MyceliumForceGraphProps['onNodeExpand'],
+  onNodeClick: MyceliumForceGraphProps['onNodeClick'],
+) {
+  if (d.expandable && onNodeExpand) {
+    onNodeExpand(d);
+    return;
+  }
+  onNodeClick?.(d);
+}
+
 export function MyceliumForceGraph({
   graph,
   className,
   emptyLabel,
+  ariaLabel,
   accentHex,
   onNodeClick,
   onNodeExpand,
@@ -65,9 +79,12 @@ export function MyceliumForceGraph({
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const onNodeClickRef = useRef(onNodeClick);
+  const onNodeExpandRef = useRef(onNodeExpand);
   const [hover, setHover] = useState<HoverState | null>(null);
   const isDark = resolvedTheme === 'dark';
-  const accent = (accentHex?.trim() || MYCELIUM.accent).trim();
+  const accent = accentHex?.trim() || MYCELIUM.accent;
+  const svgAriaLabel = ariaLabel ?? emptyLabel ?? 'Ecosystem mycelium graph';
 
   const graphKey = useMemo(
     () =>
@@ -86,14 +103,29 @@ export function MyceliumForceGraph({
           l.weight,
           l.strength,
         ]),
-        accent,
       }),
-    [graph, accent],
+    [graph],
   );
+
+  useEffect(() => {
+    onNodeClickRef.current = onNodeClick;
+    onNodeExpandRef.current = onNodeExpand;
+
+    if (!svgRef.current) return;
+    const hasClick = !!onNodeClick;
+    d3.select(svgRef.current)
+      .selectAll<SVGGElement, SimNode>('.mycelium-node')
+      .attr('tabindex', (d) => (d.expandable || hasClick ? 0 : null))
+      .attr('role', (d) => (d.expandable || hasClick ? 'button' : null))
+      .style('cursor', (d) =>
+        d.expandable || hasClick ? 'pointer' : 'default',
+      );
+  }, [onNodeClick, onNodeExpand]);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
     if (graph.nodes.length === 0) return;
+    if (resolvedTheme === undefined) return;
 
     const container = containerRef.current;
     const width = Math.max(container.clientWidth, 320);
@@ -121,6 +153,9 @@ export function MyceliumForceGraph({
     const linkColor = withAlpha(accent, isDark ? 0.72 : 0.62);
     const accentSoft = withAlpha(accent, isDark ? 0.22 : 0.16);
     const accentMuted = withAlpha(accent, isDark ? 0.45 : 0.38);
+    const fill = isDark ? '#0f172a' : '#ffffff';
+    const badgeStroke = isDark ? '#0b1220' : '#ffffff';
+    const hasClick = !!onNodeClickRef.current;
 
     const defs = svg.append('defs');
     const glow = defs
@@ -164,6 +199,7 @@ export function MyceliumForceGraph({
       .selectAll<SVGPathElement, SimLink>('path')
       .data(links)
       .join('path')
+      .attr('class', 'mycelium-link')
       .attr('stroke', linkColor)
       .attr('stroke-width', strokeFor)
       .attr('stroke-linecap', 'round')
@@ -178,8 +214,11 @@ export function MyceliumForceGraph({
       .selectAll<SVGGElement, SimNode>('g')
       .data(nodes)
       .join('g')
+      .attr('class', 'mycelium-node')
+      .attr('tabindex', (d) => (d.expandable || hasClick ? 0 : null))
+      .attr('role', (d) => (d.expandable || hasClick ? 'button' : null))
       .style('cursor', (d) =>
-        d.expandable || onNodeClick ? 'pointer' : 'default',
+        d.expandable || hasClick ? 'pointer' : 'default',
       )
       .call(
         d3
@@ -209,7 +248,6 @@ export function MyceliumForceGraph({
       const clipId = `mycelium-clip-${safeId}`;
       const isSpaceShape = d.kind === 'space';
       const corner = isSpaceShape ? r * 0.35 : r;
-      const fill = isDark ? '#0f172a' : '#ffffff';
 
       const clip = defs.append('clipPath').attr('id', clipId);
       if (isSpaceShape) {
@@ -229,6 +267,7 @@ export function MyceliumForceGraph({
       if (isSpaceShape) {
         group
           .append('rect')
+          .attr('class', 'mycelium-halo')
           .attr('x', -(r + 4))
           .attr('y', -(r + 4))
           .attr('width', (r + 4) * 2)
@@ -239,6 +278,7 @@ export function MyceliumForceGraph({
           .attr('opacity', 0.7);
         group
           .append('rect')
+          .attr('class', 'mycelium-ring')
           .attr('x', -(r + 1.5))
           .attr('y', -(r + 1.5))
           .attr('width', (r + 1.5) * 2)
@@ -251,11 +291,13 @@ export function MyceliumForceGraph({
       } else {
         group
           .append('circle')
+          .attr('class', 'mycelium-halo')
           .attr('r', r + (d.kind === 'hub' ? 6 : 3))
           .attr('fill', accentSoft)
           .attr('opacity', d.kind === 'hub' ? 0.9 : 0.55);
         group
           .append('circle')
+          .attr('class', 'mycelium-ring')
           .attr('r', r + 1.5)
           .attr('fill', fill)
           .attr('stroke', d.expanded ? accent : accentMuted)
@@ -285,22 +327,24 @@ export function MyceliumForceGraph({
         if (d.kind === 'space') {
           group
             .append('rect')
+            .attr('class', 'mycelium-badge')
             .attr('x', badgeX - 5)
             .attr('y', badgeY - 5)
             .attr('width', 10)
             .attr('height', 10)
             .attr('rx', 2)
             .attr('fill', accent)
-            .attr('stroke', isDark ? '#0b1220' : '#ffffff')
+            .attr('stroke', badgeStroke)
             .attr('stroke-width', 1.2);
         } else {
           group
             .append('circle')
+            .attr('class', 'mycelium-badge')
             .attr('cx', badgeX)
             .attr('cy', badgeY)
             .attr('r', 4.5)
             .attr('fill', accent)
-            .attr('stroke', isDark ? '#0b1220' : '#ffffff')
+            .attr('stroke', badgeStroke)
             .attr('stroke-width', 1.2);
         }
       }
@@ -308,11 +352,12 @@ export function MyceliumForceGraph({
       if (d.expandable) {
         group
           .append('circle')
+          .attr('class', 'mycelium-expand')
           .attr('cx', r * 0.72)
           .attr('cy', -r * 0.72)
           .attr('r', 7)
           .attr('fill', accent)
-          .attr('stroke', isDark ? '#0b1220' : '#ffffff')
+          .attr('stroke', badgeStroke)
           .attr('stroke-width', 1.5);
         group
           .append('text')
@@ -326,6 +371,11 @@ export function MyceliumForceGraph({
           .text(d.expanded ? '−' : '+');
       }
     });
+
+    const handleActivate = (event: Event, d: SimNode) => {
+      event.stopPropagation();
+      activateNode(d, onNodeExpandRef.current, onNodeClickRef.current);
+    };
 
     node
       .on('mouseenter', (event, d) => {
@@ -350,13 +400,26 @@ export function MyceliumForceGraph({
         );
       })
       .on('mouseleave', () => setHover(null))
-      .on('click', (event, d) => {
-        event.stopPropagation();
-        if (d.expandable && onNodeExpand) {
-          onNodeExpand(d);
-          return;
-        }
-        onNodeClick?.(d);
+      .on('click', handleActivate)
+      .on('keydown', (event, d) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        handleActivate(event, d);
+      })
+      .on('focus', function () {
+        d3.select(this)
+          .select('.mycelium-ring')
+          .attr('stroke', accent)
+          .attr('stroke-width', 3);
+      })
+      .on('blur', function (_, d) {
+        d3.select(this)
+          .select('.mycelium-ring')
+          .attr('stroke', d.expanded ? accent : accentMuted)
+          .attr(
+            'stroke-width',
+            d.expanded ? 2.4 : d.kind === 'space' ? 1.6 : 1.4,
+          );
       });
 
     const simulation = d3
@@ -395,19 +458,37 @@ export function MyceliumForceGraph({
       node.attr('transform', (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
     });
 
-    const resizeObserver = new ResizeObserver(() => {
-      // Keep current simulation; layout is responsive via viewBox on remount via graphKey.
-    });
-    resizeObserver.observe(container);
-
     return () => {
       simulation.stop();
-      resizeObserver.disconnect();
       setHover(null);
     };
-    // graphKey captures structural graph changes
+    // graphKey captures structural graph changes; theme resolved gate avoids undefined→dark remount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphKey, isDark, accent, onNodeClick, onNodeExpand]);
+  }, [graphKey, resolvedTheme]);
+
+  useEffect(() => {
+    if (!svgRef.current || resolvedTheme === undefined) return;
+
+    const linkColor = withAlpha(accent, isDark ? 0.72 : 0.62);
+    const accentSoft = withAlpha(accent, isDark ? 0.22 : 0.16);
+    const accentMuted = withAlpha(accent, isDark ? 0.45 : 0.38);
+    const fill = isDark ? '#0f172a' : '#ffffff';
+    const badgeStroke = isDark ? '#0b1220' : '#ffffff';
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('.mycelium-link').attr('stroke', linkColor);
+    svg.selectAll('.mycelium-halo').attr('fill', accentSoft);
+    svg.selectAll<SVGElement, SimNode>('.mycelium-node').each(function (d) {
+      d3.select(this)
+        .select('.mycelium-ring')
+        .attr('fill', fill)
+        .attr('stroke', d.expanded ? accent : accentMuted);
+    });
+    svg
+      .selectAll('.mycelium-badge, .mycelium-expand')
+      .attr('fill', accent)
+      .attr('stroke', badgeStroke);
+  }, [isDark, accent, resolvedTheme]);
 
   if (graph.nodes.length === 0) {
     return (
@@ -444,7 +525,7 @@ export function MyceliumForceGraph({
         ref={svgRef}
         className="relative z-[1] h-auto w-full"
         role="img"
-        aria-label="Ecosystem mycelium graph"
+        aria-label={svgAriaLabel}
       />
       {hover ? (
         <div

@@ -7,6 +7,14 @@ import type { TransferWithEntity } from '@hypha-platform/epics';
 import { MyceliumForceGraph } from './mycelium-force-graph';
 import type { MyceliumGraph, MyceliumNode, MyceliumNodeKind } from './types';
 import {
+  CRYPTO_NUMBER_FORMAT,
+  recipientId,
+  recipientImage,
+  recipientKind,
+  recipientLabel,
+  transferTime,
+} from './value-flows-utils';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -43,53 +51,6 @@ const PERIOD_MS: Record<Exclude<PeriodKey, 'all'>, number> = {
   '365d': 365 * 24 * 60 * 60 * 1000,
 };
 
-function recipientId(transfer: TransferWithEntity): string {
-  if (transfer.space?.title) {
-    return `space-${transfer.space.title}-${transfer.to}`;
-  }
-  if (transfer.person?.name || transfer.person?.surname) {
-    return `person-${transfer.person.name ?? ''}-${
-      transfer.person.surname ?? ''
-    }-${transfer.to}`;
-  }
-  return `addr-${
-    transfer.direction === 'outgoing' ? transfer.to : transfer.from
-  }`;
-}
-
-function recipientLabel(transfer: TransferWithEntity): string {
-  if (transfer.space?.title) return transfer.space.title;
-  const personName = [transfer.person?.name, transfer.person?.surname]
-    .filter(Boolean)
-    .join(' ');
-  if (personName) return personName;
-  const address =
-    transfer.direction === 'outgoing' ? transfer.to : transfer.from;
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
-
-function recipientKind(transfer: TransferWithEntity): MyceliumNodeKind {
-  if (transfer.space?.title) return 'space';
-  if (transfer.person) return 'person';
-  return 'external';
-}
-
-function recipientImage(
-  transfer: TransferWithEntity,
-): string | null | undefined {
-  return transfer.space?.avatarUrl || transfer.person?.avatarUrl;
-}
-
-function transferTime(transfer: TransferWithEntity): number {
-  const raw = transfer.timestamp;
-  if (typeof raw === 'number') {
-    // Alchemy sometimes returns seconds
-    return raw < 1e12 ? raw * 1000 : raw;
-  }
-  const parsed = new Date(raw).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 export function ValueFlowsView({
   spaceSlug,
   spaceTitle,
@@ -98,7 +59,7 @@ export function ValueFlowsView({
 }: ValueFlowsViewProps) {
   const t = useTranslations('SelectNavigationAction');
   const format = useFormatter();
-  const { transfers, isLoading } = useTransfers({
+  const { transfers, isLoading, error } = useTransfers({
     spaceSlug,
     refreshInterval: 30_000,
   });
@@ -186,7 +147,10 @@ export function ValueFlowsView({
       },
     ];
     const links: MyceliumGraph['links'] = [];
-    const maxTotal = Math.max(...aggregated.map((flow) => flow.total), 1);
+    const maxTotal = aggregated.reduce(
+      (max, flow) => Math.max(max, flow.total),
+      1,
+    );
 
     for (const flow of aggregated.slice(0, 80)) {
       nodes.push({
@@ -195,7 +159,7 @@ export function ValueFlowsView({
         label: flow.label,
         imageUrl: flow.imageUrl,
         meta: t('valueFlows.recipientMeta', {
-          amount: format.number(flow.total),
+          amount: format.number(flow.total, CRYPTO_NUMBER_FORMAT),
           symbol: flow.symbol,
         }),
       });
@@ -205,7 +169,9 @@ export function ValueFlowsView({
         target: flow.id,
         weight: flow.total / maxTotal,
         strength: 0.35 + (flow.total / maxTotal) * 0.55,
-        label: `${format.number(flow.total)} ${flow.symbol}`,
+        label: `${format.number(flow.total, CRYPTO_NUMBER_FORMAT)} ${
+          flow.symbol
+        }`,
         meta: flow.id,
       });
     }
@@ -266,7 +232,9 @@ export function ValueFlowsView({
             </SelectContent>
           </Select>
           <p className="text-1 text-muted-foreground">
-            {isLoading
+            {error
+              ? t('valueFlows.loadError')
+              : isLoading
               ? t('visibleSpaces.loading')
               : cumulativeTotal == null
               ? t('valueFlows.statsCountOnly', {
@@ -276,7 +244,7 @@ export function ValueFlowsView({
               : t('valueFlows.statsCumulative', {
                   count: periodFiltered.length,
                   recipients: aggregated.length,
-                  total: format.number(cumulativeTotal),
+                  total: format.number(cumulativeTotal, CRYPTO_NUMBER_FORMAT),
                   symbol: symbolFilter,
                 })}
           </p>
@@ -299,6 +267,7 @@ export function ValueFlowsView({
         <MyceliumForceGraph
           graph={graph}
           accentHex={accentHex}
+          ariaLabel={t('valueFlows.graphAria')}
           emptyLabel={t('valueFlows.empty')}
           onNodeClick={(node) => {
             if (node.kind === 'hub') return;
@@ -332,7 +301,8 @@ export function ValueFlowsView({
                   {t('valueFlows.cumulativeAmount')}
                 </dt>
                 <dd className="font-semibold text-foreground">
-                  {format.number(selectedFlow.total)} {selectedFlow.symbol}
+                  {format.number(selectedFlow.total, CRYPTO_NUMBER_FORMAT)}{' '}
+                  {selectedFlow.symbol}
                 </dd>
               </div>
               <div>
@@ -340,7 +310,10 @@ export function ValueFlowsView({
                   {t('valueFlows.transferCount')}
                 </dt>
                 <dd className="text-foreground">
-                  {format.number(selectedFlow.transferCount)}
+                  {format.number(
+                    selectedFlow.transferCount,
+                    CRYPTO_NUMBER_FORMAT,
+                  )}
                 </dd>
               </div>
               <div>
@@ -371,7 +344,8 @@ export function ValueFlowsView({
                         className="rounded-lg border border-border/40 bg-background-3/40 px-2.5 py-1.5"
                       >
                         <p className="font-medium text-foreground">
-                          {format.number(transfer.value)} {transfer.symbol}
+                          {format.number(transfer.value, CRYPTO_NUMBER_FORMAT)}{' '}
+                          {transfer.symbol}
                         </p>
                         <p className="text-1 text-muted-foreground">
                           {format.dateTime(new Date(transferTime(transfer)), {

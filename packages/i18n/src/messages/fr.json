@@ -625,7 +625,9 @@
     },
     "navigation": {
       "breadcrumb": "Chemin de l'espace",
-      "memberCount": "{count} membres",
+      "memberCount": "{count, plural, one {# membre} other {# membres}}",
+      "unnamedMember": "Membre",
+      "graphAria": "Visualisation de la hiérarchie des espaces",
       "individuals": "Personnes",
       "memberSpaces": "Espaces membres",
       "noIndividuals": "Aucune personne pour le moment",
@@ -646,7 +648,9 @@
       "networkSpaceMeta": "Espace réseau · saut {depth}",
       "embeddedDescription": "Connexions des membres pour {space} — personnes et espaces liés au-delà de cette hiérarchie d’écosystème.",
       "legendPerson": "Membre (cercle)",
-      "legendSpace": "Espace (carré)"
+      "legendSpace": "Espace (carré)",
+      "unknownMember": "Membre",
+      "graphAria": "Graphique mycélium des connexions de membres"
     },
     "spaceToSpace": {
       "title": "Mycélium espace-à-espace",
@@ -659,7 +663,8 @@
       "expanding": "Mycélium complet en croissance…",
       "stats": "{spaces} espaces · {links} liens",
       "empty": "Aucune adhésion espace-à-espace pour le moment",
-      "networkMeta": "Espace réseau · saut {depth}"
+      "networkMeta": "Espace réseau · saut {depth}",
+      "graphAria": "Graphique mycélium des adhésions espace à espace"
     },
     "valueFlows": {
       "title": "Flux de valeur",
@@ -667,7 +672,7 @@
       "hubMeta": "Espace distributeur",
       "recipientMeta": "{amount} {symbol}",
       "allTokens": "Tous les jetons",
-      "stats": "{count} transferts sortants",
+      "stats": "{count, plural, one {# transfert sortant} other {# transferts sortants}}",
       "empty": "Aucun flux de valeur sortant pour le moment",
       "details": "Détails du flux",
       "amount": "Montant",
@@ -682,7 +687,7 @@
       "period365d": "365 derniers jours",
       "periodAll": "Tout",
       "periodRange": "Depuis {start}",
-      "statsCumulative": "{count} transferts · {recipients} destinataires · {total} {symbol}",
+      "statsCumulative": "{count, plural, one {# transfert} other {# transferts}} · {recipients, plural, one {# destinataire} other {# destinataires}} · {total} {symbol}",
       "mixedTokens": "jetons",
       "cumulativeAmount": "Montant cumulé",
       "transferCount": "Transferts sur la période",
@@ -693,7 +698,9 @@
       "kindPerson": "Membre",
       "kindSpace": "Espace",
       "kindExternal": "Externe",
-      "statsCountOnly": "{count} transferts · {recipients} destinataires"
+      "statsCountOnly": "{count, plural, one {# transfert} other {# transferts}} · {recipients, plural, one {# destinataire} other {# destinataires}}",
+      "graphAria": "Graphique mycélium des flux de valeur",
+      "loadError": "Impossible de charger les transferts. Actualisez la page."
     }
   },
   "AgreementsTab": {

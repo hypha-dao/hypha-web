@@ -604,7 +604,9 @@
     },
     "navigation": {
       "breadcrumb": "Патека на просторот",
-      "memberCount": "{count} членови",
+      "memberCount": "{count, plural, one {# член} other {# членови}}",
+      "unnamedMember": "Член",
+      "graphAria": "Визуализација на хиерархија на простори",
       "individuals": "Поединци",
       "memberSpaces": "Членски простори",
       "noIndividuals": "Сè уште нема поединци",
@@ -625,7 +627,9 @@
       "networkSpaceMeta": "Мрежен простор · скок {depth}",
       "embeddedDescription": "Членски врски за {space} — луѓе и поврзани простори надвор од оваа екосистемска хиерархија.",
       "legendPerson": "Член (круг)",
-      "legendSpace": "Простор (квадрат)"
+      "legendSpace": "Простор (квадрат)",
+      "unknownMember": "Член",
+      "graphAria": "Мицелиум графикон на врски на членови"
     },
     "spaceToSpace": {
       "title": "Мицелиум простор-до-простор",
@@ -638,7 +642,8 @@
       "expanding": "Расте целосен мицелиум…",
       "stats": "{spaces} простори · {links} врски",
       "empty": "Сè уште нема членства простор-до-простор",
-      "networkMeta": "Мрежен простор · скок {depth}"
+      "networkMeta": "Мрежен простор · скок {depth}",
+      "graphAria": "Мицелиум графикон на членства простор-до-простор"
     },
     "valueFlows": {
       "title": "Текови на вредност",
@@ -646,7 +651,7 @@
       "hubMeta": "Дистрибутивен простор",
       "recipientMeta": "{amount} {symbol}",
       "allTokens": "Сите токени",
-      "stats": "{count} излезни трансфери",
+      "stats": "{count, plural, one {# излезен трансфер} other {# излезни трансфери}}",
       "empty": "Сè уште нема излезни текови на вредност",
       "details": "Детали за текот",
       "amount": "Износ",
@@ -661,7 +666,7 @@
       "period365d": "Последни 365 дена",
       "periodAll": "Цело време",
       "periodRange": "Од {start}",
-      "statsCumulative": "{count} трансфери · {recipients} примачи · {total} {symbol}",
+      "statsCumulative": "{count, plural, one {# трансфер} other {# трансфери}} · {recipients, plural, one {# примач} other {# примачи}} · {total} {symbol}",
       "mixedTokens": "токени",
       "cumulativeAmount": "Кумулативен износ",
       "transferCount": "Трансфери во периодот",
@@ -672,7 +677,9 @@
       "kindPerson": "Член",
       "kindSpace": "Простор",
       "kindExternal": "Надворешен",
-      "statsCountOnly": "{count} трансфери · {recipients} примачи"
+      "statsCountOnly": "{count, plural, one {# трансфер} other {# трансфери}} · {recipients, plural, one {# примач} other {# примачи}}",
+      "graphAria": "Мицелиум графикон на текови на вредност",
+      "loadError": "Не можеа да се вчитаат трансферите. Обидете се да ја освежите страницата."
     }
   },
   "AgreementsTab": {

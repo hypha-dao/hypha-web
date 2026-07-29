@@ -56,10 +56,11 @@ function MemberStack({
             title={member.label}
           >
             <AvatarImage
+              alt={member.label}
               className="rounded-full object-cover"
               src={member.imageUrl || undefined}
             />
-            <AvatarFallback className="rounded-full text-[10px]">
+            <AvatarFallback aria-hidden className="rounded-full text-[10px]">
               {member.label.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>

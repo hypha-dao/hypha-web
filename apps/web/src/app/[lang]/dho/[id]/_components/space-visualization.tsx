@@ -39,6 +39,7 @@ type Props = {
   enableHoverActions?: boolean;
   /** Show the space name under each logo (ecosystem nested view). */
   showLabels?: boolean;
+  ariaLabel?: string;
 };
 
 function truncateLabel(name: string, max = 20): string {
@@ -194,6 +195,7 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
       onVisibleSpacesChange,
       enableHoverActions = true,
       showLabels = false,
+      ariaLabel,
     },
     ref,
   ) {
@@ -320,9 +322,15 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
       if (!svgRef.current) return;
 
       const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
+      type OrbitStrokeStyle = { color: string; width: number; glow: string };
+      const orbitStrokeStyles = new Map<number, OrbitStrokeStyle>();
       const getRootFillColor = (accentColor: string) => {
         const parsed = d3.hsl(accentColor);
-        if (!parsed) {
+        if (
+          !parsed ||
+          !Number.isFinite(parsed.h) ||
+          !Number.isFinite(parsed.l)
+        ) {
           return themeRef.current === 'dark'
             ? 'rgba(255,255,255,0.06)'
             : 'rgba(15,23,42,0.08)';
@@ -345,11 +353,13 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
         themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
       );
       const MIN_LIGHTNESS_DELTA = 22;
-      const getOrbitStrokeStyle = (
-        accentColor: string,
-      ): { color: string; width: number; glow: string } => {
+      const getOrbitStrokeStyle = (accentColor: string): OrbitStrokeStyle => {
         const parsed = d3.hsl(accentColor);
-        if (!parsed) {
+        if (
+          !parsed ||
+          !Number.isFinite(parsed.h) ||
+          !Number.isFinite(parsed.l)
+        ) {
           return {
             color: withAlpha(accentColor, getOrbitStrokeAlpha()),
             width: 1.55,
@@ -380,6 +390,15 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
             themeRef.current === 'dark' ? 0.32 : 0.22,
           ),
         };
+      };
+
+      const rememberOrbitStrokeStyle = (
+        nodeId: number,
+        accentColor: string,
+      ): OrbitStrokeStyle => {
+        const style = getOrbitStrokeStyle(accentColor);
+        orbitStrokeStyles.set(nodeId, style);
+        return style;
       };
 
       const getStrokeWidth = (depth: number): number => {
@@ -593,6 +612,21 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
       const getNodeAccent = (d: SpaceHierarchyNode): string =>
         nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
 
+      const getCachedOrbitStrokeStyle = (
+        d: SpaceHierarchyNode,
+      ): OrbitStrokeStyle => {
+        const cached = orbitStrokeStyles.get(d.data.id);
+        if (cached) return cached;
+        const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
+        return rememberOrbitStrokeStyle(d.data.id, accent);
+      };
+
+      rememberOrbitStrokeStyle(root.data.id, resolvedRootAccent);
+      root.each((node) => {
+        if (node.data.id === root.data.id) return;
+        rememberOrbitStrokeStyle(node.data.id, accentFromSpaceId(node.data.id));
+      });
+
       const defs = svg.append('defs');
       const orbitGlow = defs
         .append('filter')
@@ -628,10 +662,10 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
         .append('circle')
         .attr('class', 'orbit-halo')
         .style('fill', 'none')
-        .attr('stroke', (d: SpaceHierarchyNode) => {
-          const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-          return getOrbitStrokeStyle(accent).glow;
-        })
+        .attr(
+          'stroke',
+          (d: SpaceHierarchyNode) => getCachedOrbitStrokeStyle(d).glow,
+        )
         .attr('stroke-width', (d: SpaceHierarchyNode) =>
           d.depth === 0 ? 7 : 5.5,
         )
@@ -642,13 +676,13 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
         .append('circle')
         .attr('class', 'orbit')
         .style('fill', 'none')
-        .attr('stroke', (d: SpaceHierarchyNode) => {
-          const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-          return getOrbitStrokeStyle(accent).color;
-        })
+        .attr(
+          'stroke',
+          (d: SpaceHierarchyNode) => getCachedOrbitStrokeStyle(d).color,
+        )
         .attr('stroke-width', (d: SpaceHierarchyNode) => {
           if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-          return getOrbitStrokeStyle(getNodeAccent(d)).width;
+          return getCachedOrbitStrokeStyle(d).width;
         })
         .attr('stroke-linecap', 'round')
         .attr('filter', 'url(#orbit-glow)')
@@ -982,11 +1016,10 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
             clampSvgLength(finiteOr(d.r, 0) * k),
           )
           .style('fill', 'none')
-          .attr('stroke', (d: SpaceHierarchyNode) => {
-            const accent =
-              d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-            return getOrbitStrokeStyle(accent).glow;
-          })
+          .attr(
+            'stroke',
+            (d: SpaceHierarchyNode) => getCachedOrbitStrokeStyle(d).glow,
+          )
           .attr('stroke-width', (d: SpaceHierarchyNode) =>
             d.depth === 0 ? 7 : 5.5,
           );
@@ -996,14 +1029,13 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
             clampSvgLength(finiteOr(d.r, 0) * k),
           )
           .style('fill', 'none')
-          .attr('stroke', (d: SpaceHierarchyNode) => {
-            const accent =
-              d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
-            return getOrbitStrokeStyle(accent).color;
-          })
+          .attr(
+            'stroke',
+            (d: SpaceHierarchyNode) => getCachedOrbitStrokeStyle(d).color,
+          )
           .attr('stroke-width', (d: SpaceHierarchyNode) => {
             if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-            return getOrbitStrokeStyle(getNodeAccent(d)).width;
+            return getCachedOrbitStrokeStyle(d).width;
           });
 
         logos
@@ -1089,29 +1121,28 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
           const resolvedAccent =
             sampledAccent ?? accentFromSpaceId(node.data.id);
           nodeAccents.set(node.data.id, resolvedAccent);
+          rememberOrbitStrokeStyle(node.data.id, resolvedAccent);
           const group = orbitGroups.filter((d) => d.data.id === node.data.id);
           group
             .select('circle.orbit-halo')
             .style('fill', 'none')
-            .attr('stroke', (d: SpaceHierarchyNode) => {
-              const accent =
-                d.depth === 0 ? resolvedRootAccent : resolvedAccent;
-              return getOrbitStrokeStyle(accent).glow;
-            })
+            .attr(
+              'stroke',
+              (d: SpaceHierarchyNode) => getCachedOrbitStrokeStyle(d).glow,
+            )
             .attr('stroke-width', (d: SpaceHierarchyNode) =>
               d.depth === 0 ? 7 : 5.5,
             );
           group
             .select('circle.orbit')
             .style('fill', 'none')
-            .attr('stroke', (d: SpaceHierarchyNode) => {
-              const accent =
-                d.depth === 0 ? resolvedRootAccent : resolvedAccent;
-              return getOrbitStrokeStyle(accent).color;
-            })
+            .attr(
+              'stroke',
+              (d: SpaceHierarchyNode) => getCachedOrbitStrokeStyle(d).color,
+            )
             .attr('stroke-width', (d: SpaceHierarchyNode) => {
               if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
-              return getOrbitStrokeStyle(resolvedAccent).width;
+              return getCachedOrbitStrokeStyle(d).width;
             });
         })();
       });
@@ -1128,6 +1159,7 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
       enableHoverActions,
       rootAccentHex,
       showLabels,
+      ariaLabel,
     ]);
 
     useEffect(() => {
@@ -1143,7 +1175,7 @@ export const SpaceVisualization = forwardRef<SpaceVisualizationHandle, Props>(
           ref={svgRef}
           className="h-auto w-full"
           role="img"
-          aria-label="Space hierarchy visualization"
+          aria-label={ariaLabel ?? 'Space hierarchy visualization'}
         />
         {enableHoverActions && tooltip.visible && (
           <div

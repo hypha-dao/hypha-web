@@ -68,11 +68,11 @@ export function NestedSpacesView({
           [person.name, person.surname].filter(Boolean).join(' ') ||
           person.nickname ||
           person.slug ||
-          'Member',
+          t('navigation.unnamedMember'),
         imageUrl: person.avatarUrl,
         slug: person.slug,
       })),
-    [persons.data],
+    [persons.data, t],
   );
 
   const spaceMembers = useMemo<EcosystemMemberPreview[]>(
@@ -141,6 +141,7 @@ export function NestedSpacesView({
           data={hierarchyData}
           currentSpaceId={currentSpaceId}
           rootAccentHex={rootAccentHex || selectedAccent}
+          ariaLabel={t('navigation.graphAria')}
           enableHoverActions={false}
           showLabels
           onVisibleSpacesChange={(visible) => {

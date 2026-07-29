@@ -49,11 +49,27 @@ export function useSpaceMembershipNetwork({
   const inFlightRef = useRef<Set<string>>(new Set());
   const depthBySlugRef = useRef<Map<string, number>>(new Map());
   const crawlGenRef = useRef(0);
+  const authHeadersRef = useRef<Record<string, string> | null>(null);
+  const authHeadersGenRef = useRef(-1);
 
-  const rootMemberSpaces = useMemo(
-    () => rootMembers.data ?? [],
+  // Stabilize roster identity so empty-array / same-content churn doesn't reset BFS.
+  const rootRosterKey = useMemo(
+    () =>
+      JSON.stringify(
+        (rootMembers.data ?? []).map((space) => [
+          space.id,
+          space.slug ?? '',
+          space.web3SpaceId ?? null,
+        ]),
+      ),
     [rootMembers.data],
   );
+
+  const rootMemberSpaces = useMemo(() => {
+    void rootRosterKey;
+    return rootMembers.data ?? [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by rootRosterKey
+  }, [rootRosterKey]);
 
   // Seed depth-1 edges whenever the root roster changes.
   useEffect(() => {
@@ -61,6 +77,8 @@ export function useSpaceMembershipNetwork({
     fetchedRef.current = new Set([rootSlug]);
     inFlightRef.current = new Set();
     depthBySlugRef.current = new Map([[rootSlug, 0]]);
+    authHeadersRef.current = null;
+    authHeadersGenRef.current = -1;
 
     const next: SpaceMembershipEdge[] = rootMemberSpaces.map((child) => ({
       parentSlug: null,
@@ -119,7 +137,6 @@ export function useSpaceMembershipNetwork({
       frontier.push({ slug, depth });
     };
 
-    // Expand hub's discoverable children and any already-known discoverable nodes.
     for (const edge of edges) {
       if (!discoverableIds.has(edge.child.id)) continue;
       consider(edge.child.slug, edge.depth);
@@ -127,7 +144,6 @@ export function useSpaceMembershipNetwork({
 
     if (frontier.length === 0) return;
 
-    // Respect node budget before fetching more.
     const knownIds = new Set(edges.map((e) => e.child.id));
     if (knownIds.size >= maxNodes) return;
 
@@ -137,9 +153,19 @@ export function useSpaceMembershipNetwork({
     const run = async () => {
       setIsCrawling(true);
       try {
-        const token = await getAccessToken();
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
-        if (token) headers.Authorization = `Bearer ${token}`;
+        if (
+          authHeadersGenRef.current !== gen ||
+          authHeadersRef.current == null
+        ) {
+          const token = await getAccessToken();
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+          if (token) headers.Authorization = `Bearer ${token}`;
+          authHeadersRef.current = headers;
+          authHeadersGenRef.current = gen;
+        }
+        const headers = authHeadersRef.current;
 
         const batch = frontier.slice(0, concurrency);
         for (const item of batch) inFlightRef.current.add(item.slug);
@@ -153,17 +179,32 @@ export function useSpaceMembershipNetwork({
           }
         });
 
-        for (const item of batch) inFlightRef.current.delete(item.slug);
+        if (cancelled || gen !== crawlGenRef.current) {
+          // Keep slugs in fetched so cancelled batches are not immediately re-queued.
+          for (const item of batch) {
+            inFlightRef.current.delete(item.slug);
+            fetchedRef.current.add(item.slug);
+          }
+          return;
+        }
 
-        if (cancelled || gen !== crawlGenRef.current) return;
-
-        for (const item of batch) fetchedRef.current.add(item.slug);
+        for (const item of batch) {
+          inFlightRef.current.delete(item.slug);
+          fetchedRef.current.add(item.slug);
+        }
 
         setEdges((prev) => {
           const known = new Set(prev.map((e) => e.child.id));
+          const seenPairs = new Set(
+            prev.map(
+              (e) => `${e.parentSlug ?? ''}|${e.parentId ?? ''}|${e.child.id}`,
+            ),
+          );
           const next = [...prev];
 
-          for (const { slug, depth, members } of results) {
+          resultsLoop: for (const { slug, depth, members } of results) {
+            if (known.size >= maxNodes) break resultsLoop;
+
             const parentSpace =
               prev.find((e) => e.child.slug === slug)?.child ??
               organisationSpaces.find((s) => s.slug === slug);
@@ -171,18 +212,16 @@ export function useSpaceMembershipNetwork({
 
             for (const child of members) {
               if (child.slug === rootSlug) continue;
-              if (known.size >= maxNodes) break;
-              // Avoid duplicate undirected edge noise: skip if identical parent→child exists.
-              const already = next.some(
-                (e) =>
-                  e.child.id === child.id &&
-                  (e.parentSlug === slug || e.parentId === parentId),
-              );
-              if (already) {
+              if (known.size >= maxNodes) break resultsLoop;
+
+              const pairKey = `${slug}|${parentId ?? ''}|${child.id}`;
+              if (seenPairs.has(pairKey)) {
                 known.add(child.id);
                 continue;
               }
+              seenPairs.add(pairKey);
               if (!known.has(child.id)) known.add(child.id);
+
               const childDepth = depth + 1;
               if (child.slug) {
                 const prevDepth = depthBySlugRef.current.get(child.slug);
@@ -202,7 +241,7 @@ export function useSpaceMembershipNetwork({
           return next;
         });
       } finally {
-        if (!cancelled && gen === crawlGenRef.current) {
+        if (gen === crawlGenRef.current) {
           setIsCrawling(false);
         }
       }

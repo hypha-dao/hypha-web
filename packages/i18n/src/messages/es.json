@@ -1395,7 +1395,9 @@
     },
     "navigation": {
       "breadcrumb": "Ruta del espacio",
-      "memberCount": "{count} miembros",
+      "memberCount": "{count, plural, one {# miembro} other {# miembros}}",
+      "unnamedMember": "Miembro",
+      "graphAria": "Visualización de jerarquía de espacios",
       "individuals": "Personas",
       "memberSpaces": "Espacios miembros",
       "noIndividuals": "Aún no hay personas",
@@ -1416,7 +1418,9 @@
       "networkSpaceMeta": "Espacio de red · salto {depth}",
       "embeddedDescription": "Conexiones de miembros para {space} — personas y espacios vinculados más allá de esta jerarquía del ecosistema.",
       "legendPerson": "Miembro (círculo)",
-      "legendSpace": "Espacio (cuadrado)"
+      "legendSpace": "Espacio (cuadrado)",
+      "unknownMember": "Miembro",
+      "graphAria": "Gráfico de micelio de conexiones de miembros"
     },
     "spaceToSpace": {
       "title": "Micelio espacio-espacio",
@@ -1429,7 +1433,8 @@
       "expanding": "Creciendo el micelio completo…",
       "stats": "{spaces} espacios · {links} enlaces",
       "empty": "Aún no hay membresías espacio-espacio",
-      "networkMeta": "Espacio de red · salto {depth}"
+      "networkMeta": "Espacio de red · salto {depth}",
+      "graphAria": "Gráfico de micelio de membresías espacio a espacio"
     },
     "valueFlows": {
       "title": "Flujos de valor",
@@ -1437,7 +1442,7 @@
       "hubMeta": "Espacio distribuidor",
       "recipientMeta": "{amount} {symbol}",
       "allTokens": "Todos los tokens",
-      "stats": "{count} transferencias salientes",
+      "stats": "{count, plural, one {# transferencia saliente} other {# transferencias salientes}}",
       "empty": "Aún no hay flujos de valor salientes",
       "details": "Detalles del flujo",
       "amount": "Cantidad",
@@ -1452,7 +1457,7 @@
       "period365d": "Últimos 365 días",
       "periodAll": "Todo el tiempo",
       "periodRange": "Desde {start}",
-      "statsCumulative": "{count} transferencias · {recipients} destinatarios · {total} {symbol}",
+      "statsCumulative": "{count, plural, one {# transferencia} other {# transferencias}} · {recipients, plural, one {# destinatario} other {# destinatarios}} · {total} {symbol}",
       "mixedTokens": "tokens",
       "cumulativeAmount": "Importe acumulado",
       "transferCount": "Transferencias en el periodo",
@@ -1463,7 +1468,9 @@
       "kindPerson": "Miembro",
       "kindSpace": "Espacio",
       "kindExternal": "Externo",
-      "statsCountOnly": "{count} transferencias · {recipients} destinatarios"
+      "statsCountOnly": "{count, plural, one {# transferencia} other {# transferencias}} · {recipients, plural, one {# destinatario} other {# destinatarios}}",
+      "graphAria": "Gráfico de micelio de flujos de valor",
+      "loadError": "No se pudieron cargar las transferencias. Intente actualizar."
     }
   },
   "AgreementsTab": {

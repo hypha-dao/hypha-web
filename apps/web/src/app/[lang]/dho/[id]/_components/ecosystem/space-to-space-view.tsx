@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import type { Space } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { MyceliumForceGraph } from './mycelium-force-graph';
+import { resolveEdgeSource } from './resolve-edge-source';
 import type { MyceliumGraph, MyceliumNode } from './types';
 import { useSpaceMembershipNetwork } from './use-space-membership-network';
 
@@ -44,8 +45,10 @@ export function SpaceToSpaceView({
       },
     ];
     const links: MyceliumGraph['links'] = [];
+    const seenLinks = new Set<string>();
     const nodeIds = new Set<string>([`hub-${spaceSlug}`]);
     const spaceIdToNode = new Map<number, string>();
+    const hubId = `hub-${spaceSlug}`;
 
     const ensureSpaceNode = (space: Space, depth: number) => {
       const id = `space-${space.id}`;
@@ -70,22 +73,25 @@ export function SpaceToSpaceView({
       if (!(edge.depth === 1 || discoverableIds.has(edge.child.id))) continue;
 
       const childId = ensureSpaceNode(edge.child, edge.depth);
-      const sourceId =
-        edge.parentSlug == null || edge.parentId == null
-          ? `hub-${spaceSlug}`
-          : spaceIdToNode.get(edge.parentId) ??
-            (() => {
-              // Parent may only exist as a slug on an earlier edge.
-              const parentEdge = edges.find(
-                (e) => e.child.id === edge.parentId,
-              );
-              if (parentEdge) {
-                return ensureSpaceNode(parentEdge.child, parentEdge.depth);
-              }
-              return `hub-${spaceSlug}`;
-            })();
+      const sourceId = resolveEdgeSource({
+        edge,
+        edges,
+        hubId,
+        spaceIdToNode,
+        ensureSpace: ensureSpaceNode,
+        canMaterializeParent: (space) => {
+          const parentEdge = edges.find((e) => e.child.id === space.id);
+          return parentEdge
+            ? parentEdge.depth === 1 || discoverableIds.has(space.id)
+            : discoverableIds.has(space.id);
+        },
+      });
 
       if (!nodeIds.has(sourceId)) continue;
+
+      const linkKey = `${sourceId}->${childId}@${edge.depth}`;
+      if (seenLinks.has(linkKey)) continue;
+      seenLinks.add(linkKey);
 
       links.push({
         id: `edge-${sourceId}-${childId}-${edge.depth}`,
@@ -135,6 +141,7 @@ export function SpaceToSpaceView({
       <MyceliumForceGraph
         graph={graph}
         accentHex={accentHex}
+        ariaLabel={t('spaceToSpace.graphAria')}
         emptyLabel={t('spaceToSpace.empty')}
         onNodeClick={handleClick}
       />
