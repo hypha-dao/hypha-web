@@ -12,6 +12,7 @@ import {
   authorizeIngestion,
   loadOwnedSignal,
 } from '../_lib/authorize-ingestion';
+import { withExternalTag } from '../_lib/external-signal-tag';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -71,7 +72,7 @@ export async function PATCH(
         priority: patch.priority ?? signal.priority,
         title: patch.title ?? signal.title,
         description: patch.description ?? signal.description,
-        tags: patch.tags ?? signal.tags,
+        tags: withExternalTag(patch.tags ?? signal.tags),
         dueAt: patch.dueAt === undefined ? signal.dueAt : patch.dueAt,
         progressStatus:
           patch.progressStatus === undefined

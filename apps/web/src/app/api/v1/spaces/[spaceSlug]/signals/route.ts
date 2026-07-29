@@ -15,21 +15,12 @@ import {
   authorizeIngestion,
   resolveSignalAuthorOrSpace,
 } from './_lib/authorize-ingestion';
+import { withExternalTag } from './_lib/external-signal-tag';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 type Params = { spaceSlug: string };
-
-/** Marks every ingested signal so the board can filter on provenance. */
-const EXTERNAL_SIGNAL_TAG = 'External Signal';
-
-function withExternalTag(tags: string[]): string[] {
-  const alreadyTagged = tags.some(
-    (tag) => tag.trim().toLowerCase() === EXTERNAL_SIGNAL_TAG.toLowerCase(),
-  );
-  return alreadyTagged ? tags : [...tags, EXTERNAL_SIGNAL_TAG];
-}
 
 /**
  * Who the board credits for a signal: the reported author when Hypha knows
