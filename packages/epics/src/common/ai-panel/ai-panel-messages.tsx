@@ -172,9 +172,9 @@ export function AiPanelMessages({
   return (
     <div
       ref={containerRef}
-      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-2"
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         {displayMessages.map((msg, index) => (
           <AiPanelMessageBubble
             key={msg.id}
