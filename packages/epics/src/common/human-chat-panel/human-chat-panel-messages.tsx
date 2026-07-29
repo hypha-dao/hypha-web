@@ -534,7 +534,7 @@ export function HumanChatPanelMessages({
         }}
         className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
           {messages.length > 0 ? (
             <div
               ref={topSentinelRef}
