@@ -17,13 +17,16 @@ const WORKFLOW_STATUS_TOP_BORDER: Record<string, string> = {
   error: 'border-t-error-9',
 };
 
-/** Priority colors — left card stripe + list dots (urgency, not workflow stage). */
-export const PRIORITY_LEFT_BORDER: Record<string, string> = {
+/** Priority colors — top card stripe + list dots (urgency, not workflow stage). */
+export const PRIORITY_TOP_BAR: Record<string, string> = {
   critical: 'bg-error-9',
   high: 'bg-warning-9',
   medium: 'bg-accent-9',
   low: 'bg-neutral-7',
 };
+
+/** @deprecated Use PRIORITY_TOP_BAR */
+export const PRIORITY_LEFT_BORDER = PRIORITY_TOP_BAR;
 
 export const PRIORITY_DOT: Record<string, string> = {
   critical: 'bg-error-9',
@@ -65,9 +68,14 @@ export function priorityLeftBorderEdgeClass(priority?: string | null): string {
   return PRIORITY_LEFT_BORDER_EDGE[key] ?? PRIORITY_LEFT_BORDER_EDGE.medium!;
 }
 
-export function priorityLeftBorderClass(priority?: string | null): string {
+export function priorityTopBarClass(priority?: string | null): string {
   const key = priority ?? 'medium';
-  return PRIORITY_LEFT_BORDER[key] ?? PRIORITY_LEFT_BORDER.medium!;
+  return PRIORITY_TOP_BAR[key] ?? PRIORITY_TOP_BAR.medium!;
+}
+
+/** @deprecated Use priorityTopBarClass */
+export function priorityLeftBorderClass(priority?: string | null): string {
+  return priorityTopBarClass(priority);
 }
 
 export function priorityDotClass(priority?: string | null): string {
