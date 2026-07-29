@@ -392,6 +392,22 @@
 
     font-family: var(--font-family-text);
     font-feature-settings: 'rlig' 1, 'calt' 1;
+
+    /*
+     * Quiet canvas depth — top lift + soft falloff so the page
+     * doesn't read as a flat empty slab. No frost, glow, or wash.
+     */
+    background-image: radial-gradient(
+        120% 70% at 50% -18%,
+        color-mix(in oklab, var(--card) 55%, transparent),
+        transparent 62%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--page-background) 86%, var(--card) 14%) 0%,
+        var(--page-background) 42%,
+        color-mix(in oklab, var(--page-background) 94%, black 6%) 100%
+      );
   }
 }
 
