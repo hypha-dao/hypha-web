@@ -6,8 +6,8 @@
  * Callers use this to turn the resulting error into the same answer the check
  * would have produced, rather than a 500.
  *
- * Pass `constraint` to narrow to one index when a table has several, so an
- * unrelated violation is not mistaken for the expected one.
+ * Pass the full `constraint` name to narrow to one index when a table has
+ * several, so an unrelated violation is not mistaken for the expected one.
  */
 export function isUniqueViolation(
   error: unknown,
@@ -21,9 +21,7 @@ export function isUniqueViolation(
   if (!candidate || typeof candidate !== 'object') return false;
 
   if (candidate.code === '23505') {
-    return constraint
-      ? Boolean(candidate.constraint?.includes(constraint))
-      : true;
+    return constraint ? candidate.constraint === constraint : true;
   }
 
   // Drizzle wraps driver errors, so the SQLSTATE can sit one level down.
