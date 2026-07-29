@@ -22,6 +22,10 @@ export interface CreateCoherenceInput {
   progressStatus?: string | null;
   board?: string | null;
   assigneeIds?: number[];
+  /** `space_api_keys.source` when written by a community app integration. */
+  source?: string | null;
+  /** The integration's own identifier for the record, used for idempotency. */
+  externalId?: string | null;
 }
 
 export interface UpdateCoherenceInput {
@@ -45,6 +49,8 @@ export interface UpdateCoherenceSignalInput {
   progressStatus?: string | null;
   board?: string | null;
   assigneeIds?: number[];
+  /** Omit to leave the archived state alone; set it to change it in the same write. */
+  archived?: boolean;
 }
 
 export type UpdateCoherenceSignalBySlugInput = {
@@ -103,6 +109,10 @@ export type Coherence = {
   progressStatus: string | null;
   board: string | null;
   assigneeIds: number[];
+  /** `space_api_keys.source` when written by a community app integration. */
+  source: string | null;
+  /** The integration's own identifier for the record. */
+  externalId: string | null;
   /** Present on list/detail API responses; not stored on the row itself. */
   upvotes?: CoherenceUpvoteSummary;
 };

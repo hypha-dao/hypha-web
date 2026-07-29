@@ -39,6 +39,10 @@ export const coherences = pgTable(
     progressStatus: text('progress_status'),
     board: text('board'),
     assigneeIds: jsonb('assignee_ids').$type<number[]>().notNull().default([]),
+    /** `space_api_keys.source` when the signal arrived from a community app. */
+    source: text('source'),
+    /** The external app's own identifier for the record, used for idempotency. */
+    externalId: text('external_id'),
     ...commonDateFields,
   },
   (table) => [
@@ -67,6 +71,11 @@ export const coherences = pgTable(
       .on(table.spaceId, table.dueAt)
       .where(sql`${table.dueAt} IS NOT NULL AND ${table.archived} = false`),
     index('coherences_assignee_ids_idx').using('gin', table.assigneeIds),
+    uniqueIndex('coherences_space_source_external_id_unique')
+      .on(table.spaceId, table.source, table.externalId)
+      .where(
+        sql`${table.spaceId} IS NOT NULL AND ${table.source} IS NOT NULL AND ${table.externalId} IS NOT NULL`,
+      ),
   ],
 );
 

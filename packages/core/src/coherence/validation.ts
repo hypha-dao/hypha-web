@@ -122,6 +122,98 @@ export const schemaPatchCoherenceTaskBySlug = z.object({
   priority: z.enum(COHERENCE_PRIORITIES).optional(),
 });
 
+const evmAddressSchema = z
+  .string()
+  .trim()
+  .regex(/^0x[0-9a-fA-F]{40}$/, 'walletAddress must be an EVM address');
+
+/**
+ * An integration identifies an author by wallet or email; it never creates
+ * people. When the author is omitted, or matches nobody in Hypha, the signal is
+ * attributed to the space itself.
+ */
+const ingestedSignalAuthorSchema = z
+  .object({
+    walletAddress: evmAddressSchema.optional(),
+    email: z.string().trim().email().max(320).optional(),
+  })
+  .strict()
+  .refine((author) => Boolean(author.walletAddress || author.email), {
+    message: 'author requires either walletAddress or email',
+  });
+
+const workflowSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z0-9_]+$/)
+  .nullable()
+  .optional();
+
+/**
+ * Tri-state so a patch can leave a due date untouched (absent) or clear it
+ * (explicit null). The shared `optionalDueAtSchema` collapses both to null.
+ */
+const patchDueAtSchema = z
+  .union([z.string().datetime(), z.date(), z.null()])
+  .optional()
+  .transform((value) => {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  });
+
+/**
+ * Signal creation by a community app. Types are limited to the four the Hypha
+ * edit form can round-trip, so an ingested signal stays fully editable in the
+ * UI. Assignees are Hypha person ids and remain a Hypha-side concern.
+ */
+export const schemaIngestSignal = z
+  .object({
+    type: z.enum(COHERENCE_SIGNAL_TYPES),
+    priority: z.enum(COHERENCE_PRIORITIES).default('medium'),
+    title: z.string().trim().min(1).max(50),
+    description: z.string().trim().min(1).max(4000),
+    tags: coherenceTagsSchema,
+    progressStatus: workflowSlugSchema,
+    board: workflowSlugSchema,
+    dueAt: optionalDueAtSchema,
+    /** The integration's own record id, used to make retries idempotent. */
+    externalId: z.string().trim().min(1).max(200).optional(),
+    /** Omit to publish as the space rather than on behalf of a person. */
+    author: ingestedSignalAuthorSchema.optional(),
+  })
+  .strict();
+
+export const schemaPatchIngestedSignal = z
+  .object({
+    type: z.enum(COHERENCE_SIGNAL_TYPES).optional(),
+    priority: z.enum(COHERENCE_PRIORITIES).optional(),
+    title: z.string().trim().min(1).max(50).optional(),
+    description: z.string().trim().min(1).max(4000).optional(),
+    tags: coherenceTagsSchema.optional(),
+    archived: z.boolean().optional(),
+    progressStatus: workflowSlugSchema,
+    board: workflowSlugSchema,
+    dueAt: patchDueAtSchema,
+  })
+  .strict()
+  .refine(
+    (patch) => Object.values(patch).some((value) => value !== undefined),
+    {
+      message: 'Provide at least one field to update',
+    },
+  );
+
+export const schemaIngestedSignalUpvote = z
+  .object({
+    voter: z.object({ walletAddress: evmAddressSchema }).strict(),
+    votingPowerPercent: z.number().int().min(1).max(100).optional(),
+  })
+  .strict();
+
 const signalStatusCategorySchema = z.enum([
   'backlog',
   'active',
