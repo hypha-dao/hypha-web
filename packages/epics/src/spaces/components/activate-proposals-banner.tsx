@@ -65,7 +65,7 @@ export const ActivateProposalsBanner = ({
   return (
     <div
       className={cn(
-        'border-1 rounded-[8px] bg-center border-accent-6 bg-[color-mix(in_oklab,var(--color-accent-surface)_90%,var(--color-accent-9)_10%)]',
+        'border-1 rounded-[8px] bg-center border-accent-6 bg-accent-surface-mix',
         className,
       )}
     >
@@ -78,7 +78,12 @@ export const ActivateProposalsBanner = ({
         <span className={cn('text-2', 'text-foreground')}>
           {dict.banners.activateProposals.subtitle}
         </span>
-        <Button onClick={handleAction} className="w-fit">
+        <Button
+          onClick={handleAction}
+          variant="outline"
+          colorVariant="accent"
+          className="space-accent-outline w-fit"
+        >
           {dict.banners.activateProposals.buttonText}
         </Button>
       </div>

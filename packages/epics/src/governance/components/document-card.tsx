@@ -156,22 +156,38 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
     referenceId: documentId,
   });
   const event = !isLoadingEvents && events instanceof Array ? events[0] : null;
+  const resolvedLeadImage = leadImage?.trim() || '';
   return (
     <Card className="h-full w-full space-y-5">
-      <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
+      <CardHeader className="relative p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
         <Skeleton
           loading={isLoading}
           className="min-w-full"
           height="150px"
           width="250px"
         >
-          <Image
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/document-lead-image.webp'}
-            alt={title || ''}
-            width={250}
-            height={150}
-          />
+          {resolvedLeadImage ? (
+            <>
+              <Image
+                className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+                src={resolvedLeadImage}
+                alt={title || ''}
+                width={250}
+                height={150}
+              />
+              {/* Same space-accent ramp as CTAs / banner chrome — not a frosted wash */}
+              <div
+                className="space-accent-lead-edge pointer-events-none absolute inset-x-0 bottom-0 h-[3px]"
+                aria-hidden
+              />
+            </>
+          ) : (
+            <div
+              className="space-accent-lead-fill h-full w-full rounded-tl-xl rounded-tr-xl"
+              role="img"
+              aria-label={title || ''}
+            />
+          )}
         </Skeleton>
       </CardHeader>
       <CardContent className="relative space-y-4">

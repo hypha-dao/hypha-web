@@ -209,6 +209,11 @@ export function CompactSpaceBannerLead({ src }: Props) {
           }}
           aria-hidden
         />
+        {/* Same CTA ramp as dark edge — space colour chrome, not a wash */}
+        <div
+          className="space-accent-lead-edge absolute inset-x-0 bottom-0 h-[3px] opacity-90"
+          aria-hidden
+        />
       </div>
       <div
         className="pointer-events-none absolute inset-0 hidden transition-opacity duration-320 ease-out dark:block"
@@ -231,20 +236,9 @@ export function CompactSpaceBannerLead({ src }: Props) {
           }}
           aria-hidden
         />
+        {/* Space-accent edge chrome (shared CTA ramp) — no frosted accent wash / mint skylight */}
         <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              'linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) calc(var(--banner-ov-accent-wash, 0.18) * 100%), transparent), transparent, transparent)',
-          }}
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 mix-blend-soft-light"
-          style={{
-            backgroundImage:
-              'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.28 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
-          }}
+          className="space-accent-lead-edge absolute inset-x-0 bottom-0 h-[3px] opacity-90"
           aria-hidden
         />
         <div
