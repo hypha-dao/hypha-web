@@ -462,9 +462,11 @@ export function MyceliumForceGraph({
       simulation.stop();
       setHover(null);
     };
-    // graphKey captures structural graph changes; theme resolved gate avoids undefined→dark remount
+    // Rebuild on structure only. Theme/accent colors are patched by the style effect.
+    // `resolvedTheme === undefined` is intentional so we re-run once when theme settles,
+    // without rebuilding on every light↔dark toggle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphKey, resolvedTheme]);
+  }, [graphKey, resolvedTheme === undefined]);
 
   useEffect(() => {
     if (!svgRef.current || resolvedTheme === undefined) return;
