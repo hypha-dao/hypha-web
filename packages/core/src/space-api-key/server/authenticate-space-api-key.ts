@@ -86,7 +86,14 @@ export async function authenticateSpaceApiKey(
     };
   }
 
-  await touchSpaceApiKeyLastUsed({ id: row.id }, { db });
+  // Telemetry, not an auth input: never make a valid key fail, or pay for a
+  // serialized write, because of it.
+  void touchSpaceApiKeyLastUsed({ id: row.id }, { db }).catch((error) => {
+    console.warn('Failed to record API key usage', {
+      keyId: row.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
 
   return {
     ok: true,

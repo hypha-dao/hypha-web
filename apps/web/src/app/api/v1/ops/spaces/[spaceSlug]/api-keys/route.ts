@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  buildPaginatedResponse,
   createSpaceApiKey,
   findSpaceBySlug,
+  isUniqueViolation,
   listSpaceApiKeys,
+  parseHttpPaginationParams,
   schemaCreateSpaceApiKey,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -13,6 +16,15 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 type Params = { spaceSlug: string };
+
+function activeKeyConflict(source: string) {
+  return NextResponse.json(
+    {
+      error: `An active key already exists for source "${source}". Revoke it before issuing a replacement.`,
+    },
+    { status: 409 },
+  );
+}
 
 /**
  * Issue an integration key for a space.
@@ -58,18 +70,24 @@ export async function POST(
         (key) => key.source === parsed.data.source && key.revokedAt === null,
       )
     ) {
-      return NextResponse.json(
-        {
-          error: `An active key already exists for source "${parsed.data.source}". Revoke it before issuing a replacement.`,
-        },
-        { status: 409 },
-      );
+      return activeKeyConflict(parsed.data.source);
     }
 
-    const { key, plaintext } = await createSpaceApiKey(
-      { spaceId: space.id, ...parsed.data },
-      { db },
-    );
+    let issued: Awaited<ReturnType<typeof createSpaceApiKey>>;
+    try {
+      issued = await createSpaceApiKey(
+        { spaceId: space.id, ...parsed.data },
+        { db },
+      );
+    } catch (error) {
+      // The check above cannot see a key a concurrent request is inserting, so
+      // the index has the last word — report it as the same conflict.
+      if (isUniqueViolation(error, 'space_api_keys_space_source_unique')) {
+        return activeKeyConflict(parsed.data.source);
+      }
+      throw error;
+    }
+    const { key, plaintext } = issued;
 
     return NextResponse.json(
       {
@@ -106,8 +124,21 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    // A space holds one key per integration, so paging the loaded rows is
+    // cheaper than a second count query and still honours the list contract.
+    const { page, pageSize } = parseHttpPaginationParams(new URL(request.url), {
+      defaultPageSize: 50,
+    });
     const keys = await listSpaceApiKeys({ spaceId: space.id }, { db });
-    return NextResponse.json({ keys });
+    const offset = (page - 1) * pageSize;
+    return NextResponse.json(
+      buildPaginatedResponse(
+        keys.slice(offset, offset + pageSize),
+        keys.length,
+        page,
+        pageSize,
+      ),
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Failed to list space API keys:', { spaceSlug, message });

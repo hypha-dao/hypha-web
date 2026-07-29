@@ -4,7 +4,7 @@ vi.mock('../server/queries', () => ({
   findActiveSpaceApiKeyByHash: vi.fn(),
 }));
 vi.mock('../server/mutations', () => ({
-  touchSpaceApiKeyLastUsed: vi.fn(),
+  touchSpaceApiKeyLastUsed: vi.fn().mockResolvedValue(undefined),
 }));
 
 import {
@@ -109,6 +109,26 @@ describe('authenticateSpaceApiKey', () => {
     });
     expect(mockedLookup).toHaveBeenCalledWith({ keyHash: hash }, { db });
     expect(mockedTouch).toHaveBeenCalledWith({ id: 7 }, { db });
+  });
+
+  it('authenticates even when recording usage fails', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(keyRow({ keyHash: hash }) as never);
+    mockedTouch.mockRejectedValueOnce(new Error('database unavailable'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'signals:write',
+      },
+      { db },
+    );
+
+    expect(result.ok).toBe(true);
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+    warn.mockRestore();
   });
 
   it('accepts the key as a bearer token too', async () => {

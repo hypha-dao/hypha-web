@@ -3,7 +3,6 @@ import { ZodError } from 'zod';
 import {
   normalizeCoherence,
   schemaPatchIngestedSignal,
-  updateCoherenceBySlug,
   updateCoherenceSignalBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -63,8 +62,9 @@ export async function PATCH(
     }
 
     // `updateCoherenceSignalBySlug` writes the full signal, so unspecified
-    // fields are carried over from the stored row rather than reset.
-    let updated = await updateCoherenceSignalBySlug(
+    // fields are carried over from the stored row rather than reset. Archiving
+    // rides along in the same write, so a patch can never land half-applied.
+    const updated = await updateCoherenceSignalBySlug(
       {
         slug: signalSlug,
         requesterPersonId: signal.creatorId,
@@ -80,16 +80,10 @@ export async function PATCH(
             : patch.progressStatus,
         board: patch.board === undefined ? signal.board : patch.board,
         assigneeIds: signal.assigneeIds,
+        ...(patch.archived !== undefined ? { archived: patch.archived } : {}),
       },
       { db },
     );
-
-    if (patch.archived !== undefined && patch.archived !== signal.archived) {
-      updated = await updateCoherenceBySlug(
-        { slug: signalSlug, archived: patch.archived },
-        { db },
-      );
-    }
 
     return NextResponse.json({
       id: updated.id,

@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
 import { people } from './people';
@@ -47,10 +47,12 @@ export const spaceApiKeys = pgTable(
   },
   (table) => [
     uniqueIndex('space_api_keys_key_hash_unique').on(table.keyHash),
-    uniqueIndex('space_api_keys_space_source_unique').on(
-      table.spaceId,
-      table.source,
-    ),
+    // Active keys only: `source` is stamped onto every signal the key writes, so
+    // rotating a key has to reuse it. Spanning revoked rows would make issuing a
+    // replacement impossible without breaking ownership of past signals.
+    uniqueIndex('space_api_keys_space_source_unique')
+      .on(table.spaceId, table.source)
+      .where(sql`${table.revokedAt} IS NULL`),
     index('space_api_keys_space_revoked_idx').on(
       table.spaceId,
       table.revokedAt,

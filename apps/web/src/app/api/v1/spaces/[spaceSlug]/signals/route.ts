@@ -5,6 +5,7 @@ import {
   createCoherence,
   findCoherenceBySourceExternalId,
   findSpaceActorPerson,
+  isUniqueViolation,
   normalizeCoherence,
   schemaIngestSignal,
   type Coherence,
@@ -53,6 +54,34 @@ function toIngestionResponse(
 }
 
 /**
+ * The `200` answer for an `externalId` this integration has already ingested,
+ * or null when it has not. Attribution is recovered by comparing the stored
+ * creator against the space actor, since the original payload is long gone.
+ */
+async function respondWithExistingSignal(
+  request: NextRequest,
+  key: { spaceId: number; source: string; externalId: string },
+  space: { slug: string },
+) {
+  const existing = await findCoherenceBySourceExternalId(key, { db });
+  if (!existing) return null;
+
+  const spaceActor = await findSpaceActorPerson(
+    { spaceId: key.spaceId },
+    { db },
+  );
+  return NextResponse.json(
+    toIngestionResponse(
+      request,
+      normalizeCoherence(existing),
+      space.slug,
+      existing.creatorId === spaceActor?.id ? 'space' : 'author',
+    ),
+    { status: 200 },
+  );
+}
+
+/**
  * Ingest a signal produced by a community's own app. The row lands in the same
  * `coherences` table the Signals Board reads, so it appears on the board with
  * no further work.
@@ -92,54 +121,58 @@ export async function POST(
       throw error;
     }
 
-    // Replay check first, so a repeated request neither writes nor creates the
-    // space actor person that attribution may fall back to.
-    if (payload.externalId) {
-      const existing = await findCoherenceBySourceExternalId(
-        {
+    const replayKey = payload.externalId
+      ? {
           spaceId: space.id,
           source: apiKey.source,
           externalId: payload.externalId,
-        },
-        { db },
-      );
-      if (existing) {
-        const spaceActor = await findSpaceActorPerson(
-          { spaceId: space.id },
-          { db },
-        );
-        return NextResponse.json(
-          toIngestionResponse(
-            request,
-            normalizeCoherence(existing),
-            space.slug,
-            existing.creatorId === spaceActor?.id ? 'space' : 'author',
-          ),
-          { status: 200 },
-        );
-      }
+        }
+      : null;
+
+    // Replay check first, so a repeated request neither writes nor creates the
+    // space actor person that attribution may fall back to.
+    if (replayKey) {
+      const replay = await respondWithExistingSignal(request, replayKey, space);
+      if (replay) return replay;
     }
 
     const author = await resolveSignalAuthorOrSpace(payload.author, space);
 
-    const created = await createCoherence(
-      {
-        creatorId: author.personId,
-        spaceId: space.id,
-        type: payload.type,
-        priority: payload.priority,
-        title: payload.title,
-        description: payload.description,
-        tags: withExternalTag(payload.tags),
-        archived: false,
-        dueAt: payload.dueAt,
-        progressStatus: payload.progressStatus,
-        board: payload.board,
-        source: apiKey.source,
-        externalId: payload.externalId ?? null,
-      },
-      { db },
-    );
+    let created: Awaited<ReturnType<typeof createCoherence>>;
+    try {
+      created = await createCoherence(
+        {
+          creatorId: author.personId,
+          spaceId: space.id,
+          type: payload.type,
+          priority: payload.priority,
+          title: payload.title,
+          description: payload.description,
+          tags: withExternalTag(payload.tags),
+          archived: false,
+          dueAt: payload.dueAt,
+          progressStatus: payload.progressStatus,
+          board: payload.board,
+          source: apiKey.source,
+          externalId: payload.externalId ?? null,
+        },
+        { db },
+      );
+    } catch (error) {
+      // Two retries can race past the replay check; the unique index is what
+      // actually makes ingestion idempotent, so honour it as a replay too. The
+      // lookup below is the real test of which constraint fired: any other one
+      // finds no row and falls through to the error response.
+      if (replayKey && isUniqueViolation(error)) {
+        const replay = await respondWithExistingSignal(
+          request,
+          replayKey,
+          space,
+        );
+        if (replay) return replay;
+      }
+      throw error;
+    }
 
     return NextResponse.json(
       toIngestionResponse(

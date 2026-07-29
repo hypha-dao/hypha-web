@@ -21,8 +21,10 @@ export async function DELETE(
   if (denied) return denied;
 
   const { spaceSlug, keyId } = await params;
-  const id = Number.parseInt(keyId, 10);
-  if (!Number.isInteger(id) || id < 1) {
+  // Match the whole segment: `parseInt` would read "1junk" as 1 and revoke a
+  // key the caller never named.
+  const id = /^[1-9]\d*$/.test(keyId) ? Number(keyId) : Number.NaN;
+  if (!Number.isSafeInteger(id)) {
     return NextResponse.json({ error: 'Invalid key id' }, { status: 400 });
   }
 

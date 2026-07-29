@@ -59,7 +59,7 @@ Do not hardcode them, and do not guess them.
 | --------------------- | ------------------------- | -------------------------------------------- |
 | `HYPHA_BASE_URL`      | `https://app.hypha.earth` | Production Hypha                             |
 | `HYPHA_SPACE_SLUG`    | `acme-dao`                | Which Space the signals land in              |
-| `HYPHA_SPACE_API_KEY` | `hyk_K3nQ7bTz_x9f…`       | Per-Space key. Valid for that one Space only |
+| `HYPHA_SPACE_API_KEY` | `hyk_<prefix>_<secret>`   | Per-Space key. Valid for that one Space only |
 
 If any is missing, fail fast with a clear error at startup of the function. Do not fall back to a
 placeholder and do not proceed.
@@ -182,7 +182,9 @@ behaviour, not a workaround.
 ### Edge Function — `supabase/functions/publish-signal/index.ts`
 
 ```ts
-const BASE_URL = Deno.env.get('HYPHA_BASE_URL') ?? 'https://app.hypha.earth';
+// No fallback for any of the three: guessing the host would publish a staging
+// app's signals into production, or fail with a confusing 404.
+const BASE_URL = Deno.env.get('HYPHA_BASE_URL');
 const SPACE_SLUG = Deno.env.get('HYPHA_SPACE_SLUG');
 const API_KEY = Deno.env.get('HYPHA_SPACE_API_KEY');
 
@@ -206,25 +208,32 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (request.method !== 'POST') return json({ error: 'Use POST' }, 405);
 
-  if (!SPACE_SLUG || !API_KEY) {
-    console.error('Missing HYPHA_SPACE_SLUG or HYPHA_SPACE_API_KEY secret');
+  if (!BASE_URL || !SPACE_SLUG || !API_KEY) {
+    console.error('Missing a HYPHA_BASE_URL, HYPHA_SPACE_SLUG or HYPHA_SPACE_API_KEY secret');
     return json({ error: 'Signals publishing is not configured' }, 500);
   }
 
   let input: Record<string, unknown>;
   try {
-    input = await request.json();
+    const parsed = await request.json();
+    // `null` and arrays are valid JSON but not valid bodies; reading fields off
+    // them would throw or coerce into nonsense like "[object Object]".
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return json({ error: 'Body must be a JSON object' }, 400);
+    }
+    input = parsed as Record<string, unknown>;
   } catch {
     return json({ error: 'Invalid JSON' }, 400);
   }
 
-  const externalId = String(input.externalId ?? '').trim();
-  const title = String(input.title ?? '').trim();
-  const description = String(input.description ?? '').trim();
-  const type = String(input.type ?? '') as SignalType;
+  const str = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+  const externalId = str(input.externalId);
+  const title = str(input.title);
+  const description = str(input.description);
+  const type = str(input.type) as SignalType;
 
   if (!externalId || !title || !description) {
-    return json({ error: 'externalId, title and description are required' }, 400);
+    return json({ error: 'externalId, title and description must be non-empty strings' }, 400);
   }
   if (!SIGNAL_TYPES.includes(type)) {
     return json({ error: `type must be one of ${SIGNAL_TYPES.join(', ')}` }, 400);
@@ -238,13 +247,17 @@ Deno.serve(async (request) => {
     description: description.slice(0, 4000),
     type,
   };
-  if (input.priority) payload.priority = input.priority;
+  if (typeof input.priority === 'string') payload.priority = input.priority;
   if (Array.isArray(input.tags) && input.tags.length > 0) {
-    payload.tags = input.tags.slice(0, 50);
+    payload.tags = input.tags.filter((tag) => typeof tag === 'string').slice(0, 50);
   }
-  if (input.author && typeof input.author === 'object') {
+  if (input.author && typeof input.author === 'object' && !Array.isArray(input.author)) {
     payload.author = input.author;
   }
+  if (typeof input.progressStatus === 'string') payload.progressStatus = input.progressStatus;
+  if (typeof input.board === 'string') payload.board = input.board;
+  // `null` is meaningful here — it clears a due date — so pass it through.
+  if (input.dueAt === null || typeof input.dueAt === 'string') payload.dueAt = input.dueAt;
 
   const response = await fetch(`${BASE_URL}/api/v1/spaces/${SPACE_SLUG}/signals`, {
     method: 'POST',
@@ -256,22 +269,39 @@ Deno.serve(async (request) => {
   });
 
   const text = await response.text();
+  let body: Record<string, unknown> = {};
+  try {
+    body = JSON.parse(text);
+  } catch {
+    // Non-JSON body (a gateway error page); the status is all we can rely on.
+  }
+
   if (!response.ok) {
-    // Log the detail server-side; do not leak Hypha internals to the browser.
+    // Never log the raw body or the author: both carry the signal's content and
+    // the member's email or wallet, and function logs are widely readable.
     console.error('Hypha rejected the signal', {
       status: response.status,
       externalId,
-      body: text,
     });
     const retryable = response.status >= 500 || response.status === 429;
-    return json({ error: 'Could not publish to Hypha', retryable }, retryable ? 503 : 400);
+    // Pass the status through so the caller can tell "fix the payload" (400)
+    // from "connect your profile" (422) from "re-check the key" (401).
+    return json(
+      {
+        error: 'Could not publish to Hypha',
+        status: response.status,
+        retryable,
+        details: body.details ?? null,
+      },
+      retryable ? 503 : response.status,
+    );
   }
 
-  const signal = JSON.parse(text);
+  const signal = body;
   if (signal.attributedTo === 'space') {
     console.warn('Signal credited to the Space, not the author', {
       externalId,
-      author: payload.author ?? null,
+      authorProvided: Boolean(payload.author),
     });
   }
 
@@ -327,6 +357,10 @@ Call it **after** your own record is saved, and ignore its failure for the user'
 
 Validation failures return `{ "error": "Validation failed", "details": { … } }`. Read `details` — it
 names the offending field.
+
+The Edge Function above forwards Hypha's status and `details` to its own caller (as
+`{ error, status, retryable, details }`), so the client can tell a payload bug from a `422` that needs
+a user prompt. It deliberately does not forward the raw response body.
 
 ---
 

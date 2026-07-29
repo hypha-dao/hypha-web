@@ -49,6 +49,8 @@ export interface UpdateCoherenceSignalInput {
   progressStatus?: string | null;
   board?: string | null;
   assigneeIds?: number[];
+  /** Omit to leave the archived state alone; set it to change it in the same write. */
+  archived?: boolean;
 }
 
 export type UpdateCoherenceSignalBySlugInput = {

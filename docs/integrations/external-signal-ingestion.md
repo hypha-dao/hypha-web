@@ -10,7 +10,7 @@ separate view, no sync step.
 
 ## How it fits together
 
-```
+```text
 Community app
   │  POST /api/v1/spaces/{spaceSlug}/signals      (x-hypha-api-key)
   ▼
@@ -32,7 +32,7 @@ Hypha's own UI. That mirror is best-effort: if it fails, the vote is still recor
 
 Every request carries a **per-space API key**:
 
-```
+```http
 x-hypha-api-key: hyk_<prefix>_<secret>
 ```
 
@@ -76,18 +76,19 @@ Response (the only time `apiKey` is ever returned):
     "spaceId": 42,
     "name": "ACAW contest app",
     "source": "acaw-contest",
-    "keyPrefix": "K3nQ7bTz",
+    "keyPrefix": "<prefix>",
     "scopes": ["signals:write", "signals:upvote"],
     "revokedAt": null
   },
-  "apiKey": "hyk_K3nQ7bTz_...",
+  "apiKey": "hyk_<prefix>_<secret>",
   "warning": "Store this key now — it is not recoverable. Never expose it in client-side code."
 }
 ```
 
 `source` is a stable slug identifying your app. It is stamped on every signal the key writes and is
-what proves ownership when you later update or vote on those signals. One active key per `source`
-per space.
+what proves ownership when you later update or vote on those signals. One **active** key per `source`
+per space — so rotating a key means revoking the old one and issuing a replacement under the same
+`source`, which keeps ownership of everything it has already published.
 
 List metadata (never key material) and revoke:
 
@@ -98,6 +99,9 @@ curl https://<hypha-host>/api/v1/ops/spaces/<spaceSlug>/api-keys \
 curl -X DELETE https://<hypha-host>/api/v1/ops/spaces/<spaceSlug>/api-keys/12 \
   -H "x-hypha-ops-secret: $HYPHA_SPACE_API_KEY_OPS_SECRET"
 ```
+
+The list is paginated like every other Hypha list endpoint — `{ "data": [...], "pagination": {...} }`,
+with optional `?page=` and `?pageSize=`.
 
 ---
 
@@ -135,7 +139,7 @@ the same email on their Hypha profile, then re-check `attributedTo`.
 
 ## Create a signal
 
-```
+```http
 POST /api/v1/spaces/{spaceSlug}/signals
 ```
 
@@ -202,7 +206,7 @@ update it later. Send it.
 
 ## Update a signal you created
 
-```
+```http
 PATCH /api/v1/spaces/{spaceSlug}/signals/{signalSlug}
 ```
 
@@ -224,7 +228,7 @@ records, it does not administer the space's board.
 
 ## Record and remove upvotes
 
-```
+```http
 PUT    /api/v1/spaces/{spaceSlug}/signals/{signalSlug}/upvotes
 DELETE /api/v1/spaces/{spaceSlug}/signals/{signalSlug}/upvotes
 ```
@@ -269,6 +273,13 @@ Both return the recalculated upvote summary:
 holds**, read live from the space's on-chain voting power source — the same source Hypha uses to
 tally proposals. Your app cannot inflate anyone's weight; a voter with no voting power in the space
 gets `422`. This mirrors Hypha's own upvote path exactly, since both call the same code.
+
+**What the key is trusted with.** Hypha authenticates your app, not the individual voter: there is no
+per-vote wallet signature. A key with `signals:upvote` can therefore record an upvote for any member
+of its space, bounded by that member's real weight and by one vote per person. Establishing that a
+member actually intended the vote is your app's job — the same trust you place in it when it publishes
+signals on their behalf. Grant `signals:upvote` only to apps whose own authentication you rely on, and
+omit the scope entirely for apps that merely publish.
 
 ---
 

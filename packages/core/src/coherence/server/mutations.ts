@@ -199,6 +199,7 @@ export const updateCoherenceSignalBySlug = async (
     progressStatus,
     board,
     assigneeIds,
+    archived,
   } = rest;
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });
   const nextProgressStatus = progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS;
@@ -234,6 +235,7 @@ export const updateCoherenceSignalBySlug = async (
       ...(assigneeIds !== undefined
         ? { assigneeIds: normalizeAssigneeIds(assigneeIds) }
         : {}),
+      ...(archived !== undefined ? { archived } : {}),
     })
     .where(eq(coherences.id, row.id))
     .returning();

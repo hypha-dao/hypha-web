@@ -33,7 +33,10 @@ END $$;
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "space_api_keys_key_hash_unique" ON "space_api_keys" USING btree ("key_hash");
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "space_api_keys_space_source_unique" ON "space_api_keys" USING btree ("space_id","source");
+DROP INDEX IF EXISTS "space_api_keys_space_source_unique";
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "space_api_keys_space_source_unique" ON "space_api_keys" USING btree ("space_id","source")
+  WHERE "revoked_at" IS NULL;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "space_api_keys_space_revoked_idx" ON "space_api_keys" USING btree ("space_id","revoked_at");
 --> statement-breakpoint

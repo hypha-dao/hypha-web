@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/server', () => ({
-  after: (callback: () => unknown) => {
+  after: vi.fn((callback: () => unknown) => {
     void callback();
-  },
+  }),
 }));
 vi.mock('../server/web3/get-member-voting-power', () => ({
   getMemberVotingPower: vi.fn(),
@@ -23,6 +23,8 @@ vi.mock('../server/coherence-upvotes', () => ({
   removeCoherenceUpvote: vi.fn(),
   upsertCoherenceUpvote: vi.fn(),
 }));
+
+import { after } from 'next/server';
 
 import {
   applyCoherenceUpvote,
@@ -49,6 +51,7 @@ const signal: CoherenceUpvoteTarget = {
 
 const actor = { id: 3, address: voter };
 
+const mockedAfter = vi.mocked(after);
 const mockedVotingPower = vi.mocked(getMemberVotingPower);
 const mockedUpsert = vi.mocked(upsertCoherenceUpvote);
 const mockedRemove = vi.mocked(removeCoherenceUpvote);
@@ -119,6 +122,22 @@ describe('applyCoherenceUpvote', () => {
   });
 
   it('mirrors the upvote on-chain with the snapshotted amount', async () => {
+    await applyCoherenceUpvote({ coherence: signal, actor }, { db });
+
+    expect(mockedMirror).toHaveBeenCalledWith({
+      web3SpaceId: 77,
+      signalId: 11,
+      voter,
+      amount: 1000n,
+      kind: 'upvote',
+    });
+  });
+
+  it('still mirrors when `after` is unavailable outside a request scope', async () => {
+    mockedAfter.mockImplementationOnce(() => {
+      throw new Error('after() was called outside a request scope');
+    });
+
     await applyCoherenceUpvote({ coherence: signal, actor }, { db });
 
     expect(mockedMirror).toHaveBeenCalledWith({
