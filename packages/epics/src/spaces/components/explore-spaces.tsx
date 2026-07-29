@@ -25,6 +25,7 @@ import { SpaceCardList } from './space-card-list';
 import { SpaceSearch } from './space-search';
 import { SpaceOrderCombobox } from './space-order-combobox';
 import { spaceToolbarPrimaryButtonClassName } from './space-toolbar-styles';
+import { MarketplaceView } from '../../highlights';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
@@ -214,8 +215,11 @@ export function ExploreSpaces({
     [searchParams, pathname, replace],
   );
 
-  const viewFromUrl = (params: URLSearchParams): NetworkMapView =>
-    params.get('view') === 'map' ? 'map' : 'list';
+  const viewFromUrl = (params: URLSearchParams): NetworkMapView => {
+    const viewParam = params.get('view');
+    if (viewParam === 'map' || viewParam === 'marketplace') return viewParam;
+    return 'list';
+  };
 
   const [view, setViewState] = React.useState<NetworkMapView>(() =>
     enableNetworkMap ? viewFromUrl(searchParams) : 'list',
@@ -239,11 +243,7 @@ export function ExploreSpaces({
       setViewState(nextView);
 
       const params = new URLSearchParams(window.location.search);
-      if (nextView === 'list') {
-        params.set('view', 'list');
-      } else {
-        params.set('view', 'map');
-      }
+      params.set('view', nextView);
       const queryString = params.toString();
       window.history.replaceState(
         window.history.state,
@@ -476,6 +476,9 @@ export function ExploreSpaces({
           <div className={cn(view !== 'list' && 'hidden')}>
             {listMetaRow}
             {spacesListContent}
+          </div>
+          <div className={cn(view !== 'marketplace' && 'hidden')}>
+            <MarketplaceView />
           </div>
           <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
             {metricsSection}

@@ -63,7 +63,9 @@
     },
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# Stunde} other {# Stunden}}",
-    "durationDays": "{count, plural, one {# Tag} other {# Tage}}"
+    "durationDays": "{count, plural, one {# Tag} other {# Tage}}",
+    "Highlights": "Highlights",
+    "errorLoadHighlightsTab": "Hoppla, etwas ist schiefgelaufen. Highlights-Tab konnte nicht geladen werden."
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -3375,7 +3377,8 @@
       "Tension": "Spannung",
       "Insight": "Erkenntnis",
       "Trend": "Trend",
-      "Proposal": "Vorschlag"
+      "Proposal": "Vorschlag",
+      "Story": "Story"
     },
     "typeDescriptions": {
       "Opportunity": "Koordinationsfenster oder positive Öffnung",
@@ -3383,7 +3386,8 @@
       "Tension": "Konflikt oder Meinungsverschiedenheit, die gelöst werden muss",
       "Insight": "Datengetriebene Beobachtung oder Entdeckung",
       "Trend": "Aufkommendes Muster über Räume hinweg",
-      "Proposal": "Governance-Aktion oder Abstimmung erforderlich"
+      "Proposal": "Governance-Aktion oder Abstimmung erforderlich",
+      "Story": "Erfolg, Ereignis, Besuch oder Meilenstein"
     },
     "priorities": {
       "critical": "Kritisch",
@@ -3729,7 +3733,8 @@
     "addLocationLoading": "Deine Spaces werden geladen…",
     "addLocationNoSpaces": "Du bist noch in keinem Space Mitglied.",
     "clusterExpandTitle": "{count} Spaces an diesem Ort",
-    "clusterZoomOut": "Herauszoomen"
+    "clusterZoomOut": "Herauszoomen",
+    "marketplaceView": "Marktplatz"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",
@@ -4329,6 +4334,78 @@
       "saveFailed": "Erfolgsraten konnten nicht gespeichert werden",
       "loading": "Erfolgsraten werden geladen…",
       "resetDefaults": "Standards wiederherstellen"
+    }
+  },
+  "HighlightsTab": {
+    "title": "Highlights",
+    "edit": "Bearbeiten",
+    "doneEditing": "Fertig",
+    "loadError": "Highlights konnten nicht geladen werden.",
+    "actions": {
+      "donate": "Spenden",
+      "invest": "Investieren",
+      "support": "Unterstützen",
+      "custom": "Unterstützen"
+    },
+    "support": {
+      "goal": "Ziel: {amount} {currency}",
+      "ctaPrompt": "Unterstütze diesen Space",
+      "fundTitle": "Unterstütze diesen Space",
+      "fundSubtitle": "Teile diesen QR-Code oder die Wallet-Adresse, um Mittel zu senden.",
+      "instructions": "Unterstützungsanweisungen",
+      "contactSpace": "Kontaktiere den Space für Unterstützungsdetails."
+    },
+    "publish": {
+      "title": "Marktplatz-Sichtbarkeit",
+      "description": "Teile diese Anfrage im Hypha-Marktplatz, damit Unterstützer sie finden.",
+      "shareOnMarketplace": "Diese Anfrage im Hypha-Marktplatz teilen",
+      "unpublish": "Veröffentlichung aufheben",
+      "failed": "Veröffentlichungseinstellungen konnten nicht aktualisiert werden."
+    },
+    "stories": {
+      "title": "Was wir erreicht haben",
+      "empty": "Noch keine Stories.",
+      "add": "Story hinzufügen",
+      "titlePlaceholder": "Story-Titel",
+      "bodyPlaceholder": "Was ist passiert?",
+      "save": "Story speichern",
+      "required": "Titel und Beschreibung sind erforderlich.",
+      "createFailed": "Story konnte nicht erstellt werden."
+    },
+    "editor": {
+      "emptyRead": "Noch keine Highlights-Inhalte.",
+      "emptyEdit": "Starte mit einer Vorlage, um deine Geschichte zu erzählen.",
+      "startFromTemplate": "Mit Vorlage starten",
+      "summaryPlaceholder": "Kurze Zusammenfassung für Marktplatz-Karten (160 Zeichen)",
+      "coverImagePlaceholder": "Cover-Bild-URL",
+      "goalAmountPlaceholder": "Zielbetrag",
+      "goalCurrencyPlaceholder": "Währung (z. B. EUR)",
+      "blockTitlePlaceholder": "Abschnittstitel",
+      "blockBodyPlaceholder": "In Markdown schreiben…",
+      "addImage": "Bild hinzufügen",
+      "addBlock": "Abschnitt hinzufügen",
+      "save": "Highlights speichern",
+      "saveFailed": "Highlights konnten nicht gespeichert werden.",
+      "hide": "Ausblenden",
+      "show": "Anzeigen"
+    },
+    "blockTypes": {
+      "about": "Über uns",
+      "mission": "Mission",
+      "needs": "Was wir jetzt brauchen",
+      "useOfFunds": "Wie Ressourcen verwendet werden",
+      "whyNow": "Warum jetzt unterstützen",
+      "gallery": "Galerie",
+      "location": "Standort",
+      "links": "Links",
+      "cta": "Unterstützung",
+      "stories": "Stories"
+    },
+    "marketplace": {
+      "seeking": "Sucht {amount} {currency}",
+      "viewHighlights": "Highlights ansehen →",
+      "empty": "Noch keine veröffentlichten Marktplatz-Anfragen.",
+      "loadError": "Marktplatz konnte nicht geladen werden."
     }
   }
 }

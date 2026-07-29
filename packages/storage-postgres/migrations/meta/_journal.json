@@ -526,6 +526,20 @@
       "when": 1784000000005,
       "tag": "0074_space_api_keys_and_signal_source",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1785000000000,
+      "tag": "0075_space_highlight_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1785000000001,
+      "tag": "0076_space_highlight_profiles_authenticated_grants",
+      "breakpoints": true
     }
   ]
 }
