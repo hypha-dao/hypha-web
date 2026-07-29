@@ -14,6 +14,20 @@ export type GeneratedSpaceApiKey = {
   hash: string;
 };
 
+/**
+ * Digest a key for storage, and for resolving it on each authenticated request.
+ *
+ * SHA-256 rather than a slow KDF (bcrypt/scrypt/argon2) is deliberate. A key is
+ * 32 bytes from `randomBytes` — 256 bits of entropy, never human-chosen — so
+ * there is no guessable keyspace for a slow hash to defend: recovering the
+ * plaintext from a leaked digest is infeasible at any iteration count, and
+ * precomputation does not apply to random input. Per-record salting would also
+ * make the digest unindexable, and authentication resolves a key *by* this
+ * value, so every request would degrade into scanning candidate rows.
+ *
+ * CodeQL flags this as `js/insufficient-password-hash`; the rule assumes a
+ * user-chosen password, which this is not.
+ */
 export function hashSpaceApiKey(plaintext: string): string {
   return createHash('sha256').update(plaintext.trim(), 'utf8').digest('hex');
 }
