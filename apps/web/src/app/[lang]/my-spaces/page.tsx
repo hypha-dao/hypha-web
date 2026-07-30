@@ -1,27 +1,13 @@
-import {
-  SpaceCard,
-  MyFilteredSpaces,
-  MySpacesControls,
-} from '@hypha-platform/epics';
-import { isSpaceArchived } from '@hypha-platform/core/client';
-import Link from 'next/link';
+import { MyFilteredSpaces, MySpacesControls } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  Container,
-  Carousel,
-  CarouselItem,
-  CarouselContent,
-} from '@hypha-platform/ui';
+import { Container } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
-import { Text } from '@radix-ui/themes';
 import {
   getAllSpaces,
   SPACE_ORDERS,
   Space,
   SpaceOrder,
 } from '@hypha-platform/core/server';
-import { getDhoPathOverview } from '../dho/[id]/@tab/overview/constants';
-import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -45,27 +31,11 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  let allSpaces: Space[] = [];
   let mySpaces: Space[] = [];
-  const [allSpacesResult, mySpacesResult] = await Promise.allSettled([
-    getAllSpaces({ parentOnly: false, omitSandbox: true }),
-    getAllSpaces({ search: query, parentOnly: false }),
-  ]);
-  if (allSpacesResult.status === 'fulfilled') {
-    allSpaces = allSpacesResult.value;
-  } else {
-    console.error(
-      '[my-spaces/page] Failed to fetch all spaces',
-      allSpacesResult.reason,
-    );
-  }
-  if (mySpacesResult.status === 'fulfilled') {
-    mySpaces = mySpacesResult.value;
-  } else {
-    console.error(
-      '[my-spaces/page] Failed to fetch filtered spaces',
-      mySpacesResult.reason,
-    );
+  try {
+    mySpaces = await getAllSpaces({ search: query, parentOnly: false });
+  } catch (reason) {
+    console.error('[my-spaces/page] Failed to fetch filtered spaces', reason);
   }
 
   const t = await getTranslations('Spaces');
@@ -97,47 +67,6 @@ export default async function Index(props: PageProps) {
           order={order}
           showLoadMore={false}
         />
-        <div
-          data-testid="recommended-spaces-container"
-          className="w-full space-y-4"
-        >
-          <Text className="text-2 font-normal text-muted-foreground">
-            {t('spacesYouMightLike')}
-          </Text>
-          <Carousel className="mt-2">
-            <CarouselContent className="pb-5" showScrollbar>
-              {allSpaces.map((space) => (
-                <CarouselItem
-                  key={space.id}
-                  className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
-                >
-                  <Link
-                    className="flex flex-col flex-1"
-                    href={getDhoPathOverview(lang, space.slug as string)}
-                  >
-                    <SpaceCard
-                      description={space.description as string}
-                      icon={space.logoUrl || ''}
-                      leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                      members={space.memberCount}
-                      agreements={space.documentCount}
-                      title={space.title as string}
-                      isSandbox={space.flags?.includes('sandbox') ?? false}
-                      isDemo={space.flags?.includes('demo') ?? false}
-                      isArchived={isSpaceArchived(space)}
-                      web3SpaceId={space.web3SpaceId as number}
-                      createdAt={space.createdAt}
-                      configPath={`${getDhoPathOverview(
-                        lang,
-                        space.slug,
-                      )}/space-configuration`}
-                    />
-                  </Link>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
-        </div>
       </Container>
     </div>
   );
