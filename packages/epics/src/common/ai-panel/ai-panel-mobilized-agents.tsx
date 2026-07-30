@@ -12,8 +12,8 @@ type AiPanelMobilizedAgentsProps = {
 };
 
 /**
- * Mentions-dense expertise header for assistant replies — role labels from the
- * competency catalog (no invented names). Sits next to the avatar, above the bubble.
+ * Expertise header for assistant replies — role labels from the competency
+ * catalog (no invented names). Sits next to the avatar, above the bubble.
  */
 export function AiPanelMobilizedAgents({
   agents,
@@ -29,7 +29,7 @@ export function AiPanelMobilizedAgents({
       className="flex min-w-0 flex-col gap-0.5"
       data-testid="ai-panel-mobilized-agents"
     >
-      <span className="text-[10px] font-medium uppercase tracking-wide text-foreground/60">
+      <span className="text-[11px] font-medium text-foreground/60">
         {isStreaming
           ? t('specialistsRespondingStreaming')
           : t('specialistsResponding')}
@@ -38,7 +38,7 @@ export function AiPanelMobilizedAgents({
         {agents.map((agent, index) => (
           <Fragment key={agent.id}>
             {index > 0 ? (
-              <span className="text-[11px] text-foreground/40" aria-hidden>
+              <span className="text-xs text-foreground/40" aria-hidden>
                 ·
               </span>
             ) : null}
