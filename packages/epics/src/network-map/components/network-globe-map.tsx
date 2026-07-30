@@ -62,6 +62,11 @@ const easeClusterSpreadIn = d3.easePolyOut.exponent(3);
 /** Quick fold-in before zoom-out begins. */
 const easeClusterSpreadOut = d3.easePolyIn.exponent(2);
 const FLAT_ROTATION: Rotation = [0, 0, 0];
+const DEFAULT_LAYER_VISIBILITY: NetworkMapLayerVisibility = {
+  land: true,
+  water: true,
+  grid: true,
+};
 
 type MapPalette = {
   ocean: string;
@@ -279,11 +284,7 @@ export function NetworkGlobeMap({
   setSelectedPinRef.current = setSelectedPin;
   const canHoverRef = React.useRef(canUseHover());
 
-  const [layers, setLayers] = React.useState<NetworkMapLayerVisibility>({
-    land: true,
-    water: true,
-    grid: false,
-  });
+  const layers = DEFAULT_LAYER_VISIBILITY;
   const [projectionMode, setProjectionMode] =
     React.useState<NetworkMapProjectionMode>('globe');
   const [selectedProjection, setSelectedProjection] =
@@ -1366,11 +1367,7 @@ export function NetworkGlobeMap({
 
   const layerControls = (
     <NetworkMapLayerControls
-      layers={layers}
       projectionMode={selectedProjection}
-      onLayerChange={(layer, visible) =>
-        setLayers((current) => ({ ...current, [layer]: visible }))
-      }
       onProjectionModeChange={animateProjection}
     />
   );
