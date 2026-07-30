@@ -149,25 +149,25 @@ type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
- * Graph palette — live space accent ramp (via craft tokens rebound on
- * [data-space-accent-scope] to --color-accent-*). Extra mid steps help when
- * many holders share a donut without cycling pale washed tints.
+ * Graph palette — live space-accent hue via craft tokens (wide white→solid→
+ * black mixes on [data-space-accent-scope]). Eight spaced steps so many
+ * holders stay distinct without packing consecutive Radix mid-tints.
  */
 const COLOR_RANGE = [
   'var(--craft-chart-accent-1)',
   'var(--craft-chart-accent-2)',
   'var(--craft-chart-accent-3)',
-  'var(--color-accent-7, var(--craft-chart-accent-3))',
   'var(--craft-chart-accent-4)',
   'var(--craft-chart-accent-5)',
-  'var(--color-accent-11, var(--craft-chart-accent-6))',
   'var(--craft-chart-accent-6)',
+  'var(--craft-chart-accent-7)',
+  'var(--craft-chart-accent-8)',
 ];
-/** On voting / accepted / refused — light → solid → deep accent */
+/** On voting / accepted / refused — clear light / mid / dark accent steps */
 const PROPOSALS_COLOR_RANGE = [
   'var(--craft-chart-accent-2)',
   'var(--craft-chart-accent-5)',
-  'var(--craft-chart-accent-6)',
+  'var(--craft-chart-accent-8)',
 ];
 const MEMBERS_COLOR_RANGE = {
   people: 'var(--craft-chart-accent-5)',

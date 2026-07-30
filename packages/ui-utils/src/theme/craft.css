@@ -9,27 +9,60 @@
    * Do NOT reference --space-accent here: custom properties resolve on the
    * defining element, so :root would bake in default indigo and descendants
    * would inherit that stale colour even inside [data-space-accent-scope].
+   * Wide white→solid→black mixes so adjacent donut slices stay distinct.
    */
-  --craft-chart-accent-1: color-mix(in oklab, var(--accent-9) 42%, white 58%);
-  --craft-chart-accent-2: color-mix(in oklab, var(--accent-9) 62%, white 38%);
-  --craft-chart-accent-3: color-mix(in oklab, var(--accent-9) 82%, white 18%);
-  --craft-chart-accent-4: var(--accent-9);
-  --craft-chart-accent-5: color-mix(in oklab, var(--accent-9) 78%, black 22%);
-  --craft-chart-accent-6: color-mix(in oklab, var(--accent-9) 62%, black 38%);
+  --craft-chart-accent-1: color-mix(in oklab, var(--accent-9) 28%, white 72%);
+  --craft-chart-accent-2: color-mix(in oklab, var(--accent-9) 44%, white 56%);
+  --craft-chart-accent-3: color-mix(in oklab, var(--accent-9) 62%, white 38%);
+  --craft-chart-accent-4: color-mix(in oklab, var(--accent-9) 82%, white 18%);
+  --craft-chart-accent-5: var(--accent-9);
+  --craft-chart-accent-6: color-mix(in oklab, var(--accent-9) 78%, black 22%);
+  --craft-chart-accent-7: color-mix(in oklab, var(--accent-9) 60%, black 40%);
+  --craft-chart-accent-8: color-mix(in oklab, var(--accent-9) 42%, black 58%);
 }
 
 /*
- * Live space palette — rebind to the Radix-style ramp SpaceAccentFromImages
- * writes as concrete --color-accent-* hexes on the scope. Mid/solid steps keep
- * banner chroma; skip near-surface 1–3 so slices don’t wash to dusty lavender.
+ * Live space palette — mix from --space-accent set on this scope (not the
+ * consecutive Radix accent-4…10 hexes, which read as one lavender on dark).
+ * Same hue family as the banner sample; wider luminance/chroma steps.
  */
 [data-space-accent-scope] {
-  --craft-chart-accent-1: var(--color-accent-4);
-  --craft-chart-accent-2: var(--color-accent-5);
-  --craft-chart-accent-3: var(--color-accent-6);
-  --craft-chart-accent-4: var(--color-accent-8);
-  --craft-chart-accent-5: var(--color-accent-9);
-  --craft-chart-accent-6: var(--color-accent-10);
+  --craft-chart-accent-1: color-mix(
+    in oklab,
+    var(--space-accent) 28%,
+    white 72%
+  );
+  --craft-chart-accent-2: color-mix(
+    in oklab,
+    var(--space-accent) 44%,
+    white 56%
+  );
+  --craft-chart-accent-3: color-mix(
+    in oklab,
+    var(--space-accent) 62%,
+    white 38%
+  );
+  --craft-chart-accent-4: color-mix(
+    in oklab,
+    var(--space-accent) 82%,
+    white 18%
+  );
+  --craft-chart-accent-5: var(--space-accent);
+  --craft-chart-accent-6: color-mix(
+    in oklab,
+    var(--space-accent) 78%,
+    black 22%
+  );
+  --craft-chart-accent-7: color-mix(
+    in oklab,
+    var(--space-accent) 60%,
+    black 40%
+  );
+  --craft-chart-accent-8: color-mix(
+    in oklab,
+    var(--space-accent) 42%,
+    black 58%
+  );
 }
 
 @layer components {
