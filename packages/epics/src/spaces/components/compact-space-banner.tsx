@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { ChevronDown } from 'lucide-react';
 import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
@@ -56,6 +57,8 @@ type CompactSpaceBannerCommon = {
   defaultLeadImageSrc?: string;
   /** Localized accessible name for the description region (screen readers). */
   descriptionLabel: string;
+  /** Localized label for revealing secondary meta (links / stats). */
+  revealMetaLabel?: string;
   footerTrailing?: React.ReactNode;
   className?: string;
 };
@@ -96,6 +99,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     leadImageUrl,
     defaultLeadImageSrc,
     descriptionLabel,
+    revealMetaLabel = 'Details',
     footerTrailing,
     className,
   } = props;
@@ -108,6 +112,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   const createdOnText = showSpaceStats ? props.createdOnText : '';
   const membersLabel = showSpaceStats ? props.membersLabel : '';
   const agreementsLabel = showSpaceStats ? props.agreementsLabel : '';
+  const [metaExpanded, setMetaExpanded] = React.useState(false);
   const textureSrc = (() => {
     const lead = leadImageUrl?.trim();
     const fallback = defaultLeadImageSrc?.trim() ?? '';
@@ -125,10 +130,80 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     return isSafeImageUrl(defaultLogoSrc) ? defaultLogoSrc : '';
   })();
 
+  const hasSecondaryMeta =
+    safeLinks.length > 0 || Boolean(footerLeading) || showSpaceStats;
+  const hasFooterStrip = hasSecondaryMeta || Boolean(footerTrailing);
+
+  const secondaryMeta = (
+    <>
+      {safeLinks.length > 0 ? (
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {safeLinks.map((link, index) => (
+            <a
+              key={`${link}_${index}`}
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-1 text-white/65 hover:text-white/90"
+            >
+              <span className="text-white/65 [&_svg]:h-3.5 [&_svg]:w-3.5">
+                <LinkIcon url={link} />
+              </span>
+              <LinkLabel
+                url={link}
+                className="underline-offset-4 hover:underline"
+              />
+            </a>
+          ))}
+        </div>
+      ) : null}
+
+      {footerLeading || showSpaceStats ? (
+        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2.5 gap-y-1 text-1 text-white/60 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+          {footerLeading ? (
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              {footerLeading}
+            </div>
+          ) : null}
+          {footerLeading && showSpaceStats ? (
+            <span className="hidden text-white/30 sm:inline" aria-hidden>
+              ·
+            </span>
+          ) : null}
+          {showSpaceStats ? (
+            <>
+              <span className="inline-flex items-baseline gap-1">
+                <span className="tabular-nums text-white/75">
+                  {memberCount ?? '—'}
+                </span>{' '}
+                <span className="text-white/50">{membersLabel}</span>
+              </span>
+              <span className="text-white/25" aria-hidden>
+                ·
+              </span>
+              <span className="inline-flex items-baseline gap-1">
+                <span className="tabular-nums text-white/75">
+                  {agreementCount ?? '—'}
+                </span>{' '}
+                <span className="text-white/50">{agreementsLabel}</span>
+              </span>
+              <span className="hidden text-white/30 md:inline" aria-hidden>
+                ·
+              </span>
+              <span className="text-white/50 max-md:hidden">
+                {createdOnText}
+              </span>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  );
+
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-lg border border-border/70',
+        'group/hero relative overflow-hidden rounded-lg border border-border/70',
         'shadow-sm',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-4 pt-4 pb-0 md:px-6 md:pt-5',
@@ -151,7 +226,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       )}
 
       <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
-        {/* Row 1: avatar + title/links */}
+        {/* Row 1: avatar + title */}
         <div className="flex flex-wrap items-center gap-3 md:items-start md:gap-4">
           <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
@@ -170,27 +245,6 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             >
               {title}
             </h1>
-            {safeLinks.length > 0 ? (
-              <div className="hidden flex-wrap gap-x-5 gap-y-2 md:flex">
-                {safeLinks.map((link, index) => (
-                  <a
-                    key={`${link}_${index}`}
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-1 text-white/65 hover:text-white/90"
-                  >
-                    <span className="text-white/65 [&_svg]:h-3.5 [&_svg]:w-3.5">
-                      <LinkIcon url={link} />
-                    </span>
-                    <LinkLabel
-                      url={link}
-                      className="underline-offset-4 hover:underline"
-                    />
-                  </a>
-                ))}
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -211,51 +265,57 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
           </div>
         ) : null}
 
-        {/* Hairline + metadata: one flex item so gap does not double-space above the strip */}
-        {footerLeading || showSpaceStats || footerTrailing ? (
+        {/* Secondary meta: progressive disclosure — hover (fine pointer) or expand */}
+        {hasFooterStrip ? (
           <div className="flex flex-col">
             <div
               className="h-px w-full shrink-0 bg-white/10"
               role="presentation"
             />
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 md:gap-3 md:py-3.5">
-              <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2.5 gap-y-1 text-1 text-white/60 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
-                {footerLeading ? (
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                    {footerLeading}
-                  </div>
-                ) : null}
-                {footerLeading && showSpaceStats ? (
-                  <span className="hidden text-white/30 sm:inline" aria-hidden>
-                    ·
-                  </span>
-                ) : null}
-                {showSpaceStats ? (
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                {hasSecondaryMeta ? (
                   <>
-                    <span className="inline-flex items-baseline gap-1">
-                      <span className="tabular-nums text-white/75">
-                        {memberCount ?? '—'}
-                      </span>{' '}
-                      <span className="text-white/50">{membersLabel}</span>
-                    </span>
-                    <span className="text-white/25" aria-hidden>
-                      ·
-                    </span>
-                    <span className="inline-flex items-baseline gap-1">
-                      <span className="tabular-nums text-white/75">
-                        {agreementCount ?? '—'}
-                      </span>{' '}
-                      <span className="text-white/50">{agreementsLabel}</span>
-                    </span>
-                    <span
-                      className="hidden text-white/30 md:inline"
-                      aria-hidden
+                    <button
+                      type="button"
+                      className={cn(
+                        'inline-flex w-fit items-center gap-1 text-1 font-medium text-white/70 hover:text-white/90',
+                        /* Fine pointer: chrome appears on hero hover; keep button for keyboard/a11y */
+                        'md:opacity-0 md:transition-opacity md:duration-150',
+                        'md:group-hover/hero:opacity-100 md:group-focus-within/hero:opacity-100',
+                        metaExpanded && 'md:opacity-100',
+                      )}
+                      aria-expanded={metaExpanded}
+                      onClick={() => setMetaExpanded((v) => !v)}
                     >
-                      ·
-                    </span>
-                    <span className="text-white/50 max-md:hidden">
-                      {createdOnText}
-                    </span>
+                      {revealMetaLabel}
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 transition-transform duration-150',
+                          metaExpanded && 'rotate-180',
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                    <div
+                      className={cn(
+                        'grid transition-[grid-template-rows,opacity] duration-200 ease-out',
+                        metaExpanded
+                          ? 'grid-rows-[1fr] opacity-100'
+                          : 'grid-rows-[0fr] opacity-0',
+                        /* Desktop hover reveals without a click when collapsed */
+                        !metaExpanded &&
+                          'md:group-hover/hero:grid-rows-[1fr] md:group-hover/hero:opacity-100',
+                        !metaExpanded &&
+                          'md:group-focus-within/hero:grid-rows-[1fr] md:group-focus-within/hero:opacity-100',
+                      )}
+                    >
+                      <div className="min-h-0 overflow-hidden">
+                        <div className="flex flex-col gap-2 pt-1">
+                          {secondaryMeta}
+                        </div>
+                      </div>
+                    </div>
                   </>
                 ) : null}
               </div>

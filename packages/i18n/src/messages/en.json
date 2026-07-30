@@ -63,7 +63,8 @@
     },
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# Hour} other {# Hours}}",
-    "durationDays": "{count, plural, one {# Day} other {# Days}}"
+    "durationDays": "{count, plural, one {# Day} other {# Days}}",
+    "spaceBannerRevealMeta": "Details"
   },
   "ModalAside": {
     "spaceSettings": "Space Settings",
@@ -3717,7 +3718,7 @@
     "mapView": "Map",
     "listView": "List",
     "globeView": "Globe",
-    "flatView": "Flat map",
+    "flatView": "Flat",
     "landLayer": "Land",
     "waterLayer": "Water",
     "gridLayer": "Grid",
@@ -3737,7 +3738,8 @@
     "addLocationLoading": "Loading your spaces…",
     "addLocationNoSpaces": "You are not a member of any spaces yet.",
     "clusterExpandTitle": "{count} spaces at this location",
-    "clusterZoomOut": "Zoom out"
+    "clusterZoomOut": "Zoom out",
+    "controlStripLabel": "Network controls"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",

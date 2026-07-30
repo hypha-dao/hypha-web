@@ -17,6 +17,8 @@ export type NetworkGlobeMapProps = {
   renderToolbar?: (layerControls: React.ReactNode) => React.ReactNode;
   /** When false, skip render loops while the map panel is hidden. */
   isActive?: boolean;
+  /** When false, render toolbar only (keeps map mounted for chrome state). */
+  showStage?: boolean;
 };
 
 export const NETWORK_MAP_LAYER_IDS = ['land', 'water', 'grid'] as const;

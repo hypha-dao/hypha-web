@@ -1,10 +1,20 @@
 'use client';
 
-import { Separator, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  ChevronDown,
   Globe,
   Grid3x3,
+  Layers,
   LandPlot,
   Map,
   Waves,
@@ -19,7 +29,6 @@ import {
 } from '../lib/types';
 import {
   segmentedButtonClass,
-  segmentedLayerGroupClass,
   segmentedListClass,
   segmentedTriggerClass,
 } from '../lib/segmented-control-styles';
@@ -48,14 +57,15 @@ export function NetworkMapLayerControls({
   className,
 }: NetworkMapLayerControlsProps) {
   const t = useTranslations('NetworkMap');
+  const activeLayerCount = LAYER_IDS.filter((id) => layers[id]).length;
 
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 max-w-full flex-row flex-wrap items-center gap-2 sm:inline-flex sm:w-fit sm:gap-2.5',
+        'inline-flex w-fit max-w-full min-w-0 flex-row flex-wrap items-center gap-1.5',
         className,
       )}
-      role="toolbar"
+      role="group"
       aria-label={t('layerControlsLabel')}
     >
       <Tabs
@@ -72,7 +82,7 @@ export function NetworkMapLayerControls({
             className={segmentedTriggerClass}
           >
             <Globe className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
-            {t('globeView')}
+            <span className="hidden sm:inline">{t('globeView')}</span>
           </TabsTrigger>
           <TabsTrigger
             value="flat"
@@ -80,39 +90,67 @@ export function NetworkMapLayerControls({
             className={segmentedTriggerClass}
           >
             <Map className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
-            {t('flatView')}
+            <span className="hidden sm:inline">{t('flatView')}</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <Separator
-        orientation="vertical"
-        className="mx-0.5 hidden h-4 w-px shrink-0 self-center bg-border/70 sm:block"
-      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(
+              'h-8 gap-1 rounded-lg border-border/70 bg-neutral-3 px-2.5 text-xs font-medium text-neutral-11 shadow-none',
+              'hover:bg-neutral-4 hover:text-foreground sm:text-sm',
+            )}
+            aria-label={t('layersLabel')}
+          >
+            <Layers className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
+            <span className="hidden sm:inline">{t('layersLabel')}</span>
+            <span className="tabular-nums text-muted-foreground">
+              {activeLayerCount}
+            </span>
+            <ChevronDown className="size-3 shrink-0 opacity-70" aria-hidden />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-auto min-w-[11rem] rounded-lg border-border/70 p-2 shadow-md"
+        >
+          <div
+            className="flex flex-col gap-1"
+            role="group"
+            aria-label={t('layersLabel')}
+          >
+            {LAYER_IDS.map((layerId) => {
+              const Icon = LAYER_ICONS[layerId];
+              const active = layers[layerId];
 
-      <div
-        className={segmentedLayerGroupClass}
-        role="group"
-        aria-label={t('layersLabel')}
-      >
-        {LAYER_IDS.map((layerId) => {
-          const Icon = LAYER_ICONS[layerId];
-          const active = layers[layerId];
-
-          return (
-            <button
-              key={layerId}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onLayerChange(layerId, !active)}
-              className={segmentedButtonClass(active)}
-            >
-              <Icon className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
-              <span>{t(`${layerId}Layer`)}</span>
-            </button>
-          );
-        })}
-      </div>
+              return (
+                <button
+                  key={layerId}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => onLayerChange(layerId, !active)}
+                  className={cn(
+                    segmentedButtonClass(active),
+                    'h-8 w-full justify-start px-2.5',
+                  )}
+                >
+                  <Icon
+                    className="craft-icon-sm"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  <span>{t(`${layerId}Layer`)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

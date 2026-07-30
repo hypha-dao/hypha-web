@@ -384,10 +384,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
             <p className="truncate text-1 text-muted-foreground">
               <span>{typeLabel}</span>
-              <span className="mx-1.5 text-border" aria-hidden>
-                ·
-              </span>
-              <span>{priorityLabel}</span>
+              {/* Priority stays on the left accent bar only — avoid duplicate status channel */}
               {creatorDisplayName ? (
                 <>
                   <span className="mx-1.5 text-border" aria-hidden>

@@ -539,6 +539,7 @@ export function AiPanelMessageBubble({
   const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [openSections, setOpenSections] = useState<Record<number, boolean>>({});
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [assistantImageFailed, setAssistantImageFailed] = useState(false);
   const assistantAvatarSrc = assistantAvatarUrl?.trim() || null;
@@ -577,11 +578,48 @@ export function AiPanelMessageBubble({
   const hasExpandTranslations =
     showMoreLabel !== 'AiPanel.showMore' &&
     showLessLabel !== 'AiPanel.showLess';
+  const headingCount = useMemo(
+    () => markdownBlocks.filter((block) => block.type === 'heading').length,
+    [markdownBlocks],
+  );
+  const markdownSections = useMemo(() => {
+    if (headingCount < 2) {
+      return [{ heading: null as MarkdownBlock | null, body: markdownBlocks }];
+    }
+    const sections: Array<{
+      heading: MarkdownBlock | null;
+      body: MarkdownBlock[];
+    }> = [];
+    let current: { heading: MarkdownBlock | null; body: MarkdownBlock[] } = {
+      heading: null,
+      body: [],
+    };
+    for (const block of markdownBlocks) {
+      if (block.type === 'heading') {
+        if (current.heading || current.body.length > 0) {
+          sections.push(current);
+        }
+        current = { heading: block, body: [] };
+      } else {
+        current.body.push(block);
+      }
+    }
+    if (current.heading || current.body.length > 0) {
+      sections.push(current);
+    }
+    return sections;
+  }, [headingCount, markdownBlocks]);
+  const useSectionAccordion =
+    !isUser &&
+    !isStreaming &&
+    headingCount >= 2 &&
+    markdownSections.length >= 2;
   const showExpandToggle =
     !isUser &&
     !isStreaming &&
     hasExpandTranslations &&
-    (textContent.length > 560 || textLines.length > 11);
+    !useSectionAccordion &&
+    (textContent.length > 420 || textLines.length > 8);
 
   const hasVisibleText =
     normalizedTextContent.length > 0 && normalizedTextContent !== '(no text)';
@@ -895,96 +933,213 @@ export function AiPanelMessageBubble({
         >
           {hasVisibleText && (
             <div className="flex h-fit w-full min-w-0 flex-col gap-1">
-              <div
-                className={cn(
-                  'space-y-0.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0',
-                  showExpandToggle && !expanded && 'line-clamp-8',
-                )}
-              >
-                {markdownBlocks.map((block, index) => {
-                  if (block.type === 'heading') {
+              {useSectionAccordion ? (
+                <div className="flex flex-col gap-1.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0">
+                  {markdownSections.map((section, sectionIndex) => {
+                    const isOpen =
+                      sectionIndex === 0 || openSections[sectionIndex] === true;
+                    const headingBlock =
+                      section.heading?.type === 'heading'
+                        ? section.heading
+                        : null;
+                    const sectionBlocks = [
+                      ...(headingBlock ? [headingBlock] : []),
+                      ...section.body,
+                    ];
                     return (
                       <div
-                        key={`${message.id}-heading-${index}`}
-                        className={cn(
-                          'font-semibold tracking-tight',
-                          isUser ? 'text-inherit' : 'text-foreground',
-                          block.level === 1 && 'text-lg',
-                          block.level === 2 && 'text-base',
-                          block.level >= 3 &&
-                            (isUser
-                              ? 'text-sm opacity-90'
-                              : 'text-sm text-muted-foreground'),
-                        )}
+                        key={`${message.id}-section-${sectionIndex}`}
+                        className="min-w-0"
                       >
-                        {renderInlineMarkdown(block.text)}
+                        {sectionIndex > 0 && headingBlock ? (
+                          <button
+                            type="button"
+                            className="mb-0.5 flex w-full items-center justify-between gap-2 rounded-md px-0.5 py-0.5 text-left text-sm font-semibold tracking-tight text-foreground hover:bg-muted/40"
+                            aria-expanded={isOpen}
+                            onClick={() =>
+                              setOpenSections((prev) => ({
+                                ...prev,
+                                [sectionIndex]: !isOpen,
+                              }))
+                            }
+                          >
+                            <span className="min-w-0">
+                              {renderInlineMarkdown(headingBlock.text)}
+                            </span>
+                            <span className="shrink-0 text-xs font-medium text-accent-11">
+                              {isOpen ? t('showLess') : t('showMore')}
+                            </span>
+                          </button>
+                        ) : null}
+                        {isOpen ? (
+                          <div className="space-y-0.5">
+                            {sectionBlocks.map((block, index) => {
+                              if (
+                                sectionIndex > 0 &&
+                                index === 0 &&
+                                block.type === 'heading'
+                              ) {
+                                return null;
+                              }
+                              if (block.type === 'heading') {
+                                return (
+                                  <div
+                                    key={`${message.id}-s${sectionIndex}-h-${index}`}
+                                    className={cn(
+                                      'font-semibold tracking-tight text-foreground',
+                                      block.level === 1 && 'text-lg',
+                                      block.level === 2 && 'text-base',
+                                      block.level >= 3 &&
+                                        'text-sm text-muted-foreground',
+                                    )}
+                                  >
+                                    {renderInlineMarkdown(block.text)}
+                                  </div>
+                                );
+                              }
+                              if (block.type === 'ul') {
+                                return (
+                                  <ul
+                                    key={`${message.id}-s${sectionIndex}-ul-${index}`}
+                                    className="space-y-0.5 pl-4 text-foreground"
+                                  >
+                                    {block.items.map((item, itemIndex) => (
+                                      <li
+                                        key={`${message.id}-s${sectionIndex}-ul-${index}-${itemIndex}`}
+                                        className="list-disc"
+                                      >
+                                        {renderInlineMarkdown(item)}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                );
+                              }
+                              if (block.type === 'ol') {
+                                return (
+                                  <ol
+                                    key={`${message.id}-s${sectionIndex}-ol-${index}`}
+                                    className="space-y-0.5 pl-4 text-foreground"
+                                  >
+                                    {block.items.map((item, itemIndex) => (
+                                      <li
+                                        key={`${message.id}-s${sectionIndex}-ol-${index}-${itemIndex}`}
+                                        className="list-decimal"
+                                      >
+                                        {renderInlineMarkdown(item.text)}
+                                      </li>
+                                    ))}
+                                  </ol>
+                                );
+                              }
+                              return (
+                                <p
+                                  key={`${message.id}-s${sectionIndex}-p-${index}`}
+                                  className="text-foreground/95"
+                                >
+                                  {renderInlineMarkdown(block.lines.join(' '))}
+                                </p>
+                              );
+                            })}
+                          </div>
+                        ) : null}
                       </div>
                     );
-                  }
-                  if (block.type === 'ul') {
+                  })}
+                </div>
+              ) : (
+                <div
+                  className={cn(
+                    'space-y-0.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0',
+                    showExpandToggle && !expanded && 'line-clamp-6',
+                  )}
+                >
+                  {markdownBlocks.map((block, index) => {
+                    if (block.type === 'heading') {
+                      return (
+                        <div
+                          key={`${message.id}-heading-${index}`}
+                          className={cn(
+                            'font-semibold tracking-tight',
+                            isUser ? 'text-inherit' : 'text-foreground',
+                            block.level === 1 && 'text-lg',
+                            block.level === 2 && 'text-base',
+                            block.level >= 3 &&
+                              (isUser
+                                ? 'text-sm opacity-90'
+                                : 'text-sm text-muted-foreground'),
+                          )}
+                        >
+                          {renderInlineMarkdown(block.text)}
+                        </div>
+                      );
+                    }
+                    if (block.type === 'ul') {
+                      return (
+                        <ul
+                          key={`${message.id}-ul-${index}`}
+                          className={cn(
+                            'space-y-0.5 pl-4',
+                            isUser ? 'text-inherit' : 'text-foreground',
+                          )}
+                        >
+                          {block.items.map((item, itemIndex) => (
+                            <li
+                              key={`${message.id}-ul-item-${index}-${itemIndex}`}
+                              className="list-disc"
+                            >
+                              {renderInlineMarkdown(item)}
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    if (block.type === 'ol') {
+                      return (
+                        <ol
+                          key={`${message.id}-ol-${index}`}
+                          className={cn(
+                            'space-y-0.5 pl-4',
+                            isUser ? 'text-inherit' : 'text-foreground',
+                          )}
+                        >
+                          {block.items.map((item, itemIndex) => (
+                            <li
+                              key={`${message.id}-ol-item-${index}-${itemIndex}`}
+                              className="list-decimal"
+                            >
+                              {renderInlineMarkdown(item.text)}
+                              {item.nestedUl && item.nestedUl.length > 0 ? (
+                                <ul className="mt-0.5 space-y-0.5 pl-4">
+                                  {item.nestedUl.map(
+                                    (nestedItem, nestedIndex) => (
+                                      <li
+                                        key={`${message.id}-ol-item-${index}-${itemIndex}-ul-${nestedIndex}`}
+                                        className="list-disc"
+                                      >
+                                        {renderInlineMarkdown(nestedItem)}
+                                      </li>
+                                    ),
+                                  )}
+                                </ul>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ol>
+                      );
+                    }
                     return (
-                      <ul
-                        key={`${message.id}-ul-${index}`}
-                        className={cn(
-                          'space-y-0.5 pl-4',
-                          isUser ? 'text-inherit' : 'text-foreground',
-                        )}
+                      <p
+                        key={`${message.id}-p-${index}`}
+                        className={
+                          isUser ? 'text-inherit' : 'text-foreground/95'
+                        }
                       >
-                        {block.items.map((item, itemIndex) => (
-                          <li
-                            key={`${message.id}-ul-item-${index}-${itemIndex}`}
-                            className="list-disc"
-                          >
-                            {renderInlineMarkdown(item)}
-                          </li>
-                        ))}
-                      </ul>
+                        {renderInlineMarkdown(block.lines.join(' '))}
+                      </p>
                     );
-                  }
-                  if (block.type === 'ol') {
-                    return (
-                      <ol
-                        key={`${message.id}-ol-${index}`}
-                        className={cn(
-                          'space-y-0.5 pl-4',
-                          isUser ? 'text-inherit' : 'text-foreground',
-                        )}
-                      >
-                        {block.items.map((item, itemIndex) => (
-                          <li
-                            key={`${message.id}-ol-item-${index}-${itemIndex}`}
-                            className="list-decimal"
-                          >
-                            {renderInlineMarkdown(item.text)}
-                            {item.nestedUl && item.nestedUl.length > 0 ? (
-                              <ul className="mt-0.5 space-y-0.5 pl-4">
-                                {item.nestedUl.map(
-                                  (nestedItem, nestedIndex) => (
-                                    <li
-                                      key={`${message.id}-ol-item-${index}-${itemIndex}-ul-${nestedIndex}`}
-                                      className="list-disc"
-                                    >
-                                      {renderInlineMarkdown(nestedItem)}
-                                    </li>
-                                  ),
-                                )}
-                              </ul>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ol>
-                    );
-                  }
-                  return (
-                    <p
-                      key={`${message.id}-p-${index}`}
-                      className={isUser ? 'text-inherit' : 'text-foreground/95'}
-                    >
-                      {renderInlineMarkdown(block.lines.join(' '))}
-                    </p>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              )}
               {showExpandToggle && (
                 <button
                   type="button"

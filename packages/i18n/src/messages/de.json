@@ -63,7 +63,8 @@
     },
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# Stunde} other {# Stunden}}",
-    "durationDays": "{count, plural, one {# Tag} other {# Tage}}"
+    "durationDays": "{count, plural, one {# Tag} other {# Tage}}",
+    "spaceBannerRevealMeta": "Details"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -3709,7 +3710,7 @@
     "mapView": "Karte",
     "listView": "Liste",
     "globeView": "Globus",
-    "flatView": "Flache Karte",
+    "flatView": "Flach",
     "landLayer": "Land",
     "waterLayer": "Wasser",
     "gridLayer": "Raster",
@@ -3729,7 +3730,8 @@
     "addLocationLoading": "Deine Spaces werden geladen…",
     "addLocationNoSpaces": "Du bist noch in keinem Space Mitglied.",
     "clusterExpandTitle": "{count} Spaces an diesem Ort",
-    "clusterZoomOut": "Herauszoomen"
+    "clusterZoomOut": "Herauszoomen",
+    "controlStripLabel": "Netzwerk-Steuerung"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",

@@ -98,8 +98,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   }, [isDelegate]);
 
   return (
-    <Card className="craft-card-interactive flex h-full w-full flex-col gap-2.5 p-3.5">
-      <div className="flex items-start gap-3">
+    <Card className="craft-card-interactive flex h-full w-full flex-col gap-2 p-3">
+      <div className="flex items-start gap-2.5">
         <PersonAvatar
           avatarSrc={avatarUrl}
           userName={nickname}

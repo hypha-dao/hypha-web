@@ -333,7 +333,7 @@ export function HumanChatPanelMentionTab({
             {t('mentionInboxEmpty')}
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-1.5">
             {aggregatedMentions
               ? aggregatedRows.map((row) => {
                   const senderSyncLabel = resolveMemberLabel(row.senderId);

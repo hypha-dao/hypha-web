@@ -231,6 +231,7 @@ export function NetworkGlobeMap({
   className,
   renderToolbar,
   isActive = true,
+  showStage = true,
 }: NetworkGlobeMapProps) {
   const t = useTranslations('NetworkMap');
   const { resolvedTheme } = useTheme();
@@ -1492,13 +1493,17 @@ export function NetworkGlobeMap({
     return (
       <div className={cn('flex min-w-0 flex-col gap-3', className)}>
         {toolbar}
-        {mapStage}
-        <div className="px-0 py-2 text-center">
-          <p className="text-4 text-neutral-11">{t('noSpacesWithLocation')}</p>
-          <p className="text-2 text-neutral-10">
-            {t('noSpacesWithLocationHint')}
-          </p>
-        </div>
+        {showStage ? mapStage : null}
+        {showStage ? (
+          <div className="px-0 py-2 text-center">
+            <p className="text-4 text-neutral-11">
+              {t('noSpacesWithLocation')}
+            </p>
+            <p className="text-2 text-neutral-10">
+              {t('noSpacesWithLocationHint')}
+            </p>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -1506,7 +1511,7 @@ export function NetworkGlobeMap({
   return (
     <div className={cn('flex min-w-0 flex-col gap-3', className)}>
       {toolbar}
-      {mapStage}
+      {showStage ? mapStage : null}
     </div>
   );
 }

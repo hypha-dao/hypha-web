@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
+  NetworkControlStrip,
   NetworkGlobeMap,
   NetworkMapViewToggle,
   useNetworkGlobeReady,
@@ -280,20 +281,29 @@ export function ExploreSpaces({
 
   const renderMapToolbar = React.useCallback(
     (layerControls: React.ReactNode) => (
-      <div className="mb-3 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
-        <div className="min-w-0 w-full sm:flex-1">{layerControls}</div>
-        <NetworkAddLocationButton
-          lang={lang}
-          spaces={spaces}
-          isAuthenticated={isAuthenticated}
-          className={cn(
-            spaceToolbarPrimaryButtonClassName,
-            'w-fit shrink-0 self-start border-border bg-background shadow-none hover:bg-muted/15 sm:self-auto',
-          )}
-        />
-      </div>
+      <NetworkControlStrip
+        className="mb-1"
+        viewToggle={
+          <NetworkMapViewToggle
+            value={view}
+            onChange={setView}
+            className="w-fit max-w-full shrink-0"
+          />
+        }
+        mapChrome={view === 'map' ? layerControls : undefined}
+        trailing={
+          view === 'map' ? (
+            <NetworkAddLocationButton
+              lang={lang}
+              spaces={spaces}
+              isAuthenticated={isAuthenticated}
+              className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
+            />
+          ) : undefined
+        }
+      />
     ),
-    [lang, spaces, isAuthenticated],
+    [lang, spaces, isAuthenticated, view, setView],
   );
 
   const categoryFilters = (
@@ -328,35 +338,14 @@ export function ExploreSpaces({
     enableNetworkMap && view === 'map' && !globeReady;
 
   const searchActionsRow = (
-    <div className="flex w-full min-w-0 flex-col gap-3">
-      {enableNetworkMap ? (
-        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex w-full min-w-0 flex-row items-center gap-3 sm:contents">
-            <SpaceSearch value={query} className="min-w-0 flex-1" />
-            <CreateSpaceButton
-              lang={lang}
-              isAuthenticated={isAuthenticated}
-              className="min-w-0 shrink-0 sm:ml-auto"
-              buttonClassName={spaceToolbarPrimaryButtonClassName}
-            />
-          </div>
-          <NetworkMapViewToggle
-            value={view}
-            onChange={setView}
-            className="w-fit max-w-full shrink-0"
-          />
-        </div>
-      ) : (
-        <div className="flex w-full min-w-0 flex-row items-center gap-3">
-          <SpaceSearch value={query} className="min-w-0 flex-1" />
-          <CreateSpaceButton
-            lang={lang}
-            isAuthenticated={isAuthenticated}
-            className="min-w-0 shrink-0 sm:ml-auto"
-            buttonClassName={spaceToolbarPrimaryButtonClassName}
-          />
-        </div>
-      )}
+    <div className="flex w-full min-w-0 flex-row items-center gap-3">
+      <SpaceSearch value={query} className="min-w-0 flex-1" />
+      <CreateSpaceButton
+        lang={lang}
+        isAuthenticated={isAuthenticated}
+        className="min-w-0 shrink-0"
+        buttonClassName={spaceToolbarPrimaryButtonClassName}
+      />
     </div>
   );
 
@@ -446,15 +435,14 @@ export function ExploreSpaces({
 
         {enableNetworkMap ? (
           <>
-            <div className={cn(view !== 'map' && 'hidden')}>
-              <NetworkGlobeMap
-                lang={lang}
-                spaces={mapSpaces}
-                className="w-full"
-                renderToolbar={renderMapToolbar}
-                isActive={view === 'map'}
-              />
-            </div>
+            <NetworkGlobeMap
+              lang={lang}
+              spaces={mapSpaces}
+              className="mb-4 w-full"
+              renderToolbar={renderMapToolbar}
+              isActive={view === 'map'}
+              showStage={view === 'map'}
+            />
             <div className={cn(view !== 'list' && 'hidden')}>
               {listMetaRow}
               {spacesListContent}

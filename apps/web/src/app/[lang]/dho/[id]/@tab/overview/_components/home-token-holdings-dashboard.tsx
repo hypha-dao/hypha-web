@@ -149,36 +149,26 @@ type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
- * Holder donut ramp: single space-accent family only.
- * White tints → solid accent → modest black shades of the same hue.
- * No info/teal or neutral/grey foreign slices.
+ * Graph palette — calm, ≤3 hues, space-accent aligned.
+ * Holder donut: one muted accent family (light → solid → shade).
+ * Proposals: accent + muted success + muted error.
  */
 const COLOR_RANGE = [
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 32%, white 68%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 42%, white 58%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 52%, white 48%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 62%, white 38%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, white 28%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 82%, white 18%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 92%, white 8%)',
-  'var(--space-accent, var(--accent-9))',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 84%, black 16%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 70%, black 30%)',
+  'var(--craft-chart-accent-1)',
+  'var(--craft-chart-accent-2)',
+  'var(--craft-chart-accent-3)',
+  'var(--craft-chart-accent-4)',
+  'var(--craft-chart-accent-5)',
+  'var(--craft-chart-accent-6)',
 ];
-/** Proposals: semantic status hues, muted — not three close accent shades. */
 const PROPOSALS_COLOR_RANGE = [
-  // on voting — space accent (active)
-  'var(--space-accent, var(--accent-9))',
-  // accepted — muted success
-  'color-mix(in oklab, var(--success-9) 68%, var(--neutral-9) 32%)',
-  // refused — muted error
-  'color-mix(in oklab, var(--error-9) 58%, var(--neutral-9) 42%)',
+  'var(--craft-chart-status-active)',
+  'var(--craft-chart-status-success)',
+  'var(--craft-chart-status-danger)',
 ];
 const MEMBERS_COLOR_RANGE = {
-  people: 'var(--space-accent, var(--accent-9))',
-  // quieter accent-family companion — not cyan/neutral
-  spaces:
-    'color-mix(in oklab, var(--space-accent, var(--accent-9)) 48%, white 52%)',
+  people: 'var(--craft-chart-status-active)',
+  spaces: 'var(--craft-chart-accent-2)',
 };
 /** Soft segment gaps — card bg stroke, thin enough to avoid harsh black cuts. */
 const DONUT_SEGMENT_STROKE = 'var(--color-background-2, var(--background))';

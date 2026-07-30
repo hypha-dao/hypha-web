@@ -145,6 +145,7 @@ export default async function DhoLayout({
             descriptionLabel={tCommon('spaceBannerDescriptionAria', {
               title: spaceFromDb.title,
             })}
+            revealMetaLabel={tCommon('spaceBannerRevealMeta')}
             footerTrailing={
               <>
                 <SpaceSettingsButton

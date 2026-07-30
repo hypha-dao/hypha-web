@@ -63,7 +63,8 @@
     },
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# hora} other {# horas}}",
-    "durationDays": "{count, plural, one {# día} other {# días}}"
+    "durationDays": "{count, plural, one {# día} other {# días}}",
+    "spaceBannerRevealMeta": "Detalles"
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",
@@ -3145,7 +3146,7 @@
     "mapView": "Mapa",
     "listView": "Lista",
     "globeView": "Globo",
-    "flatView": "Mapa plano",
+    "flatView": "Plano",
     "landLayer": "Tierra",
     "waterLayer": "Agua",
     "gridLayer": "Cuadrícula",
@@ -3165,7 +3166,8 @@
     "addLocationLoading": "Cargando tus espacios…",
     "addLocationNoSpaces": "Aún no eres miembro de ningún espacio.",
     "clusterExpandTitle": "{count} espacios en esta ubicación",
-    "clusterZoomOut": "Alejar"
+    "clusterZoomOut": "Alejar",
+    "controlStripLabel": "Controles de red"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",

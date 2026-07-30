@@ -179,8 +179,8 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="relative flex flex-1 flex-col gap-2 p-3.5 pt-3">
-        <div className="flex min-w-0 flex-col items-start gap-1">
+      <CardContent className="relative flex flex-1 flex-col gap-1.5 p-3 pt-2.5">
+        <div className="craft-dense-stack min-w-0 items-start">
           {(badges?.length ?? 0) > 0 || isLoading ? (
             <BadgesList
               isLoading={isLoading}

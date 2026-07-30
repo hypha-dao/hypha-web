@@ -62,7 +62,8 @@
       "uploadFailed": "Filen kunne ikke lastes opp."
     },
     "durationHours": "{count, plural, one {# time} other {# timer}}",
-    "durationDays": "{count, plural, one {# dag} other {# dager}}"
+    "durationDays": "{count, plural, one {# dag} other {# dager}}",
+    "spaceBannerRevealMeta": "Detaljer"
   },
   "ModalAside": {
     "spaceSettings": "Rominnstillinger",
@@ -3712,7 +3713,7 @@
     "mapView": "Kart",
     "listView": "Liste",
     "globeView": "Globus",
-    "flatView": "Flatt kart",
+    "flatView": "Flat",
     "landLayer": "Land",
     "waterLayer": "Vann",
     "gridLayer": "Rutenett",
@@ -3732,7 +3733,8 @@
     "addLocationLoading": "Laster inn rommene dine…",
     "addLocationNoSpaces": "Du er ikke medlem av noen rom ennå.",
     "clusterExpandTitle": "{count} rom på denne plasseringen",
-    "clusterZoomOut": "Zoom ut"
+    "clusterZoomOut": "Zoom ut",
+    "controlStripLabel": "Nettverkskontroller"
   },
   "SignalCard": {
     "noConversationRoom": "Ingen samtalerom ennå",
