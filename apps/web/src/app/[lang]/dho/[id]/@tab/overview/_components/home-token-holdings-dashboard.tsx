@@ -149,9 +149,8 @@ type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
- * Graph palette — calm, ≤3 hues, space-accent aligned.
- * Holder donut: one muted accent family (light → solid → shade).
- * Proposals: accent + muted success + muted error.
+ * Graph palette — one space-accent family (light → solid → shade).
+ * Holders, proposals, and members all share these luminance steps.
  */
 const COLOR_RANGE = [
   'var(--craft-chart-accent-1)',
@@ -161,13 +160,14 @@ const COLOR_RANGE = [
   'var(--craft-chart-accent-5)',
   'var(--craft-chart-accent-6)',
 ];
+/** On voting / accepted / refused — accent-2 → 4 → 6 */
 const PROPOSALS_COLOR_RANGE = [
-  'var(--craft-chart-status-active)',
-  'var(--craft-chart-status-success)',
-  'var(--craft-chart-status-danger)',
+  'var(--craft-chart-accent-2)',
+  'var(--craft-chart-accent-4)',
+  'var(--craft-chart-accent-6)',
 ];
 const MEMBERS_COLOR_RANGE = {
-  people: 'var(--craft-chart-status-active)',
+  people: 'var(--craft-chart-accent-4)',
   spaces: 'var(--craft-chart-accent-2)',
 };
 /** Soft segment gaps — card bg stroke, thin enough to avoid harsh black cuts. */

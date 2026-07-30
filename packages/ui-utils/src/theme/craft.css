@@ -4,7 +4,7 @@
  */
 
 :root {
-  /* Graph palette — ≤3 hues; accent family + muted status companions */
+  /* Graph palette — one space-accent hue, luminance/chroma steps only */
   --craft-chart-accent-1: color-mix(
     in oklab,
     var(--space-accent, var(--accent-9)) 28%,
@@ -30,17 +30,6 @@
     in oklab,
     var(--space-accent, var(--accent-9)) 68%,
     black 32%
-  );
-  --craft-chart-status-active: var(--space-accent, var(--accent-9));
-  --craft-chart-status-success: color-mix(
-    in oklab,
-    var(--success-9) 62%,
-    var(--neutral-9) 38%
-  );
-  --craft-chart-status-danger: color-mix(
-    in oklab,
-    var(--error-9) 52%,
-    var(--neutral-9) 48%
   );
 }
 
