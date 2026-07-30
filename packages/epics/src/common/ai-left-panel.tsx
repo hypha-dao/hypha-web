@@ -40,6 +40,7 @@ import {
   useCreateAgreementOrchestrator,
   useJwt,
   useMatrix,
+  useMe,
   useSpaceBySlug,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
@@ -304,9 +305,9 @@ const MENU_ROW_LINK_BASE_CLASS = 'flex h-full w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
-  'relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70';
+  'relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-chrome bg-muted p-0 ring-1 ring-border/70';
 const MENU_CLOSE_BUTTON_CLASS =
-  'flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
+  'flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -468,10 +469,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     spaceSlug ? [spaceSlug] : [],
     false,
   );
+  const { person: me } = useMe();
   const { data: spaceEnergyData } = useSpaceEnergy();
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
+  const userAvatarUrl = me?.avatarUrl?.trim() || null;
+  const userDisplayName =
+    [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+    me?.nickname?.trim() ||
+    null;
+  const assistantAvatarUrl = resolveSpaceDisplayLogoUrl(
+    activeSpaces?.[0],
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
   const [input, setInput] = useState('');
   const aiWalletCreateInFlightRef = useRef(false);
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
@@ -824,9 +835,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     (item: NavItem, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
       const showLabel = mode === 'expanded';
       const isDisabled = item.disabled === true;
-      const iconClassName = `h-4 w-4${item.active ? ' text-accent-9' : ''}`;
+      const iconClassName = `craft-icon${
+        item.active ? ' text-foreground' : ''
+      }`;
       const labelClassName = `min-w-0 truncate${
-        showLabel && item.active ? ' text-accent-9' : ''
+        showLabel && item.active ? ' text-foreground' : ''
       }`;
       const rowClassName = `${MENU_ROW_LINK_BASE_CLASS} ${
         showLabel ? MENU_ROW_LINK_EXPANDED_CLASS : MENU_ROW_LINK_COLLAPSED_CLASS
@@ -2944,7 +2957,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       className={MENU_TRIGGER_CANVAS_CLASS}
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
     >
-      <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+      <Menu className="craft-icon pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
     </button>
   );
   const closeButton = shouldCloseFromTrigger ? (
@@ -2955,7 +2968,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       title={t('hidePanel')}
       aria-label={t('closePanel')}
     >
-      <PanelLeftClose className="h-4 w-4" />
+      <PanelLeftClose className="craft-icon" />
     </button>
   ) : undefined;
 
@@ -3183,6 +3196,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             blockSpaceAiForInteraction ? undefined : handleActionReplySelect
           }
           activeSpaceName={activeSpaceName}
+          userAvatarUrl={userAvatarUrl}
+          userDisplayName={userDisplayName}
+          assistantAvatarUrl={assistantAvatarUrl}
           isStreaming={isStreaming}
           onboardingContext={onboardingContext}
           onOnboardingLocationConfirm={

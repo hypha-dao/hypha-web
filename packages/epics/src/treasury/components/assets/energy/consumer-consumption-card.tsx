@@ -133,12 +133,7 @@ export const ConsumerConsumptionCard = ({
   const [expanded, setExpanded] = React.useState(false);
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border border-border bg-background-2 transition-shadow',
-        expanded && 'col-span-full shadow-md',
-      )}
-    >
+    <div className={cn('craft-card', expanded && 'col-span-full')}>
       <button
         type="button"
         className="flex w-full items-center gap-3 p-3 text-left"

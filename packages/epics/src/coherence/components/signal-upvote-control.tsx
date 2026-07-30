@@ -190,11 +190,11 @@ export function SignalUpvoteControl({
     >
       <div
         className={cn(
-          'group/upvote inline-flex items-center overflow-hidden rounded-full border shadow-sm backdrop-blur-[2px] transition-[border-color,box-shadow,background-color,opacity] duration-200 ease-out',
+          'group/upvote inline-flex items-stretch overflow-hidden rounded-full border transition-[border-color,background-color,opacity] duration-200 ease-out',
           pillHeightClass,
           hasVoted
-            ? 'border-accent-8/85 bg-background/55 shadow-sm'
-            : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25 hover:shadow-md',
+            ? 'border-accent-8/80 bg-background/60'
+            : 'border-border/75 bg-background/55 hover:border-border hover:bg-muted/25',
           isMutating && 'pointer-events-none opacity-65',
           !canVote && 'opacity-55',
         )}
@@ -250,7 +250,10 @@ export function SignalUpvoteControl({
             {totalLabel}
           </span>
         </Button>
-        <span className="mx-0.5 h-4 w-px shrink-0 bg-border/80" aria-hidden />
+        <span
+          className="my-1 w-px shrink-0 self-stretch bg-border/80"
+          aria-hidden
+        />
         <Popover
           open={popoverOpen}
           onOpenChange={(open) => {
@@ -290,7 +293,7 @@ export function SignalUpvoteControl({
           <PopoverContent
             align="start"
             sideOffset={8}
-            className="w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border/90 bg-background-2 p-0 shadow-xl ring-1 ring-white/5 dark:ring-white/10"
+            className="w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border/90 bg-background-2 p-0 shadow-md"
             style={spaceAccentPortalStyle}
             data-space-accent-scope
             onClick={stopPropagation}

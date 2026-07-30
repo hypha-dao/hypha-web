@@ -39,16 +39,16 @@ export function HumanChatPanelHeader({
   const displayDescription = description;
 
   return (
-    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
+    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border/70 bg-background-2 px-4 py-2.5">
       <div className="flex shrink-0 items-center gap-1">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={t('backToSpaceChat')}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="craft-icon" />
           </button>
         ) : (
           <button
@@ -58,11 +58,11 @@ export function HumanChatPanelHeader({
               setOpen(false);
               setOpenMobile(false);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
-            <PanelRightClose className="h-4 w-4" />
+            <PanelRightClose className="craft-icon" />
           </button>
         )}
         {trailingStart}
@@ -75,25 +75,23 @@ export function HumanChatPanelHeader({
               setOpenMobile(false);
               router.push(notificationSettingsHref);
             }}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-chrome text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={t('mentionInboxNotificationSettings')}
             title={t('mentionInboxNotificationSettings')}
           >
-            <Settings className="h-4 w-4" aria-hidden />
+            <Settings className="craft-icon" aria-hidden />
           </button>
         ) : null}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
         {displayDescription && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {displayDescription}
-          </p>
+          <p className="craft-meta line-clamp-1">{displayDescription}</p>
         )}
-        <span className="font-semibold text-sm text-foreground truncate min-w-0">
+        <span className="min-w-0 truncate text-sm font-medium text-foreground">
           {displayTitle}
         </span>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70">
-          <MessageCircle className="h-4 w-4 text-muted-foreground" />
+        <div className="craft-icon-box">
+          <MessageCircle className="craft-icon text-muted-foreground" />
         </div>
       </div>
     </div>

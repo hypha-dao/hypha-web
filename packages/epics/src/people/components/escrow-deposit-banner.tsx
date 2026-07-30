@@ -309,6 +309,8 @@ export const EscrowDepositBanner = ({
         <Button
           onClick={handleClick}
           disabled={depositInFlight || refuseInFlight || insufficientBalance}
+          variant="outline"
+          colorVariant="accent"
           className="w-full sm:flex-1 lg:w-fit lg:flex-none text-wrap justify-center"
         >
           {depositInFlight && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

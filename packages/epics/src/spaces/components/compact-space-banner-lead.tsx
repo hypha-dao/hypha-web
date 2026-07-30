@@ -9,9 +9,12 @@ type Props = {
   src: string;
 };
 
-/** Scroll factor: image moves slower than the page for depth (tuned subtle → noticeable). */
-const PARALLAX_SCROLL_RATE = 0.14;
-const PARALLAX_MAX_SHIFT_PX = 56;
+/**
+ * Scroll factor: image moves slower than the page for depth.
+ * Densify keeps parallax subtle so the compact plate doesn’t swim.
+ */
+const PARALLAX_SCROLL_RATE = 0.1;
+const PARALLAX_MAX_SHIFT_PX = 36;
 
 function clampParallaxScrollY(scrollY: number): number {
   return Math.min(
@@ -44,6 +47,9 @@ function shouldUseUnoptimizedRemoteImage(src: string): boolean {
  * Hero lead image with stable branded placeholder + fade-in.
  * Avoids the grey flash from CSS background-image decoding on first paint.
  * Optional scroll parallax on the photo layer (overlays stay fixed for readable text).
+ *
+ * Visual stack matches production (photo + light/dark overlays, accent wash,
+ * skylight). Geometry stays craft-densify (compact plate coverage).
  */
 export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
@@ -138,7 +144,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
       />
       {/* Taller layer + parallax translate so edges never show during scroll */}
       <div
-        className="absolute inset-[-14%]"
+        className="absolute inset-[-10%]"
         style={
           reduceMotion
             ? undefined
@@ -146,7 +152,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
         }
         aria-hidden
       >
-        <div className="relative h-full w-full min-h-[12rem]">
+        <div className="relative h-full w-full min-h-[8rem]">
           <Image
             src={src}
             alt=""
@@ -180,6 +186,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           />
         </div>
       </div>
+      {/* Light: soft readable scrim + top glow — photo stays visible */}
       <div
         className="pointer-events-none absolute inset-0 transition-opacity duration-320 ease-out dark:hidden"
         style={{ opacity: loadedOverlayOpacity }}
@@ -210,6 +217,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           aria-hidden
         />
       </div>
+      {/* Dark: production stack — accent wash, skylight, grain, vignette */}
       <div
         className="pointer-events-none absolute inset-0 hidden transition-opacity duration-320 ease-out dark:block"
         style={{ opacity: loadedOverlayOpacity }}

@@ -44,7 +44,12 @@ export const VoteProposalButton = ({
     }
     if (proposalStatus === 'onVoting' && needsDecision) {
       return (
-        <Button className={className} variant="outline" colorVariant="accent">
+        <Button
+          size="sm"
+          className={className}
+          variant="outline"
+          colorVariant="accent"
+        >
           {t('confirmDecision')}
         </Button>
       );
@@ -55,6 +60,7 @@ export const VoteProposalButton = ({
       case 'yes':
         return (
           <Button
+            size="sm"
             className={className}
             variant="outline"
             colorVariant="success"
@@ -66,6 +72,7 @@ export const VoteProposalButton = ({
       case 'no':
         return (
           <Button
+            size="sm"
             className={className}
             variant="outline"
             colorVariant="error"
@@ -77,6 +84,7 @@ export const VoteProposalButton = ({
       default:
         return (
           <Button
+            size="sm"
             className={className}
             variant="outline"
             colorVariant="accent"

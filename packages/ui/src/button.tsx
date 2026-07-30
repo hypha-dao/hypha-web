@@ -5,14 +5,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color,--tw-ring-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,border-color,box-shadow,transform,background-color,--tw-ring-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         default: '',
         outline:
           /* ring-2 reserved so hover highlight does not shift layout */
-          'border bg-transparent shadow-sm ring-2 ring-transparent hover:shadow-md active:shadow-sm',
+          'border bg-transparent shadow-sm ring-2 ring-transparent hover:border-border active:shadow-sm',
         link: 'underline-offset-4 hover:underline bg-transparent font-medium',
         ghost: 'bg-transparent font-medium',
       },
@@ -23,7 +23,7 @@ const buttonVariants = cva(
         sm: 'min-h-8 px-3 py-1.5 text-xs',
         /** Primary emphasis (hero / dialog primary). */
         lg: 'min-h-11 px-8 py-2.5 text-base',
-        icon: 'h-10 min-h-10 min-w-10 shrink-0 p-0',
+        icon: 'h-10 min-h-10 min-w-10 shrink-0 rounded-chrome p-0 [&_svg]:size-4 [&_svg]:shrink-0',
       },
       colorVariant: {
         accent: '',
@@ -42,7 +42,7 @@ const buttonVariants = cva(
         variant: 'default',
         colorVariant: 'accent',
         className:
-          'bg-accent-9 text-accent-contrast shadow-sm hover:bg-accent-10 hover:shadow-md active:scale-[0.99] active:shadow-sm dark:shadow-black/25',
+          'bg-accent-9 text-accent-contrast shadow-sm hover:bg-accent-10 active:scale-[0.99] active:shadow-sm dark:shadow-black/20',
       },
       {
         variant: 'default',

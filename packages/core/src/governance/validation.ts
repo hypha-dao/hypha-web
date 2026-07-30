@@ -149,6 +149,9 @@ export const schemaRequestInvite = schemaCreateAgreementWeb2.extend({
     .string()
     .regex(/^0x[a-fA-F0-9]{40}$/, { message: 'Invalid Ethereum address' })
     .min(1, { message: 'Member address is required' }),
+  // Optional space banner URL/path. Not restricted to absolute URLs so relative
+  // values from the space record still persist onto invite documents.
+  leadImage: z.string().trim().min(1).optional(),
 });
 
 export const createAgreementWeb2FileUrls = {

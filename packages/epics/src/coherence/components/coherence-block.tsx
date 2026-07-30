@@ -293,14 +293,16 @@ export function CoherenceBlock({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-7 font-semibold tracking-tight text-foreground">
-        {t('signals')}
-        {typeof signals?.length === 'number' ? (
-          <span className="ml-2 text-5 font-medium text-muted-foreground">
-            | {format.number(signals.length)}
-          </span>
-        ) : null}
-      </h1>
+      <header className="craft-page-header">
+        <h1 className="craft-page-title text-6 font-medium">
+          {t('signals')}
+          {typeof signals?.length === 'number' ? (
+            <span className="ml-2 text-4 font-normal text-muted-foreground">
+              | {format.number(signals.length)}
+            </span>
+          ) : null}
+        </h1>
+      </header>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
           <div className="w-max">{priorityTabs}</div>

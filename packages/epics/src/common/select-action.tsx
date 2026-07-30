@@ -76,7 +76,7 @@ export const SelectAction = ({
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       {showTitle ? (
         <header className="flex flex-col gap-2">
           <Skeleton width="100px" height="24px" loading={isLoading}>
@@ -108,14 +108,14 @@ export const SelectAction = ({
         />
       ) : null}
       <Separator />
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full flex-col gap-6">
         {Object.entries(groupedActions || {}).length > 0 ? (
           Object.entries(groupedActions || {}).map(([group, groupActions]) => (
-            <div key={group} className="flex flex-col gap-3">
+            <div key={group} className="flex w-full flex-col gap-3">
               {group && (
                 <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
               )}
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
                 {groupActions.map((action) => {
                   const isLink = !action.onAction && !!action.href;
 
@@ -135,14 +135,16 @@ export const SelectAction = ({
                   const card = (
                     <Card
                       className={clsx(
-                        'group flex h-full items-start gap-4 rounded-2xl border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
+                        /* Full card tiles — not dense left-flush list rows */
+                        'craft-card group flex h-full w-full items-center gap-4 p-5 transition-[border-color,background-color] duration-200 ease-out md:p-6',
                         !action.disabled && 'cursor-pointer',
                         !action.disabled &&
-                          'hover:border-accent-9 hover:bg-background-3/70 hover:shadow-md hover:ring-accent-10/45',
+                          'hover:border-accent-9 hover:bg-background-3/70',
+                        /* Inset ring — no offset so focus/selection does not optically shift content */
                         !action.disabled &&
-                          'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
+                          'focus-within:border-accent-9 focus-within:ring-1 focus-within:ring-inset focus-within:ring-accent-9/45',
                         {
-                          'pointer-events-none cursor-not-allowed border-border/70 bg-background-2 opacity-90':
+                          'pointer-events-none cursor-not-allowed opacity-90':
                             action.disabled,
                         },
                       )}
@@ -151,10 +153,9 @@ export const SelectAction = ({
                     >
                       <div
                         className={clsx(
-                          'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 [&_svg]:shrink-0',
+                          'flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-accent-11 transition-[border-color,color] duration-200 [&_svg]:size-5 [&_svg]:shrink-0',
                           !action.disabled &&
-                            /* Outline-style hover: ring + border — no solid fill */
-                            'group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 group-focus-within:text-foreground',
+                            'group-hover:border-accent-9 group-hover:text-foreground group-focus-within:text-foreground',
                         )}
                         aria-hidden
                       >
@@ -169,9 +170,11 @@ export const SelectAction = ({
                             </span>
                           ) : null}
                         </span>
-                        <span className="text-1 leading-relaxed text-muted-foreground">
-                          <TextWithLinks text={action.description} />
-                        </span>
+                        {action.description ? (
+                          <span className="line-clamp-2 text-1 font-normal leading-relaxed text-muted-foreground">
+                            <TextWithLinks text={action.description} />
+                          </span>
+                        ) : null}
                       </div>
                     </Card>
                   );
@@ -182,12 +185,12 @@ export const SelectAction = ({
                       onClick={handleClick}
                       key={action.title}
                       aria-disabled={action.disabled}
-                      className="block h-full"
+                      className="block h-full w-full min-w-0"
                     >
                       {card}
                     </Link>
                   ) : (
-                    <div key={action.title} className="h-full">
+                    <div key={action.title} className="h-full w-full min-w-0">
                       {card}
                     </div>
                   );
@@ -196,7 +199,7 @@ export const SelectAction = ({
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
+          <div className="rounded-lg border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
             {noResultsLabel || tCommon('noMenusFound')}
           </div>
         )}

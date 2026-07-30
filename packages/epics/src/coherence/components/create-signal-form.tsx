@@ -769,7 +769,7 @@ export const CreateSignalForm = ({
           onSubmit={form.handleSubmit(handleSubmitSignal, handleInvalid)}
           className="flex flex-col gap-0"
         >
-          <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+          <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2 lg:-mx-7">
             {/* Match {@link CreateAgreementBaseFields} proposal modal toolbar */}
             <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
               <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
@@ -845,7 +845,7 @@ export const CreateSignalForm = ({
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-6 px-0 pt-5">
-            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
               <FormField
                 control={form.control}
                 name="type"
@@ -884,7 +884,7 @@ export const CreateSignalForm = ({
                 )}
               />
             </section>
-            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
               <FormField
                 control={form.control}
                 name="priority"
@@ -922,7 +922,7 @@ export const CreateSignalForm = ({
               />
             </section>
             {mode === 'create' ? (
-              <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+              <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
                 {/* creatorVotePercent is local state, not a form field, so
                     avoid the FormField-context-bound components here. */}
                 <div className="flex w-full flex-col gap-3">
@@ -946,7 +946,7 @@ export const CreateSignalForm = ({
                 </div>
               </section>
             ) : null}
-            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -1057,7 +1057,7 @@ export const CreateSignalForm = ({
                 scheduleFromSignalPath={scheduleFromSignalPath}
               />
             ) : null}
-            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+            <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
               <FormField
                 control={form.control}
                 name="description"
@@ -1105,6 +1105,7 @@ export const CreateSignalForm = ({
                         value={field.value}
                         allowToggleAll={false}
                         allowCreate={true}
+                        maxCount={2}
                         uiStyle="tag-picker"
                         labels={{
                           more: (count) =>

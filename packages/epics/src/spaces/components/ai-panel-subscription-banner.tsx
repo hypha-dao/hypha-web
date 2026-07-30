@@ -64,7 +64,12 @@ export function AiPanelSubscriptionBanner({
         <span className="text-2 text-foreground">
           {tAi('assistantExpiredSubtitle', { expiredElapsed })}
         </span>
-        <Button onClick={handleExpiredAction} className="w-fit">
+        <Button
+          onClick={handleExpiredAction}
+          variant="outline"
+          colorVariant="accent"
+          className="space-accent-outline w-fit"
+        >
           {tSpaces('reactivateNow')}
         </Button>
       </div>

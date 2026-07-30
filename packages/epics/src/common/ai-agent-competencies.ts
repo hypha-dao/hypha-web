@@ -164,6 +164,9 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'decision-making',
       'accountability',
       'policy',
+      // Suggestion copy uses singular ("What signal should we…"); exact-word
+      // matching does not stem plurals, so both forms are required.
+      'signal',
       'signals',
       'coherence',
     ],

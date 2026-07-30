@@ -83,31 +83,16 @@ function ComposerRecOnAirIndicator() {
           0%, 100% { opacity: 1; transform: scale(1); filter: brightness(1); }
           50% { opacity: 0.88; transform: scale(0.94); filter: brightness(1.08); }
         }
-        @keyframes hypha-rec-halo {
-          0%, 100% { opacity: 0.55; transform: scale(1); }
-          50% { opacity: 0.2; transform: scale(1.35); }
-        }
         @media (prefers-reduced-motion: reduce) {
-          [data-hypha-rec-on-air], [data-hypha-rec-halo] {
+          [data-hypha-rec-on-air] {
             animation: none !important;
           }
         }
       `}</style>
       <span className="relative flex h-[18px] w-[18px] items-center justify-center">
         <span
-          data-hypha-rec-halo=""
-          className="pointer-events-none absolute h-3 w-3 rounded-full bg-red-500/35 blur-[2px]"
-          style={{
-            animationName: 'hypha-rec-halo',
-            animationDuration: '1.2s',
-            animationTimingFunction: 'ease-in-out',
-            animationIterationCount: 'infinite',
-          }}
-          aria-hidden
-        />
-        <span
           data-hypha-rec-on-air=""
-          className="motion-safe:relative inline-block h-2 w-2 rounded-full bg-gradient-to-br from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-white/25 dark:ring-white/15"
+          className="motion-safe:relative inline-block h-2 w-2 rounded-full bg-error-9 ring-1 ring-error-11/40 dark:ring-error-8/50"
           style={{
             animationName: 'hypha-rec-on-air',
             animationDuration: '1s',

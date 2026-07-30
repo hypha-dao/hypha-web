@@ -45,7 +45,7 @@ export const SelectCreateAction = ({
       title: t('actions.makeCollectiveAgreement.title'),
       description: t('actions.makeCollectiveAgreement.description'),
       href: 'agreements/create',
-      icon: <FileText className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <FileText className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
@@ -53,7 +53,7 @@ export const SelectCreateAction = ({
       title: t('actions.proposeContribution.title'),
       description: t('actions.proposeContribution.description'),
       href: 'agreements/create/propose-contribution',
-      icon: <Rocket className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Rocket className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
@@ -61,7 +61,7 @@ export const SelectCreateAction = ({
       title: tSettings('actions.redeemTokens.title'),
       description: tSettings('actions.redeemTokens.description'),
       href: 'agreements/create/redeem-tokens',
-      icon: <Gift className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Gift className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
@@ -69,7 +69,7 @@ export const SelectCreateAction = ({
       title: t('actions.payExpenses.title'),
       description: t('actions.payExpenses.description'),
       href: 'agreements/create/pay-for-expenses',
-      icon: <TrendingUp className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <TrendingUp className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
@@ -77,7 +77,7 @@ export const SelectCreateAction = ({
       title: t('actions.acceptInvestment.title'),
       description: t('actions.acceptInvestment.description'),
       href: 'agreements/create/accept-investment',
-      icon: <PiggyBank className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <PiggyBank className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
@@ -85,7 +85,7 @@ export const SelectCreateAction = ({
       title: t('actions.exchangeStakesAndTokens.title'),
       description: t('actions.exchangeStakesAndTokens.description'),
       href: 'agreements/create/exchange-stakes-and-tokens',
-      icon: <Package className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Package className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
@@ -93,7 +93,7 @@ export const SelectCreateAction = ({
       title: t('actions.deployFunds.title'),
       description: t('actions.deployFunds.description'),
       href: 'agreements/create/deploy-funds',
-      icon: <Workflow className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Workflow className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
@@ -101,13 +101,13 @@ export const SelectCreateAction = ({
       title: t('actions.airdrop.title'),
       description: t('actions.airdrop.description'),
       href: 'agreements/create/airdrop',
-      icon: <Send className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Send className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
     },
     {
       title: t('actions.depositFunds.title'),
       description: t('actions.depositFunds.description'),
-      icon: <Wallet className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Wallet className="craft-icon" strokeWidth={1.5} />,
       onAction: () => {
         fundWallet();
       },

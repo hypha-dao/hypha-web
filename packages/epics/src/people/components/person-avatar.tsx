@@ -34,18 +34,10 @@ export const PersonAvatar = ({
   /** `circle` = full round; `squircle` ≈ superellipse; `rounded` = square + subtle corners */
   shape?: 'rounded' | 'squircle' | 'circle';
 }) => {
-  const getFallbackContent = () => {
-    if (!userName) {
-      return <UserIcon className="w-4 h-4" />;
-    }
-
-    const nameParts = userName.split(' ');
-    if (nameParts.length === 1) {
-      return nameParts[0]?.charAt(0);
-    } else if (nameParts.length >= 2) {
-      return `${nameParts[0]?.charAt(0)}${nameParts[1]?.charAt(0)}`;
-    }
-  };
+  const getFallbackContent = () => (
+    // Quiet icon fallback — letter initials read as broken/missing photos in chat.
+    <UserIcon className="h-[45%] w-[45%]" aria-hidden />
+  );
 
   const { avatar: avatarSize, skeleton: skeletonSize } = sizeMap[size];
   const radiusClass =

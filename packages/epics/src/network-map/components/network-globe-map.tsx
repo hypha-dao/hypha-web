@@ -67,38 +67,62 @@ type MapPalette = {
   ocean: string;
   landFill: string;
   landStroke: string;
+  /** Soft water-side band under coast lines — reads as shoreline, not outline chrome. */
+  coastHalo: string;
+  /** Globe disk / flat map limb against the page (no stage frame). */
+  sphereEdge: string;
   grid: string;
+  clusterFill: string;
+  clusterRing: string;
+  pinStroke: string;
+  spiderfyStroke: string;
   sphereShadow: string | null;
 };
 
-/** Pinned dark-mode globe colors — pale ocean + dark land on black page background. */
+/**
+ * Cartographic contrast without neon: deep water, elevated land, thin coast.
+ * Disk edge carries silhouette so the map can sit frameless on the page.
+ */
 const DARK_GLOBE_PALETTE: MapPalette = {
-  ocean: 'oklch(90.334% 0.04675 220.665)',
-  landFill: 'oklch(34.655% 0.01033 254.043)',
-  landStroke: 'oklch(53.701% 0.01538 262.385)',
-  grid: 'oklch(48.932% 0.01557 251.766)',
+  ocean: 'oklch(23% 0.034 236)',
+  landFill: 'oklch(36% 0.018 98)',
+  landStroke: 'oklch(54% 0.022 232)',
+  coastHalo: 'oklch(28% 0.03 236)',
+  sphereEdge: 'oklch(48% 0.022 236)',
+  grid: 'oklch(42% 0.02 236)',
+  clusterFill: 'var(--accent-9)',
+  clusterRing: 'var(--accent-8)',
+  pinStroke: 'oklch(97% 0.005 250)',
+  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 45%, transparent)',
   sphereShadow: null,
 };
 
-function mapPaletteForTheme(theme: string | undefined): MapPalette {
-  if (theme === 'light') {
-    return {
-      ocean: 'var(--info-5)',
-      landFill: 'var(--neutral-7)',
-      landStroke: 'var(--neutral-9)',
-      grid: 'var(--neutral-8)',
-      sphereShadow:
-        'drop-shadow(0 10px 28px color-mix(in oklab, var(--info-9) 18%, transparent))',
-    };
-  }
+const LIGHT_GLOBE_PALETTE: MapPalette = {
+  ocean: 'oklch(93% 0.022 232)',
+  landFill: 'oklch(87% 0.014 95)',
+  landStroke: 'oklch(58% 0.02 250)',
+  coastHalo: 'oklch(88% 0.028 230)',
+  sphereEdge: 'oklch(74% 0.018 250)',
+  grid: 'var(--neutral-7)',
+  clusterFill: 'var(--accent-9)',
+  clusterRing: 'var(--accent-8)',
+  pinStroke: 'oklch(99% 0.002 250)',
+  spiderfyStroke: 'color-mix(in oklab, var(--neutral-12) 30%, transparent)',
+  sphereShadow:
+    'drop-shadow(0 1px 3px color-mix(in oklab, var(--neutral-12) 10%, transparent))',
+};
 
-  return DARK_GLOBE_PALETTE;
+function mapPaletteForTheme(theme: string | undefined): MapPalette {
+  return theme === 'light' ? LIGHT_GLOBE_PALETTE : DARK_GLOBE_PALETTE;
 }
 
+/** Stable per-space accent hues for pin dots (not chrome). */
 function pinColor(id: number): string {
   const hue = Math.abs((id * 47) % 360);
-  return `hsl(${hue} 68% 58%)`;
+  return `oklch(62% 0.14 ${hue})`;
 }
+
+const MINI_GLOBE_SIZE = 88;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') {
@@ -162,7 +186,8 @@ function buildProjection(
   const rotation = effectiveRotation(morph, rotate);
   const minDim = Math.min(width, height);
   const zoom = Math.max(0.75, Math.min(zoomScale, MAX_MAP_ZOOM));
-  const globeScale = (minDim / 2 - 24) * zoom;
+  // Frameless stage — keep a small inset so the disk limb isn’t clipped.
+  const globeScale = (minDim / 2 - 10) * zoom;
   const flatScale = (width / (2 * Math.PI)) * zoom;
   const center: [number, number] = [width / 2, height / 2];
 
@@ -213,6 +238,7 @@ export function NetworkGlobeMap({
   const initialCenter = useInitialGlobeCenter();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
+  const miniGlobeRef = React.useRef<SVGSVGElement>(null);
 
   const mapPalette = React.useMemo(
     () => mapPaletteForTheme(resolvedTheme),
@@ -286,6 +312,7 @@ export function NetworkGlobeMap({
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
   const renderMapRef = React.useRef<() => void>(() => {});
+  const renderMiniGlobeRef = React.useRef<() => void>(() => {});
 
   morphRef.current = morphProgress;
   layersRef.current = layers;
@@ -390,16 +417,26 @@ export function NetworkGlobeMap({
     let root = svg.select<SVGGElement>('g.map-root');
     if (root.empty()) {
       root = svg.append('g').attr('class', 'map-root');
-      root.append('path').attr('class', 'map-ocean');
-      root.append('path').attr('class', 'map-grid');
-      root.append('path').attr('class', 'map-land');
-      root.append('g').attr('class', 'map-spiderfy');
-      root.append('g').attr('class', 'map-pins');
     }
 
+    const ensurePath = (className: string, before: string) => {
+      if (root.select(`path.${className}`).empty()) {
+        root.insert('path', before).attr('class', className);
+      }
+    };
+
+    if (root.select('g.map-pins').empty()) {
+      root.append('g').attr('class', 'map-pins');
+    }
     if (root.select('g.map-spiderfy').empty()) {
       root.insert('g', 'g.map-pins').attr('class', 'map-spiderfy');
     }
+
+    ensurePath('map-land', 'g.map-spiderfy');
+    ensurePath('map-land-coast', 'path.map-land');
+    ensurePath('map-grid', 'path.map-land-coast');
+    ensurePath('map-sphere-edge', 'path.map-grid');
+    ensurePath('map-ocean', 'path.map-sphere-edge');
 
     const spiderfyLayer = root.select<SVGGElement>('g.map-spiderfy');
     spiderfyLayer.selectAll('line').remove();
@@ -433,10 +470,10 @@ export function NetworkGlobeMap({
           .attr('y1', centerY)
           .attr('x2', (_, index) => centerX + offsets[index]!.x)
           .attr('y2', (_, index) => centerY + offsets[index]!.y)
-          .attr('stroke', 'white')
-          .attr('stroke-opacity', 0.35 * spread)
-          .attr('stroke-width', 1.25)
-          .attr('stroke-dasharray', '4 4')
+          .attr('stroke', palette.spiderfyStroke)
+          .attr('stroke-opacity', 0.9 * spread)
+          .attr('stroke-width', 1)
+          .attr('stroke-dasharray', '3 3')
           .attr('pointer-events', 'none');
       }
     }
@@ -446,10 +483,12 @@ export function NetworkGlobeMap({
       isGlobeView && palette.sphereShadow ? palette.sphereShadow : 'none',
     );
 
+    const spherePath = path({ type: 'Sphere' }) ?? '';
+
     const ocean = root.select<SVGPathElement>('path.map-ocean');
     if (layerState.water) {
       ocean
-        .attr('d', path({ type: 'Sphere' }) ?? '')
+        .attr('d', spherePath)
         .attr('fill', palette.ocean)
         .attr('stroke', 'none')
         .style('display', null);
@@ -457,28 +496,53 @@ export function NetworkGlobeMap({
       ocean.attr('d', null).style('display', 'none');
     }
 
+    const sphereEdge = root.select<SVGPathElement>('path.map-sphere-edge');
+    sphereEdge
+      .attr('d', spherePath)
+      .attr('fill', 'none')
+      .attr('stroke', palette.sphereEdge)
+      .attr('stroke-width', isGlobeView ? 1.1 : 0.7)
+      .attr('opacity', isGlobeView ? 0.85 : 0.45)
+      .attr('pointer-events', 'none')
+      .style('display', null);
+
     const gridPath = root.select<SVGPathElement>('path.map-grid');
     if (layerState.grid) {
       gridPath
         .attr('d', path(d3.geoGraticule10()) ?? '')
         .attr('fill', 'none')
         .attr('stroke', palette.grid)
-        .attr('stroke-width', 0.4)
-        .attr('opacity', 0.45)
+        .attr('stroke-width', 0.3)
+        .attr('opacity', isGlobeView ? 0.4 : 0.5)
         .style('display', null);
     } else {
       gridPath.attr('d', null).style('display', 'none');
     }
 
+    const landCoast = root.select<SVGPathElement>('path.map-land-coast');
     const landPath = root.select<SVGPathElement>('path.map-land');
     if (layerState.land) {
+      const landD = path(land) ?? '';
+      landCoast
+        .attr('d', landD)
+        .attr('fill', 'none')
+        .attr('stroke', palette.coastHalo)
+        .attr('stroke-width', 2.25)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
+        .attr('opacity', 0.9)
+        .attr('pointer-events', 'none')
+        .style('display', null);
       landPath
-        .attr('d', path(land) ?? '')
+        .attr('d', landD)
         .attr('fill', palette.landFill)
         .attr('stroke', palette.landStroke)
-        .attr('stroke-width', 0.5)
+        .attr('stroke-width', 0.55)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
         .style('display', null);
     } else {
+      landCoast.attr('d', null).style('display', 'none');
       landPath.attr('d', null).style('display', 'none');
     }
 
@@ -585,39 +649,40 @@ export function NetworkGlobeMap({
 
     pinsEnter.each(function (datum) {
       const group = d3.select(this);
+      const palette = mapPaletteRef.current;
       if (datum.kind === 'cluster') {
         group
           .append('circle')
           .attr('class', 'map-pin-hit')
-          .attr('r', 14)
+          .attr('r', 15)
           .attr('fill', 'transparent')
           .attr('pointer-events', 'all');
         group
           .append('circle')
-          .attr('class', 'map-pin-cluster-pulse')
+          .attr('class', 'map-pin-cluster-ring')
           .attr('r', 12)
           .attr('fill', 'none')
-          .attr('stroke', '#3b82f6')
-          .attr('stroke-width', 2)
+          .attr('stroke', palette.clusterRing)
+          .attr('stroke-width', 1.5)
+          .attr('opacity', 0.55)
           .attr('pointer-events', 'none');
         group
           .append('circle')
-          .attr('r', 11)
-          .attr('fill', 'white')
-          .attr('opacity', 0.92)
-          .attr('pointer-events', 'none');
-        group
-          .append('circle')
-          .attr('r', 8)
-          .attr('fill', '#2563eb')
+          .attr('class', 'map-pin-cluster-core')
+          .attr('r', 9)
+          .attr('fill', palette.clusterFill)
+          .attr('stroke', palette.pinStroke)
+          .attr('stroke-width', 1.5)
           .attr('pointer-events', 'none');
         group
           .append('text')
+          .attr('class', 'map-pin-cluster-count')
           .attr('text-anchor', 'middle')
           .attr('dy', '0.35em')
-          .attr('font-size', 10)
+          .attr('font-size', datum.count > 9 ? 9 : 10)
           .attr('font-weight', 600)
-          .attr('fill', 'white')
+          .attr('font-family', 'var(--font-family-text, sans-serif)')
+          .attr('fill', 'var(--accent-contrast, white)')
           .attr('pointer-events', 'none')
           .text(String(datum.count));
         group
@@ -633,16 +698,24 @@ export function NetworkGlobeMap({
 
       group
         .append('circle')
+        .attr('class', 'map-pin-hit')
         .attr('r', 12)
         .attr('fill', 'transparent')
         .attr('pointer-events', 'all');
       group
         .append('circle')
+        .attr('class', 'map-pin-halo')
+        .attr('r', 7)
+        .attr('fill', pinColor(space.id))
+        .attr('opacity', 0)
+        .attr('pointer-events', 'none');
+      group
+        .append('circle')
         .attr('class', 'map-pin-dot')
         .attr('r', 5)
         .attr('fill', pinColor(space.id))
-        .attr('stroke', 'white')
-        .attr('stroke-width', 1.5)
+        .attr('stroke', palette.pinStroke)
+        .attr('stroke-width', 1.75)
         .attr('pointer-events', 'none');
       group.append('title').text(space.locationLabel ?? space.title);
     });
@@ -721,6 +794,67 @@ export function NetworkGlobeMap({
 
   renderMapRef.current = renderMap;
 
+  const renderMiniGlobe = React.useCallback(() => {
+    const svg = d3.select(miniGlobeRef.current);
+    const land = landRef.current;
+    if (!miniGlobeRef.current || !land) {
+      return;
+    }
+
+    const size = MINI_GLOBE_SIZE;
+    const palette = mapPaletteRef.current;
+    const projection = d3
+      .geoOrthographic()
+      .scale(size / 2 - 4)
+      .translate([size / 2, size / 2])
+      .rotate(savedGlobeRotateRef.current)
+      .clipAngle(90);
+    const path = d3.geoPath(projection);
+
+    svg
+      .attr('width', size)
+      .attr('height', size)
+      .attr('viewBox', `0 0 ${size} ${size}`);
+
+    let root = svg.select<SVGGElement>('g.mini-globe-root');
+    if (root.empty()) {
+      root = svg.append('g').attr('class', 'mini-globe-root');
+      root.append('path').attr('class', 'mini-globe-ocean');
+      root.append('path').attr('class', 'mini-globe-edge');
+      root.append('path').attr('class', 'mini-globe-land');
+    }
+    if (root.select('path.mini-globe-edge').empty()) {
+      root
+        .insert('path', 'path.mini-globe-land')
+        .attr('class', 'mini-globe-edge');
+    }
+
+    const spherePath = path({ type: 'Sphere' }) ?? '';
+
+    root
+      .select<SVGPathElement>('path.mini-globe-ocean')
+      .attr('d', spherePath)
+      .attr('fill', palette.ocean)
+      .attr('stroke', 'none');
+
+    root
+      .select<SVGPathElement>('path.mini-globe-edge')
+      .attr('d', spherePath)
+      .attr('fill', 'none')
+      .attr('stroke', palette.sphereEdge)
+      .attr('stroke-width', 1);
+
+    root
+      .select<SVGPathElement>('path.mini-globe-land')
+      .attr('d', path(land) ?? '')
+      .attr('fill', palette.landFill)
+      .attr('stroke', palette.landStroke)
+      .attr('stroke-width', 0.35)
+      .attr('stroke-linejoin', 'round');
+  }, []);
+
+  renderMiniGlobeRef.current = renderMiniGlobe;
+
   const isActiveRef = React.useRef(isActive);
   isActiveRef.current = isActive;
 
@@ -734,6 +868,7 @@ export function NetworkGlobeMap({
     renderFrameRef.current = requestAnimationFrame(() => {
       renderFrameRef.current = null;
       renderMapRef.current();
+      renderMiniGlobeRef.current();
     });
   }, []);
 
@@ -960,16 +1095,30 @@ export function NetworkGlobeMap({
 
   React.useEffect(() => {
     renderMap();
+    renderMiniGlobe();
   }, [
     layers,
     morphProgress,
     projectionMode,
+    selectedProjection,
     locatedSpaces,
     mapPinData,
     clusterSpread,
     mapPalette,
     renderMap,
+    renderMiniGlobe,
   ]);
+
+  React.useEffect(() => {
+    if (selectedProjection !== 'flat' || isLoadingGeo || loadError) {
+      return;
+    }
+    // Mini-globe SVG mounts with flat mode — paint after commit.
+    const id = requestAnimationFrame(() => {
+      renderMiniGlobeRef.current();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [selectedProjection, isLoadingGeo, loadError, mapPalette]);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -1240,7 +1389,7 @@ export function NetworkGlobeMap({
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 gap-1.5 bg-neutral-2/90 shadow-sm backdrop-blur-sm"
+        className="h-8 gap-1.5 border-border bg-background shadow-sm"
         onClick={clearClusterFocus}
       >
         <Minus className="size-3.5" aria-hidden />
@@ -1249,58 +1398,101 @@ export function NetworkGlobeMap({
     </div>
   ) : null;
 
+  const showMiniGlobe =
+    selectedProjection === 'flat' && !isLoadingGeo && !loadError;
+
+  const miniGlobeInset = showMiniGlobe ? (
+    <button
+      type="button"
+      className={cn(
+        'absolute bottom-3 right-3 z-20 overflow-hidden rounded-lg border border-border bg-background shadow-sm',
+        'transition-[border-color,background-color] duration-150',
+        'hover:border-border hover:bg-muted/15',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+      )}
+      style={{ width: MINI_GLOBE_SIZE, height: MINI_GLOBE_SIZE }}
+      aria-label={t('globeView')}
+      title={t('globeView')}
+      onClick={() => animateProjection('globe')}
+    >
+      <svg
+        ref={miniGlobeRef}
+        className="block size-full"
+        role="img"
+        aria-hidden
+      />
+    </button>
+  ) : null;
+
   const mapClusterStyles = (
     <style>{`
       g.map-pin:focus,
       g.map-pin:focus-visible {
         outline: none;
       }
-      @keyframes network-map-cluster-pulse {
-        0% { transform: scale(0.9); opacity: 0.55; }
-        70% { transform: scale(1.45); opacity: 0; }
-        100% { transform: scale(1.45); opacity: 0; }
+      g.map-pin .map-pin-dot,
+      g.map-pin .map-pin-halo,
+      g.map-pin .map-pin-cluster-core,
+      g.map-pin .map-pin-cluster-ring {
+        transition: r 140ms ease-out, opacity 140ms ease-out, stroke-width 140ms ease-out;
       }
-      g.map-pin-cluster .map-pin-cluster-pulse {
-        transform-box: fill-box;
-        transform-origin: center;
-        animation: network-map-cluster-pulse 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+      @media (hover: hover) and (pointer: fine) {
+        g.map-pin:hover .map-pin-dot {
+          r: 6;
+        }
+        g.map-pin:hover .map-pin-halo {
+          opacity: 0.22;
+        }
+        g.map-pin-cluster:hover .map-pin-cluster-core {
+          r: 10;
+        }
+        g.map-pin-cluster:hover .map-pin-cluster-ring {
+          opacity: 0.85;
+        }
       }
     `}</style>
   );
 
+  const mapStage = (
+    <div
+      ref={containerRef}
+      className="relative min-h-[360px] w-full overflow-hidden bg-transparent"
+    >
+      {isLoadingGeo ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
+          <Loader2 className="size-5 animate-spin" />
+          <span>{t('loadingMap')}</span>
+        </div>
+      ) : null}
+      {loadError ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
+          {loadError}
+        </div>
+      ) : null}
+      {mapClusterStyles}
+      {clusterControls}
+      <svg
+        ref={svgRef}
+        className={cn(
+          'block w-full touch-none select-none',
+          projectionMode === 'globe'
+            ? 'cursor-grab active:cursor-grabbing'
+            : 'cursor-default',
+          isLoadingGeo ? 'invisible' : undefined,
+        )}
+        role="img"
+        aria-label={t('mapAriaLabel')}
+      />
+      {miniGlobeInset}
+      {hoverCard}
+    </div>
+  );
+
   if (locatedSpaces.length === 0) {
     return (
-      <div className={cn('flex min-w-0 flex-col gap-4', className)}>
+      <div className={cn('flex min-w-0 flex-col gap-3', className)}>
         {toolbar}
-        <div
-          ref={containerRef}
-          className="relative min-h-[360px] w-full overflow-hidden"
-        >
-          {isLoadingGeo ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
-              <Loader2 className="size-5 animate-spin" />
-              <span>{t('loadingMap')}</span>
-            </div>
-          ) : null}
-          {loadError ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
-              {loadError}
-            </div>
-          ) : null}
-          <svg
-            ref={svgRef}
-            className={cn(
-              'block w-full touch-none select-none',
-              projectionMode === 'globe'
-                ? 'cursor-grab active:cursor-grabbing'
-                : 'cursor-default',
-              isLoadingGeo ? 'invisible' : undefined,
-            )}
-            role="img"
-            aria-label={t('mapAriaLabel')}
-          />
-          {hoverCard}
-        </div>
+        {mapStage}
         <div className="px-0 py-2 text-center">
           <p className="text-4 text-neutral-11">{t('noSpacesWithLocation')}</p>
           <p className="text-2 text-neutral-10">
@@ -1312,39 +1504,9 @@ export function NetworkGlobeMap({
   }
 
   return (
-    <div className={cn('flex min-w-0 flex-col gap-4', className)}>
+    <div className={cn('flex min-w-0 flex-col gap-3', className)}>
       {toolbar}
-      <div
-        ref={containerRef}
-        className="relative min-h-[360px] w-full overflow-hidden"
-      >
-        {isLoadingGeo ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
-            <Loader2 className="size-5 animate-spin" />
-            <span>{t('loadingMap')}</span>
-          </div>
-        ) : null}
-        {loadError ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-3 text-neutral-11">
-            {loadError}
-          </div>
-        ) : null}
-        {mapClusterStyles}
-        {clusterControls}
-        <svg
-          ref={svgRef}
-          className={cn(
-            'block w-full touch-none select-none',
-            projectionMode === 'globe'
-              ? 'cursor-grab active:cursor-grabbing'
-              : 'cursor-default',
-            isLoadingGeo ? 'invisible' : undefined,
-          )}
-          role="img"
-          aria-label={t('mapAriaLabel')}
-        />
-        {hoverCard}
-      </div>
+      {mapStage}
     </div>
   );
 }

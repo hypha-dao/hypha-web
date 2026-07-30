@@ -31,7 +31,7 @@ const parameters = {
 };
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-lg border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium transition-[color,background-color,border-color,box-shadow,--tw-ring-color]',
+  'inline-flex max-w-full items-center rounded-md border font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-[color,background-color,border-color,box-shadow,--tw-ring-color]',
   {
     variants: {
       size: {
@@ -59,7 +59,7 @@ const badgeVariants = cva(
       variant: {
         solid: 'border-transparent',
         soft: 'border-transparent',
-        outline: 'bg-transparent ring-2 ring-transparent',
+        outline: 'bg-transparent ring-0',
         surface: '',
       },
       colorVariant: {
@@ -123,36 +123,36 @@ const badgeVariants = cva(
         colorVariant: 'neutral',
         className: 'bg-neutral-3 text-neutral-11 hover:bg-neutral-4',
       },
-      // Outline variants — hover tint needs high-contrast text (accent-11 on accent-2 is illegible on strong themes)
+      // Outline — hairline, quiet hover (no heavy ring wash)
       {
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-8 text-accent-11 hover:border-accent-10 hover:text-foreground hover:ring-accent-10/70',
+          'border-accent-8/70 text-accent-11 hover:border-accent-9 hover:bg-accent-2/40 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-8 text-success-11 hover:border-success-10 hover:text-foreground hover:ring-success-10/70',
+          'border-success-8/70 text-success-11 hover:border-success-9 hover:bg-success-2/40 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-8 text-error-11 hover:border-error-10 hover:text-foreground hover:ring-error-10/70',
+          'border-error-8/70 text-error-11 hover:border-error-9 hover:bg-error-2/40 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'warn',
         className:
-          'border-warning-8 text-warning-11 hover:border-warning-10 hover:text-foreground hover:ring-warning-10/70',
+          'border-warning-8/70 text-warning-11 hover:border-warning-9 hover:bg-warning-2/40 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-8 text-neutral-11 hover:border-neutral-10 hover:text-foreground hover:ring-neutral-10/70',
+          'border-border/60 text-muted-foreground hover:border-border hover:bg-muted/15 hover:text-foreground',
       },
       // Surface variants
       {
@@ -182,12 +182,12 @@ const badgeVariants = cva(
         variant: 'surface',
         colorVariant: 'neutral',
         className:
-          'border-neutral-7 bg-neutral-2 text-neutral-11 hover:bg-neutral-3',
+          'border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
       },
     ],
     defaultVariants: {
-      size: 2,
-      variant: 'solid',
+      size: 1,
+      variant: 'outline',
       colorVariant: 'neutral',
     },
   },

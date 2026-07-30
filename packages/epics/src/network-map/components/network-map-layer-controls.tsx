@@ -19,6 +19,7 @@ import {
 } from '../lib/types';
 import {
   segmentedButtonClass,
+  segmentedLayerGroupClass,
   segmentedListClass,
   segmentedTriggerClass,
 } from '../lib/segmented-control-styles';
@@ -51,7 +52,7 @@ export function NetworkMapLayerControls({
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 max-w-full flex-row flex-wrap items-center gap-2 sm:inline-flex sm:w-fit sm:gap-2',
+        'flex w-full min-w-0 max-w-full flex-row flex-wrap items-center gap-2 sm:inline-flex sm:w-fit sm:gap-2.5',
         className,
       )}
       role="toolbar"
@@ -64,13 +65,21 @@ export function NetworkMapLayerControls({
         }
         className="w-fit max-w-full"
       >
-        <TabsList className={segmentedListClass}>
-          <TabsTrigger value="globe" className={segmentedTriggerClass}>
-            <Globe className="size-3.5 shrink-0" aria-hidden />
+        <TabsList className={segmentedListClass} triggerVariant="switch">
+          <TabsTrigger
+            value="globe"
+            variant="switch"
+            className={segmentedTriggerClass}
+          >
+            <Globe className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
             {t('globeView')}
           </TabsTrigger>
-          <TabsTrigger value="flat" className={segmentedTriggerClass}>
-            <Map className="size-3.5 shrink-0" aria-hidden />
+          <TabsTrigger
+            value="flat"
+            variant="switch"
+            className={segmentedTriggerClass}
+          >
+            <Map className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
             {t('flatView')}
           </TabsTrigger>
         </TabsList>
@@ -78,11 +87,11 @@ export function NetworkMapLayerControls({
 
       <Separator
         orientation="vertical"
-        className="mx-0.5 hidden h-6 shrink-0 self-center bg-neutral-7 sm:block"
+        className="mx-0.5 hidden h-4 w-px shrink-0 self-center bg-border/70 sm:block"
       />
 
       <div
-        className="flex w-fit max-w-full min-w-0 items-center gap-1"
+        className={segmentedLayerGroupClass}
         role="group"
         aria-label={t('layersLabel')}
       >
@@ -98,7 +107,7 @@ export function NetworkMapLayerControls({
               onClick={() => onLayerChange(layerId, !active)}
               className={segmentedButtonClass(active)}
             >
-              <Icon className="size-3.5 shrink-0" aria-hidden />
+              <Icon className="craft-icon-sm" strokeWidth={1.5} aria-hidden />
               <span>{t(`${layerId}Layer`)}</span>
             </button>
           );

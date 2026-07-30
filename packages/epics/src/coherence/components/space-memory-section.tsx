@@ -175,14 +175,16 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       aria-label={t('spaceMemory')}
     >
       <header className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-7 font-semibold tracking-tight text-foreground">
-          {t('spaceMemory')}
-          {typeof totalCount === 'number' ? (
-            <span className="ml-2 text-5 font-medium text-muted-foreground">
-              | {Intl.NumberFormat(lang).format(totalCount)}
-            </span>
-          ) : null}
-        </h1>
+        <div className="craft-page-header">
+          <h1 className="craft-page-title text-6 font-medium">
+            {t('spaceMemory')}
+            {typeof totalCount === 'number' ? (
+              <span className="ml-2 text-4 font-normal text-muted-foreground">
+                | {Intl.NumberFormat(lang).format(totalCount)}
+              </span>
+            ) : null}
+          </h1>
+        </div>
       </header>
       <MemoryFilters
         activeFilter={activeFilter}
@@ -228,7 +230,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       ) : (
         <>
           <ul
-            className="m-0 grid w-full list-none grid-cols-1 gap-4 p-0 md:grid-cols-2 xl:grid-cols-3"
+            className="m-0 grid w-full list-none grid-cols-1 items-stretch gap-4 p-0 md:grid-cols-2 xl:grid-cols-3"
             aria-label={t('spaceMemory')}
           >
             {filteredItems.map((row) => (

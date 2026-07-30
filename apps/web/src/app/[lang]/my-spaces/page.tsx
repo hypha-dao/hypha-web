@@ -81,7 +81,7 @@ export default async function Index(props: PageProps) {
           className="flex flex-col"
         >
           <span>{t('allYourSpaces')}</span>
-          <span> {t('inOnePlace')}</span>
+          <span>{t('inOnePlace')}</span>
         </Heading>
         <Suspense fallback={null}>
           <MySpacesControls
@@ -99,12 +99,12 @@ export default async function Index(props: PageProps) {
         />
         <div
           data-testid="recommended-spaces-container"
-          className="w-full space-y-6"
+          className="w-full space-y-4"
         >
-          <Text className="text-4 font-medium pb-4 pt-4">
+          <Text className="text-2 font-normal text-muted-foreground">
             {t('spacesYouMightLike')}
           </Text>
-          <Carousel className="mt-6">
+          <Carousel className="mt-2">
             <CarouselContent className="pb-5" showScrollbar>
               {allSpaces.map((space) => (
                 <CarouselItem

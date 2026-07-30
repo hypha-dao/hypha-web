@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { CountBadge, formatCountBadgeLabel } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 export type ChatPanelTab = 'chat' | 'members' | 'mentions';
@@ -52,19 +53,15 @@ export function HumanChatPanelTabs({
     }
   }, []);
 
-  const chatBadgeLabel =
-    chatMentionCount > 0
-      ? chatMentionCountCapped || chatMentionCount >= 100
-        ? '99+'
-        : String(chatMentionCount)
-      : null;
+  const chatBadgeLabel = formatCountBadgeLabel(
+    chatMentionCount,
+    chatMentionCountCapped,
+  );
 
-  const mentionBadgeLabel =
-    mentionTabBadgeCount > 0
-      ? mentionTabBadgeCapped || mentionTabBadgeCount >= 100
-        ? '99+'
-        : String(mentionTabBadgeCount)
-      : null;
+  const mentionBadgeLabel = formatCountBadgeLabel(
+    mentionTabBadgeCount,
+    mentionTabBadgeCapped,
+  );
 
   const tabs: { key: ChatPanelTab; label: string }[] = [
     { key: 'chat', label: t('tabChat') },
@@ -101,12 +98,12 @@ export function HumanChatPanelTabs({
   return (
     <div
       className={cn(
-        'relative w-full min-w-0 border-b border-border bg-transparent px-4 py-2',
+        'relative w-full min-w-0 border-b border-border/70 bg-transparent px-4 py-1.5',
         'min-h-[var(--secondary-chrome-actions-row-height,52px)]',
         /* §3.1.1: tab column scrolls; call + settings column is `auto` and does not shrink. */
         'grid w-full min-w-0 items-center',
         hasEndCluster
-          ? 'grid-cols-[minmax(0,1fr)_auto] gap-x-2'
+          ? 'grid-cols-[minmax(0,1fr)_auto] gap-x-1.5'
           : 'grid-cols-1',
       )}
     >
@@ -125,7 +122,7 @@ export function HumanChatPanelTabs({
       >
         <div
           role="tablist"
-          className="inline-flex w-max min-w-0 max-w-none flex-nowrap items-stretch gap-1 py-0.5 pr-0.5"
+          className="inline-flex w-max min-w-0 max-w-none flex-nowrap items-stretch gap-0.5 py-0.5 pr-0.5"
         >
           {tabs.map((tab, index) => (
             <button
@@ -166,40 +163,38 @@ export function HumanChatPanelTabs({
               className={cn(
                 'shrink-0 select-none',
                 'inline-flex min-w-0 items-center',
-                'whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-xs font-medium',
-                'transition-colors duration-150 sm:px-3',
+                'whitespace-nowrap rounded-md px-2 py-1 text-left text-xs font-medium',
+                'transition-colors duration-150 sm:px-2.5',
                 activeTab === tab.key
-                  ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:text-foreground dark:ring-accent-10/30'
-                  : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
+                  ? 'border border-accent-9/40 bg-accent-9/10 text-foreground dark:border-accent-10/40 dark:bg-accent-9/14'
+                  : 'border border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
-              <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span className="inline-flex min-w-0 items-center gap-2">
                 <span className="min-w-0 truncate" title={tab.label}>
                   {tab.label}
                 </span>
-                {tab.key === 'chat' && chatBadgeLabel != null && (
-                  <span
-                    aria-hidden
-                    className="inline-flex min-h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-1.5 text-[10px] font-semibold leading-none text-accent-contrast tabular-nums shadow-sm"
-                  >
-                    {chatBadgeLabel}
-                  </span>
-                )}
-                {tab.key === 'mentions' && mentionBadgeLabel != null && (
-                  <span
-                    aria-hidden
-                    className="inline-flex min-h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-1.5 text-[10px] font-semibold leading-none text-accent-contrast tabular-nums shadow-sm"
-                  >
-                    {mentionBadgeLabel}
-                  </span>
-                )}
+                {tab.key === 'chat' && chatBadgeLabel != null ? (
+                  <CountBadge
+                    label={chatBadgeLabel}
+                    count={chatMentionCount}
+                    capped={chatMentionCountCapped}
+                  />
+                ) : null}
+                {tab.key === 'mentions' && mentionBadgeLabel != null ? (
+                  <CountBadge
+                    label={mentionBadgeLabel}
+                    count={mentionTabBadgeCount}
+                    capped={mentionTabBadgeCapped}
+                  />
+                ) : null}
               </span>
             </button>
           ))}
         </div>
       </div>
       {hasEndCluster ? (
-        <div className="relative z-10 flex shrink-0 items-center justify-end gap-1.5 self-stretch border-s border-border/50 bg-background ps-1.5 min-w-max">
+        <div className="relative z-10 flex shrink-0 items-center justify-end gap-1 self-stretch border-s border-border/40 bg-background ps-1.5 min-w-max">
           {tabRowEnd}
         </div>
       ) : null}
