@@ -1116,7 +1116,7 @@ function splitPlainTextMatrixMentions(
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'mention-pill inline-block max-w-full align-baseline rounded px-1 py-0 text-[12px] font-medium leading-[inherit] whitespace-nowrap',
+    'mention-pill inline-block max-w-full align-baseline rounded px-1 py-0 text-[13px] font-medium leading-[inherit] whitespace-nowrap',
     onViewerMentionTintRow
       ? 'border border-accent-9/50 bg-background/95 text-foreground shadow-none dark:border-accent-10/55 dark:bg-background/90'
       : 'border border-border/60 bg-muted/90 text-foreground shadow-none dark:border-border/55 dark:bg-muted/85',
@@ -1227,7 +1227,7 @@ const chatBodyLinkClass =
 
 /** Discord-style compact chip for Hypha chat deep links (short `?msg=` URLs). */
 const chatDeepLinkPillClass =
-  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-accent-3 px-1.5 py-0.5 text-xs font-semibold leading-snug text-accent-12 ring-1 ring-inset ring-accent-8/40 dark:bg-accent-3/50 dark:text-accent-12 dark:ring-accent-8/25';
+  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-accent-3 px-1.5 py-0.5 text-[13px] font-semibold leading-snug text-accent-12 ring-1 ring-inset ring-accent-8/40 dark:bg-accent-3/50 dark:text-accent-12 dark:ring-accent-8/25';
 
 function shortMatrixEventLabel(id: string): string {
   const t = id.trim();
@@ -1743,8 +1743,8 @@ export function HumanChatPanelMessageBubble({
     Boolean(message.media) ||
     Boolean(message.mediaSlots && message.mediaSlots.length > 0);
   const textBodyClassName = cn(
-    /* Mentions inbox density: text-xs + snug leading (readable, not airy) */
-    'text-xs leading-snug text-foreground/90',
+    /* Match AI panel production type scale (text-sm / ~14px); keep compact stack. */
+    'text-sm leading-snug text-foreground',
     hasInlineMedia ? 'mt-0.5' : 'mt-0',
     !textExpanded && 'line-clamp-10',
   );
@@ -1842,9 +1842,9 @@ export function HumanChatPanelMessageBubble({
           </div>
         </div>
 
-        {/* Content — Mentions-dense stack (gap-1 header→body) */}
+        {/* Content — compact stack; production type scale on name/body */}
         <div className="relative z-[1] flex min-w-0 flex-1 flex-col gap-0.5">
-          {/* Name + Timestamp — Mentions inbox type scale (time stays after name for hover bar) */}
+          {/* Name + Timestamp — time stays after name for hover bar */}
           <div className="flex min-w-0 items-baseline gap-1.5">
             <Skeleton
               className="inline-block min-w-0 rounded"
@@ -1852,12 +1852,12 @@ export function HumanChatPanelMessageBubble({
               width={120}
               height={14}
             >
-              <span className="truncate text-xs font-semibold text-foreground">
+              <span className="truncate text-sm font-semibold text-foreground">
                 {senderName}
               </span>
             </Skeleton>
             {timestamp && (
-              <span className="shrink-0 text-[11px] tabular-nums text-foreground/60">
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                 {timestamp}
               </span>
             )}
@@ -1978,7 +1978,7 @@ export function HumanChatPanelMessageBubble({
           {textContent && textCanExpand && jumboLayout.mode !== 'jumbo' ? (
             <button
               type="button"
-              className="mt-0.5 w-fit text-[11px] font-medium text-accent-11 underline-offset-2 hover:underline"
+              className="mt-0.5 w-fit text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
               onClick={() => setTextExpanded((v) => !v)}
             >
               {textExpanded ? t('messageShowLess') : t('messageReadMore')}
