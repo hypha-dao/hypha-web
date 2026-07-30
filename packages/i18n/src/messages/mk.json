@@ -63,7 +63,8 @@
     "Energy": "Енергија",
     "Pipeline": "Пајплајн",
     "durationHours": "{count, plural, one {# час} other {# часа}}",
-    "durationDays": "{count, plural, one {# ден} other {# дена}}"
+    "durationDays": "{count, plural, one {# ден} other {# дена}}",
+    "spaceBannerRevealMeta": "Детали"
   },
   "ModalAside": {
     "spaceSettings": "Поставки на просторот",
@@ -1253,7 +1254,7 @@
     },
     "assetCard": {
       "fromSpace": "од {spaceTitle}",
-      "totalIssuance": "Вкупна емисија: {value}",
+      "totalIssuance": "Емисија {value}",
       "createdOn": "Создадено на {date}",
       "mutualCredit": {
         "debtBadge": "Должи {amount} {symbol}",
@@ -3313,7 +3314,7 @@
     "spaceMemoryLoadMoreError": "Не можеше да се вчитаат повеќе ставки. Обидете се повторно.",
     "spaceMemoryRetry": "Обиди се повторно",
     "spaceMemoryRefresh": "Освежи",
-    "openDocument": "Отвори документ",
+    "openDocument": "Отвори",
     "spaceMemoryContext": "Од «{title}» · {state}",
     "spaceMemoryContextMemory": "Меморија · «{title}»",
     "spaceMemoryContextMatrix": "Од Matrix разговор",
@@ -3696,7 +3697,7 @@
     "mapView": "Мапа",
     "listView": "Листа",
     "globeView": "Глобус",
-    "flatView": "Рамна мапа",
+    "flatView": "Рамна",
     "landLayer": "Копно",
     "waterLayer": "Вода",
     "gridLayer": "Мрежа",
@@ -3716,7 +3717,8 @@
     "addLocationLoading": "Вашите простори се вчитуваат…",
     "addLocationNoSpaces": "Сè уште не сте член на ниту еден простор.",
     "clusterExpandTitle": "{count} простори на оваа локација",
-    "clusterZoomOut": "Оддалечи"
+    "clusterZoomOut": "Оддалечи",
+    "controlStripLabel": "Контроли на мрежата"
   },
   "SignalCard": {
     "noConversationRoom": "Сè уште нема соба за разговор",
@@ -3752,9 +3754,9 @@
     "today": "Денес",
     "previous": "Претходно",
     "next": "Следно",
-    "createTitle": "Закажете нешто",
+    "createTitle": "Креирај настан",
     "backToCalendar": "Назад кон календарот",
-    "createDescription": "Додајте повик, настан или што било друго што му е потребно на вашиот простор во календарот.",
+    "createDescription": "Додајте повик, состанок или резервација во календарот на просторот.",
     "editTitle": "Уреди закажана ставка",
     "editDescription": "Ажурирајте ги деталите или презакажете ја оваа ставка.",
     "fieldTitle": "Наслов",

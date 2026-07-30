@@ -49,7 +49,7 @@ export function SpaceCreatedOnText({ createdAt }: SpaceCreatedOnTextProps) {
   return (
     <>
       {tCommon('createdOn', {
-        date: format.dateTime(date, LOCAL_DATE_TIME_FORMAT_OPTIONS),
+        date: format.dateTime(date, LOCAL_DATE_FORMAT_OPTIONS),
       })}
     </>
   );

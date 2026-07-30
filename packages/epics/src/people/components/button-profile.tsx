@@ -197,12 +197,12 @@ export const ButtonProfile = ({
               <button
                 type="button"
                 className={cn(
-                  'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
-                  'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
-                  'shadow-sm transition-colors duration-150',
+                  'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center',
+                  'isolate overflow-hidden rounded-chrome bg-neutral-1 p-0 text-neutral-12 outline-none',
+                  'ring-1 ring-border/70 transition-colors duration-150',
                   'hover:text-foreground',
                   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                  'data-[state=open]:shadow-md',
+                  'data-[state=open]:ring-border',
                 )}
                 aria-label={t('openProfileMenu')}
                 aria-haspopup="menu"
@@ -212,7 +212,7 @@ export const ButtonProfile = ({
                   avatarSrc={person?.avatarUrl}
                   userName={person?.nickname}
                   shape="rounded"
-                  className="h-full w-full rounded-md ring-0"
+                  className="h-full w-full rounded-chrome ring-0"
                 />
               </button>
             </DropdownMenuTrigger>
@@ -410,14 +410,14 @@ export const ButtonProfile = ({
     }
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <Sheet open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
           <button
             type="button"
             className={cn(
-              'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
-              'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
-              'shadow-sm transition-colors duration-150',
+              'box-border flex h-[36px] min-h-[36px] w-[36px] min-w-[36px] shrink-0 items-center justify-center',
+              'isolate overflow-hidden rounded-chrome bg-neutral-1 p-0 text-neutral-12 outline-none',
+              'ring-1 ring-border/70 transition-colors duration-150',
               'hover:text-foreground',
               'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             )}
@@ -431,7 +431,7 @@ export const ButtonProfile = ({
               avatarSrc={person?.avatarUrl}
               userName={person?.nickname}
               shape="rounded"
-              className="h-full w-full rounded-md ring-0"
+              className="h-full w-full rounded-chrome ring-0"
             />
           </button>
           <SheetContent

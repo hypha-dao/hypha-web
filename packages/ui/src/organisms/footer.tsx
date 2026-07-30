@@ -15,8 +15,11 @@ const customLinkStyles: React.CSSProperties = {
 const customLabelStyles: React.CSSProperties = {
   fontSize: '12px',
   fontWeight: '500',
-  marginBottom: '12px',
+  marginBottom: '6px',
 };
+
+const footerLinkButtonClassName =
+  'h-auto min-h-0 justify-start rounded-lg px-0 py-1 text-gray-400';
 
 export interface FooterProps {
   networkLabel?: string;
@@ -95,21 +98,21 @@ function LegacyFooter({
   return (
     <div className="bg-background-2">
       <Container>
-        <div className="pt-6">
-          <Logo width={140} />
+        <div className="pt-4">
+          <Logo width={120} />
         </div>
         {/*
           Three-column grid: two content columns + empty track (legacy layout).
           `min-w-0` on each cell prevents text from painting into the next column when
           the main column is narrow (e.g. beside open side panels).
         */}
-        <div className="grid grid-cols-1 gap-8 py-8 md:grid-cols-3 md:gap-x-10 md:gap-y-0">
-          <div className="flex min-w-0 flex-col items-start space-y-4 md:space-y-0">
+        <div className="grid grid-cols-1 gap-5 py-4 md:grid-cols-3 md:gap-x-8 md:gap-y-0">
+          <div className="flex min-w-0 flex-col items-start gap-0.5">
             <Text style={customLabelStyles}>{networkLabel}</Text>
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
+              className={footerLinkButtonClassName}
             >
               <Link
                 rel="noopener noreferrer"
@@ -125,7 +128,7 @@ function LegacyFooter({
             {/* <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
+              className={footerLinkButtonClassName}
             >
               <Link
                 rel="noopener noreferrer"
@@ -139,7 +142,7 @@ function LegacyFooter({
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
+              className={footerLinkButtonClassName}
             >
               <Link
                 rel="noopener noreferrer"
@@ -155,12 +158,12 @@ function LegacyFooter({
             </Button>
           </div>
 
-          <div className="flex min-w-0 flex-col items-start space-y-4 md:space-y-0">
+          <div className="flex min-w-0 flex-col items-start gap-0.5">
             <Text style={customLabelStyles}>{legalLabel}</Text>
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
+              className={footerLinkButtonClassName}
             >
               <Link
                 rel="noopener noreferrer"
@@ -177,7 +180,7 @@ function LegacyFooter({
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
+              className={footerLinkButtonClassName}
             >
               <Link
                 rel="noopener noreferrer"
@@ -194,7 +197,7 @@ function LegacyFooter({
             <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
+              className={footerLinkButtonClassName}
             >
               <Link
                 rel="noopener noreferrer"
@@ -211,7 +214,7 @@ function LegacyFooter({
             {/* <Button
               asChild
               variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
+              className={footerLinkButtonClassName}
             >
               <Link
                 rel="noopener noreferrer"

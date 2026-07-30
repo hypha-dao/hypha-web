@@ -19,17 +19,17 @@ const WORKFLOW_STATUS_TOP_BORDER: Record<string, string> = {
 
 /** Priority colors — left card stripe + list dots (urgency, not workflow stage). */
 export const PRIORITY_LEFT_BORDER: Record<string, string> = {
-  critical: 'bg-gradient-to-b from-error-10 via-error-9 to-error-10',
-  high: 'bg-gradient-to-b from-warning-10 via-warning-9 to-warning-10',
-  medium: 'bg-gradient-to-b from-accent-10 via-accent-9 to-accent-10',
+  critical: 'bg-error-9',
+  high: 'bg-warning-9',
+  medium: 'bg-accent-9',
   low: 'bg-neutral-7',
 };
 
 export const PRIORITY_DOT: Record<string, string> = {
-  critical: 'bg-error-9 ring-2 ring-error-9/45 shadow-sm shadow-error-9/25',
-  high: 'bg-warning-9 ring-2 ring-warning-9/45 shadow-sm shadow-warning-9/20',
-  medium: 'bg-accent-9 ring-2 ring-accent-9/40',
-  low: 'bg-neutral-8 ring-2 ring-neutral-8/35',
+  critical: 'bg-error-9',
+  high: 'bg-warning-9',
+  medium: 'bg-accent-9',
+  low: 'bg-neutral-8',
 };
 
 /** @deprecated Prefer statusColorDotClass — index-based dots clash with priority colors. */

@@ -1263,7 +1263,7 @@ export function GlobalCallDockOverlay({
                 ? 'min-h-[320px] min-w-[480px]'
                 : '',
             ),
-        modeIsFullscreen ? 'rounded-2xl' : '',
+        modeIsFullscreen ? 'rounded-lg' : '',
       )}
       style={{ ...spaceAccentStyles, ...containerStyle }}
     >

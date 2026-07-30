@@ -13,6 +13,6 @@ test.describe('My Spaces Page', () => {
     const visibility = await mySpacesPage.testVisibility();
 
     expect(visibility.memberSpaces).toBeFalsy();
-    expect(visibility.recommendedSpaces).toBeTruthy();
+    expect(visibility.recommendedSpaces).toBeFalsy();
   });
 });

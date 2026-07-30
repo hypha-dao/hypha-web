@@ -63,7 +63,8 @@
     },
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# uur} other {# uur}}",
-    "durationDays": "{count, plural, one {# dag} other {# dagen}}"
+    "durationDays": "{count, plural, one {# dag} other {# dagen}}",
+    "spaceBannerRevealMeta": "Details"
   },
   "ModalAside": {
     "spaceSettings": "Ruimte-instellingen",
@@ -1273,7 +1274,7 @@
     },
     "assetCard": {
       "fromSpace": "vanaf {spaceTitle}",
-      "totalIssuance": "Totale uitgifte: {value}",
+      "totalIssuance": "Uitgifte {value}",
       "createdOn": "Gemaakt op {date}",
       "mutualCredit": {
         "debtBadge": "Schulden {amount} {symbol}",
@@ -3332,7 +3333,7 @@
     "spaceMemoryLoadMoreError": "Kan niet meer items laden. Probeer het opnieuw.",
     "spaceMemoryRetry": "Opnieuw proberen",
     "spaceMemoryRefresh": "Vernieuwen",
-    "openDocument": "Document openen",
+    "openDocument": "Openen",
     "spaceMemoryContext": "Van «{title}» · {state}",
     "spaceMemoryContextMemory": "Geheugen · «{title}»",
     "spaceMemoryContextMatrix": "Van Matrix-chat",
@@ -3715,7 +3716,7 @@
     "mapView": "Kaart",
     "listView": "Lijst",
     "globeView": "Bol",
-    "flatView": "Platte kaart",
+    "flatView": "Plat",
     "landLayer": "Land",
     "waterLayer": "Water",
     "gridLayer": "Rooster",
@@ -3735,7 +3736,8 @@
     "addLocationLoading": "Uw ruimtes laden…",
     "addLocationNoSpaces": "Je bent nog geen lid van een ruimte.",
     "clusterExpandTitle": "{count} plaatsen op deze locatie",
-    "clusterZoomOut": "Uitzoomen"
+    "clusterZoomOut": "Uitzoomen",
+    "controlStripLabel": "Netwerkbediening"
   },
   "SignalCard": {
     "noConversationRoom": "Er is nog geen gespreksruimte",
@@ -3771,9 +3773,9 @@
     "today": "Vandaag",
     "previous": "Vorig",
     "next": "Volgende",
-    "createTitle": "Plan iets",
+    "createTitle": "Evenement maken",
     "backToCalendar": "Terug naar Agenda",
-    "createDescription": "Voeg een oproep, evenement of iets anders toe dat uw ruimte nodig heeft op de kalender.",
+    "createDescription": "Voeg een oproep, vergadering of boeking toe aan de kalender van je ruimte.",
     "editTitle": "Bewerk gepland item",
     "editDescription": "Update de details of plan dit item opnieuw.",
     "fieldTitle": "Titel",

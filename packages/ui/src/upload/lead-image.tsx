@@ -238,7 +238,7 @@ export const UploadLeadImage = ({
         className={clsx(
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
-          'rounded-xl bg-neutral-3 text-muted-foreground',
+          'rounded-lg bg-neutral-3 text-muted-foreground',
           showEmptyPlaceholder && 'border border-dashed border-neutral-7',
           className,
         )}
@@ -276,7 +276,7 @@ export const UploadLeadImage = ({
           hideCloseButton
           overlayClassName="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
           className={clsx(
-            'fixed left-[50%] top-[50%] z-50 flex max-h-[90vh] w-full max-w-3xl translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-background p-0 shadow-2xl',
+            'fixed left-[50%] top-[50%] z-50 flex max-h-[90vh] w-full max-w-3xl translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-lg border border-border bg-background p-0 shadow-md',
             'max-sm:h-[min(90vh,640px)] sm:max-h-[90vh]',
           )}
           onInteractOutside={(e) => e.preventDefault()}

@@ -1,4 +1,5 @@
 export * from './authenticated-link-button';
+export * from './chrome-radius';
 export * from './card-button';
 export * from './button-back';
 export * from './button-close';

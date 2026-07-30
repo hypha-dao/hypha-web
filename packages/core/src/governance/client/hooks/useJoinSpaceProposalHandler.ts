@@ -256,6 +256,7 @@ export const useJoinSpaceProposalHandler = ({
 
         const spaceUrl = `/en/dho/${currentSpace?.slug}/agreements/`;
 
+        const targetSpaceLeadImage = targetSpace.leadImage?.trim();
         const inviteProposalData: CreateAgreementInput = {
           title: 'Invite Space',
           description: `**${currentSpace?.title} has just requested to join as a member!**
@@ -269,6 +270,7 @@ export const useJoinSpaceProposalHandler = ({
           web3ProposalId: createdProposalId,
           label: 'Invite',
           state: DocumentState.PROPOSAL,
+          ...(targetSpaceLeadImage ? { leadImage: targetSpaceLeadImage } : {}),
         };
 
         await createAgreement(inviteProposalData);

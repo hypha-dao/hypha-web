@@ -52,8 +52,8 @@ function FeedbackOption({
   const router = useRouter();
 
   const cardClassName = clsx(
-    'group flex h-full flex-col rounded-2xl border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
-    'cursor-pointer hover:border-accent-9 hover:bg-background-3/70 hover:shadow-md hover:ring-accent-10/45',
+    'group flex h-full flex-col rounded-lg border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
+    'cursor-pointer hover:border-accent-9 hover:bg-background-3/70',
     'focus-visible:border-accent-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background-2',
   );
 
@@ -132,7 +132,7 @@ export function HyphaNetworkFeedbackDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'gap-0 overflow-hidden rounded-none border border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 sm:rounded-2xl dark:ring-white/10',
+          'gap-0 overflow-hidden rounded-none border border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 sm:rounded-lg dark:ring-white/10',
           'max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]',
         )}
       >
@@ -150,7 +150,7 @@ export function HyphaNetworkFeedbackDialog({
           </DialogHeader>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <FeedbackOption
-              icon={<Radio className="size-[22px]" strokeWidth={1.75} />}
+              icon={<Radio className="craft-icon" strokeWidth={1.5} />}
               title={t('community.title')}
               tagline={t('community.tagline')}
               description={t('community.description')}
@@ -159,7 +159,7 @@ export function HyphaNetworkFeedbackDialog({
               onNavigate={close}
             />
             <FeedbackOption
-              icon={<Scale className="size-[22px]" strokeWidth={1.75} />}
+              icon={<Scale className="craft-icon" strokeWidth={1.5} />}
               title={t('governance.title')}
               tagline={t('governance.tagline')}
               hasInlineLink

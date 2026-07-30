@@ -14,6 +14,7 @@ import { SearchIcon } from 'lucide-react';
 type DocumentSectionProps = {
   basePath: string;
   web3SpaceId: number;
+  spaceLeadImage?: string | null;
   documents: Document[];
   label?: string;
   headSectionButton?: React.ReactNode;
@@ -27,6 +28,7 @@ type DocumentSectionProps = {
 export const DocumentSection: FC<DocumentSectionProps> = ({
   basePath,
   web3SpaceId,
+  spaceLeadImage,
   documents,
   label,
   headSectionButton,
@@ -77,6 +79,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
           <DocumentGridContainer
             basePath={basePath}
             web3SpaceId={web3SpaceId}
+            spaceLeadImage={spaceLeadImage}
             pagination={{
               page: 1,
               firstPageSize,
@@ -108,6 +111,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
               key={index}
               basePath={basePath}
               web3SpaceId={web3SpaceId}
+              spaceLeadImage={spaceLeadImage}
               pagination={{
                 page: index + 1,
                 firstPageSize,

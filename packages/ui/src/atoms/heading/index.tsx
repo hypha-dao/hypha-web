@@ -2,18 +2,18 @@ import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 
-const headingVariants = cva('font-family-inherit m-0', {
+const headingVariants = cva('m-0 [font-family:var(--font-family-heading)]', {
   variants: {
     size: {
-      '1': 'text-1', // h9
-      '2': 'text-2', // h8
-      '3': 'text-3', // h7
-      '4': 'text-4', // h6
-      '5': 'text-5', // h5
-      '6': 'text-6', // h4
-      '7': 'text-7', // h3
-      '8': 'text-8', // h2
-      '9': 'text-9', // h1
+      '1': 'text-1 tracking-normal',
+      '2': 'text-2 tracking-normal',
+      '3': 'text-3 tracking-[-0.01em]',
+      '4': 'text-4 tracking-[-0.015em]',
+      '5': 'text-5 tracking-[-0.015em]',
+      '6': 'text-6 tracking-[-0.02em]',
+      '7': 'text-7 tracking-[-0.02em]',
+      '8': 'text-8 tracking-[-0.025em]',
+      '9': 'text-9 tracking-[-0.03em]',
     },
     weight: {
       regular: 'font-normal',

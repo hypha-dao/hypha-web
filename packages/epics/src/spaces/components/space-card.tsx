@@ -14,7 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { ExitIcon } from '@radix-ui/react-icons';
 import { SpaceModeLabel } from './space-mode-label';
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, LOCAL_DATE_SHORT_FORMAT_OPTIONS } from '@hypha-platform/ui-utils';
 import { ExitSpace } from './exit-space';
 import { useFormatter, useTranslations } from 'next-intl';
 
@@ -37,7 +37,7 @@ type SpaceCardProps = {
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
-  height: '150px',
+  height: '120px',
 };
 
 export const SpaceCard: React.FC<SpaceCardProps> = ({
@@ -63,7 +63,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   return (
     <Card
       className={cn(
-        'group relative w-full h-full flex flex-col @container/spacecard',
+        'craft-card-interactive group relative flex h-full w-full flex-col @container/spacecard',
         className,
       )}
     >
@@ -93,94 +93,74 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
       )}
       <CardHeader
         style={customCardHeaderStyles}
-        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
+        className="flex-shrink-0 overflow-hidden rounded-tl-lg rounded-tr-lg p-0"
       >
         <Skeleton loading={isLoading} className="w-full h-full">
           <Image
             width={454}
-            height={150}
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+            height={120}
+            className="rounded-tl-lg rounded-tr-lg object-cover w-full h-full"
             src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title}
           />
         </Skeleton>
       </CardHeader>
-      <CardContent className="flex flex-col flex-1 pt-5 relative">
+      <CardContent className="relative flex flex-1 flex-col p-3.5 pt-4">
         <div>
-          <Avatar className="w-[64px] h-[64px] absolute top-[-54px]">
-            <Skeleton width="64px" height="64px" loading={isLoading}>
+          <Avatar className="absolute top-[-48px] h-14 w-14">
+            <Skeleton width="56px" height="56px" loading={isLoading}>
               <AvatarImage src={icon} alt="logo" />
             </Skeleton>
           </Avatar>
         </div>
-        <div className="flex flex-col flex-1">
-          <div className="mb-4 flex-shrink-0">
-            <Skeleton loading={isLoading} width="40px" height="26px">
-              <CardTitle className="font-medium tracking-normal text-4">
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="min-w-0 shrink-0 pt-1">
+            <Skeleton loading={isLoading} width="40px" height="22px">
+              <CardTitle className="truncate text-3 font-medium tracking-tight">
                 {title}
               </CardTitle>
             </Skeleton>
           </div>
-          <div className="flex flex-col flex-1 flex-grow">
-            <Skeleton
-              loading={isLoading}
-              className="mb-4"
-              width="100%"
-              height="26px"
-            >
-              <div className="text-1 text-neutral-11 mb-4 line-clamp-2">
-                {description}
-              </div>
-            </Skeleton>
+          <div className="min-h-8">
+            {description ? (
+              <Skeleton loading={isLoading} width="100%" height="32px">
+                <p className="craft-meta line-clamp-2">{description}</p>
+              </Skeleton>
+            ) : null}
           </div>
-          <div className="flex gap-2 text-xs items-center">
-            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap">
-              <div className="flex flex-col gap-y-2 gap-x-4 @min-[22rem]:flex-row">
-                <div className="flex flex-row">
-                  <Skeleton loading={isLoading} height="16px" width="80px">
-                    <div className="font-bold text-1">{members}</div>
-                    <div className="text-neutral-11 ml-1 text-1">
-                      {tCommon('Members')}
-                    </div>
-                  </Skeleton>
-                </div>
-                <div className="flex flex-row">
-                  <Skeleton loading={isLoading} height="16px" width="80px">
-                    <div className="font-bold text-1">{agreements}</div>
-                    <div className="text-neutral-11 ml-1 text-1">
-                      {tCommon('Agreements')}
-                    </div>
-                  </Skeleton>
-                </div>
-              </div>
-              <div className="flex flex-row">
-                {createdAt instanceof Date &&
-                  !Number.isNaN(createdAt.getTime()) && (
-                    <Skeleton loading={isLoading} height="16px" width="80px">
-                      <div className="text-neutral-11 text-1">
-                        {tCommon('createdOn', {
-                          date: format.dateTime(createdAt, {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          }),
-                        })}
-                      </div>
-                    </Skeleton>
-                  )}
-              </div>
+          <div className="mt-auto flex items-end gap-2 pt-2">
+            <div className="craft-meta flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+              <Skeleton loading={isLoading} height="16px" width="72px">
+                <span>
+                  <span className="text-foreground/80">{members}</span>{' '}
+                  {tCommon('Members')}
+                </span>
+              </Skeleton>
+              <Skeleton loading={isLoading} height="16px" width="72px">
+                <span>
+                  <span className="text-foreground/80">{agreements}</span>{' '}
+                  {tCommon('Agreements')}
+                </span>
+              </Skeleton>
+              <Skeleton loading={isLoading} height="16px" width="88px">
+                <span className="min-h-4 truncate">
+                  {createdAt instanceof Date &&
+                  !Number.isNaN(createdAt.getTime())
+                    ? format.dateTime(
+                        createdAt,
+                        LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+                      )
+                    : null}
+                </span>
+              </Skeleton>
             </div>
-            <div className="flex grow"></div>
             <SpaceModeLabel
               web3SpaceId={web3SpaceId}
               isSandbox={isSandbox}
               isDemo={isDemo}
               isArchived={isArchived}
               configPath={configPath}
-              className="ml-2"
+              className="shrink-0"
             />
           </div>
         </div>

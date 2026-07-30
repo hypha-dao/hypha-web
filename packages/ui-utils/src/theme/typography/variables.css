@@ -1,12 +1,20 @@
 :root {
-  --font-text: 'SF Pro';
-  --font-code: 'Menlo';
-  --font-emphasis: 'Times New Roman';
-  --font-quote: 'Times New Roman';
+  /*
+   * next/font on <html> (apps/web):
+   *   --font-body       → IBM Plex Sans (UI / body)
+   *   --font-heading    → Instrument Sans (page + card titles)
+   *   --font-code-face  → IBM Plex Mono (code / addresses)
+   */
+  --font-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-code: var(--font-code-face), ui-monospace, 'Menlo', monospace;
+  /* Emphasis / quote stay on body — no decorative serifs in-app */
+  --font-emphasis: var(--font-text);
+  --font-quote: var(--font-text);
 
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
+  --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
   --line-height-1: 16px;

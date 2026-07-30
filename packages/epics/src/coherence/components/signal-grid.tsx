@@ -54,7 +54,7 @@ export function SignalGrid({
             tabIndex={0}
             className={cn(
               SIGNAL_GRID_CARD_WRAPPER_CLASS,
-              'cursor-pointer rounded-xl text-left outline-none transition-[border-color,box-shadow] duration-200',
+              'cursor-pointer rounded-lg text-left outline-none transition-[border-color,background-color] duration-200',
               signalCardActiveClass(isActive),
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
@@ -81,7 +81,7 @@ export function SignalGrid({
             {...getSignalSlugDomProps(signal.slug)}
             className={cn(
               SIGNAL_GRID_CARD_WRAPPER_CLASS,
-              'rounded-xl transition-[border-color,box-shadow] duration-200',
+              'rounded-lg transition-[border-color,background-color] duration-200',
               signalCardActiveClass(isActive),
             )}
           >

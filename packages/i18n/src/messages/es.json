@@ -63,7 +63,8 @@
     },
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# hora} other {# horas}}",
-    "durationDays": "{count, plural, one {# día} other {# días}}"
+    "durationDays": "{count, plural, one {# día} other {# días}}",
+    "spaceBannerRevealMeta": "Detalles"
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",
@@ -1480,7 +1481,7 @@
     },
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Emisión total: {value}",
+      "totalIssuance": "Emisión {value}",
       "createdOn": "Creado en {date}",
       "mutualCredit": {
         "debtBadge": "Debe {amount} {symbol}",
@@ -2766,7 +2767,7 @@
     "spaceMemoryLoadMoreError": "No se pudieron cargar más elementos. Inténtalo de nuevo.",
     "spaceMemoryRetry": "Reintentar",
     "spaceMemoryRefresh": "Actualizar",
-    "openDocument": "Abrir documento",
+    "openDocument": "Abrir",
     "spaceMemoryContext": "De «{title}» · {state}",
     "spaceMemoryContextMemory": "Memoria · «{title}»",
     "spaceMemoryContextMatrix": "Del chat de Matrix",
@@ -3145,7 +3146,7 @@
     "mapView": "Mapa",
     "listView": "Lista",
     "globeView": "Globo",
-    "flatView": "Mapa plano",
+    "flatView": "Plano",
     "landLayer": "Tierra",
     "waterLayer": "Agua",
     "gridLayer": "Cuadrícula",
@@ -3165,7 +3166,8 @@
     "addLocationLoading": "Cargando tus espacios…",
     "addLocationNoSpaces": "Aún no eres miembro de ningún espacio.",
     "clusterExpandTitle": "{count} espacios en esta ubicación",
-    "clusterZoomOut": "Alejar"
+    "clusterZoomOut": "Alejar",
+    "controlStripLabel": "Controles de red"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",
@@ -3765,9 +3767,9 @@
     "today": "Hoy",
     "previous": "Anterior",
     "next": "Siguiente",
-    "createTitle": "Programar algo",
+    "createTitle": "Crear evento",
     "backToCalendar": "Volver al calendario",
-    "createDescription": "Añade una llamada, evento o cualquier otra cosa al calendario.",
+    "createDescription": "Añade una llamada, reunión o reserva al calendario del espacio.",
     "editTitle": "Editar elemento programado",
     "editDescription": "Actualiza los detalles o reprograma este elemento.",
     "fieldTitle": "Título",

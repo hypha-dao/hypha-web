@@ -1,29 +1,26 @@
 import * as React from 'react';
+import { ChevronDown } from 'lucide-react';
 import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { CompactSpaceBannerLead } from './compact-space-banner-lead';
 import { isSafeExternalUrl, isSafeImageUrl } from '../utils/safe-image-url';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../common/chrome-radius';
+
+export { APP_CHROME_SUBTLE_SQUARE_RADIUS };
 
 /** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
 export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
-  'h-16 w-16 shrink-0 rounded-full sm:h-[72px] sm:w-[72px]',
-  'shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/15',
+  'h-12 w-12 shrink-0 rounded-full sm:h-14 sm:w-14',
+  'shadow-sm ring-1 ring-white/12',
 );
 
-/** Title size on the banner — reuse on sticky; regular weight (no semibold) for calmer hero + chrome */
+/** Title size on the banner — reuse on sticky; tool-sized, not marketing hero */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
-  'text-balance text-6 font-normal tracking-tight sm:text-7',
-  /* Use design-token text stack from packages/ui-utils @theme (--font-family-text) */
-  '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
+  'text-balance text-5 font-medium tracking-tight sm:text-6',
+  '[font-family:var(--font-family-text)]',
 );
-
-/**
- * Subtle square corners — matches outlined header controls (language, Space Settings) and small square avatars.
- * (~6px; not pill, not large card radius.)
- */
-export const APP_CHROME_SUBTLE_SQUARE_RADIUS = 'rounded-[6px]';
 
 /** Smaller footprint for the DHO sticky space chrome row — circular logo like the hero banner */
 export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
@@ -33,7 +30,7 @@ export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
 
 export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
   'text-balance text-4 font-medium tracking-tight sm:text-5',
-  '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
+  '[font-family:var(--font-family-text)]',
 );
 
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
@@ -43,7 +40,7 @@ const DESCRIPTION_SCROLL_BOX = cn(
   'max-md:max-h-[2lh] max-md:overflow-hidden',
   /* md+: scrollable up to four lines */
   'md:max-h-[4lh] md:overflow-y-auto md:overscroll-y-contain md:touch-pan-y',
-  'text-2 leading-[1.5]',
+  'text-2 leading-relaxed',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
@@ -60,6 +57,8 @@ type CompactSpaceBannerCommon = {
   defaultLeadImageSrc?: string;
   /** Localized accessible name for the description region (screen readers). */
   descriptionLabel: string;
+  /** Localized label for revealing secondary meta (links / stats). */
+  revealMetaLabel?: string;
   footerTrailing?: React.ReactNode;
   className?: string;
 };
@@ -100,6 +99,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     leadImageUrl,
     defaultLeadImageSrc,
     descriptionLabel,
+    revealMetaLabel = 'Details',
     footerTrailing,
     className,
   } = props;
@@ -112,6 +112,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   const createdOnText = showSpaceStats ? props.createdOnText : '';
   const membersLabel = showSpaceStats ? props.membersLabel : '';
   const agreementsLabel = showSpaceStats ? props.agreementsLabel : '';
+  const [metaExpanded, setMetaExpanded] = React.useState(false);
   const textureSrc = (() => {
     const lead = leadImageUrl?.trim();
     const fallback = defaultLeadImageSrc?.trim() ?? '';
@@ -129,13 +130,83 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     return isSafeImageUrl(defaultLogoSrc) ? defaultLogoSrc : '';
   })();
 
+  const hasSecondaryMeta =
+    safeLinks.length > 0 || Boolean(footerLeading) || showSpaceStats;
+  const hasFooterStrip = hasSecondaryMeta || Boolean(footerTrailing);
+
+  const secondaryMeta = (
+    <>
+      {safeLinks.length > 0 ? (
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {safeLinks.map((link, index) => (
+            <a
+              key={`${link}_${index}`}
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-1 text-white/65 hover:text-white/90"
+            >
+              <span className="text-white/65 [&_svg]:h-3.5 [&_svg]:w-3.5">
+                <LinkIcon url={link} />
+              </span>
+              <LinkLabel
+                url={link}
+                className="underline-offset-4 hover:underline"
+              />
+            </a>
+          ))}
+        </div>
+      ) : null}
+
+      {footerLeading || showSpaceStats ? (
+        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2.5 gap-y-1 text-1 text-white/60 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+          {footerLeading ? (
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              {footerLeading}
+            </div>
+          ) : null}
+          {footerLeading && showSpaceStats ? (
+            <span className="hidden text-white/30 sm:inline" aria-hidden>
+              ·
+            </span>
+          ) : null}
+          {showSpaceStats ? (
+            <>
+              <span className="inline-flex items-baseline gap-1">
+                <span className="tabular-nums text-white/75">
+                  {memberCount ?? '—'}
+                </span>{' '}
+                <span className="text-white/50">{membersLabel}</span>
+              </span>
+              <span className="text-white/25" aria-hidden>
+                ·
+              </span>
+              <span className="inline-flex items-baseline gap-1">
+                <span className="tabular-nums text-white/75">
+                  {agreementCount ?? '—'}
+                </span>{' '}
+                <span className="text-white/50">{agreementsLabel}</span>
+              </span>
+              <span className="hidden text-white/30 md:inline" aria-hidden>
+                ·
+              </span>
+              <span className="text-white/50 max-md:hidden">
+                {createdOnText}
+              </span>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  );
+
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-xl',
-        'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
+        'group/hero relative overflow-hidden rounded-lg border border-border/70',
+        'shadow-sm',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
-        'px-4 pt-4 pb-0 md:px-8 md:pt-8',
+        'px-4 pt-4 pb-0 md:px-6 md:pt-5',
         className,
       )}
       aria-label={title}
@@ -148,66 +219,41 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       ) : (
         <>
           <div
-            className="pointer-events-none absolute inset-0 bg-white dark:bg-black"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)] dark:bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)]"
+            className="pointer-events-none absolute inset-0 bg-neutral-3 dark:bg-neutral-2"
             aria-hidden
           />
         </>
       )}
 
-      <div className="relative z-10 flex flex-col gap-3 md:gap-5">
-        {/* Row 1: avatar + title/links — avatar size matches PR #2165 */}
-        <div className="flex flex-wrap items-center gap-3 md:items-start md:gap-4 sm:gap-6">
-          <Avatar
-            className={cn(
-              COMPACT_SPACE_BANNER_AVATAR_CLASSNAME,
-              'max-md:h-11 max-md:w-11 max-md:shadow-[0_10px_24px_-8px_rgba(0,0,0,0.5)]',
-            )}
-          >
-            <AvatarImage
-              src={safeLogoSrc}
-              alt={logoAlt}
-              className="object-cover"
-            />
-          </Avatar>
+      <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
+        {/*
+          Identity row: left-aligned; vertically centered in the lead plate
+          (not horizontally centered). Links live in progressive disclosure.
+        */}
+        <div className="flex min-h-[5.5rem] flex-col justify-center md:min-h-[6.5rem]">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+            <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
+              <AvatarImage
+                src={safeLogoSrc}
+                alt={logoAlt}
+                className="object-cover"
+              />
+            </Avatar>
 
-          <div className="min-w-0 flex-1 basis-[16rem] space-y-1 md:space-y-2">
-            <h1
-              className={cn(
-                COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
-                'text-white drop-shadow-sm max-md:text-5',
-              )}
-            >
-              {title}
-            </h1>
-            {safeLinks.length > 0 ? (
-              <div className="hidden flex-wrap gap-x-5 gap-y-2 md:flex">
-                {safeLinks.map((link, index) => (
-                  <a
-                    key={`${link}_${index}`}
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-1 text-white/80 hover:text-white"
-                  >
-                    <span className="text-white/80 [&_svg]:h-4 [&_svg]:w-4">
-                      <LinkIcon url={link} />
-                    </span>
-                    <LinkLabel
-                      url={link}
-                      className="underline-offset-4 hover:underline"
-                    />
-                  </a>
-                ))}
-              </div>
-            ) : null}
+            <div className="min-w-0 flex-1 basis-[16rem] space-y-1.5 md:space-y-2">
+              <h1
+                className={cn(
+                  COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+                  'text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]',
+                )}
+              >
+                {title}
+              </h1>
+            </div>
           </div>
         </div>
 
-        {/* Below header: same horizontal origin as avatar — not nested in title column */}
+        {/* Same horizontal origin as avatar — not nested in title column */}
         {description ? (
           <div
             role="region"
@@ -218,57 +264,63 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
           >
-            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)] max-md:line-clamp-2">
+            <p className="line-clamp-2 text-pretty text-2 font-normal leading-relaxed text-white/72 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
           </div>
         ) : null}
 
-        {/* Hairline + metadata: one flex item so gap-5 does not double-space above the strip */}
-        {footerLeading || showSpaceStats || footerTrailing ? (
+        {/* Secondary meta: progressive disclosure — hover (fine pointer) or expand */}
+        {hasFooterStrip ? (
           <div className="flex flex-col">
             <div
-              className="h-px w-full shrink-0 bg-white/12"
+              className="h-px w-full shrink-0 bg-white/10"
               role="presentation"
             />
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 md:gap-3 md:py-5">
-              <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
-                {footerLeading ? (
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                    {footerLeading}
-                  </div>
-                ) : null}
-                {footerLeading && showSpaceStats ? (
-                  <span className="hidden text-white/45 sm:inline" aria-hidden>
-                    ·
-                  </span>
-                ) : null}
-                {showSpaceStats ? (
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 md:gap-3 md:py-3.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                {hasSecondaryMeta ? (
                   <>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <span className="font-bold tabular-nums text-white">
-                        {memberCount ?? '—'}
-                      </span>{' '}
-                      <span className="text-white/92">{membersLabel}</span>
-                    </span>
-                    <span className="text-white/45" aria-hidden>
-                      ·
-                    </span>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <span className="font-bold tabular-nums text-white">
-                        {agreementCount ?? '—'}
-                      </span>{' '}
-                      <span className="text-white/92">{agreementsLabel}</span>
-                    </span>
-                    <span
-                      className="hidden text-white/45 md:inline"
-                      aria-hidden
+                    <button
+                      type="button"
+                      className={cn(
+                        'inline-flex w-fit items-center gap-1 text-1 font-medium text-white/70 hover:text-white/90',
+                        /* Fine pointer: chrome appears on hero hover; keep button for keyboard/a11y */
+                        'md:opacity-0 md:transition-opacity md:duration-150',
+                        'md:group-hover/hero:opacity-100 md:group-focus-within/hero:opacity-100',
+                        metaExpanded && 'md:opacity-100',
+                      )}
+                      aria-expanded={metaExpanded}
+                      onClick={() => setMetaExpanded((v) => !v)}
                     >
-                      ·
-                    </span>
-                    <span className="text-white/88 max-md:hidden">
-                      {createdOnText}
-                    </span>
+                      {revealMetaLabel}
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 transition-transform duration-150',
+                          metaExpanded && 'rotate-180',
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                    <div
+                      className={cn(
+                        'grid transition-[grid-template-rows,opacity] duration-200 ease-out',
+                        metaExpanded
+                          ? 'grid-rows-[1fr] opacity-100'
+                          : 'grid-rows-[0fr] opacity-0',
+                        /* Desktop hover reveals without a click when collapsed */
+                        !metaExpanded &&
+                          'md:group-hover/hero:grid-rows-[1fr] md:group-hover/hero:opacity-100',
+                        !metaExpanded &&
+                          'md:group-focus-within/hero:grid-rows-[1fr] md:group-focus-within/hero:opacity-100',
+                      )}
+                    >
+                      <div className="min-h-0 overflow-hidden">
+                        <div className="flex flex-col gap-2 pt-1">
+                          {secondaryMeta}
+                        </div>
+                      </div>
+                    </div>
                   </>
                 ) : null}
               </div>

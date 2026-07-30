@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { useMatrix, useSpaceBySlug } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../chrome-radius';
 import { UseMembers } from '../../spaces';
 import { useSpaceMembersAndDelegates } from '../../spaces/hooks/use-space-members-and-delegates';
 import { shortenMatrixIdForDisplay } from './matrix-room-member-display';

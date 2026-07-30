@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/core/client';
 import {
   NetworkAddLocationButton,
+  NetworkControlStrip,
   NetworkGlobeMap,
   NetworkMapViewToggle,
   useNetworkGlobeReady,
@@ -32,7 +33,6 @@ import { Badge, Heading, Separator, Skeleton } from '@hypha-platform/ui';
 import React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { cva } from 'class-variance-authority';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { readClientSearchParams } from '../read-client-search-params';
@@ -158,6 +158,7 @@ export function ExploreSpaces({
     useFilterSpacesListWithDiscoverability({
       spaces: categoryFilteredSpaces,
       useGeneralState: true,
+      excludeSpaceLevelFromNetwork: true,
     });
 
   // Discoverability is resolved on-chain, so the filtered set (and therefore the
@@ -254,26 +255,6 @@ export function ExploreSpaces({
     [pathname],
   );
 
-  const multiSelectVariants = cva(
-    'transition ease-in-out delay-150 duration-300 max-sm:hover:translate-y-0 max-sm:hover:scale-100 sm:hover:-translate-y-1 sm:hover:scale-110',
-    {
-      variants: {
-        variant: {
-          default:
-            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
-          secondary:
-            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          destructive:
-            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-          inverted: 'inverted',
-        },
-      },
-      defaultVariants: {
-        variant: 'default',
-      },
-    },
-  );
-
   const sortedSpaces = React.useMemo(
     () => sortSpacesByOrder(selectedSpaces, order ?? 'mostmembers'),
     [selectedSpaces, order],
@@ -300,20 +281,29 @@ export function ExploreSpaces({
 
   const renderMapToolbar = React.useCallback(
     (layerControls: React.ReactNode) => (
-      <div className="mb-4 flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-        <div className="min-w-0 w-full sm:flex-1">{layerControls}</div>
-        <NetworkAddLocationButton
-          lang={lang}
-          spaces={spaces}
-          isAuthenticated={isAuthenticated}
-          className={cn(
-            spaceToolbarPrimaryButtonClassName,
-            'w-fit shrink-0 self-start sm:self-auto',
-          )}
-        />
-      </div>
+      <NetworkControlStrip
+        className="mb-1"
+        viewToggle={
+          <NetworkMapViewToggle
+            value={view}
+            onChange={setView}
+            className="w-fit max-w-full shrink-0"
+          />
+        }
+        mapChrome={view === 'map' ? layerControls : undefined}
+        trailing={
+          view === 'map' ? (
+            <NetworkAddLocationButton
+              lang={lang}
+              spaces={spaces}
+              isAuthenticated={isAuthenticated}
+              className="h-8 min-h-8 gap-1.5 px-2.5 text-xs font-medium shadow-none sm:text-sm"
+            />
+          ) : undefined
+        }
+      />
     ),
-    [lang, spaces, isAuthenticated],
+    [lang, spaces, isAuthenticated, view, setView],
   );
 
   const categoryFilters = (
@@ -323,13 +313,14 @@ export function ExploreSpaces({
         return (
           <Badge
             key={tag.id}
+            variant="outline"
+            colorVariant={isSelected ? 'accent' : 'neutral'}
+            size={1}
             className={cn(
-              'shrink-0',
-              multiSelectVariants({
-                variant: isSelected ? 'secondary' : 'default',
-              }),
+              'craft-chip craft-chip-interactive shrink-0 cursor-pointer',
+              isSelected &&
+                'border-accent-8/55 bg-accent-2/35 text-foreground hover:bg-accent-3/40',
             )}
-            style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => {
               const nextCategoryGroups = isSelected ? [] : [tag.id];
               setCategoryGroups(nextCategoryGroups);
@@ -347,35 +338,14 @@ export function ExploreSpaces({
     enableNetworkMap && view === 'map' && !globeReady;
 
   const searchActionsRow = (
-    <div className="flex w-full min-w-0 flex-col gap-3">
-      {enableNetworkMap ? (
-        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex w-full min-w-0 flex-row items-center gap-3 sm:contents">
-            <SpaceSearch value={query} className="min-w-0 flex-1" />
-            <CreateSpaceButton
-              lang={lang}
-              isAuthenticated={isAuthenticated}
-              className="min-w-0 shrink-0 sm:ml-auto"
-              buttonClassName={spaceToolbarPrimaryButtonClassName}
-            />
-          </div>
-          <NetworkMapViewToggle
-            value={view}
-            onChange={setView}
-            className="w-fit max-w-full shrink-0"
-          />
-        </div>
-      ) : (
-        <div className="flex w-full min-w-0 flex-row items-center gap-3">
-          <SpaceSearch value={query} className="min-w-0 flex-1" />
-          <CreateSpaceButton
-            lang={lang}
-            isAuthenticated={isAuthenticated}
-            className="min-w-0 shrink-0 sm:ml-auto"
-            buttonClassName={spaceToolbarPrimaryButtonClassName}
-          />
-        </div>
-      )}
+    <div className="flex w-full min-w-0 flex-row items-center gap-3">
+      <SpaceSearch value={query} className="min-w-0 flex-1" />
+      <CreateSpaceButton
+        lang={lang}
+        isAuthenticated={isAuthenticated}
+        className="min-w-0 shrink-0"
+        buttonClassName={spaceToolbarPrimaryButtonClassName}
+      />
     </div>
   );
 
@@ -448,45 +418,46 @@ export function ExploreSpaces({
   );
 
   return (
-    <div className="flex min-w-0 flex-col">
+    <div className="flex min-w-0 flex-col gap-9">
       <Heading
         size="9"
         color="secondary"
         weight="medium"
         align="center"
-        className="mb-6 flex flex-col sm:mb-8"
+        className="flex flex-col"
       >
         <span>{t('manySpaces')}</span>
         <span>{t('oneVibrantNetwork')}</span>
       </Heading>
 
-      {sharedHeader}
+      <div className="flex min-w-0 flex-col">
+        {sharedHeader}
 
-      {enableNetworkMap ? (
-        <>
-          <div className={cn(view !== 'map' && 'hidden')}>
+        {enableNetworkMap ? (
+          <>
             <NetworkGlobeMap
               lang={lang}
               spaces={mapSpaces}
-              className="w-full"
+              className="mb-4 w-full"
               renderToolbar={renderMapToolbar}
               isActive={view === 'map'}
+              showStage={view === 'map'}
             />
-          </div>
-          <div className={cn(view !== 'list' && 'hidden')}>
+            <div className={cn(view !== 'list' && 'hidden')}>
+              {listMetaRow}
+              {spacesListContent}
+            </div>
+            <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
+              {metricsSection}
+            </div>
+          </>
+        ) : (
+          <>
             {listMetaRow}
             {spacesListContent}
-          </div>
-          <div className={cn('mt-8', deferBelowMapContent && 'hidden')}>
-            {metricsSection}
-          </div>
-        </>
-      ) : (
-        <>
-          {listMetaRow}
-          {spacesListContent}
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

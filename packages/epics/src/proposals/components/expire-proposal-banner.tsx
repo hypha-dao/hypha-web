@@ -169,6 +169,8 @@ export const ExpireProposalBanner = ({
                 disabled={isDisabled}
                 title={tooltipMessage}
                 onClick={handleAction}
+                variant="outline"
+                colorVariant="accent"
                 className="w-fit"
               >
                 {buttonText}

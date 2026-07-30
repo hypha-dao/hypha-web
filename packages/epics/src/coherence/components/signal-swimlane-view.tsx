@@ -125,7 +125,7 @@ export function SignalSwimlaneView({
         return (
           <section
             key={lane.slug}
-            className="w-full overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm"
+            className="w-full overflow-hidden rounded-lg border border-border/50 bg-card"
           >
             <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 bg-gradient-to-r from-muted/35 via-muted/15 to-transparent px-4 py-3">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -134,7 +134,7 @@ export function SignalSwimlaneView({
                   {lane.board.name}
                 </h3>
               </div>
-              <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+              <span className="rounded-md bg-muted/60 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
                 {laneCount}
               </span>
             </header>
@@ -161,7 +161,7 @@ export function SignalSwimlaneView({
                     key={dropKey}
                     className={cn(
                       SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS,
-                      'min-h-[6rem] rounded-xl border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
+                      'min-h-[6rem] rounded-lg border border-t-[3px] bg-muted/10 transition-[border-color,box-shadow]',
                       statusColumnTopBorderClass(status.color),
                       isDropTarget
                         ? 'border-accent-8/70 ring-2 ring-accent-9/25 shadow-md'
@@ -293,28 +293,6 @@ export function SignalSwimlaneView({
                             onSignalClick
                               ? () => onSignalClick(signal)
                               : undefined
-                          }
-                          statusOptions={
-                            readOnly ? undefined : workflow.statuses
-                          }
-                          onStatusChange={
-                            readOnly
-                              ? undefined
-                              : (progressStatus) => {
-                                  if (
-                                    signal.progressStatus === progressStatus
-                                  ) {
-                                    return;
-                                  }
-                                  void onPatch(signal, {
-                                    progressStatus,
-                                  }).catch((error) => {
-                                    console.error(
-                                      '[SignalSwimlaneView] Failed to move signal',
-                                      error,
-                                    );
-                                  });
-                                }
                           }
                           className={cn(
                             SIGNAL_SWIMLANE_TASK_CARD_SHELL_CLASS,
