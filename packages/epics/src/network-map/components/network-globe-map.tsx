@@ -1089,11 +1089,17 @@ export function NetworkGlobeMap({
   }, [scheduleRender, t]);
 
   React.useEffect(() => {
-    if (!isActive || isLoadingGeo || loadError || !landRef.current) {
+    if (
+      !isActive ||
+      !showStage ||
+      isLoadingGeo ||
+      loadError ||
+      !landRef.current
+    ) {
       return;
     }
     scheduleRender();
-  }, [isActive, isLoadingGeo, loadError, scheduleRender]);
+  }, [isActive, showStage, isLoadingGeo, loadError, scheduleRender]);
 
   React.useEffect(() => {
     renderMap();
@@ -1123,9 +1129,12 @@ export function NetworkGlobeMap({
   }, [selectedProjection, isLoadingGeo, loadError, mapPalette]);
 
   React.useEffect(() => {
+    // Stage unmounts when showStage is false (list view). Rebind drag/resize
+    // whenever the SVG remounts — deps must include showStage or list→map
+    // leaves the globe non-interactive after geo already loaded.
     const container = containerRef.current;
     const svgElement = svgRef.current;
-    if (!container || !svgElement || isLoadingGeo || loadError) {
+    if (!showStage || !container || !svgElement || isLoadingGeo || loadError) {
       return;
     }
 
@@ -1218,7 +1227,7 @@ export function NetworkGlobeMap({
       resizeObserver.disconnect();
       d3.select(svgElement).on('.drag', null);
     };
-  }, [isLoadingGeo, loadError, requestRender]);
+  }, [showStage, isLoadingGeo, loadError, requestRender]);
 
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {

@@ -17,7 +17,7 @@ export type NetworkGlobeMapProps = {
   renderToolbar?: (layerControls: React.ReactNode) => React.ReactNode;
   /** When false, skip render loops while the map panel is hidden. */
   isActive?: boolean;
-  /** When false, render toolbar only (keeps map mounted for chrome state). */
+  /** When false, omit the map stage (toolbar stays mounted for chrome state). */
   showStage?: boolean;
 };
 
