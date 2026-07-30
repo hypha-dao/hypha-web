@@ -84,23 +84,17 @@
   /*
    * Interactive grids: quiet at rest; gain space/theme accent on hover.
    * Avoid muted hover that washes out any accent tint (feels inverted).
+   * Hover rules live outside this layer (below) so they can override Card
+   * utility bg/border classes from the utilities layer.
    */
   .craft-card-interactive {
     @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
     @apply transition-[border-color,background-color] duration-200 ease-out;
   }
 
-  .craft-card-interactive:hover {
-    border-color: color-mix(
-      in oklab,
-      var(--space-accent, var(--color-accent-9, var(--border))) 28%,
-      var(--border)
-    );
-    background: color-mix(
-      in oklab,
-      var(--background-2, var(--card)) 90%,
-      var(--space-accent, var(--color-accent-9, var(--muted))) 10%
-    );
+  /* List / table rows: same quiet→accent hover fill, no card chrome. */
+  .craft-row-interactive {
+    @apply transition-[background-color] duration-200 ease-out;
   }
 
   /*
@@ -157,4 +151,31 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
+}
+
+/*
+ * Unlayered on purpose: Card (and similar) apply bg-background-2 /
+ * border-border/* as utilities. Those beat @layer components, so the
+ * accent hover must sit outside layers to win on upvote / Card grids.
+ * Kanban/swimlane SignalTaskCard (bare div) already worked without this.
+ */
+.craft-card-interactive:hover {
+  border-color: color-mix(
+    in oklab,
+    var(--space-accent, var(--color-accent-9, var(--border))) 28%,
+    var(--border)
+  );
+  background: color-mix(
+    in oklab,
+    var(--background-2, var(--card)) 90%,
+    var(--space-accent, var(--color-accent-9, var(--muted))) 10%
+  );
+}
+
+.craft-row-interactive:hover {
+  background: color-mix(
+    in oklab,
+    var(--background-2, var(--card)) 90%,
+    var(--space-accent, var(--color-accent-9, var(--muted))) 10%
+  );
 }

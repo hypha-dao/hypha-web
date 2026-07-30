@@ -209,7 +209,7 @@ export function SignalListView({
                 SIGNAL_LIST_ITEM_SHELL_CLASS,
                 priorityLeftBorderEdgeClass(signal.priority),
                 signalCardActiveClass(isActive, 'rounded-none'),
-                !isActive && 'hover:bg-muted/20',
+                !isActive && 'craft-row-interactive',
               )}
             >
               <div
