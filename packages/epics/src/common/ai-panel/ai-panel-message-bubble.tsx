@@ -886,18 +886,18 @@ export function AiPanelMessageBubble({
           className={cn(
             // Asymmetric chat silhouette: three rounded + one sharp toward the
             // speaker. inline-flex + w-fit keeps the fill hugging copy.
-            // Mentions density: text-xs + snug leading, tight pad.
-            'inline-flex h-fit w-fit max-w-full flex-col gap-0.5 rounded-xl px-2 py-1 text-xs leading-snug',
+            // Production type scale (text-sm / 14px); keep compact pad/gap.
+            'inline-flex h-fit w-fit max-w-full flex-col gap-1 rounded-xl px-2.5 py-1.5 text-sm leading-snug',
             isUser
               ? 'rounded-tr-none border border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_10%,transparent)] text-foreground'
               : 'rounded-tl-none border border-border/70 bg-muted/45 text-foreground',
           )}
         >
           {hasVisibleText && (
-            <div className="flex h-fit w-full min-w-0 flex-col gap-0.5">
+            <div className="flex h-fit w-full min-w-0 flex-col gap-1">
               <div
                 className={cn(
-                  'space-y-px break-words text-xs leading-snug text-foreground/90 [&_p]:m-0',
+                  'space-y-0.5 break-words text-[14px] leading-5 text-foreground/95 [&_p]:m-0',
                   showExpandToggle && !expanded && 'line-clamp-8',
                 )}
               >
@@ -909,12 +909,12 @@ export function AiPanelMessageBubble({
                         className={cn(
                           'font-semibold tracking-tight',
                           isUser ? 'text-inherit' : 'text-foreground',
-                          block.level === 1 && 'text-sm',
-                          block.level === 2 && 'text-xs',
+                          block.level === 1 && 'text-lg',
+                          block.level === 2 && 'text-base',
                           block.level >= 3 &&
                             (isUser
-                              ? 'text-[11px] uppercase opacity-90'
-                              : 'text-[11px] uppercase text-muted-foreground'),
+                              ? 'text-sm opacity-90'
+                              : 'text-sm text-muted-foreground'),
                         )}
                       >
                         {renderInlineMarkdown(block.text)}
@@ -926,7 +926,7 @@ export function AiPanelMessageBubble({
                       <ul
                         key={`${message.id}-ul-${index}`}
                         className={cn(
-                          'space-y-px pl-3.5',
+                          'space-y-0.5 pl-4',
                           isUser ? 'text-inherit' : 'text-foreground',
                         )}
                       >
@@ -946,7 +946,7 @@ export function AiPanelMessageBubble({
                       <ol
                         key={`${message.id}-ol-${index}`}
                         className={cn(
-                          'space-y-px pl-3.5',
+                          'space-y-0.5 pl-4',
                           isUser ? 'text-inherit' : 'text-foreground',
                         )}
                       >
@@ -957,7 +957,7 @@ export function AiPanelMessageBubble({
                           >
                             {renderInlineMarkdown(item.text)}
                             {item.nestedUl && item.nestedUl.length > 0 ? (
-                              <ul className="mt-px space-y-px pl-3.5">
+                              <ul className="mt-0.5 space-y-0.5 pl-4">
                                 {item.nestedUl.map(
                                   (nestedItem, nestedIndex) => (
                                     <li
@@ -978,7 +978,7 @@ export function AiPanelMessageBubble({
                   return (
                     <p
                       key={`${message.id}-p-${index}`}
-                      className={isUser ? 'text-inherit' : 'text-foreground/90'}
+                      className={isUser ? 'text-inherit' : 'text-foreground/95'}
                     >
                       {renderInlineMarkdown(block.lines.join(' '))}
                     </p>
@@ -989,7 +989,7 @@ export function AiPanelMessageBubble({
                 <button
                   type="button"
                   onClick={() => setExpanded((v) => !v)}
-                  className="self-start text-[11px] font-medium text-accent-11 underline-offset-2 hover:underline"
+                  className="self-start text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
                 >
                   {expanded ? t('showLess') : t('showMore')}
                 </button>
@@ -998,10 +998,7 @@ export function AiPanelMessageBubble({
           )}
           {fileParts.length > 0 && (
             <div
-              className={cn(
-                'flex flex-col gap-1.5',
-                hasVisibleText && 'mt-0.5',
-              )}
+              className={cn('flex flex-col gap-2', hasVisibleText && 'mt-1')}
             >
               {fileParts.map((part, i) =>
                 part.mediaType?.startsWith('image/') && part.url ? (
@@ -1017,7 +1014,7 @@ export function AiPanelMessageBubble({
                     href={part.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] text-primary underline"
+                    className="text-xs text-primary underline"
                   >
                     {t('attachment')}
                   </a>
@@ -1026,14 +1023,14 @@ export function AiPanelMessageBubble({
             </div>
           )}
           {generatedVisualsCard ? (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <div key={generatedVisualsCard.key}>
                 {generatedVisualsCard.node}
               </div>
             </div>
           ) : null}
           {renderedToolParts.length > 0 && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               {renderedToolParts.map((part) => {
                 const confirmationCard =
                   part.state === 'output-available'
@@ -1053,7 +1050,7 @@ export function AiPanelMessageBubble({
             </div>
           )}
           {walletSignaturePending && !suppressWalletSignaturePrompt ? (
-            <div className="rounded-lg border border-accent-8/40 bg-accent-2/40 px-2.5 py-1.5 text-[11px] text-foreground">
+            <div className="rounded-lg border border-accent-8/40 bg-accent-2/40 px-3 py-2 text-xs text-foreground">
               {t('walletSignaturePending')}
             </div>
           ) : null}
