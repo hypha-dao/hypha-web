@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check-types": "tsc --noEmit",
+    "check-types": "NODE_OPTIONS='--max-old-space-size=6144' tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run src/common/human-chat-panel/__tests__/ src/common/__tests__/ src/common/composer/__tests__/"
   },
