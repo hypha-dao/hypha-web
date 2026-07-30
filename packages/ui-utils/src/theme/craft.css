@@ -4,33 +4,32 @@
  */
 
 :root {
-  /* Graph palette — one space-accent hue, luminance/chroma steps only */
-  --craft-chart-accent-1: color-mix(
-    in oklab,
-    var(--space-accent, var(--accent-9)) 28%,
-    white 72%
-  );
-  --craft-chart-accent-2: color-mix(
-    in oklab,
-    var(--space-accent, var(--accent-9)) 48%,
-    white 52%
-  );
-  --craft-chart-accent-3: color-mix(
-    in oklab,
-    var(--space-accent, var(--accent-9)) 68%,
-    white 32%
-  );
-  --craft-chart-accent-4: var(--space-accent, var(--accent-9));
-  --craft-chart-accent-5: color-mix(
-    in oklab,
-    var(--space-accent, var(--accent-9)) 82%,
-    black 18%
-  );
-  --craft-chart-accent-6: color-mix(
-    in oklab,
-    var(--space-accent, var(--accent-9)) 68%,
-    black 32%
-  );
+  /*
+   * Theme fallback only (pages without a space accent scope).
+   * Do NOT reference --space-accent here: custom properties resolve on the
+   * defining element, so :root would bake in default indigo and descendants
+   * would inherit that stale colour even inside [data-space-accent-scope].
+   */
+  --craft-chart-accent-1: color-mix(in oklab, var(--accent-9) 42%, white 58%);
+  --craft-chart-accent-2: color-mix(in oklab, var(--accent-9) 62%, white 38%);
+  --craft-chart-accent-3: color-mix(in oklab, var(--accent-9) 82%, white 18%);
+  --craft-chart-accent-4: var(--accent-9);
+  --craft-chart-accent-5: color-mix(in oklab, var(--accent-9) 78%, black 22%);
+  --craft-chart-accent-6: color-mix(in oklab, var(--accent-9) 62%, black 38%);
+}
+
+/*
+ * Live space palette — rebind to the Radix-style ramp SpaceAccentFromImages
+ * writes as concrete --color-accent-* hexes on the scope. Mid/solid steps keep
+ * banner chroma; skip near-surface 1–3 so slices don’t wash to dusty lavender.
+ */
+[data-space-accent-scope] {
+  --craft-chart-accent-1: var(--color-accent-4);
+  --craft-chart-accent-2: var(--color-accent-5);
+  --craft-chart-accent-3: var(--color-accent-6);
+  --craft-chart-accent-4: var(--color-accent-8);
+  --craft-chart-accent-5: var(--color-accent-9);
+  --craft-chart-accent-6: var(--color-accent-10);
 }
 
 @layer components {

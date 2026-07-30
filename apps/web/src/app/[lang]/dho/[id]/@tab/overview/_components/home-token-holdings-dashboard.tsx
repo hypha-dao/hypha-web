@@ -149,31 +149,38 @@ type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
- * Graph palette — one space-accent family (light → solid → shade).
- * Holders, proposals, and members all share these luminance steps.
+ * Graph palette — live space accent ramp (via craft tokens rebound on
+ * [data-space-accent-scope] to --color-accent-*). Extra mid steps help when
+ * many holders share a donut without cycling pale washed tints.
  */
 const COLOR_RANGE = [
   'var(--craft-chart-accent-1)',
   'var(--craft-chart-accent-2)',
   'var(--craft-chart-accent-3)',
+  'var(--color-accent-7, var(--craft-chart-accent-3))',
   'var(--craft-chart-accent-4)',
+  'var(--craft-chart-accent-5)',
+  'var(--color-accent-11, var(--craft-chart-accent-6))',
+  'var(--craft-chart-accent-6)',
+];
+/** On voting / accepted / refused — light → solid → deep accent */
+const PROPOSALS_COLOR_RANGE = [
+  'var(--craft-chart-accent-2)',
   'var(--craft-chart-accent-5)',
   'var(--craft-chart-accent-6)',
 ];
-/** On voting / accepted / refused — accent-2 → 4 → 6 */
-const PROPOSALS_COLOR_RANGE = [
-  'var(--craft-chart-accent-2)',
-  'var(--craft-chart-accent-4)',
-  'var(--craft-chart-accent-6)',
-];
 const MEMBERS_COLOR_RANGE = {
-  people: 'var(--craft-chart-accent-4)',
+  people: 'var(--craft-chart-accent-5)',
   spaces: 'var(--craft-chart-accent-2)',
 };
-/** Soft segment gaps — card bg stroke, thin enough to avoid harsh black cuts. */
-const DONUT_SEGMENT_STROKE = 'var(--color-background-2, var(--background))';
-const DONUT_SEGMENT_STROKE_WIDTH = 0.75;
-const DONUT_PAD_ANGLE = 0.012;
+/**
+ * Precision donut separators: contiguous arcs + hairline card-bg stroke.
+ * No padAngle wedges — those punch jagged gaps through thin holder slices.
+ */
+const DONUT_SEGMENT_STROKE = 'var(--color-background-2)';
+const DONUT_SEGMENT_STROKE_WIDTH = 0.5;
+const DONUT_PAD_ANGLE = 0;
+const DONUT_CORNER_RADIUS = 0;
 const CHART_CARD_CLASS =
   'min-w-0 overflow-hidden rounded-lg border border-border/70 bg-background-2 shadow-none';
 
@@ -363,16 +370,17 @@ function TokenDonutChart({
     [chartData],
   );
 
-  const outerRadius = 118;
-  const activeOuterRadius = 122;
-  const innerRadius = 78;
+  // Slightly thinner ring — reads as a precision gauge, not a comic pie.
+  const outerRadius = 116;
+  const activeOuterRadius = 118;
+  const innerRadius = 82;
   const arcGenerator = React.useMemo(
     () =>
       d3
         .arc<d3.PieArcDatum<ChartSlice>>()
         .innerRadius(innerRadius)
         .outerRadius(outerRadius)
-        .cornerRadius(1.5)
+        .cornerRadius(DONUT_CORNER_RADIUS)
         .padAngle(DONUT_PAD_ANGLE),
     [],
   );
@@ -382,7 +390,7 @@ function TokenDonutChart({
         .arc<d3.PieArcDatum<ChartSlice>>()
         .innerRadius(innerRadius)
         .outerRadius(activeOuterRadius)
-        .cornerRadius(1.5)
+        .cornerRadius(DONUT_CORNER_RADIUS)
         .padAngle(DONUT_PAD_ANGLE),
     [],
   );
@@ -422,10 +430,12 @@ function TokenDonutChart({
                 fill={colorScale(segment.data.display_name)}
                 stroke={DONUT_SEGMENT_STROKE}
                 strokeWidth={DONUT_SEGMENT_STROKE_WIDTH}
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
                 // Not keyboard-focusable: browser focus rings clip arc paths into
                 // a rectangular wedge artifact. Legend buttons handle a11y focus.
                 aria-hidden="true"
-                opacity={!hasHoveredSlice || isActive ? 1 : 0.28}
+                opacity={!hasHoveredSlice || isActive ? 1 : 0.48}
                 className="cursor-pointer transition-opacity duration-150"
                 onMouseEnter={() => setHoveredSliceKey(segment.data.hover_key)}
                 onMouseLeave={() => setHoveredSliceKey(null)}
@@ -471,7 +481,7 @@ function TokenDonutChart({
               opacity:
                 !hasHoveredSlice || hoveredSliceKey === slice.hover_key
                   ? 1
-                  : 0.4,
+                  : 0.5,
             }}
             onMouseEnter={() => setHoveredSliceKey(slice.hover_key)}
             onMouseLeave={() => setHoveredSliceKey(null)}
@@ -883,9 +893,9 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .sort(null)(chartInput);
   const arc = d3
     .arc<d3.PieArcDatum<(typeof chartInput)[number]>>()
-    .innerRadius(72)
+    .innerRadius(76)
     .outerRadius(104)
-    .cornerRadius(1.5)
+    .cornerRadius(DONUT_CORNER_RADIUS)
     .padAngle(DONUT_PAD_ANGLE);
 
   return (
@@ -911,6 +921,8 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
               fill={slice.data.color}
               stroke={DONUT_SEGMENT_STROKE}
               strokeWidth={DONUT_SEGMENT_STROKE_WIDTH}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
             />
           ))}
           <text
