@@ -14,6 +14,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import {
   TOKENS,
   useSpacesByWeb3Ids,
+  HYPHA_PRICE_USD,
   type Space,
 } from '@hypha-platform/core/client';
 import { Token } from '../components/common/token-payout-field-array';
@@ -25,7 +26,6 @@ type BuyHyphaTokensPluginProps = {
   spaces?: Space[];
 };
 
-const HYPHA_PRICE_USD = 0.25;
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 

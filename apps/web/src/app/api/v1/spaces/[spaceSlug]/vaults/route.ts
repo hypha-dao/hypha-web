@@ -12,6 +12,8 @@ import {
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
   isHiddenToken,
+  isHyphaToken,
+  HYPHA_PRICE_USD,
 } from '@hypha-platform/core/client';
 import {
   tokenBackingVaultImplementationAbi,
@@ -336,6 +338,10 @@ export async function GET(
     const prices = await getTokenPrice(allAddresses);
 
     const resolveTokenPrice = (tokenAddress: `0x${string}`): number => {
+      // HYPHA sells at a contract-fixed rate, so it overrides any feed price.
+      if (isHyphaToken(tokenAddress)) {
+        return HYPHA_PRICE_USD;
+      }
       const marketPrice = prices[tokenAddress] ?? 0;
       if (marketPrice > 0) {
         return marketPrice;

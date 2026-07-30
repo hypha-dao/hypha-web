@@ -4,6 +4,7 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useSpacesByWeb3IdsClient } from '../hooks';
 import { Image, Separator, Input } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { HYPHA_PRICE_USD } from '@hypha-platform/core/client';
 
 interface ProposalActivateSpacesDataProps {
   spaceIds?: bigint[];
@@ -11,7 +12,6 @@ interface ProposalActivateSpacesDataProps {
   tokenSymbol?: string;
 }
 
-const HYPHA_PRICE_USD = 0.25;
 const HYPHA_PER_MONTH = 44;
 const USDC_PER_MONTH = 11;
 

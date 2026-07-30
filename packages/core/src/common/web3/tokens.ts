@@ -15,6 +15,23 @@ export type Token = {
   transferable?: boolean;
 };
 
+/** HYPHA ERC-20 on Base. */
+export const HYPHA_TOKEN_ADDRESS =
+  '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3' as const;
+
+/**
+ * HYPHA is sold at a fixed rate by `HyphaToken` (see `HYPHA_PRICE_USD` in
+ * `HyphaToken.sol`), so its USD value is not market-driven. Use this instead of
+ * a price feed — HYPHA is not listed on CoinGecko and would otherwise resolve to 0.
+ */
+export const HYPHA_PRICE_USD = 0.25;
+
+/** True when `address` is the HYPHA token. */
+export function isHyphaToken(address?: string | null): boolean {
+  if (!address) return false;
+  return address.toLowerCase() === HYPHA_TOKEN_ADDRESS.toLowerCase();
+}
+
 export const TOKENS: Token[] = [
   {
     symbol: 'USDC',
@@ -51,7 +68,7 @@ export const TOKENS: Token[] = [
   {
     symbol: 'HYPHA',
     icon: '/placeholder/hypha-token-icon.svg',
-    address: '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3',
+    address: HYPHA_TOKEN_ADDRESS,
     name: 'Hypha',
     type: 'utility',
   },
