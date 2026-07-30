@@ -149,22 +149,21 @@ type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 /**
- * Holder donut ramp: space-accent base with readable luminance steps.
- * Soft white tints up top; floor at solid neutral-9 (no black / charcoal
- * mixes that vanish on dark surfaces). A light info wash adds quiet
- * differentiation without a rainbow.
+ * Holder donut ramp: single space-accent family only.
+ * White tints → solid accent → modest black shades of the same hue.
+ * No info/teal or neutral/grey foreign slices.
  */
 const COLOR_RANGE = [
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 36%, white 64%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 50%, white 50%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 66%, white 34%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 32%, white 68%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 42%, white 58%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 52%, white 48%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 62%, white 38%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, white 28%)',
   'color-mix(in oklab, var(--space-accent, var(--accent-9)) 82%, white 18%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 92%, white 8%)',
   'var(--space-accent, var(--accent-9))',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 78%, var(--info-9) 22%)',
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 52%, var(--info-9) 48%)',
-  'color-mix(in oklab, var(--info-9) 62%, var(--neutral-9) 38%)',
-  'color-mix(in oklab, var(--neutral-9) 72%, var(--space-accent, var(--accent-9)) 28%)',
-  'var(--neutral-9)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 84%, black 16%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 70%, black 30%)',
 ];
 /** Proposals: semantic status hues, muted — not three close accent shades. */
 const PROPOSALS_COLOR_RANGE = [
@@ -177,8 +176,9 @@ const PROPOSALS_COLOR_RANGE = [
 ];
 const MEMBERS_COLOR_RANGE = {
   people: 'var(--space-accent, var(--accent-9))',
+  // quieter accent-family companion — not cyan/neutral
   spaces:
-    'color-mix(in oklab, var(--neutral-9) 70%, var(--space-accent, var(--accent-9)) 30%)',
+    'color-mix(in oklab, var(--space-accent, var(--accent-9)) 48%, white 52%)',
 };
 /** Soft segment gaps — card bg stroke, thin enough to avoid harsh black cuts. */
 const DONUT_SEGMENT_STROKE = 'var(--color-background-2, var(--background))';
