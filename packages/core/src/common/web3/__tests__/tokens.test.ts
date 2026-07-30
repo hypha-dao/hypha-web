@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { TOKENS, isCatalogueToken, isKnownTreasuryToken } from '../tokens';
+import {
+  TOKENS,
+  HYPHA_PRICE_USD,
+  HYPHA_TOKEN_ADDRESS,
+  isCatalogueToken,
+  isHyphaToken,
+  isKnownTreasuryToken,
+} from '../tokens';
 
 describe('isCatalogueToken', () => {
   it('returns true for hardcoded catalogue addresses', () => {
@@ -35,5 +42,33 @@ describe('isKnownTreasuryToken', () => {
 
   it('drops unknown spam addresses', () => {
     expect(isKnownTreasuryToken(spam, known)).toBe(false);
+  });
+});
+
+describe('HYPHA pricing', () => {
+  it('is fixed at $0.25 to match the HyphaToken contract rate', () => {
+    expect(HYPHA_PRICE_USD).toBe(0.25);
+  });
+
+  it('matches the HYPHA entry in the catalogue', () => {
+    const hypha = TOKENS.find((token) => token.symbol === 'HYPHA');
+    expect(hypha?.address).toBe(HYPHA_TOKEN_ADDRESS);
+  });
+});
+
+describe('isHyphaToken', () => {
+  it('matches the HYPHA address in any casing', () => {
+    expect(isHyphaToken(HYPHA_TOKEN_ADDRESS)).toBe(true);
+    expect(isHyphaToken(HYPHA_TOKEN_ADDRESS.toLowerCase())).toBe(true);
+    expect(isHyphaToken(HYPHA_TOKEN_ADDRESS.toUpperCase())).toBe(true);
+  });
+
+  it('returns false for other or empty addresses', () => {
+    expect(isHyphaToken('0x0000000000000000000000000000000000000001')).toBe(
+      false,
+    );
+    expect(isHyphaToken(null)).toBe(false);
+    expect(isHyphaToken(undefined)).toBe(false);
+    expect(isHyphaToken('')).toBe(false);
   });
 });

@@ -13,6 +13,7 @@ import {
   schemaActivateSpaces,
   schemaCreateAgreementFiles,
   schemaCreateAgreementWeb2,
+  HYPHA_PRICE_USD,
 } from '@hypha-platform/core/client';
 import { Config } from '@wagmi/core';
 
@@ -168,7 +169,6 @@ export const useActivateSpacesOrchestrator = ({
         if (config) {
           startTask('CREATE_WEB3_ACTIVATION');
           const HYPHA_PER_MONTH = 44;
-          const HYPHA_PRICE_USD = 0.25;
           const breakdown = arg.spaces.map(({ spaceId, months }) => ({
             spaceId,
             hypha: months * HYPHA_PER_MONTH,

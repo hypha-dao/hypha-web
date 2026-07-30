@@ -22,6 +22,8 @@ import {
   getAllEnergyCommunityTokens,
   getEnergyCommunityToken,
   getEnergyCommunityDisplayDecimals,
+  isHyphaToken,
+  HYPHA_PRICE_USD,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -249,6 +251,10 @@ export async function GET(
           let rate = prices[token.address] || 0;
           if (token.address.toLowerCase() === EVC_TOKEN_ADDRESS) {
             rate = 1;
+          }
+          // HYPHA sells at a contract-fixed rate, so it overrides any feed price.
+          if (isHyphaToken(token.address)) {
+            rate = HYPHA_PRICE_USD;
           }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;

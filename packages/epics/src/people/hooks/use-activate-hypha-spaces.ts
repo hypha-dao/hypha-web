@@ -1,9 +1,11 @@
 'use client';
 
 import { ActivateSpacesFormValues } from './validation';
-import { useActivateSpacesMutation } from '@hypha-platform/core/client';
+import {
+  useActivateSpacesMutation,
+  HYPHA_PRICE_USD,
+} from '@hypha-platform/core/client';
 
-const HYPHA_PRICE_USD = 0.25;
 const HYPHA_PER_MONTH = 44;
 
 export const useActivateSpaces = ({

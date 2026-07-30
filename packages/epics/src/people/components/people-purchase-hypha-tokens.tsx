@@ -29,6 +29,7 @@ import {
   TOKENS,
   useInvestInHyphaMutation,
   useMe,
+  HYPHA_PRICE_USD,
 } from '@hypha-platform/core/client';
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
@@ -41,7 +42,6 @@ interface PeoplePurchaseHyphaTokensProps {
   closePanelUrl?: string;
 }
 
-const HYPHA_PRICE_USD = 0.25;
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 
