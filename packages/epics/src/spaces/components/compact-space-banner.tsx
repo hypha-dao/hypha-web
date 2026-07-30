@@ -226,8 +226,8 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       )}
 
       <div className="relative z-10 flex flex-col gap-3.5 md:gap-4">
-        {/* Row 1: avatar + title */}
-        <div className="flex flex-wrap items-center gap-3 md:items-start md:gap-4">
+        {/* Row 1: avatar + title — centered; secondary links live in disclosure footer */}
+        <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
           <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
               src={safeLogoSrc}
@@ -236,7 +236,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             />
           </Avatar>
 
-          <div className="min-w-0 flex-1 basis-[16rem] space-y-1.5 md:space-y-2">
+          <div className="min-w-0 max-w-full space-y-1.5 md:space-y-2">
             <h1
               className={cn(
                 COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
