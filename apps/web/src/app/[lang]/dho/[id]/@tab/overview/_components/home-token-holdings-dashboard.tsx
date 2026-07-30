@@ -1636,8 +1636,8 @@ export function HomeTokenHoldingsDashboard({
             <div
               className={
                 showDistributionHistoryWidget
-                  ? 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-4'
+                  ? 'grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
+                  : 'grid items-stretch gap-4'
               }
             >
               {showDistributionHistoryWidget ? (
@@ -1650,8 +1650,8 @@ export function HomeTokenHoldingsDashboard({
               <div
                 className={
                   showDistributionHistoryWidget
-                    ? 'grid min-w-0 items-start gap-4'
-                    : 'grid min-w-0 items-start gap-4 md:grid-cols-2'
+                    ? 'grid min-w-0 items-stretch gap-4'
+                    : 'grid min-w-0 items-stretch gap-4 md:grid-cols-2'
                 }
               >
                 {data.tokens.map((token) => {
@@ -1661,7 +1661,7 @@ export function HomeTokenHoldingsDashboard({
                   return (
                     <Card
                       key={token.token_address}
-                      className={CHART_CARD_CLASS}
+                      className={`${CHART_CARD_CLASS} flex h-full flex-col`}
                     >
                       <CardHeader className="gap-2 pb-2">
                         <div className="flex items-start justify-between gap-3">
@@ -1738,7 +1738,7 @@ export function HomeTokenHoldingsDashboard({
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0">
+                      <CardContent className="flex flex-1 flex-col pt-0">
                         <TokenDonutChart
                           title={token.symbol}
                           slices={token.holdings}
