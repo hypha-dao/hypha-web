@@ -1251,6 +1251,9 @@ importers:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
         version: link:../../config/typescript
+      '@prb/math':
+        specifier: ^4.1.2
+        version: 4.1.2
       '@wagmi/cli':
         specifier: ^2.2.0
         version: 2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -5916,6 +5919,9 @@ packages:
 
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
+
+  '@prb/math@4.1.2':
+    resolution: {integrity: sha512-CBSg0SyOYfs4X+GD16klIYE39sqDs1skPmGP5SVKJPVfthmooAriaSkWC8NqBrkIi129XDnxm7f1cBXnu55FyQ==}
 
   '@privy-io/api-base@1.5.2':
     resolution: {integrity: sha512-0eJBoQNmCSsWSWhzEVSU8WqPm7bgeN6VaAmqeXvjk8Ni0jM8nyTYjmRAqiCSs3mRzsnlQVchkGR6lsMTHkHKbw==}
@@ -27166,6 +27172,8 @@ snapshots:
 
   '@popperjs/core@2.11.8': {}
 
+  '@prb/math@4.1.2': {}
+
   '@privy-io/api-base@1.5.2':
     dependencies:
       zod: 3.25.76
@@ -32122,7 +32130,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@26.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(less@4.1.3)(lightningcss@1.30.1)(sass@1.86.3)(stylus@0.64.0)(terser@5.39.0)
+      vitest: 1.6.1(@types/node@22.15.33)(@vitest/ui@1.6.1)(jsdom@26.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(less@4.1.3)(lightningcss@1.30.1)(sass@1.86.3)(stylus@0.64.0)(terser@5.39.0)
 
   '@vitest/utils@1.6.1':
     dependencies:
