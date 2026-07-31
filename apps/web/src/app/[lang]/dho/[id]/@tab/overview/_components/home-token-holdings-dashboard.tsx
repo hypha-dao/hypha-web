@@ -22,6 +22,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@hypha-platform/ui';
+import {
+  withMembersChartBaseline,
+  type MembersMonthlyPoint,
+} from './members-chart-baseline';
 
 const tokenHoldingSuccessSchema = z.object({
   found: z.boolean(),
@@ -976,21 +980,28 @@ function MembersEvolutionWidget({
   locale: string;
 }) {
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
-  const maxValue = React.useMemo(
-    () =>
-      Math.max(1, ...monthly.map((item) => Math.max(item.people, item.spaces))),
+  const chartMonthly = React.useMemo(
+    () => withMembersChartBaseline(monthly),
     [monthly],
   );
+  const maxValue = React.useMemo(
+    () =>
+      Math.max(
+        1,
+        ...chartMonthly.map((item) => Math.max(item.people, item.spaces)),
+      ),
+    [chartMonthly],
+  );
   const totals = React.useMemo(() => {
-    const last = monthly.at(-1);
-    const first = monthly[0];
+    const last = chartMonthly.at(-1);
+    const first = chartMonthly[0];
     return {
       people: Math.round(last?.people ?? 0),
       spaces: Math.round(last?.spaces ?? 0),
       deltaPeople: Math.round((last?.people ?? 0) - (first?.people ?? 0)),
       deltaSpaces: Math.round((last?.spaces ?? 0) - (first?.spaces ?? 0)),
     };
-  }, [monthly]);
+  }, [chartMonthly]);
 
   const width = 760;
   const height = 340;
@@ -1000,7 +1011,7 @@ function MembersEvolutionWidget({
 
   const x = d3
     .scalePoint<string>()
-    .domain(monthly.map((item) => item.month))
+    .domain(chartMonthly.map((item) => item.month))
     .range([0, innerWidth])
     .padding(0.5);
   const y = d3.scaleSqrt().domain([0, maxValue]).range([innerHeight, 0]).nice();
@@ -1020,12 +1031,12 @@ function MembersEvolutionWidget({
   }, [maxValue]);
 
   const linePeople = d3
-    .line<(typeof monthly)[number]>()
+    .line<MembersMonthlyPoint>()
     .x((item) => x(item.month) ?? 0)
     .y((item) => y(item.people))
     .curve(d3.curveMonotoneX);
   const lineSpaces = d3
-    .line<(typeof monthly)[number]>()
+    .line<MembersMonthlyPoint>()
     .x((item) => x(item.month) ?? 0)
     .y((item) => y(item.spaces))
     .curve(d3.curveMonotoneX);
@@ -1086,7 +1097,7 @@ function MembersEvolutionWidget({
               ))}
 
               <path
-                d={linePeople(monthly) ?? ''}
+                d={linePeople(chartMonthly) ?? ''}
                 fill="none"
                 stroke={MEMBERS_COLOR_RANGE.people}
                 strokeWidth={1.75}
@@ -1094,7 +1105,7 @@ function MembersEvolutionWidget({
                 strokeLinejoin="round"
               />
               <path
-                d={lineSpaces(monthly) ?? ''}
+                d={lineSpaces(chartMonthly) ?? ''}
                 fill="none"
                 stroke={MEMBERS_COLOR_RANGE.spaces}
                 strokeWidth={1.5}
@@ -1104,7 +1115,7 @@ function MembersEvolutionWidget({
                 opacity={0.9}
               />
 
-              {monthly.map((item) => {
+              {chartMonthly.map((item) => {
                 const monthX = x(item.month) ?? 0;
                 const peopleY = y(item.people);
                 const spacesY = y(item.spaces);
