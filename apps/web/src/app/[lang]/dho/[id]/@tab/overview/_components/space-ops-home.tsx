@@ -4,14 +4,14 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, FileCheck2, Plus } from 'lucide-react';
+import { ArrowRight, FileCheck2 } from 'lucide-react';
 import {
   getDhoPathAgreements,
   PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   useSpaceDocumentsWithStatuses,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-import { Button, Skeleton } from '@hypha-platform/ui';
+import { Skeleton } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 import { TabScreenTitle } from '../../_components/tab-screen-title';
@@ -55,22 +55,11 @@ export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
 
   const onVoting = documents.onVoting.slice(0, 5);
   const agreementsBase = getDhoPathAgreements(lang, spaceSlug);
-  const createHref = `${agreementsBase}/select-create-action`;
   const votingHref = agreementsBase;
 
   return (
     <div className="flex flex-col gap-5 py-4 md:gap-6">
-      <TabScreenTitle
-        title={tCommon('home')}
-        actions={
-          <Button asChild size="sm">
-            <Link href={createHref} aria-label={t('createProposal')}>
-              <Plus className="size-4" aria-hidden />
-              <span className="hidden sm:inline">{t('createProposal')}</span>
-            </Link>
-          </Button>
-        }
-      />
+      <TabScreenTitle title={tCommon('home')} />
 
       <OpsSection
         title={t('needsAttentionTitle')}
