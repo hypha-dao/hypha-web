@@ -1,29 +1,12 @@
 'use client';
 
-import {
-  Button,
-  Card,
-  Separator,
-  Skeleton,
-  TextWithLinks,
-} from '@hypha-platform/ui';
+import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@hypha-platform/ui';
 import { Search } from 'lucide-react';
-
-/** Stable intent ids — never match against translated title/description. */
-export type SelectActionIntentId = 'pay' | 'mint' | 'vote' | 'member' | 'space';
-
-const INTENT_PRESET_IDS: SelectActionIntentId[] = [
-  'pay',
-  'mint',
-  'vote',
-  'member',
-  'space',
-];
 
 export type ActionProps = {
   title: string;
@@ -39,8 +22,6 @@ export type ActionProps = {
   target?: string;
   defaultDurationDays?: number;
   onAction?: () => void;
-  /** Locale-stable intent tags for filter chips. */
-  intents?: SelectActionIntentId[];
 };
 
 type SelectActionProps = {
@@ -59,13 +40,6 @@ type GroupedActions = {
   [key: string]: ActionProps[];
 };
 
-function actionMatchesIntent(
-  action: ActionProps,
-  intentId: SelectActionIntentId,
-): boolean {
-  return Boolean(action.intents?.includes(intentId));
-}
-
 export const SelectAction = ({
   isLoading,
   title,
@@ -77,26 +51,13 @@ export const SelectAction = ({
   noResultsLabel,
 }: SelectActionProps) => {
   const tCommon = useTranslations('Common');
-  const tIntent = useTranslations('SelectActionIntents');
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [activeIntent, setActiveIntent] =
-    React.useState<SelectActionIntentId | null>(null);
   const normalizedSearch = searchTerm.trim().toLowerCase();
-
-  const intentChips = React.useMemo(() => {
-    const enabled = (actions ?? []).filter((a) => !a.disabled && a.href);
-    return INTENT_PRESET_IDS.filter((intentId) =>
-      enabled.some((action) => actionMatchesIntent(action, intentId)),
-    ).slice(0, 5);
-  }, [actions]);
 
   const groupedActions = React.useMemo(
     () =>
       actions
         ?.filter((action) => {
-          if (activeIntent && !actionMatchesIntent(action, activeIntent)) {
-            return false;
-          }
           if (!normalizedSearch) return true;
           const haystack = [action.group, action.title, action.description]
             .filter(Boolean)
@@ -112,7 +73,7 @@ export const SelectAction = ({
           groups[group].push(action);
           return groups;
         }, {}),
-    [actions, normalizedSearch, activeIntent],
+    [actions, normalizedSearch],
   );
 
   return (
@@ -137,32 +98,6 @@ export const SelectAction = ({
         </p>
       </Skeleton>
       {children}
-      {intentChips.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <p className="craft-meta">{tIntent('lead')}</p>
-          <div className="flex flex-wrap gap-2">
-            {intentChips.map((chipId) => {
-              const selected = activeIntent === chipId;
-              return (
-                <Button
-                  key={chipId}
-                  type="button"
-                  aria-pressed={selected}
-                  size="sm"
-                  variant={selected ? 'default' : 'outline'}
-                  colorVariant={selected ? 'accent' : 'neutral'}
-                  className="rounded-xl"
-                  onClick={() =>
-                    setActiveIntent((prev) => (prev === chipId ? null : chipId))
-                  }
-                >
-                  {tIntent(chipId)}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
       {searchPlaceholder ? (
         <Input
           type="search"

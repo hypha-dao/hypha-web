@@ -4362,14 +4362,6 @@
     "holdingsTitle": "Avoirs",
     "holdingsDescription": "Soldes de jetons et actifs de l’espace."
   },
-  "SelectActionIntents": {
-    "lead": "Que voulez-vous faire ?",
-    "pay": "Payer quelqu’un",
-    "mint": "Émettre des jetons",
-    "vote": "Modifier le vote",
-    "member": "Membres et accès",
-    "space": "Configuration"
-  },
   "Landing": {
     "brand": "Hypha",
     "headline": "Des espaces qui décident, financent et grandissent ensemble.",

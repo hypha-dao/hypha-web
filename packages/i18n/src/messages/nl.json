@@ -4372,14 +4372,6 @@
     "holdingsTitle": "Saldi",
     "holdingsDescription": "Tokensaldi en ruimte-assets."
   },
-  "SelectActionIntents": {
-    "lead": "Wat wil je doen?",
-    "pay": "Iemand betalen",
-    "mint": "Tokens uitgeven",
-    "vote": "Stemmen wijzigen",
-    "member": "Leden en toegang",
-    "space": "Ruimte instellen"
-  },
   "Landing": {
     "brand": "Hypha",
     "headline": "Ruimtes die samen beslissen, financieren en groeien.",

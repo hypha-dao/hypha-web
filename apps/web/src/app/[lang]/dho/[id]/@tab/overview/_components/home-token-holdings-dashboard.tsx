@@ -1554,13 +1554,7 @@ export function HomeTokenHoldingsDashboard({
   }, [activeFilter, showEnergyWidget]);
 
   return (
-    <div className="flex flex-col gap-5 py-4">
-      <header className="craft-page-header">
-        <h1 className="craft-page-title text-6 font-medium">
-          {tCommon('home')}
-        </h1>
-      </header>
-
+    <div className="flex flex-col gap-4">
       <Tabs
         value={activeFilter}
         onValueChange={(value) => setActiveFilter(value as HomeSectionFilter)}

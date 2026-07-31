@@ -4364,14 +4364,6 @@
     "holdingsTitle": "Saldos",
     "holdingsDescription": "Saldos de tokens e ativos do espaço."
   },
-  "SelectActionIntents": {
-    "lead": "O que deseja fazer?",
-    "pay": "Pagar alguém",
-    "mint": "Emitir tokens",
-    "vote": "Alterar votação",
-    "member": "Membros e acesso",
-    "space": "Configurar espaço"
-  },
   "Landing": {
     "brand": "Hypha",
     "headline": "Espaços que decidem, financiam e crescem juntos.",

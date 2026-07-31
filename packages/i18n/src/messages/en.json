@@ -4374,14 +4374,6 @@
     "holdingsTitle": "Holdings",
     "holdingsDescription": "Token balances and space assets."
   },
-  "SelectActionIntents": {
-    "lead": "What do you want to do?",
-    "pay": "Pay someone",
-    "mint": "Issue tokens",
-    "vote": "Change voting",
-    "member": "Members & access",
-    "space": "Space setup"
-  },
   "Landing": {
     "brand": "Hypha",
     "headline": "Spaces that decide, fund, and grow together.",

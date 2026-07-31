@@ -4366,14 +4366,6 @@
     "holdingsTitle": "Bestände",
     "holdingsDescription": "Token-Salden und Space-Assets."
   },
-  "SelectActionIntents": {
-    "lead": "Was möchten Sie tun?",
-    "pay": "Jemanden bezahlen",
-    "mint": "Token ausgeben",
-    "vote": "Abstimmung ändern",
-    "member": "Mitglieder & Zugang",
-    "space": "Space einrichten"
-  },
   "Landing": {
     "brand": "Hypha",
     "headline": "Spaces, die gemeinsam entscheiden, finanzieren und wachsen.",

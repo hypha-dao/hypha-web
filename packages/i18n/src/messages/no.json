@@ -4371,14 +4371,6 @@
     "holdingsTitle": "Beholdninger",
     "holdingsDescription": "Tokensaldoer og rom-aktiva."
   },
-  "SelectActionIntents": {
-    "lead": "Hva vil du gjøre?",
-    "pay": "Betale noen",
-    "mint": "Utstede tokens",
-    "vote": "Endre avstemming",
-    "member": "Medlemmer og tilgang",
-    "space": "Sett opp rom"
-  },
   "Landing": {
     "brand": "Hypha",
     "headline": "Rom som bestemmer, finansierer og vokser sammen.",

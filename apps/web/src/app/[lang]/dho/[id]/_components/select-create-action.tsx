@@ -47,7 +47,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create',
       icon: <FileText className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['space' as const],
     },
     {
       defaultDurationDays: 4,
@@ -56,7 +55,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create/propose-contribution',
       icon: <Rocket className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['pay' as const, 'member' as const],
     },
     {
       defaultDurationDays: 4,
@@ -65,7 +63,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create/redeem-tokens',
       icon: <Gift className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['mint' as const],
     },
     {
       defaultDurationDays: 7,
@@ -74,7 +71,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create/pay-for-expenses',
       icon: <TrendingUp className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['pay' as const],
     },
     {
       defaultDurationDays: 7,
@@ -83,7 +79,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create/accept-investment',
       icon: <PiggyBank className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['pay' as const],
     },
     {
       defaultDurationDays: 7,
@@ -92,7 +87,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create/exchange-stakes-and-tokens',
       icon: <Package className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['pay' as const, 'mint' as const],
     },
     {
       defaultDurationDays: 7,
@@ -101,7 +95,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create/deploy-funds',
       icon: <Workflow className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['pay' as const],
     },
     {
       defaultDurationDays: 7,
@@ -110,7 +103,6 @@ export const SelectCreateAction = ({
       href: 'agreements/create/airdrop',
       icon: <Send className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired || isMutateLoading || !canMutate,
-      intents: ['pay' as const, 'mint' as const],
     },
     {
       title: t('actions.depositFunds.title'),
@@ -120,7 +112,6 @@ export const SelectCreateAction = ({
         fundWallet();
       },
       disabled: !space?.address || isMutateLoading || !canMutate,
-      intents: ['pay' as const],
     },
   ];
   return (
