@@ -53,13 +53,15 @@ export function HumanChatPanelCallToolbar({
   const phoneDim = (disabled || busy) && !audioIsActive;
   const videoDim = (disabled || busy) && !videoIsActive;
 
+  // Identical hit targets; Phone’s diagonal glyph reads larger than Video at
+  // the same SVG size, so scale it slightly for optical parity.
   const iconBtn =
-    'box-border flex h-[28px] w-[28px] min-h-[28px] min-w-[28px] max-h-[28px] max-w-[28px] flex-none items-center justify-center rounded-lg p-0 transition-colors';
-  const iconSize = 'h-4 w-4 shrink-0';
+    'box-border inline-grid size-7 shrink-0 place-items-center rounded-lg p-0 leading-none transition-colors [&>svg]:block';
+  const iconSize = 'size-4 shrink-0';
 
   return (
     <div
-      className="relative z-10 flex shrink-0 items-center gap-1"
+      className="relative z-10 flex shrink-0 items-center gap-0.5"
       role="toolbar"
       aria-label={t('callToolbarLabel')}
     >
@@ -84,8 +86,8 @@ export function HumanChatPanelCallToolbar({
         aria-busy={busy}
       >
         <Phone
-          className={iconSize}
-          strokeWidth={audioIsActive ? 2.25 : 2}
+          className={cn(iconSize, 'scale-[0.88]')}
+          strokeWidth={2}
           aria-hidden
         />
       </button>
@@ -109,11 +111,7 @@ export function HumanChatPanelCallToolbar({
         aria-pressed={videoIsActive}
         aria-busy={busy}
       >
-        <Video
-          className={iconSize}
-          strokeWidth={videoIsActive ? 2.25 : 2}
-          aria-hidden
-        />
+        <Video className={iconSize} strokeWidth={2} aria-hidden />
       </button>
     </div>
   );
