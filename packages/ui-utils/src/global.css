@@ -195,15 +195,16 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-action: oklch(0.55 0.15 250);
-  --color-action-foreground: oklch(0.35 0.12 250);
+  --color-action: oklch(0.55 0.12 176);
+  --color-action-foreground: oklch(0.35 0.09 178);
   --color-action-light: var(--action-light);
   --color-action-light-foreground: var(--action-light);
 
-  /* Border Radius — crisp craft family (avoid soft xl/2xl product surfaces) */
-  --radius-sm: 2px;
-  --radius-md: 2.5px;
-  --radius-lg: 2.5px;
+  /* Border Radius — airy content surfaces; tight chrome via --radius-chrome */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-chrome: 6px;
 
   /*
@@ -353,9 +354,9 @@
     --destructive-foreground: oklch(0.98 0 0);
     --border: var(--neutral-6);
     --input: var(--neutral-6);
-    --ring: oklch(0.15 0.01 264);
-    --radius: 2.5px;
-    --action-light: oklch(0.6 0.17 249);
+    --ring: var(--accent-9);
+    --radius: 12px;
+    --action-light: oklch(0.62 0.12 176);
   }
 
   .dark {
@@ -376,9 +377,9 @@
     --destructive-foreground: oklch(0.98 0 0);
     --border: var(--neutral-6);
     --input: var(--neutral-6);
-    --ring: oklch(0.84 0.01 264);
-    --action-light: oklch(0.81 0.15 248);
-    --radius: 2.5px;
+    --ring: var(--accent-9);
+    --action-light: oklch(0.78 0.1 180);
+    --radius: 12px;
   }
 }
 

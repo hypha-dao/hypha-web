@@ -59,33 +59,33 @@ The hypha-web design system is built on Tailwind CSS 4, shadcn/ui, and Radix UI 
 
 ## Craft rules
 
-Award-oriented product UI: crisp, calm, intentional — not soft SaaS / AI-glow.
+Award-oriented product UI: airy, calm, intentional — light-first canvas, soft content surfaces, tight chrome.
 
 ### Radius family
 
 | Surface                                                     | Prefer                                                                                                                   |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Cards / panels / menus / dialogs                            | `rounded-lg` → `--radius-lg`                                                                                             |
+| Cards / panels / menus / dialogs                            | `rounded-xl` → `--radius-xl` / `--radius-lg`                                                                             |
 | Chrome controls (header icon buttons, small square avatars) | `APP_CHROME_SUBTLE_SQUARE_RADIUS` (`rounded-chrome` → `--radius-chrome`) in `packages/epics/src/common/chrome-radius.ts` |
-| Avoid on product chrome                                     | `rounded-xl`, `rounded-2xl`                                                                                              |
+| Avoid on product chrome                                     | Soft pill overuse (`rounded-full` on dense tool chrome); keep chrome at `--radius-chrome`                                |
 
 ### Fonts
 
 Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVariables` on root + signin `<Html>`).
 
-| Role             | Face                | next/font var      | Token                                |
-| ---------------- | ------------------- | ------------------ | ------------------------------------ |
-| Body / UI chrome | **IBM Plex Sans**   | `--font-body`      | `--font-sans` / `--font-family-text` |
-| Titles           | **Instrument Sans** | `--font-heading`   | `--font-family-heading`              |
-| Code / addresses | **IBM Plex Mono**   | `--font-code-face` | `--font-mono` / `--font-family-code` |
+| Role             | Face                   | next/font var      | Token                                |
+| ---------------- | ---------------------- | ------------------ | ------------------------------------ |
+| Body / UI chrome | **Plus Jakarta Sans**  | `--font-body`      | `--font-sans` / `--font-family-text` |
+| Titles           | **Outfit**             | `--font-heading`   | `--font-family-heading`              |
+| Code / addresses | **IBM Plex Mono**      | `--font-code-face` | `--font-mono` / `--font-family-code` |
 
-**Where Instrument Sans applies (heading face only):**
+**Where Outfit applies (heading face only):**
 
 - `.craft-page-title` / page-level `h1` tool titles
 - `CardTitle` / `Heading` atom (`--font-family-heading`)
 - Rare marketing-scale titles that already use `[font-family:var(--font-family-heading)]`
 
-**Stay on IBM Plex Sans (body):** nav, buttons, labels, form fields, meta (`.craft-meta`), table cells, dialog body, tabs, badges — do **not** sprinkle heading face into dense UI chrome.
+**Stay on Plus Jakarta Sans (body):** nav, buttons, labels, form fields, meta (`.craft-meta`), table cells, dialog body, tabs, badges — do **not** sprinkle heading face into dense UI chrome.
 
 **Mono only:** wallet addresses, hashes, code (`font-mono` / `--font-family-code`).
 
@@ -102,9 +102,9 @@ Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVaria
 
 ### Cards & elevation
 
-- Shared chrome: `.craft-card` / `.craft-card-interactive` in `craft.css` (flat `bg-background-2`, `border-border/70`, quiet hover)
-- Prefer those utilities over one-off `rounded-xl` + shadow stacks on product grids
-- Cards are interaction containers: border + subtle `hover:bg-muted/15` step
+- Shared chrome: `.craft-card` / `.craft-card-interactive` in `craft.css` (flat `bg-background-2`, `border-border/70`, quiet hover, `rounded-xl`)
+- Prefer those utilities over one-off shadow stacks on product grids
+- Cards are interaction containers: border + subtle hover accent mix
 - No default `hover:shadow-md` lift or glow stacks (`shadow-[0_0_…]`)
 - Prefer `shadow-sm` / `shadow-md` when depth is needed; avoid `shadow-xl` / `shadow-2xl`
 - Padding density for grid cards: `p-3.5` (CardHeader/Content defaults match)
@@ -112,11 +112,10 @@ Two sans + mono — wired via `apps/web/src/lib/hypha-fonts.ts` (`hyphaFontVaria
 - Borders: `border-border` / `border-border/70` — not raw hex (e.g. `#30363d`)
 - Raw `indigo-*` and `border-blue-500` → `accent-*` / `border-accent-9`
 
-### Accent dialects (three)
+### Accent dialects (two)
 
-1. **Global indigo** — Radix `accent-*` (buttons, focus, mention chips, links)
+1. **Global mycelium teal** — Radix-style `accent-*` from `colors/teal.css` (buttons, focus, mention chips, links)
 2. **Space** — `--space-accent*` from imagery; inside `[data-space-accent-scope]` CTAs/tabs/focus own the space hue (`space-accent.css`)
-3. **Mycelium teal** — ecosystem / viz only; do not use as app chrome accent
 
 ## References
 

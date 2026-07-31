@@ -17,6 +17,7 @@ export * from './get-dho-space-context-path';
 export * from './get-dho-space-slug-from-pathname';
 export * from './get-root-space';
 export * from './get-path-function';
+export * from './space-section-nav';
 export * from './hypha-network-feedback-dialog';
 export * from './ecosystem-navigation-shell';
 export * from './screen-toolbar';

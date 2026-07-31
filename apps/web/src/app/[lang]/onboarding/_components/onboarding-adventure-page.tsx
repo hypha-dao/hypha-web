@@ -43,9 +43,9 @@ const getSpacePath = (lang: string, spaceSlug: string) =>
 
 const getNetworkPath = (lang: string) => `/${lang}/network`;
 const onboardingCardClass =
-  'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
+  'group h-full rounded-xl border border-border/70 bg-background-2 transition-[border-color,background-color] duration-200 hover:border-accent-8/50 hover:bg-background-3/40';
 const primaryCtaClass =
-  'h-10 w-full rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22';
+  'h-10 w-full rounded-xl border border-accent-9 bg-accent-9 text-accent-contrast transition-colors hover:bg-accent-10';
 const exchangeButtonBaseClass =
   'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EXCHANGE_LINKS = [
@@ -478,7 +478,7 @@ export function OnboardingAdventurePage({
               <span className="block text-foreground [.dark_&]:text-white">
                 {t('titleLine1')}
               </span>
-              <span className="mt-1 block bg-gradient-to-r from-foreground via-accent-10 to-info-10 bg-clip-text text-transparent [.dark_&]:from-white [.dark_&]:via-info-9 [.dark_&]:to-accent-10">
+              <span className="mt-1 block text-accent-11">
                 {t('titleLine2')}
               </span>
             </h1>
@@ -489,7 +489,7 @@ export function OnboardingAdventurePage({
 
           {onboardingHeroEnabled ? (
             <section className="relative mx-auto w-full max-w-5xl">
-              <div className="relative overflow-hidden rounded-[1.5rem] border border-border/55 bg-neutral-2 shadow-[0_10px_40px_-24px_oklch(0.45_0.08_278)] [.dark_&]:border-white/10 [.dark_&]:bg-white/[0.04] [.dark_&]:shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] [.dark_&]:backdrop-blur-md">
+              <div className="relative overflow-hidden rounded-xl border border-border/70 bg-background-2">
                 <AiPanelChatBar
                   variant="hero"
                   value={aiPrompt}
@@ -530,7 +530,27 @@ export function OnboardingAdventurePage({
         </Container>
       </section>
 
-      <Container className="flex flex-col gap-14 py-10 md:py-12">
+      <Container className="flex flex-col gap-10 py-10 md:py-12">
+        <ol className="mx-auto flex w-full max-w-3xl list-none flex-wrap items-center justify-center gap-2 px-2">
+          {[t('explore.title'), t('create.title'), t('join.title')].map(
+            (label, index) => (
+              <li
+                key={label}
+                className="inline-flex items-center gap-2 text-1 text-muted-foreground"
+              >
+                {index > 0 ? (
+                  <span className="text-border" aria-hidden>
+                    ·
+                  </span>
+                ) : null}
+                <span className="inline-flex size-6 items-center justify-center rounded-full border border-border/70 bg-background-2 text-[11px] font-semibold text-foreground">
+                  {index + 1}
+                </span>
+                <span>{label}</span>
+              </li>
+            ),
+          )}
+        </ol>
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card className={onboardingCardClass}>
             <CardHeader className="space-y-2">

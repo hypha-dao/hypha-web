@@ -68,8 +68,11 @@ import {
   type AiPanelDraftAttachment,
 } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
-import { getDhoPathEnergy } from './get-path-function';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import {
+  buildSpaceSectionNavItems,
+  type SpaceSectionNavKey,
+} from './space-section-nav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -604,103 +607,79 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [lang, pathname, spaceSlug],
   );
 
+  const sectionNavIcons: Record<SpaceSectionNavKey, ElementType> = useMemo(
+    () => ({
+      overview: House,
+      agreements: FileCheck2,
+      members: UsersRound,
+      treasury: Coins,
+      calendar: CalendarDays,
+      coherence: Radio,
+      pipeline: KanbanSquare,
+      energy: Zap,
+      rewards: HandCoins,
+      memory: MemoryIcon,
+      banking: Coins,
+      'ecosystem-navigation': Navigation,
+    }),
+    [],
+  );
+
   const sectionNavItems = useMemo<NavItem[]>(() => {
     if (!spaceSlug) return [];
-    return [
-      {
-        key: 'overview',
-        label: tCommon('home'),
-        icon: House,
-        href: `/${lang}/dho/${spaceSlug}/overview`,
-        active: isSectionActive('overview'),
-      },
-      {
-        key: 'ecosystem-navigation',
-        label: tSelectNavigation('ecosystem'),
-        icon: Navigation,
-        href: `/${lang}/dho/${spaceSlug}/ecosystem-navigation`,
-        active: isSectionActive('ecosystem-navigation'),
-      },
-      {
-        key: 'signals',
-        label: tCoherence('signals'),
-        icon: Radio,
-        href: `/${lang}/dho/${spaceSlug}/coherence`,
-        active: isSectionActive('coherence'),
-      },
-      {
-        key: 'calendar',
-        label: tCommon('Calendar'),
-        icon: CalendarDays,
-        href: `/${lang}/dho/${spaceSlug}/calendar`,
-        active: isSectionActive('calendar'),
-      },
-      ...(space?.pipelineEnabled
-        ? [
-            {
-              key: 'pipeline',
-              label: tCommon('Pipeline'),
-              icon: KanbanSquare,
-              href: `/${lang}/dho/${spaceSlug}/pipeline`,
-              active: isSectionActive('pipeline'),
-            },
-          ]
-        : []),
-      {
-        key: 'agreements',
-        label: tCommon('Agreements'),
-        icon: FileCheck2,
-        href: `/${lang}/dho/${spaceSlug}/agreements`,
-        active: isSectionActive('agreements'),
-      },
-      {
-        key: 'members',
-        label: tCommon('Members'),
-        icon: UsersRound,
-        href: `/${lang}/dho/${spaceSlug}/members`,
-        active: isSectionActive('members'),
-      },
-      {
-        key: 'treasury',
-        label: tCommon('Treasury'),
-        icon: Coins,
-        href: `/${lang}/dho/${spaceSlug}/treasury`,
-        active: isSectionActive('treasury'),
-      },
-      ...(spaceEnergyData?.enabled
-        ? [
-            {
-              key: 'energy',
-              label: tCommon('Energy'),
-              icon: Zap,
-              href: getDhoPathEnergy(lang as Locale, spaceSlug),
-              active: isSectionActive('energy'),
-            },
-          ]
-        : []),
-      {
-        key: 'rewards',
-        label: tTreasury('rewardsSection.title'),
-        icon: HandCoins,
-        href: `/${lang}/dho/${spaceSlug}/rewards`,
-        active: isSectionActive('rewards'),
-      },
-      ...(enableSpaceMemory
-        ? [
-            {
-              key: 'memory',
-              label: tCoherence('spaceMemory'),
-              icon: MemoryIcon,
-              href: `/${lang}/dho/${spaceSlug}/memory`,
-              active: isSectionActive('memory'),
-            },
-          ]
-        : []),
-    ];
+    const labelFor = (key: SpaceSectionNavKey): string => {
+      switch (key) {
+        case 'overview':
+          return tCommon('home');
+        case 'agreements':
+          return tCommon('Agreements');
+        case 'members':
+          return tCommon('Members');
+        case 'treasury':
+          return tCommon('Treasury');
+        case 'calendar':
+          return tCommon('Calendar');
+        case 'coherence':
+          return tCoherence('signals');
+        case 'pipeline':
+          return tCommon('Pipeline');
+        case 'energy':
+          return tCommon('Energy');
+        case 'rewards':
+          return tTreasury('rewardsSection.title');
+        case 'memory':
+          return tCoherence('spaceMemory');
+        case 'banking':
+          return tCommon('bankingTab');
+        case 'ecosystem-navigation':
+          return tSelectNavigation('ecosystem');
+        default:
+          return key;
+      }
+    };
+    return buildSpaceSectionNavItems({
+      lang,
+      spaceSlug,
+      pathname,
+      pipelineEnabled: Boolean(space?.pipelineEnabled),
+      energyEnabled: Boolean(spaceEnergyData?.enabled),
+      coherenceEnabled: true,
+      memoryEnabled: enableSpaceMemory,
+      bankingEnabled: true,
+    }).map((item) => ({
+      key: item.key === 'coherence' ? 'signals' : item.key,
+      label: labelFor(item.key),
+      icon: sectionNavIcons[item.key],
+      href: item.href,
+      active:
+        item.key === 'agreements' ? isSectionActive('agreements') : item.active,
+    }));
   }, [
     enableSpaceMemory,
     isSectionActive,
     lang,
+    pathname,
+    sectionNavIcons,
     space?.pipelineEnabled,
     spaceEnergyData?.enabled,
     spaceSlug,
@@ -709,6 +688,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     tSelectNavigation,
     tTreasury,
   ]);
+
   const isSpaceSettingsActive = useMemo(
     () =>
       Boolean(spaceSlug) &&

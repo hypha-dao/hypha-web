@@ -1,22 +1,25 @@
-@import '../../colors/gray.css';
+@import '../../colors/slate.css';
 
+/**
+ * Cool stone / mist canvases — slate scale (not warm cream, not pure gray).
+ */
 :root,
 .light,
 .light-theme,
 .dark,
 .dark-theme {
-  --background-1: var(--gray-1);
-  --background-2: var(--gray-2);
-  --background-3: var(--gray-3);
-  --background-4: var(--gray-4);
-  --background-5: var(--gray-5);
-  --background-6: var(--gray-6);
-  --background-7: var(--gray-7);
-  --background-8: var(--gray-8);
-  --background-9: var(--gray-9);
-  --background-10: var(--gray-10);
-  --background-11: var(--gray-11);
-  --background-12: var(--gray-12);
+  --background-1: var(--slate-1);
+  --background-2: var(--slate-2);
+  --background-3: var(--slate-3);
+  --background-4: var(--slate-4);
+  --background-5: var(--slate-5);
+  --background-6: var(--slate-6);
+  --background-7: var(--slate-7);
+  --background-8: var(--slate-8);
+  --background-9: var(--slate-9);
+  --background-10: var(--slate-10);
+  --background-11: var(--slate-11);
+  --background-12: var(--slate-12);
 
   --background: var(--background-1);
 }

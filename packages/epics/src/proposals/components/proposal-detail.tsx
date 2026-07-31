@@ -1241,248 +1241,6 @@ export const ProposalDetail = ({
         attachments={attachments || []}
         label={tProposalDetails('labels.attachments')}
       />
-      {label === 'Investment' ? (
-        <ProposalAcceptInvestmentData
-          descriptionMarkdown={content}
-          spaceSlug={spaceSlug}
-          exchangeEscrowData={proposalDetails?.exchangeEscrowData}
-        />
-      ) : null}
-      {label === 'Exchange'
-        ? (() => {
-            const parsed = parseExchangeDetailsFromDescription(content);
-            if (!parsed) return null;
-            return (
-              <ProposalExchangeStakesAndTokensData
-                spaceSlug={spaceSlug}
-                sellerAddress={parsed.sellerAddress}
-                buyerAddress={parsed.buyerAddress}
-                sellerLeg={parsed.sellerLeg}
-                buyerLeg={parsed.buyerLeg}
-                dbTokens={dbTokens}
-              />
-            );
-          })()
-        : null}
-      {proposalDetails?.votingMethods.map((method, idx) => (
-        <ProposalVotingInfo
-          key={idx}
-          votingPowerSource={method.votingPowerSource}
-          unity={method.unity}
-          quorum={method.quorum}
-          token={proposalDetails?.votingMethodsToken}
-          spaceSlug={spaceSlug}
-          minimumProposalVotingDuration={
-            proposalDetails?.minimumProposalDurationData?.duration
-          }
-        />
-      ))}
-      {proposalDetails?.entryMethods.map((method, idx) => (
-        <ProposalEntryInfo key={idx} joinMethod={method.joinMethod} />
-      ))}
-      {proposalDetails?.tokenRequirements.map((method, idx) => (
-        <ProposalTokenRequirementsInfo
-          key={idx}
-          token={method.token}
-          amount={method.amount}
-          spaceSlug={spaceSlug}
-        />
-      ))}
-      {label !== 'Investment' &&
-        label !== 'Exchange' &&
-        proposalDetails?.tokens.map((token, idx) => (
-          <ProposalTokenItem
-            key={idx}
-            name={token.name}
-            symbol={token.symbol}
-            address={token.address}
-            initialSupply={token.maxSupply}
-            dbTokens={dbTokens}
-            transferable={token.transferable}
-            fixedMaxSupply={token.fixedMaxSupply}
-            autoMinting={token.autoMinting}
-            priceInUSD={token.priceInUSD}
-            useTransferWhitelist={token.useTransferWhitelist}
-            useReceiveWhitelist={token.useReceiveWhitelist}
-            initialTransferWhitelist={token.initialTransferWhitelist}
-            initialReceiveWhitelist={token.initialReceiveWhitelist}
-            initialTransferWhitelistSpaceIds={
-              token.initialTransferWhitelistSpaceIds
-            }
-            initialReceiveWhitelistSpaceIds={
-              token.initialReceiveWhitelistSpaceIds
-            }
-            decayPercentage={token.decayPercentage}
-            decayInterval={token.decayInterval}
-            defaultCreditLimit={token.defaultCreditLimit}
-            initialCreditWhitelistSpaceIds={
-              token.initialCreditWhitelistSpaceIds
-            }
-          />
-        ))}
-      {Boolean(proposalDetails?.transfers?.length) &&
-        label !== 'Investment' &&
-        label !== 'Exchange' && (
-          <div className="flex flex-col gap-4">
-            <span className="text-neutral-11 text-2 font-medium">
-              {tProposalDetails('sections.payment')}
-            </span>
-            {proposalDetails?.transfers.map((tx, idx) => (
-              <ProposalTransactionItem
-                key={idx}
-                recipient={tx?.recipient}
-                amount={tx?.rawAmount}
-                tokenAddress={tx?.token}
-                spaceSlug={spaceSlug}
-                escrowContractAddress={escrowAddr}
-              />
-            ))}
-          </div>
-        )}
-      {proposalDetails?.mintings.map((mint, idx) => (
-        <ProposalMintItem
-          key={idx}
-          member={mint.member}
-          number={mint.number}
-          token={mint.token}
-        />
-      ))}
-      {proposalDetails?.burnings.map((burn, idx) => (
-        <ProposalBurnItem
-          key={`${burn.member}-${burn.token}-${idx}`}
-          member={burn.member}
-          number={burn.number}
-          token={burn.token}
-        />
-      ))}
-      {proposalDetails?.buyHyphaTokensData.amount ? (
-        <ProposalBuyHyphaTokensData
-          amount={proposalDetails?.buyHyphaTokensData.amount}
-        />
-      ) : null}
-      {proposalDetails?.activateSpacesData.spaceIds.length ? (
-        <ProposalActivateSpacesData
-          spaceIds={proposalDetails?.activateSpacesData?.spaceIds}
-          paymentAmounts={proposalDetails?.activateSpacesData?.paymentAmounts}
-          tokenSymbol={proposalDetails?.activateSpacesData?.tokenSymbol}
-        />
-      ) : null}
-      {proposalDetails?.delegatesData?.member ? (
-        <ProposalDelegatesData
-          member={proposalDetails?.delegatesData.member}
-          space={proposalDetails?.delegatesData.space}
-          variant={label === 'Change Delegate' ? 'changeDelegate' : 'join'}
-        />
-      ) : null}
-      {proposalDetails?.membershipExitData?.member ? (
-        <MembershipExitData
-          member={proposalDetails?.membershipExitData.member}
-          space={proposalDetails?.membershipExitData.space}
-        />
-      ) : null}
-      {proposalDetails?.transparencySettingsData &&
-      (proposalDetails.transparencySettingsData.spaceDiscoverability !==
-        undefined ||
-        proposalDetails.transparencySettingsData.spaceActivityAccess !==
-          undefined) ? (
-        <ProposalTransparencySettingsInfo
-          spaceDiscoverability={
-            proposalDetails.transparencySettingsData.spaceDiscoverability !==
-            undefined
-              ? (proposalDetails.transparencySettingsData
-                  .spaceDiscoverability as TransparencyLevel)
-              : undefined
-          }
-          spaceActivityAccess={
-            proposalDetails.transparencySettingsData.spaceActivityAccess !==
-            undefined
-              ? (proposalDetails.transparencySettingsData
-                  .spaceActivityAccess as TransparencyLevel)
-              : undefined
-          }
-        />
-      ) : null}
-      {proposalDetails?.redeemTokensData.amount &&
-      proposalDetails?.redeemTokensData.token ? (
-        <ProposalRedeemTokensData
-          spaceSlug={spaceSlug}
-          dbTokens={dbTokens}
-          amount={proposalDetails.redeemTokensData.amount}
-          token={proposalDetails.redeemTokensData.token}
-          web3SpaceId={proposalDetails.redeemTokensData.web3SpaceId}
-          conversions={proposalDetails.redeemTokensData.conversions}
-        />
-      ) : null}
-      {proposalDetails?.tokenBackingVaultData &&
-      !(
-        proposalDetails?.redeemTokensData.amount &&
-        proposalDetails?.redeemTokensData.token
-      ) ? (
-        <ProposalTokenBackingVaultData
-          spaceSlug={spaceSlug}
-          dbTokens={dbTokens}
-          {...proposalDetails.tokenBackingVaultData}
-        />
-      ) : null}
-      {proposalDetails &&
-      hasUpdateTokenDataToDisplay(proposalDetails.updateTokenData) ? (
-        <ProposalUpdateToken
-          documentId={documentId}
-          address={proposalDetails.updateTokenData.address as `0x${string}`}
-          tokenType={updateTokenTypeFromDb}
-          name={proposalDetails.updateTokenData.name}
-          symbol={proposalDetails.updateTokenData.symbol}
-          maxSupply={proposalDetails.updateTokenData.maxSupply}
-          transferable={proposalDetails.updateTokenData.transferable}
-          autoMinting={proposalDetails.updateTokenData.autoMinting}
-          priceWithCurrency={proposalDetails.updateTokenData.priceWithCurrency}
-          decayPercentage={proposalDetails.updateTokenData.decayPercentage}
-          decayInterval={proposalDetails.updateTokenData.decayInterval}
-          useTransferWhitelist={
-            proposalDetails.updateTokenData.useTransferWhitelist
-          }
-          useReceiveWhitelist={
-            proposalDetails.updateTokenData.useReceiveWhitelist
-          }
-          initialTransferWhitelist={
-            proposalDetails.updateTokenData.initialTransferWhitelist
-          }
-          initialReceiveWhitelist={
-            proposalDetails.updateTokenData.initialReceiveWhitelist
-          }
-          initialTransferWhitelistSpaceIds={
-            proposalDetails.updateTokenData.initialTransferWhitelistSpaceIds
-          }
-          initialReceiveWhitelistSpaceIds={
-            proposalDetails.updateTokenData.initialReceiveWhitelistSpaceIds
-          }
-          spacesForWhitelistDisplay={spacesForWhitelistDisplay}
-          dbTokens={dbTokens}
-          archiveToken={proposalDetails.updateTokenData.archiveToken}
-          fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
-          defaultCreditLimit={
-            proposalDetails.updateTokenData.defaultCreditLimit
-          }
-          addCreditWhitelistSpaceIds={
-            proposalDetails.updateTokenData.addCreditWhitelistSpaceIds
-          }
-          removeCreditWhitelistSpaceIds={
-            proposalDetails.updateTokenData.removeCreditWhitelistSpaceIds
-          }
-        />
-      ) : null}
-      {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
-        <ProposalSpaceTokenPurchaseData
-          dbTokens={dbTokens}
-          {...proposalDetails.spaceTokenPurchaseData}
-        />
-      ) : null}
-      {energyMarkerData ? (
-        <ProposalEnergyProposalData
-          proposalType={energyMarkerData.proposalType}
-          payload={energyMarkerData.payload}
-        />
-      ) : null}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
@@ -1541,6 +1299,268 @@ export const ProposalDetail = ({
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateDataMerged}
       />
+      <details className="proposal-details-disclosure group rounded-xl border border-border/70 bg-background-2">
+        <summary className="cursor-pointer list-none px-4 py-3 text-2 font-medium text-foreground [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex w-full items-center justify-between gap-2">
+            <span>{tProposalDetails('sections.moreDetails')}</span>
+            <span className="text-1 font-normal text-muted-foreground group-open:hidden">
+              {tProposalDetails('sections.showDetails')}
+            </span>
+            <span className="hidden text-1 font-normal text-muted-foreground group-open:inline">
+              {tProposalDetails('sections.hideDetails')}
+            </span>
+          </span>
+        </summary>
+        <div className="flex flex-col gap-5 border-t border-border/60 px-4 py-4">
+          {label === 'Investment' ? (
+            <ProposalAcceptInvestmentData
+              descriptionMarkdown={content}
+              spaceSlug={spaceSlug}
+              exchangeEscrowData={proposalDetails?.exchangeEscrowData}
+            />
+          ) : null}
+          {label === 'Exchange'
+            ? (() => {
+                const parsed = parseExchangeDetailsFromDescription(content);
+                if (!parsed) return null;
+                return (
+                  <ProposalExchangeStakesAndTokensData
+                    spaceSlug={spaceSlug}
+                    sellerAddress={parsed.sellerAddress}
+                    buyerAddress={parsed.buyerAddress}
+                    sellerLeg={parsed.sellerLeg}
+                    buyerLeg={parsed.buyerLeg}
+                    dbTokens={dbTokens}
+                  />
+                );
+              })()
+            : null}
+          {proposalDetails?.votingMethods.map((method, idx) => (
+            <ProposalVotingInfo
+              key={idx}
+              votingPowerSource={method.votingPowerSource}
+              unity={method.unity}
+              quorum={method.quorum}
+              token={proposalDetails?.votingMethodsToken}
+              spaceSlug={spaceSlug}
+              minimumProposalVotingDuration={
+                proposalDetails?.minimumProposalDurationData?.duration
+              }
+            />
+          ))}
+          {proposalDetails?.entryMethods.map((method, idx) => (
+            <ProposalEntryInfo key={idx} joinMethod={method.joinMethod} />
+          ))}
+          {proposalDetails?.tokenRequirements.map((method, idx) => (
+            <ProposalTokenRequirementsInfo
+              key={idx}
+              token={method.token}
+              amount={method.amount}
+              spaceSlug={spaceSlug}
+            />
+          ))}
+          {label !== 'Investment' &&
+            label !== 'Exchange' &&
+            proposalDetails?.tokens.map((token, idx) => (
+              <ProposalTokenItem
+                key={idx}
+                name={token.name}
+                symbol={token.symbol}
+                address={token.address}
+                initialSupply={token.maxSupply}
+                dbTokens={dbTokens}
+                transferable={token.transferable}
+                fixedMaxSupply={token.fixedMaxSupply}
+                autoMinting={token.autoMinting}
+                priceInUSD={token.priceInUSD}
+                useTransferWhitelist={token.useTransferWhitelist}
+                useReceiveWhitelist={token.useReceiveWhitelist}
+                initialTransferWhitelist={token.initialTransferWhitelist}
+                initialReceiveWhitelist={token.initialReceiveWhitelist}
+                initialTransferWhitelistSpaceIds={
+                  token.initialTransferWhitelistSpaceIds
+                }
+                initialReceiveWhitelistSpaceIds={
+                  token.initialReceiveWhitelistSpaceIds
+                }
+                decayPercentage={token.decayPercentage}
+                decayInterval={token.decayInterval}
+                defaultCreditLimit={token.defaultCreditLimit}
+                initialCreditWhitelistSpaceIds={
+                  token.initialCreditWhitelistSpaceIds
+                }
+              />
+            ))}
+          {Boolean(proposalDetails?.transfers?.length) &&
+            label !== 'Investment' &&
+            label !== 'Exchange' && (
+              <div className="flex flex-col gap-4">
+                <span className="text-neutral-11 text-2 font-medium">
+                  {tProposalDetails('sections.payment')}
+                </span>
+                {proposalDetails?.transfers.map((tx, idx) => (
+                  <ProposalTransactionItem
+                    key={idx}
+                    recipient={tx?.recipient}
+                    amount={tx?.rawAmount}
+                    tokenAddress={tx?.token}
+                    spaceSlug={spaceSlug}
+                    escrowContractAddress={escrowAddr}
+                  />
+                ))}
+              </div>
+            )}
+          {proposalDetails?.mintings.map((mint, idx) => (
+            <ProposalMintItem
+              key={idx}
+              member={mint.member}
+              number={mint.number}
+              token={mint.token}
+            />
+          ))}
+          {proposalDetails?.burnings.map((burn, idx) => (
+            <ProposalBurnItem
+              key={`${burn.member}-${burn.token}-${idx}`}
+              member={burn.member}
+              number={burn.number}
+              token={burn.token}
+            />
+          ))}
+          {proposalDetails?.buyHyphaTokensData.amount ? (
+            <ProposalBuyHyphaTokensData
+              amount={proposalDetails?.buyHyphaTokensData.amount}
+            />
+          ) : null}
+          {proposalDetails?.activateSpacesData.spaceIds.length ? (
+            <ProposalActivateSpacesData
+              spaceIds={proposalDetails?.activateSpacesData?.spaceIds}
+              paymentAmounts={
+                proposalDetails?.activateSpacesData?.paymentAmounts
+              }
+              tokenSymbol={proposalDetails?.activateSpacesData?.tokenSymbol}
+            />
+          ) : null}
+          {proposalDetails?.delegatesData?.member ? (
+            <ProposalDelegatesData
+              member={proposalDetails?.delegatesData.member}
+              space={proposalDetails?.delegatesData.space}
+              variant={label === 'Change Delegate' ? 'changeDelegate' : 'join'}
+            />
+          ) : null}
+          {proposalDetails?.membershipExitData?.member ? (
+            <MembershipExitData
+              member={proposalDetails?.membershipExitData.member}
+              space={proposalDetails?.membershipExitData.space}
+            />
+          ) : null}
+          {proposalDetails?.transparencySettingsData &&
+          (proposalDetails.transparencySettingsData.spaceDiscoverability !==
+            undefined ||
+            proposalDetails.transparencySettingsData.spaceActivityAccess !==
+              undefined) ? (
+            <ProposalTransparencySettingsInfo
+              spaceDiscoverability={
+                proposalDetails.transparencySettingsData
+                  .spaceDiscoverability !== undefined
+                  ? (proposalDetails.transparencySettingsData
+                      .spaceDiscoverability as TransparencyLevel)
+                  : undefined
+              }
+              spaceActivityAccess={
+                proposalDetails.transparencySettingsData.spaceActivityAccess !==
+                undefined
+                  ? (proposalDetails.transparencySettingsData
+                      .spaceActivityAccess as TransparencyLevel)
+                  : undefined
+              }
+            />
+          ) : null}
+          {proposalDetails?.redeemTokensData.amount &&
+          proposalDetails?.redeemTokensData.token ? (
+            <ProposalRedeemTokensData
+              spaceSlug={spaceSlug}
+              dbTokens={dbTokens}
+              amount={proposalDetails.redeemTokensData.amount}
+              token={proposalDetails.redeemTokensData.token}
+              web3SpaceId={proposalDetails.redeemTokensData.web3SpaceId}
+              conversions={proposalDetails.redeemTokensData.conversions}
+            />
+          ) : null}
+          {proposalDetails?.tokenBackingVaultData &&
+          !(
+            proposalDetails?.redeemTokensData.amount &&
+            proposalDetails?.redeemTokensData.token
+          ) ? (
+            <ProposalTokenBackingVaultData
+              spaceSlug={spaceSlug}
+              dbTokens={dbTokens}
+              {...proposalDetails.tokenBackingVaultData}
+            />
+          ) : null}
+          {proposalDetails &&
+          hasUpdateTokenDataToDisplay(proposalDetails.updateTokenData) ? (
+            <ProposalUpdateToken
+              documentId={documentId}
+              address={proposalDetails.updateTokenData.address as `0x${string}`}
+              tokenType={updateTokenTypeFromDb}
+              name={proposalDetails.updateTokenData.name}
+              symbol={proposalDetails.updateTokenData.symbol}
+              maxSupply={proposalDetails.updateTokenData.maxSupply}
+              transferable={proposalDetails.updateTokenData.transferable}
+              autoMinting={proposalDetails.updateTokenData.autoMinting}
+              priceWithCurrency={
+                proposalDetails.updateTokenData.priceWithCurrency
+              }
+              decayPercentage={proposalDetails.updateTokenData.decayPercentage}
+              decayInterval={proposalDetails.updateTokenData.decayInterval}
+              useTransferWhitelist={
+                proposalDetails.updateTokenData.useTransferWhitelist
+              }
+              useReceiveWhitelist={
+                proposalDetails.updateTokenData.useReceiveWhitelist
+              }
+              initialTransferWhitelist={
+                proposalDetails.updateTokenData.initialTransferWhitelist
+              }
+              initialReceiveWhitelist={
+                proposalDetails.updateTokenData.initialReceiveWhitelist
+              }
+              initialTransferWhitelistSpaceIds={
+                proposalDetails.updateTokenData.initialTransferWhitelistSpaceIds
+              }
+              initialReceiveWhitelistSpaceIds={
+                proposalDetails.updateTokenData.initialReceiveWhitelistSpaceIds
+              }
+              spacesForWhitelistDisplay={spacesForWhitelistDisplay}
+              dbTokens={dbTokens}
+              archiveToken={proposalDetails.updateTokenData.archiveToken}
+              fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
+              defaultCreditLimit={
+                proposalDetails.updateTokenData.defaultCreditLimit
+              }
+              addCreditWhitelistSpaceIds={
+                proposalDetails.updateTokenData.addCreditWhitelistSpaceIds
+              }
+              removeCreditWhitelistSpaceIds={
+                proposalDetails.updateTokenData.removeCreditWhitelistSpaceIds
+              }
+            />
+          ) : null}
+          {label === 'Token Purchase' &&
+          proposalDetails?.spaceTokenPurchaseData ? (
+            <ProposalSpaceTokenPurchaseData
+              dbTokens={dbTokens}
+              {...proposalDetails.spaceTokenPurchaseData}
+            />
+          ) : null}
+          {energyMarkerData ? (
+            <ProposalEnergyProposalData
+              proposalType={energyMarkerData.proposalType}
+              payload={energyMarkerData.payload}
+            />
+          ) : null}
+        </div>
+      </details>
     </div>
   );
 };

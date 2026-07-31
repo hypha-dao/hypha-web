@@ -2,28 +2,44 @@
 
 import * as React from 'react';
 import { Locale } from '@hypha-platform/i18n';
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Zap } from 'lucide-react';
-import { getDhoPathAgreements } from '../@tab/agreements/constants';
-import { getDhoPathMembers } from '../@tab/members/constants';
-import { getDhoPathTreasury } from '../@tab/treasury/constants';
-import { getDhoPathEnergy } from '../@tab/energy/constants';
-import { getDhoPathOverview } from '../@tab/overview/constants';
-import { getDhoPathPipeline } from '../@tab/pipeline/constants';
+import {
+  CalendarDays,
+  ChevronDown,
+  Coins,
+  FileCheck2,
+  HandCoins,
+  House,
+  KanbanSquare,
+  Landmark,
+  Navigation,
+  Radio,
+  UsersRound,
+  Zap,
+} from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  buildSpaceSectionNavItems,
   getActiveTabFromPath,
+  type SpaceSectionNavKey,
   useMainColumnScrollY,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-import { getDhoPathCoherence } from '../@tab/coherence/constants';
-import { getDhoPathCalendar } from '../@tab/calendar/constants';
 
-/** Subtle scroll parallax: tab strip drifts slightly vs page for depth (see CompactSpaceBannerLead). */
+/** Subtle scroll parallax: tab strip drifts slightly vs page for depth. */
 const TAB_PARALLAX_SCROLL_RATE = 0.07;
 const TAB_PARALLAX_MAX_SHIFT_PX = 18;
 
@@ -41,17 +57,56 @@ function isReducedMotionPreferred(): boolean {
   );
 }
 
+function MemoryNavIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      className={className}
+      aria-hidden
+    >
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M9 4v16M15 4v16M4 9h16M4 15h16" />
+    </svg>
+  );
+}
+
+const NAV_ICONS: Record<
+  SpaceSectionNavKey,
+  React.ComponentType<{ className?: string }>
+> = {
+  overview: House,
+  agreements: FileCheck2,
+  members: UsersRound,
+  treasury: Coins,
+  calendar: CalendarDays,
+  coherence: Radio,
+  pipeline: KanbanSquare,
+  energy: Zap,
+  rewards: HandCoins,
+  memory: MemoryNavIcon,
+  banking: Landmark,
+  'ecosystem-navigation': Navigation,
+};
+
 export function NavigationTabs({
   lang,
   id,
   coherenceEnabled = false,
+  memoryEnabled = false,
 }: {
   lang: Locale;
   id: string;
   /** When true, show the Coherence tab (from `getEnableCoherence()` on the server). */
   coherenceEnabled?: boolean;
+  memoryEnabled?: boolean;
 }) {
   const t = useTranslations('Common');
+  const tNav = useTranslations('SelectNavigationAction');
+  const tTreasury = useTranslations('TreasuryTab');
+  const tCoherence = useTranslations('CoherenceTab');
   const pathname = usePathname();
   const activeTab = React.useMemo(
     () => getActiveTabFromPath(pathname),
@@ -80,101 +135,136 @@ export function NavigationTabs({
       ? 0
       : clampTabParallaxScrollY(mainScrollY);
 
-  const tabs: {
-    title: string;
-    name: string;
-    href: string;
-    icon?: React.ReactNode;
-  }[] = [
-    {
-      title: t('home'),
-      name: 'overview',
-      href: getDhoPathOverview(lang, id),
+  const labelFor = React.useCallback(
+    (key: SpaceSectionNavKey): string => {
+      switch (key) {
+        case 'overview':
+          return t('home');
+        case 'agreements':
+          return t('Agreements');
+        case 'members':
+          return t('Members');
+        case 'treasury':
+          return t('Treasury');
+        case 'calendar':
+          return t('Calendar');
+        case 'coherence':
+          return t('Signals');
+        case 'pipeline':
+          return t('Pipeline');
+        case 'energy':
+          return t('Energy');
+        case 'rewards':
+          return tTreasury('rewardsSection.title');
+        case 'memory':
+          return tCoherence('spaceMemory');
+        case 'banking':
+          return t('bankingTab');
+        case 'ecosystem-navigation':
+          return tNav('ecosystem');
+        default:
+          return key;
+      }
     },
-    ...(coherenceEnabled
-      ? [
-          {
-            title: t('Signals'),
-            name: 'coherence',
-            href: getDhoPathCoherence(lang, id),
-          },
-        ]
-      : []),
-    {
-      title: t('Calendar'),
-      name: 'calendar',
-      href: getDhoPathCalendar(lang as Locale, id as string),
-    },
-    ...(space?.pipelineEnabled
-      ? [
-          {
-            title: t('Pipeline'),
-            name: 'pipeline',
-            href: getDhoPathPipeline(lang as Locale, id as string),
-          },
-        ]
-      : []),
-    {
-      title: t('Agreements'),
-      name: 'agreements',
-      href: getDhoPathAgreements(lang, id),
-    },
-    {
-      title: t('Members'),
-      name: 'members',
-      href: getDhoPathMembers(lang as Locale, id as string),
-    },
-    {
-      title: t('Treasury'),
-      name: 'treasury',
-      href: getDhoPathTreasury(lang as Locale, id as string),
-    },
-    ...(spaceEnergy?.enabled
-      ? [
-          {
-            title: t('Energy'),
-            name: 'energy',
-            href: getDhoPathEnergy(lang as Locale, id as string),
-            icon: (
-              <Zap className="size-4 shrink-0" strokeWidth={1.75} aria-hidden />
-            ),
-          },
-        ]
-      : []),
-  ];
+    [t, tNav, tTreasury, tCoherence],
+  );
+
+  const items = React.useMemo(
+    () =>
+      buildSpaceSectionNavItems({
+        lang,
+        spaceSlug: id,
+        pathname,
+        pipelineEnabled: Boolean(space?.pipelineEnabled),
+        energyEnabled: Boolean(spaceEnergy?.enabled),
+        coherenceEnabled,
+        memoryEnabled,
+        bankingEnabled: true,
+      }),
+    [
+      coherenceEnabled,
+      id,
+      lang,
+      memoryEnabled,
+      pathname,
+      space?.pipelineEnabled,
+      spaceEnergy?.enabled,
+    ],
+  );
+
+  const primary = items.filter((i) => i.group === 'primary');
+  const more = items.filter((i) => i.group === 'more');
+  const moreActive = more.some((i) => i.active);
+  const tabsValue = moreActive ? 'more' : activeTab;
 
   return (
-    <Tabs value={activeTab} className="mt-6 w-full md:mt-7">
-      {/*
-        Radix ScrollArea's viewport forces overflow-y: hidden, which clips vertical parallax.
-        Native overflow-x-auto keeps horizontal swipe/scroll; vertical padding absorbs translate.
-      */}
+    <Tabs value={tabsValue} className="mt-4 w-full md:mt-5">
       <div
         className={cn(
-          'mb-4 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-[18px]',
+          'mb-3 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-2',
           'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
         <TabsList
-          className="flex h-10 min-w-max will-change-transform md:min-w-0 md:w-full"
+          className="flex h-10 min-w-max will-change-transform gap-0.5 md:min-w-0 md:w-full"
           style={
             preferReducedMotion
               ? undefined
               : { transform: `translate3d(0, ${tabParallaxY}px, 0)` }
           }
         >
-          {tabs.map(({ name, href, title, icon }) => (
-            <TabsTrigger asChild key={name} value={name} variant="ghost">
-              <Link
-                href={href}
-                className="flex w-full items-center justify-center gap-1.5"
-                passHref
-              >
-                {icon}
-                {title}
-              </Link>
-            </TabsTrigger>
-          ))}
+          {primary.map(({ key, href }) => {
+            const Icon = NAV_ICONS[key];
+            return (
+              <TabsTrigger asChild key={key} value={key} variant="ghost">
+                <Link
+                  href={href}
+                  className="flex w-full items-center justify-center gap-1.5"
+                >
+                  <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                  {labelFor(key)}
+                </Link>
+              </TabsTrigger>
+            );
+          })}
+          {more.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  className={cn(
+                    'h-10 shrink-0 gap-1 px-3 text-2 font-medium',
+                    moreActive && 'bg-muted text-foreground',
+                  )}
+                  aria-label={t('moreNav')}
+                >
+                  {t('moreNav')}
+                  <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-48">
+                {more.map(({ key, href, active }) => {
+                  const Icon = NAV_ICONS[key];
+                  return (
+                    <DropdownMenuItem key={key} asChild>
+                      <Link
+                        href={href}
+                        className={cn(
+                          'flex cursor-pointer items-center gap-2',
+                          active && 'bg-accent-3 text-accent-12',
+                        )}
+                      >
+                        <Icon className="size-4 shrink-0" aria-hidden />
+                        {labelFor(key)}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </TabsList>
       </div>
     </Tabs>

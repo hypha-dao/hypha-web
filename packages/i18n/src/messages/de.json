@@ -64,7 +64,9 @@
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# Stunde} other {# Stunden}}",
     "durationDays": "{count, plural, one {# Tag} other {# Tage}}",
-    "spaceBannerRevealMeta": "Details"
+    "spaceBannerRevealMeta": "Details",
+    "moreNav": "Mehr",
+    "bankingTab": "Banking"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -1745,7 +1747,8 @@
     "escrowDepositApproving": "Genehmigung läuft...",
     "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag.",
     "pipelineEnabled": "Deal-Pipeline",
-    "pipelineEnabledDescription": "Aktivieren Sie eine Kanban-Deal-Pipeline für diesen Space. Standardmäßig aus."
+    "pipelineEnabledDescription": "Aktivieren Sie eine Kanban-Deal-Pipeline für diesen Space. Standardmäßig aus.",
+    "mySpacesSupport": "Erstellen Sie einen Space oder öffnen Sie einen, dem Sie angehören."
   },
   "AgreementFlow": {
     "labels": {
@@ -2555,7 +2558,10 @@
       "decaySettings": "Decay-Einstellungen",
       "fromWhitelist": "Von der Whitelist",
       "toWhitelist": "Zur Whitelist",
-      "mutualCredit": "Mutual Credit"
+      "mutualCredit": "Mutual Credit",
+      "moreDetails": "Vorschlagsdetails",
+      "showDetails": "Anzeigen",
+      "hideDetails": "Ausblenden"
     },
     "labels": {
       "unknown": "Unbekannt",
@@ -4332,5 +4338,39 @@
       "loading": "Erfolgsraten werden geladen…",
       "resetDefaults": "Standards wiederherstellen"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Handlungsbedarf",
+    "needsAttentionDescription": "Offene Abstimmungen und wartende Aufgaben.",
+    "noOpenVotesTitle": "Aktuell nichts Offen",
+    "noOpenVotesDescription": "Laufende Abstimmungen erscheinen hier.",
+    "createProposal": "Vorschlag erstellen",
+    "viewAllOpenVotes": "Alle {count} offenen Abstimmungen",
+    "untitledProposal": "Unbenannter Vorschlag",
+    "quickActionsTitle": "Schnellaktionen",
+    "inviteMembers": "Mitglieder",
+    "recentActivityTitle": "Aktuelle Aktivität",
+    "recentActivityDescription": "Neueste Vorschläge und Vereinbarungen in diesem Space.",
+    "noRecentActivity": "Noch keine Governance-Aktivität.",
+    "statusOnVoting": "In Abstimmung",
+    "statusAccepted": "Angenommen",
+    "statusRejected": "Abgelehnt",
+    "holdingsTitle": "Bestände",
+    "holdingsDescription": "Token-Salden und Space-Assets."
+  },
+  "SelectActionIntents": {
+    "lead": "Was möchten Sie tun?",
+    "pay": "Jemanden bezahlen",
+    "mint": "Token ausgeben",
+    "vote": "Abstimmung ändern",
+    "member": "Mitglieder & Zugang",
+    "space": "Space einrichten"
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Spaces, die gemeinsam entscheiden, finanzieren und wachsen.",
+    "support": "Der ruhige Workspace für kollektives Handeln — Governance, Treasury und Community an einem Ort.",
+    "ctaEnter": "Eintreten",
+    "ctaExplore": "Netzwerk erkunden"
   }
 }

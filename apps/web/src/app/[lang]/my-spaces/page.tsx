@@ -42,23 +42,26 @@ export default async function Index(props: PageProps) {
 
   return (
     <div className="w-full overflow-auto">
-      <Container className="flex flex-col gap-9 py-9">
-        <Heading
-          size="9"
-          color="secondary"
-          weight="medium"
-          align="center"
-          className="flex flex-col"
-        >
-          <span>{t('allYourSpaces')}</span>
-          <span>{t('inOnePlace')}</span>
-        </Heading>
+      <Container className="flex flex-col gap-6 py-8 md:gap-8 md:py-10">
+        <header className="craft-page-header gap-2">
+          <Heading
+            size="7"
+            color="secondary"
+            weight="medium"
+            align="left"
+            className="craft-page-title flex flex-col text-left"
+          >
+            <span>{t('allYourSpaces')}</span>
+            <span>{t('inOnePlace')}</span>
+          </Heading>
+          <p className="craft-meta max-w-xl">{t('mySpacesSupport')}</p>
+        </header>
         <Suspense fallback={null}>
           <MySpacesControls
             lang={lang}
             query={query}
             order={order}
-            showCreateButton={(mySpaces?.length ?? 0) > 0}
+            showCreateButton
           />
         </Suspense>
         <MyFilteredSpaces

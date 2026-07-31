@@ -64,7 +64,9 @@
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# uur} other {# uur}}",
     "durationDays": "{count, plural, one {# dag} other {# dagen}}",
-    "spaceBannerRevealMeta": "Details"
+    "spaceBannerRevealMeta": "Details",
+    "moreNav": "Meer",
+    "bankingTab": "Bankieren"
   },
   "ModalAside": {
     "spaceSettings": "Ruimte-instellingen",
@@ -1744,7 +1746,8 @@
     "escrowDepositApproving": "Goedkeuren...",
     "escrowDepositInsufficientWallet": "Uw portemonneesaldo is lager dan het vereiste bedrag.",
     "pipelineEnabled": "Deal-pipeline",
-    "pipelineEnabledDescription": "Schakel een Kanban deal-pipeline in voor deze space. Standaard uit."
+    "pipelineEnabledDescription": "Schakel een Kanban deal-pipeline in voor deze space. Standaard uit.",
+    "mySpacesSupport": "Maak een space of open er een waar je al lid van bent."
   },
   "AgreementFlow": {
     "labels": {
@@ -2557,7 +2560,10 @@
       "decaySettings": "Verval instellingen",
       "fromWhitelist": "Van witte lijst",
       "toWhitelist": "Naar witte lijst",
-      "mutualCredit": "Wederzijds krediet"
+      "mutualCredit": "Wederzijds krediet",
+      "moreDetails": "Voorsteldetails",
+      "showDetails": "Tonen",
+      "hideDetails": "Verbergen"
     },
     "labels": {
       "unknown": "Onbekend",
@@ -4338,5 +4344,39 @@
       "loading": "Succespercentages laden…",
       "resetDefaults": "Standaard herstellen"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Aandacht nodig",
+    "needsAttentionDescription": "Open votes and items waiting on you.",
+    "noOpenVotesTitle": "Nothing open right now",
+    "noOpenVotesDescription": "When a proposal is on voting, it shows up here.",
+    "createProposal": "Voorstel maken",
+    "viewAllOpenVotes": "View all {count} open votes",
+    "untitledProposal": "Untitled proposal",
+    "quickActionsTitle": "Snelle acties",
+    "inviteMembers": "Members",
+    "recentActivityTitle": "Recent activity",
+    "recentActivityDescription": "Latest proposals and agreements in this space.",
+    "noRecentActivity": "No recent governance activity yet.",
+    "statusOnVoting": "On voting",
+    "statusAccepted": "Accepted",
+    "statusRejected": "Rejected",
+    "holdingsTitle": "Saldi",
+    "holdingsDescription": "Token balances and space assets."
+  },
+  "SelectActionIntents": {
+    "lead": "Wat wil je doen?",
+    "pay": "Iemand betalen",
+    "mint": "Tokens uitgeven",
+    "vote": "Stemmen wijzigen",
+    "member": "Leden en toegang",
+    "space": "Space instellen"
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Spaces die samen beslissen, financieren en groeien.",
+    "support": "De rustige werkruimte voor collectieve actie.",
+    "ctaEnter": "Binnenkomen",
+    "ctaExplore": "Netwerk verkennen"
   }
 }

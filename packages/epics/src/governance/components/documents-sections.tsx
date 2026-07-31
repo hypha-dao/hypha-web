@@ -76,32 +76,35 @@ export function DocumentsSections({
       }}
       className="flex flex-col gap-4 py-0"
     >
-      <TabsList triggerVariant="switch" className="w-fit">
-        <TabsTrigger value="on-voting" variant="switch">
-          <span className="inline-flex items-center gap-1">
-            <span>{t('onVoting')}</span>
-            <span className="text-xs text-muted-foreground">
-              ({format.number(onVotingCount)})
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TabsList triggerVariant="switch" className="w-fit">
+          <TabsTrigger value="on-voting" variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{t('onVoting')}</span>
+              <span className="text-xs text-muted-foreground">
+                ({format.number(onVotingCount)})
+              </span>
             </span>
-          </span>
-        </TabsTrigger>
-        <TabsTrigger value="accepted" variant="switch">
-          <span className="inline-flex items-center gap-1">
-            <span>{t('accepted')}</span>
-            <span className="text-xs text-muted-foreground">
-              ({format.number(acceptedCount)})
+          </TabsTrigger>
+          <TabsTrigger value="accepted" variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{t('accepted')}</span>
+              <span className="text-xs text-muted-foreground">
+                ({format.number(acceptedCount)})
+              </span>
             </span>
-          </span>
-        </TabsTrigger>
-        <TabsTrigger value="rejected" variant="switch">
-          <span className="inline-flex items-center gap-1">
-            <span>{t('rejected')}</span>
-            <span className="text-xs text-muted-foreground">
-              ({format.number(rejectedCount)})
+          </TabsTrigger>
+          <TabsTrigger value="rejected" variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{t('rejected')}</span>
+              <span className="text-xs text-muted-foreground">
+                ({format.number(rejectedCount)})
+              </span>
             </span>
-          </span>
-        </TabsTrigger>
-      </TabsList>
+          </TabsTrigger>
+        </TabsList>
+        <div className="shrink-0">{createProposalButton}</div>
+      </div>
 
       <TabsContent value="on-voting" className="mt-0">
         <DocumentSection
@@ -109,7 +112,6 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           spaceLeadImage={spaceLeadImage}
           documents={documents.onVoting}
-          headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
           error={error}
@@ -123,7 +125,6 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           spaceLeadImage={spaceLeadImage}
           documents={documents.accepted}
-          headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
           error={error}
@@ -137,7 +138,6 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           spaceLeadImage={spaceLeadImage}
           documents={documents.rejected}
-          headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
           error={error}

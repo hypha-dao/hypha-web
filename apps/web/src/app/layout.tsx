@@ -230,7 +230,7 @@ export default async function RootLayout({
         <SwrProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
+            defaultTheme="light"
             enableSystem={false}
             storageKey="theme"
             disableTransitionOnChange

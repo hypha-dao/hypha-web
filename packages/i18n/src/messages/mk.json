@@ -64,7 +64,9 @@
     "Pipeline": "Пајплајн",
     "durationHours": "{count, plural, one {# час} other {# часа}}",
     "durationDays": "{count, plural, one {# ден} other {# дена}}",
-    "spaceBannerRevealMeta": "Детали"
+    "spaceBannerRevealMeta": "Детали",
+    "moreNav": "Повеќе",
+    "bankingTab": "Банкарство"
   },
   "ModalAside": {
     "spaceSettings": "Поставки на просторот",
@@ -1724,7 +1726,8 @@
     "escrowDepositApproving": "Се одобрува...",
     "escrowDepositInsufficientWallet": "Салдото на твојот паричник е под потребниот износ.",
     "pipelineEnabled": "Deal Pipeline",
-    "pipelineEnabledDescription": "Овозможете Kanban deal pipeline за овој простор. Исклучено по подразбирање."
+    "pipelineEnabledDescription": "Овозможете Kanban deal pipeline за овој простор. Исклучено по подразбирање.",
+    "mySpacesSupport": "Креирај простор или отвори еден во кој веќе членуваш."
   },
   "AgreementFlow": {
     "labels": {
@@ -2537,7 +2540,10 @@
       "decaySettings": "Поставки за распаѓање",
       "fromWhitelist": "Од белата листа",
       "toWhitelist": "Кон белата листа",
-      "mutualCredit": "Заемен кредит"
+      "mutualCredit": "Заемен кредит",
+      "moreDetails": "Детали за предлогот",
+      "showDetails": "Прикажи",
+      "hideDetails": "Сокриј"
     },
     "labels": {
       "unknown": "Непознато",
@@ -4319,5 +4325,39 @@
       "loading": "Се вчитуваат стапки на успех…",
       "resetDefaults": "Врати стандардни"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Потребно е внимание",
+    "needsAttentionDescription": "Open votes and items waiting on you.",
+    "noOpenVotesTitle": "Nothing open right now",
+    "noOpenVotesDescription": "When a proposal is on voting, it shows up here.",
+    "createProposal": "Креирај предлог",
+    "viewAllOpenVotes": "View all {count} open votes",
+    "untitledProposal": "Untitled proposal",
+    "quickActionsTitle": "Брзи акции",
+    "inviteMembers": "Members",
+    "recentActivityTitle": "Recent activity",
+    "recentActivityDescription": "Latest proposals and agreements in this space.",
+    "noRecentActivity": "No recent governance activity yet.",
+    "statusOnVoting": "On voting",
+    "statusAccepted": "Accepted",
+    "statusRejected": "Rejected",
+    "holdingsTitle": "Средства",
+    "holdingsDescription": "Token balances and space assets."
+  },
+  "SelectActionIntents": {
+    "lead": "Што сакате да направите?",
+    "pay": "Плати некому",
+    "mint": "Издај токени",
+    "vote": "Промени гласање",
+    "member": "Членови и пристап",
+    "space": "Поставување"
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Простори што одлучуваат, финансираат и растат заедно.",
+    "support": "Мирниот работен простор за колективно дејствување.",
+    "ctaEnter": "Влези",
+    "ctaExplore": "Истражи мрежа"
   }
 }

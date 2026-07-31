@@ -1,0 +1,35 @@
+/**
+ * Mycelium teal — global app accent (replaces indigo).
+ * Hue ~185: organic teal/cyan, distinct from SaaS purple and grass green.
+ */
+:root,
+.light,
+.light-theme {
+  --teal-1: oklch(99.2% 0.008 185);
+  --teal-2: oklch(97.6% 0.014 185);
+  --teal-3: oklch(95.1% 0.028 184);
+  --teal-4: oklch(92.2% 0.042 183);
+  --teal-5: oklch(88.4% 0.056 182);
+  --teal-6: oklch(83.2% 0.072 181);
+  --teal-7: oklch(75.8% 0.09 180);
+  --teal-8: oklch(66.4% 0.11 178);
+  --teal-9: oklch(58.2% 0.118 176);
+  --teal-10: oklch(54.1% 0.112 176);
+  --teal-11: oklch(45.6% 0.095 178);
+  --teal-12: oklch(28.4% 0.048 185);
+}
+.dark,
+.dark-theme {
+  --teal-1: oklch(18.4% 0.018 190);
+  --teal-2: oklch(20.8% 0.024 188);
+  --teal-3: oklch(26.2% 0.045 182);
+  --teal-4: oklch(30.8% 0.062 180);
+  --teal-5: oklch(35.4% 0.072 178);
+  --teal-6: oklch(40.2% 0.082 177);
+  --teal-7: oklch(45.6% 0.092 176);
+  --teal-8: oklch(52.4% 0.102 175);
+  --teal-9: oklch(58.2% 0.118 176);
+  --teal-10: oklch(63.8% 0.108 178);
+  --teal-11: oklch(78.2% 0.095 182);
+  --teal-12: oklch(92.4% 0.035 188);
+}

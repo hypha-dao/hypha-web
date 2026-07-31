@@ -1,8 +1,8 @@
 :root {
   /*
    * next/font on <html> (apps/web):
-   *   --font-body       → IBM Plex Sans (UI / body)
-   *   --font-heading    → Instrument Sans (page + card titles)
+   *   --font-body       → Plus Jakarta Sans (UI / body)
+   *   --font-heading    → Outfit (page + card titles)
    *   --font-code-face  → IBM Plex Mono (code / addresses)
    */
   --font-text: var(--font-body), ui-sans-serif, system-ui, sans-serif;

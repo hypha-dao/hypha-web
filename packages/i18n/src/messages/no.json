@@ -63,7 +63,9 @@
     },
     "durationHours": "{count, plural, one {# time} other {# timer}}",
     "durationDays": "{count, plural, one {# dag} other {# dager}}",
-    "spaceBannerRevealMeta": "Detaljer"
+    "spaceBannerRevealMeta": "Detaljer",
+    "moreNav": "Mer",
+    "bankingTab": "Bank"
   },
   "ModalAside": {
     "spaceSettings": "Rominnstillinger",
@@ -1741,7 +1743,8 @@
     "escrowConfirmExchange": "Bekreft utveksling",
     "escrowDepositDepositing": "Deponerer...",
     "escrowDepositApproving": "Godkjenner...",
-    "escrowDepositInsufficientWallet": "Lommeboksaldoen din er lavere enn beløpet som kreves."
+    "escrowDepositInsufficientWallet": "Lommeboksaldoen din er lavere enn beløpet som kreves.",
+    "mySpacesSupport": "Opprett et space eller åpne et du allerede er med i."
   },
   "AgreementFlow": {
     "labels": {
@@ -2554,7 +2557,10 @@
       "decaySettings": "Forfallsinnstillinger",
       "fromWhitelist": "Fra hviteliste",
       "toWhitelist": "Til hviteliste",
-      "mutualCredit": "Gjensidig kreditt"
+      "mutualCredit": "Gjensidig kreditt",
+      "moreDetails": "Forslagsdetaljer",
+      "showDetails": "Vis",
+      "hideDetails": "Skjul"
     },
     "labels": {
       "unknown": "Ukjent",
@@ -4171,5 +4177,39 @@
       "usdcNotConfigured": "USDC-betalingstoken er ikke konfigurert for denne appen.",
       "deviceIdsCommaNumbers": "Enhets-ID-er må være kommaseparerte tall"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Trenger oppmerksomhet",
+    "needsAttentionDescription": "Open votes and items waiting on you.",
+    "noOpenVotesTitle": "Nothing open right now",
+    "noOpenVotesDescription": "When a proposal is on voting, it shows up here.",
+    "createProposal": "Opprett forslag",
+    "viewAllOpenVotes": "View all {count} open votes",
+    "untitledProposal": "Untitled proposal",
+    "quickActionsTitle": "Hurtighandlinger",
+    "inviteMembers": "Members",
+    "recentActivityTitle": "Recent activity",
+    "recentActivityDescription": "Latest proposals and agreements in this space.",
+    "noRecentActivity": "No recent governance activity yet.",
+    "statusOnVoting": "On voting",
+    "statusAccepted": "Accepted",
+    "statusRejected": "Rejected",
+    "holdingsTitle": "Beholdninger",
+    "holdingsDescription": "Token balances and space assets."
+  },
+  "SelectActionIntents": {
+    "lead": "Hva vil du gjøre?",
+    "pay": "Betale noen",
+    "mint": "Utstede tokens",
+    "vote": "Endre avstemming",
+    "member": "Medlemmer og tilgang",
+    "space": "Sett opp space"
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Spaces som bestemmer, finansierer og vokser sammen.",
+    "support": "Det rolige arbeidsområdet for kollektiv handling.",
+    "ctaEnter": "Gå inn",
+    "ctaExplore": "Utforsk nettverk"
   }
 }

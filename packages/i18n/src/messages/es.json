@@ -64,7 +64,9 @@
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# hora} other {# horas}}",
     "durationDays": "{count, plural, one {# día} other {# días}}",
-    "spaceBannerRevealMeta": "Detalles"
+    "spaceBannerRevealMeta": "Detalles",
+    "moreNav": "Más",
+    "bankingTab": "Banca"
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",
@@ -1951,7 +1953,8 @@
     "escrowDepositApproving": "Aprobando...",
     "escrowDepositInsufficientWallet": "El saldo de tu billetera está por debajo del monto requerido.",
     "pipelineEnabled": "Pipeline de deals",
-    "pipelineEnabledDescription": "Activa un pipeline Kanban de deals en este espacio. Desactivado por defecto."
+    "pipelineEnabledDescription": "Activa un pipeline Kanban de deals en este espacio. Desactivado por defecto.",
+    "mySpacesSupport": "Crea un espacio o abre uno al que ya perteneces."
   },
   "ProposalDetails": {
     "investment": {
@@ -1991,7 +1994,10 @@
       "decaySettings": "Configuración de decadencia",
       "fromWhitelist": "De la lista blanca",
       "toWhitelist": "A la lista blanca",
-      "mutualCredit": "Crédito mutuo"
+      "mutualCredit": "Crédito mutuo",
+      "moreDetails": "Detalles de la propuesta",
+      "showDetails": "Mostrar",
+      "hideDetails": "Ocultar"
     },
     "labels": {
       "unknown": "Desconocido",
@@ -4332,5 +4338,39 @@
       "loading": "Cargando tasas de éxito…",
       "resetDefaults": "Restablecer valores"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Requiere atención",
+    "needsAttentionDescription": "Open votes and items waiting on you.",
+    "noOpenVotesTitle": "Nothing open right now",
+    "noOpenVotesDescription": "When a proposal is on voting, it shows up here.",
+    "createProposal": "Crear propuesta",
+    "viewAllOpenVotes": "View all {count} open votes",
+    "untitledProposal": "Untitled proposal",
+    "quickActionsTitle": "Acciones rápidas",
+    "inviteMembers": "Miembros",
+    "recentActivityTitle": "Actividad reciente",
+    "recentActivityDescription": "Latest proposals and agreements in this space.",
+    "noRecentActivity": "No recent governance activity yet.",
+    "statusOnVoting": "On voting",
+    "statusAccepted": "Accepted",
+    "statusRejected": "Rejected",
+    "holdingsTitle": "Activos",
+    "holdingsDescription": "Token balances and space assets."
+  },
+  "SelectActionIntents": {
+    "lead": "¿Qué quieres hacer?",
+    "pay": "Pagar a alguien",
+    "mint": "Emitir tokens",
+    "vote": "Cambiar votación",
+    "member": "Miembros y acceso",
+    "space": "Configurar espacio"
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Espacios que deciden, financian y crecen juntos.",
+    "support": "El espacio de trabajo calmado para la acción colectiva.",
+    "ctaEnter": "Entrar",
+    "ctaExplore": "Explorar red"
   }
 }

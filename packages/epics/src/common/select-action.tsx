@@ -1,12 +1,30 @@
 'use client';
 
-import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
+import {
+  Button,
+  Card,
+  Separator,
+  Skeleton,
+  TextWithLinks,
+} from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@hypha-platform/ui';
 import { Search } from 'lucide-react';
+
+/** Intent chips — map casual goals to actions by title/description keywords. */
+const INTENT_PRESETS: { id: string; keywords: string[] }[] = [
+  {
+    id: 'pay',
+    keywords: ['pay', 'expense', 'payment', 'deploy funds', 'transfer'],
+  },
+  { id: 'mint', keywords: ['mint', 'issue', 'token'] },
+  { id: 'vote', keywords: ['voting', 'vote', 'quorum', 'unity'] },
+  { id: 'member', keywords: ['member', 'entry', 'join', 'invite', 'delegate'] },
+  { id: 'space', keywords: ['space', 'activate', 'configure', 'settings'] },
+];
 
 export type ActionProps = {
   title: string;
@@ -51,12 +69,35 @@ export const SelectAction = ({
   noResultsLabel,
 }: SelectActionProps) => {
   const tCommon = useTranslations('Common');
+  const tIntent = useTranslations('SelectActionIntents');
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [activeIntent, setActiveIntent] = React.useState<string | null>(null);
   const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const intentChips = React.useMemo(() => {
+    const enabled = (actions ?? []).filter((a) => !a.disabled && a.href);
+    return INTENT_PRESETS.filter((preset) =>
+      enabled.some((action) => {
+        const haystack = `${action.title} ${action.description}`.toLowerCase();
+        return preset.keywords.some((kw) => haystack.includes(kw));
+      }),
+    ).slice(0, 5);
+  }, [actions]);
+
   const groupedActions = React.useMemo(
     () =>
       actions
         ?.filter((action) => {
+          if (activeIntent) {
+            const preset = INTENT_PRESETS.find((p) => p.id === activeIntent);
+            if (preset) {
+              const haystack =
+                `${action.title} ${action.description}`.toLowerCase();
+              if (!preset.keywords.some((kw) => haystack.includes(kw))) {
+                return false;
+              }
+            }
+          }
           if (!normalizedSearch) return true;
           const haystack = [action.group, action.title, action.description]
             .filter(Boolean)
@@ -72,7 +113,7 @@ export const SelectAction = ({
           groups[group].push(action);
           return groups;
         }, {}),
-    [actions, normalizedSearch],
+    [actions, normalizedSearch, activeIntent],
   );
 
   return (
@@ -90,13 +131,40 @@ export const SelectAction = ({
         width="100%"
         height="72px"
         loading={isLoading}
-        className="rounded-lg"
+        className="rounded-xl"
       >
         <p className="w-full min-w-0 text-2 leading-relaxed text-muted-foreground">
           {content}
         </p>
       </Skeleton>
       {children}
+      {intentChips.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <p className="craft-meta">{tIntent('lead')}</p>
+          <div className="flex flex-wrap gap-2">
+            {intentChips.map((chip) => {
+              const selected = activeIntent === chip.id;
+              return (
+                <Button
+                  key={chip.id}
+                  type="button"
+                  size="sm"
+                  variant={selected ? 'default' : 'outline'}
+                  colorVariant={selected ? 'accent' : 'neutral'}
+                  className="rounded-xl"
+                  onClick={() =>
+                    setActiveIntent((prev) =>
+                      prev === chip.id ? null : chip.id,
+                    )
+                  }
+                >
+                  {tIntent(chip.id)}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
       {searchPlaceholder ? (
         <Input
           type="search"
