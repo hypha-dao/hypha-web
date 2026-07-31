@@ -73,9 +73,9 @@ function MembershipStack({ members }: { members: MembershipPreview[] }) {
   return (
     <div
       ref={containerRef}
-      className="flex min-h-8 min-w-0 items-center overflow-hidden"
+      className="flex w-full min-h-8 min-w-0 items-center overflow-hidden"
     >
-      <div className="flex -space-x-2">
+      <div className="flex min-w-0 shrink -space-x-2">
         {visible.map((member) =>
           member.accentClassName ? (
             <div
@@ -121,19 +121,22 @@ function MembershipModuleCard({
   members: MembershipPreview[];
 }) {
   return (
-    <div className="craft-card min-w-0 overflow-hidden px-3 py-2.5">
+    <div className="craft-card flex h-full min-w-0 flex-col overflow-hidden px-3 py-2.5">
       <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <MembershipStack members={members} />
+      <div className="min-w-0 flex-1">
+        <MembershipStack members={members} />
+      </div>
     </div>
   );
 }
 
 function membershipGridClassName(count: number): string {
-  if (count <= 1) return 'grid gap-3 grid-cols-1';
-  if (count === 2) return 'grid gap-3 sm:grid-cols-2';
-  return 'grid gap-3 sm:grid-cols-3';
+  if (count <= 1) return 'grid grid-cols-1 gap-3 auto-rows-fr';
+  if (count === 2) return 'grid grid-cols-1 gap-3 auto-rows-fr sm:grid-cols-2';
+  // 1 col mobile → 2 tablet → 3 desktop when all modules are filled
+  return 'grid grid-cols-1 gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3';
 }
 
 export function EcosystemMembershipModules({
@@ -221,21 +224,23 @@ export function EcosystemMembershipModules({
   if (isLoading && individuals.length === 0 && memberSpaces.length === 0) {
     return (
       <div
-        className="grid gap-3 sm:grid-cols-3"
+        className="border-b border-border/70 px-3 py-3"
         role="status"
         aria-live="polite"
       >
-        {(['individuals', 'memberSpaces', 'agents'] as const).map((key) => (
-          <div
-            key={key}
-            className="craft-card min-w-0 overflow-hidden px-3 py-2.5"
-          >
-            <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
-              {t(`navigation.${key}`)}
-            </p>
-            <p className="craft-meta">{t('navigation.loading')}</p>
-          </div>
-        ))}
+        <div className="grid grid-cols-1 gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
+          {(['individuals', 'memberSpaces', 'agents'] as const).map((key) => (
+            <div
+              key={key}
+              className="craft-card flex h-full min-w-0 flex-col overflow-hidden px-3 py-2.5"
+            >
+              <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
+                {t(`navigation.${key}`)}
+              </p>
+              <p className="craft-meta">{t('navigation.loading')}</p>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -245,14 +250,16 @@ export function EcosystemMembershipModules({
   }
 
   return (
-    <div className={membershipGridClassName(modules.length)}>
-      {modules.map((module) => (
-        <MembershipModuleCard
-          key={module.key}
-          label={module.label}
-          members={module.members}
-        />
-      ))}
+    <div className="border-b border-border/70 px-3 py-3">
+      <div className={membershipGridClassName(modules.length)}>
+        {modules.map((module) => (
+          <MembershipModuleCard
+            key={module.key}
+            label={module.label}
+            members={module.members}
+          />
+        ))}
+      </div>
     </div>
   );
 }
