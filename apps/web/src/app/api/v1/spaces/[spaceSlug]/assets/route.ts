@@ -24,6 +24,9 @@ import {
   getEnergyCommunityDisplayDecimals,
   isHyphaToken,
   HYPHA_PRICE_USD,
+  isEpartsToken,
+  EPARTS_PRICE_EUR,
+  EPARTS_REFERENCE_CURRENCY,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -256,6 +259,10 @@ export async function GET(
           if (isHyphaToken(token.address)) {
             rate = HYPHA_PRICE_USD;
           }
+          // EPARTS is a €1 participation, so its terms override any feed price.
+          if (isEpartsToken(token.address)) {
+            rate = EPARTS_PRICE_EUR;
+          }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
           }
@@ -271,8 +278,9 @@ export async function GET(
             token.address,
             contractDecimals,
           );
-          const referenceCurrency =
-            referenceCurrencyByAddress[token.address.toLowerCase()];
+          const referenceCurrency = isEpartsToken(token.address)
+            ? EPARTS_REFERENCE_CURRENCY
+            : referenceCurrencyByAddress[token.address.toLowerCase()];
           return {
             ...meta,
             address: token.address,

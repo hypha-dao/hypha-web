@@ -27,6 +27,9 @@ import {
   getEnergyCommunityDisplayDecimals,
   isHyphaToken,
   HYPHA_PRICE_USD,
+  isEpartsToken,
+  EPARTS_PRICE_EUR,
+  EPARTS_REFERENCE_CURRENCY,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -287,12 +290,17 @@ export async function GET(
     }));
 
     const referencePriceByAddress: Record<string, number> = {};
+    const referenceCurrencyByAddress: Record<string, string> = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
         if (Number.isFinite(parsed) && parsed >= 0) {
           referencePriceByAddress[t.address.toLowerCase()] = parsed;
         }
+      }
+      if (t.address && t.referenceCurrency) {
+        referenceCurrencyByAddress[t.address.toLowerCase()] =
+          t.referenceCurrency;
       }
     });
 
@@ -353,6 +361,10 @@ export async function GET(
           if (isHyphaToken(token.address)) {
             rate = HYPHA_PRICE_USD;
           }
+          // EPARTS is a €1 participation, so its terms override any feed price.
+          if (isEpartsToken(token.address)) {
+            rate = EPARTS_PRICE_EUR;
+          }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
           }
@@ -363,11 +375,15 @@ export async function GET(
           ) {
             rate = 1;
           }
+          const referenceCurrency = isEpartsToken(token.address)
+            ? EPARTS_REFERENCE_CURRENCY
+            : referenceCurrencyByAddress[token.address.toLowerCase()];
           return {
             ...meta,
             address: token.address,
             value: amount,
             tokenPrice: rate,
+            referenceCurrency,
             usdEqual: rate * amount,
             chartData: [],
             transactions: [],

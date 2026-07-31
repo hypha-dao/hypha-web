@@ -14,6 +14,8 @@ import {
   isHiddenToken,
   isHyphaToken,
   HYPHA_PRICE_USD,
+  isEpartsToken,
+  EPARTS_PRICE_EUR,
 } from '@hypha-platform/core/client';
 import {
   tokenBackingVaultImplementationAbi,
@@ -341,6 +343,10 @@ export async function GET(
       // HYPHA sells at a contract-fixed rate, so it overrides any feed price.
       if (isHyphaToken(tokenAddress)) {
         return HYPHA_PRICE_USD;
+      }
+      // EPARTS is a €1 participation, so its terms override any feed price.
+      if (isEpartsToken(tokenAddress)) {
+        return EPARTS_PRICE_EUR;
       }
       const marketPrice = prices[tokenAddress] ?? 0;
       if (marketPrice > 0) {

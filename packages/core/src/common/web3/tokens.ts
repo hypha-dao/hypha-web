@@ -32,6 +32,26 @@ export function isHyphaToken(address?: string | null): boolean {
   return address.toLowerCase() === HYPHA_TOKEN_ADDRESS.toLowerCase();
 }
 
+/** Hypha Energy Participations (EPARTS) — ownership ERC-20 on Base. */
+export const EPARTS_TOKEN_ADDRESS =
+  '0x5d3394CAa6D09214aB86CF048e39dea058eC1921' as const;
+
+/**
+ * One EPARTS is a €1 participation in Hypha Energy's assets, so its value comes
+ * from the participation terms rather than a market. Use this instead of a price
+ * feed — EPARTS is not listed on CoinGecko and would otherwise resolve to 0.
+ */
+export const EPARTS_PRICE_EUR = 1;
+
+/** Currency label shown alongside {@link EPARTS_PRICE_EUR}. */
+export const EPARTS_REFERENCE_CURRENCY = 'EUR';
+
+/** True when `address` is the EPARTS token. */
+export function isEpartsToken(address?: string | null): boolean {
+  if (!address) return false;
+  return address.toLowerCase() === EPARTS_TOKEN_ADDRESS.toLowerCase();
+}
+
 export const TOKENS: Token[] = [
   {
     symbol: 'USDC',

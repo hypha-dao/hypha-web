@@ -3,7 +3,11 @@ import {
   TOKENS,
   HYPHA_PRICE_USD,
   HYPHA_TOKEN_ADDRESS,
+  EPARTS_PRICE_EUR,
+  EPARTS_REFERENCE_CURRENCY,
+  EPARTS_TOKEN_ADDRESS,
   isCatalogueToken,
+  isEpartsToken,
   isHyphaToken,
   isKnownTreasuryToken,
 } from '../tokens';
@@ -70,5 +74,31 @@ describe('isHyphaToken', () => {
     expect(isHyphaToken(null)).toBe(false);
     expect(isHyphaToken(undefined)).toBe(false);
     expect(isHyphaToken('')).toBe(false);
+  });
+});
+
+describe('EPARTS pricing', () => {
+  it('values one participation at 1 EUR', () => {
+    expect(EPARTS_PRICE_EUR).toBe(1);
+    expect(EPARTS_REFERENCE_CURRENCY).toBe('EUR');
+  });
+
+  it('is not a catalogue token, so it needs the explicit override', () => {
+    expect(isCatalogueToken(EPARTS_TOKEN_ADDRESS)).toBe(false);
+  });
+});
+
+describe('isEpartsToken', () => {
+  it('matches the EPARTS address in any casing', () => {
+    expect(isEpartsToken(EPARTS_TOKEN_ADDRESS)).toBe(true);
+    expect(isEpartsToken(EPARTS_TOKEN_ADDRESS.toLowerCase())).toBe(true);
+    expect(isEpartsToken(EPARTS_TOKEN_ADDRESS.toUpperCase())).toBe(true);
+  });
+
+  it('returns false for other or empty addresses', () => {
+    expect(isEpartsToken(HYPHA_TOKEN_ADDRESS)).toBe(false);
+    expect(isEpartsToken(null)).toBe(false);
+    expect(isEpartsToken(undefined)).toBe(false);
+    expect(isEpartsToken('')).toBe(false);
   });
 });
