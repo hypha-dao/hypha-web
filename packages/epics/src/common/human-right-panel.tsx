@@ -3175,8 +3175,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const spaceChatRoomId = space?.chatRoomId?.trim() ?? null;
       const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim() ?? null;
 
+      const openMentionInCurrentRoom = () => {
+        openHumanChatPanel();
+        setActiveTab('chat');
+        setScrollToEventId(eventId);
+      };
+
+      // Same room (or single-room inbox with no fromRoomId): just switch + scroll.
+      if (!targetRoom || targetRoom === current) {
+        openMentionInCurrentRoom();
+        return;
+      }
+
       if (
-        targetRoom &&
         spaceChatRoomId &&
         targetRoom === spaceChatRoomId &&
         spaceSlug &&
@@ -3185,86 +3196,49 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (mode === 'coherence') {
           exitCoherenceChat();
         }
-        openHumanChatPanel();
-        setActiveTab('chat');
-        setScrollToEventId(eventId);
+        openMentionInCurrentRoom();
         return;
       }
 
-      if (
-        targetRoom &&
-        targetRoom !== current &&
-        typeof window !== 'undefined'
-      ) {
-        const signalTarget = await resolveSignalThreadByMatrixRoom(
-          targetRoom,
-          async () => authTokenRef.current,
+      if (typeof window === 'undefined') {
+        setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
+        return;
+      }
+
+      // Aggregated Mentions: resolve signal/coherence rooms via cache + API.
+      const signalTarget = await resolveSignalThreadByMatrixRoom(
+        targetRoom,
+        async () => authTokenRef.current,
+      );
+      if (signalTarget) {
+        rememberRoomToCoherenceSession(
+          signalTarget.roomId,
+          signalTarget.signalSlug,
+          signalTarget.signalTitle,
+          signalTarget.spaceSlug,
         );
-        if (signalTarget) {
-          rememberRoomToCoherenceSession(
-            signalTarget.roomId,
-            signalTarget.signalSlug,
-            signalTarget.signalTitle,
-            signalTarget.spaceSlug,
-          );
 
-          if (pathSlug === signalTarget.spaceSlug) {
-            openCoherenceChat(
-              signalTarget.roomId,
-              signalTarget.signalTitle,
-              signalTarget.signalSlug,
-            );
-            openHumanChatPanel();
-            setActiveTab('chat');
-            setScrollToEventId(eventId);
-            return;
-          }
-
-          router.push(
-            `/${lang}/dho/${signalTarget.spaceSlug}?signal=${encodeURIComponent(
-              signalTarget.signalSlug,
-            )}&msg=${encodeURIComponent(eventId)}`,
-          );
-          openHumanChatPanel();
-          setActiveTab('chat');
-          return;
-        }
-
-        if (spaceChatRoomId && targetRoom === spaceChatRoomId) {
-          let slug =
-            window.sessionStorage
-              .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
-              ?.trim() ?? null;
-          if (!slug) {
-            const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
-            slug = fromLs ?? null;
-          }
-          if (!slug && spaceSlug) {
-            slug = spaceSlug;
-          }
-          if (slug) {
-            router.push(
-              `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
-            );
-            openHumanChatPanel();
-            setActiveTab('chat');
-            return;
-          }
-        }
-
-        const coherence = readRoomToCoherenceSession(targetRoom);
-        if (coherence.slug) {
+        if (pathSlug === signalTarget.spaceSlug) {
           openCoherenceChat(
-            targetRoom,
-            coherence.title || 'Conversation',
-            coherence.slug,
+            signalTarget.roomId,
+            signalTarget.signalTitle,
+            signalTarget.signalSlug,
           );
-          openHumanChatPanel();
-          setActiveTab('chat');
-          setScrollToEventId(eventId);
+          openMentionInCurrentRoom();
           return;
         }
 
+        router.push(
+          `/${lang}/dho/${signalTarget.spaceSlug}?signal=${encodeURIComponent(
+            signalTarget.signalSlug,
+          )}&msg=${encodeURIComponent(eventId)}`,
+        );
+        openHumanChatPanel();
+        setActiveTab('chat');
+        return;
+      }
+
+      if (spaceChatRoomId && targetRoom === spaceChatRoomId) {
         let slug =
           window.sessionStorage
             .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
@@ -3272,6 +3246,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (!slug) {
           const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
           slug = fromLs ?? null;
+        }
+        if (!slug && spaceSlug) {
+          slug = spaceSlug;
         }
         if (slug) {
           router.push(
@@ -3281,12 +3258,37 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           setActiveTab('chat');
           return;
         }
-
-        setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
       }
 
-      setActiveTab('chat');
-      setScrollToEventId(eventId);
+      const coherence = readRoomToCoherenceSession(targetRoom);
+      if (coherence.slug) {
+        openCoherenceChat(
+          targetRoom,
+          coherence.title || 'Conversation',
+          coherence.slug,
+        );
+        openMentionInCurrentRoom();
+        return;
+      }
+
+      let slug =
+        window.sessionStorage
+          .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
+          ?.trim() ?? null;
+      if (!slug) {
+        const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
+        slug = fromLs ?? null;
+      }
+      if (slug) {
+        router.push(`/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`);
+        openHumanChatPanel();
+        setActiveTab('chat');
+        return;
+      }
+
+      // Do not fall through into the current (often space) room — that showed
+      // the welcome timeline under the "could not resolve" banner.
+      setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
     },
     [
       roomId,
