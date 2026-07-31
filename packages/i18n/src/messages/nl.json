@@ -1754,8 +1754,8 @@
     "escrowDepositApproving": "Goedkeuren...",
     "escrowDepositInsufficientWallet": "Uw portemonneesaldo is lager dan het vereiste bedrag.",
     "pipelineEnabled": "Deal-pipeline",
-    "pipelineEnabledDescription": "Schakel een Kanban deal-pipeline in voor deze space. Standaard uit.",
-    "mySpacesSupport": "Maak een space of open er een waar je al lid van bent."
+    "pipelineEnabledDescription": "Schakel een Kanban deal-pipeline in voor deze ruimte. Standaard uit.",
+    "mySpacesSupport": "Maak een ruimte of open er een waar je al lid van bent."
   },
   "AgreementFlow": {
     "labels": {
@@ -4364,13 +4364,13 @@
     "quickActionsTitle": "Snelle acties",
     "inviteMembers": "Leden",
     "recentActivityTitle": "Recente activiteit",
-    "recentActivityDescription": "Laatste voorstellen en overeenkomsten in deze space.",
+    "recentActivityDescription": "Laatste voorstellen en overeenkomsten in deze ruimte.",
     "noRecentActivity": "Nog geen recente governance-activiteit.",
     "statusOnVoting": "In stemming",
     "statusAccepted": "Geaccepteerd",
     "statusRejected": "Afgewezen",
     "holdingsTitle": "Saldi",
-    "holdingsDescription": "Tokensaldi en space-assets."
+    "holdingsDescription": "Tokensaldi en ruimte-assets."
   },
   "SelectActionIntents": {
     "lead": "Wat wil je doen?",
@@ -4378,11 +4378,11 @@
     "mint": "Tokens uitgeven",
     "vote": "Stemmen wijzigen",
     "member": "Leden en toegang",
-    "space": "Space instellen"
+    "space": "Ruimte instellen"
   },
   "Landing": {
     "brand": "Hypha",
-    "headline": "Spaces die samen beslissen, financieren en groeien.",
+    "headline": "Ruimtes die samen beslissen, financieren en groeien.",
     "support": "De rustige werkruimte voor collectieve actie.",
     "ctaEnter": "Binnenkomen",
     "ctaExplore": "Netwerk verkennen"

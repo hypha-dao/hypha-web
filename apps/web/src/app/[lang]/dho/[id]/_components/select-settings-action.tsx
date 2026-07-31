@@ -65,6 +65,7 @@ export const SelectSettingsAction = ({
       title: t('actions.spaceConfiguration.title'),
       description: t('actions.spaceConfiguration.description'),
       href: 'space-configuration',
+      intents: ['space' as const],
       icon: <LayoutDashboard className="craft-icon" strokeWidth={1.5} />,
     },
     {
@@ -72,6 +73,7 @@ export const SelectSettingsAction = ({
       title: t('actions.spaceTransparencyConfiguration.title'),
       description: t('actions.spaceTransparencyConfiguration.description'),
       href: 'create/space-settings-transparency',
+      intents: ['space' as const],
       icon: <Eye className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
     },
@@ -80,6 +82,7 @@ export const SelectSettingsAction = ({
       title: t('actions.addSpace.title'),
       description: t('actions.addSpace.description'),
       href: 'space/create',
+      intents: ['space' as const],
       icon: <FolderPlus className="craft-icon" strokeWidth={1.5} />,
     },
     {
@@ -87,6 +90,7 @@ export const SelectSettingsAction = ({
       title: t('actions.activateSpaces.title'),
       description: t('actions.activateSpaces.description'),
       href: 'create/activate-spaces',
+      intents: ['space' as const],
       baseTab: 'agreements',
       icon: <Rocket className="craft-icon" strokeWidth={1.5} />,
     },
@@ -96,6 +100,7 @@ export const SelectSettingsAction = ({
       title: t('actions.votingMethod.title'),
       description: t('actions.votingMethod.description'),
       href: 'create/change-voting-method',
+      intents: ['vote' as const],
       icon: <Zap className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
@@ -106,6 +111,7 @@ export const SelectSettingsAction = ({
       title: t('actions.entryMethod.title'),
       description: t('actions.entryMethod.description'),
       href: 'create/change-entry-method',
+      intents: ['member' as const],
       icon: <DoorOpen className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
@@ -125,6 +131,7 @@ export const SelectSettingsAction = ({
       title: t('actions.membershipExit.title'),
       description: t('actions.membershipExit.description'),
       href: 'create/membership-exit',
+      intents: ['member' as const],
       icon: <LogOut className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
@@ -134,6 +141,7 @@ export const SelectSettingsAction = ({
       title: t('actions.spaceToSpaceMembership.title'),
       description: t('actions.spaceToSpaceMembership.description'),
       href: 'create/space-to-space-membership',
+      intents: ['member' as const],
       icon: <Link2 className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
@@ -143,6 +151,7 @@ export const SelectSettingsAction = ({
       title: t('actions.changeSpaceDelegate.title'),
       description: t('actions.changeSpaceDelegate.description'),
       href: 'create/change-space-delegate',
+      intents: ['vote' as const],
       icon: <UserRound className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
@@ -153,6 +162,7 @@ export const SelectSettingsAction = ({
       title: t('actions.issueNewToken.title'),
       description: t('actions.issueNewToken.description'),
       href: 'create/issue-new-token',
+      intents: ['mint' as const, 'pay' as const],
       icon: <Coins className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired,
     },
@@ -162,6 +172,7 @@ export const SelectSettingsAction = ({
       title: t('actions.updateIssuedToken.title'),
       description: t('actions.updateIssuedToken.description'),
       href: 'create/update-issued-token',
+      intents: ['mint' as const, 'pay' as const],
       icon: <Workflow className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired,
     },
@@ -170,6 +181,7 @@ export const SelectSettingsAction = ({
       title: t('actions.mintTokensToSpaceTreasury.title'),
       description: t('actions.mintTokensToSpaceTreasury.description'),
       href: 'create/mint-tokens-to-space-treasury',
+      intents: ['mint' as const, 'pay' as const],
       icon: <Download className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired,
     },
@@ -178,6 +190,7 @@ export const SelectSettingsAction = ({
       title: t('actions.tokenBurning.title'),
       description: t('actions.tokenBurning.description'),
       href: 'create/token-burning',
+      intents: ['mint' as const, 'pay' as const],
       icon: <Flame className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired,
     },
@@ -187,6 +200,7 @@ export const SelectSettingsAction = ({
       title: t('actions.tokenBackingVault.title'),
       description: t('actions.tokenBackingVault.description'),
       href: 'create/token-backing-vault',
+      intents: ['mint' as const, 'pay' as const],
       icon: <Vault className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
@@ -196,6 +210,7 @@ export const SelectSettingsAction = ({
       title: t('actions.spaceTokenPurchase.title'),
       description: t('actions.spaceTokenPurchase.description'),
       href: 'create/space-token-purchase',
+      intents: ['mint' as const, 'pay' as const],
       icon: <ShoppingBag className="craft-icon" strokeWidth={1.5} />,
       disabled: isPaymentExpired,
     },
@@ -204,6 +219,7 @@ export const SelectSettingsAction = ({
       title: t('actions.buyHyphaTokensRewards.title'),
       description: t('actions.buyHyphaTokensRewards.description'),
       href: 'create/buy-hypha-tokens',
+      intents: ['mint' as const, 'pay' as const],
       icon: <Sparkles className="craft-icon" strokeWidth={1.5} />,
     },
     {
@@ -211,6 +227,7 @@ export const SelectSettingsAction = ({
       title: t('actions.depositFunds.title'),
       description: t('actions.depositFunds.description'),
       icon: <Wallet className="craft-icon" strokeWidth={1.5} />,
+      intents: ['pay' as const],
       baseTab: 'treasury',
       onAction: () => {
         fundWallet();
@@ -225,6 +242,7 @@ export const SelectSettingsAction = ({
             title: t('actions.enableEnergyCommunity.title'),
             description: t('actions.enableEnergyCommunity.description'),
             href: 'create/enable-energy-community',
+            intents: ['space' as const],
             baseTab: 'agreements',
             icon: <Zap className="craft-icon" strokeWidth={1.5} />,
             disabled: isPaymentExpired,
@@ -239,6 +257,7 @@ export const SelectSettingsAction = ({
             title: t('actions.energySharing.title'),
             description: t('actions.energySharing.description'),
             href: 'create/energy-sharing',
+            intents: ['space' as const],
             baseTab: 'agreements',
             icon: <Zap className="craft-icon" strokeWidth={1.5} />,
             disabled: isPaymentExpired,
@@ -249,6 +268,7 @@ export const SelectSettingsAction = ({
             title: t('actions.registerEnergySource.title'),
             description: t('actions.registerEnergySource.description'),
             href: 'create/register-energy-source',
+            intents: ['space' as const],
             baseTab: 'agreements',
             icon: <Zap className="craft-icon" strokeWidth={1.5} />,
             disabled: isPaymentExpired,
@@ -259,6 +279,7 @@ export const SelectSettingsAction = ({
             title: t('actions.addEnergyMember.title'),
             description: t('actions.addEnergyMember.description'),
             href: 'create/add-energy-member',
+            intents: ['space' as const],
             baseTab: 'agreements',
             icon: <Zap className="craft-icon" strokeWidth={1.5} />,
             disabled: isPaymentExpired,
@@ -269,6 +290,7 @@ export const SelectSettingsAction = ({
             title: t('actions.changeEnergyOptimization.title'),
             description: t('actions.changeEnergyOptimization.description'),
             href: 'create/change-energy-optimization',
+            intents: ['space' as const],
             baseTab: 'agreements',
             icon: <Zap className="craft-icon" strokeWidth={1.5} />,
             disabled: isPaymentExpired,
@@ -279,6 +301,7 @@ export const SelectSettingsAction = ({
             title: t('actions.whitelistEnergySettlement.title'),
             description: t('actions.whitelistEnergySettlement.description'),
             href: 'create/whitelist-energy-settlement',
+            intents: ['space' as const],
             baseTab: 'agreements',
             icon: <Zap className="craft-icon" strokeWidth={1.5} />,
             disabled: isPaymentExpired,
@@ -290,6 +313,7 @@ export const SelectSettingsAction = ({
       title: t('actions.integrateSmartContractInSpace.title'),
       description: t('actions.integrateSmartContractInSpace.description'),
       href: 'https://hypha.services/',
+      intents: ['space' as const],
       icon: <Code2 className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       target: '_blank',
@@ -302,6 +326,7 @@ export const SelectSettingsAction = ({
         'actions.exploreExtensionsMarketplaceComingSoon.description',
       ),
       href: '#',
+      intents: ['space' as const],
       icon: <Puzzle className="craft-icon" strokeWidth={1.5} />,
       baseTab: 'agreements',
       disabled: true,
@@ -312,6 +337,7 @@ export const SelectSettingsAction = ({
       title: t('actions.hyphaEnergy.title'),
       description: t('actions.hyphaEnergy.description'),
       href: 'https://hypha.energy',
+      intents: ['space' as const],
       icon: <HyphaEnergyIcon className="craft-icon" />,
       baseTab: 'agreements',
       target: '_blank',
@@ -351,45 +377,9 @@ export const SelectSettingsAction = ({
       noResultsLabel={t('noMenusFound')}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
-        const pathKey = action.href ?? '';
-        const intents = (() => {
-          if (pathKey.includes('voting') || pathKey.includes('delegate')) {
-            return ['vote' as const];
-          }
-          if (
-            pathKey.includes('entry') ||
-            pathKey.includes('membership') ||
-            pathKey.includes('space-to-space')
-          ) {
-            return ['member' as const];
-          }
-          if (
-            pathKey.includes('token') ||
-            pathKey.includes('mint') ||
-            pathKey.includes('burn') ||
-            pathKey.includes('vault') ||
-            pathKey.includes('buy-hypha')
-          ) {
-            return ['mint' as const, 'pay' as const];
-          }
-          if (pathKey.includes('deposit') || (!pathKey && action.onAction)) {
-            return ['pay' as const];
-          }
-          if (
-            pathKey.includes('space-configuration') ||
-            pathKey.includes('transparency') ||
-            pathKey.includes('activate') ||
-            pathKey.includes('space/create') ||
-            pathKey.includes('energy')
-          ) {
-            return ['space' as const];
-          }
-          return ['space' as const];
-        })();
         return {
           ...action,
           href,
-          intents,
           disabled:
             action.disabled ||
             (isActionDisabled && action.href !== 'https://hypha.energy'),
