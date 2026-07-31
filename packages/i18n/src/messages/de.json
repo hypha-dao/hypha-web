@@ -631,6 +631,16 @@
       "visitSpace": "Space besuchen",
       "searchSpaces": "Spaces durchsuchen",
       "noSpacesFound": "Keine Spaces gefunden"
+    },
+    "navigation": {
+      "individuals": "Personen",
+      "memberSpaces": "Mitglieds-Spaces",
+      "agents": "Agenten",
+      "noIndividuals": "Noch keine Personen",
+      "noMemberSpaces": "Noch keine Mitglieds-Spaces",
+      "noAgents": "Noch keine Agenten mobilisiert",
+      "unnamedMember": "Mitglied",
+      "loading": "Wird geladen…"
     }
   },
   "AgreementsTab": {

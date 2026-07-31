@@ -610,6 +610,16 @@
       "visitSpace": "Посети простор",
       "searchSpaces": "Пребарувај простори",
       "noSpacesFound": "Не се пронајдени простори"
+    },
+    "navigation": {
+      "individuals": "Поединци",
+      "memberSpaces": "Членски простори",
+      "agents": "Агенти",
+      "noIndividuals": "Сè уште нема поединци",
+      "noMemberSpaces": "Сè уште нема членски простори",
+      "noAgents": "Сè уште нема мобилизирани агенти",
+      "unnamedMember": "Член",
+      "loading": "Се вчитува…"
     }
   },
   "AgreementsTab": {

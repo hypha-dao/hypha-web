@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
 import { sampleAccentHex } from './space-accent-utils';
+import { EcosystemMembershipModules } from './ecosystem-membership-modules';
 import type { VisibleSpace } from './types';
 import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
 
@@ -413,15 +414,18 @@ export function EcosystemNavigationMainPanel({
           onTabChange={setActiveTab}
           tabs={tabs}
           beforeTabsContent={
-            <header className="craft-page-header">
-              <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
-                <span>{t('ecosystem')}</span>
-                <span className="text-3 font-normal text-muted-foreground">
-                  {format.number(ecosystemSpaceCount)}
-                </span>
-              </h1>
-              <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
-            </header>
+            <div className="flex w-full flex-col gap-4">
+              <header className="craft-page-header">
+                <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
+                  <span>{t('ecosystem')}</span>
+                  <span className="text-3 font-normal text-muted-foreground">
+                    {format.number(ecosystemSpaceCount)}
+                  </span>
+                </h1>
+                <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
+              </header>
+              <EcosystemMembershipModules spaceSlug={selectedSpaceSlug} />
+            </div>
           }
           visualizationClassName="min-h-0"
         />

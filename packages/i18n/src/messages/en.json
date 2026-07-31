@@ -630,6 +630,16 @@
       "visitSpace": "Visit Space",
       "searchSpaces": "Search spaces",
       "noSpacesFound": "No spaces found"
+    },
+    "navigation": {
+      "individuals": "Individuals",
+      "memberSpaces": "Member Spaces",
+      "agents": "Agents",
+      "noIndividuals": "No individual members yet",
+      "noMemberSpaces": "No member spaces yet",
+      "noAgents": "No agents mobilized yet",
+      "unnamedMember": "Member",
+      "loading": "Loading…"
     }
   },
   "AgreementsTab": {

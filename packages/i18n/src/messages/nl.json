@@ -630,6 +630,16 @@
       "visitSpace": "Bezoek Ruimte",
       "searchSpaces": "Zoek ruimtes",
       "noSpacesFound": "Geen ruimtes gevonden"
+    },
+    "navigation": {
+      "individuals": "Individuen",
+      "memberSpaces": "Lidruimtes",
+      "agents": "Agenten",
+      "noIndividuals": "Nog geen individuele leden",
+      "noMemberSpaces": "Nog geen lidruimtes",
+      "noAgents": "Nog geen agenten gemobiliseerd",
+      "unnamedMember": "Lid",
+      "loading": "Laden…"
     }
   },
   "AgreementsTab": {

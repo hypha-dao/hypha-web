@@ -170,7 +170,11 @@ export {
 } from './onboarding-wallet-handoff';
 export {
   ONBOARDING_MOBILIZED_SCOPE,
+  getAgentAvatarInitials,
+  readMobilizedAiAgents,
   recordMobilizedAiAgentsForOnboarding,
+  subscribeMobilizedAiAgents,
+  tagGroupAccentClass,
   transferMobilizedAiAgentsToSpace,
 } from './ai-agent-competencies';
 export {

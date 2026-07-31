@@ -629,6 +629,16 @@
       "visitSpace": "Besøk rommet",
       "searchSpaces": "Søk etter rom",
       "noSpacesFound": "Ingen rom funnet"
+    },
+    "navigation": {
+      "individuals": "Individer",
+      "memberSpaces": "Medlemsrom",
+      "agents": "Agenter",
+      "noIndividuals": "Ingen individuelle medlemmer ennå",
+      "noMemberSpaces": "Ingen medlemsrom ennå",
+      "noAgents": "Ingen agenter mobilisert ennå",
+      "unnamedMember": "Medlem",
+      "loading": "Laster…"
     }
   },
   "AgreementsTab": {
