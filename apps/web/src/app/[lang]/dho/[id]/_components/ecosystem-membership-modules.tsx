@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import {
@@ -11,7 +11,10 @@ import {
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 
-const VISIBLE_PREVIEW_COUNT = 8;
+const AVATAR_SIZE_PX = 32;
+const AVATAR_OVERLAP_PX = 8;
+const OVERFLOW_BADGE_RESERVE_PX = 40;
+const MAX_VISIBLE_PREVIEW_COUNT = 8;
 
 type MembershipPreview = {
   id: string;
@@ -25,22 +28,53 @@ type EcosystemMembershipModulesProps = {
   spaceSlug: string;
 };
 
-function MembershipStack({
-  members,
-  emptyLabel,
-}: {
-  members: MembershipPreview[];
-  emptyLabel: string;
-}) {
-  if (members.length === 0) {
-    return <p className="craft-meta">{emptyLabel}</p>;
+function fitVisibleAvatarCount(containerWidth: number, total: number): number {
+  if (total <= 0 || containerWidth <= 0) return 0;
+
+  for (
+    let count = Math.min(total, MAX_VISIBLE_PREVIEW_COUNT);
+    count >= 1;
+    count -= 1
+  ) {
+    const stackWidth =
+      AVATAR_SIZE_PX + (count - 1) * (AVATAR_SIZE_PX - AVATAR_OVERLAP_PX);
+    const badgeWidth = count < total ? OVERFLOW_BADGE_RESERVE_PX : 0;
+    if (stackWidth + badgeWidth <= containerWidth) {
+      return count;
+    }
   }
 
-  const visible = members.slice(0, VISIBLE_PREVIEW_COUNT);
+  return 1;
+}
+
+function MembershipStack({ members }: { members: MembershipPreview[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(
+    Math.min(members.length, MAX_VISIBLE_PREVIEW_COUNT),
+  );
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      setVisibleCount(fitVisibleAvatarCount(el.clientWidth, members.length));
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [members.length]);
+
+  const visible = members.slice(0, visibleCount);
   const overflow = members.length - visible.length;
 
   return (
-    <div className="flex min-h-8 items-center">
+    <div
+      ref={containerRef}
+      className="flex min-h-8 min-w-0 items-center overflow-hidden"
+    >
       <div className="flex -space-x-2">
         {visible.map((member) =>
           member.accentClassName ? (
@@ -55,7 +89,7 @@ function MembershipStack({
           ) : (
             <Avatar
               key={member.id}
-              className="h-8 w-8 rounded-full border-2 border-background-2 shadow-sm"
+              className="h-8 w-8 shrink-0 rounded-full border-2 border-background-2 shadow-sm"
               title={member.label}
             >
               <AvatarImage
@@ -71,7 +105,7 @@ function MembershipStack({
         )}
       </div>
       {overflow > 0 ? (
-        <span className="ms-2 text-1 font-medium text-muted-foreground">
+        <span className="ms-2 shrink-0 text-1 font-medium text-muted-foreground">
           +{overflow}
         </span>
       ) : null}
@@ -82,20 +116,24 @@ function MembershipStack({
 function MembershipModuleCard({
   label,
   members,
-  emptyLabel,
 }: {
   label: string;
   members: MembershipPreview[];
-  emptyLabel: string;
 }) {
   return (
-    <div className="craft-card px-3 py-2.5">
+    <div className="craft-card min-w-0 overflow-hidden px-3 py-2.5">
       <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <MembershipStack members={members} emptyLabel={emptyLabel} />
+      <MembershipStack members={members} />
     </div>
   );
+}
+
+function membershipGridClassName(count: number): string {
+  if (count <= 1) return 'grid gap-3 grid-cols-1';
+  if (count === 2) return 'grid gap-3 sm:grid-cols-2';
+  return 'grid gap-3 sm:grid-cols-3';
 }
 
 export function EcosystemMembershipModules({
@@ -158,6 +196,28 @@ export function EcosystemMembershipModules({
     });
   }, [agentRefreshEpoch, spaceSlug, tCoherence]);
 
+  const modules = useMemo(
+    () =>
+      [
+        {
+          key: 'individuals' as const,
+          label: t('navigation.individuals'),
+          members: individuals,
+        },
+        {
+          key: 'memberSpaces' as const,
+          label: t('navigation.memberSpaces'),
+          members: memberSpaces,
+        },
+        {
+          key: 'agents' as const,
+          label: t('navigation.agents'),
+          members: agents,
+        },
+      ].filter((module) => module.members.length > 0),
+    [agents, individuals, memberSpaces, t],
+  );
+
   if (isLoading && individuals.length === 0 && memberSpaces.length === 0) {
     return (
       <div
@@ -166,7 +226,10 @@ export function EcosystemMembershipModules({
         aria-live="polite"
       >
         {(['individuals', 'memberSpaces', 'agents'] as const).map((key) => (
-          <div key={key} className="craft-card px-3 py-2.5">
+          <div
+            key={key}
+            className="craft-card min-w-0 overflow-hidden px-3 py-2.5"
+          >
             <p className="mb-2 text-1 font-medium uppercase tracking-wide text-muted-foreground">
               {t(`navigation.${key}`)}
             </p>
@@ -177,23 +240,19 @@ export function EcosystemMembershipModules({
     );
   }
 
+  if (modules.length === 0) {
+    return null;
+  }
+
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      <MembershipModuleCard
-        label={t('navigation.individuals')}
-        members={individuals}
-        emptyLabel={t('navigation.noIndividuals')}
-      />
-      <MembershipModuleCard
-        label={t('navigation.memberSpaces')}
-        members={memberSpaces}
-        emptyLabel={t('navigation.noMemberSpaces')}
-      />
-      <MembershipModuleCard
-        label={t('navigation.agents')}
-        members={agents}
-        emptyLabel={t('navigation.noAgents')}
-      />
+    <div className={membershipGridClassName(modules.length)}>
+      {modules.map((module) => (
+        <MembershipModuleCard
+          key={module.key}
+          label={module.label}
+          members={module.members}
+        />
+      ))}
     </div>
   );
 }
