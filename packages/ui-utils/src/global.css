@@ -198,7 +198,7 @@
   --color-action: oklch(0.55 0.12 176);
   --color-action-foreground: oklch(0.35 0.09 178);
   --color-action-light: var(--action-light);
-  --color-action-light-foreground: var(--action-light);
+  --color-action-light-foreground: var(--color-action-foreground);
 
   /* Border Radius — airy content surfaces; tight chrome via --radius-chrome */
   --radius-sm: 6px;

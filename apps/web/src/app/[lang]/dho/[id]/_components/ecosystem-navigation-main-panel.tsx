@@ -263,23 +263,28 @@ export function EcosystemNavigationMainPanel({
         value: 'nested-spaces',
         label: t('tabs.nestedSpaces'),
         content: (
-          <div className="w-full px-1 py-1 sm:px-2 sm:py-2">
+          <div className="w-full">
             {hierarchyData ? (
-              <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
-                {canVisitSpace && visitSpaceHref ? (
-                  <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center pt-1">
-                    <div className="pointer-events-auto inline-flex max-w-[min(96vw,28rem)] items-center gap-1.5 rounded-lg border border-border/70 bg-background-2 py-1 pe-1 ps-2.5">
-                      <span
-                        aria-hidden
-                        className="me-0.5 h-3.5 w-0.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: selectedSpaceAccent }}
-                      />
-                      <span
-                        className="min-w-0 truncate text-2 font-medium tracking-tight text-foreground"
+              <div className="craft-card overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-border/70 px-3 py-2.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="h-3.5 w-0.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: selectedSpaceAccent }}
+                    />
+                    <div className="min-w-0">
+                      <p
+                        className="truncate text-2 font-medium tracking-tight text-foreground"
                         title={selectedSpaceTitle}
                       >
                         {selectedSpaceTitle}
-                      </span>
+                      </p>
+                      <p className="craft-meta truncate">{t('diagram.hint')}</p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    {canVisitSpace && visitSpaceHref ? (
                       <Tooltip delayDuration={80}>
                         <TooltipTrigger asChild>
                           <Button
@@ -299,41 +304,46 @@ export function EcosystemNavigationMainPanel({
                           {t('visibleSpaces.visitSpace')}
                         </TooltipContent>
                       </Tooltip>
-                      {canAddSpace && addSpaceHref ? (
-                        <Tooltip delayDuration={80}>
-                          <TooltipTrigger asChild>
-                            <Button
-                              asChild
-                              variant="ghost"
-                              colorVariant="neutral"
-                              size="icon"
-                              className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
-                              aria-label={t('visibleSpaces.addSpace')}
-                            >
-                              <Link href={addSpaceHref}>
-                                <PlusIcon />
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t('visibleSpaces.addSpace')}
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : null}
-                    </div>
+                    ) : null}
+                    {canAddSpace && addSpaceHref ? (
+                      <Tooltip delayDuration={80}>
+                        <TooltipTrigger asChild>
+                          <Button
+                            asChild
+                            variant="ghost"
+                            colorVariant="neutral"
+                            size="icon"
+                            className={`h-7 w-7 min-h-7 min-w-7 ${APP_CHROME_SUBTLE_SQUARE_RADIUS}`}
+                            aria-label={t('visibleSpaces.addSpace')}
+                          >
+                            <Link href={addSpaceHref}>
+                              <PlusIcon />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t('visibleSpaces.addSpace')}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
                   </div>
-                ) : null}
-                <SpaceVisualization
-                  data={hierarchyData}
-                  currentSpaceId={currentSpace?.id}
-                  rootAccentHex={rootSpaceAccent}
-                  enableHoverActions={false}
-                  onVisibleSpacesChange={handleVisibleSpacesChange}
-                />
+                </div>
+                <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-18rem))] px-2 pb-2 pt-1 sm:px-3 sm:pb-3">
+                  <SpaceVisualization
+                    data={hierarchyData}
+                    currentSpaceId={currentSpace?.id}
+                    rootAccentHex={rootSpaceAccent}
+                    enableHoverActions={false}
+                    showNodeLabels
+                    ariaLabel={t('diagram.ariaLabel')}
+                    onVisibleSpacesChange={handleVisibleSpacesChange}
+                  />
+                </div>
               </div>
             ) : (
-              <div className="flex min-h-[16rem] items-center justify-center text-2 text-muted-foreground">
-                {t('comingSoon.spaceToSpaceVisualization')}
+              <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
+                <div className="craft-empty-mark" aria-hidden />
+                <p className="craft-meta text-center">{t('diagram.empty')}</p>
               </div>
             )}
           </div>
@@ -343,9 +353,11 @@ export function EcosystemNavigationMainPanel({
         value: 'space-to-space',
         label: t('tabs.spaceToSpace'),
         content: (
-          <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-2 text-muted-foreground">
+          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
             <div className="craft-empty-mark" aria-hidden />
-            <p>{t('comingSoon.spaceToSpaceVisualization')}</p>
+            <p className="craft-meta text-center">
+              {t('comingSoon.spaceToSpaceVisualization')}
+            </p>
           </div>
         ),
       },
@@ -353,9 +365,11 @@ export function EcosystemNavigationMainPanel({
         value: 'values-flows',
         label: t('tabs.valuesFlows'),
         content: (
-          <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-2 text-muted-foreground">
+          <div className="craft-card flex min-h-[16rem] flex-col items-center justify-center gap-3 px-4 py-8">
             <div className="craft-empty-mark" aria-hidden />
-            <p>{t('comingSoon.valuesFlowsVisualization')}</p>
+            <p className="craft-meta text-center">
+              {t('comingSoon.valuesFlowsVisualization')}
+            </p>
           </div>
         ),
       },
@@ -377,7 +391,23 @@ export function EcosystemNavigationMainPanel({
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
-      {isLoading ? null : (
+      {isLoading ? (
+        <>
+          <header className="craft-page-header">
+            <h1 className="craft-page-title flex items-baseline gap-2 text-6 font-medium">
+              <span>{t('ecosystem')}</span>
+            </h1>
+          </header>
+          <div
+            className="craft-card flex min-h-[20rem] flex-col items-center justify-center gap-3 px-4 py-8"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="craft-empty-mark" aria-hidden />
+            <p className="craft-meta">{t('diagram.loading')}</p>
+          </div>
+        </>
+      ) : (
         <EcosystemNavigationShell
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -390,6 +420,7 @@ export function EcosystemNavigationMainPanel({
                   {format.number(ecosystemSpaceCount)}
                 </span>
               </h1>
+              <p className="craft-meta max-w-xl">{t('diagram.subtitle')}</p>
             </header>
           }
           visualizationClassName="min-h-0"

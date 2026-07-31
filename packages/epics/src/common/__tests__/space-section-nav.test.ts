@@ -17,18 +17,19 @@ describe('buildSpaceSectionNavItems', () => {
     const keys = items.map((i) => i.key);
     expect(keys).toEqual([
       'overview',
+      'coherence',
       'agreements',
-      'members',
       'treasury',
       'calendar',
-      'coherence',
+      'members',
       'rewards',
-      'banking',
       'ecosystem-navigation',
     ]);
     expect(items.every((i) => i.group === SPACE_SECTION_NAV_GROUP[i.key])).toBe(
       true,
     );
+    expect(SPACE_SECTION_NAV_GROUP.coherence).toBe('primary');
+    expect(SPACE_SECTION_NAV_GROUP.members).toBe('more');
     expect(items.find((i) => i.key === 'overview')?.active).toBe(true);
     expect(items.filter((i) => i.active)).toHaveLength(1);
   });
@@ -37,14 +38,12 @@ describe('buildSpaceSectionNavItems', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
       coherenceEnabled: false,
-      bankingEnabled: false,
       memoryEnabled: false,
       pipelineEnabled: false,
       energyEnabled: false,
     });
     const keys = items.map((i) => i.key);
     expect(keys).not.toContain('coherence');
-    expect(keys).not.toContain('banking');
     expect(keys).not.toContain('memory');
     expect(keys).not.toContain('pipeline');
     expect(keys).not.toContain('energy');
@@ -71,7 +70,6 @@ describe('buildSpaceSectionNavItems', () => {
       'energy',
       'rewards',
       'memory',
-      'banking',
       'ecosystem-navigation',
     ];
     for (const key of keys) {
@@ -87,5 +85,15 @@ describe('buildSpaceSectionNavItems', () => {
       expect(active[0]?.key).toBe(key);
       expect(active[0]?.href).toBe(`/en/dho/hypha/${key}`);
     }
+  });
+
+  it('treats /banking as treasury for active state', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pathname: '/en/dho/hypha/banking',
+    });
+    expect(items.map((i) => i.key)).not.toContain('banking');
+    expect(items.find((i) => i.key === 'treasury')?.active).toBe(true);
+    expect(items.filter((i) => i.active)).toHaveLength(1);
   });
 });

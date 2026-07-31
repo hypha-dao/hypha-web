@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-  useRef,
-  type ElementType,
-} from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -15,23 +8,7 @@ import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
-import {
-  CalendarDays,
-  HandCoins,
-  Coins,
-  FileCheck2,
-  House,
-  KanbanSquare,
-  Landmark,
-  Navigation,
-  Menu,
-  PanelLeftClose,
-  Radio,
-  Settings,
-  Sparkles,
-  UsersRound,
-  Zap,
-} from 'lucide-react';
+import { Menu, PanelLeftClose, Settings, Sparkles } from 'lucide-react';
 import {
   Category,
   Space,
@@ -74,6 +51,7 @@ import {
   buildSpaceSectionNavItems,
   type SpaceSectionNavKey,
 } from './space-section-nav';
+import { SPACE_SECTION_NAV_ICONS } from './space-section-nav-icons';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -608,24 +586,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [lang, pathname, spaceSlug],
   );
 
-  const sectionNavIcons: Record<SpaceSectionNavKey, ElementType> = useMemo(
-    () => ({
-      overview: House,
-      agreements: FileCheck2,
-      members: UsersRound,
-      treasury: Coins,
-      calendar: CalendarDays,
-      coherence: Radio,
-      pipeline: KanbanSquare,
-      energy: Zap,
-      rewards: HandCoins,
-      memory: MemoryIcon,
-      banking: Landmark,
-      'ecosystem-navigation': Navigation,
-    }),
-    [],
-  );
-
   const sectionNavItems = useMemo<NavItem[]>(() => {
     if (!spaceSlug) return [];
     const labelFor = (key: SpaceSectionNavKey): string => {
@@ -650,8 +610,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return tTreasury('rewardsSection.title');
         case 'memory':
           return tCoherence('spaceMemory');
-        case 'banking':
-          return tCommon('bankingTab');
         case 'ecosystem-navigation':
           return tSelectNavigation('ecosystem');
         default:
@@ -666,11 +624,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       energyEnabled: Boolean(spaceEnergyData?.enabled),
       coherenceEnabled: true,
       memoryEnabled: enableSpaceMemory,
-      bankingEnabled: true,
     }).map((item) => ({
       key: item.key === 'coherence' ? 'signals' : item.key,
       label: labelFor(item.key),
-      icon: sectionNavIcons[item.key],
+      icon: SPACE_SECTION_NAV_ICONS[item.key],
       href: item.href,
       active:
         item.key === 'agreements' ? isSectionActive('agreements') : item.active,
@@ -680,7 +637,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     isSectionActive,
     lang,
     pathname,
-    sectionNavIcons,
     space?.pipelineEnabled,
     spaceEnergyData?.enabled,
     spaceSlug,

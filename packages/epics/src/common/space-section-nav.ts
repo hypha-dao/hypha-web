@@ -11,7 +11,6 @@ export type SpaceSectionNavKey =
   | 'energy'
   | 'rewards'
   | 'memory'
-  | 'banking'
   | 'ecosystem-navigation';
 
 export type SpaceSectionNavGroup = 'primary' | 'more';
@@ -22,16 +21,15 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   SpaceSectionNavGroup
 > = {
   overview: 'primary',
+  coherence: 'primary',
   agreements: 'primary',
-  members: 'primary',
   treasury: 'primary',
   calendar: 'primary',
-  coherence: 'more',
+  members: 'more',
   pipeline: 'more',
   energy: 'more',
   rewards: 'more',
   memory: 'more',
-  banking: 'more',
   'ecosystem-navigation': 'more',
 };
 
@@ -51,8 +49,6 @@ export type BuildSpaceSectionNavItemsOptions = {
   /** When false, Signals/Coherence is omitted. Default true for AI rail parity. */
   coherenceEnabled?: boolean;
   memoryEnabled?: boolean;
-  /** Banking tab — included in More by default. */
-  bankingEnabled?: boolean;
 };
 
 function sectionHref(lang: string, spaceSlug: string, section: string): string {
@@ -76,6 +72,9 @@ function navItem(
 /**
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
+ *
+ * Primary order: Dashboard · Signals · Agreements · Treasury · Calendar
+ * More: Members + remaining gated/secondary sections
  */
 export function buildSpaceSectionNavItems({
   lang,
@@ -85,22 +84,27 @@ export function buildSpaceSectionNavItems({
   energyEnabled = false,
   coherenceEnabled = true,
   memoryEnabled = false,
-  bankingEnabled = true,
 }: BuildSpaceSectionNavItemsOptions): SpaceSectionNavItem[] {
-  const activeTab = getActiveTabFromPath(pathname);
+  const rawActiveTab = getActiveTabFromPath(pathname);
+  // Banking lives under Treasury — keep Treasury highlighted on /banking routes.
+  const activeTab = rawActiveTab === 'banking' ? 'treasury' : rawActiveTab;
   const isActive = (key: SpaceSectionNavKey) => activeTab === key;
 
   const items: SpaceSectionNavItem[] = [
     navItem('overview', lang, spaceSlug, isActive('overview')),
-    navItem('agreements', lang, spaceSlug, isActive('agreements')),
-    navItem('members', lang, spaceSlug, isActive('members')),
-    navItem('treasury', lang, spaceSlug, isActive('treasury')),
-    navItem('calendar', lang, spaceSlug, isActive('calendar')),
   ];
 
   if (coherenceEnabled) {
     items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
   }
+
+  items.push(
+    navItem('agreements', lang, spaceSlug, isActive('agreements')),
+    navItem('treasury', lang, spaceSlug, isActive('treasury')),
+    navItem('calendar', lang, spaceSlug, isActive('calendar')),
+    navItem('members', lang, spaceSlug, isActive('members')),
+  );
+
   if (pipelineEnabled) {
     items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
   }
@@ -112,9 +116,6 @@ export function buildSpaceSectionNavItems({
 
   if (memoryEnabled) {
     items.push(navItem('memory', lang, spaceSlug, isActive('memory')));
-  }
-  if (bankingEnabled) {
-    items.push(navItem('banking', lang, spaceSlug, isActive('banking')));
   }
 
   items.push(

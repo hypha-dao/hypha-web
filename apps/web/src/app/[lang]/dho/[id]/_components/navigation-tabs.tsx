@@ -15,22 +15,10 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  CalendarDays,
-  ChevronDown,
-  Coins,
-  FileCheck2,
-  HandCoins,
-  House,
-  KanbanSquare,
-  Landmark,
-  Navigation,
-  Radio,
-  UsersRound,
-  Zap,
-} from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  SPACE_SECTION_NAV_ICONS,
   buildSpaceSectionNavItems,
   getActiveTabFromPath,
   type SpaceSectionNavKey,
@@ -56,40 +44,6 @@ function isReducedMotionPreferred(): boolean {
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   );
 }
-
-function MemoryNavIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      className={className}
-      aria-hidden
-    >
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <path d="M9 4v16M15 4v16M4 9h16M4 15h16" />
-    </svg>
-  );
-}
-
-const NAV_ICONS: Record<
-  SpaceSectionNavKey,
-  React.ComponentType<{ className?: string }>
-> = {
-  overview: House,
-  agreements: FileCheck2,
-  members: UsersRound,
-  treasury: Coins,
-  calendar: CalendarDays,
-  coherence: Radio,
-  pipeline: KanbanSquare,
-  energy: Zap,
-  rewards: HandCoins,
-  memory: MemoryNavIcon,
-  banking: Landmark,
-  'ecosystem-navigation': Navigation,
-};
 
 export function NavigationTabs({
   lang,
@@ -158,8 +112,6 @@ export function NavigationTabs({
           return tTreasury('rewardsSection.title');
         case 'memory':
           return tCoherence('spaceMemory');
-        case 'banking':
-          return t('bankingTab');
         case 'ecosystem-navigation':
           return tNav('ecosystem');
         default:
@@ -179,7 +131,6 @@ export function NavigationTabs({
         energyEnabled: Boolean(spaceEnergy?.enabled),
         coherenceEnabled,
         memoryEnabled,
-        bankingEnabled: true,
       }),
     [
       coherenceEnabled,
@@ -195,7 +146,9 @@ export function NavigationTabs({
   const primary = items.filter((i) => i.group === 'primary');
   const more = items.filter((i) => i.group === 'more');
   const moreActive = more.some((i) => i.active);
-  const tabsValue = moreActive ? 'more' : activeTab;
+  // Banking is under Treasury — highlight Treasury on /banking routes.
+  const stripActiveTab = activeTab === 'banking' ? 'treasury' : activeTab;
+  const tabsValue = moreActive ? 'more' : stripActiveTab;
 
   return (
     <Tabs value={tabsValue} className="mt-4 w-full md:mt-5">
@@ -214,7 +167,7 @@ export function NavigationTabs({
           }
         >
           {primary.map(({ key, href }) => {
-            const Icon = NAV_ICONS[key];
+            const Icon = SPACE_SECTION_NAV_ICONS[key];
             return (
               <TabsTrigger asChild key={key} value={key} variant="ghost">
                 <Link
@@ -246,11 +199,12 @@ export function NavigationTabs({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
                 {more.map(({ key, href, active }) => {
-                  const Icon = NAV_ICONS[key];
+                  const Icon = SPACE_SECTION_NAV_ICONS[key];
                   return (
                     <DropdownMenuItem key={key} asChild>
                       <Link
                         href={href}
+                        aria-current={active ? 'page' : undefined}
                         className={cn(
                           'flex cursor-pointer items-center gap-2',
                           active && 'bg-accent-3 text-accent-12',

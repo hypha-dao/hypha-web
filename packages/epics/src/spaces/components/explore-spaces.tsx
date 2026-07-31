@@ -418,19 +418,17 @@ export function ExploreSpaces({
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-6 md:gap-8">
-      <header className="craft-page-header gap-2">
-        <Heading
-          size="7"
-          color="secondary"
-          weight="medium"
-          align="left"
-          className="craft-page-title flex flex-col text-left"
-        >
-          <span>{t('manySpaces')}</span>
-          <span>{t('oneVibrantNetwork')}</span>
-        </Heading>
-      </header>
+    <div className="flex min-w-0 flex-col gap-9">
+      <Heading
+        size="9"
+        color="secondary"
+        weight="medium"
+        align="center"
+        className="flex flex-col"
+      >
+        <span>{t('manySpaces')}</span>
+        <span>{t('oneVibrantNetwork')}</span>
+      </Heading>
 
       <div className="flex min-w-0 flex-col">
         {sharedHeader}

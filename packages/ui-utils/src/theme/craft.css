@@ -8,8 +8,9 @@
   /*
    * Theme fallback only (pages without a space accent scope).
    * Do NOT reference --space-accent here: custom properties resolve on the
-   * defining element, so :root would bake in default indigo and descendants
-   * would inherit that stale colour even inside [data-space-accent-scope].
+   * defining element, so :root would bake in default mycelium teal and
+   * descendants would inherit that stale colour even inside
+   * [data-space-accent-scope].
    * Wide white→solid→black mixes so adjacent donut slices stay distinct.
    * Default accent is mycelium teal (see theme/colors/accent.css).
    */

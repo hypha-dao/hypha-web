@@ -2,7 +2,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { LandingPage } from './_components/landing-page';
 
 type PageProps = {
-  params: Promise<{ lang: Locale; id: string }>;
+  params: Promise<{ lang: Locale }>;
 };
 
 export default async function Index(props: PageProps) {

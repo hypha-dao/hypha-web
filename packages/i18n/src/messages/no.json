@@ -18,7 +18,7 @@
     "signIn": "Logg inn for å bruke denne funksjonen.",
     "joinSpaceToUse": "Bli med i dette rommet for å bruke denne funksjonen.",
     "back": "Tilbake",
-    "home": "Oversikt",
+    "home": "Dashbord",
     "remove": "Fjern",
     "by": "av",
     "copyWalletAddress": "Kopier lommebokadresse",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Prøv igjen",
     "errorMaintenanceTitle": "Vi er snart tilbake!",
     "errorMaintenanceDescription": "Hypha tar en kort pause mens vi ruller ut oppdateringer. Vi er snart tilbake med spennende forbedringer på vei!",
-    "errorLoadOverviewTab": "Oi, noe gikk galt. Kunne ikke laste inn oversiktsfanen.",
+    "errorLoadOverviewTab": "Oi, noe gikk galt. Kunne ikke laste inn dashbordfanen.",
     "errorLoadMembersTab": "Oi, noe gikk galt. Kunne ikke laste inn medlemsfanen.",
     "errorLoadAgreementsTab": "Oi, noe gikk galt. Kunne ikke laste inn avtalefanen.",
     "errorLoadTreasuryTab": "Oi, noe gikk galt. Kunne ikke laste inn kassefanen.",
@@ -610,6 +610,13 @@
     "comingSoon": {
       "spaceToSpaceVisualization": "Visualisering av medlemskap mellom rom kommer snart",
       "valuesFlowsVisualization": "Visualisering av verdistrømmer kommer snart"
+    },
+    "diagram": {
+      "ariaLabel": "Kart over hierarki for nestede rom",
+      "loading": "Laster økosystemkart…",
+      "empty": "Ingen nestede rom å vise ennå",
+      "hint": "Klikk på et rom for å fokususere · klikk utenfor for å zoome ut",
+      "subtitle": "Utforsk hvordan rom er nestet i denne organisasjonen"
     },
     "visibleSpaces": {
       "nestedRoot": "Rot",
@@ -1309,13 +1316,14 @@
     "tokenPendingContractAddress": "Venter på adresse på kjeden (utfør forslaget om tokenutstedelse først)"
   },
   "Footer": {
-    "network": "NETTVERK",
-    "legal": "JURIDISK",
+    "network": "Nettverk",
+    "legal": "Juridisk",
     "hyphaServices": "Hypha-tjenester",
     "hyphaTokenomics": "Hypha-tokenomics",
     "licensingPolicy": "Lisensretningslinjer",
     "termsAndConditions": "Vilkår og betingelser",
-    "privacyPolicy": "Personvernerklæring"
+    "privacyPolicy": "Personvernerklæring",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {

@@ -18,7 +18,7 @@
     "signIn": "Meld u aan om deze functie te gebruiken.",
     "joinSpaceToUse": "Sluit u aan bij deze ruimte om deze functie te gebruiken.",
     "back": "Terug",
-    "home": "Overzicht",
+    "home": "Dashboard",
     "remove": "Verwijderen",
     "by": "door",
     "copyWalletAddress": "Walletadres kopiëren",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Probeer het opnieuw",
     "errorMaintenanceTitle": "We zijn zo terug!",
     "errorMaintenanceDescription": "Hypha neemt een korte pauze terwijl we updates uitrollen. We zijn snel terug met spannende verbeteringen op komst!",
-    "errorLoadOverviewTab": "Oeps, er is iets misgegaan. Kan het overzichtstabblad niet laden.",
+    "errorLoadOverviewTab": "Oeps, er is iets misgegaan. Kan het dashboardtabblad niet laden.",
     "errorLoadMembersTab": "Oeps, er is iets misgegaan. Kan het tabblad Leden niet laden.",
     "errorLoadAgreementsTab": "Oeps, er is iets misgegaan. Kan het tabblad Overeenkomsten niet laden.",
     "errorLoadTreasuryTab": "Oeps, er is iets misgegaan. Kan tabblad Treasury niet laden.",
@@ -611,6 +611,13 @@
     "comingSoon": {
       "spaceToSpaceVisualization": "Space-to-Space-visualisatie binnenkort beschikbaar",
       "valuesFlowsVisualization": "Waardenstromen-visualisatie binnenkort beschikbaar"
+    },
+    "diagram": {
+      "ariaLabel": "Kaart van geneste ruimtehiërarchie",
+      "loading": "Ecosysteemkaart laden…",
+      "empty": "Nog geen geneste ruimtes om te tonen",
+      "hint": "Klik op een ruimte om te focussen · klik buiten om uit te zoomen",
+      "subtitle": "Bekijk hoe ruimtes in deze organisatie genest zijn"
     },
     "visibleSpaces": {
       "nestedRoot": "Wortel",
@@ -1310,13 +1317,14 @@
     "tokenPendingContractAddress": "In afwachting van een on-chain-adres (voer eerst het issue-token-voorstel uit)"
   },
   "Footer": {
-    "network": "NETWERK",
-    "legal": "JURIDISCH",
+    "network": "Netwerk",
+    "legal": "Juridisch",
     "hyphaServices": "Hypha-diensten",
     "hyphaTokenomics": "Hypha-tokenomics",
     "licensingPolicy": "Licentiebeleid",
     "termsAndConditions": "Algemene voorwaarden",
-    "privacyPolicy": "Privacybeleid"
+    "privacyPolicy": "Privacybeleid",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {

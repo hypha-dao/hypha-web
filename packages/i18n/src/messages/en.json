@@ -18,7 +18,7 @@
     "signIn": "Please sign in to use this feature.",
     "joinSpaceToUse": "Please join this space to use this feature.",
     "back": "Back",
-    "home": "Overview",
+    "home": "Dashboard",
     "remove": "Remove",
     "by": "by",
     "copyWalletAddress": "Copy wallet address",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Try again",
     "errorMaintenanceTitle": "We'll Be Back Shortly!",
     "errorMaintenanceDescription": "Hypha is taking a short break while we roll out updates. We'll be back soon with exciting improvements on the way!",
-    "errorLoadOverviewTab": "Oops, something went wrong. Couldn't load overview tab.",
+    "errorLoadOverviewTab": "Oops, something went wrong. Couldn't load dashboard tab.",
     "errorLoadMembersTab": "Oops, something went wrong. Couldn't load members tab.",
     "errorLoadAgreementsTab": "Oops, something went wrong. Couldn't load agreements tab.",
     "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
@@ -611,6 +611,13 @@
     "comingSoon": {
       "spaceToSpaceVisualization": "Space-to-Space visualization coming soon",
       "valuesFlowsVisualization": "Values Flows visualization coming soon"
+    },
+    "diagram": {
+      "ariaLabel": "Nested spaces hierarchy map",
+      "loading": "Loading ecosystem map…",
+      "empty": "No nested spaces to show yet",
+      "hint": "Click a space to focus · click outside to zoom out",
+      "subtitle": "Explore how spaces nest in this organization"
     },
     "visibleSpaces": {
       "nestedRoot": "Root",
@@ -1310,13 +1317,14 @@
     "tokenPendingContractAddress": "Awaiting on-chain address (execute the issue-token proposal first)"
   },
   "Footer": {
-    "network": "NETWORK",
-    "legal": "LEGAL",
+    "network": "Network",
+    "legal": "Legal",
     "hyphaServices": "Hypha Services",
     "hyphaTokenomics": "Hypha Tokenomics",
-    "licensingPolicy": "Licensing policy",
+    "licensingPolicy": "Licensing Policy",
     "termsAndConditions": "Terms & Conditions",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy Policy",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {

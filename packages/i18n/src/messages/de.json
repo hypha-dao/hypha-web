@@ -18,7 +18,7 @@
     "signIn": "Bitte melden Sie sich an, um diese Funktion zu nutzen.",
     "joinSpaceToUse": "Bitte treten Sie diesem Space bei, um diese Funktion zu nutzen.",
     "back": "Zurück",
-    "home": "Startseite",
+    "home": "Dashboard",
     "remove": "Entfernen",
     "by": "von",
     "copyWalletAddress": "Wallet-Adresse kopieren",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Erneut versuchen",
     "errorMaintenanceTitle": "Wir sind gleich zurück!",
     "errorMaintenanceDescription": "Hypha macht eine kurze Pause, während wir Updates ausrollen. Wir sind bald mit spannenden Verbesserungen zurück!",
-    "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Überblick-Tab konnte nicht geladen werden.",
+    "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Dashboard-Tab konnte nicht geladen werden.",
     "errorLoadMembersTab": "Ups, etwas ist schiefgelaufen. Der Mitglieder-Tab konnte nicht geladen werden.",
     "errorLoadAgreementsTab": "Ups, etwas ist schiefgelaufen. Der Vereinbarungen-Tab konnte nicht geladen werden.",
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
@@ -612,6 +612,13 @@
     "comingSoon": {
       "spaceToSpaceVisualization": "Space-zu-Space-Visualisierung bald verfügbar",
       "valuesFlowsVisualization": "Wertfluss-Visualisierung bald verfügbar"
+    },
+    "diagram": {
+      "ariaLabel": "Karte der verschachtelten Spaces",
+      "loading": "Ökosystemkarte wird geladen…",
+      "empty": "Noch keine verschachtelten Spaces vorhanden",
+      "hint": "Space anklicken zum Fokussieren · außerhalb klicken zum Herauszoomen",
+      "subtitle": "Sehen Sie, wie Spaces in dieser Organisation verschachtelt sind"
     },
     "visibleSpaces": {
       "nestedRoot": "Wurzel",
@@ -1311,13 +1318,14 @@
     "tokenPendingContractAddress": "On-Chain-Adresse ausstehend (Issue-Token-Vorschlag zuerst ausführen)"
   },
   "Footer": {
-    "network": "NETZWERK",
-    "legal": "RECHTLICHES",
+    "network": "Netzwerk",
+    "legal": "Rechtliches",
     "hyphaServices": "Hypha Services",
     "hyphaTokenomics": "Hypha Tokenomics",
     "licensingPolicy": "Lizenzierungsrichtlinie",
     "termsAndConditions": "Allgemeine Geschäftsbedingungen",
-    "privacyPolicy": "Datenschutzrichtlinie"
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
@@ -4342,7 +4350,7 @@
   "OverviewOps": {
     "needsAttentionTitle": "Handlungsbedarf",
     "needsAttentionDescription": "Offene Abstimmungen und wartende Aufgaben.",
-    "noOpenVotesTitle": "Aktuell nichts Offen",
+    "noOpenVotesTitle": "Aktuell nichts offen",
     "noOpenVotesDescription": "Laufende Abstimmungen erscheinen hier.",
     "createProposal": "Vorschlag erstellen",
     "viewAllOpenVotes": "Alle {count} offenen Abstimmungen",

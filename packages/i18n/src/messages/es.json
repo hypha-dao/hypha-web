@@ -18,7 +18,7 @@
     "signIn": "Inicie sesión para utilizar esta función.",
     "joinSpaceToUse": "Únase a este espacio para utilizar esta función.",
     "back": "Atrás",
-    "home": "Inicio",
+    "home": "Panel",
     "remove": "Eliminar",
     "by": "por",
     "copyWalletAddress": "Copiar dirección de la billetera",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Reintentar",
     "errorMaintenanceTitle": "¡Volvemos enseguida!",
     "errorMaintenanceDescription": "Hypha está haciendo una breve pausa mientras desplegamos actualizaciones. ¡Volvemos pronto con mejoras emocionantes!",
-    "errorLoadOverviewTab": "Ups, algo salió mal. No se pudo cargar la pestaña de resumen.",
+    "errorLoadOverviewTab": "Ups, algo salió mal. No se pudo cargar la pestaña del panel.",
     "errorLoadMembersTab": "Ups, algo salió mal. No se pudo cargar la pestaña de miembros.",
     "errorLoadAgreementsTab": "Ups, algo salió mal. No se pudo cargar la pestaña de acuerdos.",
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
@@ -1383,6 +1383,13 @@
       "spaceToSpaceVisualization": "Próximamente visualización espacio-espacio",
       "valuesFlowsVisualization": "Próximamente visualización de flujos de valores"
     },
+    "diagram": {
+      "ariaLabel": "Mapa de jerarquía de espacios anidados",
+      "loading": "Cargando mapa del ecosistema…",
+      "empty": "Aún no hay espacios anidados para mostrar",
+      "hint": "Haz clic en un espacio para enfocarlo · haz clic fuera para alejar",
+      "subtitle": "Explora cómo se anidan los espacios en esta organización"
+    },
     "visibleSpaces": {
       "nestedRoot": "Raíz",
       "nestedIn": "Anidado en {parent}",
@@ -1517,13 +1524,14 @@
     "tokenPendingContractAddress": "Dirección on-chain pendiente (ejecuta primero la propuesta de emisión de token)"
   },
   "Footer": {
-    "network": "RED",
-    "legal": "LEGAL",
+    "network": "Red",
+    "legal": "Legal",
     "hyphaServices": "Servicios Hypha",
     "hyphaTokenomics": "Tokenómica Hypha",
     "licensingPolicy": "Política de licencias",
     "termsAndConditions": "Términos y condiciones",
-    "privacyPolicy": "Política de privacidad"
+    "privacyPolicy": "Política de privacidad",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
