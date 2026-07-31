@@ -2615,8 +2615,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!hasSpaceActivityAccess) return;
 
     let cancelled = false;
-    const { joinRoom, createRoom, getRoomMessages, loadRoomHistory, client } =
-      matrixRef.current;
+    const { joinRoom, createRoom, loadRoomHistory, client } = matrixRef.current;
 
     const initRoom = async () => {
       setIsJoining(true);
@@ -2662,6 +2661,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             throw new Error('Failed to join canonical space chat room');
           }
           if (blockSpaceChatForMembership) {
+            if (!cancelled) setIsJoining(false);
             return;
           }
           const { roomId: newRoomId } = await createRoom(`space-${spaceSlug}`);
@@ -2689,34 +2689,36 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         joinedRef.current = spaceSlug;
         setRoomId(targetRoomId);
 
-        const historyResult = await loadRoomHistory(targetRoomId);
-        if (cancelled) return;
-        setHasMoreOlderMessages(historyResult.hasMoreOlder);
-        const existing = getRoomMessages(targetRoomId);
-        if (existing && !cancelled) {
-          setMessages(
-            existing.map((m) =>
-              toUIMessage(
-                m,
-                currentUserIdRef.current,
-                resolveMemberLabelRef.current,
-                currentUserAvatarUrlRef.current,
-                resolveMemberAvatarRef.current,
-                targetRoomId,
-                matrixRef.current.client ?? null,
-                formatSignalTeamNoticeRef.current,
-                systemSenderLabelRef.current,
-              ),
-            ),
-          );
-        }
+        // Paint immediately from the live timeline — don't block the UI on
+        // multi-batch scrollback (up to ~500 events + stagger delays).
+        syncRoomMessages(targetRoomId);
+        setHasMoreOlderMessages(true);
+        setIsJoining(false);
+
+        void (async () => {
+          try {
+            const historyResult = await loadRoomHistory(targetRoomId, {
+              pageSize: 30,
+              maxBatches: 1,
+            });
+            if (cancelled) return;
+            setHasMoreOlderMessages(historyResult.hasMoreOlder);
+            syncRoomMessages(targetRoomId);
+          } catch (historyErr) {
+            if (!cancelled) {
+              console.warn(
+                '[HumanRightPanel] Background space chat history load failed:',
+                historyErr,
+              );
+            }
+          }
+        })();
       } catch (err) {
         if (!cancelled) {
           console.error('[HumanRightPanel] Failed to join room:', err);
           setError('Failed to join chat room');
+          setIsJoining(false);
         }
-      } finally {
-        if (!cancelled) setIsJoining(false);
       }
     };
 
@@ -2736,6 +2738,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     hasSpaceActivityAccess,
     space?.chatRoomId,
     blockSpaceChatForMembership,
+    syncRoomMessages,
   ]);
 
   // Track previous mode to detect actual transitions (not initial mount)
@@ -2842,67 +2845,75 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled) return;
         setRoomId(targetRoomId);
-        let historyResult = await matrixRef.current.loadRoomHistory(
-          targetRoomId,
-        );
-        if (cancelled) return;
 
-        try {
-          let description = coherenceDescription?.trim() || null;
-          if (!description && coherenceSlug?.trim()) {
-            const signal = await getCoherenceBySlug({
-              slug: coherenceSlug.trim(),
-            });
-            description = signal?.description?.trim() || null;
-          }
-          if (description) {
-            await upsertSignalDescriptionInRoom({
-              roomId: targetRoomId,
-              description,
-              mode: 'safe',
-              matrix: {
-                joinRoom: (id) => matrixRef.current.joinRoom(id),
-                loadRoomHistory: (id) => matrixRef.current.loadRoomHistory(id),
-                getRoomMessages: (id) => matrixRef.current.getRoomMessages(id),
-                sendMessage: (params) => matrixRef.current.sendMessage(params),
-                editRoomMessage: (params) =>
-                  matrixRef.current.editRoomMessage(params),
-              },
-            });
+        // First paint from the live timeline; history + description seed
+        // continue in the background so the spinner does not wait on them.
+        syncRoomMessages(targetRoomId);
+        setHasMoreOlderMessages(true);
+        setIsJoining(false);
+
+        void (async () => {
+          try {
+            const historyResult = await matrixRef.current.loadRoomHistory(
+              targetRoomId,
+              { pageSize: 30, maxBatches: 1 },
+            );
+            if (cancelled) return;
+            setHasMoreOlderMessages(historyResult.hasMoreOlder);
+            syncRoomMessages(targetRoomId);
+
+            try {
+              let description = coherenceDescription?.trim() || null;
+              if (!description && coherenceSlug?.trim()) {
+                const signal = await getCoherenceBySlug({
+                  slug: coherenceSlug.trim(),
+                });
+                description = signal?.description?.trim() || null;
+              }
+              if (description) {
+                await upsertSignalDescriptionInRoom({
+                  roomId: targetRoomId,
+                  description,
+                  mode: 'safe',
+                  matrix: {
+                    joinRoom: (id) => matrixRef.current.joinRoom(id),
+                    loadRoomHistory: (id) =>
+                      matrixRef.current.loadRoomHistory(id, {
+                        pageSize: 30,
+                        maxBatches: 1,
+                      }),
+                    getRoomMessages: (id) =>
+                      matrixRef.current.getRoomMessages(id),
+                    sendMessage: (params) =>
+                      matrixRef.current.sendMessage(params),
+                    editRoomMessage: (params) =>
+                      matrixRef.current.editRoomMessage(params),
+                  },
+                });
+                if (!cancelled) {
+                  await matrixRef.current.loadRoomHistory(targetRoomId, {
+                    force: true,
+                    pageSize: 30,
+                    maxBatches: 1,
+                  });
+                  syncRoomMessages(targetRoomId);
+                }
+              }
+            } catch (seedError) {
+              console.warn(
+                '[HumanRightPanel] Failed to seed signal description in chat:',
+                seedError,
+              );
+            }
+          } catch (historyErr) {
             if (!cancelled) {
-              historyResult = await matrixRef.current.loadRoomHistory(
-                targetRoomId,
-                { force: true },
+              console.warn(
+                '[HumanRightPanel] Background coherence chat history load failed:',
+                historyErr,
               );
             }
           }
-        } catch (seedError) {
-          console.warn(
-            '[HumanRightPanel] Failed to seed signal description in chat:',
-            seedError,
-          );
-        }
-
-        if (cancelled) return;
-        setHasMoreOlderMessages(historyResult.hasMoreOlder);
-        const existing = matrixRef.current.getRoomMessages(targetRoomId);
-        if (existing) {
-          setMessages(
-            existing.map((m) =>
-              toUIMessage(
-                m,
-                currentUserIdRef.current,
-                resolveMemberLabelRef.current,
-                currentUserAvatarUrlRef.current,
-                resolveMemberAvatarRef.current,
-                targetRoomId,
-                matrixRef.current.client ?? null,
-                formatSignalTeamNoticeRef.current,
-                systemSenderLabelRef.current,
-              ),
-            ),
-          );
-        }
+        })();
       } catch (err) {
         if (!cancelled) {
           console.error(
@@ -2910,9 +2921,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             err,
           );
           setError(t('failedToJoinRoom'));
+          setIsJoining(false);
         }
-      } finally {
-        if (!cancelled) setIsJoining(false);
       }
     };
 
@@ -2932,6 +2942,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMatrixAvailable,
     isMatrixAuthenticated,
     blockSpaceChatForMembership,
+    syncRoomMessages,
   ]);
 
   // Register listener for incoming messages
