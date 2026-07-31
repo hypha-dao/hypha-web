@@ -37,6 +37,7 @@ import {
   type OnboardingDiscoveryMode,
 } from '@hypha-platform/epics';
 import { OnboardingAiFullPage } from './onboarding-ai-full-page';
+import '../../_shared/landing-marketing.css';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
@@ -438,58 +439,52 @@ export function OnboardingAdventurePage({
   }
   return (
     <div className="flex flex-col">
-      <section className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 md:pb-20 md:pt-10">
+      <section
+        data-landing-marketing
+        className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 text-white md:pb-20 md:pt-10"
+      >
+        {/* Always-on midnight plane — matches marketing website, independent of app theme */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent-2/50 via-background to-background [.dark_&]:hidden"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,var(--landing-navy-mid),var(--landing-navy-deep)_72%)]"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-35 [background-image:radial-gradient(circle,oklch(0.55_0.12_278_/_0.1)_1px,transparent_1px)] [background-size:36px_36px] [.dark_&]:hidden"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,var(--landing-navy-glow),transparent_68%)]"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,oklch(0.24_0.08_280),oklch(0.08_0.03_265)_72%)] [.dark_&]:block"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,oklch(0.2_0.07_292_/_0.55),transparent_68%)] [.dark_&]:block"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 hidden opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px] [.dark_&]:block"
+          className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px]"
         />
         <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
           <header className="flex flex-col items-center gap-6 text-center md:gap-8">
-            <p className="inline-block rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm [.dark_&]:border-info-8/30 [.dark_&]:bg-black/35 [.dark_&]:text-white [.dark_&]:shadow-[0_0_32px_-10px_var(--color-info-9)]">
+            <p className="inline-block rounded-full border border-[color-mix(in_oklab,var(--landing-accent)_40%,transparent)] bg-black/35 px-5 py-1.5 text-2 font-medium text-white shadow-[0_0_32px_-10px_var(--landing-accent)] backdrop-blur-sm">
               {t('heroPill.build')}{' '}
               <span
                 key={rotatingHeroTitleWords[heroTitleWordIndex]}
-                className="font-semibold text-info-10 transition-opacity duration-300"
+                className="font-semibold text-[var(--landing-accent)] transition-opacity duration-300"
               >
                 {rotatingHeroTitleWords[heroTitleWordIndex]}
               </span>
               {t('heroPill.together')}
             </p>
-            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-accent-11 md:text-3 [.dark_&]:text-info-11">
+            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-[var(--landing-accent-muted)] md:text-3">
               {t('heroEyebrow')}
             </p>
             <h1 className="mx-auto max-w-4xl [font-family:var(--font-family-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
-              <span className="block text-foreground [.dark_&]:text-white">
-                {t('titleLine1')}
-              </span>
-              <span className="mt-1 block text-accent-11">
+              <span className="block text-white">{t('titleLine1')}</span>
+              <span className="landing-marketing-title-accent mt-1 block">
                 {t('titleLine2')}
               </span>
             </h1>
-            <p className="mx-auto max-w-2xl text-4 font-normal leading-relaxed text-foreground/75 md:text-5 [.dark_&]:text-white/90">
+            <p className="mx-auto max-w-2xl text-4 font-normal leading-relaxed text-white/90 md:text-5">
               {t('subtitle')}
             </p>
           </header>
 
           {onboardingHeroEnabled ? (
             <section className="relative mx-auto w-full max-w-5xl">
-              <div className="relative overflow-hidden rounded-xl border border-border/70 bg-background-2">
+              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] backdrop-blur-md">
                 <AiPanelChatBar
                   variant="hero"
                   value={aiPrompt}

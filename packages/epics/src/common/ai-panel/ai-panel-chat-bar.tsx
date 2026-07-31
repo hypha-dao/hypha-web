@@ -585,8 +585,9 @@ export function AiPanelChatBar({
   const iconButtonClass = isHero
     ? 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35'
     : 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
+  /* Prefer accent-9 so landing-marketing scope can remap to website royal blue. */
   const heroSendButtonClass =
-    'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-accent-9 p-0 text-white shadow-[0_8px_20px_-8px_var(--color-accent-9)] transition-all hover:bg-accent-10 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 [.dark_&]:bg-info-9 [.dark_&]:shadow-[0_8px_20px_-8px_var(--color-info-9)] [.dark_&]:hover:bg-info-10';
+    'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-accent-9 p-0 text-accent-contrast shadow-[0_8px_20px_-8px_var(--color-accent-9)] transition-all hover:bg-accent-10 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50';
 
   useEffect(() => {
     if (!canAttachDrafts && attachMenuOpen) {

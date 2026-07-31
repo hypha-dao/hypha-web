@@ -7,6 +7,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import '../_shared/landing-marketing.css';
 
 export function LandingPage({ lang }: { lang: Locale }) {
   const t = useTranslations('Landing');
@@ -20,43 +21,41 @@ export function LandingPage({ lang }: { lang: Locale }) {
   }, [isLoading, isAuthenticated, lang, router]);
 
   return (
-    <div className="relative min-h-[calc(100dvh-var(--menu-top-height,70px))] w-full overflow-hidden">
-      {/* Full-bleed atmospheric plane — cool mist + teal mycelium accent */}
+    <div
+      data-landing-marketing
+      className="relative min-h-[calc(100dvh-var(--menu-top-height,70px))] w-full overflow-hidden text-white"
+    >
+      {/* Midnight atmosphere — aligned with marketing website, not mycelium teal */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background: `
-            radial-gradient(120% 80% at 10% 0%, oklch(0.92 0.04 185 / 0.55), transparent 55%),
-            radial-gradient(90% 70% at 90% 20%, oklch(0.88 0.05 200 / 0.35), transparent 50%),
-            linear-gradient(180deg, var(--background-1), var(--background-2) 70%, var(--background-1))
+            radial-gradient(ellipse 85% 65% at 50% 22%, var(--landing-navy-mid), var(--landing-navy-deep) 72%),
+            radial-gradient(ellipse 55% 40% at 12% 80%, var(--landing-navy-glow), transparent 68%),
+            radial-gradient(ellipse 50% 35% at 90% 70%, color-mix(in oklab, var(--landing-accent) 18%, transparent), transparent 65%)
           `,
         }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] opacity-40"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 20% 40%, oklch(0.58 0.12 176 / 0.25) 0 1px, transparent 1px), radial-gradient(circle at 70% 60%, oklch(0.58 0.12 176 / 0.18) 0 1px, transparent 1px)',
-          backgroundSize: '48px 48px, 72px 72px',
-        }}
+        className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px]"
       />
 
       <div className="relative mx-auto flex min-h-[calc(100dvh-var(--menu-top-height,70px))] w-full max-w-container-xl flex-col justify-center px-5 py-16 md:px-8 md:py-24">
         <p
-          className="mb-4 text-5 font-semibold tracking-[-0.02em] text-accent-11 sm:text-6"
+          className="mb-4 text-5 font-semibold tracking-[-0.02em] text-[var(--landing-accent)] sm:text-6"
           style={{ fontFamily: 'var(--font-family-heading)' }}
         >
           {t('brand')}
         </p>
         <h1
-          className="max-w-[18ch] text-balance text-8 font-semibold tracking-[-0.02em] text-foreground sm:text-9"
+          className="max-w-[18ch] text-balance text-8 font-semibold tracking-[-0.02em] text-white sm:text-9"
           style={{ fontFamily: 'var(--font-family-heading)' }}
         >
           {t('headline')}
         </h1>
-        <p className="mt-4 max-w-[36ch] text-3 leading-relaxed text-muted-foreground">
+        <p className="mt-4 max-w-[36ch] text-3 leading-relaxed text-white/70">
           {t('support')}
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -78,7 +77,7 @@ export function LandingPage({ lang }: { lang: Locale }) {
             size="lg"
             variant="outline"
             colorVariant="neutral"
-            className="rounded-xl px-6"
+            className="rounded-xl border-white/25 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white"
           >
             <Link href={`/${lang}/network`}>{t('ctaExplore')}</Link>
           </Button>
