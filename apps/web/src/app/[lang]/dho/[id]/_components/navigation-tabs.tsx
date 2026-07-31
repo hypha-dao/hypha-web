@@ -207,7 +207,10 @@ export function NavigationTabs({
                         aria-current={active ? 'page' : undefined}
                         className={cn(
                           'flex cursor-pointer items-center gap-2',
-                          active && 'bg-accent-3 text-accent-12',
+                          // Space accent mirrors a light-mode ramp to `:root`; accent-3/12
+                          // pairs wash out in dark mode. Tint + foreground matches AI nav.
+                          active &&
+                            'bg-accent-9/18 text-foreground data-[highlighted]:bg-accent-9/25 data-[highlighted]:text-foreground',
                         )}
                       >
                         <Icon className="size-4 shrink-0" aria-hidden />
