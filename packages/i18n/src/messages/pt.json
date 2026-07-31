@@ -66,7 +66,7 @@
     "durationDays": "{count, plural, one {# dia} other {# dias}}",
     "spaceBannerRevealMeta": "Detalhes",
     "moreNav": "Mais",
-    "bankingTab": "Banking"
+    "bankingTab": "Banca"
   },
   "ModalAside": {
     "spaceSettings": "Definições do espaço",
@@ -1994,7 +1994,7 @@
       "decaySettings": "Configurações de deterioração",
       "fromWhitelist": "Da lista branca",
       "toWhitelist": "Para colocar na lista de permissões",
-      "mutualCredit": "Mutual Credit",
+      "mutualCredit": "Crédito mútuo",
       "moreDetails": "Detalhes da proposta",
       "showDetails": "Mostrar",
       "hideDetails": "Ocultar"
@@ -4339,22 +4339,22 @@
   },
   "OverviewOps": {
     "needsAttentionTitle": "Precisa de atenção",
-    "needsAttentionDescription": "Open votes and items waiting on you.",
-    "noOpenVotesTitle": "Nothing open right now",
-    "noOpenVotesDescription": "When a proposal is on voting, it shows up here.",
+    "needsAttentionDescription": "Votações abertas e itens à sua espera.",
+    "noOpenVotesTitle": "Nada aberto neste momento",
+    "noOpenVotesDescription": "Quando uma proposta estiver em votação, ela aparece aqui.",
     "createProposal": "Criar proposta",
-    "viewAllOpenVotes": "View all {count} open votes",
-    "untitledProposal": "Untitled proposal",
+    "viewAllOpenVotes": "Ver todas as {count} votações abertas",
+    "untitledProposal": "Proposta sem título",
     "quickActionsTitle": "Ações rápidas",
-    "inviteMembers": "Members",
-    "recentActivityTitle": "Recent activity",
-    "recentActivityDescription": "Latest proposals and agreements in this space.",
-    "noRecentActivity": "No recent governance activity yet.",
-    "statusOnVoting": "On voting",
-    "statusAccepted": "Accepted",
-    "statusRejected": "Rejected",
+    "inviteMembers": "Membros",
+    "recentActivityTitle": "Atividade recente",
+    "recentActivityDescription": "Propostas e acordos mais recentes neste espaço.",
+    "noRecentActivity": "Ainda não há atividade recente de governança.",
+    "statusOnVoting": "Em votação",
+    "statusAccepted": "Aceita",
+    "statusRejected": "Rejeitada",
     "holdingsTitle": "Saldos",
-    "holdingsDescription": "Token balances and space assets."
+    "holdingsDescription": "Saldos de tokens e ativos do espaço."
   },
   "SelectActionIntents": {
     "lead": "O que deseja fazer?",

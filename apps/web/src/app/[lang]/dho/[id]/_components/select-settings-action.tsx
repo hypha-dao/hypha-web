@@ -351,9 +351,45 @@ export const SelectSettingsAction = ({
       noResultsLabel={t('noMenusFound')}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
+        const pathKey = action.href ?? '';
+        const intents = (() => {
+          if (pathKey.includes('voting') || pathKey.includes('delegate')) {
+            return ['vote' as const];
+          }
+          if (
+            pathKey.includes('entry') ||
+            pathKey.includes('membership') ||
+            pathKey.includes('space-to-space')
+          ) {
+            return ['member' as const];
+          }
+          if (
+            pathKey.includes('token') ||
+            pathKey.includes('mint') ||
+            pathKey.includes('burn') ||
+            pathKey.includes('vault') ||
+            pathKey.includes('buy-hypha')
+          ) {
+            return ['mint' as const, 'pay' as const];
+          }
+          if (pathKey.includes('deposit') || (!pathKey && action.onAction)) {
+            return ['pay' as const];
+          }
+          if (
+            pathKey.includes('space-configuration') ||
+            pathKey.includes('transparency') ||
+            pathKey.includes('activate') ||
+            pathKey.includes('space/create') ||
+            pathKey.includes('energy')
+          ) {
+            return ['space' as const];
+          }
+          return ['space' as const];
+        })();
         return {
           ...action,
           href,
+          intents,
           disabled:
             action.disabled ||
             (isActionDisabled && action.href !== 'https://hypha.energy'),

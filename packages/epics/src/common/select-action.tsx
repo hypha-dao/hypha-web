@@ -14,16 +14,15 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@hypha-platform/ui';
 import { Search } from 'lucide-react';
 
-/** Intent chips — map casual goals to actions by title/description keywords. */
-const INTENT_PRESETS: { id: string; keywords: string[] }[] = [
-  {
-    id: 'pay',
-    keywords: ['pay', 'expense', 'payment', 'deploy funds', 'transfer'],
-  },
-  { id: 'mint', keywords: ['mint', 'issue', 'token'] },
-  { id: 'vote', keywords: ['voting', 'vote', 'quorum', 'unity'] },
-  { id: 'member', keywords: ['member', 'entry', 'join', 'invite', 'delegate'] },
-  { id: 'space', keywords: ['space', 'activate', 'configure', 'settings'] },
+/** Stable intent ids — never match against translated title/description. */
+export type SelectActionIntentId = 'pay' | 'mint' | 'vote' | 'member' | 'space';
+
+const INTENT_PRESET_IDS: SelectActionIntentId[] = [
+  'pay',
+  'mint',
+  'vote',
+  'member',
+  'space',
 ];
 
 export type ActionProps = {
@@ -40,6 +39,8 @@ export type ActionProps = {
   target?: string;
   defaultDurationDays?: number;
   onAction?: () => void;
+  /** Locale-stable intent tags for filter chips. */
+  intents?: SelectActionIntentId[];
 };
 
 type SelectActionProps = {
@@ -58,6 +59,13 @@ type GroupedActions = {
   [key: string]: ActionProps[];
 };
 
+function actionMatchesIntent(
+  action: ActionProps,
+  intentId: SelectActionIntentId,
+): boolean {
+  return Boolean(action.intents?.includes(intentId));
+}
+
 export const SelectAction = ({
   isLoading,
   title,
@@ -71,16 +79,14 @@ export const SelectAction = ({
   const tCommon = useTranslations('Common');
   const tIntent = useTranslations('SelectActionIntents');
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [activeIntent, setActiveIntent] = React.useState<string | null>(null);
+  const [activeIntent, setActiveIntent] =
+    React.useState<SelectActionIntentId | null>(null);
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const intentChips = React.useMemo(() => {
     const enabled = (actions ?? []).filter((a) => !a.disabled && a.href);
-    return INTENT_PRESETS.filter((preset) =>
-      enabled.some((action) => {
-        const haystack = `${action.title} ${action.description}`.toLowerCase();
-        return preset.keywords.some((kw) => haystack.includes(kw));
-      }),
+    return INTENT_PRESET_IDS.filter((intentId) =>
+      enabled.some((action) => actionMatchesIntent(action, intentId)),
     ).slice(0, 5);
   }, [actions]);
 
@@ -88,15 +94,8 @@ export const SelectAction = ({
     () =>
       actions
         ?.filter((action) => {
-          if (activeIntent) {
-            const preset = INTENT_PRESETS.find((p) => p.id === activeIntent);
-            if (preset) {
-              const haystack =
-                `${action.title} ${action.description}`.toLowerCase();
-              if (!preset.keywords.some((kw) => haystack.includes(kw))) {
-                return false;
-              }
-            }
+          if (activeIntent && !actionMatchesIntent(action, activeIntent)) {
+            return false;
           }
           if (!normalizedSearch) return true;
           const haystack = [action.group, action.title, action.description]
@@ -142,23 +141,22 @@ export const SelectAction = ({
         <div className="flex flex-col gap-2">
           <p className="craft-meta">{tIntent('lead')}</p>
           <div className="flex flex-wrap gap-2">
-            {intentChips.map((chip) => {
-              const selected = activeIntent === chip.id;
+            {intentChips.map((chipId) => {
+              const selected = activeIntent === chipId;
               return (
                 <Button
-                  key={chip.id}
+                  key={chipId}
                   type="button"
+                  aria-pressed={selected}
                   size="sm"
                   variant={selected ? 'default' : 'outline'}
                   colorVariant={selected ? 'accent' : 'neutral'}
                   className="rounded-xl"
                   onClick={() =>
-                    setActiveIntent((prev) =>
-                      prev === chip.id ? null : chip.id,
-                    )
+                    setActiveIntent((prev) => (prev === chipId ? null : chipId))
                   }
                 >
-                  {tIntent(chip.id)}
+                  {tIntent(chipId)}
                 </Button>
               );
             })}

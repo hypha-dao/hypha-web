@@ -1,6 +1,4 @@
-import type { Locale } from '@hypha-platform/i18n';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
-import { getDhoPathEnergy } from './get-path-function';
 
 export type SpaceSectionNavKey =
   | 'overview'
@@ -45,7 +43,7 @@ export type SpaceSectionNavItem = {
 };
 
 export type BuildSpaceSectionNavItemsOptions = {
-  lang: Locale | string;
+  lang: string;
   spaceSlug: string;
   pathname: string;
   pipelineEnabled?: boolean;
@@ -59,6 +57,20 @@ export type BuildSpaceSectionNavItemsOptions = {
 
 function sectionHref(lang: string, spaceSlug: string, section: string): string {
   return `/${lang}/dho/${spaceSlug}/${section}`;
+}
+
+function navItem(
+  key: SpaceSectionNavKey,
+  lang: string,
+  spaceSlug: string,
+  active: boolean,
+): SpaceSectionNavItem {
+  return {
+    key,
+    href: sectionHref(lang, spaceSlug, key),
+    active,
+    group: SPACE_SECTION_NAV_GROUP[key],
+  };
 }
 
 /**
@@ -79,96 +91,40 @@ export function buildSpaceSectionNavItems({
   const isActive = (key: SpaceSectionNavKey) => activeTab === key;
 
   const items: SpaceSectionNavItem[] = [
-    {
-      key: 'overview',
-      href: sectionHref(lang, spaceSlug, 'overview'),
-      active: isActive('overview'),
-      group: 'primary',
-    },
-    {
-      key: 'agreements',
-      href: sectionHref(lang, spaceSlug, 'agreements'),
-      active: isActive('agreements'),
-      group: 'primary',
-    },
-    {
-      key: 'members',
-      href: sectionHref(lang, spaceSlug, 'members'),
-      active: isActive('members'),
-      group: 'primary',
-    },
-    {
-      key: 'treasury',
-      href: sectionHref(lang, spaceSlug, 'treasury'),
-      active: isActive('treasury'),
-      group: 'primary',
-    },
-    {
-      key: 'calendar',
-      href: sectionHref(lang, spaceSlug, 'calendar'),
-      active: isActive('calendar'),
-      group: 'primary',
-    },
+    navItem('overview', lang, spaceSlug, isActive('overview')),
+    navItem('agreements', lang, spaceSlug, isActive('agreements')),
+    navItem('members', lang, spaceSlug, isActive('members')),
+    navItem('treasury', lang, spaceSlug, isActive('treasury')),
+    navItem('calendar', lang, spaceSlug, isActive('calendar')),
   ];
 
   if (coherenceEnabled) {
-    items.push({
-      key: 'coherence',
-      href: sectionHref(lang, spaceSlug, 'coherence'),
-      active: isActive('coherence'),
-      group: 'more',
-    });
+    items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
   }
-
   if (pipelineEnabled) {
-    items.push({
-      key: 'pipeline',
-      href: sectionHref(lang, spaceSlug, 'pipeline'),
-      active: isActive('pipeline'),
-      group: 'more',
-    });
+    items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
   }
-
   if (energyEnabled) {
-    items.push({
-      key: 'energy',
-      href: getDhoPathEnergy(lang as Locale, spaceSlug),
-      active: isActive('energy'),
-      group: 'more',
-    });
+    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
   }
 
-  items.push({
-    key: 'rewards',
-    href: sectionHref(lang, spaceSlug, 'rewards'),
-    active: isActive('rewards'),
-    group: 'more',
-  });
+  items.push(navItem('rewards', lang, spaceSlug, isActive('rewards')));
 
   if (memoryEnabled) {
-    items.push({
-      key: 'memory',
-      href: sectionHref(lang, spaceSlug, 'memory'),
-      active: isActive('memory'),
-      group: 'more',
-    });
+    items.push(navItem('memory', lang, spaceSlug, isActive('memory')));
   }
-
   if (bankingEnabled) {
-    items.push({
-      key: 'banking',
-      href: sectionHref(lang, spaceSlug, 'banking'),
-      active: isActive('banking'),
-      group: 'more',
-    });
+    items.push(navItem('banking', lang, spaceSlug, isActive('banking')));
   }
 
-  items.push({
-    key: 'ecosystem-navigation',
-    href: sectionHref(lang, spaceSlug, 'ecosystem-navigation'),
-    active: isActive('ecosystem-navigation'),
-    group: 'more',
-  });
+  items.push(
+    navItem(
+      'ecosystem-navigation',
+      lang,
+      spaceSlug,
+      isActive('ecosystem-navigation'),
+    ),
+  );
 
   return items;
 }
