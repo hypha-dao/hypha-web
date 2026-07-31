@@ -21,6 +21,7 @@ import {
   SPACE_SECTION_NAV_ICONS,
   buildSpaceSectionNavItems,
   getActiveTabFromPath,
+  partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
   useMainColumnScrollY,
   useSpaceEnergy,
@@ -143,12 +144,15 @@ export function NavigationTabs({
     ],
   );
 
-  const primary = items.filter((i) => i.group === 'primary');
-  const more = items.filter((i) => i.group === 'more');
-  const moreActive = more.some((i) => i.active);
+  // Promote an active More item into the last primary slot so context stays visible.
+  const { primary, more } = React.useMemo(
+    () => partitionSpaceSectionNavForTabs(items),
+    [items],
+  );
   // Banking is under Treasury — highlight Treasury on /banking routes.
   const stripActiveTab = activeTab === 'banking' ? 'treasury' : activeTab;
-  const tabsValue = moreActive ? 'more' : stripActiveTab;
+  // After promotion the active key is always in primary, so Tabs can select it directly.
+  const tabsValue = stripActiveTab;
 
   return (
     <Tabs value={tabsValue} className="mt-4 w-full md:mt-5">
@@ -187,10 +191,7 @@ export function NavigationTabs({
                   type="button"
                   variant="ghost"
                   colorVariant="neutral"
-                  className={cn(
-                    'h-10 shrink-0 gap-1 px-3 text-2 font-medium',
-                    moreActive && 'bg-muted text-foreground',
-                  )}
+                  className="h-10 shrink-0 gap-1 px-3 text-2 font-medium"
                   aria-label={t('moreNav')}
                 >
                   {t('moreNav')}

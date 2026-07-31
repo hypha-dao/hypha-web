@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   SPACE_SECTION_NAV_GROUP,
   buildSpaceSectionNavItems,
+  partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
 } from '../space-section-nav';
 
@@ -95,5 +96,103 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.map((i) => i.key)).not.toContain('banking');
     expect(items.find((i) => i.key === 'treasury')?.active).toBe(true);
     expect(items.filter((i) => i.active)).toHaveLength(1);
+  });
+});
+
+describe('partitionSpaceSectionNavForTabs', () => {
+  it('keeps default primary/more when active is a primary key', () => {
+    const items = buildSpaceSectionNavItems(base);
+    const { primary, more } = partitionSpaceSectionNavForTabs(items);
+    expect(primary.map((i) => i.key)).toEqual([
+      'overview',
+      'coherence',
+      'agreements',
+      'treasury',
+      'calendar',
+    ]);
+    expect(more.map((i) => i.key)).toEqual([
+      'members',
+      'rewards',
+      'ecosystem-navigation',
+    ]);
+  });
+
+  it('promotes an active More item into the last primary slot', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pathname: '/en/dho/hypha/ecosystem-navigation',
+      memoryEnabled: true,
+    });
+    const { primary, more } = partitionSpaceSectionNavForTabs(items);
+
+    expect(primary.map((i) => i.key)).toEqual([
+      'overview',
+      'coherence',
+      'agreements',
+      'treasury',
+      'ecosystem-navigation',
+    ]);
+    expect(primary.at(-1)?.active).toBe(true);
+    expect(more.map((i) => i.key)).toEqual([
+      'calendar',
+      'members',
+      'rewards',
+      'memory',
+    ]);
+    expect(more.every((i) => !i.active)).toBe(true);
+  });
+
+  it('restores default grouping when navigating back to a primary key', () => {
+    const onEcosystem = partitionSpaceSectionNavForTabs(
+      buildSpaceSectionNavItems({
+        ...base,
+        pathname: '/en/dho/hypha/ecosystem-navigation',
+      }),
+    );
+    expect(onEcosystem.primary.map((i) => i.key)).toContain(
+      'ecosystem-navigation',
+    );
+    expect(onEcosystem.more.map((i) => i.key)).toContain('calendar');
+
+    const onOverview = partitionSpaceSectionNavForTabs(
+      buildSpaceSectionNavItems(base),
+    );
+    expect(onOverview.primary.map((i) => i.key)).toEqual([
+      'overview',
+      'coherence',
+      'agreements',
+      'treasury',
+      'calendar',
+    ]);
+    expect(onOverview.more.map((i) => i.key)).toContain('ecosystem-navigation');
+    expect(onOverview.more.map((i) => i.key)).not.toContain('calendar');
+  });
+
+  it('promotes gated More items when they are active and enabled', () => {
+    const { primary, more } = partitionSpaceSectionNavForTabs(
+      buildSpaceSectionNavItems({
+        ...base,
+        pathname: '/en/dho/hypha/pipeline',
+        pipelineEnabled: true,
+      }),
+    );
+    expect(primary.at(-1)?.key).toBe('pipeline');
+    expect(primary.at(-1)?.active).toBe(true);
+    expect(more.map((i) => i.key)).toContain('calendar');
+    expect(more.map((i) => i.key)).not.toContain('pipeline');
+  });
+
+  it('does not promote gated items that are omitted when disabled', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pathname: '/en/dho/hypha/overview',
+      pipelineEnabled: false,
+      energyEnabled: false,
+      memoryEnabled: false,
+    });
+    const { primary, more } = partitionSpaceSectionNavForTabs(items);
+    expect([...primary, ...more].map((i) => i.key)).not.toContain('pipeline');
+    expect([...primary, ...more].map((i) => i.key)).not.toContain('energy');
+    expect([...primary, ...more].map((i) => i.key)).not.toContain('memory');
   });
 });

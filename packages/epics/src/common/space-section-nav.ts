@@ -129,3 +129,48 @@ export function buildSpaceSectionNavItems({
 
   return items;
 }
+
+/**
+ * Partition space section nav for the main tab strip.
+ *
+ * Default primary/more grouping comes from {@link SPACE_SECTION_NAV_GROUP}.
+ * When the active section defaults to More, promote it into the last primary
+ * slot so the active section stays visible; the displaced primary item moves
+ * into More. When the active key is already a default-primary item, restore
+ * the default partition (no sticky promotion).
+ */
+export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
+  primary: SpaceSectionNavItem[];
+  more: SpaceSectionNavItem[];
+} {
+  const withDefaultGroups = items.map((item) => ({
+    ...item,
+    group: SPACE_SECTION_NAV_GROUP[item.key],
+  }));
+
+  const primaryDefaults = withDefaultGroups.filter(
+    (i) => i.group === 'primary',
+  );
+  const moreDefaults = withDefaultGroups.filter((i) => i.group === 'more');
+  const active = withDefaultGroups.find((i) => i.active);
+
+  if (!active || active.group === 'primary') {
+    return { primary: primaryDefaults, more: moreDefaults };
+  }
+
+  if (primaryDefaults.length === 0) {
+    return {
+      primary: [{ ...active, group: 'primary' }],
+      more: moreDefaults.filter((i) => i.key !== active.key),
+    };
+  }
+
+  const lastPrimary = primaryDefaults[primaryDefaults.length - 1]!;
+  return {
+    primary: [...primaryDefaults.slice(0, -1), { ...active, group: 'primary' }],
+    more: [
+      { ...lastPrimary, group: 'more' },
+      ...moreDefaults.filter((i) => i.key !== active.key),
+    ],
+  };
+}
