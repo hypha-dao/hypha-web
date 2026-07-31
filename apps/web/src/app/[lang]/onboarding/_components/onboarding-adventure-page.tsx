@@ -37,15 +37,16 @@ import {
   type OnboardingDiscoveryMode,
 } from '@hypha-platform/epics';
 import { OnboardingAiFullPage } from './onboarding-ai-full-page';
+import '../../_shared/landing-marketing.css';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
 
 const getNetworkPath = (lang: string) => `/${lang}/network`;
 const onboardingCardClass =
-  'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
+  'group h-full rounded-xl border border-border/70 bg-background-2 transition-[border-color,background-color] duration-200 hover:border-accent-8/50 hover:bg-background-3/40';
 const primaryCtaClass =
-  'h-10 w-full rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22';
+  'h-10 w-full rounded-xl border border-accent-9 bg-accent-9 text-accent-contrast transition-colors hover:bg-accent-10';
 const exchangeButtonBaseClass =
   'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EXCHANGE_LINKS = [
@@ -438,58 +439,52 @@ export function OnboardingAdventurePage({
   }
   return (
     <div className="flex flex-col">
-      <section className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 md:pb-20 md:pt-10">
+      <section
+        data-landing-marketing
+        className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 text-white md:pb-20 md:pt-10"
+      >
+        {/* Always-on midnight plane — matches marketing website, independent of app theme */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent-2/50 via-background to-background [.dark_&]:hidden"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,var(--landing-navy-mid),var(--landing-navy-deep)_72%)]"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-35 [background-image:radial-gradient(circle,oklch(0.55_0.12_278_/_0.1)_1px,transparent_1px)] [background-size:36px_36px] [.dark_&]:hidden"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,var(--landing-navy-glow),transparent_68%)]"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,oklch(0.24_0.08_280),oklch(0.08_0.03_265)_72%)] [.dark_&]:block"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,oklch(0.2_0.07_292_/_0.55),transparent_68%)] [.dark_&]:block"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 hidden opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px] [.dark_&]:block"
+          className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px]"
         />
         <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
           <header className="flex flex-col items-center gap-6 text-center md:gap-8">
-            <p className="inline-block rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm [.dark_&]:border-info-8/30 [.dark_&]:bg-black/35 [.dark_&]:text-white [.dark_&]:shadow-[0_0_32px_-10px_var(--color-info-9)]">
+            <p className="inline-block rounded-full border border-[color-mix(in_oklab,var(--landing-accent)_40%,transparent)] bg-black/35 px-5 py-1.5 text-2 font-medium text-white shadow-[0_0_32px_-10px_var(--landing-accent)] backdrop-blur-sm">
               {t('heroPill.build')}{' '}
               <span
                 key={rotatingHeroTitleWords[heroTitleWordIndex]}
-                className="font-semibold text-info-10 transition-opacity duration-300"
+                className="font-semibold text-[var(--landing-accent)] transition-opacity duration-300"
               >
                 {rotatingHeroTitleWords[heroTitleWordIndex]}
               </span>
               {t('heroPill.together')}
             </p>
-            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-accent-11 md:text-3 [.dark_&]:text-info-11">
+            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-[var(--landing-accent-muted)] md:text-3">
               {t('heroEyebrow')}
             </p>
             <h1 className="mx-auto max-w-4xl [font-family:var(--font-family-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
-              <span className="block text-foreground [.dark_&]:text-white">
-                {t('titleLine1')}
-              </span>
-              <span className="mt-1 block bg-gradient-to-r from-foreground via-accent-10 to-info-10 bg-clip-text text-transparent [.dark_&]:from-white [.dark_&]:via-info-9 [.dark_&]:to-accent-10">
+              <span className="block text-white">{t('titleLine1')}</span>
+              <span className="landing-marketing-title-accent mt-1 block">
                 {t('titleLine2')}
               </span>
             </h1>
-            <p className="mx-auto max-w-2xl text-4 font-normal leading-relaxed text-foreground/75 md:text-5 [.dark_&]:text-white/90">
+            <p className="mx-auto max-w-2xl text-4 font-normal leading-relaxed text-white/90 md:text-5">
               {t('subtitle')}
             </p>
           </header>
 
           {onboardingHeroEnabled ? (
             <section className="relative mx-auto w-full max-w-5xl">
-              <div className="relative overflow-hidden rounded-[1.5rem] border border-border/55 bg-neutral-2 shadow-[0_10px_40px_-24px_oklch(0.45_0.08_278)] [.dark_&]:border-white/10 [.dark_&]:bg-white/[0.04] [.dark_&]:shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] [.dark_&]:backdrop-blur-md">
+              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] backdrop-blur-md">
                 <AiPanelChatBar
                   variant="hero"
                   value={aiPrompt}
@@ -530,7 +525,27 @@ export function OnboardingAdventurePage({
         </Container>
       </section>
 
-      <Container className="flex flex-col gap-14 py-10 md:py-12">
+      <Container className="flex flex-col gap-10 py-10 md:py-12">
+        <ol className="mx-auto flex w-full max-w-3xl list-none flex-wrap items-center justify-center gap-2 px-2">
+          {[t('explore.title'), t('create.title'), t('join.title')].map(
+            (label, index) => (
+              <li
+                key={label}
+                className="inline-flex items-center gap-2 text-1 text-muted-foreground"
+              >
+                {index > 0 ? (
+                  <span className="text-border" aria-hidden>
+                    ·
+                  </span>
+                ) : null}
+                <span className="inline-flex size-6 items-center justify-center rounded-full border border-border/70 bg-background-2 text-[11px] font-semibold text-foreground">
+                  {index + 1}
+                </span>
+                <span>{label}</span>
+              </li>
+            ),
+          )}
+        </ol>
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card className={onboardingCardClass}>
             <CardHeader className="space-y-2">

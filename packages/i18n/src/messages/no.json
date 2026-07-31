@@ -18,7 +18,7 @@
     "signIn": "Logg inn for å bruke denne funksjonen.",
     "joinSpaceToUse": "Bli med i dette rommet for å bruke denne funksjonen.",
     "back": "Tilbake",
-    "home": "Oversikt",
+    "home": "Dashbord",
     "remove": "Fjern",
     "by": "av",
     "copyWalletAddress": "Kopier lommebokadresse",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Prøv igjen",
     "errorMaintenanceTitle": "Vi er snart tilbake!",
     "errorMaintenanceDescription": "Hypha tar en kort pause mens vi ruller ut oppdateringer. Vi er snart tilbake med spennende forbedringer på vei!",
-    "errorLoadOverviewTab": "Oi, noe gikk galt. Kunne ikke laste inn oversiktsfanen.",
+    "errorLoadOverviewTab": "Oi, noe gikk galt. Kunne ikke laste inn dashbordfanen.",
     "errorLoadMembersTab": "Oi, noe gikk galt. Kunne ikke laste inn medlemsfanen.",
     "errorLoadAgreementsTab": "Oi, noe gikk galt. Kunne ikke laste inn avtalefanen.",
     "errorLoadTreasuryTab": "Oi, noe gikk galt. Kunne ikke laste inn kassefanen.",
@@ -63,7 +63,9 @@
     },
     "durationHours": "{count, plural, one {# time} other {# timer}}",
     "durationDays": "{count, plural, one {# dag} other {# dager}}",
-    "spaceBannerRevealMeta": "Detaljer"
+    "spaceBannerRevealMeta": "Detaljer",
+    "moreNav": "Mer",
+    "bankingTab": "Bank"
   },
   "ModalAside": {
     "spaceSettings": "Rominnstillinger",
@@ -609,6 +611,13 @@
       "spaceToSpaceVisualization": "Visualisering av medlemskap mellom rom kommer snart",
       "valuesFlowsVisualization": "Visualisering av verdistrømmer kommer snart"
     },
+    "diagram": {
+      "ariaLabel": "Kart over hierarki for nestede rom",
+      "loading": "Laster økosystemkart…",
+      "empty": "Ingen nestede rom å vise ennå",
+      "hint": "Klikk på et rom for å fokususere · klikk utenfor for å zoome ut",
+      "subtitle": "Utforsk hvordan rom er nestet i denne organisasjonen"
+    },
     "visibleSpaces": {
       "nestedRoot": "Rot",
       "nestedIn": "Nestet i {parent}",
@@ -620,6 +629,16 @@
       "visitSpace": "Besøk rommet",
       "searchSpaces": "Søk etter rom",
       "noSpacesFound": "Ingen rom funnet"
+    },
+    "navigation": {
+      "individuals": "Individer",
+      "memberSpaces": "Medlemsrom",
+      "agents": "Agenter",
+      "noIndividuals": "Ingen individuelle medlemmer ennå",
+      "noMemberSpaces": "Ingen medlemsrom ennå",
+      "noAgents": "Ingen agenter mobilisert ennå",
+      "unnamedMember": "Medlem",
+      "loading": "Laster…"
     }
   },
   "AgreementsTab": {
@@ -1307,13 +1326,14 @@
     "tokenPendingContractAddress": "Venter på adresse på kjeden (utfør forslaget om tokenutstedelse først)"
   },
   "Footer": {
-    "network": "NETTVERK",
-    "legal": "JURIDISK",
+    "network": "Nettverk",
+    "legal": "Juridisk",
     "hyphaServices": "Hypha-tjenester",
     "hyphaTokenomics": "Hypha-tokenomics",
     "licensingPolicy": "Lisensretningslinjer",
     "termsAndConditions": "Vilkår og betingelser",
-    "privacyPolicy": "Personvernerklæring"
+    "privacyPolicy": "Personvernerklæring",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
@@ -1741,7 +1761,10 @@
     "escrowConfirmExchange": "Bekreft utveksling",
     "escrowDepositDepositing": "Deponerer...",
     "escrowDepositApproving": "Godkjenner...",
-    "escrowDepositInsufficientWallet": "Lommeboksaldoen din er lavere enn beløpet som kreves."
+    "escrowDepositInsufficientWallet": "Lommeboksaldoen din er lavere enn beløpet som kreves.",
+    "mySpacesSupport": "Opprett et rom eller åpne et du allerede er med i.",
+    "pipelineEnabled": "Deal-pipeline",
+    "pipelineEnabledDescription": "Aktiver en Kanban deal-pipeline for dette rommet. Av som standard."
   },
   "AgreementFlow": {
     "labels": {
@@ -2554,7 +2577,10 @@
       "decaySettings": "Forfallsinnstillinger",
       "fromWhitelist": "Fra hviteliste",
       "toWhitelist": "Til hviteliste",
-      "mutualCredit": "Gjensidig kreditt"
+      "mutualCredit": "Gjensidig kreditt",
+      "moreDetails": "Forslagsdetaljer",
+      "showDetails": "Vis",
+      "hideDetails": "Skjul"
     },
     "labels": {
       "unknown": "Ukjent",
@@ -2966,6 +2992,7 @@
     "mentionInboxClose": "Lukk omtaler",
     "mentionInboxNotificationSettings": "Varslingsinnstillinger",
     "mentionInboxEmpty": "Ingen omtaler i denne chatten ennå.",
+    "mentionInboxUnreadHint": "{count, plural, one {# ulest @omtale} other {# uleste @omtaler}}",
     "mentionInboxNoPreview": "(ingen forhåndsvisning)",
     "mentionInboxBellAria": "{count, plural, one {# ulest omtale} other {# uleste omtaler}}",
     "mentionInboxBellAriaCapped": "99 eller flere uleste omtaler",
@@ -4171,5 +4198,195 @@
       "usdcNotConfigured": "USDC-betalingstoken er ikke konfigurert for denne appen.",
       "deviceIdsCommaNumbers": "Enhets-ID-er må være kommaseparerte tall"
     }
+  },
+  "Pipeline": {
+    "title": "Deal-pipeline",
+    "dealDetails": "Dealdetails",
+    "loading": "Laster deals…",
+    "notFound": "Fant ikke deal",
+    "saving": "Lagre…",
+    "saved": "Lagret",
+    "cancel": "Avbryt",
+    "delete": "Slett deal",
+    "exportXlsx": "Eksporter XLSX",
+    "weightedAbbr": "gew.",
+    "openTrack": "Åpne spor",
+    "backToBoard": "Tilbake til tavle",
+    "trackTitle": "{swimlane}-track",
+    "summary": {
+      "deals": "Deals",
+      "active": "Aktive",
+      "pipelineValue": "Pipeline-verdi",
+      "weightedValue": "Vektet verdi"
+    },
+    "filters": {
+      "search": "Zoek op titel, notater, tags…",
+      "swimlane": "Svømmebane",
+      "region": "Region",
+      "priority": "Prioritet",
+      "status": "Dealstatus",
+      "deadline": "Indieningsfrist",
+      "tag": "Tag",
+      "all": "Alle",
+      "hasDeadline": "Har frist",
+      "noDeadline": "Ingen frist",
+      "searchLabel": "Søk",
+      "allSwimlanes": "Alle swimlanes",
+      "allRegions": "Alle regio’s",
+      "allPriorities": "Alle prioriteiten",
+      "allStatuses": "Alle stamellom",
+      "anyDeadline": "Elke frist",
+      "tagLabel": "Deal-tag",
+      "tagPlaceholder": "Filter op et deal-tag",
+      "country": "Land",
+      "countrySearch": "Zoek landen…",
+      "allCountries": "Alle landen",
+      "accountManager": "Kundeansvarlig",
+      "allAccountManagers": "Alle kundeansvarligs"
+    },
+    "savedViews": {
+      "save": "Lagre visning",
+      "saveTitle": "Lagre gjeldende filtre",
+      "namePlaceholder": "Visningsnavn",
+      "delete": "Slett visning"
+    },
+    "newDeal": {
+      "title": "Nieuw pipeline-item",
+      "titlePlaceholder": "Selskap, deallerede eller aanbesteding",
+      "countryPlaceholder": "Velg land (valgfritt)",
+      "valuePlaceholder": "0",
+      "create": "Kort maken",
+      "created": "Deallerede aangemaakt",
+      "titleLabel": "Tittel",
+      "overviewSection": "Oversikt",
+      "contactSection": "Kontakt",
+      "accountManagerLabel": "Kundeansvarlig",
+      "accountManagerUnassigned": "Ikke tildelt",
+      "teammatesLabel": "Teammedlemmer",
+      "teammatesPlaceholder": "Teammates toevoegen",
+      "memberSearch": "Zoek medlemmer…",
+      "loadingMembers": "Medlemmer laden…",
+      "unknownMember": "Ukjent lid",
+      "companyUrlLabel": "Prosjekt- / selskaps-URL",
+      "companyUrlPlaceholder": "https://...",
+      "contact1": "Kontakt 1",
+      "firstNamePlaceholder": "Fornavn",
+      "lastNamePlaceholder": "Etternavn",
+      "rolePlaceholder": "bijv. CEO",
+      "contactTypeLabel": "Kontakttype",
+      "departmentLabel": "Avdeling",
+      "departmentPlaceholder": "bijv. Finance, Operations",
+      "emailPlaceholder": "epost@...",
+      "mobileLabel": "Mobil",
+      "mobilePlaceholder": "+47...",
+      "linkedinLabel": "LinkedIn-URL",
+      "linkedinPlaceholder": "linkedin.com/in/...",
+      "swimlaneLabel": "Svømmebane",
+      "swimlanePlaceholder": "Velg swimlane",
+      "countryLabel": "Land",
+      "countrySearch": "Zoek landen…",
+      "regionLabel": "Region",
+      "executionStatusLabel": "Uitvoeringsstatus",
+      "executionStatusPlaceholder": "Velg status",
+      "valueLabel": "Verdi",
+      "priorityLabel": "Prioritet",
+      "validationRequired": "Tittel, swimlane, regio, uitvoeringsstatus og voornaam av het contact er obligatorisk.",
+      "createFailed": "Kort kon ikke bli aangemaakt. Probeer opnieuw.",
+      "noMembers": "Ingen medlemmer gevonden.",
+      "noCountries": "Ingen landen gevonden."
+    },
+    "fields": {
+      "swimlane": "Svømmebane",
+      "status": "Pipeline-status",
+      "country": "Land",
+      "noCountry": "Ingen land",
+      "region": "Region",
+      "value": "Verdi",
+      "currency": "Valuta",
+      "priority": "Prioritet",
+      "dealStatus": "Dealstatus",
+      "successRate": "Slagingskans (%)",
+      "successRateOverride": "Deal-specifieke verdi — leegmaken om de fasestandaard te gebruiken",
+      "successRateDefault": "Fasestandaard wordt gebruikt ({rate}%)",
+      "nextAction": "Neste handling",
+      "nextActionDate": "Dato for neste handling",
+      "notes": "Notater",
+      "tags": "Tagger",
+      "tagsPlaceholder": "kommaseparerte, tagger",
+      "submissionDeadline": "Innleveringsfrist",
+      "fundingRateSme": "Finansieringsrate (SMB %)",
+      "maxProjectSize": "Max prosjekt size",
+      "callReference": "Samtalereferanse",
+      "programme": "Program",
+      "expectedPartners": "Forventede partnere",
+      "eligibilityNotes": "Merknader om kvalifikasjon",
+      "accountManager": "Kundeansvarlig",
+      "teamMembers": "Teammedlemmer"
+    },
+    "grantTender": {
+      "title": "Tilskudd- / anbudsdetaljer"
+    },
+    "contacts": {
+      "title": "Kontakts",
+      "firstName": "Fornavn",
+      "lastName": "Etternavn",
+      "email": "E-post",
+      "role": "Rolle",
+      "primary": "Primærkontakt",
+      "add": "Legg til kontakt"
+    },
+    "regions": {
+      "title": "Pipeline-regio’s",
+      "description": "Voeg territoria toe eller verwijder ze die gebruikt bli hos het maken og filteren av deals (bijv. Benelux eller Nordics).",
+      "default": "Standaard",
+      "add": "Region toevoegen",
+      "addPlaceholder": "bijv. DACH",
+      "remove": "Region verwijderen",
+      "save": "Region’s lagre",
+      "saved": "Region’s opgeslagen",
+      "saveFailed": "Region’s konden ikke bli opgeslagen",
+      "loading": "Region’s laden…",
+      "duplicate": "Die regio bestaat al",
+      "atLeastOne": "Houd minstens én regio",
+      "resetDefaults": "Standaard herstellen"
+    },
+    "probabilities": {
+      "title": "Succespercentages per fase",
+      "description": "Standaard succeskans (%) per track og fase. Ny deals og deals die til et fase bli verplaatst starten med dette verdin; per deallerede kan dette bli overschreven.",
+      "track": "Spor",
+      "terminalHint": "Won er altijd 100% og Lost altijd 0%.",
+      "monotonicWarning": "Kansen moeten av links til rechts toenemen. Controleer: {lanes}",
+      "save": "Succespercentages lagre",
+      "saved": "Succespercentages opgeslagen",
+      "saveFailed": "Kon succespercentages ikke lagre",
+      "loading": "Succespercentages laden…",
+      "resetDefaults": "Standaard herstellen"
+    }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Trenger oppmerksomhet",
+    "needsAttentionDescription": "Åpne avstemninger og elementer som venter på deg.",
+    "noOpenVotesTitle": "Ingenting åpent akkurat nå",
+    "noOpenVotesDescription": "Når et forslag er til avstemning, vises det her.",
+    "createProposal": "Opprett forslag",
+    "viewAllOpenVotes": "Se alle {count} åpne avstemninger",
+    "untitledProposal": "Forslag uten tittel",
+    "quickActionsTitle": "Hurtighandlinger",
+    "inviteMembers": "Medlemmer",
+    "recentActivityTitle": "Nylig aktivitet",
+    "recentActivityDescription": "Siste forslag og avtaler i dette rommet.",
+    "noRecentActivity": "Ingen nylig styringsaktivitet ennå.",
+    "statusOnVoting": "Under avstemning",
+    "statusAccepted": "Godkjent",
+    "statusRejected": "Avvist",
+    "holdingsTitle": "Beholdninger",
+    "holdingsDescription": "Tokensaldoer og rom-aktiva."
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Rom som bestemmer, finansierer og vokser sammen.",
+    "support": "Det rolige arbeidsområdet for kollektiv handling.",
+    "ctaEnter": "Gå inn",
+    "ctaExplore": "Utforsk nettverk"
   }
 }

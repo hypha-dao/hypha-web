@@ -18,7 +18,7 @@
     "signIn": "Veuillez vous connecter pour utiliser cette fonctionnalité.",
     "joinSpaceToUse": "Veuillez rejoindre cet espace pour utiliser cette fonctionnalité.",
     "back": "Retour",
-    "home": "Accueil",
+    "home": "Tableau de bord",
     "remove": "Supprimer",
     "by": "par",
     "copyWalletAddress": "Copier l’adresse du portefeuille",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Réessayer",
     "errorMaintenanceTitle": "Nous revenons dans un instant !",
     "errorMaintenanceDescription": "Hypha fait une courte pause pendant le déploiement des mises à jour. Nous revenons bientôt avec de nouvelles améliorations !",
-    "errorLoadOverviewTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet aperçu.",
+    "errorLoadOverviewTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet tableau de bord.",
     "errorLoadMembersTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet membres.",
     "errorLoadAgreementsTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet accords.",
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
@@ -64,7 +64,9 @@
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# heure} other {# heures}}",
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
-    "spaceBannerRevealMeta": "Détails"
+    "spaceBannerRevealMeta": "Détails",
+    "moreNav": "Plus",
+    "bankingTab": "Banque"
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",
@@ -611,6 +613,13 @@
       "spaceToSpaceVisualization": "Visualisation espace-à-espace bientôt disponible",
       "valuesFlowsVisualization": "Visualisation des flux de valeur bientôt disponible"
     },
+    "diagram": {
+      "ariaLabel": "Carte de la hiérarchie des espaces imbriqués",
+      "loading": "Chargement de la carte de l’écosystème…",
+      "empty": "Aucun espace imbriqué à afficher pour le moment",
+      "hint": "Cliquez sur un espace pour le recentrer · cliquez à l’extérieur pour zoomer en arrière",
+      "subtitle": "Explorez l’imbrication des espaces dans cette organisation"
+    },
     "visibleSpaces": {
       "nestedRoot": "Racine",
       "nestedIn": "Imbriqué dans {parent}",
@@ -622,6 +631,16 @@
       "visitSpace": "Visiter l'espace",
       "searchSpaces": "Rechercher des espaces",
       "noSpacesFound": "Aucun espace trouvé"
+    },
+    "navigation": {
+      "individuals": "Personnes",
+      "memberSpaces": "Espaces membres",
+      "agents": "Agents",
+      "noIndividuals": "Aucune personne pour le moment",
+      "noMemberSpaces": "Aucun espace membre pour le moment",
+      "noAgents": "Aucun agent mobilisé pour le moment",
+      "unnamedMember": "Membre",
+      "loading": "Chargement…"
     }
   },
   "AgreementsTab": {
@@ -745,13 +764,14 @@
     "tokenPendingContractAddress": "Adresse on-chain en attente (exécutez d'abord la proposition d'émission de token)"
   },
   "Footer": {
-    "network": "RÉSEAU",
-    "legal": "LÉGAL",
+    "network": "Réseau",
+    "legal": "Légal",
     "hyphaServices": "Services Hypha",
     "hyphaTokenomics": "Tokenomics Hypha",
     "licensingPolicy": "Politique de licence",
     "termsAndConditions": "Conditions générales",
-    "privacyPolicy": "Politique de confidentialité"
+    "privacyPolicy": "Politique de confidentialité",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
@@ -1181,7 +1201,8 @@
     "escrowDepositApproving": "Approbation en cours...",
     "escrowDepositInsufficientWallet": "Le solde de votre portefeuille est inférieur au montant requis.",
     "pipelineEnabled": "Pipeline de deals",
-    "pipelineEnabledDescription": "Activez un pipeline Kanban de deals pour cet espace. Désactivé par défaut."
+    "pipelineEnabledDescription": "Activez un pipeline Kanban de deals pour cet espace. Désactivé par défaut.",
+    "mySpacesSupport": "Créez un espace ou ouvrez-en un auquel vous appartenez déjà."
   },
   "AgreementFlow": {
     "labels": {
@@ -1991,7 +2012,10 @@
       "decaySettings": "Paramètres de décroissance",
       "fromWhitelist": "À partir de la liste blanche",
       "toWhitelist": "Vers la liste blanche",
-      "mutualCredit": "Crédit mutuel"
+      "mutualCredit": "Crédit mutuel",
+      "moreDetails": "Détails de la proposition",
+      "showDetails": "Afficher",
+      "hideDetails": "Masquer"
     },
     "labels": {
       "unknown": "Inconnu",
@@ -2402,6 +2426,7 @@
     "mentionInboxClose": "Fermer les mentions",
     "mentionInboxNotificationSettings": "Paramètres de notification",
     "mentionInboxEmpty": "Aucune mention dans ce chat pour l’instant.",
+    "mentionInboxUnreadHint": "{count, plural, one {# mention @ non lue} other {# mentions @ non lues}}",
     "mentionInboxNoPreview": "(aucun aperçu)",
     "mentionInboxBellAria": "{count, plural, one {# mention non lue} other {# mentions non lues}}",
     "mentionInboxBellAriaCapped": "99 mentions non lues ou plus",
@@ -4328,5 +4353,31 @@
       "loading": "Chargement des taux de réussite…",
       "resetDefaults": "Réinitialiser"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "À traiter",
+    "needsAttentionDescription": "Votes ouverts et éléments en attente.",
+    "noOpenVotesTitle": "Rien d’ouvert pour le moment",
+    "noOpenVotesDescription": "Lorsqu’une proposition est en vote, elle apparaît ici.",
+    "createProposal": "Créer une proposition",
+    "viewAllOpenVotes": "Voir les {count} votes ouverts",
+    "untitledProposal": "Proposition sans titre",
+    "quickActionsTitle": "Actions rapides",
+    "inviteMembers": "Membres",
+    "recentActivityTitle": "Activité récente",
+    "recentActivityDescription": "Dernières propositions et accords de cet espace.",
+    "noRecentActivity": "Pas encore d’activité de gouvernance récente.",
+    "statusOnVoting": "En vote",
+    "statusAccepted": "Acceptée",
+    "statusRejected": "Rejetée",
+    "holdingsTitle": "Avoirs",
+    "holdingsDescription": "Soldes de jetons et actifs de l’espace."
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Des espaces qui décident, financent et grandissent ensemble.",
+    "support": "L’espace de travail calme pour l’action collective — gouvernance, trésorerie et communauté.",
+    "ctaEnter": "Entrer",
+    "ctaExplore": "Explorer le réseau"
   }
 }

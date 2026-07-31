@@ -1,24 +1,20 @@
-import {
-  IBM_Plex_Mono,
-  IBM_Plex_Sans,
-  Instrument_Sans,
-} from 'next/font/google';
+import { IBM_Plex_Mono, Outfit, Plus_Jakarta_Sans } from 'next/font/google';
 
 /**
  * Hypha type system (next/font → CSS variables on <html>):
- * - Body / UI: IBM Plex Sans → `--font-body`
- * - Titles: Instrument Sans → `--font-heading`
+ * - Body / UI: Plus Jakarta Sans → `--font-body`
+ * - Titles: Outfit → `--font-heading`
  * - Code / addresses: IBM Plex Mono → `--font-code-face`
  *   (distinct from Tailwind `--font-mono` stack token)
  */
-export const ibmPlexSans = IBM_Plex_Sans({
+export const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   display: 'swap',
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-body',
 });
 
-export const instrumentSans = Instrument_Sans({
+export const outfit = Outfit({
   subsets: ['latin'],
   display: 'swap',
   weight: ['400', '500', '600', '700'],
@@ -34,7 +30,7 @@ export const ibmPlexMono = IBM_Plex_Mono({
 
 /** Apply on `<Html className={…}>` in root + signin layouts. */
 export const hyphaFontVariables = [
-  ibmPlexSans.variable,
-  instrumentSans.variable,
+  plusJakartaSans.variable,
+  outfit.variable,
   ibmPlexMono.variable,
 ].join(' ');

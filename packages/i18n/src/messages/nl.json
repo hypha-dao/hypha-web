@@ -18,7 +18,7 @@
     "signIn": "Meld u aan om deze functie te gebruiken.",
     "joinSpaceToUse": "Sluit u aan bij deze ruimte om deze functie te gebruiken.",
     "back": "Terug",
-    "home": "Overzicht",
+    "home": "Dashboard",
     "remove": "Verwijderen",
     "by": "door",
     "copyWalletAddress": "Walletadres kopiëren",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Probeer het opnieuw",
     "errorMaintenanceTitle": "We zijn zo terug!",
     "errorMaintenanceDescription": "Hypha neemt een korte pauze terwijl we updates uitrollen. We zijn snel terug met spannende verbeteringen op komst!",
-    "errorLoadOverviewTab": "Oeps, er is iets misgegaan. Kan het overzichtstabblad niet laden.",
+    "errorLoadOverviewTab": "Oeps, er is iets misgegaan. Kan het dashboardtabblad niet laden.",
     "errorLoadMembersTab": "Oeps, er is iets misgegaan. Kan het tabblad Leden niet laden.",
     "errorLoadAgreementsTab": "Oeps, er is iets misgegaan. Kan het tabblad Overeenkomsten niet laden.",
     "errorLoadTreasuryTab": "Oeps, er is iets misgegaan. Kan tabblad Treasury niet laden.",
@@ -64,7 +64,9 @@
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# uur} other {# uur}}",
     "durationDays": "{count, plural, one {# dag} other {# dagen}}",
-    "spaceBannerRevealMeta": "Details"
+    "spaceBannerRevealMeta": "Details",
+    "moreNav": "Meer",
+    "bankingTab": "Bankieren"
   },
   "ModalAside": {
     "spaceSettings": "Ruimte-instellingen",
@@ -610,6 +612,13 @@
       "spaceToSpaceVisualization": "Space-to-Space-visualisatie binnenkort beschikbaar",
       "valuesFlowsVisualization": "Waardenstromen-visualisatie binnenkort beschikbaar"
     },
+    "diagram": {
+      "ariaLabel": "Kaart van geneste ruimtehiërarchie",
+      "loading": "Ecosysteemkaart laden…",
+      "empty": "Nog geen geneste ruimtes om te tonen",
+      "hint": "Klik op een ruimte om te focussen · klik buiten om uit te zoomen",
+      "subtitle": "Bekijk hoe ruimtes in deze organisatie genest zijn"
+    },
     "visibleSpaces": {
       "nestedRoot": "Wortel",
       "nestedIn": "Genest in {parent}",
@@ -621,6 +630,16 @@
       "visitSpace": "Bezoek Ruimte",
       "searchSpaces": "Zoek ruimtes",
       "noSpacesFound": "Geen ruimtes gevonden"
+    },
+    "navigation": {
+      "individuals": "Individuen",
+      "memberSpaces": "Lidruimtes",
+      "agents": "Agenten",
+      "noIndividuals": "Nog geen individuele leden",
+      "noMemberSpaces": "Nog geen lidruimtes",
+      "noAgents": "Nog geen agenten gemobiliseerd",
+      "unnamedMember": "Lid",
+      "loading": "Laden…"
     }
   },
   "AgreementsTab": {
@@ -1308,13 +1327,14 @@
     "tokenPendingContractAddress": "In afwachting van een on-chain-adres (voer eerst het issue-token-voorstel uit)"
   },
   "Footer": {
-    "network": "NETWERK",
-    "legal": "JURIDISCH",
+    "network": "Netwerk",
+    "legal": "Juridisch",
     "hyphaServices": "Hypha-diensten",
     "hyphaTokenomics": "Hypha-tokenomics",
     "licensingPolicy": "Licentiebeleid",
     "termsAndConditions": "Algemene voorwaarden",
-    "privacyPolicy": "Privacybeleid"
+    "privacyPolicy": "Privacybeleid",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
@@ -1744,7 +1764,8 @@
     "escrowDepositApproving": "Goedkeuren...",
     "escrowDepositInsufficientWallet": "Uw portemonneesaldo is lager dan het vereiste bedrag.",
     "pipelineEnabled": "Deal-pipeline",
-    "pipelineEnabledDescription": "Schakel een Kanban deal-pipeline in voor deze space. Standaard uit."
+    "pipelineEnabledDescription": "Schakel een Kanban deal-pipeline in voor deze ruimte. Standaard uit.",
+    "mySpacesSupport": "Maak een ruimte of open er een waar je al lid van bent."
   },
   "AgreementFlow": {
     "labels": {
@@ -2557,7 +2578,10 @@
       "decaySettings": "Verval instellingen",
       "fromWhitelist": "Van witte lijst",
       "toWhitelist": "Naar witte lijst",
-      "mutualCredit": "Wederzijds krediet"
+      "mutualCredit": "Wederzijds krediet",
+      "moreDetails": "Voorsteldetails",
+      "showDetails": "Tonen",
+      "hideDetails": "Verbergen"
     },
     "labels": {
       "unknown": "Onbekend",
@@ -2969,6 +2993,7 @@
     "mentionInboxClose": "Sluit vermeldingen",
     "mentionInboxNotificationSettings": "Meldingsinstellingen",
     "mentionInboxEmpty": "Nog geen vermeldingen in deze chat.",
+    "mentionInboxUnreadHint": "{count, plural, one {# ongelezen @vermelding} other {# ongelezen @vermeldingen}}",
     "mentionInboxNoPreview": "(geen voorbeeld)",
     "mentionInboxBellAria": "{count, plural, one {# ongelezen vermelding} other {# ongelezen vermeldingen}}",
     "mentionInboxBellAriaCapped": "99 of meer ongelezen vermeldingen",
@@ -4338,5 +4363,31 @@
       "loading": "Succespercentages laden…",
       "resetDefaults": "Standaard herstellen"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Aandacht nodig",
+    "needsAttentionDescription": "Open stemmingen en items die op je wachten.",
+    "noOpenVotesTitle": "Nu niets open",
+    "noOpenVotesDescription": "Wanneer een voorstel in stemming is, verschijnt het hier.",
+    "createProposal": "Voorstel maken",
+    "viewAllOpenVotes": "Bekijk alle {count} open stemmingen",
+    "untitledProposal": "Voorstel zonder titel",
+    "quickActionsTitle": "Snelle acties",
+    "inviteMembers": "Leden",
+    "recentActivityTitle": "Recente activiteit",
+    "recentActivityDescription": "Laatste voorstellen en overeenkomsten in deze ruimte.",
+    "noRecentActivity": "Nog geen recente governance-activiteit.",
+    "statusOnVoting": "In stemming",
+    "statusAccepted": "Geaccepteerd",
+    "statusRejected": "Afgewezen",
+    "holdingsTitle": "Saldi",
+    "holdingsDescription": "Tokensaldi en ruimte-assets."
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Ruimtes die samen beslissen, financieren en groeien.",
+    "support": "De rustige werkruimte voor collectieve actie.",
+    "ctaEnter": "Binnenkomen",
+    "ctaExplore": "Netwerk verkennen"
   }
 }

@@ -30,7 +30,7 @@ export function EcosystemNavigationShell({
 }: EcosystemNavigationShellProps) {
   return (
     <div
-      className={['relative flex min-h-0 flex-col gap-4', className ?? ''].join(
+      className={['relative flex min-h-0 flex-col gap-5', className ?? ''].join(
         ' ',
       )}
     >
@@ -43,7 +43,7 @@ export function EcosystemNavigationShell({
           <div className="w-full">{beforeTabsContent}</div>
         ) : null}
 
-        <div className="flex w-full flex-wrap items-center gap-4">
+        <div className="flex w-full flex-wrap items-center gap-3">
           <TabsList triggerVariant="switch" className="w-fit shrink-0">
             {tabs.map((tab) => (
               <TabsTrigger key={tab.value} variant="switch" value={tab.value}>
@@ -61,7 +61,11 @@ export function EcosystemNavigationShell({
           <TabsContent
             key={tab.value}
             value={tab.value}
-            className={tab.value === activeTab ? visualizationClassName : ''}
+            className={
+              tab.value === activeTab
+                ? ['mt-0 outline-none', visualizationClassName ?? ''].join(' ')
+                : 'mt-0 outline-none'
+            }
           >
             {tab.content}
           </TabsContent>

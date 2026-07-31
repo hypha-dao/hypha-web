@@ -5,14 +5,14 @@ import { useTheme } from 'next-themes';
 
 /**
  * When `enableSystem` is false, a previously stored `theme=system` from localStorage
- * would leave next-themes in an inconsistent state. Normalize to `dark` on the client.
+ * would leave next-themes in an inconsistent state. Normalize to `light` on the client.
  */
 export function ThemeStorageNormalize() {
   const { theme, setTheme } = useTheme();
 
   React.useEffect(() => {
     if (theme === 'system') {
-      setTheme('dark');
+      setTheme('light');
     }
   }, [theme, setTheme]);
 

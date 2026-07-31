@@ -67,25 +67,49 @@ function readLocalSignalThreadTargetFromStorage(
   }
 }
 
-function hasLocalSignalThreadHint(roomId: string): boolean {
-  if (readLocalSignalThreadTargetFromStorage(roomId)) return true;
-  if (typeof window === 'undefined') return false;
+/** Persist room→signal mapping so later mention opens skip the network. */
+export function rememberLocalSignalThreadTarget(
+  target: ResolvedSignalThreadTarget,
+): void {
+  if (typeof window === 'undefined') return;
+  const roomId = target.roomId.trim();
+  const signalSlug = target.signalSlug.trim();
+  const spaceSlug = target.spaceSlug.trim();
+  if (!roomId || !signalSlug || !spaceSlug) return;
   try {
-    const fromSession = window.sessionStorage
-      .getItem(`${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`)
-      ?.trim();
-    if (fromSession) return true;
-    return Boolean(
-      window.localStorage
-        .getItem(`${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`)
-        ?.trim(),
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`,
+      signalSlug,
+    );
+    const title = target.signalTitle.trim() || signalSlug;
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX}${roomId}`,
+      title,
+    );
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX}${roomId}`,
+      spaceSlug,
+    );
+    window.localStorage.setItem(
+      `${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`,
+      JSON.stringify({
+        slug: signalSlug,
+        title,
+        spaceSlug,
+      }),
     );
   } catch {
-    return false;
+    // ignore quota / private mode
   }
 }
 
-/** Resolve a Matrix room id to a signal thread (local cache first, then API). */
+/**
+ * Resolve a Matrix room id to a signal thread (local cache first, then API).
+ *
+ * Aggregated Mentions can reference signal rooms the user has never opened via
+ * Hypha UI, so there may be no session/local reverse map. Always fall through
+ * to `/api/v1/matrix/rooms/:roomId/signal` on cache miss.
+ */
 export async function resolveSignalThreadByMatrixRoom(
   roomId: string,
   getAccessToken?: () => Promise<string | null | undefined>,
@@ -95,10 +119,6 @@ export async function resolveSignalThreadByMatrixRoom(
 
   const cached = readLocalSignalThreadTargetFromStorage(trimmed);
   if (cached) return cached;
-
-  if (!hasLocalSignalThreadHint(trimmed)) {
-    return null;
-  }
 
   const headers: HeadersInit = {};
   try {
@@ -123,12 +143,14 @@ export async function resolveSignalThreadByMatrixRoom(
     const spaceSlug = data.spaceSlug?.trim();
     if (!signalSlug || !spaceSlug) return null;
 
-    return {
+    const resolved: ResolvedSignalThreadTarget = {
       signalSlug,
       signalTitle: data.signalTitle?.trim() || signalSlug,
       spaceSlug,
       roomId: data.roomId?.trim() || trimmed,
     };
+    rememberLocalSignalThreadTarget(resolved);
+    return resolved;
   } catch (error) {
     console.warn('[resolveSignalThreadByMatrixRoom] lookup failed:', error);
     return null;

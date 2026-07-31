@@ -24,25 +24,43 @@ type Props = {
   rootAccentHex?: string;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
+  showNodeLabels?: boolean;
+  ariaLabel?: string;
 };
 
 const SPACE_ACCENT_FALLBACK = '#14b8a6';
+
+/** Cool mycelium family (teal → cyan → slate). Avoids magenta/purple fallback hues. */
+const COOL_ACCENT_HUES = [162, 172, 182, 192, 152, 202, 142] as const;
 
 const VISUALIZATION_CONFIG = {
   BASE_RADIUS: 420,
   DEPTH_SCALE: 0.45,
   ORBIT_RATIO: 0.9,
   LOGO_RATIO: 0.25,
-  ZOOM_DURATION: 800,
+  ZOOM_DURATION: 720,
   WIDTH: 900,
   HEIGHT: 900,
   LOGO_STROKE_WIDTH: 20,
   STROKE_WIDTH_SCALE: 0.7,
+  MIN_LABEL_RADIUS: 14,
+  MAX_LABEL_CHARS: 18,
 } as const;
 
 function accentFromSpaceId(id: number): string {
-  const hue = Math.abs((id * 47) % 360);
-  return `hsl(${hue} 68% 58%)`;
+  const hue =
+    COOL_ACCENT_HUES[Math.abs(id * 47) % COOL_ACCENT_HUES.length] ??
+    COOL_ACCENT_HUES[0];
+  return `hsl(${hue} 40% 42%)`;
+}
+
+function truncateLabel(
+  name: string,
+  maxChars = VISUALIZATION_CONFIG.MAX_LABEL_CHARS,
+): string {
+  const trimmed = name.trim();
+  if (trimmed.length <= maxChars) return trimmed;
+  return `${trimmed.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
 }
 
 function toSampleableImageSrc(src?: string | null): string | null {
@@ -170,6 +188,8 @@ export function SpaceVisualization({
   rootAccentHex,
   onVisibleSpacesChange,
   enableHoverActions = true,
+  showNodeLabels = true,
+  ariaLabel = 'Space hierarchy visualization',
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -189,9 +209,6 @@ export function SpaceVisualization({
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const tooltipHideTimeoutRef = useRef<number | null>(null);
-  const introToRootTimeoutRef = useRef<number | null>(null);
-  const introSequenceActiveRef = useRef(false);
-  const introRanRef = useRef(false);
   const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
     new Map(),
   );
@@ -209,17 +226,6 @@ export function SpaceVisualization({
     }, 120);
   };
 
-  const clearIntroTimeout = () => {
-    if (introToRootTimeoutRef.current == null) return;
-    window.clearTimeout(introToRootTimeoutRef.current);
-    introToRootTimeoutRef.current = null;
-  };
-
-  const cancelIntroSequence = () => {
-    introSequenceActiveRef.current = false;
-    clearIntroTimeout();
-  };
-
   useEffect(() => {
     themeRef.current = resolvedTheme;
   }, [resolvedTheme]);
@@ -230,11 +236,8 @@ export function SpaceVisualization({
 
   useEffect(() => {
     previousVisibleSpacesRef.current = '';
-    // Re-arm the opening sequence whenever the focused space context changes.
-    introRanRef.current = false;
-    introSequenceActiveRef.current = false;
+    // Reset focus memory when hierarchy / entry space changes (stable first paint).
     savedFocusIdRef.current = null;
-    clearIntroTimeout();
   }, [data, currentSpaceId]);
 
   useEffect(() => {
@@ -298,11 +301,23 @@ export function SpaceVisualization({
       return softAccent.formatRgb();
     };
     const getDiagramFillColor = () => 'var(--color-background)';
+    const getLabelFillColor = () =>
+      themeRef.current === 'dark'
+        ? 'rgba(226, 232, 240, 0.92)'
+        : 'rgba(30, 41, 59, 0.88)';
+    const getLabelStrokeColor = () =>
+      themeRef.current === 'dark'
+        ? 'rgba(11, 15, 24, 0.88)'
+        : 'rgba(255, 255, 255, 0.92)';
+    const getLogoRingColor = () =>
+      themeRef.current === 'dark'
+        ? 'rgba(148, 163, 184, 0.42)'
+        : 'rgba(71, 85, 105, 0.28)';
     const getOrbitStrokeAlpha = () =>
-      themeRef.current === 'dark' ? 0.52 : 0.58;
-    const ROOT_ORBIT_STROKE_WIDTH = 1.15;
-    // Hairline dashed orbits — readable, not neon.
-    const ORBIT_DASH_PATTERN = '1.25 5.5';
+      themeRef.current === 'dark' ? 0.64 : 0.7;
+    const ROOT_ORBIT_STROKE_WIDTH = 1.35;
+    // Hairline dashed orbits — calm, readable structure.
+    const ORBIT_DASH_PATTERN = '1.5 5';
     const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
     const pageBackdropLab = d3.lab(
       themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
@@ -315,24 +330,27 @@ export function SpaceVisualization({
       if (!parsed) {
         return {
           color: withAlpha(accentColor, getOrbitStrokeAlpha()),
-          width: 1.2,
+          width: 1.25,
         };
       }
 
-      // Preserve accent hue; keep saturation/lightness calm for a tool-diagram feel.
+      // Soften purple/magenta samples into mycelium teal; keep other brand hues.
+      const sampleHue = parsed.h;
+      const isPurpleMagenta =
+        Number.isFinite(sampleHue) && sampleHue >= 260 && sampleHue <= 330;
       const tuned = d3.hsl(
-        parsed.h,
-        Math.min(Math.max(parsed.s, 0.42), 0.62),
+        isPurpleMagenta ? 172 : sampleHue,
+        Math.min(Math.max(parsed.s, 0.36), 0.52),
         themeRef.current === 'dark'
-          ? Math.min(Math.max(parsed.l, 0.52), 0.68)
-          : Math.min(Math.max(parsed.l, 0.32), 0.46),
+          ? Math.min(Math.max(parsed.l, 0.55), 0.7)
+          : Math.min(Math.max(parsed.l, 0.34), 0.48),
       );
 
       const tunedLab = d3.lab(tuned.formatRgb());
       const rootDelta = Math.abs(tunedLab.l - rootFillLab.l);
       const backdropDelta = Math.abs(tunedLab.l - pageBackdropLab.l);
       const minDelta = Math.min(rootDelta, backdropDelta);
-      const width = minDelta < MIN_LIGHTNESS_DELTA ? 1.35 : 1.15;
+      const width = minDelta < MIN_LIGHTNESS_DELTA ? 1.45 : 1.25;
 
       return {
         color: withAlpha(tuned.formatRgb(), getOrbitStrokeAlpha()),
@@ -512,6 +530,8 @@ export function SpaceVisualization({
       return null;
     };
 
+    // Stable ecosystem overview: open at root. Drill-in focus is remembered
+    // across re-renders; currentSpaceId is marked with the dashed ring instead.
     let focus = root;
 
     if (savedFocusIdRef.current) {
@@ -520,13 +540,6 @@ export function SpaceVisualization({
         focus = savedNode;
       } else {
         savedFocusIdRef.current = null;
-      }
-    }
-
-    if (!savedFocusIdRef.current && currentSpaceId) {
-      const currentSpaceNode = findNodeById(root, currentSpaceId);
-      if (currentSpaceNode) {
-        focus = currentSpaceNode;
       }
     }
 
@@ -574,7 +587,6 @@ export function SpaceVisualization({
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
-          cancelIntroSequence();
           zoom(d);
         }
       });
@@ -589,7 +601,6 @@ export function SpaceVisualization({
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
-          cancelIntroSequence();
           zoom(d);
         }
       });
@@ -637,6 +648,7 @@ export function SpaceVisualization({
 
       logoGroup
         .append('circle')
+        .attr('class', 'logo-disk')
         .attr('fill', getDiagramFillColor())
         .attr('stroke', 'none')
         .attr('shape-rendering', 'geometricPrecision');
@@ -647,11 +659,62 @@ export function SpaceVisualization({
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('alt', `${d.data.name} logo`)
         .attr('clip-path', `url(#${clipId})`);
+
+      logoGroup
+        .append('circle')
+        .attr('class', 'logo-ring')
+        .attr('fill', 'none')
+        .attr('stroke', getLogoRingColor())
+        .attr('stroke-width', 1.25)
+        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('shape-rendering', 'geometricPrecision')
+        .style('pointer-events', 'none');
+
+      logoGroup
+        .append('circle')
+        .attr('class', 'focus-ring')
+        .attr('fill', 'none')
+        .attr('stroke', resolvedRootAccent)
+        .attr('stroke-width', 1.75)
+        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('shape-rendering', 'geometricPrecision')
+        .attr('opacity', 0)
+        .style('pointer-events', 'none');
+
+      logoGroup
+        .append('circle')
+        .attr('class', 'current-ring')
+        .attr('fill', 'none')
+        .attr('stroke', resolvedRootAccent)
+        .attr('stroke-width', 1.25)
+        .attr('stroke-dasharray', '2.5 3.5')
+        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('shape-rendering', 'geometricPrecision')
+        .attr('opacity', 0)
+        .style('pointer-events', 'none');
+
+      if (showNodeLabels) {
+        logoGroup
+          .append('text')
+          .attr('class', 'node-label')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'hanging')
+          .attr('fill', getLabelFillColor())
+          .attr('stroke', getLabelStrokeColor())
+          .attr('stroke-width', 3.5)
+          .attr('paint-order', 'stroke fill')
+          .style('font-family', 'var(--font-family-text), sans-serif')
+          .style('font-weight', '500')
+          .style('letter-spacing', '-0.01em')
+          .style('pointer-events', 'none')
+          .text(truncateLabel(d.data.name));
+      }
+
+      logoGroup.append('title').text(d.data.name);
     });
 
     svg.on('click', () => {
       if (focus.parent) {
-        cancelIntroSequence();
         zoom(focus.parent);
       }
     });
@@ -778,9 +841,9 @@ export function SpaceVisualization({
       isVisible(d) ? 'block' : 'none',
     );
 
-    logos.each(function (d: SpaceHierarchyNode) {
+    logos.each(function () {
       d3.select(this)
-        .select('circle')
+        .select('circle.logo-disk')
         .attr('fill', getDiagramFillColor())
         .attr('stroke', 'none');
     });
@@ -788,20 +851,6 @@ export function SpaceVisualization({
     zoomTo(view);
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
-
-    if (!introRanRef.current && focus !== root) {
-      introRanRef.current = true;
-      introSequenceActiveRef.current = true;
-
-      introToRootTimeoutRef.current = window.setTimeout(() => {
-        if (!introSequenceActiveRef.current) return;
-        zoom(root, {
-          onEnd: () => {
-            introSequenceActiveRef.current = false;
-          },
-        });
-      }, 1400);
-    }
 
     function zoom(
       target: SpaceHierarchyNode,
@@ -844,9 +893,9 @@ export function SpaceVisualization({
           }
         });
 
-      logos.each(function (d: SpaceHierarchyNode) {
+      logos.each(function () {
         d3.select(this)
-          .select('circle')
+          .select('circle.logo-disk')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
           .attr('fill', getDiagramFillColor())
@@ -894,21 +943,60 @@ export function SpaceVisualization({
           );
           const clipId = `clip-${d.data.id}`;
           const diameter = clampSvgLength(r * 2);
+          const isFocused = d === focus;
+          const isCurrent =
+            typeof currentSpaceId === 'number' && d.data.id === currentSpaceId;
+          const showLabel =
+            showNodeLabels && r >= VISUALIZATION_CONFIG.MIN_LABEL_RADIUS;
+          const labelFontSize = clampSvgLength(
+            Math.min(15, Math.max(10, r * 0.42)),
+          );
+          const labelY = r + Math.max(10, labelFontSize * 0.35);
+          const selection = d3.select(this);
 
-          d3.select(this)
-            .select('circle')
+          selection
+            .select('circle.logo-disk')
             .attr('r', r)
             .attr('fill', getDiagramFillColor())
             .attr('stroke', 'none');
 
           defs.select(`#${clipId} circle`).attr('r', r);
 
-          d3.select(this)
+          selection
             .select('image')
             .attr('x', -r)
             .attr('y', -r)
             .attr('width', diameter)
             .attr('height', diameter);
+
+          selection
+            .select('circle.logo-ring')
+            .attr('r', r)
+            .attr('stroke', getLogoRingColor())
+            .attr('stroke-width', isFocused ? 1.5 : 1.15);
+
+          selection
+            .select('circle.focus-ring')
+            .attr('r', clampSvgLength(r + Math.max(3.5, r * 0.12)))
+            .attr('stroke', resolvedRootAccent)
+            .attr('opacity', isFocused ? 0.9 : 0);
+
+          selection
+            .select('circle.current-ring')
+            .attr('r', clampSvgLength(r + Math.max(6, r * 0.18)))
+            .attr('stroke', resolvedRootAccent)
+            .attr('opacity', isCurrent && !isFocused ? 0.55 : 0);
+
+          if (showNodeLabels) {
+            selection
+              .select('text.node-label')
+              .attr('y', labelY)
+              .attr('font-size', `${labelFontSize}px`)
+              .attr('fill', getLabelFillColor())
+              .attr('stroke', getLabelStrokeColor())
+              .attr('opacity', showLabel && isVisible(d) ? 1 : 0)
+              .text(truncateLabel(d.data.name));
+          }
         });
     }
     let isCancelled = false;
@@ -941,14 +1029,19 @@ export function SpaceVisualization({
     return () => {
       isCancelled = true;
       svg.interrupt();
-      cancelIntroSequence();
     };
-  }, [data, currentSpaceId, resolvedTheme, enableHoverActions, rootAccentHex]);
+  }, [
+    data,
+    currentSpaceId,
+    resolvedTheme,
+    enableHoverActions,
+    rootAccentHex,
+    showNodeLabels,
+  ]);
 
   useEffect(() => {
     return () => {
       clearTooltipHideTimeout();
-      cancelIntroSequence();
     };
   }, []);
 
@@ -958,21 +1051,21 @@ export function SpaceVisualization({
         ref={svgRef}
         className="h-auto w-full"
         role="img"
-        aria-label="Space hierarchy visualization"
+        aria-label={ariaLabel}
       />
       {enableHoverActions && tooltip.visible && (
         <div
           ref={tooltipRef}
           onMouseEnter={clearTooltipHideTimeout}
           onMouseLeave={scheduleTooltipHide}
-          className="absolute z-50 rounded-lg border border-border/70 bg-popover px-2 py-1.5 shadow-lg"
+          className="absolute z-50 rounded-xl border border-border/70 bg-background-2 px-2.5 py-1.5 shadow-sm"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,
             transform: 'translate(0, -50%)',
           }}
         >
-          <div className="rounded-md border border-border/60 bg-background-3/80 px-2.5 py-1 text-xs font-semibold text-foreground">
+          <div className="max-w-[14rem] truncate text-1 font-medium text-foreground">
             {tooltip.text}
           </div>
         </div>

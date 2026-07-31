@@ -53,6 +53,7 @@ export const SelectAction = ({
   const tCommon = useTranslations('Common');
   const [searchTerm, setSearchTerm] = React.useState('');
   const normalizedSearch = searchTerm.trim().toLowerCase();
+
   const groupedActions = React.useMemo(
     () =>
       actions
@@ -90,7 +91,7 @@ export const SelectAction = ({
         width="100%"
         height="72px"
         loading={isLoading}
-        className="rounded-lg"
+        className="rounded-xl"
       >
         <p className="w-full min-w-0 text-2 leading-relaxed text-muted-foreground">
           {content}

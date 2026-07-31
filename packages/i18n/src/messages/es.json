@@ -18,7 +18,7 @@
     "signIn": "Inicie sesión para utilizar esta función.",
     "joinSpaceToUse": "Únase a este espacio para utilizar esta función.",
     "back": "Atrás",
-    "home": "Inicio",
+    "home": "Panel",
     "remove": "Eliminar",
     "by": "por",
     "copyWalletAddress": "Copiar dirección de la billetera",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Reintentar",
     "errorMaintenanceTitle": "¡Volvemos enseguida!",
     "errorMaintenanceDescription": "Hypha está haciendo una breve pausa mientras desplegamos actualizaciones. ¡Volvemos pronto con mejoras emocionantes!",
-    "errorLoadOverviewTab": "Ups, algo salió mal. No se pudo cargar la pestaña de resumen.",
+    "errorLoadOverviewTab": "Ups, algo salió mal. No se pudo cargar la pestaña del panel.",
     "errorLoadMembersTab": "Ups, algo salió mal. No se pudo cargar la pestaña de miembros.",
     "errorLoadAgreementsTab": "Ups, algo salió mal. No se pudo cargar la pestaña de acuerdos.",
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
@@ -64,7 +64,9 @@
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# hora} other {# horas}}",
     "durationDays": "{count, plural, one {# día} other {# días}}",
-    "spaceBannerRevealMeta": "Detalles"
+    "spaceBannerRevealMeta": "Detalles",
+    "moreNav": "Más",
+    "bankingTab": "Banca"
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",
@@ -1381,6 +1383,13 @@
       "spaceToSpaceVisualization": "Próximamente visualización espacio-espacio",
       "valuesFlowsVisualization": "Próximamente visualización de flujos de valores"
     },
+    "diagram": {
+      "ariaLabel": "Mapa de jerarquía de espacios anidados",
+      "loading": "Cargando mapa del ecosistema…",
+      "empty": "Aún no hay espacios anidados para mostrar",
+      "hint": "Haz clic en un espacio para enfocarlo · haz clic fuera para alejar",
+      "subtitle": "Explora cómo se anidan los espacios en esta organización"
+    },
     "visibleSpaces": {
       "nestedRoot": "Raíz",
       "nestedIn": "Anidado en {parent}",
@@ -1392,6 +1401,16 @@
       "visitSpace": "Visita el espacio",
       "searchSpaces": "Buscar espacios",
       "noSpacesFound": "No se encontraron espacios"
+    },
+    "navigation": {
+      "individuals": "Personas",
+      "memberSpaces": "Espacios miembros",
+      "agents": "Agentes",
+      "noIndividuals": "Aún no hay personas",
+      "noMemberSpaces": "Aún no hay espacios miembros",
+      "noAgents": "Aún no hay agentes movilizados",
+      "unnamedMember": "Miembro",
+      "loading": "Cargando…"
     }
   },
   "AgreementsTab": {
@@ -1515,13 +1534,14 @@
     "tokenPendingContractAddress": "Dirección on-chain pendiente (ejecuta primero la propuesta de emisión de token)"
   },
   "Footer": {
-    "network": "RED",
-    "legal": "LEGAL",
+    "network": "Red",
+    "legal": "Legal",
     "hyphaServices": "Servicios Hypha",
     "hyphaTokenomics": "Tokenómica Hypha",
     "licensingPolicy": "Política de licencias",
     "termsAndConditions": "Términos y condiciones",
-    "privacyPolicy": "Política de privacidad"
+    "privacyPolicy": "Política de privacidad",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
@@ -1951,7 +1971,8 @@
     "escrowDepositApproving": "Aprobando...",
     "escrowDepositInsufficientWallet": "El saldo de tu billetera está por debajo del monto requerido.",
     "pipelineEnabled": "Pipeline de deals",
-    "pipelineEnabledDescription": "Activa un pipeline Kanban de deals en este espacio. Desactivado por defecto."
+    "pipelineEnabledDescription": "Activa un pipeline Kanban de deals en este espacio. Desactivado por defecto.",
+    "mySpacesSupport": "Crea un espacio o abre uno al que ya perteneces."
   },
   "ProposalDetails": {
     "investment": {
@@ -1991,7 +2012,10 @@
       "decaySettings": "Configuración de decadencia",
       "fromWhitelist": "De la lista blanca",
       "toWhitelist": "A la lista blanca",
-      "mutualCredit": "Crédito mutuo"
+      "mutualCredit": "Crédito mutuo",
+      "moreDetails": "Detalles de la propuesta",
+      "showDetails": "Mostrar",
+      "hideDetails": "Ocultar"
     },
     "labels": {
       "unknown": "Desconocido",
@@ -2402,6 +2426,7 @@
     "mentionInboxClose": "Cerrar menciones",
     "mentionInboxNotificationSettings": "Ajustes de notificaciones",
     "mentionInboxEmpty": "Aún no hay menciones en este chat.",
+    "mentionInboxUnreadHint": "{count, plural, one {# mención @ sin leer} other {# menciones @ sin leer}}",
     "mentionInboxNoPreview": "(sin vista previa)",
     "mentionInboxBellAria": "{count, plural, one {# mención sin leer} other {# menciones sin leer}}",
     "mentionInboxBellAriaCapped": "99 o más menciones sin leer",
@@ -4332,5 +4357,31 @@
       "loading": "Cargando tasas de éxito…",
       "resetDefaults": "Restablecer valores"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Requiere atención",
+    "needsAttentionDescription": "Votos abiertos y elementos que te esperan.",
+    "noOpenVotesTitle": "Nada abierto por ahora",
+    "noOpenVotesDescription": "Cuando una propuesta esté en votación, aparecerá aquí.",
+    "createProposal": "Crear propuesta",
+    "viewAllOpenVotes": "Ver los {count} votos abiertos",
+    "untitledProposal": "Propuesta sin título",
+    "quickActionsTitle": "Acciones rápidas",
+    "inviteMembers": "Miembros",
+    "recentActivityTitle": "Actividad reciente",
+    "recentActivityDescription": "Últimas propuestas y acuerdos en este espacio.",
+    "noRecentActivity": "Aún no hay actividad de gobernanza reciente.",
+    "statusOnVoting": "En votación",
+    "statusAccepted": "Aceptada",
+    "statusRejected": "Rechazada",
+    "holdingsTitle": "Activos",
+    "holdingsDescription": "Saldos de tokens y activos del espacio."
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Espacios que deciden, financian y crecen juntos.",
+    "support": "El espacio de trabajo calmado para la acción colectiva.",
+    "ctaEnter": "Entrar",
+    "ctaExplore": "Explorar red"
   }
 }

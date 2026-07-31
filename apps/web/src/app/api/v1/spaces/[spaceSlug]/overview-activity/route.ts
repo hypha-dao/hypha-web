@@ -76,7 +76,9 @@ function buildTimelineMonthBuckets(
     (latest.getUTCFullYear() - earliest.getUTCFullYear()) * 12 +
     (latest.getUTCMonth() - earliest.getUTCMonth()) +
     1;
-  const boundedSpan = Math.max(1, Math.min(monthSpan, maxMonths));
+  // Keep ≥2 months when joins exist so cumulative line charts can draw a
+  // segment from a zero baseline instead of a single orphaned point.
+  const boundedSpan = Math.max(2, Math.min(Math.max(monthSpan, 1), maxMonths));
 
   const start = new Date(latest);
   start.setUTCMonth(start.getUTCMonth() - (boundedSpan - 1));

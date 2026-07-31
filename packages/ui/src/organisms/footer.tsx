@@ -4,22 +4,13 @@ import { usePathname } from 'next/navigation';
 import { Container } from '../container';
 import { Button } from '../button';
 import { Link } from '@radix-ui/themes';
-import { Text } from '@radix-ui/themes';
 import { Logo } from '../atoms';
 
-const customLinkStyles: React.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: '400',
-};
-
-const customLabelStyles: React.CSSProperties = {
-  fontSize: '12px',
-  fontWeight: '500',
-  marginBottom: '6px',
-};
-
 const footerLinkButtonClassName =
-  'h-auto min-h-0 justify-start rounded-lg px-0 py-1 text-gray-400';
+  'h-auto min-h-0 justify-start rounded-lg px-0 py-1 text-sm font-normal text-muted-foreground hover:bg-transparent hover:text-foreground';
+
+const footerSectionLabelClassName =
+  'mb-1 text-1 font-medium uppercase tracking-[0.08em] text-foreground';
 
 export interface FooterProps {
   networkLabel?: string;
@@ -29,10 +20,11 @@ export interface FooterProps {
   licensingPolicyLabel?: string;
   termsAndConditionsLabel?: string;
   privacyPolicyLabel?: string;
+  copyrightLabel?: string;
 }
 
 function SpaceContextFooter({
-  licensingPolicyLabel = 'Licensing policy',
+  licensingPolicyLabel = 'Licensing Policy',
   termsAndConditionsLabel = 'Terms & Conditions',
   privacyPolicyLabel = 'Privacy Policy',
 }: FooterProps) {
@@ -47,7 +39,6 @@ function SpaceContextFooter({
           <Link
             rel="noopener noreferrer"
             target="_blank"
-            style={customLinkStyles}
             href={
               process.env.NEXT_PUBLIC_LICENCE_URL ||
               'https://assets.hypha.earth/files/Hypha_Licensing_Policy.pdf'
@@ -59,7 +50,6 @@ function SpaceContextFooter({
           <Link
             rel="noopener noreferrer"
             target="_blank"
-            style={customLinkStyles}
             href={
               process.env.NEXT_PUBLIC_TERMS_URL ||
               'https://assets.hypha.earth/files/Hypha_Terms_And_Conditions.pdf'
@@ -71,7 +61,6 @@ function SpaceContextFooter({
           <Link
             rel="noopener noreferrer"
             target="_blank"
-            style={customLinkStyles}
             href={
               process.env.NEXT_PUBLIC_PRIVACY_URL ||
               'https://assets.hypha.earth/files/Hypha_Privacy_Policy.pdf'
@@ -87,28 +76,32 @@ function SpaceContextFooter({
 }
 
 function LegacyFooter({
-  networkLabel = 'NETWORK',
-  legalLabel = 'LEGAL',
+  networkLabel = 'Network',
+  legalLabel = 'Legal',
   hyphaServicesLabel = 'Hypha Services',
   hyphaTokenomicsLabel = 'Hypha Tokenomics',
-  licensingPolicyLabel = 'Licensing policy',
+  licensingPolicyLabel = 'Licensing Policy',
   termsAndConditionsLabel = 'Terms & Conditions',
   privacyPolicyLabel = 'Privacy Policy',
+  copyrightLabel = `© ${new Date().getFullYear()} Hypha`,
 }: FooterProps) {
   return (
-    <div className="bg-background-2">
-      <Container>
-        <div className="pt-4">
-          <Logo width={120} />
-        </div>
+    <footer className="border-t border-border/60 bg-background-2">
+      <Container className="py-10 md:py-12">
         {/*
-          Three-column grid: two content columns + empty track (legacy layout).
-          `min-w-0` on each cell prevents text from painting into the next column when
-          the main column is narrow (e.g. beside open side panels).
+          Brand + two link columns across the full container width.
+          Avoids the old empty third track that left a large void on the right.
         */}
-        <div className="grid grid-cols-1 gap-5 py-4 md:grid-cols-3 md:gap-x-8 md:gap-y-0">
-          <div className="flex min-w-0 flex-col items-start gap-0.5">
-            <Text style={customLabelStyles}>{networkLabel}</Text>
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-[minmax(0,1.25fr)_repeat(2,minmax(0,1fr))] md:gap-x-12 md:gap-y-0 lg:gap-x-16">
+          <div className="flex min-w-0 flex-col justify-start sm:col-span-2 md:col-span-1">
+            <Logo width={108} />
+          </div>
+
+          <nav
+            className="flex min-w-0 flex-col items-start gap-0.5"
+            aria-label={networkLabel}
+          >
+            <p className={footerSectionLabelClassName}>{networkLabel}</p>
             <Button
               asChild
               variant="ghost"
@@ -116,7 +109,6 @@ function LegacyFooter({
             >
               <Link
                 rel="noopener noreferrer"
-                style={customLinkStyles}
                 target="_blank"
                 href="https://hypha.services/"
               >
@@ -132,9 +124,8 @@ function LegacyFooter({
             >
               <Link
                 rel="noopener noreferrer"
-                style={customLinkStyles}
                 target="_blank"
-                href="https://assets.hypha.earth/files/Hypha%20DAO%20Constitution.pdf?_gl=1*1firc45*_ga*MTk3MzcyMDY5LjE2OTcwMzY0NDA.*_ga_JM4W5HJMYV*czE3NTQ1ODMzMDkkbzM4MyRnMSR0MTc1NDU4MzMxNyRqNjAkbDAkaDA"
+                href="https://assets.hypha.earth/files/Hypha%20DAO%20Constitution.pdf"
               >
                 Hypha Constitution
               </Link>
@@ -146,7 +137,6 @@ function LegacyFooter({
             >
               <Link
                 rel="noopener noreferrer"
-                style={customLinkStyles}
                 target="_blank"
                 href={
                   process.env.NEXT_PUBLIC_HYPHA_TOKENOMICS_DOCS_URL ||
@@ -156,10 +146,13 @@ function LegacyFooter({
                 {hyphaTokenomicsLabel}
               </Link>
             </Button>
-          </div>
+          </nav>
 
-          <div className="flex min-w-0 flex-col items-start gap-0.5">
-            <Text style={customLabelStyles}>{legalLabel}</Text>
+          <nav
+            className="flex min-w-0 flex-col items-start gap-0.5"
+            aria-label={legalLabel}
+          >
+            <p className={footerSectionLabelClassName}>{legalLabel}</p>
             <Button
               asChild
               variant="ghost"
@@ -167,7 +160,6 @@ function LegacyFooter({
             >
               <Link
                 rel="noopener noreferrer"
-                style={customLinkStyles}
                 target="_blank"
                 href={
                   process.env.NEXT_PUBLIC_LICENCE_URL ||
@@ -184,7 +176,6 @@ function LegacyFooter({
             >
               <Link
                 rel="noopener noreferrer"
-                style={customLinkStyles}
                 target="_blank"
                 href={
                   process.env.NEXT_PUBLIC_TERMS_URL ||
@@ -201,7 +192,6 @@ function LegacyFooter({
             >
               <Link
                 rel="noopener noreferrer"
-                style={customLinkStyles}
                 target="_blank"
                 href={
                   process.env.NEXT_PUBLIC_PRIVACY_URL ||
@@ -211,24 +201,14 @@ function LegacyFooter({
                 {privacyPolicyLabel}
               </Link>
             </Button>
-            {/* <Button
-              asChild
-              variant="ghost"
-              className={footerLinkButtonClassName}
-            >
-              <Link
-                rel="noopener noreferrer"
-                style={customLinkStyles}
-                target='_blank'
-                href="https://hypha.earth/cookie-policy/"
-              >
-                Cookie Policy
-              </Link>
-            </Button> */}
-          </div>
+          </nav>
+        </div>
+
+        <div className="mt-10 border-t border-border/50 pt-6">
+          <p className="text-1 text-muted-foreground">{copyrightLabel}</p>
         </div>
       </Container>
-    </div>
+    </footer>
   );
 }
 

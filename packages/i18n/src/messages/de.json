@@ -18,7 +18,7 @@
     "signIn": "Bitte melden Sie sich an, um diese Funktion zu nutzen.",
     "joinSpaceToUse": "Bitte treten Sie diesem Space bei, um diese Funktion zu nutzen.",
     "back": "Zurück",
-    "home": "Startseite",
+    "home": "Dashboard",
     "remove": "Entfernen",
     "by": "von",
     "copyWalletAddress": "Wallet-Adresse kopieren",
@@ -41,7 +41,7 @@
     "errorConnectionLostRetry": "Erneut versuchen",
     "errorMaintenanceTitle": "Wir sind gleich zurück!",
     "errorMaintenanceDescription": "Hypha macht eine kurze Pause, während wir Updates ausrollen. Wir sind bald mit spannenden Verbesserungen zurück!",
-    "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Überblick-Tab konnte nicht geladen werden.",
+    "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Dashboard-Tab konnte nicht geladen werden.",
     "errorLoadMembersTab": "Ups, etwas ist schiefgelaufen. Der Mitglieder-Tab konnte nicht geladen werden.",
     "errorLoadAgreementsTab": "Ups, etwas ist schiefgelaufen. Der Vereinbarungen-Tab konnte nicht geladen werden.",
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
@@ -64,7 +64,9 @@
     "Pipeline": "Pipeline",
     "durationHours": "{count, plural, one {# Stunde} other {# Stunden}}",
     "durationDays": "{count, plural, one {# Tag} other {# Tage}}",
-    "spaceBannerRevealMeta": "Details"
+    "spaceBannerRevealMeta": "Details",
+    "moreNav": "Mehr",
+    "bankingTab": "Banking"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
@@ -611,6 +613,13 @@
       "spaceToSpaceVisualization": "Space-zu-Space-Visualisierung bald verfügbar",
       "valuesFlowsVisualization": "Wertfluss-Visualisierung bald verfügbar"
     },
+    "diagram": {
+      "ariaLabel": "Karte der verschachtelten Spaces",
+      "loading": "Ökosystemkarte wird geladen…",
+      "empty": "Noch keine verschachtelten Spaces vorhanden",
+      "hint": "Space anklicken zum Fokussieren · außerhalb klicken zum Herauszoomen",
+      "subtitle": "Sehen Sie, wie Spaces in dieser Organisation verschachtelt sind"
+    },
     "visibleSpaces": {
       "nestedRoot": "Wurzel",
       "nestedIn": "Verschachtelt in {parent}",
@@ -622,6 +631,16 @@
       "visitSpace": "Space besuchen",
       "searchSpaces": "Spaces durchsuchen",
       "noSpacesFound": "Keine Spaces gefunden"
+    },
+    "navigation": {
+      "individuals": "Personen",
+      "memberSpaces": "Mitglieds-Spaces",
+      "agents": "Agenten",
+      "noIndividuals": "Noch keine Personen",
+      "noMemberSpaces": "Noch keine Mitglieds-Spaces",
+      "noAgents": "Noch keine Agenten mobilisiert",
+      "unnamedMember": "Mitglied",
+      "loading": "Wird geladen…"
     }
   },
   "AgreementsTab": {
@@ -1309,13 +1328,14 @@
     "tokenPendingContractAddress": "On-Chain-Adresse ausstehend (Issue-Token-Vorschlag zuerst ausführen)"
   },
   "Footer": {
-    "network": "NETZWERK",
-    "legal": "RECHTLICHES",
+    "network": "Netzwerk",
+    "legal": "Rechtliches",
     "hyphaServices": "Hypha Services",
     "hyphaTokenomics": "Hypha Tokenomics",
     "licensingPolicy": "Lizenzierungsrichtlinie",
     "termsAndConditions": "Allgemeine Geschäftsbedingungen",
-    "privacyPolicy": "Datenschutzrichtlinie"
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
@@ -1745,7 +1765,8 @@
     "escrowDepositApproving": "Genehmigung läuft...",
     "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag.",
     "pipelineEnabled": "Deal-Pipeline",
-    "pipelineEnabledDescription": "Aktivieren Sie eine Kanban-Deal-Pipeline für diesen Space. Standardmäßig aus."
+    "pipelineEnabledDescription": "Aktivieren Sie eine Kanban-Deal-Pipeline für diesen Space. Standardmäßig aus.",
+    "mySpacesSupport": "Erstellen Sie einen Space oder öffnen Sie einen, dem Sie angehören."
   },
   "AgreementFlow": {
     "labels": {
@@ -2555,7 +2576,10 @@
       "decaySettings": "Decay-Einstellungen",
       "fromWhitelist": "Von der Whitelist",
       "toWhitelist": "Zur Whitelist",
-      "mutualCredit": "Mutual Credit"
+      "mutualCredit": "Mutual Credit",
+      "moreDetails": "Vorschlagsdetails",
+      "showDetails": "Anzeigen",
+      "hideDetails": "Ausblenden"
     },
     "labels": {
       "unknown": "Unbekannt",
@@ -2966,6 +2990,7 @@
     "mentionInboxClose": "Erwähnungen schließen",
     "mentionInboxNotificationSettings": "Benachrichtigungseinstellungen",
     "mentionInboxEmpty": "Noch keine Erwähnungen in diesem Chat.",
+    "mentionInboxUnreadHint": "{count, plural, one {# ungelesene @Erwähnung} other {# ungelesene @Erwähnungen}}",
     "mentionInboxNoPreview": "(keine Vorschau)",
     "mentionInboxBellAria": "{count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
     "mentionInboxBellAriaCapped": "99 oder mehr ungelesene Erwähnungen",
@@ -4332,5 +4357,31 @@
       "loading": "Erfolgsraten werden geladen…",
       "resetDefaults": "Standards wiederherstellen"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Handlungsbedarf",
+    "needsAttentionDescription": "Offene Abstimmungen und wartende Aufgaben.",
+    "noOpenVotesTitle": "Aktuell nichts offen",
+    "noOpenVotesDescription": "Laufende Abstimmungen erscheinen hier.",
+    "createProposal": "Vorschlag erstellen",
+    "viewAllOpenVotes": "Alle {count} offenen Abstimmungen",
+    "untitledProposal": "Unbenannter Vorschlag",
+    "quickActionsTitle": "Schnellaktionen",
+    "inviteMembers": "Mitglieder",
+    "recentActivityTitle": "Aktuelle Aktivität",
+    "recentActivityDescription": "Neueste Vorschläge und Vereinbarungen in diesem Space.",
+    "noRecentActivity": "Noch keine Governance-Aktivität.",
+    "statusOnVoting": "In Abstimmung",
+    "statusAccepted": "Angenommen",
+    "statusRejected": "Abgelehnt",
+    "holdingsTitle": "Bestände",
+    "holdingsDescription": "Token-Salden und Space-Assets."
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Spaces, die gemeinsam entscheiden, finanzieren und wachsen.",
+    "support": "Der ruhige Workspace für kollektives Handeln — Governance, Treasury und Community an einem Ort.",
+    "ctaEnter": "Eintreten",
+    "ctaExplore": "Netzwerk erkunden"
   }
 }

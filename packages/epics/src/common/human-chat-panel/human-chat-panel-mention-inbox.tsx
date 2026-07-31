@@ -5,7 +5,7 @@ import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
 import { Bell, ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { CountBadge, Skeleton } from '@hypha-platform/ui';
+import { Button, CountBadge, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -38,6 +38,9 @@ export type HumanChatPanelMentionTabProps = {
   onSelectMessage: (eventId: string, fromRoomId?: string) => void;
   /** When true, list @-mentions from all joined Matrix rooms with room labels. */
   aggregatedMentions?: boolean;
+  /** Unread mention badge count — enables Mark as read when > 0. */
+  unreadMentionCount?: number;
+  onMarkMentionsRead?: () => void;
   callJoinAlertsUnmuted?: boolean;
   onCallJoinAlertsUnmutedChange?: (unmuted: boolean) => void;
 };
@@ -145,12 +148,21 @@ function selectMentionRowKeyDown(e: KeyboardEvent, onSelect: () => void) {
   }
 }
 
-function eventComesFromInteractiveChild(target: EventTarget | null): boolean {
-  return (
-    target instanceof Element &&
-    Boolean(
-      target.closest('a,button,[role="link"],[role="button"],[tabindex="0"]'),
-    )
+/**
+ * True when the event target is a nested control (e.g. mention link), not the
+ * row itself. Matching `[role="button"]` / `[tabindex="0"]` without excluding
+ * the row root previously swallowed every row click — including Go to message.
+ */
+function eventComesFromInteractiveChild(
+  target: EventTarget | null,
+  rowRoot: EventTarget | null,
+): boolean {
+  if (!(target instanceof Element) || !(rowRoot instanceof Element)) {
+    return false;
+  }
+  const interactive = target.closest('a,button,[role="link"]');
+  return Boolean(
+    interactive && interactive !== rowRoot && rowRoot.contains(interactive),
   );
 }
 
@@ -195,11 +207,26 @@ const MENTION_INBOX_ROW_CLASS =
 const MENTION_INBOX_NAV_ICON_CLASS =
   'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/50 bg-transparent text-muted-foreground shadow-none transition-colors group-hover:border-border/70 group-hover:bg-muted/30 group-hover:text-foreground';
 
-function MentionInboxNavigateIcon({ label }: { label: string }) {
+function MentionInboxNavigateIcon({
+  label,
+  onNavigate,
+}: {
+  label: string;
+  onNavigate: () => void;
+}) {
   return (
-    <span className={MENTION_INBOX_NAV_ICON_CLASS} aria-hidden title={label}>
-      <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
-    </span>
+    <button
+      type="button"
+      className={MENTION_INBOX_NAV_ICON_CLASS}
+      aria-label={label}
+      title={label}
+      onClick={(e) => {
+        e.stopPropagation();
+        onNavigate();
+      }}
+    >
+      <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+    </button>
   );
 }
 
@@ -225,11 +252,11 @@ function MentionInboxRow({
       className={MENTION_INBOX_ROW_CLASS}
       aria-label={ariaLabel}
       onClick={(e) => {
-        if (eventComesFromInteractiveChild(e.target)) return;
+        if (eventComesFromInteractiveChild(e.target, e.currentTarget)) return;
         onNavigate();
       }}
       onKeyDown={(e) => {
-        if (eventComesFromInteractiveChild(e.target)) return;
+        if (eventComesFromInteractiveChild(e.target, e.currentTarget)) return;
         selectMentionRowKeyDown(e, onNavigate);
       }}
     >
@@ -243,7 +270,10 @@ function MentionInboxRow({
             {excerpt}
           </div>
         </div>
-        <MentionInboxNavigateIcon label={navigateLabel} />
+        <MentionInboxNavigateIcon
+          label={navigateLabel}
+          onNavigate={onNavigate}
+        />
       </div>
     </div>
   );
@@ -257,6 +287,8 @@ export function HumanChatPanelMentionTab({
   resolveMemberLabel,
   onSelectMessage,
   aggregatedMentions = false,
+  unreadMentionCount = 0,
+  onMarkMentionsRead,
   callJoinAlertsUnmuted = true,
   onCallJoinAlertsUnmutedChange,
 }: HumanChatPanelMentionTabProps) {
@@ -264,6 +296,8 @@ export function HumanChatPanelMentionTab({
   const format = useFormatter();
   const showCallAlertToggle = Boolean(onCallJoinAlertsUnmutedChange);
   const callAlertsMuted = showCallAlertToggle && !callJoinAlertsUnmuted;
+  const showMarkAsRead =
+    unreadMentionCount > 0 && typeof onMarkMentionsRead === 'function';
 
   const aggregatedRows =
     aggregatedMentions && client && currentUserId
@@ -285,44 +319,65 @@ export function HumanChatPanelMentionTab({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {showCallAlertToggle ? (
-        <div className="flex shrink-0 items-center border-b border-border/60 px-3 py-2">
-          <button
-            type="button"
-            onClick={() =>
-              onCallJoinAlertsUnmutedChange?.(!callJoinAlertsUnmuted)
-            }
-            className={cn(
-              'inline-flex h-auto min-h-7 w-full max-w-full items-center gap-1.5 rounded-md border border-border/60 bg-transparent px-2 py-1 text-left text-xs font-normal leading-snug text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground',
-              callAlertsMuted && 'text-muted-foreground/80',
-            )}
-            aria-pressed={callAlertsMuted}
-            aria-label={
-              callJoinAlertsUnmuted
-                ? t('callJoinCallAlertsMuteAction')
-                : t('callJoinCallAlertsUnmuteAction')
-            }
-            title={
-              callJoinAlertsUnmuted
-                ? t('callJoinCallAlertsUnmuted')
-                : t('callJoinCallAlertsMuted')
-            }
-          >
-            {callJoinAlertsUnmuted ? (
-              <Volume2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-            ) : (
-              <VolumeX
-                className="h-3.5 w-3.5 shrink-0"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-            )}
-            <span className="min-w-0 flex-1 whitespace-normal">
-              {callJoinAlertsUnmuted
-                ? t('callJoinCallAlertsUnmuted')
-                : t('callJoinCallAlertsMutedShort')}
-            </span>
-          </button>
+      {showCallAlertToggle || showMarkAsRead ? (
+        <div className="flex shrink-0 flex-col gap-2 border-b border-border/60 px-3 py-2">
+          {showMarkAsRead ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="min-w-0 text-xs text-muted-foreground">
+                {t('mentionInboxUnreadHint', {
+                  count: unreadMentionCount,
+                })}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                size="sm"
+                className="h-7 shrink-0 px-2.5 text-xs"
+                onClick={onMarkMentionsRead}
+              >
+                {t('markAsRead')}
+              </Button>
+            </div>
+          ) : null}
+          {showCallAlertToggle ? (
+            <button
+              type="button"
+              onClick={() =>
+                onCallJoinAlertsUnmutedChange?.(!callJoinAlertsUnmuted)
+              }
+              className={cn(
+                'inline-flex h-auto min-h-7 w-full max-w-full items-center gap-1.5 rounded-md border border-border/60 bg-transparent px-2 py-1 text-left text-xs font-normal leading-snug text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground',
+                callAlertsMuted && 'text-muted-foreground/80',
+              )}
+              aria-pressed={callAlertsMuted}
+              aria-label={
+                callJoinAlertsUnmuted
+                  ? t('callJoinCallAlertsMuteAction')
+                  : t('callJoinCallAlertsUnmuteAction')
+              }
+              title={
+                callJoinAlertsUnmuted
+                  ? t('callJoinCallAlertsUnmuted')
+                  : t('callJoinCallAlertsMuted')
+              }
+            >
+              {callJoinAlertsUnmuted ? (
+                <Volume2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              ) : (
+                <VolumeX
+                  className="h-3.5 w-3.5 shrink-0"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+              )}
+              <span className="min-w-0 flex-1 whitespace-normal">
+                {callJoinAlertsUnmuted
+                  ? t('callJoinCallAlertsUnmuted')
+                  : t('callJoinCallAlertsMutedShort')}
+              </span>
+            </button>
+          ) : null}
         </div>
       ) : null}
       <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3">

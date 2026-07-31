@@ -1,15 +1,18 @@
 /**
- * Precision-tool craft layer — quiet utilities only.
- * No page washes, frosted theater, stagger motion, or empty-state glow.
+ * Product craft layer — airy, calm utilities.
+ * Soft content surfaces; tight chrome controls via rounded-chrome.
+ * No frosted theater, stagger motion, or empty-state glow.
  */
 
 :root {
   /*
    * Theme fallback only (pages without a space accent scope).
    * Do NOT reference --space-accent here: custom properties resolve on the
-   * defining element, so :root would bake in default indigo and descendants
-   * would inherit that stale colour even inside [data-space-accent-scope].
+   * defining element, so :root would bake in default mycelium teal and
+   * descendants would inherit that stale colour even inside
+   * [data-space-accent-scope].
    * Wide white→solid→black mixes so adjacent donut slices stay distinct.
+   * Default accent is mycelium teal (see theme/colors/accent.css).
    */
   --craft-chart-accent-1: color-mix(in oklab, var(--accent-9) 28%, white 72%);
   --craft-chart-accent-2: color-mix(in oklab, var(--accent-9) 44%, white 56%);
@@ -86,7 +89,7 @@
   }
 
   .craft-empty-mark {
-    @apply flex size-8 items-center justify-center rounded-lg border border-border/70 bg-background-2 text-muted-foreground;
+    @apply flex size-8 items-center justify-center rounded-xl border border-border/70 bg-background-2 text-muted-foreground;
   }
 
   /* Secondary copy — one visual weight below titles */
@@ -99,7 +102,7 @@
    * Prefer these over one-off rounded-xl + shadow stacks.
    */
   .craft-card {
-    @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
+    @apply rounded-xl border border-border/70 bg-background-2 shadow-none;
   }
 
   /*
@@ -109,7 +112,7 @@
    * utility bg/border classes from the utilities layer.
    */
   .craft-card-interactive {
-    @apply rounded-lg border border-border/70 bg-background-2 shadow-none;
+    @apply rounded-xl border border-border/70 bg-background-2 shadow-none;
     @apply transition-[border-color,background-color] duration-200 ease-out;
   }
 
@@ -172,6 +175,14 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
+}
+
+/*
+ * Main-column canvas — unlayered so it beats SidebarInset's bg-background
+ * utility and keeps listing grids on one continuous page surface.
+ */
+.craft-page-canvas {
+  background-color: var(--page-background);
 }
 
 /*

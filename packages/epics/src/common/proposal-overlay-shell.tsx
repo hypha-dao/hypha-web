@@ -143,9 +143,9 @@ export function ProposalOverlayShell({
             <div
               className={cn(
                 'pointer-events-auto relative flex w-full min-h-0 flex-col outline-none md:mx-auto',
-                'md:z-10 md:flex-initial md:max-h-[min(640px,calc(100dvh_-_var(--menu-top-height,70px)_-_2.5rem))] md:max-w-[min(768px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2.5rem))]',
+                'md:z-10 md:flex-initial md:max-h-[min(720px,calc(100dvh_-_var(--menu-top-height,70px)_-_2.5rem))] md:max-w-[min(896px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2.5rem))]',
                 'max-md:max-h-[calc(100dvh_-_var(--menu-top-height,70px))]',
-                'overflow-hidden rounded-lg md:border md:border-border/90 md:bg-background-2 md:shadow-md',
+                'overflow-hidden rounded-xl md:border md:border-border/90 md:bg-background-2 md:shadow-md',
                 'max-md:rounded-none max-md:border-0 max-md:bg-background-2 max-md:shadow-none',
                 className,
               )}

@@ -1,0 +1,59 @@
+/**
+ * Marketing-site accent dialect for app entry surfaces.
+ * Matches website royal blue (~#4A7CFE) + midnight atmosphere so the
+ * website → app transition stays continuous.
+ *
+ * Scoped via [data-landing-marketing] — does not change global mycelium teal
+ * or space-scoped accents.
+ */
+[data-landing-marketing] {
+  --landing-accent: #4a7cfe;
+  --landing-accent-hover: #3d6edf;
+  --landing-accent-soft: #89a9fe;
+  --landing-accent-muted: color-mix(in oklab, #4a7cfe 55%, white 45%);
+  --landing-accent-contrast: #ffffff;
+  --landing-navy-deep: oklch(0.08 0.03 265);
+  --landing-navy-mid: oklch(0.24 0.08 280);
+  --landing-navy-glow: oklch(0.2 0.07 292 / 0.55);
+
+  /* Light-on-navy type, independent of app light/dark theme. */
+  --foreground: #ffffff;
+  --color-foreground: #ffffff;
+  --muted-foreground: rgb(255 255 255 / 0.55);
+  --color-muted-foreground: rgb(255 255 255 / 0.55);
+  --primary: var(--landing-accent);
+  --color-primary: var(--landing-accent);
+
+  /* Remap accent/info solids used by hero chrome (pill, title, send). */
+  --accent-9: var(--landing-accent);
+  --accent-10: var(--landing-accent-hover);
+  --accent-11: var(--landing-accent-soft);
+  --color-accent-9: var(--landing-accent);
+  --color-accent-10: var(--landing-accent-hover);
+  --color-accent-11: var(--landing-accent-soft);
+  --accent-contrast: var(--landing-accent-contrast);
+  --color-accent-contrast: var(--landing-accent-contrast);
+
+  --info-7: color-mix(in oklab, var(--landing-accent) 45%, transparent);
+  --info-8: color-mix(in oklab, var(--landing-accent) 62%, transparent);
+  --info-9: var(--landing-accent);
+  --info-10: var(--landing-accent);
+  --info-11: var(--landing-accent-muted);
+  --color-info-7: var(--info-7);
+  --color-info-8: var(--info-8);
+  --color-info-9: var(--landing-accent);
+  --color-info-10: var(--landing-accent);
+  --color-info-11: var(--landing-accent-muted);
+}
+
+[data-landing-marketing] .landing-marketing-title-accent {
+  background-image: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    #ffffff 42%,
+    var(--landing-accent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

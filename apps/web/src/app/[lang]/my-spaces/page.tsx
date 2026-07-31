@@ -58,7 +58,7 @@ export default async function Index(props: PageProps) {
             lang={lang}
             query={query}
             order={order}
-            showCreateButton={(mySpaces?.length ?? 0) > 0}
+            showCreateButton
           />
         </Suspense>
         <MyFilteredSpaces

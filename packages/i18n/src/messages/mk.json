@@ -17,7 +17,7 @@
     "signIn": "Најавете се за да ја користите оваа функција.",
     "joinSpaceToUse": "Приклучете се на овој простор за да ја користите оваа функција.",
     "back": "Назад",
-    "home": "Преглед",
+    "home": "Контролна табла",
     "remove": "Отстрани",
     "by": "од",
     "copyWalletAddress": "Копирај ја адресата на паричникот",
@@ -40,7 +40,7 @@
     "errorConnectionLostRetry": "Обиди се повторно",
     "errorMaintenanceTitle": "Се враќаме наскоро!",
     "errorMaintenanceDescription": "Hypha е на кратка пауза додека воведуваме нови ажурирања. Наскоро се враќаме со возбудливи подобрувања!",
-    "errorLoadOverviewTab": "Упс, нешто тргна наопаку. Не можевме да го вчитаме табот за преглед.",
+    "errorLoadOverviewTab": "Упс, нешто тргна наопаку. Не можевме да го вчитаме табот за контролна табла.",
     "errorLoadMembersTab": "Упс, нешто тргна наопаку. Не можевме да го вчитаме табот со членови.",
     "errorLoadAgreementsTab": "Упс, нешто тргна наопаку. Не можевме да го вчитаме табот со договори.",
     "errorLoadTreasuryTab": "Упс, нешто тргна наопаку. Не можевме да го вчитаме табот на трезорот.",
@@ -64,7 +64,9 @@
     "Pipeline": "Пајплајн",
     "durationHours": "{count, plural, one {# час} other {# часа}}",
     "durationDays": "{count, plural, one {# ден} other {# дена}}",
-    "spaceBannerRevealMeta": "Детали"
+    "spaceBannerRevealMeta": "Детали",
+    "moreNav": "Повеќе",
+    "bankingTab": "Банкарство"
   },
   "ModalAside": {
     "spaceSettings": "Поставки на просторот",
@@ -590,6 +592,13 @@
       "spaceToSpaceVisualization": "Визуелизацијата простор-до-простор доаѓа наскоро",
       "valuesFlowsVisualization": "Визуелизацијата на тековите на вредност доаѓа наскоро"
     },
+    "diagram": {
+      "ariaLabel": "Карта на хиерархија на вгнездени простори",
+      "loading": "Се вчитува картата на екосистемот…",
+      "empty": "Сè уште нема вгнездени простори за приказ",
+      "hint": "Кликнете на простор за фокус · кликнете надвор за зумирање назад",
+      "subtitle": "Истражете како се вгнездуваат просторите во оваа организација"
+    },
     "visibleSpaces": {
       "nestedRoot": "Корен",
       "nestedIn": "Вгнездено во {parent}",
@@ -601,6 +610,16 @@
       "visitSpace": "Посети простор",
       "searchSpaces": "Пребарувај простори",
       "noSpacesFound": "Не се пронајдени простори"
+    },
+    "navigation": {
+      "individuals": "Поединци",
+      "memberSpaces": "Членски простори",
+      "agents": "Агенти",
+      "noIndividuals": "Сè уште нема поединци",
+      "noMemberSpaces": "Сè уште нема членски простори",
+      "noAgents": "Сè уште нема мобилизирани агенти",
+      "unnamedMember": "Член",
+      "loading": "Се вчитува…"
     }
   },
   "AgreementsTab": {
@@ -1288,13 +1307,14 @@
     "tokenPendingContractAddress": "Се чека адреса на блокчејн (прво извршете го предлогот за издавање токен)"
   },
   "Footer": {
-    "network": "МРЕЖА",
-    "legal": "ПРАВНИ ИНФОРМАЦИИ",
+    "network": "Мрежа",
+    "legal": "Правни информации",
     "hyphaServices": "Hypha услуги",
     "hyphaTokenomics": "Hypha токеномика",
     "licensingPolicy": "Политика за лиценцирање",
     "termsAndConditions": "Услови за користење",
-    "privacyPolicy": "Политика за приватност"
+    "privacyPolicy": "Политика за приватност",
+    "copyright": "© {year} Hypha"
   },
   "Profile": {
     "signup": {
@@ -1724,7 +1744,8 @@
     "escrowDepositApproving": "Се одобрува...",
     "escrowDepositInsufficientWallet": "Салдото на твојот паричник е под потребниот износ.",
     "pipelineEnabled": "Deal Pipeline",
-    "pipelineEnabledDescription": "Овозможете Kanban deal pipeline за овој простор. Исклучено по подразбирање."
+    "pipelineEnabledDescription": "Овозможете Kanban deal pipeline за овој простор. Исклучено по подразбирање.",
+    "mySpacesSupport": "Креирај простор или отвори еден во кој веќе членуваш."
   },
   "AgreementFlow": {
     "labels": {
@@ -2537,7 +2558,10 @@
       "decaySettings": "Поставки за распаѓање",
       "fromWhitelist": "Од белата листа",
       "toWhitelist": "Кон белата листа",
-      "mutualCredit": "Заемен кредит"
+      "mutualCredit": "Заемен кредит",
+      "moreDetails": "Детали за предлогот",
+      "showDetails": "Прикажи",
+      "hideDetails": "Сокриј"
     },
     "labels": {
       "unknown": "Непознато",
@@ -2949,6 +2973,7 @@
     "mentionInboxClose": "Затвори спомнувања",
     "mentionInboxNotificationSettings": "Поставки за известувања",
     "mentionInboxEmpty": "Сè уште нема спомнувања во овој разговор.",
+    "mentionInboxUnreadHint": "{count, plural, one {# непрочитано @спомнување} other {# непрочитани @спомнувања}}",
     "mentionInboxNoPreview": "(без преглед)",
     "mentionInboxBellAria": "{count, plural, one {# непрочитано спомнување} other {# непрочитани спомнувања}}",
     "mentionInboxBellAriaCapped": "99 или повеќе непрочитани спомнувања",
@@ -4319,5 +4344,31 @@
       "loading": "Се вчитуваат стапки на успех…",
       "resetDefaults": "Врати стандардни"
     }
+  },
+  "OverviewOps": {
+    "needsAttentionTitle": "Потребно е внимание",
+    "needsAttentionDescription": "Отворени гласања и ставки што ве чекаат.",
+    "noOpenVotesTitle": "Моментално нема отворени гласања",
+    "noOpenVotesDescription": "Кога предлог е на гласање, ќе се појави тука.",
+    "createProposal": "Креирај предлог",
+    "viewAllOpenVotes": "Види ги сите {count} отворени гласања",
+    "untitledProposal": "Предлог без наслов",
+    "quickActionsTitle": "Брзи акции",
+    "inviteMembers": "Членови",
+    "recentActivityTitle": "Недавна активност",
+    "recentActivityDescription": "Најнови предлози и договори во овој простор.",
+    "noRecentActivity": "Сè уште нема неодамнешна активност на управување.",
+    "statusOnVoting": "На гласање",
+    "statusAccepted": "Прифатен",
+    "statusRejected": "Одбиен",
+    "holdingsTitle": "Средства",
+    "holdingsDescription": "Салда на токени и средства на просторот."
+  },
+  "Landing": {
+    "brand": "Hypha",
+    "headline": "Простори што одлучуваат, финансираат и растат заедно.",
+    "support": "Мирниот работен простор за колективно дејствување.",
+    "ctaEnter": "Влези",
+    "ctaExplore": "Истражи мрежа"
   }
 }

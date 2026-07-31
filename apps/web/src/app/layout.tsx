@@ -115,6 +115,7 @@ export default async function RootLayout({
   let footerLicensingPolicyLabel = 'Licensing Policy';
   let footerTermsAndConditionsLabel = 'Terms and Conditions';
   let footerPrivacyPolicyLabel = 'Privacy Policy';
+  let footerCopyrightLabel = `© ${new Date().getFullYear()} Hypha`;
 
   const [
     languageSelectResult,
@@ -184,6 +185,9 @@ export default async function RootLayout({
     footerLicensingPolicyLabel = tFooter('licensingPolicy');
     footerTermsAndConditionsLabel = tFooter('termsAndConditions');
     footerPrivacyPolicyLabel = tFooter('privacyPolicy');
+    footerCopyrightLabel = tFooter('copyright', {
+      year: new Date().getFullYear(),
+    });
   } else {
     console.error(
       '[app/layout] Failed to resolve Footer translations',
@@ -230,7 +234,7 @@ export default async function RootLayout({
         <SwrProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
+            defaultTheme="light"
             enableSystem={false}
             storageKey="theme"
             disableTransitionOnChange
@@ -371,6 +375,7 @@ export default async function RootLayout({
                                 footerTermsAndConditionsLabel
                               }
                               privacyPolicyLabel={footerPrivacyPolicyLabel}
+                              copyrightLabel={footerCopyrightLabel}
                             />
                           </Suspense>
                         </PanelWrapLayout>

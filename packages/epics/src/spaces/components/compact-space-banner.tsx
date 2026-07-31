@@ -33,17 +33,11 @@ export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
   '[font-family:var(--font-family-text)]',
 );
 
-/** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
+/** Purpose column — compact identity strip (two lines max). */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 lg:max-w-[50%]',
-  /* Mobile: two-line cap — no inner scroll chrome (saves ~half the card height) */
-  'max-md:max-h-[2lh] max-md:overflow-hidden',
-  /* md+: scrollable up to four lines */
-  'md:max-h-[4lh] md:overflow-y-auto md:overscroll-y-contain md:touch-pan-y',
+  'max-h-[2lh] overflow-hidden',
   'text-2 leading-relaxed',
-  '[scrollbar-gutter:stable]',
-  '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
-  '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
 );
 
 type CompactSpaceBannerCommon = {
