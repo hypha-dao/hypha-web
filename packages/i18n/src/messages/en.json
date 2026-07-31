@@ -2983,6 +2983,7 @@
     "mentionInboxClose": "Close mentions",
     "mentionInboxNotificationSettings": "Notification settings",
     "mentionInboxEmpty": "No mentions in this chat yet.",
+    "mentionInboxUnreadHint": "{count, plural, one {# unread @mention} other {# unread @mentions}}",
     "mentionInboxNoPreview": "(no preview)",
     "mentionInboxBellAria": "{count, plural, one {# unread mention} other {# unread mentions}}",
     "mentionInboxBellAriaCapped": "99 or more unread mentions",

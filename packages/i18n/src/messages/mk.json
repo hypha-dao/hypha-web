@@ -2963,6 +2963,7 @@
     "mentionInboxClose": "Затвори спомнувања",
     "mentionInboxNotificationSettings": "Поставки за известувања",
     "mentionInboxEmpty": "Сè уште нема спомнувања во овој разговор.",
+    "mentionInboxUnreadHint": "{count, plural, one {# непрочитано @спомнување} other {# непрочитани @спомнувања}}",
     "mentionInboxNoPreview": "(без преглед)",
     "mentionInboxBellAria": "{count, plural, one {# непрочитано спомнување} other {# непрочитани спомнувања}}",
     "mentionInboxBellAriaCapped": "99 или повеќе непрочитани спомнувања",

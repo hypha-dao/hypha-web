@@ -2982,6 +2982,7 @@
     "mentionInboxClose": "Lukk omtaler",
     "mentionInboxNotificationSettings": "Varslingsinnstillinger",
     "mentionInboxEmpty": "Ingen omtaler i denne chatten ennå.",
+    "mentionInboxUnreadHint": "{count, plural, one {# ulest @omtale} other {# uleste @omtaler}}",
     "mentionInboxNoPreview": "(ingen forhåndsvisning)",
     "mentionInboxBellAria": "{count, plural, one {# ulest omtale} other {# uleste omtaler}}",
     "mentionInboxBellAriaCapped": "99 eller flere uleste omtaler",

@@ -3477,28 +3477,49 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const bellMentionCount = aggregateMentionBadge.count;
   const bellMentionCapped = aggregateMentionBadge.capped;
 
-  const markChatTimelineRead = useCallback(async () => {
-    if (!client || !roomId || !currentUserId) return;
-    const room = client.getRoom(roomId);
-    if (!room) return;
+  const markRoomTimelineRead = useCallback(
+    async (targetRoomId: string) => {
+      if (!client || !currentUserId) return;
+      const room = client.getRoom(targetRoomId);
+      if (!room) return;
 
-    const timeline = room.getLiveTimeline().getEvents();
-    for (let i = timeline.length - 1; i >= 0; i--) {
-      const ev = timeline[i];
-      if (!ev) continue;
-      if (ev.getType() !== EventType.RoomMessage) continue;
-      const id = ev.getId();
-      if (!id || !ev.getSender()) continue;
-      if (isRedactedRoomMessageEvent(ev)) continue;
-      if (getMessageReplaceTargetEventId(ev) != null) continue;
-      try {
-        await markRoomRead(roomId, id);
-      } catch {
-        // ignore
+      const timeline = room.getLiveTimeline().getEvents();
+      for (let i = timeline.length - 1; i >= 0; i--) {
+        const ev = timeline[i];
+        if (!ev) continue;
+        if (ev.getType() !== EventType.RoomMessage) continue;
+        const id = ev.getId();
+        if (!id || !ev.getSender()) continue;
+        if (isRedactedRoomMessageEvent(ev)) continue;
+        if (getMessageReplaceTargetEventId(ev) != null) continue;
+        try {
+          await markRoomRead(targetRoomId, id);
+        } catch {
+          // ignore
+        }
+        return;
       }
-      return;
+    },
+    [client, currentUserId, markRoomRead],
+  );
+
+  const markChatTimelineRead = useCallback(async () => {
+    if (!roomId) return;
+    await markRoomTimelineRead(roomId);
+  }, [markRoomTimelineRead, roomId]);
+
+  /** Clear Chat/Mentions badges — marks every joined room that still has unread @mentions. */
+  const markAllUnreadMentionsRead = useCallback(async () => {
+    if (!client || !currentUserId) return;
+    for (const room of client.getRooms()) {
+      if (room.getMyMembership() !== 'join') continue;
+      const state = computeHumanChatUnreadState(room, currentUserId);
+      if (state.unreadMentionCount <= 0) continue;
+      await markRoomTimelineRead(room.roomId);
     }
-  }, [client, roomId, currentUserId, markRoomRead]);
+    setUnreadBump((n) => n + 1);
+    setAggregateMentionBump((n) => n + 1);
+  }, [client, currentUserId, markRoomTimelineRead]);
 
   const handleReachedTimelineBottom = useCallback(() => {
     if (!unreadChatState.firstUnreadMessageId) return;
@@ -4846,6 +4867,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   resolveMemberLabel={resolveMentionMemberLabel}
                   onSelectMessage={handleSelectMentionFromInbox}
                   aggregatedMentions={mode === 'space'}
+                  unreadMentionCount={bellMentionCount}
+                  onMarkMentionsRead={() => {
+                    void markAllUnreadMentionsRead();
+                  }}
                   callJoinAlertsUnmuted={
                     callUiEnabled ? joinAlertSoundEnabled : undefined
                   }

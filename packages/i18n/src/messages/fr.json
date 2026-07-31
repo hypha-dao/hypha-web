@@ -2416,6 +2416,7 @@
     "mentionInboxClose": "Fermer les mentions",
     "mentionInboxNotificationSettings": "Paramètres de notification",
     "mentionInboxEmpty": "Aucune mention dans ce chat pour l’instant.",
+    "mentionInboxUnreadHint": "{count, plural, one {# mention @ non lue} other {# mentions @ non lues}}",
     "mentionInboxNoPreview": "(aucun aperçu)",
     "mentionInboxBellAria": "{count, plural, one {# mention non lue} other {# mentions non lues}}",
     "mentionInboxBellAriaCapped": "99 mentions non lues ou plus",

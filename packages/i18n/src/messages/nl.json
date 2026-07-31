@@ -2983,6 +2983,7 @@
     "mentionInboxClose": "Sluit vermeldingen",
     "mentionInboxNotificationSettings": "Meldingsinstellingen",
     "mentionInboxEmpty": "Nog geen vermeldingen in deze chat.",
+    "mentionInboxUnreadHint": "{count, plural, one {# ongelezen @vermelding} other {# ongelezen @vermeldingen}}",
     "mentionInboxNoPreview": "(geen voorbeeld)",
     "mentionInboxBellAria": "{count, plural, one {# ongelezen vermelding} other {# ongelezen vermeldingen}}",
     "mentionInboxBellAriaCapped": "99 of meer ongelezen vermeldingen",

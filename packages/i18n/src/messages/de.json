@@ -2980,6 +2980,7 @@
     "mentionInboxClose": "Erwähnungen schließen",
     "mentionInboxNotificationSettings": "Benachrichtigungseinstellungen",
     "mentionInboxEmpty": "Noch keine Erwähnungen in diesem Chat.",
+    "mentionInboxUnreadHint": "{count, plural, one {# ungelesene @Erwähnung} other {# ungelesene @Erwähnungen}}",
     "mentionInboxNoPreview": "(keine Vorschau)",
     "mentionInboxBellAria": "{count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
     "mentionInboxBellAriaCapped": "99 oder mehr ungelesene Erwähnungen",
