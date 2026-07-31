@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowRight, FileCheck2 } from 'lucide-react';
 import {
   getDhoPathAgreements,
+  PersonLabel,
   PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
   useSpaceDocumentsWithStatuses,
 } from '@hypha-platform/epics';
@@ -67,8 +68,8 @@ export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
       >
         {isLoading ? (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-14 w-full rounded-xl" />
-            <Skeleton className="h-14 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
           </div>
         ) : onVoting.length === 0 ? (
           <div className="craft-card flex items-start gap-3 p-4">
@@ -97,7 +98,17 @@ export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
                     <p className="truncate text-2 font-medium">
                       {doc.title || t('untitledProposal')}
                     </p>
-                    <p className="craft-meta mt-0.5">{t('statusOnVoting')}</p>
+                    <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden">
+                      {doc.creator ? (
+                        <div className="min-w-0 overflow-hidden">
+                          <PersonLabel creator={doc.creator} />
+                        </div>
+                      ) : null}
+                      <span className="craft-meta shrink-0">
+                        {doc.creator ? '· ' : null}
+                        {t('statusOnVoting')}
+                      </span>
+                    </div>
                   </div>
                   <ArrowRight
                     className="size-4 shrink-0 text-muted-foreground"
