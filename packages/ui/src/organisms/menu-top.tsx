@@ -213,7 +213,8 @@ export const MenuTop = ({
       ref={headerRef}
       className={clsx(
         'relative z-30 flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
-        'bg-background-2 px-4 py-3',
+        /* Match main-column canvas so the header doesn't stripe gray over the page. */
+        'bg-page-background px-4 py-3',
         /*
          * Span the flex gap between SidebarInset and the fixed left rail so the underline meets
          * the sidebar seam cleanly. The right panel draws its own matching border, which avoids

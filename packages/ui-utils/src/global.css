@@ -395,19 +395,21 @@
     font-feature-settings: 'rlig' 1, 'calt' 1;
 
     /*
-     * Quiet canvas depth — top lift + soft falloff so the page
-     * doesn't read as a flat empty slab. No frost, glow, or wash.
+     * Quiet canvas depth — one long soft lift, no mid-page cliff.
+     * Fade to the same hue at 0 alpha (not bare `transparent` / black-alpha),
+     * or oklab interpolation muddies into a hard gray→white band that
+     * bisects card grids when the main column is transparent.
      */
     background-image: radial-gradient(
-        120% 70% at 50% -18%,
-        color-mix(in oklab, var(--card) 55%, transparent),
-        transparent 62%
+        140% 90% at 50% -30%,
+        color-mix(in oklab, var(--card) 42%, var(--page-background)),
+        var(--page-background) 72%
       ),
       linear-gradient(
         180deg,
-        color-mix(in oklab, var(--page-background) 86%, var(--card) 14%) 0%,
-        var(--page-background) 42%,
-        color-mix(in oklab, var(--page-background) 94%, black 6%) 100%
+        color-mix(in oklab, var(--page-background) 92%, var(--card) 8%) 0%,
+        var(--page-background) 55%,
+        color-mix(in oklab, var(--page-background) 97%, black 3%) 100%
       );
   }
 }

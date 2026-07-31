@@ -76,7 +76,9 @@ export function PanelDualSidebarScrollBridge({
         and DHO sticky chrome (fixed bar + opacity) that subscribe to the main column.
       */}
       <SidebarInset
-        className={cn('min-h-0 flex-1 flex-col overflow-hidden')}
+        className={cn(
+          'craft-page-canvas min-h-0 flex-1 flex-col overflow-hidden',
+        )}
         style={
           {
             '--main-column-scrollbar-width': '0px',

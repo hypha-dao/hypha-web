@@ -178,6 +178,14 @@
 }
 
 /*
+ * Main-column canvas — unlayered so it beats SidebarInset's bg-background
+ * utility and keeps listing grids on one continuous page surface.
+ */
+.craft-page-canvas {
+  background-color: var(--page-background);
+}
+
+/*
  * Unlayered on purpose: Card (and similar) apply bg-background-2 /
  * border-border/* as utilities. Those beat @layer components, so the
  * accent hover must sit outside layers to win on upvote / Card grids.

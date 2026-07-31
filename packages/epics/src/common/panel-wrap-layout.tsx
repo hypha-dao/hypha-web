@@ -608,7 +608,7 @@ export function PanelWrapLayout({
   return (
     <div
       id={HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID}
-      className="isolate min-w-0 overflow-x-clip"
+      className="craft-page-canvas isolate min-w-0 overflow-x-clip"
       ref={wrapperRef}
       style={
         {
