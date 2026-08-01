@@ -64,13 +64,14 @@ export function DocumentsSections({
   const createProposalPath = `${basePath}/select-create-action`;
   const canCreateProposal =
     !isUserStateLoading && userState === UserSpaceState.LOGGED_IN_SPACE;
-  const createProposalButton = canCreateProposal ? (
-    <Button asChild>
-      <Link href={createProposalPath}>{t('newProposal')}</Link>
-    </Button>
-  ) : (
-    <Button disabled>{t('newProposal')}</Button>
-  );
+  const renderCreateProposalButton = () =>
+    canCreateProposal ? (
+      <Button asChild>
+        <Link href={createProposalPath}>{t('newProposal')}</Link>
+      </Button>
+    ) : (
+      <Button disabled>{t('newProposal')}</Button>
+    );
 
   return (
     <Tabs
@@ -81,7 +82,7 @@ export function DocumentsSections({
       }}
       className="flex flex-col gap-4 py-0"
     >
-      <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3">
+      <div className="flex w-full min-w-0 items-center justify-between gap-3">
         <ScrollableTabsList
           triggerVariant="switch"
           viewportClassName="min-w-0 flex-1 basis-[12rem]"
@@ -111,7 +112,9 @@ export function DocumentsSections({
             </span>
           </TabsTrigger>
         </ScrollableTabsList>
-        <div className="shrink-0">{createProposalButton}</div>
+        <div className="hidden shrink-0 md:block">
+          {renderCreateProposalButton()}
+        </div>
       </div>
 
       <TabsContent value="on-voting" className="mt-0">
@@ -120,6 +123,11 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           spaceLeadImage={spaceLeadImage}
           documents={documents.onVoting}
+          headSectionButton={
+            <div className="shrink-0 md:hidden">
+              {renderCreateProposalButton()}
+            </div>
+          }
           hasSearch={true}
           isLoading={isLoading}
           error={error}
@@ -133,6 +141,11 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           spaceLeadImage={spaceLeadImage}
           documents={documents.accepted}
+          headSectionButton={
+            <div className="shrink-0 md:hidden">
+              {renderCreateProposalButton()}
+            </div>
+          }
           hasSearch={true}
           isLoading={isLoading}
           error={error}
@@ -146,6 +159,11 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           spaceLeadImage={spaceLeadImage}
           documents={documents.rejected}
+          headSectionButton={
+            <div className="shrink-0 md:hidden">
+              {renderCreateProposalButton()}
+            </div>
+          }
           hasSearch={true}
           isLoading={isLoading}
           error={error}
