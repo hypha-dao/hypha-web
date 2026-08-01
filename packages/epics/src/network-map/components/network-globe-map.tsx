@@ -1152,89 +1152,130 @@ export function NetworkGlobeMap({
       return { width, height };
     }
 
-    function pointerFromEvent(
-      event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>,
-    ): [number, number] {
-      return d3.pointer(event.sourceEvent, svgElement);
-    }
-
     function globeProjectionAtRotation(rotate: Rotation) {
       const { width, height } = mapDimensions();
       return buildProjection(width, height, 0, rotate, globeZoomRef.current);
     }
 
-    const dragBehavior = d3
-      .drag<SVGSVGElement, unknown>()
-      .filter((event) => {
-        if (focusedClusterIdRef.current) {
-          return false;
-        }
-        if (morphRef.current >= 0.01) {
-          return false;
-        }
-        return !event.ctrlKey && !event.button;
-      })
-      .on('start', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
-        // Touch + mouse: without this, mobile scroll containers steal the drag.
-        const source = event.sourceEvent;
-        if (
-          source instanceof Event &&
-          'cancelable' in source &&
-          source.cancelable
-        ) {
-          source.preventDefault();
-        }
-        isDraggingRef.current = true;
-        hasUserRotatedRef.current = true;
-        clearHoveredPinRef.current();
-        clearSelectedPinRef.current();
+    // Pointer Events unify mouse + touch. The previous d3.drag path called
+    // d3.pointer(event.sourceEvent), which for touch is a TouchEvent without
+    // clientX/clientY — coords were NaN and invert never started a rotate.
+    let activePointerId: number | null = null;
 
-        const [x, y] = pointerFromEvent(event);
-        const invert = globeProjectionAtRotation(rotateRef.current).invert?.([
-          x,
-          y,
-        ]);
-        if (!invert) {
-          dragV0Ref.current = null;
-          dragQ0Ref.current = null;
-          return;
-        }
+    const canStartDrag = (event: PointerEvent) => {
+      if (focusedClusterIdRef.current) {
+        return false;
+      }
+      if (morphRef.current >= 0.01) {
+        return false;
+      }
+      if (event.ctrlKey) {
+        return false;
+      }
+      // Primary button only for mouse; touch/pen report button 0 on down.
+      if (event.button !== 0) {
+        return false;
+      }
+      return activePointerId == null;
+    };
 
-        dragV0Ref.current = cartesian(invert);
-        dragR0Ref.current = [...rotateRef.current];
-        dragQ0Ref.current = fromAngles(rotateRef.current);
-      })
-      .on('drag', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
-        const v0 = dragV0Ref.current;
-        const r0 = dragR0Ref.current;
-        const q0 = dragQ0Ref.current;
-        if (!v0 || !q0) {
-          return;
-        }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!canStartDrag(event)) {
+        return;
+      }
+      if (event.cancelable) {
+        event.preventDefault();
+      }
 
-        const [x, y] = pointerFromEvent(event);
-        const invert = globeProjectionAtRotation(r0).invert?.([x, y]);
-        if (!invert) {
-          return;
-        }
+      activePointerId = event.pointerId;
+      isDraggingRef.current = true;
+      hasUserRotatedRef.current = true;
+      clearHoveredPinRef.current();
+      clearSelectedPinRef.current();
 
-        const v1 = cartesian(invert);
-        const q1 = multiply(q0, delta(v0, v1));
-        rotateRef.current = toAngles(q1);
-        savedGlobeRotateRef.current = rotateRef.current;
-        requestRender();
-      })
-      .on('end', () => {
-        isDraggingRef.current = false;
+      try {
+        svgElement.setPointerCapture(event.pointerId);
+      } catch {
+        // Capture can fail if the element is detached mid-gesture.
+      }
+
+      const [x, y] = d3.pointer(event, svgElement);
+      const invert = globeProjectionAtRotation(rotateRef.current).invert?.([
+        x,
+        y,
+      ]);
+      if (!invert) {
         dragV0Ref.current = null;
         dragQ0Ref.current = null;
-      });
+        return;
+      }
 
-    d3.select(svgElement).call(dragBehavior);
+      dragV0Ref.current = cartesian(invert);
+      dragR0Ref.current = [...rotateRef.current];
+      dragQ0Ref.current = fromAngles(rotateRef.current);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (activePointerId !== event.pointerId) {
+        return;
+      }
+      const v0 = dragV0Ref.current;
+      const r0 = dragR0Ref.current;
+      const q0 = dragQ0Ref.current;
+      if (!v0 || !q0) {
+        return;
+      }
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      const [x, y] = d3.pointer(event, svgElement);
+      const invert = globeProjectionAtRotation(r0).invert?.([x, y]);
+      if (!invert) {
+        return;
+      }
+
+      const v1 = cartesian(invert);
+      const q1 = multiply(q0, delta(v0, v1));
+      rotateRef.current = toAngles(q1);
+      savedGlobeRotateRef.current = rotateRef.current;
+      requestRender();
+    };
+
+    const endDrag = (event: PointerEvent) => {
+      if (activePointerId !== event.pointerId) {
+        return;
+      }
+      activePointerId = null;
+      isDraggingRef.current = false;
+      dragV0Ref.current = null;
+      dragQ0Ref.current = null;
+      if (svgElement.hasPointerCapture(event.pointerId)) {
+        svgElement.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    // touch-action: none so the browser doesn't claim the gesture for scroll.
+    svgElement.style.touchAction = 'none';
+    container.style.touchAction = 'none';
+
+    svgElement.addEventListener('pointerdown', onPointerDown);
+    svgElement.addEventListener('pointermove', onPointerMove);
+    svgElement.addEventListener('pointerup', endDrag);
+    svgElement.addEventListener('pointercancel', endDrag);
+    svgElement.addEventListener('lostpointercapture', endDrag);
 
     return () => {
       resizeObserver.disconnect();
-      d3.select(svgElement).on('.drag', null);
+      svgElement.removeEventListener('pointerdown', onPointerDown);
+      svgElement.removeEventListener('pointermove', onPointerMove);
+      svgElement.removeEventListener('pointerup', endDrag);
+      svgElement.removeEventListener('pointercancel', endDrag);
+      svgElement.removeEventListener('lostpointercapture', endDrag);
+      svgElement.style.touchAction = '';
+      container.style.touchAction = '';
+      activePointerId = null;
+      isDraggingRef.current = false;
     };
   }, [showStage, isLoadingGeo, loadError, requestRender]);
 
@@ -1539,7 +1580,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative min-h-[360px] w-full overflow-hidden bg-transparent"
+      className="relative min-h-[360px] w-full touch-none overflow-hidden bg-transparent"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
