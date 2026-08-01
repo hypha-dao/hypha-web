@@ -158,9 +158,17 @@ export function AiPanelHeader({
   useEffect(() => {
     if (!spaceMenuOpen) return;
 
-    requestAnimationFrame(() => {
-      spaceSearchInputRef.current?.focus();
-    });
+    // Radix DropdownMenu Content omits onOpenAutoFocus from its public types, so
+    // focus the custom search field after open instead of fighting default autofocus.
+    const focusSearch = () => {
+      spaceSearchInputRef.current?.focus({ preventScroll: true });
+    };
+    const rafId = requestAnimationFrame(focusSearch);
+    const timeoutId = window.setTimeout(focusSearch, 0);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+    };
   }, [spaceMenuOpen]);
 
   const renderSpaceOption = (space: Space) => (
@@ -254,12 +262,8 @@ export function AiPanelHeader({
                 sideOffset={4}
                 collisionPadding={8}
                 // Nested inside the mobile sidebar Sheet: keep modal=true so the
-                // menu opens above the sheet, but stop Radix menu focus/pointer
-                // handling from swallowing taps on the custom search field.
-                onOpenAutoFocus={(event) => {
-                  event.preventDefault();
-                  focusSpaceSearchInput();
-                }}
+                // menu opens above the sheet, but stop Radix from restoring focus
+                // to the trigger (search focus on open is handled by spaceMenuOpen).
                 onCloseAutoFocus={(event) => {
                   event.preventDefault();
                 }}
