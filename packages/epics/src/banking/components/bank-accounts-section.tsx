@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   Button,
   Tabs,
-  TabsList,
+  ScrollableTabsList,
   TabsTrigger,
   Tooltip,
   TooltipContent,
@@ -179,15 +179,18 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
         onValueChange={(value) => setActiveTab(value as 'deposits' | 'payouts')}
         className="flex w-full flex-col gap-6"
       >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <TabsList triggerVariant="switch" className="w-fit">
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2">
+          <ScrollableTabsList
+            triggerVariant="switch"
+            viewportClassName="min-w-0 flex-1 basis-[10rem]"
+          >
             <TabsTrigger value="deposits" variant="switch">
               {tPayouts('tabs.deposits')}
             </TabsTrigger>
             <TabsTrigger value="payouts" variant="switch">
               {tPayouts('tabs.payouts')}
             </TabsTrigger>
-          </TabsList>
+          </ScrollableTabsList>
           {gearSlot ? (
             <div className="flex shrink-0 items-center">{gearSlot}</div>
           ) : null}

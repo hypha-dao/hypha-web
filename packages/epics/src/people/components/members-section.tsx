@@ -18,7 +18,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   readMobilizedAiAgents,
   subscribeMobilizedAiAgents,
@@ -100,7 +100,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             setEntityFilter(value as 'member' | 'space' | 'ai')
           }
         >
-          <TabsList triggerVariant="switch" className="w-fit">
+          <ScrollableTabsList triggerVariant="switch">
             <TabsTrigger value="member" variant="switch">
               <span className="inline-flex items-center gap-1">
                 <span>{tMembers('member')}</span>
@@ -125,7 +125,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
                 </span>
               </span>
             </TabsTrigger>
-          </TabsList>
+          </ScrollableTabsList>
         </Tabs>
       </div>
       <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">

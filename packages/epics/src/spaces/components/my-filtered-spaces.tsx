@@ -104,25 +104,25 @@ export function MyFilteredSpaces({
       <SectionFilter
         count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         label={tSpaces('mySpacesLabel')}
+        inlineLabel={false}
+        className="w-full min-w-0 shrink flex-wrap justify-between gap-x-3 gap-y-2 text-wrap sm:justify-end"
       >
-        <div className="flex items-center gap-4">
-          <label
-            htmlFor="hide-archived-spaces"
-            className="flex items-center gap-1"
-          >
-            <Input
-              id="hide-archived-spaces"
-              type="checkbox"
-              checked={hideArchivedSpaces}
-              onChange={(e) => setHideArchivedSpaces(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <span className="text-2 font-normal text-neutral-11">
-              {tSpaces('hideArchivedSpaces')}
-            </span>
-          </label>
-          <SpaceOrderCombobox order={order} />
-        </div>
+        <label
+          htmlFor="hide-archived-spaces"
+          className="flex min-w-0 items-center gap-1"
+        >
+          <Input
+            id="hide-archived-spaces"
+            type="checkbox"
+            checked={hideArchivedSpaces}
+            onChange={(e) => setHideArchivedSpaces(e.target.checked)}
+            className="h-4 w-4 shrink-0"
+          />
+          <span className="text-2 font-normal text-neutral-11">
+            {tSpaces('hideArchivedSpaces')}
+          </span>
+        </label>
+        <SpaceOrderCombobox order={order} className="shrink-0" />
       </SectionFilter>
       {isLoadingSpaces ? (
         <Text className="text-3 text-muted-foreground">

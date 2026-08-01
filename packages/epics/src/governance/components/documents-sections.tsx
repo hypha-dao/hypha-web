@@ -5,7 +5,12 @@ import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order, useSpaceBySlug } from '@hypha-platform/core/client';
 import { useFormatter, useTranslations } from 'next-intl';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  Tabs,
+  TabsContent,
+  ScrollableTabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
 import {
@@ -76,8 +81,11 @@ export function DocumentsSections({
       }}
       className="flex flex-col gap-4 py-0"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <TabsList triggerVariant="switch" className="w-fit">
+      <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3">
+        <ScrollableTabsList
+          triggerVariant="switch"
+          viewportClassName="min-w-0 flex-1 basis-[12rem]"
+        >
           <TabsTrigger value="on-voting" variant="switch">
             <span className="inline-flex items-center gap-1">
               <span>{t('onVoting')}</span>
@@ -102,7 +110,7 @@ export function DocumentsSections({
               </span>
             </span>
           </TabsTrigger>
-        </TabsList>
+        </ScrollableTabsList>
         <div className="shrink-0">{createProposalButton}</div>
       </div>
 

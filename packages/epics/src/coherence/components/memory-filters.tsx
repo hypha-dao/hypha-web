@@ -7,7 +7,7 @@ import {
   Button,
   Input,
   Tabs,
-  TabsList,
+  ScrollableTabsList,
   TabsTrigger,
   useIsMobile,
 } from '@hypha-platform/ui';
@@ -71,25 +71,23 @@ export function MemoryFilters({
         onValueChange={(value) => onFilterChange(value as MemoryFilterValue)}
         className="w-full"
       >
-        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <TabsList triggerVariant="switch" className="w-max max-w-none">
-            {visibleTabItems.map((item) => (
-              <TabsTrigger
-                key={item.value}
-                variant="switch"
-                value={item.value}
-                className="justify-center"
-              >
-                <span className="inline-flex items-center gap-1">
-                  <span>{item.label}</span>
-                  <span className="text-xs text-muted-foreground">
-                    ({counts[item.value] ?? 0})
-                  </span>
+        <ScrollableTabsList triggerVariant="switch">
+          {visibleTabItems.map((item) => (
+            <TabsTrigger
+              key={item.value}
+              variant="switch"
+              value={item.value}
+              className="justify-center"
+            >
+              <span className="inline-flex items-center gap-1">
+                <span>{item.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({counts[item.value] ?? 0})
                 </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+              </span>
+            </TabsTrigger>
+          ))}
+        </ScrollableTabsList>
       </Tabs>
 
       <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">

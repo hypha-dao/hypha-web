@@ -1,6 +1,6 @@
 'use client';
 
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   Coherence,
   useFindCoherences,
@@ -78,7 +78,7 @@ function PriorityFilterTabs({
 
   return (
     <Tabs value={currentValue} onValueChange={handleValueChange}>
-      <TabsList triggerVariant="switch" className="w-fit">
+      <ScrollableTabsList triggerVariant="switch">
         {items.map((item) => (
           <TabsTrigger key={item.value} value={item.value} variant="switch">
             <span className="inline-flex items-center gap-1">
@@ -91,7 +91,7 @@ function PriorityFilterTabs({
             </span>
           </TabsTrigger>
         ))}
-      </TabsList>
+      </ScrollableTabsList>
     </Tabs>
   );
 }
@@ -304,9 +304,7 @@ export function CoherenceBlock({
         </h1>
       </header>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-          <div className="w-max">{priorityTabs}</div>
-        </div>
+        <div className="min-w-0 max-w-full">{priorityTabs}</div>
         <SignalViewControls
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
