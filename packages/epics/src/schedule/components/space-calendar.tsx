@@ -565,7 +565,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         )}
       >
         <div className="relative">
-          <div className="mb-1.5 flex flex-col gap-1">
+          <div className="mb-1.5 flex flex-col gap-1.5 px-1.5 md:px-2">
             <div className="flex flex-wrap items-center gap-1.5">
               <div className="flex h-8 items-stretch overflow-hidden rounded-md border border-border/70 bg-background">
                 <Button
@@ -620,11 +620,11 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-border/50 pb-1.5">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-border/50 pb-1.5 md:flex-nowrap">
               {TYPE_LEGEND.map(({ type, key }) => (
                 <span
                   key={type}
-                  className="inline-flex items-center gap-1 text-1 font-medium uppercase tracking-wide text-muted-foreground"
+                  className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-1 font-medium uppercase tracking-wide text-muted-foreground"
                 >
                   <span
                     className={`hypha-cal-legend-dot hypha-cal-legend-dot--${type}`}
