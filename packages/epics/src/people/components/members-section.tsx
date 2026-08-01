@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useState } from 'react';
 import { Text } from '@radix-ui/themes';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 
@@ -20,10 +20,9 @@ import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
 import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
-  readMobilizedAiAgents,
-  subscribeMobilizedAiAgents,
   getAgentAvatarInitials,
   tagGroupAccentClass,
+  useMobilizedAiAgents,
 } from '../../common/ai-agent-competencies';
 
 type MemberSectionProps = {
@@ -45,7 +44,6 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const [entityFilter, setEntityFilter] = useState<'member' | 'space' | 'ai'>(
     'member',
   );
-  const [agentRefreshEpoch, setAgentRefreshEpoch] = useState(0);
   const {
     pages,
     isLoading,
@@ -77,18 +75,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
     ? tCommon('joinSpaceToUse')
     : '';
 
-  useEffect(() => {
-    const unsubscribe = subscribeMobilizedAiAgents(spaceSlug, () =>
-      setAgentRefreshEpoch((v) => v + 1),
-    );
-    return unsubscribe;
-  }, [spaceSlug]);
-
-  const aiAgents = useMemo(
-    () => readMobilizedAiAgents(spaceSlug),
-    [spaceSlug, agentRefreshEpoch],
-  );
-
+  const aiAgents = useMobilizedAiAgents(spaceSlug);
   const aiAgentCount = aiAgents.length;
 
   return (

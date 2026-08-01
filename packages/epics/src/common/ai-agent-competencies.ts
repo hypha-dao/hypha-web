@@ -1,5 +1,7 @@
 'use client';
 
+import { useCallback, useSyncExternalStore } from 'react';
+
 export type AiCompetencyAgent = {
   id: string;
   tagGroup: string;
@@ -632,4 +634,56 @@ export function subscribeMobilizedAiAgents(
     window.removeEventListener('storage', onStorage);
     window.removeEventListener(AGENT_UPDATED_EVENT, onCustom as EventListener);
   };
+}
+
+const EMPTY_MOBILIZED_AGENTS: MobilizedAiCompetencyAgent[] = [];
+
+type MobilizedAgentsSnapshotCache = {
+  spaceSlug: string;
+  raw: string | null;
+  agents: MobilizedAiCompetencyAgent[];
+};
+
+let mobilizedAgentsSnapshotCache: MobilizedAgentsSnapshotCache | null = null;
+
+function getMobilizedAiAgentsSnapshot(
+  spaceSlug?: string | null,
+): MobilizedAiCompetencyAgent[] {
+  if (!spaceSlug || typeof window === 'undefined') {
+    return EMPTY_MOBILIZED_AGENTS;
+  }
+
+  const raw = window.localStorage.getItem(storageKey(spaceSlug));
+  if (
+    mobilizedAgentsSnapshotCache &&
+    mobilizedAgentsSnapshotCache.spaceSlug === spaceSlug &&
+    mobilizedAgentsSnapshotCache.raw === raw
+  ) {
+    return mobilizedAgentsSnapshotCache.agents;
+  }
+
+  const agents = readMobilizedAiAgents(spaceSlug);
+  mobilizedAgentsSnapshotCache = { spaceSlug, raw, agents };
+  return agents;
+}
+
+/**
+ * Client-safe mobilized-agents reader. Uses useSyncExternalStore so SSR/hydration
+ * does not permanently cache an empty localStorage result.
+ */
+export function useMobilizedAiAgents(
+  spaceSlug?: string | null,
+): MobilizedAiCompetencyAgent[] {
+  const subscribe = useCallback(
+    (onStoreChange: () => void) =>
+      subscribeMobilizedAiAgents(spaceSlug, onStoreChange),
+    [spaceSlug],
+  );
+  const getSnapshot = useCallback(
+    () => getMobilizedAiAgentsSnapshot(spaceSlug),
+    [spaceSlug],
+  );
+  const getServerSnapshot = useCallback(() => EMPTY_MOBILIZED_AGENTS, []);
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

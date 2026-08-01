@@ -530,9 +530,16 @@ export function SpaceVisualization({
       return null;
     };
 
-    // Stable ecosystem overview: open at root. Drill-in focus is remembered
-    // across re-renders; currentSpaceId is marked with the dashed ring instead.
+    // Open on the space the user is viewing so membership modules (individuals /
+    // spaces / agents) match that space's Members tab. Drill-in focus is
+    // remembered across re-renders; zoom out still reaches the org root.
     let focus = root;
+    if (typeof currentSpaceId === 'number') {
+      const currentNode = findNodeById(root, currentSpaceId);
+      if (currentNode) {
+        focus = currentNode;
+      }
+    }
 
     if (savedFocusIdRef.current) {
       const savedNode = findNodeById(root, savedFocusIdRef.current);

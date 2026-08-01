@@ -176,6 +176,7 @@ export {
   subscribeMobilizedAiAgents,
   tagGroupAccentClass,
   transferMobilizedAiAgentsToSpace,
+  useMobilizedAiAgents,
 } from './ai-agent-competencies';
 export {
   PanelProviders,

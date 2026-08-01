@@ -5,9 +5,8 @@ import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
 import {
   getAgentAvatarInitials,
-  readMobilizedAiAgents,
-  subscribeMobilizedAiAgents,
   tagGroupAccentClass,
+  useMobilizedAiAgents,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 
@@ -144,18 +143,11 @@ export function EcosystemMembershipModules({
 }: EcosystemMembershipModulesProps) {
   const t = useTranslations('SelectNavigationAction');
   const tCoherence = useTranslations('CoherenceTab');
-  const [agentRefreshEpoch, setAgentRefreshEpoch] = useState(0);
+  const mobilizedAgents = useMobilizedAiAgents(spaceSlug);
   const { persons, spaces, isLoading } = useMembers({
     spaceSlug,
     paginationDisabled: true,
   });
-
-  useEffect(() => {
-    const unsubscribe = subscribeMobilizedAiAgents(spaceSlug, () =>
-      setAgentRefreshEpoch((value) => value + 1),
-    );
-    return unsubscribe;
-  }, [spaceSlug]);
 
   const individuals = useMemo<MembershipPreview[]>(
     () =>
@@ -186,18 +178,19 @@ export function EcosystemMembershipModules({
     [spaces.data],
   );
 
-  const agents = useMemo<MembershipPreview[]>(() => {
-    void agentRefreshEpoch;
-    return readMobilizedAiAgents(spaceSlug).map((agent) => {
-      const label = tCoherence(agent.role);
-      return {
-        id: `agent-${agent.id}`,
-        label,
-        initials: getAgentAvatarInitials(label),
-        accentClassName: tagGroupAccentClass(agent.tagGroup),
-      };
-    });
-  }, [agentRefreshEpoch, spaceSlug, tCoherence]);
+  const agents = useMemo<MembershipPreview[]>(
+    () =>
+      mobilizedAgents.map((agent) => {
+        const label = tCoherence(agent.role);
+        return {
+          id: `agent-${agent.id}`,
+          label,
+          initials: getAgentAvatarInitials(label),
+          accentClassName: tagGroupAccentClass(agent.tagGroup),
+        };
+      }),
+    [mobilizedAgents, tCoherence],
+  );
 
   const modules = useMemo(
     () =>
