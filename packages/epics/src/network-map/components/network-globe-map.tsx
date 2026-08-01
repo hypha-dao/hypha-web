@@ -44,6 +44,8 @@ import {
 } from '../lib/pin-clusters';
 
 const PROJECTION_ANIMATION_MS = 1200;
+/** Slow idle yaw (~8°/s) so the globe visibly turns on mobile and desktop. */
+const AUTO_ROTATE_DEG_PER_MS = 0.008;
 /** Cluster zoom-in duration — balanced for a smooth camera dolly. */
 const CLUSTER_FOCUS_MS = 1000;
 /** Cluster zoom-out duration — matched to focus so in/out feel symmetric. */
@@ -310,6 +312,7 @@ export function NetworkGlobeMap({
   const dragR0Ref = React.useRef<Rotation>(DEFAULT_GLOBE_ROTATION);
   const dragQ0Ref = React.useRef<ReturnType<typeof fromAngles> | null>(null);
   const animationFrameRef = React.useRef<number | null>(null);
+  const autoRotateFrameRef = React.useRef<number | null>(null);
   const renderFrameRef = React.useRef<number | null>(null);
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
@@ -1172,8 +1175,14 @@ export function NetworkGlobeMap({
         return !event.ctrlKey && !event.button;
       })
       .on('start', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
-        if (event.sourceEvent instanceof MouseEvent) {
-          event.sourceEvent.preventDefault();
+        // Touch + mouse: without this, mobile scroll containers steal the drag.
+        const source = event.sourceEvent;
+        if (
+          source instanceof Event &&
+          'cancelable' in source &&
+          source.cancelable
+        ) {
+          source.preventDefault();
         }
         isDraggingRef.current = true;
         hasUserRotatedRef.current = true;
@@ -1228,6 +1237,70 @@ export function NetworkGlobeMap({
       d3.select(svgElement).on('.drag', null);
     };
   }, [showStage, isLoadingGeo, loadError, requestRender]);
+
+  // Slow idle yaw; pause while dragging, morphing, or reduced-motion.
+  React.useEffect(() => {
+    if (!isActive || !showStage || isLoadingGeo || loadError) {
+      return;
+    }
+
+    let lastTs: number | null = null;
+    let reducedMotion = prefersReducedMotion();
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncReducedMotion = () => {
+      reducedMotion = motionQuery.matches;
+      lastTs = null;
+    };
+    motionQuery.addEventListener('change', syncReducedMotion);
+
+    const onVisibilityChange = () => {
+      lastTs = null;
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const step = (now: number) => {
+      autoRotateFrameRef.current = requestAnimationFrame(step);
+
+      if (
+        reducedMotion ||
+        document.hidden ||
+        isDraggingRef.current ||
+        morphRef.current >= 0.01 ||
+        focusedClusterIdRef.current != null ||
+        clusterAnimatingRef.current ||
+        animationFrameRef.current != null ||
+        clusterAnimFrameRef.current != null
+      ) {
+        lastTs = null;
+        return;
+      }
+
+      if (lastTs == null) {
+        lastTs = now;
+        return;
+      }
+
+      const dt = Math.min(64, now - lastTs);
+      lastTs = now;
+      const [lambda, phi, gamma] = rotateRef.current;
+      const next: Rotation = [lambda + AUTO_ROTATE_DEG_PER_MS * dt, phi, gamma];
+      rotateRef.current = next;
+      savedGlobeRotateRef.current = next;
+      requestRender();
+    };
+
+    autoRotateFrameRef.current = requestAnimationFrame(step);
+
+    return () => {
+      motionQuery.removeEventListener('change', syncReducedMotion);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (autoRotateFrameRef.current != null) {
+        cancelAnimationFrame(autoRotateFrameRef.current);
+        autoRotateFrameRef.current = null;
+      }
+    };
+  }, [isActive, showStage, isLoadingGeo, loadError, requestRender]);
 
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
@@ -1303,6 +1376,9 @@ export function NetworkGlobeMap({
     return () => {
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (autoRotateFrameRef.current != null) {
+        cancelAnimationFrame(autoRotateFrameRef.current);
       }
       if (clusterAnimFrameRef.current != null) {
         cancelAnimationFrame(clusterAnimFrameRef.current);
