@@ -37,7 +37,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
       {inlineLabel ? (
         <>
           {hasLabel ? (
-            <Text className="min-w-0 shrink text-4 capitalize">
+            <Text className="min-w-0 shrink text-4 capitalize text-nowrap">
               {label} {hasCount ? <>| {count}</> : null}
             </Text>
           ) : null}
@@ -56,7 +56,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
           {children && (
             <div
               className={cn(
-                'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2',
+                'flex max-w-full flex-wrap items-center gap-x-3 gap-y-2',
                 className,
               )}
             >
@@ -67,7 +67,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
       ) : (
         <div className="flex w-full min-w-0 flex-col gap-4">
           {hasLabel ? (
-            <Text className="text-4 capitalize">
+            <Text className="text-4 capitalize text-nowrap">
               {label} {hasCount ? <>| {count}</> : null}
             </Text>
           ) : null}
@@ -90,7 +90,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               {children ? (
                 <div
                   className={cn(
-                    'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2',
+                    'flex max-w-full flex-wrap items-center gap-x-3 gap-y-2',
                     className,
                   )}
                 >
