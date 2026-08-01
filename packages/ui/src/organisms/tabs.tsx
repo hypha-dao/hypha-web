@@ -34,7 +34,7 @@ const Tabs = React.forwardRef<
 });
 Tabs.displayName = TabsPrimitive.Root.displayName;
 
-type TabsListProps = React.ComponentPropsWithoutRef<
+export type TabsListProps = React.ComponentPropsWithoutRef<
   typeof TabsPrimitive.List
 > & {
   triggerVariant?: 'default' | 'ghost' | 'outlined' | 'switch';
@@ -60,7 +60,7 @@ const TabsList = React.forwardRef<
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
-type ScrollableTabsListProps = TabsListProps & {
+export type ScrollableTabsListProps = TabsListProps & {
   viewportClassName?: string;
 };
 

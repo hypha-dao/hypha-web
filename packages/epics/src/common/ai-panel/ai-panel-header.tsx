@@ -261,12 +261,6 @@ export function AiPanelHeader({
                 align="center"
                 sideOffset={4}
                 collisionPadding={8}
-                // Nested inside the mobile sidebar Sheet: keep modal=true so the
-                // menu opens above the sheet, but stop Radix from restoring focus
-                // to the trigger (search focus on open is handled by spaceMenuOpen).
-                onCloseAutoFocus={(event) => {
-                  event.preventDefault();
-                }}
                 className="relative isolate z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-border/60 bg-background-2 p-0 shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="flex max-h-[24.5rem] min-h-0 flex-col">
@@ -290,10 +284,12 @@ export function AiPanelHeader({
                           });
                         }}
                         onKeyDown={(event) => {
-                          // Keep typing out of DropdownMenu typeahead; Escape still closes.
-                          if (event.key !== 'Escape') {
-                            event.stopPropagation();
+                          // Keep typing out of DropdownMenu typeahead; Escape still
+                          // closes, and Tab/Shift+Tab must reach Radix focus handling.
+                          if (event.key === 'Escape' || event.key === 'Tab') {
+                            return;
                           }
+                          event.stopPropagation();
                         }}
                         placeholder={tSpaces('search')}
                         className="pointer-events-auto relative z-[1] h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"

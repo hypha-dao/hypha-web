@@ -639,12 +639,14 @@ export function subscribeMobilizedAiAgents(
 const EMPTY_MOBILIZED_AGENTS: MobilizedAiCompetencyAgent[] = [];
 
 type MobilizedAgentsSnapshotCache = {
-  spaceSlug: string;
   raw: string | null;
   agents: MobilizedAiCompetencyAgent[];
 };
 
-let mobilizedAgentsSnapshotCache: MobilizedAgentsSnapshotCache | null = null;
+const mobilizedAgentsSnapshotCacheBySlug = new Map<
+  string,
+  MobilizedAgentsSnapshotCache
+>();
 
 function getMobilizedAiAgentsSnapshot(
   spaceSlug?: string | null,
@@ -654,16 +656,13 @@ function getMobilizedAiAgentsSnapshot(
   }
 
   const raw = window.localStorage.getItem(storageKey(spaceSlug));
-  if (
-    mobilizedAgentsSnapshotCache &&
-    mobilizedAgentsSnapshotCache.spaceSlug === spaceSlug &&
-    mobilizedAgentsSnapshotCache.raw === raw
-  ) {
-    return mobilizedAgentsSnapshotCache.agents;
+  const cached = mobilizedAgentsSnapshotCacheBySlug.get(spaceSlug);
+  if (cached && cached.raw === raw) {
+    return cached.agents;
   }
 
   const agents = readMobilizedAiAgents(spaceSlug);
-  mobilizedAgentsSnapshotCache = { spaceSlug, raw, agents };
+  mobilizedAgentsSnapshotCacheBySlug.set(spaceSlug, { raw, agents });
   return agents;
 }
 

@@ -432,7 +432,7 @@ export function CreateAgreementBaseFields({
           <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
             {stickyHeaderTitle ?? resolvedLabel}
           </h2>
-          <div className="flex min-w-0 shrink items-center justify-end gap-1 overflow-x-auto overscroll-x-contain touch-pan-x">
+          <div className="flex min-w-0 shrink items-center justify-start gap-1 overflow-x-auto overscroll-x-contain touch-pan-x md:justify-end">
             {backUrl && (
               <ButtonBack
                 label={resolvedBackLabel}

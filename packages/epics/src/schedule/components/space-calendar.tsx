@@ -620,7 +620,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 md:ms-auto md:flex-nowrap">
+            <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2.5 gap-y-1 md:ms-auto md:flex-nowrap md:overflow-x-auto">
               {TYPE_LEGEND.map(({ type, key }) => (
                 <span
                   key={type}

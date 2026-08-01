@@ -1188,8 +1188,6 @@ export function NetworkGlobeMap({
       }
 
       activePointerId = event.pointerId;
-      isDraggingRef.current = true;
-      hasUserRotatedRef.current = true;
       clearHoveredPinRef.current();
       clearSelectedPinRef.current();
 
@@ -1210,6 +1208,8 @@ export function NetworkGlobeMap({
         return;
       }
 
+      isDraggingRef.current = true;
+      hasUserRotatedRef.current = true;
       dragV0Ref.current = cartesian(invert);
       dragR0Ref.current = [...rotateRef.current];
       dragQ0Ref.current = fromAngles(rotateRef.current);
@@ -1255,9 +1255,12 @@ export function NetworkGlobeMap({
       }
     };
 
-    // touch-action: none so the browser doesn't claim the gesture for scroll.
-    svgElement.style.touchAction = 'none';
-    container.style.touchAction = 'none';
+    // touch-action: none only in steady globe mode so flat/morphing views can scroll.
+    const isGlobeTouch =
+      selectedProjection === 'globe' && projectionMode === 'globe';
+    const touchAction = isGlobeTouch ? 'none' : 'auto';
+    svgElement.style.touchAction = touchAction;
+    container.style.touchAction = touchAction;
 
     svgElement.addEventListener('pointerdown', onPointerDown);
     svgElement.addEventListener('pointermove', onPointerMove);
@@ -1277,7 +1280,14 @@ export function NetworkGlobeMap({
       activePointerId = null;
       isDraggingRef.current = false;
     };
-  }, [showStage, isLoadingGeo, loadError, requestRender]);
+  }, [
+    showStage,
+    isLoadingGeo,
+    loadError,
+    requestRender,
+    selectedProjection,
+    projectionMode,
+  ]);
 
   // Slow idle yaw; pause while dragging, morphing, or reduced-motion.
   React.useEffect(() => {
@@ -1325,7 +1335,10 @@ export function NetworkGlobeMap({
       const dt = Math.min(64, now - lastTs);
       lastTs = now;
       const [lambda, phi, gamma] = rotateRef.current;
-      const next: Rotation = [lambda + AUTO_ROTATE_DEG_PER_MS * dt, phi, gamma];
+      const nextLambda =
+        ((((lambda + AUTO_ROTATE_DEG_PER_MS * dt + 180) % 360) + 360) % 360) -
+        180;
+      const next: Rotation = [nextLambda, phi, gamma];
       rotateRef.current = next;
       savedGlobeRotateRef.current = next;
       requestRender();
@@ -1580,7 +1593,7 @@ export function NetworkGlobeMap({
   const mapStage = (
     <div
       ref={containerRef}
-      className="relative min-h-[360px] w-full touch-none overflow-hidden bg-transparent"
+      className="relative min-h-[360px] w-full overflow-hidden bg-transparent"
     >
       {isLoadingGeo ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-neutral-11">
@@ -1598,7 +1611,7 @@ export function NetworkGlobeMap({
       <svg
         ref={svgRef}
         className={cn(
-          'block w-full touch-none select-none',
+          'block w-full select-none',
           projectionMode === 'globe'
             ? 'cursor-grab active:cursor-grabbing'
             : 'cursor-default',

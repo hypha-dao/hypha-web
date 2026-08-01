@@ -105,7 +105,7 @@ export function MyFilteredSpaces({
         count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         label={tSpaces('mySpacesLabel')}
         inlineLabel={false}
-        className="w-auto max-w-full flex-wrap items-center justify-start gap-x-3 gap-y-2 sm:justify-end"
+        className="w-auto max-w-full flex-wrap items-center justify-start gap-x-3 gap-y-2 sm:ml-auto"
       >
         <label
           htmlFor="hide-archived-spaces"

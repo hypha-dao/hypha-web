@@ -44,7 +44,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
           {hasSearch ? (
             <Input
               type="search"
-              className="w-full min-w-0 flex-1 basis-[12rem]"
+              rootClassName="w-full min-w-0 flex-1 basis-[12rem]"
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
               leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
@@ -78,7 +78,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               {hasSearch ? (
                 <Input
                   type="search"
-                  className="w-full min-w-0 flex-1"
+                  rootClassName="w-full min-w-0 flex-1"
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
                   leftIcon={
