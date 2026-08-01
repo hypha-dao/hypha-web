@@ -565,9 +565,9 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
         )}
       >
         <div className="relative">
-          <div className="mb-1.5 flex flex-col gap-1.5 px-1.5 md:px-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <div className="flex h-8 items-stretch overflow-hidden rounded-md border border-border/70 bg-background">
+          <div className="mb-1.5 flex flex-col gap-1.5 border-b border-border/50 px-1.5 pb-1.5 md:flex-row md:items-center md:flex-nowrap md:gap-3 md:px-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 md:flex-nowrap">
+              <div className="flex h-8 shrink-0 items-stretch overflow-hidden rounded-md border border-border/70 bg-background">
                 <Button
                   type="button"
                   variant="ghost"
@@ -620,7 +620,7 @@ export function SpaceCalendar({ spaceSlug, lang = 'en' }: SpaceCalendarProps) {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-border/50 pb-1.5 md:flex-nowrap">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 md:ms-auto md:flex-nowrap">
               {TYPE_LEGEND.map(({ type, key }) => (
                 <span
                   key={type}
