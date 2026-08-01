@@ -16,6 +16,7 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 import { SignalCardActions } from './signal-card-actions';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
+  PRIORITY_LEFT_ACCENT_BAR_CLASS,
   priorityLeftBorderClass,
   statusColorDotClass,
 } from '../utils/signal-priority-styles';
@@ -176,7 +177,7 @@ export function SignalTaskCard({
     >
       <div
         className={cn(
-          'absolute inset-y-0 left-0 w-0.5 rounded-l-lg opacity-80',
+          PRIORITY_LEFT_ACCENT_BAR_CLASS,
           priorityLeftBorderClass(signal.priority),
         )}
         title={priorityLabel}
