@@ -627,7 +627,7 @@ export function CreateAgreementBaseFields({
             />
           </section>
         ) : null}
-        <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+        <section className="min-w-0 max-w-full overflow-hidden rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
           {mode === 'memory' ? (
             <FormField
               control={form.control}
@@ -643,7 +643,7 @@ export function CreateAgreementBaseFields({
                 ];
 
                 return (
-                  <FormItem className="mb-6">
+                  <FormItem className="mb-6 min-w-0 max-w-full">
                     <FormLabel className="mb-2 block gap-1 text-sm font-medium text-foreground">
                       {tCoherence('newMemoryUploadDocumentsTitle')}{' '}
                       <RequirementMark />
@@ -729,7 +729,7 @@ export function CreateAgreementBaseFields({
                 ];
 
                 return (
-                  <FormItem className="mt-6">
+                  <FormItem className="mt-6 min-w-0 max-w-full">
                     <FormControl>
                       <AddAttachment
                         label={attachmentLabel}

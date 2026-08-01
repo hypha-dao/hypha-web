@@ -125,16 +125,16 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-end w-full">
+    <div className="flex w-full min-w-0 max-w-full flex-col items-end">
       <Button
         variant="ghost"
         colorVariant="accent"
         type="button"
         onClick={handleClick}
-        className="w-full justify-start text-accent-11 hover:bg-accent-3 hover:text-neutral-12 [&_svg]:text-accent-11 hover:[&_svg]:text-neutral-12"
+        className="h-auto w-full min-w-0 max-w-full justify-start whitespace-normal text-left text-accent-11 hover:bg-accent-3 hover:text-neutral-12 [&_svg]:shrink-0 [&_svg]:text-accent-11 hover:[&_svg]:text-neutral-12"
       >
         <Link2Icon />
-        {label}
+        <span className="min-w-0 flex-1 break-words text-left">{label}</span>
         <input
           ref={inputRef}
           type="file"
@@ -148,17 +148,17 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
         />
       </Button>
 
-      <div className="mt-4 space-y-2 w-full">
+      <div className="mt-4 w-full min-w-0 max-w-full space-y-2">
         {existingAttachments.map((file, idx) => (
           <div
             key={`existing-${idx}-${
               typeof file === 'string' ? file : file.url
             }`}
-            className="flex items-center justify-between text-sm p-2 rounded"
+            className="flex min-w-0 items-center justify-between rounded p-2 text-sm"
           >
-            <div className="flex items-center gap-2 overflow-hidden">
+            <div className="flex min-w-0 items-center gap-2 overflow-hidden">
               {renderFileIcon(file)}
-              <span className="text-neutral-11 truncate">
+              <span className="truncate text-neutral-11">
                 {getFileName(file)}
               </span>
             </div>
@@ -170,11 +170,11 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
         {attachments.map((file, idx) => (
           <div
             key={`${file.name}-${file.size}-${idx}`}
-            className="flex items-center justify-between text-sm p-2 rounded"
+            className="flex min-w-0 items-center justify-between rounded p-2 text-sm"
           >
-            <div className="flex items-center gap-2 overflow-hidden">
+            <div className="flex min-w-0 items-center gap-2 overflow-hidden">
               {renderFileIcon(file)}
-              <span className="text-neutral-11 truncate">{file.name}</span>
+              <span className="truncate text-neutral-11">{file.name}</span>
             </div>
             <Button variant="ghost" onClick={() => handleRemove(idx)}>
               <X className="text-neutral-11" size={16} />
@@ -182,7 +182,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
           </div>
         ))}
       </div>
-      <Separator />
+      <Separator className="max-w-full" />
     </div>
   );
 };
