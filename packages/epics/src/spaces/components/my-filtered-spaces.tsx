@@ -105,11 +105,11 @@ export function MyFilteredSpaces({
         count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         label={tSpaces('mySpacesLabel')}
         inlineLabel={false}
-        className="w-full max-w-full flex-wrap justify-between gap-x-3 gap-y-2 sm:w-auto sm:justify-end"
+        className="w-auto max-w-full flex-wrap items-center justify-start gap-x-3 gap-y-2 sm:justify-end"
       >
         <label
           htmlFor="hide-archived-spaces"
-          className="flex shrink-0 items-center gap-1 whitespace-nowrap"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
         >
           <Input
             id="hide-archived-spaces"

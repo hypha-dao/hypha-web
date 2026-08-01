@@ -56,7 +56,9 @@ export const SectionFilter: FC<SectionFilterProps> = ({
           {children && (
             <div
               className={cn(
-                'flex max-w-full flex-wrap items-center gap-x-3 gap-y-2',
+                // Size to controls; wrap whole control groups — never stretch a
+                // checkbox label into a skinny crushed column.
+                'flex w-auto max-w-full flex-wrap items-center gap-x-3 gap-y-2',
                 className,
               )}
             >
@@ -90,7 +92,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               {children ? (
                 <div
                   className={cn(
-                    'flex max-w-full flex-wrap items-center gap-x-3 gap-y-2',
+                    'flex w-auto max-w-full flex-wrap items-center gap-x-3 gap-y-2',
                     className,
                   )}
                 >

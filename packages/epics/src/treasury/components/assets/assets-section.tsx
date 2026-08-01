@@ -75,7 +75,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         onChange={(e) => setSearchTerm(e.target.value)}
       />
       <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto lg:shrink-0">
-        <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
+        <label className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm text-foreground">
           <Input
             type="checkbox"
             checked={hideSmallBalances}
