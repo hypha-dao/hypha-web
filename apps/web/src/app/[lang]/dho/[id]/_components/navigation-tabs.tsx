@@ -23,28 +23,9 @@ import {
   getActiveTabFromPath,
   partitionSpaceSectionNavForTabs,
   type SpaceSectionNavKey,
-  useMainColumnScrollY,
   useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-
-/** Subtle scroll parallax: tab strip drifts slightly vs page for depth. */
-const TAB_PARALLAX_SCROLL_RATE = 0.07;
-const TAB_PARALLAX_MAX_SHIFT_PX = 18;
-
-function clampTabParallaxScrollY(scrollY: number): number {
-  return Math.min(
-    TAB_PARALLAX_MAX_SHIFT_PX,
-    Math.max(-TAB_PARALLAX_MAX_SHIFT_PX, scrollY * TAB_PARALLAX_SCROLL_RATE),
-  );
-}
-
-function isReducedMotionPreferred(): boolean {
-  if (typeof window === 'undefined') return false;
-  return (
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-  );
-}
 
 export function NavigationTabs({
   lang,
@@ -69,26 +50,6 @@ export function NavigationTabs({
   );
   const { data: spaceEnergy } = useSpaceEnergy();
   const { space } = useSpaceBySlug(id);
-
-  const mainScrollY = useMainColumnScrollY();
-  const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
-
-  React.useEffect(() => {
-    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-    if (!mq) return;
-
-    const sync = () => {
-      setPreferReducedMotion(mq.matches);
-    };
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
-
-  const tabParallaxY =
-    preferReducedMotion || isReducedMotionPreferred()
-      ? 0
-      : clampTabParallaxScrollY(mainScrollY);
 
   const labelFor = React.useCallback(
     (key: SpaceSectionNavKey): string => {
@@ -162,14 +123,7 @@ export function NavigationTabs({
           'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
-        <TabsList
-          className="flex h-10 min-w-max will-change-transform gap-0.5 md:min-w-0 md:w-full"
-          style={
-            preferReducedMotion
-              ? undefined
-              : { transform: `translate3d(0, ${tabParallaxY}px, 0)` }
-          }
-        >
+        <TabsList className="flex h-10 min-w-max gap-0.5 md:min-w-0 md:w-full">
           {primary.map(({ key, href }) => {
             const Icon = SPACE_SECTION_NAV_ICONS[key];
             return (
