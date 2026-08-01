@@ -16,7 +16,7 @@ import {
   CardTitle,
   Skeleton,
   Tabs,
-  TabsList,
+  ScrollableTabsList,
   TabsTrigger,
   Tooltip,
   TooltipContent,
@@ -1570,13 +1570,13 @@ export function HomeTokenHoldingsDashboard({
         value={activeFilter}
         onValueChange={(value) => setActiveFilter(value as HomeSectionFilter)}
       >
-        <TabsList triggerVariant="switch" className="w-fit">
+        <ScrollableTabsList triggerVariant="switch">
           {filterItems.map((item) => (
             <TabsTrigger key={item.value} value={item.value} variant="switch">
               {item.label}
             </TabsTrigger>
           ))}
-        </TabsList>
+        </ScrollableTabsList>
       </Tabs>
 
       {showActivity ? (

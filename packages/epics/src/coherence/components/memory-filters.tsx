@@ -7,7 +7,7 @@ import {
   Button,
   Input,
   Tabs,
-  TabsList,
+  ScrollableTabsList,
   TabsTrigger,
   useIsMobile,
 } from '@hypha-platform/ui';
@@ -71,7 +71,7 @@ export function MemoryFilters({
         onValueChange={(value) => onFilterChange(value as MemoryFilterValue)}
         className="w-full"
       >
-        <TabsList triggerVariant="switch" className="w-fit max-w-full">
+        <ScrollableTabsList triggerVariant="switch">
           {visibleTabItems.map((item) => (
             <TabsTrigger
               key={item.value}
@@ -87,7 +87,7 @@ export function MemoryFilters({
               </span>
             </TabsTrigger>
           ))}
-        </TabsList>
+        </ScrollableTabsList>
       </Tabs>
 
       <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">

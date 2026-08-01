@@ -13,7 +13,12 @@ import {
   useVaults,
   useVirtualAccounts,
 } from '@hypha-platform/epics';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
+import {
+  Tabs,
+  ScrollableTabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@hypha-platform/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { TabScreenTitle } from '../@tab/_components/tab-screen-title';
 
@@ -61,42 +66,40 @@ export function TreasuryTabs({
         onValueChange={setActiveTab}
         className="flex w-full flex-col gap-4"
       >
-        <div className="flex w-full justify-start">
-          <TabsList triggerVariant="switch" className="w-fit">
-            <TabsTrigger value="balance" variant="switch">
-              <span className="inline-flex items-center gap-1">
-                <span>{tTreasury('wallet')}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(walletCount)})
-                </span>
+        <ScrollableTabsList triggerVariant="switch">
+          <TabsTrigger value="balance" variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{tTreasury('wallet')}</span>
+              <span className="text-xs text-muted-foreground">
+                ({format.number(walletCount)})
               </span>
-            </TabsTrigger>
-            <TabsTrigger value="bank-accounts" variant="switch">
-              <span className="inline-flex items-center gap-1">
-                <span>{tTreasury('bankingRoutes')}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(bankAccountCount)})
-                </span>
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="bank-accounts" variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{tTreasury('bankingRoutes')}</span>
+              <span className="text-xs text-muted-foreground">
+                ({format.number(bankAccountCount)})
               </span>
-            </TabsTrigger>
-            <TabsTrigger value="transactions" variant="switch">
-              <span className="inline-flex items-center gap-1">
-                <span>{tTreasury('transactions')}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(transactionCount)})
-                </span>
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="transactions" variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{tTreasury('transactions')}</span>
+              <span className="text-xs text-muted-foreground">
+                ({format.number(transactionCount)})
               </span>
-            </TabsTrigger>
-            <TabsTrigger value="vaults" variant="switch">
-              <span className="inline-flex items-center gap-1">
-                <span>{tTreasury('vaults')}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({format.number(vaultCount)})
-                </span>
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="vaults" variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{tTreasury('vaults')}</span>
+              <span className="text-xs text-muted-foreground">
+                ({format.number(vaultCount)})
               </span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
+            </span>
+          </TabsTrigger>
+        </ScrollableTabsList>
 
         <TabsContent value="balance" className="mt-0">
           <AssetsSection basePath={basePath} web3SpaceId={web3SpaceId} />

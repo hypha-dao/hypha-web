@@ -33,18 +33,18 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   const hasLabel = label.trim().length > 0;
   const hasCount = count !== undefined && count !== null;
   return (
-    <div className="flex justify-between items-center w-full gap-4">
+    <div className="flex w-full min-w-0 items-center justify-between gap-4">
       {inlineLabel ? (
         <>
           {hasLabel ? (
-            <Text className="text-4 capitalize text-nowrap">
+            <Text className="min-w-0 shrink text-4 capitalize">
               {label} {hasCount ? <>| {count}</> : null}
             </Text>
           ) : null}
           {hasSearch ? (
             <Input
               type="search"
-              className="w-full"
+              className="w-full min-w-0"
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
               leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
@@ -54,7 +54,12 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             />
           ) : null}
           {children && (
-            <div className={cn('flex items-center text-nowrap', className)}>
+            <div
+              className={cn(
+                'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2',
+                className,
+              )}
+            >
               {children}
             </div>
           )}
@@ -62,7 +67,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
       ) : (
         <div className="flex w-full min-w-0 flex-col gap-4">
           {hasLabel ? (
-            <Text className="text-4 capitalize text-nowrap">
+            <Text className="text-4 capitalize">
               {label} {hasCount ? <>| {count}</> : null}
             </Text>
           ) : null}
@@ -85,7 +90,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               {children ? (
                 <div
                   className={cn(
-                    'flex shrink-0 items-center text-nowrap',
+                    'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2',
                     className,
                   )}
                 >
