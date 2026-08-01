@@ -432,12 +432,12 @@ export function CreateAgreementBaseFields({
           <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
             {stickyHeaderTitle ?? resolvedLabel}
           </h2>
-          <div className="flex shrink-0 items-center justify-end gap-1">
+          <div className="flex min-w-0 shrink items-center justify-start gap-1 overflow-x-auto overscroll-x-contain touch-pan-x md:justify-end">
             {backUrl && (
               <ButtonBack
                 label={resolvedBackLabel}
                 backUrl={backUrl}
-                className="px-0 md:px-3 align-top"
+                className="shrink-0 px-0 md:px-3 align-top"
               />
             )}
             {form.formState.isDirty ? (
@@ -445,7 +445,7 @@ export function CreateAgreementBaseFields({
                 type="button"
                 variant="ghost"
                 colorVariant="neutral"
-                className="inline-flex items-center gap-1 px-0 text-neutral-10 md:px-3"
+                className="inline-flex shrink-0 items-center gap-1 px-0 text-neutral-10 md:px-3"
                 onClick={handleResetForm}
               >
                 <RotateCcw className="size-4 shrink-0" aria-hidden />
@@ -455,7 +455,7 @@ export function CreateAgreementBaseFields({
             <ButtonClose
               closeUrl={closeUrl}
               preferBack={mode === 'memory'}
-              className="px-0 md:px-3 align-top"
+              className="shrink-0 px-0 md:px-3 align-top"
             />
           </div>
         </div>
@@ -627,7 +627,7 @@ export function CreateAgreementBaseFields({
             />
           </section>
         ) : null}
-        <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
+        <section className="min-w-0 max-w-full overflow-hidden rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
           {mode === 'memory' ? (
             <FormField
               control={form.control}
@@ -643,7 +643,7 @@ export function CreateAgreementBaseFields({
                 ];
 
                 return (
-                  <FormItem className="mb-6">
+                  <FormItem className="mb-6 min-w-0 max-w-full">
                     <FormLabel className="mb-2 block gap-1 text-sm font-medium text-foreground">
                       {tCoherence('newMemoryUploadDocumentsTitle')}{' '}
                       <RequirementMark />
@@ -729,7 +729,7 @@ export function CreateAgreementBaseFields({
                 ];
 
                 return (
-                  <FormItem className="mt-6">
+                  <FormItem className="mt-6 min-w-0 max-w-full">
                     <FormControl>
                       <AddAttachment
                         label={attachmentLabel}

@@ -68,22 +68,24 @@ export const AssetsSection: FC<AssetSectionProps> = ({
       <div className="shrink-0 whitespace-nowrap text-4 text-foreground">
         {tTreasury('balance')} | {totalBalance}
       </div>
-      <Input
-        className="w-full lg:min-w-0 lg:flex-1"
-        placeholder={tTreasury('searchTokens')}
-        leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto lg:shrink-0">
-        <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
+      <div className="flex min-w-0 w-full items-center gap-2 lg:min-w-0 lg:flex-1 lg:gap-3">
+        <Input
+          className="min-w-0 flex-1"
+          placeholder={tTreasury('searchTokens')}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <label className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm text-foreground">
           <Input
             type="checkbox"
             checked={hideSmallBalances}
             onChange={(e) => setHideSmallBalances(e.target.checked)}
-            className="h-4 w-4 accent-accent-9"
+            className="h-4 w-4 shrink-0 accent-accent-9"
           />
-          <span>{tTreasury('hideSmall')}</span>
+          <span className="whitespace-nowrap">{tTreasury('hideSmall')}</span>
         </label>
+      </div>
+      <div className="flex w-full items-center justify-end gap-2 lg:w-auto lg:shrink-0">
         {isDisabled ? (
           <Button
             colorVariant="accent"

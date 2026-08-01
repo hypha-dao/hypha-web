@@ -34,11 +34,19 @@ const Tabs = React.forwardRef<
 });
 Tabs.displayName = TabsPrimitive.Root.displayName;
 
+export type TabsListProps = React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.List
+> & {
+  triggerVariant?: 'default' | 'ghost' | 'outlined' | 'switch';
+};
+
+/** Viewport for filter/switch pill rows that must scroll on narrow screens. */
+export const scrollableTabsListViewportClassName =
+  'w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]';
+
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & {
-    triggerVariant?: 'default' | 'ghost' | 'outlined' | 'switch';
-  }
+  TabsListProps
 >(({ className, triggerVariant, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
@@ -51,6 +59,28 @@ const TabsList = React.forwardRef<
   />
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
+
+export type ScrollableTabsListProps = TabsListProps & {
+  viewportClassName?: string;
+};
+
+/**
+ * Switch/filter pill TabsList that scrolls horizontally inside the viewport
+ * instead of expanding the page or clipping trailing pills on mobile.
+ */
+const ScrollableTabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  ScrollableTabsListProps
+>(({ className, viewportClassName, ...props }, ref) => (
+  <div className={cn(scrollableTabsListViewportClassName, viewportClassName)}>
+    <TabsList
+      ref={ref}
+      className={cn('w-max max-w-none', className)}
+      {...props}
+    />
+  </div>
+));
+ScrollableTabsList.displayName = 'ScrollableTabsList';
 
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
@@ -93,4 +123,4 @@ const TabsContent = React.forwardRef<
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsList, ScrollableTabsList, TabsTrigger, TabsContent };

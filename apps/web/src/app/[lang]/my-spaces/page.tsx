@@ -41,8 +41,8 @@ export default async function Index(props: PageProps) {
   const t = await getTranslations('Spaces');
 
   return (
-    <div className="w-full overflow-auto">
-      <Container className="flex flex-col gap-9 py-9">
+    <div className="w-full min-w-0">
+      <Container className="flex min-w-0 flex-col gap-9 py-9">
         <Heading
           size="9"
           color="secondary"

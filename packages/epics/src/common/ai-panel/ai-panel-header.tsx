@@ -158,9 +158,17 @@ export function AiPanelHeader({
   useEffect(() => {
     if (!spaceMenuOpen) return;
 
-    requestAnimationFrame(() => {
-      spaceSearchInputRef.current?.focus();
-    });
+    // Radix DropdownMenu Content omits onOpenAutoFocus from its public types, so
+    // focus the custom search field after open instead of fighting default autofocus.
+    const focusSearch = () => {
+      spaceSearchInputRef.current?.focus({ preventScroll: true });
+    };
+    const rafId = requestAnimationFrame(focusSearch);
+    const timeoutId = window.setTimeout(focusSearch, 0);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+    };
   }, [spaceMenuOpen]);
 
   const renderSpaceOption = (space: Space) => (
@@ -256,7 +264,10 @@ export function AiPanelHeader({
                 className="relative isolate z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-border/60 bg-background-2 p-0 shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="flex max-h-[24.5rem] min-h-0 flex-col">
-                  <div className="shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1">
+                  <div
+                    className="relative z-[1] shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1"
+                    onPointerDown={(event) => event.stopPropagation()}
+                  >
                     <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
                       {tNavigation('mySpaces')}
                     </DropdownMenuLabel>
@@ -266,11 +277,22 @@ export function AiPanelHeader({
                         type="text"
                         value={spaceSearch}
                         onChange={(event) => setSpaceSearch(event.target.value)}
+                        onPointerDown={(event) => {
+                          event.stopPropagation();
+                          spaceSearchInputRef.current?.focus({
+                            preventScroll: true,
+                          });
+                        }}
                         onKeyDown={(event) => {
+                          // Keep typing out of DropdownMenu typeahead; Escape still
+                          // closes, and Tab/Shift+Tab must reach Radix focus handling.
+                          if (event.key === 'Escape' || event.key === 'Tab') {
+                            return;
+                          }
                           event.stopPropagation();
                         }}
                         placeholder={tSpaces('search')}
-                        className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+                        className="pointer-events-auto relative z-[1] h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
                         aria-label={tSpaces('search')}
                       />
                     </div>

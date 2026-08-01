@@ -112,11 +112,15 @@ export const SelectAction = ({
       <div className="flex w-full flex-col gap-6">
         {Object.entries(groupedActions || {}).length > 0 ? (
           Object.entries(groupedActions || {}).map(([group, groupActions]) => (
-            <div key={group} className="flex w-full flex-col gap-3">
+            <div
+              key={group}
+              className="@container/select-action flex w-full flex-col gap-3"
+            >
               {group && (
                 <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
               )}
-              <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
+              {/* Container query: viewport md on iPad ≠ overlay width when panels are open */}
+              <div className="grid w-full grid-cols-1 gap-3 @[36rem]/select-action:grid-cols-2">
                 {groupActions.map((action) => {
                   const isLink = !action.onAction && !!action.href;
 

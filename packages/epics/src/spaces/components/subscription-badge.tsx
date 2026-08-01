@@ -124,18 +124,35 @@ export function SubscriptionBadge({
     expired: { colorVariant: 'error' },
   };
 
-  /** Hero plate: keep outline craft; renew uses space-accent gradient border */
+  /** Hero plate (dark imagery): white/light text, transparent fill; renew uses space-accent border */
   const heroBannerClassByStatus: Record<NonNullable<typeof status>, string> = {
     active:
-      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-white hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-white',
     activeFreeTrial:
-      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-white hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-white',
     activeFreeTrialExpiring:
-      'space-accent-outline bg-black/25 shadow-sm !ring-0 hover:!ring-0 !text-white hover:bg-black/35 hover:!text-white',
+      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-white hover:!bg-transparent hover:!text-white',
     activate:
-      'space-accent-outline bg-black/25 shadow-sm !ring-0 hover:!ring-0 !text-white hover:bg-black/35 hover:!text-white',
+      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-white hover:!bg-transparent hover:!text-white',
     expired:
-      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-red-400/90 !text-red-50 hover:!border-red-300/90 hover:bg-black/35 hover:!text-red-50',
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-red-400/90 !text-red-50 hover:!border-red-300/90 hover:!bg-transparent hover:!text-red-50',
+  };
+
+  /** Sticky chrome / light surfaces: dark text, transparent fill, keep status outline */
+  const lightSurfaceClassByStatus: Record<
+    NonNullable<typeof status>,
+    string
+  > = {
+    active:
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-foreground hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-foreground',
+    activeFreeTrial:
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-foreground hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-foreground',
+    activeFreeTrialExpiring:
+      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-foreground hover:!bg-transparent hover:!text-foreground',
+    activate:
+      'space-accent-outline !bg-transparent shadow-sm !ring-0 hover:!ring-0 !text-foreground hover:!bg-transparent hover:!text-foreground',
+    expired:
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-red-400/90 !text-foreground hover:!border-red-300/90 hover:!bg-transparent hover:!text-foreground',
   };
 
   const { colorVariant } = variantMap[status];
@@ -153,7 +170,9 @@ export function SubscriptionBadge({
         size={1}
         colorVariant={colorVariant}
         className={cn(
-          onHeroBackground && heroBannerClassByStatus[status],
+          onHeroBackground
+            ? heroBannerClassByStatus[status]
+            : lightSurfaceClassByStatus[status],
           className,
         )}
         {...props}

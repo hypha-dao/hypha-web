@@ -369,8 +369,8 @@ export function ExploreSpaces({
   );
 
   const metricsSection = (
-    <div className="flex items-stretch justify-center gap-0">
-      <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+    <div className="flex min-w-0 flex-wrap items-stretch justify-center gap-0">
+      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
         <div className="flex justify-center text-7 font-medium">
           <CountValue
             value={selectedSpaces.length}
@@ -386,7 +386,7 @@ export function ExploreSpaces({
         orientation="vertical"
         className="h-auto self-stretch bg-neutral-6"
       />
-      <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
         <div className="flex justify-center text-7 font-medium">
           <CountValue
             value={uniqueMemberAddresses.size}
@@ -402,7 +402,7 @@ export function ExploreSpaces({
         orientation="vertical"
         className="h-auto self-stretch bg-neutral-6"
       />
-      <div className="flex min-w-[7rem] flex-col px-6 sm:min-w-[9rem] sm:px-10">
+      <div className="flex min-w-0 flex-1 flex-col px-3 sm:min-w-[7rem] sm:flex-none sm:px-6 md:min-w-[9rem] md:px-10">
         <div className="flex justify-center text-7 font-medium">
           <CountValue
             value={agreementCount}

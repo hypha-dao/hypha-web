@@ -33,18 +33,18 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   const hasLabel = label.trim().length > 0;
   const hasCount = count !== undefined && count !== null;
   return (
-    <div className="flex justify-between items-center w-full gap-4">
+    <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3 sm:gap-4">
       {inlineLabel ? (
         <>
           {hasLabel ? (
-            <Text className="text-4 capitalize text-nowrap">
+            <Text className="min-w-0 shrink text-4 capitalize text-nowrap">
               {label} {hasCount ? <>| {count}</> : null}
             </Text>
           ) : null}
           {hasSearch ? (
             <Input
               type="search"
-              className="w-full"
+              rootClassName="w-full min-w-0 flex-1 basis-[12rem]"
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
               leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
@@ -54,7 +54,14 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             />
           ) : null}
           {children && (
-            <div className={cn('flex items-center text-nowrap', className)}>
+            <div
+              className={cn(
+                // Size to controls; wrap whole control groups — never stretch a
+                // checkbox label into a skinny crushed column.
+                'flex w-auto max-w-full flex-wrap items-center gap-x-3 gap-y-2',
+                className,
+              )}
+            >
               {children}
             </div>
           )}
@@ -71,7 +78,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               {hasSearch ? (
                 <Input
                   type="search"
-                  className="w-full min-w-0 flex-1"
+                  rootClassName="w-full min-w-0 flex-1"
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
                   leftIcon={
@@ -85,7 +92,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               {children ? (
                 <div
                   className={cn(
-                    'flex shrink-0 items-center text-nowrap',
+                    'flex w-auto max-w-full flex-wrap items-center gap-x-3 gap-y-2',
                     className,
                   )}
                 >

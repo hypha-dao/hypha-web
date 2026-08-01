@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import { useFormatter } from 'next-intl';
 
 type ScreenFilterTabItem = {
@@ -47,7 +47,7 @@ export function ScreenFilterTabs({
 
   return (
     <Tabs value={currentValue} onValueChange={handleValueChange}>
-      <TabsList triggerVariant="switch" className="w-fit">
+      <ScrollableTabsList triggerVariant="switch">
         {items.map((item) => (
           <TabsTrigger key={item.value} value={item.value} variant="switch">
             <span className="inline-flex items-center gap-1">
@@ -60,7 +60,7 @@ export function ScreenFilterTabs({
             </span>
           </TabsTrigger>
         ))}
-      </TabsList>
+      </ScrollableTabsList>
     </Tabs>
   );
 }

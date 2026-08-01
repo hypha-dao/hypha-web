@@ -55,23 +55,19 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
-      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="flex w-full items-center gap-3">
         {hasSearch ? (
           <Input
             type="search"
             placeholder={tAgreements('searchDocuments')}
             onChange={(event) => onUpdateSearch(event.target.value)}
             leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-            className="w-full"
+            className="min-w-0 flex-1"
           />
         ) : (
-          <div className="w-full" />
+          <div className="min-w-0 flex-1" />
         )}
-        {headSectionButton ? (
-          <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
-            {headSectionButton}
-          </div>
-        ) : null}
+        {headSectionButton}
       </div>
 
       {isLoading && pagination?.totalPages === 0 ? (

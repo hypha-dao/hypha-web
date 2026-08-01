@@ -38,9 +38,14 @@ export type LoadingBackdropInnerProps =
  * Matches {@link ProposalOverlayShell} / DHO scrim: portaled UI must not use full
  * viewport width when side panels are open — mirror vars on `:root` from
  * `PanelWrapLayout`.
+ *
+ * Mobile (`max-md`): full-bleed under MenuTop — same as ProposalOverlayShell
+ * (`max-md:left-0 max-md:right-0`). On small viewports sidebars are Sheets, but
+ * `--sidebar-left-width` can still fall back to the desktop icon-rail (72px) and
+ * shift the keep-window chip off-center.
  */
 const MAIN_COLUMN_EDGE_CLASSES =
-  'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] top-[var(--menu-top-height,var(--menu-top-height-fallback))]';
+  'left-0 right-0 top-[var(--menu-top-height,var(--menu-top-height-fallback))] md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]';
 
 /** Legacy card — docked side panel & inline overlays (unchanged layout). */
 function ProgressCard({

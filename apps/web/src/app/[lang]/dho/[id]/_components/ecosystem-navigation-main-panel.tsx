@@ -329,7 +329,7 @@ export function EcosystemNavigationMainPanel({
             </div>
             <EcosystemMembershipModules spaceSlug={selectedSpaceSlug} />
             {hierarchyData ? (
-              <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-18rem))] px-2 pb-2 pt-1 sm:px-3 sm:pb-3">
+              <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-18rem))] px-2 pb-2 pt-4 sm:px-3 sm:pb-3 sm:pt-5">
                 <SpaceVisualization
                   data={hierarchyData}
                   currentSpaceId={currentSpace?.id}

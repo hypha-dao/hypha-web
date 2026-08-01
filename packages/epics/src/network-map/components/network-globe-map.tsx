@@ -44,6 +44,8 @@ import {
 } from '../lib/pin-clusters';
 
 const PROJECTION_ANIMATION_MS = 1200;
+/** Slow idle yaw (~8°/s) so the globe visibly turns on mobile and desktop. */
+const AUTO_ROTATE_DEG_PER_MS = 0.008;
 /** Cluster zoom-in duration — balanced for a smooth camera dolly. */
 const CLUSTER_FOCUS_MS = 1000;
 /** Cluster zoom-out duration — matched to focus so in/out feel symmetric. */
@@ -310,6 +312,7 @@ export function NetworkGlobeMap({
   const dragR0Ref = React.useRef<Rotation>(DEFAULT_GLOBE_ROTATION);
   const dragQ0Ref = React.useRef<ReturnType<typeof fromAngles> | null>(null);
   const animationFrameRef = React.useRef<number | null>(null);
+  const autoRotateFrameRef = React.useRef<number | null>(null);
   const renderFrameRef = React.useRef<number | null>(null);
   const isDraggingRef = React.useRef(false);
   const hasUserRotatedRef = React.useRef(false);
@@ -1149,85 +1152,209 @@ export function NetworkGlobeMap({
       return { width, height };
     }
 
-    function pointerFromEvent(
-      event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>,
-    ): [number, number] {
-      return d3.pointer(event.sourceEvent, svgElement);
-    }
-
     function globeProjectionAtRotation(rotate: Rotation) {
       const { width, height } = mapDimensions();
       return buildProjection(width, height, 0, rotate, globeZoomRef.current);
     }
 
-    const dragBehavior = d3
-      .drag<SVGSVGElement, unknown>()
-      .filter((event) => {
-        if (focusedClusterIdRef.current) {
-          return false;
-        }
-        if (morphRef.current >= 0.01) {
-          return false;
-        }
-        return !event.ctrlKey && !event.button;
-      })
-      .on('start', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
-        if (event.sourceEvent instanceof MouseEvent) {
-          event.sourceEvent.preventDefault();
-        }
-        isDraggingRef.current = true;
-        hasUserRotatedRef.current = true;
-        clearHoveredPinRef.current();
-        clearSelectedPinRef.current();
+    // Pointer Events unify mouse + touch. The previous d3.drag path called
+    // d3.pointer(event.sourceEvent), which for touch is a TouchEvent without
+    // clientX/clientY — coords were NaN and invert never started a rotate.
+    let activePointerId: number | null = null;
 
-        const [x, y] = pointerFromEvent(event);
-        const invert = globeProjectionAtRotation(rotateRef.current).invert?.([
-          x,
-          y,
-        ]);
-        if (!invert) {
-          dragV0Ref.current = null;
-          dragQ0Ref.current = null;
-          return;
-        }
+    const canStartDrag = (event: PointerEvent) => {
+      if (focusedClusterIdRef.current) {
+        return false;
+      }
+      if (morphRef.current >= 0.01) {
+        return false;
+      }
+      if (event.ctrlKey) {
+        return false;
+      }
+      // Primary button only for mouse; touch/pen report button 0 on down.
+      if (event.button !== 0) {
+        return false;
+      }
+      return activePointerId == null;
+    };
 
-        dragV0Ref.current = cartesian(invert);
-        dragR0Ref.current = [...rotateRef.current];
-        dragQ0Ref.current = fromAngles(rotateRef.current);
-      })
-      .on('drag', (event: d3.D3DragEvent<SVGSVGElement, unknown, unknown>) => {
-        const v0 = dragV0Ref.current;
-        const r0 = dragR0Ref.current;
-        const q0 = dragQ0Ref.current;
-        if (!v0 || !q0) {
-          return;
-        }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!canStartDrag(event)) {
+        return;
+      }
+      if (event.cancelable) {
+        event.preventDefault();
+      }
 
-        const [x, y] = pointerFromEvent(event);
-        const invert = globeProjectionAtRotation(r0).invert?.([x, y]);
-        if (!invert) {
-          return;
-        }
+      activePointerId = event.pointerId;
+      clearHoveredPinRef.current();
+      clearSelectedPinRef.current();
 
-        const v1 = cartesian(invert);
-        const q1 = multiply(q0, delta(v0, v1));
-        rotateRef.current = toAngles(q1);
-        savedGlobeRotateRef.current = rotateRef.current;
-        requestRender();
-      })
-      .on('end', () => {
-        isDraggingRef.current = false;
+      try {
+        svgElement.setPointerCapture(event.pointerId);
+      } catch {
+        // Capture can fail if the element is detached mid-gesture.
+      }
+
+      const [x, y] = d3.pointer(event, svgElement);
+      const invert = globeProjectionAtRotation(rotateRef.current).invert?.([
+        x,
+        y,
+      ]);
+      if (!invert) {
         dragV0Ref.current = null;
         dragQ0Ref.current = null;
-      });
+        return;
+      }
 
-    d3.select(svgElement).call(dragBehavior);
+      isDraggingRef.current = true;
+      hasUserRotatedRef.current = true;
+      dragV0Ref.current = cartesian(invert);
+      dragR0Ref.current = [...rotateRef.current];
+      dragQ0Ref.current = fromAngles(rotateRef.current);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (activePointerId !== event.pointerId) {
+        return;
+      }
+      const v0 = dragV0Ref.current;
+      const r0 = dragR0Ref.current;
+      const q0 = dragQ0Ref.current;
+      if (!v0 || !q0) {
+        return;
+      }
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      const [x, y] = d3.pointer(event, svgElement);
+      const invert = globeProjectionAtRotation(r0).invert?.([x, y]);
+      if (!invert) {
+        return;
+      }
+
+      const v1 = cartesian(invert);
+      const q1 = multiply(q0, delta(v0, v1));
+      rotateRef.current = toAngles(q1);
+      savedGlobeRotateRef.current = rotateRef.current;
+      requestRender();
+    };
+
+    const endDrag = (event: PointerEvent) => {
+      if (activePointerId !== event.pointerId) {
+        return;
+      }
+      activePointerId = null;
+      isDraggingRef.current = false;
+      dragV0Ref.current = null;
+      dragQ0Ref.current = null;
+      if (svgElement.hasPointerCapture(event.pointerId)) {
+        svgElement.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    // touch-action: none only in steady globe mode so flat/morphing views can scroll.
+    const isGlobeTouch =
+      selectedProjection === 'globe' && projectionMode === 'globe';
+    const touchAction = isGlobeTouch ? 'none' : 'auto';
+    svgElement.style.touchAction = touchAction;
+    container.style.touchAction = touchAction;
+
+    svgElement.addEventListener('pointerdown', onPointerDown);
+    svgElement.addEventListener('pointermove', onPointerMove);
+    svgElement.addEventListener('pointerup', endDrag);
+    svgElement.addEventListener('pointercancel', endDrag);
+    svgElement.addEventListener('lostpointercapture', endDrag);
 
     return () => {
       resizeObserver.disconnect();
-      d3.select(svgElement).on('.drag', null);
+      svgElement.removeEventListener('pointerdown', onPointerDown);
+      svgElement.removeEventListener('pointermove', onPointerMove);
+      svgElement.removeEventListener('pointerup', endDrag);
+      svgElement.removeEventListener('pointercancel', endDrag);
+      svgElement.removeEventListener('lostpointercapture', endDrag);
+      svgElement.style.touchAction = '';
+      container.style.touchAction = '';
+      activePointerId = null;
+      isDraggingRef.current = false;
     };
-  }, [showStage, isLoadingGeo, loadError, requestRender]);
+  }, [
+    showStage,
+    isLoadingGeo,
+    loadError,
+    requestRender,
+    selectedProjection,
+    projectionMode,
+  ]);
+
+  // Slow idle yaw; pause while dragging, morphing, or reduced-motion.
+  React.useEffect(() => {
+    if (!isActive || !showStage || isLoadingGeo || loadError) {
+      return;
+    }
+
+    let lastTs: number | null = null;
+    let reducedMotion = prefersReducedMotion();
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncReducedMotion = () => {
+      reducedMotion = motionQuery.matches;
+      lastTs = null;
+    };
+    motionQuery.addEventListener('change', syncReducedMotion);
+
+    const onVisibilityChange = () => {
+      lastTs = null;
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const step = (now: number) => {
+      autoRotateFrameRef.current = requestAnimationFrame(step);
+
+      if (
+        reducedMotion ||
+        document.hidden ||
+        isDraggingRef.current ||
+        morphRef.current >= 0.01 ||
+        focusedClusterIdRef.current != null ||
+        clusterAnimatingRef.current ||
+        animationFrameRef.current != null ||
+        clusterAnimFrameRef.current != null
+      ) {
+        lastTs = null;
+        return;
+      }
+
+      if (lastTs == null) {
+        lastTs = now;
+        return;
+      }
+
+      const dt = Math.min(64, now - lastTs);
+      lastTs = now;
+      const [lambda, phi, gamma] = rotateRef.current;
+      const nextLambda =
+        ((((lambda + AUTO_ROTATE_DEG_PER_MS * dt + 180) % 360) + 360) % 360) -
+        180;
+      const next: Rotation = [nextLambda, phi, gamma];
+      rotateRef.current = next;
+      savedGlobeRotateRef.current = next;
+      requestRender();
+    };
+
+    autoRotateFrameRef.current = requestAnimationFrame(step);
+
+    return () => {
+      motionQuery.removeEventListener('change', syncReducedMotion);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (autoRotateFrameRef.current != null) {
+        cancelAnimationFrame(autoRotateFrameRef.current);
+        autoRotateFrameRef.current = null;
+      }
+    };
+  }, [isActive, showStage, isLoadingGeo, loadError, requestRender]);
 
   const animateProjection = React.useCallback(
     (target: NetworkMapProjectionMode) => {
@@ -1303,6 +1430,9 @@ export function NetworkGlobeMap({
     return () => {
       if (animationFrameRef.current != null) {
         cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (autoRotateFrameRef.current != null) {
+        cancelAnimationFrame(autoRotateFrameRef.current);
       }
       if (clusterAnimFrameRef.current != null) {
         cancelAnimationFrame(clusterAnimFrameRef.current);
@@ -1481,7 +1611,7 @@ export function NetworkGlobeMap({
       <svg
         ref={svgRef}
         className={cn(
-          'block w-full touch-none select-none',
+          'block w-full select-none',
           projectionMode === 'globe'
             ? 'cursor-grab active:cursor-grabbing'
             : 'cursor-default',

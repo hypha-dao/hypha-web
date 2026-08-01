@@ -25,6 +25,13 @@ export const PRIORITY_LEFT_BORDER: Record<string, string> = {
   low: 'bg-neutral-7',
 };
 
+/**
+ * Shared left accent bar geometry for craft-card / rounded-xl signal cards.
+ * Vertically inset by the card radius so the bar sits on the straight edge only.
+ */
+export const PRIORITY_LEFT_ACCENT_BAR_CLASS =
+  'absolute bottom-3 left-0 top-3 w-0.5 rounded-full opacity-80';
+
 export const PRIORITY_DOT: Record<string, string> = {
   critical: 'bg-error-9',
   high: 'bg-warning-9',

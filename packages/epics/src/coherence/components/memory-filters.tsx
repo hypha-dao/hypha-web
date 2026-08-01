@@ -7,7 +7,7 @@ import {
   Button,
   Input,
   Tabs,
-  TabsList,
+  ScrollableTabsList,
   TabsTrigger,
   useIsMobile,
 } from '@hypha-platform/ui';
@@ -71,7 +71,7 @@ export function MemoryFilters({
         onValueChange={(value) => onFilterChange(value as MemoryFilterValue)}
         className="w-full"
       >
-        <TabsList triggerVariant="switch" className="w-fit max-w-full">
+        <ScrollableTabsList triggerVariant="switch">
           {visibleTabItems.map((item) => (
             <TabsTrigger
               key={item.value}
@@ -87,10 +87,10 @@ export function MemoryFilters({
               </span>
             </TabsTrigger>
           ))}
-        </TabsList>
+        </ScrollableTabsList>
       </Tabs>
 
-      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="flex w-full items-center gap-2 lg:gap-3">
         <Input
           type="search"
           value={searchTerm}
@@ -98,9 +98,9 @@ export function MemoryFilters({
           placeholder={t('searchSpaceMemory')}
           aria-label={t('searchSpaceMemory')}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          className="w-full"
+          className="min-w-0 flex-1"
         />
-        <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
+        <div className="flex shrink-0 items-center gap-2">
           {canCreateMemory ? (
             <Button asChild variant="default" colorVariant="accent">
               <Link href={newMemoryHref} scroll={false}>

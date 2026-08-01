@@ -44,9 +44,26 @@ export function buildSpaceScopeStyle(input: {
   const accent = normalizeAccentHex(input.accent) ?? SPACE_ACCENT_FALLBACK;
   const palette = buildAccentPaletteFromHex(accent);
 
+  const accentAliases: Record<string, string> = {};
+  for (let step = 1; step <= 12; step++) {
+    const colorToken = palette[`--color-accent-${step}`];
+    if (colorToken) {
+      accentAliases[`--accent-${step}`] = colorToken;
+    }
+  }
+  if (palette['--color-accent']) {
+    accentAliases['--accent'] = palette['--color-accent'];
+  }
+  if (palette['--color-accent-foreground']) {
+    accentAliases['--accent-foreground'] = palette['--color-accent-foreground'];
+  }
+  accentAliases['--accent-contrast'] =
+    palette['--color-accent-contrast'] ?? foreground;
+
   return {
     ...overlayVars,
     ...palette,
+    ...accentAliases,
     '--space-accent': accent,
     /**
      * Readable accent-colored text on light surfaces (tabs, outline labels, links).

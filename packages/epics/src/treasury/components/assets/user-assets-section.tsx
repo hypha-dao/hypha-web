@@ -55,14 +55,16 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
           searchPlaceholder={tTreasury('searchTokens')}
           onChangeSearch={setSearchTerm}
         >
-          <label className="flex items-center gap-1">
+          <label className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap">
             <Input
               type="checkbox"
               checked={hideSmallBalances}
               onChange={(e) => setHideSmallBalances(e.target.checked)}
-              className="h-4 w-4 accent-accent-9"
+              className="h-4 w-4 shrink-0 accent-accent-9"
             />
-            <span>{tTreasury('hideSmallBalances')}</span>
+            <span className="whitespace-nowrap">
+              {tTreasury('hideSmallBalances')}
+            </span>
           </label>
         </SectionFilter>
         {showActionButtons ? (
