@@ -155,7 +155,7 @@ export function DhoStickySpaceChrome({
            */
           'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
           'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
-          'overflow-hidden border-x border-b border-border bg-background-2',
+          'border-x border-b border-border bg-background-2',
           'transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100'
@@ -184,9 +184,10 @@ export function DhoStickySpaceChrome({
               {title}
             </p>
           </div>
+          {/* Allow shrink + horizontal scroll so Settings/badges stay reachable on iPad when panels narrow the column */}
           <div
             ref={setStickyActionsEl}
-            className="flex shrink-0 flex-nowrap items-center gap-2"
+            className="flex min-w-0 shrink items-center gap-2 overflow-x-auto overscroll-x-contain touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           />
         </div>
       </div>

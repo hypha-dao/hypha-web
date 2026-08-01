@@ -116,7 +116,8 @@ export const SelectAction = ({
               {group && (
                 <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
               )}
-              <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
+              {/* Container query: viewport md on iPad ≠ overlay width when panels are open */}
+              <div className="@container/select-action grid w-full grid-cols-1 gap-3 @[36rem]:grid-cols-2">
                 {groupActions.map((action) => {
                   const isLink = !action.onAction && !!action.href;
 

@@ -163,7 +163,9 @@ export function NavigationTabs({
         )}
       >
         <TabsList
-          className="flex h-10 min-w-max will-change-transform gap-0.5 md:min-w-0 md:w-full"
+          /* Keep content-sized strip so overflow-x on the parent can scroll at iPad widths
+             when side panels shrink the main column (viewport md ≠ usable column width). */
+          className="flex h-10 min-w-max will-change-transform gap-0.5"
           style={
             preferReducedMotion
               ? undefined
