@@ -5,7 +5,8 @@ import { cn } from '@hypha-platform/ui-utils';
 
 /** Apply on `DialogContent` — scroll the whole panel when content exceeds the viewport. */
 export const BANKING_DIALOG_CONTENT_CLASS = cn(
-  'block! max-h-[90vh]! overflow-y-scroll!',
+  /* Cap to remaining space under MenuTop so landscape iPad does not clip footers */
+  'block! max-h-[calc(100dvh-var(--menu-top-height,70px)-1rem)]! overflow-y-scroll!',
   'gap-0 p-0',
   'top-[max(0.5rem,calc(var(--menu-top-height,70px)+0.5rem))]! translate-y-0!',
 );

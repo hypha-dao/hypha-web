@@ -123,7 +123,10 @@ export function NavigationTabs({
           'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
-        <TabsList className="flex h-10 min-w-max gap-0.5 md:min-w-0 md:w-full">
+        {/* Keep content-sized strip so overflow-x on the parent can scroll at iPad
+            widths when side panels shrink the main column (viewport md ≠ usable width).
+            No scroll parallax — that caused mobile shortcut tabs to jump. */}
+        <TabsList className="flex h-10 min-w-max gap-0.5">
           {primary.map(({ key, href }) => {
             const Icon = SPACE_SECTION_NAV_ICONS[key];
             return (

@@ -279,10 +279,14 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                       type="button"
                       className={cn(
                         'inline-flex w-fit items-center gap-1 text-1 font-medium text-white/70 hover:text-white/90',
-                        /* Fine pointer: chrome appears on hero hover; keep button for keyboard/a11y */
-                        'md:opacity-0 md:transition-opacity md:duration-150',
-                        'md:group-hover/hero:opacity-100 md:group-focus-within/hero:opacity-100',
-                        metaExpanded && 'md:opacity-100',
+                        /*
+                         * Hide until hover only on fine-pointer devices. iPad is md+ but
+                         * hover:none — keep the control visible so Details stays tappable.
+                         */
+                        '[@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:transition-opacity [@media(hover:hover)_and_(pointer:fine)]:duration-150',
+                        '[@media(hover:hover)_and_(pointer:fine)]:group-hover/hero:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/hero:opacity-100',
+                        metaExpanded &&
+                          '[@media(hover:hover)_and_(pointer:fine)]:opacity-100',
                       )}
                       aria-expanded={metaExpanded}
                       onClick={() => setMetaExpanded((v) => !v)}
@@ -302,11 +306,11 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                         metaExpanded
                           ? 'grid-rows-[1fr] opacity-100'
                           : 'grid-rows-[0fr] opacity-0',
-                        /* Desktop hover reveals without a click when collapsed */
+                        /* Fine-pointer hover reveals without a click when collapsed */
                         !metaExpanded &&
-                          'md:group-hover/hero:grid-rows-[1fr] md:group-hover/hero:opacity-100',
+                          '[@media(hover:hover)_and_(pointer:fine)]:group-hover/hero:grid-rows-[1fr] [@media(hover:hover)_and_(pointer:fine)]:group-hover/hero:opacity-100',
                         !metaExpanded &&
-                          'md:group-focus-within/hero:grid-rows-[1fr] md:group-focus-within/hero:opacity-100',
+                          '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within/hero:grid-rows-[1fr] [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/hero:opacity-100',
                       )}
                     >
                       <div className="min-h-0 overflow-hidden">
