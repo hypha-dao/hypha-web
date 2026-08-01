@@ -131,13 +131,17 @@ export function HyphaNetworkFeedbackDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        // Full-viewport center (like AlertDialog viewport="full"): this is global
+        // chrome, so do not inherit main-column left/width that can leave a stale
+        // --sidebar-left-width inset on mobile and clip the panel on the right.
+        overlayClassName="left-0 right-0"
         className={cn(
           'gap-0 overflow-hidden rounded-none border border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 sm:rounded-lg dark:ring-white/10',
-          'max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]',
+          'left-1/2 max-h-[min(90dvh,calc(100dvh-2rem))] w-[min(768px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]',
         )}
       >
-        <div className="flex max-h-[min(90dvh,calc(100dvh-2rem))] flex-col gap-6 overflow-y-auto p-4 sm:p-6 lg:p-7">
-          <DialogHeader className="space-y-2 text-left">
+        <div className="flex max-h-[min(90dvh,calc(100dvh-2rem))] min-w-0 flex-col gap-6 overflow-y-auto p-4 sm:p-6 lg:p-7">
+          <DialogHeader className="space-y-2 pr-8 text-left">
             <DialogTitle className="text-4 font-semibold tracking-tight">
               {t('title')}
             </DialogTitle>
@@ -148,7 +152,7 @@ export function HyphaNetworkFeedbackDialog({
               {t('intro')}
             </p>
           </DialogHeader>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
             <FeedbackOption
               icon={<Radio className="craft-icon" strokeWidth={1.5} />}
               title={t('community.title')}
