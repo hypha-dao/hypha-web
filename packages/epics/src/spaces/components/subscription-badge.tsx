@@ -127,9 +127,9 @@ export function SubscriptionBadge({
   /** Hero plate: keep outline craft; renew uses space-accent gradient border */
   const heroBannerClassByStatus: Record<NonNullable<typeof status>, string> = {
     active:
-      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-foreground hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-foreground',
     activeFreeTrial:
-      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
+      '!bg-transparent shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-foreground hover:!border-emerald-300/90 hover:!bg-transparent hover:!text-foreground',
     activeFreeTrialExpiring:
       'space-accent-outline bg-black/25 shadow-sm !ring-0 hover:!ring-0 !text-white hover:bg-black/35 hover:!text-white',
     activate:
