@@ -628,7 +628,9 @@ export const CreateSignalForm = ({
           void (async () => {
             let roomId: string;
             try {
-              const roomCreationResult = await createRoom(coherence.title);
+              const roomCreationResult = await createRoom(coherence.title, {
+                grantCreatorPl100: true,
+              });
               roomId = roomCreationResult.roomId;
               const canonicalRoomId = await joinRoom(roomId);
               await loadRoomHistory(canonicalRoomId);

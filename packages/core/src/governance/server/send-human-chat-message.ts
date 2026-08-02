@@ -6,11 +6,13 @@ import {
 } from '../../coherence/server';
 import {
   getMatrixHomeserverUrl,
-  matrixCreateRoom,
-  matrixJoinRoom,
   matrixSendTextMessage,
-  resolveUserMatrixAccessTokenForSend,
+  resolveUserMatrixIdentityForSend,
 } from '../../matrix/server/matrix-http-client';
+import {
+  createBotOwnedRoomAction,
+  ensureMemberJoinedRoomAction,
+} from '../../matrix/server/actions';
 import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
@@ -108,17 +110,18 @@ export async function sendHumanChatMessageForSpace(
     };
   }
 
-  const accessToken = await resolveUserMatrixAccessTokenForSend(
+  const identity = await resolveUserMatrixIdentityForSend(
     input.authToken,
     input.requestUrlForSessionMatrix,
   );
-  if (!accessToken) {
+  if (!identity) {
     return {
       ok: false,
       error:
         'Human Chat is not linked for this account yet. Ask the member to open Human Chat once so their Matrix session is connected, then retry.',
     };
   }
+  const { accessToken, matrixUserId } = identity;
 
   const host = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!host) {
@@ -154,58 +157,49 @@ export async function sendHumanChatMessageForSpace(
       signalTitle = signal.title?.trim() || signalSlug;
       targetRoomId = signal.roomId?.trim() || targetRoomId;
       if (!targetRoomId) {
-        try {
-          targetRoomId = await matrixCreateRoom(
-            signalTitle,
-            accessToken,
-            homeserver,
-          );
-          await updateCoherenceBySlug(
-            { slug: signalSlug, roomId: targetRoomId },
-            { db },
-          );
-        } catch (error) {
+        const created = await createBotOwnedRoomAction({
+          title: signalTitle,
+          grantPl100ToMatrixUserId: matrixUserId,
+        });
+        if (!created) {
           return {
             ok: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to create signal chat room.',
+            error: 'Failed to create signal chat room.',
           };
         }
+        targetRoomId = created.roomId;
+        await updateCoherenceBySlug(
+          { slug: signalSlug, roomId: targetRoomId },
+          { db },
+        );
       }
     }
   } else {
     targetRoomId = host.chatRoomId?.trim() || targetRoomId;
     if (!targetRoomId) {
-      try {
-        targetRoomId = await matrixCreateRoom(
-          `space-${spaceSlug}`,
-          accessToken,
-          homeserver,
-        );
-        await updateSpaceBySlug(
-          { slug: spaceSlug, chatRoomId: targetRoomId },
-          { db },
-        );
-      } catch (error) {
+      const created = await createBotOwnedRoomAction({
+        title: `space-${spaceSlug}`,
+      });
+      if (!created) {
         return {
           ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Failed to create space chat room.',
+          error: 'Failed to create space chat room.',
         };
       }
+      targetRoomId = created.roomId;
+      await updateSpaceBySlug(
+        { slug: spaceSlug, chatRoomId: targetRoomId },
+        { db },
+      );
     }
   }
 
   try {
-    const joinedRoomId = await matrixJoinRoom(
-      targetRoomId,
-      accessToken,
-      homeserver,
-    );
+    await ensureMemberJoinedRoomAction({
+      roomId: targetRoomId,
+      matrixUserId,
+    });
+    const joinedRoomId = targetRoomId;
     const messageEventId = await matrixSendTextMessage(
       joinedRoomId,
       message,

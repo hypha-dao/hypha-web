@@ -2822,6 +2822,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           );
           const { roomId: newRoomId } = await matrixRef.current.createRoom(
             coherenceTitle || 'Conversation',
+            { grantCreatorPl100: true },
           );
           if (cancelled) return;
           targetRoomId = newRoomId;

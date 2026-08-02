@@ -1,6 +1,9 @@
 import 'server-only';
 
-import { resolveUserMatrixAccessTokenForOrgMemory } from '../../governance/server/resolve-user-matrix-access-token-for-org-memory';
+import {
+  resolveUserMatrixAccessTokenForOrgMemory,
+  resolveUserMatrixIdentityForOrgMemory,
+} from '../../governance/server/resolve-user-matrix-access-token-for-org-memory';
 
 export function getMatrixHomeserverUrl(): string | null {
   const raw = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim();
@@ -19,6 +22,18 @@ export async function resolveUserMatrixAccessTokenForSend(
   return resolveUserMatrixAccessTokenForOrgMemory(sessionAuth, sessionReqUrl);
 }
 
+/** Same as `resolveUserMatrixAccessTokenForSend`, but also returns the sender's own MXID
+ * (needed to puppet-join them into invite-only rooms via the bot's AS token, #2428). */
+export async function resolveUserMatrixIdentityForSend(
+  authToken?: string,
+  requestUrlForSessionMatrix?: string,
+): Promise<{ accessToken: string; matrixUserId: string } | null> {
+  const sessionAuth = authToken?.trim();
+  const sessionReqUrl = requestUrlForSessionMatrix?.trim();
+  if (!sessionAuth || !sessionReqUrl) return null;
+  return resolveUserMatrixIdentityForOrgMemory(sessionAuth, sessionReqUrl);
+}
+
 async function readMatrixJson<T>(res: Response): Promise<T> {
   const text = await res.text();
   if (!res.ok) {
@@ -32,6 +47,38 @@ async function readMatrixJson<T>(res: Response): Promise<T> {
   } catch {
     throw new Error('Matrix returned a non-JSON response');
   }
+}
+
+/** Permanent Application Service credential for the org bot (never expires by login/logout). */
+export function getMatrixBotAsToken(): string | null {
+  const raw = process.env.HYPHA_MATRIX_BOT_AS_TOKEN?.trim();
+  return raw || null;
+}
+
+/** Bot's Matrix user id (e.g. `@hypha_bot:matrix.test`) — public, not a secret. */
+export function getMatrixBotUserId(): string | null {
+  const raw = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim();
+  return raw || null;
+}
+
+export async function matrixInviteUser(
+  roomId: string,
+  userId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await fetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/invite`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId }),
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
 }
 
 export async function matrixJoinRoom(
@@ -52,6 +99,126 @@ export async function matrixJoinRoom(
   );
   const data = await readMatrixJson<{ room_id?: string }>(res);
   return data.room_id?.trim() || roomIdOrAlias.trim();
+}
+
+/**
+ * Join `roomId` as `puppetUserId` using the AS's own `as_token` — no login, no accept step
+ * from that user. Only works for MXIDs matching the AS's registered namespace (#2428 Decision 9).
+ */
+export async function matrixJoinRoomAsPuppet(
+  roomId: string,
+  puppetUserId: string,
+  asToken: string,
+  homeserver: string,
+): Promise<void> {
+  const res = await fetch(
+    `${homeserver}/_matrix/client/v3/join/${encodeURIComponent(
+      roomId,
+    )}?user_id=${encodeURIComponent(puppetUserId)}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${asToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    },
+  );
+  await readMatrixJson<{ room_id?: string }>(res);
+}
+
+export async function matrixGetPowerLevels(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<{
+  users?: Record<string, number>;
+  users_default?: number;
+  events?: Record<string, number>;
+  state_default?: number;
+  [key: string]: unknown;
+}> {
+  const res = await fetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/m.room.power_levels/`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return readMatrixJson(res);
+}
+
+/** Grants `targetUserId` power level `level` in `roomId`. Caller must already hold PL to edit
+ * `m.room.power_levels` (the bot does, as the room's creator). */
+export async function matrixSetPowerLevelForUser(
+  roomId: string,
+  targetUserId: string,
+  level: number,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const current = await matrixGetPowerLevels(roomId, accessToken, homeserver);
+  const res = await fetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/m.room.power_levels/`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...current,
+        users: { ...current.users, [targetUserId]: level },
+      }),
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
+}
+
+const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
+const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
+const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
+
+/** Server-side port of `matrix-provider.tsx`'s client-side `ensureRoomCallPowerLevels` — opens
+ * group-call state event types to all members (PL0). Run by the bot right after room creation,
+ * since the bot (not the human) is now the room creator holding PL to edit power_levels. */
+export async function matrixEnsureRoomCallPowerLevels(
+  roomId: string,
+  accessToken: string,
+  homeserver: string,
+): Promise<void> {
+  const current = await matrixGetPowerLevels(roomId, accessToken, homeserver);
+  const events = { ...current.events };
+  if (
+    events[MATRIX_GROUP_CALL_EVENT_TYPE] === 0 &&
+    events[MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE] === 0 &&
+    events[MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE] === 0
+  ) {
+    return;
+  }
+  const res = await fetch(
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/state/m.room.power_levels/`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...current,
+        events: {
+          ...events,
+          [MATRIX_GROUP_CALL_EVENT_TYPE]: 0,
+          [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
+          [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
+        },
+      }),
+    },
+  );
+  await readMatrixJson<Record<string, never>>(res);
 }
 
 export async function matrixCreateRoom(

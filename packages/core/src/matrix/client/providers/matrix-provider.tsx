@@ -54,6 +54,10 @@ import { useMatrixTabLeader } from '../hooks/use-matrix-tab-leader';
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
 import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
 import {
+  createBotOwnedRoomAction,
+  ensureMemberJoinedRoomAction,
+} from '../../server/actions';
+import {
   parseSignalTeamNoticeFromWireContent,
   shouldIncludeSignalTeamNoticeInChatTimeline,
 } from '../../signal-team-events';
@@ -547,7 +551,10 @@ interface MatrixContextType {
   retryMatrixConnection: () => Promise<void>;
   /** True after an explicit Retry click failed (cleared on success or next retry). */
   connectionRetryFailed: boolean;
-  createRoom: (title: string) => Promise<{ roomId: string }>;
+  createRoom: (
+    title: string,
+    options?: { grantCreatorPl100?: boolean },
+  ) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
@@ -1079,16 +1086,23 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [client]);
 
   const createRoom = React.useCallback(
-    async (title: string) => {
+    async (title: string, options?: { grantCreatorPl100?: boolean }) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
-      const { room_id: roomId } = await client.createRoom({
-        preset: RoomPreset.PublicChat,
-        name: title,
-        topic: title,
+      const userId = client.getUserId();
+      const created = await createBotOwnedRoomAction({
+        title,
+        grantPl100ToMatrixUserId:
+          options?.grantCreatorPl100 && userId ? userId : undefined,
       });
-      await ensureRoomCallPowerLevels(client, roomId);
+      if (!created) {
+        throw new Error('Failed to create room');
+      }
+      const { roomId } = created;
+      if (userId) {
+        await ensureMemberJoinedRoomAction({ roomId, matrixUserId: userId });
+      }
       return { roomId };
     },
     [client],
@@ -1916,6 +1930,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       try {
+        // Get the AS to invite+puppet-accept us first (#2428) — required for bot-owned
+        // invite-only rooms; a no-op/soft-fail on legacy open-join rooms, where the plain
+        // `client.joinRoom` call below still works on its own.
+        const userId = client.getUserId();
+        if (userId) {
+          await ensureMemberJoinedRoomAction({
+            roomId: roomIdOrAlias,
+            matrixUserId: userId,
+          });
+        }
         const joined = await client.joinRoom(roomIdOrAlias);
         const resolvedId = joined.roomId;
         await ensureRoomCallPowerLevels(client, resolvedId);

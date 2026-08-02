@@ -31,6 +31,7 @@
     "./space/server/actions": "./src/space/server/actions.ts",
     "./people/server/actions": "./src/people/server/actions.ts",
     "./governance/server/actions": "./src/governance/server/actions.ts",
+    "./matrix/server/actions": "./src/matrix/server/actions.ts",
     "./coherence/server/web3": "./src/coherence/server/web3/index.ts",
     "./generated": "./src/generated.ts"
   }
