@@ -5,7 +5,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   stopOnboardingSpeech,
   speakOnboardingText,
+  extractEarlySpeakableSentence,
   prepareAssistantTextForSpeech,
+  resolveSpeechRemainderAfterEarlyPrefix,
   estimateSpeechDurationMs,
 } from './onboarding-voice-speech';
 import { resolveOnboardingSpeechLocale } from './onboarding-voice-locale';
@@ -182,6 +184,10 @@ export function useOnboardingVoiceInterview({
   const prelistenTimerRef = useRef<number | null>(null);
   const earlySpeechStartedRef = useRef(false);
   const earlySpokenPrefixRef = useRef('');
+  const assistantTextAtStreamStartRef = useRef('');
+  const pendingRemainderSpeakRef = useRef<string | null>(null);
+  const lastAssistantTextRef = useRef(lastAssistantText);
+  lastAssistantTextRef.current = lastAssistantText;
   const startListeningRef = useRef<
     (options?: { userInitiated?: boolean }) => Promise<void>
   >(() => Promise.resolve());
@@ -441,6 +447,9 @@ export function useOnboardingVoiceInterview({
       releaseWarmMicStream();
       userInitiatedListeningRef.current = false;
       earlySpeechStartedRef.current = false;
+      earlySpokenPrefixRef.current = '';
+      pendingRemainderSpeakRef.current = null;
+      assistantTextAtStreamStartRef.current = '';
       setPhase('idle');
       return;
     }
@@ -463,6 +472,10 @@ export function useOnboardingVoiceInterview({
     if (lastActiveSpaceSlugRef.current === next) return;
     lastActiveSpaceSlugRef.current = next;
     lastSpokenAssistantRef.current = '';
+    earlySpeechStartedRef.current = false;
+    earlySpokenPrefixRef.current = '';
+    pendingRemainderSpeakRef.current = null;
+    assistantTextAtStreamStartRef.current = '';
     noSpeechRetryRef.current = 0;
     networkRetryRef.current = 0;
     userInitiatedListeningRef.current = false;
@@ -477,55 +490,96 @@ export function useOnboardingVoiceInterview({
     void acquireWarmMicStream();
   }, [enabled, isStreaming]);
 
-  useEffect(() => {
-    if (!enabled || !isStreaming) {
-      if (!isStreaming) {
-        earlySpeechStartedRef.current = false;
-        earlySpokenPrefixRef.current = '';
+  const resumeListeningAfterSpeech = useCallback(() => {
+    setPhase('idle');
+    if (!autoResumeListening || !enabled) return;
+    void acquireWarmMicStream().then(() => {
+      void startListeningRef.current({ userInitiated: false });
+    });
+  }, [autoResumeListening, enabled]);
+
+  const speakAssistantChunkRef = useRef<(text: string) => void>(() => {});
+
+  const speakAssistantChunk = useCallback(
+    (text: string) => {
+      const speakable = prepareAssistantTextForSpeech(text);
+      if (!speakable) {
+        resumeListeningAfterSpeech();
+        return;
       }
+
+      lastSpokenAssistantRef.current = text.trim();
+      clearPrelistenTimer();
+      stopListening();
+      setPhase('speaking');
+
+      const duration = estimateSpeechDurationMs(speakable);
+      prelistenTimerRef.current = window.setTimeout(() => {
+        void acquireWarmMicStream();
+      }, Math.max(0, duration - MIC_PREWARM_BEFORE_TTS_END_MS));
+
+      cancelSpeechRef.current?.();
+      cancelSpeechRef.current = speakOnboardingText(speakable, {
+        lang: locale,
+        rate: 1.05,
+        onEnd: () => {
+          cancelSpeechRef.current = null;
+          clearPrelistenTimer();
+          const remainder = pendingRemainderSpeakRef.current?.trim();
+          if (remainder && enabled) {
+            pendingRemainderSpeakRef.current = null;
+            speakAssistantChunkRef.current(remainder);
+            return;
+          }
+          resumeListeningAfterSpeech();
+        },
+      });
+    },
+    [
+      clearPrelistenTimer,
+      enabled,
+      locale,
+      resumeListeningAfterSpeech,
+      stopListening,
+    ],
+  );
+  speakAssistantChunkRef.current = speakAssistantChunk;
+
+  useEffect(() => {
+    if (!enabled || !isStreaming) return;
+
+    if (!wasStreamingRef.current) {
+      assistantTextAtStreamStartRef.current = lastAssistantTextRef.current;
+      earlySpeechStartedRef.current = false;
+      earlySpokenPrefixRef.current = '';
+      pendingRemainderSpeakRef.current = null;
+      stopSpeaking();
+    }
+    wasStreamingRef.current = true;
+    clearPrelistenTimer();
+    stopListening();
+    if (!earlySpeechStartedRef.current) {
+      setPhase('processing');
+    }
+  }, [clearPrelistenTimer, enabled, isStreaming, stopListening, stopSpeaking]);
+
+  useEffect(() => {
+    if (!enabled || !isStreaming || !wasStreamingRef.current) return;
+    if (earlySpeechStartedRef.current) return;
+    if (
+      lastAssistantText.trim() === assistantTextAtStreamStartRef.current.trim()
+    ) {
       return;
     }
-    if (earlySpeechStartedRef.current) return;
 
-    const speakable = prepareAssistantTextForSpeech(lastAssistantText);
-    if (speakable.length < 48) return;
-
-    const firstSentence = speakable.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
-    if (!firstSentence || firstSentence.length < 20) return;
+    const firstSentence = extractEarlySpeakableSentence(lastAssistantText);
+    if (!firstSentence) return;
 
     earlySpeechStartedRef.current = true;
     earlySpokenPrefixRef.current = firstSentence;
-    lastSpokenAssistantRef.current = lastAssistantText.trim();
-    clearPrelistenTimer();
-    stopListening();
-    setPhase('speaking');
-    cancelSpeechRef.current?.();
-    cancelSpeechRef.current = speakOnboardingText(firstSentence, {
-      lang: locale,
-      rate: 1.05,
-    });
-  }, [
-    clearPrelistenTimer,
-    enabled,
-    isStreaming,
-    lastAssistantText,
-    locale,
-    stopListening,
-  ]);
-
-  useEffect(() => {
-    if (!enabled) return;
-    if (isStreaming) {
-      wasStreamingRef.current = true;
-      clearPrelistenTimer();
-      stopListening();
-      if (!earlySpeechStartedRef.current) {
-        stopSpeaking();
-      }
-      setPhase('processing');
-      return;
-    }
-  }, [clearPrelistenTimer, enabled, isStreaming, stopListening, stopSpeaking]);
+    lastSpokenAssistantRef.current = firstSentence;
+    speakAssistantChunk(firstSentence);
+  }, [enabled, isStreaming, lastAssistantText, speakAssistantChunk]);
 
   useEffect(() => {
     if (!enabled || isStreaming) return;
@@ -536,70 +590,53 @@ export function useOnboardingVoiceInterview({
     if (!spoken || isAssistantFailureText(spoken)) {
       earlySpeechStartedRef.current = false;
       earlySpokenPrefixRef.current = '';
+      pendingRemainderSpeakRef.current = null;
       setPhase('idle');
       return;
     }
 
     const speakable = prepareAssistantTextForSpeech(spoken);
     const earlyPrefix = earlySpokenPrefixRef.current.trim();
+    const remainder = resolveSpeechRemainderAfterEarlyPrefix(
+      speakable,
+      earlyPrefix,
+    );
+    const earlyStillPlaying = Boolean(cancelSpeechRef.current);
     earlySpeechStartedRef.current = false;
     earlySpokenPrefixRef.current = '';
 
-    if (
-      earlyPrefix &&
-      speakable &&
-      speakable.startsWith(earlyPrefix) &&
-      speakable.length - earlyPrefix.length < 48
-    ) {
-      lastSpokenAssistantRef.current = spoken;
-      stopSpeaking();
-      stopListening();
-      setPhase('idle');
-      if (!autoResumeListening) return;
-      void acquireWarmMicStream().then(() => {
-        void startListeningRef.current({ userInitiated: false });
-      });
-      return;
-    }
-
-    if (!speakable || spoken === lastSpokenAssistantRef.current) {
-      setPhase('idle');
-      if (autoResumeListening) {
-        void startListeningRef.current({ userInitiated: false });
+    if (!speakable) {
+      pendingRemainderSpeakRef.current = null;
+      if (!earlyStillPlaying) {
+        resumeListeningAfterSpeech();
       }
       return;
     }
 
-    lastSpokenAssistantRef.current = spoken;
-    stopListening();
-    setPhase('speaking');
-    clearPrelistenTimer();
+    if (!remainder) {
+      lastSpokenAssistantRef.current = spoken;
+      pendingRemainderSpeakRef.current = null;
+      // Keep early lead-in audio playing; resume mic when it ends.
+      if (!earlyStillPlaying) {
+        resumeListeningAfterSpeech();
+      }
+      return;
+    }
 
-    const duration = estimateSpeechDurationMs(speakable);
-    prelistenTimerRef.current = window.setTimeout(() => {
-      void acquireWarmMicStream();
-    }, Math.max(0, duration - MIC_PREWARM_BEFORE_TTS_END_MS));
+    if (earlyStillPlaying) {
+      pendingRemainderSpeakRef.current = remainder;
+      lastSpokenAssistantRef.current = spoken;
+      return;
+    }
 
-    cancelSpeechRef.current = speakOnboardingText(spoken, {
-      lang: locale,
-      rate: 1.05,
-      onEnd: () => {
-        cancelSpeechRef.current = null;
-        clearPrelistenTimer();
-        setPhase('idle');
-        if (!autoResumeListening || !enabled) return;
-        void startListeningRef.current({ userInitiated: false });
-      },
-    });
+    pendingRemainderSpeakRef.current = null;
+    speakAssistantChunk(remainder);
   }, [
-    autoResumeListening,
-    clearPrelistenTimer,
     enabled,
     isStreaming,
     lastAssistantText,
-    locale,
-    stopListening,
-    stopSpeaking,
+    resumeListeningAfterSpeech,
+    speakAssistantChunk,
   ]);
 
   return {

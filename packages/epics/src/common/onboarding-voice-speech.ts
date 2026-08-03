@@ -157,6 +157,101 @@ export function prepareAssistantSpeechSentences(text: string): string[] {
   return [speakable];
 }
 
+/** Minimum length for the first completed sentence to start early TTS mid-stream. */
+export const EARLY_SPEECH_MIN_SENTENCE_CHARS = 12;
+/** Minimum words so tiny fragments like "OK." are not spoken early. */
+export const EARLY_SPEECH_MIN_SENTENCE_WORDS = 3;
+/**
+ * After early speech, skip a trailing remainder shorter than this only when it
+ * carries no question and no substantive words (already covered by the lead-in).
+ */
+export const EARLY_SPEECH_REMAINDER_SKIP_CHARS = 16;
+
+function countSpeechWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function normalizeSpeechCompareKey(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isTrivialSpeechRemainder(remainder: string): boolean {
+  const trimmed = remainder.trim();
+  if (!trimmed) return true;
+  if (trimmed.includes('?')) return false;
+  return (
+    trimmed.length < EARLY_SPEECH_REMAINDER_SKIP_CHARS &&
+    countSpeechWords(trimmed) < EARLY_SPEECH_MIN_SENTENCE_WORDS
+  );
+}
+
+/**
+ * First completed speakable sentence ready for early TTS while chat is still
+ * streaming (covers voice tool-ack lead-ins before tools finish).
+ */
+export function extractEarlySpeakableSentence(text: string): string | null {
+  const speakable = prepareAssistantTextForSpeech(text);
+  if (!speakable) return null;
+
+  const firstSentence = speakable.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
+  if (!firstSentence) return null;
+  if (firstSentence.length < EARLY_SPEECH_MIN_SENTENCE_CHARS) return null;
+  if (countSpeechWords(firstSentence) < EARLY_SPEECH_MIN_SENTENCE_WORDS) {
+    return null;
+  }
+  return firstSentence;
+}
+
+/**
+ * Text still worth speaking after an early lead-in. Empty means skip
+ * (early speech already covered the turn, or remainder is trivial).
+ * If the prefix no longer matches, returns the full speakable script.
+ */
+export function resolveSpeechRemainderAfterEarlyPrefix(
+  speakable: string,
+  earlyPrefix: string,
+): string {
+  const full = speakable.trim();
+  const prefix = earlyPrefix.trim();
+  if (!full) return '';
+  if (!prefix) return full;
+
+  let remainder = '';
+  if (full.startsWith(prefix)) {
+    remainder = full.slice(prefix.length).trim();
+  } else {
+    const normalizedPrefix = normalizeSpeechCompareKey(prefix);
+    const firstSentence = full.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim() ?? '';
+    if (
+      normalizedPrefix &&
+      firstSentence &&
+      normalizeSpeechCompareKey(firstSentence) === normalizedPrefix
+    ) {
+      remainder = full.slice(firstSentence.length).trim();
+    } else if (
+      normalizedPrefix &&
+      normalizeSpeechCompareKey(full).startsWith(normalizedPrefix)
+    ) {
+      // Prefix matches after normalization but sentence boundaries drifted —
+      // drop the matched lead-in words rather than replaying them.
+      const fullWords = full.split(/\s+/).filter(Boolean);
+      const prefixWordCount = normalizedPrefix
+        .split(/\s+/)
+        .filter(Boolean).length;
+      remainder = fullWords.slice(prefixWordCount).join(' ').trim();
+    } else {
+      return full;
+    }
+  }
+
+  if (isTrivialSpeechRemainder(remainder)) return '';
+  return remainder;
+}
+
 /** Rough duration for scheduling mic pre-warm before TTS ends. */
 export function estimateSpeechDurationMs(text: string, rate = 1.02): number {
   const spoken = prepareAssistantTextForSpeech(text);

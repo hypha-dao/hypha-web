@@ -165,9 +165,9 @@ Hypha space category tags (same list as network map + create space form):
 
 export const VISUAL_ASSET_GENERATION_GUIDELINES = `
 AI image generation (logos, banners, icons, placeholders):
-- Default to text-free visuals — no words, letters, typography, labels, or space name rendered in the image. AI-generated text is usually misspelled or obviously fake; avoid it unless the user explicitly asks for text in the image.
-- When calling generate_space_visual_assets, describe mood, symbols, colors, and composition in visual_vibe — never instruct the generator to include the space name or slogans as on-image text.
-- If the user explicitly wants text in an image, confirm the exact wording first; otherwise regenerate text-free.`;
+- HARD PRINCIPLE: generated visuals are always text-free — no words, letters, numbers, initials, monograms, labels, slogans, or the space name in the image. AI-generated text is usually misspelled or fake; never request wording for rendering. If the user asks for on-image text, explain that generated assets stay text-free and offer mood/symbol direction instead.
+- Quality bar: mature, inspirational, and visually striking. Logos/icons should feel mindblowing and emblematic — not basic flat clipart, generic geometric badges, or stock-icon silhouettes. Banners should feel cinematic and purposeful.
+- When calling generate_space_visual_assets, put craft direction in visual_vibe: mood, symbolism, light, materials, palette, composition. Never instruct the generator to render the space name or slogans as typography.`;
 
 export const ECOSYSTEM_NESTED_SPACES_GUIDELINES = `
 Ecosystem nested spaces (MANDATORY — never skip; user-facing term is "nested spaces" only — never say subspace or subspaces):
