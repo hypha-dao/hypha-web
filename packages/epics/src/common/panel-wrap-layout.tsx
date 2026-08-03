@@ -18,6 +18,7 @@ import {
   useIsMobile,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { useJwt } from '@hypha-platform/core/client';
 import {
   AiPanelProvider,
   HumanChatPanelProvider,
@@ -25,6 +26,8 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { useIsSpaceContext } from './use-is-space-context';
+import { useGlobalCallDock } from './global-call-dock-context';
+import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
@@ -208,9 +211,17 @@ export function HumanSidebarTrigger() {
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
   const mutuallyExclusive = useMutuallyExclusivePanels();
+  const { activeRoomId } = useGlobalCallDock();
+  const { jwt } = useJwt();
+  const elsewhereCallEntries = useCallMembershipRegistry({
+    excludeRoomId: activeRoomId,
+    getAccessToken: async () => jwt,
+  });
+  const hasCallElsewhere = elsewhereCallEntries.length > 0;
 
   // Hide header trigger while the chat panel is open — the panel has its own chrome.
-  if (!isSpace || open) return null;
+  // Outside a space, still show it when there's a call elsewhere to notify about (#2424).
+  if (open || (!isSpace && !hasCallElsewhere)) return null;
 
   return (
     <button
@@ -226,11 +237,17 @@ export function HumanSidebarTrigger() {
         openHumanChatPanel();
       }}
       aria-expanded={open}
-      className={APP_CHROME_ICON_TRIGGER}
+      className={`relative ${APP_CHROME_ICON_TRIGGER}`}
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
       <MessageCircle className="craft-icon" />
+      {hasCallElsewhere ? (
+        <span className="absolute right-1 top-1 flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        </span>
+      ) : null}
     </button>
   );
 }

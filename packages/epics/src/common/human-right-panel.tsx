@@ -72,6 +72,7 @@ import {
   canInteractInSpace,
 } from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
+import { Empty } from './empty';
 
 import {
   HumanChatPanelHeader,
@@ -122,6 +123,11 @@ import { useActiveCallInAnotherTab } from './human-chat-panel/use-active-call-in
 import { shouldShowCallScaleWarning } from './human-chat-panel/call-scale-warning';
 import { resolveSignalDeepLinkWithRetry } from './human-chat-panel/resolve-signal-deep-link';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
+import {
+  useCallMembershipRegistry,
+  type CallElsewhereEntry,
+} from './human-chat-panel/use-call-membership-registry';
+import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-chat-panel-elsewhere-call-indicator';
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
@@ -1342,6 +1348,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const spaceCallToolbarJoinHint =
     callUiEnabled &&
     (spaceCallShowJoinStrip || spaceCallRoomGroupDeviceCount > 0);
+  const elsewhereCallEntries = useCallMembershipRegistry({
+    excludeRoomId: roomId,
+    getAccessToken: async () => authTokenRef.current,
+  });
+
+  const handleSelectElsewhereCall = useCallback(
+    (entry: CallElsewhereEntry) => {
+      const lang = getLocaleFromPath(pathname);
+      const target =
+        entry.kind === 'signal' && entry.signalSlug
+          ? `/${lang}/dho/${entry.spaceSlug}?signal=${encodeURIComponent(
+              entry.signalSlug,
+            )}`
+          : `/${lang}/dho/${entry.spaceSlug}`;
+      router.push(target);
+      openHumanChatPanel();
+      setActiveTab('chat');
+    },
+    [pathname, router, openHumanChatPanel, setActiveTab],
+  );
+
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
   const showPanelInteractionPrompt =
@@ -4285,29 +4312,55 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             mentionTabBadgeCount={bellMentionCount}
             mentionTabBadgeCapped={bellMentionCapped}
             tabRowEnd={
-              showSidebarCallChrome &&
-              !inSpaceCall &&
-              !spaceCallShowJoinStrip ? (
-                <HumanChatPanelCallToolbar
-                  callState={spaceCallState}
-                  callKind={spaceCallKind}
-                  disabled={!callUiEnabled}
-                  roomCallInProgressToJoin={spaceCallToolbarJoinHint}
-                  onAudio={() => {
-                    if (!canJoinSignalThreadCall && isSignalThread) {
-                      void requestSignalTeamAccess();
-                      return;
-                    }
-                    handleCallAudio();
-                  }}
-                  onVideo={() => {
-                    if (!canJoinSignalThreadCall && isSignalThread) {
-                      void requestSignalTeamAccess();
-                      return;
-                    }
-                    handleCallVideo();
-                  }}
-                />
+              (showSidebarCallChrome &&
+                !inSpaceCall &&
+                !spaceCallShowJoinStrip) ||
+              (showAuthedUi &&
+                Boolean(spaceSlug?.trim()) &&
+                elsewhereCallEntries.length > 0) ? (
+                <>
+                  {showSidebarCallChrome &&
+                  !inSpaceCall &&
+                  !spaceCallShowJoinStrip ? (
+                    <HumanChatPanelCallToolbar
+                      callState={spaceCallState}
+                      callKind={spaceCallKind}
+                      disabled={!callUiEnabled}
+                      roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                      onAudio={() => {
+                        if (!canJoinSignalThreadCall && isSignalThread) {
+                          void requestSignalTeamAccess();
+                          return;
+                        }
+                        handleCallAudio();
+                      }}
+                      onVideo={() => {
+                        if (!canJoinSignalThreadCall && isSignalThread) {
+                          void requestSignalTeamAccess();
+                          return;
+                        }
+                        handleCallVideo();
+                      }}
+                    />
+                  ) : null}
+                  {showAuthedUi &&
+                  Boolean(spaceSlug?.trim()) &&
+                  elsewhereCallEntries.length > 0 ? (
+                    <HumanChatPanelElsewhereCallIndicator
+                      entries={elsewhereCallEntries}
+                      onSelect={handleSelectElsewhereCall}
+                      label={
+                        elsewhereCallEntries.length === 1
+                          ? t('activeCallElsewhere', {
+                              title: elsewhereCallEntries[0]?.title ?? '',
+                            })
+                          : t('activeCallsElsewhereCount', {
+                              count: elsewhereCallEntries.length,
+                            })
+                      }
+                    />
+                  ) : null}
+                </>
               ) : null
             }
           />
@@ -4465,7 +4518,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       >
         {isAuthLoading ? (
           <HumanChatPanelLoader />
-        ) : blockSpaceChatForActivityAccess ? (
+        ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <SpaceAccessDenied
               userState={userSpaceState}
@@ -4473,7 +4526,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               spaceSlug={spaceSlug ?? undefined}
             />
           </div>
-        ) : showAuthPrompt ? (
+        ) : !spaceSlug?.trim() ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
+            <Empty>
+              <p>{t('notInSpaceEmptyState')}</p>
+            </Empty>
+            {elsewhereCallEntries.length > 0 ? (
+              <HumanChatPanelElsewhereCallIndicator
+                entries={elsewhereCallEntries}
+                onSelect={handleSelectElsewhereCall}
+                label={
+                  elsewhereCallEntries.length === 1
+                    ? t('activeCallElsewhere', {
+                        title: elsewhereCallEntries[0]?.title ?? '',
+                      })
+                    : t('activeCallsElsewhereCount', {
+                        count: elsewhereCallEntries.length,
+                      })
+                }
+              />
+            ) : null}
+          </div>
+        ) : blockSpaceChatForActivityAccess ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <SpaceAccessDenied
               userState={userSpaceState}
