@@ -34,6 +34,17 @@ export async function resolveUserMatrixIdentityForSend(
   return resolveUserMatrixIdentityForOrgMemory(sessionAuth, sessionReqUrl);
 }
 
+const MATRIX_HTTP_TIMEOUT_MS = 10_000;
+
+/** All Matrix HTTP calls in this file go through this — bounds worst-case latency when the
+ * homeserver stalls, instead of hanging the request thread indefinitely (#2428 review). */
+function matrixFetch(url: string, init: RequestInit): Promise<Response> {
+  return fetch(url, {
+    ...init,
+    signal: AbortSignal.timeout(MATRIX_HTTP_TIMEOUT_MS),
+  });
+}
+
 async function readMatrixJson<T>(res: Response): Promise<T> {
   const text = await res.text();
   if (!res.ok) {
@@ -67,7 +78,7 @@ export async function matrixInviteUser(
   accessToken: string,
   homeserver: string,
 ): Promise<void> {
-  const res = await fetch(
+  const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/invite`,
     {
       method: 'POST',
@@ -86,7 +97,7 @@ export async function matrixJoinRoom(
   accessToken: string,
   homeserver: string,
 ): Promise<string> {
-  const res = await fetch(
+  const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/join/${encodeURIComponent(roomIdOrAlias)}`,
     {
       method: 'POST',
@@ -111,7 +122,7 @@ export async function matrixJoinRoomAsPuppet(
   asToken: string,
   homeserver: string,
 ): Promise<void> {
-  const res = await fetch(
+  const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/join/${encodeURIComponent(
       roomId,
     )}?user_id=${encodeURIComponent(puppetUserId)}`,
@@ -138,7 +149,7 @@ export async function matrixGetPowerLevels(
   state_default?: number;
   [key: string]: unknown;
 }> {
-  const res = await fetch(
+  const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
     )}/state/m.room.power_levels/`,
@@ -147,57 +158,36 @@ export async function matrixGetPowerLevels(
   return readMatrixJson(res);
 }
 
-/** Grants `targetUserId` power level `level` in `roomId`. Caller must already hold PL to edit
- * `m.room.power_levels` (the bot does, as the room's creator). */
-export async function matrixSetPowerLevelForUser(
-  roomId: string,
-  targetUserId: string,
-  level: number,
-  accessToken: string,
-  homeserver: string,
-): Promise<void> {
-  const current = await matrixGetPowerLevels(roomId, accessToken, homeserver);
-  const res = await fetch(
-    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
-      roomId,
-    )}/state/m.room.power_levels/`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...current,
-        users: { ...current.users, [targetUserId]: level },
-      }),
-    },
-  );
-  await readMatrixJson<Record<string, never>>(res);
-}
-
 const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
 
-/** Server-side port of `matrix-provider.tsx`'s client-side `ensureRoomCallPowerLevels` — opens
- * group-call state event types to all members (PL0). Run by the bot right after room creation,
- * since the bot (not the human) is now the room creator holding PL to edit power_levels. */
-export async function matrixEnsureRoomCallPowerLevels(
+/**
+ * Single read-modify-write against `m.room.power_levels`: opens group-call state event types to
+ * all members (PL0) and, if given, grants `grantPl100ToUserId` PL100 — in one GET/PUT cycle
+ * instead of two sequential ones, so the second write can't silently drop a concurrent change
+ * made to the same state event between them (#2428 review). Run by the bot right after room
+ * creation, since the bot (not the human) is now the room creator holding PL to edit
+ * power_levels.
+ */
+export async function matrixApplyRoomPowerLevels(
   roomId: string,
   accessToken: string,
   homeserver: string,
+  options: { grantPl100ToUserId?: string } = {},
 ): Promise<void> {
   const current = await matrixGetPowerLevels(roomId, accessToken, homeserver);
-  const events = { ...current.events };
-  if (
-    events[MATRIX_GROUP_CALL_EVENT_TYPE] === 0 &&
-    events[MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE] === 0 &&
-    events[MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE] === 0
-  ) {
-    return;
-  }
-  const res = await fetch(
+  const events = {
+    ...current.events,
+    [MATRIX_GROUP_CALL_EVENT_TYPE]: 0,
+    [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
+    [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
+  };
+  const targetUserId = options.grantPl100ToUserId?.trim();
+  const users = targetUserId
+    ? { ...current.users, [targetUserId]: 100 }
+    : current.users;
+  const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
     )}/state/m.room.power_levels/`,
@@ -207,15 +197,7 @@ export async function matrixEnsureRoomCallPowerLevels(
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        ...current,
-        events: {
-          ...events,
-          [MATRIX_GROUP_CALL_EVENT_TYPE]: 0,
-          [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
-          [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
-        },
-      }),
+      body: JSON.stringify({ ...current, events, users }),
     },
   );
   await readMatrixJson<Record<string, never>>(res);
@@ -226,7 +208,7 @@ export async function matrixCreateRoom(
   accessToken: string,
   homeserver: string,
 ): Promise<string> {
-  const res = await fetch(`${homeserver}/_matrix/client/v3/createRoom`, {
+  const res = await matrixFetch(`${homeserver}/_matrix/client/v3/createRoom`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -255,7 +237,7 @@ export async function matrixSendTextMessage(
   const txnId = `hypha.${Date.now()}.${Math.random()
     .toString(36)
     .slice(2, 10)}`;
-  const res = await fetch(
+  const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
     )}/send/m.room.message/${encodeURIComponent(txnId)}`,

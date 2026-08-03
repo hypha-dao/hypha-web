@@ -27,12 +27,11 @@ import { Environment } from '../../coherence/types';
 import {
   getMatrixBotAsToken,
   getMatrixHomeserverUrl,
+  matrixApplyRoomPowerLevels,
   matrixCreateRoom,
-  matrixEnsureRoomCallPowerLevels,
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
-  matrixSetPowerLevelForUser,
 } from './matrix-http-client';
 
 export async function createMatrixUserLinkAction(
@@ -131,7 +130,8 @@ export async function ensureBotJoinedRoomAction(
     return { joined: true };
   } catch (error) {
     console.warn(
-      `[MatrixBot] Failed to join room ${trimmedRoomId}:`,
+      '[MatrixBot] Failed to join room:',
+      trimmedRoomId,
       error instanceof Error ? error.message : error,
     );
     return { joined: false };
@@ -162,27 +162,33 @@ export async function createBotOwnedRoomAction({
   const botToken = getMatrixBotAsToken();
   if (!homeserver || !botToken) return null;
 
+  let roomId: string;
   try {
-    const roomId = await matrixCreateRoom(title, botToken, homeserver);
-    await matrixEnsureRoomCallPowerLevels(roomId, botToken, homeserver);
-    const targetUserId = grantPl100ToMatrixUserId?.trim();
-    if (targetUserId) {
-      await matrixSetPowerLevelForUser(
-        roomId,
-        targetUserId,
-        100,
-        botToken,
-        homeserver,
-      );
-    }
-    return { roomId };
+    roomId = await matrixCreateRoom(title, botToken, homeserver);
   } catch (error) {
     console.warn(
-      `[MatrixBot] Failed to create bot-owned room "${title}":`,
+      '[MatrixBot] Failed to create bot-owned room:',
+      title,
       error instanceof Error ? error.message : error,
     );
     return null;
   }
+
+  // Power-level setup is best-effort — the room already exists, so a failure here must not
+  // orphan it: callers retry room creation on a `null` return, which would create a duplicate,
+  // never-persisted room every time.
+  try {
+    await matrixApplyRoomPowerLevels(roomId, botToken, homeserver, {
+      grantPl100ToUserId: grantPl100ToMatrixUserId?.trim(),
+    });
+  } catch (error) {
+    console.warn(
+      '[MatrixBot] Room created but power-level setup failed:',
+      roomId,
+      error instanceof Error ? error.message : error,
+    );
+  }
+  return { roomId };
 }
 
 /**
@@ -212,7 +218,8 @@ export async function ensureMemberJoinedRoomAction({
     await matrixInviteUser(trimmedRoomId, trimmedUserId, botToken, homeserver);
   } catch (error) {
     console.warn(
-      `[MatrixBot] Invite of ${trimmedUserId} to room ${trimmedRoomId} skipped/failed (likely already a member):`,
+      '[MatrixBot] Invite skipped/failed (likely already a member), room:',
+      trimmedRoomId,
       error instanceof Error ? error.message : error,
     );
   }
@@ -227,7 +234,8 @@ export async function ensureMemberJoinedRoomAction({
     return { joined: true };
   } catch (error) {
     console.warn(
-      `[MatrixBot] Failed to puppet-join ${trimmedUserId} into room ${trimmedRoomId}:`,
+      '[MatrixBot] Failed to puppet-join member into room:',
+      trimmedRoomId,
       error instanceof Error ? error.message : error,
     );
     return { joined: false };

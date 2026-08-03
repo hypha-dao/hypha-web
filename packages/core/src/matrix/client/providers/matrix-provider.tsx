@@ -1091,18 +1091,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Client should be specified');
       }
       const userId = client.getUserId();
+      if (!userId) {
+        throw new Error('Matrix user id is not available');
+      }
       const created = await createBotOwnedRoomAction({
         title,
-        grantPl100ToMatrixUserId:
-          options?.grantCreatorPl100 && userId ? userId : undefined,
+        grantPl100ToMatrixUserId: options?.grantCreatorPl100
+          ? userId
+          : undefined,
       });
       if (!created) {
         throw new Error('Failed to create room');
       }
       const { roomId } = created;
-      if (userId) {
-        await ensureMemberJoinedRoomAction({ roomId, matrixUserId: userId });
-      }
+      await ensureMemberJoinedRoomAction({ roomId, matrixUserId: userId });
       return { roomId };
     },
     [client],

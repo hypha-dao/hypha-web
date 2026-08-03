@@ -4,6 +4,7 @@ import {
   findCoherenceBySlug,
   updateCoherenceBySlug,
 } from '../../coherence/server';
+import { determineEnvironment } from '../../coherence/lib/determine-environment';
 import {
   getMatrixHomeserverUrl,
   matrixSendTextMessage,
@@ -13,12 +14,31 @@ import {
   createBotOwnedRoomAction,
   ensureMemberJoinedRoomAction,
 } from '../../matrix/server/actions';
+import { findMatrixUserIdsByPersonIds } from '../../matrix/server/queries';
 import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
   updateSpaceBySlug,
 } from '../../space/server';
 import type { DatabaseInstance } from '../../server';
+
+/** Resolve a signal's DB `creatorId` (a person id) to their Matrix user id, so PL100 on a
+ * lazily-created signal room goes to the actual signal owner — not whoever's session happened to
+ * trigger creation (#2428 review: any space member could otherwise self-elevate to room-admin of
+ * someone else's signal by being first to open/message it). `undefined` if unresolvable. */
+async function resolveSignalCreatorMatrixUserId(
+  creatorId: number,
+  requestUrlForEnvironment: string | undefined,
+  db: DatabaseInstance,
+): Promise<string | undefined> {
+  const environment = determineEnvironment(requestUrlForEnvironment ?? '');
+  if (!environment) return undefined;
+  const rows = await findMatrixUserIdsByPersonIds(
+    { personIds: [creatorId], environment },
+    { db },
+  );
+  return rows[0]?.matrixUserId;
+}
 
 export type HumanChatMessageTarget = 'space_chat' | 'signal_chat';
 
@@ -157,9 +177,14 @@ export async function sendHumanChatMessageForSpace(
       signalTitle = signal.title?.trim() || signalSlug;
       targetRoomId = signal.roomId?.trim() || targetRoomId;
       if (!targetRoomId) {
+        const creatorMatrixUserId = await resolveSignalCreatorMatrixUserId(
+          signal.creatorId,
+          input.requestUrlForSessionMatrix,
+          db,
+        );
         const created = await createBotOwnedRoomAction({
           title: signalTitle,
-          grantPl100ToMatrixUserId: matrixUserId,
+          grantPl100ToMatrixUserId: creatorMatrixUserId,
         });
         if (!created) {
           return {
@@ -168,10 +193,20 @@ export async function sendHumanChatMessageForSpace(
           };
         }
         targetRoomId = created.roomId;
-        await updateCoherenceBySlug(
-          { slug: signalSlug, roomId: targetRoomId },
-          { db },
-        );
+        try {
+          await updateCoherenceBySlug(
+            { slug: signalSlug, roomId: targetRoomId },
+            { db },
+          );
+        } catch (error) {
+          return {
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to link the signal chat room.',
+          };
+        }
       }
     }
   } else {
@@ -187,10 +222,20 @@ export async function sendHumanChatMessageForSpace(
         };
       }
       targetRoomId = created.roomId;
-      await updateSpaceBySlug(
-        { slug: spaceSlug, chatRoomId: targetRoomId },
-        { db },
-      );
+      try {
+        await updateSpaceBySlug(
+          { slug: spaceSlug, chatRoomId: targetRoomId },
+          { db },
+        );
+      } catch (error) {
+        return {
+          ok: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to link the space chat room.',
+        };
+      }
     }
   }
 
