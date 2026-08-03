@@ -447,6 +447,9 @@ export function useOnboardingVoiceInterview({
       releaseWarmMicStream();
       userInitiatedListeningRef.current = false;
       earlySpeechStartedRef.current = false;
+      earlySpokenPrefixRef.current = '';
+      pendingRemainderSpeakRef.current = null;
+      assistantTextAtStreamStartRef.current = '';
       setPhase('idle');
       return;
     }
@@ -495,6 +498,8 @@ export function useOnboardingVoiceInterview({
     });
   }, [autoResumeListening, enabled]);
 
+  const speakAssistantChunkRef = useRef<(text: string) => void>(() => {});
+
   const speakAssistantChunk = useCallback(
     (text: string) => {
       const speakable = prepareAssistantTextForSpeech(text);
@@ -523,7 +528,7 @@ export function useOnboardingVoiceInterview({
           const remainder = pendingRemainderSpeakRef.current?.trim();
           if (remainder && enabled) {
             pendingRemainderSpeakRef.current = null;
-            speakAssistantChunk(remainder);
+            speakAssistantChunkRef.current(remainder);
             return;
           }
           resumeListeningAfterSpeech();
@@ -538,6 +543,7 @@ export function useOnboardingVoiceInterview({
       stopListening,
     ],
   );
+  speakAssistantChunkRef.current = speakAssistantChunk;
 
   useEffect(() => {
     if (!enabled || !isStreaming) return;

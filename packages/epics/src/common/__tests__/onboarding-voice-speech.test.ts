@@ -142,6 +142,24 @@ describe('resolveSpeechRemainderAfterEarlyPrefix', () => {
     ).toBe('');
   });
 
+  it('keeps a short remainder that asks the next question', () => {
+    expect(
+      resolveSpeechRemainderAfterEarlyPrefix(
+        'Let me check that for you. What should we call this space?',
+        'Let me check that for you.',
+      ),
+    ).toBe('What should we call this space?');
+  });
+
+  it('drops a normalized first-sentence match instead of replaying the lead-in', () => {
+    expect(
+      resolveSpeechRemainderAfterEarlyPrefix(
+        'Let me check that for you! What should we call this space?',
+        'Let me check that for you.',
+      ),
+    ).toBe('What should we call this space?');
+  });
+
   it('falls back to the full script when the prefix no longer matches', () => {
     expect(
       resolveSpeechRemainderAfterEarlyPrefix(

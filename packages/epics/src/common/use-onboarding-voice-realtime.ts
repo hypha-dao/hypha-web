@@ -888,6 +888,9 @@ export function useOnboardingVoiceRealtime({
   const stopSpeaking = useCallback(() => {
     clearMicRestoreTimer();
     clearPlaybackFallbackTimer();
+    pendingRemainderSpeakRef.current = null;
+    earlySpeechStartedRef.current = false;
+    earlySpokenPrefixRef.current = '';
     if (realtimeSpeakInFlightRef.current) {
       cancelActiveRealtimeResponse(
         connectionRef.current,
@@ -1010,8 +1013,8 @@ export function useOnboardingVoiceRealtime({
 
     earlySpeechStartedRef.current = true;
     earlySpokenPrefixRef.current = earlySentence;
-    interimAckSpokenRef.current = true;
     speakAssistantReply(earlySentence);
+    interimAckSpokenRef.current = true;
   }, [enabled, isChatStreaming, lastAssistantText, speakAssistantReply]);
 
   useEffect(() => {
