@@ -79,7 +79,9 @@ export async function matrixInviteUser(
   homeserver: string,
 ): Promise<void> {
   const res = await matrixFetch(
-    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/invite`,
+    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId,
+    )}/invite`,
     {
       method: 'POST',
       headers: {
