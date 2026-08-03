@@ -24,8 +24,10 @@ import {
   releaseWarmMicStream,
 } from './onboarding-voice-mic';
 import {
+  extractEarlySpeakableSentence,
   prepareAssistantTextForSpeech,
   pickVoiceInterimAckPhrase,
+  resolveSpeechRemainderAfterEarlyPrefix,
   speakOnboardingText,
   speakOnboardingTextControlled,
   stopOnboardingSpeech,
@@ -207,6 +209,11 @@ export function useOnboardingVoiceRealtime({
   const activeRealtimeResponseIdRef = useRef<string | null>(null);
   const pendingBargeInTranscriptRef = useRef<string | null>(null);
   const interimAckSpokenRef = useRef(false);
+  const earlySpeechStartedRef = useRef(false);
+  const earlySpokenPrefixRef = useRef('');
+  const pendingRemainderSpeakRef = useRef<string | null>(null);
+  const assistantTextAtStreamStartRef = useRef('');
+  const speakAssistantReplyRef = useRef<(spoken: string) => void>(() => {});
   const lastAssistantTextRef = useRef(lastAssistantText);
   lastAssistantTextRef.current = lastAssistantText;
   const onFallbackRef = useRef(onFallback);
@@ -277,6 +284,16 @@ export function useOnboardingVoiceRealtime({
     }, MIC_UNMUTE_DELAY_MS);
   }, [clearMicRestoreTimer]);
 
+  const flushPendingRemainderOrRestoreMic = useCallback(() => {
+    const remainder = pendingRemainderSpeakRef.current?.trim();
+    if (remainder && enabledRef.current) {
+      pendingRemainderSpeakRef.current = null;
+      speakAssistantReplyRef.current(remainder);
+      return;
+    }
+    scheduleMicRestoreForUserTurn();
+  }, [scheduleMicRestoreForUserTurn]);
+
   const finishRealtimeSpeakPlayback = useCallback(() => {
     if (!realtimeSpeakInFlightRef.current) return;
     clearPlaybackFallbackTimer();
@@ -286,8 +303,8 @@ export function useOnboardingVoiceRealtime({
     if (connectionRef.current) {
       setRealtimeRemoteAudioMuted(connectionRef.current, true);
     }
-    scheduleMicRestoreForUserTurn();
-  }, [clearPlaybackFallbackTimer, scheduleMicRestoreForUserTurn]);
+    flushPendingRemainderOrRestoreMic();
+  }, [clearPlaybackFallbackTimer, flushPendingRemainderOrRestoreMic]);
 
   const schedulePlaybackEndFallback = useCallback(
     (speakable: string) => {
@@ -312,6 +329,9 @@ export function useOnboardingVoiceRealtime({
     clearPlaybackFallbackTimer();
     stopBrowserSpeech();
     interimAckSpokenRef.current = false;
+    earlySpeechStartedRef.current = false;
+    earlySpokenPrefixRef.current = '';
+    pendingRemainderSpeakRef.current = null;
     restoreMicForListening(connectionRef.current);
     if (realtimeSpeakInFlightRef.current) {
       const connection = connectionRef.current;
@@ -364,17 +384,17 @@ export function useOnboardingVoiceRealtime({
             completeUserBargeInInterrupt();
             return;
           }
-          scheduleMicRestoreForUserTurn();
+          flushPendingRemainderOrRestoreMic();
         },
       });
       if (!controller) {
-        scheduleMicRestoreForUserTurn();
+        flushPendingRemainderOrRestoreMic();
         return;
       }
       speechPlaybackRef.current = controller;
       cancelSpeechRef.current = controller.cancel;
     },
-    [completeUserBargeInInterrupt, locale, scheduleMicRestoreForUserTurn],
+    [completeUserBargeInInterrupt, flushPendingRemainderOrRestoreMic, locale],
   );
 
   const speakAssistantReply = useCallback(
@@ -414,6 +434,7 @@ export function useOnboardingVoiceRealtime({
     },
     [locale, speakWithBrowserFallback],
   );
+  speakAssistantReplyRef.current = speakAssistantReply;
 
   const sendTranscriptToChat = useCallback(
     async (text: string) => {
@@ -523,6 +544,9 @@ export function useOnboardingVoiceRealtime({
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
     interimAckSpokenRef.current = false;
+    earlySpeechStartedRef.current = false;
+    earlySpokenPrefixRef.current = '';
+    pendingRemainderSpeakRef.current = null;
     pendingBargeInTranscriptRef.current = null;
     activeRealtimeResponseIdRef.current = null;
     realtimeSpeakInFlightRef.current = false;
@@ -672,6 +696,7 @@ export function useOnboardingVoiceRealtime({
         ) {
           realtimeSpeakInFlightRef.current = false;
           activeRealtimeResponseIdRef.current = null;
+          pendingRemainderSpeakRef.current = null;
           const spoken = lastAssistantTextRef.current.trim();
           const speakable = prepareAssistantTextForSpeech(spoken);
           if (speakable) {
@@ -714,6 +739,7 @@ export function useOnboardingVoiceRealtime({
             realtimeSpeakInFlightRef.current = false;
             activeRealtimeResponseIdRef.current = null;
             realtimeAudioHeardRef.current = false;
+            pendingRemainderSpeakRef.current = null;
             if (connectionRef.current) {
               setRealtimeRemoteAudioMuted(connectionRef.current, true);
             }
@@ -946,6 +972,10 @@ export function useOnboardingVoiceRealtime({
     wasStreamingRef.current = true;
     stopBrowserSpeech();
     interimAckSpokenRef.current = false;
+    earlySpeechStartedRef.current = false;
+    earlySpokenPrefixRef.current = '';
+    pendingRemainderSpeakRef.current = null;
+    assistantTextAtStreamStartRef.current = lastAssistantTextRef.current;
     if (realtimeSpeakInFlightRef.current) {
       cancelActiveRealtimeResponse(
         connectionRef.current,
@@ -966,6 +996,29 @@ export function useOnboardingVoiceRealtime({
     if (!enabled || !isChatStreaming || !awaitingAssistantSpeakRef.current) {
       return;
     }
+    if (earlySpeechStartedRef.current) return;
+    // Until the new assistant message arrives, lastAssistantText is still the
+    // previous turn — do not re-speak it as an "early" lead-in.
+    if (
+      lastAssistantText.trim() === assistantTextAtStreamStartRef.current.trim()
+    ) {
+      return;
+    }
+
+    const earlySentence = extractEarlySpeakableSentence(lastAssistantText);
+    if (!earlySentence) return;
+
+    earlySpeechStartedRef.current = true;
+    earlySpokenPrefixRef.current = earlySentence;
+    interimAckSpokenRef.current = true;
+    speakAssistantReply(earlySentence);
+  }, [enabled, isChatStreaming, lastAssistantText, speakAssistantReply]);
+
+  useEffect(() => {
+    if (!enabled || !isChatStreaming || !awaitingAssistantSpeakRef.current) {
+      return;
+    }
+    if (earlySpeechStartedRef.current) return;
 
     if (prepareAssistantTextForSpeech(lastAssistantText.trim())) {
       return;
@@ -975,11 +1028,18 @@ export function useOnboardingVoiceRealtime({
       if (!isChatStreamingRef.current || !awaitingAssistantSpeakRef.current) {
         return;
       }
-      if (interimAckSpokenRef.current || realtimeSpeakInFlightRef.current) {
+      if (
+        interimAckSpokenRef.current ||
+        earlySpeechStartedRef.current ||
+        realtimeSpeakInFlightRef.current
+      ) {
         return;
       }
       const latest = lastAssistantTextRef.current.trim();
-      if (prepareAssistantTextForSpeech(latest)) {
+      if (
+        prepareAssistantTextForSpeech(latest) ||
+        extractEarlySpeakableSentence(latest)
+      ) {
         return;
       }
 
@@ -1012,12 +1072,61 @@ export function useOnboardingVoiceRealtime({
     if (!awaitingAssistantSpeakRef.current && !wasStreamingRef.current) return;
 
     const spoken = lastAssistantText.trim();
-    if (!spoken) return;
-
     awaitingAssistantSpeakRef.current = false;
     wasStreamingRef.current = false;
-    speakAssistantReply(spoken);
-  }, [enabled, isChatStreaming, lastAssistantText, speakAssistantReply]);
+
+    if (!spoken || isAssistantFailureText(spoken)) {
+      earlySpeechStartedRef.current = false;
+      earlySpokenPrefixRef.current = '';
+      pendingRemainderSpeakRef.current = null;
+      if (!realtimeSpeakInFlightRef.current && !speechPlaybackRef.current) {
+        setPhase(connectionRef.current ? 'listening' : 'idle');
+      }
+      return;
+    }
+
+    const speakable = prepareAssistantTextForSpeech(spoken);
+    const earlyPrefix = earlySpokenPrefixRef.current.trim();
+    const remainder = resolveSpeechRemainderAfterEarlyPrefix(
+      speakable,
+      earlyPrefix,
+    );
+    earlySpeechStartedRef.current = false;
+    earlySpokenPrefixRef.current = '';
+
+    if (!speakable) {
+      pendingRemainderSpeakRef.current = null;
+      if (!realtimeSpeakInFlightRef.current && !speechPlaybackRef.current) {
+        setPhase(connectionRef.current ? 'listening' : 'idle');
+      }
+      return;
+    }
+
+    if (!remainder) {
+      lastSpokenAssistantRef.current = spoken;
+      pendingRemainderSpeakRef.current = null;
+      // Early lead-in already covered this turn — let in-flight TTS finish.
+      if (!realtimeSpeakInFlightRef.current && !speechPlaybackRef.current) {
+        scheduleMicRestoreForUserTurn();
+      }
+      return;
+    }
+
+    if (realtimeSpeakInFlightRef.current || speechPlaybackRef.current) {
+      pendingRemainderSpeakRef.current = remainder;
+      lastSpokenAssistantRef.current = spoken;
+      return;
+    }
+
+    pendingRemainderSpeakRef.current = null;
+    speakAssistantReply(remainder);
+  }, [
+    enabled,
+    isChatStreaming,
+    lastAssistantText,
+    scheduleMicRestoreForUserTurn,
+    speakAssistantReply,
+  ]);
 
   return {
     phase,

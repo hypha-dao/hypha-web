@@ -145,7 +145,9 @@ export {
   type OnboardingDiscoveryMode,
 } from './onboarding-discovery-mode';
 export {
+  extractEarlySpeakableSentence,
   prepareAssistantTextForSpeech,
+  resolveSpeechRemainderAfterEarlyPrefix,
   speakOnboardingText,
   stopOnboardingSpeech,
   stripMarkdownForSpeech,

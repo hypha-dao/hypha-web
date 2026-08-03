@@ -157,6 +157,57 @@ export function prepareAssistantSpeechSentences(text: string): string[] {
   return [speakable];
 }
 
+/** Minimum length for the first completed sentence to start early TTS mid-stream. */
+export const EARLY_SPEECH_MIN_SENTENCE_CHARS = 12;
+/** Minimum words so tiny fragments like "OK." are not spoken early. */
+export const EARLY_SPEECH_MIN_SENTENCE_WORDS = 3;
+/**
+ * After early speech, skip a trailing remainder shorter than this (already covered
+ * by the lead-in / tool ack).
+ */
+export const EARLY_SPEECH_REMAINDER_SKIP_CHARS = 48;
+
+function countSpeechWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * First completed speakable sentence ready for early TTS while chat is still
+ * streaming (covers voice tool-ack lead-ins before tools finish).
+ */
+export function extractEarlySpeakableSentence(text: string): string | null {
+  const speakable = prepareAssistantTextForSpeech(text);
+  if (!speakable) return null;
+
+  const firstSentence = speakable.match(/^(.+?[.!?])(?:\s|$)/)?.[1]?.trim();
+  if (!firstSentence) return null;
+  if (firstSentence.length < EARLY_SPEECH_MIN_SENTENCE_CHARS) return null;
+  if (countSpeechWords(firstSentence) < EARLY_SPEECH_MIN_SENTENCE_WORDS) {
+    return null;
+  }
+  return firstSentence;
+}
+
+/**
+ * Text still worth speaking after an early lead-in. Empty means skip
+ * (early speech already covered the turn, or remainder is trivial).
+ * If the prefix no longer matches, returns the full speakable script.
+ */
+export function resolveSpeechRemainderAfterEarlyPrefix(
+  speakable: string,
+  earlyPrefix: string,
+): string {
+  const full = speakable.trim();
+  const prefix = earlyPrefix.trim();
+  if (!full) return '';
+  if (!prefix) return full;
+  if (!full.startsWith(prefix)) return full;
+
+  const remainder = full.slice(prefix.length).trim();
+  if (remainder.length < EARLY_SPEECH_REMAINDER_SKIP_CHARS) return '';
+  return remainder;
+}
+
 /** Rough duration for scheduling mic pre-warm before TTS ends. */
 export function estimateSpeechDurationMs(text: string, rate = 1.02): number {
   const spoken = prepareAssistantTextForSpeech(text);

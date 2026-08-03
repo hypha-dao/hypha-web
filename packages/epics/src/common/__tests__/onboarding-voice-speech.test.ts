@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   estimateSpeechDurationMs,
+  extractEarlySpeakableSentence,
   pickVoiceInterimAckPhrase,
   prepareAssistantTextForSpeech,
+  resolveSpeechRemainderAfterEarlyPrefix,
 } from '../onboarding-voice-speech';
 
 describe('prepareAssistantTextForSpeech', () => {
@@ -99,5 +101,53 @@ describe('prepareAssistantSpeechSentences', () => {
       'First point here. Second point follows! Third one?',
     );
     expect(sentences).toHaveLength(3);
+  });
+});
+
+describe('extractEarlySpeakableSentence', () => {
+  it('returns the first completed sentence for early TTS', () => {
+    expect(
+      extractEarlySpeakableSentence(
+        'Let me check that for you. What should we call this space?',
+      ),
+    ).toBe('Let me check that for you.');
+  });
+
+  it('waits until a sentence terminator arrives', () => {
+    expect(
+      extractEarlySpeakableSentence('Let me check that for you'),
+    ).toBeNull();
+  });
+
+  it('ignores tiny fragments', () => {
+    expect(extractEarlySpeakableSentence('OK.')).toBeNull();
+  });
+});
+
+describe('resolveSpeechRemainderAfterEarlyPrefix', () => {
+  it('returns substantial text after the early lead-in', () => {
+    const remainder = resolveSpeechRemainderAfterEarlyPrefix(
+      'Let me check that for you. I drafted a name based on what you shared — want to use "Sunrise Collective"?',
+      'Let me check that for you.',
+    );
+    expect(remainder).toContain('Sunrise Collective');
+  });
+
+  it('skips short remainders already covered by the lead-in', () => {
+    expect(
+      resolveSpeechRemainderAfterEarlyPrefix(
+        'Let me check that for you. Done.',
+        'Let me check that for you.',
+      ),
+    ).toBe('');
+  });
+
+  it('falls back to the full script when the prefix no longer matches', () => {
+    expect(
+      resolveSpeechRemainderAfterEarlyPrefix(
+        'Here is a fresh recommendation for your space name.',
+        'Let me check that for you.',
+      ),
+    ).toBe('Here is a fresh recommendation for your space name.');
   });
 });
