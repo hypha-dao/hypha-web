@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useJwt, useMatrix } from '@hypha-platform/core/client';
 import { HumanChatPanelCallJoinStrip } from '../../common/human-chat-panel/human-chat-panel-call-join-strip';
+import { useCallMembershipRegistry } from '../../common/human-chat-panel/use-call-membership-registry';
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
 import {
   UserSpaceState,
@@ -44,6 +45,7 @@ export function SpaceCallJoinHeroBanner({
     startVideoForRoom,
     pinnedCallSpaceSlug,
     activeRoomId,
+    leave: leaveSpaceCall,
   } = useGlobalCallDock();
 
   const canonicalRoomId = chatRoomId?.trim() || null;
@@ -92,6 +94,33 @@ export function SpaceCallJoinHeroBanner({
     roomGroupCallDeviceCount > 0 &&
     !inSpaceCall;
 
+  /**
+   * This space's own room has an active call, but the user is bound to a *different* one
+   * (`!roomMatches`) — `showBanner` above stays hidden for that case by design, so this is a
+   * separate signal reusing the same registry the cross-context badge/panel use (#2424).
+   * Only excludes the user's own bound room; nothing excludes `canonicalRoomId` itself, since
+   * that's exactly the room we're checking here.
+   */
+  const otherActiveCallEntries = useCallMembershipRegistry({
+    excludeRoomIds: [activeRoomId],
+    getAccessToken: async () => authToken,
+  });
+  const currentRoomActiveCallElsewhere = useMemo(
+    () =>
+      otherActiveCallEntries.find(
+        (entry) => entry.roomId === canonicalRoomId,
+      ) ?? null,
+    [otherActiveCallEntries, canonicalRoomId],
+  );
+  const showBoundElsewhereBanner =
+    !isAuthLoading &&
+    !isUserSpaceStateLoading &&
+    callUiEnabled &&
+    !inSpaceCall &&
+    Boolean(currentRoomActiveCallElsewhere) &&
+    Boolean(activeRoomId?.trim()) &&
+    activeRoomId?.trim() !== canonicalRoomId;
+
   const launchContext = useMemo(() => {
     const roomTitle = spaceTitle?.trim();
     return roomTitle ? { roomTitle } : undefined;
@@ -117,7 +146,76 @@ export function SpaceCallJoinHeroBanner({
     );
   }, [authToken, canonicalRoomId, launchContext, slug, startVideoForRoom]);
 
-  if (!showBanner || !isAuthenticated) {
+  /**
+   * Same sequencing as the right panel's `handleJoinCurrentRoomCallInstead`
+   * (`human-right-panel.tsx`) — `activeRoomId` only clears via a `useEffect` reacting to
+   * `callState === 'idle'`, not synchronously when `leave()`'s promise resolves, so awaiting
+   * the promise and immediately joining would race that. Record intent, let an effect fire
+   * the join once the room has actually cleared.
+   */
+  const [pendingCallSwitchKind, setPendingCallSwitchKind] = useState<
+    'audio' | 'video' | null
+  >(null);
+
+  const handleJoinInsteadOfBoundCall = useCallback(
+    (kind: 'audio' | 'video') => {
+      if (activeRoomId?.trim() && activeRoomId.trim() !== canonicalRoomId) {
+        setPendingCallSwitchKind(kind);
+        void leaveSpaceCall();
+        return;
+      }
+      if (kind === 'audio') {
+        handleJoinAudio();
+      } else {
+        handleJoinVideo();
+      }
+    },
+    [
+      activeRoomId,
+      canonicalRoomId,
+      leaveSpaceCall,
+      handleJoinAudio,
+      handleJoinVideo,
+    ],
+  );
+
+  useEffect(() => {
+    if (!pendingCallSwitchKind) return;
+    if (activeRoomId?.trim() && activeRoomId.trim() !== canonicalRoomId) return;
+    const kind = pendingCallSwitchKind;
+    setPendingCallSwitchKind(null);
+    if (kind === 'audio') {
+      handleJoinAudio();
+    } else {
+      handleJoinVideo();
+    }
+  }, [
+    pendingCallSwitchKind,
+    activeRoomId,
+    canonicalRoomId,
+    handleJoinAudio,
+    handleJoinVideo,
+  ]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (showBoundElsewhereBanner && currentRoomActiveCallElsewhere) {
+    return (
+      <HumanChatPanelCallJoinStrip
+        variant="hero"
+        deviceCount={currentRoomActiveCallElsewhere.participantCount}
+        disabled={!callUiEnabled}
+        busy={Boolean(pendingCallSwitchKind)}
+        roomId={canonicalRoomId}
+        onJoinAudio={() => handleJoinInsteadOfBoundCall('audio')}
+        onJoinVideo={() => handleJoinInsteadOfBoundCall('video')}
+      />
+    );
+  }
+
+  if (!showBanner) {
     return null;
   }
 

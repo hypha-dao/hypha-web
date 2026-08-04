@@ -8,7 +8,13 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Menu, MessageCircle, PanelLeftClose, Sparkles } from 'lucide-react';
+import {
+  Menu,
+  MessageCircle,
+  PanelLeftClose,
+  Phone,
+  Sparkles,
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import {
   SidebarProvider,
@@ -214,7 +220,7 @@ export function HumanSidebarTrigger() {
   const { activeRoomId } = useGlobalCallDock();
   const { jwt } = useJwt();
   const elsewhereCallEntries = useCallMembershipRegistry({
-    excludeRoomId: activeRoomId,
+    excludeRoomIds: [activeRoomId],
     getAccessToken: async () => jwt,
   });
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
@@ -224,31 +230,40 @@ export function HumanSidebarTrigger() {
   if (open || (!isSpace && !hasCallElsewhere)) return null;
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        if (open) {
-          toggle();
-          return;
-        }
-        if (mutuallyExclusive && (leftOpen || overlayVisible)) {
-          closeAiPanel();
-        }
-        openHumanChatPanel();
-      }}
-      aria-expanded={open}
-      className={`relative ${APP_CHROME_ICON_TRIGGER}`}
-      title={t('openPanel')}
-      aria-label={t('openPanel')}
-    >
-      <MessageCircle className="craft-icon" />
+    // `APP_CHROME_ICON_TRIGGER` has `overflow-hidden`, which clips a badge positioned
+    // outside the icon's bounds — so the badge lives on this unclipped wrapper instead
+    // of inside the button.
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => {
+          if (open) {
+            toggle();
+            return;
+          }
+          if (mutuallyExclusive && (leftOpen || overlayVisible)) {
+            closeAiPanel();
+          }
+          openHumanChatPanel();
+        }}
+        aria-expanded={open}
+        className={APP_CHROME_ICON_TRIGGER}
+        title={t('openPanel')}
+        aria-label={t('openPanel')}
+      >
+        <MessageCircle className="craft-icon" />
+      </button>
       {hasCallElsewhere ? (
-        <span className="absolute right-1 top-1 flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        <span className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-9 opacity-60" />
+          {/* h-4.5/w-4.5 isn't valid here — see the matching comment in
+              human-chat-panel-elsewhere-call-indicator.tsx. */}
+          <span className="relative flex h-[18px] w-[18px] items-center justify-center rounded-full bg-success-9 ring-2 ring-background">
+            <Phone className="h-3 w-3 text-white" strokeWidth={2.5} />
+          </span>
         </span>
       ) : null}
-    </button>
+    </span>
   );
 }
 
@@ -338,8 +353,10 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isOnboarding = pathname.includes('/onboarding');
   const effectiveLeft = isSpace ? left : undefined;
-  // Right human panel remains space-context only.
-  const effectiveRight = isSpace ? right : undefined;
+  // Right human panel is openable outside a space too (#2424) — the trigger only
+  // surfaces there when there's a call elsewhere to jump to, and `HumanRightPanel`
+  // itself renders a dedicated "not in a space" state instead of its space-only UI.
+  const effectiveRight = right;
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
       return MOBILE_PANEL_BREAKPOINT_PX;

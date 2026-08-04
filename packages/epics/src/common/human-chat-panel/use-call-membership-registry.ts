@@ -6,10 +6,17 @@ import { ClientEvent } from 'matrix-js-sdk';
 import {
   useMatrix,
   MATRIX_RTC_SESSION_EVENT,
+  isMatrixCallDebugEnabled,
   type MatrixRtcSessionLike,
 } from '@hypha-platform/core/client';
 import { resolveSignalThreadByMatrixRoom } from './resolve-signal-thread-by-matrix-room';
 import { resolveSpaceByMatrixRoom } from './resolve-space-by-matrix-room';
+
+/** Same convention as `use-space-group-call.ts`'s `logCallDebug` — gated by `hypha.callDebug`. */
+function logRegistryDebug(step: string, extra?: Record<string, unknown>) {
+  if (!isMatrixCallDebugEnabled()) return;
+  console.info('[hypha.call_membership_registry.debug] ' + step, extra);
+}
 
 /**
  * Not part of the public matrix-js-sdk types — same cast `use-space-group-call.ts` uses
@@ -32,16 +39,36 @@ function getRoomRtcSession(
   }
 }
 
-function roomHasActiveCall(
+/** Non-expired MatrixRTC memberships for a room — 0 means no active call. */
+function getRoomActiveCallParticipantCount(
   client: MatrixSdk.MatrixClient,
   room: MatrixSdk.Room,
-): boolean {
+): number {
   const session = getRoomRtcSession(client, room);
-  if (!session) return false;
-  return session.memberships.some((membership) => !membership.isExpired());
+  if (!session) {
+    logRegistryDebug('room-has-active-call:no-session', {
+      roomId: room.roomId,
+    });
+    return 0;
+  }
+  const active = session.memberships.filter(
+    (membership) => !membership.isExpired(),
+  );
+  logRegistryDebug('room-has-active-call:checked', {
+    roomId: room.roomId,
+    totalMemberships: session.memberships.length,
+    activeMemberships: active.length,
+    senders: session.memberships.map((m) => ({
+      sender: m.sender,
+      expired: m.isExpired(),
+    })),
+  });
+  return active.length;
 }
 
-export type CallElsewhereEntry = {
+/** Identity fields only — safe to cache indefinitely (immutable per room), unlike
+ * `participantCount` below which changes as people join/leave the call. */
+type CallIdentity = {
   roomId: string;
   kind: 'space' | 'signal';
   spaceSlug: string;
@@ -50,9 +77,20 @@ export type CallElsewhereEntry = {
   title: string;
 };
 
+export type CallElsewhereEntry = CallIdentity & {
+  /** Live count, refreshed whenever the active-room set is recomputed — not part of the
+   * cached identity, so a stale count is never served from `sharedIdentityCache`. */
+  participantCount: number;
+};
+
 export type UseCallMembershipRegistryParams = {
-  /** Exclude this room from the output — typically the user's own currently-bound call room. */
-  excludeRoomId?: string | null;
+  /**
+   * Exclude these rooms from the output. Callers combine whichever apply: the room
+   * currently being viewed, and/or the user's own actively-bound call room — these can
+   * differ (e.g. browsing space Z's chat while still on a call bound to space Y), and both
+   * need excluding so the badge never points at a room the user is already in a call in.
+   */
+  excludeRoomIds?: Array<string | null | undefined>;
   getAccessToken?: () => Promise<string | null | undefined>;
 };
 
@@ -63,14 +101,41 @@ export type UseCallMembershipRegistryParams = {
  * subscriptions or server queries for scoping; room-set scoping is just "rooms I'm
  * joined to" (`client.getRooms()`), which the client already knows.
  */
+/**
+ * Module-scope (not per-instance `useRef`) so every mount of this hook shares one cache —
+ * e.g. the always-mounted top-nav trigger and the right panel's own instance, which remounts
+ * whenever `PanelWrapLayout` switches JSX branches (space vs. non-space navigation changes
+ * which sidebar layout renders). Without sharing, a fresh mount re-resolves identities its
+ * sibling instance already has, showing up as a visible delay before the avatar appears.
+ * Lives for the page session only — reset on full reload, never persisted.
+ */
+const sharedIdentityCache = new Map<string, CallIdentity>();
+
 export function useCallMembershipRegistry({
-  excludeRoomId,
+  excludeRoomIds,
   getAccessToken,
 }: UseCallMembershipRegistryParams): CallElsewhereEntry[] {
   const { client } = useMatrix();
   const [activeRoomIds, setActiveRoomIds] = useState<string[]>([]);
   const [entries, setEntries] = useState<CallElsewhereEntry[]>([]);
-  const identityCacheRef = useRef<Map<string, CallElsewhereEntry>>(new Map());
+  const identityCacheRef =
+    useRef<Map<string, CallIdentity>>(sharedIdentityCache);
+  /** Not cached, unlike identity — refreshed on every recompute. Per-instance, since it's
+   * cheap to recompute and (unlike identity) must never go stale across mounts. */
+  const roomParticipantCountsRef = useRef<Map<string, number>>(new Map());
+  /**
+   * Callers pass a fresh array literal every render (e.g. `[roomId, activeRoomId]`) — read
+   * via a ref (same pattern as `getAccessTokenRef` below) so the identity-resolution effect
+   * depends on a stable derived string key instead of the array's identity.
+   */
+  const excludeRoomIdsRef = useRef<Array<string | null | undefined>>(
+    excludeRoomIds ?? [],
+  );
+  excludeRoomIdsRef.current = excludeRoomIds ?? [];
+  const excludeRoomIdsKey = (excludeRoomIds ?? [])
+    .filter((id): id is string => Boolean(id))
+    .sort()
+    .join(',');
   /**
    * Callers pass an inline `getAccessToken` (a new function every render). Reading it via a
    * ref — rather than depending on it directly — keeps `resolveIdentity` referentially stable,
@@ -86,15 +151,31 @@ export function useCallMembershipRegistry({
       return;
     }
 
-    const sessionListeners = new Map<string, MatrixRtcSessionLike>();
+    const sessionListeners = new Map<
+      string,
+      { session: MatrixRtcSessionLike; listener: () => void }
+    >();
 
-    const recomputeActiveRoomIds = () => {
+    const recomputeActiveRoomIds = (source = 'unknown') => {
       const joinedRooms = client
         .getRooms()
         .filter((room) => room.getMyMembership() === 'join');
-      const active = joinedRooms
-        .filter((room) => roomHasActiveCall(client, room))
-        .map((room) => room.roomId);
+      const nextCounts = new Map<string, number>();
+      const active: string[] = [];
+      for (const room of joinedRooms) {
+        const count = getRoomActiveCallParticipantCount(client, room);
+        if (count > 0) {
+          nextCounts.set(room.roomId, count);
+          active.push(room.roomId);
+        }
+      }
+      roomParticipantCountsRef.current = nextCounts;
+      logRegistryDebug('recompute-active-room-ids', {
+        source,
+        joinedRoomCount: joinedRooms.length,
+        joinedRoomIds: joinedRooms.map((room) => room.roomId),
+        activeRoomIds: active,
+      });
       setActiveRoomIds((prev) => {
         if (
           prev.length === active.length &&
@@ -111,42 +192,68 @@ export function useCallMembershipRegistry({
         .getRooms()
         .filter((room) => room.getMyMembership() === 'join');
       for (const room of joinedRooms) {
-        if (sessionListeners.has(room.roomId)) continue;
+        if (sessionListeners.has(room.roomId)) {
+          // Diagnostic: if the SDK hands back a *different* session object than the one
+          // we're subscribed to, our listener is attached to a now-orphaned instance and
+          // will never fire for this room again — would explain a call in one room never
+          // getting picked up while another room's calls work fine.
+          const current = getRoomRtcSession(client, room);
+          if (
+            current &&
+            current !== sessionListeners.get(room.roomId)?.session
+          ) {
+            logRegistryDebug('attach-session-listeners:stale-session-object', {
+              roomId: room.roomId,
+            });
+          }
+          continue;
+        }
         const session = getRoomRtcSession(client, room);
-        if (!session) continue;
+        if (!session) {
+          logRegistryDebug('attach-session-listeners:no-session', {
+            roomId: room.roomId,
+          });
+          continue;
+        }
+        const onMembershipsChanged = () =>
+          recomputeActiveRoomIds(`session-memberships-changed:${room.roomId}`);
         session.on(
           MATRIX_RTC_SESSION_EVENT.MembershipsChanged,
-          recomputeActiveRoomIds,
+          onMembershipsChanged,
         );
-        sessionListeners.set(room.roomId, session);
+        sessionListeners.set(room.roomId, {
+          session,
+          listener: onMembershipsChanged,
+        });
+        logRegistryDebug('attach-session-listeners:attached', {
+          roomId: room.roomId,
+        });
       }
     };
 
     attachSessionListeners();
-    recomputeActiveRoomIds();
+    recomputeActiveRoomIds('mount');
 
     /** New rooms can appear after initial sync (space joined, signal opened for the first time). */
     const onRoom = () => {
       attachSessionListeners();
-      recomputeActiveRoomIds();
+      recomputeActiveRoomIds('client-room-event');
     };
+    const onSync = () => recomputeActiveRoomIds('client-sync-event');
     client.on(ClientEvent.Room, onRoom);
-    client.on(ClientEvent.Sync, recomputeActiveRoomIds);
+    client.on(ClientEvent.Sync, onSync);
 
     return () => {
       client.removeListener(ClientEvent.Room, onRoom);
-      client.removeListener(ClientEvent.Sync, recomputeActiveRoomIds);
-      for (const session of sessionListeners.values()) {
-        session.off(
-          MATRIX_RTC_SESSION_EVENT.MembershipsChanged,
-          recomputeActiveRoomIds,
-        );
+      client.removeListener(ClientEvent.Sync, onSync);
+      for (const { session, listener } of sessionListeners.values()) {
+        session.off(MATRIX_RTC_SESSION_EVENT.MembershipsChanged, listener);
       }
     };
   }, [client]);
 
   const resolveIdentity = useCallback(
-    async (roomId: string): Promise<CallElsewhereEntry | null> => {
+    async (roomId: string): Promise<CallIdentity | null> => {
       const cached = identityCacheRef.current.get(roomId);
       if (cached) return cached;
 
@@ -154,38 +261,49 @@ export function useCallMembershipRegistry({
         getAccessTokenRef.current?.(),
       );
       if (signal) {
-        const entry: CallElsewhereEntry = {
+        const identity: CallIdentity = {
           roomId,
           kind: 'signal',
           spaceSlug: signal.spaceSlug,
           signalSlug: signal.signalSlug,
           title: signal.signalTitle,
         };
-        identityCacheRef.current.set(roomId, entry);
-        return entry;
+        identityCacheRef.current.set(roomId, identity);
+        return identity;
       }
 
       const space = await resolveSpaceByMatrixRoom(roomId, async () =>
         getAccessTokenRef.current?.(),
       );
       if (space) {
-        const entry: CallElsewhereEntry = {
+        const identity: CallIdentity = {
           roomId,
           kind: 'space',
           spaceSlug: space.spaceSlug,
           title: space.spaceTitle,
         };
-        identityCacheRef.current.set(roomId, entry);
-        return entry;
+        identityCacheRef.current.set(roomId, identity);
+        return identity;
       }
 
+      logRegistryDebug('resolve-identity:no-match', { roomId });
       return null;
     },
     [],
   );
 
   useEffect(() => {
-    const targetRoomIds = activeRoomIds.filter((id) => id !== excludeRoomId);
+    const excludeSet = new Set(
+      excludeRoomIdsRef.current.filter(
+        (id): id is string => typeof id === 'string' && id.length > 0,
+      ),
+    );
+    const targetRoomIds = activeRoomIds.filter((id) => !excludeSet.has(id));
+    logRegistryDebug('identity-resolution-effect', {
+      activeRoomIds,
+      excludeRoomIds: [...excludeSet],
+      targetRoomIds,
+    });
     if (targetRoomIds.length === 0) {
       setEntries([]);
       return;
@@ -197,13 +315,26 @@ export function useCallMembershipRegistry({
         targetRoomIds.map((roomId) => resolveIdentity(roomId)),
       );
       if (cancelled) return;
-      const next = resolved.filter(
-        (entry): entry is CallElsewhereEntry => entry !== null,
-      );
+      const next: CallElsewhereEntry[] = resolved
+        .filter((identity): identity is CallIdentity => identity !== null)
+        .map((identity) => ({
+          ...identity,
+          participantCount:
+            roomParticipantCountsRef.current.get(identity.roomId) ?? 0,
+        }));
+      logRegistryDebug('identity-resolution-effect:resolved', {
+        targetRoomIds,
+        resolvedCount: next.length,
+        entries: next,
+      });
       setEntries((prev) => {
         if (
           prev.length === next.length &&
-          prev.every((entry, index) => entry.roomId === next[index]?.roomId)
+          prev.every(
+            (entry, index) =>
+              entry.roomId === next[index]?.roomId &&
+              entry.participantCount === next[index]?.participantCount,
+          )
         ) {
           return prev;
         }
@@ -214,7 +345,7 @@ export function useCallMembershipRegistry({
     return () => {
       cancelled = true;
     };
-  }, [activeRoomIds, excludeRoomId, resolveIdentity]);
+  }, [activeRoomIds, excludeRoomIdsKey, resolveIdentity]);
 
   return entries;
 }
