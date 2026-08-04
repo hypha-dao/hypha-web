@@ -1,354 +1,167 @@
-/* MDXEditor portals `.mdxeditor-popup-container` to `document.body` as a **sibling** of
- * the `.mdxeditor` wrapper (see `@mdxeditor/editor` EditorRootElement). Scoped rules under
- * `.mdxeditor` therefore never hit it; the library default stays `z-index: 2`, which stacks
- * below modal shells (~z-21) and breaks toolbar Select/Popover interactions.
- * Keep portaled UI aligned with Radix layers used elsewhere (`z-50`). */
-body > .mdxeditor-popup-container {
-  position: relative;
-  z-index: 50;
-}
+/* TipTap-based RichTextEditor — theme aligned with Hypha design tokens. */
 
-/**
- * When `overlayContainer` is set, MDXEditor appends this outside `.mdxeditor`,
- * so rules must not rely on `.mdxeditor .mdxeditor-popup-container` only.
- */
-.richtext-editor-portal-host .mdxeditor-popup-container {
-  z-index: 1000;
-  pointer-events: auto;
-}
-
-.mdxeditor {
+.richtext-editor {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background-color: var(--neutral-1);
   transition: border-color 0.2s ease-in-out;
-
-  &:focus-within {
-    border-color: var(--accent-7);
-    box-shadow: 0 0 0 1px var(--accent-7);
-  }
-
-  .mdxeditor-toolbar {
-    background-color: var(--neutral-2);
-    border-radius: var(--radius) var(--radius) 0 0;
-    border-bottom: 1px solid var(--border);
-    padding: 8px;
-
-    button {
-      transition: all 0.2s ease-in-out;
-      border-radius: calc(var(--radius) - 2px);
-
-      &:hover {
-        background-color: var(--neutral-3);
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--accent-7);
-        outline-offset: 2px;
-      }
-
-      &[data-state='on'] {
-        background-color: var(--accent-6);
-        color: var(--accent-12);
-      }
-    }
-
-    .selectContainer {
-      background-color: var(--neutral-2);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      box-shadow: 0 0 0 1px var(--border);
-    }
-
-    .separator {
-      background-color: var(--border);
-    }
-  }
-
-  .mdxeditor-select-content {
-    background-color: var(--neutral-3);
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
-      0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  }
-
-  ._selectTrigger_sects_308 {
-    margin: 0;
-    background: var(--neutral-3);
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) - 2px);
-    transition: all 0.2s ease-in-out;
-    min-height: 32px;
-
-    &:hover {
-      background-color: var(--neutral-4);
-      border-color: var(--neutral-6);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--accent-7);
-      outline-offset: 2px;
-    }
-
-    &[data-placeholder] > span:first-child {
-      color: var(--neutral-11);
-    }
-
-    svg {
-      color: var(--neutral-11);
-      transition: transform 0.2s ease-in-out;
-    }
-
-    &[data-state='open'] svg {
-      transform: rotate(180deg);
-    }
-  }
-
-  .mdxeditor-root-contenteditable {
-    font-family: var(--font-family-text);
-    padding: 0 12px;
-    min-height: 120px;
-    line-height: 1.6;
-
-    ::selection {
-      background-color: var(--accent-4);
-      color: var(--accent-12);
-    }
-
-    &:focus {
-      outline: none;
-    }
-
-    ul,
-    ol {
-      gap: 0.25em;
-      margin: 0.5em 0 0.5em 1.5em;
-
-      li {
-        margin: 0.25em 0;
-        line-height: 1.5;
-        padding-left: 0.5em;
-      }
-    }
-
-    ul {
-      list-style-type: disc;
-    }
-
-    ol {
-      list-style-type: decimal;
-    }
-
-    ul li::marker,
-    ol li::marker {
-      color: var(--neutral-11);
-      font-weight: bold;
-    }
-
-    h1 {
-      font-size: 1.5em !important;
-    }
-    h2 {
-      font-size: 1.25em !important;
-    }
-    h3 {
-      font-size: 1em !important;
-    }
-    h4 {
-      font-size: 0.8em !important;
-    }
-
-    blockquote {
-      border-left: 3px solid var(--accent-6);
-      padding-left: 1em;
-      margin: 1em 0;
-      color: var(--neutral-11);
-      font-style: italic;
-    }
-
-    code {
-      background-color: var(--neutral-3);
-      border: 1px solid var(--border);
-      border-radius: calc(var(--radius) - 2px);
-      padding: 0.2em 0.4em;
-      font-family: var(--font-family-code);
-      font-size: 0.9em;
-    }
-
-    a {
-      color: var(--accent-11);
-      text-decoration: underline;
-      transition: color 0.2s ease-in-out;
-
-      &:hover {
-        color: var(--accent-12);
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--accent-7);
-        outline-offset: 2px;
-        border-radius: 2px;
-      }
-    }
-  }
 }
 
-[role='listbox'] {
-  background-color: var(--neutral-3) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
-    0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
-  padding: 4px !important;
-  min-width: 180px !important;
+.richtext-editor:focus-within {
+  border-color: var(--accent-7);
+  box-shadow: 0 0 0 1px var(--accent-7);
 }
 
-._selectItem_sects_301 {
-  color: var(--neutral-12) !important;
-  background-color: var(--neutral-3) !important;
+/* Parent forms often wrap another border; avoid double frames. */
+.overflow-hidden.rounded-lg.border > .richtext-editor,
+.overflow-hidden.rounded-lg.border .richtext-editor {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-._selectItem_sects_301:hover,
-._selectItem_sects_301[data-highlighted] {
-  background-color: var(--accent-4) !important;
+.richtext-editor-toolbar button {
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
-._selectItem_sects_301 {
-  background-color: transparent !important;
-  color: var(--neutral-12) !important;
-  border-radius: calc(var(--radius) - 2px) !important;
-  padding: 8px 12px !important;
-  margin: 2px 0 !important;
-  transition: all 0.15s ease-in-out !important;
-  cursor: pointer !important;
-  font-size: 14px !important;
-
-  &:hover,
-  &[data-highlighted] {
-    background-color: var(--neutral-4) !important;
-    color: var(--neutral-12) !important;
-  }
-
-  &[data-state='checked'] {
-    background-color: var(--accent-4) !important;
-    color: var(--accent-12) !important;
-    font-weight: 500 !important;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--accent-7) !important;
-    outline-offset: 2px !important;
-  }
+.richtext-editor-content-host .tiptap,
+.richtext-editor-content {
+  font-family: var(--font-family-text);
+  padding: 12px;
+  min-height: 120px;
+  line-height: 1.6;
+  color: var(--neutral-12);
 }
 
-.mdxeditor-toolbar [data-toolbar-item] {
-  color: var(--neutral-11);
-  transition: color 0.2s ease-in-out;
-
-  &:hover {
-    color: var(--neutral-12);
-  }
-
-  &[data-state='on'] {
-    color: var(--accent-12);
-  }
+.richtext-editor-content-host .tiptap:focus,
+.richtext-editor-content:focus {
+  outline: none;
 }
 
-.prose ul {
-  list-style-type: disc;
-}
-.prose ol {
-  list-style-type: decimal;
-}
-.prose li::marker {
-  color: inherit;
-}
-
-.prose u {
-  color: var(--neutral-11);
-}
-
-.mdxeditor[data-loading='true'] {
-  opacity: 0.7;
+.richtext-editor-content-host .tiptap p.is-editor-empty:first-child::before,
+.richtext-editor-content-host .tiptap .is-empty::before {
+  color: var(--neutral-9);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
   pointer-events: none;
 }
 
-.mdxeditor[data-error='true'] {
-  border-color: var(--error-7);
-
-  &:focus-within {
-    border-color: var(--error-8);
-    box-shadow: 0 0 0 1px var(--error-7);
-  }
+.richtext-editor-content-host .tiptap ::selection {
+  background-color: var(--accent-4);
+  color: var(--accent-12);
 }
 
-[role='tooltip'] {
-  background-color: var(--neutral-2) !important;
-  color: var(--neutral-12) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius) !important;
-  padding: 6px 8px !important;
-  font-size: 12px !important;
-  line-height: 1.4 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
-  z-index: 9999 !important;
-  max-width: 200px !important;
-  word-wrap: break-word !important;
+.richtext-editor-content-host .tiptap ul,
+.richtext-editor-content-host .tiptap ol {
+  margin: 0.5em 0 0.5em 1.5em;
+  padding: 0;
 }
 
-._tooltipContent_sects_681,
-[data-state='delayed-open'][class*='tooltipContent'] {
-  background-color: var(--neutral-2) !important;
-  color: var(--neutral-12) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius) !important;
-  padding: 6px 8px !important;
-  font-size: 12px !important;
-  line-height: 1.4 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
-  z-index: 9999 !important;
-  max-width: 200px !important;
-  word-wrap: break-word !important;
+.richtext-editor-content-host .tiptap ul {
+  list-style-type: disc;
 }
 
-._tooltipTrigger_sects_677[data-state='delayed-open'] {
-  position: relative;
+.richtext-editor-content-host .tiptap ol {
+  list-style-type: decimal;
 }
 
-[data-tooltip],
-[aria-describedby][data-state='delayed-open'] {
-  position: relative;
+.richtext-editor-content-host .tiptap li {
+  margin: 0.25em 0;
+  line-height: 1.5;
+  padding-left: 0.5em;
 }
 
-body [role='tooltip']:not(.mdxeditor [role='tooltip']) {
-  background-color: var(--neutral-2) !important;
-  color: var(--neutral-12) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius) !important;
-  padding: 6px 8px !important;
-  font-size: 12px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
-  z-index: 9999 !important;
+.richtext-editor-content-host .tiptap li::marker {
+  color: var(--neutral-11);
+  font-weight: bold;
+}
+
+.richtext-editor-content-host .tiptap h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 0.6em 0 0.35em;
+  line-height: 1.25;
+}
+
+.richtext-editor-content-host .tiptap h2 {
+  font-size: 1.25em;
+  font-weight: 700;
+  margin: 0.55em 0 0.3em;
+  line-height: 1.3;
+}
+
+.richtext-editor-content-host .tiptap h3 {
+  font-size: 1.05em;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+  line-height: 1.35;
+}
+
+.richtext-editor-content-host .tiptap h4 {
+  font-size: 0.95em;
+  font-weight: 600;
+  margin: 0.45em 0 0.2em;
+  line-height: 1.4;
+}
+
+.richtext-editor-content-host .tiptap blockquote {
+  border-left: 3px solid var(--accent-6);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--neutral-11);
+  font-style: italic;
+}
+
+.richtext-editor-content-host .tiptap code {
+  background-color: var(--neutral-3);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.15em 0.35em;
+  font-family: var(--font-family-code);
+  font-size: 0.9em;
+}
+
+.richtext-editor-content-host .tiptap a {
+  color: var(--accent-11);
+  text-decoration: underline;
+}
+
+.richtext-editor-content-host .tiptap a:hover {
+  color: var(--accent-12);
+}
+
+.richtext-editor-content-host .tiptap p {
+  margin: 0.35em 0;
+}
+
+.richtext-editor-content-host .tiptap p:first-child {
+  margin-top: 0;
+}
+
+.richtext-editor-content-host .tiptap p:last-child {
+  margin-bottom: 0;
+}
+
+.richtext-editor-content-host .tiptap u {
+  text-decoration: underline;
+  color: var(--neutral-11);
+}
+
+.richtext-editor[data-editable='false'] {
+  opacity: 0.85;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mdxeditor,
-  .mdxeditor *,
-  ._selectItem_sects_301 {
+  .richtext-editor,
+  .richtext-editor-toolbar button {
     transition: none !important;
-    animation: none !important;
   }
 }
 
 @media (prefers-contrast: high) {
-  .mdxeditor {
+  .richtext-editor {
     border-width: 2px;
-  }
-
-  ._selectItem_sects_301 {
-    border: 1px solid var(--border) !important;
   }
 }
