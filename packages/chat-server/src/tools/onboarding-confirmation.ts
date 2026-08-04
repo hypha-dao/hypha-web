@@ -57,17 +57,17 @@ export function inferVisualVibe(args: {
   title?: string | null;
 }): string {
   const explicit = args.visualVibe?.trim();
-  if (explicit) return explicit.slice(0, 200);
+  if (explicit) return explicit.slice(0, 400);
 
   const description = args.description?.trim();
   if (description) {
     const firstSentence = description.split(/[.!?]/)[0]?.trim();
-    if (firstSentence) return firstSentence.slice(0, 200);
+    if (firstSentence) return firstSentence.slice(0, 400);
   }
 
-  const title = args.title?.trim();
-  if (title) return `${title}, community, purposeful`;
-  return 'calm, visionary, community';
+  // Intentionally ignore title: seeding the space name into visual_vibe often
+  // causes image models to render it as on-image text.
+  return 'mature, inspirational, luminous symbolism, cinematic depth, premium craft';
 }
 
 export function hasExplicitConfirmation(

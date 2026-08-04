@@ -48,7 +48,7 @@ const inputSchema = z.object({
   lead_image_url: httpUrlSchema.optional(),
   logo_url: httpUrlSchema.optional(),
   generate_visuals: z.boolean().optional().default(false),
-  visual_vibe: z.string().trim().min(1).max(200).optional(),
+  visual_vibe: z.string().trim().min(1).max(400).optional(),
   location_query: z.string().trim().min(2).max(500).optional(),
   location_label: z.string().trim().max(500).optional(),
   latitude: z.number().min(-90).max(90).optional(),

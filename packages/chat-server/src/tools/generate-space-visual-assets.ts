@@ -4,35 +4,16 @@ import type { ChatRouteTool } from './types';
 import { generateOpenRouterImage } from '../openrouter-image';
 import { uploadGeneratedImageDataUrl } from '../upload-generated-image';
 import { sanitizeSlug } from '../system-prompt';
+import { buildBannerPrompt, buildLogoPrompt } from './space-visual-prompts';
 
 const assetKindSchema = z.enum(['logo', 'banner', 'both']);
 
 const inputSchema = z.object({
   space_name: z.string().trim().min(1).max(120),
   space_purpose: z.string().trim().min(1).max(300),
-  visual_vibe: z.string().trim().min(1).max(200),
+  visual_vibe: z.string().trim().min(1).max(400),
   asset_kind: assetKindSchema.optional().default('both'),
 });
-
-function buildLogoPrompt(args: z.infer<typeof inputSchema>): string {
-  return [
-    'Create a clean, modern square app icon for a Hypha DAO community space.',
-    `Space name: ${args.space_name}.`,
-    `Purpose: ${args.space_purpose}.`,
-    `Mood / vibe: ${args.visual_vibe}.`,
-    'Minimal flat vector style, strong silhouette, no text, no letters, no words, no typography, no watermark, centered subject, solid or soft gradient background, high contrast, professional community branding.',
-  ].join(' ');
-}
-
-function buildBannerPrompt(args: z.infer<typeof inputSchema>): string {
-  return [
-    'Create a wide cinematic banner image for a Hypha DAO community space profile header.',
-    `Space name: ${args.space_name}.`,
-    `Purpose: ${args.space_purpose}.`,
-    `Mood / vibe: ${args.visual_vibe}.`,
-    'Landscape composition, atmospheric depth, no text, no letters, no words, no typography, no watermark, abstract or symbolic imagery that fits the purpose, polished and inviting.',
-  ].join(' ');
-}
 
 export async function generateSpaceVisualAssets(
   args: z.infer<typeof inputSchema>,
@@ -122,7 +103,7 @@ export async function generateSpaceVisualAssets(
 export function createGenerateSpaceVisualAssetsTool() {
   return {
     description:
-      'Generate Hypha space visual assets (square icon/logo and/or wide banner) from the space name, purpose, and desired vibe. Text-free by default — no words or typography in the image unless the user explicitly requests on-image text. Returns hosted https URLs suitable for create_space_from_onboarding. Always use this when the user asks to generate images, logos, banners, or placeholders — never say images must wait until after creation.',
+      'Generate Hypha space visual assets (square icon/logo and/or wide banner) from the space purpose and desired vibe. HARD RULE: images must be text-free — never put words, letters, or the space name in the image. Aim for mature, inspirational, mindblowing craft (not basic flat icons). Pass rich visual_vibe (mood, symbols, light, materials, composition) — never slogans to render. Returns hosted https URLs suitable for create_space_from_onboarding. Always use this when the user asks to generate images, logos, banners, or placeholders — never say images must wait until after creation.',
     inputSchema,
     execute: async (args) => generateSpaceVisualAssets(args),
   } satisfies ChatRouteTool<typeof inputSchema>;
