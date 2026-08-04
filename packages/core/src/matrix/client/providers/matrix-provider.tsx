@@ -1105,6 +1105,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
       const { roomId } = created;
       await ensureMemberJoinedRoomAction({ roomId, matrixUserId: userId });
+      // The bot creates the room server-side (#2428); this client only learns about it on
+      // the next sync, so `getRoom` can still return null for a few seconds after the puppet
+      // join above resolves. Wait for it the same way `joinRoom` does, so callers that
+      // immediately act on `roomId` (e.g. syncRoomMessages) don't hit "Room not found".
+      for (let i = 0; i < 200; i++) {
+        if (client.getRoom(roomId)) {
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
       return { roomId };
     },
     [client],

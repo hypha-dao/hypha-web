@@ -188,7 +188,7 @@ export async function matrixApplyRoomPowerLevels(
   const targetUserId = options.grantPl100ToUserId?.trim();
   const users = targetUserId
     ? { ...current.users, [targetUserId]: 100 }
-    : current.users;
+    : { ...current.users };
   const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
