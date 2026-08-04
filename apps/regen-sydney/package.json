@@ -1,0 +1,32 @@
+{
+  "name": "regen-sydney",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack --port 3002",
+    "build": "next build",
+    "start": "next start --port 3002",
+    "lint": "next lint",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "next": "^15.4.8",
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*",
+    "eslint": "^9.24.0",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.8.2"
+  }
+}
