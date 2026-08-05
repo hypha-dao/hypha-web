@@ -25,6 +25,7 @@ import {
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { Environment } from '../../coherence/types';
 import {
+  getMatrixAdditionalBotAsTokens,
   getMatrixBotAsToken,
   getMatrixHomeserverUrl,
   matrixApplyRoomPowerLevels,
@@ -32,6 +33,7 @@ import {
   matrixInviteUser,
   matrixJoinRoom,
   matrixJoinRoomAsPuppet,
+  matrixWhoAmI,
 } from './matrix-http-client';
 
 export async function createMatrixUserLinkAction(
@@ -139,6 +141,34 @@ export async function ensureBotJoinedRoomAction(
 }
 
 /**
+ * Joins each configured additional bot (`HYPHA_MATRIX_ADDITIONAL_BOT_AS_TOKENS`, #2428) into
+ * `roomId` under its own identity, and returns their MXIDs so the caller can grant them PL100
+ * alongside the primary bot. Temporary bridge while Prod/Preview share one Postgres DB (#2252) —
+ * see `getMatrixAdditionalBotAsTokens`. Soft-fails per bot: one bot failing to join must not stop
+ * the others or the room-creation flow.
+ */
+async function joinAdditionalBotsToRoom(
+  roomId: string,
+  homeserver: string,
+): Promise<string[]> {
+  const additionalBotTokens = getMatrixAdditionalBotAsTokens();
+  const joinedUserIds: string[] = [];
+  for (const additionalBotToken of additionalBotTokens) {
+    try {
+      await matrixJoinRoom(roomId, additionalBotToken, homeserver);
+      joinedUserIds.push(await matrixWhoAmI(additionalBotToken, homeserver));
+    } catch (error) {
+      console.warn(
+        '[MatrixBot] Failed to join additional bot into room:',
+        roomId,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+  return joinedUserIds;
+}
+
+/**
  * Create a room owned by the bot (its own AS identity), instead of the human/org-memory token
  * that used to create it. The bot is PL100 by construction as the room's creator — no
  * power-level state-event mutation and no `hypha_admin` impersonation needed to manage the room
@@ -148,6 +178,8 @@ export async function ensureBotJoinedRoomAction(
  * `grantPl100ToMatrixUserId` additionally elevates one human (the signal's DB `creatorId`, or —
  * as a pragmatic fallback when that's not resolvable at call time — whoever triggered creation)
  * to PL100 alongside the bot, so they can manage the room too (e.g. edit/close a signal).
+ * Any other bots configured via `HYPHA_MATRIX_ADDITIONAL_BOT_AS_TOKENS` are also joined and
+ * granted PL100 (#2428) — a temporary bridge until #2252 gives Prod/Preview isolated databases.
  * Soft-fails on any Matrix error — a bot-side room-setup problem must not block the human's flow;
  * returns `null` so callers can fall back.
  */
@@ -174,12 +206,18 @@ export async function createBotOwnedRoomAction({
     return null;
   }
 
+  const additionalBotUserIds = await joinAdditionalBotsToRoom(
+    roomId,
+    homeserver,
+  );
+
   // Power-level setup is best-effort — the room already exists, so a failure here must not
   // orphan it: callers retry room creation on a `null` return, which would create a duplicate,
   // never-persisted room every time.
   try {
     await matrixApplyRoomPowerLevels(roomId, botToken, homeserver, {
       grantPl100ToUserId: grantPl100ToMatrixUserId?.trim(),
+      additionalPl100UserIds: additionalBotUserIds,
     });
   } catch (error) {
     console.warn(
