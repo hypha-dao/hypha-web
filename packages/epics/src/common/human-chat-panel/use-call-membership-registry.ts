@@ -92,6 +92,14 @@ export type UseCallMembershipRegistryParams = {
    */
   excludeRoomIds?: Array<string | null | undefined>;
   getAccessToken?: () => Promise<string | null | undefined>;
+  /**
+   * Whether `getAccessToken` currently has a token to give (e.g. `Boolean(jwt)` from
+   * `useJwt()`). A plain reactive primitive, unlike `getAccessToken` itself (a fresh
+   * function every render, read via ref to avoid retriggering effects) — passing this
+   * lets the identity-resolution effect below re-run the moment auth actually becomes
+   * available, instead of guessing with a polling timeout.
+   */
+  hasAccessToken?: boolean;
 };
 
 /**
@@ -123,6 +131,7 @@ const sharedUnresolvedRoomIds = new Map<string, { hadToken: boolean }>();
 export function useCallMembershipRegistry({
   excludeRoomIds,
   getAccessToken,
+  hasAccessToken,
 }: UseCallMembershipRegistryParams): CallElsewhereEntry[] {
   const { client } = useMatrix();
   const [activeRoomIds, setActiveRoomIds] = useState<string[]>([]);
@@ -153,38 +162,6 @@ export function useCallMembershipRegistry({
    */
   const getAccessTokenRef = useRef(getAccessToken);
   getAccessTokenRef.current = getAccessToken;
-
-  /**
-   * `useJwt`/equivalent callers often start with no token while auth is still loading.
-   * A room active at that point resolves without one, and `resolveIdentity` only skips its
-   * negative cache for such an entry on the *next* time it's asked to resolve that room —
-   * which otherwise only happens when the set of active-call rooms changes. If it doesn't
-   * (the same call stays active while the token loads), the room would never retry. Poll a
-   * few times for the token to appear and bump this to force one retry pass once it does.
-   */
-  const [tokenPollEpoch, setTokenPollEpoch] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    let attempt = 0;
-    const maxAttempts = 6;
-    const poll = async () => {
-      if (cancelled) return;
-      const token = (await getAccessTokenRef.current?.()) ?? null;
-      if (cancelled) return;
-      if (token) {
-        setTokenPollEpoch((epoch) => epoch + 1);
-        return;
-      }
-      attempt += 1;
-      if (attempt >= maxAttempts) return;
-      setTimeout(() => void poll(), 1500);
-    };
-    void poll();
-    return () => {
-      cancelled = true;
-    };
-  }, [client]);
 
   useEffect(() => {
     if (!client) {
@@ -368,6 +345,7 @@ export function useCallMembershipRegistry({
     );
     const targetRoomIds = activeRoomIds.filter((id) => !excludeSet.has(id));
     logRegistryDebug('identity-resolution-effect', {
+      hasAccessToken: Boolean(hasAccessToken),
       activeRoomIds,
       excludeRoomIds: [...excludeSet],
       targetRoomIds,
@@ -413,7 +391,10 @@ export function useCallMembershipRegistry({
     return () => {
       cancelled = true;
     };
-  }, [activeRoomIds, excludeRoomIdsKey, resolveIdentity, tokenPollEpoch]);
+    // `hasAccessToken` is a plain reactive boolean (unlike `getAccessToken`, read via ref
+    // to stay referentially stable) — depending on it directly re-runs this effect the
+    // moment auth actually becomes available, instead of guessing with a polling timeout.
+  }, [activeRoomIds, excludeRoomIdsKey, resolveIdentity, hasAccessToken]);
 
   return entries;
 }

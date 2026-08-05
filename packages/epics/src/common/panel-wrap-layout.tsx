@@ -222,6 +222,7 @@ export function HumanSidebarTrigger() {
   const elsewhereCallEntries = useCallMembershipRegistry({
     excludeRoomIds: [activeRoomId],
     getAccessToken: async () => jwt,
+    hasAccessToken: Boolean(jwt),
   });
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
 

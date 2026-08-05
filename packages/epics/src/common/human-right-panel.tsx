@@ -1362,6 +1362,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const otherActiveCallEntries = useCallMembershipRegistry({
     excludeRoomIds: [callSessionRoomId],
     getAccessToken: async () => authTokenRef.current,
+    hasAccessToken: Boolean(authToken),
   });
   const elsewhereCallEntries = useMemo(
     () => otherActiveCallEntries.filter((entry) => entry.roomId !== roomId),

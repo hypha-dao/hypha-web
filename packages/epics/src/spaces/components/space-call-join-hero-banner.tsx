@@ -104,6 +104,7 @@ export function SpaceCallJoinHeroBanner({
   const otherActiveCallEntries = useCallMembershipRegistry({
     excludeRoomIds: [activeRoomId],
     getAccessToken: async () => authToken,
+    hasAccessToken: Boolean(authToken),
   });
   const currentRoomActiveCallElsewhere = useMemo(
     () =>
