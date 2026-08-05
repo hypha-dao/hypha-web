@@ -5,10 +5,30 @@ import {
   resolveUserMatrixIdentityForOrgMemory,
 } from '../../governance/server/resolve-user-matrix-access-token-for-org-memory';
 
+/** Rejects non-HTTPS homeserver URLs, except localhost/127.0.0.1 for local dev against a
+ * plain-HTTP Dendrite instance (#2428 review) — every request here carries a bearer token. */
 export function getMatrixHomeserverUrl(): string | null {
   const raw = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim();
   if (!raw) return null;
-  return raw.replace(/\/?$/, '');
+  const trimmed = raw.replace(/\/?$/, '');
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    console.warn(
+      '[MatrixBot] NEXT_PUBLIC_MATRIX_HOMESERVER_URL is not a valid URL',
+    );
+    return null;
+  }
+  const isLocalDev =
+    parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+  if (parsed.protocol !== 'https:' && !isLocalDev) {
+    console.warn(
+      '[MatrixBot] NEXT_PUBLIC_MATRIX_HOMESERVER_URL must use https: outside local dev',
+    );
+    return null;
+  }
+  return trimmed;
 }
 
 /** User session Matrix token for sending chat as the member (not the org-memory bot). */
@@ -37,11 +57,14 @@ export async function resolveUserMatrixIdentityForSend(
 const MATRIX_HTTP_TIMEOUT_MS = 10_000;
 
 /** All Matrix HTTP calls in this file go through this — bounds worst-case latency when the
- * homeserver stalls, instead of hanging the request thread indefinitely (#2428 review). */
+ * homeserver stalls, instead of hanging the request thread indefinitely (#2428 review).
+ * `redirect: 'error'` refuses to follow any redirect, so a bearer token can never leak to a
+ * host other than the one we explicitly configured (#2428 review). */
 function matrixFetch(url: string, init: RequestInit): Promise<Response> {
   return fetch(url, {
     ...init,
     signal: AbortSignal.timeout(MATRIX_HTTP_TIMEOUT_MS),
+    redirect: 'error',
   });
 }
 
