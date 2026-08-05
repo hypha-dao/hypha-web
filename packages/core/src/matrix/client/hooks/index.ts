@@ -3,6 +3,10 @@ export * from './use-user-privy-id-by-matrix-id';
 export * from './use-matrix-user-ids-by-privy-subs';
 export * from './use-matrix-user-ids-by-person-ids';
 export * from './use-space-group-call';
+export {
+  MATRIX_RTC_SESSION_EVENT,
+  type MatrixRtcSessionLike,
+} from './matrix-rtc-events';
 export { shouldMirrorCallFeedVideoForDisplay } from './call-local-video-orientation';
 export {
   getCallControlsPhase,

@@ -2915,6 +2915,9 @@
   },
   "HumanChatPanel": {
     "title": "Chatten",
+    "activeCallElsewhere": "Actief gesprek in {title}",
+    "activeCallsElsewhereCount": "{count} actieve gesprekken elders",
+    "notInSpaceEmptyState": "Je bevindt je momenteel niet in een ruimte.",
     "welcome": "Welkom bij de chat! Begin een gesprek met andere leden van deze ruimte.",
     "placeholder": "Typ een bericht...",
     "placeholderChannel": "Bericht #{channel}",

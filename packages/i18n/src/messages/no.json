@@ -2914,6 +2914,9 @@
   },
   "HumanChatPanel": {
     "title": "Chat",
+    "activeCallElsewhere": "Aktiv samtale i {title}",
+    "activeCallsElsewhereCount": "{count} aktive samtaler andre steder",
+    "notInSpaceEmptyState": "Du er ikke i et rom akkurat nå.",
     "welcome": "Velkommen til chatten! Start en samtale med andre medlemmer av dette rommet.",
     "placeholder": "Skriv en melding...",
     "placeholderChannel": "Melding til #{channel}",

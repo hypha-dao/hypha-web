@@ -2895,6 +2895,9 @@
   },
   "HumanChatPanel": {
     "title": "Разговор",
+    "activeCallElsewhere": "Активен повик во {title}",
+    "activeCallsElsewhereCount": "{count} активни повици на друго место",
+    "notInSpaceEmptyState": "Во моментов не сте во простор.",
     "welcome": "Добредојде во разговорот! Започни разговор со другите членови на овој простор.",
     "placeholder": "Напиши порака...",
     "placeholderChannel": "Порака во #{channel}",

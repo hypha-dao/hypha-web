@@ -2879,6 +2879,16 @@ export function useSpaceGroupCall(
         );
       }
       const p = readParticipantsFromRtcMemberships(session.memberships, myId);
+      logCallDebug('idle-room-participants:synced', {
+        roomId,
+        myId,
+        totalMemberships: session.memberships.length,
+        senders: session.memberships.map((m) => ({
+          sender: m.sender,
+          expired: m.isExpired(),
+        })),
+        idleParticipantCount: p.count,
+      });
       if (p.count === 0) {
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);
