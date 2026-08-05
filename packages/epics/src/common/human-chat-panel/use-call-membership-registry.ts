@@ -111,6 +111,15 @@ export type UseCallMembershipRegistryParams = {
  */
 const sharedIdentityCache = new Map<string, CallIdentity>();
 
+/**
+ * Rooms that resolved to neither a signal nor a space, so `resolveIdentity` isn't hammered
+ * with two requests on every sync event for a room that will never resolve (e.g. a call in a
+ * DM room). `hadToken` records whether the lookup ran with a bearer token: if it didn't (the
+ * caller's `getAccessToken` hadn't resolved yet), the entry doesn't block a retry once a token
+ * becomes available — only a token-backed non-match is treated as durable.
+ */
+const sharedUnresolvedRoomIds = new Map<string, { hadToken: boolean }>();
+
 export function useCallMembershipRegistry({
   excludeRoomIds,
   getAccessToken,
@@ -192,21 +201,25 @@ export function useCallMembershipRegistry({
         .getRooms()
         .filter((room) => room.getMyMembership() === 'join');
       for (const room of joinedRooms) {
-        if (sessionListeners.has(room.roomId)) {
-          // Diagnostic: if the SDK hands back a *different* session object than the one
-          // we're subscribed to, our listener is attached to a now-orphaned instance and
-          // will never fire for this room again — would explain a call in one room never
-          // getting picked up while another room's calls work fine.
+        const existing = sessionListeners.get(room.roomId);
+        if (existing) {
+          // If the SDK hands back a *different* session object than the one we're
+          // subscribed to, our listener is attached to a now-orphaned instance and will
+          // never fire for this room again. Detach it and re-subscribe below instead of
+          // just logging, so the room doesn't silently stop reporting call membership.
           const current = getRoomRtcSession(client, room);
-          if (
-            current &&
-            current !== sessionListeners.get(room.roomId)?.session
-          ) {
+          if (current && current !== existing.session) {
             logRegistryDebug('attach-session-listeners:stale-session-object', {
               roomId: room.roomId,
             });
+            existing.session.off(
+              MATRIX_RTC_SESSION_EVENT.MembershipsChanged,
+              existing.listener,
+            );
+            sessionListeners.delete(room.roomId);
+          } else {
+            continue;
           }
-          continue;
         }
         const session = getRoomRtcSession(client, room);
         if (!session) {
@@ -257,8 +270,15 @@ export function useCallMembershipRegistry({
       const cached = identityCacheRef.current.get(roomId);
       if (cached) return cached;
 
-      const signal = await resolveSignalThreadByMatrixRoom(roomId, async () =>
-        getAccessTokenRef.current?.(),
+      const token = (await getAccessTokenRef.current?.()) ?? null;
+      const unresolved = sharedUnresolvedRoomIds.get(roomId);
+      if (unresolved && (unresolved.hadToken || !token)) {
+        return null;
+      }
+
+      const signal = await resolveSignalThreadByMatrixRoom(
+        roomId,
+        async () => token,
       );
       if (signal) {
         const identity: CallIdentity = {
@@ -269,12 +289,11 @@ export function useCallMembershipRegistry({
           title: signal.signalTitle,
         };
         identityCacheRef.current.set(roomId, identity);
+        sharedUnresolvedRoomIds.delete(roomId);
         return identity;
       }
 
-      const space = await resolveSpaceByMatrixRoom(roomId, async () =>
-        getAccessTokenRef.current?.(),
-      );
+      const space = await resolveSpaceByMatrixRoom(roomId, async () => token);
       if (space) {
         const identity: CallIdentity = {
           roomId,
@@ -283,10 +302,15 @@ export function useCallMembershipRegistry({
           title: space.spaceTitle,
         };
         identityCacheRef.current.set(roomId, identity);
+        sharedUnresolvedRoomIds.delete(roomId);
         return identity;
       }
 
-      logRegistryDebug('resolve-identity:no-match', { roomId });
+      sharedUnresolvedRoomIds.set(roomId, { hadToken: Boolean(token) });
+      logRegistryDebug('resolve-identity:no-match', {
+        roomId,
+        hadToken: Boolean(token),
+      });
       return null;
     },
     [],

@@ -26,14 +26,15 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const access = await checkSpaceAccess(request, space.web3SpaceId);
-      if (!access.hasAccess) {
-        return (
-          access.response ??
-          NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        );
-      }
+    if (!space.web3SpaceId || !canConvertToBigInt(space.web3SpaceId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    const access = await checkSpaceAccess(request, space.web3SpaceId);
+    if (!access.hasAccess) {
+      return (
+        access.response ??
+        NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      );
     }
 
     return NextResponse.json({

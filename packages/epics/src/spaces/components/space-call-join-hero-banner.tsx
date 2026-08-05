@@ -116,7 +116,6 @@ export function SpaceCallJoinHeroBanner({
     !isAuthLoading &&
     !isUserSpaceStateLoading &&
     callUiEnabled &&
-    !inSpaceCall &&
     Boolean(currentRoomActiveCallElsewhere) &&
     Boolean(activeRoomId?.trim()) &&
     activeRoomId?.trim() !== canonicalRoomId;
@@ -153,15 +152,22 @@ export function SpaceCallJoinHeroBanner({
    * the promise and immediately joining would race that. Record intent, let an effect fire
    * the join once the room has actually cleared.
    */
-  const [pendingCallSwitchKind, setPendingCallSwitchKind] = useState<
-    'audio' | 'video' | null
-  >(null);
+  const [pendingCallSwitch, setPendingCallSwitch] = useState<{
+    kind: 'audio' | 'video';
+    roomId: string;
+  } | null>(null);
 
   const handleJoinInsteadOfBoundCall = useCallback(
     (kind: 'audio' | 'video') => {
       if (activeRoomId?.trim() && activeRoomId.trim() !== canonicalRoomId) {
-        setPendingCallSwitchKind(kind);
-        void leaveSpaceCall();
+        const targetRoomId = canonicalRoomId;
+        if (!targetRoomId) return;
+        setPendingCallSwitch({ kind, roomId: targetRoomId });
+        leaveSpaceCall().catch(() => {
+          setPendingCallSwitch((prev) =>
+            prev && prev.roomId === targetRoomId ? null : prev,
+          );
+        });
         return;
       }
       if (kind === 'audio') {
@@ -180,17 +186,23 @@ export function SpaceCallJoinHeroBanner({
   );
 
   useEffect(() => {
-    if (!pendingCallSwitchKind) return;
+    if (!pendingCallSwitch) return;
+    // This banner instance is bound to `canonicalRoomId`; if it no longer matches the
+    // room we meant to join (component reused for a different space), abandon the switch.
+    if (pendingCallSwitch.roomId !== canonicalRoomId) {
+      setPendingCallSwitch(null);
+      return;
+    }
     if (activeRoomId?.trim() && activeRoomId.trim() !== canonicalRoomId) return;
-    const kind = pendingCallSwitchKind;
-    setPendingCallSwitchKind(null);
+    const { kind } = pendingCallSwitch;
+    setPendingCallSwitch(null);
     if (kind === 'audio') {
       handleJoinAudio();
     } else {
       handleJoinVideo();
     }
   }, [
-    pendingCallSwitchKind,
+    pendingCallSwitch,
     activeRoomId,
     canonicalRoomId,
     handleJoinAudio,
@@ -207,7 +219,7 @@ export function SpaceCallJoinHeroBanner({
         variant="hero"
         deviceCount={currentRoomActiveCallElsewhere.participantCount}
         disabled={!callUiEnabled}
-        busy={Boolean(pendingCallSwitchKind)}
+        busy={Boolean(pendingCallSwitch)}
         roomId={canonicalRoomId}
         onJoinAudio={() => handleJoinInsteadOfBoundCall('audio')}
         onJoinVideo={() => handleJoinInsteadOfBoundCall('video')}

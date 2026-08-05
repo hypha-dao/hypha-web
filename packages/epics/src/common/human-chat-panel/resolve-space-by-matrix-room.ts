@@ -23,7 +23,7 @@ export async function resolveSpaceByMatrixRoom(
 
     const res = await fetch(
       `/api/v1/matrix/rooms/${encodeURIComponent(trimmed)}/space`,
-      { headers },
+      { headers, signal: AbortSignal.timeout(8000) },
     );
     if (!res.ok) return null;
 

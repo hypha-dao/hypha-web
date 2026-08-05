@@ -1664,15 +1664,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
    * on the first click. Instead, record the intent and let an effect fire the join once
    * `callSessionRoomId` has actually cleared.
    */
-  const [pendingCallSwitchKind, setPendingCallSwitchKind] = useState<
-    'audio' | 'video' | null
-  >(null);
+  const [pendingCallSwitch, setPendingCallSwitch] = useState<{
+    kind: 'audio' | 'video';
+    roomId: string;
+  } | null>(null);
 
   const handleJoinCurrentRoomCallInstead = useCallback(
     (kind: 'audio' | 'video') => {
       if (callSessionRoomId && callSessionRoomId !== roomId) {
-        setPendingCallSwitchKind(kind);
-        void leaveSpaceCall();
+        const targetRoomId = roomId;
+        if (!targetRoomId) return;
+        setPendingCallSwitch({ kind, roomId: targetRoomId });
+        leaveSpaceCall().catch(() => {
+          setPendingCallSwitch((prev) =>
+            prev && prev.roomId === targetRoomId ? null : prev,
+          );
+        });
         return;
       }
       if (kind === 'audio') {
@@ -1691,17 +1698,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   useEffect(() => {
-    if (!pendingCallSwitchKind) return;
+    if (!pendingCallSwitch) return;
+    // User navigated away from the room they meant to join before the leave completed —
+    // abandon the switch instead of joining whatever room happens to be open now.
+    if (pendingCallSwitch.roomId !== roomId) {
+      setPendingCallSwitch(null);
+      return;
+    }
     if (callSessionRoomId && callSessionRoomId !== roomId) return;
-    const kind = pendingCallSwitchKind;
-    setPendingCallSwitchKind(null);
+    const { kind } = pendingCallSwitch;
+    setPendingCallSwitch(null);
     if (kind === 'audio') {
       handleCallAudio();
     } else {
       handleCallVideo();
     }
   }, [
-    pendingCallSwitchKind,
+    pendingCallSwitch,
     callSessionRoomId,
     roomId,
     handleCallAudio,
@@ -4502,7 +4515,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             <HumanChatPanelCallJoinStrip
               deviceCount={currentRoomActiveCall.participantCount}
               disabled={!callUiEnabled}
-              busy={Boolean(pendingCallSwitchKind)}
+              busy={Boolean(pendingCallSwitch)}
               roomId={roomId}
               onJoinAudio={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
@@ -5078,6 +5091,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         )}
       </SidebarContent>
       {activeTab === 'chat' &&
+        Boolean(spaceSlug?.trim()) &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 bg-background-2 p-0">
