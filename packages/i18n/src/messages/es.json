@@ -2349,6 +2349,9 @@
   },
   "HumanChatPanel": {
     "title": "Chat",
+    "activeCallElsewhere": "Llamada activa en {title}",
+    "activeCallsElsewhereCount": "{count} llamadas activas en otro lugar",
+    "notInSpaceEmptyState": "No estás en un espacio en este momento.",
     "welcome": "¡Bienvenido al chat! Inicia una conversación con otros miembros de este espacio.",
     "placeholder": "Escribe un mensaje...",
     "placeholderChannel": "Mensaje #{channel}",
