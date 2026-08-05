@@ -160,6 +160,18 @@ export function useCallMembershipRegistry({
       return;
     }
 
+    /**
+     * `client` is a new `MatrixClient` instance on every login/logout/re-auth (see
+     * `matrix-provider.tsx`'s `setClient`) — it doesn't change on a same-session remount.
+     * `sharedIdentityCache`/`sharedUnresolvedRoomIds` are keyed by room id only, not by
+     * caller, so without this a resolved-while-authorized room identity could keep being
+     * served to a *different* account that later authenticates in the same browser tab,
+     * bypassing that account's own authorization check for it. Clearing on every client
+     * swap scopes both caches to the current session without needing a per-subject key.
+     */
+    sharedIdentityCache.clear();
+    sharedUnresolvedRoomIds.clear();
+
     const sessionListeners = new Map<
       string,
       { session: MatrixRtcSessionLike; listener: () => void }
