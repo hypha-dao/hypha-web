@@ -154,6 +154,38 @@ export function useCallMembershipRegistry({
   const getAccessTokenRef = useRef(getAccessToken);
   getAccessTokenRef.current = getAccessToken;
 
+  /**
+   * `useJwt`/equivalent callers often start with no token while auth is still loading.
+   * A room active at that point resolves without one, and `resolveIdentity` only skips its
+   * negative cache for such an entry on the *next* time it's asked to resolve that room —
+   * which otherwise only happens when the set of active-call rooms changes. If it doesn't
+   * (the same call stays active while the token loads), the room would never retry. Poll a
+   * few times for the token to appear and bump this to force one retry pass once it does.
+   */
+  const [tokenPollEpoch, setTokenPollEpoch] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    let attempt = 0;
+    const maxAttempts = 6;
+    const poll = async () => {
+      if (cancelled) return;
+      const token = (await getAccessTokenRef.current?.()) ?? null;
+      if (cancelled) return;
+      if (token) {
+        setTokenPollEpoch((epoch) => epoch + 1);
+        return;
+      }
+      attempt += 1;
+      if (attempt >= maxAttempts) return;
+      setTimeout(() => void poll(), 1500);
+    };
+    void poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
+
   useEffect(() => {
     if (!client) {
       setActiveRoomIds([]);
@@ -381,7 +413,7 @@ export function useCallMembershipRegistry({
     return () => {
       cancelled = true;
     };
-  }, [activeRoomIds, excludeRoomIdsKey, resolveIdentity]);
+  }, [activeRoomIds, excludeRoomIdsKey, resolveIdentity, tokenPollEpoch]);
 
   return entries;
 }
