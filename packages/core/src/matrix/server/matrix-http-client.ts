@@ -72,6 +72,23 @@ export function getMatrixBotUserId(): string | null {
   return raw || null;
 }
 
+/**
+ * AS tokens for bots *other than* this environment's own — e.g. the Prod bot's token when
+ * running in Preview, or vice versa. Temporary bridge while Prod/Preview share one Postgres DB
+ * (#2252 will remove the need for this): a Space/Signal created in one environment is a real row
+ * the other environment's UI can also load, so both bots need PL100 in every room until the DBs
+ * are actually isolated. Comma-separated; each entry is a full AS token, not just an MXID, since
+ * joining a room requires authenticating as that bot (#2428).
+ */
+export function getMatrixAdditionalBotAsTokens(): string[] {
+  const raw = process.env.HYPHA_MATRIX_ADDITIONAL_BOT_AS_TOKENS?.trim();
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
 export async function matrixInviteUser(
   roomId: string,
   userId: string,
@@ -140,6 +157,24 @@ export async function matrixJoinRoomAsPuppet(
   await readMatrixJson<{ room_id?: string }>(res);
 }
 
+/** Resolves the MXID that owns `accessToken` — used to identify an additional bot's own user id
+ * from just its AS token (#2428), so callers only need to configure one token list. */
+export async function matrixWhoAmI(
+  accessToken: string,
+  homeserver: string,
+): Promise<string> {
+  const res = await matrixFetch(
+    `${homeserver}/_matrix/client/v3/account/whoami`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  const data = await readMatrixJson<{ user_id?: string }>(res);
+  const userId = data.user_id?.trim();
+  if (!userId) {
+    throw new Error('Matrix whoami returned no user_id');
+  }
+  return userId;
+}
+
 export async function matrixGetPowerLevels(
   roomId: string,
   accessToken: string,
@@ -176,7 +211,10 @@ export async function matrixApplyRoomPowerLevels(
   roomId: string,
   accessToken: string,
   homeserver: string,
-  options: { grantPl100ToUserId?: string } = {},
+  options: {
+    grantPl100ToUserId?: string;
+    additionalPl100UserIds?: string[];
+  } = {},
 ): Promise<void> {
   const current = await matrixGetPowerLevels(roomId, accessToken, homeserver);
   const events = {
@@ -186,9 +224,16 @@ export async function matrixApplyRoomPowerLevels(
     [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
   };
   const targetUserId = options.grantPl100ToUserId?.trim();
-  const users = targetUserId
-    ? { ...current.users, [targetUserId]: 100 }
-    : { ...current.users };
+  const additionalTargetUserIds = (options.additionalPl100UserIds ?? [])
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const users = { ...current.users };
+  if (targetUserId) {
+    users[targetUserId] = 100;
+  }
+  for (const additionalUserId of additionalTargetUserIds) {
+    users[additionalUserId] = 100;
+  }
   const res = await matrixFetch(
     `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
