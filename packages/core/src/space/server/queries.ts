@@ -151,6 +151,28 @@ export const findSpaceHostFieldsBySlug = async (
   return row ?? null;
 };
 
+/** Reverse-lookup: which space owns this Matrix room (its general chat room). */
+export const findSpaceHostFieldsByChatRoomId = async (
+  { roomId }: { roomId: string },
+  { db }: DbConfig,
+) => {
+  const trimmed = roomId.trim();
+  if (!trimmed) return null;
+
+  const row = await db.query.spaces.findFirst({
+    columns: {
+      id: true,
+      slug: true,
+      title: true,
+      parentId: true,
+      web3SpaceId: true,
+      chatRoomId: true,
+    },
+    where: (spaces, { eq }) => eq(spaces.chatRoomId, trimmed),
+  });
+  return row ?? null;
+};
+
 export const findSpaceBySlug = async (
   { slug }: FindSpaceBySlugInput,
   { db }: DbConfig,

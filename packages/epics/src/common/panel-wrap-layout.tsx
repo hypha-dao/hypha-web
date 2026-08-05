@@ -8,7 +8,13 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Menu, MessageCircle, PanelLeftClose, Sparkles } from 'lucide-react';
+import {
+  Menu,
+  MessageCircle,
+  PanelLeftClose,
+  Phone,
+  Sparkles,
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import {
   SidebarProvider,
@@ -18,6 +24,7 @@ import {
   useIsMobile,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { useJwt } from '@hypha-platform/core/client';
 import {
   AiPanelProvider,
   HumanChatPanelProvider,
@@ -25,6 +32,8 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { useIsSpaceContext } from './use-is-space-context';
+import { useGlobalCallDock } from './global-call-dock-context';
+import { useCallMembershipRegistry } from './human-chat-panel/use-call-membership-registry';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 import { APP_CHROME_ICON_TRIGGER } from './chrome-radius';
@@ -208,30 +217,54 @@ export function HumanSidebarTrigger() {
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
   const mutuallyExclusive = useMutuallyExclusivePanels();
+  const { activeRoomId } = useGlobalCallDock();
+  const { jwt } = useJwt();
+  const elsewhereCallEntries = useCallMembershipRegistry({
+    excludeRoomIds: [activeRoomId],
+    getAccessToken: async () => jwt,
+    hasAccessToken: Boolean(jwt),
+  });
+  const hasCallElsewhere = elsewhereCallEntries.length > 0;
 
   // Hide header trigger while the chat panel is open — the panel has its own chrome.
-  if (!isSpace || open) return null;
+  // Outside a space, still show it when there's a call elsewhere to notify about (#2424).
+  if (open || (!isSpace && !hasCallElsewhere)) return null;
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        if (open) {
-          toggle();
-          return;
-        }
-        if (mutuallyExclusive && (leftOpen || overlayVisible)) {
-          closeAiPanel();
-        }
-        openHumanChatPanel();
-      }}
-      aria-expanded={open}
-      className={APP_CHROME_ICON_TRIGGER}
-      title={t('openPanel')}
-      aria-label={t('openPanel')}
-    >
-      <MessageCircle className="craft-icon" />
-    </button>
+    // `APP_CHROME_ICON_TRIGGER` has `overflow-hidden`, which clips a badge positioned
+    // outside the icon's bounds — so the badge lives on this unclipped wrapper instead
+    // of inside the button.
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => {
+          if (open) {
+            toggle();
+            return;
+          }
+          if (mutuallyExclusive && (leftOpen || overlayVisible)) {
+            closeAiPanel();
+          }
+          openHumanChatPanel();
+        }}
+        aria-expanded={open}
+        className={APP_CHROME_ICON_TRIGGER}
+        title={t('openPanel')}
+        aria-label={t('openPanel')}
+      >
+        <MessageCircle className="craft-icon" />
+      </button>
+      {hasCallElsewhere ? (
+        <span className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-9 opacity-60" />
+          {/* h-4.5/w-4.5 isn't valid here — see the matching comment in
+              human-chat-panel-elsewhere-call-indicator.tsx. */}
+          <span className="relative flex h-[18px] w-[18px] items-center justify-center rounded-full bg-success-9 ring-2 ring-background">
+            <Phone className="h-3 w-3 text-white" strokeWidth={2.5} />
+          </span>
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -321,8 +354,10 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isOnboarding = pathname.includes('/onboarding');
   const effectiveLeft = isSpace ? left : undefined;
-  // Right human panel remains space-context only.
-  const effectiveRight = isSpace ? right : undefined;
+  // Right human panel is openable outside a space too (#2424) — the trigger only
+  // surfaces there when there's a call elsewhere to jump to, and `HumanRightPanel`
+  // itself renders a dedicated "not in a space" state instead of its space-only UI.
+  const effectiveRight = right;
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
       return MOBILE_PANEL_BREAKPOINT_PX;

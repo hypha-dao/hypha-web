@@ -11,6 +11,7 @@ import {
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { Check, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import {
   useParams,
   usePathname,
@@ -38,6 +39,7 @@ import {
   useMe,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
+  useSpacesBySlugs,
   Message,
   firstLineForReplyPreview,
   stripMatrixReplyFallback,
@@ -72,6 +74,8 @@ import {
   canInteractInSpace,
 } from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
+import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
+import { Empty } from './empty';
 
 import {
   HumanChatPanelHeader,
@@ -122,6 +126,11 @@ import { useActiveCallInAnotherTab } from './human-chat-panel/use-active-call-in
 import { shouldShowCallScaleWarning } from './human-chat-panel/call-scale-warning';
 import { resolveSignalDeepLinkWithRetry } from './human-chat-panel/resolve-signal-deep-link';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
+import {
+  useCallMembershipRegistry,
+  type CallElsewhereEntry,
+} from './human-chat-panel/use-call-membership-registry';
+import { HumanChatPanelElsewhereCallIndicator } from './human-chat-panel/human-chat-panel-elsewhere-call-indicator';
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
@@ -1342,6 +1351,80 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const spaceCallToolbarJoinHint =
     callUiEnabled &&
     (spaceCallShowJoinStrip || spaceCallRoomGroupDeviceCount > 0);
+  /**
+   * Only excludes the user's own actively-bound call room — the room currently being
+   * viewed is *not* excluded here (unlike the top-nav trigger / earlier version of this
+   * call), because this single result now drives two different views below: the "elsewhere"
+   * avatar list (which does exclude the viewed room) and the "there's a call in this room but
+   * I'm bound elsewhere" banner (which needs exactly the viewed room, when present). See
+   * #2424 QA notes, 2026-08-04.
+   */
+  const otherActiveCallEntries = useCallMembershipRegistry({
+    excludeRoomIds: [callSessionRoomId],
+    getAccessToken: async () => authTokenRef.current,
+    hasAccessToken: Boolean(authToken),
+  });
+  const elsewhereCallEntries = useMemo(
+    () => otherActiveCallEntries.filter((entry) => entry.roomId !== roomId),
+    [otherActiveCallEntries, roomId],
+  );
+  /** The room currently being viewed has its own active call, separate from whichever call
+   * (if any) the user is actively bound to elsewhere. */
+  const currentRoomActiveCall = useMemo(
+    () =>
+      otherActiveCallEntries.find((entry) => entry.roomId === roomId) ?? null,
+    [otherActiveCallEntries, roomId],
+  );
+
+  const { resolvedTheme } = useTheme();
+  const elsewhereCallSpaceSlugs = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          elsewhereCallEntries
+            .map((entry) => entry.spaceSlug?.trim())
+            .filter((slug): slug is string => Boolean(slug)),
+        ),
+      ),
+    [elsewhereCallEntries],
+  );
+  const { spaces: elsewhereCallSpacesData } = useSpacesBySlugs(
+    elsewhereCallSpaceSlugs,
+    false,
+  );
+  /** Avatar images for the cross-context indicator — same source as the recent-spaces
+   * sidebar (`ai-left-panel.tsx`): batch-fetched space records, resolved logo URL with
+   * a first-letter fallback while the fetch is in flight or if no logo is set. */
+  const elsewhereCallEntriesWithAvatar = useMemo(
+    () =>
+      elsewhereCallEntries.map((entry) => ({
+        ...entry,
+        avatarUrl: resolveSpaceDisplayLogoUrl(
+          elsewhereCallSpacesData.find(
+            (space) => space.slug === entry.spaceSlug,
+          ),
+          resolvedTheme === 'dark' ? 'dark' : 'light',
+        ),
+      })),
+    [elsewhereCallEntries, elsewhereCallSpacesData, resolvedTheme],
+  );
+
+  const handleSelectElsewhereCall = useCallback(
+    (entry: CallElsewhereEntry) => {
+      const lang = getLocaleFromPath(pathname);
+      const target =
+        entry.kind === 'signal' && entry.signalSlug
+          ? `/${lang}/dho/${entry.spaceSlug}?signal=${encodeURIComponent(
+              entry.signalSlug,
+            )}`
+          : `/${lang}/dho/${entry.spaceSlug}`;
+      router.push(target);
+      openHumanChatPanel();
+      setActiveTab('chat');
+    },
+    [pathname, router, openHumanChatPanel, setActiveTab],
+  );
+
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
   const showPanelInteractionPrompt =
@@ -1569,6 +1652,74 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     startVideoForRoom,
     markPendingCallStartNotify,
     inSpaceCall,
+  ]);
+
+  /**
+   * "Join this room's call instead" — for the case where the room being viewed has its own
+   * active call but the user is already bound to a call in a *different* room.
+   * `startAudioForRoom`/`startVideoForRoom` silently no-op while pinned to another room
+   * (see `global-call-dock-context.tsx`), so the old call must actually end first. But
+   * `callSessionRoomId` only clears via a `useEffect` reacting to `call.callState === 'idle'`,
+   * not synchronously when `leave()`'s promise resolves — awaiting the promise and then
+   * immediately calling `handleCallAudio`/`handleCallVideo` would race that and likely fail
+   * on the first click. Instead, record the intent and let an effect fire the join once
+   * `callSessionRoomId` has actually cleared.
+   */
+  const [pendingCallSwitch, setPendingCallSwitch] = useState<{
+    kind: 'audio' | 'video';
+    roomId: string;
+  } | null>(null);
+
+  const handleJoinCurrentRoomCallInstead = useCallback(
+    (kind: 'audio' | 'video') => {
+      if (callSessionRoomId && callSessionRoomId !== roomId) {
+        const targetRoomId = roomId;
+        if (!targetRoomId) return;
+        setPendingCallSwitch({ kind, roomId: targetRoomId });
+        leaveSpaceCall().catch(() => {
+          setPendingCallSwitch((prev) =>
+            prev && prev.roomId === targetRoomId ? null : prev,
+          );
+        });
+        return;
+      }
+      if (kind === 'audio') {
+        handleCallAudio();
+      } else {
+        handleCallVideo();
+      }
+    },
+    [
+      callSessionRoomId,
+      roomId,
+      leaveSpaceCall,
+      handleCallAudio,
+      handleCallVideo,
+    ],
+  );
+
+  useEffect(() => {
+    if (!pendingCallSwitch) return;
+    // User navigated away from the room they meant to join before the leave completed —
+    // abandon the switch instead of joining whatever room happens to be open now.
+    if (pendingCallSwitch.roomId !== roomId) {
+      setPendingCallSwitch(null);
+      return;
+    }
+    if (callSessionRoomId && callSessionRoomId !== roomId) return;
+    const { kind } = pendingCallSwitch;
+    setPendingCallSwitch(null);
+    if (kind === 'audio') {
+      handleCallAudio();
+    } else {
+      handleCallVideo();
+    }
+  }, [
+    pendingCallSwitch,
+    callSessionRoomId,
+    roomId,
+    handleCallAudio,
+    handleCallVideo,
   ]);
 
   const handleCallLeave = useCallback(() => {
@@ -4290,29 +4441,51 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             mentionTabBadgeCount={bellMentionCount}
             mentionTabBadgeCapped={bellMentionCapped}
             tabRowEnd={
-              showSidebarCallChrome &&
-              !inSpaceCall &&
-              !spaceCallShowJoinStrip ? (
-                <HumanChatPanelCallToolbar
-                  callState={spaceCallState}
-                  callKind={spaceCallKind}
-                  disabled={!callUiEnabled}
-                  roomCallInProgressToJoin={spaceCallToolbarJoinHint}
-                  onAudio={() => {
-                    if (!canJoinSignalThreadCall && isSignalThread) {
-                      void requestSignalTeamAccess();
-                      return;
-                    }
-                    handleCallAudio();
-                  }}
-                  onVideo={() => {
-                    if (!canJoinSignalThreadCall && isSignalThread) {
-                      void requestSignalTeamAccess();
-                      return;
-                    }
-                    handleCallVideo();
-                  }}
-                />
+              (showSidebarCallChrome &&
+                !inSpaceCall &&
+                !spaceCallShowJoinStrip) ||
+              (showAuthedUi && elsewhereCallEntries.length > 0) ? (
+                <>
+                  {showSidebarCallChrome &&
+                  !inSpaceCall &&
+                  !spaceCallShowJoinStrip ? (
+                    <HumanChatPanelCallToolbar
+                      callState={spaceCallState}
+                      callKind={spaceCallKind}
+                      disabled={!callUiEnabled}
+                      roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                      onAudio={() => {
+                        if (!canJoinSignalThreadCall && isSignalThread) {
+                          void requestSignalTeamAccess();
+                          return;
+                        }
+                        handleCallAudio();
+                      }}
+                      onVideo={() => {
+                        if (!canJoinSignalThreadCall && isSignalThread) {
+                          void requestSignalTeamAccess();
+                          return;
+                        }
+                        handleCallVideo();
+                      }}
+                    />
+                  ) : null}
+                  {showAuthedUi && elsewhereCallEntries.length > 0 ? (
+                    <HumanChatPanelElsewhereCallIndicator
+                      entries={elsewhereCallEntriesWithAvatar}
+                      onSelect={handleSelectElsewhereCall}
+                      label={
+                        elsewhereCallEntries.length === 1
+                          ? t('activeCallElsewhere', {
+                              title: elsewhereCallEntries[0]?.title ?? '',
+                            })
+                          : t('activeCallsElsewhereCount', {
+                              count: elsewhereCallEntries.length,
+                            })
+                      }
+                    />
+                  ) : null}
+                </>
               ) : null
             }
           />
@@ -4339,6 +4512,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }}
             />
           )}
+          {/* Mutually exclusive with the banner above: that one needs `showSidebarCallChrome`
+              (bound call === this room), this one needs the opposite — a call here while
+              bound elsewhere. Joining leaves the other call first (#2424). */}
+          {currentRoomActiveCall &&
+          callSessionRoomId &&
+          callSessionRoomId !== roomId ? (
+            <HumanChatPanelCallJoinStrip
+              deviceCount={currentRoomActiveCall.participantCount}
+              disabled={!callUiEnabled}
+              busy={Boolean(pendingCallSwitch)}
+              roomId={roomId}
+              onJoinAudio={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleJoinCurrentRoomCallInstead('audio');
+              }}
+              onJoinVideo={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleJoinCurrentRoomCallInstead('video');
+              }}
+            />
+          ) : null}
           <HumanChatPanelCallJoinInvitation
             open={joinInviteOpen}
             deviceCount={spaceCallRoomGroupDeviceCount}
@@ -4470,7 +4670,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       >
         {isAuthLoading ? (
           <HumanChatPanelLoader />
-        ) : blockSpaceChatForActivityAccess ? (
+        ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <SpaceAccessDenied
               userState={userSpaceState}
@@ -4478,7 +4678,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               spaceSlug={spaceSlug ?? undefined}
             />
           </div>
-        ) : showAuthPrompt ? (
+        ) : !spaceSlug?.trim() ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
+            <Empty>
+              <p>{t('notInSpaceEmptyState')}</p>
+            </Empty>
+          </div>
+        ) : blockSpaceChatForActivityAccess ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <SpaceAccessDenied
               userState={userSpaceState}
@@ -4891,6 +5097,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         )}
       </SidebarContent>
       {activeTab === 'chat' &&
+        Boolean(spaceSlug?.trim()) &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
           <SidebarFooter className="relative z-20 bg-background-2 p-0">
