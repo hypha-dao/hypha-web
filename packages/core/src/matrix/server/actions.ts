@@ -144,19 +144,33 @@ export async function ensureBotJoinedRoomAction(
  * Joins each configured additional bot (`HYPHA_MATRIX_ADDITIONAL_BOT_AS_TOKENS`, #2428) into
  * `roomId` under its own identity, and returns their MXIDs so the caller can grant them PL100
  * alongside the primary bot. Temporary bridge while Prod/Preview share one Postgres DB (#2252) —
- * see `getMatrixAdditionalBotAsTokens`. Soft-fails per bot: one bot failing to join must not stop
- * the others or the room-creation flow.
+ * see `getMatrixAdditionalBotAsTokens`. Rooms are invite-only, so a plain self-join has nothing
+ * to bypass join_rules with (that's only for puppet-joins via `?user_id=`) — `primaryBotToken`
+ * (PL100 as room creator) must invite each additional bot before it can accept, same as
+ * `ensureMemberJoinedRoomAction` does for humans. Soft-fails per bot: one bot failing to join
+ * must not stop the others or the room-creation flow.
  */
 async function joinAdditionalBotsToRoom(
   roomId: string,
+  primaryBotToken: string,
   homeserver: string,
 ): Promise<string[]> {
   const additionalBotTokens = getMatrixAdditionalBotAsTokens();
   const joinedUserIds: string[] = [];
   for (const additionalBotToken of additionalBotTokens) {
     try {
+      const additionalBotUserId = await matrixWhoAmI(
+        additionalBotToken,
+        homeserver,
+      );
+      await matrixInviteUser(
+        roomId,
+        additionalBotUserId,
+        primaryBotToken,
+        homeserver,
+      );
       await matrixJoinRoom(roomId, additionalBotToken, homeserver);
-      joinedUserIds.push(await matrixWhoAmI(additionalBotToken, homeserver));
+      joinedUserIds.push(additionalBotUserId);
     } catch (error) {
       console.warn(
         '[MatrixBot] Failed to join additional bot into room:',
@@ -208,6 +222,7 @@ export async function createBotOwnedRoomAction({
 
   const additionalBotUserIds = await joinAdditionalBotsToRoom(
     roomId,
+    botToken,
     homeserver,
   );
 
