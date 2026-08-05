@@ -9,6 +9,7 @@ import {
 import { Markdown } from '@tiptap/markdown';
 import { Placeholder } from '@tiptap/extensions';
 import StarterKit from '@tiptap/starter-kit';
+import { PasteMarkdown } from './paste-markdown';
 import {
   Bold,
   Heading1,
@@ -278,6 +279,7 @@ export function RichTextEditor({
         placeholder: placeholder ?? '',
       }),
       Markdown,
+      PasteMarkdown,
     ],
     editorProps: {
       attributes: {

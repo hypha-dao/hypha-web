@@ -10,10 +10,14 @@ export type SimpleHtmlNode =
   | { type: 'linebreak' }
   | { type: 'bold'; children: SimpleHtmlNode[] }
   | { type: 'italic'; children: SimpleHtmlNode[] }
+  | { type: 'underline'; children: SimpleHtmlNode[] }
   | { type: 'strike'; children: SimpleHtmlNode[] }
   | { type: 'code'; value: string }
   | { type: 'spoiler'; children: SimpleHtmlNode[] }
-  | { type: 'blockquote'; children: SimpleHtmlNode[] };
+  | { type: 'blockquote'; children: SimpleHtmlNode[] }
+  | { type: 'heading'; level: 1 | 2 | 3 | 4; children: SimpleHtmlNode[] }
+  | { type: 'ul'; items: SimpleHtmlNode[][] }
+  | { type: 'ol'; items: SimpleHtmlNode[][] };
 
 /**
  * Minimal HTML → nodes for safe React rendering (subset from Matrix formatted_body).
@@ -53,6 +57,8 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
       case 'em':
       case 'i':
         return [{ type: 'italic', children: childNodes }];
+      case 'u':
+        return [{ type: 'underline', children: childNodes }];
       case 'del':
       case 's':
         return [{ type: 'strike', children: childNodes }];
@@ -60,6 +66,28 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
         return [{ type: 'code', value: el.textContent ?? '' }];
       case 'blockquote':
         return [{ type: 'blockquote', children: childNodes }];
+      case 'h1':
+      case 'h2':
+      case 'h3':
+      case 'h4': {
+        const level = Number(tag.slice(1)) as 1 | 2 | 3 | 4;
+        return [{ type: 'heading', level, children: childNodes }];
+      }
+      case 'ul':
+      case 'ol': {
+        const items: SimpleHtmlNode[][] = [];
+        for (const child of Array.from(el.children)) {
+          if (child.tagName.toLowerCase() !== 'li') continue;
+          items.push(Array.from(child.childNodes).flatMap(walk));
+        }
+        if (items.length === 0 && childNodes.length > 0) {
+          items.push(childNodes);
+        }
+        return [{ type: tag === 'ul' ? 'ul' : 'ol', items }];
+      }
+      case 'li':
+        // Handled by ul/ol parent; standalone → flatten.
+        return childNodes;
       case 'span': {
         const spoiler =
           el.getAttribute('data-mx-spoiler') != null ||
@@ -107,6 +135,13 @@ function SpoilerSpan({ children }: { children: React.ReactNode }) {
   );
 }
 
+const headingClassName: Record<1 | 2 | 3 | 4, string> = {
+  1: 'text-base font-semibold leading-snug',
+  2: 'text-[0.95rem] font-semibold leading-snug',
+  3: 'text-sm font-semibold leading-snug',
+  4: 'text-sm font-medium leading-snug',
+};
+
 export function renderSimpleHtmlNodes(
   nodes: SimpleHtmlNode[],
   keyPrefix = '',
@@ -145,6 +180,12 @@ export function renderSimpleHtmlNodes(
             {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </em>
         );
+      case 'underline':
+        return (
+          <u key={k} className="underline underline-offset-2">
+            {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
+          </u>
+        );
       case 'strike':
         return (
           <del key={k} className="line-through opacity-90">
@@ -165,6 +206,46 @@ export function renderSimpleHtmlNodes(
           >
             {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </span>
+        );
+      case 'heading':
+        return (
+          <div key={k} className={cn('my-0.5', headingClassName[n.level])}>
+            {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
+          </div>
+        );
+      case 'ul':
+        return (
+          <ul
+            key={k}
+            className="my-0.5 list-disc space-y-0.5 pl-4 text-inherit"
+          >
+            {n.items.map((item, itemIndex) => (
+              <li key={`${k}-li-${itemIndex}`}>
+                {renderSimpleHtmlNodes(
+                  item,
+                  `${k}-li-${itemIndex}-`,
+                  transformText,
+                )}
+              </li>
+            ))}
+          </ul>
+        );
+      case 'ol':
+        return (
+          <ol
+            key={k}
+            className="my-0.5 list-decimal space-y-0.5 pl-4 text-inherit"
+          >
+            {n.items.map((item, itemIndex) => (
+              <li key={`${k}-li-${itemIndex}`}>
+                {renderSimpleHtmlNodes(
+                  item,
+                  `${k}-li-${itemIndex}-`,
+                  transformText,
+                )}
+              </li>
+            ))}
+          </ol>
         );
       default:
         return null;

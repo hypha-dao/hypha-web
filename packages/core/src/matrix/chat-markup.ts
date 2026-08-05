@@ -1,7 +1,7 @@
 /**
- * Discord-like plaintext markup for chat: **bold**, *italic*, ~~strike~~,
- * `code`, ||spoiler||, and > blockquote lines. Used for composer → Matrix HTML
- * and timeline rendering.
+ * Discord-like plaintext markup for chat: **bold**, *italic*, __underline__,
+ * ~~strike~~, `code`, ||spoiler||, > blockquotes, # headings, and - / 1. lists.
+ * Used for composer → Matrix HTML and timeline rendering.
  */
 
 import {
@@ -14,11 +14,15 @@ export type MarkupNode =
   | { type: 'text'; value: string }
   | { type: 'bold'; children: MarkupNode[] }
   | { type: 'italic'; children: MarkupNode[] }
+  | { type: 'underline'; children: MarkupNode[] }
   | { type: 'strike'; children: MarkupNode[] }
   | { type: 'code'; value: string }
   | { type: 'spoiler'; children: MarkupNode[] }
   | { type: 'linebreak' }
-  | { type: 'blockquote'; children: MarkupNode[] };
+  | { type: 'blockquote'; children: MarkupNode[] }
+  | { type: 'heading'; level: 1 | 2 | 3 | 4; children: MarkupNode[] }
+  | { type: 'ul'; items: MarkupNode[][] }
+  | { type: 'ol'; items: MarkupNode[][] };
 
 function escapeHtml(s: string): string {
   return s
@@ -38,13 +42,35 @@ export function chatMarkupLooksFormatted(plain: string): boolean {
     /~~/.test(plain) ||
     /\|\|/.test(plain) ||
     /`/.test(plain) ||
+    /__/.test(plain) ||
     /(^|\n)>\s?/m.test(plain) ||
+    /(^|\n)#{1,4}\s+\S/m.test(plain) ||
+    /(^|\n)(\s{0,3})([-*+]|\d+\.)\s+\S/m.test(plain) ||
     /\*[^*\n]+\*/.test(plain)
   );
 }
 
+function parseHeadingLine(
+  line: string,
+): { level: 1 | 2 | 3 | 4; text: string } | null {
+  const match = line.match(/^(#{1,4})\s+(.*)$/);
+  if (!match) return null;
+  const level = match[1]!.length as 1 | 2 | 3 | 4;
+  return { level, text: match[2] ?? '' };
+}
+
+function parseUnorderedListItem(line: string): string | null {
+  const match = line.match(/^(\s{0,3})[-*+]\s+(.*)$/);
+  return match ? match[2] ?? '' : null;
+}
+
+function parseOrderedListItem(line: string): string | null {
+  const match = line.match(/^(\s{0,3})\d+\.\s+(.*)$/);
+  return match ? match[2] ?? '' : null;
+}
+
 /**
- * Parse block structure (lines, blockquotes) then inline marks.
+ * Parse block structure (lines, blockquotes, headings, lists) then inline marks.
  */
 export function parseChatMarkup(plain: string): MarkupNode[] {
   const normalized = plain.replace(/\r\n/g, '\n');
@@ -87,6 +113,41 @@ export function parseChatMarkup(plain: string): MarkupNode[] {
       continue;
     }
 
+    const heading = parseHeadingLine(line);
+    if (heading) {
+      out.push({
+        type: 'heading',
+        level: heading.level,
+        children: parseInlineMarkup(heading.text),
+      });
+      i += 1;
+      continue;
+    }
+
+    const ulItems: MarkupNode[][] = [];
+    while (i < lines.length) {
+      const item = parseUnorderedListItem(lines[i]!);
+      if (item === null) break;
+      ulItems.push(parseInlineMarkup(item));
+      i += 1;
+    }
+    if (ulItems.length > 0) {
+      out.push({ type: 'ul', items: ulItems });
+      continue;
+    }
+
+    const olItems: MarkupNode[][] = [];
+    while (i < lines.length) {
+      const item = parseOrderedListItem(lines[i]!);
+      if (item === null) break;
+      olItems.push(parseInlineMarkup(item));
+      i += 1;
+    }
+    if (olItems.length > 0) {
+      out.push({ type: 'ol', items: olItems });
+      continue;
+    }
+
     out.push(...parseInlineMarkup(line));
     if (i < lines.length - 1) {
       out.push({ type: 'linebreak' });
@@ -98,7 +159,13 @@ export function parseChatMarkup(plain: string): MarkupNode[] {
   return out;
 }
 
-type DelimKind = 'code' | 'spoiler' | 'bold' | 'strike' | 'italic';
+type DelimKind =
+  | 'code'
+  | 'spoiler'
+  | 'bold'
+  | 'underline'
+  | 'strike'
+  | 'italic';
 
 function findNextDelimiter(
   s: string,
@@ -125,6 +192,10 @@ function findNextDelimiter(
     }
     if (s.slice(idx, idx + 2) === '**') {
       consider('bold', idx, 2);
+      break;
+    }
+    if (s.slice(idx, idx + 2) === '__') {
+      consider('underline', idx, 2);
       break;
     }
     if (s.slice(idx, idx + 2) === '~~') {
@@ -161,6 +232,10 @@ function findClosingDelimiter(
     }
     case 'bold': {
       const i = s.indexOf('**', innerStart);
+      return i === -1 ? null : { innerEnd: i, len: 2 };
+    }
+    case 'underline': {
+      const i = s.indexOf('__', innerStart);
       return i === -1 ? null : { innerEnd: i, len: 2 };
     }
     case 'strike': {
@@ -217,6 +292,8 @@ function parseInlineMarkup(s: string): MarkupNode[] {
           ? ({ type: 'bold', children } as MarkupNode)
           : kind === 'italic'
           ? ({ type: 'italic', children } as MarkupNode)
+          : kind === 'underline'
+          ? ({ type: 'underline', children } as MarkupNode)
           : kind === 'strike'
           ? ({ type: 'strike', children } as MarkupNode)
           : ({ type: 'spoiler', children } as MarkupNode);
@@ -227,7 +304,7 @@ function parseInlineMarkup(s: string): MarkupNode[] {
   return nodes;
 }
 
-function nodesToHtml(nodes: MarkupNode[]): string {
+export function nodesToHtml(nodes: MarkupNode[]): string {
   const parts: string[] = [];
   for (const n of nodes) {
     switch (n.type) {
@@ -246,6 +323,9 @@ function nodesToHtml(nodes: MarkupNode[]): string {
       case 'italic':
         parts.push('<em>', nodesToHtml(n.children), '</em>');
         break;
+      case 'underline':
+        parts.push('<u>', nodesToHtml(n.children), '</u>');
+        break;
       case 'strike':
         parts.push('<del>', nodesToHtml(n.children), '</del>');
         break;
@@ -259,11 +339,35 @@ function nodesToHtml(nodes: MarkupNode[]): string {
       case 'blockquote':
         parts.push('<blockquote>', nodesToHtml(n.children), '</blockquote>');
         break;
+      case 'heading': {
+        const tag = `h${n.level}`;
+        parts.push(`<${tag}>`, nodesToHtml(n.children), `</${tag}>`);
+        break;
+      }
+      case 'ul':
+        parts.push(
+          '<ul>',
+          ...n.items.map((item) => `<li>${nodesToHtml(item)}</li>`),
+          '</ul>',
+        );
+        break;
+      case 'ol':
+        parts.push(
+          '<ol>',
+          ...n.items.map((item) => `<li>${nodesToHtml(item)}</li>`),
+          '</ol>',
+        );
+        break;
       default:
         break;
     }
   }
   return parts.join('');
+}
+
+/** Parse chat markup to Matrix HTML (always; caller decides when to attach). */
+export function chatMarkupToHtml(plain: string): string {
+  return nodesToHtml(parseChatMarkup(plain)).trim();
 }
 
 /**
@@ -280,8 +384,7 @@ export function matrixTextEventContentWithOptionalFormatting(body: string):
   if (!trimmed || !chatMarkupLooksFormatted(body)) {
     return { body };
   }
-  const tree = parseChatMarkup(body);
-  const html = nodesToHtml(tree).trim();
+  const html = chatMarkupToHtml(body);
   if (!html) {
     return { body };
   }
