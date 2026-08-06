@@ -68,6 +68,30 @@ type VerifiedIdentity = {
   name: string | null;
 };
 
+/**
+ * Why a token was rejected matters. Expired is routine and fixes itself on the
+ * next refresh; an audience naming a different Privy app means the browser and
+ * the deployment disagree about which app they belong to, and no amount of
+ * retrying will help. Claims are read without verifying — they are untrusted,
+ * and used only to make the log line worth reading.
+ */
+function describeToken(token: string): string {
+  try {
+    const claims = JSON.parse(
+      Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'),
+    );
+    const remaining = Number(claims.exp) - Math.floor(Date.now() / 1000);
+    const life = Number.isFinite(remaining)
+      ? remaining < 0
+        ? `expired ${-remaining}s ago`
+        : `${remaining}s left`
+      : 'no exp';
+    return `iss=${claims.iss} aud=${claims.aud} ${life} (this app is ${process.env.NEXT_PUBLIC_PRIVY_APP_ID})`;
+  } catch {
+    return 'claims unreadable — not a JWT?';
+  }
+}
+
 async function verifyToken(token: string): Promise<VerifiedIdentity> {
   const privy = getPrivyClient();
 
@@ -77,7 +101,9 @@ async function verifyToken(token: string): Promise<VerifiedIdentity> {
     privyUserId = claims.user_id;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown error';
-    console.warn('Privy token verification failed:', message);
+    console.warn(
+      `Privy token verification failed: ${message} — ${describeToken(token)}`,
+    );
     throw new AuthError(401, 'Invalid or expired session');
   }
 
@@ -168,7 +194,16 @@ export async function requireViewer(
   hints: IdentityHints = {},
 ): Promise<Viewer> {
   const token = readBearerToken(request);
-  if (!token) throw new AuthError(401, 'Sign in to continue');
+  if (!token) {
+    // Worth a line: these routes are only called by a client that believes it
+    // is signed in, so arriving without a token means the browser holds a Privy
+    // session it cannot turn into an access token — a different fault from a
+    // token that arrives and fails to verify.
+    console.warn(
+      `No bearer token on ${request.method} ${new URL(request.url).pathname}`,
+    );
+    throw new AuthError(401, 'Sign in to continue');
+  }
 
   const identity = await verifyToken(token);
   const member = await upsertMember(identity, hints);
