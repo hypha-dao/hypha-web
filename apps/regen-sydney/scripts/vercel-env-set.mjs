@@ -4,40 +4,53 @@
  *   node scripts/vercel-env-set.mjs            # show what would change
  *   node scripts/vercel-env-set.mjs --execute
  *
- * Only settings this repo can determine on its own are handled here. Two are
- * deliberately left out, because each is a decision rather than a value:
+ * Values are read from the local .env, so what is deployed matches what was
+ * tested. Two settings are deliberately left out:
  *
- *   PRIVY_APP_SECRET          held encrypted on the hypha-web project
+ *   STRIPE_WEBHOOK_SECRET     comes into existence with the webhook endpoint —
+ *                             see scripts/stripe-webhook-endpoint.mjs
  *   RSUT_RELAYER_PRIVATE_KEY  mint authority over a real token; putting it in
  *                             preview would let any preview deploy mint RSUT
  *
  * The database connection is not here either, but for a different reason: the
  * Neon integration publishes it as CAMPAIGN_DB_DATABASE_URL and keeps it in
  * sync. Nothing to push.
- *
- * Values for the Stripe and campaign settings are read from the local .env, so
- * what is deployed matches what was tested.
  */
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 
-const TEAM = 'team_YAelhta9tYGFYAu3jPN1TE5v';
-const PROJECT = 'regen-sydney';
-const PRODUCTION_URL = 'https://regen-sydney.vercel.app';
+import {
+  PROJECT,
+  PRODUCTION_URL,
+  TEAM,
+  branchAlias,
+  fromEnvFile,
+  vercel,
+} from './lib/vercel.mjs';
 
 const execute = process.argv.includes('--execute');
 
 const local = readFileSync(new URL('../.env', import.meta.url), 'utf8');
-const fromLocal = (name) =>
-  new RegExp(`^\\s*${name}\\s*=\\s*(.*)$`, 'm')
-    .exec(local)?.[1]
-    ?.trim()
-    .replace(/^["']|["']$/g, '') || '';
+const fromLocal = (name) => fromEnvFile(local, name);
 
-/** Anything not listed here is intentionally left for a human to decide. */
+const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+  encoding: 'utf8',
+}).trim();
+
+const ALL = ['production', 'preview', 'development'];
+
+/**
+ * A plain string applies to every target. An object names the targets it
+ * applies to and gives each its own value — which is what NEXT_PUBLIC_APP_URL
+ * needs, since a preview that advertises the production hostname sends anyone
+ * returning from Stripe Checkout to the wrong deployment.
+ */
 const desired = {
   NEXT_PUBLIC_PRIVY_APP_ID: fromLocal('NEXT_PUBLIC_PRIVY_APP_ID'),
+  PRIVY_APP_SECRET: {
+    production: fromLocal('PRIVY_APP_SECRET'),
+    preview: fromLocal('PRIVY_APP_SECRET'),
+  },
   CAMPAIGN_ADMIN_EMAILS: fromLocal('CAMPAIGN_ADMIN_EMAILS'),
   CAMPAIGN_JOIN_BONUS_RSUT: fromLocal('CAMPAIGN_JOIN_BONUS_RSUT'),
   CAMPAIGN_RSUT_PER_AUD: fromLocal('CAMPAIGN_RSUT_PER_AUD'),
@@ -48,90 +61,93 @@ const desired = {
   RPC_URL: 'https://base-rpc.publicnode.com',
   CAMPAIGN_PAYMENTS_PROVIDER: 'stripe',
   STRIPE_SECRET_KEY: fromLocal('STRIPE_SECRET_KEY'),
-  NEXT_PUBLIC_APP_URL: PRODUCTION_URL,
+  NEXT_PUBLIC_APP_URL: {
+    production: PRODUCTION_URL,
+    preview: branchAlias(branch),
+    development: 'http://localhost:3002',
+  },
   HYPHA_BASE_URL: fromLocal('HYPHA_BASE_URL') || 'https://app.hypha.earth',
 };
 
-/** Values that must never reach a deployment by accident. */
-const secretish = new Set(['STRIPE_SECRET_KEY']);
+/** Values that must never be echoed, here or into a deployment log. */
+const secretish = new Set(['STRIPE_SECRET_KEY', 'PRIVY_APP_SECRET']);
+
+/** Normalises both spellings into { target: value } pairs. */
+const spread = (value) =>
+  typeof value === 'string'
+    ? Object.fromEntries(ALL.map((target) => [target, value]))
+    : value;
 
 for (const [key, value] of Object.entries(desired)) {
-  if (!value) {
-    console.error(`${key} is empty in .env — fill it in first.`);
-    process.exit(1);
+  for (const [target, each] of Object.entries(spread(value))) {
+    if (!each) {
+      console.error(`${key} (${target}) is empty in .env — fill it in first.`);
+      process.exit(1);
+    }
   }
 }
 if (/^(sk|rk)_live_/.test(desired.STRIPE_SECRET_KEY)) {
-  console.error('STRIPE_SECRET_KEY is a live key. Refusing to deploy it from a test setup.');
+  console.error(
+    'STRIPE_SECRET_KEY is a live key. Refusing to deploy it from a test setup.',
+  );
   process.exit(1);
 }
 
-let token;
-for (const path of [
-  join(homedir(), 'Library/Application Support/com.vercel.cli/auth.json'),
-  join(homedir(), '.local/share/com.vercel.cli/auth.json'),
-]) {
-  try {
-    token = JSON.parse(readFileSync(path, 'utf8')).token;
-    if (token) break;
-  } catch {
-    // next
-  }
-}
-if (!token) {
-  console.error('No Vercel CLI token — run `vercel login`.');
-  process.exit(1);
-}
-
-async function api(path, init = {}) {
-  const response = await fetch(`https://api.vercel.com${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...init.headers,
-    },
-  });
-  const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(json.error?.message ?? `${response.status} on ${path}`);
-  return json;
-}
-
-const TARGETS = ['production', 'preview', 'development'];
-const { envs } = await api(`/v10/projects/${PROJECT}/env?teamId=${TEAM}`);
+const { envs } = await vercel(`/v10/projects/${PROJECT}/env?teamId=${TEAM}`);
 
 console.log(`${PROJECT} — ${execute ? 'applying' : 'dry run'}\n`);
 
 for (const [key, value] of Object.entries(desired)) {
+  const byTarget = spread(value);
   const existing = envs.filter((e) => e.key === key);
-  const shown = secretish.has(key) ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
 
-  if (!execute) {
-    console.log(`  ${existing.length ? 'replace' : 'create '}  ${key} = ${shown}`);
-    continue;
+  // One entry per distinct value, so targets sharing a value stay one row.
+  const groups = new Map();
+  for (const [target, each] of Object.entries(byTarget)) {
+    groups.set(each, [...(groups.get(each) ?? []), target]);
   }
 
-  for (const entry of existing) {
-    await api(`/v9/projects/${PROJECT}/env/${entry.id}?teamId=${TEAM}`, {
-      method: 'DELETE',
+  if (execute) {
+    for (const entry of existing) {
+      await vercel(`/v9/projects/${PROJECT}/env/${entry.id}?teamId=${TEAM}`, {
+        method: 'DELETE',
+      });
+    }
+  }
+
+  for (const [each, targets] of groups) {
+    const shown = secretish.has(key)
+      ? `${each.slice(0, 8)}…${each.slice(-4)}`
+      : each;
+    const scope =
+      targets.length === ALL.length ? '' : ` [${targets.join(', ')}]`;
+
+    if (!execute) {
+      console.log(
+        `  ${
+          existing.length ? 'replace' : 'create '
+        }  ${key} = ${shown}${scope}`,
+      );
+      continue;
+    }
+
+    await vercel(`/v10/projects/${PROJECT}/env?teamId=${TEAM}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        key,
+        value: each,
+        type: secretish.has(key) ? 'encrypted' : 'plain',
+        target: targets,
+      }),
     });
+    console.log(`  set      ${key} = ${shown}${scope}`);
   }
-
-  await api(`/v10/projects/${PROJECT}/env?teamId=${TEAM}&upsert=true`, {
-    method: 'POST',
-    body: JSON.stringify({
-      key,
-      value,
-      type: secretish.has(key) ? 'encrypted' : 'plain',
-      target: TARGETS,
-    }),
-  });
-  console.log(`  set      ${key} = ${shown}`);
 }
 
 console.log('\nStill unset, on purpose:');
-console.log('  PRIVY_APP_SECRET          copy from the hypha-web project');
-console.log('  STRIPE_WEBHOOK_SECRET     created with the webhook endpoint');
-console.log('  RSUT_RELAYER_PRIVATE_KEY  mint authority — production only, once you are ready');
+console.log('  STRIPE_WEBHOOK_SECRET     scripts/stripe-webhook-endpoint.mjs');
+console.log(
+  '  RSUT_RELAYER_PRIVATE_KEY  mint authority — production only, once you are ready',
+);
 
 if (!execute) console.log('\nRe-run with --execute to apply.');

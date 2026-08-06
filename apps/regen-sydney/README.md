@@ -116,9 +116,22 @@ Stripe is the provider. It is reached through the adapter in
    stripe listen --forward-to localhost:3002/api/webhooks/payments
    ```
 
-   Deployed, add an endpoint at `https://<host>/api/webhooks/payments` for
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded` and
-   `charge.refunded`, and copy its signing secret.
+   Deployed, register the endpoint from a script instead:
+
+   ```bash
+   node scripts/stripe-webhook-endpoint.mjs             # show the plan
+   node scripts/stripe-webhook-endpoint.mjs --execute   # preview
+   node scripts/stripe-webhook-endpoint.mjs --target production --execute
+   ```
+
+   It subscribes the three events above and writes the signing secret straight into
+   `STRIPE_WEBHOOK_SECRET` on the Vercel project, without printing it — Stripe returns that secret
+   once and never again, so a copy in a scrollback is a liability with no upside.
+
+   For preview it targets the **branch alias** (`regen-sydney-git-<branch>-hypha-dao.vercel.app`)
+   rather than a deployment URL, since a deployment URL stops existing at the next push and the
+   endpoint would go quietly dead. `NEXT_PUBLIC_APP_URL` is set per environment to match, so
+   returning from Checkout lands back on the deployment you started from.
 
 3. Put both in `.env` alongside `CAMPAIGN_PAYMENTS_PROVIDER=stripe`.
 4. Check the wiring, with the dev server running:
