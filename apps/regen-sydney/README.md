@@ -128,10 +128,10 @@ Stripe is the provider. It is reached through the adapter in
    `STRIPE_WEBHOOK_SECRET` on the Vercel project, without printing it — Stripe returns that secret
    once and never again, so a copy in a scrollback is a liability with no upside.
 
-   For preview it targets the **branch alias** (`regen-sydney-git-<branch>-hypha-dao.vercel.app`)
-   rather than a deployment URL, since a deployment URL stops existing at the next push and the
-   endpoint would go quietly dead. `NEXT_PUBLIC_APP_URL` is set per environment to match, so
-   returning from Checkout lands back on the deployment you started from.
+   For preview it targets `regen.preview-app.hypha.earth` (see below) rather than a deployment
+   URL, since a deployment URL stops existing at the next push and the endpoint would go quietly
+   dead. `NEXT_PUBLIC_APP_URL` is set per environment to match, so returning from Checkout lands
+   back where you started.
 
 3. Put both in `.env` alongside `CAMPAIGN_PAYMENTS_PROVIDER=stripe`.
 4. Check the wiring, with the dev server running:
@@ -239,6 +239,29 @@ asking for it by name.
 The other variables the deployed app needs are `PRIVY_APP_SECRET`, `CAMPAIGN_ADMIN_EMAILS`,
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RSUT_RELAYER_PRIVATE_KEY` and `NEXT_PUBLIC_APP_URL`.
 `.env.template` documents each.
+
+### Why preview runs on a hypha.earth subdomain
+
+Preview deploys are reached at **`regen.preview-app.hypha.earth`**, pinned to this branch so it
+follows the newest deployment, rather than at the `*.vercel.app` alias Vercel generates.
+
+That is not cosmetic. The shared Privy app uses a custom auth domain at `privy.hypha.earth`, and
+its session cookies carry `Domain=privy.hypha.earth; SameSite=None; Secure`. Browsers decide
+first- versus third-party by _site_, not origin: from `app.hypha.earth` — or any other
+`hypha.earth` subdomain — those cookies are first-party and are sent. From `*.vercel.app` they are
+not, because `vercel.app` is on the Public Suffix List, so every deployment is its own site.
+
+The failure that causes is quiet and misleading. Login succeeds, because the Privy modal runs in a
+top-level context where the cookie is first-party. `authenticated` becomes `true`. But
+`getAccessToken()` then has no refresh cookie to work with and returns `null` forever, so every
+API call goes out without a bearer token and the app looks signed out while Privy insists
+otherwise.
+
+The subdomain needed no DNS work — `*.preview-app.hypha.earth` already resolves to Vercel — and no
+Privy change, since `https://*.preview-app.hypha.earth` is already an allowed domain.
+
+**Production will need the same treatment.** `regen-sydney.vercel.app` will hit this exact wall;
+the campaign needs a `hypha.earth` subdomain, or a Privy app of its own.
 
 ## Admin
 

@@ -69,14 +69,20 @@ export async function setEnv(key, value, targets, { encrypted = false } = {}) {
 }
 
 /**
- * The hostname Vercel keeps pointed at the newest preview of a branch. Unlike
- * a deployment URL it survives the next push, which is what a webhook endpoint
- * and an OAuth redirect both need.
+ * Where preview traffic should go.
+ *
+ * Not the `*.vercel.app` branch alias, even though that also tracks the newest
+ * deployment. Privy is configured with a custom auth domain at
+ * `privy.hypha.earth`, and its session cookies carry `Domain=privy.hypha.earth`.
+ * A page on `vercel.app` is a different site — `vercel.app` is a public suffix,
+ * so every deployment is its own site — which makes those cookies third-party
+ * and unreadable, and `getAccessToken()` returns nothing however long you wait.
+ * Under `hypha.earth` they are first-party, exactly as on app.hypha.earth.
+ *
+ * The subdomain is pinned to the branch, so it follows the newest deployment
+ * without being re-aliased after every push.
  */
-export function branchAlias(branch) {
-  const slug = branch.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase();
-  return `https://${PROJECT}-git-${slug}-hypha-dao.vercel.app`;
-}
+export const PREVIEW_URL = 'https://regen.preview-app.hypha.earth';
 
 /** Reads one value out of a local dotenv file without pulling in a parser. */
 export function fromEnvFile(contents, name) {

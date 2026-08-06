@@ -16,14 +16,13 @@
  * Neon integration publishes it as CAMPAIGN_DB_DATABASE_URL and keeps it in
  * sync. Nothing to push.
  */
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import {
   PROJECT,
   PRODUCTION_URL,
   TEAM,
-  branchAlias,
+  PREVIEW_URL,
   fromEnvFile,
   vercel,
 } from './lib/vercel.mjs';
@@ -32,10 +31,6 @@ const execute = process.argv.includes('--execute');
 
 const local = readFileSync(new URL('../.env', import.meta.url), 'utf8');
 const fromLocal = (name) => fromEnvFile(local, name);
-
-const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
-  encoding: 'utf8',
-}).trim();
 
 const ALL = ['production', 'preview', 'development'];
 
@@ -63,7 +58,7 @@ const desired = {
   STRIPE_SECRET_KEY: fromLocal('STRIPE_SECRET_KEY'),
   NEXT_PUBLIC_APP_URL: {
     production: PRODUCTION_URL,
-    preview: branchAlias(branch),
+    preview: PREVIEW_URL,
     development: 'http://localhost:3002',
   },
   HYPHA_BASE_URL: fromLocal('HYPHA_BASE_URL') || 'https://app.hypha.earth',

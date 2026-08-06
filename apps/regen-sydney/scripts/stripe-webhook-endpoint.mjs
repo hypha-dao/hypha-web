@@ -10,16 +10,15 @@
  * secret is written straight to Vercel and never printed: there is no way to
  * recover it from a scrollback, and no reason to want one.
  *
- * By default this targets the branch alias rather than a deployment URL, since
- * a deployment URL stops existing at the next push and the endpoint would go
- * quietly dead.
+ * By default this targets the branch's stable preview hostname rather than a
+ * deployment URL, since a deployment URL stops existing at the next push and
+ * the endpoint would go quietly dead.
  */
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import {
   PRODUCTION_URL,
-  branchAlias,
+  PREVIEW_URL,
   fromEnvFile,
   setEnv,
 } from './lib/vercel.mjs';
@@ -45,10 +44,7 @@ if (!['preview', 'production'].includes(target)) {
   process.exit(1);
 }
 
-const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
-  encoding: 'utf8',
-}).trim();
-const base = target === 'production' ? PRODUCTION_URL : branchAlias(branch);
+const base = target === 'production' ? PRODUCTION_URL : PREVIEW_URL;
 const endpointUrl = `${base}/api/webhooks/payments`;
 
 const env = readFileSync(new URL('../.env', import.meta.url), 'utf8');
