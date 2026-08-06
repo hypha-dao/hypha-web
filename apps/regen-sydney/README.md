@@ -128,30 +128,40 @@ at most one mint.
 
 ## Relayer
 
-Minting needs a hot wallet that RSUT recognises. `mint` is gated on
-`msg.sender == executor || isAuthorizedMinter[msg.sender]`, and RSUT's proxy is still running a
-build from before `isAuthorizedMinter` existed — so today the only minter is the RS Core Team
-executor (`0xEc5106fb6eA212305e487a9114c958ffE90E9a7a`), which acts only on a passed proposal.
+Minting needs a hot wallet that RSUT recognises, because `mint` is gated on
+`msg.sender == executor || isAuthorizedMinter[msg.sender]`. Create one with:
 
-Two transactions from the token owner (`0x2687fe290b54d824c136Ceff2d5bD362Bc62019a`) settle it:
-upgrade the proxy to the implementation the token factory already deploys, then authorise the
-relayer. Both are handled by:
+```bash
+pnpm --filter regen-sydney exec node scripts/new-relayer.mjs
+```
+
+It writes the key to the gitignored `.env` and prints only the address. **Fund that address with a
+little ETH on Base** — it pays gas for every mint — and copy the key into Vercel as
+`RSUT_RELAYER_PRIVATE_KEY` for the deployed app.
+
+Then authorise it, from the token owner (`0x2687fe290b54d824c136Ceff2d5bD362Bc62019a`, whose key is
+`PRIVATE_KEY` in `packages/storage-evm/.env`):
 
 ```bash
 cd packages/storage-evm
-node scripts/rsut-upgrade.mjs --relayer 0x…            # dry run, signs nothing
-RSUT_OWNER_PRIVATE_KEY=0x… node scripts/rsut-upgrade.mjs --relayer 0x… --execute
+node scripts/rsut-upgrade.mjs --relayer 0x…             # dry run, signs nothing
+node scripts/rsut-upgrade.mjs --relayer 0x… --execute
 ```
 
-The dry run simulates the upgrade against live state and checks that name, symbol, supply, space
-id, owner and executor all survive it, that decay stays off, and that an authorised minter can
-actually mint. Note the owner still cannot mint directly afterwards — it can only grant that right
-to others, including itself.
+The dry run simulates against live state: that the target implementation carries the functions we
+need, that name, symbol, supply, space id, owner and executor survive the upgrade, that decay
+stays off, and that an authorised minter can mint.
 
-Until this happens, leave `RSUT_RELAYER_PRIVATE_KEY` blank. Grants are still recorded and votes
-still count — voting power reads the ledger, not the chain — and the mints sit at `pending`. The
-admin Status tab shows the relayer's address, balance and authorisation, and can retry the backlog
-once the authorisation lands.
+Two things worth knowing about the ownership model. The owner **cannot** mint directly, even after
+the upgrade — `mint` recognises only the executor and authorised minters, so the owner's power is
+to appoint minters (itself included), not to mint. And RSUT's proxy was originally deployed from a
+build predating `isAuthorizedMinter`, which is why the upgrade is needed at all; it now runs
+`0x02603dEf…08D9`, the same implementation the token factory deploys for every new space token.
+
+If the relayer is not set up, leave `RSUT_RELAYER_PRIVATE_KEY` blank. Grants are still recorded and
+votes still count — voting power reads the ledger, not the chain — and the mints sit at `pending`.
+The admin Status tab shows the relayer's address, balance and authorisation, and can retry the
+backlog once the authorisation lands.
 
 ## Admin
 

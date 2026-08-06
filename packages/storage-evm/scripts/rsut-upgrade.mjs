@@ -11,12 +11,14 @@
  *   node scripts/rsut-upgrade.mjs                 # dry run, touches nothing
  *   node scripts/rsut-upgrade.mjs --execute       # sign and send
  *
- * Execution needs RSUT_OWNER_PRIVATE_KEY (the key for the owner EOA below).
- * Pass --relayer 0x… to authorise a minter in the same run; it can also be done
- * later, since it is a separate transaction either way.
+ * Signing uses PRIVATE_KEY from this package's .env, the same key the other
+ * deploy and upgrade scripts here use; it must be the token owner. Pass
+ * --relayer 0x… to authorise a minter in the same run — a separate transaction
+ * either way, so it can equally be done later.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
+import dotenv from 'dotenv';
 import {
   createPublicClient,
   createWalletClient,
@@ -31,6 +33,8 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
+
+dotenv.config();
 
 const PROXY = '0xaacf3eb65badeebf3206c5d241b851c7c8fc2ac1';
 const EXPECTED_OWNER = '0x2687fe290b54d824c136Ceff2d5bD362Bc62019a';
@@ -68,7 +72,9 @@ const { values: opts } = parseArgs({
   options: {
     execute: { type: 'boolean', default: false },
     relayer: { type: 'string' },
-    rpc: { type: 'string', default: process.env.RPC_URL ?? 'https://mainnet.base.org' },
+    // publicnode rather than mainnet.base.org, whose rate limits are strict
+    // enough to break a run of a dozen simulated calls.
+    rpc: { type: 'string', default: process.env.RPC_URL ?? 'https://base-rpc.publicnode.com' },
   },
 });
 
@@ -269,9 +275,9 @@ if (!opts.execute) {
   process.exit(0);
 }
 
-const key = process.env.RSUT_OWNER_PRIVATE_KEY;
+const key = process.env.PRIVATE_KEY;
 if (!key) {
-  console.log('\n!! RSUT_OWNER_PRIVATE_KEY is not set.');
+  console.log('\n!! PRIVATE_KEY is not set in packages/storage-evm/.env');
   process.exit(1);
 }
 const account = privateKeyToAccount(key.startsWith('0x') ? key : `0x${key}`);
@@ -281,6 +287,14 @@ if (getAddress(account.address) !== getAddress(owner)) {
 }
 
 const wallet = createWalletClient({ account, chain: base, transport: http(opts.rpc) });
+
+const gas = await retry(() => publicClient.getBalance({ address: account.address }));
+console.log(`\nSigning as ${account.address}`);
+console.log(`  balance ${formatUnits(gas.value ?? 0n, 18)} ETH`);
+if ((gas.value ?? 0n) === 0n) {
+  console.log('  !! no ETH on Base to pay for gas. Stopping.');
+  process.exit(1);
+}
 
 if (currentImpl.toLowerCase() !== TARGET_IMPL.toLowerCase()) {
   console.log('\nSending upgradeToAndCall…');
@@ -303,12 +317,30 @@ if (relayer) {
   console.log(`  ${receipt.status} in block ${receipt.blockNumber}`);
 }
 
+// Reads right after a receipt can land on a node that has not caught up yet,
+// which reports the change as missing. Give it a few tries before believing it.
 console.log('\nVerifying on chain');
 const finalImplRaw = await retry(() => publicClient.getStorageAt({ address: PROXY, slot: IMPL_SLOT }));
 console.log(`  implementation   ${getAddress(`0x${finalImplRaw.value.slice(-40)}`)}`);
 console.log(`  total supply     ${formatUnits(await read('totalSupply'), decimals)} ${symbol}`);
 console.log(`  decayPercentage  ${await read('decayPercentage')}`);
+
 if (relayer) {
-  console.log(`  isAuthorizedMinter(${relayer})  ${await read('isAuthorizedMinter', [relayer])}`);
+  let authorised = false;
+  for (let i = 0; i < 10 && !authorised; i++) {
+    authorised = await read('isAuthorizedMinter', [relayer]);
+    if (!authorised) await sleep(2000);
+  }
+  console.log(`  isAuthorizedMinter(${relayer})  ${authorised}`);
+
+  const canMint = await simulate(relayer, 'mint', [relayer, 10n ** 18n]);
+  console.log(`  relayer can mint  ${canMint.ok ? 'yes' : `NO — ${canMint.reason}`}`);
+
+  const gasBalance = await retry(() => publicClient.getBalance({ address: relayer }));
+  const eth = formatUnits(gasBalance.value ?? 0n, 18);
+  console.log(`  relayer gas       ${eth} ETH`);
+  if ((gasBalance.value ?? 0n) === 0n) {
+    console.log('  !! fund the relayer with a little ETH on Base or every mint will fail');
+  }
 }
 console.log('\nDone.');
