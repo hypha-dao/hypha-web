@@ -67,37 +67,91 @@ DEFAULT_DB_URL=postgres://postgres:postgres@localhost:5432/regen \
   pnpm --filter regen-sydney test
 ```
 
-They run against that same Postgres rather than mocks, because the behaviour worth checking —
-grant idempotency, the one-open-round constraint, atomic ballot replacement — is enforced by the
-database. Each run parks the development data, creates its own people, projects and round, and
-puts everything back afterwards, so running it against a seeded database is safe.
+The campaign tests run against that same Postgres rather than mocks, because the behaviour worth
+checking — grant idempotency, the one-open-round constraint, atomic ballot replacement — is
+enforced by the database. Each run parks the development data, creates its own people, projects
+and round, and puts everything back afterwards, so running it against a seeded database is safe.
 
-## Checkout is deliberately unresolved
+Without a connection string those are skipped and only the suites that need nothing run — the
+Stripe webhook checks, which cover signature verification, replay windows and the unpaid-session
+case.
 
-The choice between Paddle and Stripe is still open, so nothing in the app depends on either.
-`src/server/payments/provider.ts` defines the contract — create a session, verify a webhook,
-return a normalised `PaymentEvent` — and there are three implementations behind
-`CAMPAIGN_PAYMENTS_PROVIDER`:
+## Checkout
+
+Stripe is the provider. It is reached through the adapter in
+`src/server/payments/provider.ts` — create a session, verify a webhook, return a normalised
+`PaymentEvent` — so the grant ledger, idempotency and minting never mention Stripe by name.
+`CAMPAIGN_PAYMENTS_PROVIDER` still selects between:
 
 | Value | Behaviour |
 | --- | --- |
-| `mock` | Redirects to `/checkout/mock`, which posts a self-signed webhook back. Exercises the real grant and mint path. |
-| `paddle` | Paddle Billing. Merchant of Record, so Paddle is the seller — worth checking against DGR receipting before committing. |
-| `stripe` | Stripe Checkout. Not Merchant of Record; Regen Sydney remains the seller. |
+| `stripe` | Stripe Checkout. Not Merchant of Record, so Regen Sydney stays the seller — which keeps DGR receipting straightforward. |
+| `mock` | Redirects to `/checkout/mock`, which posts a self-signed webhook back. Exercises the real grant and mint path with no Stripe account. |
+| `paddle` | Kept working but unused. Merchant of Record, which complicates DGR receipting. |
 
-Switching providers is an env change. The grant ledger, idempotency and minting are all
-downstream of the normalised event and do not care which one is live.
+### Connecting the Stripe sandbox
+
+1. In the Stripe dashboard, switch to a **sandbox** (or test mode) and copy the secret key from
+   Developers → API keys. It starts `sk_test_`.
+2. Get a webhook secret. Locally that means the Stripe CLI:
+
+   ```bash
+   stripe login
+   stripe listen --forward-to localhost:3002/api/webhooks/payments
+   ```
+
+   It prints a `whsec_…` for this session. Deployed, add an endpoint at
+   `https://<host>/api/webhooks/payments` for `checkout.session.completed`,
+   `checkout.session.async_payment_succeeded` and `charge.refunded`, and copy its signing secret.
+
+3. Put both in `.env` alongside `CAMPAIGN_PAYMENTS_PROVIDER=stripe`.
+4. Check the wiring, with the dev server running:
+
+   ```bash
+   pnpm --filter regen-sydney stripe:check
+   ```
+
+   It refuses a live key, opens a throwaway A$25 session against the real Stripe API, replays a
+   correctly signed webhook at the local app, and confirms a tampered one is rejected.
+
+5. Contribute through the UI and pay with `4242 4242 4242 4242`, any future expiry and any CVC.
+   The grant appears under Admin → Contributions.
+
+The admin Status tab reports whether the key in use is `test` or `live`, so a real charge is never
+a surprise.
+
+Two details worth knowing. `checkout.session.completed` fires when the customer finishes the form,
+which for delayed methods is before the money moves — so an unpaid session is ignored and the
+grant waits for `checkout.session.async_payment_succeeded`. And the idempotency key is
+`stripe:<checkout session id>`, so however often Stripe retries, one checkout yields one grant and
+at most one mint.
 
 ## Relayer
 
-Minting needs a hot wallet authorised by RSUT's owner. The RS Core Team executor
-(`0xEc5106fb6eA212305e487a9114c958ffE90E9a7a`) must call
-`batchSetAuthorizedMinters([relayer], [true])` once, through a Hypha proposal.
+Minting needs a hot wallet that RSUT recognises. `mint` is gated on
+`msg.sender == executor || isAuthorizedMinter[msg.sender]`, and RSUT's proxy is still running a
+build from before `isAuthorizedMinter` existed — so today the only minter is the RS Core Team
+executor (`0xEc5106fb6eA212305e487a9114c958ffE90E9a7a`), which acts only on a passed proposal.
 
-Until then, leave `RSUT_RELAYER_PRIVATE_KEY` blank. Grants are still recorded and votes still
-count — voting power reads the ledger, not the chain — and the mints sit at `pending`. The admin
-Status tab shows the relayer's address, balance and authorisation, and can retry the backlog once
-the authorisation lands.
+Two transactions from the token owner (`0x2687fe290b54d824c136Ceff2d5bD362Bc62019a`) settle it:
+upgrade the proxy to the implementation the token factory already deploys, then authorise the
+relayer. Both are handled by:
+
+```bash
+cd packages/storage-evm
+node scripts/rsut-upgrade.mjs --relayer 0x…            # dry run, signs nothing
+RSUT_OWNER_PRIVATE_KEY=0x… node scripts/rsut-upgrade.mjs --relayer 0x… --execute
+```
+
+The dry run simulates the upgrade against live state and checks that name, symbol, supply, space
+id, owner and executor all survive it, that decay stays off, and that an authorised minter can
+actually mint. Note the owner still cannot mint directly afterwards — it can only grant that right
+to others, including itself.
+
+Until this happens, leave `RSUT_RELAYER_PRIVATE_KEY` blank. Grants are still recorded and votes
+still count — voting power reads the ledger, not the chain — and the mints sit at `pending`. The
+admin Status tab shows the relayer's address, balance and authorisation, and can retry the backlog
+once the authorisation lands.
 
 ## Admin
 

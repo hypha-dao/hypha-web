@@ -14,12 +14,15 @@ import { nonceManager, privateKeyToAccount } from 'viem/accounts';
 import { getRelayerConfig } from '../config';
 
 /**
- * RSUT lives at 0xaacf…2ac1 on Base and is a Hypha `DecayingSpaceToken` owned
- * by the RS Core Team executor. `mint` is gated on
- * `msg.sender == executor || isAuthorizedMinter[msg.sender]`, so this relayer
- * only works after the executor has run `batchSetAuthorizedMinters` for its
- * address once. Until then every mint fails with `!executor` and the grant
- * stays retryable — the ledger is unaffected.
+ * RSUT lives at 0xaacf…2ac1 on Base — a Hypha space token for space 889, whose
+ * `mint` is gated on `msg.sender == executor || isAuthorizedMinter[msg.sender]`.
+ *
+ * The proxy was deployed from a build that predates `isAuthorizedMinter`, so
+ * until it is upgraded the only minter is the RS Core Team executor, which acts
+ * only on a passed governance proposal. Two owner transactions fix that —
+ * `packages/storage-evm/scripts/rsut-upgrade.mjs` performs and verifies them.
+ * Until then every mint fails and the grant stays retryable: the ledger records
+ * the voting power either way, so nothing is lost by minting late.
  */
 const rsutAbi = [
   {

@@ -48,6 +48,11 @@ export type WebhookResult =
 
 export interface PaymentProvider {
   readonly id: PaymentProviderId;
+  /**
+   * Sandbox or production, where the provider distinguishes them. Surfaced on
+   * the admin screen so nobody has to guess whether a contribution was real.
+   */
+  readonly mode?: 'test' | 'live' | 'unknown';
   /** False when the provider is selected but its credentials are missing. */
   isConfigured(): boolean;
   createCheckout(input: CreateCheckoutInput): Promise<CheckoutSession>;

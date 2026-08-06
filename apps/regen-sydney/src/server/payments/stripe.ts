@@ -7,9 +7,13 @@ import {
   PaymentProviderError,
   type CreateCheckoutInput,
   type CheckoutSession,
+  type PaymentEvent,
   type PaymentProvider,
   type WebhookResult,
 } from './provider';
+
+/** Stripe rejects events older than this to blunt replay attempts. */
+const SIGNATURE_TOLERANCE_SECONDS = 60 * 5;
 
 /**
  * Stripe Checkout adapter, written against the REST API directly so the app
@@ -23,6 +27,13 @@ export class StripePaymentProvider implements PaymentProvider {
 
   isConfigured(): boolean {
     return Boolean(stripeConfig.secretKey && stripeConfig.webhookSecret);
+  }
+
+  /** Test keys are prefixed `sk_test_`; live ones `sk_live_`. */
+  get mode(): 'test' | 'live' | 'unknown' {
+    if (stripeConfig.secretKey.startsWith('sk_test_')) return 'test';
+    if (stripeConfig.secretKey.startsWith('sk_live_')) return 'live';
+    return 'unknown';
   }
 
   private assertConfigured() {
@@ -49,6 +60,11 @@ export class StripePaymentProvider implements PaymentProvider {
       'line_items[0][price_data][unit_amount]': String(input.amountCents),
       'line_items[0][price_data][product_data][name]':
         'Regen Sydney community fund contribution',
+      // Carried onto the PaymentIntent and charge, so a refund or a dashboard
+      // lookup can still be traced back to the contributor.
+      'payment_intent_data[metadata][reference]': input.reference,
+      'payment_intent_data[metadata][personId]': String(input.personId),
+      submit_type: 'donate',
     });
     if (input.email) form.set('customer_email', input.email);
 
@@ -59,6 +75,10 @@ export class StripePaymentProvider implements PaymentProvider {
         headers: {
           Authorization: `Bearer ${stripeConfig.secretKey}`,
           'Content-Type': 'application/x-www-form-urlencoded',
+          // Our reference is generated per checkout attempt, so a retried
+          // request reuses the session Stripe already made rather than opening
+          // a second one against the same contribution.
+          'Idempotency-Key': input.reference,
         },
         body: form,
       },
@@ -94,30 +114,40 @@ export class StripePaymentProvider implements PaymentProvider {
       return { ok: false, reason: 'Stripe webhook secret is not configured' };
     }
 
-    // Stripe-Signature: t=1234567890,v1=<hmac of "t.rawBody">
+    // Stripe-Signature: t=1234567890,v1=<hmac of "t.rawBody">[,v1=<another>]
+    // A second v1 appears while a signing secret is being rotated, so collect
+    // every candidate rather than keeping the last one.
     const header = headers.get('stripe-signature') ?? '';
-    const parts = Object.fromEntries(
-      header
-        .split(',')
-        .map((chunk) => chunk.split('='))
-        .filter((pair): pair is [string, string] => pair.length === 2),
-    );
+    let timestamp = '';
+    const signatures: string[] = [];
+    for (const chunk of header.split(',')) {
+      const separator = chunk.indexOf('=');
+      if (separator === -1) continue;
+      const key = chunk.slice(0, separator).trim();
+      const value = chunk.slice(separator + 1).trim();
+      if (key === 't') timestamp = value;
+      else if (key === 'v1') signatures.push(value);
+    }
 
-    const timestamp = parts.t;
-    const signature = parts.v1;
-    if (!timestamp || !signature) {
+    if (!timestamp || signatures.length === 0) {
       return { ok: false, reason: 'Missing Stripe-Signature header' };
+    }
+
+    const age = Math.abs(Date.now() / 1000 - Number(timestamp));
+    if (!Number.isFinite(age) || age > SIGNATURE_TOLERANCE_SECONDS) {
+      return { ok: false, reason: 'Signature timestamp outside tolerance' };
     }
 
     const expected = createHmac('sha256', stripeConfig.webhookSecret)
       .update(`${timestamp}.${rawBody}`, 'utf8')
       .digest('hex');
-
-    const given = Buffer.from(signature, 'utf8');
     const want = Buffer.from(expected, 'utf8');
-    if (given.length !== want.length || !timingSafeEqual(given, want)) {
-      return { ok: false, reason: 'Bad signature' };
-    }
+
+    const matches = signatures.some((candidate) => {
+      const given = Buffer.from(candidate, 'utf8');
+      return given.length === want.length && timingSafeEqual(given, want);
+    });
+    if (!matches) return { ok: false, reason: 'Bad signature' };
 
     let payload: StripeEvent;
     try {
@@ -126,15 +156,27 @@ export class StripePaymentProvider implements PaymentProvider {
       return { ok: false, reason: 'Malformed JSON' };
     }
 
-    const type =
-      payload.type === 'checkout.session.completed'
-        ? ('payment.completed' as const)
-        : payload.type === 'charge.refunded'
-        ? ('payment.refunded' as const)
-        : null;
-
     const object = payload.data?.object;
-    if (!type || !object?.id) return { ok: true, event: null };
+    if (!object?.id) return { ok: true, event: null };
+
+    // `checkout.session.completed` fires as soon as the customer finishes the
+    // form, which for delayed methods (BECS direct debit, bank transfer) is
+    // before the money arrives. Granting RSUT then would hand out voting power
+    // for a payment that can still fail, so an unpaid session is left for the
+    // async_payment_succeeded event that follows it.
+    let type: PaymentEvent['type'] | null = null;
+    if (payload.type === 'checkout.session.completed') {
+      if (object.payment_status !== 'paid') {
+        return { ok: true, event: null };
+      }
+      type = 'payment.completed';
+    } else if (payload.type === 'checkout.session.async_payment_succeeded') {
+      type = 'payment.completed';
+    } else if (payload.type === 'charge.refunded') {
+      type = 'payment.refunded';
+    }
+
+    if (!type) return { ok: true, event: null };
 
     return {
       ok: true,
@@ -161,6 +203,7 @@ type StripeEvent = {
       amount?: number;
       amount_total?: number;
       currency?: string;
+      payment_status?: string;
       client_reference_id?: string;
       customer_email?: string;
       customer_details?: { email?: string };

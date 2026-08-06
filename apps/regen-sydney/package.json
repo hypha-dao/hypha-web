@@ -10,6 +10,7 @@
     "lint": "next lint",
     "check-types": "tsc --noEmit",
     "seed": "tsx src/server/campaign/seed.ts",
+    "stripe:check": "node scripts/stripe-check.mjs",
     "postinstall": "if [ ! -f .env ] && [ -z \"$CI\" ]; then cp .env.template .env; fi",
     "test": "vitest run"
   },

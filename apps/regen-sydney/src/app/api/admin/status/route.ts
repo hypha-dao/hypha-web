@@ -28,6 +28,7 @@ export async function GET(request: Request) {
       payments: {
         provider: getPaymentProviderId(),
         configured: provider.isConfigured(),
+        mode: provider.mode ?? null,
       },
       economics: {
         joinBonusRsut: campaignConfig.joinBonusRsut,
