@@ -111,6 +111,11 @@ type CampaignContextValue = {
 
 const CampaignContext = createContext<CampaignContextValue | null>(null);
 
+/** Server-supplied messages are written for members, so prefer them. */
+function describe(caught: unknown, fallback: string): string {
+  return caught instanceof ApiRequestError ? caught.message : fallback;
+}
+
 function toCycleView(
   cycle: CycleDto | null,
   totals: CampaignStateDto['totals'],
@@ -196,7 +201,14 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
             signedInRef.current = privyUser.id;
             setJoinDismissed(false);
           }
-          await establishSession();
+          try {
+            await establishSession();
+          } catch (caught) {
+            // The round, the projects and the tally are all public. Letting a
+            // failed sign-in abort the load as well turns one broken thing
+            // into a page that claims there is no round at all.
+            if (!cancelled) setError(describe(caught, 'Could not sign you in'));
+          }
         } else {
           signedInRef.current = null;
           setViewer(null);
@@ -205,11 +217,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         await loadPublicState();
       } catch (caught) {
         if (!cancelled) {
-          setError(
-            caught instanceof ApiRequestError
-              ? caught.message
-              : 'Could not load the campaign',
-          );
+          setError(describe(caught, 'Could not load the campaign'));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -229,11 +237,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       }
       await loadPublicState();
     } catch (caught) {
-      setError(
-        caught instanceof ApiRequestError
-          ? caught.message
-          : 'Could not refresh the campaign',
-      );
+      setError(describe(caught, 'Could not refresh the campaign'));
     }
   }, [authenticated, establishSession, loadPublicState]);
 
@@ -350,11 +354,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       await loadPublicState();
       return true;
     } catch (caught) {
-      setError(
-        caught instanceof ApiRequestError
-          ? caught.message
-          : 'Could not save your votes',
-      );
+      setError(describe(caught, 'Could not save your votes'));
       return false;
     } finally {
       setSaving(false);
