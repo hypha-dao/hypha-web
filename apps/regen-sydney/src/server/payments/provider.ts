@@ -14,7 +14,7 @@ export type CreateCheckoutInput = {
   currency: 'AUD';
   /** Our own id for the payment, echoed back by the provider's webhook. */
   reference: string;
-  personId: number;
+  memberId: number;
   email: string | null;
   successUrl: string;
   cancelUrl: string;
@@ -70,7 +70,7 @@ export class PaymentProviderError extends Error {
   }
 }
 
-export function newReference(personId: number): string {
+export function newReference(memberId: number): string {
   const random = Math.random().toString(36).slice(2, 10);
-  return `rs_${personId}_${Date.now().toString(36)}_${random}`;
+  return `rs_${memberId}_${Date.now().toString(36)}_${random}`;
 }

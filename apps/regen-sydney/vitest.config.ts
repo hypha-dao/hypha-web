@@ -6,13 +6,11 @@ import { defineConfig } from 'vitest/config';
  * nothing — the Stripe webhook checks — runnable on a bare checkout, rather
  * than failing the whole run on a missing container.
  */
-const hasDatabase = Boolean(
-  process.env.BRANCH_DB_URL || process.env.DEFAULT_DB_URL,
-);
+const hasDatabase = Boolean(process.env.CAMPAIGN_DB_URL);
 
 if (!hasDatabase) {
   console.warn(
-    '[vitest] No BRANCH_DB_URL / DEFAULT_DB_URL — skipping the campaign integration tests.',
+    '[vitest] No CAMPAIGN_DB_URL — skipping the campaign integration tests.',
   );
 }
 

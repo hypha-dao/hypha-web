@@ -3,11 +3,11 @@ import 'server-only';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import {
   campaignGrants,
+  campaignMembers,
   db,
-  people,
   type CampaignGrant,
-  type Person,
-} from '@hypha-platform/storage-postgres';
+  type CampaignMember,
+} from '../db';
 
 import { campaignConfig } from '../config';
 import { mintRsut } from '../chain/rsut';
@@ -21,7 +21,7 @@ import { mintRsut } from '../chain/rsut';
  */
 
 export type GrantInput = {
-  personId: number;
+  memberId: number;
   kind: 'join' | 'contribution' | 'manual';
   /** Must be stable for a given real-world event: replaying it is a no-op. */
   idempotencyKey: string;
@@ -54,14 +54,14 @@ function toNumber(value: string | number | null | undefined): number {
 export async function recordGrant(
   input: GrantInput,
 ): Promise<RecordGrantResult> {
-  const person = await db.query.people.findFirst({
-    where: eq(people.id, input.personId),
+  const member = await db.query.campaignMembers.findFirst({
+    where: eq(campaignMembers.id, input.memberId),
   });
 
   const inserted = await db
     .insert(campaignGrants)
     .values({
-      personId: input.personId,
+      memberId: input.memberId,
       cycleId: input.cycleId ?? null,
       kind: input.kind,
       idempotencyKey: input.idempotencyKey,
@@ -70,7 +70,7 @@ export async function recordGrant(
       paymentProvider: input.paymentProvider ?? null,
       paymentReference: input.paymentReference ?? null,
       paymentStatus: input.paymentStatus ?? 'settled',
-      mintToAddress: person?.address ?? null,
+      mintToAddress: member?.walletAddress ?? null,
       mintStatus: 'pending',
       note: input.note ?? null,
     })
@@ -95,7 +95,7 @@ export async function recordGrant(
 export async function settleMint(grant: CampaignGrant): Promise<CampaignGrant> {
   if (grant.mintStatus === 'confirmed') return grant;
 
-  const to = grant.mintToAddress ?? (await resolveWallet(grant.personId));
+  const to = grant.mintToAddress ?? (await resolveWallet(grant.memberId));
   if (!to) {
     return updateMint(grant.id, {
       mintStatus: 'skipped',
@@ -129,11 +129,11 @@ export async function settleMint(grant: CampaignGrant): Promise<CampaignGrant> {
   }
 }
 
-async function resolveWallet(personId: number): Promise<string | null> {
-  const person = await db.query.people.findFirst({
-    where: eq(people.id, personId),
+async function resolveWallet(memberId: number): Promise<string | null> {
+  const member = await db.query.campaignMembers.findFirst({
+    where: eq(campaignMembers.id, memberId),
   });
-  return person?.address ?? null;
+  return member?.walletAddress ?? null;
 }
 
 async function updateMint(
@@ -160,10 +160,10 @@ async function updateMint(
 }
 
 /**
- * Grants the first-login bonus. The idempotency key is derived from the person
+ * Grants the first-login bonus. The idempotency key is derived from the member
  * alone, so concurrent first requests collapse to one grant.
  */
-export async function grantJoinBonus(person: Person): Promise<{
+export async function grantJoinBonus(member: CampaignMember): Promise<{
   grant: CampaignGrant | null;
   joinedNow: boolean;
 }> {
@@ -171,9 +171,9 @@ export async function grantJoinBonus(person: Person): Promise<{
   if (!(amount > 0)) return { grant: null, joinedNow: false };
 
   const { grant, created } = await recordGrant({
-    personId: person.id,
+    memberId: member.id,
     kind: 'join',
-    idempotencyKey: `join:${person.id}`,
+    idempotencyKey: `join:${member.id}`,
     rsut: amount,
     note: 'Joining bonus',
   });
@@ -184,8 +184,8 @@ export async function grantJoinBonus(person: Person): Promise<{
   return { grant: settled, joinedNow: true };
 }
 
-/** Voting power: every settled grant a person holds, in RSUT. */
-export async function getVotingPower(personId: number): Promise<number> {
+/** Voting power: every settled grant a member holds, in RSUT. */
+export async function getVotingPower(memberId: number): Promise<number> {
   const [row] = await db
     .select({
       total: sql<string>`coalesce(sum(${campaignGrants.rsut}), 0)`,
@@ -193,7 +193,7 @@ export async function getVotingPower(personId: number): Promise<number> {
     .from(campaignGrants)
     .where(
       and(
-        eq(campaignGrants.personId, personId),
+        eq(campaignGrants.memberId, memberId),
         inArray(campaignGrants.paymentStatus, ['settled', 'pending']),
       ),
     );
@@ -202,10 +202,10 @@ export async function getVotingPower(personId: number): Promise<number> {
 }
 
 export async function getLatestGrant(
-  personId: number,
+  memberId: number,
 ): Promise<CampaignGrant | null> {
   const grant = await db.query.campaignGrants.findFirst({
-    where: eq(campaignGrants.personId, personId),
+    where: eq(campaignGrants.memberId, memberId),
     orderBy: (grants, { desc }) => [desc(grants.createdAt)],
   });
   return grant ?? null;

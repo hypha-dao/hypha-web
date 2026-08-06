@@ -75,7 +75,7 @@ export type CampaignStateDto = {
 };
 
 export type ViewerDto = {
-  personId: number;
+  memberId: number;
   email: string | null;
   name: string | null;
   walletAddress: string | null;
@@ -105,6 +105,11 @@ export type ContributionDto = {
   mintStatus: 'pending' | 'sent' | 'confirmed' | 'failed' | 'skipped';
   mintTxHash: string | null;
   kind: 'join' | 'contribution' | 'manual';
+  /**
+   * Set when this contributor also has a Hypha profile, matched read-only on
+   * their wallet. Null is the normal case and means nothing is wrong.
+   */
+  hypha: { name: string | null; url: string } | null;
 };
 
 export type PayoutRowDto = {

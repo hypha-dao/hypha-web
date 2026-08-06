@@ -69,7 +69,7 @@ export class PaddlePaymentProvider implements PaymentProvider {
         items: [item],
         currency_code: input.currency,
         collection_mode: 'automatic',
-        custom_data: { reference: input.reference, personId: input.personId },
+        custom_data: { reference: input.reference, memberId: input.memberId },
         ...(input.email ? { customer: { email: input.email } } : {}),
         checkout: { url: input.successUrl },
       }),

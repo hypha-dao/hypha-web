@@ -69,13 +69,26 @@ if (session?.id) {
 }
 
 console.log('\nWrites that would let me finish the setup unaided');
-await probe(
+const endpoint = await probe(
   'create a webhook endpoint',
   'POST',
   'webhook_endpoints',
   new URLSearchParams({
     url: 'https://example.org/api/webhooks/payments',
     'enabled_events[0]': 'checkout.session.completed',
-    description: 'permission probe — safe to delete',
+    description: 'permission probe — deleted immediately',
   }),
 );
+
+// A probe that leaves debris behind is worse than no probe: a stray endpoint
+// pointing at example.org would sit in the dashboard collecting failures.
+if (endpoint?.id) {
+  const removed = await probe(
+    `remove the probe endpoint ${endpoint.id}`,
+    'DELETE',
+    `webhook_endpoints/${endpoint.id}`,
+  );
+  if (!removed) {
+    console.log(`         !! delete ${endpoint.id} by hand — it points at example.org`);
+  }
+}

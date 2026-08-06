@@ -9,7 +9,7 @@ import {
   campaignVotes,
   db,
   type CampaignCycle,
-} from '@hypha-platform/storage-postgres';
+} from '../db';
 
 import type { CycleDto } from '@rs/lib/campaign-types';
 
@@ -78,7 +78,7 @@ export async function getCycleTotals(cycleId: number): Promise<{
   const [row] = await db
     .select({
       total: sql<string>`coalesce(sum(${campaignGrants.audCents}), 0)`,
-      contributors: sql<string>`count(distinct ${campaignGrants.personId})`,
+      contributors: sql<string>`count(distinct ${campaignGrants.memberId})`,
     })
     .from(campaignGrants)
     .where(

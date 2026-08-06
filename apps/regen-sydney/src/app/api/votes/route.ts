@@ -36,13 +36,13 @@ export async function PUT(request: Request) {
 
     const allocations = await setAllocations({
       cycle,
-      personId: viewer.person.id,
+      memberId: viewer.member.id,
       allocations: body.allocations,
     });
 
     const [tally, votingPower] = await Promise.all([
-      getTally(cycle, viewer.person.id),
-      getVotingPower(viewer.person.id),
+      getTally(cycle, viewer.member.id),
+      getVotingPower(viewer.member.id),
     ]);
 
     const allocated = Object.values(allocations).reduce(

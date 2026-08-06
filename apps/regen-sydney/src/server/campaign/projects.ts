@@ -6,7 +6,7 @@ import {
   campaignVotes,
   db,
   type CampaignProject,
-} from '@hypha-platform/storage-postgres';
+} from '../db';
 
 import type { CampaignProjectDto, ProjectGroup } from '@rs/lib/campaign-types';
 

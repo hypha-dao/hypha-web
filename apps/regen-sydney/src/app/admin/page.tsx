@@ -606,6 +606,16 @@ function ContributionsTab() {
                   <span className="rs-ui text-xs text-[var(--rs-ink-faint)]">
                     {row.email}
                   </span>
+                  {row.hypha ? (
+                    <a
+                      href={row.hypha.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rs-ui mt-0.5 block text-xs text-[var(--rs-ink-faint)] underline"
+                    >
+                      Hypha profile
+                    </a>
+                  ) : null}
                 </td>
                 <td className="rs-ui rs-tabular py-3.5 text-sm text-[var(--rs-ink-soft)]">
                   {row.at.slice(0, 10)}

@@ -1,12 +1,13 @@
 /**
  * Integration tests for the campaign domain, run against a real Postgres.
  *
- *   DEFAULT_DB_URL=postgres://postgres:postgres@localhost:5432/regen \
+ *   CAMPAIGN_DB_URL=postgres://postgres:postgres@localhost:55499/regen_sydney \
  *     pnpm --filter regen-sydney test
  *
- * See the README for the local Postgres + Neon proxy containers. Every test
- * creates its own people, projects and round, and removes them afterwards, so
- * it is safe to run against a seeded development database.
+ * That must be the campaign's own database — see the README for the local
+ * Postgres and Neon proxy containers. Every test creates its own members,
+ * projects and round and removes them afterwards, so it is safe to run against
+ * a seeded development database.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -14,14 +15,14 @@ import { eq, gt, inArray } from 'drizzle-orm';
 import {
   campaignCycles,
   campaignGrants,
+  campaignMembers,
   campaignPayouts,
   campaignProjects,
   campaignVotes,
   db,
-  people,
   type CampaignCycle,
-  type Person,
-} from '@hypha-platform/storage-postgres';
+  type CampaignMember,
+} from '../../db';
 
 import { getVotingPower, recordGrant } from '../grants';
 import { getAllocations, getTally, setAllocations } from '../voting';
@@ -36,8 +37,8 @@ import { newReference } from '../../payments/provider';
 
 const run = `t${Date.now()}`;
 
-let alice: Person;
-let bob: Person;
+let alice: CampaignMember;
+let bob: CampaignMember;
 let projectA: number;
 let projectB: number;
 let cycle: CampaignCycle;
@@ -54,17 +55,16 @@ let parkedCycleIds: number[] = [];
 /** Seeded projects hidden for the duration, restored afterwards. */
 let hiddenProjectIds: number[] = [];
 
-async function makePerson(name: string): Promise<Person> {
-  const [person] = await db
-    .insert(people)
+async function makeMember(name: string): Promise<CampaignMember> {
+  const [member] = await db
+    .insert(campaignMembers)
     .values({
       sub: `${run}-${name}`,
-      slug: `${run}-${name}`,
       name,
       email: `${run}-${name}@example.test`,
     })
     .returning();
-  return person!;
+  return member!;
 }
 
 async function makeProject(slug: string): Promise<number> {
@@ -108,8 +108,8 @@ beforeAll(async () => {
       .where(inArray(campaignProjects.id, hiddenProjectIds));
   }
 
-  alice = await makePerson('alice');
-  bob = await makePerson('bob');
+  alice = await makeMember('alice');
+  bob = await makeMember('bob');
   projectA = await makeProject('project-a');
   projectB = await makeProject('project-b');
 
@@ -136,7 +136,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const personIds = [alice, bob].filter(Boolean).map((p) => p.id);
+  const memberIds = [alice, bob].filter(Boolean).map((p) => p.id);
   const projectIds = [projectA, projectB].filter(Boolean);
 
   // Anything numbered above the baseline is ours, including rounds a test
@@ -156,10 +156,10 @@ afterAll(async () => {
       .delete(campaignVotes)
       .where(inArray(campaignVotes.cycleId, cycleIds));
   }
-  if (personIds.length > 0) {
+  if (memberIds.length > 0) {
     await db
       .delete(campaignGrants)
-      .where(inArray(campaignGrants.personId, personIds));
+      .where(inArray(campaignGrants.memberId, memberIds));
   }
   if (cycleIds.length > 0) {
     await db.delete(campaignCycles).where(inArray(campaignCycles.id, cycleIds));
@@ -169,8 +169,10 @@ afterAll(async () => {
       .delete(campaignProjects)
       .where(inArray(campaignProjects.id, projectIds));
   }
-  if (personIds.length > 0) {
-    await db.delete(people).where(inArray(people.id, personIds));
+  if (memberIds.length > 0) {
+    await db
+      .delete(campaignMembers)
+      .where(inArray(campaignMembers.id, memberIds));
   }
 
   // Put the development data back the way we found it.
@@ -192,7 +194,7 @@ describe('grants', () => {
   it('grants the joining bonus once, however many times it is replayed', async () => {
     const key = `join:${alice.id}`;
     const first = await recordGrant({
-      personId: alice.id,
+      memberId: alice.id,
       kind: 'join',
       idempotencyKey: key,
       rsut: 50,
@@ -200,7 +202,7 @@ describe('grants', () => {
     expect(first.created).toBe(true);
 
     const second = await recordGrant({
-      personId: alice.id,
+      memberId: alice.id,
       kind: 'join',
       idempotencyKey: key,
       rsut: 50,
@@ -253,7 +255,7 @@ describe('grants', () => {
 describe('voting', () => {
   beforeAll(async () => {
     await recordGrant({
-      personId: bob.id,
+      memberId: bob.id,
       kind: 'contribution',
       idempotencyKey: `bob:${run}`,
       rsut: 30,
@@ -266,7 +268,7 @@ describe('voting', () => {
     await expect(
       setAllocations({
         cycle,
-        personId: bob.id,
+        memberId: bob.id,
         allocations: [{ projectId: projectA, weight: 500 }],
       }),
     ).rejects.toThrow();
@@ -275,7 +277,7 @@ describe('voting', () => {
   it('replaces the ballot rather than adding to it', async () => {
     await setAllocations({
       cycle,
-      personId: alice.id,
+      memberId: alice.id,
       allocations: [
         { projectId: projectA, weight: 100 },
         { projectId: projectB, weight: 70 },
@@ -288,7 +290,7 @@ describe('voting', () => {
 
     await setAllocations({
       cycle,
-      personId: alice.id,
+      memberId: alice.id,
       allocations: [{ projectId: projectA, weight: 170 }],
     });
     expect(await getAllocations(cycleId, alice.id)).toEqual({
@@ -299,7 +301,7 @@ describe('voting', () => {
   it('tallies pro-rata and lists projects that have no votes yet', async () => {
     await setAllocations({
       cycle,
-      personId: bob.id,
+      memberId: bob.id,
       allocations: [{ projectId: projectB, weight: 30 }],
     });
 

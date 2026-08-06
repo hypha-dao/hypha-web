@@ -7,7 +7,7 @@ import {
   campaignVotes,
   db,
   type CampaignCycle,
-} from '@hypha-platform/storage-postgres';
+} from '../db';
 
 import type { TallyRowDto } from '@rs/lib/campaign-types';
 
@@ -32,7 +32,7 @@ export type Allocation = { projectId: number; weight: number };
 
 export async function getAllocations(
   cycleId: number,
-  personId: number,
+  memberId: number,
 ): Promise<Record<number, number>> {
   const rows = await db
     .select({
@@ -43,7 +43,7 @@ export async function getAllocations(
     .where(
       and(
         eq(campaignVotes.cycleId, cycleId),
-        eq(campaignVotes.personId, personId),
+        eq(campaignVotes.memberId, memberId),
       ),
     );
 
@@ -55,16 +55,16 @@ export async function getAllocations(
 }
 
 /**
- * Replaces a person's whole ballot for the round in one transaction. Sending
+ * Replaces a member's whole ballot for the round in one transaction. Sending
  * the complete allocation rather than deltas means a dropped request can never
  * leave a half-applied ballot behind.
  */
 export async function setAllocations(input: {
   cycle: CampaignCycle;
-  personId: number;
+  memberId: number;
   allocations: Allocation[];
 }): Promise<Record<number, number>> {
-  const { cycle, personId } = input;
+  const { cycle, memberId } = input;
 
   if (cycle.status !== 'open') {
     throw new VotingError(409, 'This round has closed');
@@ -88,7 +88,7 @@ export async function setAllocations(input: {
     seen.add(entry.projectId);
   }
 
-  const power = await getVotingPower(personId);
+  const power = await getVotingPower(memberId);
   const total = cleaned.reduce((sum, entry) => sum + entry.weight, 0);
   // A cent of slack absorbs float noise from the browser without letting
   // anyone meaningfully overspend.
@@ -121,7 +121,7 @@ export async function setAllocations(input: {
       .where(
         and(
           eq(campaignVotes.cycleId, cycle.id),
-          eq(campaignVotes.personId, personId),
+          eq(campaignVotes.memberId, memberId),
         ),
       );
 
@@ -129,7 +129,7 @@ export async function setAllocations(input: {
       await tx.insert(campaignVotes).values(
         cleaned.map((entry) => ({
           cycleId: cycle.id,
-          personId,
+          memberId,
           projectId: entry.projectId,
           weight: entry.weight.toFixed(6),
         })),
@@ -154,12 +154,12 @@ export type Tally = {
 };
 
 /**
- * Live tally for a round. `personId` narrows the `yourVotes` column; the
+ * Live tally for a round. `memberId` narrows the `yourVotes` column; the
  * public shape is identical so an anonymous visitor sees the same standings.
  */
 export async function getTally(
   cycle: CampaignCycle,
-  personId?: number | null,
+  memberId?: number | null,
 ): Promise<Tally> {
   const [totalsRow, perProject, mine] = await Promise.all([
     getCycleTotals(cycle.id),
@@ -180,8 +180,8 @@ export async function getTally(
       )
       .where(eq(campaignProjects.active, true))
       .groupBy(campaignProjects.id),
-    personId
-      ? getAllocations(cycle.id, personId)
+    memberId
+      ? getAllocations(cycle.id, memberId)
       : Promise.resolve({} as Record<number, number>),
   ]);
 

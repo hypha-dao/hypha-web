@@ -1,16 +1,13 @@
 import 'server-only';
 
 import { desc, eq } from 'drizzle-orm';
-import {
-  campaignGrants,
-  db,
-  people,
-  type CampaignGrant,
-} from '@hypha-platform/storage-postgres';
+
+import { campaignGrants, campaignMembers, db, type CampaignGrant } from '../db';
 
 import type { ContributionDto } from '@rs/lib/campaign-types';
 
 import { campaignConfig } from '../config';
+import { findHyphaProfiles } from '../hypha-profiles';
 import { getOpenCycle } from './cycles';
 import { numeric, recordGrant, settleMint } from './grants';
 import type { PaymentEvent } from '../payments';
@@ -21,7 +18,7 @@ import type { PaymentEvent } from '../payments';
  * The idempotency key is `provider:providerReference`, so a webhook Paddle or
  * Stripe retries five times still produces exactly one grant and at most one
  * mint. The reference we generated at checkout is only used to find the
- * person — it is never the uniqueness key, because a provider can legitimately
+ * member — it is never the uniqueness key, because a provider can legitimately
  * emit several events for one checkout.
  */
 export async function applyPaymentEvent(
@@ -35,19 +32,21 @@ export async function applyPaymentEvent(
     return { handled: false, reason: 'Zero amount' };
   }
 
-  const personId = personIdFromReference(event.reference);
-  const person = personId
-    ? await db.query.people.findFirst({ where: eq(people.id, personId) })
+  const memberId = memberIdFromReference(event.reference);
+  const member = memberId
+    ? await db.query.campaignMembers.findFirst({
+        where: eq(campaignMembers.id, memberId),
+      })
     : event.email
-    ? await db.query.people.findFirst({
-        where: eq(people.email, event.email.toLowerCase()),
+    ? await db.query.campaignMembers.findFirst({
+        where: eq(campaignMembers.email, event.email.toLowerCase()),
       })
     : null;
 
-  if (!person) {
+  if (!member) {
     return {
       handled: false,
-      reason: `No person for reference ${event.reference ?? '(none)'}`,
+      reason: `No member for reference ${event.reference ?? '(none)'}`,
     };
   }
 
@@ -55,7 +54,7 @@ export async function applyPaymentEvent(
   const rsut = (event.amountCents / 100) * campaignConfig.rsutPerAud;
 
   const { grant, created } = await recordGrant({
-    personId: person.id,
+    memberId: member.id,
     kind: 'contribution',
     idempotencyKey: `${provider}:${event.providerReference}`,
     rsut,
@@ -72,8 +71,8 @@ export async function applyPaymentEvent(
   return { handled: true };
 }
 
-/** Checkout references are minted as `rs_<personId>_<time>_<random>`. */
-function personIdFromReference(reference: string | null): number | null {
+/** Checkout references are minted as `rs_<memberId>_<time>_<random>`. */
+function memberIdFromReference(reference: string | null): number | null {
   if (!reference) return null;
   const match = /^rs_(\d+)_/.exec(reference);
   if (!match?.[1]) return null;
@@ -85,6 +84,7 @@ function toContributionDto(
   grant: CampaignGrant,
   who: string,
   email: string | null,
+  hypha: ContributionDto['hypha'],
 ): ContributionDto {
   return {
     id: grant.id,
@@ -97,25 +97,38 @@ function toContributionDto(
     mintStatus: grant.mintStatus,
     mintTxHash: grant.mintTxHash,
     kind: grant.kind,
+    hypha,
   };
 }
 
+/**
+ * The admin ledger. Contributors who also have a Hypha profile are annotated
+ * with it, looked up read-only over Hypha's public API — see
+ * server/hypha-profiles.ts. That lookup is best-effort: if Hypha is slow or
+ * unreachable the ledger simply shows what the campaign knows on its own.
+ */
 export async function listContributions(limit = 200) {
   const rows = await db
-    .select({ grant: campaignGrants, person: people })
+    .select({ grant: campaignGrants, member: campaignMembers })
     .from(campaignGrants)
-    .innerJoin(people, eq(campaignGrants.personId, people.id))
+    .innerJoin(campaignMembers, eq(campaignGrants.memberId, campaignMembers.id))
     .orderBy(desc(campaignGrants.createdAt))
     .limit(limit);
 
-  return rows.map(({ grant, person }) =>
-    toContributionDto(
-      grant,
-      [person.name, person.surname].filter(Boolean).join(' ') ||
-        person.nickname ||
-        person.email ||
-        'Member',
-      person.email,
-    ),
+  const profiles = await findHyphaProfiles(
+    rows.map(({ member }) => member.walletAddress),
   );
+
+  return rows.map(({ grant, member }) => {
+    const profile = member.walletAddress
+      ? profiles.get(member.walletAddress.toLowerCase()) ?? null
+      : null;
+
+    return toContributionDto(
+      grant,
+      profile?.name || member.name || member.email || 'Member',
+      member.email,
+      profile ? { name: profile.name, url: profile.url } : null,
+    );
+  });
 }

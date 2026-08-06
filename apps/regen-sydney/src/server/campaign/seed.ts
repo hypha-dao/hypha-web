@@ -2,20 +2,15 @@
  * Seeds the ballot with Kiran's project list and opens the first round.
  *
  * Safe to re-run: projects are matched on slug and updated rather than
- * duplicated, and a round is only opened if none is open.
+ * duplicated, and a round is only opened if none is open. It writes only to
+ * the campaign's own database, named by CAMPAIGN_DB_URL.
  *
  *   pnpm --filter regen-sydney seed
  */
 
 import { eq } from 'drizzle-orm';
-import * as storageModule from '@hypha-platform/storage-postgres';
 
-// storage-postgres is CommonJS, and tsx loads it through the ESM loader, which
-// only surfaces `default`. Unwrap so the named exports resolve at runtime.
-const storage = ((storageModule as { default?: typeof storageModule })
-  .default ?? storageModule) as typeof storageModule;
-
-const { campaignCycles, campaignProjects, db } = storage;
+import { campaignCycles, campaignProjects, db } from '../db';
 
 type SeedProject = {
   slug: string;

@@ -3,8 +3,10 @@
 A standalone Next.js app (port 3002) where supporters contribute in AUD, receive RSUT, and use
 it to vote on which Regen Sydney projects the pooled funds go to.
 
-It lives in this monorepo to share Hypha's database and Privy app, but it renders its own
-`<html>` — none of Hypha's chrome, navigation or theming leaks in.
+It lives in this monorepo for convenience, not for coupling. It has **its own database**, renders
+its own `<html>`, and imports none of Hypha's runtime packages. The one thing it shares is the
+Privy app, so a contributor who also uses Hypha keeps a single identity. See
+[Isolation from the Hypha platform](#isolation-from-the-hypha-platform).
 
 ## How it works
 
@@ -34,47 +36,48 @@ pnpm --filter regen-sydney seed               # projects + opening round
 pnpm --filter regen-sydney dev                # http://localhost:3002
 ```
 
-`DEFAULT_DB_URL` and `PRIVY_APP_SECRET` are the only two variables you need for a useful local
+`CAMPAIGN_DB_URL` and `PRIVY_APP_SECRET` are the only two variables you need for a useful local
 run. Everything else has a working default — see `.env.template`, which documents each one.
 
 ### Local database
 
 The app talks to Postgres through Neon's serverless driver, so locally it needs Neon's websocket
-proxy in front of a plain Postgres. `packages/storage-postgres/src/db.ts` switches to the proxy
-automatically when the connection string points at localhost.
+proxy in front of a plain Postgres. `src/server/db/index.ts` switches to the proxy automatically
+when the connection string points at localhost.
 
 ```bash
 docker run -d --name rs-pg -e POSTGRES_PASSWORD=postgres -p 55499:5432 postgres:16
 docker run -d --name rs-neon-proxy --link rs-pg -p 5433:4444 \
-  -e PG_CONNECTION_STRING=postgres://postgres:postgres@rs-pg:5432/regen \
+  -e PG_CONNECTION_STRING=postgres://postgres:postgres@rs-pg:5432/regen_sydney \
   ghcr.io/timowilhelm/local-neon-http-proxy:main
+docker exec rs-pg psql -U postgres -c 'CREATE DATABASE regen_sydney;'
 ```
 
-Then `DEFAULT_DB_URL=postgres://postgres:postgres@localhost:5432/regen`. The port in that URL is
-ignored — the driver routes through the proxy on 5433 — but the host must say `localhost` for the
-switch to trigger.
+Then `CAMPAIGN_DB_URL=postgres://postgres:postgres@localhost:5432/regen_sydney`. The port in that
+URL is ignored — the driver routes through the proxy on 5433 — but the host must say `localhost`
+for the switch to trigger.
 
-Migrations live with the rest of the platform's:
+Migrations are the campaign's own, in `./migrations`, on their own chain:
 
 ```bash
-pnpm --filter @hypha-platform/storage-postgres run migrate
+pnpm --filter regen-sydney db:generate   # after changing src/server/db/schema.ts
+pnpm --filter regen-sydney db:migrate
 ```
 
 ### Tests
 
 ```bash
-DEFAULT_DB_URL=postgres://postgres:postgres@localhost:5432/regen \
+CAMPAIGN_DB_URL=postgres://postgres:postgres@localhost:5432/regen_sydney \
   pnpm --filter regen-sydney test
 ```
 
 The campaign tests run against that same Postgres rather than mocks, because the behaviour worth
 checking — grant idempotency, the one-open-round constraint, atomic ballot replacement — is
-enforced by the database. Each run parks the development data, creates its own people, projects
+enforced by the database. Each run parks the development data, creates its own members, projects
 and round, and puts everything back afterwards, so running it against a seeded database is safe.
 
-Without a connection string those are skipped and only the suites that need nothing run — the
-Stripe webhook checks, which cover signature verification, replay windows and the unpaid-session
-case.
+Without a connection string those are skipped and only the suites that need none run: the Stripe
+webhook checks, and the isolation guard tests described below.
 
 ## Checkout
 
@@ -174,6 +177,39 @@ votes still count — voting power reads the ledger, not the chain — and the m
 The admin Status tab shows the relayer's address, balance and authorisation, and can retry the
 backlog once the authorisation lands.
 
+## Deploying
+
+The Vercel project is `regen-sydney` under the **Hypha DAO** team
+(`prj_VDfqcWlLDmezeTIXTBFJOkHrhxEe`), deployed from `apps/regen-sydney` as its root directory.
+
+The campaign's database is provisioned as a **Neon resource on that project**, which keeps it in a
+different Neon project from the platform's and bills through Vercel. Provision it from this
+directory — not from the repository root, which is linked to a different Vercel project:
+
+```bash
+cd apps/regen-sydney
+vercel integration add neon      # asks for region and plan
+```
+
+Neon publishes its connection string as `DATABASE_URL`. The app does not read that name, so copy
+it across explicitly:
+
+```bash
+vercel env pull .env.vercel --environment=production
+# then set CAMPAIGN_DB_URL to the DATABASE_URL value, for each environment:
+vercel env add CAMPAIGN_DB_URL production
+node scripts/db-check.mjs .env.vercel     # confirms it is not a Hypha database
+pnpm db:migrate                            # with CAMPAIGN_DB_URL set to it
+pnpm seed
+```
+
+Copying rather than reading `DATABASE_URL` directly is deliberate: `CAMPAIGN_DB_URL` stays the one
+name that can point this app at a database, so there is a single place to audit.
+
+The other variables the deployed app needs are `PRIVY_APP_SECRET`, `CAMPAIGN_ADMIN_EMAILS`,
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RSUT_RELAYER_PRIVATE_KEY` and `NEXT_PUBLIC_APP_URL`.
+`.env.template` documents each.
+
 ## Admin
 
 `CAMPAIGN_ADMIN_EMAILS` is a comma-separated allowlist, checked server-side on every admin
@@ -197,11 +233,62 @@ src/
     checkout/mock/   mock provider's hosted-page stand-in
   server/
     campaign/        projects, cycles, voting, grants, contributions, seed
+    db/              schema and connection for the campaign's own database
     payments/        provider interface + mock, paddle, stripe
     chain/           RSUT ABI and relayer mint
-    auth.ts          Privy verification, person upsert, admin gate
+    auth.ts          Privy verification, member upsert, admin gate
     config.ts        env reading and validation
+    hypha-profiles.ts  read-only profile lookups over Hypha's public API
+migrations/          the campaign's own migration chain
 ```
 
-Schema lives in `packages/storage-postgres/src/schema/campaign.ts` so Hypha and the campaign
-share one `people` table and one migration history.
+## Isolation from the Hypha platform
+
+The campaign takes money and counts votes; Hypha is the platform of record for live DAOs. A bug
+here — a careless migration, a runaway seed, a bad delete — must not be able to damage that. So
+the two are kept apart deliberately, and in more than one way, because a single mechanism is a
+single point of failure.
+
+**Its own database.** Every table the campaign owns is prefixed `campaign_` and lives in its own
+Neon project, with its own migration chain in `./migrations`. Nothing in
+`packages/storage-postgres` mentions the campaign, so running Hypha's migrations never creates a
+campaign table and vice versa.
+
+**Its own connection variable.** The campaign reads `CAMPAIGN_DB_URL` and never Hypha's
+`DEFAULT_DB_URL` or `BRANCH_DB_URL`. Those names are not referenced anywhere in this app, so an
+unset variable cannot silently fall back to the platform database — it fails loudly instead. The
+same is true of `drizzle.config.ts`, which matters because `drizzle-kit push` applies DDL without
+asking.
+
+**A guard against the remaining human error.** The one way left to get this wrong is to paste
+Hypha's connection string into `CAMPAIGN_DB_URL` while setting up a deploy. Startup compares the
+two and refuses to build a client if they match. `src/server/db/__tests__/guard.test.ts` covers
+this and needs no database to run.
+
+**A pre-deploy check that looks at the database itself**, rather than trusting the variable name:
+
+```bash
+pnpm --filter regen-sydney db:check              # reads .env
+pnpm --filter regen-sydney db:check .env.production
+```
+
+It fails if Hypha's tables (`people`, `spaces`, `documents`…) are present, and tells you if the
+campaign's migrations have not run. Reads only — it creates and alters nothing. Worth running
+against any new connection string before pointing a deploy at it.
+
+**No Hypha packages at runtime.** The app imports no `@hypha-platform/*` runtime package — only
+the shared ESLint and TypeScript configs, which are build-time only. There is no code path from
+here into Hypha's schema.
+
+### What is shared, and how
+
+| | Mechanism | Direction |
+| --- | --- | --- |
+| Identity | The same Privy app, so the same `sub` | Neither app reads the other's store |
+| Profile details | `GET /api/v1/people/by-web3-address/:address` | Read-only, unauthenticated, best-effort |
+| RSUT | The token contract on Base | On-chain, shared by definition |
+
+Profile enrichment follows the same rule as the ACAW integration in
+`docs/integrations/external-signal-ingestion.md`: match an existing profile, never create one. The
+campaign holds no Hypha credential, so it could not write even if asked to. A contributor who
+wants a Hypha profile creates it on Hypha.

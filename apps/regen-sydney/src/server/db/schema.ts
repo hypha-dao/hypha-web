@@ -17,18 +17,33 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
-import { people } from './people';
-import { commonDateFields } from './shared';
-
 /**
- * Tables backing the Regen Sydney community fund (apps/regen-sydney).
+ * The campaign's own schema, in the campaign's own database.
  *
- * Voting is settled entirely in Postgres — there is no ballot contract. The
- * only on-chain artefact is the RSUT mint that mirrors each grant, so members
- * genuinely hold the token while the ledger below stays the source of truth
- * for voting power. Reading the ledger rather than `balanceOf` also sidesteps
- * RSUT's 1%-per-30-days decay.
+ * This deliberately shares nothing with the Hypha platform database. The
+ * campaign is a small app that takes money and counts votes; Hypha is the
+ * platform of record for a live DAO. Giving the campaign write access to
+ * Hypha's tables would mean any bug here — a bad migration, a careless
+ * delete, a runaway seed — could damage the platform. The blast radius is
+ * kept to this database instead.
+ *
+ * Identity still lines up across the two, because both authenticate against
+ * the same Privy app: the `sub` stored below is the same subject Hypha stores.
+ * Anything richer about a person (display name, avatar) is read from Hypha's
+ * public API at request time — see server/hypha-profiles.ts — and never
+ * written back.
+ *
+ * Voting is settled entirely in Postgres; there is no ballot contract. The
+ * only on-chain artefact is the RSUT mint mirroring each grant, so members
+ * genuinely hold the token while the ledger here stays the source of truth for
+ * voting power. Reading the ledger rather than `balanceOf` also sidesteps
+ * RSUT's decay.
  */
+
+const commonDateFields = {
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+};
 
 export const CAMPAIGN_PROJECT_GROUPS = [
   'initiative',
@@ -78,6 +93,32 @@ export const CAMPAIGN_PAYMENT_STATUSES = [
 export const campaignPaymentStatus = pgEnum(
   'campaign_payment_status',
   CAMPAIGN_PAYMENT_STATUSES,
+);
+
+/**
+ * A contributor. Keyed on the Privy subject, which is the same value Hypha
+ * keys its own `people` rows on — so the two can be correlated later without
+ * either system writing to the other.
+ *
+ * Only what the campaign itself needs is stored: who to attribute a grant to,
+ * where to mint, and how to address them in the admin ledger.
+ */
+export const campaignMembers = pgTable(
+  'campaign_members',
+  {
+    id: serial('id').primaryKey(),
+    /** Privy `sub`. The same person on Hypha carries the same value. */
+    sub: text('sub').notNull().unique(),
+    email: text('email'),
+    name: text('name'),
+    /** Where RSUT is minted. Null until Privy reports an ethereum wallet. */
+    walletAddress: text('wallet_address'),
+    ...commonDateFields,
+  },
+  (table) => [
+    index('campaign_members_email_idx').on(table.email),
+    index('campaign_members_wallet_idx').on(table.walletAddress),
+  ],
 );
 
 export const campaignProjects = pgTable(
@@ -139,9 +180,9 @@ export const campaignGrants = pgTable(
   'campaign_grants',
   {
     id: serial('id').primaryKey(),
-    personId: integer('person_id')
+    memberId: integer('member_id')
       .notNull()
-      .references(() => people.id),
+      .references(() => campaignMembers.id),
     /** Null for the joining bonus, which is not tied to a round. */
     cycleId: integer('cycle_id').references(() => campaignCycles.id),
     kind: campaignGrantKind('kind').notNull(),
@@ -169,7 +210,7 @@ export const campaignGrants = pgTable(
     ...commonDateFields,
   },
   (table) => [
-    index('campaign_grants_person_idx').on(table.personId),
+    index('campaign_grants_member_idx').on(table.memberId),
     index('campaign_grants_mint_status_idx').on(table.mintStatus),
     uniqueIndex('campaign_grants_payment_ref_idx').on(
       table.paymentProvider,
@@ -178,7 +219,7 @@ export const campaignGrants = pgTable(
   ],
 );
 
-/** One row per (cycle, person, project). Revoting overwrites the weight. */
+/** One row per (cycle, member, project). Revoting overwrites the weight. */
 export const campaignVotes = pgTable(
   'campaign_votes',
   {
@@ -186,9 +227,9 @@ export const campaignVotes = pgTable(
     cycleId: integer('cycle_id')
       .notNull()
       .references(() => campaignCycles.id),
-    personId: integer('person_id')
+    memberId: integer('member_id')
       .notNull()
-      .references(() => people.id),
+      .references(() => campaignMembers.id),
     projectId: integer('project_id')
       .notNull()
       .references(() => campaignProjects.id),
@@ -200,7 +241,7 @@ export const campaignVotes = pgTable(
   (table) => [
     uniqueIndex('campaign_votes_unique_idx').on(
       table.cycleId,
-      table.personId,
+      table.memberId,
       table.projectId,
     ),
     index('campaign_votes_cycle_project_idx').on(
@@ -242,9 +283,9 @@ export const campaignPayouts = pgTable(
 );
 
 export const campaignGrantRelations = relations(campaignGrants, ({ one }) => ({
-  person: one(people, {
-    fields: [campaignGrants.personId],
-    references: [people.id],
+  member: one(campaignMembers, {
+    fields: [campaignGrants.memberId],
+    references: [campaignMembers.id],
   }),
   cycle: one(campaignCycles, {
     fields: [campaignGrants.cycleId],
@@ -253,9 +294,9 @@ export const campaignGrantRelations = relations(campaignGrants, ({ one }) => ({
 }));
 
 export const campaignVoteRelations = relations(campaignVotes, ({ one }) => ({
-  person: one(people, {
-    fields: [campaignVotes.personId],
-    references: [people.id],
+  member: one(campaignMembers, {
+    fields: [campaignVotes.memberId],
+    references: [campaignMembers.id],
   }),
   cycle: one(campaignCycles, {
     fields: [campaignVotes.cycleId],
@@ -281,6 +322,20 @@ export const campaignPayoutRelations = relations(
   }),
 );
 
+export const schema = {
+  campaignMembers,
+  campaignProjects,
+  campaignCycles,
+  campaignGrants,
+  campaignVotes,
+  campaignPayouts,
+  campaignGrantRelations,
+  campaignVoteRelations,
+  campaignPayoutRelations,
+};
+
+export type CampaignMember = InferSelectModel<typeof campaignMembers>;
+export type NewCampaignMember = InferInsertModel<typeof campaignMembers>;
 export type CampaignProject = InferSelectModel<typeof campaignProjects>;
 export type NewCampaignProject = InferInsertModel<typeof campaignProjects>;
 export type CampaignCycle = InferSelectModel<typeof campaignCycles>;

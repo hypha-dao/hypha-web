@@ -757,9 +757,9 @@ importers:
 
   apps/regen-sydney:
     dependencies:
-      '@hypha-platform/storage-postgres':
-        specifier: workspace:*
-        version: link:../../packages/storage-postgres
+      '@neondatabase/serverless':
+        specifier: ^0.10.4
+        version: 0.10.4
       '@privy-io/node':
         specifier: ^0.12.0
         version: 0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
@@ -796,6 +796,9 @@ importers:
       viem:
         specifier: ^2.27.2
         version: 2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      ws:
+        specifier: ^8.18.1
+        version: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -818,6 +821,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.2
         version: 19.1.2(@types/react@19.1.2)
+      '@types/ws':
+        specifier: ^8.5.14
+        version: 8.18.1
+      drizzle-kit:
+        specifier: ^0.30.5
+        version: 0.30.6
       eslint:
         specifier: ^9.24.0
         version: 9.24.0(jiti@2.4.2)
@@ -40585,7 +40594,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
-      ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil

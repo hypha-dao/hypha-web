@@ -37,14 +37,14 @@ export async function POST(request: Request) {
     }
 
     const provider = getPaymentProvider();
-    const reference = newReference(viewer.person.id);
+    const reference = newReference(viewer.member.id);
 
     const session = await provider.createCheckout({
       amountCents: Math.round(amountAud * 100),
       currency: 'AUD',
       reference,
-      personId: viewer.person.id,
-      email: viewer.person.email,
+      memberId: viewer.member.id,
+      email: viewer.member.email,
       successUrl: `${appUrl}/?contributed=1`,
       cancelUrl: `${appUrl}/?contributed=0`,
     });

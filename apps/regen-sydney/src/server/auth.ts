@@ -2,18 +2,23 @@ import 'server-only';
 
 import { PrivyClient, type LinkedAccount } from '@privy-io/node';
 import { eq } from 'drizzle-orm';
-import { db, people, type Person } from '@hypha-platform/storage-postgres';
 
 import { isAdminEmail } from './config';
+import { campaignMembers, db, type CampaignMember } from './db';
 
 /**
- * Identity for the campaign is Hypha's identity: the same Privy app, so the
- * same `sub`, resolving to the same row in `people`. Someone who already has a
- * Hypha profile keeps it; a first-time contributor gets a minimal one created.
+ * Identity for the campaign comes from Privy, and from nowhere else.
+ *
+ * The campaign shares Hypha's Privy app, so a contributor who also uses Hypha
+ * carries the same `sub` in both systems and the two can be correlated later.
+ * What the campaign does *not* do is read or write Hypha's `people` table: it
+ * keeps its own `campaign_members` row, so no bug here can reach the platform
+ * database. Display details from a matching Hypha profile are fetched
+ * read-only over the public API — see hypha-profiles.ts.
  */
 
 export type Viewer = {
-  person: Person;
+  member: CampaignMember;
   privyUserId: string;
   isAdmin: boolean;
 };
@@ -82,7 +87,7 @@ async function verifyToken(token: string): Promise<VerifiedIdentity> {
     accounts = user.linked_accounts ?? [];
   } catch (error) {
     // A lookup failure must not lock a member out — it only means we learn
-    // nothing new about them this time. `upsertPerson` backfills, so a person
+    // nothing new about them this time. `upsertMember` backfills, so someone
     // who already exists keeps the email and wallet they have.
     const message = error instanceof Error ? error.message : 'unknown error';
     console.warn(`Could not load Privy user ${privyUserId}:`, message);
@@ -110,60 +115,54 @@ export type IdentityHints = {
   name?: string | null;
 };
 
-function slugify(seed: string): string {
-  const base = seed
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 32);
-  return `${base || 'member'}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-async function upsertPerson(
+async function upsertMember(
   identity: VerifiedIdentity,
   hints: IdentityHints,
-): Promise<Person> {
-  const { privyUserId, email, walletAddress: address } = identity;
+): Promise<CampaignMember> {
+  const { privyUserId, email, walletAddress } = identity;
   const name = identity.name ?? hints.name?.trim() ?? null;
 
-  const existing = await db.query.people.findFirst({
-    where: eq(people.sub, privyUserId),
+  const existing = await db.query.campaignMembers.findFirst({
+    where: eq(campaignMembers.sub, privyUserId),
   });
 
   if (existing) {
-    // Backfill only. A Hypha profile edited by its owner must not be
-    // overwritten by whatever the campaign page happens to know.
-    const patch: Partial<Person> = {};
+    // Backfill only, so a value a member has already corrected is not
+    // clobbered by whatever the campaign page happens to know this request.
+    const patch: Partial<CampaignMember> = {};
     if (!existing.email && email) patch.email = email;
-    if (!existing.address && address) patch.address = address;
+    if (!existing.walletAddress && walletAddress) {
+      patch.walletAddress = walletAddress;
+    }
     if (!existing.name && name) patch.name = name;
 
     if (Object.keys(patch).length === 0) return existing;
 
     const [updated] = await db
-      .update(people)
+      .update(campaignMembers)
       .set({ ...patch, updatedAt: new Date() })
-      .where(eq(people.id, existing.id))
+      .where(eq(campaignMembers.id, existing.id))
       .returning();
     return updated ?? existing;
   }
 
   const [created] = await db
-    .insert(people)
-    .values({
-      sub: privyUserId,
-      email,
-      address,
-      name,
-      slug: slugify(email?.split('@')[0] ?? 'member'),
-    })
+    .insert(campaignMembers)
+    .values({ sub: privyUserId, email, walletAddress, name })
+    .onConflictDoNothing({ target: campaignMembers.sub })
     .returning();
 
-  if (!created) throw new AuthError(500, 'Could not create person record');
-  return created;
+  if (created) return created;
+
+  // Two first requests raced; the other one won.
+  const raced = await db.query.campaignMembers.findFirst({
+    where: eq(campaignMembers.sub, privyUserId),
+  });
+  if (!raced) throw new AuthError(500, 'Could not create member record');
+  return raced;
 }
 
-/** Verifies the caller and returns their person row, creating it on first sign-in. */
+/** Verifies the caller and returns their member row, creating it on first sign-in. */
 export async function requireViewer(
   request: Request,
   hints: IdentityHints = {},
@@ -172,12 +171,14 @@ export async function requireViewer(
   if (!token) throw new AuthError(401, 'Sign in to continue');
 
   const identity = await verifyToken(token);
-  const person = await upsertPerson(identity, hints);
+  const member = await upsertMember(identity, hints);
 
   return {
-    person,
+    member,
     privyUserId: identity.privyUserId,
-    isAdmin: isAdminEmail(person.email),
+    // Prefer the address Privy just vouched for; the stored one is only a
+    // fallback for the request where the Privy user lookup failed.
+    isAdmin: isAdminEmail(identity.email ?? member.email),
   };
 }
 

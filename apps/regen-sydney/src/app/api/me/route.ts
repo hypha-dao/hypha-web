@@ -26,8 +26,8 @@ const bodySchema = z.object({
 });
 
 /**
- * Establishes the session: resolves the Privy token to a person, creates that
- * person on first sign-in, and grants the joining bonus exactly once.
+ * Establishes the session: resolves the Privy token to a member, creates that
+ * member on first sign-in, and grants the joining bonus exactly once.
  *
  * It is a POST because it has those side effects. The client calls it once per
  * sign-in and then reads `/api/campaign` for everything public.
@@ -37,16 +37,16 @@ export async function POST(request: Request) {
     const body = bodySchema.parse(await readJson(request));
     const viewer = await requireViewer(request, { name: body.name });
 
-    const { joinedNow } = await grantJoinBonus(viewer.person);
+    const { joinedNow } = await grantJoinBonus(viewer.member);
 
     const [cycle, votingPower, latestGrant] = await Promise.all([
       getCurrentCycle(),
-      getVotingPower(viewer.person.id),
-      getLatestGrant(viewer.person.id),
+      getVotingPower(viewer.member.id),
+      getLatestGrant(viewer.member.id),
     ]);
 
     const allocations = cycle
-      ? await getAllocations(cycle.id, viewer.person.id)
+      ? await getAllocations(cycle.id, viewer.member.id)
       : {};
     const allocated = Object.values(allocations).reduce(
       (sum, weight) => sum + weight,
@@ -54,10 +54,10 @@ export async function POST(request: Request) {
     );
 
     const dto: ViewerDto = {
-      personId: viewer.person.id,
-      email: viewer.person.email,
-      name: viewer.person.name,
-      walletAddress: viewer.person.address,
+      memberId: viewer.member.id,
+      email: viewer.member.email,
+      name: viewer.member.name,
+      walletAddress: viewer.member.walletAddress,
       isAdmin: viewer.isAdmin,
       votingPower,
       joinedNow,

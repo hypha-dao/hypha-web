@@ -161,7 +161,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   }, [getToken]);
 
   /**
-   * Establishing the session is a POST because it creates the person record
+   * Establishing the session is a POST because it creates the member record
    * and grants the joining bonus. It runs once per sign-in; a second call is
    * harmless but would report `joinedNow: false`.
    */

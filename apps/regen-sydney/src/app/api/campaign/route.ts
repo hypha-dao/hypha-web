@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       return NextResponse.json(empty);
     }
 
-    const tally = await getTally(cycle, viewer?.person.id ?? null);
+    const tally = await getTally(cycle, viewer?.member.id ?? null);
 
     const state: CampaignStateDto = {
       cycle: toCycleDto(cycle),

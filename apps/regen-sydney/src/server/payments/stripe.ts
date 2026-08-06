@@ -58,7 +58,7 @@ export class StripePaymentProvider implements PaymentProvider {
       cancel_url: input.cancelUrl,
       client_reference_id: input.reference,
       'metadata[reference]': input.reference,
-      'metadata[personId]': String(input.personId),
+      'metadata[memberId]': String(input.memberId),
       'line_items[0][quantity]': '1',
       'line_items[0][price_data][currency]': input.currency.toLowerCase(),
       'line_items[0][price_data][unit_amount]': String(input.amountCents),
@@ -67,7 +67,7 @@ export class StripePaymentProvider implements PaymentProvider {
       // Carried onto the PaymentIntent and charge, so a refund or a dashboard
       // lookup can still be traced back to the contributor.
       'payment_intent_data[metadata][reference]': input.reference,
-      'payment_intent_data[metadata][personId]': String(input.personId),
+      'payment_intent_data[metadata][memberId]': String(input.memberId),
       submit_type: 'donate',
     });
     if (input.email) form.set('customer_email', input.email);
