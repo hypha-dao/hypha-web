@@ -13,7 +13,10 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:check": "node scripts/db-check.mjs",
-    "seed": "NODE_OPTIONS='--conditions=react-server' tsx src/server/campaign/seed.ts",
+    "seed": "NODE_OPTIONS='--conditions=react-server' tsx --env-file-if-exists=.env src/server/campaign/seed.ts",
+    "db:check:deployed": "node scripts/db-check.mjs .env.neon",
+    "db:migrate:deployed": "node --env-file=.env.neon ./node_modules/drizzle-kit/bin.cjs migrate",
+    "seed:deployed": "NODE_OPTIONS='--conditions=react-server' tsx --env-file=.env.neon src/server/campaign/seed.ts",
     "stripe:check": "node scripts/stripe-check.mjs",
     "postinstall": "if [ ! -f .env ] && [ -z \"$CI\" ]; then cp .env.template .env; fi",
     "test": "vitest run"

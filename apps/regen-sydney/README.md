@@ -57,6 +57,9 @@ Then `CAMPAIGN_DB_URL=postgres://postgres:postgres@localhost:5432/regen_sydney`.
 URL is ignored — the driver routes through the proxy on 5433 — but the host must say `localhost`
 for the switch to trigger.
 
+Keep `.env` pointed at this local database and nothing else. The deployed connection string lives
+in `.env.neon`, read only by the `:deployed` scripts described under [Deploying](#deploying).
+
 Migrations are the campaign's own, in `./migrations`, on their own chain:
 
 ```bash
@@ -86,11 +89,11 @@ Stripe is the provider. It is reached through the adapter in
 `PaymentEvent` — so the grant ledger, idempotency and minting never mention Stripe by name.
 `CAMPAIGN_PAYMENTS_PROVIDER` still selects between:
 
-| Value | Behaviour |
-| --- | --- |
-| `stripe` | Stripe Checkout. Not Merchant of Record, so Regen Sydney stays the seller — which keeps DGR receipting straightforward. |
-| `mock` | Redirects to `/checkout/mock`, which posts a self-signed webhook back. Exercises the real grant and mint path with no Stripe account. |
-| `paddle` | Kept working but unused. Merchant of Record, which complicates DGR receipting. |
+| Value    | Behaviour                                                                                                                             |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `stripe` | Stripe Checkout. Not Merchant of Record, so Regen Sydney stays the seller — which keeps DGR receipting straightforward.               |
+| `mock`   | Redirects to `/checkout/mock`, which posts a self-signed webhook back. Exercises the real grant and mint path with no Stripe account. |
+| `paddle` | Kept working but unused. Merchant of Record, which complicates DGR receipting.                                                        |
 
 ### Connecting the Stripe sandbox
 
@@ -194,25 +197,31 @@ vercel integration add neon      # asks for region and plan
 Give the integration `CAMPAIGN_DB` as its **variable prefix**, and attach it to Production and
 Preview only. It then publishes its whole set of variables under that prefix, of which two matter:
 
-| Variable | Used by |
-|---|---|
-| `CAMPAIGN_DB_DATABASE_URL` | the app at runtime — Neon's pooled endpoint, right for serverless |
-| `CAMPAIGN_DB_DATABASE_URL_UNPOOLED` | `pnpm db:migrate` — a direct endpoint, right for DDL |
+| Variable                            | Used by                                                           |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| `CAMPAIGN_DB_DATABASE_URL`          | the app at runtime — Neon's pooled endpoint, right for serverless |
+| `CAMPAIGN_DB_DATABASE_URL_UNPOOLED` | `pnpm db:migrate` — a direct endpoint, right for DDL              |
 
 Both are read as fallbacks after `CAMPAIGN_DB_URL`, so a deployed environment needs nothing set by
-hand. The integration marks its values *sensitive*, meaning they cannot be read back out of Vercel
+hand. The integration marks its values _sensitive_, meaning they cannot be read back out of Vercel
 at all — copying one into `CAMPAIGN_DB_URL` is not possible, which is why the app accepts the
 integration's own names. Every name it will read still begins `CAMPAIGN_DB`; none is a name Hypha
 sets.
 
 Migrating and seeding needs the connection string, and since Vercel will not hand it back, take it
-from the Neon console (**Storage → your database → Connection string** in the Vercel dashboard):
+from the Neon console — **Open in Neon** on the resource page, then **Connect**, with connection
+pooling switched off. Put it in `.env.neon`, which is gitignored, as a single `CAMPAIGN_DB_URL=`
+line. Deliberately not in `.env`: that file is what `pnpm dev` and the integration tests read, and
+those tests write and delete rows.
 
 ```bash
-CAMPAIGN_DB_URL='<connection string>' node scripts/db-check.mjs   # not a Hypha database?
-CAMPAIGN_DB_URL='<connection string>' pnpm db:migrate
-CAMPAIGN_DB_URL='<connection string>' pnpm seed
+pnpm db:check:deployed      # empty, and none of Hypha's tables?
+pnpm db:migrate:deployed
+pnpm seed:deployed
 ```
+
+Each of those reads `.env.neon` and nothing else, so the deployed database can only be touched by
+asking for it by name.
 
 The other variables the deployed app needs are `PRIVY_APP_SECRET`, `CAMPAIGN_ADMIN_EMAILS`,
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RSUT_RELAYER_PRIVATE_KEY` and `NEXT_PUBLIC_APP_URL`.
@@ -290,11 +299,11 @@ here into Hypha's schema.
 
 ### What is shared, and how
 
-| | Mechanism | Direction |
-| --- | --- | --- |
-| Identity | The same Privy app, so the same `sub` | Neither app reads the other's store |
+|                 | Mechanism                                     | Direction                               |
+| --------------- | --------------------------------------------- | --------------------------------------- |
+| Identity        | The same Privy app, so the same `sub`         | Neither app reads the other's store     |
 | Profile details | `GET /api/v1/people/by-web3-address/:address` | Read-only, unauthenticated, best-effort |
-| RSUT | The token contract on Base | On-chain, shared by definition |
+| RSUT            | The token contract on Base                    | On-chain, shared by definition          |
 
 Profile enrichment follows the same rule as the ACAW integration in
 `docs/integrations/external-signal-ingestion.md`: match an existing profile, never create one. The
