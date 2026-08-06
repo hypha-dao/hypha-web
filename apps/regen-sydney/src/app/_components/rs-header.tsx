@@ -48,10 +48,14 @@ export function RsHeader({ onSignIn }: { onSignIn: () => void }) {
           {hydrated && user ? (
             <>
               <div className="hidden items-center gap-3 sm:flex">
-                {/* gap-1 not gap-2: the eyebrow's 0.18em tracking already
-                    leaves a space hanging after the colon. */}
-                <div className="rs-tabular flex items-baseline gap-1 rounded-full bg-[var(--rs-aqua)] px-4 py-2">
-                  <span className="rs-eyebrow text-[var(--rs-teal)]">
+                {/* Centred, not baseline-aligned. On a shared baseline the
+                    label's smaller caps put its optical centre ~2px below the
+                    number's and it visibly hangs low. leading-none on both
+                    keeps each box tight to its own em, so centring them lines
+                    the caps up. gap-1 not gap-2: the eyebrow's 0.18em tracking
+                    already leaves a space hanging after the colon. */}
+                <div className="rs-tabular flex items-center gap-1 rounded-full bg-[var(--rs-aqua)] px-4 py-2">
+                  <span className="rs-eyebrow leading-none text-[var(--rs-teal)]">
                     Your RSUT:
                   </span>
                   <span className="rs-heading text-base leading-none">
