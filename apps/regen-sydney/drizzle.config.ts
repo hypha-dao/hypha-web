@@ -3,17 +3,25 @@ import { defineConfig } from 'drizzle-kit';
 /**
  * The campaign's own migration chain, against the campaign's own database.
  *
- * Note the variable: `CAMPAIGN_DB_URL`, never Hypha's `DEFAULT_DB_URL` or
- * `BRANCH_DB_URL`. Those names are not read here, so `drizzle-kit push` run
- * from this directory cannot reach the platform database even by accident —
- * which matters, because push applies DDL without asking.
+ * Only `CAMPAIGN_DB*` names are read — never Hypha's `DEFAULT_DB_URL` or
+ * `BRANCH_DB_URL`. That matters more here than anywhere else, because
+ * `drizzle-kit push` applies DDL without asking.
+ *
+ * The unpooled endpoint is preferred over the pooled one the app uses at
+ * runtime: migrations issue DDL over a single long connection, which is what
+ * a direct endpoint is for and what a transaction-mode pooler handles badly.
  */
-const url = process.env.CAMPAIGN_DB_URL;
+const url =
+  process.env.CAMPAIGN_DB_URL ||
+  process.env.CAMPAIGN_DB_DATABASE_URL_UNPOOLED ||
+  process.env.CAMPAIGN_DB_DATABASE_URL;
 
 if (!url) {
   throw new Error(
-    'CAMPAIGN_DB_URL is not set. The campaign migrates its own database, ' +
-      'separate from the Hypha platform — see apps/regen-sydney/README.md.',
+    'No campaign database configured (CAMPAIGN_DB_URL, or ' +
+      'CAMPAIGN_DB_DATABASE_URL_UNPOOLED from the Neon integration). The ' +
+      'campaign migrates its own database, separate from the Hypha platform — ' +
+      'see apps/regen-sydney/README.md.',
   );
 }
 

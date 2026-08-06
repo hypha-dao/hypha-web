@@ -191,20 +191,28 @@ cd apps/regen-sydney
 vercel integration add neon      # asks for region and plan
 ```
 
-Neon publishes its connection string as `DATABASE_URL`. The app does not read that name, so copy
-it across explicitly:
+Give the integration `CAMPAIGN_DB` as its **variable prefix**, and attach it to Production and
+Preview only. It then publishes its whole set of variables under that prefix, of which two matter:
+
+| Variable | Used by |
+|---|---|
+| `CAMPAIGN_DB_DATABASE_URL` | the app at runtime — Neon's pooled endpoint, right for serverless |
+| `CAMPAIGN_DB_DATABASE_URL_UNPOOLED` | `pnpm db:migrate` — a direct endpoint, right for DDL |
+
+Both are read as fallbacks after `CAMPAIGN_DB_URL`, so a deployed environment needs nothing set by
+hand. The integration marks its values *sensitive*, meaning they cannot be read back out of Vercel
+at all — copying one into `CAMPAIGN_DB_URL` is not possible, which is why the app accepts the
+integration's own names. Every name it will read still begins `CAMPAIGN_DB`; none is a name Hypha
+sets.
+
+Migrating and seeding needs the connection string, and since Vercel will not hand it back, take it
+from the Neon console (**Storage → your database → Connection string** in the Vercel dashboard):
 
 ```bash
-vercel env pull .env.vercel --environment=production
-# then set CAMPAIGN_DB_URL to the DATABASE_URL value, for each environment:
-vercel env add CAMPAIGN_DB_URL production
-node scripts/db-check.mjs .env.vercel     # confirms it is not a Hypha database
-pnpm db:migrate                            # with CAMPAIGN_DB_URL set to it
-pnpm seed
+CAMPAIGN_DB_URL='<connection string>' node scripts/db-check.mjs   # not a Hypha database?
+CAMPAIGN_DB_URL='<connection string>' pnpm db:migrate
+CAMPAIGN_DB_URL='<connection string>' pnpm seed
 ```
-
-Copying rather than reading `DATABASE_URL` directly is deliberate: `CAMPAIGN_DB_URL` stays the one
-name that can point this app at a database, so there is a single place to audit.
 
 The other variables the deployed app needs are `PRIVY_APP_SECRET`, `CAMPAIGN_ADMIN_EMAILS`,
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RSUT_RELAYER_PRIVATE_KEY` and `NEXT_PUBLIC_APP_URL`.
@@ -254,16 +262,16 @@ Neon project, with its own migration chain in `./migrations`. Nothing in
 `packages/storage-postgres` mentions the campaign, so running Hypha's migrations never creates a
 campaign table and vice versa.
 
-**Its own connection variable.** The campaign reads `CAMPAIGN_DB_URL` and never Hypha's
-`DEFAULT_DB_URL` or `BRANCH_DB_URL`. Those names are not referenced anywhere in this app, so an
-unset variable cannot silently fall back to the platform database — it fails loudly instead. The
-same is true of `drizzle.config.ts`, which matters because `drizzle-kit push` applies DDL without
-asking.
+**Its own connection variables.** The campaign reads `CAMPAIGN_DB_URL`, then the Neon
+integration's `CAMPAIGN_DB_DATABASE_URL`, and never Hypha's `DEFAULT_DB_URL` or `BRANCH_DB_URL`.
+Those names are not referenced anywhere in this app, so an unset variable cannot silently fall
+back to the platform database — it fails loudly instead. The same is true of `drizzle.config.ts`,
+which matters because `drizzle-kit push` applies DDL without asking.
 
 **A guard against the remaining human error.** The one way left to get this wrong is to paste
-Hypha's connection string into `CAMPAIGN_DB_URL` while setting up a deploy. Startup compares the
-two and refuses to build a client if they match. `src/server/db/__tests__/guard.test.ts` covers
-this and needs no database to run.
+Hypha's connection string into one of those two while setting up a deploy. Startup compares
+whichever it resolved against every Hypha variable present and refuses to build a client if they
+match. `src/server/db/__tests__/guard.test.ts` covers this and needs no database to run.
 
 **A pre-deploy check that looks at the database itself**, rather than trusting the variable name:
 

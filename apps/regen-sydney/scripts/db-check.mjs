@@ -40,11 +40,26 @@ function readEnv(path) {
 }
 
 const fromFile = readEnv(envFile);
-const connectionString =
-  process.env.CAMPAIGN_DB_URL || fromFile.CAMPAIGN_DB_URL || '';
+
+/** Same order the app resolves in. See src/server/db/index.ts. */
+const CANDIDATES = ['CAMPAIGN_DB_URL', 'CAMPAIGN_DB_DATABASE_URL'];
+
+let usingVar = '';
+let connectionString = '';
+for (const name of CANDIDATES) {
+  const value = process.env[name] || fromFile[name];
+  if (value) {
+    usingVar = name;
+    connectionString = value;
+    break;
+  }
+}
 
 if (!connectionString) {
-  console.error(`No CAMPAIGN_DB_URL in the environment or in ${envFile}.`);
+  console.error(
+    `No campaign database configured. Looked for ${CANDIDATES.join(' then ')} ` +
+      `in the environment and in ${envFile}.`,
+  );
   process.exit(1);
 }
 
@@ -79,7 +94,7 @@ for (const name of HYPHA_DB_VARS) {
   const other = process.env[name] || fromFile[name];
   if (other && other === connectionString) {
     console.error(
-      `FAIL  CAMPAIGN_DB_URL is the same connection string as ${name}.\n` +
+      `FAIL  ${usingVar} is the same connection string as ${name}.\n` +
         '      Point the campaign at its own Neon project before deploying.',
     );
     process.exit(1);
@@ -97,7 +112,8 @@ if (connectionString.includes('localhost')) {
 }
 
 const url = new URL(connectionString);
-console.log(`Campaign database: ${url.hostname}${url.pathname}\n`);
+console.log(`Campaign database: ${url.hostname}${url.pathname}`);
+console.log(`Configured by:     ${usingVar}\n`);
 
 const pool = new Pool({ connectionString });
 let failed = false;

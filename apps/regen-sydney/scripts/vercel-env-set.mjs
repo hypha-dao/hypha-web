@@ -4,14 +4,16 @@
  *   node scripts/vercel-env-set.mjs            # show what would change
  *   node scripts/vercel-env-set.mjs --execute
  *
- * Only settings this repo can determine on its own are handled here. Three are
+ * Only settings this repo can determine on its own are handled here. Two are
  * deliberately left out, because each is a decision rather than a value:
  *
- *   CAMPAIGN_DB_URL           the campaign's own Neon database, provisioned on
- *                             the Vercel project; never Hypha's
  *   PRIVY_APP_SECRET          held encrypted on the hypha-web project
  *   RSUT_RELAYER_PRIVATE_KEY  mint authority over a real token; putting it in
  *                             preview would let any preview deploy mint RSUT
+ *
+ * The database connection is not here either, but for a different reason: the
+ * Neon integration publishes it as CAMPAIGN_DB_DATABASE_URL and keeps it in
+ * sync. Nothing to push.
  *
  * Values for the Stripe and campaign settings are read from the local .env, so
  * what is deployed matches what was tested.
@@ -128,8 +130,6 @@ for (const [key, value] of Object.entries(desired)) {
 }
 
 console.log('\nStill unset, on purpose:');
-console.log('  CAMPAIGN_DB_URL           the campaign\'s own Neon database — run');
-console.log('                            scripts/db-check.mjs against it first');
 console.log('  PRIVY_APP_SECRET          copy from the hypha-web project');
 console.log('  STRIPE_WEBHOOK_SECRET     created with the webhook endpoint');
 console.log('  RSUT_RELAYER_PRIVATE_KEY  mint authority — production only, once you are ready');

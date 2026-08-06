@@ -65,7 +65,12 @@ console.log(`\nEnvironment variables (${envs.length})`);
 const width = Math.max(0, ...envs.map((e) => e.key.length));
 for (const env of envs.sort((a, b) => a.key.localeCompare(b.key))) {
   const targets = Array.isArray(env.target) ? env.target.join(', ') : env.target;
-  console.log(`  ${env.key.padEnd(width)}  ${targets}`);
+  // `sensitive` values cannot be read back at all, by anyone — worth showing,
+  // because it decides whether `vercel env pull` can retrieve them.
+  const origin = env.type === 'sensitive' ? 'sensitive' : env.type;
+  console.log(
+    `  ${env.key.padEnd(width)}  ${origin.padEnd(9)}  ${targets}`,
+  );
 }
 
 const { deployments } = await api(

@@ -9,17 +9,29 @@ import { schema } from './schema';
 /**
  * The campaign's connection to the campaign's own database.
  *
- * The variable is `CAMPAIGN_DB_URL`, deliberately not one of the `*_DB_URL`
- * names the Hypha platform uses. There is therefore no environment in which a
- * missing value here quietly falls back to Hypha's connection string, because
- * the names Hypha sets are never read. A misconfigured deploy fails loudly
- * instead of writing into the platform database.
+ * Two names are accepted, in this order:
+ *
+ *   CAMPAIGN_DB_URL           set by hand — local development, or a database
+ *                             provisioned outside Vercel
+ *   CAMPAIGN_DB_DATABASE_URL  published by the Neon integration on the
+ *                             regen-sydney Vercel project, which was given
+ *                             `CAMPAIGN_DB` as its variable prefix
+ *
+ * Both begin `CAMPAIGN_DB`, and neither is a name the Hypha platform sets. The
+ * property that matters is unchanged: no variable Hypha uses is read here, so
+ * there is no environment in which a missing value quietly falls back to the
+ * platform's connection string. A misconfigured deploy fails loudly instead.
+ *
+ * The integration's value is Neon's *pooled* endpoint, which is the right one
+ * for serverless functions. Migrations prefer the unpooled companion — see
+ * drizzle.config.ts.
  */
-const connectionString = process.env.CAMPAIGN_DB_URL ?? '';
+const connectionString =
+  process.env.CAMPAIGN_DB_URL || process.env.CAMPAIGN_DB_DATABASE_URL || '';
 
 /**
- * Hypha's connection string variables, read only so that one pasted into
- * CAMPAIGN_DB_URL by mistake can be recognised and refused.
+ * Hypha's connection string variables, read only so that one pasted into the
+ * campaign's own variable by mistake can be recognised and refused.
  */
 const HYPHA_DB_VARS = [
   'DEFAULT_DB_URL',
@@ -33,7 +45,7 @@ export function isDatabaseConfigured(): boolean {
 }
 
 /**
- * Pointing CAMPAIGN_DB_URL at Hypha's database would defeat every other
+ * Pointing the campaign at Hypha's database would defeat every other
  * precaution here, and it is an easy mistake to make while wiring up a deploy.
  * Refusing to build the client is the only useful response: by the time a
  * query is in flight it is too late to be careful.
@@ -42,9 +54,9 @@ function assertNotHyphaDatabase(candidate: string): void {
   for (const name of HYPHA_DB_VARS) {
     if (process.env[name] && process.env[name] === candidate) {
       throw new Error(
-        `CAMPAIGN_DB_URL points at the same database as ${name}. The campaign ` +
-          `must own its data — point CAMPAIGN_DB_URL at a separate Neon ` +
-          `project. See apps/regen-sydney/README.md.`,
+        `The campaign database is the same as ${name}. The campaign must own ` +
+          `its data — point it at a separate Neon project. See ` +
+          `apps/regen-sydney/README.md.`,
       );
     }
   }
@@ -53,9 +65,9 @@ function assertNotHyphaDatabase(candidate: string): void {
 function create() {
   if (!connectionString) {
     throw new Error(
-      'CAMPAIGN_DB_URL is not set. The campaign keeps its data in its own ' +
-        'database, separate from the Hypha platform — see ' +
-        'apps/regen-sydney/README.md for provisioning one.',
+      'Neither CAMPAIGN_DB_URL nor CAMPAIGN_DB_DATABASE_URL is set. The ' +
+        'campaign keeps its data in its own database, separate from the Hypha ' +
+        'platform — see apps/regen-sydney/README.md for provisioning one.',
     );
   }
   assertNotHyphaDatabase(connectionString);
