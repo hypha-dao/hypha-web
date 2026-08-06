@@ -91,18 +91,28 @@ Stripe is the provider. It is reached through the adapter in
 
 ### Connecting the Stripe sandbox
 
-1. In the Stripe dashboard, switch to a **sandbox** (or test mode) and copy the secret key from
-   Developers → API keys. It starts `sk_test_`.
+1. In the Stripe dashboard, switch to a **sandbox** (or test mode) and create a key. A restricted
+   key (`rk_test_…`) is preferable to a full secret key: the only write the app performs is
+   creating a Checkout Session, so that is the only write scope it needs. `sk_test_…` also works.
+
+   To let the Stripe CLI work with the same key, give it **Debugging Tools write**
+   (`stripecli_session_write`) as well; without that, `stripe listen` gets a 403. Grant
+   **Webhook Endpoints write** too if you want to manage endpoints from a script.
+
+   `node scripts/stripe-permissions.mjs` reports what a key can actually do — Stripe has no
+   endpoint that lists a key's scopes, so it finds out by trying each one.
+
 2. Get a webhook secret. Locally that means the Stripe CLI:
 
    ```bash
-   stripe login
+   stripe login   # or rely on the key above, if it has Debugging Tools write
+   node scripts/stripe-webhook-secret.mjs   # writes whsec_… into .env, prints nothing secret
    stripe listen --forward-to localhost:3002/api/webhooks/payments
    ```
 
-   It prints a `whsec_…` for this session. Deployed, add an endpoint at
-   `https://<host>/api/webhooks/payments` for `checkout.session.completed`,
-   `checkout.session.async_payment_succeeded` and `charge.refunded`, and copy its signing secret.
+   Deployed, add an endpoint at `https://<host>/api/webhooks/payments` for
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded` and
+   `charge.refunded`, and copy its signing secret.
 
 3. Put both in `.env` alongside `CAMPAIGN_PAYMENTS_PROVIDER=stripe`.
 4. Check the wiring, with the dev server running:
@@ -112,7 +122,8 @@ Stripe is the provider. It is reached through the adapter in
    ```
 
    It refuses a live key, opens a throwaway A$25 session against the real Stripe API, replays a
-   correctly signed webhook at the local app, and confirms a tampered one is rejected.
+   correctly signed webhook at the local app, confirms a redelivery of that same event is
+   recognised rather than granted twice, and confirms a tampered one is rejected.
 
 5. Contribute through the UI and pay with `4242 4242 4242 4242`, any future expiry and any CVC.
    The grant appears under Admin → Contributions.

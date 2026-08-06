@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 const WEBHOOK_SECRET = 'whsec_test_secret_for_unit_tests';
 
@@ -59,6 +59,27 @@ describe('stripe mode', () => {
   it('reports the sandbox when given a test key', () => {
     expect(provider.mode).toBe('test');
     expect(provider.isConfigured()).toBe(true);
+  });
+
+  // The campaign only needs permission to create Checkout Sessions, so what
+  // gets deployed should be a restricted `rk_` key rather than a full `sk_`
+  // one. Both have to be recognised, or the admin screen calls a sandbox key
+  // "unknown" and nobody can tell test from live at a glance.
+  it.each([
+    ['sk_test_x', 'test'],
+    ['rk_test_x', 'test'],
+    ['sk_live_x', 'live'],
+    ['rk_live_x', 'live'],
+    ['nonsense', 'unknown'],
+  ])('reads %s as %s', async (key, expected) => {
+    vi.resetModules();
+    process.env.STRIPE_SECRET_KEY = key;
+
+    const { StripePaymentProvider } = await import('../stripe');
+    expect(new StripePaymentProvider().mode).toBe(expected);
+
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    vi.resetModules();
   });
 });
 

@@ -38,9 +38,11 @@ const fail = (m) => {
 };
 
 console.log('Configuration');
+const restricted = secretKey.startsWith('rk_');
 if (!secretKey) fail('STRIPE_SECRET_KEY is not set');
-else if (secretKey.startsWith('sk_test_')) pass('STRIPE_SECRET_KEY is a test key');
-else if (secretKey.startsWith('sk_live_'))
+else if (/^(sk|rk)_test_/.test(secretKey))
+  pass(`STRIPE_SECRET_KEY is a test ${restricted ? 'restricted key' : 'secret key'}`);
+else if (/^(sk|rk)_live_/.test(secretKey))
   fail('STRIPE_SECRET_KEY is a LIVE key — use a test key for the sandbox');
 else fail(`STRIPE_SECRET_KEY has an unexpected prefix (${secretKey.slice(0, 8)}…)`);
 
@@ -78,10 +80,20 @@ async function stripe(path, body, extraHeaders = {}) {
 }
 
 console.log('\nStripe API');
-const account = await stripe('account');
-pass(`authenticated as ${account.settings?.dashboard?.display_name ?? account.id} (${account.id})`);
-if (account.charges_enabled) pass('charges enabled');
-else console.log('  note  charges are not enabled — fine for a sandbox');
+// A restricted key is unlikely to carry account-read, so prove reachability
+// with something the campaign genuinely needs instead of failing on a scope we
+// never use.
+try {
+  const account = await stripe('account');
+  pass(
+    `authenticated as ${account.settings?.dashboard?.display_name ?? account.id} (${account.id})`,
+  );
+} catch {
+  const balance = await stripe('balance');
+  pass(
+    `authenticated (no account-read scope; balance reads ${balance.available?.[0]?.currency?.toUpperCase() ?? 'ok'})`,
+  );
+}
 
 const reference = `rs_${personId}_check_${Date.now().toString(36)}`;
 const form = new URLSearchParams({
@@ -144,6 +156,26 @@ try {
 const text = await response.text();
 if (response.ok) pass(`${endpoint} → ${response.status} ${text}`);
 else fail(`${endpoint} → ${response.status} ${text}`);
+
+// Stripe redelivers on any non-2xx and sometimes just because. The grant has
+// to be keyed on the session so a redelivery is recognised as the same payment.
+console.log('\nRedelivery of the same event');
+const replay = await fetch(endpoint, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Stripe-Signature': `t=${timestamp},v1=${signature}`,
+  },
+  body: payload,
+});
+const replayText = await replay.text();
+if (replay.ok && replayText.includes('Already processed')) {
+  pass(`recognised as a duplicate → ${replayText}`);
+} else if (replay.ok) {
+  fail(`expected "Already processed", got ${replayText} — a retry would grant twice`);
+} else {
+  fail(`${replay.status} ${replayText}`);
+}
 
 console.log('\nAnd the signature check itself rejects a tampered body:');
 const tampered = await fetch(endpoint, {

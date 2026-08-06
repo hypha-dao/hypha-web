@@ -29,10 +29,14 @@ export class StripePaymentProvider implements PaymentProvider {
     return Boolean(stripeConfig.secretKey && stripeConfig.webhookSecret);
   }
 
-  /** Test keys are prefixed `sk_test_`; live ones `sk_live_`. */
+  /**
+   * `sk_` is a full secret key, `rk_` a restricted one — the campaign only
+   * needs permission to create Checkout Sessions, so a restricted key is the
+   * better thing to deploy. Either carries `test` or `live` in the middle.
+   */
   get mode(): 'test' | 'live' | 'unknown' {
-    if (stripeConfig.secretKey.startsWith('sk_test_')) return 'test';
-    if (stripeConfig.secretKey.startsWith('sk_live_')) return 'live';
+    if (/^(sk|rk)_test_/.test(stripeConfig.secretKey)) return 'test';
+    if (/^(sk|rk)_live_/.test(stripeConfig.secretKey)) return 'live';
     return 'unknown';
   }
 

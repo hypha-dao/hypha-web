@@ -43,7 +43,10 @@ export async function POST(request: Request) {
       console.warn(`[${provider.id}] event not applied: ${outcome.reason}`);
       return NextResponse.json({ handled: false, reason: outcome.reason });
     }
-    return NextResponse.json({ handled: true });
+    // `reason` is set when the event was recognised as one already recorded.
+    // Passing it back makes a redelivery distinguishable from a first delivery
+    // in the provider's own event log, where both otherwise read as plain 200s.
+    return NextResponse.json({ handled: true, reason: outcome.reason });
   } catch (error) {
     // A real failure — let the provider retry.
     console.error(`[${provider.id}] failed to apply event:`, error);
