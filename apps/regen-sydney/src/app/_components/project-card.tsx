@@ -29,13 +29,15 @@ export function ProjectCard({
 
   return (
     <article className="flex flex-col overflow-hidden rounded-3xl bg-[var(--rs-white)] shadow-[0_1px_0_var(--rs-line)] transition-shadow hover:shadow-lg">
-      <div className="relative aspect-[16/10] overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={project.image}
-          alt=""
-          className="size-full object-cover transition-transform duration-500 hover:scale-105"
-        />
+      <div className="relative aspect-[16/10] overflow-hidden bg-[var(--rs-aqua-soft)]">
+        {project.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={project.image}
+            alt=""
+            className="size-full object-cover transition-transform duration-500 hover:scale-105"
+          />
+        ) : null}
         <div className="absolute left-4 top-4">
           <Pill tone="aqua">{project.program}</Pill>
         </div>
@@ -54,17 +56,21 @@ export function ProjectCard({
         </p>
 
         <div className="rs-ui mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--rs-ink-faint)]">
-          <span className="inline-flex items-center gap-1.5">
-            <Users size={13} /> {project.team}
-          </span>
-          <a
-            href={project.videoUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="rs-focus inline-flex items-center gap-1.5 rounded text-[var(--rs-clay)] hover:underline"
-          >
-            <Play size={13} /> Watch the video
-          </a>
+          {project.team ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Users size={13} /> {project.team}
+            </span>
+          ) : null}
+          {project.videoUrl ? (
+            <a
+              href={project.videoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rs-focus inline-flex items-center gap-1.5 rounded text-[var(--rs-clay)] hover:underline"
+            >
+              <Play size={13} /> Watch the video
+            </a>
+          ) : null}
         </div>
 
         <div className="mt-6 border-t border-[var(--rs-line)] pt-5">

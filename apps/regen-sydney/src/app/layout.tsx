@@ -4,6 +4,7 @@ import './global.css';
 
 import { CampaignProvider } from './_lib/campaign-store';
 import { regenSydneyFontVariables } from './_lib/fonts';
+import { RsPrivyProvider } from './_lib/privy-provider';
 
 export const metadata: Metadata = {
   title: 'Regen Sydney — Community Fund',
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en-AU" className={regenSydneyFontVariables}>
       <body className="rs-root">
-        <CampaignProvider>{children}</CampaignProvider>
+        <RsPrivyProvider appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? ''}>
+          <CampaignProvider>{children}</CampaignProvider>
+        </RsPrivyProvider>
       </body>
     </html>
   );

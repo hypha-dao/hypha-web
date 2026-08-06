@@ -18,7 +18,9 @@ export function JoinNotice() {
           <span>
             Welcome, {user.name.split(' ')[0]} —{' '}
             <strong className="rs-tabular">{formatNumber(balance)} RSUT</strong>{' '}
-            were minted to your wallet {user.wallet}.
+            {user.mintStatus === 'confirmed'
+              ? `were minted to your wallet ${user.wallet}.`
+              : 'are yours to vote with. They are on their way to your wallet on Base.'}
           </span>
         </p>
         <button

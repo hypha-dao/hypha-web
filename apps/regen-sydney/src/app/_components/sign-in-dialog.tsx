@@ -1,9 +1,8 @@
 'use client';
 
-import { ShieldCheck, Sparkles, Wallet } from 'lucide-react';
+import { Sparkles, Wallet } from 'lucide-react';
 
 import { useCampaign } from '../_lib/campaign-store';
-import { JOIN_BONUS_RSUT } from '../_lib/mock-data';
 import { Dialog, RsButton } from './ui';
 
 function GoogleMark() {
@@ -36,37 +35,27 @@ export function SignInDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const { signIn } = useCampaign();
-
-  const handleSignIn = (asAdmin: boolean) => {
-    signIn({ asAdmin });
-    onClose();
-  };
+  const { signIn, economics } = useCampaign();
 
   return (
     <Dialog open={open} onClose={onClose} title="Join the round">
       <p className="rs-prose text-[var(--rs-ink-soft)]">
-        Sign in with your Google account. A wallet is created for you in the
-        background — there is nothing to install and no transaction to sign.
+        Sign in with your Google account or your email. A wallet is created for
+        you in the background — there is nothing to install and no transaction
+        to sign.
       </p>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-6">
         <button
           type="button"
-          onClick={() => handleSignIn(false)}
+          onClick={() => {
+            onClose();
+            signIn();
+          }}
           className="rs-focus flex w-full items-center justify-center gap-3 rounded-full border border-[var(--rs-line)] bg-[var(--rs-white)] px-6 py-3.5 transition-colors hover:border-[var(--rs-ink)]"
         >
           <GoogleMark />
-          <span className="rs-eyebrow">Continue with Google</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleSignIn(true)}
-          className="rs-focus flex w-full items-center justify-center gap-2 rounded-full px-6 py-2.5 text-[var(--rs-ink-faint)] transition-colors hover:text-[var(--rs-ink)]"
-        >
-          <ShieldCheck size={14} />
-          <span className="rs-eyebrow">Mockup: sign in as an admin</span>
+          <span className="rs-eyebrow">Continue with Google or email</span>
         </button>
       </div>
 
@@ -77,8 +66,8 @@ export function SignInDialog({
             className="mt-0.5 shrink-0 text-[var(--rs-clay)]"
           />
           <span>
-            First time here? {JOIN_BONUS_RSUT} RSUT are minted to you as a
-            joining bonus.
+            First time here? {economics.joinBonusRsut} RSUT are minted to you as
+            a joining bonus.
           </span>
         </li>
         <li className="rs-ui flex items-start gap-3 text-sm text-[var(--rs-ink-soft)]">

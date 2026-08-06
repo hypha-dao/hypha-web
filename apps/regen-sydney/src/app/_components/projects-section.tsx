@@ -4,8 +4,11 @@ import { useState } from 'react';
 
 import { cn } from '../_lib/cn';
 
-import { useCampaign } from '../_lib/campaign-store';
-import { GROUP_LABELS, type ProjectGroup } from '../_lib/mock-data';
+import {
+  GROUP_LABELS,
+  useCampaign,
+  type ProjectGroup,
+} from '../_lib/campaign-store';
 import { ProjectCard } from './project-card';
 import { SectionHeading } from './ui';
 

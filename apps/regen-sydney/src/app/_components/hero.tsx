@@ -3,7 +3,6 @@
 import { ArrowRight } from 'lucide-react';
 
 import { formatAud, formatNumber, useCampaign } from '../_lib/campaign-store';
-import { JOIN_BONUS_RSUT } from '../_lib/mock-data';
 import { Pill, RsButton } from './ui';
 
 export function Hero({
@@ -13,7 +12,7 @@ export function Hero({
   onContribute: () => void;
   onSignIn: () => void;
 }) {
-  const { user, cycle, totalPotAud } = useCampaign();
+  const { user, cycle, totalPotAud, economics } = useCampaign();
 
   return (
     <section className="relative overflow-hidden bg-[var(--rs-cream)] px-5 pb-20 pt-16 sm:pt-24">
@@ -53,7 +52,7 @@ export function Hero({
               </a>
             ) : (
               <RsButton variant="ghost" onClick={onSignIn}>
-                Sign in and get {JOIN_BONUS_RSUT} RSUT
+                Sign in and get {economics.joinBonusRsut} RSUT
               </RsButton>
             )}
           </div>
@@ -78,7 +77,7 @@ export function Hero({
             <div>
               <dt className="rs-eyebrow text-[var(--rs-ink-faint)]">Matched</dt>
               <dd className="rs-heading rs-tabular mt-1.5 text-2xl">
-                1&nbsp;:&nbsp;1
+                1&nbsp;:&nbsp;{cycle.matchMultiplier}
               </dd>
             </div>
           </dl>

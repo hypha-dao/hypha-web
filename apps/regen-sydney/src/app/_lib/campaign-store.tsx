@@ -1,361 +1,441 @@
 'use client';
 
+import { useLogin, useLogout, usePrivy } from '@privy-io/react-auth';
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
-import {
-  ADMIN_EMAILS,
-  IMAGE_BASE,
-  JOIN_BONUS_RSUT,
-  MATCH_MULTIPLIER,
-  SEED_CONTRIBUTIONS,
-  SEED_CYCLE,
-  SEED_PROJECTS,
-  type CampaignProject,
-  type MockContribution,
-  type ProjectGroup,
-} from './mock-data';
+import type {
+  CampaignProjectDto,
+  CampaignStateDto,
+  CheckoutSessionDto,
+  CycleDto,
+  ViewerDto,
+} from '@rs/lib/campaign-types';
+import { formatAud, formatNumber } from '@rs/lib/campaign-types';
+
+import { ApiRequestError, api } from './api';
+
+export { formatAud, formatNumber };
+export { GROUP_LABELS, GROUP_ORDER } from '@rs/lib/campaign-types';
+export type { CampaignProjectDto, ProjectGroup } from '@rs/lib/campaign-types';
 
 /**
- * Everything here lives in memory (mirrored to sessionStorage so navigating
- * between the public page and the admin area keeps your state). There is no
- * backend behind any of it — this exists purely to make the design clickable.
+ * Single client-side view of the campaign.
+ *
+ * Vote allocations are held locally while you drag the sliders and only sent
+ * to the server when you press save, so the ballot is one atomic write rather
+ * than a request per nudge. Everything else — balance, tally, totals — is read
+ * back from the API.
  */
 
-export type MockUser = {
-  name: string;
-  email: string;
-  wallet: string;
-  isAdmin: boolean;
-  /** Whether the joining bonus was minted this session. */
-  joinedNow: boolean;
-};
-
-export type Cycle = {
+export type CycleView = {
+  id: number | null;
   number: number;
   name: string;
-  durationDays: number;
+  status: 'open' | 'closed';
   endsAt: string;
+  durationDays: number;
   communityPotAud: number;
   contributors: number;
+  matchMultiplier: number;
 };
-
-type State = {
-  user: MockUser | null;
-  balance: number;
-  allocations: Record<string, number>;
-  projects: CampaignProject[];
-  cycle: Cycle;
-  contributions: MockContribution[];
-  paidOut: string[];
-};
-
-const STORAGE_KEY = 'rs-campaign-mockup-v1';
-
-const initialState: State = {
-  user: null,
-  balance: 0,
-  allocations: {},
-  projects: SEED_PROJECTS,
-  cycle: SEED_CYCLE,
-  contributions: SEED_CONTRIBUTIONS,
-  paidOut: [],
-};
-
-type CampaignContextValue = State & {
-  hydrated: boolean;
-  signIn: (options: { asAdmin: boolean }) => void;
-  signOut: () => void;
-  dismissJoinNotice: () => void;
-  allocated: number;
-  remaining: number;
-  setAllocation: (projectId: string, value: number) => void;
-  adjustAllocation: (projectId: string, delta: number) => void;
-  resetAllocations: () => void;
-  contribute: (amountAud: number) => void;
-  totalPotAud: number;
-  tally: TallyRow[];
-  addProject: (
-    project: Pick<
-      CampaignProject,
-      'title' | 'program' | 'group' | 'summary' | 'team' | 'videoUrl'
-    >,
-  ) => void;
-  removeProject: (projectId: string) => void;
-  toggleProject: (projectId: string) => void;
-  setCycleDuration: (days: number) => void;
-  startNewCycle: () => void;
-  markPaid: (projectId: string) => void;
-};
-
-const CampaignContext = createContext<CampaignContextValue | null>(null);
 
 export type TallyRow = {
-  project: CampaignProject;
+  project: CampaignProjectDto;
   votes: number;
   yourVotes: number;
   share: number;
   projectedAud: number;
 };
 
-const MEMBER: MockUser = {
-  name: 'Ada Mercer',
-  email: 'ada.mercer@gmail.com',
-  wallet: '0x7A3f…9C21',
-  isAdmin: false,
-  joinedNow: true,
+export type CampaignUser = {
+  name: string;
+  email: string;
+  wallet: string;
+  isAdmin: boolean;
+  joinedNow: boolean;
+  mintStatus: ViewerDto['mint']['status'];
 };
 
-const ADMIN: MockUser = {
-  name: 'Kiran Kashyap',
-  email: ADMIN_EMAILS[0],
-  wallet: '0xE41b…7Df0',
-  isAdmin: true,
-  joinedNow: false,
+const EMPTY_CYCLE: CycleView = {
+  id: null,
+  number: 0,
+  name: 'Not open yet',
+  status: 'closed',
+  endsAt: new Date(0).toISOString(),
+  durationDays: 21,
+  communityPotAud: 0,
+  contributors: 0,
+  matchMultiplier: 1,
 };
 
-function readStored(): State | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<State>;
-    return { ...initialState, ...parsed };
-  } catch {
-    return null;
-  }
+type CampaignContextValue = {
+  hydrated: boolean;
+  loading: boolean;
+  error: string | null;
+
+  user: CampaignUser | null;
+  balance: number;
+  cycle: CycleView;
+  projects: CampaignProjectDto[];
+  tally: TallyRow[];
+  totalPotAud: number;
+  votesCast: number;
+  economics: CampaignStateDto['economics'];
+
+  signIn: () => void;
+  signOut: () => void;
+  dismissJoinNotice: () => void;
+
+  allocations: Record<number, number>;
+  allocated: number;
+  remaining: number;
+  dirty: boolean;
+  saving: boolean;
+  setAllocation: (projectId: number, value: number) => void;
+  adjustAllocation: (projectId: number, delta: number) => void;
+  resetAllocations: () => void;
+  saveVotes: () => Promise<boolean>;
+
+  contribute: (amountAud: number) => Promise<CheckoutSessionDto>;
+  refresh: () => Promise<void>;
+  getToken: () => Promise<string | null>;
+};
+
+const CampaignContext = createContext<CampaignContextValue | null>(null);
+
+function toCycleView(
+  cycle: CycleDto | null,
+  totals: CampaignStateDto['totals'],
+): CycleView {
+  if (!cycle) return EMPTY_CYCLE;
+  return {
+    id: cycle.id,
+    number: cycle.number,
+    name: cycle.name,
+    status: cycle.status,
+    endsAt: cycle.endsAt,
+    durationDays: cycle.durationDays,
+    communityPotAud: totals.communityAud,
+    contributors: totals.contributors,
+    matchMultiplier: cycle.matchMultiplier,
+  };
 }
 
 export function CampaignProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<State>(initialState);
-  const [hydrated, setHydrated] = useState(false);
+  const { ready, authenticated, getAccessToken, user: privyUser } = usePrivy();
+  const { login } = useLogin();
+  const { logout } = useLogout();
 
-  useEffect(() => {
-    const stored = readStored();
-    if (stored) setState(stored);
-    setHydrated(true);
-  }, []);
+  const [state, setState] = useState<CampaignStateDto | null>(null);
+  const [viewer, setViewer] = useState<ViewerDto | null>(null);
+  const [localAllocations, setLocalAllocations] = useState<Record<
+    number,
+    number
+  > | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [joinDismissed, setJoinDismissed] = useState(false);
 
-  useEffect(() => {
-    if (!hydrated) return;
+  const getToken = useCallback(async () => {
+    if (!authenticated) return null;
     try {
-      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return await getAccessToken();
     } catch {
-      // sessionStorage can be unavailable in private browsing; the mockup still works.
+      return null;
     }
-  }, [state, hydrated]);
+  }, [authenticated, getAccessToken]);
 
-  const signIn = useCallback(({ asAdmin }: { asAdmin: boolean }) => {
-    setState((prev) => ({
-      ...prev,
-      user: asAdmin ? ADMIN : MEMBER,
-      balance: asAdmin ? 1250 : JOIN_BONUS_RSUT,
-      allocations: {},
-    }));
-  }, []);
+  const loadPublicState = useCallback(async () => {
+    const next = await api.get<CampaignStateDto>('/api/campaign', getToken);
+    setState(next);
+    return next;
+  }, [getToken]);
 
-  const signOut = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      user: null,
-      balance: 0,
-      allocations: {},
-    }));
-  }, []);
-
-  const dismissJoinNotice = useCallback(() => {
-    setState((prev) =>
-      prev.user ? { ...prev, user: { ...prev.user, joinedNow: false } } : prev,
+  /**
+   * Establishing the session is a POST because it creates the person record
+   * and grants the joining bonus. It runs once per sign-in; a second call is
+   * harmless but would report `joinedNow: false`.
+   */
+  const establishSession = useCallback(async () => {
+    // Email and wallet deliberately are not sent — the server reads those from
+    // Privy, since admin access is decided by email.
+    const next = await api.post<ViewerDto>(
+      '/api/me',
+      { name: privyUser?.google?.name ?? null },
+      getToken,
     );
-  }, []);
+    setViewer(next);
+    setLocalAllocations(next.allocations);
+    return next;
+  }, [getToken, privyUser]);
+
+  const signedInRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!ready) return;
+
+    let cancelled = false;
+
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (authenticated && privyUser?.id) {
+          // Re-run whenever the Privy user changes so a wallet that finishes
+          // provisioning after login still gets recorded.
+          if (signedInRef.current !== privyUser.id) {
+            signedInRef.current = privyUser.id;
+            setJoinDismissed(false);
+          }
+          await establishSession();
+        } else {
+          signedInRef.current = null;
+          setViewer(null);
+          setLocalAllocations(null);
+        }
+        await loadPublicState();
+      } catch (caught) {
+        if (!cancelled) {
+          setError(
+            caught instanceof ApiRequestError
+              ? caught.message
+              : 'Could not load the campaign',
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, authenticated, privyUser?.id, establishSession, loadPublicState]);
+
+  const refresh = useCallback(async () => {
+    try {
+      if (authenticated) {
+        const next = await establishSession();
+        setLocalAllocations(next.allocations);
+      }
+      await loadPublicState();
+    } catch (caught) {
+      setError(
+        caught instanceof ApiRequestError
+          ? caught.message
+          : 'Could not refresh the campaign',
+      );
+    }
+  }, [authenticated, establishSession, loadPublicState]);
+
+  const projects = state?.projects ?? [];
+  const balance = viewer?.votingPower ?? 0;
+  const emptyAllocations = useMemo<Record<number, number>>(() => ({}), []);
+  const allocations = localAllocations ?? emptyAllocations;
 
   const allocated = useMemo(
-    () => Object.values(state.allocations).reduce((sum, n) => sum + n, 0),
-    [state.allocations],
+    () => Object.values(allocations).reduce((sum, n) => sum + n, 0),
+    [allocations],
   );
-  const remaining = Math.max(0, state.balance - allocated);
+  const remaining = Math.max(0, balance - allocated);
 
-  const setAllocation = useCallback((projectId: string, value: number) => {
-    setState((prev) => {
-      const others = Object.entries(prev.allocations).reduce(
-        (sum, [id, n]) => (id === projectId ? sum : sum + n),
-        0,
-      );
-      const capped = Math.max(0, Math.min(value, prev.balance - others));
-      return {
-        ...prev,
-        allocations: { ...prev.allocations, [projectId]: Math.round(capped) },
-      };
-    });
-  }, []);
+  const dirty = useMemo(() => {
+    if (!viewer) return false;
+    const saved = viewer.allocations;
+    const ids = new Set([
+      ...Object.keys(saved).map(Number),
+      ...Object.keys(allocations).map(Number),
+    ]);
+    for (const id of ids) {
+      if ((saved[id] ?? 0) !== (allocations[id] ?? 0)) return true;
+    }
+    return false;
+  }, [viewer, allocations]);
 
-  const adjustAllocation = useCallback((projectId: string, delta: number) => {
-    setState((prev) => {
-      const current = prev.allocations[projectId] ?? 0;
-      const others = Object.entries(prev.allocations).reduce(
-        (sum, [id, n]) => (id === projectId ? sum : sum + n),
-        0,
-      );
-      const capped = Math.max(
-        0,
-        Math.min(current + delta, prev.balance - others),
-      );
-      return {
-        ...prev,
-        allocations: { ...prev.allocations, [projectId]: Math.round(capped) },
-      };
-    });
-  }, []);
-
-  const resetAllocations = useCallback(() => {
-    setState((prev) => ({ ...prev, allocations: {} }));
-  }, []);
-
-  const contribute = useCallback((amountAud: number) => {
-    setState((prev) => ({
-      ...prev,
-      balance: prev.balance + amountAud,
-      cycle: {
-        ...prev.cycle,
-        communityPotAud: prev.cycle.communityPotAud + amountAud,
-        contributors: prev.cycle.contributors + 1,
-      },
-      contributions: [
-        {
-          id: `txn_${Math.random().toString(16).slice(2, 6)}`,
-          who: prev.user?.name ?? 'You',
-          email: prev.user?.email ?? 'you@example.com',
-          amountAud,
-          rsut: amountAud,
-          at: new Date().toISOString().slice(0, 10),
-          status: 'settled' as const,
-        },
-        ...prev.contributions,
-      ],
-    }));
-  }, []);
-
-  const totalPotAud =
-    state.cycle.communityPotAud +
-    state.cycle.communityPotAud * MATCH_MULTIPLIER;
-
+  /**
+   * Tally rows are recomputed locally against the unsaved allocation so the
+   * projected split moves as you drag, then replaced by the server's numbers
+   * on save. Other members' votes come from the server either way.
+   */
   const tally = useMemo<TallyRow[]>(() => {
-    const active = state.projects.filter((p) => p.active);
-    const rows = active.map((project) => {
-      const yourVotes = state.allocations[project.id] ?? 0;
-      return { project, votes: project.baseVotes + yourVotes, yourVotes };
-    });
-    const total = rows.reduce((sum, r) => sum + r.votes, 0) || 1;
-    return rows
-      .map((r) => ({
-        ...r,
-        share: r.votes / total,
-        projectedAud: Math.round((r.votes / total) * totalPotAud),
-      }))
-      .sort((a, b) => b.votes - a.votes);
-  }, [state.projects, state.allocations, totalPotAud]);
+    if (!state) return [];
+    const byId = new Map(state.projects.map((p) => [p.id, p]));
+    const serverRows = new Map(state.tally.map((row) => [row.projectId, row]));
 
-  const addProject = useCallback<CampaignContextValue['addProject']>(
-    (project) => {
-      setState((prev) => ({
-        ...prev,
-        projects: [
-          ...prev.projects,
-          {
-            ...project,
-            id: `custom-${Date.now()}`,
-            image: `${IMAGE_BASE}/indicators.webp`,
-            baseVotes: 0,
-            active: true,
-          },
-        ],
-      }));
+    const rows = state.projects.map((project) => {
+      const server = serverRows.get(project.id);
+      const othersVotes = (server?.votes ?? 0) - (server?.yourVotes ?? 0);
+      const yourVotes = allocations[project.id] ?? 0;
+      return { project, votes: othersVotes + yourVotes, yourVotes };
+    });
+
+    const total = rows.reduce((sum, row) => sum + row.votes, 0);
+    const potAud = state.totals.potAud;
+
+    return rows
+      .map((row) => {
+        const share = total > 0 ? row.votes / total : 0;
+        return {
+          ...row,
+          project: byId.get(row.project.id) ?? row.project,
+          share,
+          projectedAud: Math.round(share * potAud),
+        };
+      })
+      .sort((a, b) => b.votes - a.votes || a.project.id - b.project.id);
+  }, [state, allocations]);
+
+  const setAllocation = useCallback(
+    (projectId: number, value: number) => {
+      setLocalAllocations((prev) => {
+        const current = prev ?? {};
+        const others = Object.entries(current).reduce(
+          (sum, [id, n]) => (Number(id) === projectId ? sum : sum + n),
+          0,
+        );
+        const capped = Math.max(0, Math.min(value, balance - others));
+        return { ...current, [projectId]: Math.round(capped) };
+      });
     },
-    [],
+    [balance],
   );
 
-  const removeProject = useCallback((projectId: string) => {
-    setState((prev) => {
-      const allocations = Object.fromEntries(
-        Object.entries(prev.allocations).filter(([id]) => id !== projectId),
+  const adjustAllocation = useCallback(
+    (projectId: number, delta: number) => {
+      setLocalAllocations((prev) => {
+        const current = prev ?? {};
+        const others = Object.entries(current).reduce(
+          (sum, [id, n]) => (Number(id) === projectId ? sum : sum + n),
+          0,
+        );
+        const next = (current[projectId] ?? 0) + delta;
+        const capped = Math.max(0, Math.min(next, balance - others));
+        return { ...current, [projectId]: Math.round(capped) };
+      });
+    },
+    [balance],
+  );
+
+  const resetAllocations = useCallback(() => setLocalAllocations({}), []);
+
+  const saveVotes = useCallback(async () => {
+    if (!viewer) return false;
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = Object.entries(allocations)
+        .map(([projectId, weight]) => ({
+          projectId: Number(projectId),
+          weight,
+        }))
+        .filter((entry) => entry.weight > 0);
+
+      const result = await api.put<{
+        allocations: Record<number, number>;
+      }>('/api/votes', { allocations: payload }, getToken);
+
+      setViewer((prev) =>
+        prev ? { ...prev, allocations: result.allocations } : prev,
       );
-      return {
-        ...prev,
-        projects: prev.projects.filter((p) => p.id !== projectId),
-        allocations,
-      };
-    });
-  }, []);
+      setLocalAllocations(result.allocations);
+      await loadPublicState();
+      return true;
+    } catch (caught) {
+      setError(
+        caught instanceof ApiRequestError
+          ? caught.message
+          : 'Could not save your votes',
+      );
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [viewer, allocations, getToken, loadPublicState]);
 
-  const toggleProject = useCallback((projectId: string) => {
-    setState((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) =>
-        p.id === projectId ? { ...p, active: !p.active } : p,
-      ),
-    }));
-  }, []);
+  const contribute = useCallback(
+    async (amountAud: number) => {
+      return api.post<CheckoutSessionDto>(
+        '/api/checkout',
+        { amountAud },
+        getToken,
+      );
+    },
+    [getToken],
+  );
 
-  const setCycleDuration = useCallback((days: number) => {
-    setState((prev) => ({
-      ...prev,
-      cycle: { ...prev.cycle, durationDays: Math.max(1, Math.round(days)) },
-    }));
-  }, []);
+  const signIn = useCallback(() => login(), [login]);
 
-  const startNewCycle = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      allocations: {},
-      paidOut: [],
-      cycle: {
-        ...prev.cycle,
-        number: prev.cycle.number + 1,
-        name: `Round ${prev.cycle.number + 1}`,
-        endsAt: new Date(
-          Date.now() + prev.cycle.durationDays * 24 * 60 * 60 * 1000,
-        ).toISOString(),
-        communityPotAud: 0,
-        contributors: 0,
-      },
-    }));
-  }, []);
+  const signOut = useCallback(async () => {
+    await logout();
+    setViewer(null);
+    setLocalAllocations(null);
+    await loadPublicState();
+  }, [logout, loadPublicState]);
 
-  const markPaid = useCallback((projectId: string) => {
-    setState((prev) => ({
-      ...prev,
-      paidOut: prev.paidOut.includes(projectId)
-        ? prev.paidOut.filter((id) => id !== projectId)
-        : [...prev.paidOut, projectId],
-    }));
-  }, []);
+  const user = useMemo<CampaignUser | null>(() => {
+    if (!viewer) return null;
+    const wallet = viewer.walletAddress;
+    return {
+      name: viewer.name || viewer.email?.split('@')[0] || 'Member',
+      email: viewer.email ?? '',
+      wallet: wallet ? `${wallet.slice(0, 6)}…${wallet.slice(-4)}` : 'pending',
+      isAdmin: viewer.isAdmin,
+      joinedNow: viewer.joinedNow && !joinDismissed,
+      mintStatus: viewer.mint.status,
+    };
+  }, [viewer, joinDismissed]);
+
+  const cycle = toCycleView(
+    state?.cycle ?? null,
+    state?.totals ?? {
+      communityAud: 0,
+      matchAud: 0,
+      potAud: 0,
+      contributors: 0,
+      votesCast: 0,
+    },
+  );
 
   const value: CampaignContextValue = {
-    ...state,
-    hydrated,
+    hydrated: ready && !loading,
+    loading,
+    error,
+    user,
+    balance,
+    cycle,
+    projects,
+    tally,
+    totalPotAud: state?.totals.potAud ?? 0,
+    votesCast: state?.totals.votesCast ?? 0,
+    economics: state?.economics ?? {
+      joinBonusRsut: 50,
+      rsutPerAud: 1,
+      minContributionAud: 5,
+    },
     signIn,
     signOut,
-    dismissJoinNotice,
+    dismissJoinNotice: () => setJoinDismissed(true),
+    allocations,
     allocated,
     remaining,
+    dirty,
+    saving,
     setAllocation,
     adjustAllocation,
     resetAllocations,
+    saveVotes,
     contribute,
-    totalPotAud,
-    tally,
-    addProject,
-    removeProject,
-    toggleProject,
-    setCycleDuration,
-    startNewCycle,
-    markPaid,
+    refresh,
+    getToken,
   };
 
   return (
@@ -371,22 +451,4 @@ export function useCampaign() {
     throw new Error('useCampaign must be used inside CampaignProvider');
   }
   return ctx;
-}
-
-export const GROUP_ORDER: ProjectGroup[] = [
-  'initiative',
-  'program',
-  'enabling',
-];
-
-export function formatAud(amount: number) {
-  return new Intl.NumberFormat('en-AU', {
-    style: 'currency',
-    currency: 'AUD',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-export function formatNumber(amount: number) {
-  return new Intl.NumberFormat('en-AU').format(Math.round(amount));
 }

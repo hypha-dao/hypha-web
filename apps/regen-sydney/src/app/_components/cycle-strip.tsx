@@ -38,7 +38,7 @@ function Unit({ value, label }: { value: number; label: string }) {
 }
 
 export function CycleStrip() {
-  const { cycle, totalPotAud, contributions } = useCampaign();
+  const { cycle, totalPotAud, votesCast, economics } = useCampaign();
   const countdown = useCountdown(cycle.endsAt);
 
   return (
@@ -68,7 +68,7 @@ export function CycleStrip() {
           <div>
             <dt className="rs-eyebrow text-[var(--rs-teal)]">Matched</dt>
             <dd className="rs-heading rs-tabular mt-1 text-xl">
-              {formatAud(cycle.communityPotAud)}
+              {formatAud(cycle.communityPotAud * cycle.matchMultiplier)}
             </dd>
           </div>
           <div>
@@ -84,18 +84,16 @@ export function CycleStrip() {
             </dd>
           </div>
           <div>
-            <dt className="rs-eyebrow text-[var(--rs-teal)]">
-              Latest donation
-            </dt>
+            <dt className="rs-eyebrow text-[var(--rs-teal)]">Votes cast</dt>
             <dd className="rs-heading rs-tabular mt-1 text-xl">
-              {contributions[0]
-                ? formatAud(contributions[0].amountAud)
-                : formatAud(0)}
+              {formatNumber(votesCast)}
             </dd>
           </div>
           <div>
             <dt className="rs-eyebrow text-[var(--rs-teal)]">Rate</dt>
-            <dd className="rs-heading rs-tabular mt-1 text-xl">A$1 = 1 RSUT</dd>
+            <dd className="rs-heading rs-tabular mt-1 text-xl">
+              A$1 = {economics.rsutPerAud} RSUT
+            </dd>
           </div>
         </dl>
       </div>

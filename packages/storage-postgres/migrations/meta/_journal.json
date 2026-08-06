@@ -526,6 +526,13 @@
       "when": 1784000000005,
       "tag": "0074_space_api_keys_and_signal_source",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1785946426242,
+      "tag": "0075_campaign_tables",
+      "breakpoints": true
     }
   ]
 }
