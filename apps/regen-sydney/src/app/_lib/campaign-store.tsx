@@ -150,13 +150,35 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [joinDismissed, setJoinDismissed] = useState(false);
 
+  /**
+   * Privy reports `authenticated` before `getAccessToken()` can produce a
+   * token, so the first call after sign-in usually comes back empty. Sending
+   * that request without a bearer earns a 401 that nothing retries — the
+   * effect's dependencies have already settled — and the member stays signed
+   * out for the rest of the visit while Privy insists they are signed in.
+   *
+   * The same wait is in `@hypha-platform/authentication`, which hit this on the
+   * platform; the campaign cannot import it without depending on Hypha's
+   * runtime, so the retry lives here instead. Backoff is bounded: after roughly
+   * eight seconds, give up and let the server report a real 401.
+   */
   const getToken = useCallback(async () => {
     if (!authenticated) return null;
-    try {
-      return await getAccessToken();
-    } catch {
-      return null;
+
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        const token = await getAccessToken();
+        if (token) return token;
+      } catch (caught) {
+        // Worth saying out loud: returning null quietly turns a refresh
+        // failure into an unexplained 401 several layers away.
+        console.warn('Privy access token unavailable:', caught);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
     }
+
+    console.warn('Privy never produced an access token for this session');
+    return null;
   }, [authenticated, getAccessToken]);
 
   const loadPublicState = useCallback(async () => {
