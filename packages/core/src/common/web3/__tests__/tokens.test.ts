@@ -42,7 +42,8 @@ describe('TOKENS catalogue', () => {
 
   it('has no duplicate addresses or symbols', () => {
     const addresses = TOKENS.map((t) => t.address.toLowerCase());
-    const symbols = TOKENS.map((t) => t.symbol);
+    // getTokenMeta matches symbols case-insensitively, so compare them that way.
+    const symbols = TOKENS.map((t) => t.symbol.toUpperCase());
     expect(new Set(addresses).size).toBe(TOKENS.length);
     expect(new Set(symbols).size).toBe(TOKENS.length);
   });
@@ -55,6 +56,16 @@ describe('TOKENS catalogue', () => {
       a.toLowerCase(),
     ).sort();
     expect(allowlisted).toEqual(transferable);
+  });
+
+  it('carries AUDD on Base as a transferable 6-decimal stablecoin', () => {
+    const audd = TOKENS.find((t) => t.symbol === 'AUDD');
+    expect(audd?.address).toBe('0x449B3317a6d1efb1Bc3ba0700C9EaA4FFFf4Ae65');
+    expect(audd?.transferable).toBe(true);
+    expect(audd?.icon).toBe('/placeholder/audd-icon.svg');
+    expect(
+      ERC20_TOKEN_TRANSFER_ADDRESSES.map((a) => a.toLowerCase()),
+    ).toContain(audd?.address.toLowerCase());
   });
 
   it('points every token at an icon asset', () => {
