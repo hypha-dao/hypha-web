@@ -78,12 +78,18 @@ describe('TOKENS catalogue', () => {
 
 describe('getOraclePricedTokensHint', () => {
   it('lists every catalogue token that has a price feed', () => {
-    const hint = getOraclePricedTokensHint();
+    // Parse the prose back into symbols so this matches whole entries; a
+    // substring check would count USDC as listing a hypothetical USD.
+    const listed = new Set(
+      getOraclePricedTokensHint()
+        .split(/,\s*or\s+|,\s*|\s+or\s+/)
+        .filter(Boolean),
+    );
     for (const token of TOKENS) {
       const hasFeed = Boolean(
         ASSET_PRICE_FEED_BY_TOKEN[token.address.toLowerCase()],
       );
-      expect(hint.includes(token.symbol)).toBe(hasFeed);
+      expect(listed.has(token.symbol)).toBe(hasFeed);
     }
   });
 
