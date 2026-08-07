@@ -50,6 +50,14 @@ export const TOKENS: Token[] = [
     transferable: true,
   },
   {
+    symbol: 'AUDD',
+    icon: '/placeholder/audd-icon.svg',
+    address: '0x449B3317a6d1efb1Bc3ba0700C9EaA4FFFf4Ae65',
+    name: 'AUDD',
+    type: null,
+    transferable: true,
+  },
+  {
     symbol: 'WETH',
     icon: '/placeholder/eth.svg',
     address: '0x4200000000000000000000000000000000000006',
@@ -102,7 +110,7 @@ export function isHiddenToken(address?: string | null): boolean {
   return HIDDEN_TOKEN_ADDRESSES.has(address.toLowerCase());
 }
 
-/** True when `address` is in the hardcoded {@link TOKENS} catalogue (USDC/EURC/WETH/cbBTC/HYPHA). */
+/** True when `address` is in the hardcoded {@link TOKENS} catalogue (USDC/EURC/AUDD/WETH/cbBTC/HYPHA). */
 export function isCatalogueToken(address?: string | null): boolean {
   if (!address) return false;
   const lower = address.toLowerCase();
@@ -125,6 +133,7 @@ export function isKnownTreasuryToken(
 export const ERC20_TOKEN_TRANSFER_ADDRESSES = [
   '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
   '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42',
+  '0x449B3317a6d1efb1Bc3ba0700C9EaA4FFFf4Ae65',
   '0x4200000000000000000000000000000000000006',
   '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
 ];

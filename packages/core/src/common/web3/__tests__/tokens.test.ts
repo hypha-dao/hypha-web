@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { getAddress } from 'viem';
 import {
+  ERC20_TOKEN_TRANSFER_ADDRESSES,
   TOKENS,
   HYPHA_PRICE_USD,
   HYPHA_TOKEN_ADDRESS,
@@ -24,6 +26,37 @@ describe('isCatalogueToken', () => {
     expect(isCatalogueToken(null)).toBe(false);
     expect(isCatalogueToken(undefined)).toBe(false);
     expect(isCatalogueToken('')).toBe(false);
+  });
+});
+
+describe('TOKENS catalogue', () => {
+  it('stores every address in EIP-55 checksummed form', () => {
+    for (const token of TOKENS) {
+      expect(getAddress(token.address)).toBe(token.address);
+    }
+  });
+
+  it('has no duplicate addresses or symbols', () => {
+    const addresses = TOKENS.map((t) => t.address.toLowerCase());
+    const symbols = TOKENS.map((t) => t.symbol);
+    expect(new Set(addresses).size).toBe(TOKENS.length);
+    expect(new Set(symbols).size).toBe(TOKENS.length);
+  });
+
+  it('lists exactly the transferable tokens in ERC20_TOKEN_TRANSFER_ADDRESSES', () => {
+    const transferable = TOKENS.filter((t) => t.transferable)
+      .map((t) => t.address.toLowerCase())
+      .sort();
+    const allowlisted = ERC20_TOKEN_TRANSFER_ADDRESSES.map((a) =>
+      a.toLowerCase(),
+    ).sort();
+    expect(allowlisted).toEqual(transferable);
+  });
+
+  it('points every token at an icon asset', () => {
+    for (const token of TOKENS) {
+      expect(token.icon).toMatch(/^\/placeholder\/.+\.(svg|png)$/);
+    }
   });
 });
 

@@ -170,7 +170,7 @@ export async function preflightTokenBackingVault(
   );
 
   const validationErrors: string[] = [];
-  const SUPPORTED_TOKENS_HINT = 'USDC, WETH, cbBTC, or EURC';
+  const SUPPORTED_TOKENS_HINT = 'USDC, EURC, AUDD, WETH, or cbBTC';
 
   // Space token must have tokenPrice() > 0 when creating a new vault,
   // UNLESS a redemption-price override is being set in this proposal

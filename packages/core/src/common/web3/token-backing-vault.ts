@@ -4,6 +4,11 @@ export const ASSET_PRICE_FEED_BY_TOKEN: Record<string, `0x${string}`> = {
     '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B' as `0x${string}`,
   '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42':
     '0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250' as `0x${string}`,
+  // AUDD has no dedicated Chainlink feed. It is 1:1 AUD-backed, so it is valued
+  // through the AUD/USD fiat feed (same address as CURRENCY_FEEDS.AUD) — that
+  // tracks the peg, not AUDD's market price, so a depeg would not be reflected.
+  '0x449b3317a6d1efb1bc3ba0700c9eaa4ffff4ae65':
+    '0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229' as `0x${string}`,
   '0x4200000000000000000000000000000000000006':
     '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70' as `0x${string}`,
   '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf':
