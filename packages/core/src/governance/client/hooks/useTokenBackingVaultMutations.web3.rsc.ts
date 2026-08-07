@@ -29,6 +29,7 @@ import {
   ASSET_PRICE_FEED_BY_TOKEN,
   HYPH_TOKEN_PRICE_FEED,
   CURRENCY_FEEDS,
+  getOraclePricedTokensHint,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 
@@ -170,7 +171,7 @@ export async function preflightTokenBackingVault(
   );
 
   const validationErrors: string[] = [];
-  const SUPPORTED_TOKENS_HINT = 'USDC, WETH, cbBTC, or EURC';
+  const SUPPORTED_TOKENS_HINT = getOraclePricedTokensHint();
 
   // Space token must have tokenPrice() > 0 when creating a new vault,
   // UNLESS a redemption-price override is being set in this proposal

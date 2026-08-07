@@ -1,14 +1,39 @@
+import { TOKENS } from './tokens';
+
 /** Chainlink asset price feeds for backing tokens (Base Mainnet) - by token address */
 export const ASSET_PRICE_FEED_BY_TOKEN: Record<string, `0x${string}`> = {
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913':
     '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B' as `0x${string}`,
   '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42':
     '0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250' as `0x${string}`,
+  // AUDD has no dedicated Chainlink feed. It is 1:1 AUD-backed, so it is valued
+  // through the AUD/USD fiat feed (same address as CURRENCY_FEEDS.AUD) — that
+  // tracks the peg, not AUDD's market price, so a depeg would not be reflected.
+  '0x449b3317a6d1efb1bc3ba0700c9eaa4ffff4ae65':
+    '0x46e51B8cA41d709928EdA9Ae43e42193E6CDf229' as `0x${string}`,
   '0x4200000000000000000000000000000000000006':
     '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70' as `0x${string}`,
   '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf':
     '0x64c911996D3c6aC71f9b455B1E8E7266BcbD848F' as `0x${string}`,
 };
+
+/**
+ * Catalogue tokens that can back a vault straight away, as a prose list for
+ * validation messages ("USDC, EURC, or WETH"). Anything else has to expose an
+ * on-chain `tokenPrice()`.
+ *
+ * Derived from {@link ASSET_PRICE_FEED_BY_TOKEN} rather than hand-written, so
+ * it cannot drift out of date as tokens are added to the catalogue.
+ */
+export function getOraclePricedTokensHint(): string {
+  const symbols = TOKENS.filter(
+    (token) => ASSET_PRICE_FEED_BY_TOKEN[token.address.toLowerCase()],
+  ).map((token) => token.symbol);
+  if (symbols.length < 2) return symbols.join('');
+  return `${symbols.slice(0, -1).join(', ')}, or ${
+    symbols[symbols.length - 1]
+  }`;
+}
 
 /**
  * Chainlink currency feeds for redemption price (X/USD, address(0) = USD).

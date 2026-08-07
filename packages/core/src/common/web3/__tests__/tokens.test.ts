@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { getAddress } from 'viem';
 import {
+  ERC20_TOKEN_TRANSFER_ADDRESSES,
   TOKENS,
   HYPHA_PRICE_USD,
   HYPHA_TOKEN_ADDRESS,
@@ -7,6 +9,10 @@ import {
   isHyphaToken,
   isKnownTreasuryToken,
 } from '../tokens';
+import {
+  ASSET_PRICE_FEED_BY_TOKEN,
+  getOraclePricedTokensHint,
+} from '../token-backing-vault';
 
 describe('isCatalogueToken', () => {
   it('returns true for hardcoded catalogue addresses', () => {
@@ -24,6 +30,73 @@ describe('isCatalogueToken', () => {
     expect(isCatalogueToken(null)).toBe(false);
     expect(isCatalogueToken(undefined)).toBe(false);
     expect(isCatalogueToken('')).toBe(false);
+  });
+});
+
+describe('TOKENS catalogue', () => {
+  it('stores every address in EIP-55 checksummed form', () => {
+    for (const token of TOKENS) {
+      expect(getAddress(token.address)).toBe(token.address);
+    }
+  });
+
+  it('has no duplicate addresses or symbols', () => {
+    const addresses = TOKENS.map((t) => t.address.toLowerCase());
+    // getTokenMeta matches symbols case-insensitively, so compare them that way.
+    const symbols = TOKENS.map((t) => t.symbol.toUpperCase());
+    expect(new Set(addresses).size).toBe(TOKENS.length);
+    expect(new Set(symbols).size).toBe(TOKENS.length);
+  });
+
+  it('lists exactly the transferable tokens in ERC20_TOKEN_TRANSFER_ADDRESSES', () => {
+    const transferable = TOKENS.filter((t) => t.transferable)
+      .map((t) => t.address.toLowerCase())
+      .sort();
+    const allowlisted = ERC20_TOKEN_TRANSFER_ADDRESSES.map((a) =>
+      a.toLowerCase(),
+    ).sort();
+    expect(allowlisted).toEqual(transferable);
+  });
+
+  // Decimals are asserted in packages/epics, where the resolver lives.
+  it('carries AUDD on Base as a transferable token with an icon', () => {
+    const audd = TOKENS.find((t) => t.symbol === 'AUDD');
+    expect(audd?.address).toBe('0x449B3317a6d1efb1Bc3ba0700C9EaA4FFFf4Ae65');
+    expect(audd?.transferable).toBe(true);
+    expect(audd?.icon).toBe('/placeholder/audd-icon.svg');
+    expect(
+      ERC20_TOKEN_TRANSFER_ADDRESSES.map((a) => a.toLowerCase()),
+    ).toContain(audd?.address.toLowerCase());
+  });
+
+  it('points every token at an icon asset', () => {
+    for (const token of TOKENS) {
+      expect(token.icon).toMatch(/^\/placeholder\/.+\.(svg|png)$/);
+    }
+  });
+});
+
+describe('getOraclePricedTokensHint', () => {
+  it('lists every catalogue token that has a price feed', () => {
+    // Parse the prose back into symbols so this matches whole entries; a
+    // substring check would count USDC as listing a hypothetical USD.
+    const listed = new Set(
+      getOraclePricedTokensHint()
+        .split(/,\s*or\s+|,\s*|\s+or\s+/)
+        .filter(Boolean),
+    );
+    for (const token of TOKENS) {
+      const hasFeed = Boolean(
+        ASSET_PRICE_FEED_BY_TOKEN[token.address.toLowerCase()],
+      );
+      expect(listed.has(token.symbol)).toBe(hasFeed);
+    }
+  });
+
+  it('reads as a prose list', () => {
+    expect(getOraclePricedTokensHint()).toBe(
+      'USDC, EURC, AUDD, WETH, or cbBTC',
+    );
   });
 });
 

@@ -1,8 +1,10 @@
 const TOKEN_DECIMALS_BY_ADDRESS: Record<string, number> = {
   // USDC (Base)
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 6,
-  // USDC (test/development deployment)
+  // EURC (Base)
   '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42': 6,
+  // AUDD (Base)
+  '0x449b3317a6d1efb1bc3ba0700c9eaa4ffff4ae65': 6,
   // cbBTC (Base)
   '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf': 8,
 };

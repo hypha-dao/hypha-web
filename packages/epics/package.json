@@ -6,7 +6,7 @@
   "scripts": {
     "check-types": "NODE_OPTIONS='--max-old-space-size=6144' tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run src/common/human-chat-panel/__tests__/ src/common/__tests__/ src/common/composer/__tests__/"
+    "test": "vitest run src/common/human-chat-panel/__tests__/ src/common/__tests__/ src/common/composer/__tests__/ src/governance/utils/__tests__/"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
