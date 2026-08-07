@@ -58,7 +58,8 @@ describe('TOKENS catalogue', () => {
     expect(allowlisted).toEqual(transferable);
   });
 
-  it('carries AUDD on Base as a transferable 6-decimal stablecoin', () => {
+  // Decimals are asserted in packages/epics, where the resolver lives.
+  it('carries AUDD on Base as a transferable token with an icon', () => {
     const audd = TOKENS.find((t) => t.symbol === 'AUDD');
     expect(audd?.address).toBe('0x449B3317a6d1efb1Bc3ba0700C9EaA4FFFf4Ae65');
     expect(audd?.transferable).toBe(true);
