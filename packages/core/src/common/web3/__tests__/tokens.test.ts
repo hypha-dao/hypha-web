@@ -9,6 +9,10 @@ import {
   isHyphaToken,
   isKnownTreasuryToken,
 } from '../tokens';
+import {
+  ASSET_PRICE_FEED_BY_TOKEN,
+  getOraclePricedTokensHint,
+} from '../token-backing-vault';
 
 describe('isCatalogueToken', () => {
   it('returns true for hardcoded catalogue addresses', () => {
@@ -57,6 +61,24 @@ describe('TOKENS catalogue', () => {
     for (const token of TOKENS) {
       expect(token.icon).toMatch(/^\/placeholder\/.+\.(svg|png)$/);
     }
+  });
+});
+
+describe('getOraclePricedTokensHint', () => {
+  it('lists every catalogue token that has a price feed', () => {
+    const hint = getOraclePricedTokensHint();
+    for (const token of TOKENS) {
+      const hasFeed = Boolean(
+        ASSET_PRICE_FEED_BY_TOKEN[token.address.toLowerCase()],
+      );
+      expect(hint.includes(token.symbol)).toBe(hasFeed);
+    }
+  });
+
+  it('reads as a prose list', () => {
+    expect(getOraclePricedTokensHint()).toBe(
+      'USDC, EURC, AUDD, WETH, or cbBTC',
+    );
   });
 });
 
