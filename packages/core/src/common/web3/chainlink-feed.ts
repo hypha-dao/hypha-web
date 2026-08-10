@@ -9,6 +9,12 @@
  */
 export const FEED_MAX_AGE_SECONDS = 48 * 60 * 60;
 
+/**
+ * Small allowance for local clock lag relative to the oracle. Timestamps farther
+ * into the future than this are treated as malformed rather than fresh.
+ */
+export const FEED_MAX_FUTURE_SKEW_SECONDS = 5 * 60;
+
 /** The fields of `latestRoundData` we actually price against. */
 export type ChainlinkRound = {
   answer?: bigint;
@@ -31,6 +37,9 @@ export function parseFeedRate(
 ): FeedRateResult {
   const { answer, updatedAt } = round;
 
+  if (!Number.isSafeInteger(nowSeconds) || nowSeconds <= 0) {
+    return { ok: false, reason: 'invalid' };
+  }
   if (answer == null || answer <= 0n) return { ok: false, reason: 'invalid' };
   if (!Number.isInteger(decimals) || decimals < 0 || decimals > 30) {
     return { ok: false, reason: 'invalid' };
@@ -39,7 +48,13 @@ export function parseFeedRate(
   if (updatedAt == null || updatedAt <= 0n) {
     return { ok: false, reason: 'invalid' };
   }
-  if (nowSeconds - Number(updatedAt) > FEED_MAX_AGE_SECONDS) {
+
+  // Compare as bigint so a far-future updatedAt cannot lose precision via Number().
+  const now = BigInt(nowSeconds);
+  if (updatedAt > now + BigInt(FEED_MAX_FUTURE_SKEW_SECONDS)) {
+    return { ok: false, reason: 'invalid' };
+  }
+  if (now - updatedAt > BigInt(FEED_MAX_AGE_SECONDS)) {
     return { ok: false, reason: 'stale' };
   }
 

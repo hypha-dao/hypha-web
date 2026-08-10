@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { FEED_MAX_AGE_SECONDS, parseFeedRate } from '../chainlink-feed';
+import {
+  FEED_MAX_AGE_SECONDS,
+  FEED_MAX_FUTURE_SKEW_SECONDS,
+  parseFeedRate,
+} from '../chainlink-feed';
 
 const NOW = 1_800_000_000;
 const fresh = (answer: bigint) => ({ answer, updatedAt: BigInt(NOW - 60) });
@@ -35,6 +39,25 @@ describe('parseFeedRate', () => {
   it('tolerates a feed timestamp slightly ahead of local time', () => {
     const round = { answer: 65_000_000n, updatedAt: BigInt(NOW + 30) };
     expect(parseFeedRate(round, 8, NOW)).toEqual({ ok: true, rate: 0.65 });
+  });
+
+  it('accepts an answer right at the future skew boundary', () => {
+    const round = {
+      answer: 65_000_000n,
+      updatedAt: BigInt(NOW + FEED_MAX_FUTURE_SKEW_SECONDS),
+    };
+    expect(parseFeedRate(round, 8, NOW)).toEqual({ ok: true, rate: 0.65 });
+  });
+
+  it('rejects a timestamp beyond the allowed future skew', () => {
+    const round = {
+      answer: 65_000_000n,
+      updatedAt: BigInt(NOW + FEED_MAX_FUTURE_SKEW_SECONDS + 1),
+    };
+    expect(parseFeedRate(round, 8, NOW)).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
   });
 
   it('rejects a non-positive answer', () => {
