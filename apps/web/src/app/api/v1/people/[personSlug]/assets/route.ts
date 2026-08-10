@@ -35,21 +35,24 @@ import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { web3Client } from '@hypha-platform/core/server';
 
+type SourceResult<T> = { ok: true; value: T } | { ok: false; value: T };
+
 /**
  * Transient Alchemy / RPC blips used to return an empty fallback on the first
  * failure, which the client then treated as the real wallet (balance flicker).
- * One short retry absorbs most of those without changing the happy path.
+ * One short retry absorbs most of those; the caller still learns whether the
+ * source actually succeeded so incomplete responses can be marked.
  */
 async function withRetry<T>(
   label: string,
   fn: () => Promise<T>,
   fallback: T,
   attempts = 2,
-): Promise<T> {
+): Promise<SourceResult<T>> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      return await fn();
+      return { ok: true, value: await fn() };
     } catch (error) {
       lastError = error;
       if (attempt < attempts) {
@@ -58,7 +61,7 @@ async function withRetry<T>(
     }
   }
   console.warn(`Failed to ${label} after ${attempts} attempts:`, lastError);
-  return fallback;
+  return { ok: false, value: fallback };
 }
 
 export async function GET(
@@ -98,9 +101,9 @@ export async function GET(
      * unknown ERC-20 spam is dropped via isKnownTreasuryToken.
      */
     const [
-      energyResult,
-      memberSpacesResult,
-      externalTokens,
+      energySource,
+      memberSpacesSource,
+      externalTokensSource,
       rawDbTokensForSeed,
     ] = await Promise.all([
       withRetry(
@@ -121,6 +124,18 @@ export async function GET(
       ),
       findAllTokens({ db: getDb({ authToken }) }, { search: undefined }),
     ]);
+
+    const energyResult = energySource.value;
+    const memberSpacesResult = memberSpacesSource.value;
+    const externalTokens = externalTokensSource.value;
+
+    // Alchemy is what discovers holdings outside the energy/member catalogues.
+    // When it fails we still assemble a partial wallet (HYPHA/USDC + energy
+    // community tokens), but the client must not treat that as the full set.
+    const incompleteSources: string[] = [];
+    if (!externalTokensSource.ok) incompleteSources.push('alchemy');
+    if (!memberSpacesSource.ok) incompleteSources.push('memberSpaces');
+    if (!energySource.ok) incompleteSources.push('energy');
 
     const energyBalanceRaw: bigint = energyResult
       ? BigInt(energyResult[0])
@@ -486,6 +501,9 @@ export async function GET(
     return NextResponse.json({
       assets: sorted,
       balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
+      // Empty when every upstream source answered. Non-empty means this payload
+      // is missing a slice of holdings (most often Alchemy → "energy-only" look).
+      incompleteSources,
     });
   } catch (error) {
     console.error('Failed to fetch user assets:', error);
