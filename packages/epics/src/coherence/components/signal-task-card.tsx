@@ -89,6 +89,7 @@ export function SignalTaskCard({
       | 'priorities.low',
   );
 
+  const hasAssignee = signal.assigneeIds.length > 0;
   const { creatorDisplayName, createdAtRelative } = useSignalCreatorMeta({
     creatorId: signal.creatorId,
     createdAt: signal.createdAt,
@@ -191,7 +192,9 @@ export function SignalTaskCard({
                 </span>
               </>
             ) : null}
-            {creatorDisplayName ? (
+            {/* The assignee owns the person slot; the creator only fills it
+                for signals nobody is assigned to. */}
+            {!hasAssignee && creatorDisplayName ? (
               <>
                 <span className="mx-1.5 text-border" aria-hidden>
                   ·

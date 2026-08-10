@@ -159,6 +159,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
   const isCreator = person?.id === creatorId;
+  const hasAssignee = (assigneeIds?.length ?? 0) > 0;
   const creatorDisplayName = React.useMemo(() => {
     if (isCreator) {
       const currentUserName = [person?.name, person?.surname]
@@ -390,7 +391,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <p className="truncate text-1 text-muted-foreground">
               <span>{typeLabel}</span>
               {/* Priority stays on the left accent bar only — avoid duplicate status channel */}
-              {creatorDisplayName ? (
+              {/* The assignee owns the person slot; the creator only fills it
+                  for signals nobody is assigned to. */}
+              {!hasAssignee && creatorDisplayName ? (
                 <>
                   <span className="mx-1.5 text-border" aria-hidden>
                     ·
