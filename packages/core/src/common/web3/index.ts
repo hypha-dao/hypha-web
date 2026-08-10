@@ -7,6 +7,7 @@ export * from './tokens';
 export * from './energy-community-tokens';
 export * from './token-backing-vault';
 export * from './currency-conversion';
+export * from './chainlink-feed';
 export * from './allowed-spaces';
 export * from './abis/space-token-purchase';
 

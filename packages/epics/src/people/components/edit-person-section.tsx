@@ -33,7 +33,7 @@ import { Links } from '../../common';
 import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useScrollToErrors } from '../../hooks';
 import { useCallback, useMemo, useRef } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 /** Subset of person fields used to seed the edit form (not the full domain `Person`). */
 interface EditPersonSectionInput {
@@ -78,25 +78,20 @@ export const EditPersonSection = ({
   const tSpaces = useTranslations('Spaces');
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
-  const locale = useLocale();
+  /** The currency names the token issuance form already ships in every locale. */
+  const tCurrencies = useTranslations(
+    'AgreementFlow.plugins.issueNewToken.value.currencies',
+  );
   const baseResolver = useMemo(() => zodResolver(schemaEditPersonForm), []);
 
-  /**
-   * `Intl.DisplayNames` localizes the currency names for free, so the picker
-   * reads naturally in every locale without a translation key per currency.
-   */
-  const currencyOptions = useMemo(() => {
-    let displayNames: Intl.DisplayNames | undefined;
-    try {
-      displayNames = new Intl.DisplayNames([locale], { type: 'currency' });
-    } catch {
-      displayNames = undefined;
-    }
-    return TOKEN_PRICE_REFERENCE_CURRENCIES.map((code) => ({
-      code,
-      label: displayNames?.of(code) ?? code,
-    }));
-  }, [locale]);
+  const currencyOptions = useMemo(
+    () =>
+      TOKEN_PRICE_REFERENCE_CURRENCIES.map((code) => ({
+        code,
+        label: tCurrencies(code.toLowerCase()),
+      })),
+    [tCurrencies],
+  );
 
   const translateEditProfileError = useCallback(
     (message: string) => {
@@ -223,9 +218,11 @@ export const EditPersonSection = ({
       links: person?.links || [],
       email: person?.email || '',
       location: person?.location || '',
-      preferredCurrency: person?.preferredCurrency as
-        | FormData['preferredCurrency']
-        | undefined,
+      // Free-text column: anything not on the supported list would fail the
+      // resolver on submit and block saving an otherwise-untouched profile.
+      preferredCurrency: TOKEN_PRICE_REFERENCE_CURRENCIES.find(
+        (code) => code === person?.preferredCurrency,
+      ),
     },
     mode: 'onChange',
   });
@@ -466,7 +463,11 @@ export const EditPersonSection = ({
                 </span>
               </div>
               <div className="flex justify-between">
-                <Text className={cn('text-2', 'text-neutral-11')}>
+                <Text
+                  as="label"
+                  htmlFor="preferred-currency"
+                  className={cn('text-2', 'text-neutral-11')}
+                >
                   {tProfile('editForm.labels.preferredCurrency')}
                 </Text>
                 <span className="flex items-center">
@@ -481,7 +482,10 @@ export const EditPersonSection = ({
                             onValueChange={field.onChange}
                             disabled={isLoading}
                           >
-                            <SelectTrigger className="w-60">
+                            <SelectTrigger
+                              id="preferred-currency"
+                              className="w-60"
+                            >
                               <SelectValue
                                 placeholder={tProfile(
                                   'editForm.placeholders.preferredCurrency',

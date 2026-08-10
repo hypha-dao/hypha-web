@@ -8,6 +8,7 @@ import {
   findAllTokens,
   getSupply,
   getUsdRates,
+  convertToUsd,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -25,7 +26,6 @@ import {
   getEnergyCommunityDisplayDecimals,
   isHyphaToken,
   HYPHA_PRICE_USD,
-  convertToUsd,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -226,15 +226,17 @@ export async function GET(
       (token) => !isHiddenToken(token.address),
     );
 
-    let prices: Record<string, number | undefined> = {};
-    try {
-      prices = await getTokenPrice(allTokens.map(({ address }) => address));
-    } catch (error: unknown) {
-      console.error('Failed to fetch token prices:', error);
-    }
-
-    /** Needed to sum tokens priced in different currencies into one total. */
-    const usdRates = await getUsdRates();
+    // Rates are needed to sum tokens priced in different currencies into one
+    // total, and do not depend on the prices, so pay for one round-trip.
+    const [prices, usdRates] = await Promise.all([
+      getTokenPrice(allTokens.map(({ address }) => address)).catch(
+        (error: unknown) => {
+          console.error('Failed to fetch token prices:', error);
+          return {} as Record<string, number | undefined>;
+        },
+      ),
+      getUsdRates(),
+    ]);
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {

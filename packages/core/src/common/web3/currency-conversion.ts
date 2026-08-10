@@ -14,10 +14,18 @@ export const CONVERTIBLE_CURRENCIES = Object.keys(
 /** USD value of one unit of each convertible currency, e.g. `{ AUD: 0.65 }`. */
 export type UsdRates = Partial<Record<ConvertibleCurrency, number>>;
 
+/**
+ * `reference_currency` is free text in the DB, so an `in` check would accept
+ * inherited names like `constructor` and hand back a function as the rate,
+ * turning the balance total into NaN. Only own keys count.
+ */
 export function isConvertibleCurrency(
   currency: string | null | undefined,
 ): currency is ConvertibleCurrency {
-  return currency != null && currency in CURRENCY_FEEDS;
+  return (
+    currency != null &&
+    Object.prototype.hasOwnProperty.call(CURRENCY_FEEDS, currency)
+  );
 }
 
 /**

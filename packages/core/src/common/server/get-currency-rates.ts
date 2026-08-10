@@ -5,6 +5,7 @@ import {
   CONVERTIBLE_CURRENCIES,
   type UsdRates,
 } from '../web3/currency-conversion';
+import { parseFeedRate, type ChainlinkRound } from '../web3/chainlink-feed';
 import { aggregatorV3InterfaceAbi } from '../../generated';
 import { web3Client } from './web3-rpc/client';
 
@@ -57,14 +58,20 @@ export async function getUsdRates(): Promise<UsdRates> {
         return;
       }
 
-      const answer = (roundResult.result as readonly bigint[])[1];
-      const decimals = Number(decimalsResult.result);
-      if (answer == null || answer <= 0n || !Number.isFinite(decimals)) {
-        console.warn(`Invalid Chainlink answer for ${currency}/USD`);
+      // latestRoundData: [roundId, answer, startedAt, updatedAt, answeredInRound]
+      const round = roundResult.result as readonly bigint[];
+      const parsed = parseFeedRate(
+        { answer: round[1], updatedAt: round[3] } satisfies ChainlinkRound,
+        Number(decimalsResult.result),
+      );
+      if (!parsed.ok) {
+        console.warn(
+          `Skipping ${parsed.reason} Chainlink answer for ${currency}/USD`,
+        );
         return;
       }
 
-      rates[currency] = Number(answer) / 10 ** decimals;
+      rates[currency] = parsed.rate;
     });
   } catch (error) {
     console.error('Failed to fetch Chainlink currency rates:', error);

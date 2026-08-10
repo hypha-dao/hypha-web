@@ -33,6 +33,13 @@ describe('isConvertibleCurrency', () => {
     expect(isConvertibleCurrency(null)).toBe(false);
     expect(isConvertibleCurrency(undefined)).toBe(false);
   });
+
+  it('rejects inherited object keys', () => {
+    expect(isConvertibleCurrency('constructor')).toBe(false);
+    expect(isConvertibleCurrency('toString')).toBe(false);
+    expect(isConvertibleCurrency('hasOwnProperty')).toBe(false);
+    expect(isConvertibleCurrency('__proto__')).toBe(false);
+  });
 });
 
 describe('convertToUsd', () => {
@@ -60,6 +67,16 @@ describe('convertToUsd', () => {
     expect(convertToUsd(0, 'AUD', RATES)).toBe(0);
     expect(convertToUsd(Number.NaN, 'AUD', RATES)).toBe(0);
     expect(convertToUsd(Number.POSITIVE_INFINITY, 'AUD', RATES)).toBe(0);
+  });
+
+  it('does not let an inherited key name poison the total with NaN', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    // reference_currency is free text, so these can reach us from the DB.
+    for (const key of ['constructor', 'toString', 'hasOwnProperty']) {
+      expect(convertToUsd(100, key, RATES)).toBe(100);
+      expect(convertFromUsd(100, key, RATES)).toBe(100);
+    }
+    warn.mockRestore();
   });
 });
 

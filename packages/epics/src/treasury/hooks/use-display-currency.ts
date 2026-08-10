@@ -26,25 +26,6 @@ const fetchRates = (endpoint: string): Promise<{ rates: UsdRates }> =>
   });
 
 /**
- * Currency symbol as written in `locale`, e.g. `A$` for AUD in en-US. Falls
- * back to the ISO code so an unrecognized currency still renders sensibly.
- */
-function getCurrencySymbol(currency: string, locale: string): string {
-  try {
-    return (
-      new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
-      })
-        .formatToParts(0)
-        .find((part) => part.type === 'currency')?.value ?? currency
-    );
-  } catch {
-    return currency;
-  }
-}
-
-/**
  * Renders USD-denominated totals in the currency the member picked on their
  * profile. Defaults to USD, which is what the API already sums in, so an
  * unset preference or an unavailable rate leaves the display unchanged.
@@ -72,13 +53,20 @@ export const useDisplayCurrency = () => {
   const rate = currency === 'USD' ? 1 : preferredRate;
 
   return React.useMemo(() => {
-    const symbol = getCurrencySymbol(currency, locale);
     const rates: UsdRates = rate ? { [currency]: rate } : {};
 
     const formatFromUsd = (usdAmount: number): string => {
       const value = convertFromUsd(usdAmount, currency, rates);
-      const sign = value < 0 ? '-' : '';
-      return `${sign}${symbol} ${formatCurrencyValue(Math.abs(value), locale)}`;
+      try {
+        // Let Intl place the symbol and the sign: de-DE writes "1.234,56 €",
+        // not "€ 1.234,56". Fraction digits still adapt to the magnitude.
+        return formatCurrencyValue(value, locale, {
+          style: 'currency',
+          currency,
+        });
+      } catch {
+        return `${currency} ${formatCurrencyValue(value, locale)}`;
+      }
     };
 
     return { currency, formatFromUsd };
