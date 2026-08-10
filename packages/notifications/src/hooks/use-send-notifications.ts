@@ -7,6 +7,7 @@ import {
   NotifyProposalAcceptedInput,
   NotifyProposalCreatedInput,
   NotifyProposalRejectedInput,
+  NotifySignalAssignedInput,
   UseSendNotificationsHook,
   UseSendNotificationsInput,
   UseSendNotificationsReturn,
@@ -17,6 +18,7 @@ import {
   notifyProposalAcceptedAction,
   notifyProposalCreatedAction,
   notifyProposalRejectedAction,
+  notifySignalAssignedAction,
 } from '../actions';
 
 const noOp = async () => {
@@ -62,11 +64,18 @@ export const useSendNotifications: UseSendNotificationsHook = ({
       notifyCallStartedAction(arg, { authToken }),
   );
 
+  const { trigger: notifySignalAssigned } = useSWRMutation(
+    authToken ? [authToken, 'notifySignalAssigned'] : null,
+    async ([authToken], { arg }: { arg: NotifySignalAssignedInput }) =>
+      notifySignalAssignedAction(arg, { authToken }),
+  );
+
   return {
     notifyProposalCreated: authToken ? notifyProposalCreated : noOp,
     notifyProposalAccepted: authToken ? notifyProposalAccepted : noOp,
     notifyProposalRejected: authToken ? notifyProposalRejected : noOp,
     notifyChatMention: authToken ? notifyChatMention : noOp,
     notifyCallStarted: authToken ? notifyCallStarted : noOp,
+    notifySignalAssigned: authToken ? notifySignalAssigned : noOp,
   };
 };

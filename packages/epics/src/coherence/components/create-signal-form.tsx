@@ -44,6 +44,7 @@ import {
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useCoherenceUpvoteMutations,
+  useHookRegistry,
   useJwt,
   useMatrix,
   useMe,
@@ -170,9 +171,15 @@ export const CreateSignalForm = ({
     isUpdatingCoherenceSignal,
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
+  const { useSendNotifications } = useHookRegistry();
+  const { notifySignalAssigned } = useSendNotifications({ authToken });
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
   const [isTogglingArchiveState, setIsTogglingArchiveState] =
+    React.useState(false);
+  // Keeps the overlay up between a successful save and the route change, so the
+  // filled-in form never reappears while navigation settles.
+  const [isClosingAfterPublish, setIsClosingAfterPublish] =
     React.useState(false);
   const [isSignalArchived, setIsSignalArchived] = React.useState(
     initialValues?.archived ?? false,
@@ -224,13 +231,18 @@ export const CreateSignalForm = ({
   );
 
   const isMutating =
-    isCreatingCoherence || isUpdatingCoherenceSignal || isTogglingArchiveState;
+    isCreatingCoherence ||
+    isUpdatingCoherenceSignal ||
+    isTogglingArchiveState ||
+    isClosingAfterPublish;
   const progress = React.useMemo(() => {
+    if (isClosingAfterPublish) return 100;
     if (isTogglingArchiveState) return 50;
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
   }, [
     createdCoherence,
+    isClosingAfterPublish,
     isCreatingCoherence,
     isTogglingArchiveState,
     isUpdatingCoherenceSignal,
@@ -555,6 +567,45 @@ export const CreateSignalForm = ({
     [],
   );
 
+  /** Emails people who were just put on a signal. Self-assignment is dropped server-side. */
+  const notifyAssignees = React.useCallback(
+    ({
+      slug,
+      title,
+      assigneeIds,
+    }: {
+      slug?: string | null;
+      title: string;
+      assigneeIds: number[];
+    }) => {
+      const trimmedSlug = slug?.trim();
+      if (!trimmedSlug || !spaceSlug || assigneeIds.length === 0) return;
+      const origin =
+        typeof window === 'undefined' ? '' : window.location.origin;
+      void notifySignalAssigned({
+        assigneePersonIds: assigneeIds,
+        signalTitle: title,
+        spaceTitle: space?.title ?? undefined,
+        actorDisplayName:
+          [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
+          undefined,
+        url: `${origin}/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
+          trimmedSlug,
+        )}`,
+      }).catch((error) => {
+        console.warn('Could not notify signal assignees:', error);
+      });
+    },
+    [
+      lang,
+      notifySignalAssigned,
+      person?.name,
+      person?.surname,
+      space?.title,
+      spaceSlug,
+    ],
+  );
+
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
       form.clearErrors('root');
@@ -601,23 +652,32 @@ export const CreateSignalForm = ({
               data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: data.assigneeIds,
           });
+          // The signal is saved — close now and let the chat sync, the
+          // assignment email and the list refresh finish in the background.
+          setIsClosingAfterPublish(true);
+          router.push(successfulUrl);
+          const previousAssigneeIds = initialValues?.assigneeIds ?? [];
+          notifyAssignees({
+            slug: signalSlug,
+            title: data.title,
+            assigneeIds: (data.assigneeIds ?? []).filter(
+              (id) => !previousAssigneeIds.includes(id),
+            ),
+          });
           if (updatedSignal?.roomId) {
-            try {
-              await upsertSignalDescriptionMessage({
-                roomId: updatedSignal.roomId,
-                description: data.description,
-              });
-            } catch (matrixSyncError) {
+            void upsertSignalDescriptionMessage({
+              roomId: updatedSignal.roomId,
+              description: data.description,
+            }).catch((matrixSyncError) => {
               console.warn(
                 'Signal saved but failed to sync description to chat room:',
                 matrixSyncError,
               );
-            }
+            });
           }
           if (spaceSlug) {
-            await revalidateCoherences(spaceSlug);
+            void revalidateCoherences(spaceSlug);
           }
-          router.push(successfulUrl);
         } catch (error) {
           const rawMessage = resolveMutationErrorMessage(error);
           const isSanitizedServerError =
@@ -661,19 +721,35 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...data });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
+        // Close the panel as soon as the signal exists — everything below is
+        // best-effort follow-up work that must not hold the form open.
+        setIsClosingAfterPublish(true);
+        router.push(successfulUrl);
+        notifyAssignees({
+          slug: coherenceSlug,
+          title: coherence.title,
+          assigneeIds: data.assigneeIds ?? [],
+        });
         if (coherenceSlug) {
           // Best-effort creator upvote; ranking still works without it.
-          try {
-            await upvoteCoherence({
-              slug: coherenceSlug,
-              votingPowerPercent: creatorVotePercent,
-            });
-          } catch (upvoteError) {
-            console.warn(
-              'Signal created but creator upvote failed:',
-              upvoteError,
-            );
-          }
+          void (async () => {
+            try {
+              await upvoteCoherence({
+                slug: coherenceSlug,
+                votingPowerPercent: creatorVotePercent,
+              });
+            } catch (upvoteError) {
+              console.warn(
+                'Signal created but creator upvote failed:',
+                upvoteError,
+              );
+            }
+            if (spaceSlug) {
+              await revalidateCoherences(spaceSlug);
+            }
+          })();
+        } else if (spaceSlug) {
+          void revalidateCoherences(spaceSlug);
         }
         if (!isMatrixAvailable) {
           setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
@@ -737,10 +813,6 @@ export const CreateSignalForm = ({
             'Signal created but coherence slug is missing — room linking skipped.',
           );
         }
-        if (spaceSlug) {
-          await revalidateCoherences(spaceSlug);
-        }
-        router.push(successfulUrl);
       } catch (error) {
         console.warn('Could not create conversation:', error);
       }
@@ -758,7 +830,9 @@ export const CreateSignalForm = ({
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
       upsertSignalDescriptionMessage,
+      initialValues?.assigneeIds,
       mode,
+      notifyAssignees,
       setSignalProvisioningNotice,
       signalSlug,
       spaceSlug,

@@ -21,6 +21,15 @@ export interface NotifyChatMentionInput {
   url: string;
 }
 
+export interface NotifySignalAssignedInput {
+  /** Hypha person ids of the assignees. The caller is never notified. */
+  assigneePersonIds: number[];
+  signalTitle: string;
+  spaceTitle?: string;
+  actorDisplayName?: string;
+  url: string;
+}
+
 export type NotifyCallStartedScope = 'space_members' | 'signal_team';
 
 export interface NotifyCallStartedInput {
@@ -44,6 +53,7 @@ export interface UseSendNotificationsReturn {
   notifyProposalRejected: (arg: NotifyProposalRejectedInput) => Promise<void>;
   notifyChatMention: (arg: NotifyChatMentionInput) => Promise<void>;
   notifyCallStarted: (arg: NotifyCallStartedInput) => Promise<void>;
+  notifySignalAssigned: (arg: NotifySignalAssignedInput) => Promise<void>;
 }
 
 export interface UseSendNotificationsInput {
