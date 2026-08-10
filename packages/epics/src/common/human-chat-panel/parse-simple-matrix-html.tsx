@@ -207,12 +207,17 @@ export function renderSimpleHtmlNodes(
             {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </span>
         );
-      case 'heading':
+      case 'heading': {
+        const HeadingTag = `h${n.level}` as 'h1' | 'h2' | 'h3' | 'h4';
         return (
-          <div key={k} className={cn('my-0.5', headingClassName[n.level])}>
+          <HeadingTag
+            key={k}
+            className={cn('my-0.5', headingClassName[n.level])}
+          >
             {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
-          </div>
+          </HeadingTag>
         );
+      }
       case 'ul':
         return (
           <ul

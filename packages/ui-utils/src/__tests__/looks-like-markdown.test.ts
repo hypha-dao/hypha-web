@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { looksLikeMarkdown } from './looks-like-markdown';
+import { looksLikeMarkdown } from '../looks-like-markdown';
 
 describe('looksLikeMarkdown', () => {
   it('rejects plain prose', () => {
@@ -24,12 +24,24 @@ describe('looksLikeMarkdown', () => {
     ).toBe(true);
   });
 
-  it('detects bold / links', () => {
+  it('rejects heading levels above 4', () => {
+    expect(looksLikeMarkdown('##### Too deep')).toBe(false);
+  });
+
+  it('detects bold / italic / links', () => {
     expect(looksLikeMarkdown('say **hello** now')).toBe(true);
+    expect(looksLikeMarkdown('say *hello* now')).toBe(true);
     expect(looksLikeMarkdown('see [docs](https://example.com)')).toBe(true);
   });
 
   it('detects task-list style lines', () => {
     expect(looksLikeMarkdown('- [ ] todo')).toBe(true);
+  });
+
+  it('handles adversarial bracket spam without hanging', () => {
+    const spam = '['.repeat(5000) + 'x';
+    expect(looksLikeMarkdown(spam)).toBe(false);
+    const linkSpam = '[!]('.repeat(2000) + 'x';
+    expect(looksLikeMarkdown(linkSpam)).toBe(false);
   });
 });

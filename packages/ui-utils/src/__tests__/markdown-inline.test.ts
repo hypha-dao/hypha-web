@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tokenizeInlineMarkdown } from './markdown-inline';
+import { tokenizeInlineMarkdown } from '../markdown-inline';
 
 describe('tokenizeInlineMarkdown', () => {
   it('tokenizes bold', () => {

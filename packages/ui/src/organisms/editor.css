@@ -150,7 +150,6 @@
 
 .richtext-editor[data-editable='false'] {
   opacity: 0.85;
-  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

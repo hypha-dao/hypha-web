@@ -327,7 +327,7 @@ export function RichTextEditor({
       )}
       data-editable={editable ? 'true' : 'false'}
     >
-      {editor ? <EditorToolbar editor={editor} /> : null}
+      {editor && editable ? <EditorToolbar editor={editor} /> : null}
       <EditorContent editor={editor} className="richtext-editor-content-host" />
     </div>
   );
