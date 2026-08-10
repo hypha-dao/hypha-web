@@ -729,8 +729,8 @@
       "joinSpaceToUpdateBackingVault": "Rejoignez l’espace pour mettre à jour le coffre de garantie"
     },
     "assetCard": {
-      "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Émission {value}",
+      "fromSpace": "de · {spaceTitle}",
+      "totalIssuance": "Émission · {value}",
       "createdOn": "Créé le {date}",
       "mutualCredit": {
         "debtBadge": "Doit {amount} {symbol}",

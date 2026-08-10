@@ -1499,8 +1499,8 @@
       "joinSpaceToUpdateBackingVault": "Únete al espacio para actualizar la bóveda de respaldo"
     },
     "assetCard": {
-      "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Emisión {value}",
+      "fromSpace": "de · {spaceTitle}",
+      "totalIssuance": "Emisión · {value}",
       "createdOn": "Creado en {date}",
       "mutualCredit": {
         "debtBadge": "Debe {amount} {symbol}",

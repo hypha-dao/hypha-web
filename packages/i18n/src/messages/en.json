@@ -1292,8 +1292,8 @@
       "joinSpaceToUpdateBackingVault": "Join the space to update backing vault"
     },
     "assetCard": {
-      "fromSpace": "from {spaceTitle}",
-      "totalIssuance": "Issuance {value}",
+      "fromSpace": "from · {spaceTitle}",
+      "totalIssuance": "Issuance · {value}",
       "createdOn": "Created on {date}",
       "mutualCredit": {
         "debtBadge": "Owes {amount} {symbol}",

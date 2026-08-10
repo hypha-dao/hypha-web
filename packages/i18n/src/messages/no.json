@@ -1291,8 +1291,8 @@
       "joinSpaceToUpdateBackingVault": "Bli med i rommet for å oppdatere dekningshvelvet"
     },
     "assetCard": {
-      "fromSpace": "fra {spaceTitle}",
-      "totalIssuance": "Utstedelse {value}",
+      "fromSpace": "fra · {spaceTitle}",
+      "totalIssuance": "Utstedelse · {value}",
       "createdOn": "Opprettet {date}",
       "mutualCredit": {
         "debtBadge": "Skylder {amount} {symbol}",

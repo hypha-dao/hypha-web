@@ -1499,8 +1499,8 @@
       "joinSpaceToUpdateBackingVault": "Entre no espaço para atualizar o cofre de lastro"
     },
     "assetCard": {
-      "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Emissão {value}",
+      "fromSpace": "de · {spaceTitle}",
+      "totalIssuance": "Emissão · {value}",
       "createdOn": "Criado em {date}",
       "mutualCredit": {
         "debtBadge": "Deve {amount} {symbol}",

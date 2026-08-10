@@ -1292,8 +1292,8 @@
       "joinSpaceToUpdateBackingVault": "Sluit u aan bij de ruimte om de back-upkluis te updaten"
     },
     "assetCard": {
-      "fromSpace": "vanaf {spaceTitle}",
-      "totalIssuance": "Uitgifte {value}",
+      "fromSpace": "vanaf · {spaceTitle}",
+      "totalIssuance": "Uitgifte · {value}",
       "createdOn": "Gemaakt op {date}",
       "mutualCredit": {
         "debtBadge": "Schulden {amount} {symbol}",
