@@ -1361,7 +1361,8 @@
       "uploadLeadImageLabel": "<accent>Last opp</accent> et bilde",
       "labels": {
         "email": "E-post",
-        "location": "Sted"
+        "location": "Sted",
+        "preferredCurrency": "Foretrukket valuta"
       },
       "placeholders": {
         "firstName": "Fornavn",
@@ -1369,7 +1370,8 @@
         "nickname": "Kallenavn",
         "lifePurpose": "Skriv livsformålet ditt her...",
         "email": "E-post",
-        "location": "Sted"
+        "location": "Sted",
+        "preferredCurrency": "Velg en valuta"
       },
       "actions": {
         "retry": "Prøv igjen",

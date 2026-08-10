@@ -11,6 +11,8 @@ export interface Person {
   location?: string;
   nickname?: string;
   address?: string;
+  /** ISO 4217 code balances are shown in. Undefined means USD. */
+  preferredCurrency?: string;
   links?: string[];
   createdAt: Date;
   updatedAt: Date;

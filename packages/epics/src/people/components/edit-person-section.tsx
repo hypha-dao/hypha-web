@@ -6,6 +6,7 @@ import {
   type Person as SavedPerson,
   schemaEditPersonWeb2,
   editPersonFiles,
+  TOKEN_PRICE_REFERENCE_CURRENCIES,
 } from '@hypha-platform/core/client';
 import {
   Button,
@@ -20,6 +21,11 @@ import {
   UploadLeadImage,
   UploadAvatar,
   RequirementMark,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
@@ -27,7 +33,7 @@ import { Links } from '../../common';
 import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useScrollToErrors } from '../../hooks';
 import { useCallback, useMemo, useRef } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 /** Subset of person fields used to seed the edit form (not the full domain `Person`). */
 interface EditPersonSectionInput {
@@ -41,6 +47,7 @@ interface EditPersonSectionInput {
   location?: string;
   email?: string;
   links?: string[];
+  preferredCurrency?: string;
 }
 
 const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
@@ -71,7 +78,25 @@ export const EditPersonSection = ({
   const tSpaces = useTranslations('Spaces');
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
+  const locale = useLocale();
   const baseResolver = useMemo(() => zodResolver(schemaEditPersonForm), []);
+
+  /**
+   * `Intl.DisplayNames` localizes the currency names for free, so the picker
+   * reads naturally in every locale without a translation key per currency.
+   */
+  const currencyOptions = useMemo(() => {
+    let displayNames: Intl.DisplayNames | undefined;
+    try {
+      displayNames = new Intl.DisplayNames([locale], { type: 'currency' });
+    } catch {
+      displayNames = undefined;
+    }
+    return TOKEN_PRICE_REFERENCE_CURRENCIES.map((code) => ({
+      code,
+      label: displayNames?.of(code) ?? code,
+    }));
+  }, [locale]);
 
   const translateEditProfileError = useCallback(
     (message: string) => {
@@ -198,6 +223,9 @@ export const EditPersonSection = ({
       links: person?.links || [],
       email: person?.email || '',
       location: person?.location || '',
+      preferredCurrency: person?.preferredCurrency as
+        | FormData['preferredCurrency']
+        | undefined,
     },
     mode: 'onChange',
   });
@@ -430,6 +458,47 @@ export const EditPersonSection = ({
                             className="w-60"
                             {...field}
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <Text className={cn('text-2', 'text-neutral-11')}>
+                  {tProfile('editForm.labels.preferredCurrency')}
+                </Text>
+                <span className="flex items-center">
+                  <FormField
+                    control={form.control}
+                    name="preferredCurrency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Select
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger className="w-60">
+                              <SelectValue
+                                placeholder={tProfile(
+                                  'editForm.placeholders.preferredCurrency',
+                                )}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {currencyOptions.map((currency) => (
+                                <SelectItem
+                                  key={currency.code}
+                                  value={currency.code}
+                                >
+                                  {currency.code} - {currency.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

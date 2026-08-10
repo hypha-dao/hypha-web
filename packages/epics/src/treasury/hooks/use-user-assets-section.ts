@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { FILTER_OPTIONS_ASSETS } from '../../common/constants';
 import { useUserAssets } from './use-user-assets';
+import { useDisplayCurrency } from './use-display-currency';
 
 export interface UseUserAssetsSectionProps {
   personSlug?: string;
@@ -37,9 +37,8 @@ export const useUserAssetsSection = ({
     setVisibleCount((prev) => prev + pageSize);
   }, [pageSize]);
 
-  const totalBalance = `${balance < 0 ? '-' : ''}$ ${formatCurrencyValue(
-    Math.abs(balance),
-  )}`;
+  const { formatFromUsd } = useDisplayCurrency();
+  const totalBalance = formatFromUsd(balance);
 
   const displayableAssets = React.useMemo(() => {
     let result = assets.filter((asset) => asset.value > 0);

@@ -1362,7 +1362,8 @@
       "uploadLeadImageLabel": "<accent>Upload</accent> an image",
       "labels": {
         "email": "Email",
-        "location": "Location"
+        "location": "Location",
+        "preferredCurrency": "Preferred currency"
       },
       "placeholders": {
         "firstName": "First Name",
@@ -1370,7 +1371,8 @@
         "nickname": "Nickname",
         "lifePurpose": "Type your life purpose here...",
         "email": "Email",
-        "location": "Location"
+        "location": "Location",
+        "preferredCurrency": "Select a currency"
       },
       "actions": {
         "retry": "Retry",

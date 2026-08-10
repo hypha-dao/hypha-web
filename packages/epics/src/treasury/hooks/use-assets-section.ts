@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAssets } from './use-assets';
 import { FILTER_OPTIONS_ASSETS } from '../../common/constants';
-import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { useDisplayCurrency } from './use-display-currency';
 
 export interface UseAssetsSectionProps {
   pageSize?: number;
@@ -32,9 +32,8 @@ export const useAssetsSection = ({
     setVisibleCount((prev) => prev + pageSize);
   }, [pageSize]);
 
-  const totalBalance = `${balance < 0 ? '-' : ''}$ ${formatCurrencyValue(
-    Math.abs(balance),
-  )}`;
+  const { formatFromUsd } = useDisplayCurrency();
+  const totalBalance = formatFromUsd(balance);
 
   const displayableAssets = React.useMemo(() => {
     // Hide zero-balance noise, but always keep tokens issued by this space

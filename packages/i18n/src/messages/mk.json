@@ -1342,7 +1342,8 @@
       "uploadLeadImageLabel": "<accent>Прикачи</accent> слика",
       "labels": {
         "email": "Е-пошта",
-        "location": "Локација"
+        "location": "Локација",
+        "preferredCurrency": "Претпочитана валута"
       },
       "placeholders": {
         "firstName": "Име",
@@ -1350,7 +1351,8 @@
         "nickname": "Прекар",
         "lifePurpose": "Напиши ја твојата животна цел овде...",
         "email": "Е-пошта",
-        "location": "Локација"
+        "location": "Локација",
+        "preferredCurrency": "Изберете валута"
       },
       "actions": {
         "retry": "Обиди се повторно",

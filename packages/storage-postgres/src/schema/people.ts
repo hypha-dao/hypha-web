@@ -20,6 +20,8 @@ export const people = pgTable(
     surname: text('surname'),
     nickname: text('nickname'),
     address: text('web3_address'),
+    /** ISO 4217 code the member wants balances shown in. Null means USD. */
+    preferredCurrency: text('preferred_currency'),
     links: jsonb('links').$type<string[]>().notNull().default([]),
     ...commonDateFields,
   },

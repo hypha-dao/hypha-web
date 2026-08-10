@@ -1363,7 +1363,8 @@
       "uploadLeadImageLabel": "<accent>Bild</accent> hochladen",
       "labels": {
         "email": "E-Mail",
-        "location": "Standort"
+        "location": "Standort",
+        "preferredCurrency": "Bevorzugte Währung"
       },
       "placeholders": {
         "firstName": "Vorname",
@@ -1371,7 +1372,8 @@
         "nickname": "Spitzname",
         "lifePurpose": "Beschreiben Sie hier Ihren Lebenszweck...",
         "email": "E-Mail",
-        "location": "Standort"
+        "location": "Standort",
+        "preferredCurrency": "Währung auswählen"
       },
       "actions": {
         "retry": "Erneut versuchen",

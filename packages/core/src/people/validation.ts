@@ -7,8 +7,19 @@ import {
 import { z } from 'zod';
 import { isAddress } from 'viem';
 import { percentageStringToBigInt } from '../common';
+import { TOKEN_PRICE_REFERENCE_CURRENCIES } from '../governance/types';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+
+/**
+ * Currency members can have balances shown in. Restricted to the currencies
+ * with a Chainlink X/USD feed, since anything else could not be converted.
+ */
+const preferredCurrency = z
+  .enum(TOKEN_PRICE_REFERENCE_CURRENCIES)
+  .or(z.literal(''))
+  .optional()
+  .transform((value) => (value === '' ? undefined : value));
 
 const signupPersonWeb2Props = {
   name: z.string().trim().min(1, { message: 'Please enter your first name' }),
@@ -77,6 +88,7 @@ const editPersonWeb2Props = {
     .max(100, { message: 'Location must be at most 100 characters long' })
     .trim()
     .optional(),
+  preferredCurrency,
   links: z
     .array(
       z.string().url('Please enter a valid URL (e.g., https://example.com)'),
