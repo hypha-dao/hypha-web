@@ -8,7 +8,6 @@ import {
   Coherence,
   SignalWorkflowConfig,
   resolveEffectiveBoard,
-  usePersonById,
 } from '@hypha-platform/core/client';
 import {
   Select,
@@ -22,6 +21,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
+import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
@@ -36,7 +36,6 @@ import {
   signalCardActiveClass,
 } from '../utils/signal-active-styles';
 import { SIGNAL_LIST_ITEM_SHELL_CLASS } from '../utils/signal-board-layout';
-import { PersonAvatar } from '../../people/components/person-avatar';
 
 type SignalListViewProps = {
   signals: Coherence[];
@@ -56,46 +55,8 @@ type SignalListViewProps = {
   readOnly?: boolean;
 };
 
-function ListAssigneeStack({
-  assigneeIds,
-  className,
-}: {
-  assigneeIds: number[];
-  className?: string;
-}) {
-  const visible = assigneeIds.slice(0, 2);
-  return (
-    <div className={cn('flex -space-x-1', className)}>
-      {visible.map((id) => (
-        <ListAssigneeAvatar key={id} personId={id} />
-      ))}
-      {assigneeIds.length > 2 ? (
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground ring-2 ring-background">
-          +{assigneeIds.length - 2}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function ListAssigneeAvatar({ personId }: { personId: number }) {
-  const { person } = usePersonById({ id: personId });
-  const label =
-    [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
-    person?.nickname ||
-    '?';
-  return (
-    <PersonAvatar
-      size="sm"
-      avatarSrc={person?.avatarUrl || ''}
-      userName={label}
-      className="ring-2 ring-background"
-    />
-  );
-}
-
-function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
-  const { creatorDisplayName, createdAtRelative } = useSignalCreatorMeta({
+function SignalListAssigneeMeta({ signal }: { signal: Coherence }) {
+  const { createdAtRelative } = useSignalCreatorMeta({
     creatorId: signal.creatorId,
     createdAt: signal.createdAt,
     description: signal.description,
@@ -103,11 +64,26 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
     tags: signal.tags,
   });
 
+  const hasPersonSlot =
+    resolveSignalPersonIds({
+      assigneeIds: signal.assigneeIds,
+      fallbackPersonId: signal.creatorId,
+    }).length > 0;
+
   return (
     <SignalCreatorMeta
-      creatorDisplayName={creatorDisplayName}
       createdAtRelative={createdAtRelative}
       className="mt-0.5"
+      personSlot={
+        hasPersonSlot ? (
+          <SignalAssignee
+            assigneeIds={signal.assigneeIds}
+            fallbackPersonId={signal.creatorId}
+            variant="meta"
+            className="text-[11px] text-muted-foreground"
+          />
+        ) : null
+      }
     />
   );
 }
@@ -243,14 +219,8 @@ export function SignalListView({
                       maxVisible={3}
                       className="mt-1"
                     />
-                    <SignalListCreatorMeta signal={signal} />
+                    <SignalListAssigneeMeta signal={signal} />
                   </button>
-                  {signal.assigneeIds.length > 0 ? (
-                    <ListAssigneeStack
-                      assigneeIds={signal.assigneeIds}
-                      className="hidden shrink-0 lg:flex"
-                    />
-                  ) : null}
                 </div>
 
                 <div className="lg:contents">
@@ -422,15 +392,7 @@ export function SignalListView({
                     />
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 lg:col-start-7 lg:justify-end lg:px-3">
-                    {signal.assigneeIds.length > 0 ? (
-                      <ListAssigneeStack
-                        assigneeIds={signal.assigneeIds}
-                        className="lg:hidden"
-                      />
-                    ) : (
-                      <span className="lg:hidden" />
-                    )}
+                  <div className="flex items-center justify-end gap-2 lg:col-start-7 lg:px-3">
                     <SignalCardActions
                       signal={signal}
                       refresh={refresh}

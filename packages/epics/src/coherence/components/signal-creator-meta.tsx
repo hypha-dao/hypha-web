@@ -1,20 +1,31 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Clock, UserCircle2 } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 
 type SignalCreatorMetaProps = {
-  creatorDisplayName: string | null;
+  /** Prefer `personSlot` when the label is a React node (e.g. resolved assignee). */
+  creatorDisplayName?: string | null;
+  personSlot?: ReactNode;
   createdAtRelative: string;
   className?: string;
 };
 
 export function SignalCreatorMeta({
   creatorDisplayName,
+  personSlot,
   createdAtRelative,
   className,
 }: SignalCreatorMetaProps) {
-  if (!creatorDisplayName && !createdAtRelative) return null;
+  const person =
+    personSlot !== undefined ? (
+      personSlot
+    ) : creatorDisplayName ? (
+      <span className="truncate">{creatorDisplayName}</span>
+    ) : null;
+
+  if (!person && !createdAtRelative) return null;
 
   return (
     <div
@@ -23,13 +34,13 @@ export function SignalCreatorMeta({
         className,
       )}
     >
-      {creatorDisplayName ? (
+      {person ? (
         <span className="inline-flex min-w-0 items-center gap-1 truncate">
           <UserCircle2
             className="h-3.5 w-3.5 shrink-0 opacity-70"
             aria-hidden
           />
-          <span className="truncate">{creatorDisplayName}</span>
+          {person}
         </span>
       ) : null}
       {createdAtRelative ? (

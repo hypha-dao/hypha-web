@@ -8,11 +8,10 @@ import {
   Coherence,
   SignalBoardDefinition,
   SignalStatusDefinition,
-  usePersonById,
 } from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-import { PersonAvatar } from '../../people/components/person-avatar';
+import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
@@ -42,38 +41,6 @@ type SignalTaskCardProps = {
   className?: string;
 };
 
-function AssigneeStack({ assigneeIds }: { assigneeIds: number[] }) {
-  const visible = assigneeIds.slice(0, 3);
-  return (
-    <div className="flex -space-x-1.5">
-      {visible.map((id) => (
-        <AssigneeAvatar key={id} personId={id} />
-      ))}
-      {assigneeIds.length > 3 ? (
-        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-background text-[10px] font-medium text-muted-foreground ring-2 ring-background">
-          +{assigneeIds.length - 3}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function AssigneeAvatar({ personId }: { personId: number }) {
-  const { person } = usePersonById({ id: personId });
-  const label =
-    [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
-    person?.nickname ||
-    '?';
-  return (
-    <PersonAvatar
-      size="sm"
-      avatarSrc={person?.avatarUrl || ''}
-      userName={label}
-      className="ring-2 ring-background"
-    />
-  );
-}
-
 export function SignalTaskCard({
   signal,
   status,
@@ -91,6 +58,11 @@ export function SignalTaskCard({
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
   const intlFormat = useFormatter();
+  const hasPersonSlot =
+    resolveSignalPersonIds({
+      assigneeIds: signal.assigneeIds,
+      fallbackPersonId: signal.creatorId,
+    }).length > 0;
   const typeLabel = t(
     `types.${signal.type}` as
       | 'types.Opportunity'
@@ -122,7 +94,7 @@ export function SignalTaskCard({
       | 'priorities.low',
   );
 
-  const { creatorDisplayName, createdAtRelative } = useSignalCreatorMeta({
+  const { createdAtRelative } = useSignalCreatorMeta({
     creatorId: signal.creatorId,
     createdAt: signal.createdAt,
     description: signal.description,
@@ -224,12 +196,17 @@ export function SignalTaskCard({
                 </span>
               </>
             ) : null}
-            {creatorDisplayName ? (
+            {hasPersonSlot ? (
               <>
                 <span className="mx-1.5 text-border" aria-hidden>
                   ·
                 </span>
-                <span className="truncate">{creatorDisplayName}</span>
+                <SignalAssignee
+                  assigneeIds={signal.assigneeIds}
+                  fallbackPersonId={signal.creatorId}
+                  variant="meta"
+                  className="min-w-0 truncate"
+                />
               </>
             ) : null}
             {createdAtRelative ? (
@@ -290,9 +267,6 @@ export function SignalTaskCard({
               </span>
             ) : null}
           </div>
-          {signal.assigneeIds.length > 0 ? (
-            <AssigneeStack assigneeIds={signal.assigneeIds} />
-          ) : null}
         </div>
       </div>
     </div>

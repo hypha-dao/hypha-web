@@ -5,8 +5,6 @@ import {
   COHERENCE_PRIORITY_OPTIONS,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
-  useMe,
-  usePersonById,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
@@ -38,6 +36,7 @@ import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import {
@@ -70,6 +69,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   messages = 0,
   roomId,
   creatorId,
+  assigneeIds,
   upvotes,
   refresh,
   onOpenConversation,
@@ -78,8 +78,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isActive = false,
 }) => {
   const { jwt: authToken } = useJwt();
-  const { person } = useMe();
-  const { person: creatorPerson } = usePersonById({ id: creatorId });
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
@@ -110,93 +108,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
     return Math.trunc(parsed);
   }, [messages]);
-  const hasAiSignalTag = React.useMemo(
-    () => tags.some((tag) => tag.trim().toLowerCase() === 'ai signal'),
-    [tags],
-  );
-  const relaySourceSpaceSlug = React.useMemo(() => {
-    const match = description.match(
-      /Relayed from ecosystem space:\s*([a-z0-9-]+)/i,
-    );
-    return match?.[1] ?? null;
-  }, [description]);
-  const { space: relaySourceSpace } = useSpaceBySlug(
-    relaySourceSpaceSlug ?? '',
-  );
-  const isBackgroundJobSignal = React.useMemo(
-    () =>
-      /recent space-memory activity indicates a coordination opportunity/i.test(
-        description,
-      ) || /high-signal .* update/i.test(title),
-    [description, title],
-  );
-  const creatorKind = React.useMemo<
-    'person' | 'aiRole' | 'backgroundJob' | 'relay'
-  >(() => {
-    if (relaySourceSpaceSlug) return 'relay';
-    if (isBackgroundJobSignal) return 'backgroundJob';
-    if (hasAiSignalTag) return 'aiRole';
-    return 'person';
-  }, [relaySourceSpaceSlug, isBackgroundJobSignal, hasAiSignalTag]);
-  const creatorLabel = React.useMemo(() => {
-    if (creatorKind === 'relay') {
-      return relaySourceSpace?.title || relaySourceSpaceSlug || 'Relay space';
-    }
-    if (creatorKind === 'backgroundJob') return 'AI Agent';
-    if (creatorKind === 'aiRole') return 'AI Agent';
-    return (
-      [creatorPerson?.name, creatorPerson?.surname].filter(Boolean).join(' ') ||
-      'Member'
-    );
-  }, [creatorKind, creatorPerson, relaySourceSpace, relaySourceSpaceSlug]);
-
   const [archiveDialogOpen, setArchiveDialogOpen] = React.useState(false);
   const [isArchiveMutating, setIsArchiveMutating] = React.useState(false);
   const [archiveError, setArchiveError] = React.useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
-  const isCreator = person?.id === creatorId;
-  const creatorDisplayName = React.useMemo(() => {
-    if (isCreator) {
-      const currentUserName = [person?.name, person?.surname]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
-      return currentUserName || 'You';
-    }
 
-    if (creatorKind !== 'person') return creatorLabel;
-
-    const resolvedPersonName = [creatorPerson?.name, creatorPerson?.surname]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-    if (resolvedPersonName) return resolvedPersonName;
-
-    const raw = `${creatorId ?? ''}`.trim();
-    if (!raw) return creatorLabel;
-
-    if (raw.startsWith('@')) {
-      const [localpart] = raw.slice(1).split(':');
-      return localpart?.trim() || creatorLabel;
-    }
-
-    const [left] = raw.split(':');
-    const fallback = left?.trim() || raw;
-    if (/^\d+$/.test(fallback)) return creatorLabel;
-    return fallback;
-  }, [
-    creatorId,
-    creatorKind,
-    creatorLabel,
-    creatorPerson?.name,
-    creatorPerson?.surname,
-    isCreator,
-    person?.name,
-    person?.surname,
-  ]);
-
+  const hasPersonSlot =
+    resolveSignalPersonIds({
+      assigneeIds,
+      fallbackPersonId: creatorId,
+    }).length > 0;
   const typeLabel = t(
     `types.${type}` as
       | 'types.Opportunity'
@@ -388,12 +311,17 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <p className="truncate text-1 text-muted-foreground">
               <span>{typeLabel}</span>
               {/* Priority stays on the left accent bar only — avoid duplicate status channel */}
-              {creatorDisplayName ? (
+              {hasPersonSlot ? (
                 <>
                   <span className="mx-1.5 text-border" aria-hidden>
                     ·
                   </span>
-                  <span className="truncate">{creatorDisplayName}</span>
+                  <SignalAssignee
+                    assigneeIds={assigneeIds}
+                    fallbackPersonId={creatorId}
+                    variant="meta"
+                    className="min-w-0 truncate"
+                  />
                 </>
               ) : null}
               {createdAtShort ? (

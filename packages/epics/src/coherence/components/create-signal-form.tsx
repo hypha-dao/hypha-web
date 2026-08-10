@@ -38,14 +38,17 @@ import {
   CoherenceTag,
   CoherenceType,
   DEFAULT_SIGNAL_PROGRESS_STATUS,
+  Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
   revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useCoherenceUpvoteMutations,
+  useHookRegistry,
   useJwt,
   useMatrix,
   useMe,
+  usePersonById,
   useSignalWorkflow,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
@@ -68,6 +71,8 @@ import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { toLocalDueDateInputValue } from '../utils/signal-due-date';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
+import type { UseMembers } from '../../spaces/hooks/types';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -81,6 +86,8 @@ export interface CreateSignalFormProps {
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
+  /** Supplies the space roster for the assignee picker. */
+  useMembers: UseMembers;
 }
 
 function dueDateFromInputValue(value: string): Date | null {
@@ -110,6 +117,7 @@ export const CreateSignalForm = ({
   signalSlug,
   signalRoomId,
   initialValues,
+  useMembers,
 }: CreateSignalFormProps) => {
   const params = useParams<{ id?: string; lang?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
@@ -136,6 +144,11 @@ export const CreateSignalForm = ({
   const { jwt: authToken } = useJwt();
   const router = useRouter();
   const { space } = useSpaceBySlug(spaceSlug);
+  const { persons: spaceMembers, isLoading: isLoadingSpaceMembers } =
+    useMembers({
+      spaceSlug,
+      paginationDisabled: true,
+    });
   const canManageSignal = useCanManageSignal({
     spaceSlug,
     web3SpaceId: space?.web3SpaceId ?? undefined,
@@ -158,9 +171,15 @@ export const CreateSignalForm = ({
     isUpdatingCoherenceSignal,
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const { upvote: upvoteCoherence } = useCoherenceUpvoteMutations(authToken);
+  const { useSendNotifications } = useHookRegistry();
+  const { notifySignalAssigned } = useSendNotifications({ authToken });
   // Creator's initial upvote share of their proposal voting power (max by default).
   const [creatorVotePercent, setCreatorVotePercent] = React.useState(100);
   const [isTogglingArchiveState, setIsTogglingArchiveState] =
+    React.useState(false);
+  // Keeps the overlay up between a successful save and the route change, so the
+  // filled-in form never reappears while navigation settles.
+  const [isClosingAfterPublish, setIsClosingAfterPublish] =
     React.useState(false);
   const [isSignalArchived, setIsSignalArchived] = React.useState(
     initialValues?.archived ?? false,
@@ -212,13 +231,18 @@ export const CreateSignalForm = ({
   );
 
   const isMutating =
-    isCreatingCoherence || isUpdatingCoherenceSignal || isTogglingArchiveState;
+    isCreatingCoherence ||
+    isUpdatingCoherenceSignal ||
+    isTogglingArchiveState ||
+    isClosingAfterPublish;
   const progress = React.useMemo(() => {
+    if (isClosingAfterPublish) return 100;
     if (isTogglingArchiveState) return 50;
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
   }, [
     createdCoherence,
+    isClosingAfterPublish,
     isCreatingCoherence,
     isTogglingArchiveState,
     isUpdatingCoherenceSignal,
@@ -252,9 +276,13 @@ export const CreateSignalForm = ({
       board:
         initialValues?.board ??
         (workflow ? resolveDefaultBoard(workflow) : null),
-      assigneeIds: initialValues?.assigneeIds ?? [],
+      // Creator default applies on create only — editing a legacy unassigned
+      // signal must not silently claim the editor as assignee.
+      assigneeIds:
+        initialValues?.assigneeIds ??
+        (mode === 'create' && person?.id ? [person.id] : []),
     }),
-    [initialValues, person?.id, spaceId, workflow],
+    [initialValues, mode, person?.id, spaceId, workflow],
   );
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -458,6 +486,19 @@ export const CreateSignalForm = ({
     }
   }, [person, form]);
 
+  // `person` can resolve after mount, so the creator default has to be applied
+  // once it lands rather than only through `defaultValues`.
+  React.useEffect(() => {
+    if (mode !== 'create' || !person?.id) return;
+    const { isDirty } = form.getFieldState('assigneeIds');
+    if (isDirty || form.getValues('assigneeIds')?.length) return;
+    form.setValue('assigneeIds', [person.id], {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: true,
+    });
+  }, [form, mode, person?.id]);
+
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('spaceId');
     if (!isDirty && spaceId) {
@@ -468,6 +509,34 @@ export const CreateSignalForm = ({
       });
     }
   }, [spaceId, form]);
+
+  const selectedAssigneeId = form.watch('assigneeIds')?.[0] ?? null;
+  // Keeps the picker readable when the assignee is no longer on the roster
+  // (left the space, or is a delegate rather than a member).
+  const { person: selectedAssignee } = usePersonById({
+    id: selectedAssigneeId ?? undefined,
+  });
+  const assigneeOptions = React.useMemo(() => {
+    const byId = new Map<number, Person>();
+    for (const member of spaceMembers.data) {
+      byId.set(member.id, member);
+    }
+    for (const extra of [person, selectedAssignee]) {
+      if (extra?.id && !byId.has(extra.id)) byId.set(extra.id, extra);
+    }
+    return [...byId.values()].sort((a, b) =>
+      [a.name, a.surname]
+        .filter(Boolean)
+        .join(' ')
+        .localeCompare(
+          [b.name, b.surname].filter(Boolean).join(' '),
+          undefined,
+          {
+            sensitivity: 'base',
+          },
+        ),
+    );
+  }, [person, selectedAssignee, spaceMembers.data]);
 
   const handleResetForm = React.useCallback(() => {
     form.reset(formDefaults);
@@ -498,6 +567,45 @@ export const CreateSignalForm = ({
       window.dispatchEvent(new Event(SIGNAL_PROVISIONING_NOTICE_EVENT));
     },
     [],
+  );
+
+  /** Emails people who were just put on a signal. Self-assignment is dropped server-side. */
+  const notifyAssignees = React.useCallback(
+    ({
+      slug,
+      title,
+      assigneeIds,
+    }: {
+      slug?: string | null;
+      title: string;
+      assigneeIds: number[];
+    }) => {
+      const trimmedSlug = slug?.trim();
+      if (!trimmedSlug || !spaceSlug || assigneeIds.length === 0) return;
+      const origin =
+        typeof window === 'undefined' ? '' : window.location.origin;
+      void notifySignalAssigned({
+        assigneePersonIds: assigneeIds,
+        signalTitle: title,
+        spaceTitle: space?.title ?? undefined,
+        actorDisplayName:
+          [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
+          undefined,
+        url: `${origin}/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
+          trimmedSlug,
+        )}`,
+      }).catch((error) => {
+        console.warn('Could not notify signal assignees:', error);
+      });
+    },
+    [
+      lang,
+      notifySignalAssigned,
+      person?.name,
+      person?.surname,
+      space?.title,
+      spaceSlug,
+    ],
   );
 
   const handleSubmitSignal = React.useCallback(
@@ -546,23 +654,32 @@ export const CreateSignalForm = ({
               data.board ?? (workflow ? resolveDefaultBoard(workflow) : null),
             assigneeIds: data.assigneeIds,
           });
+          // The signal is saved — close now and let the chat sync, the
+          // assignment email and the list refresh finish in the background.
+          setIsClosingAfterPublish(true);
+          router.push(successfulUrl);
+          const previousAssigneeIds = initialValues?.assigneeIds ?? [];
+          notifyAssignees({
+            slug: signalSlug,
+            title: data.title,
+            assigneeIds: (data.assigneeIds ?? []).filter(
+              (id) => !previousAssigneeIds.includes(id),
+            ),
+          });
           if (updatedSignal?.roomId) {
-            try {
-              await upsertSignalDescriptionMessage({
-                roomId: updatedSignal.roomId,
-                description: data.description,
-              });
-            } catch (matrixSyncError) {
+            void upsertSignalDescriptionMessage({
+              roomId: updatedSignal.roomId,
+              description: data.description,
+            }).catch((matrixSyncError) => {
               console.warn(
                 'Signal saved but failed to sync description to chat room:',
                 matrixSyncError,
               );
-            }
+            });
           }
           if (spaceSlug) {
-            await revalidateCoherences(spaceSlug);
+            void revalidateCoherences(spaceSlug);
           }
-          router.push(successfulUrl);
         } catch (error) {
           const rawMessage = resolveMutationErrorMessage(error);
           const isSanitizedServerError =
@@ -606,19 +723,35 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...data });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
+        // Close the panel as soon as the signal exists — everything below is
+        // best-effort follow-up work that must not hold the form open.
+        setIsClosingAfterPublish(true);
+        router.push(successfulUrl);
+        notifyAssignees({
+          slug: coherenceSlug,
+          title: coherence.title,
+          assigneeIds: data.assigneeIds ?? [],
+        });
         if (coherenceSlug) {
           // Best-effort creator upvote; ranking still works without it.
-          try {
-            await upvoteCoherence({
-              slug: coherenceSlug,
-              votingPowerPercent: creatorVotePercent,
-            });
-          } catch (upvoteError) {
-            console.warn(
-              'Signal created but creator upvote failed:',
-              upvoteError,
-            );
-          }
+          void (async () => {
+            try {
+              await upvoteCoherence({
+                slug: coherenceSlug,
+                votingPowerPercent: creatorVotePercent,
+              });
+            } catch (upvoteError) {
+              console.warn(
+                'Signal created but creator upvote failed:',
+                upvoteError,
+              );
+            }
+            if (spaceSlug) {
+              await revalidateCoherences(spaceSlug);
+            }
+          })();
+        } else if (spaceSlug) {
+          void revalidateCoherences(spaceSlug);
         }
         if (!isMatrixAvailable) {
           setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
@@ -682,10 +815,6 @@ export const CreateSignalForm = ({
             'Signal created but coherence slug is missing — room linking skipped.',
           );
         }
-        if (spaceSlug) {
-          await revalidateCoherences(spaceSlug);
-        }
-        router.push(successfulUrl);
       } catch (error) {
         console.warn('Could not create conversation:', error);
       }
@@ -703,7 +832,9 @@ export const CreateSignalForm = ({
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
       upsertSignalDescriptionMessage,
+      initialValues?.assigneeIds,
       mode,
+      notifyAssignees,
       setSignalProvisioningNotice,
       signalSlug,
       spaceSlug,
@@ -1021,9 +1152,49 @@ export const CreateSignalForm = ({
                 />
                 <FormField
                   control={form.control}
+                  name="assigneeIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">
+                        {t('signalAssignee')}
+                      </FormLabel>
+                      <FormControl>
+                        <SpaceMemberSelect
+                          members={assigneeOptions}
+                          value={
+                            field.value?.[0] != null
+                              ? String(field.value[0])
+                              : null
+                          }
+                          onChange={(value) =>
+                            field.onChange(value ? [Number(value)] : [])
+                          }
+                          placeholder={
+                            isLoadingSpaceMembers
+                              ? t('signalFormAssigneeLoading')
+                              : t('signalFormAssigneeUnassigned')
+                          }
+                          unassignedLabel={t('signalFormAssigneeUnassigned')}
+                          searchPlaceholder={t('signalFormAssigneeSearch')}
+                          emptyListMessage={t('signalFormAssigneeEmpty')}
+                          unknownLabel={t('signalAssigneeUnknown')}
+                          disabled={isMutating}
+                          // The signal form lives inside an overlay dialog.
+                          popoverModal={false}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('signalFormAssigneeHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="dueAt"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel className="text-foreground">
                         {t('signalFormDueDate')}
                       </FormLabel>
