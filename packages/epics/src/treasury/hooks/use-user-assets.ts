@@ -91,7 +91,9 @@ type UseAssetsReturn = {
 
 export const useUserAssets = ({
   filter,
-  refreshInterval = 10000,
+  // 30s: the assets route hits Alchemy + several RPCs; polling every 10s was
+  // frequent enough to surface transient upstream gaps as balance flicker.
+  refreshInterval = 30000,
   personSlug,
 }: {
   filter?: { type: string };
@@ -119,7 +121,15 @@ export const useUserAssets = ({
         }
         return await res.json();
       }),
-    { refreshInterval },
+    {
+      refreshInterval,
+      // Keep the last good wallet when the JWT (and therefore the SWR key)
+      // rotates, or when a refresh fails — otherwise the balance drops to 0
+      // and the token grid empties for a few seconds every poll/refresh.
+      keepPreviousData: true,
+      revalidateOnFocus: true,
+      errorRetryCount: 3,
+    },
   );
 
   const typedData = data as UseAssetsReturn | undefined;
@@ -138,7 +148,10 @@ export const useUserAssets = ({
     assets: filteredAssets,
     // A null SWR key reports "not loading", which would flash an empty wallet
     // in the gap between the JWT arriving and the slug being known.
-    isLoading: isLoading || (Boolean(jwt) && !personSlug),
+    // Once we have data, background revalidation must not look like a first load.
+    isLoading:
+      (!hasValidData && isLoading) ||
+      (Boolean(jwt) && !personSlug && !hasValidData),
     balance: hasValidData ? typedData.balance : 0,
     manualUpdate: mutate,
   };

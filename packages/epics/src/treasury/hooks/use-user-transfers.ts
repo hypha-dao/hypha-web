@@ -39,7 +39,11 @@ export const useUserTransfers = ({
         throw err;
       }
     },
-    { refreshInterval },
+    {
+      refreshInterval,
+      keepPreviousData: true,
+      errorRetryCount: 3,
+    },
   );
 
   return {

@@ -17,6 +17,9 @@ export const useJwt = () => {
       refreshInterval: 5 * 60 * 1000,
       revalidateOnFocus: true,
       dedupingInterval: 60 * 1000,
+      // Auth loading can briefly null the key; keep the last token so every
+      // `[endpoint, jwt]` consumer does not flash empty and refetch as uncached.
+      keepPreviousData: true,
     },
   );
 

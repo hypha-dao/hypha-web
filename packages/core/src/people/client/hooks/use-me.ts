@@ -22,13 +22,27 @@ export const useMe = (): {
     data: person,
     isLoading: isLoadingPerson,
     mutate,
-  } = useSWR<Person>(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
-    fetch(endpoint, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-        'Content-Type': 'application/json',
-      },
-    }).then((res) => res.json() as Promise<Person>),
+  } = useSWR<Person>(
+    jwt ? [endpoint, jwt] : null,
+    async ([endpoint, jwt]) => {
+      const res = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      // A 500 body like `{ error: "..." }` must not be cached as a Person —
+      // that clears `slug` and sends the wallet into a full-page loader.
+      if (!res.ok) {
+        throw new Error(`Failed to fetch profile: ${res.status}`);
+      }
+      return (await res.json()) as Person;
+    },
+    {
+      // JWT refresh changes the SWR key; keep the last good profile so the
+      // wallet does not unmount into "Loading..." every few minutes.
+      keepPreviousData: true,
+    },
   );
 
   const isMe = React.useCallback(

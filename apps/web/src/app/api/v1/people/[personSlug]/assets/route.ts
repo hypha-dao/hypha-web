@@ -35,6 +35,32 @@ import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { web3Client } from '@hypha-platform/core/server';
 
+/**
+ * Transient Alchemy / RPC blips used to return an empty fallback on the first
+ * failure, which the client then treated as the real wallet (balance flicker).
+ * One short retry absorbs most of those without changing the happy path.
+ */
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  fallback: T,
+  attempts = 2,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 150 * attempt));
+      }
+    }
+  }
+  console.warn(`Failed to ${label} after ${attempts} attempts:`, lastError);
+  return fallback;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<ProfileRouteParams> },
@@ -77,23 +103,21 @@ export async function GET(
       externalTokens,
       rawDbTokensForSeed,
     ] = await Promise.all([
-      web3Client
-        .readContract(getEnergyBalances({ member: address }))
-        .catch((error) => {
-          console.warn('Failed to fetch energy balance:', error);
-          return null;
-        }),
-      web3Client
-        .readContract(getMemberSpaces({ memberAddress: address }))
-        .catch((error) => {
-          console.warn('Failed to fetch member spaces:', error);
-          return null;
-        }),
-      getTokenBalancesByAddress(address).catch(
-        (error): Awaited<ReturnType<typeof getTokenBalancesByAddress>> => {
-          console.warn('Failed to fetch external token balances:', error);
-          return [];
-        },
+      withRetry(
+        'fetch energy balance',
+        () => web3Client.readContract(getEnergyBalances({ member: address })),
+        null,
+      ),
+      withRetry(
+        'fetch member spaces',
+        () =>
+          web3Client.readContract(getMemberSpaces({ memberAddress: address })),
+        null,
+      ),
+      withRetry(
+        'fetch external token balances',
+        () => getTokenBalancesByAddress(address),
+        [] as Awaited<ReturnType<typeof getTokenBalancesByAddress>>,
       ),
       findAllTokens({ db: getDb({ authToken }) }, { search: undefined }),
     ]);
