@@ -21,7 +21,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
-import { SignalAssignee } from './signal-assignee';
+import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { priorityLeftBorderEdgeClass } from '../utils/signal-priority-styles';
@@ -64,16 +64,21 @@ function SignalListAssigneeMeta({ signal }: { signal: Coherence }) {
     tags: signal.tags,
   });
 
-  const hasAssignee = (signal.assigneeIds?.length ?? 0) > 0;
+  const hasPersonSlot =
+    resolveSignalPersonIds({
+      assigneeIds: signal.assigneeIds,
+      fallbackPersonId: signal.creatorId,
+    }).length > 0;
 
   return (
     <SignalCreatorMeta
       createdAtRelative={createdAtRelative}
       className="mt-0.5"
       personSlot={
-        hasAssignee ? (
+        hasPersonSlot ? (
           <SignalAssignee
             assigneeIds={signal.assigneeIds}
+            fallbackPersonId={signal.creatorId}
             variant="meta"
             className="text-[11px] text-muted-foreground"
           />

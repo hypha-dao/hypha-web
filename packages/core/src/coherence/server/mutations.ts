@@ -114,7 +114,10 @@ export const createCoherence = async (
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
   const priority = maybePriority ?? 'medium';
-  const assigneeIds = normalizeAssigneeIds(inputAssigneeIds ?? []);
+  // New signals always have an owner: the chosen assignee, or the creator.
+  const assigneeIds = normalizeAssigneeIds(
+    inputAssigneeIds?.length ? inputAssigneeIds : [creatorId],
+  );
 
   let progressStatus = inputProgressStatus;
   let defaultBoard: string | null = null;

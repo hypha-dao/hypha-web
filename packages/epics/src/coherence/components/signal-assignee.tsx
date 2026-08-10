@@ -22,21 +22,48 @@ function useAssigneeLabel(
 }
 
 /**
+ * Effective person ids for the card person slot: assignees when set, otherwise
+ * the creator so legacy/unassigned signals still show a name.
+ */
+export function resolveSignalPersonIds({
+  assigneeIds,
+  fallbackPersonId,
+}: {
+  assigneeIds?: number[] | null;
+  fallbackPersonId?: number | null;
+}): number[] {
+  const assignees = (assigneeIds ?? []).filter(
+    (id) => Number.isInteger(id) && id > 0,
+  );
+  if (assignees.length > 0) return assignees;
+  if (fallbackPersonId != null && fallbackPersonId > 0) {
+    return [fallbackPersonId];
+  }
+  return [];
+}
+
+/**
  * Assignee display for signal boards.
  * - `meta` (default): name only — sits in the person slot under the title.
  * - `full`: avatar + name for denser surfaces that still want a face.
+ *
+ * Pass `fallbackPersonId` (usually the creator) so cards always have a name
+ * when no assignee was stored.
  */
 export function SignalAssignee({
   assigneeIds,
+  fallbackPersonId,
   className,
   variant = 'meta',
 }: {
   assigneeIds?: number[] | null;
+  /** Shown when `assigneeIds` is empty — typically the signal creator. */
+  fallbackPersonId?: number | null;
   className?: string;
   variant?: 'meta' | 'full';
 }) {
   const t = useTranslations('CoherenceTab');
-  const ids = assigneeIds ?? [];
+  const ids = resolveSignalPersonIds({ assigneeIds, fallbackPersonId });
   const [primaryId, ...extraIds] = ids;
   if (primaryId == null) return null;
 

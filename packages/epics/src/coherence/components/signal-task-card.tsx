@@ -11,7 +11,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-import { SignalAssignee } from './signal-assignee';
+import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
@@ -58,6 +58,11 @@ export function SignalTaskCard({
 }: SignalTaskCardProps) {
   const t = useTranslations('CoherenceTab');
   const intlFormat = useFormatter();
+  const hasPersonSlot =
+    resolveSignalPersonIds({
+      assigneeIds: signal.assigneeIds,
+      fallbackPersonId: signal.creatorId,
+    }).length > 0;
   const typeLabel = t(
     `types.${signal.type}` as
       | 'types.Opportunity'
@@ -191,13 +196,14 @@ export function SignalTaskCard({
                 </span>
               </>
             ) : null}
-            {(signal.assigneeIds?.length ?? 0) > 0 ? (
+            {hasPersonSlot ? (
               <>
                 <span className="mx-1.5 text-border" aria-hidden>
                   ·
                 </span>
                 <SignalAssignee
                   assigneeIds={signal.assigneeIds}
+                  fallbackPersonId={signal.creatorId}
                   variant="meta"
                   className="min-w-0 truncate"
                 />

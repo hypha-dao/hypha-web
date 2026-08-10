@@ -36,7 +36,7 @@ import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
-import { SignalAssignee } from './signal-assignee';
+import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import {
@@ -68,7 +68,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   archived,
   messages = 0,
   roomId,
-  creatorId: _creatorId,
+  creatorId,
   assigneeIds,
   upvotes,
   refresh,
@@ -115,6 +115,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
 
+  const hasPersonSlot =
+    resolveSignalPersonIds({
+      assigneeIds,
+      fallbackPersonId: creatorId,
+    }).length > 0;
   const typeLabel = t(
     `types.${type}` as
       | 'types.Opportunity'
@@ -306,13 +311,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <p className="truncate text-1 text-muted-foreground">
               <span>{typeLabel}</span>
               {/* Priority stays on the left accent bar only — avoid duplicate status channel */}
-              {(assigneeIds?.length ?? 0) > 0 ? (
+              {hasPersonSlot ? (
                 <>
                   <span className="mx-1.5 text-border" aria-hidden>
                     ·
                   </span>
                   <SignalAssignee
                     assigneeIds={assigneeIds}
+                    fallbackPersonId={creatorId}
                     variant="meta"
                     className="min-w-0 truncate"
                   />
