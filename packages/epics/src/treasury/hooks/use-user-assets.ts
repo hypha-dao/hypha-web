@@ -103,8 +103,10 @@ export const useUserAssets = ({
     return `/api/v1/people/${personSlug}/assets`;
   }, [personSlug]);
 
+  // The JWT resolves before the slug does, so keying on it alone fired a
+  // request for `/people/undefined/assets` on every mount.
   const { data, isLoading, mutate } = useSWR(
-    jwt ? [endpoint, jwt] : null,
+    jwt && personSlug ? [endpoint, jwt] : null,
     ([endpoint, jwt]) =>
       fetch(endpoint, {
         headers: {
@@ -134,7 +136,9 @@ export const useUserAssets = ({
 
   return {
     assets: filteredAssets,
-    isLoading,
+    // A null SWR key reports "not loading", which would flash an empty wallet
+    // in the gap between the JWT arriving and the slug being known.
+    isLoading: isLoading || (Boolean(jwt) && !personSlug),
     balance: hasValidData ? typedData.balance : 0,
     manualUpdate: mutate,
   };
