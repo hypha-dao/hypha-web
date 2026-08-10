@@ -7,6 +7,7 @@ import {
   getTokenMeta,
   findAllTokens,
   getSupply,
+  getUsdRates,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -24,6 +25,7 @@ import {
   getEnergyCommunityDisplayDecimals,
   isHyphaToken,
   HYPHA_PRICE_USD,
+  convertToUsd,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -231,6 +233,9 @@ export async function GET(
       console.error('Failed to fetch token prices:', error);
     }
 
+    /** Needed to sum tokens priced in different currencies into one total. */
+    const usdRates = await getUsdRates();
+
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
@@ -249,6 +254,11 @@ export async function GET(
             );
           }
           let rate = prices[token.address] || 0;
+          /**
+           * Currency `rate` is denominated in. Market feeds and the fixed HYPHA
+           * rate are USD; only a DB reference price carries its own currency.
+           */
+          let rateCurrency = 'USD';
           if (token.address.toLowerCase() === EVC_TOKEN_ADDRESS) {
             rate = 1;
           }
@@ -258,6 +268,11 @@ export async function GET(
           }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            if (rate > 0) {
+              rateCurrency =
+                referenceCurrencyByAddress[token.address.toLowerCase()] ??
+                'USD';
+            }
           }
           // 1 display NRG ≈ 1 EURC/USDC after credit decimal normalization.
           if (
@@ -271,15 +286,13 @@ export async function GET(
             token.address,
             contractDecimals,
           );
-          const referenceCurrency =
-            referenceCurrencyByAddress[token.address.toLowerCase()];
           return {
             ...meta,
             address: token.address,
             value: amount,
             tokenPrice: rate,
-            referenceCurrency,
-            usdEqual: rate * amount,
+            referenceCurrency: rateCurrency,
+            usdEqual: convertToUsd(rate * amount, rateCurrency, usdRates),
             chartData: [],
             transactions: [],
             closeUrl: [],

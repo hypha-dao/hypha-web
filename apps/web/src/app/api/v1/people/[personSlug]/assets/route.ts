@@ -10,6 +10,7 @@ import {
   getTokenMeta,
   getSupply,
   getMutualCreditInfo,
+  getUsdRates,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -27,6 +28,7 @@ import {
   getEnergyCommunityDisplayDecimals,
   isHyphaToken,
   HYPHA_PRICE_USD,
+  convertToUsd,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -287,6 +289,7 @@ export async function GET(
     }));
 
     const referencePriceByAddress: Record<string, number> = {};
+    const referenceCurrencyByAddress: Record<string, string> = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
@@ -294,7 +297,14 @@ export async function GET(
           referencePriceByAddress[t.address.toLowerCase()] = parsed;
         }
       }
+      if (t.address && t.referenceCurrency) {
+        referenceCurrencyByAddress[t.address.toLowerCase()] =
+          t.referenceCurrency;
+      }
     });
+
+    /** Needed to sum tokens priced in different currencies into one total. */
+    const usdRates = await getUsdRates();
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {
@@ -349,12 +359,22 @@ export async function GET(
             decimals,
           );
           let rate = isEnergyToken ? 1 : prices[token.address] || 0;
+          /**
+           * Currency `rate` is denominated in. Market feeds and the fixed HYPHA
+           * rate are USD; only a DB reference price carries its own currency.
+           */
+          let rateCurrency = 'USD';
           // HYPHA sells at a contract-fixed rate, so it overrides any feed price.
           if (isHyphaToken(token.address)) {
             rate = HYPHA_PRICE_USD;
           }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            if (rate > 0) {
+              rateCurrency =
+                referenceCurrencyByAddress[token.address.toLowerCase()] ??
+                'USD';
+            }
           }
           // 1 display NRG ≈ 1 EURC/USDC after credit decimal normalization.
           if (
@@ -368,7 +388,8 @@ export async function GET(
             address: token.address,
             value: amount,
             tokenPrice: rate,
-            usdEqual: rate * amount,
+            referenceCurrency: rateCurrency,
+            usdEqual: convertToUsd(rate * amount, rateCurrency, usdRates),
             chartData: [],
             transactions: [],
             closeUrl: [],
