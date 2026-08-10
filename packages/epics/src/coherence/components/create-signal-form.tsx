@@ -38,6 +38,7 @@ import {
   CoherenceTag,
   CoherenceType,
   DEFAULT_SIGNAL_PROGRESS_STATUS,
+  Person,
   resolveDefaultBoard,
   schemaCreateCoherenceForm,
   revalidateCoherences,
@@ -46,6 +47,7 @@ import {
   useJwt,
   useMatrix,
   useMe,
+  usePersonById,
   useSignalWorkflow,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
@@ -68,6 +70,8 @@ import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { toLocalDueDateInputValue } from '../utils/signal-due-date';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { SpaceMemberSelect } from '../../pipeline/components/space-member-select';
+import type { UseMembers } from '../../spaces/hooks/types';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -81,6 +85,8 @@ export interface CreateSignalFormProps {
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
+  /** Supplies the space roster for the assignee picker. */
+  useMembers: UseMembers;
 }
 
 function dueDateFromInputValue(value: string): Date | null {
@@ -110,6 +116,7 @@ export const CreateSignalForm = ({
   signalSlug,
   signalRoomId,
   initialValues,
+  useMembers,
 }: CreateSignalFormProps) => {
   const params = useParams<{ id?: string; lang?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
@@ -136,6 +143,11 @@ export const CreateSignalForm = ({
   const { jwt: authToken } = useJwt();
   const router = useRouter();
   const { space } = useSpaceBySlug(spaceSlug);
+  const { persons: spaceMembers, isLoading: isLoadingSpaceMembers } =
+    useMembers({
+      spaceSlug,
+      paginationDisabled: true,
+    });
   const canManageSignal = useCanManageSignal({
     spaceSlug,
     web3SpaceId: space?.web3SpaceId ?? undefined,
@@ -252,7 +264,9 @@ export const CreateSignalForm = ({
       board:
         initialValues?.board ??
         (workflow ? resolveDefaultBoard(workflow) : null),
-      assigneeIds: initialValues?.assigneeIds ?? [],
+      // A new signal is assigned to its creator until they pick someone else.
+      assigneeIds:
+        initialValues?.assigneeIds ?? (person?.id ? [person.id] : []),
     }),
     [initialValues, person?.id, spaceId, workflow],
   );
@@ -458,6 +472,19 @@ export const CreateSignalForm = ({
     }
   }, [person, form]);
 
+  // `person` can resolve after mount, so the creator default has to be applied
+  // once it lands rather than only through `defaultValues`.
+  React.useEffect(() => {
+    if (mode !== 'create' || !person?.id) return;
+    const { isDirty } = form.getFieldState('assigneeIds');
+    if (isDirty || form.getValues('assigneeIds')?.length) return;
+    form.setValue('assigneeIds', [person.id], {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: true,
+    });
+  }, [form, mode, person?.id]);
+
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('spaceId');
     if (!isDirty && spaceId) {
@@ -468,6 +495,34 @@ export const CreateSignalForm = ({
       });
     }
   }, [spaceId, form]);
+
+  const selectedAssigneeId = form.watch('assigneeIds')?.[0] ?? null;
+  // Keeps the picker readable when the assignee is no longer on the roster
+  // (left the space, or is a delegate rather than a member).
+  const { person: selectedAssignee } = usePersonById({
+    id: selectedAssigneeId ?? undefined,
+  });
+  const assigneeOptions = React.useMemo(() => {
+    const byId = new Map<number, Person>();
+    for (const member of spaceMembers.data) {
+      byId.set(member.id, member);
+    }
+    for (const extra of [person, selectedAssignee]) {
+      if (extra?.id && !byId.has(extra.id)) byId.set(extra.id, extra);
+    }
+    return [...byId.values()].sort((a, b) =>
+      [a.name, a.surname]
+        .filter(Boolean)
+        .join(' ')
+        .localeCompare(
+          [b.name, b.surname].filter(Boolean).join(' '),
+          undefined,
+          {
+            sensitivity: 'base',
+          },
+        ),
+    );
+  }, [person, selectedAssignee, spaceMembers.data]);
 
   const handleResetForm = React.useCallback(() => {
     form.reset(formDefaults);
@@ -1021,9 +1076,49 @@ export const CreateSignalForm = ({
                 />
                 <FormField
                   control={form.control}
+                  name="assigneeIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">
+                        {t('signalAssignee')}
+                      </FormLabel>
+                      <FormControl>
+                        <SpaceMemberSelect
+                          members={assigneeOptions}
+                          value={
+                            field.value?.[0] != null
+                              ? String(field.value[0])
+                              : null
+                          }
+                          onChange={(value) =>
+                            field.onChange(value ? [Number(value)] : [])
+                          }
+                          placeholder={
+                            isLoadingSpaceMembers
+                              ? t('signalFormAssigneeLoading')
+                              : t('signalFormAssigneeUnassigned')
+                          }
+                          unassignedLabel={t('signalFormAssigneeUnassigned')}
+                          searchPlaceholder={t('signalFormAssigneeSearch')}
+                          emptyListMessage={t('signalFormAssigneeEmpty')}
+                          unknownLabel={t('signalAssigneeUnknown')}
+                          disabled={isMutating}
+                          // The signal form lives inside an overlay dialog.
+                          popoverModal={false}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('signalFormAssigneeHint')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="dueAt"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel className="text-foreground">
                         {t('signalFormDueDate')}
                       </FormLabel>

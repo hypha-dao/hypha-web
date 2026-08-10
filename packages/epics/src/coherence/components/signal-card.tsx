@@ -38,6 +38,7 @@ import { Archive, ArchiveRestore, CalendarDays, Pencil } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { SignalAssignee } from './signal-assignee';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import {
@@ -70,6 +71,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   messages = 0,
   roomId,
   creatorId,
+  assigneeIds,
   upvotes,
   refresh,
   onOpenConversation,
@@ -538,6 +540,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               <span className="truncate text-1">{t('openConversation')}</span>
             </Button>
           ) : null}
+          <SignalAssignee
+            assigneeIds={assigneeIds ?? []}
+            className="ml-auto max-w-[9rem] shrink-0"
+          />
         </div>
         <AlertDialog
           open={archiveDialogOpen}

@@ -8,11 +8,10 @@ import {
   Coherence,
   SignalBoardDefinition,
   SignalStatusDefinition,
-  usePersonById,
 } from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-import { PersonAvatar } from '../../people/components/person-avatar';
+import { SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
@@ -41,38 +40,6 @@ type SignalTaskCardProps = {
   refresh?: () => Promise<void>;
   className?: string;
 };
-
-function AssigneeStack({ assigneeIds }: { assigneeIds: number[] }) {
-  const visible = assigneeIds.slice(0, 3);
-  return (
-    <div className="flex -space-x-1.5">
-      {visible.map((id) => (
-        <AssigneeAvatar key={id} personId={id} />
-      ))}
-      {assigneeIds.length > 3 ? (
-        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-background text-[10px] font-medium text-muted-foreground ring-2 ring-background">
-          +{assigneeIds.length - 3}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function AssigneeAvatar({ personId }: { personId: number }) {
-  const { person } = usePersonById({ id: personId });
-  const label =
-    [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
-    person?.nickname ||
-    '?';
-  return (
-    <PersonAvatar
-      size="sm"
-      avatarSrc={person?.avatarUrl || ''}
-      userName={label}
-      className="ring-2 ring-background"
-    />
-  );
-}
 
 export function SignalTaskCard({
   signal,
@@ -290,9 +257,10 @@ export function SignalTaskCard({
               </span>
             ) : null}
           </div>
-          {signal.assigneeIds.length > 0 ? (
-            <AssigneeStack assigneeIds={signal.assigneeIds} />
-          ) : null}
+          <SignalAssignee
+            assigneeIds={signal.assigneeIds}
+            className="max-w-[9rem] shrink-0"
+          />
         </div>
       </div>
     </div>
