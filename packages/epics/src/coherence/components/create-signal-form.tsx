@@ -276,11 +276,13 @@ export const CreateSignalForm = ({
       board:
         initialValues?.board ??
         (workflow ? resolveDefaultBoard(workflow) : null),
-      // A new signal is assigned to its creator until they pick someone else.
+      // Creator default applies on create only — editing a legacy unassigned
+      // signal must not silently claim the editor as assignee.
       assigneeIds:
-        initialValues?.assigneeIds ?? (person?.id ? [person.id] : []),
+        initialValues?.assigneeIds ??
+        (mode === 'create' && person?.id ? [person.id] : []),
     }),
-    [initialValues, person?.id, spaceId, workflow],
+    [initialValues, mode, person?.id, spaceId, workflow],
   );
 
   const formRef = React.useRef<HTMLFormElement>(null);

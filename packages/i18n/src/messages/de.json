@@ -3653,7 +3653,7 @@
     "signalFormDueDateHint": "Optionales Zieldatum zur Nachverfolgung dieser Signal-Aufgabe.",
     "signalAssignee": "Zuständig",
     "signalAssigneeUnknown": "Unbekanntes Mitglied",
-    "signalFormAssigneeHint": "Space-Mitglied, das für dieses Signal verantwortlich ist. Standardmäßig du als Ersteller*in.",
+    "signalFormAssigneeHint": "Space-Mitglied, das für dieses Signal verantwortlich ist. Standardmäßig bist du als Ersteller*in ausgewählt.",
     "signalFormAssigneeUnassigned": "Nicht zugewiesen",
     "signalFormAssigneeLoading": "Mitglieder werden geladen …",
     "signalFormAssigneeSearch": "Mitglieder suchen …",

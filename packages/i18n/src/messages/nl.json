@@ -3655,7 +3655,7 @@
     "signalFormDueDateHint": "Optionele streefdatum voor het volgen van deze signaaltaak.",
     "signalAssignee": "Verantwoordelijke",
     "signalAssigneeUnknown": "Onbekend lid",
-    "signalFormAssigneeHint": "Lid van de space dat verantwoordelijk is voor dit signaal. Standaard jij, als aanmaker.",
+    "signalFormAssigneeHint": "Lid van de space dat verantwoordelijk is voor dit signaal. Standaard ben jij als aanmaker geselecteerd.",
     "signalFormAssigneeUnassigned": "Niet toegewezen",
     "signalFormAssigneeLoading": "Leden laden…",
     "signalFormAssigneeSearch": "Leden zoeken…",

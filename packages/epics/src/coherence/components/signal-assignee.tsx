@@ -6,61 +6,100 @@ import { usePersonById } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
-function SignalAssigneeAvatarAndName({
-  personId,
-  unknownLabel,
-}: {
-  personId: number;
-  unknownLabel: string;
-}) {
+function useAssigneeLabel(
+  personId: number,
+  unknownLabel: string,
+): {
+  label: string;
+  avatarUrl: string;
+} {
   const { person } = usePersonById({ id: personId });
   const label =
     [person?.name, person?.surname].filter(Boolean).join(' ').trim() ||
     person?.nickname?.trim() ||
     unknownLabel;
-
-  return (
-    <>
-      <PersonAvatar
-        size="sm"
-        avatarSrc={person?.avatarUrl || ''}
-        userName={label}
-        className="shrink-0"
-      />
-      <span className="truncate">{label}</span>
-    </>
-  );
+  return { label, avatarUrl: person?.avatarUrl || '' };
 }
 
 /**
- * Board-card assignee: avatar plus name of the assigned member, with a `+N`
- * counter for the extra ids older signals may carry.
+ * Assignee display for signal boards.
+ * - `meta` (default): name only — sits in the person slot under the title.
+ * - `full`: avatar + name for denser surfaces that still want a face.
  */
 export function SignalAssignee({
   assigneeIds,
   className,
+  variant = 'meta',
 }: {
-  assigneeIds: number[];
+  assigneeIds?: number[] | null;
   className?: string;
+  variant?: 'meta' | 'full';
 }) {
   const t = useTranslations('CoherenceTab');
-  const [primaryId, ...extraIds] = assigneeIds;
+  const ids = assigneeIds ?? [];
+  const [primaryId, ...extraIds] = ids;
   if (primaryId == null) return null;
 
   return (
-    <span
-      className={cn(
-        'inline-flex min-w-0 items-center gap-1.5 text-1 text-muted-foreground',
-        className,
-      )}
+    <SignalAssigneePrimary
+      personId={primaryId}
+      extraCount={extraIds.length}
+      variant={variant}
+      className={className}
       title={t('signalAssignee')}
+      unknownLabel={t('signalAssigneeUnknown')}
+    />
+  );
+}
+
+function SignalAssigneePrimary({
+  personId,
+  extraCount,
+  variant,
+  className,
+  title,
+  unknownLabel,
+}: {
+  personId: number;
+  extraCount: number;
+  variant: 'meta' | 'full';
+  className?: string;
+  title: string;
+  unknownLabel: string;
+}) {
+  const { label, avatarUrl } = useAssigneeLabel(personId, unknownLabel);
+
+  if (variant === 'full') {
+    return (
+      <span
+        className={cn(
+          'inline-flex min-w-0 items-center gap-1.5 text-1 text-muted-foreground',
+          className,
+        )}
+        title={title}
+      >
+        <PersonAvatar
+          size="sm"
+          avatarSrc={avatarUrl}
+          userName={label}
+          className="shrink-0"
+        />
+        <span className="truncate">{label}</span>
+        {extraCount > 0 ? (
+          <span className="shrink-0 tabular-nums">+{extraCount}</span>
+        ) : null}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={cn('inline-flex min-w-0 max-w-full items-center', className)}
+      title={title}
     >
-      <SignalAssigneeAvatarAndName
-        personId={primaryId}
-        unknownLabel={t('signalAssigneeUnknown')}
-      />
-      {extraIds.length > 0 ? (
-        <span className="shrink-0 tabular-nums">+{extraIds.length}</span>
+      <span className="truncate">{label}</span>
+      {extraCount > 0 ? (
+        <span className="ml-0.5 shrink-0 tabular-nums">+{extraCount}</span>
       ) : null}
     </span>
   );

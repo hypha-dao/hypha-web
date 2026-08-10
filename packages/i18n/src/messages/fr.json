@@ -3085,7 +3085,7 @@
     "signalFormDueDateHint": "Date cible optionnelle pour suivre cette tâche de signal.",
     "signalAssignee": "Responsable",
     "signalAssigneeUnknown": "Membre inconnu",
-    "signalFormAssigneeHint": "Membre de l'espace responsable de ce signal. Par défaut, vous en tant que créateur.",
+    "signalFormAssigneeHint": "Membre de l'espace responsable de ce signal. Par défaut, le créateur du signal est sélectionné.",
     "signalFormAssigneeUnassigned": "Non attribué",
     "signalFormAssigneeLoading": "Chargement des membres…",
     "signalFormAssigneeSearch": "Rechercher des membres…",

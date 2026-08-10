@@ -3654,7 +3654,7 @@
     "signalFormDueDateHint": "Valgfri måldato for å følge opp denne signaloppgaven.",
     "signalAssignee": "Ansvarlig",
     "signalAssigneeUnknown": "Ukjent medlem",
-    "signalFormAssigneeHint": "Medlemmet i spacet som er ansvarlig for dette signalet. Som standard deg, som oppretter.",
+    "signalFormAssigneeHint": "Medlemmet i spacet som er ansvarlig for dette signalet. Som standard er du valgt som oppretter.",
     "signalFormAssigneeUnassigned": "Ikke tildelt",
     "signalFormAssigneeLoading": "Laster medlemmer…",
     "signalFormAssigneeSearch": "Søk i medlemmer…",
