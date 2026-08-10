@@ -201,6 +201,8 @@ export const useUserAssets = ({
       (!hasValidData && isLoading) ||
       (Boolean(jwt) && !personSlug && !hasValidData),
     balance: hasValidData ? typedData.balance : 0,
-    manualUpdate: mutate,
+    manualUpdate: async () => {
+      await mutate();
+    },
   };
 };
