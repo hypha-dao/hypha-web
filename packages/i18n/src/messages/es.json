@@ -1499,8 +1499,8 @@
       "joinSpaceToUpdateBackingVault": "Únete al espacio para actualizar la bóveda de respaldo"
     },
     "assetCard": {
-      "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Emisión {value}",
+      "fromSpace": "de · {spaceTitle}",
+      "totalIssuance": "Emisión · {value}",
       "createdOn": "Creado en {date}",
       "mutualCredit": {
         "debtBadge": "Debe {amount} {symbol}",
@@ -1569,7 +1569,8 @@
       "uploadLeadImageLabel": "<accent>Subir</accent> una imagen",
       "labels": {
         "email": "Correo electrónico",
-        "location": "Ubicación"
+        "location": "Ubicación",
+        "preferredCurrency": "Moneda preferida"
       },
       "placeholders": {
         "firstName": "Nombre de pila",
@@ -1577,7 +1578,8 @@
         "nickname": "Apodo",
         "lifePurpose": "Escribe aquí tu propósito de vida...",
         "email": "Correo electrónico",
-        "location": "Ubicación"
+        "location": "Ubicación",
+        "preferredCurrency": "Selecciona una moneda"
       },
       "actions": {
         "retry": "Reintentar",

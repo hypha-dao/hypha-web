@@ -6,6 +6,7 @@ import {
   type Person as SavedPerson,
   schemaEditPersonWeb2,
   editPersonFiles,
+  TOKEN_PRICE_REFERENCE_CURRENCIES,
 } from '@hypha-platform/core/client';
 import {
   Button,
@@ -20,6 +21,11 @@ import {
   UploadLeadImage,
   UploadAvatar,
   RequirementMark,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
@@ -41,6 +47,7 @@ interface EditPersonSectionInput {
   location?: string;
   email?: string;
   links?: string[];
+  preferredCurrency?: string;
 }
 
 const schemaEditPersonForm = schemaEditPersonWeb2.extend(editPersonFiles.shape);
@@ -71,7 +78,20 @@ export const EditPersonSection = ({
   const tSpaces = useTranslations('Spaces');
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
+  /** The currency names the token issuance form already ships in every locale. */
+  const tCurrencies = useTranslations(
+    'AgreementFlow.plugins.issueNewToken.value.currencies',
+  );
   const baseResolver = useMemo(() => zodResolver(schemaEditPersonForm), []);
+
+  const currencyOptions = useMemo(
+    () =>
+      TOKEN_PRICE_REFERENCE_CURRENCIES.map((code) => ({
+        code,
+        label: tCurrencies(code.toLowerCase()),
+      })),
+    [tCurrencies],
+  );
 
   const translateEditProfileError = useCallback(
     (message: string) => {
@@ -198,6 +218,11 @@ export const EditPersonSection = ({
       links: person?.links || [],
       email: person?.email || '',
       location: person?.location || '',
+      // Free-text column: anything not on the supported list would fail the
+      // resolver on submit and block saving an otherwise-untouched profile.
+      preferredCurrency: TOKEN_PRICE_REFERENCE_CURRENCIES.find(
+        (code) => code === person?.preferredCurrency,
+      ),
     },
     mode: 'onChange',
   });
@@ -430,6 +455,54 @@ export const EditPersonSection = ({
                             className="w-60"
                             {...field}
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <Text
+                  as="label"
+                  htmlFor="preferred-currency"
+                  className={cn('text-2', 'text-neutral-11')}
+                >
+                  {tProfile('editForm.labels.preferredCurrency')}
+                </Text>
+                <span className="flex items-center">
+                  <FormField
+                    control={form.control}
+                    name="preferredCurrency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Select
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger
+                              id="preferred-currency"
+                              className="w-60"
+                            >
+                              <SelectValue
+                                placeholder={tProfile(
+                                  'editForm.placeholders.preferredCurrency',
+                                )}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {currencyOptions.map((currency) => (
+                                <SelectItem
+                                  key={currency.code}
+                                  value={currency.code}
+                                >
+                                  {currency.code} - {currency.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -4,10 +4,9 @@ import { FC } from 'react';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
 import { useUserAssetsSection } from '../../hooks/use-user-assets-section';
-import { Button } from '../../../../../ui/src/button';
 import Link from 'next/link';
 import { AssetsList } from './assets-list';
-import { Input } from '@hypha-platform/ui';
+import { Button, Input } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
 type UserAssetsSectionProps = {

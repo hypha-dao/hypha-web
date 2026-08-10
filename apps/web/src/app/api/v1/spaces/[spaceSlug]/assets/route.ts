@@ -7,6 +7,8 @@ import {
   getTokenMeta,
   findAllTokens,
   getSupply,
+  getUsdRates,
+  convertToUsd,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -224,12 +226,17 @@ export async function GET(
       (token) => !isHiddenToken(token.address),
     );
 
-    let prices: Record<string, number | undefined> = {};
-    try {
-      prices = await getTokenPrice(allTokens.map(({ address }) => address));
-    } catch (error: unknown) {
-      console.error('Failed to fetch token prices:', error);
-    }
+    // Rates are needed to sum tokens priced in different currencies into one
+    // total, and do not depend on the prices, so pay for one round-trip.
+    const [prices, usdRates] = await Promise.all([
+      getTokenPrice(allTokens.map(({ address }) => address)).catch(
+        (error: unknown) => {
+          console.error('Failed to fetch token prices:', error);
+          return {} as Record<string, number | undefined>;
+        },
+      ),
+      getUsdRates(),
+    ]);
 
     const assets = await Promise.all(
       allTokens.map(async (token) => {
@@ -249,6 +256,11 @@ export async function GET(
             );
           }
           let rate = prices[token.address] || 0;
+          /**
+           * Currency `rate` is denominated in. Market feeds and the fixed HYPHA
+           * rate are USD; only a DB reference price carries its own currency.
+           */
+          let rateCurrency = 'USD';
           if (token.address.toLowerCase() === EVC_TOKEN_ADDRESS) {
             rate = 1;
           }
@@ -258,6 +270,11 @@ export async function GET(
           }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            if (rate > 0) {
+              rateCurrency =
+                referenceCurrencyByAddress[token.address.toLowerCase()] ??
+                'USD';
+            }
           }
           // 1 display NRG ≈ 1 EURC/USDC after credit decimal normalization.
           if (
@@ -271,15 +288,13 @@ export async function GET(
             token.address,
             contractDecimals,
           );
-          const referenceCurrency =
-            referenceCurrencyByAddress[token.address.toLowerCase()];
           return {
             ...meta,
             address: token.address,
             value: amount,
             tokenPrice: rate,
-            referenceCurrency,
-            usdEqual: rate * amount,
+            referenceCurrency: rateCurrency,
+            usdEqual: convertToUsd(rate * amount, rateCurrency, usdRates),
             chartData: [],
             transactions: [],
             closeUrl: [],

@@ -1292,8 +1292,8 @@
       "joinSpaceToUpdateBackingVault": "Sluit u aan bij de ruimte om de back-upkluis te updaten"
     },
     "assetCard": {
-      "fromSpace": "vanaf {spaceTitle}",
-      "totalIssuance": "Uitgifte {value}",
+      "fromSpace": "vanaf · {spaceTitle}",
+      "totalIssuance": "Uitgifte · {value}",
       "createdOn": "Gemaakt op {date}",
       "mutualCredit": {
         "debtBadge": "Schulden {amount} {symbol}",
@@ -1362,7 +1362,8 @@
       "uploadLeadImageLabel": "<accent>Upload</accent> een afbeelding",
       "labels": {
         "email": "E-mail",
-        "location": "Locatie"
+        "location": "Locatie",
+        "preferredCurrency": "Voorkeursvaluta"
       },
       "placeholders": {
         "firstName": "Voornaam",
@@ -1370,7 +1371,8 @@
         "nickname": "Bijnaam",
         "lifePurpose": "Typ hier uw levensdoel...",
         "email": "E-mail",
-        "location": "Locatie"
+        "location": "Locatie",
+        "preferredCurrency": "Selecteer een valuta"
       },
       "actions": {
         "retry": "Opnieuw proberen",

@@ -92,12 +92,18 @@ export function MyWalletDashboard({ lang }: MyWalletDashboardProps) {
     return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
-  if (isLoading || !personSlug) {
+  // Only block the page on the initial profile load. Background revalidation
+  // (JWT refresh, focus) must not tear the wallet down into a full-page spinner.
+  if (!personSlug && isLoading) {
     return (
       <div className="flex w-full min-h-[280px] items-center justify-center py-16">
         <SpaceAccentLoader label={tMyWallet('loading')} />
       </div>
     );
+  }
+
+  if (!personSlug) {
+    return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
   }
 
   return (

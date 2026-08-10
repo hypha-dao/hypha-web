@@ -69,6 +69,8 @@ export const usePayoutAccounts = ({
       {
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
+        keepPreviousData: true,
+        errorRetryCount: 3,
       },
     );
 

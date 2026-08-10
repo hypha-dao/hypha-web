@@ -82,6 +82,17 @@ export type AssetItem = {
   };
 };
 
+type AssetsPayload = {
+  assets: AssetItem[];
+  balance: number;
+  /**
+   * Upstream sources that failed while assembling this response. When Alchemy
+   * is listed the payload looks like an "energy-only" wallet and must not
+   * replace a previously complete fetch in the client cache.
+   */
+  incompleteSources?: string[];
+};
+
 type UseAssetsReturn = {
   assets: AssetItem[];
   isLoading: boolean;
@@ -89,9 +100,21 @@ type UseAssetsReturn = {
   manualUpdate: () => Promise<void>;
 };
 
+function isCompletePayload(payload: AssetsPayload): boolean {
+  return !payload.incompleteSources || payload.incompleteSources.length === 0;
+}
+
+/**
+ * Survives remounts and JWT-key churn so an Alchemy blip after a good fetch
+ * cannot replace the full wallet with the energy-catalogue subset.
+ */
+const completeWalletBySlug = new Map<string, AssetsPayload>();
+
 export const useUserAssets = ({
   filter,
-  refreshInterval = 10000,
+  // 30s: the assets route hits Alchemy + several RPCs; polling every 10s was
+  // frequent enough to surface transient upstream gaps as balance flicker.
+  refreshInterval = 30000,
   personSlug,
 }: {
   filter?: { type: string };
@@ -103,24 +126,61 @@ export const useUserAssets = ({
     return `/api/v1/people/${personSlug}/assets`;
   }, [personSlug]);
 
+  // The JWT resolves before the slug does, so keying on it alone fired a
+  // request for `/people/undefined/assets` on every mount.
   const { data, isLoading, mutate } = useSWR(
-    jwt ? [endpoint, jwt] : null,
-    ([endpoint, jwt]) =>
-      fetch(endpoint, {
+    jwt && personSlug ? [endpoint, jwt] : null,
+    async ([endpoint, jwt]) => {
+      const res = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${jwt}`,
           'Content-Type': 'application/json',
         },
-      }).then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch user assets: ${res.statusText}`);
-        }
-        return await res.json();
-      }),
-    { refreshInterval },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch user assets: ${res.statusText}`);
+      }
+      const payload = (await res.json()) as AssetsPayload;
+      if (
+        !Array.isArray(payload.assets) ||
+        typeof payload.balance !== 'number'
+      ) {
+        throw new Error('Failed to fetch user assets: invalid payload');
+      }
+
+      const slug = personSlug as string;
+      if (isCompletePayload(payload)) {
+        completeWalletBySlug.set(slug, payload);
+        return payload;
+      }
+
+      // Alchemy (etc.) failed: this payload is the energy/member catalogue
+      // subset. Prefer the last complete wallet for this slug so the balance
+      // does not collapse mid-session. First paint with no prior complete
+      // fetch still shows the partial set rather than an empty grid.
+      const previousComplete = completeWalletBySlug.get(slug);
+      if (previousComplete) {
+        console.warn(
+          `Incomplete assets response (${(payload.incompleteSources ?? []).join(
+            ', ',
+          )}); keeping previous wallet`,
+        );
+        return previousComplete;
+      }
+      return payload;
+    },
+    {
+      refreshInterval,
+      // Keep the last good wallet when the JWT (and therefore the SWR key)
+      // rotates, or when a refresh fails — otherwise the balance drops to 0
+      // and the token grid empties for a few seconds every poll/refresh.
+      keepPreviousData: true,
+      revalidateOnFocus: true,
+      errorRetryCount: 3,
+    },
   );
 
-  const typedData = data as UseAssetsReturn | undefined;
+  const typedData = data as AssetsPayload | undefined;
   const hasValidData =
     typedData &&
     Array.isArray(typedData.assets) &&
@@ -134,8 +194,15 @@ export const useUserAssets = ({
 
   return {
     assets: filteredAssets,
-    isLoading,
+    // A null SWR key reports "not loading", which would flash an empty wallet
+    // in the gap between the JWT arriving and the slug being known.
+    // Once we have data, background revalidation must not look like a first load.
+    isLoading:
+      (!hasValidData && isLoading) ||
+      (Boolean(jwt) && !personSlug && !hasValidData),
     balance: hasValidData ? typedData.balance : 0,
-    manualUpdate: mutate,
+    manualUpdate: async () => {
+      await mutate();
+    },
   };
 };

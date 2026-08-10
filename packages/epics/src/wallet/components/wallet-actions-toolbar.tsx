@@ -11,12 +11,28 @@ type WalletActionsToolbarProps = {
   className?: string;
 };
 
+/**
+ * The wallet's primary actions, so they keep the solid accent fill rather than
+ * the quiet outline treatment used for banners and surrounding chrome.
+ */
+const ACTION_BUTTON_CLASS =
+  'h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4';
+
 export function WalletActionsToolbar({
   basePath,
   disabled = false,
   className,
 }: WalletActionsToolbarProps) {
   const tProfile = useTranslations('Profile');
+
+  const actions = [
+    { href: `${basePath}/actions/buy-space-tokens`, label: 'buySpaceTokens' },
+    {
+      href: `${basePath}/actions/purchase-hypha-tokens`,
+      label: 'buyHypha',
+    },
+    { href: `${basePath}/actions`, label: 'actions' },
+  ] as const;
 
   return (
     <div
@@ -25,71 +41,22 @@ export function WalletActionsToolbar({
         className,
       )}
     >
-      {disabled ? (
-        <Button
-          variant="outline"
-          colorVariant="accent"
-          className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
-          disabled
-        >
-          {tProfile('buySpaceTokens')}
-        </Button>
-      ) : (
-        <Button
-          asChild
-          variant="outline"
-          colorVariant="accent"
-          className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
-        >
-          <Link href={`${basePath}/actions/buy-space-tokens`} scroll={false}>
-            {tProfile('buySpaceTokens')}
-          </Link>
-        </Button>
-      )}
-      {disabled ? (
-        <Button
-          variant="outline"
-          colorVariant="accent"
-          className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
-          disabled
-        >
-          {tProfile('buyHypha')}
-        </Button>
-      ) : (
-        <Button
-          asChild
-          variant="outline"
-          colorVariant="accent"
-          className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
-        >
-          <Link
-            href={`${basePath}/actions/purchase-hypha-tokens`}
-            scroll={false}
+      {actions.map(({ href, label }) =>
+        disabled ? (
+          <Button
+            key={href}
+            className={cn(ACTION_BUTTON_CLASS, 'cursor-not-allowed')}
+            disabled
           >
-            {tProfile('buyHypha')}
-          </Link>
-        </Button>
-      )}
-      {disabled ? (
-        <Button
-          variant="outline"
-          colorVariant="accent"
-          className="h-10 shrink-0 cursor-not-allowed whitespace-nowrap px-3 text-sm sm:px-4"
-          disabled
-        >
-          {tProfile('actions')}
-        </Button>
-      ) : (
-        <Button
-          asChild
-          variant="outline"
-          colorVariant="accent"
-          className="h-10 shrink-0 whitespace-nowrap px-3 text-sm sm:px-4"
-        >
-          <Link href={`${basePath}/actions`} scroll={false}>
-            {tProfile('actions')}
-          </Link>
-        </Button>
+            {tProfile(label)}
+          </Button>
+        ) : (
+          <Button key={href} asChild className={ACTION_BUTTON_CLASS}>
+            <Link href={href} scroll={false}>
+              {tProfile(label)}
+            </Link>
+          </Button>
+        ),
       )}
     </div>
   );

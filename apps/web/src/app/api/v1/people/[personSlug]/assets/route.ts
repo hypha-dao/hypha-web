@@ -10,6 +10,8 @@ import {
   getTokenMeta,
   getSupply,
   getMutualCreditInfo,
+  getUsdRates,
+  convertToUsd,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -32,6 +34,35 @@ import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { web3Client } from '@hypha-platform/core/server';
+
+type SourceResult<T> = { ok: true; value: T } | { ok: false; value: T };
+
+/**
+ * Transient Alchemy / RPC blips used to return an empty fallback on the first
+ * failure, which the client then treated as the real wallet (balance flicker).
+ * One short retry absorbs most of those; the caller still learns whether the
+ * source actually succeeded so incomplete responses can be marked.
+ */
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  fallback: T,
+  attempts = 2,
+): Promise<SourceResult<T>> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return { ok: true, value: await fn() };
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 150 * attempt));
+      }
+    }
+  }
+  console.warn(`Failed to ${label} after ${attempts} attempts:`, lastError);
+  return { ok: false, value: fallback };
+}
 
 export async function GET(
   request: NextRequest,
@@ -70,31 +101,41 @@ export async function GET(
      * unknown ERC-20 spam is dropped via isKnownTreasuryToken.
      */
     const [
-      energyResult,
-      memberSpacesResult,
-      externalTokens,
+      energySource,
+      memberSpacesSource,
+      externalTokensSource,
       rawDbTokensForSeed,
     ] = await Promise.all([
-      web3Client
-        .readContract(getEnergyBalances({ member: address }))
-        .catch((error) => {
-          console.warn('Failed to fetch energy balance:', error);
-          return null;
-        }),
-      web3Client
-        .readContract(getMemberSpaces({ memberAddress: address }))
-        .catch((error) => {
-          console.warn('Failed to fetch member spaces:', error);
-          return null;
-        }),
-      getTokenBalancesByAddress(address).catch(
-        (error): Awaited<ReturnType<typeof getTokenBalancesByAddress>> => {
-          console.warn('Failed to fetch external token balances:', error);
-          return [];
-        },
+      withRetry(
+        'fetch energy balance',
+        () => web3Client.readContract(getEnergyBalances({ member: address })),
+        null,
+      ),
+      withRetry(
+        'fetch member spaces',
+        () =>
+          web3Client.readContract(getMemberSpaces({ memberAddress: address })),
+        null,
+      ),
+      withRetry(
+        'fetch external token balances',
+        () => getTokenBalancesByAddress(address),
+        [] as Awaited<ReturnType<typeof getTokenBalancesByAddress>>,
       ),
       findAllTokens({ db: getDb({ authToken }) }, { search: undefined }),
     ]);
+
+    const energyResult = energySource.value;
+    const memberSpacesResult = memberSpacesSource.value;
+    const externalTokens = externalTokensSource.value;
+
+    // Alchemy is what discovers holdings outside the energy/member catalogues.
+    // When it fails we still assemble a partial wallet (HYPHA/USDC + energy
+    // community tokens), but the client must not treat that as the full set.
+    const incompleteSources: string[] = [];
+    if (!externalTokensSource.ok) incompleteSources.push('alchemy');
+    if (!memberSpacesSource.ok) incompleteSources.push('memberSpaces');
+    if (!energySource.ok) incompleteSources.push('energy');
 
     const energyBalanceRaw: bigint = energyResult
       ? BigInt(energyResult[0])
@@ -263,12 +304,17 @@ export async function GET(
       (token) => !isHiddenToken(token.address),
     );
 
-    let prices: Record<string, number | undefined> = {};
-    try {
-      prices = await getTokenPrice(allTokens.map(({ address }) => address));
-    } catch (error: unknown) {
-      console.error('Failed to fetch token prices:', error);
-    }
+    // Rates are needed to sum tokens priced in different currencies into one
+    // total, and do not depend on the prices, so pay for one round-trip.
+    const [prices, usdRates] = await Promise.all([
+      getTokenPrice(allTokens.map(({ address }) => address)).catch(
+        (error: unknown) => {
+          console.error('Failed to fetch token prices:', error);
+          return {} as Record<string, number | undefined>;
+        },
+      ),
+      getUsdRates(),
+    ]);
 
     const rawDbTokens = rawDbTokensForSeed;
     const dbTokens = rawDbTokens.map((token) => ({
@@ -287,12 +333,17 @@ export async function GET(
     }));
 
     const referencePriceByAddress: Record<string, number> = {};
+    const referenceCurrencyByAddress: Record<string, string> = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
         if (Number.isFinite(parsed) && parsed >= 0) {
           referencePriceByAddress[t.address.toLowerCase()] = parsed;
         }
+      }
+      if (t.address && t.referenceCurrency) {
+        referenceCurrencyByAddress[t.address.toLowerCase()] =
+          t.referenceCurrency;
       }
     });
 
@@ -349,12 +400,22 @@ export async function GET(
             decimals,
           );
           let rate = isEnergyToken ? 1 : prices[token.address] || 0;
+          /**
+           * Currency `rate` is denominated in. Market feeds and the fixed HYPHA
+           * rate are USD; only a DB reference price carries its own currency.
+           */
+          let rateCurrency = 'USD';
           // HYPHA sells at a contract-fixed rate, so it overrides any feed price.
           if (isHyphaToken(token.address)) {
             rate = HYPHA_PRICE_USD;
           }
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+            if (rate > 0) {
+              rateCurrency =
+                referenceCurrencyByAddress[token.address.toLowerCase()] ??
+                'USD';
+            }
           }
           // 1 display NRG ≈ 1 EURC/USDC after credit decimal normalization.
           if (
@@ -368,7 +429,8 @@ export async function GET(
             address: token.address,
             value: amount,
             tokenPrice: rate,
-            usdEqual: rate * amount,
+            referenceCurrency: rateCurrency,
+            usdEqual: convertToUsd(rate * amount, rateCurrency, usdRates),
             chartData: [],
             transactions: [],
             closeUrl: [],
@@ -439,6 +501,9 @@ export async function GET(
     return NextResponse.json({
       assets: sorted,
       balance: sorted.reduce((sum, asset) => sum + asset.usdEqual, 0),
+      // Empty when every upstream source answered. Non-empty means this payload
+      // is missing a slice of holdings (most often Alchemy → "energy-only" look).
+      incompleteSources,
     });
   } catch (error) {
     console.error('Failed to fetch user assets:', error);

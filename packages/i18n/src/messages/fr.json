@@ -729,8 +729,8 @@
       "joinSpaceToUpdateBackingVault": "Rejoignez l’espace pour mettre à jour le coffre de garantie"
     },
     "assetCard": {
-      "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Émission {value}",
+      "fromSpace": "de · {spaceTitle}",
+      "totalIssuance": "Émission · {value}",
       "createdOn": "Créé le {date}",
       "mutualCredit": {
         "debtBadge": "Doit {amount} {symbol}",
@@ -799,7 +799,8 @@
       "uploadLeadImageLabel": "<accent>Téléverser</accent> une image",
       "labels": {
         "email": "E-mail",
-        "location": "Localisation"
+        "location": "Localisation",
+        "preferredCurrency": "Devise préférée"
       },
       "placeholders": {
         "firstName": "Prénom",
@@ -807,7 +808,8 @@
         "nickname": "Pseudo",
         "lifePurpose": "Décrivez ici votre raison d’être...",
         "email": "E-mail",
-        "location": "Localisation"
+        "location": "Localisation",
+        "preferredCurrency": "Sélectionnez une devise"
       },
       "actions": {
         "retry": "Réessayer",

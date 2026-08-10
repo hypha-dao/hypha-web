@@ -1272,8 +1272,8 @@
       "joinSpaceToUpdateBackingVault": "Придружете се на просторот за да ја ажурирате вредносната резерва"
     },
     "assetCard": {
-      "fromSpace": "од {spaceTitle}",
-      "totalIssuance": "Емисија {value}",
+      "fromSpace": "од · {spaceTitle}",
+      "totalIssuance": "Емисија · {value}",
       "createdOn": "Создадено на {date}",
       "mutualCredit": {
         "debtBadge": "Должи {amount} {symbol}",
@@ -1342,7 +1342,8 @@
       "uploadLeadImageLabel": "<accent>Прикачи</accent> слика",
       "labels": {
         "email": "Е-пошта",
-        "location": "Локација"
+        "location": "Локација",
+        "preferredCurrency": "Претпочитана валута"
       },
       "placeholders": {
         "firstName": "Име",
@@ -1350,7 +1351,8 @@
         "nickname": "Прекар",
         "lifePurpose": "Напиши ја твојата животна цел овде...",
         "email": "Е-пошта",
-        "location": "Локација"
+        "location": "Локација",
+        "preferredCurrency": "Изберете валута"
       },
       "actions": {
         "retry": "Обиди се повторно",
