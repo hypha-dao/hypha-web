@@ -2939,6 +2939,7 @@
     "connectionFollowerDescription": "Human Chat wordt op één browsertabblad tegelijk gesynchroniseerd om betrouwbaar te blijven tijdens gesprekken.",
     "connectionFollowerUseTab": "Gebruik dit tabblad",
     "openPanel": "Chatpaneel openen",
+    "openPanelWithUnreadMentions": "Chatpaneel openen (ongelezen vermeldingen)",
     "hidePanel": "Chatpaneel verbergen",
     "closePanel": "Sluit paneel",
     "backToSpaceChat": "Terug naar de ruimtechat",

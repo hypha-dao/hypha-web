@@ -2373,6 +2373,7 @@
     "connectionFollowerDescription": "Human Chat se sincroniza en una pestaña del navegador a la vez para mantener las llamadas estables.",
     "connectionFollowerUseTab": "Usar esta pestaña",
     "openPanel": "Abrir panel de chat",
+    "openPanelWithUnreadMentions": "Abrir panel de chat (menciones sin leer)",
     "hidePanel": "Ocultar panel de chat",
     "closePanel": "Cerrar panel",
     "copyButton": "Copiar",

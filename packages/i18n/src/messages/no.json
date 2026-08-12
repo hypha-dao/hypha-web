@@ -2938,6 +2938,7 @@
     "connectionFollowerDescription": "Human Chat synkroniserer i én nettleserfane om gangen for å holde seg pålitelig under samtaler.",
     "connectionFollowerUseTab": "Bruk denne fanen",
     "openPanel": "Åpne chatpanelet",
+    "openPanelWithUnreadMentions": "Åpne chatpanelet (uleste omtaler)",
     "hidePanel": "Skjul chatpanelet",
     "closePanel": "Lukk panelet",
     "backToSpaceChat": "Tilbake til romchatten",

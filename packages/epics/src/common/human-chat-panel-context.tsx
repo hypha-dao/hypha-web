@@ -51,6 +51,10 @@ export type HumanChatPanelContextValue = {
   openHumanChatPanel: () => void;
   /** Idempotently closes the Human Chat sidebar without toggling it open. */
   closeHumanChatPanel: () => void;
+  /** Aggregate unread @mention count across joined rooms (for header badge). */
+  unreadMentionCount: number;
+  /** Publish unread mention count from the mounted chat panel. */
+  setUnreadMentionCount: (count: number) => void;
   // Coherence mode
   mode: 'space' | 'coherence';
   coherenceRoomId: string | null;
@@ -71,6 +75,8 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   toggle: () => {},
   openHumanChatPanel: () => {},
   closeHumanChatPanel: () => {},
+  unreadMentionCount: 0,
+  setUnreadMentionCount: () => {},
   mode: 'space',
   coherenceRoomId: null,
   coherenceTitle: null,
@@ -103,6 +109,12 @@ export function HumanChatPanelProvider({
   const [coherenceDescription, setCoherenceDescription] = useState<
     string | null
   >(null);
+  const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
+
+  const setUnreadMentionCount = useCallback((count: number) => {
+    const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+    setUnreadMentionCountState((prev) => (prev === next ? prev : next));
+  }, []);
 
   const openCoherenceChat = useCallback(
     (
@@ -145,6 +157,8 @@ export function HumanChatPanelProvider({
         toggle,
         openHumanChatPanel,
         closeHumanChatPanel,
+        unreadMentionCount,
+        setUnreadMentionCount,
         mode,
         coherenceRoomId,
         coherenceTitle,

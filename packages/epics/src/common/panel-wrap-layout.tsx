@@ -212,7 +212,8 @@ export function AiPanelTrigger() {
 }
 
 export function HumanSidebarTrigger() {
-  const { open, toggle, openHumanChatPanel } = useHumanChatPanel();
+  const { open, toggle, openHumanChatPanel, unreadMentionCount } =
+    useHumanChatPanel();
   const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
@@ -225,10 +226,17 @@ export function HumanSidebarTrigger() {
     hasAccessToken: Boolean(jwt),
   });
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
+  const hasUnreadMentions = unreadMentionCount > 0;
 
   // Hide header trigger while the chat panel is open — the panel has its own chrome.
-  // Outside a space, still show it when there's a call elsewhere to notify about (#2424).
-  if (open || (!isSpace && !hasCallElsewhere)) return null;
+  // Outside a space, still show it when there's a call elsewhere or unread mentions.
+  if (open || (!isSpace && !hasCallElsewhere && !hasUnreadMentions)) {
+    return null;
+  }
+
+  const openPanelLabel = hasUnreadMentions
+    ? t('openPanelWithUnreadMentions')
+    : t('openPanel');
 
   return (
     // `APP_CHROME_ICON_TRIGGER` has `overflow-hidden`, which clips a badge positioned
@@ -249,8 +257,8 @@ export function HumanSidebarTrigger() {
         }}
         aria-expanded={open}
         className={APP_CHROME_ICON_TRIGGER}
-        title={t('openPanel')}
-        aria-label={t('openPanel')}
+        title={openPanelLabel}
+        aria-label={openPanelLabel}
       >
         <MessageCircle className="craft-icon" />
       </button>
@@ -263,6 +271,17 @@ export function HumanSidebarTrigger() {
             <Phone className="h-3 w-3 text-white" strokeWidth={2.5} />
           </span>
         </span>
+      ) : null}
+      {hasUnreadMentions ? (
+        <span
+          className={
+            hasCallElsewhere
+              ? 'pointer-events-none absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-warning-9 ring-2 ring-background'
+              : 'pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-warning-9 ring-2 ring-background'
+          }
+          aria-hidden="true"
+          data-testid="human-chat-unread-mention-dot"
+        />
       ) : null}
     </span>
   );

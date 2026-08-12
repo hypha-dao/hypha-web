@@ -2939,6 +2939,7 @@
     "connectionFollowerDescription": "Human Chat syncs in one browser tab at a time to stay reliable during calls.",
     "connectionFollowerUseTab": "Use this tab",
     "openPanel": "Open chat panel",
+    "openPanelWithUnreadMentions": "Open chat panel (unread mentions)",
     "hidePanel": "Hide chat panel",
     "closePanel": "Close panel",
     "backToSpaceChat": "Back to space chat",

@@ -4,7 +4,10 @@ import { eq, inArray } from 'drizzle-orm';
 import { matrixUserLinks, people, db } from '@hypha-platform/storage-postgres';
 import { NotifyChatMentionInput } from '@hypha-platform/core/client';
 import { PrivyClient } from '@privy-io/node';
-import { sendEmailNotifications, sendPushNotifications } from '../mutations';
+import {
+  sendEmailNotificationsToEmails,
+  sendPushNotifications,
+} from '../mutations';
 import { TAG_MENTION_CONSENT } from '../constants';
 import {
   buildMentionEmailBody,
@@ -60,20 +63,38 @@ export async function notifyChatMentionAction(
   const recipients = await db
     .select({
       slug: people.slug,
+      email: people.email,
       matrixUserId: matrixUserLinks.matrixUserId,
     })
     .from(matrixUserLinks)
     .innerJoin(people, eq(matrixUserLinks.privyUserId, people.sub))
     .where(inArray(matrixUserLinks.matrixUserId, matrixIds));
 
-  const usernames = [
+  const uniqueRecipients = new Map<
+    string,
+    { slug: string; email: string | null }
+  >();
+  for (const recipient of recipients) {
+    const slug = recipient.slug?.trim();
+    if (!slug || slug === actorSlug) continue;
+    if (!uniqueRecipients.has(slug)) {
+      uniqueRecipients.set(slug, {
+        slug,
+        email: recipient.email?.trim() || null,
+      });
+    }
+  }
+
+  const usernames = [...uniqueRecipients.keys()];
+  if (usernames.length === 0) return;
+
+  const emails = [
     ...new Set(
-      recipients
-        .map((r) => r.slug?.trim())
-        .filter((slug): slug is string => Boolean(slug && slug !== actorSlug)),
+      [...uniqueRecipients.values()]
+        .map((r) => r.email)
+        .filter((email): email is string => Boolean(email)),
     ),
   ];
-  if (usernames.length === 0) return;
 
   const safeActor = actorDisplayName?.trim() || 'Someone';
   const safePreview = messagePreview?.trim() || '';
@@ -89,7 +110,23 @@ export async function notifyChatMentionAction(
     [TAG_MENTION_CONSENT]: 'true',
   };
 
-  const results = await Promise.allSettled([
+  const emailBody = buildMentionEmailBody({
+    actorDisplayName: safeActor,
+    messagePreview: safePreview,
+    url,
+    contextLabel,
+  });
+
+  if (emails.length === 0) {
+    console.warn(
+      '[notifyChatMentionAction] No recipient emails on file for mentioned users',
+      { usernames },
+    );
+  }
+
+  // Email uses direct addresses so delivery works without OneSignal
+  // subscription/tags (Discord-like mention alerts). Push stays opt-in via tags.
+  const deliveries: Array<Promise<unknown>> = [
     sendPushNotifications({
       contents,
       headings,
@@ -97,18 +134,18 @@ export async function notifyChatMentionAction(
       requiredTags,
       url,
     }),
-    sendEmailNotifications({
-      subject,
-      body: buildMentionEmailBody({
-        actorDisplayName: safeActor,
-        messagePreview: safePreview,
-        url,
-        contextLabel,
+  ];
+  if (emails.length > 0) {
+    deliveries.unshift(
+      sendEmailNotificationsToEmails({
+        subject,
+        body: emailBody,
+        emails,
       }),
-      usernames,
-      requiredTags,
-    }),
-  ]);
+    );
+  }
+
+  const results = await Promise.allSettled(deliveries);
 
   const rejected = results.filter(
     (result): result is PromiseRejectedResult => result.status === 'rejected',
