@@ -1978,7 +1978,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!room) {
         throw new Error('Room not found');
       }
-      await client.setRoomReadMarkersHttpRequest(roomId, eventId, eventId);
+      // Prefer setRoomReadMarkers so the SDK applies local receipt echo;
+      // setRoomReadMarkersHttpRequest alone leaves unread badges stale until sync.
+      const event = room.findEventById(eventId) ?? undefined;
+      await client.setRoomReadMarkers(roomId, eventId, event);
     },
     [client],
   );

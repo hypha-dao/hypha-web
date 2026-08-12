@@ -205,6 +205,34 @@ export const sendEmailNotificationsTemplate = async ({
   });
 };
 
+/** Sends a plain email directly to addresses (no OneSignal subscription / tags required). */
+export const sendEmailNotificationsToEmails = async ({
+  body,
+  subject,
+  emails,
+}: {
+  body: string;
+  subject: string;
+  emails: string[];
+}) => {
+  if (!ONESIGNAL_APP_ID) {
+    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
+  }
+
+  const recipients = [...new Set(emails.map((e) => e.trim()).filter(Boolean))];
+  if (recipients.length === 0) {
+    console.warn('No email recipients for notification');
+    return null;
+  }
+
+  console.log('Send email to addresses...');
+  return await sendEmailByAlias({
+    app_id: ONESIGNAL_APP_ID,
+    alias: { email_to: recipients },
+    content: { email_body: body, email_subject: subject },
+  });
+};
+
 /** Sends a templated email directly to addresses (no Hypha user / subscription required). */
 export const sendEmailNotificationsTemplateToEmails = async ({
   templateId,

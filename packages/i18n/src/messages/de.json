@@ -2937,6 +2937,7 @@
     "connectionFollowerDescription": "Human Chat synchronisiert jeweils nur in einem Browser-Tab, damit Anrufe stabil bleiben.",
     "connectionFollowerUseTab": "Diesen Tab verwenden",
     "openPanel": "Chat-Panel öffnen",
+    "openPanelWithUnreadMentions": "Chat-Panel öffnen (ungelesene Erwähnungen)",
     "hidePanel": "Chat-Panel ausblenden",
     "closePanel": "Panel schließen",
     "copyButton": "Kopieren",

@@ -1014,6 +1014,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
+    setUnreadMentionCount,
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { useSendNotifications } = useHookRegistry();
@@ -3630,6 +3631,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const bellMentionCount = aggregateMentionBadge.count;
   const bellMentionCapped = aggregateMentionBadge.capped;
 
+  // Keep the header "Open chat panel" trigger in sync with unread @mentions
+  // even while the panel is closed (sidebar content stays mounted off-canvas).
+  useEffect(() => {
+    setUnreadMentionCount(bellMentionCount);
+  }, [bellMentionCount, setUnreadMentionCount]);
+
+  useEffect(() => {
+    return () => {
+      setUnreadMentionCount(0);
+    };
+  }, [setUnreadMentionCount]);
+
   const markRoomTimelineRead = useCallback(
     async (targetRoomId: string) => {
       if (!client || !currentUserId) return;
@@ -3647,6 +3660,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (getMessageReplaceTargetEventId(ev) != null) continue;
         try {
           await markRoomRead(targetRoomId, id);
+          setUnreadBump((n) => n + 1);
+          setAggregateMentionBump((n) => n + 1);
         } catch {
           // ignore
         }

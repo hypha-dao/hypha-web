@@ -2373,6 +2373,7 @@
     "connectionFollowerDescription": "Human Chat se synchronise dans un seul onglet du navigateur à la fois pour rester fiable pendant les appels.",
     "connectionFollowerUseTab": "Utiliser cet onglet",
     "openPanel": "Ouvrir le panneau de chat",
+    "openPanelWithUnreadMentions": "Ouvrir le panneau de chat (mentions non lues)",
     "hidePanel": "Masquer le panneau de chat",
     "closePanel": "Fermer le panneau",
     "copyButton": "Copier",
