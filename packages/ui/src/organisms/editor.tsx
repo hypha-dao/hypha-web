@@ -17,6 +17,7 @@ import {
   Heading3,
   Heading4,
   Italic,
+  Link2,
   List,
   ListOrdered,
   Redo2,
@@ -24,12 +25,30 @@ import {
   Underline as UnderlineIcon,
   Undo2,
 } from 'lucide-react';
-import { useEffect, useRef, type ForwardedRef, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ForwardedRef,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { Button } from '../button';
+import { Input } from '../input';
+import { Label } from '../label';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { Separator } from '../separator';
 
 import './editor.css';
+
+export type EditorTranslationFn = (
+  key: string,
+  defaultValue: string | undefined,
+  interpolations?: Record<string, string | number>,
+) => string;
 
 function assignEditorRef(
   editorRef: ForwardedRef<Editor | null> | null | undefined,
@@ -43,48 +62,204 @@ function assignEditorRef(
   editorRef.current = editor;
 }
 
-function ToolbarButton({
-  onClick,
-  active,
-  disabled,
-  label,
-  children,
-}: {
+function applyInterpolations(
+  template: string,
+  interpolations?: Record<string, string | number>,
+): string {
+  if (!interpolations) return template;
+  return template.replace(/\{(\w+)\}/g, (_, name: string) =>
+    interpolations[name] !== undefined
+      ? String(interpolations[name])
+      : `{${name}}`,
+  );
+}
+
+function translateLabel(
+  translation: EditorTranslationFn | undefined,
+  key: string,
+  defaultValue: string,
+  interpolations?: Record<string, string | number>,
+): string {
+  const result = translation
+    ? translation(key, defaultValue, interpolations)
+    : defaultValue;
+  // Fill placeholders when translation is absent or returned the raw default.
+  return applyInterpolations(result, interpolations);
+}
+
+export interface ToolbarButtonProps {
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
   label: string;
   children: ReactNode;
-}) {
+  tabIndex?: number;
+  onFocus?: () => void;
+}
+
+const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
+  function ToolbarButton(
+    { onClick, active, disabled, label, children, tabIndex, onFocus },
+    ref,
+  ) {
+    return (
+      <Button
+        ref={ref}
+        type="button"
+        variant="ghost"
+        colorVariant="neutral"
+        size="sm"
+        data-toolbar-item=""
+        className={cn(
+          'h-8 w-8 shrink-0 p-0',
+          active && 'bg-accent-4 text-accent-12 hover:bg-accent-5',
+        )}
+        aria-label={label}
+        title={label}
+        aria-pressed={active}
+        disabled={disabled}
+        tabIndex={tabIndex}
+        onFocus={onFocus}
+        onClick={(e) => {
+          e.preventDefault();
+          onClick();
+        }}
+        onMouseDown={(e) => {
+          // Keep editor selection when clicking toolbar.
+          e.preventDefault();
+        }}
+      >
+        {children}
+      </Button>
+    );
+  },
+);
+
+interface LinkToolbarControlProps {
+  editor: Editor;
+  translation?: EditorTranslationFn;
+  tabIndex?: number;
+  onFocus?: () => void;
+  active: boolean;
+}
+
+function LinkToolbarControl({
+  editor,
+  translation,
+  tabIndex,
+  onFocus,
+  active,
+}: LinkToolbarControlProps) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState('');
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const linkLabel = translateLabel(translation, 'toolbar.link', 'Link');
+  const urlLabel = translateLabel(translation, 'toolbar.linkUrl', 'URL');
+  const applyLabel = translateLabel(translation, 'toolbar.applyLink', 'Apply');
+  const removeLabel = translateLabel(
+    translation,
+    'toolbar.removeLink',
+    'Remove link',
+  );
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      setUrl(String(editor.getAttributes('link').href ?? ''));
+    }
+    setOpen(next);
+  };
+
+  const applyLink = () => {
+    const href = url.trim();
+    if (!href) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else {
+      editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    }
+    setOpen(false);
+  };
+
+  const removeLink = () => {
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    setOpen(false);
+  };
+
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      colorVariant="neutral"
-      size="sm"
-      className={cn(
-        'h-8 w-8 shrink-0 p-0',
-        active && 'bg-accent-4 text-accent-12 hover:bg-accent-5',
-      )}
-      aria-label={label}
-      title={label}
-      aria-pressed={active}
-      disabled={disabled}
-      onClick={(e) => {
-        e.preventDefault();
-        onClick();
-      }}
-      onMouseDown={(e) => {
-        // Keep editor focus when clicking toolbar.
-        e.preventDefault();
-      }}
-    >
-      {children}
-    </Button>
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <ToolbarButton
+          label={linkLabel}
+          active={active}
+          tabIndex={tabIndex}
+          onFocus={onFocus}
+          // Radix PopoverTrigger owns open/close; avoid double-toggle.
+          onClick={() => undefined}
+        >
+          <Link2 className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-72 space-y-3 p-3"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor={inputId}>{urlLabel}</Label>
+          <Input
+            ref={inputRef}
+            id={inputId}
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                applyLink();
+              }
+            }}
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            colorVariant="neutral"
+            size="sm"
+            disabled={!active}
+            onClick={removeLink}
+          >
+            {removeLabel}
+          </Button>
+          <Button
+            type="button"
+            colorVariant="accent"
+            size="sm"
+            onClick={applyLink}
+          >
+            {applyLabel}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
-function EditorToolbar({ editor }: { editor: Editor }) {
+interface EditorToolbarProps {
+  editor: Editor;
+  translation?: EditorTranslationFn;
+}
+
+function EditorToolbar({ editor, translation }: EditorToolbarProps) {
+  const [tabbableIndex, setTabbableIndex] = useState(0);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
   const state = useEditorState({
     editor,
     selector: ({ editor: ed }) => {
@@ -95,6 +270,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
           isUnderline: false,
           isBulletList: false,
           isOrderedList: false,
+          isLink: false,
           headingLevel: 0 as 0 | 1 | 2 | 3 | 4,
           canUndo: false,
           canRedo: false,
@@ -106,6 +282,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
         isUnderline: ed.isActive('underline'),
         isBulletList: ed.isActive('bulletList'),
         isOrderedList: ed.isActive('orderedList'),
+        isLink: ed.isActive('link'),
         headingLevel: (ed.isActive('heading', { level: 1 })
           ? 1
           : ed.isActive('heading', { level: 2 })
@@ -121,43 +298,124 @@ function EditorToolbar({ editor }: { editor: Editor }) {
     },
   });
 
+  const itemTabIndex = (index: number) => (index === tabbableIndex ? 0 : -1);
+
+  const itemFocus = (index: number) => () => setTabbableIndex(index);
+
+  const handleToolbarKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+
+    const items = Array.from(
+      toolbarRef.current?.querySelectorAll<HTMLButtonElement>(
+        'button[data-toolbar-item]',
+      ) ?? [],
+    );
+    if (items.length === 0) return;
+
+    event.preventDefault();
+    const current =
+      items.findIndex((el) => el === document.activeElement) ?? tabbableIndex;
+    const start = current >= 0 ? current : tabbableIndex;
+    const step = event.key === 'ArrowRight' ? 1 : -1;
+
+    for (let offset = 1; offset <= items.length; offset += 1) {
+      const next = (start + step * offset + items.length * 10) % items.length;
+      if (!items[next]?.disabled) {
+        setTabbableIndex(next);
+        items[next]?.focus();
+        break;
+      }
+    }
+  };
+
+  const undoShortcut =
+    typeof navigator !== 'undefined' &&
+    /Mac|iPhone|iPad/.test(navigator.platform)
+      ? '⌘Z'
+      : 'Ctrl+Z';
+  const redoShortcut =
+    typeof navigator !== 'undefined' &&
+    /Mac|iPhone|iPad/.test(navigator.platform)
+      ? '⇧⌘Z'
+      : 'Ctrl+Y';
+
   return (
     <div
+      ref={toolbarRef}
       className="richtext-editor-toolbar flex flex-wrap items-center gap-0.5 border-b border-border bg-neutral-2 px-2 py-1.5"
       role="toolbar"
-      aria-label="Formatting"
+      aria-label={translateLabel(
+        translation,
+        'toolbar.ariaLabel',
+        'Formatting',
+      )}
+      onKeyDown={handleToolbarKeyDown}
     >
       <ToolbarButton
-        label="Paragraph"
+        label={translateLabel(
+          translation,
+          'toolbar.blockTypes.paragraph',
+          'Paragraph',
+        )}
         active={state.headingLevel === 0}
+        tabIndex={itemTabIndex(0)}
+        onFocus={itemFocus(0)}
         onClick={() => editor.chain().focus().setParagraph().run()}
       >
         <Type className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Heading 1"
+        label={translateLabel(
+          translation,
+          'toolbar.blockTypes.heading',
+          'Heading {level}',
+          { level: 1 },
+        )}
         active={state.headingLevel === 1}
+        tabIndex={itemTabIndex(1)}
+        onFocus={itemFocus(1)}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
       >
         <Heading1 className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Heading 2"
+        label={translateLabel(
+          translation,
+          'toolbar.blockTypes.heading',
+          'Heading {level}',
+          { level: 2 },
+        )}
         active={state.headingLevel === 2}
+        tabIndex={itemTabIndex(2)}
+        onFocus={itemFocus(2)}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
         <Heading2 className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Heading 3"
+        label={translateLabel(
+          translation,
+          'toolbar.blockTypes.heading',
+          'Heading {level}',
+          { level: 3 },
+        )}
         active={state.headingLevel === 3}
+        tabIndex={itemTabIndex(3)}
+        onFocus={itemFocus(3)}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
       >
         <Heading3 className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Heading 4"
+        label={translateLabel(
+          translation,
+          'toolbar.blockTypes.heading',
+          'Heading {level}',
+          { level: 4 },
+        )}
         active={state.headingLevel === 4}
+        tabIndex={itemTabIndex(4)}
+        onFocus={itemFocus(4)}
         onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
       >
         <Heading4 className="h-4 w-4" aria-hidden />
@@ -166,22 +424,28 @@ function EditorToolbar({ editor }: { editor: Editor }) {
       <Separator orientation="vertical" className="mx-1 h-6" />
 
       <ToolbarButton
-        label="Bold"
+        label={translateLabel(translation, 'toolbar.bold', 'Bold')}
         active={state.isBold}
+        tabIndex={itemTabIndex(5)}
+        onFocus={itemFocus(5)}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <Bold className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Italic"
+        label={translateLabel(translation, 'toolbar.italic', 'Italic')}
         active={state.isItalic}
+        tabIndex={itemTabIndex(6)}
+        onFocus={itemFocus(6)}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Underline"
+        label={translateLabel(translation, 'toolbar.underline', 'Underline')}
         active={state.isUnderline}
+        tabIndex={itemTabIndex(7)}
+        onFocus={itemFocus(7)}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
         <UnderlineIcon className="h-4 w-4" aria-hidden />
@@ -190,32 +454,59 @@ function EditorToolbar({ editor }: { editor: Editor }) {
       <Separator orientation="vertical" className="mx-1 h-6" />
 
       <ToolbarButton
-        label="Bullet list"
+        label={translateLabel(
+          translation,
+          'toolbar.bulletedList',
+          'Bullet list',
+        )}
         active={state.isBulletList}
+        tabIndex={itemTabIndex(8)}
+        onFocus={itemFocus(8)}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
         <List className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Numbered list"
+        label={translateLabel(
+          translation,
+          'toolbar.numberedList',
+          'Numbered list',
+        )}
         active={state.isOrderedList}
+        tabIndex={itemTabIndex(9)}
+        onFocus={itemFocus(9)}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
         <ListOrdered className="h-4 w-4" aria-hidden />
       </ToolbarButton>
+      <LinkToolbarControl
+        editor={editor}
+        translation={translation}
+        active={state.isLink}
+        tabIndex={itemTabIndex(10)}
+        onFocus={itemFocus(10)}
+      />
 
       <div className="grow" />
 
       <ToolbarButton
-        label="Undo"
+        label={translateLabel(translation, 'toolbar.undo', 'Undo {shortcut}', {
+          shortcut: undoShortcut,
+        })}
         disabled={!state.canUndo}
+        tabIndex={itemTabIndex(11)}
+        onFocus={itemFocus(11)}
         onClick={() => editor.chain().focus().undo().run()}
       >
         <Undo2 className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Redo"
+        label={translateLabel(translation, 'toolbar.redo', 'Redo {shortcut}', {
+          shortcut: redoShortcut,
+        })}
         disabled={!state.canRedo}
+        tabIndex={itemTabIndex(12)}
+        onFocus={itemFocus(12)}
         onClick={() => editor.chain().focus().redo().run()}
       >
         <Redo2 className="h-4 w-4" aria-hidden />
@@ -224,7 +515,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
   );
 }
 
-export type RichTextEditorProps = {
+export interface RichTextEditorProps {
   /** Controlled markdown value stored in forms / API. */
   markdown?: string;
   /** Called with markdown whenever the document changes. */
@@ -238,15 +529,11 @@ export type RichTextEditorProps = {
    */
   editorRef?: ForwardedRef<Editor | null> | null;
   /**
-   * Legacy MDXEditor i18n hook. Accepted as no-op so existing form props
-   * continue to type-check during migration; TipTap uses aria-labels instead.
+   * i18n hook for toolbar labels. Uses English defaults when omitted or when
+   * a key is missing from the consumer dictionary.
    */
-  translation?: (
-    key: string,
-    defaultValue: string | undefined,
-    interpolations?: Record<string, string | number>,
-  ) => string;
-};
+  translation?: EditorTranslationFn;
+}
 
 export function RichTextEditor({
   markdown = '',
@@ -255,6 +542,7 @@ export function RichTextEditor({
   className,
   editable = true,
   editorRef,
+  translation,
 }: RichTextEditorProps) {
   const lastEmittedMarkdown = useRef(markdown);
   const onChangeRef = useRef(onChange);
@@ -327,7 +615,9 @@ export function RichTextEditor({
       )}
       data-editable={editable ? 'true' : 'false'}
     >
-      {editor && editable ? <EditorToolbar editor={editor} /> : null}
+      {editor && editable ? (
+        <EditorToolbar editor={editor} translation={translation} />
+      ) : null}
       <EditorContent editor={editor} className="richtext-editor-content-host" />
     </div>
   );
