@@ -3660,6 +3660,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (getMessageReplaceTargetEventId(ev) != null) continue;
         try {
           await markRoomRead(targetRoomId, id);
+          setUnreadBump((n) => n + 1);
+          setAggregateMentionBump((n) => n + 1);
         } catch {
           // ignore
         }

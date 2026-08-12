@@ -226,13 +226,12 @@ export function HumanSidebarTrigger() {
     hasAccessToken: Boolean(jwt),
   });
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
-  const hasUnreadMentions = unreadMentionCount > 0;
+  const hasUnreadMentions = isSpace && unreadMentionCount > 0;
 
   // Hide header trigger while the chat panel is open — the panel has its own chrome.
-  // Outside a space, still show it when there's a call elsewhere or unread mentions.
-  if (open || (!isSpace && !hasCallElsewhere && !hasUnreadMentions)) {
-    return null;
-  }
+  // Outside a space, still show it when there's a call elsewhere to notify about (#2424).
+  // Unread mentions only surface in-space: outside spaces the panel has no mentions destination.
+  if (open || (!isSpace && !hasCallElsewhere)) return null;
 
   const openPanelLabel = hasUnreadMentions
     ? t('openPanelWithUnreadMentions')
