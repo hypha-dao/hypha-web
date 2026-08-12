@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { CheckIcon, XCircle, ChevronDown, XIcon, List } from 'lucide-react';
+import { CheckIcon, XCircle, ChevronDown, XIcon } from 'lucide-react';
 import {
   Popover,
   PopoverAnchor,
@@ -319,6 +319,9 @@ export const MultiSelect = React.forwardRef<
         bumpTagUsage(option);
       }
       setSearchValue('');
+      if (uiStyle === 'tag-picker') {
+        setIsPopoverOpen(false);
+      }
     };
 
     const canCreateOption = React.useMemo(() => {
@@ -483,20 +486,13 @@ export const MultiSelect = React.forwardRef<
       flushCategory();
       return groupedRows;
     }, [filteredOptions, options, trimmedSearchValue, uiStyle]);
-    const groupedTagPickerOptions = React.useMemo(() => {
-      if (uiStyle !== 'tag-picker' || trimmedSearchValue.length > 0) return [];
-      return options;
-    }, [options, trimmedSearchValue, uiStyle]);
-    const shouldShowAllTagsHeading =
-      uiStyle === 'tag-picker' &&
-      trimmedSearchValue.length === 0 &&
-      groupedTagPickerOptions.length > 0;
     const renderedOptions =
-      trimmedSearchValue.length > 0 &&
-      groupedFilteredTagPickerOptions.length > 0
-        ? groupedFilteredTagPickerOptions
-        : uiStyle === 'tag-picker' && trimmedSearchValue.length === 0
-        ? groupedTagPickerOptions
+      uiStyle === 'tag-picker'
+        ? trimmedSearchValue.length === 0
+          ? []
+          : groupedFilteredTagPickerOptions.length > 0
+          ? groupedFilteredTagPickerOptions
+          : filteredOptions
         : filteredOptions;
 
     const focusCommandItem = React.useCallback(
@@ -573,7 +569,17 @@ export const MultiSelect = React.forwardRef<
     return (
       <Popover
         open={isPopoverOpen}
-        onOpenChange={setIsPopoverOpen}
+        onOpenChange={(open) => {
+          if (
+            uiStyle === 'tag-picker' &&
+            open &&
+            searchValue.trim().length === 0
+          ) {
+            setIsPopoverOpen(false);
+            return;
+          }
+          setIsPopoverOpen(open);
+        }}
         modal={modalPopover}
       >
         {uiStyle === 'tag-picker' ? (
@@ -595,7 +601,6 @@ export const MultiSelect = React.forwardRef<
               )}
               onClick={() => {
                 tagInputRef.current?.focus();
-                setIsPopoverOpen(true);
               }}
             >
               {selectedValues.slice(0, maxCount).map((value) => {
@@ -676,17 +681,16 @@ export const MultiSelect = React.forwardRef<
                   const nextTrimmedValue = nextValue.trim();
                   setSearchValue(nextValue);
                   if (nextTrimmedValue.length === 0) {
-                    setIsPopoverOpen(true);
+                    setIsPopoverOpen(false);
                     return;
                   }
-                  if (!isPopoverOpen) setIsPopoverOpen(true);
+                  setIsPopoverOpen(true);
                 }}
                 onKeyDown={handleInputKeyDown}
                 onFocus={(event) => {
                   props.onFocus?.(
                     event as unknown as React.FocusEvent<HTMLButtonElement>,
                   );
-                  setIsPopoverOpen(true);
                 }}
                 placeholder={searchPlaceholder}
                 className="h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
@@ -837,14 +841,6 @@ export const MultiSelect = React.forwardRef<
                   : resolvedLabels.noResults}
               </CommandEmpty>
               <CommandGroup>
-                {shouldShowAllTagsHeading ? (
-                  <div className="sticky top-0 z-10 flex items-center justify-end gap-2 border-b border-border/45 bg-popover/95 px-2 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-popover/85">
-                    <div className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/85">
-                      <List className="h-3.5 w-3.5" />
-                      <span>{resolvedLabels.allTags}</span>
-                    </div>
-                  </div>
-                ) : null}
                 {canCreateOption ? (
                   <>
                     <CommandItem
