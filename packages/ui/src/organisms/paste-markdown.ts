@@ -25,6 +25,8 @@ export const PasteMarkdown = Extension.create({
               return false;
             }
 
+            // Parse through the editor's Markdown manager so custom mark
+            // handlers (e.g. __underline__ via UnderscoreUnderline) apply.
             if (!editor.markdown) {
               return false;
             }

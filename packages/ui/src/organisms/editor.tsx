@@ -31,8 +31,10 @@ import {
   useId,
   useRef,
   useState,
+  type ComponentPropsWithoutRef,
   type ForwardedRef,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
 } from 'react';
 import { cn } from '@hypha-platform/ui-utils';
@@ -41,8 +43,12 @@ import { Input } from '../input';
 import { Label } from '../label';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { Separator } from '../separator';
+import { AsteriskBold, UnderscoreUnderline } from './chat-markdown-marks';
 
 import './editor.css';
+
+const EDITOR_CONTENT_CLASS =
+  'richtext-editor-content prose max-w-full focus:outline-none';
 
 export type EditorTranslationFn = (
   key: string,
@@ -87,8 +93,12 @@ function translateLabel(
   return applyInterpolations(result, interpolations);
 }
 
-export interface ToolbarButtonProps {
-  onClick: () => void;
+export interface ToolbarButtonProps
+  extends Omit<
+    ComponentPropsWithoutRef<typeof Button>,
+    'children' | 'type' | 'variant' | 'colorVariant' | 'size'
+  > {
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   active?: boolean;
   disabled?: boolean;
   label: string;
@@ -99,7 +109,17 @@ export interface ToolbarButtonProps {
 
 const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
   function ToolbarButton(
-    { onClick, active, disabled, label, children, tabIndex, onFocus },
+    {
+      onClick,
+      active,
+      disabled,
+      label,
+      children,
+      tabIndex,
+      onFocus,
+      className,
+      ...props
+    },
     ref,
   ) {
     return (
@@ -113,6 +133,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         className={cn(
           'h-8 w-8 shrink-0 p-0',
           active && 'bg-accent-4 text-accent-12 hover:bg-accent-5',
+          className,
         )}
         aria-label={label}
         title={label}
@@ -120,13 +141,16 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         disabled={disabled}
         tabIndex={tabIndex}
         onFocus={onFocus}
+        {...props}
         onClick={(e) => {
-          e.preventDefault();
-          onClick();
+          // Forward the event so Radix (PopoverTrigger asChild) can read
+          // defaultPrevented; type="button" already avoids form submit.
+          onClick?.(e);
         }}
         onMouseDown={(e) => {
           // Keep editor selection when clicking toolbar.
           e.preventDefault();
+          props.onMouseDown?.(e);
         }}
       >
         {children}
@@ -175,6 +199,16 @@ function LinkToolbarControl({
     const href = url.trim();
     if (!href) {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else if (editor.state.selection.empty && !active) {
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: 'text',
+          text: href,
+          marks: [{ type: 'link', attrs: { href } }],
+        })
+        .run();
     } else {
       editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
     }
@@ -194,8 +228,6 @@ function LinkToolbarControl({
           active={active}
           tabIndex={tabIndex}
           onFocus={onFocus}
-          // Radix PopoverTrigger owns open/close; avoid double-toggle.
-          onClick={() => undefined}
         >
           <Link2 className="h-4 w-4" aria-hidden />
         </ToolbarButton>
@@ -298,7 +330,15 @@ function EditorToolbar({ editor, translation }: EditorToolbarProps) {
     },
   });
 
-  const itemTabIndex = (index: number) => (index === tabbableIndex ? 0 : -1);
+  // Undo is 11 and Redo is 12. Move the tab stop off a disabled control.
+  const resolvedTabbableIndex =
+    (tabbableIndex === 11 && !state.canUndo) ||
+    (tabbableIndex === 12 && !state.canRedo)
+      ? 0
+      : tabbableIndex;
+
+  const itemTabIndex = (index: number) =>
+    index === resolvedTabbableIndex ? 0 : -1;
 
   const itemFocus = (index: number) => () => setTabbableIndex(index);
 
@@ -313,13 +353,12 @@ function EditorToolbar({ editor, translation }: EditorToolbarProps) {
     if (items.length === 0) return;
 
     event.preventDefault();
-    const current =
-      items.findIndex((el) => el === document.activeElement) ?? tabbableIndex;
-    const start = current >= 0 ? current : tabbableIndex;
+    const current = items.findIndex((el) => el === document.activeElement);
+    const start = current >= 0 ? current : resolvedTabbableIndex;
     const step = event.key === 'ArrowRight' ? 1 : -1;
 
     for (let offset = 1; offset <= items.length; offset += 1) {
-      const next = (start + step * offset + items.length * 10) % items.length;
+      const next = (start + step * offset + items.length) % items.length;
       if (!items[next]?.disabled) {
         setTabbableIndex(next);
         items[next]?.focus();
@@ -328,16 +367,11 @@ function EditorToolbar({ editor, translation }: EditorToolbarProps) {
     }
   };
 
-  const undoShortcut =
+  const isApple =
     typeof navigator !== 'undefined' &&
-    /Mac|iPhone|iPad/.test(navigator.platform)
-      ? '⌘Z'
-      : 'Ctrl+Z';
-  const redoShortcut =
-    typeof navigator !== 'undefined' &&
-    /Mac|iPhone|iPad/.test(navigator.platform)
-      ? '⇧⌘Z'
-      : 'Ctrl+Y';
+    /Mac|iPhone|iPad/.test(navigator.platform);
+  const undoShortcut = isApple ? '⌘Z' : 'Ctrl+Z';
+  const redoShortcut = isApple ? '⇧⌘Z' : 'Ctrl+Y';
 
   return (
     <div
@@ -523,6 +557,12 @@ export interface RichTextEditorProps {
   placeholder?: string;
   className?: string;
   editable?: boolean;
+  /** Set false when a parent already renders the frame. */
+  bordered?: boolean;
+  /** Accessible name for the editing region. */
+  'aria-label'?: string;
+  /** Id of an existing label element that names the editing region. */
+  'aria-labelledby'?: string;
   /**
    * Optional ref to the TipTap editor instance.
    * Kept for call sites that previously passed MDXEditor refs (usually `null`).
@@ -541,12 +581,19 @@ export function RichTextEditor({
   placeholder,
   className,
   editable = true,
+  bordered = true,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
   editorRef,
   translation,
 }: RichTextEditorProps) {
   const lastEmittedMarkdown = useRef(markdown);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
+  const resolvedAriaLabel =
+    ariaLabel ??
+    translateLabel(translation, 'editor.ariaLabel', 'Rich text editor');
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -556,6 +603,9 @@ export function RichTextEditor({
     contentType: 'markdown',
     extensions: [
       StarterKit.configure({
+        // Replaced by AsteriskBold / UnderscoreUnderline for chat-compatible __/ **.
+        bold: false,
+        underline: false,
         heading: { levels: [1, 2, 3, 4] },
         link: {
           openOnClick: false,
@@ -563,6 +613,8 @@ export function RichTextEditor({
           defaultProtocol: 'https',
         },
       }),
+      AsteriskBold,
+      UnderscoreUnderline,
       Placeholder.configure({
         placeholder: placeholder ?? '',
       }),
@@ -571,7 +623,12 @@ export function RichTextEditor({
     ],
     editorProps: {
       attributes: {
-        class: 'richtext-editor-content prose max-w-full focus:outline-none',
+        class: EDITOR_CONTENT_CLASS,
+        role: 'textbox',
+        'aria-multiline': 'true',
+        ...(ariaLabelledBy
+          ? { 'aria-labelledby': ariaLabelledBy }
+          : { 'aria-label': resolvedAriaLabel }),
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -590,6 +647,32 @@ export function RichTextEditor({
     if (!editor) return;
     editor.setEditable(editable);
   }, [editor, editable]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const ext = editor.extensionManager.extensions.find(
+      (e) => e.name === 'placeholder',
+    );
+    if (!ext) return;
+    ext.options.placeholder = placeholder ?? '';
+    editor.view.dispatch(editor.state.tr);
+  }, [editor, placeholder]);
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.setOptions({
+      editorProps: {
+        attributes: {
+          class: EDITOR_CONTENT_CLASS,
+          role: 'textbox',
+          'aria-multiline': 'true',
+          ...(ariaLabelledBy
+            ? { 'aria-labelledby': ariaLabelledBy }
+            : { 'aria-label': resolvedAriaLabel }),
+        },
+      },
+    });
+  }, [editor, ariaLabelledBy, resolvedAriaLabel]);
 
   // Sync external markdown (form reset / resubmit) without stomping local typing.
   useEffect(() => {
@@ -614,6 +697,7 @@ export function RichTextEditor({
         className,
       )}
       data-editable={editable ? 'true' : 'false'}
+      data-bordered={bordered ? 'true' : 'false'}
     >
       {editor && editable ? (
         <EditorToolbar editor={editor} translation={translation} />

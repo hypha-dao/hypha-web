@@ -39,8 +39,10 @@ describe('looksLikeMarkdown', () => {
   });
 
   it('handles adversarial bracket spam without hanging', () => {
-    const spam = '['.repeat(5000) + 'x';
+    const spam = '['.repeat(100_000);
+    const started = Date.now();
     expect(looksLikeMarkdown(spam)).toBe(false);
+    expect(Date.now() - started).toBeLessThan(500);
     const linkSpam = '[!]('.repeat(2000) + 'x';
     expect(looksLikeMarkdown(linkSpam)).toBe(false);
   });

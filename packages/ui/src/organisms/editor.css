@@ -13,8 +13,7 @@
 }
 
 /* Parent forms often wrap another border; avoid double frames. */
-.overflow-hidden.rounded-lg.border > .richtext-editor,
-.overflow-hidden.rounded-lg.border .richtext-editor {
+.richtext-editor[data-bordered='false'] {
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -39,8 +38,7 @@
   outline: none;
 }
 
-.richtext-editor-content-host .tiptap p.is-editor-empty:first-child::before,
-.richtext-editor-content-host .tiptap .is-empty::before {
+.richtext-editor-content-host .tiptap p.is-editor-empty:first-child::before {
   color: var(--neutral-9);
   content: attr(data-placeholder);
   float: left;
@@ -146,11 +144,10 @@
 
 .richtext-editor-content-host .tiptap u {
   text-decoration: underline;
-  color: var(--neutral-11);
 }
 
 .richtext-editor[data-editable='false'] {
-  opacity: 0.85;
+  background-color: var(--neutral-2);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -160,7 +157,7 @@
   }
 }
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   .richtext-editor {
     border-width: 2px;
   }

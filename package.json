@@ -63,6 +63,8 @@
     "@tanstack/react-query": "^5.67.1",
     "@theguild/remark-mermaid": "^0.2.0",
     "@tiptap/core": "^3.29.2",
+    "@tiptap/extension-bold": "^3.29.2",
+    "@tiptap/extension-underline": "^3.29.2",
     "@tiptap/extensions": "^3.29.2",
     "@tiptap/markdown": "^3.29.2",
     "@tiptap/pm": "^3.29.2",

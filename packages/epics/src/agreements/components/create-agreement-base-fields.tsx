@@ -701,6 +701,7 @@ export function CreateAgreementBaseFields({
                     <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
                       <RichTextEditor
                         editorRef={null}
+                        bordered={false}
                         markdown={descriptionValue}
                         translation={translateEditor}
                         placeholder={contentPlaceholder}

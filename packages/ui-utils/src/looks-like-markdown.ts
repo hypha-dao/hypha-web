@@ -145,16 +145,17 @@ function hasMarkdownLink(text: string): boolean {
       if (ch === '\n' || ch === ']') break;
       labelEnd += 1;
     }
-    if (
-      labelEnd >= text.length ||
-      text[labelEnd] !== ']' ||
-      labelEnd === labelStart
-    ) {
-      i += 1;
+    // Advance to the scanned boundary so repeated `[` without `]` stays linear.
+    if (labelEnd >= text.length || text[labelEnd] !== ']') {
+      i = Math.max(labelEnd, i + 1);
+      continue;
+    }
+    if (labelEnd === labelStart) {
+      i = labelEnd + 1;
       continue;
     }
     if (text[labelEnd + 1] !== '(') {
-      i += 1;
+      i = labelEnd + 1;
       continue;
     }
     const urlStart = labelEnd + 2;
@@ -167,7 +168,7 @@ function hasMarkdownLink(text: string): boolean {
     if (urlEnd < text.length && text[urlEnd] === ')' && urlEnd > urlStart) {
       return true;
     }
-    i += 1;
+    i = Math.max(urlEnd, labelEnd + 1);
   }
   return false;
 }
