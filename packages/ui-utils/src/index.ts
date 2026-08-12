@@ -3,6 +3,7 @@ export * from './copyToClipboard';
 export * from './isAbsoluteUrl';
 export * from './strip-markdown';
 export * from './markdown-inline';
+export * from './looks-like-markdown';
 export * from './formatCurrencyValue';
 export * from './localeDecimal';
 export * from './formatDate';

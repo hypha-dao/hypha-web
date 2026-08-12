@@ -1,6 +1,8 @@
 export type InlineMarkdownToken =
   | { type: 'text'; value: string }
   | { type: 'bold'; value: string }
+  | { type: 'italic'; value: string }
+  | { type: 'underline'; value: string }
   | { type: 'inlineCode'; value: string }
   | { type: 'image'; alt: string; url: string };
 
@@ -53,6 +55,23 @@ function readMarkdownImage(
   };
 }
 
+function findClosingDouble(
+  text: string,
+  openEnd: number,
+  delim: string,
+): number {
+  return text.indexOf(delim, openEnd);
+}
+
+function findClosingSingleStar(text: string, openEnd: number): number {
+  for (let i = openEnd; i < text.length; i++) {
+    if (text[i] === '*' && text[i + 1] !== '*') {
+      return i;
+    }
+  }
+  return -1;
+}
+
 /** Tokenize a single line of inline markdown without vulnerable regexes. */
 export function tokenizeInlineMarkdown(text: string): InlineMarkdownToken[] {
   const tokens: InlineMarkdownToken[] = [];
@@ -67,10 +86,28 @@ export function tokenizeInlineMarkdown(text: string): InlineMarkdownToken[] {
     }
 
     if (text[i] === '*' && text[i + 1] === '*') {
-      const end = text.indexOf('**', i + 2);
+      const end = findClosingDouble(text, i + 2, '**');
       if (end !== -1) {
         tokens.push({ type: 'bold', value: text.slice(i + 2, end) });
         i = end + 2;
+        continue;
+      }
+    }
+
+    if (text[i] === '_' && text[i + 1] === '_') {
+      const end = findClosingDouble(text, i + 2, '__');
+      if (end !== -1) {
+        tokens.push({ type: 'underline', value: text.slice(i + 2, end) });
+        i = end + 2;
+        continue;
+      }
+    }
+
+    if (text[i] === '*' && text[i + 1] !== '*') {
+      const end = findClosingSingleStar(text, i + 1);
+      if (end !== -1) {
+        tokens.push({ type: 'italic', value: text.slice(i + 1, end) });
+        i = end + 1;
         continue;
       }
     }
@@ -88,6 +125,8 @@ export function tokenizeInlineMarkdown(text: string): InlineMarkdownToken[] {
     while (next < text.length) {
       if (text[next] === '`') break;
       if (text[next] === '*' && text[next + 1] === '*') break;
+      if (text[next] === '_' && text[next + 1] === '_') break;
+      if (text[next] === '*' && text[next + 1] !== '*') break;
       if (text[next] === '!' && text[next + 1] === '[') break;
       next += 1;
     }

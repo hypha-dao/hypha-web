@@ -32,6 +32,8 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import {
   MATRIX_MXID_IN_PLAIN_TEXT,
+  chatMarkupLooksFormatted,
+  chatMarkupToHtml,
   normalizePlainTextMxidCaptureFromMatch,
   useMatrix,
   usePersonBySub,
@@ -1532,6 +1534,21 @@ export function HumanChatPanelMessageBubble({
     ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
     : { mode: 'normal' as const };
 
+  /** Prefer Matrix formatted_body; otherwise derive HTML from Discord-like markup in body. */
+  const richTextHtml = useMemo(() => {
+    if (message.formattedContentHtml?.trim()) {
+      return message.formattedContentHtml;
+    }
+    if (!textContent.trim() || jumboLayout.mode === 'jumbo') {
+      return null;
+    }
+    if (!chatMarkupLooksFormatted(textContent)) {
+      return null;
+    }
+    const html = chatMarkupToHtml(textContent);
+    return html || null;
+  }, [message.formattedContentHtml, textContent, jumboLayout.mode]);
+
   const rosterSenderLabel =
     message.role === 'member' && message.senderMatrixId
       ? resolveSenderDisplayLabel?.(message.senderMatrixId)
@@ -1751,7 +1768,7 @@ export function HumanChatPanelMessageBubble({
 
   useEffect(() => {
     setTextExpanded(false);
-  }, [message.id, textContent, message.formattedContentHtml]);
+  }, [message.id, textContent, richTextHtml]);
 
   useLayoutEffect(() => {
     const el = textBodyRef.current;
@@ -1767,7 +1784,7 @@ export function HumanChatPanelMessageBubble({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [textContent, textExpanded, message.formattedContentHtml, hasInlineMedia]);
+  }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
 
   const row = (moreSlot: ReactNode | null) => (
     <div
@@ -1926,14 +1943,14 @@ export function HumanChatPanelMessageBubble({
 
           {/* Message text above attachments (caption + media in one Matrix event) */}
           {textContent &&
-            (message.formattedContentHtml ? (
+            (richTextHtml ? (
               <div
                 ref={textBodyRef}
                 data-testid="chat-message-body"
                 className={textBodyClassName}
               >
                 <ChatMessageRichText
-                  html={message.formattedContentHtml}
+                  html={richTextHtml}
                   transformText={(fragment) =>
                     resolveMatrixPlainAndHtmlFragments(
                       fragment,

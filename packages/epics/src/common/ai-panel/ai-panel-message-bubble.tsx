@@ -410,6 +410,27 @@ function renderInlineMarkdown(text: string): React.ReactNode {
       continue;
     }
 
+    if (token.type === 'italic') {
+      nodes.push(
+        <em key={`md-inline-${partIndex++}`} className="italic">
+          {token.value}
+        </em>,
+      );
+      continue;
+    }
+
+    if (token.type === 'underline') {
+      nodes.push(
+        <u
+          key={`md-inline-${partIndex++}`}
+          className="underline underline-offset-2"
+        >
+          {token.value}
+        </u>,
+      );
+      continue;
+    }
+
     if (token.type === 'inlineCode') {
       nodes.push(
         <code
