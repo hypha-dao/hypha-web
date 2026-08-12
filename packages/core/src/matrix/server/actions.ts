@@ -277,22 +277,32 @@ export async function ensureMemberJoinedRoomAction({
     );
   }
 
-  try {
-    await matrixJoinRoomAsPuppet(
-      trimmedRoomId,
-      trimmedUserId,
-      botToken,
-      homeserver,
-    );
-    return { joined: true };
-  } catch (error) {
-    console.warn(
-      '[MatrixBot] Failed to puppet-join member into room:',
-      trimmedRoomId,
-      error instanceof Error ? error.message : error,
-    );
-    return { joined: false };
+  // The member's own AS-puppeting namespace may not be this environment's primary bot (e.g. a
+  // Prod-primary deployment puppeting a Preview-created account) — try every configured bot
+  // token, not just the primary's, before giving up. Same fix as the legacy-rooms backfill
+  // script's puppet-grant call (#2428, 2026-08-12) — same root cause, temporary bridge while
+  // Prod/Preview share one Postgres DB (#2252).
+  const puppetCandidates = [botToken, ...getMatrixAdditionalBotAsTokens()];
+  for (const token of puppetCandidates) {
+    try {
+      await matrixJoinRoomAsPuppet(
+        trimmedRoomId,
+        trimmedUserId,
+        token,
+        homeserver,
+      );
+      return { joined: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(
+        '[MatrixBot] Failed to puppet-join member into room:',
+        trimmedRoomId,
+        message,
+      );
+      if (!message.includes('M_FORBIDDEN')) return { joined: false };
+    }
   }
+  return { joined: false };
 }
 
 export async function getLinkByMatrixUserIdAction(
