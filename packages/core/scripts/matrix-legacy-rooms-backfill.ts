@@ -384,13 +384,38 @@ async function processRoom(
         };
       }
       const [puppetAdminId] = admins[0]!;
-      await puppetGrantPl100(
-        roomId,
-        puppetAdminId,
-        primaryUserId,
+      // The admin's AS-puppeting namespace may not be the primary bot's own (e.g. a
+      // Preview-created room's admin, puppeted with the Preview bot's token instead) — try
+      // every available bot token, not just the primary's, before giving up.
+      const puppetCandidates = [
         primaryBotToken,
-        homeserver,
-      );
+        ...additionalBots.map((b) => b.token),
+      ];
+      let puppeted = false;
+      for (const token of puppetCandidates) {
+        try {
+          await puppetGrantPl100(
+            roomId,
+            puppetAdminId,
+            primaryUserId,
+            token,
+            homeserver,
+          );
+          puppeted = true;
+          break;
+        } catch (error) {
+          if (!String(error).includes('M_FORBIDDEN')) throw error;
+        }
+      }
+      if (!puppeted) {
+        return {
+          roomId,
+          name,
+          status: 'NEEDS_MANUAL_REVIEW',
+          detail: `No available bot token's AS namespace covers the room's existing admin (${puppetAdminId}) — cannot self-grant via puppeting, skipping`,
+          before,
+        };
+      }
     }
 
     for (const bot of additionalBots) {
