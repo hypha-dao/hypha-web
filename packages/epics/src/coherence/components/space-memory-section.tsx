@@ -235,16 +235,13 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
               <thead className="bg-neutral-2 text-1 text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2 font-medium">
+                    {t('spaceDocumentationColDate')}
+                  </th>
+                  <th className="px-3 py-2 font-medium">
                     {t('spaceDocumentationColName')}
                   </th>
                   <th className="px-3 py-2 font-medium">
-                    {t('spaceDocumentationColSource')}
-                  </th>
-                  <th className="px-3 py-2 font-medium">
                     {t('spaceDocumentationColContext')}
-                  </th>
-                  <th className="px-3 py-2 font-medium">
-                    {t('spaceDocumentationColAction')}
                   </th>
                 </tr>
               </thead>
@@ -256,21 +253,24 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                       row.url.startsWith('http://'))
                       ? row.url
                       : null;
+                  const dateLabel = (() => {
+                    const ms = Date.parse(row.uploadedAt);
+                    if (!Number.isFinite(ms)) return '—';
+                    return new Intl.DateTimeFormat(lang, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    }).format(new Date(ms));
+                  })();
                   return (
                     <tr
                       key={row.id}
                       className="border-t border-border align-top"
                     >
+                      <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                        {dateLabel}
+                      </td>
                       <td className="px-3 py-2 font-medium text-foreground">
-                        {row.name}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {row.source}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {contextLineForItem(row)}
-                      </td>
-                      <td className="px-3 py-2">
                         {href ? (
                           <a
                             href={href}
@@ -278,11 +278,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                             rel="noopener noreferrer"
                             className="text-accent-11 underline-offset-2 hover:underline"
                           >
-                            {t('spaceMemoryOpenAsset', { name: row.name })}
+                            {row.name}
                           </a>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          row.name
                         )}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {contextLineForItem(row)}
                       </td>
                     </tr>
                   );

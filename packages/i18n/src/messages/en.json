@@ -3413,6 +3413,7 @@
     "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
     "spaceDocumentation": "Space Documentation",
     "spaceDocumentationSubtitle": "Files from proposals, chat, calls, and uploaded memories — table view without previews.",
+    "spaceDocumentationColDate": "Date",
     "spaceDocumentationColName": "Name",
     "spaceDocumentationColSource": "Source",
     "spaceDocumentationColContext": "Context",

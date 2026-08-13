@@ -20,6 +20,8 @@ import {
   getNetworkEcosystemPatterns,
   proposeOrganisationBlueprint,
   sendHumanChatMessageForSpace,
+  listIntelligenceBySpaceSlug,
+  readIntelligenceBySpaceSlug,
 } from '@hypha-platform/core/server';
 import {
   createSpaceSignalBySlugInputSchema,
@@ -53,6 +55,14 @@ import {
   fetchOrgMemoryAssetInputSchema,
   fetchOrgMemoryAssetOutputSchema,
 } from './fetch-org-memory-asset-schema.js';
+import {
+  memoryListInputSchema,
+  memoryListOutputSchema,
+  memorySearchInputSchema,
+  memorySearchOutputSchema,
+  memoryReadInputSchema,
+  memoryReadOutputSchema,
+} from './memory-intelligence-schema.js';
 import {
   summarizeSpaceDiscussionInputSchema,
   summarizeSpaceDiscussionOutputSchema,
@@ -101,7 +111,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; Space Intelligence via memory.list / memory.search / memory.read (Markdown artifacts in the intelligence bucket); documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -1022,6 +1032,252 @@ server.registerTool(
             type: 'text',
             text: 'Internal error while fetching org memory asset',
           },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'memory.list',
+  {
+    description:
+      'Read-only: list Space Intelligence Markdown artifacts for a space (manifest-backed). Same data as the Memory tab Intelligence cards / GET /api/v1/spaces/{slug}/intelligence. Optional type, status, and search filters. Requires BLOB_READ_WRITE_TOKEN for configured=true. Distinct from get_org_memory_by_space_slug (Documentation files).',
+    inputSchema: memoryListInputSchema,
+    outputSchema: memoryListOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = memoryListInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const gated = await listIntelligenceBySpaceSlug(
+        {
+          spaceSlug: parsed.data.space_slug,
+          type: parsed.data.type,
+          status: parsed.data.status,
+          search: parsed.data.search,
+          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        },
+        { db },
+      );
+
+      if (gated.access === 'denied') {
+        return {
+          content: [{ type: 'text', text: gated.message }],
+          isError: true,
+        };
+      }
+
+      const structured = {
+        space_slug: gated.space_slug,
+        configured: gated.configured,
+        artifacts: gated.artifacts,
+      };
+      const outParse = memoryListOutputSchema.safeParse(structured);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const count = outParse.data.artifacts.length;
+      const summary = !outParse.data.configured
+        ? `Space "${outParse.data.space_slug}": intelligence blob storage is not configured (set BLOB_READ_WRITE_TOKEN).`
+        : `Space "${outParse.data.space_slug}": ${count} intelligence artifact(s).`;
+
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: outParse.data,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:memory.list] failed', err);
+      return {
+        content: [
+          { type: 'text', text: 'Internal error while listing intelligence' },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'memory.search',
+  {
+    description:
+      'Read-only: search Space Intelligence artifacts for a space by title, id, or tags (same core list API as memory.list with a required query). Optional type/status filters.',
+    inputSchema: memorySearchInputSchema,
+    outputSchema: memorySearchOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = memorySearchInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const gated = await listIntelligenceBySpaceSlug(
+        {
+          spaceSlug: parsed.data.space_slug,
+          type: parsed.data.type,
+          status: parsed.data.status,
+          search: parsed.data.query,
+          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        },
+        { db },
+      );
+
+      if (gated.access === 'denied') {
+        return {
+          content: [{ type: 'text', text: gated.message }],
+          isError: true,
+        };
+      }
+
+      const structured = {
+        space_slug: gated.space_slug,
+        configured: gated.configured,
+        artifacts: gated.artifacts,
+      };
+      const outParse = memorySearchOutputSchema.safeParse(structured);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const count = outParse.data.artifacts.length;
+      const summary = !outParse.data.configured
+        ? `Space "${outParse.data.space_slug}": intelligence blob storage is not configured (set BLOB_READ_WRITE_TOKEN).`
+        : `Space "${outParse.data.space_slug}": ${count} match(es) for "${parsed.data.query}".`;
+
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: outParse.data,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:memory.search] failed', err);
+      return {
+        content: [
+          { type: 'text', text: 'Internal error while searching intelligence' },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'memory.read',
+  {
+    description:
+      'Read-only: read one Space Intelligence Markdown artifact (frontmatter + body) by space_slug and artifact_id. Same data as GET /api/v1/spaces/{slug}/intelligence/{artifactId}. Path must stay under intelligence/spaces/{slug}/.',
+    inputSchema: memoryReadInputSchema,
+    outputSchema: memoryReadOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = memoryReadInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const gated = await readIntelligenceBySpaceSlug(
+        {
+          spaceSlug: parsed.data.space_slug,
+          artifactId: parsed.data.artifact_id,
+          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        },
+        { db },
+      );
+
+      if (gated.access === 'denied') {
+        return {
+          content: [{ type: 'text', text: gated.message }],
+          isError: true,
+        };
+      }
+
+      const artifact = gated.artifact;
+      const structured = {
+        space_slug: gated.space_slug,
+        configured: gated.configured,
+        found: Boolean(artifact),
+        frontmatter: artifact?.frontmatter ?? null,
+        body: artifact?.body ?? null,
+        path: artifact?.path ?? null,
+      };
+      const outParse = memoryReadOutputSchema.safeParse(structured);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const summary = !outParse.data.configured
+        ? `Space "${outParse.data.space_slug}": intelligence blob storage is not configured (set BLOB_READ_WRITE_TOKEN).`
+        : outParse.data.found
+          ? `Read "${parsed.data.artifact_id}" (${outParse.data.path}).`
+          : `No intelligence artifact "${parsed.data.artifact_id}" in space "${outParse.data.space_slug}".`;
+
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: outParse.data,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:memory.read] failed', err);
+      return {
+        content: [
+          { type: 'text', text: 'Internal error while reading intelligence' },
         ],
         isError: true,
       };

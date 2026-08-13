@@ -1,10 +1,10 @@
 # `@hypha-platform/mcp-server`
 
-Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `fetch_org_memory_asset`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`.
+Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `fetch_org_memory_asset`, `memory.list` / `memory.search` / `memory.read`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`. Space Intelligence plan: `docs/plans/space-intelligence.md` (M4).
 
 ## Security and access control
 
-`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, **`fetch_org_memory_asset`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
+`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, **`fetch_org_memory_asset`**, **`memory.list` / `memory.search` / `memory.read`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
 
 - **`HYPHA_MCP_AUTH_TOKEN`** — bearer token used to resolve the caller’s identity for non-public spaces.
 
@@ -48,6 +48,9 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 | `get_people_by_space_slug` | Members by space slug (people + space-as-members), with membership/join metadata. |
 | `get_org_memory_by_space_slug` | Organization memory (member roster + org memory assets with asset keys). |
 | `fetch_org_memory_asset` | Fetch one memory asset by `space_slug` + `asset_key` (text/PDF/image/video modes). |
+| `memory.list` | List Space Intelligence Markdown artifacts for a space (manifest). |
+| `memory.search` | Search Space Intelligence by title / id / tags. |
+| `memory.read` | Read one intelligence artifact (frontmatter + body). |
 | `get_token_holdings_by_space_slug` | Token holdings/treasury distribution for a space by slug. |
 | `get_documents_by_space_slug` | Paginated documents/proposals/agreements list with optional filters. |
 
