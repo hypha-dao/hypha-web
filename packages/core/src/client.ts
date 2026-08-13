@@ -21,9 +21,7 @@ export {
   INTELLIGENCE_STATUSES,
   INTELLIGENCE_TYPE_FOLDERS,
   buildIntelligenceRelatedGraph,
-  isCoreIntelligenceType,
-  intelligenceFrontmatterSchema,
-} from './intelligence';
+} from './intelligence/client';
 export type {
   IntelligenceFrontmatter,
   IntelligenceManifest,
@@ -33,7 +31,7 @@ export type {
   IntelligenceGraph,
   IntelligenceGraphNode,
   IntelligenceGraphEdge,
-} from './intelligence';
+} from './intelligence/client';
 export * from './energy';
 export {
   getDefaultDestinationCurrency,

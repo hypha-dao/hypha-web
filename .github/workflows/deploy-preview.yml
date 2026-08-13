@@ -57,7 +57,7 @@ jobs:
 
       - name: Type check
         env:
-          NODE_OPTIONS: --max-old-space-size=6144
+          NODE_OPTIONS: --max-old-space-size=8192
         run: pnpm turbo run check-types --filter=web
 
   i18n-verify:
