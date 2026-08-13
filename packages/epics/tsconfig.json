@@ -1,19 +1,24 @@
 {
-  "extends": "@hypha-platform/config-typescript/base.json",
+  "extends": "@hypha-platform/config-typescript/nextjs.json",
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "preserve",
-    "allowJs": true,
-    "noEmit": true,
-    "declaration": false,
-    "declarationMap": false
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    "next.config.js"
+  ],
   "exclude": [
     "node_modules",
     "**/*.stories.tsx",
     "**/*.stories.ts",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    ".next",
+    "type-stubs"
   ]
 }

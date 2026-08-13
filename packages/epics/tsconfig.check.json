@@ -1,0 +1,24 @@
+{
+  // Full-package epics `tsc` OOMs in CI (>12GB) via @hypha-platform/core/client barrel.
+  // This config typechecks the Space Intelligence surface only; Next.js build still
+  // typechecks the app import graph.
+  "extends": "@hypha-platform/config-typescript/base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "baseUrl": ".",
+    "paths": {
+      "@hypha-platform/authentication": ["./type-stubs/any-module.ts"],
+      "@hypha-platform/ui-utils": ["./type-stubs/ui-utils.ts"]
+    }
+  },
+  "include": [
+    "src/coherence/components/space-intelligence-cards.tsx",
+    "src/coherence/hooks/use-space-intelligence.ts"
+  ],
+  "exclude": ["node_modules", "type-stubs"]
+}

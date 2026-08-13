@@ -4,7 +4,7 @@ import {
   buildIntelligenceRelatedGraph,
   type IntelligenceGraph,
   type IntelligenceManifestEntry,
-} from '@hypha-platform/core/client';
+} from '@hypha-platform/core/intelligence';
 import { useAuthentication } from '@hypha-platform/authentication';
 import queryString from 'query-string';
 import React from 'react';

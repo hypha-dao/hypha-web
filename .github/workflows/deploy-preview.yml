@@ -41,8 +41,10 @@ jobs:
         uses: ./.github/actions/detect-changes
 
   check-types:
-    # Epics tsc is memory-heavy; use a larger runner and serialize package checks.
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    # Full epics/web `tsc` OOMs (>12GB) on the core/client barrel. Epics check-types
+    # uses a narrow Space Intelligence tsconfig; chat-server is checked fully.
+    # Next.js build still typechecks the app import graph.
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
 
@@ -58,8 +60,8 @@ jobs:
 
       - name: Type check
         env:
-          NODE_OPTIONS: --max-old-space-size=12288
-        run: pnpm turbo run check-types --filter=web --concurrency=1
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: pnpm turbo run check-types --filter=@hypha-platform/chat-server --filter=@hypha-platform/epics --concurrency=1
 
   i18n-verify:
     runs-on: blacksmith-4vcpu-ubuntu-2404

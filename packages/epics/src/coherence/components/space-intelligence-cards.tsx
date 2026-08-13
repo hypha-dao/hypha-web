@@ -4,7 +4,7 @@ import { FC } from 'react';
 import type {
   IntelligenceGraph,
   IntelligenceManifestEntry,
-} from '@hypha-platform/core/client';
+} from '@hypha-platform/core/intelligence';
 import { cn } from '@hypha-platform/ui-utils';
 
 type SpaceIntelligenceGraphProps = {

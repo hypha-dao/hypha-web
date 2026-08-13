@@ -31,6 +31,7 @@
   },
   "exports": {
     "./client": "./src/client.ts",
+    "./intelligence": "./src/intelligence/client.ts",
     "./server": "./src/server.ts",
     "./space/server/actions": "./src/space/server/actions.ts",
     "./people/server/actions": "./src/people/server/actions.ts",

@@ -13,7 +13,7 @@ import {
   SelectValue,
   Textarea,
 } from '@hypha-platform/ui';
-import { INTELLIGENCE_CORE_TYPES } from '@hypha-platform/core/client';
+import { INTELLIGENCE_CORE_TYPES } from '@hypha-platform/core/intelligence';
 import { useTranslations } from 'next-intl';
 import { useSpaceIntelligence } from '../hooks/use-space-intelligence';
 import {
