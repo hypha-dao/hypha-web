@@ -16,6 +16,24 @@ export * from './pipeline';
 export * from './geo';
 export * from './geo/client';
 export * from './org-memory';
+export {
+  INTELLIGENCE_CORE_TYPES,
+  INTELLIGENCE_STATUSES,
+  INTELLIGENCE_TYPE_FOLDERS,
+  buildIntelligenceRelatedGraph,
+  isCoreIntelligenceType,
+  intelligenceFrontmatterSchema,
+} from './intelligence';
+export type {
+  IntelligenceFrontmatter,
+  IntelligenceManifest,
+  IntelligenceManifestEntry,
+  IntelligenceCoreType,
+  IntelligenceStatus,
+  IntelligenceGraph,
+  IntelligenceGraphNode,
+  IntelligenceGraphEdge,
+} from './intelligence';
 export * from './energy';
 export {
   getDefaultDestinationCurrency,

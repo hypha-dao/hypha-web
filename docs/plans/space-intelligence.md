@@ -345,7 +345,7 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 
 ## 13. Open items (non-blocking for M1)
 
-1. Exact Blob vs S3 vendor choice and env var names.
+1. ~~Exact Blob vs S3 vendor choice and env var names.~~ → **Vercel Blob** via `BLOB_READ_WRITE_TOKEN` (private access).
 2. Manifest format: JSON vs Markdown registry file (JSON preferred for MCP).
 3. Whether human direct edits skip the Signal approval panel (spec allows direct member publish; signal flow still required for AI/IBA proposals).
 4. GitHub issue / project board card for tracking (create when ready).

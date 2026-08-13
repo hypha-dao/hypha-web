@@ -29,3 +29,5 @@ export * from './signal-card-actions';
 export * from './signal-upvote-control';
 export * from './space-memory-section';
 export * from './space-memory-timeline-item';
+export * from './space-intelligence-section';
+export * from './space-intelligence-cards';
