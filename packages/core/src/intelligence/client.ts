@@ -14,8 +14,10 @@ export type {
   IntelligenceCoreType,
   IntelligenceStatus,
   IntelligenceArtifact,
+} from './types';
+export { buildIntelligenceRelatedGraph } from './graph';
+export type {
   IntelligenceGraph,
   IntelligenceGraphNode,
   IntelligenceGraphEdge,
-} from './types';
-export { buildIntelligenceRelatedGraph } from './graph';
+} from './graph';
