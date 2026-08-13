@@ -10,12 +10,14 @@ import { getLinkByPrivyUserId } from '../../matrix/server/web3/get-link-by-privy
  * Same Privy verification as `apps/web` `GET /api/matrix/token`, without issuing
  * a new Matrix registration — only reads an existing `matrix_user_links` row.
  * Used when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is unset so org memory can
- * still list Human-chat media for the signed-in user (Space Memory + Chat tool).
+ * still list Human-chat media for the signed-in user (Space Memory + Chat tool),
+ * and by the Human Chat send path, which also needs the sender's own MXID to
+ * puppet-join them into invite-only rooms (#2428).
  */
-export async function resolveUserMatrixAccessTokenForOrgMemory(
+export async function resolveUserMatrixIdentityForOrgMemory(
   privyJwt: string,
   requestUrlForEnvironment: string,
-): Promise<string | null> {
+): Promise<{ accessToken: string; matrixUserId: string } | null> {
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim();
   const appSecret = process.env.PRIVY_APP_SECRET?.trim();
   if (!appId || !appSecret) {
@@ -41,7 +43,7 @@ export async function resolveUserMatrixAccessTokenForOrgMemory(
       privyUserId,
       environment,
     });
-    if (!existing?.encryptedAccessToken) {
+    if (!existing?.encryptedAccessToken || !existing.matrixUserId) {
       return null;
     }
 
@@ -57,8 +59,19 @@ export async function resolveUserMatrixAccessTokenForOrgMemory(
       return null;
     }
 
-    return accessToken;
+    return { accessToken, matrixUserId: existing.matrixUserId };
   } catch {
     return null;
   }
+}
+
+export async function resolveUserMatrixAccessTokenForOrgMemory(
+  privyJwt: string,
+  requestUrlForEnvironment: string,
+): Promise<string | null> {
+  const identity = await resolveUserMatrixIdentityForOrgMemory(
+    privyJwt,
+    requestUrlForEnvironment,
+  );
+  return identity?.accessToken ?? null;
 }

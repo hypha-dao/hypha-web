@@ -2972,6 +2972,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             '[HumanRightPanel] Creating Matrix room for coherence:',
             coherenceSlug,
           );
+          // No `grantCreatorPl100` here deliberately: this is a lazy-creation fallback for a
+          // signal that predates having a room, reachable by any space member who happens to
+          // open it first — not necessarily the signal's actual creator (#2428 review). The
+          // primary creation path (`create-signal-form.tsx`) grants PL100 correctly, since it
+          // only runs for the person actually submitting the create form.
           const { roomId: newRoomId } = await matrixRef.current.createRoom(
             coherenceTitle || 'Conversation',
           );
