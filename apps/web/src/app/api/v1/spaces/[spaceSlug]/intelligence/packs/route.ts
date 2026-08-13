@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import {
   findSpaceBySlug,
+  enableIntelligencePackForSpace,
   listIntelligenceBySpaceSlug,
-  writeIntelligenceBySpaceSlug,
-  buildIntelligenceRelatedGraph,
+  listIntelligencePackCatalogs,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -50,37 +50,29 @@ export async function GET(
     const gated = await gateSpace(request, spaceSlug);
     if (!gated.ok) return gated.response;
 
-    const url = new URL(request.url);
     const listed = await listIntelligenceBySpaceSlug(
-      {
-        spaceSlug,
-        type: url.searchParams.get('type') || undefined,
-        status: url.searchParams.get('status') || undefined,
-        search:
-          url.searchParams.get('search') ||
-          url.searchParams.get('q') ||
-          undefined,
-        authToken: bearerFrom(request),
-      },
+      { spaceSlug, authToken: bearerFrom(request) },
       { db },
     );
-
     if (listed.access === 'denied') {
       return NextResponse.json({ error: listed.message }, { status: 403 });
     }
 
-    const graph = buildIntelligenceRelatedGraph(listed.artifacts);
     return NextResponse.json({
       space_slug: listed.space_slug,
       configured: listed.configured,
-      artifacts: listed.artifacts,
       enabled_packs: listed.enabled_packs,
-      graph,
+      available: listIntelligencePackCatalogs().map((pack) => ({
+        id: pack.id,
+        title: pack.title,
+        description: pack.description,
+        template_count: pack.templates.length,
+      })),
     });
   } catch (error) {
-    console.error('GET intelligence', error);
+    console.error('GET intelligence packs', error);
     return NextResponse.json(
-      { error: 'Failed to list space intelligence' },
+      { error: 'Failed to list intelligence packs' },
       { status: 500 },
     );
   }
@@ -95,22 +87,18 @@ export async function POST(
     const gated = await gateSpace(request, spaceSlug);
     if (!gated.ok) return gated.response;
 
-    const body = (await request.json()) as {
-      markdown?: string;
-      frontmatter?: Record<string, unknown>;
-      body?: string;
-      expectedSha?: string;
-      source_app?: string;
-    };
+    const body = (await request.json()) as { pack_id?: string };
+    if (!body.pack_id?.trim()) {
+      return NextResponse.json(
+        { error: 'pack_id is required.' },
+        { status: 400 },
+      );
+    }
 
-    const result = await writeIntelligenceBySpaceSlug(
+    const result = await enableIntelligencePackForSpace(
       {
         spaceSlug,
-        markdown: body.markdown,
-        frontmatter: body.frontmatter as never,
-        body: body.body,
-        expectedSha: body.expectedSha,
-        source_app: body.source_app,
+        packId: body.pack_id,
         authToken: bearerFrom(request),
       },
       { db },
@@ -119,32 +107,21 @@ export async function POST(
     if (result.access === 'denied') {
       return NextResponse.json({ error: result.message }, { status: 403 });
     }
-    if (result.access === 'conflict') {
-      return NextResponse.json(
-        { error: result.message, currentSha: result.currentSha },
-        { status: 409 },
-      );
-    }
     if (result.access === 'misconfigured') {
       return NextResponse.json({ error: result.message }, { status: 503 });
     }
 
-    return NextResponse.json(
-      {
-        created: result.created,
-        artifact: {
-          path: result.artifact.path,
-          sha: result.artifact.sha,
-          frontmatter: result.artifact.frontmatter,
-          body: result.artifact.body,
-        },
-      },
-      { status: result.created ? 201 : 200 },
-    );
+    return NextResponse.json({
+      space_slug: result.space_slug,
+      pack_id: result.pack_id,
+      enabled_packs: result.enabled_packs,
+      seeded: result.seeded,
+      skipped: result.skipped,
+    });
   } catch (error) {
-    console.error('POST intelligence', error);
+    console.error('POST intelligence packs', error);
     return NextResponse.json(
-      { error: 'Failed to write space intelligence' },
+      { error: 'Failed to enable intelligence pack' },
       { status: 500 },
     );
   }

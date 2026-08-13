@@ -3411,6 +3411,8 @@
     "spaceIntelligenceRetry": "Retry",
     "spaceIntelligenceLoading": "Loading intelligence…",
     "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
+    "spaceIntelligenceEnableEnergyPack": "Enable Energy pack",
+    "spaceIntelligenceEnablingPack": "Enabling pack…",
     "spaceDocumentation": "Space Documentation",
     "spaceDocumentationSubtitle": "Files from proposals, chat, calls, and uploaded memories — table view without previews.",
     "spaceDocumentationColDate": "Date",

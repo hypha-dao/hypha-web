@@ -126,6 +126,32 @@ export function artifactPatchPath(input: {
   return `${INTELLIGENCE_ROOT}/spaces/${slug}/_patches/${signalSlug}.json`;
 }
 
+export function assertSafePackId(packId: string): string {
+  return assertSafeSpaceSlug(packId);
+}
+
+export function frameworkPackPrefix(packId: string): string {
+  const id = assertSafePackId(packId);
+  return `${INTELLIGENCE_ROOT}/frameworks/${id}/`;
+}
+
+export function frameworkPackManifestPath(packId: string): string {
+  return `${frameworkPackPrefix(packId)}_pack.json`;
+}
+
+export function frameworkPackOntologyPath(packId: string): string {
+  return `${frameworkPackPrefix(packId)}ontology.md`;
+}
+
+export function frameworkPackTemplatePath(input: {
+  packId: string;
+  artifactId: string;
+}): string {
+  const packId = assertSafePackId(input.packId);
+  const artifactId = assertSafeArtifactId(input.artifactId);
+  return `${INTELLIGENCE_ROOT}/frameworks/${packId}/templates/${artifactId}.md`;
+}
+
 function looksLikePathTraversal(pathname: string): boolean {
   const lower = pathname.toLowerCase();
   return (

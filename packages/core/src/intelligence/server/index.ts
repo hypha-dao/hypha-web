@@ -34,6 +34,11 @@ export {
   writeSpaceIntelligenceManifest,
 } from './manifest';
 export {
+  enableIntelligencePackForSpace,
+  type EnableIntelligencePackInput,
+  type EnableIntelligencePackResult,
+} from './enable-pack';
+export {
   isIntelligenceBlobConfigured,
   IntelligenceBlobNotConfiguredError,
 } from './blob-client';

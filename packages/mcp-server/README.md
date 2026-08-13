@@ -1,10 +1,10 @@
 # `@hypha-platform/mcp-server`
 
-Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `fetch_org_memory_asset`, `memory.list` / `memory.search` / `memory.read` / `memory.create` / `memory.update` / `memory.delete`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`. Space Intelligence plan: `docs/plans/space-intelligence.md` (M6).
+Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `fetch_org_memory_asset`, `memory.list` / `memory.search` / `memory.read` / `memory.create` / `memory.update` / `memory.delete` / `memory.enable_pack`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`. Space Intelligence plan: `docs/plans/space-intelligence.md` (M7).
 
 ## Security and access control
 
-`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, **`fetch_org_memory_asset`**, **`memory.list` / `memory.search` / `memory.read` / `memory.create` / `memory.update` / `memory.delete`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
+`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, **`fetch_org_memory_asset`**, **`memory.list` / `memory.search` / `memory.read` / `memory.create` / `memory.update` / `memory.delete` / `memory.enable_pack`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
 
 - **`HYPHA_MCP_AUTH_TOKEN`** — bearer token used to resolve the caller’s identity for non-public spaces.
 - **`HYPHA_MCP_SOURCE_APP`** — IBA installation identity stamped as `source_app` on intelligence writes. Caller-supplied `source_app` must match this value. When unset, writes use **`hypha-mcp`**.
@@ -55,6 +55,7 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 | `memory.create`                      | Create a draft or member-published intelligence artifact (path + `.md` + app identity). |
 | `memory.update`                      | SHA-checked update; IBA/AI default `propose` (signal approval); members may `publish`.  |
 | `memory.delete`                      | Soft-archive an artifact (`status: archived`). Hard delete is rejected.                 |
+| `memory.enable_pack`                 | Enable a framework pack (currently `hypha-energy`) and seed starter drafts.             |
 | `get_token_holdings_by_space_slug`   | Token holdings/treasury distribution for a space by slug.                               |
 | `get_documents_by_space_slug`        | Paginated documents/proposals/agreements list with optional filters.                    |
 

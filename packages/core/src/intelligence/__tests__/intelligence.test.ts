@@ -8,6 +8,7 @@ import { buildIntelligenceRelatedGraph } from '../graph';
 import {
   artifactCurrentPath,
   artifactPatchPath,
+  frameworkPackPrefix,
   matchCallerIntelligencePath,
   spaceManifestPath,
   spaceIntelligencePrefix,
@@ -17,6 +18,11 @@ import {
   assertIntelligenceMarkdownSize,
   resolveCanonicalSourceApp,
 } from '../app-identity';
+import {
+  HYPHA_ENERGY_PACK_ID,
+  HYPHA_ENERGY_TEMPLATES,
+  renderPackTemplateMarkdown,
+} from '../packs';
 import type { IntelligenceManifestEntry } from '../types';
 
 const SAMPLE = `---
@@ -65,6 +71,9 @@ describe('intelligence paths', () => {
         signalSlug: 'inbox-item-1',
       }),
     ).toBe('intelligence/spaces/belica-5-0/_patches/inbox-item-1.json');
+    expect(frameworkPackPrefix('hypha-energy')).toBe(
+      'intelligence/frameworks/hypha-energy/',
+    );
   });
 
   it('rejects unsafe slugs', () => {
@@ -243,5 +252,29 @@ describe('assertIntelligenceMarkdownSize', () => {
     expect(() => assertIntelligenceMarkdownSize(SAMPLE)).not.toThrow();
     const oversized = 'x'.repeat(INTELLIGENCE_MARKDOWN_MAX_BYTES + 1);
     expect(() => assertIntelligenceMarkdownSize(oversized)).toThrow(/exceeds/);
+  });
+});
+
+describe('hypha energy pack', () => {
+  it('renders eight unique starters with pack-seed provenance', () => {
+    const ids = HYPHA_ENERGY_TEMPLATES.map((template) => template.id);
+    expect(ids).toHaveLength(8);
+    expect(new Set(ids).size).toBe(8);
+
+    for (const template of HYPHA_ENERGY_TEMPLATES) {
+      const markdown = renderPackTemplateMarkdown({
+        template,
+        packId: HYPHA_ENERGY_PACK_ID,
+        spaceSlug: 'belica-5-0',
+        today: '2026-08-13',
+      });
+      const parsed = parseIntelligenceMarkdown(markdown);
+      expect(parsed.frontmatter.space).toBe('belica-5-0');
+      expect(parsed.frontmatter.source_app).toBe('pack-seed');
+      expect(parsed.frontmatter.status).toBe('draft');
+      expect(parsed.frontmatter.pack_id).toBe('hypha-energy');
+      expect(parsed.frontmatter.pack_alias).toMatch(/^ART-0[1-8]$/);
+      expect(parsed.body.length).toBeGreaterThan(40);
+    }
   });
 });

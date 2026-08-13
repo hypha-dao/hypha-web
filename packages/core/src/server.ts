@@ -81,6 +81,10 @@ export {
   resolveCanonicalSourceApp,
   stampIntelligenceSourceApp,
   INTELLIGENCE_MARKDOWN_MAX_BYTES,
+  HYPHA_ENERGY_PACK_ID,
+  listIntelligencePackCatalogs,
+  renderPackTemplateMarkdown,
+  frameworkPackPrefix,
 } from './intelligence';
 export type { ResolveCanonicalSourceAppResult } from './intelligence';
 export {

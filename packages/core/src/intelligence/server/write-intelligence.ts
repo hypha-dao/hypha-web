@@ -357,6 +357,7 @@ export async function seedIntelligenceArtifactIfMissing(
     spaceSlug: string;
     markdown: string;
     authToken?: string;
+    canonicalSourceApp?: string;
   },
   cfg: { db: DatabaseInstance },
 ): Promise<WriteIntelligenceResult> {
@@ -402,6 +403,7 @@ export async function seedIntelligenceArtifactIfMissing(
       markdown: input.markdown,
       authToken: input.authToken,
       source_app: parsed.frontmatter.source_app,
+      canonicalSourceApp: input.canonicalSourceApp,
     },
     cfg,
   );

@@ -79,6 +79,19 @@ export function upsertManifestEntry(
   };
 }
 
+export function enablePackOnManifest(
+  manifest: IntelligenceManifest,
+  packId: string,
+): IntelligenceManifest {
+  const packs = new Set(manifest.enabled_packs ?? []);
+  packs.add(packId);
+  return {
+    ...manifest,
+    updated_at: new Date().toISOString().slice(0, 10),
+    enabled_packs: [...packs].sort(),
+  };
+}
+
 export function archiveManifestEntry(
   manifest: IntelligenceManifest,
   artifactId: string,

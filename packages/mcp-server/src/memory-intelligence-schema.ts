@@ -46,6 +46,7 @@ export const memoryListOutputSchema = z.object({
   space_slug: z.string(),
   configured: z.boolean(),
   artifacts: z.array(intelligenceManifestEntrySchema),
+  enabled_packs: z.array(z.string()).default([]),
 });
 
 export type MemoryListOutput = z.infer<typeof memoryListOutputSchema>;
@@ -228,3 +229,30 @@ export const memoryDeleteOutputSchema = z.union([
 ]);
 
 export type MemoryDeleteOutput = z.infer<typeof memoryDeleteOutputSchema>;
+
+export const memoryEnablePackInputSchema = z.object({
+  space_slug: spaceSlugSchema,
+  pack_id: z
+    .string()
+    .trim()
+    .min(1)
+    .describe('Pack id to enable (currently hypha-energy).'),
+});
+
+export type MemoryEnablePackInput = z.infer<typeof memoryEnablePackInputSchema>;
+
+export const memoryEnablePackOutputSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    space_slug: z.string(),
+    pack_id: z.string(),
+    enabled_packs: z.array(z.string()),
+    seeded: z.array(z.string()),
+    skipped: z.array(z.string()),
+  }),
+  memoryWriteFailSchema,
+]);
+
+export type MemoryEnablePackOutput = z.infer<
+  typeof memoryEnablePackOutputSchema
+>;

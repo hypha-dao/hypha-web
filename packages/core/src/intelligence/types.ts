@@ -50,6 +50,14 @@ export type IntelligenceFrontmatter = {
   related: string[];
   version: number;
   supersedes: string | null;
+  /** Pack that declared this artifact (e.g. hypha-energy). */
+  pack_id?: string;
+  /** Pack alias such as ART-01. */
+  pack_alias?: string;
+  maturity?: string;
+  confidence?: string;
+  community_id?: string;
+  linked_signals?: string[];
 };
 
 export type IntelligenceManifestEntry = {
@@ -71,6 +79,7 @@ export type IntelligenceManifest = {
   version: 1;
   space: string;
   updated_at: string;
+  enabled_packs: string[];
   artifacts: IntelligenceManifestEntry[];
 };
 

@@ -26,6 +26,7 @@ import {
   deleteIntelligenceBySpaceSlug,
   proposeIntelligencePatchForSignal,
   parseIntelligenceMarkdown,
+  enableIntelligencePackForSpace,
 } from '@hypha-platform/core/server';
 import {
   createSpaceSignalBySlugInputSchema,
@@ -72,6 +73,8 @@ import {
   memoryUpdateOutputSchema,
   memoryDeleteInputSchema,
   memoryDeleteOutputSchema,
+  memoryEnablePackInputSchema,
+  memoryEnablePackOutputSchema,
 } from './memory-intelligence-schema.js';
 import { mcpAuthToken, resolveMcpSourceApp } from './memory-write-identity.js';
 import {
@@ -122,7 +125,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; Space Intelligence via memory.list / memory.search / memory.read / memory.create / memory.update / memory.delete (Markdown artifacts in the intelligence bucket); documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; Space Intelligence via memory.list / memory.search / memory.read / memory.create / memory.update / memory.delete / memory.enable_pack (Markdown artifacts in the intelligence bucket); documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -1096,6 +1099,7 @@ server.registerTool(
         space_slug: gated.space_slug,
         configured: gated.configured,
         artifacts: gated.artifacts,
+        enabled_packs: gated.enabled_packs,
       };
       const outParse = memoryListOutputSchema.safeParse(structured);
       if (!outParse.success) {
@@ -1177,6 +1181,7 @@ server.registerTool(
         space_slug: gated.space_slug,
         configured: gated.configured,
         artifacts: gated.artifacts,
+        enabled_packs: gated.enabled_packs,
       };
       const outParse = memorySearchOutputSchema.safeParse(structured);
       if (!outParse.success) {
@@ -1678,6 +1683,91 @@ server.registerTool(
       return {
         content: [
           { type: 'text', text: 'Internal error while deleting intelligence' },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'memory.enable_pack',
+  {
+    description:
+      'Write: enable a framework pack for a space and seed starter Markdown artifacts (idempotent). Currently hypha-energy (8 Energy ontology starters). Same core API as POST /api/v1/spaces/{slug}/intelligence/packs.',
+    inputSchema: memoryEnablePackInputSchema,
+    outputSchema: memoryEnablePackOutputSchema,
+  },
+  async (args) => {
+    const parsed = memoryEnablePackInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const result = await enableIntelligencePackForSpace(
+        {
+          spaceSlug: parsed.data.space_slug,
+          packId: parsed.data.pack_id,
+          authToken: mcpAuthToken(),
+        },
+        { db },
+      );
+
+      if (result.access !== 'ok') {
+        const fail = {
+          ok: false as const,
+          error: result.message,
+        };
+        return {
+          content: [{ type: 'text', text: result.message }],
+          structuredContent: fail,
+          isError: true,
+        };
+      }
+
+      const structured = {
+        ok: true as const,
+        space_slug: result.space_slug,
+        pack_id: result.pack_id,
+        enabled_packs: result.enabled_packs,
+        seeded: result.seeded,
+        skipped: result.skipped,
+      };
+      const outParse = memoryEnablePackOutputSchema.safeParse(structured);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Enabled pack "${result.pack_id}" for ${result.space_slug}: seeded ${result.seeded.length}, skipped ${result.skipped.length}.`,
+          },
+        ],
+        structuredContent: outParse.data,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:memory.enable_pack] failed', err);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Internal error while enabling intelligence pack',
+          },
         ],
         isError: true,
       };

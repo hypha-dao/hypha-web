@@ -22,6 +22,7 @@ export type ListIntelligenceBySpaceSlugResult =
       configured: boolean;
       space_slug: string;
       artifacts: IntelligenceManifestEntry[];
+      enabled_packs: string[];
     }
   | {
       access: 'denied';
@@ -92,5 +93,6 @@ export async function listIntelligenceBySpaceSlug(
     configured,
     space_slug: spaceSlug,
     artifacts,
+    enabled_packs: manifest.enabled_packs ?? [],
   };
 }

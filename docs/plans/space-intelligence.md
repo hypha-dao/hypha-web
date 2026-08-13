@@ -1,6 +1,6 @@
 # Space Intelligence & Documentation — Spec
 
-> **Status:** Frozen for Phase B. M1–M6 done; **M7** (Energy pack templates) next on `feat/org-memory`.  
+> **Status:** Frozen for Phase B. **M1–M7 done** on `feat/org-memory`.  
 > **Supersedes (for intelligence scope):** informal plans in chat; complements [space-memory-panel.md](./space-memory-panel.md) and [documents-and-media-overview.md](../architecture/documents-and-media-overview.md).  
 > **Related product docs:** Organizational Intelligence App Architecture (IBA ↔ Markdown MCP); Hypha Energy Org Memory Ontology (first pack).
 
@@ -320,7 +320,7 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 | **M4** | MCP `list` / `search` / `read`                                                               | External client with space auth can list/read same files as UI — **done** (`memory.list` / `memory.search` / `memory.read`)                         |
 | **M5** | Signal detail approval → apply versioned patch                                               | Approve publishes new version; reject leaves current unchanged — **done** (blob `_patches/` + Signal detail panel)                                  |
 | **M6** | MCP `create` / `update` / `delete` (propose or member-publish); app identity                 | IBA-shaped client can propose/update under path allowlist — **done** (`memory.create` / `memory.update` / `memory.delete` + `HYPHA_MCP_SOURCE_APP`) |
-| **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space                                                                                                      |
+| **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space — **done** (`hypha-energy` ART-01…08 + `memory.enable_pack`)                                         |
 
 **Phase B kickoff:** implement **M1 → M3** first; freeze further slices only after M3 demo.
 

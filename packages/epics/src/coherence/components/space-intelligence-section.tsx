@@ -13,7 +13,10 @@ import {
   SelectValue,
   Textarea,
 } from '@hypha-platform/ui';
-import { INTELLIGENCE_CORE_TYPES } from '@hypha-platform/core/intelligence';
+import {
+  INTELLIGENCE_CORE_TYPES,
+  HYPHA_ENERGY_PACK_ID,
+} from '@hypha-platform/core/intelligence';
 import { useTranslations } from 'next-intl';
 import { useSpaceIntelligence } from '../hooks/use-space-intelligence';
 import {
@@ -52,6 +55,8 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     setSearchTerm,
     refresh,
     createArtifact,
+    enablePack,
+    enabledPacks,
   } = useSpaceIntelligence(spaceSlug);
   const { space } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({
@@ -67,6 +72,21 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
   const [related, setRelated] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [enablingPack, setEnablingPack] = useState(false);
+
+  const energyPackEnabled = enabledPacks.includes(HYPHA_ENERGY_PACK_ID);
+
+  const onEnableEnergyPack = async () => {
+    setEnablingPack(true);
+    setSaveError(null);
+    try {
+      await enablePack(HYPHA_ENERGY_PACK_ID);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setEnablingPack(false);
+    }
+  };
 
   const onCreate = async () => {
     const idBase = slugifyTitle(title);
@@ -128,16 +148,31 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
           </p>
         </div>
         {canMutate ? (
-          <Button
-            type="button"
-            colorVariant="accent"
-            size="sm"
-            onClick={() => setShowCreate((v) => !v)}
-          >
-            {showCreate
-              ? t('spaceIntelligenceCancelCreate')
-              : t('spaceIntelligenceNew')}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {configured && !energyPackEnabled ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={enablingPack}
+                onClick={() => void onEnableEnergyPack()}
+              >
+                {enablingPack
+                  ? t('spaceIntelligenceEnablingPack')
+                  : t('spaceIntelligenceEnableEnergyPack')}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              colorVariant="accent"
+              size="sm"
+              onClick={() => setShowCreate((v) => !v)}
+            >
+              {showCreate
+                ? t('spaceIntelligenceCancelCreate')
+                : t('spaceIntelligenceNew')}
+            </Button>
+          </div>
         ) : null}
       </header>
 

@@ -41,7 +41,6 @@ export const intelligenceFrontmatterSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(100)).default([]),
   related: z.array(slugIdSchema).default([]),
   version: z.coerce.number().int().positive(),
-  // Prior artifact id or content sha (provenance pointer).
   supersedes: z
     .union([
       z
@@ -53,6 +52,12 @@ export const intelligenceFrontmatterSchema = z.object({
       z.null(),
     ])
     .default(null),
+  pack_id: slugIdSchema.optional(),
+  pack_alias: z.string().trim().min(1).max(32).optional(),
+  maturity: z.string().trim().min(1).max(50).optional(),
+  confidence: z.string().trim().min(1).max(50).optional(),
+  community_id: slugIdSchema.optional(),
+  linked_signals: z.array(slugIdSchema).optional(),
 });
 
 export type ParsedIntelligenceFrontmatter = z.infer<
@@ -88,6 +93,7 @@ export const intelligenceManifestSchema = z.object({
   version: z.literal(1),
   space: slugIdSchema,
   updated_at: z.string().trim().min(1),
+  enabled_packs: z.array(slugIdSchema).default([]),
   artifacts: z.array(manifestEntrySchema),
 });
 
@@ -102,6 +108,7 @@ export function emptyIntelligenceManifest(
     version: 1,
     space: spaceSlug,
     updated_at: new Date().toISOString().slice(0, 10),
+    enabled_packs: [],
     artifacts: [],
   };
 }

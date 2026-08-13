@@ -17,6 +17,7 @@ type IntelligenceListResponse = {
   configured: boolean;
   artifacts: IntelligenceManifestEntry[];
   graph: IntelligenceGraph;
+  enabled_packs?: string[];
 };
 
 export function revalidateSpaceIntelligence(spaceSlug: string) {
@@ -102,6 +103,38 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     [getAccessToken, revalidate, spaceSlug],
   );
 
+  const enablePack = React.useCallback(
+    async (packId: string) => {
+      if (!spaceSlug) throw new Error('Missing space');
+      const token = await getAccessToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(
+        `/api/v1/spaces/${spaceSlug}/intelligence/packs`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ pack_id: packId }),
+        },
+      );
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          (payload as { error?: string }).error || `HTTP ${res.status}`,
+        );
+      }
+      await revalidate();
+      return payload as {
+        pack_id: string;
+        seeded: string[];
+        skipped: string[];
+      };
+    },
+    [getAccessToken, revalidate, spaceSlug],
+  );
+
   const artifacts = data?.artifacts ?? [];
   const graph = data?.graph ?? buildIntelligenceRelatedGraph(artifacts);
 
@@ -118,5 +151,7 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     setSearchTerm,
     refresh: () => revalidate(),
     createArtifact,
+    enablePack,
+    enabledPacks: data?.enabled_packs ?? [],
   };
 }
