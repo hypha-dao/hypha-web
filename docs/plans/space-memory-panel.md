@@ -2,6 +2,8 @@
 
 This plan ties the **Space Memory** surface (Coherence) to shared backend projections. Detailed UI milestones may live in other coherence docs; this file anchors **cross-cutting contracts** referenced by architecture and requirements.
 
+> **Intelligence split:** For Space Intelligence (Markdown in object storage), Documentation table UX, signal-approved versioned patches, and `memory.*` MCP, see the frozen spec **[space-intelligence.md](./space-intelligence.md)** (`feat/org-memory`).
+
 ---
 
 ## 1) Phased delivery — panel, MCP, and Matrix assets
