@@ -3728,7 +3728,21 @@
       "success": "Grün",
       "error": "Rot"
     },
-    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf"
+    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf",
+    "signalMemoryPatchBadge": "Speicheränderung ausstehend",
+    "signalMemoryPatchTitle": "Vorgeschlagene Speicheränderung",
+    "signalMemoryPatchSubtitle": "Genehmigen veröffentlicht eine neue Intelligence-Version. Ablehnen lässt das aktuelle Artefakt unverändert.",
+    "signalMemoryPatchTarget": "Ziel",
+    "signalMemoryPatchBaseSha": "Basis-SHA",
+    "signalMemoryPatchSource": "Quell-App",
+    "signalMemoryPatchLoading": "Vorgeschlagene Speicheränderung wird geladen…",
+    "signalMemoryPatchApprove": "Genehmigen",
+    "signalMemoryPatchReject": "Ablehnen",
+    "signalMemoryPatchEditThenApprove": "Bearbeiten und genehmigen",
+    "signalMemoryPatchApproveEdited": "Bearbeitetes genehmigen",
+    "signalMemoryPatchCancelEdit": "Bearbeitung abbrechen",
+    "signalMemoryPatchEditLabel": "Vorgeschlagenes Markdown",
+    "signalMemoryPatchMembersOnly": "Nur Space-Mitglieder können genehmigen oder ablehnen."
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

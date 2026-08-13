@@ -112,6 +112,20 @@ export function artifactVersionPath(input: {
   return `${INTELLIGENCE_ROOT}/spaces/${slug}/_versions/${id}/${sha}.md`;
 }
 
+/** Signal slug-id for `_patches/{signalSlug}.json` (same rules as artifact ids). */
+export function assertSafeSignalSlug(signalSlug: string): string {
+  return assertSafeArtifactId(signalSlug);
+}
+
+export function artifactPatchPath(input: {
+  spaceSlug: string;
+  signalSlug: string;
+}): string {
+  const slug = assertSafeSpaceSlug(input.spaceSlug);
+  const signalSlug = assertSafeSignalSlug(input.signalSlug);
+  return `${INTELLIGENCE_ROOT}/spaces/${slug}/_patches/${signalSlug}.json`;
+}
+
 /** True when pathname is under the space intelligence prefix and is a .md file (not manifest). */
 export function isAllowedIntelligenceMarkdownPath(
   spaceSlug: string,

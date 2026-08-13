@@ -3160,7 +3160,21 @@
       "success": "Vert",
       "error": "Rouge"
     },
-    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace"
+    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
+    "signalMemoryPatchBadge": "Modification mémoire en attente",
+    "signalMemoryPatchTitle": "Modification mémoire proposée",
+    "signalMemoryPatchSubtitle": "Approuver publie une nouvelle version d’intelligence. Rejeter laisse l’artefact actuel inchangé.",
+    "signalMemoryPatchTarget": "Cible",
+    "signalMemoryPatchBaseSha": "SHA de base",
+    "signalMemoryPatchSource": "App source",
+    "signalMemoryPatchLoading": "Chargement de la modification proposée…",
+    "signalMemoryPatchApprove": "Approuver",
+    "signalMemoryPatchReject": "Rejeter",
+    "signalMemoryPatchEditThenApprove": "Modifier puis approuver",
+    "signalMemoryPatchApproveEdited": "Approuver la version modifiée",
+    "signalMemoryPatchCancelEdit": "Annuler la modification",
+    "signalMemoryPatchEditLabel": "Markdown proposé",
+    "signalMemoryPatchMembersOnly": "Seuls les membres de l’espace peuvent approuver ou rejeter."
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",

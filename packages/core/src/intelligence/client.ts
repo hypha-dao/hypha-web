@@ -15,6 +15,10 @@ export type {
   IntelligenceStatus,
   IntelligenceArtifact,
 } from './types';
+export type {
+  IntelligenceArtifactPatch,
+  IntelligencePatchStatus,
+} from './patch-types';
 export { buildIntelligenceRelatedGraph } from './graph';
 export type {
   IntelligenceGraph,

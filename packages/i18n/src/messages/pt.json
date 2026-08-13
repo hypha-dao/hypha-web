@@ -3162,7 +3162,21 @@
       "success": "Verde",
       "error": "Vermelho"
     },
-    "spaceMemoryTimelineLabel": "Histórico da memória do espaço"
+    "spaceMemoryTimelineLabel": "Histórico da memória do espaço",
+    "signalMemoryPatchBadge": "Alteração de memória pendente",
+    "signalMemoryPatchTitle": "Alteração de memória proposta",
+    "signalMemoryPatchSubtitle": "Aprovar publica uma nova versão de intelligence. Rejeitar mantém o artefato atual.",
+    "signalMemoryPatchTarget": "Alvo",
+    "signalMemoryPatchBaseSha": "SHA base",
+    "signalMemoryPatchSource": "App de origem",
+    "signalMemoryPatchLoading": "A carregar alteração de memória proposta…",
+    "signalMemoryPatchApprove": "Aprovar",
+    "signalMemoryPatchReject": "Rejeitar",
+    "signalMemoryPatchEditThenApprove": "Editar e aprovar",
+    "signalMemoryPatchApproveEdited": "Aprovar editado",
+    "signalMemoryPatchCancelEdit": "Cancelar edição",
+    "signalMemoryPatchEditLabel": "Markdown proposto",
+    "signalMemoryPatchMembersOnly": "Apenas membros do space podem aprovar ou rejeitar."
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",

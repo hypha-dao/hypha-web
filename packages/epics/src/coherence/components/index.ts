@@ -25,6 +25,7 @@ export * from './signal-list-view';
 export * from './signal-task-card';
 export * from './signal-workflow-settings';
 export * from './signal-linked-calendar-events';
+export * from './signal-memory-patch-panel';
 export * from './signal-card-actions';
 export * from './signal-upvote-control';
 export * from './space-memory-section';

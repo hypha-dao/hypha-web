@@ -1,6 +1,6 @@
 # Space Intelligence & Documentation — Spec
 
-> **Status:** Frozen for Phase B. M1–M3 done; **M4** (MCP `memory.list` / `search` / `read`) in progress on `feat/org-memory`.  
+> **Status:** Frozen for Phase B. M1–M5 done; **M6** (MCP write tools) next on `feat/org-memory`.  
 > **Supersedes (for intelligence scope):** informal plans in chat; complements [space-memory-panel.md](./space-memory-panel.md) and [documents-and-media-overview.md](../architecture/documents-and-media-overview.md).  
 > **Related product docs:** Organizational Intelligence App Architecture (IBA ↔ Markdown MCP); Hypha Energy Org Memory Ontology (first pack).
 
@@ -93,6 +93,7 @@ intelligence/
 Stable "current" object key per artifact (e.g. `…/assessments/{id}.md`) plus immutable `_versions/…`. Optional later: `ecosystems/{id}/organizations/{id}/spaces/{slug}/…`.
 
 **Framework pack storage and authorization (before M7):**
+
 - `frameworks/{packId}/` contains **globally readable, read-only** pack template files and ontology definitions.
 - Packs are **not** copied into individual `spaces/{spaceSlug}/` paths; enabling a pack for a space grants members read access to `intelligence/frameworks/{packId}/**` and seeds template-based starter artifacts into the space's own prefix.
 - Pack templates are authored and published by platform maintainers or trusted pack publishers; space members have **read-only** access via MCP path grants (`intelligence/frameworks/{packId}/**` in addition to `intelligence/spaces/{spaceSlug}/**`).
@@ -124,11 +125,13 @@ Each entry (illustrative):
 **Atomicity and recovery protocol (before M1):**
 
 Write order and semantics:
+
 1. **Object write:** Upload the new/updated `.md` file to its stable or versioned path. Use bucket provider's idempotent write (PUT with same content overwrites safely).
 2. **Manifest update:** Read current `_manifest.json`, apply the update (add/update/remove entry), write back atomically using conditional write semantics where available (e.g., S3 `If-Match` with ETag, or optimistic version field).
 3. **Retry behavior:** On network/timeout failure between object and manifest write, retry the full operation idempotently. If the object exists with the expected SHA, skip re-upload; always attempt manifest reconciliation.
 
 Crash recovery and reconciliation:
+
 - **Unlisted immutable versions:** If `_versions/{artifactId}/{sha}.md` exists but is not referenced by any manifest entry, treat it as an orphaned backup; periodic repair jobs may list and index or prune based on age.
 - **Missing current object:** If a manifest entry points to a `path` that does not exist in the bucket, list/search operations **skip** that entry (log warning); repair jobs should either restore from `_versions/` or remove the stale manifest entry.
 - **Concurrency conflicts:** Manifest updates use read-modify-write with optimistic locking (retry loop on conflict); object writes are last-write-wins per key, protected by SHA validation at the application layer.
@@ -194,6 +197,7 @@ Packs may extend types; unknown pack types are allowed if declared by an enabled
 **Input:** Complete stored Markdown object as UTF-8 bytes, including YAML frontmatter delimiters (`---`), frontmatter body, and Markdown content body. No normalization of newlines or whitespace beyond what the editor/client writes to storage.
 
 **Responsibility:**
+
 - UI, MCP, and IBA clients **must** compute the SHA from the identical byte sequence returned by bucket read operations.
 - Server write operations (create/update) **must** return the resulting SHA in the response and persist it in `_manifest.json` and the frontmatter `sha` field (if stored).
 - Optimistic concurrency: update requests **must** include the client's known SHA; the server rejects writes if the current object SHA does not match the supplied base SHA.
@@ -214,12 +218,14 @@ Incoming signal (Coherence / IBA / AI)
 ```
 
 **Immutable versioning model:**
+
 - Each published version is written once and **never rewritten**. Frontmatter fields (`status`, `version`, etc.) in stored `.md` files reflect the state at creation time.
 - The `supersedes` field in a new version points immutably to the predecessor artifact ID (or `null` for initial versions).
 - **Current vs superseded determination:** Derived from manifest state. When a new version is published, the manifest entry for the prior version is updated to `"status": "superseded"` (or removed if only current versions are indexed), and the new version's entry is added with `"status": "current"`. The stored `.md` files themselves are not modified.
 - **Alternative model (not implemented in MVP):** An immutable `successor` field could be added to the prior version's stored frontmatter during publish; however, this conflicts with immutability unless versions are always stored separately in `_versions/` and the stable path object is ephemeral. For M1–M3, the manifest is the authoritative source of current/superseded status.
 
 Process:
+
 - AI / IBAs **propose** patches; they do not silently overwrite `status: current` without approval rules.
 - Human create/edit in Space Intelligence: members may publish directly in MVP, still **versioned** + SHA-checked.
 - Optimistic concurrency: updates require the client's known content SHA.
@@ -266,6 +272,7 @@ MCP tools call the **same `@hypha-platform/core` server functions** as HTTP/UI. 
 **Security-critical order:**
 
 1. **Path canonicalization and traversal rejection (BEFORE prefix validation):**
+
    - Server **must** canonicalize all caller-supplied paths (resolve `.`, `..`, symbolic links, redundant slashes) and reject any path that after canonicalization would escape the `intelligence/` root or cross space boundaries.
    - Reject paths containing `..`, absolute paths outside the intelligence prefix, or encoded traversal attempts (e.g., `%2e%2e`, URL-encoded slashes).
    - Only after canonicalization and traversal rejection, validate that the resolved path matches permitted prefixes.
@@ -275,16 +282,19 @@ MCP tools call the **same `@hypha-platform/core` server functions** as HTTP/UI. 
 3. **Authorized Space (membership):** User must be a member of the target space; `{slug}` in the path is validated against the user's memberships.
 
 4. **Permitted path prefixes:** After canonicalization, enforce allowed patterns:
+
    - Space artifacts: `intelligence/spaces/{slug}/**` where `{slug}` matches the authenticated user's authorized space.
    - Framework packs (read-only): `intelligence/frameworks/{packId}/**` if the space has enabled that pack.
 
 5. **Allowed file type:** `.md` only for Intelligence `memory.*` tools; reject other extensions.
 
 6. **`source_app` validation (writes only):**
+
    - Derive `source_app` from the authenticated installation ID or launch ticket (IBA architecture contract).
    - **Reject** caller-supplied `source_app` values that do not match the authenticated app identity; server assigns the canonical value based on the request's auth context.
 
 7. **Frontmatter validation (writes only):**
+
    - Server validates that `space`, `type`, and `id` in frontmatter match the request path and authorized scope.
    - Reject frontmatter values that conflict with server-derived constraints (e.g., `space` field does not match the `{slug}` in the path).
 
@@ -302,15 +312,15 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 
 ## 10. Delivery slices
 
-| Slice  | Scope                                                                                        | Exit criteria                                                                                 |
-| ------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **M1** | Bucket layout, core frontmatter validation, manifest, Intelligence **read/list** cards in UI | Member can open Memory and see Intelligence cards from seeded/sample files                    |
-| **M2** | Member create/update/version; Documentation section = current aggregation as **table**       | Round-trip create → version → list; Documentation table shows existing assets without preview |
-| **M3** | Graph from `linked_signals` (pack field; intelligence ↔ signals only)                        | Graph renders linked artifacts/signals for a space with sample edges                          |
+| Slice  | Scope                                                                                        | Exit criteria                                                                                                               |
+| ------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **M1** | Bucket layout, core frontmatter validation, manifest, Intelligence **read/list** cards in UI | Member can open Memory and see Intelligence cards from seeded/sample files                                                  |
+| **M2** | Member create/update/version; Documentation section = current aggregation as **table**       | Round-trip create → version → list; Documentation table shows existing assets without preview                               |
+| **M3** | Graph from `linked_signals` (pack field; intelligence ↔ signals only)                        | Graph renders linked artifacts/signals for a space with sample edges                                                        |
 | **M4** | MCP `list` / `search` / `read`                                                               | External client with space auth can list/read same files as UI — **done** (`memory.list` / `memory.search` / `memory.read`) |
-| **M5** | Signal detail approval → apply versioned patch                                               | Approve publishes new version; reject leaves current unchanged                                |
-| **M6** | MCP `create` / `update` / `delete` (propose or member-publish); app identity                 | IBA-shaped client can propose/update under path allowlist                                     |
-| **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space                                                |
+| **M5** | Signal detail approval → apply versioned patch                                               | Approve publishes new version; reject leaves current unchanged — **done** (blob `_patches/` + Signal detail panel)          |
+| **M6** | MCP `create` / `update` / `delete` (propose or member-publish); app identity                 | IBA-shaped client can propose/update under path allowlist                                                                   |
+| **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space                                                                              |
 
 **Phase B kickoff:** implement **M1 → M3** first; freeze further slices only after M3 demo.
 
@@ -333,13 +343,13 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 
 ## 12. Risks & mitigations
 
-| Risk                                      | Mitigation                                                                                   |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Risk                                      | Mitigation                                                                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Manifest drift vs objects                 | Atomicity protocol (§5.3): object write → manifest update with retry; reconciliation for orphaned versions and missing objects |
-| Large spaces / slow list                  | Manifest first; external search only if needed                                               |
-| Silent overwrites by two AIs              | Require content SHA; prefer propose → approve for app/AI writers                             |
-| Confusing Intelligence vs Documentation   | Distinct UI sections + copy; MEMORY docs explicitly Documentation                            |
-| Bucket vs GitHub expectations in IBA docs | Bucket is Hypha SOFT; MCP hides backend; SHA concurrency mirrors Git semantics               |
+| Large spaces / slow list                  | Manifest first; external search only if needed                                                                                 |
+| Silent overwrites by two AIs              | Require content SHA; prefer propose → approve for app/AI writers                                                               |
+| Confusing Intelligence vs Documentation   | Distinct UI sections + copy; MEMORY docs explicitly Documentation                                                              |
+| Bucket vs GitHub expectations in IBA docs | Bucket is Hypha SOFT; MCP hides backend; SHA concurrency mirrors Git semantics                                                 |
 
 ---
 

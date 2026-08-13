@@ -46,6 +46,8 @@ import {
 import { signalCardActiveClass } from '../utils/signal-active-styles';
 import { useParams, useRouter } from 'next/navigation';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
+import { SignalMemoryPatchPanel } from './signal-memory-patch-panel';
+import { useSignalIntelligencePatch } from '../hooks/use-signal-intelligence-patch';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -89,6 +91,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     spaceSlug: params.id ?? '',
     web3SpaceId: currentSpace?.web3SpaceId ?? undefined,
   });
+  const { patch: memoryPatch } = useSignalIntelligencePatch(
+    params.id ?? '',
+    slug,
+  );
+  const hasPendingMemoryPatch = memoryPatch?.status === 'pending';
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
@@ -310,6 +317,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
             <p className="truncate text-1 text-muted-foreground">
               <span>{typeLabel}</span>
+              {hasPendingMemoryPatch ? (
+                <>
+                  <span className="mx-1.5 text-border" aria-hidden>
+                    ·
+                  </span>
+                  <span className="text-accent-11">
+                    {t('signalMemoryPatchBadge')}
+                  </span>
+                </>
+              ) : null}
               {/* Priority stays on the left accent bar only — avoid duplicate status channel */}
               {hasPersonSlot ? (
                 <>
@@ -413,6 +430,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 <p className="whitespace-pre-wrap text-2 leading-relaxed text-foreground">
                   {plainDescription}
                 </p>
+                {hasPendingMemoryPatch && slug && params.id ? (
+                  <div className="mt-5">
+                    <SignalMemoryPatchPanel
+                      spaceSlug={params.id}
+                      signalSlug={slug}
+                    />
+                  </div>
+                ) : null}
               </div>
               <DialogFooter className="shrink-0 border-t border-border/60 px-6 py-4">
                 <Button

@@ -6,6 +6,7 @@ import {
 import { buildIntelligenceRelatedGraph } from '../graph';
 import {
   artifactCurrentPath,
+  artifactPatchPath,
   spaceManifestPath,
   spaceIntelligencePrefix,
 } from '../paths';
@@ -51,6 +52,12 @@ describe('intelligence paths', () => {
     ).toBe(
       'intelligence/spaces/belica-5-0/assessments/stakeholder-assessment-belica-2026-07.md',
     );
+    expect(
+      artifactPatchPath({
+        spaceSlug: 'belica-5-0',
+        signalSlug: 'inbox-item-1',
+      }),
+    ).toBe('intelligence/spaces/belica-5-0/_patches/inbox-item-1.json');
   });
 
   it('rejects unsafe slugs', () => {

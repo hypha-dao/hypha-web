@@ -1,4 +1,5 @@
 export * from './types';
+export * from './patch-types';
 export * from './paths';
 export * from './validation';
 export * from './content-sha';

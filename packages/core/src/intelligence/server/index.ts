@@ -15,6 +15,16 @@ export {
   type WriteIntelligenceResult,
 } from './write-intelligence';
 export {
+  getIntelligencePatchForSignal,
+  proposeIntelligencePatchForSignal,
+  approveIntelligencePatchForSignal,
+  rejectIntelligencePatchForSignal,
+  type GetIntelligencePatchInput,
+  type ProposeIntelligencePatchInput,
+  type ApproveIntelligencePatchInput,
+  type RejectIntelligencePatchInput,
+} from './patch-intelligence';
+export {
   readSpaceIntelligenceManifest,
   writeSpaceIntelligenceManifest,
 } from './manifest';

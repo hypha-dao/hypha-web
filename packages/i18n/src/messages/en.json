@@ -3732,7 +3732,21 @@
       "success": "Green",
       "error": "Red"
     },
-    "spaceMemoryTimelineLabel": "Space memory history"
+    "spaceMemoryTimelineLabel": "Space memory history",
+    "signalMemoryPatchBadge": "Memory change pending",
+    "signalMemoryPatchTitle": "Proposed memory change",
+    "signalMemoryPatchSubtitle": "Approve to publish a new intelligence version. Reject leaves the current artifact unchanged.",
+    "signalMemoryPatchTarget": "Target",
+    "signalMemoryPatchBaseSha": "Base SHA",
+    "signalMemoryPatchSource": "Source app",
+    "signalMemoryPatchLoading": "Loading proposed memory change…",
+    "signalMemoryPatchApprove": "Approve",
+    "signalMemoryPatchReject": "Reject",
+    "signalMemoryPatchEditThenApprove": "Edit then approve",
+    "signalMemoryPatchApproveEdited": "Approve edited",
+    "signalMemoryPatchCancelEdit": "Cancel edit",
+    "signalMemoryPatchEditLabel": "Proposed markdown",
+    "signalMemoryPatchMembersOnly": "Only space members can approve or reject."
   },
   "GlobalCallDock": {
     "callTitle": "Call - {count, plural, one {# member} other {# members}}",

@@ -68,6 +68,7 @@ import {
 } from '../constants';
 import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
 import { SignalLinkedCalendarEvents } from './signal-linked-calendar-events';
+import { SignalMemoryPatchPanel } from './signal-memory-patch-panel';
 import { buildScheduleFromSignalSearchParams } from '@hypha-platform/core/client';
 import { toLocalDueDateInputValue } from '../utils/signal-due-date';
 import { useCanManageSignal } from '../hooks/use-can-manage-signal';
@@ -1228,6 +1229,12 @@ export const CreateSignalForm = ({
                 lang={lang}
                 calendarPath={`/${lang}/dho/${spaceSlug}/calendar`}
                 scheduleFromSignalPath={scheduleFromSignalPath}
+              />
+            ) : null}
+            {mode === 'edit' && signalSlug && spaceSlug ? (
+              <SignalMemoryPatchPanel
+                spaceSlug={spaceSlug}
+                signalSlug={signalSlug}
               />
             ) : null}
             <section className="rounded-lg border border-border/70 bg-muted/10 p-4 dark:bg-muted/10 lg:p-6">
