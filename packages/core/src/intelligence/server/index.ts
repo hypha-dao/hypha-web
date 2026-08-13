@@ -38,6 +38,7 @@ export {
   type EnableIntelligencePackInput,
   type EnableIntelligencePackResult,
 } from './enable-pack';
+export { buildIntelligenceGraphForSpace } from './graph-intelligence';
 export {
   isIntelligenceBlobConfigured,
   IntelligenceBlobNotConfiguredError,

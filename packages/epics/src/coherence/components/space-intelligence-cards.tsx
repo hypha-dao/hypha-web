@@ -48,37 +48,43 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full"
         role="img"
-        aria-label="Space intelligence knowledge graph"
+        aria-label="Space intelligence knowledge graph (artifacts and signals)"
       >
         {graph.edges.map((edge) => {
           const from = positions.get(edge.from);
           const to = positions.get(edge.to);
           if (!from || !to) return null;
+          const proposed = edge.relation === 'proposed-patch';
           return (
             <line
-              key={`${edge.from}-${edge.to}`}
+              key={`${edge.relation}-${edge.from}-${edge.to}`}
               x1={from.x}
               y1={from.y}
               x2={to.x}
               y2={to.y}
-              className="stroke-accent-7"
-              strokeWidth={1.5}
+              className={proposed ? 'stroke-accent-8' : 'stroke-accent-7'}
+              strokeWidth={proposed ? 1 : 1.5}
+              strokeDasharray={proposed ? '4 3' : undefined}
             />
           );
         })}
         {nodes.map((node) => {
           const pos = positions.get(node.id);
           if (!pos) return null;
-          const missing = node.kind === 'related-missing';
+          const isSignal =
+            node.kind === 'signal' || node.kind === 'signal-missing';
+          const missing = node.kind === 'signal-missing';
           return (
             <g key={node.id}>
               <circle
                 cx={pos.x}
                 cy={pos.y}
-                r={missing ? 10 : 14}
+                r={isSignal ? 10 : 14}
                 className={
                   missing
                     ? 'fill-neutral-4 stroke-neutral-8'
+                    : isSignal
+                    ? 'fill-background stroke-accent-9'
                     : 'fill-accent-4 stroke-accent-9'
                 }
                 strokeWidth={1.5}

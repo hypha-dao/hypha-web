@@ -73,6 +73,8 @@ export type IntelligenceManifestEntry = {
   sha: string;
   version: number;
   updated_at: string;
+  /** Signal slugs that informed this artifact (pack field; graph edges). */
+  linked_signals?: string[];
 };
 
 export type IntelligenceManifest = {

@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  buildIntelligenceRelatedGraph,
+  buildIntelligenceSignalGraph,
   type IntelligenceGraph,
   type IntelligenceManifestEntry,
 } from '@hypha-platform/core/intelligence';
@@ -136,7 +136,7 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
   );
 
   const artifacts = data?.artifacts ?? [];
-  const graph = data?.graph ?? buildIntelligenceRelatedGraph(artifacts);
+  const graph = data?.graph ?? buildIntelligenceSignalGraph({ artifacts });
 
   return {
     artifacts,

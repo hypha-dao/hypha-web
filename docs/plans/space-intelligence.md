@@ -1,6 +1,6 @@
 # Space Intelligence & Documentation — Spec
 
-> **Status:** Frozen for Phase B. **M1–M7 done** on `feat/org-memory`.  
+> **Status:** Frozen for Phase B. **M1–M8 done** on `feat/org-memory`.  
 > **Supersedes (for intelligence scope):** informal plans in chat; complements [space-memory-panel.md](./space-memory-panel.md) and [documents-and-media-overview.md](../architecture/documents-and-media-overview.md).  
 > **Related product docs:** Organizational Intelligence App Architecture (IBA ↔ Markdown MCP); Hypha Energy Org Memory Ontology (first pack).
 
@@ -321,6 +321,7 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 | **M5** | Signal detail approval → apply versioned patch                                               | Approve publishes new version; reject leaves current unchanged — **done** (blob `_patches/` + Signal detail panel)                                  |
 | **M6** | MCP `create` / `update` / `delete` (propose or member-publish); app identity                 | IBA-shaped client can propose/update under path allowlist — **done** (`memory.create` / `memory.update` / `memory.delete` + `HYPHA_MCP_SOURCE_APP`) |
 | **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space — **done** (`hypha-energy` ART-01…08 + `memory.enable_pack`)                                         |
+| **M8** | Graph from `linked_signals` + pending patches (intelligence ↔ signals only)                  | Graph shows artifact–signal edges; `related` is not rendered — **done**                                                                             |
 
 **Phase B kickoff:** implement **M1 → M3** first; freeze further slices only after M3 demo.
 
@@ -333,7 +334,7 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 - [ ] Manifest (or equivalent bucket index) drives card list/filter by `type`.
 - [ ] Documentation lists non-intelligence assets as table rows without preview; Matrix/UploadThing behavior unchanged; existing MEMORY docs remain Documentation.
 - [ ] Versions are immutable; stored `.md` files are never rewritten; publish creates new version with `supersedes` field; manifest determines current/superseded status; conflict on SHA mismatch.
-- [ ] Graph shows only intelligence ↔ signal relationships.
+- [x] Graph shows only intelligence ↔ signal relationships.
 - [ ] Signal detail can approve a proposed patch that publishes a new version.
 - [ ] Any space member can approve (MVP).
 - [ ] MCP `memory.*` uses the same core APIs as the UI and enforces auth, space, path, `.md`, and `source_app`.

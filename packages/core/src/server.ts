@@ -70,6 +70,7 @@ export {
   INTELLIGENCE_STATUSES,
   intelligenceFrontmatterSchema,
   buildIntelligenceRelatedGraph,
+  buildIntelligenceSignalGraph,
   parseIntelligenceMarkdown,
   serializeIntelligenceMarkdown,
   contentSha,

@@ -4,8 +4,9 @@ import {
   findSpaceBySlug,
   listIntelligenceBySpaceSlug,
   writeIntelligenceBySpaceSlug,
-  buildIntelligenceRelatedGraph,
+  buildIntelligenceGraphForSpace,
 } from '@hypha-platform/core/server';
+import type { IntelligenceGraph } from '@hypha-platform/core/intelligence';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
@@ -69,7 +70,18 @@ export async function GET(
       return NextResponse.json({ error: listed.message }, { status: 403 });
     }
 
-    const graph = buildIntelligenceRelatedGraph(listed.artifacts);
+    let graph: IntelligenceGraph = { nodes: [], edges: [] };
+    try {
+      graph = await buildIntelligenceGraphForSpace(
+        {
+          spaceSlug,
+          artifacts: listed.artifacts,
+        },
+        { db },
+      );
+    } catch (graphError) {
+      console.error('GET intelligence graph', graphError);
+    }
     return NextResponse.json({
       space_slug: listed.space_slug,
       configured: listed.configured,

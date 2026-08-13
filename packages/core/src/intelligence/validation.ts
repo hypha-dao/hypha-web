@@ -87,6 +87,7 @@ const manifestEntrySchema = z.object({
   sha: z.string().trim().min(7),
   version: z.coerce.number().int().positive(),
   updated_at: isoDateSchema,
+  linked_signals: z.array(slugIdSchema).optional().default([]),
 });
 
 export const intelligenceManifestSchema = z.object({
@@ -132,5 +133,6 @@ export function manifestEntryFromFrontmatter(input: {
     sha,
     version: frontmatter.version,
     updated_at: frontmatter.updated_at,
+    linked_signals: frontmatter.linked_signals ?? [],
   };
 }

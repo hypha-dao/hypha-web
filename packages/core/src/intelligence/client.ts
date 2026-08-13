@@ -19,7 +19,10 @@ export type {
   IntelligenceArtifactPatch,
   IntelligencePatchStatus,
 } from './patch-types';
-export { buildIntelligenceRelatedGraph } from './graph';
+export {
+  buildIntelligenceRelatedGraph,
+  buildIntelligenceSignalGraph,
+} from './graph';
 export { HYPHA_ENERGY_PACK_ID } from './packs/ids';
 export type {
   IntelligenceGraph,

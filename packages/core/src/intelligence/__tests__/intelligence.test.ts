@@ -4,7 +4,7 @@ import {
   serializeIntelligenceMarkdown,
   stampIntelligenceSourceApp,
 } from '../parse-markdown';
-import { buildIntelligenceRelatedGraph } from '../graph';
+import { buildIntelligenceSignalGraph } from '../graph';
 import {
   artifactCurrentPath,
   artifactPatchPath,
@@ -158,8 +158,8 @@ body
   });
 });
 
-describe('buildIntelligenceRelatedGraph', () => {
-  it('links related artifacts and marks missing targets', () => {
+describe('buildIntelligenceSignalGraph', () => {
+  it('links artifacts to signals and ignores related ids', () => {
     const artifacts: IntelligenceManifestEntry[] = [
       {
         id: 'a',
@@ -168,7 +168,8 @@ describe('buildIntelligenceRelatedGraph', () => {
         space: 'demo',
         status: 'current',
         tags: [],
-        related: ['b', 'missing-x'],
+        related: ['b'],
+        linked_signals: ['inbox-item-1'],
         source_app: 'hypha',
         path: 'intelligence/spaces/demo/assessments/a.md',
         sha: 'abc1234',
@@ -190,11 +191,50 @@ describe('buildIntelligenceRelatedGraph', () => {
         updated_at: '2026-07-18',
       },
     ];
-    const graph = buildIntelligenceRelatedGraph(artifacts);
-    expect(graph.nodes).toHaveLength(3);
+    const graph = buildIntelligenceSignalGraph({
+      artifacts,
+      signals: [{ slug: 'inbox-item-1', title: 'Inbox item' }],
+      patches: [
+        {
+          signal_slug: 'inbox-item-1',
+          target_id: 'b',
+          status: 'pending',
+        },
+      ],
+    });
+    expect(graph.nodes.map((n) => n.kind).sort()).toEqual([
+      'artifact',
+      'artifact',
+      'signal',
+    ]);
     expect(graph.edges).toHaveLength(2);
-    expect(graph.nodes.find((n) => n.id === 'missing-x')?.kind).toBe(
-      'related-missing',
+    expect(graph.edges.some((e) => e.relation === 'linked-signal')).toBe(true);
+    expect(graph.edges.some((e) => e.relation === 'proposed-patch')).toBe(true);
+    expect(graph.nodes.some((n) => n.id === 'b')).toBe(true);
+  });
+
+  it('marks unknown signal slugs as missing', () => {
+    const graph = buildIntelligenceSignalGraph({
+      artifacts: [
+        {
+          id: 'a',
+          type: 'assessment',
+          title: 'A',
+          space: 'demo',
+          status: 'current',
+          tags: [],
+          related: [],
+          linked_signals: ['ghost-signal'],
+          source_app: 'hypha',
+          path: 'intelligence/spaces/demo/assessments/a.md',
+          sha: 'abc1234',
+          version: 1,
+          updated_at: '2026-07-18',
+        },
+      ],
+    });
+    expect(graph.nodes.find((n) => n.title === 'ghost-signal')?.kind).toBe(
+      'signal-missing',
     );
   });
 });
