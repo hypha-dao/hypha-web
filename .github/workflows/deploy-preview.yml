@@ -41,7 +41,8 @@ jobs:
         uses: ./.github/actions/detect-changes
 
   check-types:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    # Epics tsc is memory-heavy; use a larger runner and serialize package checks.
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
 
@@ -57,8 +58,8 @@ jobs:
 
       - name: Type check
         env:
-          NODE_OPTIONS: --max-old-space-size=8192
-        run: pnpm turbo run check-types --filter=web
+          NODE_OPTIONS: --max-old-space-size=12288
+        run: pnpm turbo run check-types --filter=web --concurrency=1
 
   i18n-verify:
     runs-on: blacksmith-4vcpu-ubuntu-2404
