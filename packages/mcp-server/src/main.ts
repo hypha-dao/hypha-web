@@ -1266,8 +1266,8 @@ server.registerTool(
       const summary = !outParse.data.configured
         ? `Space "${outParse.data.space_slug}": intelligence blob storage is not configured (set BLOB_READ_WRITE_TOKEN).`
         : outParse.data.found
-          ? `Read "${parsed.data.artifact_id}" (${outParse.data.path}).`
-          : `No intelligence artifact "${parsed.data.artifact_id}" in space "${outParse.data.space_slug}".`;
+        ? `Read "${parsed.data.artifact_id}" (${outParse.data.path}).`
+        : `No intelligence artifact "${parsed.data.artifact_id}" in space "${outParse.data.space_slug}".`;
 
       return {
         content: [{ type: 'text', text: summary }],
