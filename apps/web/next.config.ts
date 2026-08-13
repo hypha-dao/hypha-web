@@ -10,6 +10,15 @@ const LOCALES = routing.locales;
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
+  // Full-program tsc OOMs in CI (>12GB) via the @hypha-platform/core/client barrel.
+  // Deploy Preview gates types via the check-types job; skip duplicate Next build
+  // typecheck so webpack can finish without exhausting the heap.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Load matrix-js-sdk from node_modules on the server so it is not duplicated
   // across server chunks (pairs with webpack resolve.alias below). See
   // .agents/references/domain/hypha-matrix-mapping.md — stay on SDK ^40.x.

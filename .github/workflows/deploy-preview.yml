@@ -86,7 +86,7 @@ jobs:
     if: |
       (github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true') ||
       (github.event_name == 'workflow_dispatch' && inputs.force_preview_deploy == true)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     env:
       NEON_DATABASE_USERNAME: ${{ secrets.DB_USER_NAME }}
       NEON_DATABASE_NAME: ${{ secrets.DB_NAME }}
@@ -99,6 +99,8 @@ jobs:
       DEFAULT_DB_ANONYMOUS_URL: ${{ secrets.POSTGRES_ANONYMOUS_URL }}
       PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha || inputs.pr_number || github.run_id }}
       PREVIEW_ALIAS_SUFFIX: ${{ github.event.pull_request.number || inputs.pr_number || github.run_id }}
+      # Next build typechecks the full app graph; 6GB heap OOMs on this branch.
+      NODE_OPTIONS: --max-old-space-size=12288
 
     steps:
       - uses: actions/checkout@v4
