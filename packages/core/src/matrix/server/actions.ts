@@ -281,7 +281,7 @@ export async function ensureMemberJoinedRoomAction({
   // Prod-primary deployment puppeting a Preview-created account) — try every configured bot
   // token, not just the primary's, before giving up. Same fix as the legacy-rooms backfill
   // script's puppet-grant call (#2428, 2026-08-12) — same root cause, temporary bridge while
-  // Prod/Preview share one Postgres DB (#2252).
+  // Prod/Preview share one Postgres DB (#2252). Verified working in Preview 2026-08-13.
   const puppetCandidates = [botToken, ...getMatrixAdditionalBotAsTokens()];
   for (const token of puppetCandidates) {
     try {
