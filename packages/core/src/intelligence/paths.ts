@@ -4,12 +4,33 @@ import {
   type IntelligenceCoreType,
 } from './types';
 
-const SLUG_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const SPACE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** Linear slug check: lowercase alnum segments joined by single hyphens. */
+function isSafeSlug(value: string): boolean {
+  if (value.length === 0 || value.length > 200) return false;
+  let i = 0;
+  let sawSegment = false;
+  while (i < value.length) {
+    const start = i;
+    while (
+      i < value.length &&
+      ((value[i]! >= 'a' && value[i]! <= 'z') ||
+        (value[i]! >= '0' && value[i]! <= '9'))
+    ) {
+      i += 1;
+    }
+    if (i === start) return false;
+    sawSegment = true;
+    if (i === value.length) break;
+    if (value[i] !== '-') return false;
+    i += 1;
+    if (i === value.length) return false; // trailing hyphen
+  }
+  return sawSegment;
+}
 
 export function assertSafeSpaceSlug(spaceSlug: string): string {
   const slug = spaceSlug.trim();
-  if (!SPACE_SLUG_RE.test(slug)) {
+  if (!isSafeSlug(slug)) {
     throw new Error(`Invalid space slug for intelligence path: "${spaceSlug}"`);
   }
   return slug;
@@ -17,7 +38,7 @@ export function assertSafeSpaceSlug(spaceSlug: string): string {
 
 export function assertSafeArtifactId(id: string): string {
   const value = id.trim();
-  if (!SLUG_ID_RE.test(value) || value.startsWith('_')) {
+  if (!isSafeSlug(value) || value.startsWith('_')) {
     throw new Error(`Invalid intelligence artifact id: "${id}"`);
   }
   return value;
@@ -36,12 +57,33 @@ export function typeFolderFor(type: string): string {
   if (type in INTELLIGENCE_TYPE_FOLDERS) {
     return INTELLIGENCE_TYPE_FOLDERS[type as IntelligenceCoreType];
   }
-  // Pack-specific types land under assessments-style catch-all folder by type slug.
-  const safe = type
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  // Pack-specific types: linear sanitize (no quantified regex on user input).
+  const trimmed = type.trim().toLowerCase();
+  const chars: string[] = [];
+  let lastWasHyphen = false;
+  for (let i = 0; i < trimmed.length; i += 1) {
+    const ch = trimmed[i]!;
+    const ok =
+      (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch === '-';
+    if (ok) {
+      if (ch === '-') {
+        if (chars.length === 0 || lastWasHyphen) continue;
+        lastWasHyphen = true;
+        chars.push(ch);
+      } else {
+        lastWasHyphen = false;
+        chars.push(ch);
+      }
+    } else {
+      if (chars.length === 0 || lastWasHyphen) continue;
+      lastWasHyphen = true;
+      chars.push('-');
+    }
+  }
+  while (chars.length > 0 && chars[chars.length - 1] === '-') {
+    chars.pop();
+  }
+  const safe = chars.join('');
   return safe || 'assessments';
 }
 

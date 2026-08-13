@@ -78,6 +78,17 @@ describe('parseIntelligenceMarkdown', () => {
     expect(twice.frontmatter).toEqual(once.frontmatter);
     expect(twice.sha).toBe(once.sha);
   });
+
+  it('rejects executable ---js frontmatter fences', () => {
+    expect(() =>
+      parseIntelligenceMarkdown(`---js
+module.exports = { id: 'x' }
+---
+
+body
+`),
+    ).toThrow(/Unsupported frontmatter fence/);
+  });
 });
 
 describe('buildIntelligenceRelatedGraph', () => {
