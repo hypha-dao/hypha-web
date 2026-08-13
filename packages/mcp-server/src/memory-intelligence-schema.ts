@@ -84,3 +84,147 @@ export const memoryReadOutputSchema = z.object({
 });
 
 export type MemoryReadOutput = z.infer<typeof memoryReadOutputSchema>;
+
+const memoryMarkdownSchema = z
+  .string()
+  .min(1)
+  .max(400_000)
+  .describe(
+    'Full Markdown including YAML frontmatter (---). Must be a .md intelligence artifact.',
+  );
+
+const memoryPathSchema = z
+  .string()
+  .min(1)
+  .optional()
+  .describe(
+    'Optional object path. Must match intelligence/spaces/{slug}/{type-folder}/{id}.md',
+  );
+
+const memorySourceAppSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(200)
+  .optional()
+  .describe(
+    'Claimed source_app. Must match HYPHA_MCP_SOURCE_APP (or hypha-mcp when unset). Server stamps identity.',
+  );
+
+const memoryWriteOkSchema = z.object({
+  ok: z.literal(true),
+  space_slug: z.string(),
+  created: z.boolean(),
+  path: z.string(),
+  sha: z.string(),
+  source_app: z.string(),
+  frontmatter: z.record(z.unknown()),
+});
+
+const memoryWriteFailSchema = z.object({
+  ok: z.literal(false),
+  error: z.string(),
+  current_sha: z.string().optional(),
+});
+
+export const memoryCreateInputSchema = z.object({
+  space_slug: spaceSlugSchema,
+  markdown: memoryMarkdownSchema,
+  path: memoryPathSchema,
+  mode: z
+    .enum(['draft', 'publish'])
+    .optional()
+    .default('draft')
+    .describe(
+      'draft writes status=draft; publish writes a member-published current version. IBAs should use draft.',
+    ),
+  source_app: memorySourceAppSchema,
+});
+
+export type MemoryCreateInput = z.infer<typeof memoryCreateInputSchema>;
+
+export const memoryCreateOutputSchema = z.union([
+  memoryWriteOkSchema,
+  memoryWriteFailSchema,
+]);
+
+export type MemoryCreateOutput = z.infer<typeof memoryCreateOutputSchema>;
+
+export const memoryUpdateInputSchema = z.object({
+  space_slug: spaceSlugSchema,
+  markdown: memoryMarkdownSchema,
+  expected_sha: z
+    .string()
+    .trim()
+    .min(7)
+    .max(64)
+    .describe('SHA-256 of the current artifact (optimistic concurrency).'),
+  mode: z
+    .enum(['propose', 'publish'])
+    .optional()
+    .default('propose')
+    .describe(
+      'propose stores a pending patch on a signal (IBA/AI default). publish versions immediately (space member).',
+    ),
+  signal_slug: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe('Required when mode=propose. Members approve on Signal detail.'),
+  path: memoryPathSchema,
+  source_app: memorySourceAppSchema,
+  title: z.string().trim().min(1).max(500).optional(),
+});
+
+export type MemoryUpdateInput = z.infer<typeof memoryUpdateInputSchema>;
+
+export const memoryUpdateOutputSchema = z.union([
+  memoryWriteOkSchema.extend({ mode: z.literal('publish') }),
+  z.object({
+    ok: z.literal(true),
+    mode: z.literal('propose'),
+    space_slug: z.string(),
+    signal_slug: z.string(),
+    target_id: z.string(),
+    patch_status: z.string(),
+    source_app: z.string(),
+  }),
+  memoryWriteFailSchema,
+]);
+
+export type MemoryUpdateOutput = z.infer<typeof memoryUpdateOutputSchema>;
+
+export const memoryDeleteInputSchema = z.object({
+  space_slug: spaceSlugSchema,
+  artifact_id: z
+    .string()
+    .min(1)
+    .describe('Intelligence artifact slug-id (manifest `id`).'),
+  expected_sha: z
+    .string()
+    .trim()
+    .min(7)
+    .max(64)
+    .describe('SHA-256 of the current artifact (optimistic concurrency).'),
+  hard: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Hard delete is rejected in MVP; leave false for soft archive.'),
+});
+
+export type MemoryDeleteInput = z.infer<typeof memoryDeleteInputSchema>;
+
+export const memoryDeleteOutputSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    space_slug: z.string(),
+    artifact_id: z.string(),
+    archived: z.literal(true),
+    sha: z.string(),
+  }),
+  memoryWriteFailSchema,
+]);
+
+export type MemoryDeleteOutput = z.infer<typeof memoryDeleteOutputSchema>;

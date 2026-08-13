@@ -110,6 +110,18 @@ export function parseIntelligenceMarkdown(
   };
 }
 
+/** Overwrite frontmatter `source_app` and re-canonicalize (new SHA). */
+export function stampIntelligenceSourceApp(
+  raw: string,
+  sourceApp: string,
+): string {
+  const parsed = parseIntelligenceMarkdown(raw);
+  return serializeIntelligenceMarkdown({
+    frontmatter: { ...parsed.frontmatter, source_app: sourceApp },
+    body: parsed.body,
+  });
+}
+
 export function serializeIntelligenceMarkdown(input: {
   frontmatter: ParsedIntelligenceFrontmatter;
   body: string;

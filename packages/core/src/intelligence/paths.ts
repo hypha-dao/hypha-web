@@ -126,6 +126,25 @@ export function artifactPatchPath(input: {
   return `${INTELLIGENCE_ROOT}/spaces/${slug}/_patches/${signalSlug}.json`;
 }
 
+function looksLikePathTraversal(pathname: string): boolean {
+  const lower = pathname.toLowerCase();
+  return (
+    pathname.includes('..') ||
+    lower.includes('%2e') ||
+    lower.includes('%2f') ||
+    lower.includes('%5c')
+  );
+}
+
+/** Normalize caller path: trim, forward slashes, strip a single leading slash. */
+export function canonicalizeIntelligencePath(pathname: string): string {
+  let value = pathname.trim().replace(/\\/g, '/');
+  while (value.startsWith('/')) {
+    value = value.slice(1);
+  }
+  return value;
+}
+
 /** True when pathname is under the space intelligence prefix and is a .md file (not manifest). */
 export function isAllowedIntelligenceMarkdownPath(
   spaceSlug: string,
@@ -135,7 +154,48 @@ export function isAllowedIntelligenceMarkdownPath(
   if (!pathname.startsWith(prefix)) return false;
   if (pathname === spaceManifestPath(spaceSlug)) return false;
   if (!pathname.endsWith('.md')) return false;
-  // Disallow path traversal segments
-  if (pathname.includes('..')) return false;
+  if (looksLikePathTraversal(pathname)) return false;
   return true;
+}
+
+/**
+ * Intelligence writes derive the object key from space + type + id.
+ * If the caller supplies a path, it must match that key and stay a `.md` under
+ * the space prefix.
+ */
+export function matchCallerIntelligencePath(input: {
+  spaceSlug: string;
+  type: string;
+  id: string;
+  callerPath?: string;
+}): { ok: true; path: string } | { ok: false; message: string } {
+  const expected = artifactCurrentPath({
+    spaceSlug: input.spaceSlug,
+    type: input.type,
+    id: input.id,
+  });
+  const raw = input.callerPath?.trim();
+  if (!raw) {
+    return { ok: true, path: expected };
+  }
+  if (looksLikePathTraversal(raw)) {
+    return { ok: false, message: 'Path traversal is not allowed.' };
+  }
+  const caller = canonicalizeIntelligencePath(raw);
+  if (!caller.endsWith('.md')) {
+    return {
+      ok: false,
+      message: 'Intelligence writes must target a .md path.',
+    };
+  }
+  if (
+    !isAllowedIntelligenceMarkdownPath(input.spaceSlug, caller) ||
+    caller !== expected
+  ) {
+    return {
+      ok: false,
+      message: `Path must be "${expected}" (space prefix + type folder + id.md).`,
+    };
+  }
+  return { ok: true, path: expected };
 }

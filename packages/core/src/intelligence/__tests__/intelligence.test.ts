@@ -2,14 +2,21 @@ import { describe, expect, it } from 'vitest';
 import {
   parseIntelligenceMarkdown,
   serializeIntelligenceMarkdown,
+  stampIntelligenceSourceApp,
 } from '../parse-markdown';
 import { buildIntelligenceRelatedGraph } from '../graph';
 import {
   artifactCurrentPath,
   artifactPatchPath,
+  matchCallerIntelligencePath,
   spaceManifestPath,
   spaceIntelligencePrefix,
 } from '../paths';
+import {
+  INTELLIGENCE_MARKDOWN_MAX_BYTES,
+  assertIntelligenceMarkdownSize,
+  resolveCanonicalSourceApp,
+} from '../app-identity';
 import type { IntelligenceManifestEntry } from '../types';
 
 const SAMPLE = `---
@@ -62,6 +69,50 @@ describe('intelligence paths', () => {
 
   it('rejects unsafe slugs', () => {
     expect(() => spaceIntelligencePrefix('../etc')).toThrow();
+  });
+
+  it('accepts matching caller .md paths and rejects traversal', () => {
+    expect(
+      matchCallerIntelligencePath({
+        spaceSlug: 'belica-5-0',
+        type: 'assessment',
+        id: 'stakeholder-assessment-belica-2026-07',
+      }).ok,
+    ).toBe(true);
+    expect(
+      matchCallerIntelligencePath({
+        spaceSlug: 'belica-5-0',
+        type: 'assessment',
+        id: 'stakeholder-assessment-belica-2026-07',
+        callerPath:
+          'intelligence/spaces/belica-5-0/assessments/stakeholder-assessment-belica-2026-07.md',
+      }).ok,
+    ).toBe(true);
+    expect(
+      matchCallerIntelligencePath({
+        spaceSlug: 'belica-5-0',
+        type: 'assessment',
+        id: 'stakeholder-assessment-belica-2026-07',
+        callerPath: 'intelligence/spaces/other/assessments/x.md',
+      }).ok,
+    ).toBe(false);
+    expect(
+      matchCallerIntelligencePath({
+        spaceSlug: 'belica-5-0',
+        type: 'assessment',
+        id: 'stakeholder-assessment-belica-2026-07',
+        callerPath: 'intelligence/spaces/belica-5-0/../etc/passwd.md',
+      }).ok,
+    ).toBe(false);
+    expect(
+      matchCallerIntelligencePath({
+        spaceSlug: 'belica-5-0',
+        type: 'assessment',
+        id: 'stakeholder-assessment-belica-2026-07',
+        callerPath:
+          'intelligence/spaces/belica-5-0/assessments/stakeholder-assessment-belica-2026-07.json',
+      }).ok,
+    ).toBe(false);
   });
 });
 
@@ -136,5 +187,61 @@ describe('buildIntelligenceRelatedGraph', () => {
     expect(graph.nodes.find((n) => n.id === 'missing-x')?.kind).toBe(
       'related-missing',
     );
+  });
+});
+
+describe('resolveCanonicalSourceApp', () => {
+  it('stamps configured identity and rejects a mismatched claim', () => {
+    expect(
+      resolveCanonicalSourceApp({
+        configured: 'stakeholder-protocol',
+        fallback: 'hypha-mcp',
+      }),
+    ).toEqual({ ok: true, source_app: 'stakeholder-protocol' });
+    expect(
+      resolveCanonicalSourceApp({
+        claimed: 'stakeholder-protocol',
+        configured: 'stakeholder-protocol',
+        fallback: 'hypha-mcp',
+      }),
+    ).toEqual({ ok: true, source_app: 'stakeholder-protocol' });
+    expect(
+      resolveCanonicalSourceApp({
+        claimed: 'evil-app',
+        configured: 'stakeholder-protocol',
+        fallback: 'hypha-mcp',
+      }).ok,
+    ).toBe(false);
+  });
+
+  it('uses fallback when no installation identity is configured', () => {
+    expect(
+      resolveCanonicalSourceApp({
+        fallback: 'hypha-mcp',
+      }),
+    ).toEqual({ ok: true, source_app: 'hypha-mcp' });
+    expect(
+      resolveCanonicalSourceApp({
+        claimed: 'other-app',
+        fallback: 'hypha-mcp',
+      }).ok,
+    ).toBe(false);
+  });
+});
+
+describe('stampIntelligenceSourceApp', () => {
+  it('overwrites source_app and changes the content SHA', () => {
+    const stamped = stampIntelligenceSourceApp(SAMPLE, 'hypha-mcp');
+    const parsed = parseIntelligenceMarkdown(stamped);
+    expect(parsed.frontmatter.source_app).toBe('hypha-mcp');
+    expect(parsed.sha).not.toBe(parseIntelligenceMarkdown(SAMPLE).sha);
+  });
+});
+
+describe('assertIntelligenceMarkdownSize', () => {
+  it('rejects payloads over the byte cap', () => {
+    expect(() => assertIntelligenceMarkdownSize(SAMPLE)).not.toThrow();
+    const oversized = 'x'.repeat(INTELLIGENCE_MARKDOWN_MAX_BYTES + 1);
+    expect(() => assertIntelligenceMarkdownSize(oversized)).toThrow(/exceeds/);
   });
 });

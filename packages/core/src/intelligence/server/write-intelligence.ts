@@ -4,19 +4,26 @@ import type { DatabaseInstance } from '../../common/server/types';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
-import type { IntelligenceArtifact, IntelligenceFrontmatter } from '../types';
+import type {
+  IntelligenceArtifact,
+  IntelligenceFrontmatter,
+  IntelligenceStatus,
+} from '../types';
 import {
   assertSafeSpaceSlug,
   artifactCurrentPath,
   artifactVersionPath,
   isAllowedIntelligenceMarkdownPath,
+  matchCallerIntelligencePath,
 } from '../paths';
 import {
   parseIntelligenceMarkdown,
   serializeIntelligenceMarkdown,
+  stampIntelligenceSourceApp,
+  type ParsedIntelligenceMarkdown,
 } from '../parse-markdown';
-import { contentSha } from '../content-sha';
 import { parseIntelligenceFrontmatter } from '../validation';
+import { assertIntelligenceMarkdownSize } from '../app-identity';
 import {
   readSpaceIntelligenceManifest,
   upsertManifestEntry,
@@ -44,6 +51,18 @@ export type WriteIntelligenceInput = {
   expectedSha?: string;
   source_app?: string;
   authToken?: string;
+  /** Fail if the artifact already exists (MCP memory.create). */
+  createOnly?: boolean;
+  /** Fail if the artifact does not exist (MCP memory.update publish). */
+  updateOnly?: boolean;
+  /** Server-assigned app identity; stamped onto frontmatter when set. */
+  canonicalSourceApp?: string;
+  /** Optional caller path; must match the derived `.md` key. */
+  callerPath?: string;
+  /** Force frontmatter status (e.g. draft create). */
+  forceStatus?: IntelligenceStatus;
+  /** If the incoming status is draft, promote to current (member publish). */
+  promoteDraft?: boolean;
 };
 
 export type WriteIntelligenceResult =
@@ -146,11 +165,71 @@ export async function writeIntelligenceBySpaceSlug(
     };
   }
 
-  let parsed = parseIntelligenceMarkdown(raw);
+  try {
+    assertIntelligenceMarkdownSize(raw);
+  } catch (error) {
+    return {
+      access: 'denied',
+      message:
+        error instanceof Error ? error.message : 'Markdown is too large.',
+      space_slug: spaceSlug,
+    };
+  }
+
+  if (input.canonicalSourceApp) {
+    try {
+      raw = stampIntelligenceSourceApp(raw, input.canonicalSourceApp);
+    } catch {
+      return {
+        access: 'denied',
+        message: 'Markdown is not valid intelligence frontmatter + body.',
+        space_slug: spaceSlug,
+      };
+    }
+  }
+
+  let parsed: ParsedIntelligenceMarkdown;
+  try {
+    parsed = parseIntelligenceMarkdown(raw);
+  } catch {
+    return {
+      access: 'denied',
+      message: 'Markdown is not valid intelligence frontmatter + body.',
+      space_slug: spaceSlug,
+    };
+  }
   if (parsed.frontmatter.space !== spaceSlug) {
     return {
       access: 'denied',
       message: `Frontmatter space "${parsed.frontmatter.space}" does not match path space "${spaceSlug}".`,
+      space_slug: spaceSlug,
+    };
+  }
+
+  if (input.forceStatus && parsed.frontmatter.status !== input.forceStatus) {
+    raw = serializeIntelligenceMarkdown({
+      frontmatter: { ...parsed.frontmatter, status: input.forceStatus },
+      body: parsed.body,
+    });
+    parsed = parseIntelligenceMarkdown(raw);
+  } else if (input.promoteDraft && parsed.frontmatter.status === 'draft') {
+    raw = serializeIntelligenceMarkdown({
+      frontmatter: { ...parsed.frontmatter, status: 'current' },
+      body: parsed.body,
+    });
+    parsed = parseIntelligenceMarkdown(raw);
+  }
+
+  const pathMatch = matchCallerIntelligencePath({
+    spaceSlug,
+    type: parsed.frontmatter.type,
+    id: parsed.frontmatter.id,
+    callerPath: input.callerPath,
+  });
+  if (!pathMatch.ok) {
+    return {
+      access: 'denied',
+      message: pathMatch.message,
       space_slug: spaceSlug,
     };
   }
@@ -160,6 +239,22 @@ export async function writeIntelligenceBySpaceSlug(
     (a) => a.id === parsed.frontmatter.id,
   );
   const created = !existing;
+
+  if (input.createOnly && existing) {
+    return {
+      access: 'conflict',
+      message: `Artifact "${parsed.frontmatter.id}" already exists; use memory.update.`,
+      space_slug: spaceSlug,
+      currentSha: existing.sha,
+    };
+  }
+  if (input.updateOnly && !existing) {
+    return {
+      access: 'denied',
+      message: `Artifact "${parsed.frontmatter.id}" was not found; use memory.create.`,
+      space_slug: spaceSlug,
+    };
+  }
 
   if (existing) {
     if (!input.expectedSha) {
@@ -194,11 +289,7 @@ export async function writeIntelligenceBySpaceSlug(
     parsed = parseIntelligenceMarkdown(raw);
   }
 
-  const path = artifactCurrentPath({
-    spaceSlug,
-    type: parsed.frontmatter.type,
-    id: parsed.frontmatter.id,
-  });
+  const path = pathMatch.path;
   if (!isAllowedIntelligenceMarkdownPath(spaceSlug, path)) {
     return {
       access: 'denied',

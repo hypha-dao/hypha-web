@@ -1,6 +1,6 @@
 # Space Intelligence & Documentation — Spec
 
-> **Status:** Frozen for Phase B. M1–M5 done; **M6** (MCP write tools) next on `feat/org-memory`.  
+> **Status:** Frozen for Phase B. M1–M6 done; **M7** (Energy pack templates) next on `feat/org-memory`.  
 > **Supersedes (for intelligence scope):** informal plans in chat; complements [space-memory-panel.md](./space-memory-panel.md) and [documents-and-media-overview.md](../architecture/documents-and-media-overview.md).  
 > **Related product docs:** Organizational Intelligence App Architecture (IBA ↔ Markdown MCP); Hypha Energy Org Memory Ontology (first pack).
 
@@ -312,15 +312,15 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 
 ## 10. Delivery slices
 
-| Slice  | Scope                                                                                        | Exit criteria                                                                                                               |
-| ------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **M1** | Bucket layout, core frontmatter validation, manifest, Intelligence **read/list** cards in UI | Member can open Memory and see Intelligence cards from seeded/sample files                                                  |
-| **M2** | Member create/update/version; Documentation section = current aggregation as **table**       | Round-trip create → version → list; Documentation table shows existing assets without preview                               |
-| **M3** | Graph from `linked_signals` (pack field; intelligence ↔ signals only)                        | Graph renders linked artifacts/signals for a space with sample edges                                                        |
-| **M4** | MCP `list` / `search` / `read`                                                               | External client with space auth can list/read same files as UI — **done** (`memory.list` / `memory.search` / `memory.read`) |
-| **M5** | Signal detail approval → apply versioned patch                                               | Approve publishes new version; reject leaves current unchanged — **done** (blob `_patches/` + Signal detail panel)          |
-| **M6** | MCP `create` / `update` / `delete` (propose or member-publish); app identity                 | IBA-shaped client can propose/update under path allowlist                                                                   |
-| **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space                                                                              |
+| Slice  | Scope                                                                                        | Exit criteria                                                                                                                                       |
+| ------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M1** | Bucket layout, core frontmatter validation, manifest, Intelligence **read/list** cards in UI | Member can open Memory and see Intelligence cards from seeded/sample files                                                                          |
+| **M2** | Member create/update/version; Documentation section = current aggregation as **table**       | Round-trip create → version → list; Documentation table shows existing assets without preview                                                       |
+| **M3** | Graph from `linked_signals` (pack field; intelligence ↔ signals only)                        | Graph renders linked artifacts/signals for a space with sample edges                                                                                |
+| **M4** | MCP `list` / `search` / `read`                                                               | External client with space auth can list/read same files as UI — **done** (`memory.list` / `memory.search` / `memory.read`)                         |
+| **M5** | Signal detail approval → apply versioned patch                                               | Approve publishes new version; reject leaves current unchanged — **done** (blob `_patches/` + Signal detail panel)                                  |
+| **M6** | MCP `create` / `update` / `delete` (propose or member-publish); app identity                 | IBA-shaped client can propose/update under path allowlist — **done** (`memory.create` / `memory.update` / `memory.delete` + `HYPHA_MCP_SOURCE_APP`) |
+| **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space                                                                                                      |
 
 **Phase B kickoff:** implement **M1 → M3** first; freeze further slices only after M3 demo.
 

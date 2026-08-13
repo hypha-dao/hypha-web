@@ -22,6 +22,10 @@ import {
   sendHumanChatMessageForSpace,
   listIntelligenceBySpaceSlug,
   readIntelligenceBySpaceSlug,
+  writeIntelligenceBySpaceSlug,
+  deleteIntelligenceBySpaceSlug,
+  proposeIntelligencePatchForSignal,
+  parseIntelligenceMarkdown,
 } from '@hypha-platform/core/server';
 import {
   createSpaceSignalBySlugInputSchema,
@@ -62,7 +66,14 @@ import {
   memorySearchOutputSchema,
   memoryReadInputSchema,
   memoryReadOutputSchema,
+  memoryCreateInputSchema,
+  memoryCreateOutputSchema,
+  memoryUpdateInputSchema,
+  memoryUpdateOutputSchema,
+  memoryDeleteInputSchema,
+  memoryDeleteOutputSchema,
 } from './memory-intelligence-schema.js';
+import { mcpAuthToken, resolveMcpSourceApp } from './memory-write-identity.js';
 import {
   summarizeSpaceDiscussionInputSchema,
   summarizeSpaceDiscussionOutputSchema,
@@ -111,7 +122,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; Space Intelligence via memory.list / memory.search / memory.read (Markdown artifacts in the intelligence bucket); documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); organisational guidance via get_network_ecosystem_patterns and propose_organisation_blueprint (learns from network ecosystems); create signals in space; create_human_chat_message to post in Human Chat on behalf of the member; proposal_guidance, get_proposal_form_state, and prepare_governance_proposal for one-field-at-a-time governance proposal hand-holding; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; Space Intelligence via memory.list / memory.search / memory.read / memory.create / memory.update / memory.delete (Markdown artifacts in the intelligence bucket); documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -1278,6 +1289,395 @@ server.registerTool(
       return {
         content: [
           { type: 'text', text: 'Internal error while reading intelligence' },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'memory.create',
+  {
+    description:
+      'Write: create a new Space Intelligence Markdown artifact under intelligence/spaces/{slug}/. IBAs should use mode=draft. mode=publish is for space members. source_app is stamped from HYPHA_MCP_SOURCE_APP (fallback hypha-mcp). Same core write API as POST /api/v1/spaces/{slug}/intelligence. Distinct from Documentation uploads.',
+    inputSchema: memoryCreateInputSchema,
+    outputSchema: memoryCreateOutputSchema,
+  },
+  async (args) => {
+    const parsed = memoryCreateInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    const identity = resolveMcpSourceApp(parsed.data.source_app);
+    if (!identity.ok) {
+      return {
+        content: [{ type: 'text', text: identity.message }],
+        isError: true,
+      };
+    }
+
+    try {
+      const result = await writeIntelligenceBySpaceSlug(
+        {
+          spaceSlug: parsed.data.space_slug,
+          markdown: parsed.data.markdown,
+          authToken: mcpAuthToken(),
+          createOnly: true,
+          canonicalSourceApp: identity.source_app,
+          callerPath: parsed.data.path,
+          forceStatus: parsed.data.mode === 'draft' ? 'draft' : undefined,
+          promoteDraft: parsed.data.mode === 'publish',
+        },
+        { db },
+      );
+
+      if (result.access !== 'ok') {
+        const fail = {
+          ok: false as const,
+          error: result.message,
+          ...(result.access === 'conflict' && result.currentSha
+            ? { current_sha: result.currentSha }
+            : {}),
+        };
+        const outParse = memoryCreateOutputSchema.safeParse(fail);
+        return {
+          content: [{ type: 'text', text: result.message }],
+          structuredContent: outParse.success ? outParse.data : fail,
+          isError: true,
+        };
+      }
+
+      const structured = {
+        ok: true as const,
+        space_slug: parsed.data.space_slug,
+        created: result.created,
+        path: result.artifact.path,
+        sha: result.artifact.sha,
+        source_app: result.artifact.frontmatter.source_app,
+        frontmatter: result.artifact.frontmatter,
+      };
+      const outParse = memoryCreateOutputSchema.safeParse(structured);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Created "${result.artifact.frontmatter.id}" at ${
+              result.artifact.path
+            } (${result.artifact.sha.slice(0, 12)}…).`,
+          },
+        ],
+        structuredContent: outParse.data,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:memory.create] failed', err);
+      return {
+        content: [
+          { type: 'text', text: 'Internal error while creating intelligence' },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'memory.update',
+  {
+    description:
+      'Write: update a Space Intelligence artifact. IBA/AI default mode=propose (stores a pending patch on signal_slug; members approve on Signal detail). mode=publish versions immediately (SHA-checked). source_app is stamped from HYPHA_MCP_SOURCE_APP.',
+    inputSchema: memoryUpdateInputSchema,
+    outputSchema: memoryUpdateOutputSchema,
+  },
+  async (args) => {
+    const parsed = memoryUpdateInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    const identity = resolveMcpSourceApp(parsed.data.source_app);
+    if (!identity.ok) {
+      return {
+        content: [{ type: 'text', text: identity.message }],
+        isError: true,
+      };
+    }
+
+    const mode = parsed.data.mode ?? 'propose';
+
+    try {
+      if (mode === 'propose') {
+        if (!parsed.data.signal_slug?.trim()) {
+          const fail = {
+            ok: false as const,
+            error:
+              'mode=propose requires signal_slug. Create a signal first (create_space_signal_by_slug), then members approve on Signal detail.',
+          };
+          return {
+            content: [{ type: 'text', text: fail.error }],
+            structuredContent: fail,
+            isError: true,
+          };
+        }
+
+        let targetId: string;
+        try {
+          targetId = parseIntelligenceMarkdown(parsed.data.markdown).frontmatter
+            .id;
+        } catch {
+          const fail = {
+            ok: false as const,
+            error:
+              'Proposed markdown is not valid intelligence frontmatter + body.',
+          };
+          return {
+            content: [{ type: 'text', text: fail.error }],
+            structuredContent: fail,
+            isError: true,
+          };
+        }
+
+        const result = await proposeIntelligencePatchForSignal(
+          {
+            spaceSlug: parsed.data.space_slug,
+            signalSlug: parsed.data.signal_slug,
+            targetId,
+            expectedSha: parsed.data.expected_sha,
+            markdown: parsed.data.markdown,
+            source_app: identity.source_app,
+            title: parsed.data.title,
+            authToken: mcpAuthToken(),
+            canonicalSourceApp: identity.source_app,
+            callerPath: parsed.data.path,
+          },
+          { db },
+        );
+
+        if (result.access !== 'ok') {
+          const fail = {
+            ok: false as const,
+            error: result.message,
+            ...(result.access === 'conflict' && result.currentSha
+              ? { current_sha: result.currentSha }
+              : {}),
+          };
+          return {
+            content: [{ type: 'text', text: result.message }],
+            structuredContent: fail,
+            isError: true,
+          };
+        }
+
+        const structured = {
+          ok: true as const,
+          mode: 'propose' as const,
+          space_slug: result.space_slug,
+          signal_slug: result.patch.signal_slug,
+          target_id: result.patch.target_id,
+          patch_status: result.patch.status,
+          source_app: result.patch.source_app,
+        };
+        const outParse = memoryUpdateOutputSchema.safeParse(structured);
+        if (!outParse.success) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Internal error: output validation failed: ${outParse.error.message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Proposed patch for "${result.patch.target_id}" on signal "${result.patch.signal_slug}" (pending member approval).`,
+            },
+          ],
+          structuredContent: outParse.data,
+        };
+      }
+
+      const result = await writeIntelligenceBySpaceSlug(
+        {
+          spaceSlug: parsed.data.space_slug,
+          markdown: parsed.data.markdown,
+          expectedSha: parsed.data.expected_sha,
+          authToken: mcpAuthToken(),
+          updateOnly: true,
+          canonicalSourceApp: identity.source_app,
+          callerPath: parsed.data.path,
+          promoteDraft: true,
+        },
+        { db },
+      );
+
+      if (result.access !== 'ok') {
+        const fail = {
+          ok: false as const,
+          error: result.message,
+          ...(result.access === 'conflict' && result.currentSha
+            ? { current_sha: result.currentSha }
+            : {}),
+        };
+        return {
+          content: [{ type: 'text', text: result.message }],
+          structuredContent: fail,
+          isError: true,
+        };
+      }
+
+      const structured = {
+        ok: true as const,
+        mode: 'publish' as const,
+        space_slug: parsed.data.space_slug,
+        created: result.created,
+        path: result.artifact.path,
+        sha: result.artifact.sha,
+        source_app: result.artifact.frontmatter.source_app,
+        frontmatter: result.artifact.frontmatter,
+      };
+      const outParse = memoryUpdateOutputSchema.safeParse(structured);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Published "${
+              result.artifact.frontmatter.id
+            }" (${result.artifact.sha.slice(0, 12)}…).`,
+          },
+        ],
+        structuredContent: outParse.data,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:memory.update] failed', err);
+      return {
+        content: [
+          { type: 'text', text: 'Internal error while updating intelligence' },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'memory.delete',
+  {
+    description:
+      'Write: soft-archive a Space Intelligence artifact (manifest status=archived). Stored .md versions are not rewritten. Hard delete is rejected. Requires expected_sha.',
+    inputSchema: memoryDeleteInputSchema,
+    outputSchema: memoryDeleteOutputSchema,
+    annotations: {
+      destructiveHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = memoryDeleteInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const result = await deleteIntelligenceBySpaceSlug(
+        {
+          spaceSlug: parsed.data.space_slug,
+          artifactId: parsed.data.artifact_id,
+          expectedSha: parsed.data.expected_sha,
+          hard: parsed.data.hard,
+          authToken: mcpAuthToken(),
+        },
+        { db },
+      );
+
+      if (result.access !== 'ok') {
+        const fail = {
+          ok: false as const,
+          error: result.message,
+          ...(result.access === 'conflict' && result.currentSha
+            ? { current_sha: result.currentSha }
+            : {}),
+        };
+        return {
+          content: [{ type: 'text', text: result.message }],
+          structuredContent: fail,
+          isError: true,
+        };
+      }
+
+      const structured = {
+        ok: true as const,
+        space_slug: result.space_slug,
+        artifact_id: result.artifact_id,
+        archived: true as const,
+        sha: result.entry.sha,
+      };
+      const outParse = memoryDeleteOutputSchema.safeParse(structured);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Archived "${result.artifact_id}" in space "${result.space_slug}".`,
+          },
+        ],
+        structuredContent: outParse.data,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:memory.delete] failed', err);
+      return {
+        content: [
+          { type: 'text', text: 'Internal error while deleting intelligence' },
         ],
         isError: true,
       };

@@ -1,6 +1,7 @@
 export * from './types';
 export * from './patch-types';
 export * from './paths';
+export * from './app-identity';
 export * from './validation';
 export * from './content-sha';
 export * from './parse-markdown';

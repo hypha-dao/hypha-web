@@ -1,12 +1,13 @@
 # `@hypha-platform/mcp-server`
 
-Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `fetch_org_memory_asset`, `memory.list` / `memory.search` / `memory.read`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`. Space Intelligence plan: `docs/plans/space-intelligence.md` (M4).
+Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `fetch_org_memory_asset`, `memory.list` / `memory.search` / `memory.read` / `memory.create` / `memory.update` / `memory.delete`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`. Space Intelligence plan: `docs/plans/space-intelligence.md` (M6).
 
 ## Security and access control
 
-`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, **`fetch_org_memory_asset`**, **`memory.list` / `memory.search` / `memory.read`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
+`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, **`fetch_org_memory_asset`**, **`memory.list` / `memory.search` / `memory.read` / `memory.create` / `memory.update` / `memory.delete`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
 
 - **`HYPHA_MCP_AUTH_TOKEN`** — bearer token used to resolve the caller’s identity for non-public spaces.
+- **`HYPHA_MCP_SOURCE_APP`** — IBA installation identity stamped as `source_app` on intelligence writes. Caller-supplied `source_app` must match this value. When unset, writes use **`hypha-mcp`**.
 
 Without a token, **non-public** spaces return an access error. Public spaces still work without a token.
 
@@ -20,9 +21,9 @@ For stdio scripts that use `process` globals, ensure the compiler includes Node 
 
 ## Configuration
 
-Set the same environment variables required for DB and RPC access as the rest of the monorepo (e.g. `DEFAULT_DB_URL` or Neon/Postgres URLs, `NEXT_PUBLIC_RPC_URL` where `publicClient` reads the chain). For roster tools on restricted spaces, set **`HYPHA_MCP_AUTH_TOKEN`**.
+Set the same environment variables required for DB and RPC access as the rest of the monorepo (e.g. `DEFAULT_DB_URL` or Neon/Postgres URLs, `NEXT_PUBLIC_RPC_URL` where `publicClient` reads the chain). For roster tools on restricted spaces, set **`HYPHA_MCP_AUTH_TOKEN`**. For intelligence writes (`memory.create` / `memory.update` / `memory.delete`), set **`HYPHA_MCP_SOURCE_APP`** to the IBA installation slug so `source_app` is server-assigned (defaults to `hypha-mcp`).
 
-For **Matrix-backed** rows in `org_memory_assets`, prefer **`HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN`** (a normal Matrix **access token** for a user joined to the space chat room — *not* a Privy JWT) plus **`NEXT_PUBLIC_MATRIX_HOMESERVER_URL`**. Alternatively, with **`HYPHA_MCP_AUTH_TOKEN`** (Privy JWT) set, you can set **`HYPHA_MCP_MATRIX_REQUEST_URL`** to a full deployment URL (same host shape as the web app, e.g. `https://your-app.vercel.app`) so org memory can resolve the **caller's** Matrix token from `matrix_user_links` (parity with Human Chat). If unset on Vercel, **`VERCEL_URL`** is used as `https://$VERCEL_URL`. The server calls `GET /_matrix/client/v3/rooms/{roomId}/messages` with `access_token` as a query parameter (Synapse-compatible). Ensure the space has **`chat_room_id`** set in the database. Tool output includes **`matrix_fetch`** (including `used_session_matrix_token`, `session_matrix_token_unavailable`, HTTP status, event counts, skip reason) when Matrix rows are empty. Without Matrix configuration, proposal-backed assets still appear; Matrix assets are omitted.
+For **Matrix-backed** rows in `org_memory_assets`, prefer **`HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN`** (a normal Matrix **access token** for a user joined to the space chat room — _not_ a Privy JWT) plus **`NEXT_PUBLIC_MATRIX_HOMESERVER_URL`**. Alternatively, with **`HYPHA_MCP_AUTH_TOKEN`** (Privy JWT) set, you can set **`HYPHA_MCP_MATRIX_REQUEST_URL`** to a full deployment URL (same host shape as the web app, e.g. `https://your-app.vercel.app`) so org memory can resolve the **caller's** Matrix token from `matrix_user_links` (parity with Human Chat). If unset on Vercel, **`VERCEL_URL`** is used as `https://$VERCEL_URL`. The server calls `GET /_matrix/client/v3/rooms/{roomId}/messages` with `access_token` as a query parameter (Synapse-compatible). Ensure the space has **`chat_room_id`** set in the database. Tool output includes **`matrix_fetch`** (including `used_session_matrix_token`, `session_matrix_token_unavailable`, HTTP status, event counts, skip reason) when Matrix rows are empty. Without Matrix configuration, proposal-backed assets still appear; Matrix assets are omitted.
 
 ## Run locally
 
@@ -36,23 +37,26 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 
 ## Tools (complete MCP server list)
 
-| Tool | Description |
-| --- | --- |
-| `summarize_space_discussion_by_slug` | Create and persist a summary of recent Matrix chat discussion for a space slug. |
-| `ingest_space_call_artifacts` | Persist call recording/transcript artifacts for a space call session. |
-| `create_space_signal_by_slug` | Create a signal in a space (write-capable; limited to active paid spaces). |
-| `relay_ecosystem_signal` | Relay a summarized signal from one ecosystem space to another (write-capable). |
-| `get_ecosystem_by_space_slug` | Return interconnected ecosystem context (spaces graph and parent-child links). |
-| `get_network_ecosystem_patterns` | Analyze multi-space ecosystems across the network (organisational guidance). |
-| `propose_organisation_blueprint` | Propose a multi-space organisation blueprint from network patterns (plan-only). |
-| `get_people_by_space_slug` | Members by space slug (people + space-as-members), with membership/join metadata. |
-| `get_org_memory_by_space_slug` | Organization memory (member roster + org memory assets with asset keys). |
-| `fetch_org_memory_asset` | Fetch one memory asset by `space_slug` + `asset_key` (text/PDF/image/video modes). |
-| `memory.list` | List Space Intelligence Markdown artifacts for a space (manifest). |
-| `memory.search` | Search Space Intelligence by title / id / tags. |
-| `memory.read` | Read one intelligence artifact (frontmatter + body). |
-| `get_token_holdings_by_space_slug` | Token holdings/treasury distribution for a space by slug. |
-| `get_documents_by_space_slug` | Paginated documents/proposals/agreements list with optional filters. |
+| Tool                                 | Description                                                                             |
+| ------------------------------------ | --------------------------------------------------------------------------------------- |
+| `summarize_space_discussion_by_slug` | Create and persist a summary of recent Matrix chat discussion for a space slug.         |
+| `ingest_space_call_artifacts`        | Persist call recording/transcript artifacts for a space call session.                   |
+| `create_space_signal_by_slug`        | Create a signal in a space (write-capable; limited to active paid spaces).              |
+| `relay_ecosystem_signal`             | Relay a summarized signal from one ecosystem space to another (write-capable).          |
+| `get_ecosystem_by_space_slug`        | Return interconnected ecosystem context (spaces graph and parent-child links).          |
+| `get_network_ecosystem_patterns`     | Analyze multi-space ecosystems across the network (organisational guidance).            |
+| `propose_organisation_blueprint`     | Propose a multi-space organisation blueprint from network patterns (plan-only).         |
+| `get_people_by_space_slug`           | Members by space slug (people + space-as-members), with membership/join metadata.       |
+| `get_org_memory_by_space_slug`       | Organization memory (member roster + org memory assets with asset keys).                |
+| `fetch_org_memory_asset`             | Fetch one memory asset by `space_slug` + `asset_key` (text/PDF/image/video modes).      |
+| `memory.list`                        | List Space Intelligence Markdown artifacts for a space (manifest).                      |
+| `memory.search`                      | Search Space Intelligence by title / id / tags.                                         |
+| `memory.read`                        | Read one intelligence artifact (frontmatter + body).                                    |
+| `memory.create`                      | Create a draft or member-published intelligence artifact (path + `.md` + app identity). |
+| `memory.update`                      | SHA-checked update; IBA/AI default `propose` (signal approval); members may `publish`.  |
+| `memory.delete`                      | Soft-archive an artifact (`status: archived`). Hard delete is rejected.                 |
+| `get_token_holdings_by_space_slug`   | Token holdings/treasury distribution for a space by slug.                               |
+| `get_documents_by_space_slug`        | Paginated documents/proposals/agreements list with optional filters.                    |
 
 ### Notes
 

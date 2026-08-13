@@ -11,8 +11,14 @@ import {
   assertSafeSignalSlug,
   assertSafeSpaceSlug,
   artifactPatchPath,
+  matchCallerIntelligencePath,
 } from '../paths';
-import { parseIntelligenceMarkdown } from '../parse-markdown';
+import {
+  parseIntelligenceMarkdown,
+  stampIntelligenceSourceApp,
+  type ParsedIntelligenceMarkdown,
+} from '../parse-markdown';
+import { assertIntelligenceMarkdownSize } from '../app-identity';
 import {
   IntelligenceBlobNotConfiguredError,
   isIntelligenceBlobConfigured,
@@ -31,6 +37,8 @@ export type ProposeIntelligencePatchInput = {
   source_app?: string;
   title?: string;
   authToken?: string;
+  canonicalSourceApp?: string;
+  callerPath?: string;
 };
 
 export type ApproveIntelligencePatchInput = {
@@ -226,9 +234,34 @@ export async function proposeIntelligencePatchForSignal(
     };
   }
 
-  let parsed;
+  let markdown = input.markdown;
   try {
-    parsed = parseIntelligenceMarkdown(input.markdown);
+    assertIntelligenceMarkdownSize(markdown);
+  } catch (error) {
+    return {
+      access: 'denied',
+      message:
+        error instanceof Error ? error.message : 'Markdown is too large.',
+      space_slug: gated.spaceSlug,
+    };
+  }
+
+  if (input.canonicalSourceApp) {
+    try {
+      markdown = stampIntelligenceSourceApp(markdown, input.canonicalSourceApp);
+    } catch {
+      return {
+        access: 'denied',
+        message:
+          'Proposed markdown is not valid intelligence frontmatter + body.',
+        space_slug: gated.spaceSlug,
+      };
+    }
+  }
+
+  let parsed: ParsedIntelligenceMarkdown;
+  try {
+    parsed = parseIntelligenceMarkdown(markdown);
   } catch {
     return {
       access: 'denied',
@@ -249,6 +282,20 @@ export async function proposeIntelligencePatchForSignal(
     return {
       access: 'denied',
       message: `Proposed frontmatter space does not match "${gated.spaceSlug}".`,
+      space_slug: gated.spaceSlug,
+    };
+  }
+
+  const pathMatch = matchCallerIntelligencePath({
+    spaceSlug: gated.spaceSlug,
+    type: parsed.frontmatter.type,
+    id: parsed.frontmatter.id,
+    callerPath: input.callerPath,
+  });
+  if (!pathMatch.ok) {
+    return {
+      access: 'denied',
+      message: pathMatch.message,
       space_slug: gated.spaceSlug,
     };
   }
@@ -279,11 +326,14 @@ export async function proposeIntelligencePatchForSignal(
     signal_slug: gated.signalSlug,
     target_id: targetId,
     expected_sha: expectedSha,
-    source_app: input.source_app?.trim() || parsed.frontmatter.source_app,
+    source_app:
+      input.canonicalSourceApp ||
+      input.source_app?.trim() ||
+      parsed.frontmatter.source_app,
     title: input.title?.trim() || parsed.frontmatter.title || existing.title,
     created_at: now,
     updated_at: now,
-    markdown: input.markdown,
+    markdown,
   };
 
   await writePatchFile(patch);

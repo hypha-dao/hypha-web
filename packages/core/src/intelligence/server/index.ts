@@ -15,6 +15,11 @@ export {
   type WriteIntelligenceResult,
 } from './write-intelligence';
 export {
+  deleteIntelligenceBySpaceSlug,
+  type DeleteIntelligenceInput,
+  type DeleteIntelligenceResult,
+} from './delete-intelligence';
+export {
   getIntelligencePatchForSignal,
   proposeIntelligencePatchForSignal,
   approveIntelligencePatchForSignal,

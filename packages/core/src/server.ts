@@ -77,7 +77,12 @@ export {
   spaceManifestPath,
   artifactCurrentPath,
   artifactPatchPath,
+  matchCallerIntelligencePath,
+  resolveCanonicalSourceApp,
+  stampIntelligenceSourceApp,
+  INTELLIGENCE_MARKDOWN_MAX_BYTES,
 } from './intelligence';
+export type { ResolveCanonicalSourceAppResult } from './intelligence';
 export {
   geocodeRequestSchema,
   geocodeResponseSchema,

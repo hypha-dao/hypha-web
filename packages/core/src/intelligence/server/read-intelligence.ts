@@ -82,7 +82,7 @@ export async function readIntelligenceBySpaceSlug(
 
   const { manifest } = await readSpaceIntelligenceManifest(spaceSlug);
   const entry = manifest.artifacts.find((a) => a.id === artifactId);
-  if (!entry) {
+  if (!entry || entry.status === 'archived') {
     return {
       access: 'ok',
       configured: true,
