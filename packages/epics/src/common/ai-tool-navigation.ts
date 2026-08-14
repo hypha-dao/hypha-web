@@ -33,8 +33,12 @@ export type AiPanelNavigationTarget = {
   key: string;
 };
 
-/** Prefer signal-create navigation over generic mcp_navigation in the same turn. */
+/** Prefer intelligence writes over signal-create so "artifact from a signal" lands on Memory. */
 const NAVIGATION_TOOL_PRIORITY = [
+  'memory_update',
+  'memory_create',
+  'memory_enable_pack',
+  'memory_delete',
   'create_space_signal_by_slug',
   'relay_ecosystem_signal',
   'create_human_chat_message',
@@ -46,6 +50,9 @@ const NAVIGATION_TOOL_PRIORITY = [
 ] as const;
 
 export const IMMEDIATE_AUTO_NAVIGATION_TOOLS = new Set<string>([
+  'memory_update',
+  'memory_create',
+  'memory_enable_pack',
   'create_space_signal_by_slug',
   'relay_ecosystem_signal',
   'create_human_chat_message',
@@ -175,8 +182,33 @@ function parseNavigationTarget(args: {
   if (
     !href &&
     args.output?.ok === true &&
+    args.toolName === 'memory_update' &&
+    args.output.mode === 'propose'
+  ) {
+    const spaceSlug =
+      typeof args.output.space_slug === 'string'
+        ? args.output.space_slug.trim()
+        : '';
+    const signalSlug =
+      typeof args.output.signal_slug === 'string'
+        ? args.output.signal_slug.trim()
+        : '';
+    if (spaceSlug && signalSlug) {
+      const params = new URLSearchParams();
+      params.set('signal', signalSlug);
+      href = `/en/dho/${spaceSlug}/coherence?${params.toString()}`;
+    }
+  }
+
+  if (
+    !href &&
+    args.output?.ok === true &&
     (args.toolName === 'summarize_space_discussion_by_slug' ||
-      args.toolName === 'ingest_space_call_artifacts')
+      args.toolName === 'ingest_space_call_artifacts' ||
+      args.toolName === 'memory_create' ||
+      args.toolName === 'memory_enable_pack' ||
+      args.toolName === 'memory_delete' ||
+      (args.toolName === 'memory_update' && args.output.mode === 'publish'))
   ) {
     const spaceSlug =
       typeof args.output.space_slug === 'string'

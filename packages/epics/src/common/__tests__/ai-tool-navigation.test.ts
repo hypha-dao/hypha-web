@@ -134,6 +134,110 @@ describe('findLatestAiPanelNavigationTarget', () => {
     expect(best?.toolName).toBe('create_space_signal_by_slug');
   });
 
+  it('routes to memory after memory_create', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-intel-1',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-memory_create',
+              state: 'output-available',
+              output: {
+                ok: true,
+                space_slug: 'belica-5-0',
+                navigation: {
+                  kind: 'internal',
+                  href: '/en/dho/belica-5-0/memory',
+                  label: 'Open Space Intelligence',
+                  screen: 'memory',
+                  space_slug: 'belica-5-0',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['memory_create', 'create_space_signal_by_slug'],
+    );
+
+    expect(target?.href).toBe('/en/dho/belica-5-0/memory');
+    expect(target?.toolName).toBe('memory_create');
+  });
+
+  it('prefers memory_create over create_space_signal_by_slug in the same turn', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-intel-2',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-memory_create',
+              state: 'output-available',
+              output: {
+                ok: true,
+                space_slug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/memory',
+                },
+              },
+            },
+            {
+              type: 'tool-create_space_signal_by_slug',
+              state: 'output-available',
+              output: {
+                ok: true,
+                signalSlug: 'new-signal',
+                spaceSlug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=new-signal',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['memory_create', 'create_space_signal_by_slug'],
+    );
+
+    expect(target?.toolName).toBe('memory_create');
+    expect(target?.href).toBe('/en/dho/belica-5-0/memory');
+  });
+
+  it('routes to the signal after memory_update propose', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-intel-3',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-memory_update',
+              state: 'output-available',
+              output: {
+                ok: true,
+                mode: 'propose',
+                space_slug: 'belica-5-0',
+                signal_slug: 'stakeholder-gap',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=stakeholder-gap',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['memory_update'],
+    );
+
+    expect(target?.href).toBe(
+      '/en/dho/belica-5-0/coherence?signal=stakeholder-gap',
+    );
+    expect(target?.toolName).toBe('memory_update');
+  });
+
   it('routes to memory after summarize_space_discussion_by_slug', () => {
     const target = findLatestAiPanelNavigationTarget(
       [

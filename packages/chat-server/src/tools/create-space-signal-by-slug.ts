@@ -34,7 +34,7 @@ export function createCreateSpaceSignalBySlugTool(
 
   return {
     description:
-      'Write: create a new signal in a space when the recommendation is relevant and evidence-backed. Allowed for active paid spaces only. Always returns navigation metadata so the app opens the signals screen on the new signal.',
+      'Write: create a new Coherence signal (opportunity/risk/tension/insight/trend/proposal on the signal board). Allowed for active paid spaces only. Do NOT use this to persist organisational intelligence, Markdown artifacts, assessments, or "org memory" — use memory_create (new artifact) or memory_update (patch an existing artifact, default propose on the current signal). Always returns navigation metadata so the app opens the signals screen on the new signal.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);

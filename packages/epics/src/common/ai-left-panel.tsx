@@ -1494,6 +1494,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       'create_ecosystem_space',
       'summarize_space_discussion_by_slug',
       'ingest_space_call_artifacts',
+      'memory_create',
+      'memory_update',
+      'memory_enable_pack',
+      'memory_delete',
     ]);
     const href = navigationTarget?.href;
     if (!href) return;

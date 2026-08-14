@@ -24,6 +24,11 @@ export {
   buildIntelligenceSignalGraph,
 } from './graph';
 export { HYPHA_ENERGY_PACK_ID } from './packs/ids';
+export {
+  resolveCanonicalSourceApp,
+  INTELLIGENCE_MARKDOWN_MAX_BYTES,
+} from './app-identity';
+export type { ResolveCanonicalSourceAppResult } from './app-identity';
 export type {
   IntelligenceGraph,
   IntelligenceGraphNode,

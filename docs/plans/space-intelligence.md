@@ -1,6 +1,6 @@
 # Space Intelligence & Documentation — Spec
 
-> **Status:** Frozen for Phase B. **M1–M8 done** on `feat/org-memory`.  
+> **Status:** Frozen for Phase B. **M1–M9 done** on `feat/org-memory`.  
 > **Supersedes (for intelligence scope):** informal plans in chat; complements [space-memory-panel.md](./space-memory-panel.md) and [documents-and-media-overview.md](../architecture/documents-and-media-overview.md).  
 > **Related product docs:** Organizational Intelligence App Architecture (IBA ↔ Markdown MCP); Hypha Energy Org Memory Ontology (first pack).
 
@@ -267,6 +267,8 @@ MCP tools call the **same `@hypha-platform/core` server functions** as HTTP/UI. 
 | `memory.update` | SHA-checked; apps/AI default to **propose**; version on publish |
 | `memory.delete` | Soft → `archived` / superseded; hard delete rare                |
 
+Hypha AI chat uses the same core APIs as MCP, registered as `memory_list` / `memory_search` / `memory_read` / `memory_create` / `memory_update` / `memory_delete` / `memory_enable_pack` (underscores; OpenAI-style tool names). `source_app` is stamped `hypha-ai`.
+
 ### 9.3 Constraints (every call)
 
 **Security-critical order:**
@@ -322,6 +324,7 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 | **M6** | MCP `create` / `update` / `delete` (propose or member-publish); app identity                 | IBA-shaped client can propose/update under path allowlist — **done** (`memory.create` / `memory.update` / `memory.delete` + `HYPHA_MCP_SOURCE_APP`) |
 | **M7** | Energy pack templates (8 starters) under `frameworks/hypha-energy/`                          | Enabling pack seeds template files for a space — **done** (`hypha-energy` ART-01…08 + `memory.enable_pack`)                                         |
 | **M8** | Graph from `linked_signals` + pending patches (intelligence ↔ signals only)                  | Graph shows artifact–signal edges; `related` is not rendered — **done**                                                                             |
+| **M9** | Hypha AI uses Space Intelligence (`memory_*` chat tools + prompt)                            | Advisor creates/patches Intelligence artifacts from signals instead of opening a second Coherence signal — **done**                                 |
 
 **Phase B kickoff:** implement **M1 → M3** first; freeze further slices only after M3 demo.
 
@@ -338,6 +341,7 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 - [ ] Signal detail can approve a proposed patch that publishes a new version.
 - [ ] Any space member can approve (MVP).
 - [ ] MCP `memory.*` uses the same core APIs as the UI and enforces auth, space, path, `.md`, and `source_app`.
+- [x] Hypha AI can list/read Intelligence and create or propose patches from a Coherence signal without opening a second signal.
 - [ ] IBA can promote an insight without Hypha knowing its DB schema.
 
 ---

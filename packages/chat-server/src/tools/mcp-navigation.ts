@@ -12,6 +12,7 @@ import {
   resolveSpaceScreenPath,
   type SpaceScreen,
 } from './space-screen-navigation';
+import { inferSpaceScreenFromIntent } from './space-screen-intent';
 
 const destinationTypeSchema = z.enum([
   'space',
@@ -160,57 +161,6 @@ function scoreSpaceMatch(
   return score;
 }
 
-function inferScreenFromIntent(
-  intentText: string | undefined,
-): z.infer<typeof spaceScreenSchema> | null {
-  const normalized = (intentText ?? '').trim().toLowerCase();
-  if (!normalized) return null;
-  if (
-    /\b(signal|signals|coherence|alert|alerts|issue|issues|blind spot|priority)\b/.test(
-      normalized,
-    )
-  ) {
-    return 'signals';
-  }
-  if (
-    /\b(treasury|token|tokens|vault|fund|funds|payment|payments|payout|payouts|finance)\b/.test(
-      normalized,
-    )
-  ) {
-    return 'treasury';
-  }
-  if (
-    /\b(member|members|people|team|teams|contributor|contributors)\b/.test(
-      normalized,
-    )
-  ) {
-    return 'members';
-  }
-  if (/\b(reward|rewards|incentive|incentives)\b/.test(normalized)) {
-    return 'rewards';
-  }
-  if (/\b(memory|knowledge|transcript|recording|notes)\b/.test(normalized)) {
-    return 'memory';
-  }
-  if (/\b(config|configuration|settings|set up|setup)\b/.test(normalized)) {
-    return 'space_configuration';
-  }
-  if (
-    /\b(proposal|proposals|agreement|agreements|vote|voting|governance|document|documents)\b/.test(
-      normalized,
-    )
-  ) {
-    return 'agreements';
-  }
-  if (/\b(ecosystem|network|subspace|subspaces)\b/.test(normalized)) {
-    return 'ecosystem_navigation';
-  }
-  if (/\b(overview|home|summary|dashboard)\b/.test(normalized)) {
-    return 'overview';
-  }
-  return null;
-}
-
 function resolveAppScreenPath(
   lang: string,
   screen: z.infer<typeof appScreenSchema>,
@@ -327,7 +277,7 @@ export function createMcpNavigationTool(authToken: string) {
               );
               if (!access.hasAccess) continue;
               if (row.score < 80) break;
-              const inferredScreen = inferScreenFromIntent(intentText);
+              const inferredScreen = inferSpaceScreenFromIntent(intentText);
               const href = inferredScreen
                 ? resolveSpaceScreenPath(lang, row.space.slug, inferredScreen)
                 : `/${lang}/dho/${row.space.slug}/agreements`;
@@ -502,7 +452,7 @@ export function createMcpNavigationTool(authToken: string) {
           };
         }
 
-        const inferredScreen = inferScreenFromIntent(
+        const inferredScreen = inferSpaceScreenFromIntent(
           [data.context_hint, rawTargetQuery, data.label]
             .filter(Boolean)
             .join(' '),
@@ -556,7 +506,7 @@ export function createMcpNavigationTool(authToken: string) {
       }
 
       if (data.destination_type === 'space') {
-        const inferredScreen = inferScreenFromIntent(
+        const inferredScreen = inferSpaceScreenFromIntent(
           [data.context_hint, data.label].filter(Boolean).join(' '),
         );
         const targetScreen = data.space_screen ?? inferredScreen;
