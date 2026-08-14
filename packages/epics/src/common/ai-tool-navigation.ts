@@ -50,9 +50,6 @@ const NAVIGATION_TOOL_PRIORITY = [
 ] as const;
 
 export const IMMEDIATE_AUTO_NAVIGATION_TOOLS = new Set<string>([
-  'memory_update',
-  'memory_create',
-  'memory_enable_pack',
   'create_space_signal_by_slug',
   'relay_ecosystem_signal',
   'create_human_chat_message',
@@ -152,6 +149,7 @@ function parseNavigationTarget(args: {
   output: Record<string, unknown> | undefined;
   messageId: string;
   partKey: string;
+  toolCallId?: string;
 }): AiPanelNavigationTarget | null {
   if (args.output?.ok !== true) return null;
 
@@ -302,9 +300,9 @@ function parseNavigationTarget(args: {
     focusField,
     focusSection,
     coherenceChat,
-    key: `${args.messageId}:${args.partKey}:${href}:${focusField ?? ''}:${
-      focusSection ?? ''
-    }:${payloadFingerprint}`,
+    key: `${args.messageId}:${args.toolCallId || args.partKey}:${href}:${
+      focusField ?? ''
+    }:${focusSection ?? ''}:${payloadFingerprint}`,
   };
 }
 
@@ -344,11 +342,16 @@ function collectNavigationTargetsFromMessage(
       ((invocation as { output?: Record<string, unknown> }).output as
         | Record<string, unknown>
         | undefined);
+    const toolCallId =
+      typeof (invocation as { toolCallId?: unknown }).toolCallId === 'string'
+        ? (invocation as { toolCallId: string }).toolCallId
+        : undefined;
     const target = parseNavigationTarget({
       toolName,
       output,
       messageId,
       partKey: `toolInvocation:${invocationIndex}`,
+      toolCallId,
     });
     if (target) targets.push(target);
   }
@@ -365,11 +368,16 @@ function collectNavigationTargetsFromMessage(
     if (!allowed.has(toolName)) continue;
     if (!isCompletedToolState((part as { state?: unknown }).state)) continue;
     const output = (part as { output?: Record<string, unknown> }).output;
+    const toolCallId =
+      typeof (part as { toolCallId?: unknown }).toolCallId === 'string'
+        ? (part as { toolCallId: string }).toolCallId
+        : undefined;
     const target = parseNavigationTarget({
       toolName,
       output,
       messageId,
       partKey: `part:${partIndex}`,
+      toolCallId,
     });
     if (target) targets.push(target);
   }
@@ -398,6 +406,10 @@ export function findLatestAiPanelNavigationTarget(
   ) {
     const message = messages[messageIndex];
     if (!message) continue;
+    // A newer user turn must not re-fire navigation from an earlier assistant
+    // tool result — that aborts the in-flight reply (React #185 / stream error).
+    if (message.role === 'user') return null;
+    if (message.role && message.role !== 'assistant') continue;
 
     const targets = collectNavigationTargetsFromMessage(
       message,
@@ -406,6 +418,7 @@ export function findLatestAiPanelNavigationTarget(
     );
     const best = pickBestNavigationTarget(targets);
     if (best) return best;
+    return null;
   }
 
   return null;

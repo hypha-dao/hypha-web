@@ -238,6 +238,39 @@ describe('findLatestAiPanelNavigationTarget', () => {
     expect(target?.toolName).toBe('memory_update');
   });
 
+  it('does not re-fire an earlier turn after the user sends a follow-up', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-1',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-create_space_signal_by_slug',
+              state: 'output-available',
+              output: {
+                ok: true,
+                signalSlug: 'old-signal',
+                spaceSlug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=old-signal',
+                },
+              },
+            },
+          ],
+        },
+        {
+          id: 'user-2',
+          role: 'user',
+          parts: [{ type: 'text', text: 'now make an intelligence artifact' }],
+        },
+      ],
+      ['create_space_signal_by_slug', 'memory_create'],
+    );
+
+    expect(target).toBeNull();
+  });
+
   it('routes to memory after summarize_space_discussion_by_slug', () => {
     const target = findLatestAiPanelNavigationTarget(
       [
