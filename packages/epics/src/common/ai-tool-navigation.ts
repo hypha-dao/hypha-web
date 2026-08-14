@@ -49,12 +49,22 @@ const NAVIGATION_TOOL_PRIORITY = [
   'mcp_navigation',
 ] as const;
 
+/**
+ * @deprecated Do not navigate while a reply is in flight. `router.push` aborts
+ * the chat fetch and can loop into React error #185. Kept so call sites can
+ * migrate; `shouldDeferAiPanelAutoNavigation` is the source of truth.
+ */
 export const IMMEDIATE_AUTO_NAVIGATION_TOOLS = new Set<string>([
   'create_space_signal_by_slug',
   'relay_ecosystem_signal',
   'create_human_chat_message',
   'prepare_governance_proposal',
 ]);
+
+/** Auto-nav must wait until the assistant turn finished — never while streaming. */
+export function shouldDeferAiPanelAutoNavigation(status: string): boolean {
+  return status !== 'ready';
+}
 
 function navigationToolPriority(toolName: string): number {
   const index = NAVIGATION_TOOL_PRIORITY.indexOf(
@@ -135,7 +145,10 @@ type ChatMessageForNavigation = {
 };
 
 function isCompletedToolState(state: unknown): boolean {
-  if (typeof state !== 'string') return true;
+  if (typeof state !== 'string') {
+    // Persisted tool parts may omit `state` but still have a successful output.
+    return true;
+  }
   return (
     state === 'output-available' ||
     state === 'output_available' ||
@@ -300,7 +313,8 @@ function parseNavigationTarget(args: {
     focusField,
     focusSection,
     coherenceChat,
-    key: `${args.messageId}:${args.toolCallId || args.partKey}:${href}:${
+    // Prefer toolCallId so a streaming message id change cannot re-fire nav.
+    key: `${args.toolCallId || `${args.messageId}:${args.partKey}`}:${href}:${
       focusField ?? ''
     }:${focusSection ?? ''}:${payloadFingerprint}`,
   };

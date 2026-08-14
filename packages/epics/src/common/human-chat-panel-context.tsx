@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 
 /**
  * Shared panel context type used by both AI and Human panel triggers.
@@ -150,24 +156,41 @@ export function HumanChatPanelProvider({
     setOpen(false);
   }, [setOpen]);
 
+  const value = useMemo(
+    (): HumanChatPanelContextValue => ({
+      open,
+      toggle,
+      openHumanChatPanel,
+      closeHumanChatPanel,
+      unreadMentionCount,
+      setUnreadMentionCount,
+      mode,
+      coherenceRoomId,
+      coherenceTitle,
+      coherenceSlug,
+      coherenceDescription,
+      openCoherenceChat,
+      closeCoherenceChat,
+    }),
+    [
+      closeCoherenceChat,
+      closeHumanChatPanel,
+      coherenceDescription,
+      coherenceRoomId,
+      coherenceSlug,
+      coherenceTitle,
+      mode,
+      open,
+      openCoherenceChat,
+      openHumanChatPanel,
+      setUnreadMentionCount,
+      toggle,
+      unreadMentionCount,
+    ],
+  );
+
   return (
-    <HumanChatPanelContext.Provider
-      value={{
-        open,
-        toggle,
-        openHumanChatPanel,
-        closeHumanChatPanel,
-        unreadMentionCount,
-        setUnreadMentionCount,
-        mode,
-        coherenceRoomId,
-        coherenceTitle,
-        coherenceSlug,
-        coherenceDescription,
-        openCoherenceChat,
-        closeCoherenceChat,
-      }}
-    >
+    <HumanChatPanelContext.Provider value={value}>
       {children}
     </HumanChatPanelContext.Provider>
   );

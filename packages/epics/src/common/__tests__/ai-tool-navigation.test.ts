@@ -3,6 +3,7 @@ import {
   findLatestAiPanelNavigationTarget,
   isAtNavigationTarget,
   pickBestNavigationTarget,
+  shouldDeferAiPanelAutoNavigation,
   shouldSkipStaleOverviewAutoNavigation,
 } from '../ai-tool-navigation';
 
@@ -271,6 +272,62 @@ describe('findLatestAiPanelNavigationTarget', () => {
     expect(target).toBeNull();
   });
 
+  it('ignores in-progress tool parts until output is available', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-streaming',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-create_space_signal_by_slug',
+              state: 'input-streaming',
+              output: {
+                ok: true,
+                signalSlug: 'partial',
+                spaceSlug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=partial',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['create_space_signal_by_slug'],
+    );
+
+    expect(target).toBeNull();
+  });
+
+  it('keeps the navigation key stable when the message id changes', () => {
+    const parts = [
+      {
+        type: 'tool-memory_create',
+        toolCallId: 'call-stable',
+        state: 'output-available',
+        output: {
+          ok: true,
+          space_slug: 'belica-5-0',
+          navigation: {
+            href: '/en/dho/belica-5-0/memory',
+          },
+        },
+      },
+    ];
+
+    const first = findLatestAiPanelNavigationTarget(
+      [{ id: 'tmp-id', role: 'assistant', parts }],
+      ['memory_create'],
+    );
+    const second = findLatestAiPanelNavigationTarget(
+      [{ id: 'final-id', role: 'assistant', parts }],
+      ['memory_create'],
+    );
+
+    expect(first?.key).toBe(second?.key);
+  });
+
   it('routes to memory after summarize_space_discussion_by_slug', () => {
     const target = findLatestAiPanelNavigationTarget(
       [
@@ -363,5 +420,17 @@ describe('shouldSkipStaleOverviewAutoNavigation', () => {
         '/en/dho/treetop/agreements/create/pay-for-expenses',
       ),
     ).toBe(false);
+  });
+});
+
+describe('shouldDeferAiPanelAutoNavigation', () => {
+  it('defers while the assistant turn is in flight', () => {
+    expect(shouldDeferAiPanelAutoNavigation('submitted')).toBe(true);
+    expect(shouldDeferAiPanelAutoNavigation('streaming')).toBe(true);
+    expect(shouldDeferAiPanelAutoNavigation('error')).toBe(true);
+  });
+
+  it('allows navigation only after the turn is ready', () => {
+    expect(shouldDeferAiPanelAutoNavigation('ready')).toBe(false);
   });
 });
