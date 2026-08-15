@@ -74,6 +74,12 @@ export type HumanChatPanelContextValue = {
     description?: string | null,
   ) => void;
   closeCoherenceChat: () => void;
+  /** Open a named Matrix room that is not a Coherence signal thread. */
+  openThreadChat: (
+    roomId: string,
+    title: string,
+    description?: string | null,
+  ) => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -90,6 +96,7 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceDescription: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
+  openThreadChat: () => {},
 });
 
 /**
@@ -148,6 +155,15 @@ export function HumanChatPanelProvider({
     setCoherenceDescription(null);
   }, []);
 
+  const openThreadChat = useCallback(
+    (roomId: string, title: string, description?: string | null) => {
+      // Empty slug keeps Human Chat out of signal-thread side effects
+      // (team policy, coherence PATCH, description sync).
+      openCoherenceChat(roomId, title, '', description);
+    },
+    [openCoherenceChat],
+  );
+
   const openHumanChatPanel = useCallback(() => {
     setOpen(true);
   }, [setOpen]);
@@ -171,6 +187,7 @@ export function HumanChatPanelProvider({
       coherenceDescription,
       openCoherenceChat,
       closeCoherenceChat,
+      openThreadChat,
     }),
     [
       closeCoherenceChat,
@@ -183,6 +200,7 @@ export function HumanChatPanelProvider({
       open,
       openCoherenceChat,
       openHumanChatPanel,
+      openThreadChat,
       setUnreadMentionCount,
       toggle,
       unreadMentionCount,

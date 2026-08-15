@@ -3434,6 +3434,8 @@
     "spaceIntelligenceEmpty": "No intelligence artifacts yet. Create one to get started.",
     "spaceIntelligenceEnableEnergyPack": "Enable Energy pack",
     "spaceIntelligenceEnablingPack": "Enabling pack…",
+    "spaceIntelligenceChatUnavailable": "Chat is unavailable for this space.",
+    "spaceIntelligenceCommentsFailed": "Could not open comments for this artifact.",
     "intelligenceTypes": {
       "context": "Context",
       "signal": "Signal",

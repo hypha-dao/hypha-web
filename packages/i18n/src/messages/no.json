@@ -3417,6 +3417,8 @@
     "spaceIntelligenceEmpty": "Ingen intelligence-artefakter ennå. Opprett ett for å komme i gang.",
     "spaceIntelligenceEnableEnergyPack": "Aktiver Energy-pakke",
     "spaceIntelligenceEnablingPack": "Aktiverer pakke…",
+    "spaceIntelligenceChatUnavailable": "Chat er ikke tilgjengelig for dette rommet.",
+    "spaceIntelligenceCommentsFailed": "Kunne ikke åpne kommentarer for dette artefaktet.",
     "spaceDocumentation": "Space Documentation",
     "spaceDocumentationSubtitle": "Files from proposals, chat, calls, and uploaded memories � table view without previews.",
     "spaceDocumentationColDate": "Dato",

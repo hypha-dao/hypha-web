@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Text } from '@radix-ui/themes';
@@ -29,6 +29,7 @@ import {
   HYPHA_ENERGY_PACK_ID,
   type IntelligenceListItem,
 } from '@hypha-platform/core/intelligence';
+import { useMatrix, useSpaceBySlug } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
 import { useSpaceIntelligence } from '../hooks/use-space-intelligence';
@@ -37,7 +38,7 @@ import {
   SpaceIntelligenceGraph,
 } from './space-intelligence-cards';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   SIGNAL_GRID_CARD_WRAPPER_CLASS,
   SIGNAL_GRID_LAYOUT_CLASS,
@@ -66,6 +67,7 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     setSearchTerm,
     refresh,
     deleteArtifact,
+    linkArtifactRoom,
     enablePack,
     enabledPacks,
   } = useSpaceIntelligence(spaceSlug);
@@ -75,6 +77,9 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     space,
     spaceId: space?.web3SpaceId ?? undefined,
   });
+  const { openThreadChat } = useHumanChatPanel();
+  const { isMatrixAvailable, createRoom, joinRoom, loadRoomHistory } =
+    useMatrix();
 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [enablingPack, setEnablingPack] = useState(false);
@@ -82,6 +87,7 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     useState<IntelligenceListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<IntelligenceViewMode>('cards');
+  const [commentingId, setCommentingId] = useState<string | null>(null);
 
   const energyPackEnabled = enabledPacks.includes(HYPHA_ENERGY_PACK_ID);
   const createHref = `/${lang}/dho/${spaceSlug}/memory/new-intelligence`;
@@ -104,6 +110,59 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
       setDeleting(false);
     }
   };
+
+  const onOpenComments = useCallback(
+    async (artifact: IntelligenceListItem) => {
+      if (commentingId) return;
+      setCommentingId(artifact.id);
+      setSaveError(null);
+      try {
+        let roomId = artifact.room_id?.trim() || '';
+        if (!roomId) {
+          if (!isMatrixAvailable) {
+            setSaveError(t('spaceIntelligenceChatUnavailable'));
+            return;
+          }
+          const created = await createRoom(artifact.title, {
+            grantCreatorPl100: true,
+          });
+          const canonicalRoomId = await joinRoom(created.roomId);
+          try {
+            await loadRoomHistory(canonicalRoomId);
+          } catch (historyError) {
+            console.warn(
+              'Intelligence comment room created but history load failed:',
+              historyError,
+            );
+          }
+          await linkArtifactRoom({
+            artifactId: artifact.id,
+            roomId: canonicalRoomId,
+          });
+          roomId = canonicalRoomId;
+        }
+        openThreadChat(roomId, artifact.title, artifact.excerpt ?? null);
+      } catch (err) {
+        setSaveError(
+          err instanceof Error
+            ? err.message
+            : t('spaceIntelligenceCommentsFailed'),
+        );
+      } finally {
+        setCommentingId(null);
+      }
+    },
+    [
+      commentingId,
+      createRoom,
+      isMatrixAvailable,
+      joinRoom,
+      linkArtifactRoom,
+      loadRoomHistory,
+      openThreadChat,
+      t,
+    ],
+  );
 
   const onEnableEnergyPack = async () => {
     setEnablingPack(true);
@@ -254,6 +313,16 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
                     canEdit={canMutate}
                     onDelete={
                       canMutate ? (item) => setPendingDelete(item) : undefined
+                    }
+                    onOpenComments={onOpenComments}
+                    commentsDisabled={
+                      commentingId === artifact.id ||
+                      (!artifact.room_id?.trim() && !isMatrixAvailable)
+                    }
+                    commentsTitle={
+                      !artifact.room_id?.trim() && !isMatrixAvailable
+                        ? t('spaceIntelligenceChatUnavailable')
+                        : undefined
                     }
                   />
                 </div>

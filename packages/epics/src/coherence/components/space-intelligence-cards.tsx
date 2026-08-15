@@ -8,6 +8,7 @@ import type {
 } from '@hypha-platform/core/intelligence';
 import { cn } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
@@ -256,7 +257,7 @@ const STATUS_LEFT_BAR: Record<string, string> = {
 
 function IntelligenceTagBadges({ tags }: { tags: string[] }) {
   if (tags.length === 0) return null;
-  const visible = tags.slice(0, 2);
+  const visible = tags.slice(0, 5);
   const overflow = tags.length - visible.length;
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -298,12 +299,18 @@ type IntelligenceCardProps = {
   artifact: IntelligenceListItem;
   canEdit?: boolean;
   onDelete?: (artifact: IntelligenceListItem) => void;
+  onOpenComments?: (artifact: IntelligenceListItem) => void;
+  commentsDisabled?: boolean;
+  commentsTitle?: string;
 };
 
 export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
   artifact,
   canEdit = false,
   onDelete,
+  onOpenComments,
+  commentsDisabled = false,
+  commentsTitle,
 }) => {
   const t = useTranslations('CoherenceTab');
   const router = useRouter();
@@ -421,12 +428,32 @@ export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
             </p>
           </div>
           {artifact.excerpt ? (
-            <p className="line-clamp-2 min-h-[2.5rem] text-2 leading-snug text-muted-foreground">
+            <p className="line-clamp-5 min-h-[6.25rem] text-2 leading-snug text-muted-foreground">
               {artifact.excerpt}
             </p>
           ) : null}
           <IntelligenceTagBadges tags={artifact.tags} />
         </div>
+        {onOpenComments ? (
+          <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-border/50 px-3.5 py-2">
+            <button
+              type="button"
+              className="inline-flex h-7 min-w-0 flex-1 items-center justify-start gap-1.5 rounded-md px-2 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+              disabled={commentsDisabled}
+              title={commentsTitle}
+              aria-label={t('openConversation')}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onOpenComments(artifact);
+              }}
+              onKeyDown={stopCardActivationKey}
+            >
+              <ChatBubbleIcon aria-hidden />
+              <span className="truncate text-1">{t('openConversation')}</span>
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

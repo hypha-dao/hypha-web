@@ -26,6 +26,7 @@ import {
 import type { IntelligenceManifestEntry } from '../types';
 import {
   formatIntelligenceMarkdownError,
+  manifestEntryFromFrontmatter,
   parseIntelligenceFrontmatter,
 } from '../validation';
 import { excerptIntelligenceBody } from '../excerpt';
@@ -179,6 +180,37 @@ body
       expect(message).toContain('created_at');
       expect(message).toContain('updated_at');
     }
+  });
+
+  it('keeps an optional Matrix room_id on frontmatter and the manifest entry', () => {
+    const frontmatter = parseIntelligenceFrontmatter({
+      id: 'stakeholder-assessment-belica-2026-07',
+      type: 'assessment',
+      title: 'Stakeholder Assessment',
+      space: 'belica-5-0',
+      source_app: 'hypha',
+      status: 'current',
+      created_at: '2026-07-18',
+      updated_at: '2026-07-18',
+      tags: ['stakeholders'],
+      related: [],
+      version: 1,
+      supersedes: null,
+      room_id: '!abc:matrix.org',
+    });
+    expect(frontmatter.room_id).toBe('!abc:matrix.org');
+    const raw = serializeIntelligenceMarkdown({
+      frontmatter,
+      body: 'The village board is an anchor ally.',
+    });
+    const parsed = parseIntelligenceMarkdown(raw);
+    expect(parsed.frontmatter.room_id).toBe('!abc:matrix.org');
+    const entry = manifestEntryFromFrontmatter({
+      frontmatter: parsed.frontmatter,
+      path: 'intelligence/spaces/belica-5-0/assessments/x.md',
+      sha: parsed.sha,
+    });
+    expect(entry.room_id).toBe('!abc:matrix.org');
   });
 });
 
@@ -387,8 +419,9 @@ describe('excerptIntelligenceBody', () => {
     expect(excerptIntelligenceBody('```js\nconst x = 1\n```\nVisible')).toBe(
       'Visible',
     );
-    const long = excerptIntelligenceBody('a'.repeat(300));
+    expect(excerptIntelligenceBody('a'.repeat(400)).endsWith('…')).toBe(false);
+    const long = excerptIntelligenceBody('a'.repeat(700));
     expect(long.endsWith('…')).toBe(true);
-    expect(long.length).toBeLessThanOrEqual(221);
+    expect(long.length).toBeLessThanOrEqual(561);
   });
 });

@@ -147,6 +147,56 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     [getAccessToken, revalidate, spaceSlug],
   );
 
+  const linkArtifactRoom = React.useCallback(
+    async (input: { artifactId: string; roomId: string }) => {
+      if (!spaceSlug) throw new Error('Missing space');
+      const token = await getAccessToken();
+      const headers: HeadersInit = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const getRes = await fetch(
+        `/api/v1/spaces/${spaceSlug}/intelligence/${encodeURIComponent(
+          input.artifactId,
+        )}`,
+        { headers },
+      );
+      const getPayload = await getRes.json().catch(() => ({}));
+      if (!getRes.ok) {
+        throw new Error(
+          (getPayload as { error?: string }).error || `HTTP ${getRes.status}`,
+        );
+      }
+      const artifact = (getPayload as IntelligenceArtifactResponse).artifact;
+      if (!artifact) {
+        throw new Error('Artifact was not found.');
+      }
+      const postHeaders: HeadersInit = {
+        ...headers,
+        'Content-Type': 'application/json',
+      };
+      const postRes = await fetch(`/api/v1/spaces/${spaceSlug}/intelligence`, {
+        method: 'POST',
+        headers: postHeaders,
+        body: JSON.stringify({
+          frontmatter: {
+            ...artifact.frontmatter,
+            room_id: input.roomId,
+          },
+          body: artifact.body,
+          expectedSha: artifact.sha,
+        }),
+      });
+      const postPayload = await postRes.json().catch(() => ({}));
+      if (!postRes.ok) {
+        throw new Error(
+          (postPayload as { error?: string }).error || `HTTP ${postRes.status}`,
+        );
+      }
+      await revalidate();
+      return postPayload;
+    },
+    [getAccessToken, revalidate, spaceSlug],
+  );
+
   const enablePack = React.useCallback(
     async (packId: string) => {
       if (!spaceSlug) throw new Error('Missing space');
@@ -196,6 +246,7 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     refresh: () => revalidate(),
     createArtifact,
     deleteArtifact,
+    linkArtifactRoom,
     enablePack,
     enabledPacks: data?.enabled_packs ?? [],
   };

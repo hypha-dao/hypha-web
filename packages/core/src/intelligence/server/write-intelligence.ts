@@ -161,6 +161,7 @@ export async function writeIntelligenceBySpaceSlug(
       maturity: input.frontmatter.maturity,
       confidence: input.frontmatter.confidence,
       community_id: input.frontmatter.community_id,
+      room_id: input.frontmatter.room_id,
     });
     raw = serializeIntelligenceMarkdown({
       frontmatter: fm,

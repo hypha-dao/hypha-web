@@ -58,6 +58,8 @@ export type IntelligenceFrontmatter = {
   confidence?: string;
   community_id?: string;
   linked_signals?: string[];
+  /** Matrix room for per-artifact comments (Human Chat). */
+  room_id?: string;
 };
 
 export type IntelligenceManifestEntry = {
@@ -75,6 +77,8 @@ export type IntelligenceManifestEntry = {
   updated_at: string;
   /** Signal slugs that informed this artifact (pack field; graph edges). */
   linked_signals?: string[];
+  /** Matrix room for per-artifact comments (Human Chat). */
+  room_id?: string;
 };
 
 /** List DTO: manifest row plus a plain-text body preview for Memory cards. */

@@ -3416,6 +3416,8 @@
     "spaceIntelligenceEmpty": "Noch keine Intelligence-Artefakte. Erstelle eines, um zu starten.",
     "spaceIntelligenceEnableEnergyPack": "Energy-Pack aktivieren",
     "spaceIntelligenceEnablingPack": "Pack wird aktiviert…",
+    "spaceIntelligenceChatUnavailable": "Chat ist für diesen Space nicht verfügbar.",
+    "spaceIntelligenceCommentsFailed": "Kommentare für dieses Artefakt konnten nicht geöffnet werden.",
     "spaceDocumentation": "Space Documentation",
     "spaceDocumentationSubtitle": "Files from proposals, chat, calls, and uploaded memories � table view without previews.",
     "spaceDocumentationColDate": "Datum",

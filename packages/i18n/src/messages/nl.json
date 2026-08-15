@@ -3418,6 +3418,8 @@
     "spaceIntelligenceEmpty": "Nog geen intelligence-artefacten. Maak er een aan om te beginnen.",
     "spaceIntelligenceEnableEnergyPack": "Energy-pack inschakelen",
     "spaceIntelligenceEnablingPack": "Pack inschakelen…",
+    "spaceIntelligenceChatUnavailable": "Chat is niet beschikbaar voor deze space.",
+    "spaceIntelligenceCommentsFailed": "Reacties voor dit artefact konden niet worden geopend.",
     "spaceDocumentation": "Space Documentation",
     "spaceDocumentationSubtitle": "Files from proposals, chat, calls, and uploaded memories � table view without previews.",
     "spaceDocumentationColDate": "Datum",

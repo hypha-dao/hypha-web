@@ -58,6 +58,10 @@ export const intelligenceFrontmatterSchema = z.object({
   confidence: z.string().trim().min(1).max(50).optional(),
   community_id: slugIdSchema.optional(),
   linked_signals: z.array(slugIdSchema).optional(),
+  room_id: z.preprocess(
+    (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
+    z.string().trim().min(1).max(255).optional(),
+  ),
 });
 
 export type ParsedIntelligenceFrontmatter = z.infer<
@@ -105,6 +109,10 @@ const manifestEntrySchema = z.object({
   version: z.coerce.number().int().positive(),
   updated_at: isoDateSchema,
   linked_signals: z.array(slugIdSchema).optional().default([]),
+  room_id: z.preprocess(
+    (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
+    z.string().trim().min(1).max(255).optional(),
+  ),
 });
 
 export const intelligenceManifestSchema = z.object({
@@ -151,5 +159,6 @@ export function manifestEntryFromFrontmatter(input: {
     version: frontmatter.version,
     updated_at: frontmatter.updated_at,
     linked_signals: frontmatter.linked_signals ?? [],
+    ...(frontmatter.room_id ? { room_id: frontmatter.room_id } : {}),
   };
 }

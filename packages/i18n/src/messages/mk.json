@@ -3399,6 +3399,8 @@
     "spaceIntelligenceEmpty": "Сè уште нема артефакти. Создајте еден за да започнете.",
     "spaceIntelligenceEnableEnergyPack": "Enable Energy pack",
     "spaceIntelligenceEnablingPack": "Enabling pack…",
+    "spaceIntelligenceChatUnavailable": "Разговорот не е достапен за овој простор.",
+    "spaceIntelligenceCommentsFailed": "Не можеше да се отворат коментарите за овој артефакт.",
     "spaceDocumentation": "Space Documentation",
     "spaceDocumentationSubtitle": "Files from proposals, chat, calls, and uploaded memories � table view without previews.",
     "spaceDocumentationColDate": "Датум",

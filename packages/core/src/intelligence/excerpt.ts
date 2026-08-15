@@ -1,4 +1,4 @@
-const EXCERPT_MAX = 220;
+const EXCERPT_MAX = 560;
 
 /** Plain-text card preview from an intelligence Markdown body (no YAML). */
 export function excerptIntelligenceBody(
