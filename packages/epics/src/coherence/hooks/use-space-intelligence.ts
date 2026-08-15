@@ -4,6 +4,7 @@ import {
   buildIntelligenceSignalGraph,
   type IntelligenceGraph,
   type IntelligenceManifestEntry,
+  type IntelligenceFrontmatter,
 } from '@hypha-platform/core/intelligence';
 import { useAuthentication } from '@hypha-platform/authentication';
 import queryString from 'query-string';
@@ -18,6 +19,19 @@ type IntelligenceListResponse = {
   artifacts: IntelligenceManifestEntry[];
   graph: IntelligenceGraph;
   enabled_packs?: string[];
+};
+
+export type IntelligenceArtifactPayload = {
+  path: string;
+  sha: string;
+  frontmatter: IntelligenceFrontmatter;
+  body: string;
+};
+
+type IntelligenceArtifactResponse = {
+  space_slug: string;
+  configured: boolean;
+  artifact: IntelligenceArtifactPayload;
 };
 
 export function revalidateSpaceIntelligence(spaceSlug: string) {
@@ -153,5 +167,50 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     createArtifact,
     enablePack,
     enabledPacks: data?.enabled_packs ?? [],
+  };
+}
+
+export function useIntelligenceArtifact(
+  spaceSlug: string | undefined,
+  artifactId: string | undefined,
+) {
+  const { getAccessToken } = useAuthentication();
+  const key =
+    spaceSlug && artifactId
+      ? ([
+          SPACE_INTELLIGENCE_SWR_KEY,
+          spaceSlug,
+          'artifact',
+          artifactId,
+        ] as const)
+      : null;
+
+  const { data, error, isLoading, mutate } = useSWR(
+    key,
+    async ([, slug, , id]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(
+        `/api/v1/spaces/${slug}/intelligence/${encodeURIComponent(id)}`,
+        { headers },
+      );
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(payload?.error || `HTTP ${res.status}`);
+      }
+      return (await res.json()) as IntelligenceArtifactResponse;
+    },
+  );
+
+  return {
+    artifact: data?.artifact ?? null,
+    configured: data?.configured ?? false,
+    isLoading,
+    error:
+      error instanceof Error ? error : error ? new Error(String(error)) : null,
+    refresh: () => mutate(),
   };
 }

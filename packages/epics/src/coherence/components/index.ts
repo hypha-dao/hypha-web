@@ -32,3 +32,4 @@ export * from './space-memory-section';
 export * from './space-memory-timeline-item';
 export * from './space-intelligence-section';
 export * from './space-intelligence-cards';
+export * from './create-intelligence-form';

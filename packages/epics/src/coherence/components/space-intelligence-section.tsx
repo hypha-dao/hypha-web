@@ -1,23 +1,25 @@
 'use client';
 
 import { FC, useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Text } from '@radix-ui/themes';
+import { PlusIcon } from '@radix-ui/react-icons';
 import {
   Button,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea,
 } from '@hypha-platform/ui';
 import {
   INTELLIGENCE_CORE_TYPES,
   HYPHA_ENERGY_PACK_ID,
 } from '@hypha-platform/core/intelligence';
 import { useTranslations } from 'next-intl';
+import { Locale } from '@hypha-platform/i18n';
 import { useSpaceIntelligence } from '../hooks/use-space-intelligence';
 import {
   SpaceIntelligenceCard,
@@ -25,24 +27,20 @@ import {
 } from './space-intelligence-cards';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  SIGNAL_GRID_CARD_WRAPPER_CLASS,
+  SIGNAL_GRID_LAYOUT_CLASS,
+} from '../utils/signal-board-layout';
 
 type SpaceIntelligenceSectionProps = {
   spaceSlug: string;
 };
 
-function slugifyTitle(title: string): string {
-  return title
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-}
-
 export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
   spaceSlug,
 }) => {
   const t = useTranslations('CoherenceTab');
+  const { lang } = useParams<{ lang: Locale; id: string }>();
   const {
     artifacts,
     graph,
@@ -54,7 +52,6 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     searchTerm,
     setSearchTerm,
     refresh,
-    createArtifact,
     enablePack,
     enabledPacks,
   } = useSpaceIntelligence(spaceSlug);
@@ -65,16 +62,11 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     spaceId: space?.web3SpaceId ?? undefined,
   });
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState<string>('assessment');
-  const [body, setBody] = useState('');
-  const [related, setRelated] = useState('');
-  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [enablingPack, setEnablingPack] = useState(false);
 
   const energyPackEnabled = enabledPacks.includes(HYPHA_ENERGY_PACK_ID);
+  const createHref = `/${lang}/dho/${spaceSlug}/memory/new-intelligence`;
 
   const onEnableEnergyPack = async () => {
     setEnablingPack(true);
@@ -85,48 +77,6 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
       setSaveError(err instanceof Error ? err.message : String(err));
     } finally {
       setEnablingPack(false);
-    }
-  };
-
-  const onCreate = async () => {
-    const idBase = slugifyTitle(title);
-    if (!idBase) {
-      setSaveError(t('spaceIntelligenceCreateTitleRequired'));
-      return;
-    }
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      await createArtifact({
-        frontmatter: {
-          id: idBase,
-          type,
-          title: title.trim(),
-          space: spaceSlug,
-          source_app: 'hypha',
-          status: 'current',
-          created_at: today,
-          updated_at: today,
-          tags: [],
-          related: related
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean),
-          version: 1,
-          supersedes: null,
-        },
-        body,
-        source_app: 'hypha',
-      });
-      setShowCreate(false);
-      setTitle('');
-      setBody('');
-      setRelated('');
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -162,15 +112,11 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
                   : t('spaceIntelligenceEnableEnergyPack')}
               </Button>
             ) : null}
-            <Button
-              type="button"
-              colorVariant="accent"
-              size="sm"
-              onClick={() => setShowCreate((v) => !v)}
-            >
-              {showCreate
-                ? t('spaceIntelligenceCancelCreate')
-                : t('spaceIntelligenceNew')}
+            <Button asChild colorVariant="accent" size="sm">
+              <Link href={createHref} className="whitespace-nowrap">
+                <PlusIcon />
+                {t('spaceIntelligenceNew')}
+              </Link>
             </Button>
           </div>
         ) : null}
@@ -188,11 +134,14 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
             <SelectItem value="all">
               {t('spaceIntelligenceFilterAll')}
             </SelectItem>
-            {INTELLIGENCE_CORE_TYPES.map((coreType) => (
-              <SelectItem key={coreType} value={coreType}>
-                {coreType}
-              </SelectItem>
-            ))}
+            {INTELLIGENCE_CORE_TYPES.map((coreType) => {
+              const key = `intelligenceTypes.${coreType}`;
+              return (
+                <SelectItem key={coreType} value={coreType}>
+                  {t.has(key as never) ? t(key as never) : coreType}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
         <Input
@@ -203,73 +152,8 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
         />
       </div>
 
-      {showCreate ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="intel-title">
-                {t('spaceIntelligenceFieldTitle')}
-              </Label>
-              <Input
-                id="intel-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('spaceIntelligenceFieldType')}</Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INTELLIGENCE_CORE_TYPES.map((coreType) => (
-                    <SelectItem key={coreType} value={coreType}>
-                      {coreType}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="intel-related">
-              {t('spaceIntelligenceFieldRelated')}
-            </Label>
-            <Input
-              id="intel-related"
-              value={related}
-              onChange={(e) => setRelated(e.target.value)}
-              placeholder="id-one, id-two"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="intel-body">
-              {t('spaceIntelligenceFieldBody')}
-            </Label>
-            <Textarea
-              id="intel-body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={6}
-            />
-          </div>
-          {saveError ? (
-            <Text className="text-sm text-destructive">{saveError}</Text>
-          ) : null}
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              colorVariant="accent"
-              disabled={saving}
-              onClick={() => void onCreate()}
-            >
-              {saving
-                ? t('spaceIntelligenceSaving')
-                : t('spaceIntelligencePublish')}
-            </Button>
-          </div>
-        </div>
+      {saveError ? (
+        <Text className="text-sm text-destructive">{saveError}</Text>
       ) : null}
 
       {!configured && !isLoading ? (
@@ -302,13 +186,16 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
       ) : (
         <>
           <SpaceIntelligenceGraph graph={graph} />
-          <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2 xl:grid-cols-3">
+          <div className={SIGNAL_GRID_LAYOUT_CLASS}>
             {artifacts.map((artifact) => (
-              <li key={artifact.id}>
-                <SpaceIntelligenceCard artifact={artifact} />
-              </li>
+              <div key={artifact.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
+                <SpaceIntelligenceCard
+                  artifact={artifact}
+                  canEdit={canMutate}
+                />
+              </div>
             ))}
-          </ul>
+          </div>
         </>
       )}
     </section>

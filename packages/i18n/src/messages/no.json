@@ -3401,7 +3401,7 @@
     "spaceIntelligenceFieldTitle": "Title",
     "spaceIntelligenceFieldType": "Type",
     "spaceIntelligenceFieldRelated": "Related ids (comma-separated)",
-    "spaceIntelligenceFieldBody": "Body (markdown)",
+    "spaceIntelligenceFieldBody": "Beskrivelse",
     "spaceIntelligenceCreateTitleRequired": "Title is required.",
     "spaceIntelligenceSaving": "Publishing�",
     "spaceIntelligencePublish": "Publish",
@@ -3409,7 +3409,7 @@
     "spaceIntelligenceError": "Could not load space intelligence.",
     "spaceIntelligenceRetry": "Retry",
     "spaceIntelligenceLoading": "Loading intelligence�",
-    "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
+    "spaceIntelligenceEmpty": "Ingen intelligence-artefakter ennå. Opprett ett for å komme i gang.",
     "spaceIntelligenceEnableEnergyPack": "Aktiver Energy-pakke",
     "spaceIntelligenceEnablingPack": "Aktiverer pakke…",
     "spaceDocumentation": "Space Documentation",
@@ -3747,7 +3747,33 @@
     "signalMemoryPatchApproveEdited": "Approve edited",
     "signalMemoryPatchCancelEdit": "Cancel edit",
     "signalMemoryPatchEditLabel": "Proposed markdown",
-    "signalMemoryPatchMembersOnly": "Only space members can approve or reject."
+    "signalMemoryPatchMembersOnly": "Only space members can approve or reject.",
+    "spaceIntelligenceCreateTitle": "Nytt artefakt",
+    "spaceIntelligenceEditTitle": "Rediger artefakt",
+    "spaceIntelligenceEditMenu": "Rediger artefakt",
+    "spaceIntelligenceFieldTags": "Tagger",
+    "spaceIntelligenceFieldTagsPlaceholder": "tagg-en, tagg-to",
+    "spaceIntelligenceFieldBodyPlaceholder": "Skriv artefaktet…",
+    "spaceIntelligenceSavingUpdate": "Lagrer…",
+    "spaceIntelligenceLoadError": "Kunne ikke laste dette artefaktet.",
+    "intelligenceTypes": {
+      "context": "Kontekst",
+      "signal": "Signal",
+      "assessment": "Vurdering",
+      "insight": "Innsikt",
+      "recommendation": "Anbefaling",
+      "decision": "Beslutning",
+      "proposal": "Forslag",
+      "report": "Rapport",
+      "framework": "Rammeverk"
+    },
+    "intelligenceStatuses": {
+      "draft": "Utkast",
+      "current": "Gjeldende",
+      "contested": "Omtvistet",
+      "superseded": "Erstattet",
+      "archived": "Arkivert"
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Samtale - {count, plural, one {# medlem} other {# medlemmer}}",

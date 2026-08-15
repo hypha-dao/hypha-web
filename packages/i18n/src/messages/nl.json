@@ -3402,7 +3402,7 @@
     "spaceIntelligenceFieldTitle": "Title",
     "spaceIntelligenceFieldType": "Type",
     "spaceIntelligenceFieldRelated": "Related ids (comma-separated)",
-    "spaceIntelligenceFieldBody": "Body (markdown)",
+    "spaceIntelligenceFieldBody": "Beschrijving",
     "spaceIntelligenceCreateTitleRequired": "Title is required.",
     "spaceIntelligenceSaving": "Publishing�",
     "spaceIntelligencePublish": "Publish",
@@ -3410,7 +3410,7 @@
     "spaceIntelligenceError": "Could not load space intelligence.",
     "spaceIntelligenceRetry": "Retry",
     "spaceIntelligenceLoading": "Loading intelligence�",
-    "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
+    "spaceIntelligenceEmpty": "Nog geen intelligence-artefacten. Maak er een aan om te beginnen.",
     "spaceIntelligenceEnableEnergyPack": "Energy-pack inschakelen",
     "spaceIntelligenceEnablingPack": "Pack inschakelen…",
     "spaceDocumentation": "Space Documentation",
@@ -3748,7 +3748,33 @@
     "signalMemoryPatchApproveEdited": "Approve edited",
     "signalMemoryPatchCancelEdit": "Cancel edit",
     "signalMemoryPatchEditLabel": "Proposed markdown",
-    "signalMemoryPatchMembersOnly": "Only space members can approve or reject."
+    "signalMemoryPatchMembersOnly": "Only space members can approve or reject.",
+    "spaceIntelligenceCreateTitle": "Nieuw artefact",
+    "spaceIntelligenceEditTitle": "Artefact bewerken",
+    "spaceIntelligenceEditMenu": "Artefact bewerken",
+    "spaceIntelligenceFieldTags": "Tags",
+    "spaceIntelligenceFieldTagsPlaceholder": "tag-een, tag-twee",
+    "spaceIntelligenceFieldBodyPlaceholder": "Schrijf het artefact…",
+    "spaceIntelligenceSavingUpdate": "Opslaan…",
+    "spaceIntelligenceLoadError": "Dit artefact kon niet worden geladen.",
+    "intelligenceTypes": {
+      "context": "Context",
+      "signal": "Signaal",
+      "assessment": "Beoordeling",
+      "insight": "Inzicht",
+      "recommendation": "Aanbeveling",
+      "decision": "Besluit",
+      "proposal": "Voorstel",
+      "report": "Rapport",
+      "framework": "Kader"
+    },
+    "intelligenceStatuses": {
+      "draft": "Concept",
+      "current": "Actueel",
+      "contested": "Betwist",
+      "superseded": "Vervangen",
+      "archived": "Gearchiveerd"
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Oproep - {count, plural, one {# lid} other {# leden}}",

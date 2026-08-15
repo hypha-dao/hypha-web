@@ -3383,7 +3383,7 @@
     "spaceIntelligenceFieldTitle": "Title",
     "spaceIntelligenceFieldType": "Type",
     "spaceIntelligenceFieldRelated": "Related ids (comma-separated)",
-    "spaceIntelligenceFieldBody": "Body (markdown)",
+    "spaceIntelligenceFieldBody": "Опис",
     "spaceIntelligenceCreateTitleRequired": "Title is required.",
     "spaceIntelligenceSaving": "Publishing�",
     "spaceIntelligencePublish": "Publish",
@@ -3391,7 +3391,7 @@
     "spaceIntelligenceError": "Could not load space intelligence.",
     "spaceIntelligenceRetry": "Retry",
     "spaceIntelligenceLoading": "Loading intelligence�",
-    "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
+    "spaceIntelligenceEmpty": "Сè уште нема артефакти. Создајте еден за да започнете.",
     "spaceIntelligenceEnableEnergyPack": "Enable Energy pack",
     "spaceIntelligenceEnablingPack": "Enabling pack…",
     "spaceDocumentation": "Space Documentation",
@@ -3729,7 +3729,33 @@
     "signalMemoryPatchApproveEdited": "Approve edited",
     "signalMemoryPatchCancelEdit": "Cancel edit",
     "signalMemoryPatchEditLabel": "Proposed markdown",
-    "signalMemoryPatchMembersOnly": "Only space members can approve or reject."
+    "signalMemoryPatchMembersOnly": "Only space members can approve or reject.",
+    "spaceIntelligenceCreateTitle": "Нов артефакт",
+    "spaceIntelligenceEditTitle": "Уреди артефакт",
+    "spaceIntelligenceEditMenu": "Уреди артефакт",
+    "spaceIntelligenceFieldTags": "Ознаки",
+    "spaceIntelligenceFieldTagsPlaceholder": "ознака-еден, ознака-два",
+    "spaceIntelligenceFieldBodyPlaceholder": "Напишете го артефактот…",
+    "spaceIntelligenceSavingUpdate": "Се зачувува…",
+    "spaceIntelligenceLoadError": "Артефактот не можеше да се вчита.",
+    "intelligenceTypes": {
+      "context": "Контекст",
+      "signal": "Сигнал",
+      "assessment": "Проценка",
+      "insight": "Увид",
+      "recommendation": "Препорака",
+      "decision": "Одлука",
+      "proposal": "Предлог",
+      "report": "Извештај",
+      "framework": "Рамка"
+    },
+    "intelligenceStatuses": {
+      "draft": "Нацрт",
+      "current": "Тековен",
+      "contested": "Оспорен",
+      "superseded": "Заменет",
+      "archived": "Архивиран"
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Повик - {count, plural, one {# член} other {# членови}}",

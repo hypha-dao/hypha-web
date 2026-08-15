@@ -3400,7 +3400,7 @@
     "spaceIntelligenceFieldTitle": "Title",
     "spaceIntelligenceFieldType": "Type",
     "spaceIntelligenceFieldRelated": "Related ids (comma-separated)",
-    "spaceIntelligenceFieldBody": "Body (markdown)",
+    "spaceIntelligenceFieldBody": "Beschreibung",
     "spaceIntelligenceCreateTitleRequired": "Title is required.",
     "spaceIntelligenceSaving": "Publishing�",
     "spaceIntelligencePublish": "Publish",
@@ -3408,7 +3408,7 @@
     "spaceIntelligenceError": "Could not load space intelligence.",
     "spaceIntelligenceRetry": "Retry",
     "spaceIntelligenceLoading": "Loading intelligence�",
-    "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
+    "spaceIntelligenceEmpty": "Noch keine Intelligence-Artefakte. Erstelle eines, um zu starten.",
     "spaceIntelligenceEnableEnergyPack": "Energy-Pack aktivieren",
     "spaceIntelligenceEnablingPack": "Pack wird aktiviert…",
     "spaceDocumentation": "Space Documentation",
@@ -3746,7 +3746,33 @@
     "signalMemoryPatchApproveEdited": "Bearbeitetes genehmigen",
     "signalMemoryPatchCancelEdit": "Bearbeitung abbrechen",
     "signalMemoryPatchEditLabel": "Vorgeschlagenes Markdown",
-    "signalMemoryPatchMembersOnly": "Nur Space-Mitglieder können genehmigen oder ablehnen."
+    "signalMemoryPatchMembersOnly": "Nur Space-Mitglieder können genehmigen oder ablehnen.",
+    "spaceIntelligenceCreateTitle": "Neues Artefakt",
+    "spaceIntelligenceEditTitle": "Artefakt bearbeiten",
+    "spaceIntelligenceEditMenu": "Artefakt bearbeiten",
+    "spaceIntelligenceFieldTags": "Tags",
+    "spaceIntelligenceFieldTagsPlaceholder": "tag-eins, tag-zwei",
+    "spaceIntelligenceFieldBodyPlaceholder": "Artefakt schreiben…",
+    "spaceIntelligenceSavingUpdate": "Speichern…",
+    "spaceIntelligenceLoadError": "Dieses Artefakt konnte nicht geladen werden.",
+    "intelligenceTypes": {
+      "context": "Kontext",
+      "signal": "Signal",
+      "assessment": "Bewertung",
+      "insight": "Erkenntnis",
+      "recommendation": "Empfehlung",
+      "decision": "Entscheidung",
+      "proposal": "Vorschlag",
+      "report": "Bericht",
+      "framework": "Rahmen"
+    },
+    "intelligenceStatuses": {
+      "draft": "Entwurf",
+      "current": "Aktuell",
+      "contested": "Umstritten",
+      "superseded": "Ersetzt",
+      "archived": "Archiviert"
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

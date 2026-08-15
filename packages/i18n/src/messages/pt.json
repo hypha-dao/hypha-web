@@ -2836,7 +2836,7 @@
     "spaceIntelligenceFieldTitle": "Title",
     "spaceIntelligenceFieldType": "Type",
     "spaceIntelligenceFieldRelated": "Related ids (comma-separated)",
-    "spaceIntelligenceFieldBody": "Body (markdown)",
+    "spaceIntelligenceFieldBody": "Descrição",
     "spaceIntelligenceCreateTitleRequired": "Title is required.",
     "spaceIntelligenceSaving": "Publishing�",
     "spaceIntelligencePublish": "Publish",
@@ -2844,7 +2844,7 @@
     "spaceIntelligenceError": "Could not load space intelligence.",
     "spaceIntelligenceRetry": "Retry",
     "spaceIntelligenceLoading": "Loading intelligence�",
-    "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
+    "spaceIntelligenceEmpty": "Ainda não há artefactos de inteligência. Cria um para começar.",
     "spaceIntelligenceEnableEnergyPack": "Ativar pack Energy",
     "spaceIntelligenceEnablingPack": "A ativar pack…",
     "spaceDocumentation": "Space Documentation",
@@ -3180,7 +3180,33 @@
     "signalMemoryPatchApproveEdited": "Aprovar editado",
     "signalMemoryPatchCancelEdit": "Cancelar edição",
     "signalMemoryPatchEditLabel": "Markdown proposto",
-    "signalMemoryPatchMembersOnly": "Apenas membros do space podem aprovar ou rejeitar."
+    "signalMemoryPatchMembersOnly": "Apenas membros do space podem aprovar ou rejeitar.",
+    "spaceIntelligenceCreateTitle": "Novo artefacto",
+    "spaceIntelligenceEditTitle": "Editar artefacto",
+    "spaceIntelligenceEditMenu": "Editar artefacto",
+    "spaceIntelligenceFieldTags": "Etiquetas",
+    "spaceIntelligenceFieldTagsPlaceholder": "etiqueta-um, etiqueta-dois",
+    "spaceIntelligenceFieldBodyPlaceholder": "Escreve o artefacto…",
+    "spaceIntelligenceSavingUpdate": "A guardar…",
+    "spaceIntelligenceLoadError": "Não foi possível carregar este artefacto.",
+    "intelligenceTypes": {
+      "context": "Contexto",
+      "signal": "Sinal",
+      "assessment": "Avaliação",
+      "insight": "Insight",
+      "recommendation": "Recomendação",
+      "decision": "Decisão",
+      "proposal": "Proposta",
+      "report": "Relatório",
+      "framework": "Framework"
+    },
+    "intelligenceStatuses": {
+      "draft": "Rascunho",
+      "current": "Atual",
+      "contested": "Contestado",
+      "superseded": "Substituído",
+      "archived": "Arquivado"
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",

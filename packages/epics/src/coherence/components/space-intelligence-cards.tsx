@@ -5,7 +5,15 @@ import type {
   IntelligenceGraph,
   IntelligenceManifestEntry,
 } from '@hypha-platform/core/intelligence';
+import { Button, Card, CardContent, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { Pencil } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
+import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { PRIORITY_LEFT_ACCENT_BAR_CLASS } from '../utils/signal-priority-styles';
+import { SignalTagBadges } from './signal-tag-badges';
 
 type SpaceIntelligenceGraphProps = {
   graph: IntelligenceGraph;
@@ -108,35 +116,129 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
   );
 };
 
+const STATUS_LEFT_BAR: Record<string, string> = {
+  draft: 'bg-neutral-7',
+  current: 'bg-accent-9',
+  contested: 'bg-warning-9',
+  superseded: 'bg-neutral-7',
+  archived: 'bg-error-9',
+};
+
 type IntelligenceCardProps = {
   artifact: IntelligenceManifestEntry;
-  onSelect?: (id: string) => void;
+  canEdit?: boolean;
 };
 
 export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
   artifact,
-  onSelect,
+  canEdit = false,
 }) => {
+  const t = useTranslations('CoherenceTab');
+  const router = useRouter();
+  const params = useParams<{ lang: string; id: string; tab?: string }>();
+  const locale = useLocale();
+  const dateFnsLocale = resolveDateFnsLocale(locale);
+
+  const typeKey = `intelligenceTypes.${artifact.type}`;
+  const statusKey = `intelligenceStatuses.${artifact.status}`;
+  const typeLabel = t.has(typeKey as never)
+    ? t(typeKey as never)
+    : artifact.type;
+  const statusLabel = t.has(statusKey as never)
+    ? t(statusKey as never)
+    : artifact.status;
+
+  const updatedAtDate = artifact.updated_at
+    ? new Date(
+        /^\d{4}-\d{2}-\d{2}$/.test(artifact.updated_at)
+          ? `${artifact.updated_at}T00:00:00`
+          : artifact.updated_at,
+      )
+    : null;
+  const updatedShort =
+    updatedAtDate && !Number.isNaN(updatedAtDate.getTime())
+      ? formatDistanceToNowStrict(updatedAtDate, {
+          addSuffix: false,
+          locale: dateFnsLocale,
+        })
+      : '';
+
+  const editHref =
+    params.lang && params.id
+      ? `/${params.lang}/dho/${params.id}/${
+          params.tab ?? 'memory'
+        }/edit-intelligence/${artifact.id}`
+      : undefined;
+
+  const openEditor = () => {
+    if (!editHref) return;
+    router.push(editHref);
+  };
+
   return (
-    <button
-      type="button"
-      onClick={() => onSelect?.(artifact.id)}
-      className="flex h-full w-full flex-col gap-2 rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-accent-7 hover:bg-accent-2"
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={openEditor}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openEditor();
+        }
+      }}
+      className="craft-card-interactive group relative flex h-full w-full min-h-0 cursor-pointer flex-col text-left outline-none focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="rounded-md bg-accent-3 px-2 py-0.5 text-1 font-medium text-accent-11">
-          {artifact.type}
-        </span>
-        <span className="text-1 text-muted-foreground">{artifact.status}</span>
-      </div>
-      <h3 className="text-3 font-medium leading-snug text-foreground">
-        {artifact.title}
-      </h3>
-      {artifact.tags.length > 0 ? (
-        <p className="line-clamp-2 text-1 text-muted-foreground">
-          {artifact.tags.join(' · ')}
-        </p>
-      ) : null}
-    </button>
+      <div
+        className={cn(
+          PRIORITY_LEFT_ACCENT_BAR_CLASS,
+          STATUS_LEFT_BAR[artifact.status] ?? STATUS_LEFT_BAR.current,
+        )}
+        title={statusLabel}
+        aria-label={statusLabel}
+      />
+      <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
+        <div className="relative flex flex-1 flex-col gap-2.5 px-3.5 pb-3 pt-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex min-w-0 items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <CardTitle className="line-clamp-2 text-3 font-medium leading-snug tracking-tight">
+                  {artifact.title}
+                </CardTitle>
+              </div>
+              {canEdit && editHref ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-7 w-7 shrink-0 p-0 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+                  aria-label={t('spaceIntelligenceEditMenu')}
+                  title={t('spaceIntelligenceEditMenu')}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    router.push(editHref);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden />
+                </Button>
+              ) : null}
+            </div>
+            <p className="text-1 text-muted-foreground">
+              <span>{typeLabel}</span>
+              <span aria-hidden> · </span>
+              <span>{statusLabel}</span>
+              {updatedShort ? (
+                <>
+                  <span aria-hidden> · </span>
+                  <span>{updatedShort}</span>
+                </>
+              ) : null}
+            </p>
+          </div>
+          <SignalTagBadges tags={artifact.tags} />
+        </div>
+      </CardContent>
+    </Card>
   );
 };

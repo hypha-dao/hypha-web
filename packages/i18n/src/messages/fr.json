@@ -2834,7 +2834,7 @@
     "spaceIntelligenceFieldTitle": "Title",
     "spaceIntelligenceFieldType": "Type",
     "spaceIntelligenceFieldRelated": "Related ids (comma-separated)",
-    "spaceIntelligenceFieldBody": "Body (markdown)",
+    "spaceIntelligenceFieldBody": "Description",
     "spaceIntelligenceCreateTitleRequired": "Title is required.",
     "spaceIntelligenceSaving": "Publishing�",
     "spaceIntelligencePublish": "Publish",
@@ -2842,7 +2842,7 @@
     "spaceIntelligenceError": "Could not load space intelligence.",
     "spaceIntelligenceRetry": "Retry",
     "spaceIntelligenceLoading": "Loading intelligence�",
-    "spaceIntelligenceEmpty": "No intelligence artifacts yet. Publish a markdown artifact to get started.",
+    "spaceIntelligenceEmpty": "Pas encore d’artefacts d’intelligence. Créez-en un pour commencer.",
     "spaceIntelligenceEnableEnergyPack": "Activer le pack Energy",
     "spaceIntelligenceEnablingPack": "Activation du pack…",
     "spaceDocumentation": "Space Documentation",
@@ -3178,7 +3178,33 @@
     "signalMemoryPatchApproveEdited": "Approuver la version modifiée",
     "signalMemoryPatchCancelEdit": "Annuler la modification",
     "signalMemoryPatchEditLabel": "Markdown proposé",
-    "signalMemoryPatchMembersOnly": "Seuls les membres de l’espace peuvent approuver ou rejeter."
+    "signalMemoryPatchMembersOnly": "Seuls les membres de l’espace peuvent approuver ou rejeter.",
+    "spaceIntelligenceCreateTitle": "Nouvel artefact",
+    "spaceIntelligenceEditTitle": "Modifier l’artefact",
+    "spaceIntelligenceEditMenu": "Modifier l’artefact",
+    "spaceIntelligenceFieldTags": "Tags",
+    "spaceIntelligenceFieldTagsPlaceholder": "tag-un, tag-deux",
+    "spaceIntelligenceFieldBodyPlaceholder": "Rédigez l’artefact…",
+    "spaceIntelligenceSavingUpdate": "Enregistrement…",
+    "spaceIntelligenceLoadError": "Impossible de charger cet artefact.",
+    "intelligenceTypes": {
+      "context": "Contexte",
+      "signal": "Signal",
+      "assessment": "Évaluation",
+      "insight": "Insight",
+      "recommendation": "Recommandation",
+      "decision": "Décision",
+      "proposal": "Proposition",
+      "report": "Rapport",
+      "framework": "Cadre"
+    },
+    "intelligenceStatuses": {
+      "draft": "Brouillon",
+      "current": "Actuel",
+      "contested": "Contesté",
+      "superseded": "Remplacé",
+      "archived": "Archivé"
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
