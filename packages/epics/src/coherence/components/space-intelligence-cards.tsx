@@ -17,6 +17,16 @@ import {
   SIGNAL_TAG_OVERFLOW_BADGE_CLASS,
 } from '../utils/signal-tag-badge-styles';
 
+function intelligenceEditHref(
+  params: { lang?: string; id?: string; tab?: string },
+  artifactId: string,
+): string | undefined {
+  if (!params.lang || !params.id) return undefined;
+  return `/${params.lang}/dho/${params.id}/${
+    params.tab ?? 'memory'
+  }/edit-intelligence/${artifactId}`;
+}
+
 type SpaceIntelligenceGraphProps = {
   graph: IntelligenceGraph;
   className?: string;
@@ -27,13 +37,16 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
   graph,
   className,
 }) => {
+  const t = useTranslations('CoherenceTab');
+  const router = useRouter();
+  const params = useParams<{ lang: string; id: string; tab?: string }>();
   const nodes = graph.nodes;
   if (nodes.length === 0) {
     return null;
   }
 
   const width = 640;
-  const height = 280;
+  const height = 420;
   const cx = width / 2;
   const cy = height / 2;
   const radius = Math.min(width, height) * 0.36;
@@ -47,6 +60,12 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
     });
   });
 
+  const openArtifact = (artifactId: string) => {
+    const href = intelligenceEditHref(params, artifactId);
+    if (!href) return;
+    router.push(href);
+  };
+
   return (
     <div
       className={cn(
@@ -57,8 +76,8 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full"
-        role="img"
-        aria-label="Space intelligence knowledge graph (artifacts and signals)"
+        role="group"
+        aria-label={t('spaceIntelligenceGraphAria')}
       >
         {graph.edges.map((edge) => {
           const from = positions.get(edge.from);
@@ -84,8 +103,39 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
           const isSignal =
             node.kind === 'signal' || node.kind === 'signal-missing';
           const missing = node.kind === 'signal-missing';
+          const canOpen = node.kind === 'artifact';
           return (
-            <g key={node.id}>
+            <g
+              key={node.id}
+              role={canOpen ? 'button' : undefined}
+              tabIndex={canOpen ? 0 : undefined}
+              className={
+                canOpen
+                  ? 'cursor-pointer outline-none focus-visible:[&>circle]:stroke-[3]'
+                  : undefined
+              }
+              aria-label={
+                canOpen
+                  ? t('spaceIntelligenceOpenArtifact', { title: node.title })
+                  : undefined
+              }
+              onClick={canOpen ? () => openArtifact(node.id) : undefined}
+              onKeyDown={
+                canOpen
+                  ? (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openArtifact(node.id);
+                      }
+                    }
+                  : undefined
+              }
+            >
+              <title>
+                {canOpen
+                  ? t('spaceIntelligenceOpenArtifact', { title: node.title })
+                  : node.title}
+              </title>
               <circle
                 cx={pos.x}
                 cy={pos.y}
@@ -207,12 +257,7 @@ export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
         })
       : '';
 
-  const editHref =
-    params.lang && params.id
-      ? `/${params.lang}/dho/${params.id}/${
-          params.tab ?? 'memory'
-        }/edit-intelligence/${artifact.id}`
-      : undefined;
+  const editHref = intelligenceEditHref(params, artifact.id);
 
   const openEditor = () => {
     if (!editHref) return;

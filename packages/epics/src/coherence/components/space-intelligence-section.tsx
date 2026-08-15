@@ -20,6 +20,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from '@hypha-platform/ui';
 import {
   INTELLIGENCE_CORE_TYPES,
@@ -43,6 +46,8 @@ import {
 type SpaceIntelligenceSectionProps = {
   spaceSlug: string;
 };
+
+type IntelligenceViewMode = 'cards' | 'graph';
 
 export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
   spaceSlug,
@@ -76,6 +81,7 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
   const [pendingDelete, setPendingDelete] =
     useState<IntelligenceListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [viewMode, setViewMode] = useState<IntelligenceViewMode>('cards');
 
   const energyPackEnabled = enabledPacks.includes(HYPHA_ENERGY_PACK_ID);
   const createHref = `/${lang}/dho/${spaceSlug}/memory/new-intelligence`;
@@ -181,6 +187,24 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
           placeholder={t('spaceIntelligenceSearch')}
           className="max-w-xs"
         />
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as IntelligenceViewMode)}
+          className="ml-auto shrink-0"
+        >
+          <TabsList
+            triggerVariant="switch"
+            className="w-fit"
+            aria-label={t('spaceIntelligenceViewSwitcher')}
+          >
+            <TabsTrigger value="cards" variant="switch">
+              {t('spaceIntelligenceViewCards')}
+            </TabsTrigger>
+            <TabsTrigger value="graph" variant="switch">
+              {t('spaceIntelligenceViewGraph')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {saveError ? (
@@ -216,20 +240,26 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
         </Text>
       ) : (
         <>
-          <SpaceIntelligenceGraph graph={graph} />
-          <div className={SIGNAL_GRID_LAYOUT_CLASS}>
-            {artifacts.map((artifact) => (
-              <div key={artifact.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
-                <SpaceIntelligenceCard
-                  artifact={artifact}
-                  canEdit={canMutate}
-                  onDelete={
-                    canMutate ? (item) => setPendingDelete(item) : undefined
-                  }
-                />
-              </div>
-            ))}
-          </div>
+          {viewMode === 'graph' ? (
+            <SpaceIntelligenceGraph graph={graph} />
+          ) : (
+            <div className={SIGNAL_GRID_LAYOUT_CLASS}>
+              {artifacts.map((artifact) => (
+                <div
+                  key={artifact.id}
+                  className={SIGNAL_GRID_CARD_WRAPPER_CLASS}
+                >
+                  <SpaceIntelligenceCard
+                    artifact={artifact}
+                    canEdit={canMutate}
+                    onDelete={
+                      canMutate ? (item) => setPendingDelete(item) : undefined
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
 

@@ -237,6 +237,31 @@ describe('buildIntelligenceSignalGraph', () => {
     expect(graph.nodes.some((n) => n.id === 'b')).toBe(true);
   });
 
+  it('includes artifacts that have no signal links', () => {
+    const graph = buildIntelligenceSignalGraph({
+      artifacts: [
+        {
+          id: 'solo',
+          type: 'context',
+          title: 'Solo',
+          space: 'demo',
+          status: 'current',
+          tags: [],
+          related: [],
+          source_app: 'hypha',
+          path: 'intelligence/spaces/demo/context/solo.md',
+          sha: 'abc1234',
+          version: 1,
+          updated_at: '2026-07-18',
+        },
+      ],
+    });
+    expect(graph.nodes).toEqual([
+      expect.objectContaining({ id: 'solo', kind: 'artifact' }),
+    ]);
+    expect(graph.edges).toHaveLength(0);
+  });
+
   it('marks unknown signal slugs as missing', () => {
     const graph = buildIntelligenceSignalGraph({
       artifacts: [

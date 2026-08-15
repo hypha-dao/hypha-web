@@ -97,9 +97,9 @@ export function buildIntelligenceSignalGraph(input: {
   };
 
   for (const artifact of input.artifacts) {
+    ensureArtifact(artifact.id);
     for (const slug of artifact.linked_signals ?? []) {
       if (!slug) continue;
-      ensureArtifact(artifact.id);
       ensureSignal(slug);
       addEdge(artifact.id, intelligenceSignalNodeId(slug), 'linked-signal');
     }
