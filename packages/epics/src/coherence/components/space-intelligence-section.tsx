@@ -201,47 +201,43 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
       </header>
 
       <div className="flex flex-col gap-3">
-        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-            <div className="inline-flex w-max flex-nowrap items-center gap-2">
-              {canMutate ? (
-                <div className="inline-flex h-10 shrink-0 items-center rounded-lg bg-neutral-3 px-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    size="sm"
-                    className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-foreground"
-                    aria-label={t('spaceIntelligenceConfigure')}
-                    title={t('spaceIntelligenceConfigure')}
-                    onClick={() => setSettingsOpen(true)}
-                  >
-                    <Cog className="h-[1.125rem] w-[1.125rem]" aria-hidden />
-                  </Button>
-                </div>
-              ) : null}
-              <Tabs
-                value={viewMode}
-                onValueChange={(value) =>
-                  setViewMode(value as IntelligenceViewMode)
-                }
-                className="shrink-0"
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+          {canMutate ? (
+            <div className="inline-flex h-10 shrink-0 items-center rounded-lg bg-neutral-3 px-1">
+              <Button
+                type="button"
+                variant="ghost"
+                colorVariant="neutral"
+                size="sm"
+                className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-foreground"
+                aria-label={t('spaceIntelligenceConfigure')}
+                title={t('spaceIntelligenceConfigure')}
+                onClick={() => setSettingsOpen(true)}
               >
-                <TabsList
-                  triggerVariant="switch"
-                  className="w-fit"
-                  aria-label={t('spaceIntelligenceViewSwitcher')}
-                >
-                  <TabsTrigger value="cards" variant="switch">
-                    {t('spaceIntelligenceViewCards')}
-                  </TabsTrigger>
-                  <TabsTrigger value="graph" variant="switch">
-                    {t('spaceIntelligenceViewGraph')}
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+                <Cog className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+              </Button>
             </div>
-          </div>
+          ) : null}
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) =>
+              setViewMode(value as IntelligenceViewMode)
+            }
+            className="shrink-0"
+          >
+            <TabsList
+              triggerVariant="switch"
+              className="w-fit"
+              aria-label={t('spaceIntelligenceViewSwitcher')}
+            >
+              <TabsTrigger value="cards" variant="switch">
+                {t('spaceIntelligenceViewCards')}
+              </TabsTrigger>
+              <TabsTrigger value="graph" variant="switch">
+                {t('spaceIntelligenceViewGraph')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[14px]">
             <Checkbox
               id="hideArchivedIntelligenceCheckbox"

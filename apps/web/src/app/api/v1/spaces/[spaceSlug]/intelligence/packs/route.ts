@@ -74,6 +74,7 @@ export async function GET(
           title: template.title,
           pack_alias: template.pack_alias,
           tags: template.tags,
+          body: template.body,
         })),
       })),
     });

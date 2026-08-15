@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   Button,
@@ -25,6 +26,7 @@ export type IntelligencePackPreview = {
     title: string;
     pack_alias: string;
     tags: string[];
+    body: string;
   }>;
 };
 
@@ -89,7 +91,7 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[min(56rem,calc(100vw-var(--sidebar-left-width,0px)-var(--sidebar-right-width,0px)-2rem))]">
         <DialogHeader>
           <DialogTitle>{t('spaceIntelligenceConfigure')}</DialogTitle>
           <DialogDescription>
@@ -142,26 +144,34 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
                         count: pack.template_count,
                       })}
                     </p>
-                    <ul className="flex flex-col gap-1">
+                    <ul className="flex flex-col gap-1.5">
                       {pack.templates.map((template) => {
                         const typeKey = `intelligenceTypes.${template.type}`;
                         const typeLabel = t.has(typeKey as never)
                           ? t(typeKey as never)
                           : template.type;
                         return (
-                          <li
-                            key={template.id}
-                            className="flex min-w-0 items-baseline gap-2 text-2"
-                          >
-                            <span className="shrink-0 font-mono text-1 text-muted-foreground">
-                              {template.pack_alias}
-                            </span>
-                            <span className="min-w-0 truncate">
-                              {template.title}
-                            </span>
-                            <span className="shrink-0 text-1 text-muted-foreground">
-                              {typeLabel}
-                            </span>
+                          <li key={template.id}>
+                            <details className="group rounded-md border border-border bg-background">
+                              <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-2 [&::-webkit-details-marker]:hidden">
+                                <ChevronDown
+                                  className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                                  aria-hidden
+                                />
+                                <span className="shrink-0 font-mono text-1 text-muted-foreground">
+                                  {template.pack_alias}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate">
+                                  {template.title}
+                                </span>
+                                <span className="shrink-0 text-1 text-muted-foreground">
+                                  {typeLabel}
+                                </span>
+                              </summary>
+                              <pre className="max-h-[min(24rem,50dvh)] overflow-auto whitespace-pre-wrap break-words border-t border-border px-3 py-3 font-mono text-1 leading-relaxed text-foreground">
+                                {template.body}
+                              </pre>
+                            </details>
                           </li>
                         );
                       })}
