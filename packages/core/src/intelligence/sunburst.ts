@@ -70,7 +70,10 @@ export function sunburstBoardColor(
 ): string {
   const index = boards.findIndex((board) => board.slug === slug);
   const paletteIndex = index >= 0 ? index : hashSlug(slug);
-  return SUNBURST_BOARD_PALETTE[paletteIndex % SUNBURST_BOARD_PALETTE.length];
+  return (
+    SUNBURST_BOARD_PALETTE[paletteIndex % SUNBURST_BOARD_PALETTE.length] ??
+    SUNBURST_BOARD_PALETTE[0]
+  );
 }
 
 function hashSlug(slug: string): number {
