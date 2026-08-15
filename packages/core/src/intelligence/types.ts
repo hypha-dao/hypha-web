@@ -77,6 +77,11 @@ export type IntelligenceManifestEntry = {
   linked_signals?: string[];
 };
 
+/** List DTO: manifest row plus a plain-text body preview for Memory cards. */
+export type IntelligenceListItem = IntelligenceManifestEntry & {
+  excerpt?: string;
+};
+
 export type IntelligenceManifest = {
   version: 1;
   space: string;

@@ -3,7 +3,7 @@
 import {
   buildIntelligenceSignalGraph,
   type IntelligenceGraph,
-  type IntelligenceManifestEntry,
+  type IntelligenceListItem,
   type IntelligenceFrontmatter,
 } from '@hypha-platform/core/intelligence';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -16,7 +16,7 @@ export const SPACE_INTELLIGENCE_SWR_KEY = 'space-intelligence' as const;
 type IntelligenceListResponse = {
   space_slug: string;
   configured: boolean;
-  artifacts: IntelligenceManifestEntry[];
+  artifacts: IntelligenceListItem[];
   graph: IntelligenceGraph;
   enabled_packs?: string[];
 };
@@ -117,6 +117,36 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     [getAccessToken, revalidate, spaceSlug],
   );
 
+  const deleteArtifact = React.useCallback(
+    async (input: { artifactId: string; expectedSha: string }) => {
+      if (!spaceSlug) throw new Error('Missing space');
+      const token = await getAccessToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(
+        `/api/v1/spaces/${spaceSlug}/intelligence/${encodeURIComponent(
+          input.artifactId,
+        )}`,
+        {
+          method: 'DELETE',
+          headers,
+          body: JSON.stringify({ expectedSha: input.expectedSha }),
+        },
+      );
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          (payload as { error?: string }).error || `HTTP ${res.status}`,
+        );
+      }
+      await revalidate();
+      return payload;
+    },
+    [getAccessToken, revalidate, spaceSlug],
+  );
+
   const enablePack = React.useCallback(
     async (packId: string) => {
       if (!spaceSlug) throw new Error('Missing space');
@@ -165,6 +195,7 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     setSearchTerm,
     refresh: () => revalidate(),
     createArtifact,
+    deleteArtifact,
     enablePack,
     enabledPacks: data?.enabled_packs ?? [],
   };

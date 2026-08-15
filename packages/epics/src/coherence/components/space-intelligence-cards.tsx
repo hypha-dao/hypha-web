@@ -1,13 +1,13 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, KeyboardEvent } from 'react';
 import type {
   IntelligenceGraph,
-  IntelligenceManifestEntry,
+  IntelligenceListItem,
 } from '@hypha-platform/core/intelligence';
 import { cn } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -157,14 +157,25 @@ function IntelligenceTagBadges({ tags }: { tags: string[] }) {
   );
 }
 
+function stopCardActivationKey(event: KeyboardEvent<HTMLElement>) {
+  if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+    if (event.key === ' ' || event.key === 'Spacebar') {
+      event.preventDefault();
+    }
+    event.stopPropagation();
+  }
+}
+
 type IntelligenceCardProps = {
-  artifact: IntelligenceManifestEntry;
+  artifact: IntelligenceListItem;
   canEdit?: boolean;
+  onDelete?: (artifact: IntelligenceListItem) => void;
 };
 
 export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
   artifact,
   canEdit = false,
+  onDelete,
 }) => {
   const t = useTranslations('CoherenceTab');
   const router = useRouter();
@@ -238,20 +249,41 @@ export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
                   {artifact.title}
                 </h3>
               </div>
-              {canEdit && editHref ? (
-                <button
-                  type="button"
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-                  aria-label={t('spaceIntelligenceEditMenu')}
-                  title={t('spaceIntelligenceEditMenu')}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    router.push(editHref);
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" aria-hidden />
-                </button>
+              {canEdit && (editHref || onDelete) ? (
+                <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+                  {editHref ? (
+                    <button
+                      type="button"
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={t('spaceIntelligenceEditMenu')}
+                      title={t('spaceIntelligenceEditMenu')}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        router.push(editHref);
+                      }}
+                      onKeyDown={stopCardActivationKey}
+                    >
+                      <Pencil className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                  ) : null}
+                  {onDelete ? (
+                    <button
+                      type="button"
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={t('spaceIntelligenceDeleteMenu')}
+                      title={t('spaceIntelligenceDeleteMenu')}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onDelete(artifact);
+                      }}
+                      onKeyDown={stopCardActivationKey}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
             </div>
             <p className="text-1 text-muted-foreground">
@@ -266,6 +298,11 @@ export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
               ) : null}
             </p>
           </div>
+          {artifact.excerpt ? (
+            <p className="line-clamp-2 min-h-[2.5rem] text-2 leading-snug text-muted-foreground">
+              {artifact.excerpt}
+            </p>
+          ) : null}
           <IntelligenceTagBadges tags={artifact.tags} />
         </div>
       </div>

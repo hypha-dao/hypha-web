@@ -11,6 +11,7 @@ export type {
   IntelligenceFrontmatter,
   IntelligenceManifest,
   IntelligenceManifestEntry,
+  IntelligenceListItem,
   IntelligenceCoreType,
   IntelligenceStatus,
   IntelligenceArtifact,
@@ -24,6 +25,7 @@ export {
   buildIntelligenceSignalGraph,
 } from './graph';
 export { HYPHA_ENERGY_PACK_ID } from './packs/ids';
+export { excerptIntelligenceBody } from './excerpt';
 export {
   resolveCanonicalSourceApp,
   INTELLIGENCE_MARKDOWN_MAX_BYTES,

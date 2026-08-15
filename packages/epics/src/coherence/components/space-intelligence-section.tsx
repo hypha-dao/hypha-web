@@ -6,6 +6,13 @@ import { useParams } from 'next/navigation';
 import { Text } from '@radix-ui/themes';
 import { PlusIcon } from '@radix-ui/react-icons';
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Input,
   Select,
@@ -17,6 +24,7 @@ import {
 import {
   INTELLIGENCE_CORE_TYPES,
   HYPHA_ENERGY_PACK_ID,
+  type IntelligenceListItem,
 } from '@hypha-platform/core/intelligence';
 import { useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
@@ -52,6 +60,7 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     searchTerm,
     setSearchTerm,
     refresh,
+    deleteArtifact,
     enablePack,
     enabledPacks,
   } = useSpaceIntelligence(spaceSlug);
@@ -64,9 +73,31 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [enablingPack, setEnablingPack] = useState(false);
+  const [pendingDelete, setPendingDelete] =
+    useState<IntelligenceListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const energyPackEnabled = enabledPacks.includes(HYPHA_ENERGY_PACK_ID);
   const createHref = `/${lang}/dho/${spaceSlug}/memory/new-intelligence`;
+
+  const onConfirmDelete = async () => {
+    if (!pendingDelete || deleting) return;
+    setDeleting(true);
+    setSaveError(null);
+    try {
+      await deleteArtifact({
+        artifactId: pendingDelete.id,
+        expectedSha: pendingDelete.sha,
+      });
+      setPendingDelete(null);
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : t('spaceIntelligenceDeleteFailed'),
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const onEnableEnergyPack = async () => {
     setEnablingPack(true);
@@ -192,12 +223,50 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
                 <SpaceIntelligenceCard
                   artifact={artifact}
                   canEdit={canMutate}
+                  onDelete={
+                    canMutate ? (item) => setPendingDelete(item) : undefined
+                  }
                 />
               </div>
             ))}
           </div>
         </>
       )}
+
+      <AlertDialog
+        open={pendingDelete != null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('spaceIntelligenceDeleteTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('spaceIntelligenceDeleteConfirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {saveError && pendingDelete ? (
+            <p className="text-sm text-error-11">{saveError}</p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>
+              {t('spaceIntelligenceCancelCreate')}
+            </AlertDialogCancel>
+            <Button
+              colorVariant="error"
+              disabled={deleting}
+              onClick={() => void onConfirmDelete()}
+            >
+              {deleting
+                ? t('spaceIntelligenceDeleting')
+                : t('spaceIntelligenceDeleteAction')}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 };

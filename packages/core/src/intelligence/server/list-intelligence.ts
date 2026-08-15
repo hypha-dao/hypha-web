@@ -4,9 +4,15 @@ import type { DatabaseInstance } from '../../common/server/types';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
-import type { IntelligenceManifestEntry } from '../types';
+import type { IntelligenceListItem, IntelligenceManifestEntry } from '../types';
+import { excerptIntelligenceBody } from '../excerpt';
 import { assertSafeSpaceSlug } from '../paths';
 import { readSpaceIntelligenceManifest } from './manifest';
+import { readIntelligenceBlobText } from './blob-client';
+import {
+  parseIntelligenceMarkdown,
+  splitIntelligenceFrontmatter,
+} from '../parse-markdown';
 
 export type ListIntelligenceBySpaceSlugInput = {
   spaceSlug: string;
@@ -21,7 +27,7 @@ export type ListIntelligenceBySpaceSlugResult =
       access: 'ok';
       configured: boolean;
       space_slug: string;
-      artifacts: IntelligenceManifestEntry[];
+      artifacts: IntelligenceListItem[];
       enabled_packs: string[];
     }
   | {
@@ -29,6 +35,28 @@ export type ListIntelligenceBySpaceSlugResult =
       message: string;
       space_slug: string;
     };
+
+async function withExcerpt(
+  entry: IntelligenceManifestEntry,
+): Promise<IntelligenceListItem> {
+  try {
+    const raw = await readIntelligenceBlobText(entry.path);
+    if (!raw) return { ...entry, excerpt: '' };
+    let body = '';
+    try {
+      body = parseIntelligenceMarkdown(raw).body;
+    } catch {
+      try {
+        body = splitIntelligenceFrontmatter(raw).body;
+      } catch {
+        body = raw;
+      }
+    }
+    return { ...entry, excerpt: excerptIntelligenceBody(body) };
+  } catch {
+    return { ...entry, excerpt: '' };
+  }
+}
 
 export async function listIntelligenceBySpaceSlug(
   input: ListIntelligenceBySpaceSlugInput,
@@ -78,21 +106,25 @@ export async function listIntelligenceBySpaceSlug(
     const status = input.status.trim().toLowerCase();
     artifacts = artifacts.filter((a) => a.status === status);
   }
-  if (input.search?.trim()) {
-    const q = input.search.trim().toLowerCase();
-    artifacts = artifacts.filter(
-      (a) =>
-        a.title.toLowerCase().includes(q) ||
-        a.id.toLowerCase().includes(q) ||
-        a.tags.some((t) => t.toLowerCase().includes(q)),
-    );
-  }
+
+  const listed = await Promise.all(artifacts.map(withExcerpt));
+
+  const search = input.search?.trim().toLowerCase();
+  const filtered = search
+    ? listed.filter(
+        (a) =>
+          a.title.toLowerCase().includes(search) ||
+          a.id.toLowerCase().includes(search) ||
+          a.tags.some((tag) => tag.toLowerCase().includes(search)) ||
+          (a.excerpt ?? '').toLowerCase().includes(search),
+      )
+    : listed;
 
   return {
     access: 'ok',
     configured,
     space_slug: spaceSlug,
-    artifacts,
+    artifacts: filtered,
     enabled_packs: manifest.enabled_packs ?? [],
   };
 }

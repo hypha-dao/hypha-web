@@ -28,6 +28,7 @@ import {
   formatIntelligenceMarkdownError,
   parseIntelligenceFrontmatter,
 } from '../validation';
+import { excerptIntelligenceBody } from '../excerpt';
 
 const SAMPLE = `---
 id: stakeholder-assessment-belica-2026-07
@@ -339,5 +340,24 @@ describe('hypha energy pack', () => {
       expect(parsed.frontmatter.pack_alias).toMatch(/^ART-0[1-8]$/);
       expect(parsed.body.length).toBeGreaterThan(40);
     }
+  });
+});
+
+describe('excerptIntelligenceBody', () => {
+  it('strips markdown to a plain-text card preview', () => {
+    expect(
+      excerptIntelligenceBody(
+        '# Hello\n\nA **bold** [link](http://x) and `code`.',
+      ),
+    ).toBe('Hello A bold link and code.');
+  });
+
+  it('drops fenced code and truncates long bodies', () => {
+    expect(excerptIntelligenceBody('```js\nconst x = 1\n```\nVisible')).toBe(
+      'Visible',
+    );
+    const long = excerptIntelligenceBody('a'.repeat(300));
+    expect(long.endsWith('…')).toBe(true);
+    expect(long.length).toBeLessThanOrEqual(221);
   });
 });
