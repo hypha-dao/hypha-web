@@ -292,6 +292,7 @@ CRITICAL — "create an artifact / intelligence / org memory from this signal":
 - First: get_signals_by_space_slug (or use the signal already in context) + memory_list / memory_search.
 - If a related Intelligence artifact already exists: memory_read for expected_sha, then memory_update with mode=propose and signal_slug of the EXISTING Coherence signal (members approve the patch on Signal detail).
 - If none exists: memory_create (default draft). Frontmatter type must be insight, assessment, recommendation, decision, or context — never type: signal (that is an intelligence folder name, not a Coherence board item). Set linked_signals to the Coherence signal slug. Set space to the current space slug. Set source_app: hypha-ai.
+- After create, write 1–2 short sentences for the member (what you created or proposed, and that they can review it). Never end the turn on tool calls only.
 - After create, the app opens the Memory tab. After propose, the app opens that signal so a member can approve.
 
 Do not invent a second signal to "hold" the artifact. The existing signal is the approval vehicle.`;

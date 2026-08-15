@@ -3,11 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
-import {
-  ONBOARDING_MOBILIZED_SCOPE,
-  readMobilizedAiAgents,
-  resolveMobilizedAgentsForAssistantMessage,
-} from '../ai-agent-competencies';
+import { resolveMobilizedAgentsForAssistantMessage } from '../ai-agent-competencies';
 import type { OnboardingConversationContext } from '../ai-onboarding-context';
 import { shouldShowOnboardingLocationPicker } from '../onboarding-location-ui';
 import { shouldShowOnboardingSetupJourneyPicker } from '../onboarding-setup-journey-ui';
@@ -184,34 +180,9 @@ export function AiPanelMessages({
             assistantAvatarUrl={assistantAvatarUrl}
             mobilizedAgents={
               msg.role === 'assistant' && msg.id !== 'welcome'
-                ? [
-                    ...resolveMobilizedAgentsForAssistantMessage(
-                      displayMessages,
-                      index,
-                    ),
-                    ...(onboardingContext
-                      ? readMobilizedAiAgents(ONBOARDING_MOBILIZED_SCOPE).map(
-                          ({
-                            id,
-                            tagGroup,
-                            role,
-                            focus,
-                            avatarLabel,
-                            roleDefinition,
-                          }) => ({
-                            id,
-                            tagGroup,
-                            role,
-                            focus,
-                            avatarLabel,
-                            roleDefinition,
-                          }),
-                        )
-                      : []),
-                  ].filter(
-                    (agent, agentIndex, list) =>
-                      list.findIndex((item) => item.id === agent.id) ===
-                      agentIndex,
+                ? resolveMobilizedAgentsForAssistantMessage(
+                    displayMessages,
+                    index,
                   )
                 : []
             }
