@@ -51,6 +51,7 @@ import {
   isLegacyGenericResubmitSegment,
 } from '../../utils/resubmit-proposal-template';
 import { revalidateSpaceMemoryOrg } from '../../coherence/hooks/use-space-memory-org';
+import { LinkedArtifactSelect } from '../../coherence/components/linked-artifact-select';
 
 /** Session payload for `RESUBMIT_FORM_DATA_KEY` (lead image / attachments bridge). */
 export type ResubmitFormData = {
@@ -83,6 +84,7 @@ export type CreateAgreementFormProps = {
   stickyHeaderTitle?: string;
   mode?: 'agreement' | 'memory';
   progress: number;
+  linkedArtifacts?: Array<{ id: string; title: string }>;
 };
 
 type Callback = () => Promise<void>;
@@ -99,6 +101,7 @@ export function CreateAgreementBaseFields({
   stickyHeaderTitle,
   mode = 'agreement',
   progress,
+  linkedArtifacts,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tCoherence = useTranslations('CoherenceTab');
@@ -684,6 +687,29 @@ export function CreateAgreementBaseFields({
                   </FormItem>
                 );
               }}
+            />
+          ) : null}
+          {mode === 'memory' ? (
+            <FormField
+              control={form.control}
+              name="linkedArtifactId"
+              render={({ field }) => (
+                <FormItem className="mb-6 min-w-0 max-w-full">
+                  <FormLabel className="mb-2 block text-sm font-medium text-foreground">
+                    {tCoherence('spaceDocumentationFieldLinkedArtifact')}
+                  </FormLabel>
+                  <FormControl>
+                    <LinkedArtifactSelect
+                      id="linked-artifact"
+                      value={typeof field.value === 'string' ? field.value : ''}
+                      onChange={field.onChange}
+                      artifacts={linkedArtifacts ?? []}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           ) : null}
           <FormField

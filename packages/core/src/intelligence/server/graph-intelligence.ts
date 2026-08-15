@@ -6,12 +6,14 @@ import {
   findCoherencesBySlugs,
 } from '../../coherence/server/queries';
 import { findSpaceBySlug } from '../../space/server/queries';
+import { findLinkedMemoryDocumentsBySpaceSlug } from '../../governance/server/queries';
 import type { IntelligenceManifestEntry } from '../types';
 import {
   buildIntelligenceSignalGraph,
   collectIntelligenceLinkedSignalSlugs,
   graphSignalsFromCoherenceRows,
   type IntelligenceGraph,
+  type IntelligenceGraphDocumentation,
   type IntelligenceGraphPatchLink,
   type IntelligenceGraphSignal,
 } from '../graph';
@@ -23,6 +25,28 @@ import {
 } from './blob-client';
 
 const PATCH_LIST_LIMIT = 100;
+
+function firstHttpAttachmentUrl(
+  attachments:
+    | Array<string | { name?: string; url?: string }>
+    | null
+    | undefined,
+): string | undefined {
+  for (const raw of attachments ?? []) {
+    const url = typeof raw === 'string' ? raw : raw.url;
+    const trimmed = url?.trim();
+    if (!trimmed) continue;
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return parsed.toString();
+      }
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
 
 function patchesPrefix(spaceSlug: string): string {
   return `${spaceIntelligencePrefix(spaceSlug)}_patches/`;
@@ -117,9 +141,30 @@ export async function buildIntelligenceGraphForSpace(
     }
   }
 
+  let documents: IntelligenceGraphDocumentation[] = [];
+  try {
+    const linkedDocs = await findLinkedMemoryDocumentsBySpaceSlug(
+      { spaceSlug: input.spaceSlug },
+      { db },
+    );
+    documents = linkedDocs.map((doc) => {
+      const href = firstHttpAttachmentUrl(doc.attachments);
+      return {
+        id: doc.id,
+        title: doc.title,
+        slug: doc.slug,
+        linked_artifact_id: doc.linkedArtifactId,
+        ...(href ? { href } : {}),
+      };
+    });
+  } catch {
+    documents = [];
+  }
+
   return buildIntelligenceSignalGraph({
     artifacts: input.artifacts,
     signals,
     patches,
+    documents,
   });
 }

@@ -27,6 +27,7 @@ export type SpaceMemoryItem = {
     documentState: DocumentState;
     documentSlug?: string;
     documentLabel?: string;
+    linkedArtifactId?: string;
     matrixEventId?: string;
     textExcerpt?: string;
     /** Human-facing title (signal name, AI summary, etc.) — not a filename or id. */
@@ -59,6 +60,7 @@ export type OrgMemoryAssetWire = {
   document_state?: string;
   document_slug?: string;
   document_label?: string;
+  linked_artifact_id?: string;
   call_session_id?: string;
   discussion_summary_id?: number;
   text_excerpt?: string;
@@ -222,6 +224,7 @@ export function buildSpaceMemoryItemsFromDocuments(
       documentState: stateEnum,
       documentSlug: doc.slug,
       documentLabel: doc.label?.trim() || undefined,
+      linkedArtifactId: doc.linkedArtifactId?.trim() || undefined,
     };
 
     if (isMemoryDocument(doc)) {
@@ -328,6 +331,7 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           documentState: stateEnum,
           documentSlug: a.document_slug,
           documentLabel: a.document_label?.trim() || undefined,
+          linkedArtifactId: a.linked_artifact_id?.trim() || undefined,
         },
       });
       continue;
@@ -352,6 +356,7 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
             documentState: DocumentState.MEMORY,
             documentSlug: a.document_slug,
             documentLabel: a.document_label?.trim() || undefined,
+            linkedArtifactId: a.linked_artifact_id?.trim() || undefined,
             textExcerpt: excerpt || undefined,
           },
         });
@@ -370,6 +375,7 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           documentState: DocumentState.MEMORY,
           documentSlug: a.document_slug,
           documentLabel: a.document_label?.trim() || undefined,
+          linkedArtifactId: a.linked_artifact_id?.trim() || undefined,
           textExcerpt: excerpt || undefined,
         },
       });
@@ -504,6 +510,7 @@ export function filterSpaceMemoryItems(
       row.context.documentTitle.toLowerCase().includes(q) ||
       (row.context.contextTitle?.toLowerCase().includes(q) ?? false) ||
       (row.context.documentLabel?.toLowerCase().includes(q) ?? false) ||
+      (row.context.linkedArtifactId?.toLowerCase().includes(q) ?? false) ||
       (row.context.textExcerpt?.toLowerCase().includes(q) ?? false),
   );
 }

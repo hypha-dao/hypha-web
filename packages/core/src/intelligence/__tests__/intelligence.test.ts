@@ -8,6 +8,7 @@ import {
   buildIntelligenceSignalGraph,
   extractLinkedSignalSlug,
   graphSignalsFromCoherenceRows,
+  intelligenceDocumentationNodeId,
   intelligenceSignalNodeId,
 } from '../graph';
 import {
@@ -427,6 +428,50 @@ describe('buildIntelligenceSignalGraph', () => {
         from: 'belica',
         to: intelligenceSignalNodeId('coh-3fbfaa35'),
         relation: 'linked-signal',
+      },
+    ]);
+  });
+
+  it('links documentation files to artifacts', () => {
+    const graph = buildIntelligenceSignalGraph({
+      artifacts: [
+        {
+          id: 'data-room-intelligence',
+          type: 'insight',
+          title: 'Data Room: Intelligence',
+          space: 'hypha-platform',
+          status: 'current',
+          tags: [],
+          related: [],
+          source_app: 'hypha',
+          path: 'intelligence/spaces/hypha-platform/insights/data-room-intelligence.md',
+          sha: 'abc1234',
+          version: 1,
+          updated_at: '2026-08-15',
+        },
+      ],
+      documents: [
+        {
+          id: 99,
+          title: 'Hypha Intelligence.md',
+          slug: 'hypha-intelligence-abcd1234',
+          href: 'https://cdn.example.com/hypha-intelligence.md',
+          linked_artifact_id: 'data-room-intelligence',
+        },
+      ],
+    });
+    const docNode = graph.nodes.find((node) => node.kind === 'documentation');
+    expect(docNode).toMatchObject({
+      id: intelligenceDocumentationNodeId(99),
+      title: 'Hypha Intelligence.md',
+      slug: 'hypha-intelligence-abcd1234',
+      href: 'https://cdn.example.com/hypha-intelligence.md',
+    });
+    expect(graph.edges).toEqual([
+      {
+        from: intelligenceDocumentationNodeId(99),
+        to: 'data-room-intelligence',
+        relation: 'linked-documentation',
       },
     ]);
   });

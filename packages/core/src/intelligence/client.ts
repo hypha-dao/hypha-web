@@ -24,6 +24,7 @@ export {
   buildIntelligenceRelatedGraph,
   buildIntelligenceSignalGraph,
   extractLinkedSignalSlug,
+  intelligenceDocumentationNodeId,
   intelligenceSignalNodeId,
   intelligenceSignalSlugFromNodeId,
 } from './graph';

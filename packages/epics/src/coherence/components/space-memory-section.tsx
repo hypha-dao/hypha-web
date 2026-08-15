@@ -11,11 +11,21 @@ import {
   SpaceMemoryItem,
   filterSpaceMemoryItems,
   useSpaceBySlug,
+  useJwt,
+  useAgreementMutationsWeb2Rsc,
 } from '@hypha-platform/core/client';
-import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
+import {
+  useSpaceMemoryOrg,
+  revalidateSpaceMemoryOrg,
+} from '../hooks/use-space-memory-org';
+import {
+  useSpaceIntelligence,
+  revalidateSpaceIntelligence,
+} from '../hooks/use-space-intelligence';
+import { LinkedArtifactSelect } from './linked-artifact-select';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 
 type SpaceMemorySectionProps = {
@@ -46,8 +56,44 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     spaceId: space?.web3SpaceId ?? undefined,
   });
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
+  const searchParams = useSearchParams();
+  const highlightDoc = searchParams.get('doc')?.trim() ?? '';
+  const { jwt } = useJwt();
+  const { updateAgreementBySlug, isUpdatingAgreement } =
+    useAgreementMutationsWeb2Rsc(jwt);
+  const { artifacts } = useSpaceIntelligence(spaceSlug);
+  const artifactOptions = React.useMemo(
+    () =>
+      artifacts.map((artifact) => ({
+        id: artifact.id,
+        title: artifact.title,
+      })),
+    [artifacts],
+  );
+  const artifactTitleById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const artifact of artifacts) {
+      map.set(artifact.id, artifact.title);
+    }
+    return map;
+  }, [artifacts]);
   const [activeFilter, setActiveFilter] =
     React.useState<MemoryFilterValue>('general');
+
+  const handleLinkedArtifactChange = React.useCallback(
+    async (documentSlug: string | undefined, artifactId: string) => {
+      if (!documentSlug) return;
+      await updateAgreementBySlug({
+        slug: documentSlug,
+        linkedArtifactId: artifactId.trim() ? artifactId.trim() : null,
+      });
+      await Promise.all([
+        revalidateSpaceMemoryOrg(spaceSlug),
+        revalidateSpaceIntelligence(spaceSlug),
+      ]);
+    },
+    [spaceSlug, updateAgreementBySlug],
+  );
 
   const isAiChatItem = React.useCallback(
     (row: (typeof items)[number]) =>
@@ -243,6 +289,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                   <th className="px-3 py-2 font-medium">
                     {t('spaceDocumentationColContext')}
                   </th>
+                  <th className="px-3 py-2 font-medium">
+                    {t('spaceDocumentationColArtifact')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -262,10 +311,17 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                       day: 'numeric',
                     }).format(new Date(ms));
                   })();
+                  const isHighlighted =
+                    Boolean(highlightDoc) &&
+                    row.context.documentSlug === highlightDoc;
                   return (
                     <tr
                       key={row.id}
-                      className="border-t border-border align-top"
+                      className={
+                        isHighlighted
+                          ? 'border-t border-border align-top bg-accent-3/40'
+                          : 'border-t border-border align-top'
+                      }
                     >
                       <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
                         {dateLabel}
@@ -286,6 +342,31 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {contextLineForItem(row)}
+                      </td>
+                      <td className="px-3 py-2">
+                        {row.source === 'memory' &&
+                        row.context.documentSlug &&
+                        canMutate ? (
+                          <LinkedArtifactSelect
+                            value={row.context.linkedArtifactId ?? ''}
+                            onChange={(next) => {
+                              void handleLinkedArtifactChange(
+                                row.context.documentSlug,
+                                next,
+                              );
+                            }}
+                            artifacts={artifactOptions}
+                            disabled={isMutateLoading || isUpdatingAgreement}
+                          />
+                        ) : row.context.linkedArtifactId ? (
+                          <span className="text-muted-foreground">
+                            {artifactTitleById.get(
+                              row.context.linkedArtifactId,
+                            ) ?? row.context.linkedArtifactId}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   );

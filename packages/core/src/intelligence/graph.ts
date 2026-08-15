@@ -1,11 +1,13 @@
 import type { IntelligenceManifestEntry } from './types';
 
 export const INTELLIGENCE_SIGNAL_NODE_PREFIX = 'signal:' as const;
+export const INTELLIGENCE_DOCUMENTATION_NODE_PREFIX = 'documentation:' as const;
 
 export type IntelligenceGraphNodeKind =
   | 'artifact'
   | 'signal'
-  | 'signal-missing';
+  | 'signal-missing'
+  | 'documentation';
 
 export type IntelligenceGraphNode = {
   id: string;
@@ -13,13 +15,18 @@ export type IntelligenceGraphNode = {
   title: string;
   type?: string;
   status?: string;
-  /** Coherence signal slug when `kind` is signal / signal-missing. */
+  /** Coherence signal slug, documentation document slug, or similar. */
   slug?: string;
   /** Coherence priority (`critical` / `high` / `medium` / `low`). */
   priority?: string;
+  /** http(s) URL to open a Space Documentation file. */
+  href?: string;
 };
 
-export type IntelligenceGraphRelation = 'linked-signal' | 'proposed-patch';
+export type IntelligenceGraphRelation =
+  | 'linked-signal'
+  | 'proposed-patch'
+  | 'linked-documentation';
 
 export type IntelligenceGraphEdge = {
   from: string;
@@ -47,8 +54,20 @@ export type IntelligenceGraphPatchLink = {
   status: string;
 };
 
+export type IntelligenceGraphDocumentation = {
+  id: number;
+  title: string;
+  slug?: string | null;
+  href?: string;
+  linked_artifact_id: string;
+};
+
 export function intelligenceSignalNodeId(signalSlug: string): string {
   return `${INTELLIGENCE_SIGNAL_NODE_PREFIX}${signalSlug}`;
+}
+
+export function intelligenceDocumentationNodeId(documentId: number): string {
+  return `${INTELLIGENCE_DOCUMENTATION_NODE_PREFIX}${documentId}`;
 }
 
 export function intelligenceSignalSlugFromNodeId(
@@ -191,6 +210,7 @@ export function buildIntelligenceSignalGraph(input: {
   artifacts: IntelligenceManifestEntry[];
   signals?: IntelligenceGraphSignal[];
   patches?: IntelligenceGraphPatchLink[];
+  documents?: IntelligenceGraphDocumentation[];
 }): IntelligenceGraph {
   const signalsBySlug = new Map<string, IntelligenceGraphSignal>();
   for (const signal of input.signals ?? []) {
@@ -268,6 +288,26 @@ export function buildIntelligenceSignalGraph(input: {
     const signalId = ensureSignal(signalSlug);
     if (!signalId) continue;
     addEdge(signalId, patch.target_id, 'proposed-patch');
+  }
+
+  for (const doc of input.documents ?? []) {
+    const artifactId = doc.linked_artifact_id.trim();
+    if (!artifactId || !artifactsById.has(artifactId)) continue;
+    ensureArtifact(artifactId);
+    const nodeId = intelligenceDocumentationNodeId(doc.id);
+    if (!nodes.has(nodeId)) {
+      const href = doc.href?.trim();
+      const slug = doc.slug?.trim();
+      nodes.set(nodeId, {
+        id: nodeId,
+        kind: 'documentation',
+        title: doc.title.trim() || slug || `document-${doc.id}`,
+        type: 'documentation',
+        ...(slug ? { slug } : {}),
+        ...(href ? { href } : {}),
+      });
+    }
+    addEdge(nodeId, artifactId, 'linked-documentation');
   }
 
   return {

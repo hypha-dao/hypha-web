@@ -32,6 +32,24 @@ function intelligenceEditHref(
   }/edit-intelligence/${artifactId}`;
 }
 
+function intelligenceDocumentationHref(
+  params: { lang?: string; id?: string },
+  node: IntelligenceGraphNode,
+): string | undefined {
+  const fileHref = node.href?.trim();
+  if (
+    fileHref &&
+    (fileHref.startsWith('https://') || fileHref.startsWith('http://'))
+  ) {
+    return fileHref;
+  }
+  const slug = node.slug?.trim();
+  if (!params.lang || !params.id || !slug) return undefined;
+  return `/${params.lang}/dho/${params.id}/memory?doc=${encodeURIComponent(
+    slug,
+  )}`;
+}
+
 function intelligenceSignalHref(
   params: { lang?: string; id?: string },
   signalSlug: string,
@@ -57,6 +75,9 @@ function graphHoverLabel(node: IntelligenceGraphNode): string {
   if (node.kind === 'artifact') {
     return type ? `${node.title} · ${type}` : node.title;
   }
+  if (node.kind === 'documentation') {
+    return `${node.title} · Documentation`;
+  }
   const kind = type && type !== 'signal' ? type : 'Signal';
   return `${node.title} · ${kind}`;
 }
@@ -81,7 +102,10 @@ function layoutIntelligenceGraph(
   minHeight: number,
 ): { positions: Map<string, { x: number; y: number }>; height: number } {
   const signals = nodes
-    .filter((node) => node.kind !== 'artifact')
+    .filter((node) => node.kind === 'signal' || node.kind === 'signal-missing')
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const documents = nodes
+    .filter((node) => node.kind === 'documentation')
     .sort((a, b) => a.title.localeCompare(b.title));
   const artifacts = nodes
     .filter((node) => node.kind === 'artifact')
@@ -90,7 +114,8 @@ function layoutIntelligenceGraph(
   const padY = 56;
   const height = Math.max(
     minHeight,
-    padY * 2 + Math.max(signals.length, artifacts.length, 1) * row,
+    padY * 2 +
+      Math.max(signals.length, documents.length, artifacts.length, 1) * row,
   );
   const positions = new Map<string, { x: number; y: number }>();
   const place = (list: IntelligenceGraphNode[], x: number) => {
@@ -104,11 +129,18 @@ function layoutIntelligenceGraph(
       positions.set(node.id, { x, y });
     });
   };
-  if (signals.length === 0) {
+  if (signals.length === 0 && documents.length === 0) {
     place(artifacts, width / 2);
-  } else {
+  } else if (documents.length === 0) {
     place(signals, 200);
     place(artifacts, width - 200);
+  } else if (signals.length === 0) {
+    place(documents, 200);
+    place(artifacts, width - 200);
+  } else {
+    place(signals, 130);
+    place(documents, width / 2);
+    place(artifacts, width - 130);
   }
   return { positions, height };
 }
@@ -118,7 +150,7 @@ type SpaceIntelligenceGraphProps = {
   className?: string;
 };
 
-/** Bipartite SVG layout: signals on the left, artifacts on the right. */
+/** Signals left, documentation center, artifacts right. */
 export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
   graph,
   className,
@@ -133,11 +165,21 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
 
   const width = 720;
   const { positions, height } = layoutIntelligenceGraph(nodes, width, 360);
-  const hasSignalColumn = nodes.some((node) => node.kind !== 'artifact');
+  const hasSideColumns = nodes.some((node) => node.kind !== 'artifact');
 
   const openNode = (node: IntelligenceGraphNode) => {
     if (node.kind === 'artifact') {
       pushOverlayHref(router, intelligenceEditHref(params, node.id));
+      return;
+    }
+    if (node.kind === 'documentation') {
+      const href = intelligenceDocumentationHref(params, node);
+      if (!href) return;
+      if (href.startsWith('http://') || href.startsWith('https://')) {
+        window.open(href, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      pushOverlayHref(router, href);
       return;
     }
     const slug = node.slug?.trim();
@@ -165,7 +207,8 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
             filter: drop-shadow(0 3px 8px rgba(15, 23, 42, 0.28));
           }
           .intel-graph-node[role='button']:focus-visible circle,
-          .intel-graph-node[role='button']:focus-visible polygon {
+          .intel-graph-node[role='button']:focus-visible polygon,
+          .intel-graph-node[role='button']:focus-visible rect {
             stroke-width: 3;
           }
           .intel-graph-hover-label { opacity: 0; }
@@ -196,10 +239,15 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
           if (!pos) return null;
           const isSignal =
             node.kind === 'signal' || node.kind === 'signal-missing';
+          const isDocumentation = node.kind === 'documentation';
           const missing = node.kind === 'signal-missing';
           const canOpen =
-            node.kind === 'artifact' || Boolean(node.slug?.trim());
-          const labelSide: 'left' | 'right' | 'below' = !hasSignalColumn
+            node.kind === 'artifact' ||
+            isDocumentation ||
+            Boolean(node.slug?.trim());
+          const labelSide: 'left' | 'right' | 'below' = !hasSideColumns
+            ? 'below'
+            : isDocumentation
             ? 'below'
             : isSignal
             ? 'left'
@@ -267,6 +315,30 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
                     <path d="M3.6 5.7a2.6 2.6 0 0 1 4.8 0" fill="none" />
                   </g>
                 </>
+              ) : isDocumentation ? (
+                <>
+                  <rect
+                    x={pos.x - 13}
+                    y={pos.y - 13}
+                    width={26}
+                    height={26}
+                    rx={2}
+                    className="fill-accent-5 stroke-accent-11"
+                    strokeWidth={1.5}
+                  />
+                  <g
+                    transform={`translate(${pos.x - 6} ${pos.y - 7})`}
+                    className="stroke-white"
+                    fill="none"
+                    strokeWidth={1.35}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M3 1.5h4.2L11 5.3V12.5H3z" />
+                    <path d="M7.2 1.5V5.3H11" />
+                  </g>
+                </>
               ) : (
                 <circle
                   cx={pos.x}
@@ -293,7 +365,7 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
               </text>
               <text
                 x={pos.x}
-                y={pos.y - (isSignal ? 26 : 22)}
+                y={pos.y - (isSignal || isDocumentation ? 26 : 22)}
                 textAnchor="middle"
                 className="intel-graph-hover-label fill-neutral-12 text-[10px] font-medium"
               >
