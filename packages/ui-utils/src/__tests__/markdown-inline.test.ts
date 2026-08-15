@@ -17,4 +17,21 @@ describe('tokenizeInlineMarkdown', () => {
       { type: 'underline', value: 'u' },
     ]);
   });
+
+  it('tokenizes markdown and bare links', () => {
+    expect(
+      tokenizeInlineMarkdown(
+        'see [docs](https://example.com) and https://hypha.earth',
+      ),
+    ).toEqual([
+      { type: 'text', value: 'see ' },
+      { type: 'link', label: 'docs', url: 'https://example.com' },
+      { type: 'text', value: ' and ' },
+      {
+        type: 'link',
+        label: 'https://hypha.earth',
+        url: 'https://hypha.earth',
+      },
+    ]);
+  });
 });

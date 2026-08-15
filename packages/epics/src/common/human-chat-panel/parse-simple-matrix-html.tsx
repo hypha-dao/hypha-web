@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { Fragment, useState } from 'react';
 
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, isSafeInlineLinkUrl } from '@hypha-platform/ui-utils';
 
 export type SimpleHtmlNode =
   | { type: 'text'; value: string }
@@ -14,6 +14,7 @@ export type SimpleHtmlNode =
   | { type: 'strike'; children: SimpleHtmlNode[] }
   | { type: 'code'; value: string }
   | { type: 'spoiler'; children: SimpleHtmlNode[] }
+  | { type: 'link'; href: string; children: SimpleHtmlNode[] }
   | { type: 'blockquote'; children: SimpleHtmlNode[] }
   | { type: 'heading'; level: 1 | 2 | 3 | 4; children: SimpleHtmlNode[] }
   | { type: 'ul'; items: SimpleHtmlNode[][] }
@@ -96,6 +97,11 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
           return [{ type: 'spoiler', children: childNodes }];
         }
         return childNodes;
+      }
+      case 'a': {
+        const href = (el.getAttribute('href') ?? '').trim();
+        if (!isSafeInlineLinkUrl(href)) return childNodes;
+        return [{ type: 'link', href, children: childNodes }];
       }
       case 'p':
       case 'div':
@@ -197,6 +203,18 @@ export function renderSimpleHtmlNodes(
           <SpoilerSpan key={k}>
             {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </SpoilerSpan>
+        );
+      case 'link':
+        return (
+          <a
+            key={k}
+            href={n.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all font-medium text-primary underline decoration-primary/35 underline-offset-2 hover:decoration-primary/70"
+          >
+            {renderSimpleHtmlNodes(n.children, `${k}-`)}
+          </a>
         );
       case 'blockquote':
         return (

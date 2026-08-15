@@ -4,7 +4,11 @@ import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Copy, Sparkles } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
-import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
+import {
+  cn,
+  isSafeInlineLinkUrl,
+  tokenizeInlineMarkdown,
+} from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
@@ -461,6 +465,21 @@ function renderInlineMarkdown(text: string): React.ReactNode {
         >
           {token.value}
         </code>,
+      );
+      continue;
+    }
+
+    if (token.type === 'link' && isSafeInlineLinkUrl(token.url)) {
+      nodes.push(
+        <a
+          key={`md-inline-${partIndex++}`}
+          href={token.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+        >
+          {token.label}
+        </a>,
       );
     }
   }

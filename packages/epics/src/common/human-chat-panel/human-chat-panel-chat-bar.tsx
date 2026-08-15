@@ -64,6 +64,10 @@ import {
 import { getTextareaSelectionCenter } from './textarea-caret-position';
 import { highlightComposerUrlsForBackdrop } from './human-chat-panel-composer-url-highlight';
 import {
+  firstUriListHref,
+  htmlToChatLinkMarkup,
+} from './html-to-chat-link-markup';
+import {
   type ChatPanelAttachmentMedia,
   looksLikeAudioMimeOrName,
   looksLikeVideoMimeOrName,
@@ -738,6 +742,40 @@ export function HumanChatPanelChatBar({
       bd.scrollTop = 0;
     }
   }, []);
+
+  const insertComposerText = useCallback(
+    (insertion: string) => {
+      if (!insertion) return;
+      const el = textareaRef.current;
+      const start = el?.selectionStart ?? value.length;
+      const end = el?.selectionEnd ?? value.length;
+      const { next, caret } = insertAtCaret(value, start, end, insertion);
+      onChange(next);
+      requestAnimationFrame(() => {
+        el?.focus();
+        el?.setSelectionRange(caret, caret);
+        autoResize();
+      });
+    },
+    [autoResize, onChange, value],
+  );
+
+  const insertLinksFromDataTransfer = useCallback(
+    (data: DataTransfer): boolean => {
+      const fromHtml = htmlToChatLinkMarkup(data.getData('text/html'));
+      if (fromHtml) {
+        insertComposerText(fromHtml);
+        return true;
+      }
+      const uri = firstUriListHref(data);
+      if (uri) {
+        insertComposerText(uri);
+        return true;
+      }
+      return false;
+    },
+    [insertComposerText],
+  );
 
   useEffect(() => {
     const isOpen = Boolean(replyPreview);
@@ -1653,28 +1691,46 @@ export function HumanChatPanelChatBar({
           setComposerDragDepth((d) => Math.max(0, d - 1));
         }}
         onDragOver={(e) => {
-          if (!e.dataTransfer?.types.includes('Files')) {
+          const types = e.dataTransfer?.types;
+          if (!types) return;
+          if (types.includes('Files')) {
+            e.preventDefault();
+            if (!onDraftAttachmentsChange) {
+              return;
+            }
+            e.dataTransfer.dropEffect = 'copy';
+            return;
+          }
+          if (
+            composerLocked ||
+            !(
+              types.includes('text/uri-list') ||
+              types.includes('text/html') ||
+              types.includes('text/plain')
+            )
+          ) {
             return;
           }
           e.preventDefault();
-          if (!onDraftAttachmentsChange) {
-            return;
-          }
           e.dataTransfer.dropEffect = 'copy';
         }}
         onDrop={(e) => {
           if (composerLocked) return;
-          if (!e.dataTransfer?.types.includes('Files')) {
+          if (e.dataTransfer?.types.includes('Files')) {
+            e.preventDefault();
+            setComposerDragDepth(0);
+            if (!onDraftAttachmentsChange) {
+              return;
+            }
+            const files = e.dataTransfer?.files;
+            if (!files?.length) return;
+            pushDrafts(files, 'file');
             return;
           }
-          e.preventDefault();
-          setComposerDragDepth(0);
-          if (!onDraftAttachmentsChange) {
-            return;
+          if (e.dataTransfer && insertLinksFromDataTransfer(e.dataTransfer)) {
+            e.preventDefault();
+            setComposerDragDepth(0);
           }
-          const files = e.dataTransfer?.files;
-          if (!files?.length) return;
-          pushDrafts(files, 'file');
         }}
       >
         {isComposerDropActive && (
@@ -2079,6 +2135,14 @@ export function HumanChatPanelChatBar({
               if (e.button !== 0) return;
               pointerSelectingRef.current = true;
               setSelectionBar(null);
+            }}
+            onPaste={(e) => {
+              if (composerLocked) return;
+              const data = e.clipboardData;
+              if (!data) return;
+              if (insertLinksFromDataTransfer(data)) {
+                e.preventDefault();
+              }
             }}
             onChange={(e) => {
               onChange(e.target.value);

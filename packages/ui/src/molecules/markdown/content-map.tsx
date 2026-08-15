@@ -52,6 +52,16 @@ export const ComponentMap: MDXComponents = {
       {children}
     </ol>
   ),
+  a: ({ href, children }: { href?: string; children: React.ReactNode }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-medium text-accent-11 underline underline-offset-2 hover:text-accent-12"
+    >
+      {children}
+    </a>
+  ),
   li: ({ children }: { children: React.ReactNode }) => (
     <li className="my-1 text-neutral-11">{children}</li>
   ),
