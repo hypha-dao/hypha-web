@@ -1,0 +1,449 @@
+'use client';
+
+import { FC, useEffect, useMemo, useRef } from 'react';
+import * as d3 from 'd3';
+import {
+  buildIntelligenceSunburstTree,
+  SIGNAL_SUNBURST_CATEGORIES,
+  SIGNAL_SUNBURST_CATEGORY_COLORS,
+  SIGNAL_SUNBURST_UNCATEGORIZED_ID,
+  type IntelligenceGraph,
+  type IntelligenceListItem,
+  type IntelligenceSunburstNode,
+  type SignalSunburstCategoryId,
+} from '@hypha-platform/core/intelligence';
+import { useFindCoherences } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
+
+const SUNBURST_SIZE = 720;
+const SUNBURST_VISIBLE_RINGS = 4;
+
+type SpaceIntelligenceSunburstProps = {
+  spaceSlug: string;
+  graph: IntelligenceGraph;
+  artifacts: IntelligenceListItem[];
+  hideArchived?: boolean;
+  className?: string;
+};
+
+type ArcState = { x0: number; x1: number; y0: number; y1: number };
+
+type LayoutNode = d3.HierarchyRectangularNode<IntelligenceSunburstNode> & {
+  current: ArcState;
+  target?: ArcState;
+};
+
+function intelligenceEditHref(
+  params: { lang?: string; id?: string; tab?: string },
+  artifactId: string,
+): string | undefined {
+  if (!params.lang || !params.id) return undefined;
+  return `/${params.lang}/dho/${params.id}/${
+    params.tab ?? 'memory'
+  }/edit-intelligence/${artifactId}`;
+}
+
+function intelligenceDocumentationHref(
+  params: { lang?: string; id?: string },
+  node: IntelligenceSunburstNode,
+): string | undefined {
+  const fileHref = node.href?.trim();
+  if (
+    fileHref &&
+    (fileHref.startsWith('https://') || fileHref.startsWith('http://'))
+  ) {
+    return fileHref;
+  }
+  const slug = node.slug?.trim();
+  if (!params.lang || !params.id || !slug) return undefined;
+  return `/${params.lang}/dho/${params.id}/memory?doc=${encodeURIComponent(
+    slug,
+  )}`;
+}
+
+function intelligenceSignalHref(
+  params: { lang?: string; id?: string },
+  signalSlug: string,
+): string | undefined {
+  if (!params.lang || !params.id) return undefined;
+  return `/${params.lang}/dho/${
+    params.id
+  }/coherence/edit-signal/${encodeURIComponent(signalSlug)}`;
+}
+
+function pushOverlayHref(
+  router: ReturnType<typeof useRouter>,
+  href: string | undefined,
+) {
+  if (!href) return;
+  window.setTimeout(() => {
+    router.push(href, { scroll: false });
+  }, 0);
+}
+
+function openSunburstNode(
+  router: ReturnType<typeof useRouter>,
+  params: { lang?: string; id?: string; tab?: string },
+  node: IntelligenceSunburstNode,
+) {
+  if (node.kind === 'artifact' && node.artifactId) {
+    pushOverlayHref(router, intelligenceEditHref(params, node.artifactId));
+    return;
+  }
+  if (node.kind === 'file') {
+    const href = intelligenceDocumentationHref(params, node);
+    if (!href) return;
+    if (href.startsWith('http://') || href.startsWith('https://')) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    pushOverlayHref(router, href);
+    return;
+  }
+  if (node.kind === 'signal' && node.slug) {
+    pushOverlayHref(router, intelligenceSignalHref(params, node.slug));
+  }
+}
+
+function categoryColor(node: LayoutNode): string {
+  let current: LayoutNode | null = node;
+  while (current && current.depth > 1) {
+    current = current.parent as LayoutNode | null;
+  }
+  return (
+    current?.data.color ??
+    (current?.data.categoryId
+      ? SIGNAL_SUNBURST_CATEGORY_COLORS[current.data.categoryId]
+      : SIGNAL_SUNBURST_CATEGORY_COLORS[SIGNAL_SUNBURST_UNCATEGORIZED_ID])
+  );
+}
+
+function translateTreeNames(
+  node: IntelligenceSunburstNode,
+  labelFor: (categoryId: string) => string,
+): IntelligenceSunburstNode {
+  const name =
+    node.kind === 'category' && node.categoryId
+      ? labelFor(node.categoryId)
+      : node.name;
+  return {
+    ...node,
+    name,
+    children: node.children?.map((child) =>
+      translateTreeNames(child, labelFor),
+    ),
+  };
+}
+
+export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
+  spaceSlug,
+  graph,
+  artifacts,
+  hideArchived = true,
+  className,
+}) => {
+  const t = useTranslations('CoherenceTab');
+  const router = useRouter();
+  const params = useParams<{ lang: string; id: string; tab?: string }>();
+  const hostRef = useRef<HTMLDivElement>(null);
+  const { coherences, isLoading } = useFindCoherences({
+    spaceSlug,
+    includeArchived: !hideArchived,
+  });
+
+  const tree = useMemo(() => {
+    const files = graph.nodes.flatMap((node) => {
+      if (node.kind !== 'documentation') return [];
+      const edge = graph.edges.find(
+        (item) =>
+          item.from === node.id && item.relation === 'linked-documentation',
+      );
+      if (!edge?.to) return [];
+      return [
+        {
+          id: node.id,
+          title: node.title,
+          linked_artifact_id: edge.to,
+          slug: node.slug,
+          href: node.href,
+        },
+      ];
+    });
+    const built = buildIntelligenceSunburstTree({
+      rootName: t('spaceIntelligence'),
+      signals: (coherences ?? [])
+        .filter((item) => item.slug?.trim())
+        .map((item) => ({
+          slug: item.slug as string,
+          title: item.title,
+          tags: item.tags,
+          type: item.type,
+          description: item.description,
+        })),
+      artifacts: artifacts.map((item) => ({
+        id: item.id,
+        title: item.title,
+        linked_signals: item.linked_signals,
+      })),
+      files,
+    });
+    return translateTreeNames(built, (categoryId) => {
+      const key = `intelligenceSignalCategories.${categoryId}`;
+      return t.has(key as never) ? t(key as never) : categoryId;
+    });
+  }, [artifacts, coherences, graph.edges, graph.nodes, t]);
+
+  const hasSlices = (tree.children?.length ?? 0) > 0;
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || !hasSlices) return;
+
+    const width = SUNBURST_SIZE;
+    const radius = width / (2 * SUNBURST_VISIBLE_RINGS);
+    const hierarchy = d3
+      .hierarchy(tree)
+      .sum((node) => node.value ?? 0)
+      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+    const root = d3
+      .partition<IntelligenceSunburstNode>()
+      .size([2 * Math.PI, hierarchy.height + 1])(hierarchy) as LayoutNode;
+    root.each((node) => {
+      const layout = node as LayoutNode;
+      layout.current = {
+        x0: layout.x0,
+        x1: layout.x1,
+        y0: layout.y0,
+        y1: layout.y1,
+      };
+    });
+
+    const arc = d3
+      .arc<ArcState>()
+      .startAngle((d) => d.x0)
+      .endAngle((d) => d.x1)
+      .padAngle((d) => Math.min((d.x1 - d.x0) / 2, 0.005))
+      .padRadius(radius * 1.5)
+      .innerRadius((d) => d.y0 * radius)
+      .outerRadius((d) => Math.max(d.y0 * radius, d.y1 * radius - 1));
+
+    const arcVisible = (d: ArcState) =>
+      d.y1 <= SUNBURST_VISIBLE_RINGS + 1 && d.y0 >= 1 && d.x1 > d.x0;
+    const labelVisible = (d: ArcState) =>
+      arcVisible(d) && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.03;
+    const labelTransform = (d: ArcState) => {
+      const x = ((d.x0 + d.x1) / 2) * (180 / Math.PI);
+      const y = ((d.y0 + d.y1) / 2) * radius;
+      return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+    };
+
+    const svg = d3
+      .select(host)
+      .append('svg')
+      .attr('viewBox', [-width / 2, -width / 2, width, width].join(' '))
+      .attr('class', 'h-auto w-full')
+      .attr('role', 'group')
+      .attr('aria-label', t('spaceIntelligenceSunburstAria'))
+      .style('font', '10px var(--font-sans, sans-serif)');
+
+    const path = svg
+      .append('g')
+      .selectAll('path')
+      .data(root.descendants().slice(1) as LayoutNode[])
+      .join('path')
+      .attr('fill', (d) => categoryColor(d))
+      .attr('fill-opacity', (d) =>
+        arcVisible(d.current) ? (d.children ? 0.7 : 0.5) : 0,
+      )
+      .attr('pointer-events', (d) => (arcVisible(d.current) ? 'auto' : 'none'))
+      .attr('d', (d) => arc(d.current))
+      .style('cursor', 'pointer');
+
+    path.append('title').text((d) => {
+      const trail = d
+        .ancestors()
+        .map((node) => node.data.name)
+        .reverse()
+        .join(' / ');
+      return trail;
+    });
+
+    const label = svg
+      .append('g')
+      .attr('pointer-events', 'none')
+      .attr('text-anchor', 'middle')
+      .style('user-select', 'none')
+      .selectAll('text')
+      .data(root.descendants().slice(1) as LayoutNode[])
+      .join('text')
+      .attr('dy', '0.35em')
+      .attr('fill-opacity', (d) => +labelVisible(d.current))
+      .attr('transform', (d) => labelTransform(d.current))
+      .attr('class', 'fill-neutral-12')
+      .text((d) => {
+        const name = d.data.name;
+        return name.length > 28 ? `${name.slice(0, 27)}…` : name;
+      });
+
+    const parent = svg
+      .append('circle')
+      .datum(root)
+      .attr('r', radius)
+      .attr('fill', 'transparent')
+      .attr('pointer-events', 'all')
+      .attr('class', 'cursor-pointer')
+      .on('click', (event, p) => clicked(event, p as LayoutNode));
+
+    const centerLabel = svg
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .attr('class', 'fill-neutral-12 pointer-events-none')
+      .style('font-size', '12px')
+      .style('font-weight', '600')
+      .text(root.data.name);
+
+    let focus: LayoutNode = root;
+
+    function isNavigable(node: IntelligenceSunburstNode) {
+      return (
+        node.kind === 'signal' ||
+        node.kind === 'artifact' ||
+        node.kind === 'file'
+      );
+    }
+
+    function clicked(event: Event, p: LayoutNode) {
+      if (isNavigable(p.data) && (!p.children || p === focus)) {
+        openSunburstNode(router, params, p.data);
+        return;
+      }
+      if (p === focus && p === root) return;
+      focus = p;
+      parent.datum(p.parent || root);
+      centerLabel.text(p.data.name);
+      root.each((node) => {
+        const layout = node as LayoutNode;
+        layout.target = {
+          x0:
+            Math.max(0, Math.min(1, (layout.x0 - p.x0) / (p.x1 - p.x0))) *
+            2 *
+            Math.PI,
+          x1:
+            Math.max(0, Math.min(1, (layout.x1 - p.x0) / (p.x1 - p.x0))) *
+            2 *
+            Math.PI,
+          y0: Math.max(0, layout.y0 - p.depth),
+          y1: Math.max(0, layout.y1 - p.depth),
+        };
+      });
+      const transition = svg
+        .transition()
+        .duration((event as MouseEvent).altKey ? 7500 : 750);
+      path
+        .transition(transition)
+        .tween('data', (d) => {
+          const interpolate = d3.interpolate(d.current, d.target as ArcState);
+          return (t) => {
+            d.current = interpolate(t);
+          };
+        })
+        .filter(function (d) {
+          return Boolean(
+            +this.getAttribute('fill-opacity')! ||
+              arcVisible(d.target as ArcState),
+          );
+        })
+        .attr('fill-opacity', (d) =>
+          arcVisible(d.target as ArcState) ? (d.children ? 0.7 : 0.5) : 0,
+        )
+        .attr('pointer-events', (d) =>
+          arcVisible(d.target as ArcState) ? 'auto' : 'none',
+        )
+        .attrTween('d', (d) => () => arc(d.current) as string);
+      label
+        .filter(function (d) {
+          return Boolean(
+            +this.getAttribute('fill-opacity')! ||
+              labelVisible(d.target as ArcState),
+          );
+        })
+        .transition(transition)
+        .attr('fill-opacity', (d) => +labelVisible(d.target as ArcState))
+        .attrTween('transform', (d) => () => labelTransform(d.current));
+    }
+
+    path.on('click', (event, d) => {
+      event.stopPropagation();
+      clicked(event, d);
+    });
+
+    return () => {
+      svg.remove();
+    };
+  }, [hasSlices, params, router, t, tree]);
+
+  const legendIds: SignalSunburstCategoryId[] = [
+    ...SIGNAL_SUNBURST_CATEGORIES.map((category) => category.id),
+    SIGNAL_SUNBURST_UNCATEGORIZED_ID,
+  ];
+  const usedCategories = new Set(
+    (tree.children ?? [])
+      .map((child) => child.categoryId)
+      .filter(Boolean) as string[],
+  );
+
+  if (isLoading && !coherences) {
+    return (
+      <p className="text-2 text-muted-foreground">
+        {t('spaceIntelligenceLoading')}
+      </p>
+    );
+  }
+
+  if (!hasSlices) {
+    return (
+      <p className="text-2 text-muted-foreground">
+        {t('spaceIntelligenceSunburstEmpty')}
+      </p>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex w-full flex-col gap-3 overflow-hidden rounded-lg border border-border bg-neutral-2 p-3',
+        className,
+      )}
+    >
+      <div ref={hostRef} className="mx-auto w-full max-w-[720px]" />
+      <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2">
+        {legendIds.map((categoryId) => {
+          const key = `intelligenceSignalCategories.${categoryId}`;
+          const label = t.has(key as never) ? t(key as never) : categoryId;
+          const active = usedCategories.has(categoryId);
+          return (
+            <li
+              key={categoryId}
+              className={cn(
+                'inline-flex items-center gap-1.5 text-[11px]',
+                active ? 'text-foreground' : 'text-muted-foreground/60',
+              )}
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: SIGNAL_SUNBURST_CATEGORY_COLORS[categoryId],
+                }}
+                aria-hidden
+              />
+              {label}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};

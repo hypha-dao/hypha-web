@@ -40,3 +40,18 @@ export type {
   IntelligenceGraphNode,
   IntelligenceGraphEdge,
 } from './graph';
+export {
+  SIGNAL_SUNBURST_CATEGORIES,
+  SIGNAL_SUNBURST_CATEGORY_COLORS,
+  SIGNAL_SUNBURST_UNCATEGORIZED_ID,
+  buildIntelligenceSunburstTree,
+  categorizeSignal,
+} from './sunburst';
+export type {
+  IntelligenceSunburstKind,
+  IntelligenceSunburstNode,
+  SignalSunburstCategoryId,
+  SunburstArtifactInput,
+  SunburstFileInput,
+  SunburstSignalInput,
+} from './sunburst';

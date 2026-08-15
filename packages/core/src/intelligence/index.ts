@@ -8,3 +8,4 @@ export * from './content-sha';
 export * from './parse-markdown';
 export * from './excerpt';
 export * from './graph';
+export * from './sunburst';

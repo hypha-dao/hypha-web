@@ -38,6 +38,7 @@ import {
   SpaceIntelligenceCard,
   SpaceIntelligenceGraph,
 } from './space-intelligence-cards';
+import { SpaceIntelligenceSunburst } from './space-intelligence-sunburst';
 import { SpaceIntelligenceSettings } from './space-intelligence-settings';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -50,7 +51,7 @@ type SpaceIntelligenceSectionProps = {
   spaceSlug: string;
 };
 
-type IntelligenceViewMode = 'cards' | 'graph';
+type IntelligenceViewMode = 'cards' | 'graph' | 'sunburst';
 
 export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
   spaceSlug,
@@ -237,6 +238,9 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
               <TabsTrigger value="graph" variant="switch">
                 {t('spaceIntelligenceViewGraph')}
               </TabsTrigger>
+              <TabsTrigger value="sunburst" variant="switch">
+                {t('spaceIntelligenceViewSunburst')}
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[14px]">
@@ -318,43 +322,47 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
         <Text className="text-muted-foreground">
           {t('spaceIntelligenceLoading')}
         </Text>
+      ) : artifacts.length === 0 && viewMode === 'cards' ? (
+        <Text className="text-muted-foreground">
+          {t('spaceIntelligenceEmpty')}
+        </Text>
+      ) : viewMode === 'sunburst' ? (
+        <SpaceIntelligenceSunburst
+          spaceSlug={spaceSlug}
+          graph={graph}
+          artifacts={artifacts}
+          hideArchived={hideArchived}
+        />
       ) : artifacts.length === 0 ? (
         <Text className="text-muted-foreground">
           {t('spaceIntelligenceEmpty')}
         </Text>
+      ) : viewMode === 'graph' ? (
+        <SpaceIntelligenceGraph graph={graph} />
       ) : (
-        <>
-          {viewMode === 'graph' ? (
-            <SpaceIntelligenceGraph graph={graph} />
-          ) : (
-            <div className={SIGNAL_GRID_LAYOUT_CLASS}>
-              {artifacts.map((artifact) => (
-                <div
-                  key={artifact.id}
-                  className={SIGNAL_GRID_CARD_WRAPPER_CLASS}
-                >
-                  <SpaceIntelligenceCard
-                    artifact={artifact}
-                    canEdit={canMutate}
-                    onDelete={
-                      canMutate ? (item) => setPendingDelete(item) : undefined
-                    }
-                    onOpenComments={onOpenComments}
-                    commentsDisabled={
-                      commentingId === artifact.id ||
-                      (!artifact.room_id?.trim() && !isMatrixAvailable)
-                    }
-                    commentsTitle={
-                      !artifact.room_id?.trim() && !isMatrixAvailable
-                        ? t('spaceIntelligenceChatUnavailable')
-                        : undefined
-                    }
-                  />
-                </div>
-              ))}
+        <div className={SIGNAL_GRID_LAYOUT_CLASS}>
+          {artifacts.map((artifact) => (
+            <div key={artifact.id} className={SIGNAL_GRID_CARD_WRAPPER_CLASS}>
+              <SpaceIntelligenceCard
+                artifact={artifact}
+                canEdit={canMutate}
+                onDelete={
+                  canMutate ? (item) => setPendingDelete(item) : undefined
+                }
+                onOpenComments={onOpenComments}
+                commentsDisabled={
+                  commentingId === artifact.id ||
+                  (!artifact.room_id?.trim() && !isMatrixAvailable)
+                }
+                commentsTitle={
+                  !artifact.room_id?.trim() && !isMatrixAvailable
+                    ? t('spaceIntelligenceChatUnavailable')
+                    : undefined
+                }
+              />
             </div>
-          )}
-        </>
+          ))}
+        </div>
       )}
 
       <SpaceIntelligenceSettings
