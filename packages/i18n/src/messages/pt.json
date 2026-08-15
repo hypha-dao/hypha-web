@@ -2880,6 +2880,7 @@
     "spaceDocumentationFieldLinkedArtifact": "Artefacto ligado",
     "spaceDocumentationFieldLinkedArtifactNone": "Nenhum",
     "spaceDocumentationColAction": "Open",
+    "spaceDocumentationAddFile": "Adicionar arquivo",
     "newMemoryUploadDocumentsTitle": "Carregar documentos",
     "newMemoryUploadingFiles": "A carregar memórias do espaço...",
     "newMemoryAttachmentsRequired": "Carregue pelo menos um documento para esta memória.",

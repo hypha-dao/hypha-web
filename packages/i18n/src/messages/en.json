@@ -3480,6 +3480,7 @@
     "spaceDocumentationFieldLinkedArtifact": "Linked artifact",
     "spaceDocumentationFieldLinkedArtifactNone": "None",
     "spaceDocumentationColAction": "Open",
+    "spaceDocumentationAddFile": "Add file",
     "newMemoryUploadDocumentsTitle": "Upload Documents",
     "newMemoryUploadingFiles": "Uploading space memories...",
     "newMemoryAttachmentsRequired": "Please upload at least one document for this memory.",

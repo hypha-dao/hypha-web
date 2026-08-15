@@ -3446,6 +3446,7 @@
     "spaceDocumentationFieldLinkedArtifact": "Gekoppeld artefact",
     "spaceDocumentationFieldLinkedArtifactNone": "Geen",
     "spaceDocumentationColAction": "Open",
+    "spaceDocumentationAddFile": "Bestand toevoegen",
     "newMemoryUploadDocumentsTitle": "Documenten uploaden",
     "newMemoryUploadingFiles": "Ruimteherinneringen uploaden...",
     "newMemoryAttachmentsRequired": "Upload ten minste één document voor dit geheugen.",

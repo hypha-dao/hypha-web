@@ -3444,6 +3444,7 @@
     "spaceDocumentationFieldLinkedArtifact": "Verknüpftes Artefakt",
     "spaceDocumentationFieldLinkedArtifactNone": "Keine",
     "spaceDocumentationColAction": "Open",
+    "spaceDocumentationAddFile": "Datei hinzufügen",
     "newMemoryUploadDocumentsTitle": "Dokumente hochladen",
     "newMemoryUploadingFiles": "Space-Memories werden hochgeladen...",
     "newMemoryAttachmentsRequired": "Bitte laden Sie mindestens ein Dokument für diese Erinnerung hoch.",

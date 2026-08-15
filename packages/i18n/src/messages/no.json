@@ -3445,6 +3445,7 @@
     "spaceDocumentationFieldLinkedArtifact": "Tilknyttet artefakt",
     "spaceDocumentationFieldLinkedArtifactNone": "Ingen",
     "spaceDocumentationColAction": "Open",
+    "spaceDocumentationAddFile": "Legg til fil",
     "newMemoryUploadDocumentsTitle": "Last opp dokumenter",
     "newMemoryUploadingFiles": "Laster opp romminner...",
     "newMemoryAttachmentsRequired": "Last opp minst ett dokument for dette minnet.",

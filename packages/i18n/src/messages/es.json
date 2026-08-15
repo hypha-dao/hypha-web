@@ -2880,6 +2880,7 @@
     "spaceDocumentationFieldLinkedArtifact": "Artefacto vinculado",
     "spaceDocumentationFieldLinkedArtifactNone": "Ninguno",
     "spaceDocumentationColAction": "Open",
+    "spaceDocumentationAddFile": "Añadir archivo",
     "newMemoryUploadDocumentsTitle": "Subir documentos",
     "newMemoryUploadingFiles": "Subiendo recuerdos del espacio...",
     "newMemoryAttachmentsRequired": "Sube al menos un documento para este recuerdo.",
