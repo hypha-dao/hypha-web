@@ -28,14 +28,24 @@ function intelligenceEditHref(
   }/edit-intelligence/${artifactId}`;
 }
 
-function intelligenceSignalEditHref(
-  params: { lang?: string; id?: string; tab?: string },
+function intelligenceSignalHref(
+  params: { lang?: string; id?: string },
   signalSlug: string,
 ): string | undefined {
   if (!params.lang || !params.id) return undefined;
-  return `/${params.lang}/dho/${params.id}/${
-    params.tab ?? 'memory'
-  }/edit-signal/${signalSlug}`;
+  return `/${params.lang}/dho/${
+    params.id
+  }/coherence/edit-signal/${encodeURIComponent(signalSlug)}`;
+}
+
+function pushOverlayHref(
+  router: ReturnType<typeof useRouter>,
+  href: string | undefined,
+) {
+  if (!href) return;
+  window.setTimeout(() => {
+    router.push(href, { scroll: false });
+  }, 0);
 }
 
 function graphNodeLabel(title: string, max = 28): string {
@@ -106,14 +116,12 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
 
   const openNode = (node: IntelligenceGraphNode) => {
     if (node.kind === 'artifact') {
-      const href = intelligenceEditHref(params, node.id);
-      if (href) router.push(href);
+      pushOverlayHref(router, intelligenceEditHref(params, node.id));
       return;
     }
     const slug = node.slug?.trim();
     if (!slug) return;
-    const href = intelligenceSignalEditHref(params, slug);
-    if (href) router.push(href);
+    pushOverlayHref(router, intelligenceSignalHref(params, slug));
   };
 
   return (
@@ -181,7 +189,15 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
                   : undefined
               }
               aria-label={canOpen ? openLabel : undefined}
-              onClick={canOpen ? () => openNode(node) : undefined}
+              onClick={
+                canOpen
+                  ? (event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openNode(node);
+                    }
+                  : undefined
+              }
               onKeyDown={
                 canOpen
                   ? (event) => {
@@ -322,8 +338,7 @@ export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
   const editHref = intelligenceEditHref(params, artifact.id);
 
   const openEditor = () => {
-    if (!editHref) return;
-    router.push(editHref);
+    pushOverlayHref(router, editHref);
   };
 
   return (
@@ -367,7 +382,7 @@ export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
-                        router.push(editHref);
+                        pushOverlayHref(router, editHref);
                       }}
                       onKeyDown={stopCardActivationKey}
                     >
