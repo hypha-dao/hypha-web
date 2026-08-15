@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  MarkdownSuspense,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
@@ -35,6 +36,8 @@ type PacksResponse = {
   available?: IntelligencePackPreview[];
 };
 
+type PackTemplate = IntelligencePackPreview['templates'][number];
+
 type SpaceIntelligenceSettingsProps = {
   spaceSlug: string;
   open: boolean;
@@ -44,6 +47,48 @@ type SpaceIntelligenceSettingsProps = {
   enablingPackId: string | null;
   onEnablePack: (packId: string) => Promise<void>;
 };
+
+function PackTemplatePreview({
+  template,
+  typeLabel,
+}: {
+  template: PackTemplate;
+  typeLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const renderedBody = useMemo(
+    () => <MarkdownSuspense>{template.body}</MarkdownSuspense>,
+    [template.body],
+  );
+
+  return (
+    <details
+      className="group rounded-md border border-border bg-background"
+      onToggle={(event) => {
+        setOpen(event.currentTarget.open);
+      }}
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-2 [&::-webkit-details-marker]:hidden">
+        <ChevronDown
+          className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+          aria-hidden
+        />
+        <span className="shrink-0 font-mono text-1 text-muted-foreground">
+          {template.pack_alias}
+        </span>
+        <span className="min-w-0 flex-1 truncate">{template.title}</span>
+        <span className="shrink-0 text-1 text-muted-foreground">
+          {typeLabel}
+        </span>
+      </summary>
+      {open ? (
+        <div className="h-[min(28rem,50dvh)] overflow-y-scroll overscroll-contain border-t border-border px-4 py-3 [scrollbar-gutter:stable]">
+          {renderedBody}
+        </div>
+      ) : null}
+    </details>
+  );
+}
 
 export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
   spaceSlug,
@@ -152,26 +197,10 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
                           : template.type;
                         return (
                           <li key={template.id}>
-                            <details className="group rounded-md border border-border bg-background">
-                              <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-2 [&::-webkit-details-marker]:hidden">
-                                <ChevronDown
-                                  className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
-                                  aria-hidden
-                                />
-                                <span className="shrink-0 font-mono text-1 text-muted-foreground">
-                                  {template.pack_alias}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate">
-                                  {template.title}
-                                </span>
-                                <span className="shrink-0 text-1 text-muted-foreground">
-                                  {typeLabel}
-                                </span>
-                              </summary>
-                              <pre className="max-h-[min(24rem,50dvh)] overflow-auto whitespace-pre-wrap break-words border-t border-border px-3 py-3 font-mono text-1 leading-relaxed text-foreground">
-                                {template.body}
-                              </pre>
-                            </details>
+                            <PackTemplatePreview
+                              template={template}
+                              typeLabel={typeLabel}
+                            />
                           </li>
                         );
                       })}
