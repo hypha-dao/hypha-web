@@ -135,12 +135,12 @@ function layoutIntelligenceGraph(
     place(signals, 200);
     place(artifacts, width - 200);
   } else if (signals.length === 0) {
-    place(documents, 200);
-    place(artifacts, width - 200);
+    place(artifacts, 200);
+    place(documents, width - 200);
   } else {
     place(signals, 130);
-    place(documents, width / 2);
-    place(artifacts, width - 130);
+    place(artifacts, width / 2);
+    place(documents, width - 130);
   }
   return { positions, height };
 }
@@ -150,7 +150,7 @@ type SpaceIntelligenceGraphProps = {
   className?: string;
 };
 
-/** Signals left, documentation center, artifacts right. */
+/** Signals left, artifacts center, documentation right. */
 export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
   graph,
   className,
@@ -165,7 +165,11 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
 
   const width = 720;
   const { positions, height } = layoutIntelligenceGraph(nodes, width, 360);
-  const hasSideColumns = nodes.some((node) => node.kind !== 'artifact');
+  const hasSignals = nodes.some(
+    (node) => node.kind === 'signal' || node.kind === 'signal-missing',
+  );
+  const hasDocuments = nodes.some((node) => node.kind === 'documentation');
+  const hasSideColumns = hasSignals || hasDocuments;
 
   const openNode = (node: IntelligenceGraphNode) => {
     if (node.kind === 'artifact') {
@@ -247,9 +251,13 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
             Boolean(node.slug?.trim());
           const labelSide: 'left' | 'right' | 'below' = !hasSideColumns
             ? 'below'
-            : isDocumentation
-            ? 'below'
             : isSignal
+            ? 'left'
+            : isDocumentation
+            ? 'right'
+            : hasDocuments && hasSignals
+            ? 'below'
+            : hasDocuments
             ? 'left'
             : 'right';
           const labelX =
