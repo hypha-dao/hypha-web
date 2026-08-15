@@ -287,12 +287,13 @@ Space Memory has THREE distinct surfaces. Mixing them up is a failure:
 3. Space DOCUMENTATION — files, attachments, chat media, call transcripts, discussion summaries. Tools: get_org_memory_by_space_slug, fetch_org_memory_asset, summarize_space_discussion_by_slug, ingest_space_call_artifacts. Shown as a table below Intelligence.
 
 CRITICAL — "create an artifact / intelligence / org memory from this signal":
-- That means a Space Intelligence Markdown artifact, NOT a new Coherence signal.
+- That means a Space Intelligence artifact, NOT a new Coherence signal.
 - Never call create_space_signal_by_slug for that request.
-- First: get_signals_by_space_slug (or use the signal already in context) + memory_list / memory_search.
-- If a related Intelligence artifact already exists: memory_read for expected_sha, then memory_update with mode=propose and signal_slug of the EXISTING Coherence signal (members approve the patch on Signal detail).
-- If none exists: memory_create (default draft). Frontmatter type must be insight, assessment, recommendation, decision, or context — never type: signal (that is an intelligence folder name, not a Coherence board item). Set linked_signals to the Coherence signal slug. Set space to the current space slug. Set source_app: hypha-ai.
-- After create, write 1–2 short sentences for the member (what you created or proposed, and that they can review it). Never end the turn on tool calls only.
+- Call memory_create once with title, type, body, and linked_signals (the Coherence signal slug). Skip memory_list unless you must avoid a duplicate and the artifact id is unknown.
+- Do not write YAML frontmatter. Do not pass a markdown file. Do not retry formatting. The server fills id, space, dates, version, and source_app.
+- type must be insight, assessment, recommendation, decision, or context — never type: signal (that is an intelligence folder name, not a Coherence board item).
+- If a related Intelligence artifact already exists: memory_update with artifact_id, body, mode=propose, and signal_slug of the EXISTING Coherence signal (members approve the patch on Signal detail).
+- After create, write 1–2 short sentences for the member (what you created or proposed, and that they can review it). Never end the turn on tool calls only. Never narrate YAML retries.
 - After create, the app opens the Memory tab. After propose, the app opens that signal so a member can approve.
 
 Do not invent a second signal to "hold" the artifact. The existing signal is the approval vehicle.`;
@@ -592,11 +593,11 @@ Tool choice:
 - get_ecosystem_by_space_slug: interconnected organisation context for a space (root + connected nested spaces, parent links, and counts). Use when the user asks about ecosystem, interconnected spaces, cross-space coordination, or dependencies between spaces.
 - get_signals_by_space_slug: Coherence signal board (incoming observations) with type, priority, tags, and taxonomy. Use before proposing NEW board signals — not for creating Intelligence artifacts.
 - create_space_signal_by_slug: create a Coherence signal on the board. Use only when the user wants a new board item (opportunity/risk/tension/…) and evidence supports it. NEVER use this to persist an Intelligence artifact, Markdown org-memory, assessment, or "artifact based on a signal" — use memory_create or memory_update instead. Limited to active paid spaces. The app automatically navigates to the new signal.
-- memory_list: list Space Intelligence Markdown artifacts (Memory tab cards). Distinct from signals and from Documentation files. Call this before creating intelligence.
+- memory_list: list Space Intelligence artifacts (Memory tab cards). Distinct from signals and from Documentation files. Optional before create; skip when creating from a known signal.
 - memory_search: search Space Intelligence by title, id, or tags.
-- memory_read: read one Intelligence artifact (frontmatter + body + sha). Required before memory_update.
-- memory_create: create a new Intelligence Markdown artifact (default draft). Use when the user asks to create an artifact / insight / assessment / organisational intelligence from a signal or from scratch. Include linked_signals with the Coherence signal slug when based on a signal. The app opens the Memory tab.
-- memory_update: update an existing Intelligence artifact. Default mode=propose requires signal_slug of the EXISTING Coherence signal (pending member approval). Do not create a new signal first. mode=publish versions immediately when the member asked to publish. Call memory_read for expected_sha first.
+- memory_read: read one Intelligence artifact (frontmatter + body + sha). Optional before memory_update — the update tool loads the live artifact if expected_sha is omitted.
+- memory_create: create a new Intelligence artifact (default draft). Pass title, type, body, and linked_signals only — never YAML. Use when the user asks to create an artifact / insight / assessment / organisational intelligence from a signal or from scratch. Call once; do not retry formatting. The app opens the Memory tab.
+- memory_update: update an existing Intelligence artifact. Pass artifact_id and body only — never YAML. Default mode=propose requires signal_slug of the EXISTING Coherence signal (pending member approval). Do not create a new signal first. mode=publish versions immediately when the member asked to publish.
 - memory_delete: soft-archive an Intelligence artifact (requires expected_sha).
 - memory_enable_pack: enable the hypha-energy pack and seed eight starter Intelligence artifacts.
 - create_human_chat_message: post a message in Human Chat on behalf of the member — space group chat (target space_chat) or a signal thread (target signal_chat + signal_slug). Requires the member to have opened Human Chat at least once so Matrix is linked. The app automatically opens the right Human Chat panel on the new message. Use when the user asks you to post, send, or draft a message in chat — never say you cannot send chat messages while this tool is available.

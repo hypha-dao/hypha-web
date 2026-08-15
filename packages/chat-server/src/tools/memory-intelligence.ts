@@ -4,9 +4,9 @@ import {
   enableIntelligencePackForSpace,
   HYPHA_ENERGY_PACK_ID,
   listIntelligenceBySpaceSlug,
-  parseIntelligenceMarkdown,
   proposeIntelligencePatchForSignal,
   readIntelligenceBySpaceSlug,
+  serializeIntelligenceMarkdown,
   writeIntelligenceBySpaceSlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -14,6 +14,12 @@ import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 import { buildSpaceScreenNavigation } from './space-screen-navigation';
 import { resolveHyphaAiSourceApp } from './memory-write-identity';
+import {
+  buildMemoryCreateFields,
+  normalizeIntelligenceArtifactType,
+  normalizeLinkedSignalSlugs,
+  stripAccidentalYamlFence,
+} from './memory-artifact-fields';
 
 export {
   HYPHA_AI_SOURCE_APP_FALLBACK,
@@ -21,12 +27,18 @@ export {
 } from './memory-write-identity';
 
 const spaceSlugSchema = z.string().trim().min(1);
-const markdownSchema = z
+const artifactBodySchema = z
   .string()
   .min(1)
   .max(400_000)
   .describe(
-    'Full Markdown including YAML frontmatter (---). Required fields: id (lowercase slug), type (insight/assessment/recommendation/decision/context/… — NOT a Coherence signal), title, space (must match space_slug), source_app (hypha-ai), status, created_at, updated_at (YYYY-MM-DD), version. When creating from a Coherence signal, set linked_signals to that signal slug.',
+    'Markdown body only — prose, headings, and lists. Do not include YAML frontmatter or --- fences. The server writes id, space, dates, version, and source_app.',
+  );
+const linkedSignalsSchema = z
+  .union([z.string().trim().min(1), z.array(z.string().trim().min(1)).max(50)])
+  .optional()
+  .describe(
+    'Coherence signal slug(s) this artifact is based on, e.g. coh-138. Pass a string or array — never YAML.',
   );
 
 function invalidSlug(spaceSlug: string) {
@@ -90,7 +102,7 @@ export function createMemoryListTool(authToken: string) {
 
   return {
     description:
-      'Read-only: list Space Intelligence Markdown artifacts (Memory tab cards). Distinct from Coherence signals (get_signals_by_space_slug) and from Documentation files (get_org_memory_by_space_slug). Use before creating or updating intelligence so you do not duplicate artifacts.',
+      'Read-only: list Space Intelligence artifacts (Memory tab cards). Distinct from Coherence signals (get_signals_by_space_slug) and from Documentation files (get_org_memory_by_space_slug). Optional before create; skip when the member asked to create from a known signal slug.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -205,7 +217,7 @@ export function createMemoryReadTool(authToken: string) {
 
   return {
     description:
-      'Read-only: read one Space Intelligence Markdown artifact (frontmatter + body) by artifact_id. Call memory_list or memory_search first. Required before memory_update so expected_sha is current.',
+      'Read-only: read one Space Intelligence artifact (frontmatter + body) by artifact_id. Call memory_list or memory_search first when the id is unknown. Optional before memory_update — update loads the live artifact if expected_sha is omitted.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -256,7 +268,33 @@ export function createMemoryCreateTool(
 ) {
   const inputSchema = z.object({
     space_slug: spaceSlugSchema,
-    markdown: markdownSchema,
+    title: z
+      .string()
+      .trim()
+      .min(1)
+      .max(500)
+      .describe(
+        'Human title. The server derives a slug id unless artifact_id is set.',
+      ),
+    body: artifactBodySchema,
+    type: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe(
+        'Intelligence type: insight (default), assessment, recommendation, decision, context, proposal, report, or framework. Never use signal (that is a Coherence board item).',
+      ),
+    linked_signals: linkedSignalsSchema,
+    artifact_id: z
+      .string()
+      .trim()
+      .min(1)
+      .max(80)
+      .optional()
+      .describe('Optional lowercase slug id. Omit to derive from title.'),
+    tags: z.array(z.string().trim().min(1).max(100)).max(20).optional(),
     mode: z
       .enum(['draft', 'publish'])
       .optional()
@@ -273,7 +311,7 @@ export function createMemoryCreateTool(
 
   return {
     description:
-      'Write: create a new Space Intelligence Markdown artifact (Memory tab). Use this — not create_space_signal_by_slug — when the user asks to create an artifact, insight, assessment, recommendation, or organisational memory from a Coherence signal. Default mode=draft. Include linked_signals with the Coherence signal slug when the artifact is based on a signal. Do not create a second Coherence signal.',
+      'Write: create a Space Intelligence artifact (Memory tab). Pass title, type, and body only — never YAML frontmatter. The server fills id, space, dates, version, and source_app. Use this — not create_space_signal_by_slug — when the user asks to create an artifact from a Coherence signal. Pass linked_signals with that signal slug. Default mode=draft. Call once; do not retry formatting.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -288,11 +326,37 @@ export function createMemoryCreateTool(
         return { ok: false, error: identity.message, space_slug: safe };
       }
 
+      const fields = buildMemoryCreateFields({
+        title: parsed.data.title,
+        type: parsed.data.type,
+        artifactId: parsed.data.artifact_id,
+        body: parsed.data.body,
+        linkedSignals: parsed.data.linked_signals,
+        tags: parsed.data.tags,
+      });
+      if (!fields.body) {
+        return {
+          ok: false,
+          error:
+            'body must be the artifact prose only. Do not pass YAML frontmatter or --- fences.',
+          space_slug: safe,
+        };
+      }
+
       try {
         const result = await writeIntelligenceBySpaceSlug(
           {
             spaceSlug: safe,
-            markdown: parsed.data.markdown,
+            frontmatter: {
+              id: fields.id,
+              type: fields.type,
+              title: fields.title,
+              source_app: identity.source_app,
+              status: parsed.data.mode === 'publish' ? 'current' : 'draft',
+              linked_signals: fields.linked_signals,
+              tags: fields.tags,
+            },
+            body: fields.body,
             authToken,
             createOnly: true,
             canonicalSourceApp: identity.source_app,
@@ -345,14 +409,25 @@ export function createMemoryUpdateTool(
 ) {
   const inputSchema = z.object({
     space_slug: spaceSlugSchema,
-    markdown: markdownSchema,
+    artifact_id: z
+      .string()
+      .trim()
+      .min(1)
+      .describe(
+        'Existing intelligence artifact slug-id from memory_list / memory_read.',
+      ),
+    body: artifactBodySchema,
+    title: z.string().trim().min(1).max(500).optional(),
+    type: z.string().trim().min(1).max(100).optional(),
+    linked_signals: linkedSignalsSchema,
     expected_sha: z
       .string()
       .trim()
       .min(7)
       .max(64)
+      .optional()
       .describe(
-        'SHA from memory_read of the current artifact (optimistic concurrency).',
+        'Optional SHA from memory_read. Omit to use the live artifact (server loads it).',
       ),
     mode: z
       .enum(['propose', 'publish'])
@@ -369,7 +444,6 @@ export function createMemoryUpdateTool(
       .describe(
         'Required when mode=propose. The Coherence signal members approve on.',
       ),
-    title: z.string().trim().min(1).max(500).optional(),
     lang: z
       .string()
       .trim()
@@ -379,7 +453,7 @@ export function createMemoryUpdateTool(
 
   return {
     description:
-      'Write: update an existing Space Intelligence artifact. Default mode=propose: attach a versioned patch to an existing Coherence signal (signal_slug required) for member approval — do not create a new Coherence signal. Use memory_read first for expected_sha. mode=publish versions immediately when the member asked to publish.',
+      'Write: update an existing Space Intelligence artifact. Pass artifact_id and body only — never YAML. The server loads current frontmatter. Default mode=propose: attach a versioned patch to an existing Coherence signal (signal_slug required) for member approval — do not create a new Coherence signal. mode=publish versions immediately when the member asked to publish.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -396,8 +470,59 @@ export function createMemoryUpdateTool(
 
       const mode = parsed.data.mode ?? 'propose';
       const lang = parsed.data.lang ?? defaultLocale;
+      const body = stripAccidentalYamlFence(parsed.data.body);
+      if (!body) {
+        return {
+          ok: false,
+          error:
+            'body must be the artifact prose only. Do not pass YAML frontmatter or --- fences.',
+          space_slug: safe,
+        };
+      }
 
       try {
+        const gated = await readIntelligenceBySpaceSlug(
+          {
+            spaceSlug: safe,
+            artifactId: parsed.data.artifact_id,
+            authToken,
+          },
+          { db },
+        );
+        if (gated.access === 'denied') {
+          return { ok: false, error: gated.message, space_slug: safe };
+        }
+        const existing = gated.artifact;
+        if (!existing) {
+          return {
+            ok: false,
+            error: `Artifact "${parsed.data.artifact_id}" was not found; use memory_create.`,
+            space_slug: safe,
+          };
+        }
+
+        const expectedSha = parsed.data.expected_sha ?? existing.sha;
+        const linkedSignals = normalizeLinkedSignalSlugs(
+          parsed.data.linked_signals,
+        );
+        const nextTitle =
+          parsed.data.title?.trim() || existing.frontmatter.title;
+        const nextType = parsed.data.type
+          ? normalizeIntelligenceArtifactType(parsed.data.type)
+          : existing.frontmatter.type;
+        const markdown = serializeIntelligenceMarkdown({
+          frontmatter: {
+            ...existing.frontmatter,
+            title: nextTitle,
+            type: nextType,
+            space: safe,
+            source_app: identity.source_app,
+            linked_signals:
+              linkedSignals ?? existing.frontmatter.linked_signals,
+          },
+          body,
+        });
+
         if (mode === 'propose') {
           const signalSlug = parsed.data.signal_slug?.trim();
           if (!signalSlug) {
@@ -409,28 +534,15 @@ export function createMemoryUpdateTool(
             };
           }
 
-          let targetId: string;
-          try {
-            targetId = parseIntelligenceMarkdown(parsed.data.markdown)
-              .frontmatter.id;
-          } catch {
-            return {
-              ok: false,
-              error:
-                'Proposed markdown is not valid intelligence frontmatter + body.',
-              space_slug: safe,
-            };
-          }
-
           const result = await proposeIntelligencePatchForSignal(
             {
               spaceSlug: safe,
               signalSlug,
-              targetId,
-              expectedSha: parsed.data.expected_sha,
-              markdown: parsed.data.markdown,
+              targetId: existing.frontmatter.id,
+              expectedSha,
+              markdown,
               source_app: identity.source_app,
-              title: parsed.data.title,
+              title: nextTitle,
               authToken,
               canonicalSourceApp: identity.source_app,
             },
@@ -460,7 +572,7 @@ export function createMemoryUpdateTool(
               lang,
               spaceSlug: result.space_slug,
               signalSlug: result.patch.signal_slug,
-              label: parsed.data.title ?? result.patch.target_id,
+              label: nextTitle,
             }),
           };
         }
@@ -468,8 +580,8 @@ export function createMemoryUpdateTool(
         const result = await writeIntelligenceBySpaceSlug(
           {
             spaceSlug: safe,
-            markdown: parsed.data.markdown,
-            expectedSha: parsed.data.expected_sha,
+            markdown,
+            expectedSha,
             authToken,
             updateOnly: true,
             canonicalSourceApp: identity.source_app,

@@ -70,6 +70,23 @@ export function parseIntelligenceFrontmatter(
   return intelligenceFrontmatterSchema.parse(raw);
 }
 
+/** Field-level parse errors so writers can retry the right key instead of YAML as a blob. */
+export function formatIntelligenceMarkdownError(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    const details = error.issues
+      .map((issue) => {
+        const path = issue.path.length ? issue.path.join('.') : 'frontmatter';
+        return `${path}: ${issue.message}`;
+      })
+      .join('; ');
+    return `Invalid intelligence frontmatter. ${details}`;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return 'Markdown is not valid intelligence frontmatter + body.';
+}
+
 export function isCoreIntelligenceType(type: string): boolean {
   return (INTELLIGENCE_CORE_TYPES as readonly string[]).includes(type);
 }

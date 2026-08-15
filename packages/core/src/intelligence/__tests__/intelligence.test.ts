@@ -24,6 +24,10 @@ import {
   renderPackTemplateMarkdown,
 } from '../packs';
 import type { IntelligenceManifestEntry } from '../types';
+import {
+  formatIntelligenceMarkdownError,
+  parseIntelligenceFrontmatter,
+} from '../validation';
 
 const SAMPLE = `---
 id: stakeholder-assessment-belica-2026-07
@@ -155,6 +159,25 @@ module.exports = { id: 'x' }
 body
 `),
     ).toThrow(/Unsupported frontmatter fence/);
+  });
+
+  it('names missing date fields instead of a generic YAML failure', () => {
+    try {
+      parseIntelligenceFrontmatter({
+        id: 'hypha-x-belica-5-0',
+        type: 'insight',
+        title: 'Hypha x Belica 5.0 Insight',
+        space: 'belica-5-0',
+        source_app: 'hypha-ai',
+        status: 'draft',
+        version: 1,
+      });
+      throw new Error('expected parse to fail');
+    } catch (error) {
+      const message = formatIntelligenceMarkdownError(error);
+      expect(message).toContain('created_at');
+      expect(message).toContain('updated_at');
+    }
   });
 });
 

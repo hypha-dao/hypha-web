@@ -18,6 +18,7 @@ import {
   stampIntelligenceSourceApp,
   type ParsedIntelligenceMarkdown,
 } from '../parse-markdown';
+import { formatIntelligenceMarkdownError } from '../validation';
 import { assertIntelligenceMarkdownSize } from '../app-identity';
 import {
   IntelligenceBlobNotConfiguredError,
@@ -249,11 +250,10 @@ export async function proposeIntelligencePatchForSignal(
   if (input.canonicalSourceApp) {
     try {
       markdown = stampIntelligenceSourceApp(markdown, input.canonicalSourceApp);
-    } catch {
+    } catch (error) {
       return {
         access: 'denied',
-        message:
-          'Proposed markdown is not valid intelligence frontmatter + body.',
+        message: formatIntelligenceMarkdownError(error),
         space_slug: gated.spaceSlug,
       };
     }
@@ -262,11 +262,10 @@ export async function proposeIntelligencePatchForSignal(
   let parsed: ParsedIntelligenceMarkdown;
   try {
     parsed = parseIntelligenceMarkdown(markdown);
-  } catch {
+  } catch (error) {
     return {
       access: 'denied',
-      message:
-        'Proposed markdown is not valid intelligence frontmatter + body.',
+      message: formatIntelligenceMarkdownError(error),
       space_slug: gated.spaceSlug,
     };
   }

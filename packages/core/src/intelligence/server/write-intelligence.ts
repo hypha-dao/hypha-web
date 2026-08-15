@@ -22,7 +22,10 @@ import {
   stampIntelligenceSourceApp,
   type ParsedIntelligenceMarkdown,
 } from '../parse-markdown';
-import { parseIntelligenceFrontmatter } from '../validation';
+import {
+  formatIntelligenceMarkdownError,
+  parseIntelligenceFrontmatter,
+} from '../validation';
 import { assertIntelligenceMarkdownSize } from '../app-identity';
 import {
   readSpaceIntelligenceManifest,
@@ -152,6 +155,12 @@ export async function writeIntelligenceBySpaceSlug(
       related: input.frontmatter.related ?? [],
       version: input.frontmatter.version ?? 1,
       supersedes: input.frontmatter.supersedes ?? null,
+      linked_signals: input.frontmatter.linked_signals,
+      pack_id: input.frontmatter.pack_id,
+      pack_alias: input.frontmatter.pack_alias,
+      maturity: input.frontmatter.maturity,
+      confidence: input.frontmatter.confidence,
+      community_id: input.frontmatter.community_id,
     });
     raw = serializeIntelligenceMarkdown({
       frontmatter: fm,
@@ -179,10 +188,10 @@ export async function writeIntelligenceBySpaceSlug(
   if (input.canonicalSourceApp) {
     try {
       raw = stampIntelligenceSourceApp(raw, input.canonicalSourceApp);
-    } catch {
+    } catch (error) {
       return {
         access: 'denied',
-        message: 'Markdown is not valid intelligence frontmatter + body.',
+        message: formatIntelligenceMarkdownError(error),
         space_slug: spaceSlug,
       };
     }
@@ -191,10 +200,10 @@ export async function writeIntelligenceBySpaceSlug(
   let parsed: ParsedIntelligenceMarkdown;
   try {
     parsed = parseIntelligenceMarkdown(raw);
-  } catch {
+  } catch (error) {
     return {
       access: 'denied',
-      message: 'Markdown is not valid intelligence frontmatter + body.',
+      message: formatIntelligenceMarkdownError(error),
       space_slug: spaceSlug,
     };
   }
