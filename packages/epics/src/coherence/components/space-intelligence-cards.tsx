@@ -49,7 +49,7 @@ function pushOverlayHref(
   }, 0);
 }
 
-function graphNodeLabel(title: string, max = 28): string {
+function graphNodeLabel(title: string, max = 40): string {
   const clean = title.replace(/[<>&]/g, '');
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}…`;

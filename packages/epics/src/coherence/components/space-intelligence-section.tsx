@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Text } from '@radix-ui/themes';
 import { PlusIcon } from '@radix-ui/react-icons';
+import { SearchIcon } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -193,35 +194,12 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
             {t('spaceIntelligenceSubtitle')}
           </p>
         </div>
-        {canMutate ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {configured && !energyPackEnabled ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={enablingPack}
-                onClick={() => void onEnableEnergyPack()}
-              >
-                {enablingPack
-                  ? t('spaceIntelligenceEnablingPack')
-                  : t('spaceIntelligenceEnableEnergyPack')}
-              </Button>
-            ) : null}
-            <Button asChild colorVariant="accent" size="sm">
-              <Link href={createHref} className="whitespace-nowrap">
-                <PlusIcon />
-                {t('spaceIntelligenceNew')}
-              </Link>
-            </Button>
-          </div>
-        ) : null}
       </header>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex w-full items-center gap-2 lg:gap-3">
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger
-            className="w-[180px]"
+            className="w-[180px] shrink-0"
             aria-label={t('spaceIntelligenceFilterType')}
           >
             <SelectValue placeholder={t('spaceIntelligenceFilterType')} />
@@ -241,29 +219,56 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
           </SelectContent>
         </Select>
         <Input
+          type="search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder={t('spaceIntelligenceSearch')}
-          className="max-w-xs"
+          aria-label={t('spaceIntelligenceSearch')}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          className="min-w-0 flex-1"
         />
-        <Tabs
-          value={viewMode}
-          onValueChange={(value) => setViewMode(value as IntelligenceViewMode)}
-          className="ml-auto shrink-0"
-        >
-          <TabsList
-            triggerVariant="switch"
-            className="w-fit"
-            aria-label={t('spaceIntelligenceViewSwitcher')}
+        <div className="flex shrink-0 items-center gap-2">
+          {canMutate && configured && !energyPackEnabled ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={enablingPack}
+              onClick={() => void onEnableEnergyPack()}
+            >
+              {enablingPack
+                ? t('spaceIntelligenceEnablingPack')
+                : t('spaceIntelligenceEnableEnergyPack')}
+            </Button>
+          ) : null}
+          {canMutate ? (
+            <Button asChild colorVariant="accent" size="sm">
+              <Link href={createHref} className="whitespace-nowrap">
+                <PlusIcon />
+                {t('spaceIntelligenceNew')}
+              </Link>
+            </Button>
+          ) : null}
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) =>
+              setViewMode(value as IntelligenceViewMode)
+            }
           >
-            <TabsTrigger value="cards" variant="switch">
-              {t('spaceIntelligenceViewCards')}
-            </TabsTrigger>
-            <TabsTrigger value="graph" variant="switch">
-              {t('spaceIntelligenceViewGraph')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+            <TabsList
+              triggerVariant="switch"
+              className="w-fit"
+              aria-label={t('spaceIntelligenceViewSwitcher')}
+            >
+              <TabsTrigger value="cards" variant="switch">
+                {t('spaceIntelligenceViewCards')}
+              </TabsTrigger>
+              <TabsTrigger value="graph" variant="switch">
+                {t('spaceIntelligenceViewGraph')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {saveError ? (

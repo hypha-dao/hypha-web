@@ -4,7 +4,10 @@ import {
   serializeIntelligenceMarkdown,
   stampIntelligenceSourceApp,
 } from '../parse-markdown';
-import { buildIntelligenceSignalGraph } from '../graph';
+import {
+  buildIntelligenceSignalGraph,
+  graphSignalsFromCoherenceRows,
+} from '../graph';
 import {
   artifactCurrentPath,
   artifactPatchPath,
@@ -323,6 +326,59 @@ describe('buildIntelligenceSignalGraph', () => {
     expect(graph.nodes.find((n) => n.slug === 'ghost-signal')?.kind).toBe(
       'signal-missing',
     );
+  });
+
+  it('resolves signal titles from slug or coh-{id} aliases', () => {
+    const resolved = graphSignalsFromCoherenceRows(
+      ['coh-nb3wojrgh', '42'],
+      [
+        {
+          id: 7,
+          slug: 'coh-nb3wojrgh',
+          title: 'Village water repair',
+        },
+        {
+          id: 42,
+          slug: 'inbox-follow-up',
+          title: 'Inbox follow-up',
+        },
+      ],
+    );
+    expect(resolved).toEqual([
+      {
+        slug: 'coh-nb3wojrgh',
+        title: 'Village water repair',
+        aliases: ['7', 'coh-7'],
+      },
+      {
+        slug: 'inbox-follow-up',
+        title: 'Inbox follow-up',
+        aliases: ['42'],
+      },
+    ]);
+    const graph = buildIntelligenceSignalGraph({
+      artifacts: [
+        {
+          id: 'a',
+          type: 'insight',
+          title: 'A',
+          space: 'demo',
+          status: 'current',
+          tags: [],
+          related: [],
+          linked_signals: ['coh-nb3wojrgh'],
+          source_app: 'hypha',
+          path: 'intelligence/spaces/demo/insights/a.md',
+          sha: 'abc1234',
+          version: 1,
+          updated_at: '2026-07-18',
+        },
+      ],
+      signals: resolved,
+    });
+    const signalNode = graph.nodes.find((node) => node.kind === 'signal');
+    expect(signalNode?.title).toBe('Village water repair');
+    expect(signalNode?.slug).toBe('coh-nb3wojrgh');
   });
 });
 
