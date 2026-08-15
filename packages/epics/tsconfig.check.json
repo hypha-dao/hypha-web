@@ -1,7 +1,9 @@
 {
   // Full-package epics `tsc` OOMs in CI (>12GB) via @hypha-platform/core/client barrel.
   // This config typechecks the Space Intelligence surface only; Next.js build still
-  // typechecks the app import graph.
+  // typechecks the app import graph. Included files must not import
+  // `@hypha-platform/ui` or `@hypha-platform/core/client` (those barrels pull
+  // ui-utils members and SVG modules the stubs do not cover).
   "extends": "@hypha-platform/config-typescript/base.json",
   "compilerOptions": {
     "module": "ESNext",
