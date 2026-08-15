@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -52,9 +52,11 @@ type SpaceIntelligenceSettingsProps = {
 function PackTemplatePreview({
   template,
   typeLabel,
+  action,
 }: {
   template: PackTemplate;
   typeLabel: string;
+  action?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const renderedBody = useMemo(
@@ -64,12 +66,12 @@ function PackTemplatePreview({
 
   return (
     <details
-      className="group rounded-md border border-border bg-background"
+      className="group w-full rounded-md border border-border bg-background"
       onToggle={(event) => {
         setOpen(event.currentTarget.open);
       }}
     >
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-2 [&::-webkit-details-marker]:hidden">
+      <summary className="flex w-full cursor-pointer list-none items-center gap-2 px-3 py-2 text-2 [&::-webkit-details-marker]:hidden">
         <ChevronDown
           className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
           aria-hidden
@@ -81,6 +83,15 @@ function PackTemplatePreview({
         <span className="shrink-0 text-1 text-muted-foreground">
           {typeLabel}
         </span>
+        {action ? (
+          <span
+            className="shrink-0"
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            {action}
+          </span>
+        ) : null}
       </summary>
       {open ? (
         <div className="h-[min(28rem,50dvh)] overflow-y-scroll overscroll-contain border-t border-border px-4 py-3 [scrollbar-gutter:stable]">
@@ -188,38 +199,44 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
                         const busy = enablingTemplateId === template.id;
                         const activated = template.activated === true;
                         return (
-                          <li
-                            key={template.id}
-                            className="flex items-start gap-2"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <PackTemplatePreview
-                                template={template}
-                                typeLabel={typeLabel}
-                              />
-                            </div>
-                            {canEnable ? (
-                              activated ? (
-                                <span className="mt-1.5 shrink-0 rounded-full bg-accent-3 px-2 py-0.5 text-1 text-accent-11">
-                                  {t('spaceIntelligenceTemplateActivated')}
-                                </span>
-                              ) : (
-                                <Button
-                                  type="button"
-                                  colorVariant="accent"
-                                  size="sm"
-                                  className="mt-1 shrink-0"
-                                  disabled={busy || enablingTemplateId != null}
-                                  onClick={() =>
-                                    void enableTemplate(pack.id, template.id)
-                                  }
-                                >
-                                  {busy
-                                    ? t('spaceIntelligenceActivatingTemplate')
-                                    : t('spaceIntelligenceActivateTemplate')}
-                                </Button>
-                              )
-                            ) : null}
+                          <li key={template.id} className="w-full">
+                            <PackTemplatePreview
+                              template={template}
+                              typeLabel={typeLabel}
+                              action={
+                                canEnable ? (
+                                  activated ? (
+                                    <span className="rounded-full bg-accent-3 px-2 py-0.5 text-1 text-accent-11">
+                                      {t('spaceIntelligenceTemplateActivated')}
+                                    </span>
+                                  ) : (
+                                    <Button
+                                      type="button"
+                                      colorVariant="accent"
+                                      size="sm"
+                                      className="h-6 min-h-6 px-2 py-0 text-1"
+                                      disabled={
+                                        busy || enablingTemplateId != null
+                                      }
+                                      onClick={() =>
+                                        void enableTemplate(
+                                          pack.id,
+                                          template.id,
+                                        )
+                                      }
+                                    >
+                                      {busy
+                                        ? t(
+                                            'spaceIntelligenceActivatingTemplate',
+                                          )
+                                        : t(
+                                            'spaceIntelligenceActivateTemplate',
+                                          )}
+                                    </Button>
+                                  )
+                                ) : undefined
+                              }
+                            />
                           </li>
                         );
                       })}
