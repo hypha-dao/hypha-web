@@ -950,6 +950,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   } = useChat({
     id: spaceChatId,
     transport,
+    // Batch stream chunks — every-token updates overflow React (#185) in this panel.
+    // https://ai-sdk.dev/docs/troubleshooting/react-maximum-update-depth-exceeded
+    experimental_throttle: 100,
     onError: (chatError) => {
       console.error('[AiLeftPanel][useChat]', chatError);
     },
@@ -1097,6 +1100,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [isOnboardingSetup, messages.length, setMessages, spaceSlug]);
 
   useEffect(() => {
+    if (status === 'streaming' || status === 'submitted') return;
     const slug = spaceSlug?.trim();
     if (!slug || !messages.length) return;
     const stored = toStoredOnboardingChatMessages(messages);
@@ -1105,7 +1109,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
     saveSpaceAiChatMessages(slug, stored);
-  }, [isOnboardingSetup, messages, spaceSlug]);
+  }, [isOnboardingSetup, messages, spaceSlug, status]);
 
   const buildMessageOptions = useCallback(
     async (contextOverride?: OnboardingConversationContext | undefined) => {
@@ -1489,6 +1493,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [applyPrepareGovernanceUpdate, messages, pathname, router, status]);
 
   useEffect(() => {
+    if (shouldDeferAiPanelAutoNavigation(status)) return;
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
@@ -1504,9 +1509,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     ]);
     const href = navigationTarget?.href;
     if (!href) return;
-    // Never router.push / open panels while a reply is in flight — that aborts
-    // the chat fetch (streamError) and can loop into React error #185.
-    if (shouldDeferAiPanelAutoNavigation(status)) return;
 
     const currentSearch =
       typeof window !== 'undefined' ? window.location.search : '';
