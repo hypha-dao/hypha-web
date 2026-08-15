@@ -206,7 +206,9 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
     if (!host || !hasSlices) return;
 
     const width = SUNBURST_SIZE;
-    const radius = width / (2 * SUNBURST_VISIBLE_RINGS);
+    // Hole (root) + visible rings, so the outer category rim sits at the edge.
+    const radius = width / (2 * (SUNBURST_VISIBLE_RINGS + 1));
+    const yOuter = SUNBURST_VISIBLE_RINGS + 1;
     const hierarchy = d3
       .hierarchy(tree)
       .sum((node) => node.value ?? 0)
@@ -224,22 +226,28 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
       };
     });
 
+    /** Invert depth so board categories (first ring) draw on the outer edge. */
+    const ringInner = (d: ArcState) =>
+      Math.max(0, (yOuter + 1 - d.y1) * radius);
+    const ringOuter = (d: ArcState) =>
+      Math.max(ringInner(d), (yOuter + 1 - d.y0) * radius - 1);
+
     const arc = d3
       .arc<ArcState>()
       .startAngle((d) => d.x0)
       .endAngle((d) => d.x1)
       .padAngle((d) => Math.min((d.x1 - d.x0) / 2, 0.005))
       .padRadius(radius * 1.5)
-      .innerRadius((d) => d.y0 * radius)
-      .outerRadius((d) => Math.max(d.y0 * radius, d.y1 * radius - 1));
+      .innerRadius((d) => ringInner(d))
+      .outerRadius((d) => ringOuter(d));
 
     const arcVisible = (d: ArcState) =>
-      d.y1 <= SUNBURST_VISIBLE_RINGS + 1 && d.y0 >= 1 && d.x1 > d.x0;
+      d.y1 <= yOuter && d.y0 >= 1 && d.x1 > d.x0;
     const labelVisible = (d: ArcState) =>
       arcVisible(d) && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.03;
     const labelTransform = (d: ArcState) => {
       const x = ((d.x0 + d.x1) / 2) * (180 / Math.PI);
-      const y = ((d.y0 + d.y1) / 2) * radius;
+      const y = (ringInner(d) + ringOuter(d)) / 2;
       return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
     };
 
@@ -285,10 +293,16 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
       .attr('dy', '0.35em')
       .attr('fill-opacity', (d) => +labelVisible(d.current))
       .attr('transform', (d) => labelTransform(d.current))
-      .attr('class', 'fill-neutral-12')
+      .attr('class', (d) =>
+        d.data.kind === 'category'
+          ? 'fill-neutral-12 font-semibold'
+          : 'fill-neutral-12',
+      )
+      .style('font-size', (d) => (d.data.kind === 'category' ? '12px' : '10px'))
       .text((d) => {
         const name = d.data.name;
-        return name.length > 28 ? `${name.slice(0, 27)}…` : name;
+        const max = d.data.kind === 'category' ? 22 : 28;
+        return name.length > max ? `${name.slice(0, max - 1)}…` : name;
       });
 
     const parent = svg

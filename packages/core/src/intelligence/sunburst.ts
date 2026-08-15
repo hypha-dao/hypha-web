@@ -164,8 +164,9 @@ function boardMeta(
 }
 
 /**
- * Hierarchy for the zoomable sunburst, center → edge:
+ * Hierarchy for the zoomable sunburst:
  * root → board category → signal → artifact → file.
+ * The chart draws this inverted (detail near the center, categories on the outer edge).
  */
 export function buildIntelligenceSunburstTree(input: {
   signals: SunburstSignalInput[];
