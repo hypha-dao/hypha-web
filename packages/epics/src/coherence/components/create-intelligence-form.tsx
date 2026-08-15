@@ -1,7 +1,10 @@
 'use client';
 
 import { FC, useCallback, useEffect, useState } from 'react';
-import { INTELLIGENCE_CORE_TYPES } from '@hypha-platform/core/intelligence';
+import {
+  extractLinkedSignalSlug,
+  INTELLIGENCE_CORE_TYPES,
+} from '@hypha-platform/core/intelligence';
 import {
   Button,
   Input,
@@ -51,6 +54,18 @@ function splitCsv(value: string): string[] {
     .filter(Boolean);
 }
 
+function splitLinkedSignals(value: string): string[] {
+  const slugs: string[] = [];
+  const seen = new Set<string>();
+  for (const item of splitCsv(value)) {
+    const slug = extractLinkedSignalSlug(item);
+    if (!slug || seen.has(slug)) continue;
+    seen.add(slug);
+    slugs.push(slug);
+  }
+  return slugs;
+}
+
 export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
   spaceSlug,
   successfulUrl,
@@ -82,6 +97,7 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
   const [type, setType] = useState<string>('insight');
   const [body, setBody] = useState('');
   const [related, setRelated] = useState('');
+  const [linkedSignals, setLinkedSignals] = useState('');
   const [tags, setTags] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -93,6 +109,7 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
     setType(artifact.frontmatter.type);
     setBody(artifact.body);
     setRelated((artifact.frontmatter.related ?? []).join(', '));
+    setLinkedSignals((artifact.frontmatter.linked_signals ?? []).join(', '));
     setTags((artifact.frontmatter.tags ?? []).join(', '));
     setHydrated(true);
   }, [artifact, mode]);
@@ -140,6 +157,7 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
             title: trimmedTitle,
             type,
             related: splitCsv(related),
+            linked_signals: splitLinkedSignals(linkedSignals),
             tags: splitCsv(tags),
             updated_at: today,
           },
@@ -165,6 +183,7 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
             updated_at: today,
             tags: splitCsv(tags),
             related: splitCsv(related),
+            linked_signals: splitLinkedSignals(linkedSignals),
             version: 1,
             supersedes: null,
           },
@@ -267,6 +286,18 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
               onChange={(event) => setRelated(event.target.value)}
               disabled={!editable}
               placeholder="id-one, id-two"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="intel-linked-signals">
+              {t('spaceIntelligenceFieldLinkedSignals')}
+            </Label>
+            <Input
+              id="intel-linked-signals"
+              value={linkedSignals}
+              onChange={(event) => setLinkedSignals(event.target.value)}
+              disabled={!editable}
+              placeholder={t('spaceIntelligenceFieldLinkedSignalsPlaceholder')}
             />
           </div>
           <div className="space-y-1.5">

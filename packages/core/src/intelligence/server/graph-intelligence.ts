@@ -1,13 +1,16 @@
 import 'server-only';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { findAllCoherences } from '../../coherence/server/queries';
+import {
+  findAllCoherences,
+  findCoherencesBySlugs,
+} from '../../coherence/server/queries';
 import { findSpaceBySlug } from '../../space/server/queries';
 import type { IntelligenceManifestEntry } from '../types';
 import {
   buildIntelligenceSignalGraph,
+  collectIntelligenceLinkedSignalSlugs,
   graphSignalsFromCoherenceRows,
-  normalizeIntelligenceSignalSlug,
   type IntelligenceGraph,
   type IntelligenceGraphPatchLink,
   type IntelligenceGraphSignal,
@@ -82,21 +85,9 @@ export async function buildIntelligenceGraphForSpace(
   } catch {
     patches = [];
   }
-  const linkedSlugs = new Set<string>();
-  const addLinked = (raw: string) => {
-    const slug = normalizeIntelligenceSignalSlug(raw);
-    if (slug) linkedSlugs.add(slug);
-  };
-  for (const artifact of input.artifacts) {
-    for (const slug of artifact.linked_signals ?? []) {
-      addLinked(slug);
-    }
-  }
-  for (const patch of patches) {
-    if (patch.status === 'pending' && patch.signal_slug) {
-      addLinked(patch.signal_slug);
-    }
-  }
+  const linkedSlugs = new Set(
+    collectIntelligenceLinkedSignalSlugs(input.artifacts, patches),
+  );
 
   let signals: IntelligenceGraphSignal[] = [];
   if (linkedSlugs.size > 0) {
@@ -107,6 +98,22 @@ export async function buildIntelligenceGraphForSpace(
         { spaceId: space.id, includeArchived: true },
       );
       signals = graphSignalsFromCoherenceRows(linkedSlugs, coherences);
+    }
+    const resolved = new Set<string>();
+    for (const signal of signals) {
+      resolved.add(signal.slug);
+      for (const alias of signal.aliases ?? []) resolved.add(alias);
+    }
+    const unmatched = [...linkedSlugs].filter((slug) => !resolved.has(slug));
+    if (unmatched.length > 0) {
+      const extras = await findCoherencesBySlugs({ slugs: unmatched }, { db });
+      const extraSignals = graphSignalsFromCoherenceRows(unmatched, extras);
+      const seen = new Set(signals.map((signal) => signal.slug));
+      for (const extra of extraSignals) {
+        if (seen.has(extra.slug)) continue;
+        seen.add(extra.slug);
+        signals.push(extra);
+      }
     }
   }
 

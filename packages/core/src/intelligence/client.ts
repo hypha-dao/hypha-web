@@ -23,6 +23,7 @@ export type {
 export {
   buildIntelligenceRelatedGraph,
   buildIntelligenceSignalGraph,
+  extractLinkedSignalSlug,
   intelligenceSignalNodeId,
   intelligenceSignalSlugFromNodeId,
 } from './graph';

@@ -9,11 +9,14 @@ import type {
 import { cn } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Archive, Pencil } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
-import { PRIORITY_LEFT_ACCENT_BAR_CLASS } from '../utils/signal-priority-styles';
+import {
+  PRIORITY_LEFT_ACCENT_BAR_CLASS,
+  priorityGraphNodeClass,
+} from '../utils/signal-priority-styles';
 import {
   SIGNAL_TAG_BADGE_CLASS,
   SIGNAL_TAG_OVERFLOW_BADGE_CLASS,
@@ -49,10 +52,27 @@ function pushOverlayHref(
   }, 0);
 }
 
+function graphHoverLabel(node: IntelligenceGraphNode): string {
+  const type = node.type?.trim();
+  if (node.kind === 'artifact') {
+    return type ? `${node.title} · ${type}` : node.title;
+  }
+  const kind = type && type !== 'signal' ? type : 'Signal';
+  return `${node.title} · ${kind}`;
+}
+
 function graphNodeLabel(title: string, max = 40): string {
   const clean = title.replace(/[<>&]/g, '');
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}…`;
+}
+
+function signalTrianglePoints(x: number, y: number): string {
+  const height = 28;
+  const width = 30;
+  return `${x},${y - height * 0.62} ${x - width / 2},${y + height * 0.42} ${
+    x + width / 2
+  },${y + height * 0.42}`;
 }
 
 function layoutIntelligenceGraph(
@@ -138,21 +158,36 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
         role="group"
         aria-label={t('spaceIntelligenceGraphAria')}
       >
+        <style>{`
+          .intel-graph-node { outline: none; }
+          .intel-graph-node[role='button'] { cursor: pointer; }
+          .intel-graph-node[role='button']:hover {
+            filter: drop-shadow(0 3px 8px rgba(15, 23, 42, 0.28));
+          }
+          .intel-graph-node[role='button']:focus-visible circle,
+          .intel-graph-node[role='button']:focus-visible polygon {
+            stroke-width: 3;
+          }
+          .intel-graph-hover-label { opacity: 0; }
+          .intel-graph-node:hover .intel-graph-hover-label,
+          .intel-graph-node:focus-visible .intel-graph-hover-label {
+            opacity: 1;
+          }
+        `}</style>
         {graph.edges.map((edge) => {
           const from = positions.get(edge.from);
           const to = positions.get(edge.to);
           if (!from || !to) return null;
           const proposed = edge.relation === 'proposed-patch';
+          const midX = (from.x + to.x) / 2;
           return (
-            <line
+            <path
               key={`${edge.relation}-${edge.from}-${edge.to}`}
-              x1={from.x}
-              y1={from.y}
-              x2={to.x}
-              y2={to.y}
+              d={`M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`}
+              fill="none"
               className={proposed ? 'stroke-accent-8' : 'stroke-accent-7'}
-              strokeWidth={proposed ? 1 : 1.5}
-              strokeDasharray={proposed ? '4 3' : undefined}
+              strokeWidth={proposed ? 1.25 : 1.75}
+              strokeDasharray={proposed ? '5 4' : undefined}
             />
           );
         })}
@@ -171,25 +206,19 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
             : 'right';
           const labelX =
             labelSide === 'left'
-              ? pos.x - 20
+              ? pos.x - 22
               : labelSide === 'right'
-              ? pos.x + 20
+              ? pos.x + 22
               : pos.x;
-          const labelY = labelSide === 'below' ? pos.y + 26 : pos.y + 4;
-          const openLabel = t('spaceIntelligenceOpenArtifact', {
-            title: node.title,
-          });
+          const labelY = labelSide === 'below' ? pos.y + 28 : pos.y + 4;
+          const hoverLabel = graphHoverLabel(node);
           return (
             <g
               key={node.id}
               role={canOpen ? 'button' : undefined}
               tabIndex={canOpen ? 0 : undefined}
-              className={
-                canOpen
-                  ? 'cursor-pointer outline-none focus-visible:[&>circle]:stroke-[3]'
-                  : undefined
-              }
-              aria-label={canOpen ? openLabel : undefined}
+              className="intel-graph-node"
+              aria-label={canOpen ? hoverLabel : undefined}
               onClick={
                 canOpen
                   ? (event) => {
@@ -210,20 +239,43 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
                   : undefined
               }
             >
-              <title>{canOpen ? openLabel : node.title}</title>
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={isSignal ? 10 : 14}
-                className={
-                  missing
-                    ? 'fill-neutral-4 stroke-neutral-8'
-                    : isSignal
-                    ? 'fill-background stroke-accent-9'
-                    : 'fill-accent-4 stroke-accent-9'
-                }
-                strokeWidth={1.5}
-              />
+              <title>{hoverLabel}</title>
+              {isSignal ? (
+                <>
+                  <polygon
+                    points={signalTrianglePoints(pos.x, pos.y)}
+                    className={
+                      missing
+                        ? 'fill-neutral-4 stroke-neutral-8'
+                        : priorityGraphNodeClass(node.priority)
+                    }
+                    strokeWidth={1.5}
+                  />
+                  <g
+                    transform={`translate(${pos.x - 6} ${pos.y - 4})`}
+                    className={
+                      missing
+                        ? 'fill-neutral-8 stroke-neutral-8'
+                        : 'fill-white stroke-white'
+                    }
+                    strokeWidth={1.35}
+                    strokeLinecap="round"
+                    aria-hidden
+                  >
+                    <circle cx="6" cy="7" r="1.35" stroke="none" />
+                    <path d="M2.4 4.4a4.4 4.4 0 0 1 7.2 0" fill="none" />
+                    <path d="M3.6 5.7a2.6 2.6 0 0 1 4.8 0" fill="none" />
+                  </g>
+                </>
+              ) : (
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={14}
+                  className="fill-accent-4 stroke-accent-9"
+                  strokeWidth={1.5}
+                />
+              )}
               <text
                 x={labelX}
                 y={labelY}
@@ -238,6 +290,14 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
                 className="fill-neutral-12 text-[10px]"
               >
                 {graphNodeLabel(node.title)}
+              </text>
+              <text
+                x={pos.x}
+                y={pos.y - (isSignal ? 26 : 22)}
+                textAnchor="middle"
+                className="intel-graph-hover-label fill-neutral-12 text-[10px] font-medium"
+              >
+                {graphNodeLabel(hoverLabel, 48)}
               </text>
             </g>
           );
@@ -409,7 +469,7 @@ export const SpaceIntelligenceCard: FC<IntelligenceCardProps> = ({
                       }}
                       onKeyDown={stopCardActivationKey}
                     >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      <Archive className="h-3.5 w-3.5" aria-hidden />
                     </button>
                   ) : null}
                 </div>

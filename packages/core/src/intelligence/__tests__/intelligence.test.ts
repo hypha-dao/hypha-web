@@ -6,7 +6,9 @@ import {
 } from '../parse-markdown';
 import {
   buildIntelligenceSignalGraph,
+  extractLinkedSignalSlug,
   graphSignalsFromCoherenceRows,
+  intelligenceSignalNodeId,
 } from '../graph';
 import {
   artifactCurrentPath,
@@ -354,7 +356,7 @@ describe('buildIntelligenceSignalGraph', () => {
       {
         slug: 'inbox-follow-up',
         title: 'Inbox follow-up',
-        aliases: ['42'],
+        aliases: ['42', 'coh-42'],
       },
     ]);
     const graph = buildIntelligenceSignalGraph({
@@ -380,6 +382,96 @@ describe('buildIntelligenceSignalGraph', () => {
     const signalNode = graph.nodes.find((node) => node.kind === 'signal');
     expect(signalNode?.title).toBe('Village water repair');
     expect(signalNode?.slug).toBe('coh-nb3wojrgh');
+  });
+
+  it('extracts signal slugs from coherence deep-link URLs', () => {
+    expect(
+      extractLinkedSignalSlug(
+        'https://pr-2461.preview-app.hypha.earth/en/dho/hypha-platform/coherence?signal=coh-3fbfaa35',
+      ),
+    ).toBe('coh-3fbfaa35');
+  });
+
+  it('links artifacts from a coherence URL in linked_signals', () => {
+    const graph = buildIntelligenceSignalGraph({
+      artifacts: [
+        {
+          id: 'belica',
+          type: 'context',
+          title: 'Belica',
+          space: 'hypha-platform',
+          status: 'current',
+          tags: [],
+          related: [],
+          linked_signals: [
+            'https://pr-2461.preview-app.hypha.earth/en/dho/hypha-platform/coherence?signal=coh-3fbfaa35',
+          ],
+          source_app: 'hypha',
+          path: 'intelligence/spaces/hypha-platform/context/belica.md',
+          sha: 'abc1234',
+          version: 1,
+          updated_at: '2026-08-15',
+        },
+      ],
+      signals: [
+        {
+          slug: 'coh-3fbfaa35',
+          title: 'Belica grid risk',
+          type: 'Risk',
+          priority: 'critical',
+        },
+      ],
+    });
+    expect(graph.edges).toEqual([
+      {
+        from: 'belica',
+        to: intelligenceSignalNodeId('coh-3fbfaa35'),
+        relation: 'linked-signal',
+      },
+    ]);
+  });
+
+  it('links artifacts via related coh- slugs and stamps type/priority', () => {
+    const graph = buildIntelligenceSignalGraph({
+      artifacts: [
+        {
+          id: 'belica',
+          type: 'context',
+          title: 'Belica',
+          space: 'hypha-platform',
+          status: 'current',
+          tags: [],
+          related: ['coh-3fbfaa35'],
+          source_app: 'hypha',
+          path: 'intelligence/spaces/hypha-platform/context/belica.md',
+          sha: 'abc1234',
+          version: 1,
+          updated_at: '2026-08-15',
+        },
+      ],
+      signals: [
+        {
+          slug: 'coh-3fbfaa35',
+          title: 'Belica grid risk',
+          type: 'Risk',
+          priority: 'critical',
+        },
+      ],
+    });
+    const signalNode = graph.nodes.find((node) => node.kind === 'signal');
+    expect(signalNode).toMatchObject({
+      slug: 'coh-3fbfaa35',
+      title: 'Belica grid risk',
+      type: 'Risk',
+      priority: 'critical',
+    });
+    expect(graph.edges).toEqual([
+      {
+        from: 'belica',
+        to: intelligenceSignalNodeId('coh-3fbfaa35'),
+        relation: 'linked-signal',
+      },
+    ]);
   });
 });
 
