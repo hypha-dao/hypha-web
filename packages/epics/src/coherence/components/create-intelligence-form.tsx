@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   extractLinkedSignalSlug,
   INTELLIGENCE_CORE_TYPES,
@@ -9,6 +9,7 @@ import {
   Button,
   Input,
   Label,
+  MultiSelect,
   RichTextEditor,
   Select,
   SelectContent,
@@ -23,7 +24,7 @@ import { ButtonBack } from '../../common/button-back';
 import { ButtonClose } from '../../common/button-close';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
 import {
   useIntelligenceArtifact,
   useSpaceIntelligence,
@@ -54,16 +55,39 @@ function splitCsv(value: string): string[] {
     .filter(Boolean);
 }
 
-function splitLinkedSignals(value: string): string[] {
-  const slugs: string[] = [];
+function uniqueValues(values: string[]): string[] {
   const seen = new Set<string>();
-  for (const item of splitCsv(value)) {
-    const slug = extractLinkedSignalSlug(item);
+  const result: string[] = [];
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    result.push(trimmed);
+  }
+  return result;
+}
+
+function uniqueLinkedSignalSlugs(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const slug = extractLinkedSignalSlug(value);
     if (!slug || seen.has(slug)) continue;
     seen.add(slug);
-    slugs.push(slug);
+    result.push(slug);
   }
-  return slugs;
+  return result;
+}
+
+function withOrphanOptions(
+  options: { label: string; value: string }[],
+  selected: string[],
+): { label: string; value: string }[] {
+  const known = new Set(options.map((option) => option.value));
+  const extras = selected
+    .filter((value) => value && !known.has(value))
+    .map((value) => ({ label: value, value }));
+  return extras.length ? [...options, ...extras] : options;
 }
 
 export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
@@ -83,7 +107,8 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
     space,
     spaceId: space?.web3SpaceId ?? undefined,
   });
-  const { createArtifact } = useSpaceIntelligence(spaceSlug);
+  const { createArtifact, artifacts } = useSpaceIntelligence(spaceSlug);
+  const { coherences } = useFindCoherences({ spaceSlug });
   const {
     artifact,
     isLoading: isLoadingArtifact,
@@ -96,8 +121,8 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
   const [title, setTitle] = useState('');
   const [type, setType] = useState<string>('insight');
   const [body, setBody] = useState('');
-  const [related, setRelated] = useState('');
-  const [linkedSignals, setLinkedSignals] = useState('');
+  const [related, setRelated] = useState<string[]>([]);
+  const [linkedSignals, setLinkedSignals] = useState<string[]>([]);
   const [tags, setTags] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -108,8 +133,10 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
     setTitle(artifact.frontmatter.title);
     setType(artifact.frontmatter.type);
     setBody(artifact.body);
-    setRelated((artifact.frontmatter.related ?? []).join(', '));
-    setLinkedSignals((artifact.frontmatter.linked_signals ?? []).join(', '));
+    setRelated(uniqueValues(artifact.frontmatter.related ?? []));
+    setLinkedSignals(
+      uniqueLinkedSignalSlugs(artifact.frontmatter.linked_signals ?? []),
+    );
     setTags((artifact.frontmatter.tags ?? []).join(', '));
     setHydrated(true);
   }, [artifact, mode]);
@@ -128,6 +155,32 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
     },
     [tAgreementFlow],
   );
+
+  const relatedOptions = useMemo(() => {
+    const excludeId = mode === 'edit' ? artifactId : undefined;
+    const options = artifacts
+      .filter((item) => item.id !== excludeId)
+      .map((item) => ({
+        value: item.id,
+        label: item.title.trim() || item.id,
+      }));
+    return withOrphanOptions(options, related);
+  }, [artifactId, artifacts, mode, related]);
+
+  const linkedSignalOptions = useMemo(() => {
+    const options: { label: string; value: string }[] = [];
+    const seen = new Set<string>();
+    for (const item of coherences ?? []) {
+      const slug = extractLinkedSignalSlug(item.slug ?? '');
+      if (!slug || seen.has(slug)) continue;
+      seen.add(slug);
+      options.push({
+        value: slug,
+        label: item.title.trim() || slug,
+      });
+    }
+    return withOrphanOptions(options, linkedSignals);
+  }, [coherences, linkedSignals]);
 
   const editable = canMutate && (mode === 'create' || hydrated);
   const headerTitle =
@@ -156,8 +209,8 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
             ...fm,
             title: trimmedTitle,
             type,
-            related: splitCsv(related),
-            linked_signals: splitLinkedSignals(linkedSignals),
+            related: uniqueValues(related).filter((id) => id !== fm.id),
+            linked_signals: uniqueLinkedSignalSlugs(linkedSignals),
             tags: splitCsv(tags),
             updated_at: today,
           },
@@ -182,8 +235,8 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
             created_at: today,
             updated_at: today,
             tags: splitCsv(tags),
-            related: splitCsv(related),
-            linked_signals: splitLinkedSignals(linkedSignals),
+            related: uniqueValues(related),
+            linked_signals: uniqueLinkedSignalSlugs(linkedSignals),
             version: 1,
             supersedes: null,
           },
@@ -277,27 +330,31 @@ export const CreateIntelligenceForm: FC<CreateIntelligenceFormProps> = ({
 
         <div className="flex flex-col gap-6">
           <div className="space-y-1.5">
-            <Label htmlFor="intel-related">
-              {t('spaceIntelligenceFieldRelated')}
-            </Label>
-            <Input
-              id="intel-related"
+            <Label>{t('spaceIntelligenceFieldRelated')}</Label>
+            <MultiSelect
+              placeholder={t('selectOneOrMore')}
+              searchPlaceholder={t('spaceIntelligenceFieldRelatedPlaceholder')}
+              options={relatedOptions}
               value={related}
-              onChange={(event) => setRelated(event.target.value)}
+              onValueChange={setRelated}
+              allowToggleAll={false}
+              maxCount={2}
               disabled={!editable}
-              placeholder="id-one, id-two"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="intel-linked-signals">
-              {t('spaceIntelligenceFieldLinkedSignals')}
-            </Label>
-            <Input
-              id="intel-linked-signals"
+            <Label>{t('spaceIntelligenceFieldLinkedSignals')}</Label>
+            <MultiSelect
+              placeholder={t('selectOneOrMore')}
+              searchPlaceholder={t(
+                'spaceIntelligenceFieldLinkedSignalsPlaceholder',
+              )}
+              options={linkedSignalOptions}
               value={linkedSignals}
-              onChange={(event) => setLinkedSignals(event.target.value)}
+              onValueChange={setLinkedSignals}
+              allowToggleAll={false}
+              maxCount={2}
               disabled={!editable}
-              placeholder={t('spaceIntelligenceFieldLinkedSignalsPlaceholder')}
             />
           </div>
           <div className="space-y-1.5">

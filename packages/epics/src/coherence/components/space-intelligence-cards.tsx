@@ -9,7 +9,7 @@ import type {
 import { cn } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
-import { Archive, Pencil } from 'lucide-react';
+import { Archive, Brain, Pencil } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -340,13 +340,24 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
                   </g>
                 </>
               ) : (
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={14}
-                  className="fill-accent-4 stroke-accent-9"
-                  strokeWidth={1.5}
-                />
+                <>
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={14}
+                    className="fill-accent-4 stroke-accent-9"
+                    strokeWidth={1.5}
+                  />
+                  <Brain
+                    x={pos.x - 7}
+                    y={pos.y - 7}
+                    width={14}
+                    height={14}
+                    className="text-accent-11"
+                    strokeWidth={2.2}
+                    aria-hidden
+                  />
+                </>
               )}
               <text
                 x={labelX}
