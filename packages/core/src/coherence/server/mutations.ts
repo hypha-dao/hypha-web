@@ -114,9 +114,14 @@ export const createCoherence = async (
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
   const priority = maybePriority ?? 'medium';
-  // New signals always have an owner: the chosen assignee, or the creator.
+  // New signals always have an owner: the chosen assignee, or the creator
+  // (system-created signals with no creatorId start unassigned).
   const assigneeIds = normalizeAssigneeIds(
-    inputAssigneeIds?.length ? inputAssigneeIds : [creatorId],
+    inputAssigneeIds?.length
+      ? inputAssigneeIds
+      : creatorId != null
+        ? [creatorId]
+        : [],
   );
 
   let progressStatus = inputProgressStatus;
@@ -189,7 +194,10 @@ export const updateCoherenceSignalBySlug = async (
     slug,
     requesterPersonId: _requesterPersonId,
     ...rest
-  }: { slug: string; requesterPersonId: number } & UpdateCoherenceSignalInput,
+  }: {
+    slug: string;
+    requesterPersonId: number | null;
+  } & UpdateCoherenceSignalInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const {
@@ -261,7 +269,10 @@ export const patchCoherenceTaskBySlug = async (
     slug,
     requesterPersonId: _requesterPersonId,
     ...rest
-  }: { slug: string; requesterPersonId: number } & PatchCoherenceTaskInput,
+  }: {
+    slug: string;
+    requesterPersonId: number | null;
+  } & PatchCoherenceTaskInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });
@@ -318,7 +329,7 @@ export const deleteCoherenceBySlug = async (
   {
     slug,
     requesterPersonId: _requesterPersonId,
-  }: { slug: string; requesterPersonId: number },
+  }: { slug: string; requesterPersonId: number | null },
   { db }: { db: DatabaseInstance },
 ) => {
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });

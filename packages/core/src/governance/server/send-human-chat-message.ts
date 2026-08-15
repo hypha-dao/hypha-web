@@ -27,10 +27,11 @@ import type { DatabaseInstance } from '../../server';
  * trigger creation (#2428 review: any space member could otherwise self-elevate to room-admin of
  * someone else's signal by being first to open/message it). `undefined` if unresolvable. */
 async function resolveSignalCreatorMatrixUserId(
-  creatorId: number,
+  creatorId: number | null,
   requestUrlForEnvironment: string | undefined,
   db: DatabaseInstance,
 ): Promise<string | undefined> {
+  if (creatorId == null) return undefined;
   const environment = determineEnvironment(requestUrlForEnvironment ?? '');
   if (!environment) return undefined;
   const rows = await findMatrixUserIdsByPersonIds(

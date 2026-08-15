@@ -31,7 +31,7 @@ export const relayEcosystemSignalOutputSchema = z.union([
     signalSlug: z.string(),
     sourceSpaceSlug: z.string(),
     targetSpaceSlug: z.string(),
-    creatorId: z.number(),
+    creatorId: z.number().nullable(),
     navigation: z.object({
       kind: z.literal('internal'),
       href: z.string(),

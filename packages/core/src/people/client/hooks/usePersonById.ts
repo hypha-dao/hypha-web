@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import { getPersonById } from '../../server/actions';
 import { useJwt } from './useJwt';
 
-export const usePersonById = ({ id }: { id?: number }) => {
+export const usePersonById = ({ id }: { id?: number | null }) => {
   const { jwt } = useJwt();
 
   const { data: person, isLoading } = useSWR(

@@ -457,10 +457,11 @@ export async function processSignalOrchestratorBatch(
     .orderBy(signalOrchestratorQueue.dueAt)
     .limit(Math.max(1, Math.min(100, limit)));
 
-  const systemAuthToken =
-    authToken?.trim() ||
-    process.env.HYPHA_SIGNAL_ORCHESTRATOR_AUTH_TOKEN?.trim() ||
-    process.env.HYPHA_MCP_AUTH_TOKEN?.trim();
+  // No Vercel Cron / ops-secret caller ever supplies a real per-user Privy token — both HTTP
+  // entrypoints authenticate the caller via a fixed shared secret before reaching this function.
+  // `authToken` stays supported as an explicit override (e.g. tests exercising the real-user path).
+  const callerAuthToken = authToken?.trim() || undefined;
+  const useSystemIdentity = !callerAuthToken;
   const results: Array<{ queue_id: number; status: string; message: string }> =
     [];
 
@@ -546,7 +547,11 @@ export async function processSignalOrchestratorBatch(
             requestUrlForSessionMatrix,
             assetView: 'signal',
           },
-          { db, authToken: systemAuthToken },
+          {
+            db,
+            authToken: callerAuthToken,
+            system: useSystemIdentity,
+          },
         ),
         findAllCoherences(
           { db },
@@ -638,7 +643,8 @@ export async function processSignalOrchestratorBatch(
       const local = await createAiSignalForSpaceBySlug(
         {
           spaceSlug: host.slug,
-          authToken: systemAuthToken,
+          authToken: callerAuthToken,
+          system: useSystemIdentity,
           title: candidate.title,
           description: candidate.description,
           type: candidate.type,
@@ -748,7 +754,8 @@ export async function processSignalOrchestratorBatch(
               {
                 sourceSpaceSlug: host.slug,
                 targetSpaceSlug: best.slug,
-                authToken: systemAuthToken,
+                authToken: callerAuthToken,
+                system: useSystemIdentity,
                 title: `${host.title} -> ${best.title}: relevant signal`,
                 summary: `Local signal summary: ${candidate.summary}.`,
                 recommendedAction:

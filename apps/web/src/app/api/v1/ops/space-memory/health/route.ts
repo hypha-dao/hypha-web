@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim(),
     ),
     matrix_bot_access_token_configured: Boolean(
-      process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim(),
+      process.env.HYPHA_MATRIX_BOT_AS_TOKEN?.trim(),
     ),
     mcp_auth_token_configured: Boolean(
       process.env.HYPHA_MCP_AUTH_TOKEN?.trim(),
@@ -223,7 +223,7 @@ export async function GET(request: NextRequest) {
       level: 'warn',
       code: 'missing_matrix_bot_token',
       message:
-        'HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN is missing; cron-style summary refresh may fail without user session tokens.',
+        'HYPHA_MATRIX_BOT_AS_TOKEN is missing; cron-style summary refresh may fail without user session tokens.',
     });
   }
   if (!readiness.mcp_auth_token_configured) {

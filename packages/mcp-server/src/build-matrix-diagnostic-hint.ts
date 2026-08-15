@@ -27,7 +27,7 @@ export function buildMatrixDiagnosticHint(
     mf.skipped_reason === 'missing_access_token' &&
     !mf.used_session_matrix_token &&
     !mf.session_matrix_token_unavailable
-      ? ' — set HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN (bot) or pass Privy JWT + app URL for per-user Matrix (Hypha Chat / MCP)'
+      ? ' — set HYPHA_MATRIX_BOT_AS_TOKEN (bot) or pass Privy JWT + app URL for per-user Matrix (Hypha Chat / MCP)'
       : '';
   const errPart = mf.error ? ` — ${mf.error}` : '';
 

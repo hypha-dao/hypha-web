@@ -812,7 +812,7 @@ server.registerTool(
   'get_org_memory_by_space_slug',
   {
     description:
-      'Read-only: organisation memory for a space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix m.file/m.image when NEXT_PUBLIC_MATRIX_HOMESERVER_URL and chat_room_id are set, and either HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN or HYPHA_MCP_AUTH_TOKEN + HYPHA_MCP_MATRIX_REQUEST_URL / VERCEL_URL for session Matrix token resolution). structuredContent matrix_fetch includes used_bot_access_token, used_session_matrix_token, session_matrix_token_unavailable, skipped_reason, http_status, events_in_chunk, media_events_yielded, error. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster.',
+      'Read-only: organisation memory for a space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix m.file/m.image when NEXT_PUBLIC_MATRIX_HOMESERVER_URL and chat_room_id are set, and either HYPHA_MATRIX_BOT_AS_TOKEN or HYPHA_MCP_AUTH_TOKEN + HYPHA_MCP_MATRIX_REQUEST_URL / VERCEL_URL for session Matrix token resolution). structuredContent matrix_fetch includes used_bot_access_token, used_session_matrix_token, session_matrix_token_unavailable, skipped_reason, http_status, events_in_chunk, media_events_yielded, error. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster.',
     inputSchema: getOrgMemoryBySpaceSlugInputSchema,
     outputSchema: getOrgMemoryBySpaceSlugOutputSchema,
     annotations: {

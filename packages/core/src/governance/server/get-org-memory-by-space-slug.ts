@@ -80,7 +80,7 @@ export type GetOrgMemoryBySpaceSlugInput = {
   assetsSearch?: string;
   /**
    * When set with a valid Privy JWT, Matrix fetch may use this user's stored
-   * Matrix access token if `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is unset
+   * Matrix access token if `HYPHA_MATRIX_BOT_AS_TOKEN` is unset
    * (Space Memory / browser API parity with Human Chat).
    */
   requestUrlForSessionMatrix?: string;
@@ -102,7 +102,7 @@ export type MatrixOrgMemoryFetchMeta = {
   chat_room_id: string | null;
   homeserver_configured: boolean;
   access_token_configured: boolean;
-  /** True when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is set (bot / service user). */
+  /** True when `HYPHA_MATRIX_BOT_AS_TOKEN` is set (bot / service user). */
   used_bot_access_token: boolean;
   /**
    * True when the caller supplied a Privy JWT and we resolved a valid Matrix
@@ -440,7 +440,7 @@ function matrixEnvFlags(): Pick<
       process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim(),
     ),
     access_token_configured: Boolean(
-      process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim(),
+      process.env.HYPHA_MATRIX_BOT_AS_TOKEN?.trim(),
     ),
   };
 }
@@ -552,8 +552,7 @@ export async function fetchMatrixChatAssets(
     /\/?$/,
     '',
   );
-  const botToken =
-    process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim() ?? '';
+  const botToken = process.env.HYPHA_MATRIX_BOT_AS_TOKEN?.trim() ?? '';
 
   const sessionAuth = options?.authToken?.trim();
   const sessionReqUrl = options?.requestUrlForSessionMatrix?.trim();
@@ -888,7 +887,7 @@ function compactOrgMemoryAssetsForSignal(
  * Organisation memory for a space: member roster (same as `getSpaceMembersRoster`)
  * plus `org_memory_assets` from proposal document attachments and,
  * when `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` is set and either
- * `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` **or** (for HTTP with Privy JWT)
+ * `HYPHA_MATRIX_BOT_AS_TOKEN` **or** (for HTTP with Privy JWT)
  * the caller passes `requestUrlForSessionMatrix` so the user's Matrix token
  * from `matrix_user_links` can be used — Matrix human-chat attachments
  * (including `org.hypha.media_bundle` slots).
@@ -905,7 +904,19 @@ export async function getOrgMemoryBySpaceSlug(
     requestUrlForSessionMatrix,
     assetView = 'full',
   }: GetOrgMemoryBySpaceSlugInput,
-  { db, authToken }: DbConfig & { authToken?: string },
+  {
+    db,
+    authToken,
+    system = false,
+  }: DbConfig & {
+    authToken?: string;
+    /**
+     * System-triggered call (signal-orchestrator cron) — skips the Privy-based
+     * `checkSpaceAccessForSpace` gate below, since the caller is already authenticated at the
+     * HTTP layer via a fixed shared secret. See `ai-signal-actions.ts`'s same-named flag.
+     */
+    system?: boolean;
+  },
 ): Promise<
   | { access: 'ok'; result: GetOrgMemoryBySpaceSlugResult }
   | { access: 'denied'; message: string; space_slug: string }
@@ -947,13 +958,15 @@ export async function getOrgMemoryBySpaceSlug(
         space_slug: spaceSlug,
       };
     }
-    const gate = await checkSpaceAccessForSpace(host, authToken);
-    if (!gate.hasAccess) {
-      return {
-        access: 'denied',
-        message: gate.message,
-        space_slug: spaceSlug,
-      };
+    if (!system) {
+      const gate = await checkSpaceAccessForSpace(host, authToken);
+      if (!gate.hasAccess) {
+        return {
+          access: 'denied',
+          message: gate.message,
+          space_slug: spaceSlug,
+        };
+      }
     }
   }
 

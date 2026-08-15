@@ -533,6 +533,13 @@
       "when": 1784000000006,
       "tag": "0075_person_preferred_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1784000000007,
+      "tag": "0076_coherence_creator_id_nullable",
+      "breakpoints": true
     }
   ]
 }

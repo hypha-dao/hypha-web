@@ -21,7 +21,7 @@ Set these on the web deployment:
     - `POST /api/v1/spaces/[spaceSlug]/call-artifacts`
 - `NEXT_PUBLIC_MATRIX_HOMESERVER_URL`
   - Required for Matrix timeline/media fetch and discussion summaries.
-- `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN`
+- `HYPHA_MATRIX_BOT_AS_TOKEN`
   - Recommended bot/service token for unattended summary refresh jobs.
 - `HYPHA_SIGNAL_ORCHESTRATOR_AUTH_TOKEN` or `HYPHA_MCP_AUTH_TOKEN`
   - Service auth used when the orchestrator reads org memory during evaluation.

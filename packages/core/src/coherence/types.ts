@@ -6,7 +6,8 @@ import { CoherenceTag } from './coherence-tags';
 import { CoherenceType } from './coherence-types';
 
 export interface CreateCoherenceInput {
-  creatorId: number;
+  /** Null for system/automated signals with no attributable requesting user. */
+  creatorId: number | null;
   spaceId: number;
   type: CoherenceType;
   priority: CoherencePriority;
@@ -91,7 +92,7 @@ export type CoherenceUpvoteSummary = {
 
 export type Coherence = {
   id: number;
-  creatorId: number;
+  creatorId: number | null;
   spaceId?: number | null;
   createdAt: Date;
   updatedAt: Date;

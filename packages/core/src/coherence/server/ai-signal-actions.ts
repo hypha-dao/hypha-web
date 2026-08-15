@@ -31,6 +31,13 @@ export type PaymentEligibility = {
 type CreateAiSignalInput = {
   spaceSlug: string;
   authToken?: string;
+  /**
+   * System-triggered call (e.g. the signal-orchestrator cron) with no per-request user session.
+   * Skips the Privy-based access gate and actor resolution — the caller is already authenticated
+   * at the HTTP layer via a fixed shared secret (CRON_SECRET / HYPHA_SPACE_MEMORY_OPS_SECRET).
+   * `creatorId` is written as null (nobody created this, the system did).
+   */
+  system?: boolean;
   title: string;
   description: string;
   type: SignalType;
@@ -43,6 +50,8 @@ type RelayAiSignalInput = {
   sourceSpaceSlug: string;
   targetSpaceSlug: string;
   authToken?: string;
+  /** See `CreateAiSignalInput.system`. */
+  system?: boolean;
   title: string;
   summary: string;
   recommendedAction: string;
@@ -214,7 +223,7 @@ async function createSignalInSpace(
     tags,
   }: {
     host: NonNullable<Awaited<ReturnType<typeof findSpaceBySlug>>>;
-    creatorId: number;
+    creatorId: number | null;
     title: string;
     description: string;
     type: SignalType;
@@ -240,6 +249,7 @@ export async function createAiSignalForSpaceBySlug(
   {
     spaceSlug,
     authToken,
+    system = false,
     title,
     description,
     type,
@@ -249,7 +259,7 @@ export async function createAiSignalForSpaceBySlug(
   }: CreateAiSignalInput,
   { db }: DbConfig,
 ) {
-  if (!authToken) {
+  if (!system && !authToken) {
     return { ok: false as const, error: 'authToken is required' };
   }
 
@@ -258,9 +268,11 @@ export async function createAiSignalForSpaceBySlug(
     return { ok: false as const, error: 'Space not found' };
   }
 
-  const access = await checkSpaceAccessForSpace(host, authToken);
-  if (!access.hasAccess) {
-    return { ok: false as const, error: access.message };
+  if (!system) {
+    const access = await checkSpaceAccessForSpace(host, authToken);
+    if (!access.hasAccess) {
+      return { ok: false as const, error: access.message };
+    }
   }
 
   const payment = await getSpacePaymentEligibility(host.web3SpaceId);
@@ -269,12 +281,15 @@ export async function createAiSignalForSpaceBySlug(
     return { ok: false as const, error: paymentReason };
   }
 
-  const actorId = await resolveSignalActorId(authToken);
-  if (!actorId) {
-    return {
-      ok: false as const,
-      error: 'Could not resolve authenticated user.',
-    };
+  let actorId: number | null = null;
+  if (!system) {
+    actorId = await resolveSignalActorId(authToken);
+    if (!actorId) {
+      return {
+        ok: false as const,
+        error: 'Could not resolve authenticated user.',
+      };
+    }
   }
 
   const created = await createSignalInSpace(
@@ -319,6 +334,7 @@ export async function relayAiSignalToEcosystemSpace(
     sourceSpaceSlug,
     targetSpaceSlug,
     authToken,
+    system = false,
     title,
     summary,
     recommendedAction,
@@ -331,7 +347,7 @@ export async function relayAiSignalToEcosystemSpace(
   }: RelayAiSignalInput,
   { db }: DbConfig,
 ) {
-  if (!authToken) {
+  if (!system && !authToken) {
     return { ok: false as const, error: 'authToken is required' };
   }
 
@@ -343,15 +359,17 @@ export async function relayAiSignalToEcosystemSpace(
   if (!source) return { ok: false as const, error: 'Source space not found' };
   if (!target) return { ok: false as const, error: 'Target space not found' };
 
-  const [sourceAccess, targetAccess] = await Promise.all([
-    checkSpaceAccessForSpace(source, authToken),
-    checkSpaceAccessForSpace(target, authToken),
-  ]);
-  if (!sourceAccess.hasAccess) {
-    return { ok: false as const, error: sourceAccess.message };
-  }
-  if (!targetAccess.hasAccess) {
-    return { ok: false as const, error: targetAccess.message };
+  if (!system) {
+    const [sourceAccess, targetAccess] = await Promise.all([
+      checkSpaceAccessForSpace(source, authToken),
+      checkSpaceAccessForSpace(target, authToken),
+    ]);
+    if (!sourceAccess.hasAccess) {
+      return { ok: false as const, error: sourceAccess.message };
+    }
+    if (!targetAccess.hasAccess) {
+      return { ok: false as const, error: targetAccess.message };
+    }
   }
 
   const sourcePayment = await getSpacePaymentEligibility(source.web3SpaceId);
@@ -392,12 +410,15 @@ export async function relayAiSignalToEcosystemSpace(
     };
   }
 
-  const actorId = await resolveSignalActorId(authToken);
-  if (!actorId) {
-    return {
-      ok: false as const,
-      error: 'Could not resolve authenticated user.',
-    };
+  let actorId: number | null = null;
+  if (!system) {
+    actorId = await resolveSignalActorId(authToken);
+    if (!actorId) {
+      return {
+        ok: false as const,
+        error: 'Could not resolve authenticated user.',
+      };
+    }
   }
 
   const composedDescription = [
