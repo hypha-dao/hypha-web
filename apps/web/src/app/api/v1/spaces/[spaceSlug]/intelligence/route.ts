@@ -61,6 +61,9 @@ export async function GET(
           url.searchParams.get('search') ||
           url.searchParams.get('q') ||
           undefined,
+        includeArchived:
+          url.searchParams.get('includeArchived') === '1' ||
+          url.searchParams.get('includeArchived') === 'true',
         authToken: bearerFrom(request),
       },
       { db },

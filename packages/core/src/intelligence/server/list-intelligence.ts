@@ -19,6 +19,7 @@ export type ListIntelligenceBySpaceSlugInput = {
   type?: string;
   status?: string;
   search?: string;
+  includeArchived?: boolean;
   authToken?: string;
 };
 
@@ -94,9 +95,10 @@ export async function listIntelligenceBySpaceSlug(
     spaceSlug,
   );
 
-  let artifacts = manifest.artifacts.filter(
-    (a) => a.status !== 'archived' && a.status !== 'superseded',
-  );
+  let artifacts = manifest.artifacts.filter((a) => a.status !== 'superseded');
+  if (!input.includeArchived) {
+    artifacts = artifacts.filter((a) => a.status !== 'archived');
+  }
 
   if (input.type?.trim()) {
     const type = input.type.trim().toLowerCase();

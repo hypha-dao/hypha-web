@@ -66,7 +66,15 @@ export async function GET(
         id: pack.id,
         title: pack.title,
         description: pack.description,
+        version: pack.version,
         template_count: pack.templates.length,
+        templates: pack.templates.map((template) => ({
+          id: template.id,
+          type: template.type,
+          title: template.title,
+          pack_alias: template.pack_alias,
+          tags: template.tags,
+        })),
       })),
     });
   } catch (error) {

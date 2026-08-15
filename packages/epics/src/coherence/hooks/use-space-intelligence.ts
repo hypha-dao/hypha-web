@@ -49,6 +49,7 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
   const { getAccessToken } = useAuthentication();
   const [typeFilter, setTypeFilter] = React.useState<string>('all');
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [hideArchived, setHideArchived] = React.useState(true);
 
   const key = spaceSlug
     ? ([
@@ -56,6 +57,7 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
         spaceSlug,
         typeFilter,
         searchTerm.trim(),
+        hideArchived,
       ] as const)
     : null;
 
@@ -65,10 +67,11 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     isLoading,
     isValidating,
     mutate: revalidate,
-  } = useSWR(key, async ([, slug, type, search]) => {
+  } = useSWR(key, async ([, slug, type, search, hide]) => {
     const qs = queryString.stringify({
       ...(type && type !== 'all' ? { type } : {}),
       ...(search ? { search } : {}),
+      ...(!hide ? { includeArchived: '1' } : {}),
     });
     const token = await getAccessToken();
     const headers: HeadersInit = {};
@@ -243,6 +246,8 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
     setTypeFilter,
     searchTerm,
     setSearchTerm,
+    hideArchived,
+    setHideArchived,
     refresh: () => revalidate(),
     createArtifact,
     deleteArtifact,

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Text } from '@radix-ui/themes';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { SearchIcon } from 'lucide-react';
+import { Cog, SearchIcon } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  Checkbox,
   Input,
   Select,
   SelectContent,
@@ -27,7 +28,6 @@ import {
 } from '@hypha-platform/ui';
 import {
   INTELLIGENCE_CORE_TYPES,
-  HYPHA_ENERGY_PACK_ID,
   type IntelligenceListItem,
 } from '@hypha-platform/core/intelligence';
 import { useMatrix, useSpaceBySlug } from '@hypha-platform/core/client';
@@ -38,6 +38,7 @@ import {
   SpaceIntelligenceCard,
   SpaceIntelligenceGraph,
 } from './space-intelligence-cards';
+import { SpaceIntelligenceSettings } from './space-intelligence-settings';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
@@ -66,6 +67,8 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     setTypeFilter,
     searchTerm,
     setSearchTerm,
+    hideArchived,
+    setHideArchived,
     refresh,
     deleteArtifact,
     linkArtifactRoom,
@@ -83,14 +86,14 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     useMatrix();
 
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [enablingPack, setEnablingPack] = useState(false);
+  const [enablingPackId, setEnablingPackId] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [pendingDelete, setPendingDelete] =
     useState<IntelligenceListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<IntelligenceViewMode>('cards');
   const [commentingId, setCommentingId] = useState<string | null>(null);
 
-  const energyPackEnabled = enabledPacks.includes(HYPHA_ENERGY_PACK_ID);
   const createHref = `/${lang}/dho/${spaceSlug}/memory/new-intelligence`;
 
   const onConfirmDelete = async () => {
@@ -165,15 +168,16 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     ],
   );
 
-  const onEnableEnergyPack = async () => {
-    setEnablingPack(true);
+  const onEnablePack = async (packId: string) => {
+    setEnablingPackId(packId);
     setSaveError(null);
     try {
-      await enablePack(HYPHA_ENERGY_PACK_ID);
+      await enablePack(packId);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err));
+      throw err;
     } finally {
-      setEnablingPack(false);
+      setEnablingPackId(null);
     }
   };
 
@@ -196,78 +200,97 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
         </div>
       </header>
 
-      <div className="flex w-full items-center gap-2 lg:gap-3">
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger
-            className="w-[180px] shrink-0"
-            aria-label={t('spaceIntelligenceFilterType')}
-          >
-            <SelectValue placeholder={t('spaceIntelligenceFilterType')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              {t('spaceIntelligenceFilterAll')}
-            </SelectItem>
-            {INTELLIGENCE_CORE_TYPES.map((coreType) => {
-              const key = `intelligenceTypes.${coreType}`;
-              return (
-                <SelectItem key={coreType} value={coreType}>
-                  {t.has(key as never) ? t(key as never) : coreType}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-        <Input
-          type="search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder={t('spaceIntelligenceSearch')}
-          aria-label={t('spaceIntelligenceSearch')}
-          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          className="min-w-0 flex-1"
-        />
-        <div className="flex shrink-0 items-center gap-2">
-          {canMutate && configured && !energyPackEnabled ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={enablingPack}
-              onClick={() => void onEnableEnergyPack()}
+      <div className="flex flex-col gap-3">
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
+            <div className="inline-flex w-max flex-nowrap items-center gap-2">
+              {canMutate ? (
+                <div className="inline-flex h-10 shrink-0 items-center rounded-lg bg-neutral-3 px-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-foreground"
+                    aria-label={t('spaceIntelligenceConfigure')}
+                    title={t('spaceIntelligenceConfigure')}
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <Cog className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+                  </Button>
+                </div>
+              ) : null}
+              <Tabs
+                value={viewMode}
+                onValueChange={(value) =>
+                  setViewMode(value as IntelligenceViewMode)
+                }
+                className="shrink-0"
+              >
+                <TabsList
+                  triggerVariant="switch"
+                  className="w-fit"
+                  aria-label={t('spaceIntelligenceViewSwitcher')}
+                >
+                  <TabsTrigger value="cards" variant="switch">
+                    {t('spaceIntelligenceViewCards')}
+                  </TabsTrigger>
+                  <TabsTrigger value="graph" variant="switch">
+                    {t('spaceIntelligenceViewGraph')}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+          <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[14px]">
+            <Checkbox
+              id="hideArchivedIntelligenceCheckbox"
+              className="border-accent-8/80 data-[state=checked]:border-accent-9 data-[state=checked]:bg-accent-9 data-[state=checked]:text-accent-contrast focus-visible:ring-accent-8"
+              checked={hideArchived}
+              onCheckedChange={(checked) => setHideArchived(checked === true)}
+            />
+            {t('hideArchived')}
+          </label>
+        </div>
+        <div className="flex w-full items-center gap-2 lg:gap-3">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger
+              className="w-[180px] shrink-0"
+              aria-label={t('spaceIntelligenceFilterType')}
             >
-              {enablingPack
-                ? t('spaceIntelligenceEnablingPack')
-                : t('spaceIntelligenceEnableEnergyPack')}
-            </Button>
-          ) : null}
+              <SelectValue placeholder={t('spaceIntelligenceFilterType')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {t('spaceIntelligenceFilterAll')}
+              </SelectItem>
+              {INTELLIGENCE_CORE_TYPES.map((coreType) => {
+                const key = `intelligenceTypes.${coreType}`;
+                return (
+                  <SelectItem key={coreType} value={coreType}>
+                    {t.has(key as never) ? t(key as never) : coreType}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <Input
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={t('spaceIntelligenceSearch')}
+            aria-label={t('spaceIntelligenceSearch')}
+            leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+            className="min-w-0 flex-1"
+          />
           {canMutate ? (
-            <Button asChild colorVariant="accent" size="sm">
-              <Link href={createHref} className="whitespace-nowrap">
+            <Button asChild colorVariant="accent" className="whitespace-nowrap">
+              <Link href={createHref}>
                 <PlusIcon />
                 {t('spaceIntelligenceNew')}
               </Link>
             </Button>
           ) : null}
-          <Tabs
-            value={viewMode}
-            onValueChange={(value) =>
-              setViewMode(value as IntelligenceViewMode)
-            }
-          >
-            <TabsList
-              triggerVariant="switch"
-              className="w-fit"
-              aria-label={t('spaceIntelligenceViewSwitcher')}
-            >
-              <TabsTrigger value="cards" variant="switch">
-                {t('spaceIntelligenceViewCards')}
-              </TabsTrigger>
-              <TabsTrigger value="graph" variant="switch">
-                {t('spaceIntelligenceViewGraph')}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
       </div>
 
@@ -336,6 +359,16 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
           )}
         </>
       )}
+
+      <SpaceIntelligenceSettings
+        spaceSlug={spaceSlug}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        enabledPacks={enabledPacks}
+        canEnable={canMutate && configured}
+        enablingPackId={enablingPackId}
+        onEnablePack={onEnablePack}
+      />
 
       <AlertDialog
         open={pendingDelete != null}
