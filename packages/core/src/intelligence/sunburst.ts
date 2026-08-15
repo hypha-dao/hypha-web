@@ -2,198 +2,19 @@ import { extractLinkedSignalSlug } from './graph';
 
 export const SIGNAL_SUNBURST_UNCATEGORIZED_ID = 'uncategorized' as const;
 
-export const SIGNAL_SUNBURST_CATEGORIES = [
-  {
-    id: 'market',
-    label: 'Market Signal',
-    keywords: [
-      'competitor',
-      'customer demand',
-      'investment trend',
-      'market',
-      'product-market',
-    ],
-  },
-  {
-    id: 'customer',
-    label: 'Customer Signal',
-    keywords: [
-      'customer',
-      'feedback',
-      'support ticket',
-      'nps',
-      'usage pattern',
-      'users',
-      'beneficiaries',
-      'serving audience',
-    ],
-  },
-  {
-    id: 'financial',
-    label: 'Financial Signal',
-    keywords: [
-      'treasury',
-      'cash flow',
-      'fundraising',
-      'runway',
-      'financial',
-      'revenue',
-      'costs',
-    ],
-  },
-  {
-    id: 'algorithmic',
-    label: 'Algorithmic Signal',
-    keywords: [
-      'ai signal',
-      'ai summar',
-      'anomaly',
-      'prediction',
-      'recommendation',
-      'algorithm',
-    ],
-  },
-  {
-    id: 'regulatory',
-    label: 'Regulatory Signal',
-    keywords: ['legislation', 'compliance', 'regulation', 'policy'],
-  },
-  {
-    id: 'governance',
-    label: 'Governance Signal',
-    keywords: [
-      'governance',
-      'voting',
-      'participation',
-      'proposal outcome',
-      'proposal',
-    ],
-  },
-  {
-    id: 'operational',
-    label: 'Operational Signal',
-    keywords: [
-      'bottleneck',
-      'delivery metric',
-      'workflow',
-      'operational',
-      'process',
-      'project',
-      'rhythms',
-    ],
-  },
-  {
-    id: 'business',
-    label: 'Business Signal',
-    keywords: ['kpi', 'productivity', 'business model', 'business'],
-  },
-  {
-    id: 'technology',
-    label: 'Technology Signal',
-    keywords: [
-      'ai model',
-      'software release',
-      'cybersecurity',
-      'technology',
-      'software',
-    ],
-  },
-  {
-    id: 'environmental',
-    label: 'Environmental Signal',
-    keywords: [
-      'climate',
-      'biodiversity',
-      'planetary',
-      'environmental',
-      'water',
-      'energy production',
-    ],
-  },
-  {
-    id: 'scientific',
-    label: 'Scientific Signal',
-    keywords: [
-      'research paper',
-      'discovery',
-      'scientific',
-      'evidence',
-      'research',
-    ],
-  },
-  {
-    id: 'political',
-    label: 'Political Signal',
-    keywords: ['election', 'geopolitical', 'public policy', 'political'],
-  },
-  {
-    id: 'ecosystem',
-    label: 'Ecosystem Signal',
-    keywords: [
-      'partner',
-      'grant',
-      'alliance',
-      'collaboration',
-      'ecosystem',
-      'matchmaking',
-    ],
-  },
-  {
-    id: 'human',
-    label: 'Human Signal',
-    keywords: [
-      'interview',
-      'discussion',
-      'community observation',
-      'communities',
-      'community',
-      'human',
-    ],
-  },
-  {
-    id: 'social',
-    label: 'Social Signal',
-    keywords: [
-      'sentiment',
-      'demographic',
-      'public opinion',
-      'social conditions',
-      'social',
-    ],
-  },
-  {
-    id: 'network',
-    label: 'Network Signal',
-    keywords: ['network'],
-  },
+/** Distinct slice colors by board order (workflow tokens often repeat). */
+export const SUNBURST_BOARD_PALETTE = [
+  '#64748b',
+  '#3b82f6',
+  '#8b5cf6',
+  '#06b6d4',
+  '#22c55e',
+  '#f59e0b',
+  '#ec4899',
+  '#ef4444',
+  '#14b8a6',
+  '#f97316',
 ] as const;
-
-export type SignalSunburstCategoryId =
-  | (typeof SIGNAL_SUNBURST_CATEGORIES)[number]['id']
-  | typeof SIGNAL_SUNBURST_UNCATEGORIZED_ID;
-
-export const SIGNAL_SUNBURST_CATEGORY_COLORS: Record<
-  SignalSunburstCategoryId,
-  string
-> = {
-  market: '#3b82f6',
-  customer: '#ec4899',
-  financial: '#22c55e',
-  algorithmic: '#06b6d4',
-  regulatory: '#a855f7',
-  governance: '#6366f1',
-  operational: '#64748b',
-  business: '#8b5cf6',
-  technology: '#0ea5e9',
-  environmental: '#84cc16',
-  scientific: '#14b8a6',
-  political: '#ef4444',
-  ecosystem: '#10b981',
-  human: '#f59e0b',
-  social: '#f97316',
-  network: '#eab308',
-  uncategorized: '#94a3b8',
-};
 
 export type IntelligenceSunburstKind =
   | 'root'
@@ -206,7 +27,7 @@ export type IntelligenceSunburstNode = {
   id: string;
   name: string;
   kind: IntelligenceSunburstKind;
-  categoryId?: SignalSunburstCategoryId;
+  categoryId?: string;
   color?: string;
   slug?: string;
   href?: string;
@@ -218,9 +39,7 @@ export type IntelligenceSunburstNode = {
 export type SunburstSignalInput = {
   slug: string;
   title: string;
-  tags?: string[];
-  type?: string;
-  description?: string;
+  board?: string | null;
 };
 
 export type SunburstArtifactInput = {
@@ -237,50 +56,52 @@ export type SunburstFileInput = {
   href?: string;
 };
 
-function haystackForSignal(signal: SunburstSignalInput): string {
-  return [signal.title, signal.type, signal.description, ...(signal.tags ?? [])]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+export type SunburstBoardInput = {
+  slug: string;
+  name: string;
+  color?: string;
+  position?: number;
+  archived?: boolean;
+};
+
+export function sunburstBoardColor(
+  slug: string,
+  boards: readonly SunburstBoardInput[],
+): string {
+  const index = boards.findIndex((board) => board.slug === slug);
+  const paletteIndex = index >= 0 ? index : hashSlug(slug);
+  return SUNBURST_BOARD_PALETTE[paletteIndex % SUNBURST_BOARD_PALETTE.length];
 }
 
-function keywordScore(haystack: string, keywords: readonly string[]): number {
-  let score = 0;
-  for (const keyword of keywords) {
-    if (haystack.includes(keyword.toLowerCase())) score += 1;
+function hashSlug(slug: string): number {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i += 1) {
+    hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
   }
-  return score;
+  return hash;
 }
 
-export function categorizeSignal(
-  signal: SunburstSignalInput,
-): SignalSunburstCategoryId {
-  const haystack = haystackForSignal(signal);
-  let bestId: SignalSunburstCategoryId = SIGNAL_SUNBURST_UNCATEGORIZED_ID;
-  let bestScore = 0;
-  for (const category of SIGNAL_SUNBURST_CATEGORIES) {
-    const score = keywordScore(haystack, category.keywords);
-    if (score > bestScore) {
-      bestScore = score;
-      bestId = category.id;
-    }
+export function resolveSunburstBoard(
+  board: string | null | undefined,
+  boards: readonly SunburstBoardInput[],
+  defaultBoard: string,
+): string {
+  const trimmed = board?.trim();
+  if (trimmed) {
+    const exists = boards.some(
+      (item) => item.slug === trimmed && !item.archived,
+    );
+    if (exists) return trimmed;
+    if (boards.length === 0) return trimmed;
   }
-  return bestId;
-}
-
-function categoryMeta(categoryId: SignalSunburstCategoryId): {
-  id: SignalSunburstCategoryId;
-  label: string;
-  color: string;
-} {
-  const listed = SIGNAL_SUNBURST_CATEGORIES.find(
-    (category) => category.id === categoryId,
-  );
-  return {
-    id: categoryId,
-    label: listed?.label ?? 'Uncategorized',
-    color: SIGNAL_SUNBURST_CATEGORY_COLORS[categoryId],
-  };
+  if (
+    defaultBoard &&
+    (boards.length === 0 ||
+      boards.some((item) => item.slug === defaultBoard && !item.archived))
+  ) {
+    return defaultBoard;
+  }
+  return SIGNAL_SUNBURST_UNCATEGORIZED_ID;
 }
 
 function asLeaf(node: IntelligenceSunburstNode): IntelligenceSunburstNode {
@@ -328,17 +149,38 @@ function signalMatchesArtifact(
   );
 }
 
+function boardMeta(
+  slug: string,
+  boards: readonly SunburstBoardInput[],
+): { name: string; color: string } {
+  const listed = boards.find((board) => board.slug === slug);
+  return {
+    name: listed?.name.trim() || slug,
+    color: sunburstBoardColor(slug, boards),
+  };
+}
+
 /**
  * Hierarchy for the zoomable sunburst, center → edge:
- * root → signal category → signal → artifact → file.
- * Empty proposal/action rings are omitted until those layers exist in data.
+ * root → board category → signal → artifact → file.
  */
 export function buildIntelligenceSunburstTree(input: {
   signals: SunburstSignalInput[];
   artifacts: SunburstArtifactInput[];
   files?: SunburstFileInput[];
+  boards?: SunburstBoardInput[];
+  defaultBoard?: string;
   rootName?: string;
 }): IntelligenceSunburstNode {
+  const boards = [...(input.boards ?? [])]
+    .filter((board) => !board.archived)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const defaultBoard =
+    input.defaultBoard?.trim() ||
+    boards.find((board) => board.slug === 'general')?.slug ||
+    boards[0]?.slug ||
+    SIGNAL_SUNBURST_UNCATEGORIZED_ID;
+
   const filesByArtifact = new Map<string, SunburstFileInput[]>();
   for (const file of input.files ?? []) {
     const artifactId = file.linked_artifact_id.trim();
@@ -349,47 +191,57 @@ export function buildIntelligenceSunburstTree(input: {
   }
 
   const linkedArtifactIds = new Set<string>();
-  const signalsByCategory = new Map<
-    SignalSunburstCategoryId,
-    SunburstSignalInput[]
-  >();
+  const signalsByBoard = new Map<string, SunburstSignalInput[]>();
 
   for (const signal of input.signals) {
     const slug = extractLinkedSignalSlug(signal.slug);
     if (!slug) continue;
-    const categoryId = categorizeSignal(signal);
-    const list = signalsByCategory.get(categoryId) ?? [];
-    list.push({ ...signal, slug });
-    signalsByCategory.set(categoryId, list);
+    const boardSlug = resolveSunburstBoard(signal.board, boards, defaultBoard);
+    const list = signalsByBoard.get(boardSlug) ?? [];
+    list.push({ ...signal, slug, board: boardSlug });
+    signalsByBoard.set(boardSlug, list);
+    for (const artifact of input.artifacts) {
+      if (signalMatchesArtifact(slug, artifact)) {
+        linkedArtifactIds.add(artifact.id);
+      }
+    }
+  }
+
+  const boardOrder: string[] = [];
+  const seen = new Set<string>();
+  for (const board of boards) {
+    seen.add(board.slug);
+    boardOrder.push(board.slug);
+  }
+  for (const slug of signalsByBoard.keys()) {
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    boardOrder.push(slug);
+  }
+  if (!seen.has(defaultBoard)) {
+    boardOrder.push(defaultBoard);
   }
 
   const categoryNodes: IntelligenceSunburstNode[] = [];
-  const categoryOrder: SignalSunburstCategoryId[] = [
-    ...SIGNAL_SUNBURST_CATEGORIES.map((category) => category.id),
-    SIGNAL_SUNBURST_UNCATEGORIZED_ID,
-  ];
-
-  for (const categoryId of categoryOrder) {
-    const signals = signalsByCategory.get(categoryId) ?? [];
+  for (const boardSlug of boardOrder) {
+    const signals = signalsByBoard.get(boardSlug) ?? [];
     const children: IntelligenceSunburstNode[] = signals.map((signal) => {
-      const linked = input.artifacts.filter((artifact) => {
-        const match = signalMatchesArtifact(signal.slug, artifact);
-        if (match) linkedArtifactIds.add(artifact.id);
-        return match;
-      });
+      const linked = input.artifacts.filter((artifact) =>
+        signalMatchesArtifact(signal.slug, artifact),
+      );
       return asLeaf({
         id: `signal:${signal.slug}`,
         name: signal.title.trim() || signal.slug,
         kind: 'signal',
         slug: signal.slug,
-        categoryId,
+        categoryId: boardSlug,
         children: linked.map((artifact) =>
           artifactNode(artifact, filesByArtifact),
         ),
       });
     });
 
-    if (categoryId === SIGNAL_SUNBURST_UNCATEGORIZED_ID) {
+    if (boardSlug === defaultBoard) {
       for (const artifact of input.artifacts) {
         if (linkedArtifactIds.has(artifact.id)) continue;
         children.push(artifactNode(artifact, filesByArtifact));
@@ -397,12 +249,12 @@ export function buildIntelligenceSunburstTree(input: {
     }
 
     if (children.length === 0) continue;
-    const meta = categoryMeta(categoryId);
+    const meta = boardMeta(boardSlug, boards);
     categoryNodes.push({
-      id: `category:${categoryId}`,
-      name: meta.label,
+      id: `category:${boardSlug}`,
+      name: meta.name,
       kind: 'category',
-      categoryId,
+      categoryId: boardSlug,
       color: meta.color,
       children,
     });

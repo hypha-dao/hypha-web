@@ -41,17 +41,17 @@ export type {
   IntelligenceGraphEdge,
 } from './graph';
 export {
-  SIGNAL_SUNBURST_CATEGORIES,
-  SIGNAL_SUNBURST_CATEGORY_COLORS,
   SIGNAL_SUNBURST_UNCATEGORIZED_ID,
+  SUNBURST_BOARD_PALETTE,
   buildIntelligenceSunburstTree,
-  categorizeSignal,
+  resolveSunburstBoard,
+  sunburstBoardColor,
 } from './sunburst';
 export type {
   IntelligenceSunburstKind,
   IntelligenceSunburstNode,
-  SignalSunburstCategoryId,
   SunburstArtifactInput,
+  SunburstBoardInput,
   SunburstFileInput,
   SunburstSignalInput,
 } from './sunburst';

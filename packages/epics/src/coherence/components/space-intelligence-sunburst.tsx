@@ -4,15 +4,18 @@ import { FC, useEffect, useMemo, useRef } from 'react';
 import * as d3 from 'd3';
 import {
   buildIntelligenceSunburstTree,
-  SIGNAL_SUNBURST_CATEGORIES,
-  SIGNAL_SUNBURST_CATEGORY_COLORS,
   SIGNAL_SUNBURST_UNCATEGORIZED_ID,
+  sunburstBoardColor,
   type IntelligenceGraph,
   type IntelligenceListItem,
   type IntelligenceSunburstNode,
-  type SignalSunburstCategoryId,
+  type SunburstBoardInput,
 } from '@hypha-platform/core/intelligence';
-import { useFindCoherences } from '@hypha-platform/core/client';
+import {
+  resolveDefaultBoard,
+  useFindCoherences,
+  useSignalWorkflow,
+} from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
@@ -107,34 +110,14 @@ function openSunburstNode(
   }
 }
 
-function categoryColor(node: LayoutNode): string {
+function categoryColor(node: LayoutNode, boards: SunburstBoardInput[]): string {
   let current: LayoutNode | null = node;
   while (current && current.depth > 1) {
     current = current.parent as LayoutNode | null;
   }
-  return (
-    current?.data.color ??
-    (current?.data.categoryId
-      ? SIGNAL_SUNBURST_CATEGORY_COLORS[current.data.categoryId]
-      : SIGNAL_SUNBURST_CATEGORY_COLORS[SIGNAL_SUNBURST_UNCATEGORIZED_ID])
-  );
-}
-
-function translateTreeNames(
-  node: IntelligenceSunburstNode,
-  labelFor: (categoryId: string) => string,
-): IntelligenceSunburstNode {
-  const name =
-    node.kind === 'category' && node.categoryId
-      ? labelFor(node.categoryId)
-      : node.name;
-  return {
-    ...node,
-    name,
-    children: node.children?.map((child) =>
-      translateTreeNames(child, labelFor),
-    ),
-  };
+  if (current?.data.color) return current.data.color;
+  const slug = current?.data.categoryId ?? SIGNAL_SUNBURST_UNCATEGORIZED_ID;
+  return sunburstBoardColor(slug, boards);
 }
 
 export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
@@ -152,6 +135,23 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
     spaceSlug,
     includeArchived: !hideArchived,
   });
+  const { workflow, isLoading: isWorkflowLoading } =
+    useSignalWorkflow(spaceSlug);
+
+  const boards: SunburstBoardInput[] = useMemo(
+    () =>
+      (workflow?.boards ?? [])
+        .filter((board) => !board.archived)
+        .sort((a, b) => a.position - b.position)
+        .map((board) => ({
+          slug: board.slug,
+          name: board.name,
+          color: board.color,
+          position: board.position,
+        })),
+    [workflow],
+  );
+  const defaultBoard = workflow ? resolveDefaultBoard(workflow) : 'general';
 
   const tree = useMemo(() => {
     const files = graph.nodes.flatMap((node) => {
@@ -171,16 +171,16 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
         },
       ];
     });
-    const built = buildIntelligenceSunburstTree({
+    return buildIntelligenceSunburstTree({
       rootName: t('spaceIntelligence'),
+      defaultBoard,
+      boards,
       signals: (coherences ?? [])
         .filter((item) => item.slug?.trim())
         .map((item) => ({
           slug: item.slug as string,
           title: item.title,
-          tags: item.tags,
-          type: item.type,
-          description: item.description,
+          board: item.board,
         })),
       artifacts: artifacts.map((item) => ({
         id: item.id,
@@ -189,11 +189,15 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
       })),
       files,
     });
-    return translateTreeNames(built, (categoryId) => {
-      const key = `intelligenceSignalCategories.${categoryId}`;
-      return t.has(key as never) ? t(key as never) : categoryId;
-    });
-  }, [artifacts, coherences, graph.edges, graph.nodes, t]);
+  }, [
+    artifacts,
+    boards,
+    coherences,
+    defaultBoard,
+    graph.edges,
+    graph.nodes,
+    t,
+  ]);
 
   const hasSlices = (tree.children?.length ?? 0) > 0;
 
@@ -253,7 +257,7 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
       .selectAll('path')
       .data(root.descendants().slice(1) as LayoutNode[])
       .join('path')
-      .attr('fill', (d) => categoryColor(d))
+      .attr('fill', (d) => categoryColor(d, boards))
       .attr('fill-opacity', (d) =>
         arcVisible(d.current) ? (d.children ? 0.7 : 0.5) : 0,
       )
@@ -383,19 +387,22 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
     return () => {
       svg.remove();
     };
-  }, [hasSlices, params, router, t, tree]);
+  }, [boards, hasSlices, params, router, t, tree]);
 
-  const legendIds: SignalSunburstCategoryId[] = [
-    ...SIGNAL_SUNBURST_CATEGORIES.map((category) => category.id),
-    SIGNAL_SUNBURST_UNCATEGORIZED_ID,
-  ];
-  const usedCategories = new Set(
+  const legendBoards = boards.length
+    ? boards
+    : (tree.children ?? []).map((child) => ({
+        slug: child.categoryId ?? SIGNAL_SUNBURST_UNCATEGORIZED_ID,
+        name: child.name,
+        color: child.color,
+      }));
+  const usedBoards = new Set(
     (tree.children ?? [])
       .map((child) => child.categoryId)
       .filter(Boolean) as string[],
   );
 
-  if (isLoading && !coherences) {
+  if ((isLoading && !coherences) || isWorkflowLoading) {
     return (
       <p className="text-2 text-muted-foreground">
         {t('spaceIntelligenceLoading')}
@@ -420,13 +427,11 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
     >
       <div ref={hostRef} className="mx-auto w-full max-w-[720px]" />
       <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2">
-        {legendIds.map((categoryId) => {
-          const key = `intelligenceSignalCategories.${categoryId}`;
-          const label = t.has(key as never) ? t(key as never) : categoryId;
-          const active = usedCategories.has(categoryId);
+        {legendBoards.map((board) => {
+          const active = usedBoards.has(board.slug);
           return (
             <li
-              key={categoryId}
+              key={board.slug}
               className={cn(
                 'inline-flex items-center gap-1.5 text-[11px]',
                 active ? 'text-foreground' : 'text-muted-foreground/60',
@@ -435,11 +440,11 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{
-                  backgroundColor: SIGNAL_SUNBURST_CATEGORY_COLORS[categoryId],
+                  backgroundColor: sunburstBoardColor(board.slug, boards),
                 }}
                 aria-hidden
               />
-              {label}
+              {board.name}
             </li>
           );
         })}
