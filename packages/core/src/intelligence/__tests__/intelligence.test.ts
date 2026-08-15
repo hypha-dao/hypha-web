@@ -23,6 +23,7 @@ import {
 } from '../app-identity';
 import {
   HYPHA_ENERGY_PACK_ID,
+  HYPHA_ENERGY_PACK,
   HYPHA_ENERGY_TEMPLATES,
   renderPackTemplateMarkdown,
 } from '../packs';
@@ -443,6 +444,7 @@ describe('hypha energy pack', () => {
     const ids = HYPHA_ENERGY_TEMPLATES.map((template) => template.id);
     expect(ids).toHaveLength(8);
     expect(new Set(ids).size).toBe(8);
+    expect(HYPHA_ENERGY_PACK.title).toBe('Hypha Energy Intelligence Pack');
 
     for (const template of HYPHA_ENERGY_TEMPLATES) {
       const markdown = renderPackTemplateMarkdown({

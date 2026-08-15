@@ -12,6 +12,8 @@ import React from 'react';
 import useSWR, { mutate } from 'swr';
 
 export const SPACE_INTELLIGENCE_SWR_KEY = 'space-intelligence' as const;
+export const SPACE_INTELLIGENCE_PACKS_SWR_KEY =
+  'space-intelligence-packs' as const;
 
 type IntelligenceListResponse = {
   space_slug: string;
@@ -38,7 +40,8 @@ export function revalidateSpaceIntelligence(spaceSlug: string) {
   return mutate(
     (key: unknown) =>
       Array.isArray(key) &&
-      key[0] === SPACE_INTELLIGENCE_SWR_KEY &&
+      (key[0] === SPACE_INTELLIGENCE_SWR_KEY ||
+        key[0] === SPACE_INTELLIGENCE_PACKS_SWR_KEY) &&
       key[1] === spaceSlug,
     undefined,
     { revalidate: true },
@@ -201,7 +204,7 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
   );
 
   const enablePack = React.useCallback(
-    async (packId: string) => {
+    async (packId: string, templateId?: string) => {
       if (!spaceSlug) throw new Error('Missing space');
       const token = await getAccessToken();
       const headers: HeadersInit = {
@@ -213,7 +216,10 @@ export function useSpaceIntelligence(spaceSlug: string | undefined) {
         {
           method: 'POST',
           headers,
-          body: JSON.stringify({ pack_id: packId }),
+          body: JSON.stringify({
+            pack_id: packId,
+            ...(templateId ? { template_id: templateId } : {}),
+          }),
         },
       );
       const payload = await res.json().catch(() => ({}));

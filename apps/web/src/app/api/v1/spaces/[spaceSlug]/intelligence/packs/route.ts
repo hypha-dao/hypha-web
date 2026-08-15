@@ -58,6 +58,8 @@ export async function GET(
       return NextResponse.json({ error: listed.message }, { status: 403 });
     }
 
+    const existingIds = new Set(listed.artifact_ids);
+
     return NextResponse.json({
       space_slug: listed.space_slug,
       configured: listed.configured,
@@ -75,6 +77,7 @@ export async function GET(
           pack_alias: template.pack_alias,
           tags: template.tags,
           body: template.body,
+          activated: existingIds.has(template.id),
         })),
       })),
     });
@@ -96,7 +99,10 @@ export async function POST(
     const gated = await gateSpace(request, spaceSlug);
     if (!gated.ok) return gated.response;
 
-    const body = (await request.json()) as { pack_id?: string };
+    const body = (await request.json()) as {
+      pack_id?: string;
+      template_id?: string;
+    };
     if (!body.pack_id?.trim()) {
       return NextResponse.json(
         { error: 'pack_id is required.' },
@@ -108,6 +114,7 @@ export async function POST(
       {
         spaceSlug,
         packId: body.pack_id,
+        templateId: body.template_id?.trim() || undefined,
         authToken: bearerFrom(request),
       },
       { db },

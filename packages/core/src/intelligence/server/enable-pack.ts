@@ -31,6 +31,8 @@ import { seedIntelligenceArtifactIfMissing } from './write-intelligence';
 export type EnableIntelligencePackInput = {
   spaceSlug: string;
   packId: string;
+  /** When set, seed only this catalog template. Otherwise seed the full pack. */
+  templateId?: string;
   authToken?: string;
 };
 
@@ -154,11 +156,23 @@ export async function enableIntelligencePackForSpace(
   try {
     await publishPackToBlob(packId);
 
+    const templateId = input.templateId?.trim();
+    const templates = templateId
+      ? catalog.templates.filter((template) => template.id === templateId)
+      : catalog.templates;
+    if (templateId && templates.length === 0) {
+      return {
+        access: 'denied',
+        message: `Unknown template "${templateId}" in pack "${packId}".`,
+        space_slug: spaceSlug,
+      };
+    }
+
     const seeded: string[] = [];
     const skipped: string[] = [];
     const today = new Date().toISOString().slice(0, 10);
 
-    for (const template of catalog.templates) {
+    for (const template of templates) {
       const markdown = renderPackTemplateMarkdown({
         template,
         packId,

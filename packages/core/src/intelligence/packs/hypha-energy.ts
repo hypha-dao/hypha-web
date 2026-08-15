@@ -249,7 +249,7 @@ Enabling the pack for a space copies starters into \`intelligence/spaces/{slug}/
 
 export const HYPHA_ENERGY_PACK: IntelligencePackCatalog = {
   id: HYPHA_ENERGY_PACK_ID,
-  title: 'Hypha Energy Org Memory',
+  title: 'Hypha Energy Intelligence Pack',
   version: 1,
   description:
     'Eight starter artifacts for community energy identity, sites, portfolio, governance, and signal-driven decisions.',

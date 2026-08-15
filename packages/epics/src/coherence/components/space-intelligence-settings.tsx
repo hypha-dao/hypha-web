@@ -14,6 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
+import { SPACE_INTELLIGENCE_PACKS_SWR_KEY } from '../hooks/use-space-intelligence';
 
 export type IntelligencePackPreview = {
   id: string;
@@ -28,6 +29,7 @@ export type IntelligencePackPreview = {
     pack_alias: string;
     tags: string[];
     body: string;
+    activated?: boolean;
   }>;
 };
 
@@ -42,10 +44,9 @@ type SpaceIntelligenceSettingsProps = {
   spaceSlug: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  enabledPacks: string[];
   canEnable: boolean;
-  enablingPackId: string | null;
-  onEnablePack: (packId: string) => Promise<void>;
+  enablingTemplateId: string | null;
+  onEnableTemplate: (packId: string, templateId: string) => Promise<void>;
 };
 
 function PackTemplatePreview({
@@ -94,17 +95,16 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
   spaceSlug,
   open,
   onOpenChange,
-  enabledPacks,
   canEnable,
-  enablingPackId,
-  onEnablePack,
+  enablingTemplateId,
+  onEnableTemplate,
 }) => {
   const t = useTranslations('CoherenceTab');
   const { getAccessToken } = useAuthentication();
   const [actionError, setActionError] = useState<string | null>(null);
 
   const { data, error, isLoading } = useSWR(
-    open ? (['space-intelligence-packs', spaceSlug] as const) : null,
+    open ? ([SPACE_INTELLIGENCE_PACKS_SWR_KEY, spaceSlug] as const) : null,
     async ([, slug]) => {
       const token = await getAccessToken();
       const headers: HeadersInit = {};
@@ -123,12 +123,11 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
   );
 
   const packs = data?.available ?? [];
-  const enabled = new Set([...(data?.enabled_packs ?? []), ...enabledPacks]);
 
-  const enablePack = async (packId: string) => {
+  const enableTemplate = async (packId: string, templateId: string) => {
     setActionError(null);
     try {
-      await onEnablePack(packId);
+      await onEnableTemplate(packId, templateId);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : String(err));
     }
@@ -161,27 +160,18 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
         ) : (
           <ul className="flex flex-col gap-3">
             {packs.map((pack) => {
-              const isEnabled = enabled.has(pack.id);
-              const busy = enablingPackId === pack.id;
               return (
                 <li
                   key={pack.id}
                   className="flex flex-col gap-3 rounded-lg border border-border bg-neutral-2 p-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-3 font-medium leading-snug">
-                        {pack.title}
-                      </h3>
-                      <p className="mt-1 text-2 text-muted-foreground">
-                        {pack.description}
-                      </p>
-                    </div>
-                    {isEnabled ? (
-                      <span className="shrink-0 rounded-full bg-accent-3 px-2 py-0.5 text-1 text-accent-11">
-                        {t('spaceIntelligencePackEnabled')}
-                      </span>
-                    ) : null}
+                  <div className="min-w-0">
+                    <h3 className="text-3 font-medium leading-snug">
+                      {pack.title}
+                    </h3>
+                    <p className="mt-1 text-2 text-muted-foreground">
+                      {pack.description}
+                    </p>
                   </div>
                   <div>
                     <p className="mb-1.5 text-1 font-medium text-muted-foreground">
@@ -195,38 +185,46 @@ export const SpaceIntelligenceSettings: FC<SpaceIntelligenceSettingsProps> = ({
                         const typeLabel = t.has(typeKey as never)
                           ? t(typeKey as never)
                           : template.type;
+                        const busy = enablingTemplateId === template.id;
+                        const activated = template.activated === true;
                         return (
-                          <li key={template.id}>
-                            <PackTemplatePreview
-                              template={template}
-                              typeLabel={typeLabel}
-                            />
+                          <li
+                            key={template.id}
+                            className="flex items-start gap-2"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <PackTemplatePreview
+                                template={template}
+                                typeLabel={typeLabel}
+                              />
+                            </div>
+                            {canEnable ? (
+                              activated ? (
+                                <span className="mt-1.5 shrink-0 rounded-full bg-accent-3 px-2 py-0.5 text-1 text-accent-11">
+                                  {t('spaceIntelligenceTemplateActivated')}
+                                </span>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  colorVariant="accent"
+                                  size="sm"
+                                  className="mt-1 shrink-0"
+                                  disabled={busy || enablingTemplateId != null}
+                                  onClick={() =>
+                                    void enableTemplate(pack.id, template.id)
+                                  }
+                                >
+                                  {busy
+                                    ? t('spaceIntelligenceActivatingTemplate')
+                                    : t('spaceIntelligenceActivateTemplate')}
+                                </Button>
+                              )
+                            ) : null}
                           </li>
                         );
                       })}
                     </ul>
                   </div>
-                  {canEnable ? (
-                    isEnabled ? (
-                      <p className="text-1 text-muted-foreground">
-                        {t('spaceIntelligencePackEnabledHint')}
-                      </p>
-                    ) : (
-                      <div className="flex justify-end">
-                        <Button
-                          type="button"
-                          colorVariant="accent"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() => void enablePack(pack.id)}
-                        >
-                          {busy
-                            ? t('spaceIntelligenceEnablingPack')
-                            : t('spaceIntelligenceEnablePack')}
-                        </Button>
-                      </div>
-                    )
-                  ) : null}
                 </li>
               );
             })}

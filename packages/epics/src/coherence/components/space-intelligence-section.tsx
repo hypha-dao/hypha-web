@@ -73,7 +73,6 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     deleteArtifact,
     linkArtifactRoom,
     enablePack,
-    enabledPacks,
   } = useSpaceIntelligence(spaceSlug);
   const { space } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({
@@ -86,7 +85,9 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     useMatrix();
 
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [enablingPackId, setEnablingPackId] = useState<string | null>(null);
+  const [enablingTemplateId, setEnablingTemplateId] = useState<string | null>(
+    null,
+  );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pendingDelete, setPendingDelete] =
     useState<IntelligenceListItem | null>(null);
@@ -168,16 +169,16 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
     ],
   );
 
-  const onEnablePack = async (packId: string) => {
-    setEnablingPackId(packId);
+  const onEnableTemplate = async (packId: string, templateId: string) => {
+    setEnablingTemplateId(templateId);
     setSaveError(null);
     try {
-      await enablePack(packId);
+      await enablePack(packId, templateId);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
-      setEnablingPackId(null);
+      setEnablingTemplateId(null);
     }
   };
 
@@ -360,10 +361,9 @@ export const SpaceIntelligenceSection: FC<SpaceIntelligenceSectionProps> = ({
         spaceSlug={spaceSlug}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        enabledPacks={enabledPacks}
         canEnable={canMutate && configured}
-        enablingPackId={enablingPackId}
-        onEnablePack={onEnablePack}
+        enablingTemplateId={enablingTemplateId}
+        onEnableTemplate={onEnableTemplate}
       />
 
       <AlertDialog

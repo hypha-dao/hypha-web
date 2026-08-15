@@ -30,6 +30,7 @@ export type ListIntelligenceBySpaceSlugResult =
       space_slug: string;
       artifacts: IntelligenceListItem[];
       enabled_packs: string[];
+      artifact_ids: string[];
     }
   | {
       access: 'denied';
@@ -128,5 +129,6 @@ export async function listIntelligenceBySpaceSlug(
     space_slug: spaceSlug,
     artifacts: filtered,
     enabled_packs: manifest.enabled_packs ?? [],
+    artifact_ids: manifest.artifacts.map((artifact) => artifact.id),
   };
 }
