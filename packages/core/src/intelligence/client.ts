@@ -23,6 +23,8 @@ export type {
 export {
   buildIntelligenceRelatedGraph,
   buildIntelligenceSignalGraph,
+  intelligenceSignalNodeId,
+  intelligenceSignalSlugFromNodeId,
 } from './graph';
 export { HYPHA_ENERGY_PACK_ID } from './packs/ids';
 export { excerptIntelligenceBody } from './excerpt';

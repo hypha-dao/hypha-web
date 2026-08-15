@@ -3,6 +3,7 @@
 import { FC, KeyboardEvent } from 'react';
 import type {
   IntelligenceGraph,
+  IntelligenceGraphNode,
   IntelligenceListItem,
 } from '@hypha-platform/core/intelligence';
 import { cn } from '@hypha-platform/ui-utils';
@@ -27,12 +28,66 @@ function intelligenceEditHref(
   }/edit-intelligence/${artifactId}`;
 }
 
+function intelligenceSignalEditHref(
+  params: { lang?: string; id?: string; tab?: string },
+  signalSlug: string,
+): string | undefined {
+  if (!params.lang || !params.id) return undefined;
+  return `/${params.lang}/dho/${params.id}/${
+    params.tab ?? 'memory'
+  }/edit-signal/${signalSlug}`;
+}
+
+function graphNodeLabel(title: string, max = 28): string {
+  const clean = title.replace(/[<>&]/g, '');
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max - 1)}…`;
+}
+
+function layoutIntelligenceGraph(
+  nodes: IntelligenceGraphNode[],
+  width: number,
+  minHeight: number,
+): { positions: Map<string, { x: number; y: number }>; height: number } {
+  const signals = nodes
+    .filter((node) => node.kind !== 'artifact')
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const artifacts = nodes
+    .filter((node) => node.kind === 'artifact')
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const row = 72;
+  const padY = 56;
+  const height = Math.max(
+    minHeight,
+    padY * 2 + Math.max(signals.length, artifacts.length, 1) * row,
+  );
+  const positions = new Map<string, { x: number; y: number }>();
+  const place = (list: IntelligenceGraphNode[], x: number) => {
+    if (list.length === 0) return;
+    const span = height - padY * 2;
+    list.forEach((node, index) => {
+      const y =
+        list.length === 1
+          ? height / 2
+          : padY + (span * index) / Math.max(list.length - 1, 1);
+      positions.set(node.id, { x, y });
+    });
+  };
+  if (signals.length === 0) {
+    place(artifacts, width / 2);
+  } else {
+    place(signals, 200);
+    place(artifacts, width - 200);
+  }
+  return { positions, height };
+}
+
 type SpaceIntelligenceGraphProps = {
   graph: IntelligenceGraph;
   className?: string;
 };
 
-/** Lightweight SVG force-free layout: circle of nodes + related edges (M3). */
+/** Bipartite SVG layout: signals on the left, artifacts on the right. */
 export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
   graph,
   className,
@@ -45,25 +100,20 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
     return null;
   }
 
-  const width = 640;
-  const height = 420;
-  const cx = width / 2;
-  const cy = height / 2;
-  const radius = Math.min(width, height) * 0.36;
-  const positions = new Map<string, { x: number; y: number }>();
+  const width = 720;
+  const { positions, height } = layoutIntelligenceGraph(nodes, width, 360);
+  const hasSignalColumn = nodes.some((node) => node.kind !== 'artifact');
 
-  nodes.forEach((node, index) => {
-    const angle = (2 * Math.PI * index) / nodes.length - Math.PI / 2;
-    positions.set(node.id, {
-      x: cx + radius * Math.cos(angle),
-      y: cy + radius * Math.sin(angle),
-    });
-  });
-
-  const openArtifact = (artifactId: string) => {
-    const href = intelligenceEditHref(params, artifactId);
-    if (!href) return;
-    router.push(href);
+  const openNode = (node: IntelligenceGraphNode) => {
+    if (node.kind === 'artifact') {
+      const href = intelligenceEditHref(params, node.id);
+      if (href) router.push(href);
+      return;
+    }
+    const slug = node.slug?.trim();
+    if (!slug) return;
+    const href = intelligenceSignalEditHref(params, slug);
+    if (href) router.push(href);
   };
 
   return (
@@ -103,7 +153,23 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
           const isSignal =
             node.kind === 'signal' || node.kind === 'signal-missing';
           const missing = node.kind === 'signal-missing';
-          const canOpen = node.kind === 'artifact';
+          const canOpen =
+            node.kind === 'artifact' || Boolean(node.slug?.trim());
+          const labelSide: 'left' | 'right' | 'below' = !hasSignalColumn
+            ? 'below'
+            : isSignal
+            ? 'left'
+            : 'right';
+          const labelX =
+            labelSide === 'left'
+              ? pos.x - 20
+              : labelSide === 'right'
+              ? pos.x + 20
+              : pos.x;
+          const labelY = labelSide === 'below' ? pos.y + 26 : pos.y + 4;
+          const openLabel = t('spaceIntelligenceOpenArtifact', {
+            title: node.title,
+          });
           return (
             <g
               key={node.id}
@@ -114,28 +180,20 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
                   ? 'cursor-pointer outline-none focus-visible:[&>circle]:stroke-[3]'
                   : undefined
               }
-              aria-label={
-                canOpen
-                  ? t('spaceIntelligenceOpenArtifact', { title: node.title })
-                  : undefined
-              }
-              onClick={canOpen ? () => openArtifact(node.id) : undefined}
+              aria-label={canOpen ? openLabel : undefined}
+              onClick={canOpen ? () => openNode(node) : undefined}
               onKeyDown={
                 canOpen
                   ? (event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        openArtifact(node.id);
+                        openNode(node);
                       }
                     }
                   : undefined
               }
             >
-              <title>
-                {canOpen
-                  ? t('spaceIntelligenceOpenArtifact', { title: node.title })
-                  : node.title}
-              </title>
+              <title>{canOpen ? openLabel : node.title}</title>
               <circle
                 cx={pos.x}
                 cy={pos.y}
@@ -150,15 +208,19 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
                 strokeWidth={1.5}
               />
               <text
-                x={pos.x}
-                y={pos.y + 28}
-                textAnchor="middle"
+                x={labelX}
+                y={labelY}
+                textAnchor={
+                  labelSide === 'left'
+                    ? 'end'
+                    : labelSide === 'right'
+                    ? 'start'
+                    : 'middle'
+                }
+                dominantBaseline={labelSide === 'below' ? 'hanging' : 'middle'}
                 className="fill-neutral-12 text-[10px]"
               >
-                {(node.title.length > 28
-                  ? `${node.title.slice(0, 26)}…`
-                  : node.title
-                ).replace(/[<>&]/g, '')}
+                {graphNodeLabel(node.title)}
               </text>
             </g>
           );

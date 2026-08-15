@@ -9,6 +9,7 @@ import {
   arrayOverlaps,
   desc,
   eq,
+  inArray,
   isNotNull,
   lte,
   SQL,
@@ -122,6 +123,15 @@ export const findCoherenceById = async (
 
 type FindCoherenceBySlugInput = {
   slug: string;
+};
+
+export const findCoherencesBySlugs = async (
+  { slugs }: { slugs: string[] },
+  { db }: DbConfig,
+): Promise<Coherence[]> => {
+  const unique = [...new Set(slugs.map((slug) => slug.trim()).filter(Boolean))];
+  if (unique.length === 0) return [];
+  return db.select().from(coherences).where(inArray(coherences.slug, unique));
 };
 
 export const findCoherenceBySlug = async (

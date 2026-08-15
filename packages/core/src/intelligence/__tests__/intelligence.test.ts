@@ -235,6 +235,9 @@ describe('buildIntelligenceSignalGraph', () => {
     expect(graph.edges.some((e) => e.relation === 'linked-signal')).toBe(true);
     expect(graph.edges.some((e) => e.relation === 'proposed-patch')).toBe(true);
     expect(graph.nodes.some((n) => n.id === 'b')).toBe(true);
+    const signalNode = graph.nodes.find((n) => n.kind === 'signal');
+    expect(signalNode?.title).toBe('Inbox item');
+    expect(signalNode?.slug).toBe('inbox-item-1');
   });
 
   it('includes artifacts that have no signal links', () => {
@@ -283,6 +286,9 @@ describe('buildIntelligenceSignalGraph', () => {
       ],
     });
     expect(graph.nodes.find((n) => n.title === 'ghost-signal')?.kind).toBe(
+      'signal-missing',
+    );
+    expect(graph.nodes.find((n) => n.slug === 'ghost-signal')?.kind).toBe(
       'signal-missing',
     );
   });

@@ -13,6 +13,8 @@ export type IntelligenceGraphNode = {
   title: string;
   type?: string;
   status?: string;
+  /** Coherence signal slug when `kind` is signal / signal-missing. */
+  slug?: string;
 };
 
 export type IntelligenceGraphRelation = 'linked-signal' | 'proposed-patch';
@@ -43,6 +45,22 @@ export function intelligenceSignalNodeId(signalSlug: string): string {
   return `${INTELLIGENCE_SIGNAL_NODE_PREFIX}${signalSlug}`;
 }
 
+export function intelligenceSignalSlugFromNodeId(
+  nodeId: string,
+): string | null {
+  if (!nodeId.startsWith(INTELLIGENCE_SIGNAL_NODE_PREFIX)) return null;
+  const slug = nodeId.slice(INTELLIGENCE_SIGNAL_NODE_PREFIX.length).trim();
+  return slug || null;
+}
+
+function asSignalSlug(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.startsWith(INTELLIGENCE_SIGNAL_NODE_PREFIX)) {
+    return trimmed.slice(INTELLIGENCE_SIGNAL_NODE_PREFIX.length).trim();
+  }
+  return trimmed;
+}
+
 /**
  * Knowledge graph: Intelligence artifacts ↔ Coherence signals only.
  * `related` cross-references are not rendered.
@@ -53,7 +71,7 @@ export function buildIntelligenceSignalGraph(input: {
   patches?: IntelligenceGraphPatchLink[];
 }): IntelligenceGraph {
   const signalsBySlug = new Map(
-    (input.signals ?? []).map((signal) => [signal.slug, signal]),
+    (input.signals ?? []).map((signal) => [signal.slug.trim(), signal]),
   );
   const artifactsById = new Map(input.artifacts.map((a) => [a.id, a]));
   const nodes = new Map<string, IntelligenceGraphNode>();
@@ -73,15 +91,19 @@ export function buildIntelligenceSignalGraph(input: {
     });
   };
 
-  const ensureSignal = (slug: string) => {
+  const ensureSignal = (rawSlug: string) => {
+    const slug = asSignalSlug(rawSlug);
+    if (!slug) return;
     const id = intelligenceSignalNodeId(slug);
     if (nodes.has(id)) return;
     const hit = signalsBySlug.get(slug);
+    const title = hit?.title?.trim();
     nodes.set(id, {
       id,
       kind: hit ? 'signal' : 'signal-missing',
-      title: hit?.title ?? slug,
+      title: title || slug,
       type: 'signal',
+      slug,
     });
   };
 
@@ -98,7 +120,8 @@ export function buildIntelligenceSignalGraph(input: {
 
   for (const artifact of input.artifacts) {
     ensureArtifact(artifact.id);
-    for (const slug of artifact.linked_signals ?? []) {
+    for (const rawSlug of artifact.linked_signals ?? []) {
+      const slug = asSignalSlug(rawSlug);
       if (!slug) continue;
       ensureSignal(slug);
       addEdge(artifact.id, intelligenceSignalNodeId(slug), 'linked-signal');
@@ -107,12 +130,13 @@ export function buildIntelligenceSignalGraph(input: {
 
   for (const patch of input.patches ?? []) {
     if (patch.status !== 'pending') continue;
-    if (!patch.signal_slug || !patch.target_id) continue;
+    const signalSlug = asSignalSlug(patch.signal_slug ?? '');
+    if (!signalSlug || !patch.target_id) continue;
     if (!artifactsById.has(patch.target_id)) continue;
     ensureArtifact(patch.target_id);
-    ensureSignal(patch.signal_slug);
+    ensureSignal(signalSlug);
     addEdge(
-      intelligenceSignalNodeId(patch.signal_slug),
+      intelligenceSignalNodeId(signalSlug),
       patch.target_id,
       'proposed-patch',
     );

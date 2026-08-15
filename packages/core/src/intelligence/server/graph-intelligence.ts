@@ -1,8 +1,7 @@
 import 'server-only';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { findAllCoherences } from '../../coherence/server/queries';
-import { findSpaceBySlug } from '../../space/server/queries';
+import { findCoherencesBySlugs } from '../../coherence/server/queries';
 import type { IntelligenceManifestEntry } from '../types';
 import {
   buildIntelligenceSignalGraph,
@@ -83,30 +82,27 @@ export async function buildIntelligenceGraphForSpace(
   const linkedSlugs = new Set<string>();
   for (const artifact of input.artifacts) {
     for (const slug of artifact.linked_signals ?? []) {
-      if (slug) linkedSlugs.add(slug);
+      if (slug) linkedSlugs.add(slug.trim());
     }
   }
   for (const patch of patches) {
     if (patch.status === 'pending' && patch.signal_slug) {
-      linkedSlugs.add(patch.signal_slug);
+      linkedSlugs.add(patch.signal_slug.trim());
     }
   }
 
   let signals: IntelligenceGraphSignal[] = [];
   if (linkedSlugs.size > 0) {
-    const space = await findSpaceBySlug({ slug: input.spaceSlug }, { db });
-    if (space) {
-      const coherences = await findAllCoherences(
-        { db },
-        { spaceId: space.id, includeArchived: true },
-      );
-      signals = coherences
-        .filter((row) => row.slug && linkedSlugs.has(row.slug))
-        .map((row) => ({
-          slug: row.slug as string,
-          title: row.title,
-        }));
-    }
+    const rows = await findCoherencesBySlugs(
+      { slugs: [...linkedSlugs] },
+      { db },
+    );
+    signals = rows
+      .filter((row) => row.slug)
+      .map((row) => ({
+        slug: row.slug as string,
+        title: row.title?.trim() || (row.slug as string),
+      }));
   }
 
   return buildIntelligenceSignalGraph({
