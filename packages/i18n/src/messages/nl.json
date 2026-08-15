@@ -3401,6 +3401,8 @@
     "spaceIntelligenceViewCards": "Kaarten",
     "spaceIntelligenceViewGraph": "Graaf",
     "spaceIntelligenceGraphAria": "Kennisschema van Space Intelligence",
+    "spaceIntelligenceGraphZoomIn": "Inzoomen",
+    "spaceIntelligenceGraphZoomOut": "Uitzoomen",
     "spaceIntelligenceOpenArtifact": "{title} openen",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

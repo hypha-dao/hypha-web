@@ -3403,6 +3403,8 @@
     "spaceIntelligenceViewCards": "Cards",
     "spaceIntelligenceViewGraph": "Graph",
     "spaceIntelligenceGraphAria": "Space intelligence knowledge graph",
+    "spaceIntelligenceGraphZoomIn": "Zoom in",
+    "spaceIntelligenceGraphZoomOut": "Zoom out",
     "spaceIntelligenceOpenArtifact": "Open {title}",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

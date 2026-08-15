@@ -1,6 +1,14 @@
 'use client';
 
-import { FC, KeyboardEvent } from 'react';
+import {
+  FC,
+  KeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import type {
   IntelligenceGraph,
   IntelligenceGraphNode,
@@ -9,7 +17,7 @@ import type {
 import { cn } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
-import { Archive, Brain, Pencil } from 'lucide-react';
+import { Archive, Brain, Minus, Pencil, Plus } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -145,6 +153,54 @@ function layoutIntelligenceGraph(
   return { positions, height };
 }
 
+const GRAPH_WIDTH = 720;
+const GRAPH_MIN_HEIGHT = 360;
+const GRAPH_MIN_SCALE = 0.5;
+const GRAPH_MAX_SCALE = 4;
+const GRAPH_ZOOM_STEP = 1.25;
+const GRAPH_PAN_THRESHOLD_PX = 4;
+
+type GraphViewport = { scale: number; tx: number; ty: number };
+
+const INITIAL_GRAPH_VIEWPORT: GraphViewport = { scale: 1, tx: 0, ty: 0 };
+
+function clampGraphScale(scale: number): number {
+  return Math.min(GRAPH_MAX_SCALE, Math.max(GRAPH_MIN_SCALE, scale));
+}
+
+function zoomGraphViewport(
+  viewport: GraphViewport,
+  origin: { x: number; y: number },
+  factor: number,
+): GraphViewport {
+  const scale = clampGraphScale(viewport.scale * factor);
+  if (scale === viewport.scale) return viewport;
+  const graphX = (origin.x - viewport.tx) / viewport.scale;
+  const graphY = (origin.y - viewport.ty) / viewport.scale;
+  return {
+    scale,
+    tx: origin.x - graphX * scale,
+    ty: origin.y - graphY * scale,
+  };
+}
+
+function clientPointToViewBox(
+  svg: SVGSVGElement,
+  clientX: number,
+  clientY: number,
+  viewBoxWidth: number,
+  viewBoxHeight: number,
+): { x: number; y: number } {
+  const rect = svg.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    return { x: viewBoxWidth / 2, y: viewBoxHeight / 2 };
+  }
+  return {
+    x: ((clientX - rect.left) / rect.width) * viewBoxWidth,
+    y: ((clientY - rect.top) / rect.height) * viewBoxHeight,
+  };
+}
+
 type SpaceIntelligenceGraphProps = {
   graph: IntelligenceGraph;
   className?: string;
@@ -159,12 +215,113 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
   const router = useRouter();
   const params = useParams<{ lang: string; id: string; tab?: string }>();
   const nodes = graph.nodes;
+  const viewportElRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const sizeRef = useRef({ width: GRAPH_WIDTH, height: GRAPH_MIN_HEIGHT });
+  const panRef = useRef({
+    pointerId: null as number | null,
+    lastClientX: 0,
+    lastClientY: 0,
+    moved: false,
+  });
+  const [viewport, setViewport] = useState<GraphViewport>(
+    INITIAL_GRAPH_VIEWPORT,
+  );
+  const [isPanning, setIsPanning] = useState(false);
+
+  const zoomAtClient = useCallback(
+    (clientX: number, clientY: number, factor: number) => {
+      const svg = svgRef.current;
+      const { width, height } = sizeRef.current;
+      const origin = svg
+        ? clientPointToViewBox(svg, clientX, clientY, width, height)
+        : { x: width / 2, y: height / 2 };
+      setViewport((current) => zoomGraphViewport(current, origin, factor));
+    },
+    [],
+  );
+
+  const zoomTowardCenter = useCallback((factor: number) => {
+    const { width, height } = sizeRef.current;
+    setViewport((current) =>
+      zoomGraphViewport(current, { x: width / 2, y: height / 2 }, factor),
+    );
+  }, []);
+
+  const onPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) return;
+      if ((event.target as HTMLElement | null)?.closest('button')) return;
+      panRef.current = {
+        pointerId: event.pointerId,
+        lastClientX: event.clientX,
+        lastClientY: event.clientY,
+        moved: false,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [],
+  );
+
+  const onPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const pan = panRef.current;
+      if (pan.pointerId !== event.pointerId) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dxPx = event.clientX - pan.lastClientX;
+      const dyPx = event.clientY - pan.lastClientY;
+      if (!pan.moved && Math.hypot(dxPx, dyPx) < GRAPH_PAN_THRESHOLD_PX) {
+        return;
+      }
+      pan.moved = true;
+      pan.lastClientX = event.clientX;
+      pan.lastClientY = event.clientY;
+      setIsPanning(true);
+      const { width, height } = sizeRef.current;
+      setViewport((current) => ({
+        ...current,
+        tx: current.tx + (dxPx / rect.width) * width,
+        ty: current.ty + (dyPx / rect.height) * height,
+      }));
+    },
+    [],
+  );
+
+  const endPan = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (panRef.current.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    panRef.current.pointerId = null;
+    setIsPanning(false);
+  }, []);
+
+  useEffect(() => {
+    const el = viewportElRef.current;
+    if (!el) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const factor = event.deltaY < 0 ? GRAPH_ZOOM_STEP : 1 / GRAPH_ZOOM_STEP;
+      zoomAtClient(event.clientX, event.clientY, factor);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [nodes.length, zoomAtClient]);
+
   if (nodes.length === 0) {
     return null;
   }
 
-  const width = 720;
-  const { positions, height } = layoutIntelligenceGraph(nodes, width, 360);
+  const width = GRAPH_WIDTH;
+  const { positions, height } = layoutIntelligenceGraph(
+    nodes,
+    width,
+    GRAPH_MIN_HEIGHT,
+  );
+  sizeRef.current = { width, height };
   const hasSignals = nodes.some(
     (node) => node.kind === 'signal' || node.kind === 'signal-missing',
   );
@@ -172,6 +329,7 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
   const hasSideColumns = hasSignals || hasDocuments;
 
   const openNode = (node: IntelligenceGraphNode) => {
+    if (panRef.current.moved) return;
     if (node.kind === 'artifact') {
       pushOverlayHref(router, intelligenceEditHref(params, node.id));
       return;
@@ -193,12 +351,19 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
 
   return (
     <div
+      ref={viewportElRef}
       className={cn(
-        'w-full overflow-hidden rounded-lg border border-border bg-neutral-2',
+        'relative w-full touch-none select-none overflow-hidden rounded-lg border border-border bg-neutral-2',
+        isPanning ? 'intel-graph-panning cursor-grabbing' : 'cursor-grab',
         className,
       )}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endPan}
+      onPointerCancel={endPan}
     >
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full"
         role="group"
@@ -220,180 +385,211 @@ export const SpaceIntelligenceGraph: FC<SpaceIntelligenceGraphProps> = ({
           .intel-graph-node:focus-visible .intel-graph-hover-label {
             opacity: 1;
           }
+          .intel-graph-panning .intel-graph-node[role='button'] {
+            cursor: grabbing;
+          }
         `}</style>
-        {graph.edges.map((edge) => {
-          const from = positions.get(edge.from);
-          const to = positions.get(edge.to);
-          if (!from || !to) return null;
-          const proposed = edge.relation === 'proposed-patch';
-          const midX = (from.x + to.x) / 2;
-          return (
-            <path
-              key={`${edge.relation}-${edge.from}-${edge.to}`}
-              d={`M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`}
-              fill="none"
-              className={proposed ? 'stroke-accent-8' : 'stroke-accent-7'}
-              strokeWidth={proposed ? 1.25 : 1.75}
-              strokeDasharray={proposed ? '5 4' : undefined}
-            />
-          );
-        })}
-        {nodes.map((node) => {
-          const pos = positions.get(node.id);
-          if (!pos) return null;
-          const isSignal =
-            node.kind === 'signal' || node.kind === 'signal-missing';
-          const isDocumentation = node.kind === 'documentation';
-          const missing = node.kind === 'signal-missing';
-          const canOpen =
-            node.kind === 'artifact' ||
-            isDocumentation ||
-            Boolean(node.slug?.trim());
-          const labelSide: 'left' | 'right' | 'below' = !hasSideColumns
-            ? 'below'
-            : isSignal
-            ? 'left'
-            : isDocumentation
-            ? 'right'
-            : hasDocuments && hasSignals
-            ? 'below'
-            : hasDocuments
-            ? 'left'
-            : 'right';
-          const labelX =
-            labelSide === 'left'
-              ? pos.x - 22
-              : labelSide === 'right'
-              ? pos.x + 22
-              : pos.x;
-          const labelY = labelSide === 'below' ? pos.y + 28 : pos.y + 4;
-          const hoverLabel = graphHoverLabel(node);
-          return (
-            <g
-              key={node.id}
-              role={canOpen ? 'button' : undefined}
-              tabIndex={canOpen ? 0 : undefined}
-              className="intel-graph-node"
-              aria-label={canOpen ? hoverLabel : undefined}
-              onClick={
-                canOpen
-                  ? (event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      openNode(node);
-                    }
-                  : undefined
-              }
-              onKeyDown={
-                canOpen
-                  ? (event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
+        <g
+          transform={`translate(${viewport.tx} ${viewport.ty}) scale(${viewport.scale})`}
+        >
+          {graph.edges.map((edge) => {
+            const from = positions.get(edge.from);
+            const to = positions.get(edge.to);
+            if (!from || !to) return null;
+            const proposed = edge.relation === 'proposed-patch';
+            const midX = (from.x + to.x) / 2;
+            return (
+              <path
+                key={`${edge.relation}-${edge.from}-${edge.to}`}
+                d={`M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`}
+                fill="none"
+                className={proposed ? 'stroke-accent-8' : 'stroke-accent-7'}
+                strokeWidth={proposed ? 1.25 : 1.75}
+                strokeDasharray={proposed ? '5 4' : undefined}
+              />
+            );
+          })}
+          {nodes.map((node) => {
+            const pos = positions.get(node.id);
+            if (!pos) return null;
+            const isSignal =
+              node.kind === 'signal' || node.kind === 'signal-missing';
+            const isDocumentation = node.kind === 'documentation';
+            const missing = node.kind === 'signal-missing';
+            const canOpen =
+              node.kind === 'artifact' ||
+              isDocumentation ||
+              Boolean(node.slug?.trim());
+            const labelSide: 'left' | 'right' | 'below' = !hasSideColumns
+              ? 'below'
+              : isSignal
+              ? 'left'
+              : isDocumentation
+              ? 'right'
+              : hasDocuments && hasSignals
+              ? 'below'
+              : hasDocuments
+              ? 'left'
+              : 'right';
+            const labelX =
+              labelSide === 'left'
+                ? pos.x - 22
+                : labelSide === 'right'
+                ? pos.x + 22
+                : pos.x;
+            const labelY = labelSide === 'below' ? pos.y + 28 : pos.y + 4;
+            const hoverLabel = graphHoverLabel(node);
+            return (
+              <g
+                key={node.id}
+                role={canOpen ? 'button' : undefined}
+                tabIndex={canOpen ? 0 : undefined}
+                className="intel-graph-node"
+                aria-label={canOpen ? hoverLabel : undefined}
+                onClick={
+                  canOpen
+                    ? (event) => {
                         event.preventDefault();
+                        event.stopPropagation();
                         openNode(node);
                       }
-                    }
-                  : undefined
-              }
-            >
-              <title>{hoverLabel}</title>
-              {isSignal ? (
-                <>
-                  <polygon
-                    points={signalTrianglePoints(pos.x, pos.y)}
-                    className={
-                      missing
-                        ? 'fill-neutral-4 stroke-neutral-8'
-                        : priorityGraphNodeClass(node.priority)
-                    }
-                    strokeWidth={1.5}
-                  />
-                  <g
-                    transform={`translate(${pos.x - 6} ${pos.y - 4})`}
-                    className={
-                      missing
-                        ? 'fill-neutral-8 stroke-neutral-8'
-                        : 'fill-white stroke-white'
-                    }
-                    strokeWidth={1.35}
-                    strokeLinecap="round"
-                    aria-hidden
-                  >
-                    <circle cx="6" cy="7" r="1.35" stroke="none" />
-                    <path d="M2.4 4.4a4.4 4.4 0 0 1 7.2 0" fill="none" />
-                    <path d="M3.6 5.7a2.6 2.6 0 0 1 4.8 0" fill="none" />
-                  </g>
-                </>
-              ) : isDocumentation ? (
-                <>
-                  <rect
-                    x={pos.x - 13}
-                    y={pos.y - 13}
-                    width={26}
-                    height={26}
-                    rx={2}
-                    className="fill-accent-5 stroke-accent-11"
-                    strokeWidth={1.5}
-                  />
-                  <g
-                    transform={`translate(${pos.x - 6} ${pos.y - 7})`}
-                    className="stroke-white"
-                    fill="none"
-                    strokeWidth={1.35}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d="M3 1.5h4.2L11 5.3V12.5H3z" />
-                    <path d="M7.2 1.5V5.3H11" />
-                  </g>
-                </>
-              ) : (
-                <>
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={14}
-                    className="fill-accent-4 stroke-accent-9"
-                    strokeWidth={1.5}
-                  />
-                  <Brain
-                    x={pos.x - 7}
-                    y={pos.y - 7}
-                    width={14}
-                    height={14}
-                    className="text-accent-11"
-                    strokeWidth={2.2}
-                    aria-hidden
-                  />
-                </>
-              )}
-              <text
-                x={labelX}
-                y={labelY}
-                textAnchor={
-                  labelSide === 'left'
-                    ? 'end'
-                    : labelSide === 'right'
-                    ? 'start'
-                    : 'middle'
+                    : undefined
                 }
-                dominantBaseline={labelSide === 'below' ? 'hanging' : 'middle'}
-                className="fill-neutral-12 text-[10px]"
+                onKeyDown={
+                  canOpen
+                    ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openNode(node);
+                        }
+                      }
+                    : undefined
+                }
               >
-                {graphNodeLabel(node.title)}
-              </text>
-              <text
-                x={pos.x}
-                y={pos.y - (isSignal || isDocumentation ? 26 : 22)}
-                textAnchor="middle"
-                className="intel-graph-hover-label fill-neutral-12 text-[10px] font-medium"
-              >
-                {graphNodeLabel(hoverLabel, 48)}
-              </text>
-            </g>
-          );
-        })}
+                <title>{hoverLabel}</title>
+                {isSignal ? (
+                  <>
+                    <polygon
+                      points={signalTrianglePoints(pos.x, pos.y)}
+                      className={
+                        missing
+                          ? 'fill-neutral-4 stroke-neutral-8'
+                          : priorityGraphNodeClass(node.priority)
+                      }
+                      strokeWidth={1.5}
+                    />
+                    <g
+                      transform={`translate(${pos.x - 6} ${pos.y - 4})`}
+                      className={
+                        missing
+                          ? 'fill-neutral-8 stroke-neutral-8'
+                          : 'fill-white stroke-white'
+                      }
+                      strokeWidth={1.35}
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <circle cx="6" cy="7" r="1.35" stroke="none" />
+                      <path d="M2.4 4.4a4.4 4.4 0 0 1 7.2 0" fill="none" />
+                      <path d="M3.6 5.7a2.6 2.6 0 0 1 4.8 0" fill="none" />
+                    </g>
+                  </>
+                ) : isDocumentation ? (
+                  <>
+                    <rect
+                      x={pos.x - 13}
+                      y={pos.y - 13}
+                      width={26}
+                      height={26}
+                      rx={2}
+                      className="fill-accent-5 stroke-accent-11"
+                      strokeWidth={1.5}
+                    />
+                    <g
+                      transform={`translate(${pos.x - 6} ${pos.y - 7})`}
+                      className="stroke-white"
+                      fill="none"
+                      strokeWidth={1.35}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M3 1.5h4.2L11 5.3V12.5H3z" />
+                      <path d="M7.2 1.5V5.3H11" />
+                    </g>
+                  </>
+                ) : (
+                  <>
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={14}
+                      className="fill-accent-4 stroke-accent-9"
+                      strokeWidth={1.5}
+                    />
+                    <Brain
+                      x={pos.x - 7}
+                      y={pos.y - 7}
+                      width={14}
+                      height={14}
+                      className="text-white"
+                      strokeWidth={2.2}
+                      aria-hidden
+                    />
+                  </>
+                )}
+                <text
+                  x={labelX}
+                  y={labelY}
+                  textAnchor={
+                    labelSide === 'left'
+                      ? 'end'
+                      : labelSide === 'right'
+                      ? 'start'
+                      : 'middle'
+                  }
+                  dominantBaseline={
+                    labelSide === 'below' ? 'hanging' : 'middle'
+                  }
+                  className="fill-neutral-12 text-[10px]"
+                >
+                  {graphNodeLabel(node.title)}
+                </text>
+                <text
+                  x={pos.x}
+                  y={pos.y - (isSignal || isDocumentation ? 26 : 22)}
+                  textAnchor="middle"
+                  className="intel-graph-hover-label fill-neutral-12 text-[10px] font-medium"
+                >
+                  {graphNodeLabel(hoverLabel, 48)}
+                </text>
+              </g>
+            );
+          })}
+        </g>
       </svg>
+      <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-chrome border border-border/70 bg-background/90 text-foreground shadow-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+          aria-label={t('spaceIntelligenceGraphZoomIn')}
+          disabled={viewport.scale >= GRAPH_MAX_SCALE - 0.001}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => zoomTowardCenter(GRAPH_ZOOM_STEP)}
+        >
+          <Plus className="size-4" aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-chrome border border-border/70 bg-background/90 text-foreground shadow-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+          aria-label={t('spaceIntelligenceGraphZoomOut')}
+          disabled={viewport.scale <= GRAPH_MIN_SCALE + 0.001}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => zoomTowardCenter(1 / GRAPH_ZOOM_STEP)}
+        >
+          <Minus className="size-4" aria-hidden />
+        </button>
+      </div>
     </div>
   );
 };

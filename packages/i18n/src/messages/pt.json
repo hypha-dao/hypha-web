@@ -2835,6 +2835,8 @@
     "spaceIntelligenceViewCards": "Cartões",
     "spaceIntelligenceViewGraph": "Grafo",
     "spaceIntelligenceGraphAria": "Grafo de conhecimento da Space Intelligence",
+    "spaceIntelligenceGraphZoomIn": "Ampliar",
+    "spaceIntelligenceGraphZoomOut": "Reduzir",
     "spaceIntelligenceOpenArtifact": "Abrir {title}",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

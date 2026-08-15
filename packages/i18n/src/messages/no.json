@@ -3400,6 +3400,8 @@
     "spaceIntelligenceViewCards": "Kort",
     "spaceIntelligenceViewGraph": "Graf",
     "spaceIntelligenceGraphAria": "Kunnskapsgraf for Space Intelligence",
+    "spaceIntelligenceGraphZoomIn": "Zoom inn",
+    "spaceIntelligenceGraphZoomOut": "Zoom ut",
     "spaceIntelligenceOpenArtifact": "Åpne {title}",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

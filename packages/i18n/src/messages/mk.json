@@ -3382,6 +3382,8 @@
     "spaceIntelligenceViewCards": "Картички",
     "spaceIntelligenceViewGraph": "Граф",
     "spaceIntelligenceGraphAria": "Граф на знаење на Space Intelligence",
+    "spaceIntelligenceGraphZoomIn": "Зголеми",
+    "spaceIntelligenceGraphZoomOut": "Намали",
     "spaceIntelligenceOpenArtifact": "Отвори {title}",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",
