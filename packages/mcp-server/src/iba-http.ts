@@ -13,8 +13,8 @@ import {
 import {
   createIbaMemoryToolContext,
   IBA_MEMORY_MCP_TOOLS,
-} from './memory-tool-context.js';
-import { registerMemoryIntelligenceTools } from './memory-tools.js';
+} from './memory-tool-context';
+import { registerMemoryIntelligenceTools } from './memory-tools';
 
 export const IBA_MEMORY_MCP_NAME = 'hypha-iba-mcp';
 export const IBA_MEMORY_MCP_VERSION = '0.0.0';

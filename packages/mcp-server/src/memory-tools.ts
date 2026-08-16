@@ -23,12 +23,12 @@ import {
   memorySearchOutputSchema,
   memoryUpdateInputSchema,
   memoryUpdateOutputSchema,
-} from './memory-intelligence-schema.js';
+} from './memory-intelligence-schema';
 import {
   memoryPublishDenied,
   type MemoryToolAccess,
   type MemoryToolContext,
-} from './memory-tool-context.js';
+} from './memory-tool-context';
 
 type ToolTextResult = {
   content: [{ type: 'text'; text: string }];

@@ -1,5 +1,5 @@
 import { resolveCanonicalSourceApp } from '@hypha-platform/core/intelligence';
-import { mcpAuthToken, resolveMcpSourceApp } from './memory-write-identity.js';
+import { mcpAuthToken, resolveMcpSourceApp } from './memory-write-identity';
 
 export const IBA_MEMORY_MCP_TOOLS = [
   'memory.list',
