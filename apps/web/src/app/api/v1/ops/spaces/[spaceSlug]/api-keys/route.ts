@@ -33,6 +33,10 @@ function activeKeyConflict(source: string) {
  * be fully public, and anyone able to read a space must never be able to read
  * or mint its write credentials. The plaintext key is returned by this call
  * only — afterwards only its SHA-256 digest exists.
+ *
+ * Scopes: `signals:write` / `signals:upvote` (board posts) and
+ * `intelligence:read` / `intelligence:write` (org memory Markdown; write implies
+ * read). Grant only what the integration needs.
  */
 export async function POST(
   request: NextRequest,

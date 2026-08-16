@@ -10,6 +10,11 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import {
+  authorizeIntelligenceRequest,
+  intelligenceWriteFlags,
+  isSpaceApiKeyRequest,
+} from '../../../intelligence/_lib/authorize-intelligence';
 
 type Params = { spaceSlug: string; signalSlug: string };
 
@@ -87,9 +92,6 @@ export async function POST(
 ) {
   const { spaceSlug, signalSlug } = await params;
   try {
-    const gated = await gateSpace(request, spaceSlug);
-    if (!gated.ok) return gated.response;
-
     const body = (await request.json()) as {
       action?: 'propose' | 'approve' | 'reject';
       target_id?: string;
@@ -100,6 +102,22 @@ export async function POST(
     };
 
     const action = body.action ?? 'propose';
+
+    if (isSpaceApiKeyRequest(request)) {
+      if (action !== 'propose') {
+        return NextResponse.json(
+          {
+            error:
+              'Intelligence API keys cannot approve or reject patches; a space member must do that.',
+          },
+          { status: 403 },
+        );
+      }
+    } else {
+      const gated = await gateSpace(request, spaceSlug);
+      if (!gated.ok) return gated.response;
+    }
+
     const authToken = bearerFrom(request);
 
     if (action === 'propose') {
@@ -112,6 +130,33 @@ export async function POST(
           { status: 400 },
         );
       }
+
+      let skipMembershipCheck = false;
+      let canonicalSourceApp: string | undefined;
+      if (isSpaceApiKeyRequest(request)) {
+        const authorized = await authorizeIntelligenceRequest(
+          request,
+          spaceSlug,
+          'write',
+        );
+        if ('response' in authorized) return authorized.response;
+        if (
+          authorized.auth.kind === 'iba' &&
+          body.source_app &&
+          body.source_app !== authorized.auth.apiKey.source
+        ) {
+          return NextResponse.json(
+            {
+              error: `source_app "${body.source_app}" does not match authenticated app identity "${authorized.auth.apiKey.source}".`,
+            },
+            { status: 403 },
+          );
+        }
+        const flags = intelligenceWriteFlags(authorized.auth);
+        skipMembershipCheck = flags.skipMembershipCheck;
+        canonicalSourceApp = flags.canonicalSourceApp;
+      }
+
       const result = await proposeIntelligencePatchForSignal(
         {
           spaceSlug,
@@ -121,7 +166,9 @@ export async function POST(
           markdown: body.markdown,
           source_app: body.source_app,
           title: body.title,
-          authToken,
+          authToken: skipMembershipCheck ? undefined : authToken,
+          skipMembershipCheck,
+          canonicalSourceApp,
         },
         { db },
       );

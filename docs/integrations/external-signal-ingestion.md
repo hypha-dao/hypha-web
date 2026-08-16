@@ -44,7 +44,7 @@ Key properties:
 | --- | --- |
 | Scope of validity | One space. A key presented against a different space is rejected with `403`. |
 | Storage | Only a SHA-256 digest is stored. The plaintext is shown once at issuance and is unrecoverable. |
-| Permissions | `signals:write` (create/update) and `signals:upvote` (record/remove upvotes), granted per key. |
+| Permissions | `signals:write` (create/update) and `signals:upvote` (record/remove upvotes), granted per key. The same ops route also issues `intelligence:read` / `intelligence:write` for [Space Intelligence](./external-intelligence-ingestion.md) — a different API (Markdown files, not board posts). Grant only the scopes the app needs. |
 | Revocation | Immediate — a revoked key fails with `401`. |
 
 > **Server-side only.** The key grants write access to the space. Never ship it to a browser, a
@@ -102,6 +102,10 @@ curl -X DELETE https://<hypha-host>/api/v1/ops/spaces/<spaceSlug>/api-keys/12 \
 
 The list is paginated like every other Hypha list endpoint — `{ "data": [...], "pagination": {...} }`,
 with optional `?page=` and `?pageSize=`.
+
+For an Intelligence Business App (org memory Markdown, not the Signals board), issue
+`"scopes": ["intelligence:write"]` instead (write implies read). Spec:
+[external-intelligence-ingestion.md](./external-intelligence-ingestion.md).
 
 ---
 
