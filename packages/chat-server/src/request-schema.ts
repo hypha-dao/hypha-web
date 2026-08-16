@@ -61,6 +61,8 @@ export const onboardingConversationContextSchema = z.object({
   /** True after first wallet/2FA sign in this browser session (client sessionStorage). */
   walletSessionActive: z.boolean().optional(),
   visualAssets: onboardingVisualAssetsSchema.optional(),
+  /** True after the user accepted the logo + banner (chat/voice confirmation). */
+  visualAssetsConfirmed: z.boolean().optional(),
   discoveryMode: z.enum(['chat', 'voice_interview']).optional(),
   lastUserText: z.string().optional(),
   locale: z.string().trim().min(2).max(16).optional(),
