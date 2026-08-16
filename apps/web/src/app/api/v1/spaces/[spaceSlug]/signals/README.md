@@ -7,6 +7,11 @@ implementation is given in full.
 
 Humans wanting the narrative version: `docs/integrations/external-signal-ingestion.md`.
 
+If the human asked you to publish **Markdown org memory** (assessments, insights) rather than a
+Signals Board post, stop and follow
+`apps/web/src/app/api/v1/spaces/[spaceSlug]/intelligence/README.md` instead. This file is the
+board-post API only.
+
 ---
 
 ## 1. What you are building

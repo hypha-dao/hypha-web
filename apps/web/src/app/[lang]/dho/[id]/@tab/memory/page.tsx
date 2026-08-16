@@ -1,5 +1,6 @@
 import {
   SpaceMemorySection,
+  SpaceIntelligenceSection,
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 import { getEnableSpaceMemory } from '@hypha-platform/feature-flags';
@@ -23,7 +24,8 @@ export default async function MemoryPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <div className="flex flex-col gap-4 py-4">
+      <div className="flex flex-col gap-8 py-4">
+        <SpaceIntelligenceSection spaceSlug={id} />
         <SpaceMemorySection spaceSlug={id} />
       </div>
     </SpaceTabAccessWrapper>

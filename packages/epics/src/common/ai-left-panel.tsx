@@ -199,8 +199,8 @@ import {
   collectGovernancePrepareNavigationKeys,
   findLatestAiPanelNavigationTarget,
   findLatestPrepareGovernanceProposalUpdate,
-  IMMEDIATE_AUTO_NAVIGATION_TOOLS,
   isAtNavigationTarget,
+  shouldDeferAiPanelAutoNavigation,
   shouldSkipStaleOverviewAutoNavigation,
   type AiPanelNavigationTarget,
 } from './ai-tool-navigation';
@@ -914,6 +914,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [recentSpaces, renderRecentSpaceItem, spaceSettingsItem, tSpaces],
   );
 
+  const getAccessTokenRef = useRef(getAccessToken);
+  getAccessTokenRef.current = getAccessToken;
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -921,7 +924,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         headers: async (): Promise<Record<string, string>> => {
           let token: string | undefined;
           try {
-            token = (await getAccessToken?.()) ?? undefined;
+            token = (await getAccessTokenRef.current?.()) ?? undefined;
           } catch (error) {
             console.error('[AiLeftPanel] getAccessToken failed for transport', {
               error,
@@ -933,7 +936,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         // so useChat does not reinitialize when onboarding context updates.
         body: {},
       }),
-    [getAccessToken],
+    [],
   );
 
   const {
@@ -947,6 +950,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   } = useChat({
     id: spaceChatId,
     transport,
+    // Batch stream chunks — every-token updates overflow React (#185) in this panel.
+    // https://ai-sdk.dev/docs/troubleshooting/react-maximum-update-depth-exceeded
+    experimental_throttle: 100,
     onError: (chatError) => {
       console.error('[AiLeftPanel][useChat]', chatError);
     },
@@ -1094,6 +1100,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [isOnboardingSetup, messages.length, setMessages, spaceSlug]);
 
   useEffect(() => {
+    if (status === 'streaming' || status === 'submitted') return;
     const slug = spaceSlug?.trim();
     if (!slug || !messages.length) return;
     const stored = toStoredOnboardingChatMessages(messages);
@@ -1102,7 +1109,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
     saveSpaceAiChatMessages(slug, stored);
-  }, [isOnboardingSetup, messages, spaceSlug]);
+  }, [isOnboardingSetup, messages, spaceSlug, status]);
 
   const buildMessageOptions = useCallback(
     async (contextOverride?: OnboardingConversationContext | undefined) => {
@@ -1460,15 +1467,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const prepareUpdate = findLatestPrepareGovernanceProposalUpdate(messages);
     if (!prepareUpdate?.resubmitPayload) return;
     if (isGovernancePrepareNavigationStale(prepareUpdate.key)) return;
-    if (lastPrepareGovernanceResubmitKeyRef.current === prepareUpdate.key) {
-      return;
-    }
 
-    lastPrepareGovernanceResubmitKeyRef.current = prepareUpdate.key;
-    applyPrepareGovernanceUpdate(prepareUpdate);
+    if (lastPrepareGovernanceResubmitKeyRef.current !== prepareUpdate.key) {
+      lastPrepareGovernanceResubmitKeyRef.current = prepareUpdate.key;
+      applyPrepareGovernanceUpdate(prepareUpdate);
+    }
 
     const href = prepareUpdate.href;
     if (!href) return;
+    if (shouldDeferAiPanelAutoNavigation(status)) return;
 
     const alreadyOnTarget =
       !prepareUpdate.coherenceChat &&
@@ -1483,9 +1490,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     lastMcpNavigationTargetSpaceSlugRef.current =
       getDhoSpaceSlugFromPathname(href) ?? null;
     router.push(href);
-  }, [applyPrepareGovernanceUpdate, messages, pathname, router]);
+  }, [applyPrepareGovernanceUpdate, messages, pathname, router, status]);
 
   useEffect(() => {
+    if (shouldDeferAiPanelAutoNavigation(status)) return;
     const navigationTarget = findLatestAiPanelNavigationTarget(messages, [
       'mcp_navigation',
       'create_human_chat_message',
@@ -1494,19 +1502,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       'create_ecosystem_space',
       'summarize_space_discussion_by_slug',
       'ingest_space_call_artifacts',
+      'memory_create',
+      'memory_update',
+      'memory_enable_pack',
+      'memory_delete',
     ]);
     const href = navigationTarget?.href;
     if (!href) return;
-
-    const allowWhileStreaming =
-      navigationTarget &&
-      IMMEDIATE_AUTO_NAVIGATION_TOOLS.has(navigationTarget.toolName);
-    if (
-      (status === 'streaming' || status === 'submitted') &&
-      !allowWhileStreaming
-    ) {
-      return;
-    }
 
     const currentSearch =
       typeof window !== 'undefined' ? window.location.search : '';
@@ -1514,9 +1516,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const isSignalCreateNavigation =
       navigationTarget.toolName === 'create_space_signal_by_slug' ||
       navigationTarget.toolName === 'relay_ecosystem_signal';
+    const canOpenHumanChatWithAi = !mutuallyExclusivePanels;
 
     if (isAtNavigationTarget(href, pathname, currentSearch)) {
       if (
+        canOpenHumanChatWithAi &&
         isSignalCreateNavigation &&
         navigationTarget.openHumanChat &&
         navigationTarget.coherenceChat &&
@@ -1551,10 +1555,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     lastMcpNavigationTargetSpaceSlugRef.current =
       getDhoSpaceSlugFromPathname(href) ?? null;
-    openAiPanel();
-    setAiOverlayVisible(false);
+    if (!isAiOpen) {
+      openAiPanel();
+    }
+    if (overlayVisible) {
+      setAiOverlayVisible(false);
+    }
 
-    if (navigationTarget.openHumanChat) {
+    if (canOpenHumanChatWithAi && navigationTarget.openHumanChat) {
       if (navigationTarget.coherenceChat) {
         openCoherenceChat(
           navigationTarget.coherenceChat.roomId,
@@ -1579,10 +1587,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     router.push(href);
   }, [
+    isAiOpen,
     messages,
+    mutuallyExclusivePanels,
     openAiPanel,
     openCoherenceChat,
     openHumanChatPanel,
+    overlayVisible,
     pathname,
     router,
     setAiOverlayVisible,

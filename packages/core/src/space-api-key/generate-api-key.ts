@@ -3,6 +3,13 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 /** Namespace marker so a leaked key is recognisable as a Hypha space key. */
 export const SPACE_API_KEY_PREFIX = 'hyk';
 
+/** True for `hyk_…` plaintext keys (not Privy JWTs). */
+export function looksLikeSpaceApiKey(value: string | undefined): boolean {
+  const trimmed = value?.trim();
+  if (!trimmed) return false;
+  return trimmed.startsWith(`${SPACE_API_KEY_PREFIX}_`);
+}
+
 const SECRET_BYTES = 32;
 const PREFIX_CHARS = 8;
 

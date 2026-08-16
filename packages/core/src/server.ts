@@ -51,6 +51,43 @@ export * from './matrix/types';
 export * from './energy/server';
 export * from './banking/server';
 export * from './geo/server';
+export * from './intelligence/server';
+export type {
+  IntelligenceFrontmatter,
+  IntelligenceManifest,
+  IntelligenceManifestEntry,
+  IntelligenceArtifact,
+  IntelligenceGraph,
+  IntelligenceGraphNode,
+  IntelligenceGraphEdge,
+  IntelligenceCoreType,
+  IntelligenceStatus,
+  IntelligenceArtifactPatch,
+  IntelligencePatchStatus,
+} from './intelligence';
+export {
+  INTELLIGENCE_CORE_TYPES,
+  INTELLIGENCE_STATUSES,
+  intelligenceFrontmatterSchema,
+  buildIntelligenceRelatedGraph,
+  buildIntelligenceSignalGraph,
+  parseIntelligenceMarkdown,
+  serializeIntelligenceMarkdown,
+  contentSha,
+  spaceIntelligencePrefix,
+  spaceManifestPath,
+  artifactCurrentPath,
+  artifactPatchPath,
+  matchCallerIntelligencePath,
+  resolveCanonicalSourceApp,
+  stampIntelligenceSourceApp,
+  INTELLIGENCE_MARKDOWN_MAX_BYTES,
+  HYPHA_ENERGY_PACK_ID,
+  listIntelligencePackCatalogs,
+  renderPackTemplateMarkdown,
+  frameworkPackPrefix,
+} from './intelligence';
+export type { ResolveCanonicalSourceAppResult } from './intelligence';
 export {
   geocodeRequestSchema,
   geocodeResponseSchema,

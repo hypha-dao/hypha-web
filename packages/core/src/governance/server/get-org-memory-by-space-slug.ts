@@ -56,6 +56,7 @@ export type OrgMemoryAsset = {
   document_state?: Document['state'];
   document_slug?: string;
   document_label?: string;
+  linked_artifact_id?: string;
   call_session_id?: string;
   call_recording_id?: number;
   call_transcript_id?: number;
@@ -268,13 +269,19 @@ function proposalDocContextFields(
   doc: Document,
 ): Pick<
   OrgMemoryAsset,
-  'document_title' | 'document_state' | 'document_slug' | 'document_label'
+  | 'document_title'
+  | 'document_state'
+  | 'document_slug'
+  | 'document_label'
+  | 'linked_artifact_id'
 > {
+  const linked = doc.linkedArtifactId?.trim();
   return {
     document_title: doc.title?.trim() || undefined,
     document_state: doc.state,
     document_slug: doc.slug,
     document_label: doc.label?.trim() || undefined,
+    ...(linked ? { linked_artifact_id: linked } : {}),
   };
 }
 

@@ -1,5 +1,5 @@
 import type { DbConfig } from '../../common/server/types';
-import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
+import { eq, sql, and, or, asc, desc, SQL, isNotNull, ne } from 'drizzle-orm';
 
 import {
   documents,
@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
+import { SPACE_MEMORY_DOCUMENT_LABEL } from '../space-memory-document-label';
 import {
   DirectionType,
   FilterParams,
@@ -80,6 +81,7 @@ export const mapToDocument = (
     web3ProposalId: dbDocument.web3ProposalId,
     creator: actualCreator,
     label: dbDocument.label || '',
+    linkedArtifactId: dbDocument.linkedArtifactId?.trim() || null,
   };
 };
 
@@ -422,6 +424,57 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
       result.spaceCreator ?? undefined,
     ),
   );
+};
+
+export type LinkedMemoryDocumentForGraph = {
+  id: number;
+  title: string;
+  slug: string | null;
+  linkedArtifactId: string;
+  attachments: DbDocument['attachments'];
+};
+
+export const findLinkedMemoryDocumentsBySpaceSlug = async (
+  { spaceSlug }: { spaceSlug: string },
+  { db }: DbConfig,
+): Promise<LinkedMemoryDocumentForGraph[]> => {
+  const rows = await db
+    .select({
+      id: documents.id,
+      title: documents.title,
+      slug: documents.slug,
+      linkedArtifactId: documents.linkedArtifactId,
+      attachments: documents.attachments,
+      state: documents.state,
+      label: documents.label,
+    })
+    .from(documents)
+    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .where(
+      and(
+        eq(spaces.slug, spaceSlug),
+        isNotNull(documents.linkedArtifactId),
+        ne(documents.linkedArtifactId, ''),
+        or(
+          eq(documents.state, 'memory'),
+          eq(documents.label, SPACE_MEMORY_DOCUMENT_LABEL),
+        ),
+      ),
+    );
+
+  const out: LinkedMemoryDocumentForGraph[] = [];
+  for (const row of rows) {
+    const linkedArtifactId = row.linkedArtifactId?.trim();
+    if (!linkedArtifactId) continue;
+    out.push({
+      id: row.id,
+      title: row.title?.trim() || 'Memory',
+      slug: row.slug,
+      linkedArtifactId,
+      attachments: row.attachments,
+    });
+  }
+  return out;
 };
 
 /**

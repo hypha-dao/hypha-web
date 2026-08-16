@@ -15,6 +15,8 @@ type AiPanelMobilizedAgentsProps = {
  * Expertise header for assistant replies — role labels from the competency
  * catalog (no invented names). Sits next to the avatar, above the bubble.
  */
+const MAX_VISIBLE_MOBILIZED_AGENTS = 3;
+
 export function AiPanelMobilizedAgents({
   agents,
   isStreaming = false,
@@ -23,6 +25,9 @@ export function AiPanelMobilizedAgents({
   const tCoherence = useTranslations('CoherenceTab');
 
   if (agents.length === 0) return null;
+
+  const visibleAgents = agents.slice(0, MAX_VISIBLE_MOBILIZED_AGENTS);
+  const extraCount = agents.length - visibleAgents.length;
 
   return (
     <div
@@ -35,7 +40,7 @@ export function AiPanelMobilizedAgents({
           : t('specialistsResponding')}
       </span>
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-        {agents.map((agent, index) => (
+        {visibleAgents.map((agent, index) => (
           <Fragment key={agent.id}>
             {index > 0 ? (
               <span className="text-xs text-foreground/40" aria-hidden>
@@ -52,6 +57,11 @@ export function AiPanelMobilizedAgents({
             </span>
           </Fragment>
         ))}
+        {extraCount > 0 ? (
+          <span className="text-xs text-foreground/50">
+            {t('specialistsMore', { count: extraCount })}
+          </span>
+        ) : null}
       </div>
     </div>
   );

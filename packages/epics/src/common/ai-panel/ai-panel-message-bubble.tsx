@@ -4,7 +4,11 @@ import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Copy, Sparkles } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
-import { cn, tokenizeInlineMarkdown } from '@hypha-platform/ui-utils';
+import {
+  cn,
+  isSafeInlineLinkUrl,
+  tokenizeInlineMarkdown,
+} from '@hypha-platform/ui-utils';
 
 import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { localizeOnboardingPickerUserMessage } from '../onboarding-picker-message-i18n';
@@ -147,6 +151,28 @@ function readVisualAssetUrlsFromOutput(output: unknown): {
   }
 
   return { logoUrl, bannerUrl };
+}
+
+function readCompletedToolSummary(output: unknown): string | null {
+  if (!output || typeof output !== 'object') return null;
+  const record = output as {
+    navigation?: { label?: unknown };
+    frontmatter?: { title?: unknown };
+    title?: unknown;
+  };
+  if (typeof record.navigation?.label === 'string') {
+    const label = record.navigation.label.trim();
+    if (label) return label;
+  }
+  if (typeof record.frontmatter?.title === 'string') {
+    const title = record.frontmatter.title.trim();
+    if (title) return title;
+  }
+  if (typeof record.title === 'string') {
+    const title = record.title.trim();
+    if (title) return title;
+  }
+  return null;
 }
 
 function renderVisualAssetsCard(output: unknown) {
@@ -440,6 +466,21 @@ function renderInlineMarkdown(text: string): React.ReactNode {
           {token.value}
         </code>,
       );
+      continue;
+    }
+
+    if (token.type === 'link' && isSafeInlineLinkUrl(token.url)) {
+      nodes.push(
+        <a
+          key={`md-inline-${partIndex++}`}
+          href={token.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+        >
+          {token.label}
+        </a>,
+      );
     }
   }
 
@@ -711,6 +752,20 @@ export function AiPanelMessageBubble({
   const renderedToolParts = visibleToolParts.filter(
     (part) => !shouldHideToolPart(part),
   );
+  const hasInProgressTools = toolParts.some(
+    (part) =>
+      part.state === 'input-streaming' || part.state === 'input-available',
+  );
+  const completedToolSummary = !isUser
+    ? [...toolParts]
+        .reverse()
+        .map((part) =>
+          part.state === 'output-available'
+            ? readCompletedToolSummary(part.output)
+            : null,
+        )
+        .find((label): label is string => Boolean(label))
+    : null;
   const generatedVisualsCard = (() => {
     for (let index = toolParts.length - 1; index >= 0; index -= 1) {
       const part = toolParts[index];
@@ -741,7 +796,7 @@ export function AiPanelMessageBubble({
   })();
   const isTypingOnly =
     !isUser &&
-    isStreaming &&
+    (isStreaming || hasInProgressTools) &&
     !hasVisibleText &&
     fileParts.length === 0 &&
     renderedToolParts.length === 0 &&
@@ -1230,7 +1285,18 @@ export function AiPanelMessageBubble({
               {t('walletSignaturePending')}
             </div>
           ) : null}
-          {isStreaming && (
+          {hasInProgressTools && !hasVisibleText ? (
+            <p className="text-xs text-muted-foreground">{t('toolsWorking')}</p>
+          ) : null}
+          {!isStreaming &&
+          !hasInProgressTools &&
+          !hasVisibleText &&
+          completedToolSummary ? (
+            <p className="text-xs text-muted-foreground">
+              {completedToolSummary}
+            </p>
+          ) : null}
+          {(isStreaming || hasInProgressTools) && (
             <span
               className={cn(
                 'inline-flex items-center gap-0.5',

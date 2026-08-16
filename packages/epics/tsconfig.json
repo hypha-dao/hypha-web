@@ -11,8 +11,14 @@
     "**/*.ts",
     "**/*.tsx",
     "next-env.d.ts",
-    "next.config.js",
-    ".next/types/**/*.ts"
+    "next.config.js"
   ],
-  "exclude": ["node_modules", "**/*.stories.tsx", "**/*.stories.ts"]
+  "exclude": [
+    "node_modules",
+    "**/*.stories.tsx",
+    "**/*.stories.ts",
+    "**/__tests__/**",
+    ".next",
+    "type-stubs"
+  ]
 }

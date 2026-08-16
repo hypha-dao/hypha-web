@@ -1174,9 +1174,11 @@ function trimTrailingUrlPunctuation(raw: string): string {
 function nextHttpSchemeIndex(text: string, from: number): number {
   const httpIdx = text.indexOf('http://', from);
   const httpsIdx = text.indexOf('https://', from);
+  const wwwIdx = text.indexOf('www.', from);
   const hi = httpsIdx >= 0 ? httpsIdx : Number.POSITIVE_INFINITY;
   const lo = httpIdx >= 0 ? httpIdx : Number.POSITIVE_INFINITY;
-  const start = Math.min(lo, hi);
+  const www = wwwIdx >= 0 ? wwwIdx : Number.POSITIVE_INFINITY;
+  const start = Math.min(lo, hi, www);
   return Number.isFinite(start) ? start : -1;
 }
 
@@ -1197,7 +1199,11 @@ function splitPlainTextUrls(text: string): PlainUrlPiece[] {
     if (start > last) {
       out.push({ kind: 'text', value: text.slice(last, start) });
     }
-    const schemeLen = text.startsWith('https://', start) ? 8 : 7;
+    const schemeLen = text.startsWith('https://', start)
+      ? 8
+      : text.startsWith('http://', start)
+      ? 7
+      : 4;
     let end = start + schemeLen;
     while (end < n) {
       const ch = text[end];
@@ -1216,8 +1222,9 @@ function splitPlainTextUrls(text: string): PlainUrlPiece[] {
       end++;
     }
     const raw = text.slice(start, end);
-    const href = trimTrailingUrlPunctuation(raw);
-    const trailing = raw.slice(href.length);
+    const trimmed = trimTrailingUrlPunctuation(raw);
+    const trailing = raw.slice(trimmed.length);
+    const href = trimmed.startsWith('www.') ? `https://${trimmed}` : trimmed;
     out.push({ kind: 'url', href, trailing });
     last = start + raw.length;
   }

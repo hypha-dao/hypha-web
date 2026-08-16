@@ -16,4 +16,18 @@ describe('parseSimpleMatrixHtml', () => {
       ]),
     );
   });
+
+  it('parses safe anchor tags and drops javascript hrefs', () => {
+    const nodes = parseSimpleMatrixHtml(
+      '<a href="https://example.com">docs</a><a href="javascript:alert(1)">x</a>',
+    );
+    expect(nodes).toEqual([
+      {
+        type: 'link',
+        href: 'https://example.com',
+        children: [{ type: 'text', value: 'docs' }],
+      },
+      { type: 'text', value: 'x' },
+    ]);
+  });
 });

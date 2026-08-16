@@ -140,6 +140,16 @@ const createAgreementWeb2Props = {
   web3ProposalId: z.number().optional(),
   label: z.string().optional(),
   state: z.nativeEnum(DocumentState).optional(),
+  linkedArtifactId: z.preprocess(
+    (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
+    z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+      .optional(),
+  ),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);

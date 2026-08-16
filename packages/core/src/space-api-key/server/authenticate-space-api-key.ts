@@ -1,6 +1,7 @@
 import type { DbConfig } from '../../server';
 import { hashSpaceApiKey, safeEqualHashes } from '../generate-api-key';
 import type { SpaceApiKeyScope } from '../types';
+import { spaceApiKeySatisfiesScope } from '../types';
 import { findActiveSpaceApiKeyByHash } from './queries';
 import { touchSpaceApiKeyLastUsed } from './mutations';
 
@@ -31,24 +32,27 @@ export function readSpaceApiKeyFromRequest(
   return bearer || undefined;
 }
 
+function recordSpaceApiKeyUsage(
+  apiKey: AuthenticatedSpaceApiKey,
+  { db }: DbConfig,
+): void {
+  // Telemetry, not an auth input: never make a valid key fail, or pay for a
+  // serialized write, because of it.
+  void touchSpaceApiKeyLastUsed({ id: apiKey.id }, { db }).catch((error) => {
+    console.warn('Failed to record API key usage', {
+      keyId: apiKey.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
+}
+
 /**
- * Verify an inbound integration key against a single space and scope.
- *
- * The lookup is by SHA-256 digest, so no secret is ever used in a SQL
- * comparison; the digests are then re-compared with a timing-safe check.
- * A key issued for another space is rejected even though digests are globally
- * unique, so a key can never be replayed against a space it does not own.
+ * Resolve a presented key to an active row without checking space or scope.
+ * Callers that bind the key to a path (REST) or infer the space (hosted MCP)
+ * apply those checks themselves before treating the request as authorized.
  */
-export async function authenticateSpaceApiKey(
-  {
-    request,
-    spaceId,
-    requiredScope,
-  }: {
-    request: Request;
-    spaceId: number;
-    requiredScope: SpaceApiKeyScope;
-  },
+async function lookupPresentedSpaceApiKey(
+  request: Request,
   { db }: DbConfig,
 ): Promise<SpaceApiKeyAuthResult> {
   const presented = readSpaceApiKeyFromRequest(request);
@@ -69,32 +73,6 @@ export async function authenticateSpaceApiKey(
     return { ok: false, status: 401, error: 'Invalid or revoked API key.' };
   }
 
-  if (row.spaceId !== spaceId) {
-    return {
-      ok: false,
-      status: 403,
-      error: 'This API key is not valid for this space.',
-    };
-  }
-
-  const scopes = (row.scopes ?? []) as SpaceApiKeyScope[];
-  if (!scopes.includes(requiredScope)) {
-    return {
-      ok: false,
-      status: 403,
-      error: `This API key is missing the "${requiredScope}" scope.`,
-    };
-  }
-
-  // Telemetry, not an auth input: never make a valid key fail, or pay for a
-  // serialized write, because of it.
-  void touchSpaceApiKeyLastUsed({ id: row.id }, { db }).catch((error) => {
-    console.warn('Failed to record API key usage', {
-      keyId: row.id,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  });
-
   return {
     ok: true,
     apiKey: {
@@ -102,7 +80,65 @@ export async function authenticateSpaceApiKey(
       spaceId: row.spaceId,
       name: row.name,
       source: row.source,
-      scopes,
+      scopes: (row.scopes ?? []) as SpaceApiKeyScope[],
     },
   };
+}
+
+/**
+ * Verify an inbound integration key without a space path. Hosted MCP uses this
+ * then loads the key's space and checks intelligence scopes.
+ */
+export async function authenticateSpaceApiKeyUnscoped(
+  request: Request,
+  { db }: DbConfig,
+): Promise<SpaceApiKeyAuthResult> {
+  const result = await lookupPresentedSpaceApiKey(request, { db });
+  if (result.ok) {
+    recordSpaceApiKeyUsage(result.apiKey, { db });
+  }
+  return result;
+}
+
+/**
+ * Verify an inbound integration key against a single space and scope.
+ *
+ * The lookup is by SHA-256 digest, so no secret is ever used in a SQL
+ * comparison; the digests are then re-compared with a timing-safe check.
+ * A key issued for another space is rejected even though digests are globally
+ * unique, so a key can never be replayed against a space it does not own.
+ */
+export async function authenticateSpaceApiKey(
+  {
+    request,
+    spaceId,
+    requiredScope,
+  }: {
+    request: Request;
+    spaceId: number;
+    requiredScope: SpaceApiKeyScope;
+  },
+  { db }: DbConfig,
+): Promise<SpaceApiKeyAuthResult> {
+  const result = await lookupPresentedSpaceApiKey(request, { db });
+  if (!result.ok) return result;
+
+  if (result.apiKey.spaceId !== spaceId) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'This API key is not valid for this space.',
+    };
+  }
+
+  if (!spaceApiKeySatisfiesScope(result.apiKey.scopes, requiredScope)) {
+    return {
+      ok: false,
+      status: 403,
+      error: `This API key is missing the "${requiredScope}" scope.`,
+    };
+  }
+
+  recordSpaceApiKeyUsage(result.apiKey, { db });
+  return result;
 }

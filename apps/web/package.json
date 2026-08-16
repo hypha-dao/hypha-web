@@ -5,10 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --port 3000",
-    "build": "node --max-old-space-size=6144 ./node_modules/next/dist/bin/next build",
+    "build": "node --max-old-space-size=12288 ./node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "next lint",
-    "check-types": "node --max-old-space-size=6144 ./node_modules/typescript/bin/tsc --noEmit",
+    "check-types": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
     "postinstall": "if [ ! -f .env ] && [ -z \"$CI\" ]; then cp .env.template .env; fi"
   },
   "dependencies": {
@@ -21,6 +21,7 @@
     "@hypha-platform/evm": "workspace:*",
     "@hypha-platform/feature-flags": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
+    "@hypha-platform/mcp-server": "workspace:*",
     "@hypha-platform/notifications": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
     "@hypha-platform/ui": "workspace:*",

@@ -48,6 +48,8 @@ export type Document = {
   web3ProposalId: number | null;
   label?: string;
   status?: DocumentStatus;
+  /** Space Intelligence artifact id this documentation file is linked to. */
+  linkedArtifactId?: string | null;
 };
 
 export interface CreateAgreementInput {
@@ -61,6 +63,7 @@ export interface CreateAgreementInput {
   spaceId: number;
   creatorId: number;
   label?: string;
+  linkedArtifactId?: string;
 }
 
 export interface UpdateAgreementInput {
@@ -68,6 +71,7 @@ export interface UpdateAgreementInput {
   slug?: string;
   attachments?: (string | Attachment)[];
   web3ProposalId?: number | null;
+  linkedArtifactId?: string | null;
 }
 
 export type UpdateAgreementBySlugInput = {

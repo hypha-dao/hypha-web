@@ -1592,7 +1592,7 @@ export async function createChatStreamResult(
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
-    stopWhen: stepCountIs(6),
+    stopWhen: stepCountIs(8),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
 

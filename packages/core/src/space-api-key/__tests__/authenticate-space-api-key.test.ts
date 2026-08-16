@@ -10,11 +10,14 @@ vi.mock('../server/mutations', () => ({
 import {
   generateSpaceApiKey,
   hashSpaceApiKey,
+  looksLikeSpaceApiKey,
   safeEqualHashes,
   SPACE_API_KEY_PREFIX,
 } from '../generate-api-key';
+import { spaceApiKeySatisfiesScope } from '../types';
 import {
   authenticateSpaceApiKey,
+  authenticateSpaceApiKeyUnscoped,
   SPACE_API_KEY_HEADER,
 } from '../server/authenticate-space-api-key';
 import { findActiveSpaceApiKeyByHash } from '../server/queries';
@@ -46,6 +49,34 @@ function requestWithKey(key: string, header = SPACE_API_KEY_HEADER) {
     headers: { [header]: key },
   });
 }
+
+describe('looksLikeSpaceApiKey', () => {
+  it('accepts hyk_ plaintext and rejects Privy-shaped bearers', () => {
+    expect(looksLikeSpaceApiKey(generateSpaceApiKey().plaintext)).toBe(true);
+    expect(looksLikeSpaceApiKey('eyJhbGciOiJIUzI1NiJ9.abc.def')).toBe(false);
+    expect(looksLikeSpaceApiKey(undefined)).toBe(false);
+  });
+});
+
+describe('spaceApiKeySatisfiesScope', () => {
+  it('treats intelligence write as including read', () => {
+    expect(
+      spaceApiKeySatisfiesScope(['intelligence:write'], 'intelligence:read'),
+    ).toBe(true);
+    expect(
+      spaceApiKeySatisfiesScope(['intelligence:read'], 'intelligence:write'),
+    ).toBe(false);
+    expect(spaceApiKeySatisfiesScope(['signals:write'], 'signals:upvote')).toBe(
+      false,
+    );
+    expect(
+      spaceApiKeySatisfiesScope(['signals:write'], 'intelligence:read'),
+    ).toBe(false);
+    expect(
+      spaceApiKeySatisfiesScope(['signals:write'], 'intelligence:write'),
+    ).toBe(false);
+  });
+});
 
 describe('generateSpaceApiKey', () => {
   it('produces a namespaced key whose digest matches the plaintext', () => {
@@ -233,5 +264,118 @@ describe('authenticateSpaceApiKey', () => {
     );
 
     expect(result).toMatchObject({ ok: false, status: 401 });
+  });
+
+  it('lets intelligence:write satisfy intelligence:read', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['intelligence:write'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:read',
+      },
+      { db },
+    );
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('returns 403 when a signals key is used on an intelligence route', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['signals:write'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:read',
+      },
+      { db },
+    );
+
+    expect(result).toMatchObject({ ok: false, status: 403 });
+  });
+
+  it('returns 403 when an intelligence key belongs to another space', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({
+        keyHash: hash,
+        spaceId: 99,
+        scopes: ['intelligence:write'],
+      }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:write',
+      },
+      { db },
+    );
+
+    expect(result).toMatchObject({ ok: false, status: 403 });
+    expect(mockedTouch).not.toHaveBeenCalled();
+  });
+
+  it('does not let intelligence:read satisfy intelligence:write', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['intelligence:read'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:write',
+      },
+      { db },
+    );
+
+    expect(result).toMatchObject({ ok: false, status: 403 });
+  });
+});
+
+describe('authenticateSpaceApiKeyUnscoped', () => {
+  const mockedLookup = vi.mocked(findActiveSpaceApiKeyByHash);
+  const mockedTouch = vi.mocked(touchSpaceApiKeyLastUsed);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('resolves a valid key without a space path', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['intelligence:write'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKeyUnscoped(
+      requestWithKey(plaintext),
+      { db },
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      apiKey: { id: 7, spaceId: 42, source: 'contest-app' },
+    });
+    expect(mockedTouch).toHaveBeenCalledWith({ id: 7 }, { db });
+  });
+
+  it('returns 401 when no key is presented', async () => {
+    const result = await authenticateSpaceApiKeyUnscoped(
+      new Request('https://hypha.test/api/mcp', { method: 'POST' }),
+      { db },
+    );
+    expect(result).toMatchObject({ ok: false, status: 401 });
+    expect(mockedLookup).not.toHaveBeenCalled();
   });
 });
