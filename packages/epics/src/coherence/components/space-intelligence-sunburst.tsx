@@ -1,21 +1,25 @@
 'use client';
 
-import { FC, useEffect, useMemo, useRef } from 'react';
+import { FC, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import {
   buildIntelligenceSunburstTree,
+  filterSunburstInputsByPriority,
   SIGNAL_SUNBURST_UNCATEGORIZED_ID,
+  SUNBURST_PRIORITY_FILTERS,
   sunburstBoardColor,
   type IntelligenceGraph,
   type IntelligenceListItem,
   type IntelligenceSunburstNode,
   type SunburstBoardInput,
+  type SunburstPriorityFilter,
 } from '@hypha-platform/core/intelligence';
 import {
   resolveDefaultBoard,
   useFindCoherences,
   useSignalWorkflow,
 } from '@hypha-platform/core/client';
+import { Slider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
@@ -110,6 +114,56 @@ function openSunburstNode(
   }
 }
 
+function priorityFilterLabel(
+  t: ReturnType<typeof useTranslations>,
+  filter: SunburstPriorityFilter,
+) {
+  if (filter === 'all') return t('all');
+  return t(`priorities.${filter}` as never);
+}
+
+function SunburstPrioritySlider({
+  value,
+  onChange,
+}: {
+  value: SunburstPriorityFilter;
+  onChange: (next: SunburstPriorityFilter) => void;
+}) {
+  const t = useTranslations('CoherenceTab');
+  const index = Math.max(0, SUNBURST_PRIORITY_FILTERS.indexOf(value));
+  return (
+    <div className="mx-auto w-full max-w-md px-1">
+      <Slider
+        min={0}
+        max={SUNBURST_PRIORITY_FILTERS.length - 1}
+        step={1}
+        value={[index]}
+        onValueChange={(next) => {
+          const step = SUNBURST_PRIORITY_FILTERS[next[0] ?? 0];
+          if (step) onChange(step);
+        }}
+        aria-label={t('spaceIntelligenceSunburstPriority')}
+        aria-valuetext={priorityFilterLabel(t, value)}
+      />
+      <div className="mt-1.5 flex justify-between gap-1">
+        {SUNBURST_PRIORITY_FILTERS.map((step, stepIndex) => (
+          <button
+            key={step}
+            type="button"
+            className={cn(
+              'min-w-0 flex-1 text-center text-[11px] leading-tight text-muted-foreground hover:text-foreground',
+              stepIndex === index && 'font-semibold text-foreground',
+            )}
+            onClick={() => onChange(step)}
+          >
+            {priorityFilterLabel(t, step)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function categoryColor(node: LayoutNode, boards: SunburstBoardInput[]): string {
   let current: LayoutNode | null = node;
   while (current && current.depth > 1) {
@@ -131,6 +185,8 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
   const router = useRouter();
   const params = useParams<{ lang: string; id: string; tab?: string }>();
   const hostRef = useRef<HTMLDivElement>(null);
+  const [priorityFilter, setPriorityFilter] =
+    useState<SunburstPriorityFilter>('all');
   const { coherences, isLoading } = useFindCoherences({
     spaceSlug,
     includeArchived: !hideArchived,
@@ -171,22 +227,28 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
         },
       ];
     });
-    return buildIntelligenceSunburstTree({
-      rootName: t('spaceIntelligence'),
-      defaultBoard,
-      boards,
+    const filtered = filterSunburstInputsByPriority({
+      filter: priorityFilter,
       signals: (coherences ?? [])
         .filter((item) => item.slug?.trim())
         .map((item) => ({
           slug: item.slug as string,
           title: item.title,
           board: item.board,
+          priority: item.priority,
         })),
       artifacts: artifacts.map((item) => ({
         id: item.id,
         title: item.title,
         linked_signals: item.linked_signals,
       })),
+    });
+    return buildIntelligenceSunburstTree({
+      rootName: t('spaceIntelligence'),
+      defaultBoard,
+      boards,
+      signals: filtered.signals,
+      artifacts: filtered.artifacts,
       files,
     });
   }, [
@@ -196,6 +258,7 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
     defaultBoard,
     graph.edges,
     graph.nodes,
+    priorityFilter,
     t,
   ]);
 
@@ -424,14 +487,6 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
     );
   }
 
-  if (!hasSlices) {
-    return (
-      <p className="text-2 text-muted-foreground">
-        {t('spaceIntelligenceSunburstEmpty')}
-      </p>
-    );
-  }
-
   return (
     <div
       className={cn(
@@ -439,30 +494,44 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
         className,
       )}
     >
-      <div ref={hostRef} className="mx-auto w-full max-w-[720px]" />
-      <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2">
-        {legendBoards.map((board) => {
-          const active = usedBoards.has(board.slug);
-          return (
-            <li
-              key={board.slug}
-              className={cn(
-                'inline-flex items-center gap-1.5 text-[11px]',
-                active ? 'text-foreground' : 'text-muted-foreground/60',
-              )}
-            >
-              <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: sunburstBoardColor(board.slug, boards),
-                }}
-                aria-hidden
-              />
-              {board.name}
-            </li>
-          );
-        })}
-      </ul>
+      <SunburstPrioritySlider
+        value={priorityFilter}
+        onChange={setPriorityFilter}
+      />
+      {hasSlices ? (
+        <div ref={hostRef} className="mx-auto w-full max-w-[720px]" />
+      ) : (
+        <p className="text-2 px-2 py-8 text-center text-muted-foreground">
+          {priorityFilter === 'all'
+            ? t('spaceIntelligenceSunburstEmpty')
+            : t('spaceIntelligenceSunburstEmptyPriority')}
+        </p>
+      )}
+      {hasSlices ? (
+        <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2">
+          {legendBoards.map((board) => {
+            const active = usedBoards.has(board.slug);
+            return (
+              <li
+                key={board.slug}
+                className={cn(
+                  'inline-flex items-center gap-1.5 text-[11px]',
+                  active ? 'text-foreground' : 'text-muted-foreground/60',
+                )}
+              >
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor: sunburstBoardColor(board.slug, boards),
+                  }}
+                  aria-hidden
+                />
+                {board.name}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 };

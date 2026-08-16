@@ -40,7 +40,55 @@ export type SunburstSignalInput = {
   slug: string;
   title: string;
   board?: string | null;
+  priority?: string | null;
 };
+
+export const SUNBURST_PRIORITY_FILTERS = [
+  'all',
+  'critical',
+  'high',
+  'medium',
+  'low',
+] as const;
+
+export type SunburstPriorityFilter = (typeof SUNBURST_PRIORITY_FILTERS)[number];
+
+export function sunburstSignalMatchesPriority(
+  priority: string | null | undefined,
+  filter: SunburstPriorityFilter,
+): boolean {
+  if (filter === 'all') return true;
+  return (priority ?? '').trim().toLowerCase() === filter;
+}
+
+/** Exact-match priority filter. Unlinked artifacts stay only when filter is `all`. */
+export function filterSunburstInputsByPriority(input: {
+  signals: SunburstSignalInput[];
+  artifacts: SunburstArtifactInput[];
+  filter: SunburstPriorityFilter;
+}): {
+  signals: SunburstSignalInput[];
+  artifacts: SunburstArtifactInput[];
+} {
+  if (input.filter === 'all') {
+    return { signals: input.signals, artifacts: input.artifacts };
+  }
+  const signals = input.signals.filter((signal) =>
+    sunburstSignalMatchesPriority(signal.priority, input.filter),
+  );
+  const signalSlugs = new Set(
+    signals
+      .map((signal) => extractLinkedSignalSlug(signal.slug))
+      .filter(Boolean),
+  );
+  const artifacts = input.artifacts.filter((artifact) =>
+    (artifact.linked_signals ?? []).some((raw) => {
+      const slug = extractLinkedSignalSlug(raw);
+      return Boolean(slug && signalSlugs.has(slug));
+    }),
+  );
+  return { signals, artifacts };
+}
 
 export type SunburstArtifactInput = {
   id: string;

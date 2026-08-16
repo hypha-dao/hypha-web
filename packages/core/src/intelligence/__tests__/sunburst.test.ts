@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildIntelligenceSunburstTree,
+  filterSunburstInputsByPriority,
   resolveSunburstBoard,
   SUNBURST_BOARD_PALETTE,
 } from '../sunburst';
@@ -128,5 +129,60 @@ describe('buildIntelligenceSunburstTree', () => {
     expect(tree.children?.map((child) => child.categoryId)).toEqual([
       'product',
     ]);
+  });
+});
+
+describe('filterSunburstInputsByPriority', () => {
+  it('keeps only matching-priority signals and their artifacts', () => {
+    const filtered = filterSunburstInputsByPriority({
+      filter: 'critical',
+      signals: [
+        {
+          slug: 'coh-crit',
+          title: 'Outage',
+          board: 'product',
+          priority: 'critical',
+        },
+        {
+          slug: 'coh-high',
+          title: 'Soon',
+          board: 'outreach',
+          priority: 'high',
+        },
+      ],
+      artifacts: [
+        {
+          id: 'linked-crit',
+          title: 'Outage notes',
+          linked_signals: ['coh-crit'],
+        },
+        {
+          id: 'linked-high',
+          title: 'Soon notes',
+          linked_signals: ['coh-high'],
+        },
+        { id: 'orphan', title: 'Loose insight', linked_signals: [] },
+      ],
+    });
+    expect(filtered.signals.map((signal) => signal.slug)).toEqual(['coh-crit']);
+    expect(filtered.artifacts.map((artifact) => artifact.id)).toEqual([
+      'linked-crit',
+    ]);
+  });
+
+  it('leaves signals and artifacts unchanged when filter is all', () => {
+    const signals = [
+      { slug: 'coh-high', title: 'Soon', priority: 'high' as const },
+    ];
+    const artifacts = [
+      { id: 'orphan', title: 'Loose insight', linked_signals: [] },
+    ];
+    const filtered = filterSunburstInputsByPriority({
+      filter: 'all',
+      signals,
+      artifacts,
+    });
+    expect(filtered.signals).toBe(signals);
+    expect(filtered.artifacts).toBe(artifacts);
   });
 });

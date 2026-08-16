@@ -43,9 +43,12 @@ export type {
 export {
   SIGNAL_SUNBURST_UNCATEGORIZED_ID,
   SUNBURST_BOARD_PALETTE,
+  SUNBURST_PRIORITY_FILTERS,
   buildIntelligenceSunburstTree,
+  filterSunburstInputsByPriority,
   resolveSunburstBoard,
   sunburstBoardColor,
+  sunburstSignalMatchesPriority,
 } from './sunburst';
 export type {
   IntelligenceSunburstKind,
@@ -53,5 +56,6 @@ export type {
   SunburstArtifactInput,
   SunburstBoardInput,
   SunburstFileInput,
+  SunburstPriorityFilter,
   SunburstSignalInput,
 } from './sunburst';

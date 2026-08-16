@@ -3408,6 +3408,8 @@
     "spaceIntelligenceGraphZoomOut": "Zoom out",
     "spaceIntelligenceSunburstAria": "Space intelligence sunburst chart",
     "spaceIntelligenceSunburstEmpty": "No signals, artifacts, or files to show on the sunburst yet.",
+    "spaceIntelligenceSunburstPriority": "Filter sunburst by priority",
+    "spaceIntelligenceSunburstEmptyPriority": "No signals at this priority to show on the sunburst.",
     "spaceIntelligenceOpenArtifact": "Open {title}",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

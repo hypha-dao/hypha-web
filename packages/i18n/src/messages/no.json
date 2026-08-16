@@ -3405,6 +3405,8 @@
     "spaceIntelligenceGraphZoomOut": "Zoom ut",
     "spaceIntelligenceSunburstAria": "Sunburst-diagram for Space Intelligence",
     "spaceIntelligenceSunburstEmpty": "Ingen signaler, artefakter eller filer å vise i sunburst-diagrammet ennå.",
+    "spaceIntelligenceSunburstPriority": "Filtrer sunburst etter prioritet",
+    "spaceIntelligenceSunburstEmptyPriority": "Ingen signaler med denne prioriteten å vise i sunburst-diagrammet.",
     "spaceIntelligenceOpenArtifact": "Åpne {title}",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

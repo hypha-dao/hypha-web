@@ -3404,6 +3404,8 @@
     "spaceIntelligenceGraphZoomOut": "Verkleinern",
     "spaceIntelligenceSunburstAria": "Sunburst-Diagramm der Space Intelligence",
     "spaceIntelligenceSunburstEmpty": "Noch keine Signals, Artefakte oder Dateien für das Sunburst-Diagramm.",
+    "spaceIntelligenceSunburstPriority": "Sunburst nach Priorität filtern",
+    "spaceIntelligenceSunburstEmptyPriority": "Keine Signals mit dieser Priorität für das Sunburst-Diagramm.",
     "spaceIntelligenceOpenArtifact": "{title} öffnen",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

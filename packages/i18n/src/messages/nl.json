@@ -3406,6 +3406,8 @@
     "spaceIntelligenceGraphZoomOut": "Uitzoomen",
     "spaceIntelligenceSunburstAria": "Sunburst-diagram van Space Intelligence",
     "spaceIntelligenceSunburstEmpty": "Nog geen signals, artefacten of bestanden om in het sunburst-diagram te tonen.",
+    "spaceIntelligenceSunburstPriority": "Sunburst filteren op prioriteit",
+    "spaceIntelligenceSunburstEmptyPriority": "Geen signals met deze prioriteit om in het sunburst-diagram te tonen.",
     "spaceIntelligenceOpenArtifact": "{title} openen",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",

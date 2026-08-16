@@ -3387,6 +3387,8 @@
     "spaceIntelligenceGraphZoomOut": "Намали",
     "spaceIntelligenceSunburstAria": "Sunburst графикон на Space Intelligence",
     "spaceIntelligenceSunburstEmpty": "Сè уште нема сигнали, артефакти или датотеки за sunburst графиконот.",
+    "spaceIntelligenceSunburstPriority": "Филтрирај sunburst по приоритет",
+    "spaceIntelligenceSunburstEmptyPriority": "Нема сигнали со овој приоритет за sunburst графиконот.",
     "spaceIntelligenceOpenArtifact": "Отвори {title}",
     "spaceIntelligenceNew": "New artifact",
     "spaceIntelligenceCancelCreate": "Cancel",
