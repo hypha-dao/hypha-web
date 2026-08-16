@@ -2,6 +2,7 @@ export * from './types';
 export * from './patch-types';
 export * from './paths';
 export * from './app-identity';
+export * from './iba-access';
 export * from './packs';
 export * from './validation';
 export * from './content-sha';

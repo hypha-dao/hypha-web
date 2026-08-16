@@ -1,4 +1,7 @@
-import { resolveCanonicalSourceApp } from '@hypha-platform/core/intelligence';
+import {
+  IBA_CANNOT_PUBLISH,
+  resolveCanonicalSourceApp,
+} from '@hypha-platform/core/intelligence';
 import { mcpAuthToken, resolveMcpSourceApp } from './memory-write-identity';
 
 export const IBA_MEMORY_MCP_TOOLS = [
@@ -41,7 +44,7 @@ export function memoryPublishDenied(
   allowPublish: boolean,
 ): string | undefined {
   if (mode === 'publish' && !allowPublish) {
-    return 'Intelligence API keys cannot publish; create a draft instead.';
+    return IBA_CANNOT_PUBLISH;
   }
   return undefined;
 }

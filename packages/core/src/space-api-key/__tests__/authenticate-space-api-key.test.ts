@@ -69,6 +69,12 @@ describe('spaceApiKeySatisfiesScope', () => {
     expect(spaceApiKeySatisfiesScope(['signals:write'], 'signals:upvote')).toBe(
       false,
     );
+    expect(
+      spaceApiKeySatisfiesScope(['signals:write'], 'intelligence:read'),
+    ).toBe(false);
+    expect(
+      spaceApiKeySatisfiesScope(['signals:write'], 'intelligence:write'),
+    ).toBe(false);
   });
 });
 
@@ -276,6 +282,47 @@ describe('authenticateSpaceApiKey', () => {
     );
 
     expect(result.ok).toBe(true);
+  });
+
+  it('returns 403 when a signals key is used on an intelligence route', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['signals:write'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:read',
+      },
+      { db },
+    );
+
+    expect(result).toMatchObject({ ok: false, status: 403 });
+  });
+
+  it('returns 403 when an intelligence key belongs to another space', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({
+        keyHash: hash,
+        spaceId: 99,
+        scopes: ['intelligence:write'],
+      }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:write',
+      },
+      { db },
+    );
+
+    expect(result).toMatchObject({ ok: false, status: 403 });
+    expect(mockedTouch).not.toHaveBeenCalled();
   });
 
   it('does not let intelligence:read satisfy intelligence:write', async () => {

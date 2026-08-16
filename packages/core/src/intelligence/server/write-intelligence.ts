@@ -3,6 +3,7 @@ import 'server-only';
 import type { DatabaseInstance } from '../../common/server/types';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { gateIntelligenceSpaceAccess } from './space-access';
+import { ibaWriteDeniesPublish, IBA_CANNOT_PUBLISH } from '../iba-access';
 import type {
   IntelligenceArtifact,
   IntelligenceFrontmatter,
@@ -125,10 +126,10 @@ export async function writeIntelligenceBySpaceSlug(
     return membership;
   }
 
-  if (input.skipMembershipCheck && input.promoteDraft) {
+  if (ibaWriteDeniesPublish(input)) {
     return {
       access: 'denied',
-      message: 'Intelligence API keys cannot publish; create a draft instead.',
+      message: IBA_CANNOT_PUBLISH,
       space_slug: spaceSlug,
     };
   }

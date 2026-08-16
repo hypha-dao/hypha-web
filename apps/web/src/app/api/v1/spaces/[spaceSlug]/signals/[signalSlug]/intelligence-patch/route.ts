@@ -11,6 +11,10 @@ import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import {
+  ibaHttpCreateDenial,
+  ibaPatchActionDenied,
+} from '@hypha-platform/core/intelligence';
+import {
   authorizeIntelligenceRequest,
   intelligenceWriteFlags,
   isSpaceApiKeyRequest,
@@ -104,14 +108,9 @@ export async function POST(
     const action = body.action ?? 'propose';
 
     if (isSpaceApiKeyRequest(request)) {
-      if (action !== 'propose') {
-        return NextResponse.json(
-          {
-            error:
-              'Intelligence API keys cannot approve or reject patches; a space member must do that.',
-          },
-          { status: 403 },
-        );
+      const actionDenied = ibaPatchActionDenied(action);
+      if (actionDenied) {
+        return NextResponse.json({ error: actionDenied }, { status: 403 });
       }
     } else {
       const gated = await gateSpace(request, spaceSlug);
@@ -140,17 +139,14 @@ export async function POST(
           'write',
         );
         if ('response' in authorized) return authorized.response;
-        if (
-          authorized.auth.kind === 'iba' &&
-          body.source_app &&
-          body.source_app !== authorized.auth.apiKey.source
-        ) {
-          return NextResponse.json(
-            {
-              error: `source_app "${body.source_app}" does not match authenticated app identity "${authorized.auth.apiKey.source}".`,
-            },
-            { status: 403 },
-          );
+        if (authorized.auth.kind === 'iba') {
+          const spoofed = ibaHttpCreateDenial({
+            claimedSourceApp: body.source_app,
+            keySource: authorized.auth.apiKey.source,
+          });
+          if (spoofed) {
+            return NextResponse.json({ error: spoofed }, { status: 403 });
+          }
         }
         const flags = intelligenceWriteFlags(authorized.auth);
         skipMembershipCheck = flags.skipMembershipCheck;

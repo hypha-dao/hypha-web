@@ -7,6 +7,7 @@ import {
   buildIntelligenceGraphForSpace,
 } from '@hypha-platform/core/server';
 import {
+  ibaHttpCreateDenial,
   slugifyIntelligenceId,
   type IntelligenceGraph,
 } from '@hypha-platform/core/intelligence';
@@ -127,32 +128,15 @@ function ibaCreateDenied(
   body: z.infer<typeof ibaCreateSchema>,
 ): NextResponse | null {
   if (auth.kind !== 'iba') return null;
-  if (body.mode === 'publish') {
-    return NextResponse.json(
-      {
-        error: 'Intelligence API keys cannot publish; create a draft instead.',
-      },
-      { status: 403 },
-    );
-  }
-  if (body.expectedSha || body.expected_sha) {
-    return NextResponse.json(
-      {
-        error:
-          'Intelligence API keys cannot update published artifacts. Create a draft, or propose a patch from a signal.',
-      },
-      { status: 403 },
-    );
-  }
-  if (body.source_app && body.source_app !== auth.apiKey.source) {
-    return NextResponse.json(
-      {
-        error: `source_app "${body.source_app}" does not match authenticated app identity "${auth.apiKey.source}".`,
-      },
-      { status: 403 },
-    );
-  }
-  return null;
+  const error = ibaHttpCreateDenial({
+    mode: body.mode,
+    expectedSha: body.expectedSha,
+    expected_sha: body.expected_sha,
+    claimedSourceApp: body.source_app,
+    keySource: auth.apiKey.source,
+  });
+  if (!error) return null;
+  return NextResponse.json({ error }, { status: 403 });
 }
 
 export async function POST(

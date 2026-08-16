@@ -35,6 +35,14 @@ export {
   INTELLIGENCE_MARKDOWN_MAX_BYTES,
 } from './app-identity';
 export type { ResolveCanonicalSourceAppResult } from './app-identity';
+export {
+  IBA_CANNOT_APPROVE_PATCH,
+  IBA_CANNOT_PUBLISH,
+  IBA_CANNOT_SHA_UPDATE_ON_CREATE,
+  ibaHttpCreateDenial,
+  ibaPatchActionDenied,
+  ibaWriteDeniesPublish,
+} from './iba-access';
 export type {
   IntelligenceGraph,
   IntelligenceGraphNode,

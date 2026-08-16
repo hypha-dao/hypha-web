@@ -16,6 +16,7 @@ import {
   artifactPatchPath,
   frameworkPackPrefix,
   matchCallerIntelligencePath,
+  isAllowedIntelligenceMarkdownPath,
   slugifyIntelligenceId,
   spaceManifestPath,
   spaceIntelligencePrefix,
@@ -143,6 +144,27 @@ describe('intelligence paths', () => {
           'intelligence/spaces/belica-5-0/assessments/stakeholder-assessment-belica-2026-07.json',
       }).ok,
     ).toBe(false);
+  });
+
+  it('rejects encoded traversal and other-space prefixes', () => {
+    expect(
+      isAllowedIntelligenceMarkdownPath(
+        'belica-5-0',
+        'intelligence/spaces/belica-5-0/assessments/%2e%2e/secret.md',
+      ),
+    ).toBe(false);
+    expect(
+      isAllowedIntelligenceMarkdownPath(
+        'belica-5-0',
+        'intelligence/spaces/other-space/assessments/x.md',
+      ),
+    ).toBe(false);
+    expect(
+      isAllowedIntelligenceMarkdownPath(
+        'belica-5-0',
+        'intelligence/spaces/belica-5-0/assessments/ok.md',
+      ),
+    ).toBe(true);
   });
 });
 
