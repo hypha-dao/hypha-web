@@ -1,10 +1,9 @@
 import 'server-only';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { findSpaceBySlug } from '../../space/server/queries';
-import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import type { IntelligenceListItem, IntelligenceManifestEntry } from '../types';
+import { gateIntelligenceSpaceAccess } from './space-access';
 import { excerptIntelligenceBody } from '../excerpt';
 import { assertSafeSpaceSlug } from '../paths';
 import { readSpaceIntelligenceManifest } from './manifest';
@@ -21,6 +20,7 @@ export type ListIntelligenceBySpaceSlugInput = {
   search?: string;
   includeArchived?: boolean;
   authToken?: string;
+  skipMembershipCheck?: boolean;
 };
 
 export type ListIntelligenceBySpaceSlugResult =
@@ -74,22 +74,9 @@ export async function listIntelligenceBySpaceSlug(
     };
   }
 
-  if (space.web3SpaceId != null) {
-    if (!canConvertToBigInt(space.web3SpaceId)) {
-      return {
-        access: 'denied',
-        message: `Space "${space.slug}" has an invalid on-chain space id.`,
-        space_slug: spaceSlug,
-      };
-    }
-    const gate = await checkSpaceAccessForSpace(space, input.authToken);
-    if (!gate.hasAccess) {
-      return {
-        access: 'denied',
-        message: gate.message,
-        space_slug: spaceSlug,
-      };
-    }
+  const membership = await gateIntelligenceSpaceAccess(space, input, spaceSlug);
+  if (membership.access === 'denied') {
+    return membership;
   }
 
   const { configured, manifest } = await readSpaceIntelligenceManifest(

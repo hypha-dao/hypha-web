@@ -16,6 +16,7 @@ import {
   artifactPatchPath,
   frameworkPackPrefix,
   matchCallerIntelligencePath,
+  slugifyIntelligenceId,
   spaceManifestPath,
   spaceIntelligencePrefix,
 } from '../paths';
@@ -62,6 +63,13 @@ The village board is an anchor ally.
 `;
 
 describe('intelligence paths', () => {
+  it('slugifies titles into artifact ids', () => {
+    expect(slugifyIntelligenceId('Stakeholder Assessment — Belica 5.0')).toBe(
+      'stakeholder-assessment-belica-5-0',
+    );
+    expect(slugifyIntelligenceId('   ')).toBe('artifact');
+  });
+
   it('builds space-scoped private prefix', () => {
     expect(spaceIntelligencePrefix('belica-5-0')).toBe(
       'intelligence/spaces/belica-5-0/',

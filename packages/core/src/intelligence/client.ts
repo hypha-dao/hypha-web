@@ -40,6 +40,7 @@ export type {
   IntelligenceGraphNode,
   IntelligenceGraphEdge,
 } from './graph';
+export { slugifyIntelligenceId } from './paths';
 export {
   SIGNAL_SUNBURST_UNCATEGORIZED_ID,
   SUNBURST_BOARD_PALETTE,

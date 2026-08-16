@@ -9,6 +9,7 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { isSpaceApiKeyRequest } from '../_lib/authorize-intelligence';
 
 type Params = { spaceSlug: string };
 
@@ -47,6 +48,12 @@ export async function GET(
 ) {
   const { spaceSlug } = await params;
   try {
+    if (isSpaceApiKeyRequest(request)) {
+      return NextResponse.json(
+        { error: 'Intelligence API keys cannot manage packs.' },
+        { status: 403 },
+      );
+    }
     const gated = await gateSpace(request, spaceSlug);
     if (!gated.ok) return gated.response;
 
@@ -96,6 +103,12 @@ export async function POST(
 ) {
   const { spaceSlug } = await params;
   try {
+    if (isSpaceApiKeyRequest(request)) {
+      return NextResponse.json(
+        { error: 'Intelligence API keys cannot manage packs.' },
+        { status: 403 },
+      );
+    }
     const gated = await gateSpace(request, spaceSlug);
     if (!gated.ok) return gated.response;
 

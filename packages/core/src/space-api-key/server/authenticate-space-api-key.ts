@@ -1,6 +1,7 @@
 import type { DbConfig } from '../../server';
 import { hashSpaceApiKey, safeEqualHashes } from '../generate-api-key';
 import type { SpaceApiKeyScope } from '../types';
+import { spaceApiKeySatisfiesScope } from '../types';
 import { findActiveSpaceApiKeyByHash } from './queries';
 import { touchSpaceApiKeyLastUsed } from './mutations';
 
@@ -78,7 +79,7 @@ export async function authenticateSpaceApiKey(
   }
 
   const scopes = (row.scopes ?? []) as SpaceApiKeyScope[];
-  if (!scopes.includes(requiredScope)) {
+  if (!spaceApiKeySatisfiesScope(scopes, requiredScope)) {
     return {
       ok: false,
       status: 403,

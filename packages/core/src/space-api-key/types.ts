@@ -1,9 +1,22 @@
 export const SPACE_API_KEY_SCOPES = [
   'signals:write',
   'signals:upvote',
+  'intelligence:read',
+  'intelligence:write',
 ] as const;
 
 export type SpaceApiKeyScope = (typeof SPACE_API_KEY_SCOPES)[number];
+
+/** `intelligence:write` implies `intelligence:read`. Signal scopes stay exact. */
+export function spaceApiKeySatisfiesScope(
+  scopes: readonly string[],
+  required: SpaceApiKeyScope,
+): boolean {
+  if (scopes.includes(required)) return true;
+  return (
+    required === 'intelligence:read' && scopes.includes('intelligence:write')
+  );
+}
 
 /** Key metadata safe to return over the wire — never includes the digest. */
 export type SpaceApiKeySummary = {

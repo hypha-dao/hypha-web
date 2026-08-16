@@ -10,9 +10,11 @@ vi.mock('../server/mutations', () => ({
 import {
   generateSpaceApiKey,
   hashSpaceApiKey,
+  looksLikeSpaceApiKey,
   safeEqualHashes,
   SPACE_API_KEY_PREFIX,
 } from '../generate-api-key';
+import { spaceApiKeySatisfiesScope } from '../types';
 import {
   authenticateSpaceApiKey,
   SPACE_API_KEY_HEADER,
@@ -46,6 +48,28 @@ function requestWithKey(key: string, header = SPACE_API_KEY_HEADER) {
     headers: { [header]: key },
   });
 }
+
+describe('looksLikeSpaceApiKey', () => {
+  it('accepts hyk_ plaintext and rejects Privy-shaped bearers', () => {
+    expect(looksLikeSpaceApiKey(generateSpaceApiKey().plaintext)).toBe(true);
+    expect(looksLikeSpaceApiKey('eyJhbGciOiJIUzI1NiJ9.abc.def')).toBe(false);
+    expect(looksLikeSpaceApiKey(undefined)).toBe(false);
+  });
+});
+
+describe('spaceApiKeySatisfiesScope', () => {
+  it('treats intelligence write as including read', () => {
+    expect(
+      spaceApiKeySatisfiesScope(['intelligence:write'], 'intelligence:read'),
+    ).toBe(true);
+    expect(
+      spaceApiKeySatisfiesScope(['intelligence:read'], 'intelligence:write'),
+    ).toBe(false);
+    expect(spaceApiKeySatisfiesScope(['signals:write'], 'signals:upvote')).toBe(
+      false,
+    );
+  });
+});
 
 describe('generateSpaceApiKey', () => {
   it('produces a namespaced key whose digest matches the plaintext', () => {
@@ -233,5 +257,41 @@ describe('authenticateSpaceApiKey', () => {
     );
 
     expect(result).toMatchObject({ ok: false, status: 401 });
+  });
+
+  it('lets intelligence:write satisfy intelligence:read', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['intelligence:write'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:read',
+      },
+      { db },
+    );
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('does not let intelligence:read satisfy intelligence:write', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['intelligence:read'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKey(
+      {
+        request: requestWithKey(plaintext),
+        spaceId: 42,
+        requiredScope: 'intelligence:write',
+      },
+      { db },
+    );
+
+    expect(result).toMatchObject({ ok: false, status: 403 });
   });
 });

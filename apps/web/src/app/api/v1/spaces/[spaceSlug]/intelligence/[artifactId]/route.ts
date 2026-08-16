@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
-  findSpaceBySlug,
   readIntelligenceBySpaceSlug,
   deleteIntelligenceBySpaceSlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import {
+  authorizeIntelligenceRequest,
+  intelligenceWriteFlags,
+} from '../_lib/authorize-intelligence';
 
 type Params = { spaceSlug: string; artifactId: string };
 
@@ -17,26 +18,21 @@ export async function GET(
 ) {
   const { spaceSlug, artifactId } = await params;
   try {
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
-    }
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) {
-        return response;
-      }
-    }
+    const gated = await authorizeIntelligenceRequest(
+      request,
+      spaceSlug,
+      'read',
+    );
+    if ('response' in gated) return gated.response;
 
-    const authHeader = request.headers.get('authorization');
-    const bearer =
-      authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || undefined;
-
+    const flags = intelligenceWriteFlags(gated.auth);
     const result = await readIntelligenceBySpaceSlug(
-      { spaceSlug, artifactId, authToken: bearer },
+      {
+        spaceSlug,
+        artifactId,
+        authToken: flags.authToken,
+        skipMembershipCheck: flags.skipMembershipCheck,
+      },
       { db },
     );
 
@@ -75,23 +71,12 @@ export async function DELETE(
 ) {
   const { spaceSlug, artifactId } = await params;
   try {
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
-    }
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) {
-        return response;
-      }
-    }
-
-    const authHeader = request.headers.get('authorization');
-    const bearer =
-      authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || undefined;
+    const gated = await authorizeIntelligenceRequest(
+      request,
+      spaceSlug,
+      'write',
+    );
+    if ('response' in gated) return gated.response;
 
     let expectedSha = request.nextUrl.searchParams.get('expectedSha')?.trim();
     if (!expectedSha) {
@@ -108,8 +93,15 @@ export async function DELETE(
       );
     }
 
+    const flags = intelligenceWriteFlags(gated.auth);
     const result = await deleteIntelligenceBySpaceSlug(
-      { spaceSlug, artifactId, expectedSha, authToken: bearer },
+      {
+        spaceSlug,
+        artifactId,
+        expectedSha,
+        authToken: flags.authToken,
+        skipMembershipCheck: flags.skipMembershipCheck,
+      },
       { db },
     );
 

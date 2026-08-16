@@ -1,45 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import {
-  findSpaceBySlug,
   listIntelligenceBySpaceSlug,
   writeIntelligenceBySpaceSlug,
   buildIntelligenceGraphForSpace,
 } from '@hypha-platform/core/server';
-import type { IntelligenceGraph } from '@hypha-platform/core/intelligence';
+import {
+  slugifyIntelligenceId,
+  type IntelligenceGraph,
+} from '@hypha-platform/core/intelligence';
 import { db } from '@hypha-platform/storage-postgres';
-import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import {
+  authorizeIntelligenceRequest,
+  intelligenceWriteFlags,
+  type IntelligenceHttpAuth,
+} from './_lib/authorize-intelligence';
 
 type Params = { spaceSlug: string };
 
-async function gateSpace(request: NextRequest, spaceSlug: string) {
-  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-  if (!space) {
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { error: 'Space not found' },
-        { status: 404 },
-      ),
-    };
-  }
-  if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-    const { hasAccess, response } = await checkSpaceAccess(
-      request,
-      space.web3SpaceId as number,
-    );
-    if (!hasAccess && response) {
-      return { ok: false as const, response };
-    }
-  }
-  return { ok: true as const, space };
-}
+const ibaCreateSchema = z
+  .object({
+    title: z.string().trim().min(1).max(500).optional(),
+    type: z.string().trim().min(1).max(64).optional(),
+    body: z.string().max(400_000).optional(),
+    tags: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+    related: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
+    linked_signals: z
+      .array(z.string().trim().min(1).max(200))
+      .max(50)
+      .optional(),
+    id: z.string().trim().min(1).max(80).optional(),
+    markdown: z.string().min(1).max(400_000).optional(),
+    source_app: z.string().trim().min(1).max(200).optional(),
+    mode: z.enum(['draft', 'publish']).optional(),
+    expectedSha: z.string().optional(),
+    expected_sha: z.string().optional(),
+    frontmatter: z.record(z.unknown()).optional(),
+  })
+  .strict();
 
-function bearerFrom(request: NextRequest): string | undefined {
-  const authHeader = request.headers.get('authorization');
-  const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
-  return bearerMatch?.[1]?.trim() || undefined;
+function writeErrorResponse(result: {
+  access: 'denied' | 'conflict' | 'misconfigured';
+  message: string;
+  currentSha?: string;
+}) {
+  if (result.access === 'conflict') {
+    return NextResponse.json(
+      { error: result.message, currentSha: result.currentSha },
+      { status: 409 },
+    );
+  }
+  if (result.access === 'misconfigured') {
+    return NextResponse.json({ error: result.message }, { status: 503 });
+  }
+  return NextResponse.json({ error: result.message }, { status: 403 });
 }
 
 export async function GET(
@@ -48,10 +63,15 @@ export async function GET(
 ) {
   const { spaceSlug } = await params;
   try {
-    const gated = await gateSpace(request, spaceSlug);
-    if (!gated.ok) return gated.response;
+    const gated = await authorizeIntelligenceRequest(
+      request,
+      spaceSlug,
+      'read',
+    );
+    if ('response' in gated) return gated.response;
 
     const url = new URL(request.url);
+    const flags = intelligenceWriteFlags(gated.auth);
     const listed = await listIntelligenceBySpaceSlug(
       {
         spaceSlug,
@@ -64,7 +84,8 @@ export async function GET(
         includeArchived:
           url.searchParams.get('includeArchived') === '1' ||
           url.searchParams.get('includeArchived') === 'true',
-        authToken: bearerFrom(request),
+        authToken: flags.authToken,
+        skipMembershipCheck: flags.skipMembershipCheck,
       },
       { db },
     );
@@ -101,16 +122,152 @@ export async function GET(
   }
 }
 
+function ibaCreateDenied(
+  auth: IntelligenceHttpAuth,
+  body: z.infer<typeof ibaCreateSchema>,
+): NextResponse | null {
+  if (auth.kind !== 'iba') return null;
+  if (body.mode === 'publish') {
+    return NextResponse.json(
+      {
+        error: 'Intelligence API keys cannot publish; create a draft instead.',
+      },
+      { status: 403 },
+    );
+  }
+  if (body.expectedSha || body.expected_sha) {
+    return NextResponse.json(
+      {
+        error:
+          'Intelligence API keys cannot update published artifacts. Create a draft, or propose a patch from a signal.',
+      },
+      { status: 403 },
+    );
+  }
+  if (body.source_app && body.source_app !== auth.apiKey.source) {
+    return NextResponse.json(
+      {
+        error: `source_app "${body.source_app}" does not match authenticated app identity "${auth.apiKey.source}".`,
+      },
+      { status: 403 },
+    );
+  }
+  return null;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<Params> },
 ) {
   const { spaceSlug } = await params;
   try {
-    const gated = await gateSpace(request, spaceSlug);
-    if (!gated.ok) return gated.response;
+    const gated = await authorizeIntelligenceRequest(
+      request,
+      spaceSlug,
+      'write',
+    );
+    if ('response' in gated) return gated.response;
 
-    const body = (await request.json()) as {
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const flags = intelligenceWriteFlags(gated.auth);
+
+    if (gated.auth.kind === 'iba') {
+      const parsed = ibaCreateSchema.safeParse(rawBody);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: 'Validation failed', details: parsed.error.flatten() },
+          { status: 400 },
+        );
+      }
+      const denied = ibaCreateDenied(gated.auth, parsed.data);
+      if (denied) return denied;
+
+      const title = parsed.data.title?.trim();
+      const type = parsed.data.type?.trim();
+      const markdown = parsed.data.markdown?.trim();
+
+      if (title && type) {
+        const result = await writeIntelligenceBySpaceSlug(
+          {
+            spaceSlug,
+            frontmatter: {
+              id: slugifyIntelligenceId(parsed.data.id || title),
+              type,
+              title,
+              source_app: gated.auth.apiKey.source,
+              status: 'draft',
+              tags: parsed.data.tags,
+              related: parsed.data.related,
+              linked_signals: parsed.data.linked_signals,
+            },
+            body: parsed.data.body ?? '',
+            skipMembershipCheck: true,
+            canonicalSourceApp: gated.auth.apiKey.source,
+            createOnly: true,
+            forceStatus: 'draft',
+          },
+          { db },
+        );
+        if (result.access !== 'ok') return writeErrorResponse(result);
+        return NextResponse.json(
+          {
+            created: result.created,
+            artifact: {
+              path: result.artifact.path,
+              sha: result.artifact.sha,
+              frontmatter: result.artifact.frontmatter,
+              body: result.artifact.body,
+            },
+          },
+          { status: result.created ? 201 : 200 },
+        );
+      }
+
+      if (!markdown) {
+        return NextResponse.json(
+          {
+            error:
+              'Provide title and type (and body), or markdown with YAML frontmatter.',
+          },
+          { status: 400 },
+        );
+      }
+
+      const result = await writeIntelligenceBySpaceSlug(
+        {
+          spaceSlug,
+          markdown,
+          skipMembershipCheck: true,
+          canonicalSourceApp: gated.auth.apiKey.source,
+          createOnly: true,
+          forceStatus: 'draft',
+        },
+        { db },
+      );
+
+      if (result.access !== 'ok') return writeErrorResponse(result);
+
+      return NextResponse.json(
+        {
+          created: result.created,
+          artifact: {
+            path: result.artifact.path,
+            sha: result.artifact.sha,
+            frontmatter: result.artifact.frontmatter,
+            body: result.artifact.body,
+          },
+        },
+        { status: result.created ? 201 : 200 },
+      );
+    }
+
+    const body = rawBody as {
       markdown?: string;
       frontmatter?: Record<string, unknown>;
       body?: string;
@@ -126,23 +283,12 @@ export async function POST(
         body: body.body,
         expectedSha: body.expectedSha,
         source_app: body.source_app,
-        authToken: bearerFrom(request),
+        authToken: flags.authToken,
       },
       { db },
     );
 
-    if (result.access === 'denied') {
-      return NextResponse.json({ error: result.message }, { status: 403 });
-    }
-    if (result.access === 'conflict') {
-      return NextResponse.json(
-        { error: result.message, currentSha: result.currentSha },
-        { status: 409 },
-      );
-    }
-    if (result.access === 'misconfigured') {
-      return NextResponse.json({ error: result.message }, { status: 503 });
-    }
+    if (result.access !== 'ok') return writeErrorResponse(result);
 
     return NextResponse.json(
       {

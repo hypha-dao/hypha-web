@@ -44,6 +44,21 @@ export function assertSafeArtifactId(id: string): string {
   return value;
 }
 
+const ARTIFACT_ID_MAX = 80;
+
+/** Slug-id for IBA/HTTP create when the caller sends a title instead of YAML. */
+export function slugifyIntelligenceId(value: string): string {
+  const slug = value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, ARTIFACT_ID_MAX)
+    .replace(/-+$/g, '');
+  return slug || 'artifact';
+}
+
 export function spaceIntelligencePrefix(spaceSlug: string): string {
   const slug = assertSafeSpaceSlug(spaceSlug);
   return `${INTELLIGENCE_ROOT}/spaces/${slug}/`;

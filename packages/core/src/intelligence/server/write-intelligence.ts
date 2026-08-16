@@ -1,9 +1,8 @@
 import 'server-only';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { findSpaceBySlug } from '../../space/server/queries';
-import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
+import { gateIntelligenceSpaceAccess } from './space-access';
 import type {
   IntelligenceArtifact,
   IntelligenceFrontmatter,
@@ -54,6 +53,8 @@ export type WriteIntelligenceInput = {
   expectedSha?: string;
   source_app?: string;
   authToken?: string;
+  /** IBA space API key: skip Privy membership / transparency. */
+  skipMembershipCheck?: boolean;
   /** Fail if the artifact already exists (MCP memory.create). */
   createOnly?: boolean;
   /** Fail if the artifact does not exist (MCP memory.update publish). */
@@ -119,22 +120,17 @@ export async function writeIntelligenceBySpaceSlug(
     };
   }
 
-  if (space.web3SpaceId != null) {
-    if (!canConvertToBigInt(space.web3SpaceId)) {
-      return {
-        access: 'denied',
-        message: `Space "${space.slug}" has an invalid on-chain space id.`,
-        space_slug: spaceSlug,
-      };
-    }
-    const gate = await checkSpaceAccessForSpace(space, input.authToken);
-    if (!gate.hasAccess) {
-      return {
-        access: 'denied',
-        message: gate.message,
-        space_slug: spaceSlug,
-      };
-    }
+  const membership = await gateIntelligenceSpaceAccess(space, input, spaceSlug);
+  if (membership.access === 'denied') {
+    return membership;
+  }
+
+  if (input.skipMembershipCheck && input.promoteDraft) {
+    return {
+      access: 'denied',
+      message: 'Intelligence API keys cannot publish; create a draft instead.',
+      space_slug: spaceSlug,
+    };
   }
 
   let raw: string;
@@ -219,6 +215,15 @@ export async function writeIntelligenceBySpaceSlug(
   if (input.forceStatus && parsed.frontmatter.status !== input.forceStatus) {
     raw = serializeIntelligenceMarkdown({
       frontmatter: { ...parsed.frontmatter, status: input.forceStatus },
+      body: parsed.body,
+    });
+    parsed = parseIntelligenceMarkdown(raw);
+  } else if (
+    input.skipMembershipCheck &&
+    parsed.frontmatter.status !== 'draft'
+  ) {
+    raw = serializeIntelligenceMarkdown({
+      frontmatter: { ...parsed.frontmatter, status: 'draft' },
       body: parsed.body,
     });
     parsed = parseIntelligenceMarkdown(raw);
