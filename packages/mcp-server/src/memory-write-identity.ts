@@ -1,7 +1,7 @@
 import {
   resolveCanonicalSourceApp,
   type ResolveCanonicalSourceAppResult,
-} from '@hypha-platform/core/server';
+} from '@hypha-platform/core/intelligence';
 
 export const MCP_INTELLIGENCE_SOURCE_APP_FALLBACK = 'hypha-mcp';
 

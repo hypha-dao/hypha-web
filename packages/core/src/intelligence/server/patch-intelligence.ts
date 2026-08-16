@@ -1,9 +1,8 @@
 import 'server-only';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { findSpaceBySlug } from '../../space/server/queries';
-import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
+import { gateIntelligenceSpaceAccess } from './space-access';
 import { findCoherenceBySlug } from '../../coherence/server/queries';
 import type { IntelligenceArtifactPatch } from '../patch-types';
 import {
@@ -40,6 +39,8 @@ export type ProposeIntelligencePatchInput = {
   authToken?: string;
   canonicalSourceApp?: string;
   callerPath?: string;
+  /** IBA space API key: skip Privy membership / transparency. */
+  skipMembershipCheck?: boolean;
 };
 
 export type ApproveIntelligencePatchInput = {
@@ -68,7 +69,12 @@ type PatchGateResult =
   | { access: 'misconfigured'; message: string; space_slug: string };
 
 async function gatePatchAccess(
-  input: { spaceSlug: string; signalSlug: string; authToken?: string },
+  input: {
+    spaceSlug: string;
+    signalSlug: string;
+    authToken?: string;
+    skipMembershipCheck?: boolean;
+  },
   { db }: { db: DatabaseInstance },
 ): Promise<PatchGateResult> {
   const spaceSlug = assertSafeSpaceSlug(input.spaceSlug);
@@ -92,22 +98,9 @@ async function gatePatchAccess(
     };
   }
 
-  if (space.web3SpaceId != null) {
-    if (!canConvertToBigInt(space.web3SpaceId)) {
-      return {
-        access: 'denied',
-        message: `Space "${space.slug}" has an invalid on-chain space id.`,
-        space_slug: spaceSlug,
-      };
-    }
-    const gate = await checkSpaceAccessForSpace(space, input.authToken);
-    if (!gate.hasAccess) {
-      return {
-        access: 'denied',
-        message: gate.message,
-        space_slug: spaceSlug,
-      };
-    }
+  const membership = await gateIntelligenceSpaceAccess(space, input, spaceSlug);
+  if (membership.access === 'denied') {
+    return membership;
   }
 
   const signal = await findCoherenceBySlug({ slug: signalSlug }, { db });

@@ -17,6 +17,7 @@ import {
 import { spaceApiKeySatisfiesScope } from '../types';
 import {
   authenticateSpaceApiKey,
+  authenticateSpaceApiKeyUnscoped,
   SPACE_API_KEY_HEADER,
 } from '../server/authenticate-space-api-key';
 import { findActiveSpaceApiKeyByHash } from '../server/queries';
@@ -293,5 +294,41 @@ describe('authenticateSpaceApiKey', () => {
     );
 
     expect(result).toMatchObject({ ok: false, status: 403 });
+  });
+});
+
+describe('authenticateSpaceApiKeyUnscoped', () => {
+  const mockedLookup = vi.mocked(findActiveSpaceApiKeyByHash);
+  const mockedTouch = vi.mocked(touchSpaceApiKeyLastUsed);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('resolves a valid key without a space path', async () => {
+    const { plaintext, hash } = generateSpaceApiKey();
+    mockedLookup.mockResolvedValue(
+      keyRow({ keyHash: hash, scopes: ['intelligence:write'] }) as never,
+    );
+
+    const result = await authenticateSpaceApiKeyUnscoped(
+      requestWithKey(plaintext),
+      { db },
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      apiKey: { id: 7, spaceId: 42, source: 'contest-app' },
+    });
+    expect(mockedTouch).toHaveBeenCalledWith({ id: 7 }, { db });
+  });
+
+  it('returns 401 when no key is presented', async () => {
+    const result = await authenticateSpaceApiKeyUnscoped(
+      new Request('https://hypha.test/api/mcp', { method: 'POST' }),
+      { db },
+    );
+    expect(result).toMatchObject({ ok: false, status: 401 });
+    expect(mockedLookup).not.toHaveBeenCalled();
   });
 });

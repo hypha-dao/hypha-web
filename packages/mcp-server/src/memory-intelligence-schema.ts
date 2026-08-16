@@ -3,7 +3,9 @@ import { z } from 'zod';
 const spaceSlugSchema = z
   .string()
   .min(1)
-  .describe('Space slug (URL segment under /dho/{slug}).');
+  .describe(
+    'Space slug (URL segment under /dho/{slug}). Required for local stdio MCP; may be omitted on hosted /api/mcp and inferred from the API key.',
+  );
 
 const intelligenceManifestEntrySchema = z.object({
   id: z.string(),
@@ -21,7 +23,7 @@ const intelligenceManifestEntrySchema = z.object({
 });
 
 export const memoryListInputSchema = z.object({
-  space_slug: spaceSlugSchema,
+  space_slug: spaceSlugSchema.optional(),
   type: z
     .string()
     .optional()
@@ -52,7 +54,7 @@ export const memoryListOutputSchema = z.object({
 export type MemoryListOutput = z.infer<typeof memoryListOutputSchema>;
 
 export const memorySearchInputSchema = z.object({
-  space_slug: spaceSlugSchema,
+  space_slug: spaceSlugSchema.optional(),
   query: z
     .string()
     .min(1)
@@ -66,7 +68,7 @@ export type MemorySearchInput = z.infer<typeof memorySearchInputSchema>;
 export const memorySearchOutputSchema = memoryListOutputSchema;
 
 export const memoryReadInputSchema = z.object({
-  space_slug: spaceSlugSchema,
+  space_slug: spaceSlugSchema.optional(),
   artifact_id: z
     .string()
     .min(1)
@@ -129,7 +131,7 @@ const memoryWriteFailSchema = z.object({
 });
 
 export const memoryCreateInputSchema = z.object({
-  space_slug: spaceSlugSchema,
+  space_slug: spaceSlugSchema.optional(),
   markdown: memoryMarkdownSchema,
   path: memoryPathSchema,
   mode: z
@@ -152,7 +154,7 @@ export const memoryCreateOutputSchema = z.union([
 export type MemoryCreateOutput = z.infer<typeof memoryCreateOutputSchema>;
 
 export const memoryUpdateInputSchema = z.object({
-  space_slug: spaceSlugSchema,
+  space_slug: spaceSlugSchema.optional(),
   markdown: memoryMarkdownSchema,
   expected_sha: z
     .string()
@@ -197,7 +199,7 @@ export const memoryUpdateOutputSchema = z.union([
 export type MemoryUpdateOutput = z.infer<typeof memoryUpdateOutputSchema>;
 
 export const memoryDeleteInputSchema = z.object({
-  space_slug: spaceSlugSchema,
+  space_slug: spaceSlugSchema.optional(),
   artifact_id: z
     .string()
     .min(1)
