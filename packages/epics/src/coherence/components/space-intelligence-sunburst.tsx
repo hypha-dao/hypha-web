@@ -114,6 +114,35 @@ function openSunburstNode(
   }
 }
 
+function sunburstLabelLines(name: string, maxWordLength: number): string[] {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) =>
+      word.length > maxWordLength
+        ? `${word.slice(0, maxWordLength - 1)}…`
+        : word,
+    );
+}
+
+function applyWrappedSvgText(
+  el: d3.Selection<SVGTextElement, unknown, d3.BaseType, unknown>,
+  name: string,
+  maxWordLength: number,
+) {
+  const lines = sunburstLabelLines(name, maxWordLength);
+  const lineHeight = 1.1;
+  const startDy = 0.35 - ((Math.max(lines.length, 1) - 1) * lineHeight) / 2;
+  el.text(null);
+  for (const [i, line] of lines.entries()) {
+    el.append('tspan')
+      .attr('x', 0)
+      .attr('dy', `${i === 0 ? startDy : lineHeight}em`)
+      .text(line);
+  }
+}
+
 function priorityFilterLabel(
   t: ReturnType<typeof useTranslations>,
   filter: SunburstPriorityFilter,
@@ -353,7 +382,6 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
       .selectAll('text')
       .data(root.descendants().slice(1) as LayoutNode[])
       .join('text')
-      .attr('dy', '0.35em')
       .attr('fill-opacity', (d) => +labelVisible(d.current))
       .attr('transform', (d) => labelTransform(d.current))
       .attr('class', (d) =>
@@ -362,10 +390,12 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
           : 'fill-neutral-12',
       )
       .style('font-size', (d) => (d.data.kind === 'category' ? '12px' : '10px'))
-      .text((d) => {
-        const name = d.data.name;
-        const max = d.data.kind === 'category' ? 22 : 28;
-        return name.length > max ? `${name.slice(0, max - 1)}…` : name;
+      .each(function (d) {
+        applyWrappedSvgText(
+          d3.select(this),
+          d.data.name,
+          d.data.kind === 'category' ? 22 : 28,
+        );
       });
 
     const parent = svg
@@ -380,11 +410,10 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
     const centerLabel = svg
       .append('text')
       .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
       .attr('class', 'fill-neutral-12 pointer-events-none')
       .style('font-size', '12px')
-      .style('font-weight', '600')
-      .text(root.data.name);
+      .style('font-weight', '600');
+    applyWrappedSvgText(centerLabel, root.data.name, 28);
 
     let focus: LayoutNode = root;
 
@@ -404,7 +433,7 @@ export const SpaceIntelligenceSunburst: FC<SpaceIntelligenceSunburstProps> = ({
       if (p === focus && p === root) return;
       focus = p;
       parent.datum(p.parent || root);
-      centerLabel.text(p.data.name);
+      applyWrappedSvgText(centerLabel, p.data.name, 28);
       root.each((node) => {
         const layout = node as LayoutNode;
         layout.target = {
