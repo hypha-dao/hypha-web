@@ -308,7 +308,9 @@ Existing `get_org_memory_by_space_slug` / `fetch_org_memory_asset` (and HTTP equ
 
 ### 9.5 IBA access
 
-IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticket auth as described in the IBA architecture). Path grants look like `intelligence/spaces/{slug}/**` and optionally `intelligence/frameworks/{packId}/**`.
+IBAs never receive bucket/GitHub credentials. They use Hypha MCP and/or HTTP with a per-space install credential.
+
+**This file** specifies the Markdown/MCP **data plane**. **External install path** (space API key scopes, REST for Lovable, hosted Streamable HTTP MCP, per-request `source_app`) is specified in [business-app.md](./business-app.md) on **`feat/business-app`**. Until that ships, MCP remains stdio + process env (`HYPHA_MCP_AUTH_TOKEN`, `HYPHA_MCP_SOURCE_APP`).
 
 ---
 
@@ -342,7 +344,7 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 - [ ] Any space member can approve (MVP).
 - [ ] MCP `memory.*` uses the same core APIs as the UI and enforces auth, space, path, `.md`, and `source_app`.
 - [x] Hypha AI can list/read Intelligence and create or propose patches from a Coherence signal without opening a second signal.
-- [ ] IBA can promote an insight without Hypha knowing its DB schema.
+- [ ] IBA can promote an insight without Hypha knowing its DB schema. → **[business-app.md](./business-app.md)** (`feat/business-app`).
 
 ---
 
@@ -373,3 +375,4 @@ IBAs never receive bucket/GitHub credentials. They use Hypha MCP (+ launch-ticke
 - [documents-and-media-overview.md](../architecture/documents-and-media-overview.md) — Matrix vs upload backends
 - Organizational Intelligence App Architecture — IBA local DB + Markdown MCP boundary
 - Hypha Energy Org Memory Ontology — first pack vocabulary and MVP artifact set
+- [business-app.md](./business-app.md) — IBA credentials, REST, hosted MCP (`feat/business-app`)
