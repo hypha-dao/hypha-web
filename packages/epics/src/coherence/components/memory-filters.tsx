@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { SearchIcon } from 'lucide-react';
+import { PlusIcon } from '@radix-ui/react-icons';
 import {
   Button,
   Input,
@@ -102,18 +103,26 @@ export function MemoryFilters({
         />
         <div className="flex shrink-0 items-center gap-2">
           {canCreateMemory ? (
-            <Button asChild variant="default" colorVariant="accent">
+            <Button
+              asChild
+              variant="default"
+              colorVariant="accent"
+              className="whitespace-nowrap"
+            >
               <Link href={newMemoryHref} scroll={false}>
-                {t('newMemory')}
+                <PlusIcon />
+                {t('spaceDocumentationAddFile')}
               </Link>
             </Button>
           ) : (
             <Button
               variant="default"
               colorVariant="accent"
+              className="whitespace-nowrap"
               disabled={isCreateMemoryLoading || !canCreateMemory}
             >
-              {t('newMemory')}
+              <PlusIcon />
+              {t('spaceDocumentationAddFile')}
             </Button>
           )}
         </div>

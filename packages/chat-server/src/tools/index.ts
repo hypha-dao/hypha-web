@@ -19,6 +19,7 @@ import { webSearchTool } from './web-search';
 import { createGetProposalFormStateTool } from './get-proposal-form-state';
 import type { ActiveProposalFormSnapshot } from './proposal-form-state';
 import { createOnboardingToolSet, safeChatTool } from './onboarding-tool-set';
+import { createMemoryIntelligenceTools } from './memory-intelligence';
 import { resolveChatLocale } from '../locale-ui-labels';
 
 /**
@@ -71,6 +72,11 @@ export function createChatTools(
     relay_ecosystem_signal: safeChatTool(
       'relay_ecosystem_signal',
       createRelayEcosystemSignalTool(authToken, locale),
+    ),
+    ...Object.fromEntries(
+      Object.entries(createMemoryIntelligenceTools(authToken, locale)).map(
+        ([name, tool]) => [name, safeChatTool(name, tool)],
+      ),
     ),
     get_org_memory_by_space_slug: safeChatTool(
       'get_org_memory_by_space_slug',
@@ -136,6 +142,7 @@ export { createGetPeopleBySpaceSlugTool } from './get-people-by-space-slug';
 export { createGetSignalsBySpaceSlugTool } from './get-signals-by-space-slug';
 export { createCreateSpaceSignalBySlugTool } from './create-space-signal-by-slug';
 export { createRelayEcosystemSignalTool } from './relay-ecosystem-signal';
+export { createMemoryIntelligenceTools } from './memory-intelligence';
 export { createGetOrgMemoryBySpaceSlugTool } from './get-org-memory-by-space-slug';
 export { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug';
 export { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-space-slug';

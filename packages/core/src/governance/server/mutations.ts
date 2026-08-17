@@ -55,9 +55,13 @@ export const updateAgreementBySlug = async (
   { slug, ...rest }: { slug: string } & UpdateAgreementInput,
   { db }: { db: DatabaseInstance },
 ) => {
+  const patch = { ...rest };
+  if (patch.linkedArtifactId === '') {
+    patch.linkedArtifactId = null;
+  }
   const [updatedAgreement] = await db
     .update(documents)
-    .set({ ...rest })
+    .set(patch)
     .where(eq(documents.slug, slug))
     .returning();
 

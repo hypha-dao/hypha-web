@@ -18,6 +18,7 @@ export type MarkupNode =
   | { type: 'strike'; children: MarkupNode[] }
   | { type: 'code'; value: string }
   | { type: 'spoiler'; children: MarkupNode[] }
+  | { type: 'link'; href: string; children: MarkupNode[] }
   | { type: 'linebreak' }
   | { type: 'blockquote'; children: MarkupNode[] }
   | { type: 'heading'; level: 1 | 2 | 3 | 4; children: MarkupNode[] }
@@ -32,12 +33,185 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/** http(s), www, or same-origin path — never javascript:/data:. */
+export function isSafeChatLinkHref(href: string): boolean {
+  const trimmed = href.trim();
+  if (!trimmed) return false;
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('vbscript:')
+  ) {
+    return false;
+  }
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return true;
+  if (lower.startsWith('https://') || lower.startsWith('http://')) {
+    try {
+      const parsed = new URL(trimmed);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+function normalizeChatHref(raw: string): string | null {
+  const href = raw.trim();
+  if (!href) return null;
+  if (href.toLowerCase().startsWith('www.')) {
+    const withProtocol = `https://${href}`;
+    return isSafeChatLinkHref(withProtocol) ? withProtocol : null;
+  }
+  return isSafeChatLinkHref(href) ? href : null;
+}
+
+function readMarkdownLink(
+  s: string,
+  i: number,
+): { label: string; href: string; end: number } | null {
+  if (s[i] !== '[') return null;
+  if (i > 0 && s[i - 1] === '!') return null;
+  const labelStart = i + 1;
+  let labelEnd = labelStart;
+  while (labelEnd < s.length) {
+    const ch = s[labelEnd];
+    if (ch === '\n' || ch === ']') break;
+    labelEnd += 1;
+  }
+  if (labelEnd >= s.length || s[labelEnd] !== ']') return null;
+  if (labelEnd === labelStart) return null;
+  if (s[labelEnd + 1] !== '(') return null;
+  const urlStart = labelEnd + 2;
+  let urlEnd = urlStart;
+  while (urlEnd < s.length) {
+    const ch = s[urlEnd];
+    if (ch === '\n' || ch === ')' || ch === ' ' || ch === '\t') break;
+    urlEnd += 1;
+  }
+  if (urlEnd >= s.length || s[urlEnd] !== ')' || urlEnd === urlStart) {
+    return null;
+  }
+  const href = normalizeChatHref(s.slice(urlStart, urlEnd));
+  if (!href) return null;
+  return {
+    label: s.slice(labelStart, labelEnd),
+    href,
+    end: urlEnd + 1,
+  };
+}
+
+function hasMarkdownLink(plain: string): boolean {
+  for (let i = 0; i < plain.length; i += 1) {
+    if (plain[i] === '[' && readMarkdownLink(plain, i)) return true;
+  }
+  return false;
+}
+
+function isUrlWordBoundary(s: string, i: number): boolean {
+  if (i <= 0) return true;
+  const prev = s[i - 1]!;
+  return (
+    prev === ' ' ||
+    prev === '\t' ||
+    prev === '\n' ||
+    prev === '(' ||
+    prev === '[' ||
+    prev === '<' ||
+    prev === '"' ||
+    prev === "'"
+  );
+}
+
+function trimAutolinkRaw(raw: string): string {
+  let s = raw;
+  while (
+    s.length > 0 &&
+    (s[s.length - 1] === '.' ||
+      s[s.length - 1] === ',' ||
+      s[s.length - 1] === ';' ||
+      s[s.length - 1] === ':' ||
+      s[s.length - 1] === '!' ||
+      s[s.length - 1] === '?')
+  ) {
+    s = s.slice(0, -1);
+  }
+  while (s.length > 0 && s[s.length - 1] === ')') {
+    const prefix = s.slice(0, -1);
+    let opens = 0;
+    let closes = 0;
+    for (let i = 0; i < prefix.length; i += 1) {
+      if (prefix[i] === '(') opens += 1;
+      else if (prefix[i] === ')') closes += 1;
+    }
+    if (opens > closes) break;
+    s = prefix;
+  }
+  return s;
+}
+
+function readAutolinkUrl(
+  s: string,
+  i: number,
+): { raw: string; href: string; end: number } | null {
+  if (!isUrlWordBoundary(s, i)) return null;
+  let prefixLen = 0;
+  if (s.startsWith('https://', i)) prefixLen = 8;
+  else if (s.startsWith('http://', i)) prefixLen = 7;
+  else if (s.startsWith('www.', i)) prefixLen = 4;
+  else return null;
+  let end = i + prefixLen;
+  while (end < s.length) {
+    const ch = s[end]!;
+    if (
+      ch === ' ' ||
+      ch === '\t' ||
+      ch === '\n' ||
+      ch === '<' ||
+      ch === '>' ||
+      ch === '"' ||
+      ch === "'"
+    ) {
+      break;
+    }
+    end += 1;
+  }
+  if (end <= i + prefixLen) return null;
+  const raw = trimAutolinkRaw(s.slice(i, end));
+  if (raw.length <= prefixLen) return null;
+  const href = normalizeChatHref(raw);
+  if (!href) return null;
+  return { raw, href, end: i + raw.length };
+}
+
+function findNextMarkdownLink(s: string, from: number): number {
+  for (let i = from; i < s.length; i += 1) {
+    if (s[i] === '[' && readMarkdownLink(s, i)) return i;
+  }
+  return -1;
+}
+
+function findNextAutolink(s: string, from: number): number {
+  let best = -1;
+  const consider = (idx: number) => {
+    if (idx >= 0 && readAutolinkUrl(s, idx) && (best < 0 || idx < best)) {
+      best = idx;
+    }
+  };
+  consider(s.indexOf('https://', from));
+  consider(s.indexOf('http://', from));
+  consider(s.indexOf('www.', from));
+  return best;
+}
+
 /**
  * True if the string uses chat markup delimiters (may still parse to plain text).
  */
 export function chatMarkupLooksFormatted(plain: string): boolean {
   if (!plain) return false;
   return (
+    hasMarkdownLink(plain) ||
     /\*\*/.test(plain) ||
     /~~/.test(plain) ||
     /\|\|/.test(plain) ||
@@ -261,19 +435,66 @@ function parseInlineMarkup(s: string): MarkupNode[] {
   let pos = 0;
 
   while (pos < s.length) {
-    const next = findNextDelimiter(s, pos);
-    if (!next) {
-      if (pos < s.length) {
-        nodes.push({ type: 'text', value: s.slice(pos) });
+    const nextDelim = findNextDelimiter(s, pos);
+    const nextMd = findNextMarkdownLink(s, pos);
+    const nextUrl = findNextAutolink(s, pos);
+
+    let nextStart = s.length;
+    let kind: 'end' | 'delim' | 'md' | 'url' = 'end';
+    if (nextDelim && nextDelim.start < nextStart) {
+      nextStart = nextDelim.start;
+      kind = 'delim';
+    }
+    if (nextMd >= 0 && nextMd < nextStart) {
+      nextStart = nextMd;
+      kind = 'md';
+    }
+    if (nextUrl >= 0 && nextUrl < nextStart) {
+      nextStart = nextUrl;
+      kind = 'url';
+    }
+
+    if (nextStart > pos) {
+      nodes.push({ type: 'text', value: s.slice(pos, nextStart) });
+    }
+    if (kind === 'end') break;
+
+    if (kind === 'md') {
+      const md = readMarkdownLink(s, nextStart);
+      if (!md) {
+        nodes.push({ type: 'text', value: s[nextStart]! });
+        pos = nextStart + 1;
+        continue;
       }
-      break;
+      nodes.push({
+        type: 'link',
+        href: md.href,
+        children: parseInlineMarkup(md.label),
+      });
+      pos = md.end;
+      continue;
     }
-    if (next.start > pos) {
-      nodes.push({ type: 'text', value: s.slice(pos, next.start) });
+
+    if (kind === 'url') {
+      const auto = readAutolinkUrl(s, nextStart);
+      if (!auto) {
+        nodes.push({ type: 'text', value: s[nextStart]! });
+        pos = nextStart + 1;
+        continue;
+      }
+      nodes.push({
+        type: 'link',
+        href: auto.href,
+        children: [{ type: 'text', value: auto.raw }],
+      });
+      pos = auto.end;
+      continue;
     }
-    const { kind, endOpen } = next;
+
+    const next = nextDelim!;
+    const { kind: delimKind, endOpen } = next;
     const innerStart = endOpen;
-    const close = findClosingDelimiter(s, innerStart, kind);
+    const close = findClosingDelimiter(s, innerStart, delimKind);
     if (!close) {
       nodes.push({ type: 'text', value: s.slice(next.start, innerStart) });
       pos = innerStart;
@@ -283,18 +504,18 @@ function parseInlineMarkup(s: string): MarkupNode[] {
     const inner = s.slice(innerStart, innerEnd);
     pos = innerEnd + len;
 
-    if (kind === 'code') {
+    if (delimKind === 'code') {
       nodes.push({ type: 'code', value: inner });
     } else {
       const children = parseInlineMarkup(inner);
       const wrap =
-        kind === 'bold'
+        delimKind === 'bold'
           ? ({ type: 'bold', children } as MarkupNode)
-          : kind === 'italic'
+          : delimKind === 'italic'
           ? ({ type: 'italic', children } as MarkupNode)
-          : kind === 'underline'
+          : delimKind === 'underline'
           ? ({ type: 'underline', children } as MarkupNode)
-          : kind === 'strike'
+          : delimKind === 'strike'
           ? ({ type: 'strike', children } as MarkupNode)
           : ({ type: 'spoiler', children } as MarkupNode);
       nodes.push(wrap);
@@ -310,6 +531,15 @@ export function nodesToHtml(nodes: MarkupNode[]): string {
     switch (n.type) {
       case 'text':
         parts.push(escapeHtml(n.value));
+        break;
+      case 'link':
+        parts.push(
+          '<a href="',
+          escapeHtml(n.href),
+          '" target="_blank" rel="noopener noreferrer nofollow">',
+          nodesToHtml(n.children),
+          '</a>',
+        );
         break;
       case 'linebreak':
         parts.push('<br />');

@@ -23,6 +23,9 @@ describe('chatMarkupLooksFormatted', () => {
   it('detects underline', () => {
     expect(chatMarkupLooksFormatted('__hi__')).toBe(true);
   });
+  it('detects markdown links', () => {
+    expect(chatMarkupLooksFormatted('[docs](https://example.com)')).toBe(true);
+  });
 });
 
 describe('matrixTextEventContentWithOptionalFormatting', () => {
@@ -48,6 +51,25 @@ describe('matrixTextEventContentWithOptionalFormatting', () => {
   it('adds underline to formatted_body', () => {
     const r = matrixTextEventContentWithOptionalFormatting('__hi__');
     expect('formatted_body' in r && r.formatted_body).toContain('<u>');
+  });
+  it('adds markdown links to formatted_body', () => {
+    const r = matrixTextEventContentWithOptionalFormatting(
+      'see [docs](https://example.com)',
+    );
+    expect('formatted_body' in r && r.formatted_body).toContain(
+      '<a href="https://example.com"',
+    );
+    expect('formatted_body' in r && r.formatted_body).toContain('docs');
+    expect(r.body).toContain('[docs](https://example.com)');
+  });
+  it('does not treat javascript markdown hrefs as markup', () => {
+    expect(chatMarkupLooksFormatted('[xss](javascript:alert(1))')).toBe(false);
+    expect(chatMarkupToHtml('[xss](javascript:alert(1))')).not.toContain('<a ');
+  });
+  it('autolinks bare https URLs inside other markup', () => {
+    const html = chatMarkupToHtml('**https://example.com/path**');
+    expect(html).toContain('<strong>');
+    expect(html).toContain('<a href="https://example.com/path"');
   });
 });
 

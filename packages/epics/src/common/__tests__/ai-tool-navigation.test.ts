@@ -3,6 +3,7 @@ import {
   findLatestAiPanelNavigationTarget,
   isAtNavigationTarget,
   pickBestNavigationTarget,
+  shouldDeferAiPanelAutoNavigation,
   shouldSkipStaleOverviewAutoNavigation,
 } from '../ai-tool-navigation';
 
@@ -134,6 +135,199 @@ describe('findLatestAiPanelNavigationTarget', () => {
     expect(best?.toolName).toBe('create_space_signal_by_slug');
   });
 
+  it('routes to memory after memory_create', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-intel-1',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-memory_create',
+              state: 'output-available',
+              output: {
+                ok: true,
+                space_slug: 'belica-5-0',
+                navigation: {
+                  kind: 'internal',
+                  href: '/en/dho/belica-5-0/memory',
+                  label: 'Open Space Intelligence',
+                  screen: 'memory',
+                  space_slug: 'belica-5-0',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['memory_create', 'create_space_signal_by_slug'],
+    );
+
+    expect(target?.href).toBe('/en/dho/belica-5-0/memory');
+    expect(target?.toolName).toBe('memory_create');
+  });
+
+  it('prefers memory_create over create_space_signal_by_slug in the same turn', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-intel-2',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-memory_create',
+              state: 'output-available',
+              output: {
+                ok: true,
+                space_slug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/memory',
+                },
+              },
+            },
+            {
+              type: 'tool-create_space_signal_by_slug',
+              state: 'output-available',
+              output: {
+                ok: true,
+                signalSlug: 'new-signal',
+                spaceSlug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=new-signal',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['memory_create', 'create_space_signal_by_slug'],
+    );
+
+    expect(target?.toolName).toBe('memory_create');
+    expect(target?.href).toBe('/en/dho/belica-5-0/memory');
+  });
+
+  it('routes to the signal after memory_update propose', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-intel-3',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-memory_update',
+              state: 'output-available',
+              output: {
+                ok: true,
+                mode: 'propose',
+                space_slug: 'belica-5-0',
+                signal_slug: 'stakeholder-gap',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=stakeholder-gap',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['memory_update'],
+    );
+
+    expect(target?.href).toBe(
+      '/en/dho/belica-5-0/coherence?signal=stakeholder-gap',
+    );
+    expect(target?.toolName).toBe('memory_update');
+  });
+
+  it('does not re-fire an earlier turn after the user sends a follow-up', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-1',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-create_space_signal_by_slug',
+              state: 'output-available',
+              output: {
+                ok: true,
+                signalSlug: 'old-signal',
+                spaceSlug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=old-signal',
+                },
+              },
+            },
+          ],
+        },
+        {
+          id: 'user-2',
+          role: 'user',
+          parts: [{ type: 'text', text: 'now make an intelligence artifact' }],
+        },
+      ],
+      ['create_space_signal_by_slug', 'memory_create'],
+    );
+
+    expect(target).toBeNull();
+  });
+
+  it('ignores in-progress tool parts until output is available', () => {
+    const target = findLatestAiPanelNavigationTarget(
+      [
+        {
+          id: 'assistant-streaming',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-create_space_signal_by_slug',
+              state: 'input-streaming',
+              output: {
+                ok: true,
+                signalSlug: 'partial',
+                spaceSlug: 'belica-5-0',
+                navigation: {
+                  href: '/en/dho/belica-5-0/coherence?signal=partial',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      ['create_space_signal_by_slug'],
+    );
+
+    expect(target).toBeNull();
+  });
+
+  it('keeps the navigation key stable when the message id changes', () => {
+    const parts = [
+      {
+        type: 'tool-memory_create',
+        toolCallId: 'call-stable',
+        state: 'output-available',
+        output: {
+          ok: true,
+          space_slug: 'belica-5-0',
+          navigation: {
+            href: '/en/dho/belica-5-0/memory',
+          },
+        },
+      },
+    ];
+
+    const first = findLatestAiPanelNavigationTarget(
+      [{ id: 'tmp-id', role: 'assistant', parts }],
+      ['memory_create'],
+    );
+    const second = findLatestAiPanelNavigationTarget(
+      [{ id: 'final-id', role: 'assistant', parts }],
+      ['memory_create'],
+    );
+
+    expect(first?.key).toBe(second?.key);
+  });
+
   it('routes to memory after summarize_space_discussion_by_slug', () => {
     const target = findLatestAiPanelNavigationTarget(
       [
@@ -226,5 +420,17 @@ describe('shouldSkipStaleOverviewAutoNavigation', () => {
         '/en/dho/treetop/agreements/create/pay-for-expenses',
       ),
     ).toBe(false);
+  });
+});
+
+describe('shouldDeferAiPanelAutoNavigation', () => {
+  it('defers while the assistant turn is in flight', () => {
+    expect(shouldDeferAiPanelAutoNavigation('submitted')).toBe(true);
+    expect(shouldDeferAiPanelAutoNavigation('streaming')).toBe(true);
+    expect(shouldDeferAiPanelAutoNavigation('error')).toBe(true);
+  });
+
+  it('allows navigation only after the turn is ready', () => {
+    expect(shouldDeferAiPanelAutoNavigation('ready')).toBe(false);
   });
 });

@@ -33,8 +33,12 @@ export type AiPanelNavigationTarget = {
   key: string;
 };
 
-/** Prefer signal-create navigation over generic mcp_navigation in the same turn. */
+/** Prefer intelligence writes over signal-create so "artifact from a signal" lands on Memory. */
 const NAVIGATION_TOOL_PRIORITY = [
+  'memory_update',
+  'memory_create',
+  'memory_enable_pack',
+  'memory_delete',
   'create_space_signal_by_slug',
   'relay_ecosystem_signal',
   'create_human_chat_message',
@@ -45,12 +49,22 @@ const NAVIGATION_TOOL_PRIORITY = [
   'mcp_navigation',
 ] as const;
 
+/**
+ * @deprecated Do not navigate while a reply is in flight. `router.push` aborts
+ * the chat fetch and can loop into React error #185. Kept so call sites can
+ * migrate; `shouldDeferAiPanelAutoNavigation` is the source of truth.
+ */
 export const IMMEDIATE_AUTO_NAVIGATION_TOOLS = new Set<string>([
   'create_space_signal_by_slug',
   'relay_ecosystem_signal',
   'create_human_chat_message',
   'prepare_governance_proposal',
 ]);
+
+/** Auto-nav must wait until the assistant turn finished — never while streaming. */
+export function shouldDeferAiPanelAutoNavigation(status: string): boolean {
+  return status !== 'ready';
+}
 
 function navigationToolPriority(toolName: string): number {
   const index = NAVIGATION_TOOL_PRIORITY.indexOf(
@@ -131,7 +145,10 @@ type ChatMessageForNavigation = {
 };
 
 function isCompletedToolState(state: unknown): boolean {
-  if (typeof state !== 'string') return true;
+  if (typeof state !== 'string') {
+    // Persisted tool parts may omit `state` but still have a successful output.
+    return true;
+  }
   return (
     state === 'output-available' ||
     state === 'output_available' ||
@@ -145,6 +162,7 @@ function parseNavigationTarget(args: {
   output: Record<string, unknown> | undefined;
   messageId: string;
   partKey: string;
+  toolCallId?: string;
 }): AiPanelNavigationTarget | null {
   if (args.output?.ok !== true) return null;
 
@@ -175,8 +193,33 @@ function parseNavigationTarget(args: {
   if (
     !href &&
     args.output?.ok === true &&
+    args.toolName === 'memory_update' &&
+    args.output.mode === 'propose'
+  ) {
+    const spaceSlug =
+      typeof args.output.space_slug === 'string'
+        ? args.output.space_slug.trim()
+        : '';
+    const signalSlug =
+      typeof args.output.signal_slug === 'string'
+        ? args.output.signal_slug.trim()
+        : '';
+    if (spaceSlug && signalSlug) {
+      const params = new URLSearchParams();
+      params.set('signal', signalSlug);
+      href = `/en/dho/${spaceSlug}/coherence?${params.toString()}`;
+    }
+  }
+
+  if (
+    !href &&
+    args.output?.ok === true &&
     (args.toolName === 'summarize_space_discussion_by_slug' ||
-      args.toolName === 'ingest_space_call_artifacts')
+      args.toolName === 'ingest_space_call_artifacts' ||
+      args.toolName === 'memory_create' ||
+      args.toolName === 'memory_enable_pack' ||
+      args.toolName === 'memory_delete' ||
+      (args.toolName === 'memory_update' && args.output.mode === 'publish'))
   ) {
     const spaceSlug =
       typeof args.output.space_slug === 'string'
@@ -270,9 +313,10 @@ function parseNavigationTarget(args: {
     focusField,
     focusSection,
     coherenceChat,
-    key: `${args.messageId}:${args.partKey}:${href}:${focusField ?? ''}:${
-      focusSection ?? ''
-    }:${payloadFingerprint}`,
+    // Prefer toolCallId so a streaming message id change cannot re-fire nav.
+    key: `${args.toolCallId || `${args.messageId}:${args.partKey}`}:${href}:${
+      focusField ?? ''
+    }:${focusSection ?? ''}:${payloadFingerprint}`,
   };
 }
 
@@ -312,11 +356,16 @@ function collectNavigationTargetsFromMessage(
       ((invocation as { output?: Record<string, unknown> }).output as
         | Record<string, unknown>
         | undefined);
+    const toolCallId =
+      typeof (invocation as { toolCallId?: unknown }).toolCallId === 'string'
+        ? (invocation as { toolCallId: string }).toolCallId
+        : undefined;
     const target = parseNavigationTarget({
       toolName,
       output,
       messageId,
       partKey: `toolInvocation:${invocationIndex}`,
+      toolCallId,
     });
     if (target) targets.push(target);
   }
@@ -333,11 +382,16 @@ function collectNavigationTargetsFromMessage(
     if (!allowed.has(toolName)) continue;
     if (!isCompletedToolState((part as { state?: unknown }).state)) continue;
     const output = (part as { output?: Record<string, unknown> }).output;
+    const toolCallId =
+      typeof (part as { toolCallId?: unknown }).toolCallId === 'string'
+        ? (part as { toolCallId: string }).toolCallId
+        : undefined;
     const target = parseNavigationTarget({
       toolName,
       output,
       messageId,
       partKey: `part:${partIndex}`,
+      toolCallId,
     });
     if (target) targets.push(target);
   }
@@ -366,6 +420,10 @@ export function findLatestAiPanelNavigationTarget(
   ) {
     const message = messages[messageIndex];
     if (!message) continue;
+    // A newer user turn must not re-fire navigation from an earlier assistant
+    // tool result — that aborts the in-flight reply (React #185 / stream error).
+    if (message.role === 'user') return null;
+    if (message.role && message.role !== 'assistant') continue;
 
     const targets = collectNavigationTargetsFromMessage(
       message,
@@ -374,6 +432,7 @@ export function findLatestAiPanelNavigationTarget(
     );
     const best = pickBestNavigationTarget(targets);
     if (best) return best;
+    return null;
   }
 
   return null;

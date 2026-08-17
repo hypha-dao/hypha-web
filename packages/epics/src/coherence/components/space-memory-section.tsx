@@ -11,12 +11,21 @@ import {
   SpaceMemoryItem,
   filterSpaceMemoryItems,
   useSpaceBySlug,
+  useJwt,
+  useAgreementMutationsWeb2Rsc,
 } from '@hypha-platform/core/client';
-import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
+import {
+  useSpaceMemoryOrg,
+  revalidateSpaceMemoryOrg,
+} from '../hooks/use-space-memory-org';
+import {
+  useSpaceIntelligence,
+  revalidateSpaceIntelligence,
+} from '../hooks/use-space-intelligence';
+import { LinkedArtifactSelect } from './linked-artifact-select';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
-import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 
 type SpaceMemorySectionProps = {
@@ -46,10 +55,54 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     space,
     spaceId: space?.web3SpaceId ?? undefined,
   });
-  const matrixChatRoomId = space?.chatRoomId?.trim() || null;
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
+  const searchParams = useSearchParams();
+  const highlightDoc = searchParams.get('doc')?.trim() ?? '';
+  const { jwt } = useJwt();
+  const { updateAgreementBySlug, isUpdatingAgreement } =
+    useAgreementMutationsWeb2Rsc(jwt);
+  const { artifacts } = useSpaceIntelligence(spaceSlug);
+  const artifactOptions = React.useMemo(
+    () =>
+      artifacts.map((artifact) => ({
+        id: artifact.id,
+        title: artifact.title,
+      })),
+    [artifacts],
+  );
+  const artifactTitleById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const artifact of artifacts) {
+      map.set(artifact.id, artifact.title);
+    }
+    return map;
+  }, [artifacts]);
   const [activeFilter, setActiveFilter] =
     React.useState<MemoryFilterValue>('general');
+  const dateFormatter = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(lang, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }),
+    [lang],
+  );
+
+  const handleLinkedArtifactChange = React.useCallback(
+    async (documentSlug: string | undefined, artifactId: string) => {
+      if (!documentSlug) return;
+      await updateAgreementBySlug({
+        slug: documentSlug,
+        linkedArtifactId: artifactId.trim() ? artifactId.trim() : null,
+      });
+      await Promise.all([
+        revalidateSpaceMemoryOrg(spaceSlug),
+        revalidateSpaceIntelligence(spaceSlug),
+      ]);
+    },
+    [spaceSlug, updateAgreementBySlug],
+  );
 
   const isAiChatItem = React.useCallback(
     (row: (typeof items)[number]) =>
@@ -172,18 +225,21 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   return (
     <section
       className="flex w-full flex-col gap-4 py-2"
-      aria-label={t('spaceMemory')}
+      aria-label={t('spaceDocumentation')}
     >
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div className="craft-page-header">
-          <h1 className="craft-page-title text-6 font-medium">
-            {t('spaceMemory')}
+          <h2 className="craft-page-title text-5 font-medium">
+            {t('spaceDocumentation')}
             {typeof totalCount === 'number' ? (
-              <span className="ml-2 text-4 font-normal text-muted-foreground">
+              <span className="ml-2 text-3 font-normal text-muted-foreground">
                 | {Intl.NumberFormat(lang).format(totalCount)}
               </span>
             ) : null}
-          </h1>
+          </h2>
+          <p className="mt-1 text-2 text-muted-foreground">
+            {t('spaceDocumentationSubtitle')}
+          </p>
         </div>
       </header>
       <MemoryFilters
@@ -229,22 +285,100 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         </Empty>
       ) : (
         <>
-          <ul
-            className="m-0 grid w-full list-none grid-cols-1 items-stretch gap-4 p-0 md:grid-cols-2 xl:grid-cols-3"
-            aria-label={t('spaceMemory')}
-          >
-            {filteredItems.map((row) => (
-              <SpaceMemoryTimelineItem
-                key={row.id}
-                item={row}
-                contextLine={contextLineForItem(row)}
-                matrixChatRoomId={matrixChatRoomId}
-                openLabel={t('spaceMemoryOpenAsset', {
-                  name: row.name,
+          <div className="w-full overflow-x-auto rounded-lg border border-border">
+            <table className="w-full min-w-[640px] border-collapse text-left text-2">
+              <thead className="bg-neutral-2 text-1 text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 font-medium">
+                    {t('spaceDocumentationColDate')}
+                  </th>
+                  <th className="px-3 py-2 font-medium">
+                    {t('spaceDocumentationColName')}
+                  </th>
+                  <th className="px-3 py-2 font-medium">
+                    {t('spaceDocumentationColContext')}
+                  </th>
+                  <th className="px-3 py-2 font-medium">
+                    {t('spaceDocumentationColArtifact')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredItems.map((row) => {
+                  const href =
+                    row.url &&
+                    (row.url.startsWith('https://') ||
+                      row.url.startsWith('http://'))
+                      ? row.url
+                      : null;
+                  const dateLabel = (() => {
+                    const ms = Date.parse(row.uploadedAt);
+                    if (!Number.isFinite(ms)) return '—';
+                    return dateFormatter.format(new Date(ms));
+                  })();
+                  const isHighlighted =
+                    Boolean(highlightDoc) &&
+                    row.context.documentSlug === highlightDoc;
+                  return (
+                    <tr
+                      key={row.id}
+                      className={
+                        isHighlighted
+                          ? 'border-t border-border align-top bg-accent-3/40'
+                          : 'border-t border-border align-top'
+                      }
+                    >
+                      <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                        {dateLabel}
+                      </td>
+                      <td className="px-3 py-2 font-medium text-foreground">
+                        {href ? (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent-11 underline-offset-2 hover:underline"
+                          >
+                            {row.name}
+                          </a>
+                        ) : (
+                          row.name
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {contextLineForItem(row)}
+                      </td>
+                      <td className="px-3 py-2">
+                        {row.source === 'memory' &&
+                        row.context.documentSlug &&
+                        canMutate ? (
+                          <LinkedArtifactSelect
+                            value={row.context.linkedArtifactId ?? ''}
+                            onChange={(next) => {
+                              void handleLinkedArtifactChange(
+                                row.context.documentSlug,
+                                next,
+                              );
+                            }}
+                            artifacts={artifactOptions}
+                            disabled={isMutateLoading || isUpdatingAgreement}
+                          />
+                        ) : row.context.linkedArtifactId ? (
+                          <span className="text-muted-foreground">
+                            {artifactTitleById.get(
+                              row.context.linkedArtifactId,
+                            ) ?? row.context.linkedArtifactId}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
                 })}
-              />
-            ))}
-          </ul>
+              </tbody>
+            </table>
+          </div>
           {totalCount > 0 ? (
             <div className="flex w-full flex-col items-center gap-2">
               <SectionLoadMore

@@ -77,7 +77,14 @@ export function priorityLeftBorderClass(priority?: string | null): string {
   return PRIORITY_LEFT_BORDER[key] ?? PRIORITY_LEFT_BORDER.medium!;
 }
 
-export function priorityDotClass(priority?: string | null): string {
-  const key = priority ?? 'medium';
-  return PRIORITY_DOT[key] ?? PRIORITY_DOT.medium!;
+export const PRIORITY_GRAPH_NODE_CLASS: Record<string, string> = {
+  critical: 'fill-error-9 stroke-error-11',
+  high: 'fill-warning-9 stroke-warning-11',
+  medium: 'fill-accent-9 stroke-accent-11',
+  low: 'fill-neutral-6 stroke-neutral-9',
+};
+
+export function priorityGraphNodeClass(priority?: string | null): string {
+  const key = priority?.trim().toLowerCase() ?? 'medium';
+  return PRIORITY_GRAPH_NODE_CLASS[key] ?? PRIORITY_GRAPH_NODE_CLASS.medium!;
 }

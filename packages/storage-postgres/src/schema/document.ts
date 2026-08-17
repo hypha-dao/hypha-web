@@ -39,6 +39,8 @@ export const documents = pgTable(
       .default([]),
     web3ProposalId: integer('web3_proposal_id'),
     label: text('label'),
+    /** Space Intelligence artifact id (slug) this documentation file is linked to. */
+    linkedArtifactId: text('linked_artifact_id'),
     ...commonDateFields,
   },
   (table) => [

@@ -3861,9 +3861,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       readLiveSearchParam('msg') ?? searchParams?.get('msg')?.trim() ?? null;
     if (!qpSignal) return;
 
+    // Already on this signal — do not keep calling openHumanChatPanel(). Compact
+    // layout closes the right panel when AI is expanded; reopening it loops (#185).
     if (mode === 'coherence' && coherenceSlug?.trim() === qpSignal) {
-      openHumanChatPanel();
-      setActiveTab('chat');
       return;
     }
 

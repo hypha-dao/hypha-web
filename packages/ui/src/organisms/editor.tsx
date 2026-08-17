@@ -611,6 +611,8 @@ export function RichTextEditor({
           openOnClick: false,
           autolink: true,
           defaultProtocol: 'https',
+          markdownLinks: true,
+          linkOnPaste: true,
         },
       }),
       AsteriskBold,

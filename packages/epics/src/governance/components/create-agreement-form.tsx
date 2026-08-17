@@ -21,7 +21,9 @@ import {
   useScrollToErrors,
 } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useSpaceIntelligence } from '../../coherence/hooks/use-space-intelligence';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const COLLECTIVE_AGREEMENT_RESUBMIT_SEGMENT = '';
@@ -67,6 +69,10 @@ export const CreateAgreementForm = ({
   const tCoherence = useTranslations('CoherenceTab');
   const { person } = useMe();
   const { jwt } = useJwt();
+  const { id: spaceSlug } = useParams<{ id: string }>();
+  const { artifacts } = useSpaceIntelligence(
+    mode === 'memory' ? spaceSlug : undefined,
+  );
   const config = useConfig();
   const {
     createAgreement,
@@ -105,6 +111,7 @@ export const CreateAgreementForm = ({
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
+      linkedArtifactId: '',
     },
   });
 
@@ -165,6 +172,14 @@ export const CreateAgreementForm = ({
           stickyHeaderTitle={stickyHeaderTitle}
           mode={mode}
           progress={progress}
+          linkedArtifacts={
+            mode === 'memory'
+              ? artifacts.map((artifact) => ({
+                  id: artifact.id,
+                  title: artifact.title,
+                }))
+              : undefined
+          }
         />
         <div className="flex justify-end w-full">
           <Button type="submit">

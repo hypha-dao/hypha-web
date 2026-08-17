@@ -18,16 +18,20 @@
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
     "@privy-io/node": "^0.12.0",
+    "@vercel/blob": "^2.8.0",
     "@wagmi/cli": "^2.2.0",
     "livekit-client": "^2.18.1",
     "matrix-js-sdk": "^40.0.0",
     "pdf-parse": "^1.1.1",
     "pg": "^8.13.1",
     "rrule": "^2.8.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "yaml": "^2.9.0",
+    "zod": "^3.24.2"
   },
   "exports": {
     "./client": "./src/client.ts",
+    "./intelligence": "./src/intelligence/client.ts",
     "./server": "./src/server.ts",
     "./space/server/actions": "./src/space/server/actions.ts",
     "./people/server/actions": "./src/people/server/actions.ts",
