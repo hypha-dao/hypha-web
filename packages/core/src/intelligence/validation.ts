@@ -33,7 +33,17 @@ const isoDateSchema = z.preprocess(
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
     .refine((value) => {
-      const [year, month, day] = value.split('-').map(Number);
+      const [yearText, monthText, dayText] = value.split('-');
+      const year = Number(yearText);
+      const month = Number(monthText);
+      const day = Number(dayText);
+      if (
+        !Number.isInteger(year) ||
+        !Number.isInteger(month) ||
+        !Number.isInteger(day)
+      ) {
+        return false;
+      }
       const utc = new Date(Date.UTC(year, month - 1, day));
       return (
         utc.getUTCFullYear() === year &&
