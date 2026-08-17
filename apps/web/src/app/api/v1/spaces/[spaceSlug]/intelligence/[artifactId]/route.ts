@@ -1,15 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
+  authorizeIntelligenceSpace,
   findSpaceBySlug,
   readIntelligenceBySpaceSlug,
   deleteIntelligenceBySpaceSlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 type Params = { spaceSlug: string; artifactId: string };
+
+function bearerFrom(request: NextRequest): string | undefined {
+  const authHeader = request.headers.get('authorization');
+  return authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || undefined;
+}
+
+async function gateSpace(request: NextRequest, spaceSlug: string) {
+  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (!space) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'Space not found' },
+        { status: 404 },
+      ),
+    };
+  }
+  const gate = await authorizeIntelligenceSpace(space, bearerFrom(request));
+  if (!gate.hasAccess) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: gate.message },
+        { status: gate.httpStatus },
+      ),
+    };
+  }
+  return { ok: true as const, space };
+}
 
 export async function GET(
   request: NextRequest,
@@ -17,23 +45,10 @@ export async function GET(
 ) {
   const { spaceSlug, artifactId } = await params;
   try {
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
-    }
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) {
-        return response;
-      }
-    }
+    const gated = await gateSpace(request, spaceSlug);
+    if (!gated.ok) return gated.response;
 
-    const authHeader = request.headers.get('authorization');
-    const bearer =
-      authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || undefined;
+    const bearer = bearerFrom(request);
 
     const result = await readIntelligenceBySpaceSlug(
       { spaceSlug, artifactId, authToken: bearer },
@@ -75,23 +90,10 @@ export async function DELETE(
 ) {
   const { spaceSlug, artifactId } = await params;
   try {
-    const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
-    }
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) {
-        return response;
-      }
-    }
+    const gated = await gateSpace(request, spaceSlug);
+    if (!gated.ok) return gated.response;
 
-    const authHeader = request.headers.get('authorization');
-    const bearer =
-      authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || undefined;
+    const bearer = bearerFrom(request);
 
     let expectedSha = request.nextUrl.searchParams.get('expectedSha')?.trim();
     if (!expectedSha) {

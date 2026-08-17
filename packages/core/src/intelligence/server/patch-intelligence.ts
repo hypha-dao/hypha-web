@@ -1,9 +1,8 @@
 import 'server-only';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { findSpaceBySlug } from '../../space/server/queries';
-import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
+import { authorizeIntelligenceSpace } from './authorize';
 import { findCoherenceBySlug } from '../../coherence/server/queries';
 import type { IntelligenceArtifactPatch } from '../patch-types';
 import {
@@ -92,22 +91,13 @@ async function gatePatchAccess(
     };
   }
 
-  if (space.web3SpaceId != null) {
-    if (!canConvertToBigInt(space.web3SpaceId)) {
-      return {
-        access: 'denied',
-        message: `Space "${space.slug}" has an invalid on-chain space id.`,
-        space_slug: spaceSlug,
-      };
-    }
-    const gate = await checkSpaceAccessForSpace(space, input.authToken);
-    if (!gate.hasAccess) {
-      return {
-        access: 'denied',
-        message: gate.message,
-        space_slug: spaceSlug,
-      };
-    }
+  const gate = await authorizeIntelligenceSpace(space, input.authToken);
+  if (!gate.hasAccess) {
+    return {
+      access: 'denied',
+      message: gate.message,
+      space_slug: spaceSlug,
+    };
   }
 
   const signal = await findCoherenceBySlug({ slug: signalSlug }, { db });
@@ -122,8 +112,8 @@ async function gatePatchAccess(
   return { access: 'ok', spaceSlug, signalSlug };
 }
 
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+function nowIsoTimestamp(): string {
+  return new Date().toISOString();
 }
 
 function parsePatchJson(raw: string): IntelligenceArtifactPatch | null {
@@ -318,7 +308,7 @@ export async function proposeIntelligencePatchForSignal(
     };
   }
 
-  const now = todayIsoDate();
+  const now = nowIsoTimestamp();
   const patch: IntelligenceArtifactPatch = {
     status: 'pending',
     space: gated.spaceSlug,
@@ -375,6 +365,23 @@ export async function approveIntelligencePatchForSignal(
     ? input.markdown
     : existingPatch.markdown;
 
+  try {
+    const parsed = parseIntelligenceMarkdown(markdown);
+    if (parsed.frontmatter.id !== existingPatch.target_id) {
+      return {
+        access: 'denied',
+        message: `Edited frontmatter id "${parsed.frontmatter.id}" does not match target_id "${existingPatch.target_id}".`,
+        space_slug: gated.spaceSlug,
+      };
+    }
+  } catch (error) {
+    return {
+      access: 'denied',
+      message: formatIntelligenceMarkdownError(error),
+      space_slug: gated.spaceSlug,
+    };
+  }
+
   const written = await writeIntelligenceBySpaceSlug(
     {
       spaceSlug: gated.spaceSlug,
@@ -402,7 +409,7 @@ export async function approveIntelligencePatchForSignal(
     ...existingPatch,
     status: 'approved',
     markdown,
-    updated_at: todayIsoDate(),
+    updated_at: nowIsoTimestamp(),
   };
   await writePatchFile(approved);
 
@@ -442,7 +449,7 @@ export async function rejectIntelligencePatchForSignal(
   const rejected: IntelligenceArtifactPatch = {
     ...existingPatch,
     status: 'rejected',
-    updated_at: todayIsoDate(),
+    updated_at: nowIsoTimestamp(),
   };
   await writePatchFile(rejected);
 

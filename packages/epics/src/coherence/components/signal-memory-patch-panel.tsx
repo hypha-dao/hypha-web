@@ -51,7 +51,7 @@ export const SignalMemoryPatchPanel: FC<SignalMemoryPatchPanelProps> = ({
 
   if (error) {
     return (
-      <div className={className}>
+      <div className={className} role="alert">
         <Text className="text-2 text-destructive">{error}</Text>
       </div>
     );
@@ -124,7 +124,7 @@ export const SignalMemoryPatchPanel: FC<SignalMemoryPatchPanelProps> = ({
       )}
 
       {actionError ? (
-        <Text className="mb-3 block text-2 text-destructive">
+        <Text className="mb-3 block text-2 text-destructive" role="alert">
           {actionError}
         </Text>
       ) : null}

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
+  authorizeIntelligenceSpace,
   findSpaceBySlug,
   listIntelligenceBySpaceSlug,
   writeIntelligenceBySpaceSlug,
   buildIntelligenceGraphForSpace,
+  type WriteIntelligenceInput,
 } from '@hypha-platform/core/server';
 import type { IntelligenceGraph } from '@hypha-platform/core/intelligence';
 import { db } from '@hypha-platform/storage-postgres';
-import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 type Params = { spaceSlug: string };
 
@@ -24,14 +24,15 @@ async function gateSpace(request: NextRequest, spaceSlug: string) {
       ),
     };
   }
-  if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-    const { hasAccess, response } = await checkSpaceAccess(
-      request,
-      space.web3SpaceId as number,
-    );
-    if (!hasAccess && response) {
-      return { ok: false as const, response };
-    }
+  const gate = await authorizeIntelligenceSpace(space, bearerFrom(request));
+  if (!gate.hasAccess) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: gate.message },
+        { status: gate.httpStatus },
+      ),
+    };
   }
   return { ok: true as const, space };
 }
@@ -40,6 +41,62 @@ function bearerFrom(request: NextRequest): string | undefined {
   const authHeader = request.headers.get('authorization');
   const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
   return bearerMatch?.[1]?.trim() || undefined;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function optionalString(
+  value: unknown,
+  field: string,
+): { ok: true; value?: string } | { ok: false; error: string } {
+  if (value === undefined) return { ok: true };
+  if (typeof value !== 'string') {
+    return { ok: false, error: `${field} must be a string` };
+  }
+  return { ok: true, value };
+}
+
+function parseWriteBody(raw: unknown):
+  | {
+      ok: true;
+      value: {
+        markdown?: string;
+        frontmatter?: Record<string, unknown>;
+        body?: string;
+        expectedSha?: string;
+        source_app?: string;
+      };
+    }
+  | { ok: false; error: string } {
+  if (!isPlainObject(raw)) {
+    return { ok: false, error: 'Request body must be a JSON object' };
+  }
+
+  const markdown = optionalString(raw.markdown, 'markdown');
+  const body = optionalString(raw.body, 'body');
+  const expectedSha = optionalString(raw.expectedSha, 'expectedSha');
+  const sourceApp = optionalString(raw.source_app, 'source_app');
+  if (!markdown.ok) return markdown;
+  if (!body.ok) return body;
+  if (!expectedSha.ok) return expectedSha;
+  if (!sourceApp.ok) return sourceApp;
+
+  if (raw.frontmatter !== undefined && !isPlainObject(raw.frontmatter)) {
+    return { ok: false, error: 'frontmatter must be an object' };
+  }
+
+  return {
+    ok: true,
+    value: {
+      markdown: markdown.value,
+      frontmatter: raw.frontmatter,
+      body: body.value,
+      expectedSha: expectedSha.value,
+      source_app: sourceApp.value,
+    },
+  };
 }
 
 export async function GET(
@@ -110,22 +167,30 @@ export async function POST(
     const gated = await gateSpace(request, spaceSlug);
     if (!gated.ok) return gated.response;
 
-    const body = (await request.json()) as {
-      markdown?: string;
-      frontmatter?: Record<string, unknown>;
-      body?: string;
-      expectedSha?: string;
-      source_app?: string;
-    };
+    let raw: unknown;
+    try {
+      raw = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Request body must be valid JSON' },
+        { status: 400 },
+      );
+    }
+
+    const parsed = parseWriteBody(raw);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
 
     const result = await writeIntelligenceBySpaceSlug(
       {
         spaceSlug,
-        markdown: body.markdown,
-        frontmatter: body.frontmatter as never,
-        body: body.body,
-        expectedSha: body.expectedSha,
-        source_app: body.source_app,
+        markdown: parsed.value.markdown,
+        frontmatter: parsed.value
+          .frontmatter as WriteIntelligenceInput['frontmatter'],
+        body: parsed.value.body,
+        expectedSha: parsed.value.expectedSha,
+        source_app: parsed.value.source_app,
         authToken: bearerFrom(request),
       },
       { db },

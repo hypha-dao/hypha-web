@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
+  authorizeIntelligenceSpace,
   findSpaceBySlug,
   getIntelligencePatchForSignal,
   proposeIntelligencePatchForSignal,
@@ -8,8 +9,6 @@ import {
   rejectIntelligencePatchForSignal,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 type Params = { spaceSlug: string; signalSlug: string };
 
@@ -24,14 +23,15 @@ async function gateSpace(request: NextRequest, spaceSlug: string) {
       ),
     };
   }
-  if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-    const { hasAccess, response } = await checkSpaceAccess(
-      request,
-      space.web3SpaceId as number,
-    );
-    if (!hasAccess && response) {
-      return { ok: false as const, response };
-    }
+  const gate = await authorizeIntelligenceSpace(space, bearerFrom(request));
+  if (!gate.hasAccess) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: gate.message },
+        { status: gate.httpStatus },
+      ),
+    };
   }
   return { ok: true as const, space };
 }

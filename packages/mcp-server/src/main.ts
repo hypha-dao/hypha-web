@@ -150,7 +150,7 @@ server.registerTool(
     const result = await createSpaceDiscussionSummary(
       {
         spaceSlug: parsed.data.space_slug,
-        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        authToken: mcpAuthToken(),
         requestUrlForSessionMatrix:
           process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
           (process.env.VERCEL_URL?.trim()
@@ -215,10 +215,7 @@ server.registerTool(
         isError: true,
       };
     }
-    const access = await checkSpaceAccessForSpace(
-      host,
-      process.env.HYPHA_MCP_AUTH_TOKEN,
-    );
+    const access = await checkSpaceAccessForSpace(host, mcpAuthToken());
     if (!access.hasAccess) {
       return {
         content: [{ type: 'text', text: access.message }],
@@ -298,7 +295,7 @@ server.registerTool(
     const result = await createAiSignalForSpaceBySlug(
       {
         spaceSlug: parsed.data.space_slug,
-        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        authToken: mcpAuthToken(),
         title: parsed.data.title,
         description: parsed.data.description,
         type: parsed.data.type,
@@ -363,7 +360,7 @@ server.registerTool(
         signalSlug: parsed.data.signal_slug,
         roomId: parsed.data.room_id,
         lang: parsed.data.lang,
-        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        authToken: mcpAuthToken(),
         requestUrlForSessionMatrix: mcpMatrixRequestUrl,
       },
       { db },
@@ -420,7 +417,7 @@ server.registerTool(
       {
         sourceSpaceSlug: parsed.data.source_space_slug,
         targetSpaceSlug: parsed.data.target_space_slug,
-        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        authToken: mcpAuthToken(),
         title: parsed.data.title,
         summary: parsed.data.summary,
         recommendedAction: parsed.data.recommended_action,
@@ -500,7 +497,7 @@ server.registerTool(
       };
     }
 
-    const authToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+    const authToken = mcpAuthToken();
     const access = await checkSpaceAccessForSpace(host, authToken);
     if (!access.hasAccess) {
       return {
@@ -768,7 +765,7 @@ server.registerTool(
 
     const host = await findSpaceBySlug({ slug: space_slug }, { db });
     if (host) {
-      const authToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+      const authToken = mcpAuthToken();
       const access = await checkSpaceAccessForSpace(host, authToken);
       if (!access.hasAccess) {
         return {
@@ -886,7 +883,7 @@ server.registerTool(
           assetsSearch: assets_search,
           requestUrlForSessionMatrix: mcpMatrixRequestUrl,
         },
-        { db, authToken: process.env.HYPHA_MCP_AUTH_TOKEN },
+        { db, authToken: mcpAuthToken() },
       );
 
       if (gated.access === 'denied') {
@@ -1000,7 +997,7 @@ server.registerTool(
         },
         {
           db,
-          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+          authToken: mcpAuthToken(),
           requestUrlForSessionMatrix: mcpMatrixRequestUrl,
         },
       );
@@ -1083,7 +1080,7 @@ server.registerTool(
           type: parsed.data.type,
           status: parsed.data.status,
           search: parsed.data.search,
-          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+          authToken: mcpAuthToken(),
         },
         { db },
       );
@@ -1165,7 +1162,7 @@ server.registerTool(
           type: parsed.data.type,
           status: parsed.data.status,
           search: parsed.data.query,
-          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+          authToken: mcpAuthToken(),
         },
         { db },
       );
@@ -1245,7 +1242,7 @@ server.registerTool(
         {
           spaceSlug: parsed.data.space_slug,
           artifactId: parsed.data.artifact_id,
-          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+          authToken: mcpAuthToken(),
         },
         { db },
       );
@@ -1816,7 +1813,7 @@ server.registerTool(
           holderLimit: holder_limit,
           includeTreasury: include_treasury,
         },
-        { db, authToken: process.env.HYPHA_MCP_AUTH_TOKEN },
+        { db, authToken: mcpAuthToken() },
       );
 
       if (gated.access === 'denied') {
@@ -1903,7 +1900,7 @@ server.registerTool(
           searchTerm,
           state,
         },
-        { db, authToken: process.env.HYPHA_MCP_AUTH_TOKEN },
+        { db, authToken: mcpAuthToken() },
       );
 
       if (gated.access === 'denied') {
@@ -2033,7 +2030,7 @@ server.registerTool(
 );
 
 const prepareGovernanceProposalTool = createPrepareGovernanceProposalTool(
-  process.env.HYPHA_MCP_AUTH_TOKEN ?? '',
+  mcpAuthToken() ?? '',
 );
 server.registerTool(
   'prepare_governance_proposal',

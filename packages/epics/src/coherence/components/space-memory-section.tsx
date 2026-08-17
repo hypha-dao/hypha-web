@@ -79,6 +79,15 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   }, [artifacts]);
   const [activeFilter, setActiveFilter] =
     React.useState<MemoryFilterValue>('general');
+  const dateFormatter = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(lang, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }),
+    [lang],
+  );
 
   const handleLinkedArtifactChange = React.useCallback(
     async (documentSlug: string | undefined, artifactId: string) => {
@@ -305,11 +314,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                   const dateLabel = (() => {
                     const ms = Date.parse(row.uploadedAt);
                     if (!Number.isFinite(ms)) return '—';
-                    return new Intl.DateTimeFormat(lang, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    }).format(new Date(ms));
+                    return dateFormatter.format(new Date(ms));
                   })();
                   const isHighlighted =
                     Boolean(highlightDoc) &&

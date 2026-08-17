@@ -14,20 +14,34 @@ const slugIdSchema = z
   .max(200)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id must be a lowercase slug');
 
-const isoDateSchema = z.preprocess((value) => {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10);
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    // Accept full ISO timestamps by taking the date portion.
-    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
-      return trimmed.slice(0, 10);
+const isoDateSchema = z.preprocess(
+  (value) => {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value.toISOString().slice(0, 10);
     }
-    return trimmed;
-  }
-  return value;
-}, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD'));
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      // Accept full ISO timestamps by taking the date portion.
+      if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+        return trimmed.slice(0, 10);
+      }
+      return trimmed;
+    }
+    return value;
+  },
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
+    .refine((value) => {
+      const [year, month, day] = value.split('-').map(Number);
+      const utc = new Date(Date.UTC(year, month - 1, day));
+      return (
+        utc.getUTCFullYear() === year &&
+        utc.getUTCMonth() === month - 1 &&
+        utc.getUTCDate() === day
+      );
+    }, 'expected a real UTC calendar date'),
+);
 
 export const intelligenceFrontmatterSchema = z.object({
   id: slugIdSchema,

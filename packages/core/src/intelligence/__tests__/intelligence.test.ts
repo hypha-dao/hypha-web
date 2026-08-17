@@ -219,6 +219,25 @@ body
     });
     expect(entry.room_id).toBe('!abc:matrix.org');
   });
+
+  it('rejects impossible UTC calendar dates', () => {
+    expect(() =>
+      parseIntelligenceFrontmatter({
+        id: 'stakeholder-assessment-belica-2026-07',
+        type: 'assessment',
+        title: 'Stakeholder Assessment',
+        space: 'belica-5-0',
+        source_app: 'hypha',
+        status: 'current',
+        created_at: '2026-02-31',
+        updated_at: '2026-02-31',
+        tags: [],
+        related: [],
+        version: 1,
+        supersedes: null,
+      }),
+    ).toThrow(/real UTC calendar date/);
+  });
 });
 
 describe('buildIntelligenceSignalGraph', () => {

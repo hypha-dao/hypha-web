@@ -1,9 +1,8 @@
 import 'server-only';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { findSpaceBySlug } from '../../space/server/queries';
-import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
+import { authorizeIntelligenceSpace } from './authorize';
 import type {
   IntelligenceArtifact,
   IntelligenceFrontmatter,
@@ -119,22 +118,13 @@ export async function writeIntelligenceBySpaceSlug(
     };
   }
 
-  if (space.web3SpaceId != null) {
-    if (!canConvertToBigInt(space.web3SpaceId)) {
-      return {
-        access: 'denied',
-        message: `Space "${space.slug}" has an invalid on-chain space id.`,
-        space_slug: spaceSlug,
-      };
-    }
-    const gate = await checkSpaceAccessForSpace(space, input.authToken);
-    if (!gate.hasAccess) {
-      return {
-        access: 'denied',
-        message: gate.message,
-        space_slug: spaceSlug,
-      };
-    }
+  const gate = await authorizeIntelligenceSpace(space, input.authToken);
+  if (!gate.hasAccess) {
+    return {
+      access: 'denied',
+      message: gate.message,
+      space_slug: spaceSlug,
+    };
   }
 
   let raw: string;

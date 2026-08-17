@@ -1,3 +1,4 @@
+export { authorizeIntelligenceSpace } from './authorize';
 export {
   listIntelligenceBySpaceSlug,
   type ListIntelligenceBySpaceSlugInput,

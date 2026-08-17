@@ -59,6 +59,7 @@ export function useSignalIntelligencePatch(
 ) {
   const { getAccessToken } = useAuthentication();
   const [token, setToken] = React.useState<string | null>(null);
+  const [tokenReady, setTokenReady] = React.useState(false);
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [isActing, setIsActing] = React.useState(false);
 
@@ -70,6 +71,8 @@ export function useSignalIntelligencePatch(
         if (!cancelled) setToken(t ?? null);
       } catch {
         if (!cancelled) setToken(null);
+      } finally {
+        if (!cancelled) setTokenReady(true);
       }
     })();
     return () => {
@@ -78,7 +81,7 @@ export function useSignalIntelligencePatch(
   }, [getAccessToken]);
 
   const key =
-    spaceSlug && signalSlug
+    spaceSlug && signalSlug && tokenReady
       ? ([
           SIGNAL_INTELLIGENCE_PATCH_SWR_KEY,
           spaceSlug,
