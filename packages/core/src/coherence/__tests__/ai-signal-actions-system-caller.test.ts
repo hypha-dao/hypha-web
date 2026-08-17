@@ -27,6 +27,7 @@ vi.mock('../server/mutations', () => ({
 }));
 
 import { createAiSignalForSpaceBySlug } from '../server/ai-signal-actions';
+import { createSystemAiSignalForSpaceBySlug } from '../server/ai-signal-actions-system';
 import { findSelf } from '../../people/server/queries';
 import { checkSpaceAccessForSpace, findSpaceBySlug } from '../../space/server';
 import { createCoherence } from '../server/mutations';
@@ -60,12 +61,11 @@ beforeEach(() => {
   } as never);
 });
 
-describe('createAiSignalForSpaceBySlug — system vs. user caller', () => {
-  it('system caller with no authToken succeeds, skips the access gate, and writes a null creatorId', async () => {
-    const result = await createAiSignalForSpaceBySlug(
-      { ...baseInput, system: true },
-      { db: {} as never },
-    );
+describe('createSystemAiSignalForSpaceBySlug — orchestrator-only path', () => {
+  it('succeeds with no authToken, skips the access gate, and writes a null creatorId', async () => {
+    const result = await createSystemAiSignalForSpaceBySlug(baseInput, {
+      db: {} as never,
+    });
 
     expect(result.ok).toBe(true);
     expect(mockedCheckAccess).not.toHaveBeenCalled();
@@ -78,8 +78,10 @@ describe('createAiSignalForSpaceBySlug — system vs. user caller', () => {
       expect(result.creatorId).toBeNull();
     }
   });
+});
 
-  it('real user with a valid authToken keeps the existing access gate and resolves a real creatorId', async () => {
+describe('createAiSignalForSpaceBySlug — user-facing path always requires real auth', () => {
+  it('a real user with a valid authToken keeps the access gate and resolves a real creatorId', async () => {
     mockedCheckAccess.mockResolvedValue({ hasAccess: true });
     mockedFindSelf.mockResolvedValue({ id: 99 } as never);
 
@@ -99,10 +101,11 @@ describe('createAiSignalForSpaceBySlug — system vs. user caller', () => {
     }
   });
 
-  it('a caller with no authToken and no system flag is still rejected (no accidental bypass)', async () => {
-    const result = await createAiSignalForSpaceBySlug(baseInput, {
-      db: {} as never,
-    });
+  it('a caller with no authToken is rejected (no accidental bypass — there is no flag to set)', async () => {
+    const result = await createAiSignalForSpaceBySlug(
+      { ...baseInput, authToken: '' },
+      { db: {} as never },
+    );
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

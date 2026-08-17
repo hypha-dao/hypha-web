@@ -35,6 +35,7 @@ Optional but useful:
 - `HYPHA_MCP_MATRIX_REQUEST_URL` (or `VERCEL_URL`)
 - Signal orchestrator tuning (defaults shown):
   - `HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES=20` — debounce before a queued item becomes due
+  - `HYPHA_SIGNAL_ORCHESTRATOR_MIN_WINDOW_MINUTES=5` — floor on the debounce window; lower this too if you need WINDOW_MINUTES below 5 (e.g. local testing)
   - `HYPHA_SIGNAL_ORCHESTRATOR_MAX_ATTEMPTS=5`
   - `HYPHA_SIGNAL_ORCHESTRATOR_SPACE_DAILY_LIMIT=3`
   - `HYPHA_SIGNAL_ORCHESTRATOR_RELAY_DAILY_LIMIT=2`
@@ -183,5 +184,5 @@ When querying memory via AI/MCP, always paginate until completion:
 3. Call `/api/v1/ops/space-memory/health` and confirm no critical alerts.
 4. Run refresh dry-run and verify expected target spaces.
 5. Run real refresh and confirm `success_count > 0` (or ingest a transcript).
-6. Wait for `dueAt` (or lower `HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES` in a staging env), then hit orchestrate (cron or ops POST) and confirm queue items move off `pending`.
+6. Wait for `dueAt` (or lower `HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES` and `HYPHA_SIGNAL_ORCHESTRATOR_MIN_WINDOW_MINUTES` in a staging env), then hit orchestrate (cron or ops POST) and confirm queue items move off `pending`.
 7. Ask AI for “everything this space remembers” and validate multi-page retrieval.

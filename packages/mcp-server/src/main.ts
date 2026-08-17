@@ -274,7 +274,7 @@ server.registerTool(
     const result = await createAiSignalForSpaceBySlug(
       {
         spaceSlug: parsed.data.space_slug,
-        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        authToken: process.env.HYPHA_MCP_AUTH_TOKEN ?? '',
         title: parsed.data.title,
         description: parsed.data.description,
         type: parsed.data.type,
@@ -396,7 +396,7 @@ server.registerTool(
       {
         sourceSpaceSlug: parsed.data.source_space_slug,
         targetSpaceSlug: parsed.data.target_space_slug,
-        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        authToken: process.env.HYPHA_MCP_AUTH_TOKEN ?? '',
         title: parsed.data.title,
         summary: parsed.data.summary,
         recommendedAction: parsed.data.recommended_action,

@@ -24,13 +24,18 @@ import {
   type SignalPriority,
   type SignalType,
 } from './ai-signal-actions';
+import {
+  createSystemAiSignalForSpaceBySlug,
+  relaySystemAiSignalToEcosystemSpace,
+} from './ai-signal-actions-system';
 
 function parseEnvNumber(
   value: string | undefined,
   fallback: number,
   options?: { int?: boolean; min?: number; max?: number },
 ): number {
-  const raw = Number(value ?? '');
+  const trimmed = value?.trim();
+  const raw = trimmed ? Number(trimmed) : NaN;
   let parsed = Number.isFinite(raw) ? raw : fallback;
   if (options?.int) parsed = Math.trunc(parsed);
   if (typeof options?.min === 'number') parsed = Math.max(options.min, parsed);
@@ -41,6 +46,13 @@ function parseEnvNumber(
 const WINDOW_MINUTES = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES,
   20,
+  { int: true, min: 1, max: 240 },
+);
+// Separate, rarely-touched floor: lowering WINDOW_MINUTES alone (e.g. for local
+// testing) can't push the debounce below this without also changing this var.
+const MIN_WINDOW_MINUTES = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_WINDOW_MINUTES,
+  5,
   { int: true, min: 1, max: 240 },
 );
 const MAX_ATTEMPTS = parseEnvNumber(
@@ -380,7 +392,9 @@ export async function enqueueSignalEvaluationFromMemory(
   if (!slug) return { ok: false as const, error: 'spaceSlug is required' };
   const host = await findSpaceBySlug({ slug }, { db });
   if (!host) return { ok: false as const, error: 'Space not found' };
-  const dueAt = new Date(Date.now() + Math.max(5, WINDOW_MINUTES) * 60 * 1000);
+  const dueAt = new Date(
+    Date.now() + Math.max(MIN_WINDOW_MINUTES, WINDOW_MINUTES) * 60 * 1000,
+  );
 
   const payload: Record<string, unknown> = {
     trigger_kind: input.triggerKind,
@@ -460,6 +474,9 @@ export async function processSignalOrchestratorBatch(
   // No Vercel Cron / ops-secret caller ever supplies a real per-user Privy token — both HTTP
   // entrypoints authenticate the caller via a fixed shared secret before reaching this function.
   // `authToken` stays supported as an explicit override (e.g. tests exercising the real-user path).
+  // When absent, signal writes go through `./ai-signal-actions-system` — a separate module not
+  // reachable from user-facing MCP/chat tools — instead of a boolean flag on the shared,
+  // user-facing `createAiSignalForSpaceBySlug` / `relayAiSignalToEcosystemSpace` functions.
   const callerAuthToken = authToken?.trim() || undefined;
   const useSystemIdentity = !callerAuthToken;
   const results: Array<{ queue_id: number; status: string; message: string }> =
@@ -470,7 +487,10 @@ export async function processSignalOrchestratorBatch(
       .update(signalOrchestratorQueue)
       .set({
         state: 'processing',
-        attempts: row.attempts + 1,
+        // A dry run is a preview, not a genuine processing attempt — don't burn one of
+        // MAX_ATTEMPTS for it, or repeated dry-runs could discard a due item that was
+        // never actually tried for real.
+        attempts: dryRun ? row.attempts : row.attempts + 1,
         processingStartedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -640,19 +660,30 @@ export async function processSignalOrchestratorBatch(
         continue;
       }
 
-      const local = await createAiSignalForSpaceBySlug(
-        {
-          spaceSlug: host.slug,
-          authToken: callerAuthToken,
-          system: useSystemIdentity,
-          title: candidate.title,
-          description: candidate.description,
-          type: candidate.type,
-          priority: candidate.priority,
-          tags: candidate.tags,
-        },
-        { db },
-      );
+      const local = useSystemIdentity
+        ? await createSystemAiSignalForSpaceBySlug(
+            {
+              spaceSlug: host.slug,
+              title: candidate.title,
+              description: candidate.description,
+              type: candidate.type,
+              priority: candidate.priority,
+              tags: candidate.tags,
+            },
+            { db },
+          )
+        : await createAiSignalForSpaceBySlug(
+            {
+              spaceSlug: host.slug,
+              authToken: callerAuthToken as string,
+              title: candidate.title,
+              description: candidate.description,
+              type: candidate.type,
+              priority: candidate.priority,
+              tags: candidate.tags,
+            },
+            { db },
+          );
       if (!local.ok) {
         await saveDispatch(
           {
@@ -750,24 +781,25 @@ export async function processSignalOrchestratorBatch(
             .sort((a, b) => b.relevance - a.relevance)[0];
 
           if (best && best.relevance >= 52) {
-            const relay = await relayAiSignalToEcosystemSpace(
-              {
-                sourceSpaceSlug: host.slug,
-                targetSpaceSlug: best.slug,
-                authToken: callerAuthToken,
-                system: useSystemIdentity,
-                title: `${host.title} -> ${best.title}: relevant signal`,
-                summary: `Local signal summary: ${candidate.summary}.`,
-                recommendedAction:
-                  'Review this signal in next coordination cycle and decide if shared workstream alignment is required.',
-                relevanceRationale: `Target overlap relevance score ${best.relevance}/100 from purpose-language alignment and ecosystem adjacency.`,
-                type: candidate.type,
-                priority: candidate.priority,
-                tags: candidate.tags,
-                sourceAssetKeys: extractSourceAssetKeys(lock.payload),
-              },
-              { db },
-            );
+            const relayInput = {
+              sourceSpaceSlug: host.slug,
+              targetSpaceSlug: best.slug,
+              title: `${host.title} -> ${best.title}: relevant signal`,
+              summary: `Local signal summary: ${candidate.summary}.`,
+              recommendedAction:
+                'Review this signal in next coordination cycle and decide if shared workstream alignment is required.',
+              relevanceRationale: `Target overlap relevance score ${best.relevance}/100 from purpose-language alignment and ecosystem adjacency.`,
+              type: candidate.type,
+              priority: candidate.priority,
+              tags: candidate.tags,
+              sourceAssetKeys: extractSourceAssetKeys(lock.payload),
+            };
+            const relay = useSystemIdentity
+              ? await relaySystemAiSignalToEcosystemSpace(relayInput, { db })
+              : await relayAiSignalToEcosystemSpace(
+                  { ...relayInput, authToken: callerAuthToken as string },
+                  { db },
+                );
 
             await saveDispatch(
               {

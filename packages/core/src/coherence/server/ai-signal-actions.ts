@@ -6,9 +6,8 @@ import { getDb, web3Client } from '../../common/server';
 import { findSelf } from '../../people/server/queries';
 import { checkSpaceAccessForSpace, findSpaceBySlug } from '../../space/server';
 import { getAllOrganizationSpacesForNodeById } from '../../space/server/web3';
-import { CreateCoherenceInput } from '../types';
-import { createCoherence } from './mutations';
 import { DbConfig } from '../../server';
+import { createSignalInSpace } from './ai-signal-actions-internal';
 
 const PAYMENT_CHAIN_ID = 8453 as const;
 
@@ -30,14 +29,7 @@ export type PaymentEligibility = {
 
 type CreateAiSignalInput = {
   spaceSlug: string;
-  authToken?: string;
-  /**
-   * System-triggered call (e.g. the signal-orchestrator cron) with no per-request user session.
-   * Skips the Privy-based access gate and actor resolution — the caller is already authenticated
-   * at the HTTP layer via a fixed shared secret (CRON_SECRET / HYPHA_SPACE_MEMORY_OPS_SECRET).
-   * `creatorId` is written as null (nobody created this, the system did).
-   */
-  system?: boolean;
+  authToken: string;
   title: string;
   description: string;
   type: SignalType;
@@ -49,9 +41,7 @@ type CreateAiSignalInput = {
 type RelayAiSignalInput = {
   sourceSpaceSlug: string;
   targetSpaceSlug: string;
-  authToken?: string;
-  /** See `CreateAiSignalInput.system`. */
-  system?: boolean;
+  authToken: string;
   title: string;
   summary: string;
   recommendedAction: string;
@@ -106,27 +96,6 @@ export function buildAiSignalNavigation(args: {
     ...(args.roomId?.trim() ? { room_id: args.roomId.trim() } : {}),
     label: signalTitle,
   };
-}
-
-const AI_SIGNAL_TAG = 'AI Signal';
-
-function normalizeTags(tags: string[] | undefined): string[] {
-  const uniqueTags = (tags ?? [])
-    .map((tag) => tag.trim())
-    .filter(
-      (tag, index, arr) =>
-        tag.length > 0 &&
-        arr.findIndex(
-          (candidate) =>
-            candidate.trim().toLowerCase() === tag.trim().toLowerCase(),
-        ) === index,
-    );
-
-  if (!uniqueTags.some((tag) => tag.trim().toLowerCase() === 'ai signal')) {
-    uniqueTags.push(AI_SIGNAL_TAG);
-  }
-
-  return uniqueTags;
 }
 
 export function toPaymentReason(
@@ -212,44 +181,10 @@ export async function resolveSignalActorId(authToken: string | undefined) {
   return self?.id ?? null;
 }
 
-async function createSignalInSpace(
-  {
-    host,
-    creatorId,
-    title,
-    description,
-    type,
-    priority,
-    tags,
-  }: {
-    host: NonNullable<Awaited<ReturnType<typeof findSpaceBySlug>>>;
-    creatorId: number | null;
-    title: string;
-    description: string;
-    type: SignalType;
-    priority: SignalPriority;
-    tags?: string[];
-  },
-  { db }: DbConfig,
-) {
-  const payload: CreateCoherenceInput = {
-    creatorId,
-    spaceId: host.id,
-    type,
-    priority,
-    title: title.trim(),
-    description: description.trim(),
-    archived: false,
-    tags: normalizeTags(tags),
-  };
-  return createCoherence(payload, { db });
-}
-
 export async function createAiSignalForSpaceBySlug(
   {
     spaceSlug,
     authToken,
-    system = false,
     title,
     description,
     type,
@@ -259,7 +194,7 @@ export async function createAiSignalForSpaceBySlug(
   }: CreateAiSignalInput,
   { db }: DbConfig,
 ) {
-  if (!system && !authToken) {
+  if (!authToken) {
     return { ok: false as const, error: 'authToken is required' };
   }
 
@@ -268,11 +203,9 @@ export async function createAiSignalForSpaceBySlug(
     return { ok: false as const, error: 'Space not found' };
   }
 
-  if (!system) {
-    const access = await checkSpaceAccessForSpace(host, authToken);
-    if (!access.hasAccess) {
-      return { ok: false as const, error: access.message };
-    }
+  const access = await checkSpaceAccessForSpace(host, authToken);
+  if (!access.hasAccess) {
+    return { ok: false as const, error: access.message };
   }
 
   const payment = await getSpacePaymentEligibility(host.web3SpaceId);
@@ -281,15 +214,12 @@ export async function createAiSignalForSpaceBySlug(
     return { ok: false as const, error: paymentReason };
   }
 
-  let actorId: number | null = null;
-  if (!system) {
-    actorId = await resolveSignalActorId(authToken);
-    if (!actorId) {
-      return {
-        ok: false as const,
-        error: 'Could not resolve authenticated user.',
-      };
-    }
+  const actorId = await resolveSignalActorId(authToken);
+  if (!actorId) {
+    return {
+      ok: false as const,
+      error: 'Could not resolve authenticated user.',
+    };
   }
 
   const created = await createSignalInSpace(
@@ -334,7 +264,6 @@ export async function relayAiSignalToEcosystemSpace(
     sourceSpaceSlug,
     targetSpaceSlug,
     authToken,
-    system = false,
     title,
     summary,
     recommendedAction,
@@ -347,7 +276,7 @@ export async function relayAiSignalToEcosystemSpace(
   }: RelayAiSignalInput,
   { db }: DbConfig,
 ) {
-  if (!system && !authToken) {
+  if (!authToken) {
     return { ok: false as const, error: 'authToken is required' };
   }
 
@@ -359,17 +288,15 @@ export async function relayAiSignalToEcosystemSpace(
   if (!source) return { ok: false as const, error: 'Source space not found' };
   if (!target) return { ok: false as const, error: 'Target space not found' };
 
-  if (!system) {
-    const [sourceAccess, targetAccess] = await Promise.all([
-      checkSpaceAccessForSpace(source, authToken),
-      checkSpaceAccessForSpace(target, authToken),
-    ]);
-    if (!sourceAccess.hasAccess) {
-      return { ok: false as const, error: sourceAccess.message };
-    }
-    if (!targetAccess.hasAccess) {
-      return { ok: false as const, error: targetAccess.message };
-    }
+  const [sourceAccess, targetAccess] = await Promise.all([
+    checkSpaceAccessForSpace(source, authToken),
+    checkSpaceAccessForSpace(target, authToken),
+  ]);
+  if (!sourceAccess.hasAccess) {
+    return { ok: false as const, error: sourceAccess.message };
+  }
+  if (!targetAccess.hasAccess) {
+    return { ok: false as const, error: targetAccess.message };
   }
 
   const sourcePayment = await getSpacePaymentEligibility(source.web3SpaceId);
@@ -410,15 +337,12 @@ export async function relayAiSignalToEcosystemSpace(
     };
   }
 
-  let actorId: number | null = null;
-  if (!system) {
-    actorId = await resolveSignalActorId(authToken);
-    if (!actorId) {
-      return {
-        ok: false as const,
-        error: 'Could not resolve authenticated user.',
-      };
-    }
+  const actorId = await resolveSignalActorId(authToken);
+  if (!actorId) {
+    return {
+      ok: false as const,
+      error: 'Could not resolve authenticated user.',
+    };
   }
 
   const composedDescription = [
