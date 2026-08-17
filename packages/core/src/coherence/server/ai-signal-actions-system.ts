@@ -50,7 +50,15 @@ type RelaySystemAiSignalInput = {
 };
 
 export async function createSystemAiSignalForSpaceBySlug(
-  { spaceSlug, title, description, type, priority, tags, lang }: CreateSystemAiSignalInput,
+  {
+    spaceSlug,
+    title,
+    description,
+    type,
+    priority,
+    tags,
+    lang,
+  }: CreateSystemAiSignalInput,
   { db }: DbConfig,
 ) {
   const host = await findSpaceBySlug({ slug: spaceSlug }, { db });

@@ -120,8 +120,8 @@ export const createCoherence = async (
     inputAssigneeIds?.length
       ? inputAssigneeIds
       : creatorId != null
-        ? [creatorId]
-        : [],
+      ? [creatorId]
+      : [],
   );
 
   let progressStatus = inputProgressStatus;

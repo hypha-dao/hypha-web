@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../common/server', () => ({
-  getDb: vi.fn(() => ({}) as never),
+  getDb: vi.fn(() => ({} as never)),
   web3Client: {
     readContract: vi.fn(async ({ functionName }: { functionName: string }) => {
       if (functionName === 'hasSpacePaid') return true;
