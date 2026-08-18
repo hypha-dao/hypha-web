@@ -9,14 +9,14 @@ export const SIGNAL_GRID_CARD_WRAPPER_CLASS = cn(
   'flex h-full min-h-0 w-full flex-col',
 );
 
-/** Kanban task cards — quiet density; grow when footer content wraps. */
+/** Kanban task cards — quiet density; grow when the title or footer wraps. */
 export const SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS = cn(
-  'flex min-h-[7rem] flex-col',
+  'flex min-h-[6.25rem] flex-col',
 );
 
-/** Swimlane task cards — quiet density; grow when footer content wraps. */
+/** Swimlane task cards — quiet density; grow when the title or footer wraps. */
 export const SIGNAL_SWIMLANE_TASK_CARD_SHELL_CLASS = cn(
-  'flex min-h-[6.75rem] flex-col',
+  'flex min-h-[6rem] flex-col',
 );
 
 /** List rows — uniform minimum height within the list view. */

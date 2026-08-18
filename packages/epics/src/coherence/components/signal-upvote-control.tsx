@@ -178,8 +178,8 @@ export function SignalUpvoteControl({
   );
 
   // Button size="sm" sets min-h-8; zero it so our pill height wins.
-  const pillHeightClass = cn('min-h-0 shrink-0 py-0', compact ? 'h-5' : 'h-7');
-  const iconSizeClass = compact ? 'h-3 w-3' : 'h-3.5 w-3.5';
+  const pillHeightClass = cn('min-h-0 shrink-0 py-0', compact ? 'h-5' : 'h-6');
+  const iconSizeClass = compact ? 'h-2.5 w-2.5' : 'h-3 w-3';
   const hasAnyVotes = summary.upvoteCount > 0;
 
   return (
@@ -208,7 +208,7 @@ export function SignalUpvoteControl({
             pillHeightClass,
             'gap-1 rounded-none border-0 px-0 tabular-nums shadow-none ring-0 hover:shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
             'flex items-center justify-center',
-            compact ? 'min-w-[2.75rem] px-2' : 'min-w-[3rem] px-2.5',
+            compact ? 'min-w-[2.5rem] px-1.5' : 'min-w-[2.75rem] px-2',
             hasVoted
               ? 'text-accent-11 hover:bg-muted/30 active:bg-muted/40'
               : 'text-muted-foreground hover:bg-muted/35 hover:text-foreground active:bg-muted/50',
@@ -239,7 +239,7 @@ export function SignalUpvoteControl({
           />
           <span
             className={cn(
-              compact ? 'text-[11px]' : 'text-1',
+              compact ? 'text-[10px]' : 'text-[11px]',
               hasVoted
                 ? 'font-semibold text-accent-11'
                 : hasAnyVotes
@@ -272,7 +272,8 @@ export function SignalUpvoteControl({
               size="sm"
               className={cn(
                 pillHeightClass,
-                'flex w-7 items-center justify-center rounded-none border-0 px-0 text-muted-foreground shadow-none ring-0 hover:bg-muted/35 hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/45 data-[state=open]:text-foreground',
+                compact ? 'w-5' : 'w-6',
+                'flex items-center justify-center rounded-none border-0 px-0 text-muted-foreground shadow-none ring-0 hover:bg-muted/35 hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:bg-muted/45 data-[state=open]:text-foreground',
                 hasVoted && 'text-accent-11 hover:text-accent-11',
               )}
               aria-haspopup="dialog"

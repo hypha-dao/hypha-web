@@ -54,7 +54,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
   title,
   description,
-  type,
   priority,
   slug,
   createdAt,
@@ -110,16 +109,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       assigneeIds,
       fallbackPersonId: creatorId,
     }).length > 0;
-  const typeLabel = t(
-    `types.${type}` as
-      | 'types.Opportunity'
-      | 'types.Risk'
-      | 'types.Tension'
-      | 'types.Insight'
-      | 'types.Trend'
-      | 'types.Proposal',
-  );
-
   const priorityMeta = React.useMemo(
     () => COHERENCE_PRIORITY_OPTIONS.find((o) => o.priority === priority),
     [priority],
@@ -171,6 +160,45 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
 
+  const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
+  if (hasPersonSlot) {
+    metaParts.push({
+      key: 'assignee',
+      node: (
+        <SignalAssignee
+          assigneeIds={assigneeIds}
+          fallbackPersonId={creatorId}
+          variant="meta"
+          className="min-w-0 truncate"
+        />
+      ),
+    });
+  }
+  if (createdAtShort) {
+    metaParts.push({
+      key: 'created',
+      node: (
+        <span className="inline-flex shrink-0 items-center gap-1 tabular-nums">
+          <CalendarDays className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+          {createdAtShort}
+        </span>
+      ),
+    });
+  }
+  if (normalizedMessagesCount > 0) {
+    metaParts.push({
+      key: 'messages',
+      node: (
+        <span
+          className="shrink-0 tabular-nums"
+          aria-label={t('messageCount', { count: normalizedMessagesCount })}
+        >
+          {normalizedMessagesCount}
+        </span>
+      ),
+    });
+  }
+
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -210,7 +238,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   height="20px"
                   loading={isLoading}
                 >
-                  <CardTitle className="line-clamp-2 text-3 font-medium leading-snug tracking-tight">
+                  <CardTitle
+                    className="line-clamp-3 text-2 font-medium leading-snug tracking-tight"
+                    title={title}
+                  >
                     {title}
                   </CardTitle>
                 </Skeleton>
@@ -279,52 +310,23 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 ) : null}
               </div>
             </div>
-            <p className="truncate text-1 text-muted-foreground">
-              <span>{typeLabel}</span>
-              {/* Priority stays on the left accent bar only — avoid duplicate status channel */}
-              {hasPersonSlot ? (
-                <>
-                  <span className="mx-1.5 text-border" aria-hidden>
-                    ·
-                  </span>
-                  <SignalAssignee
-                    assigneeIds={assigneeIds}
-                    fallbackPersonId={creatorId}
-                    variant="meta"
-                    className="min-w-0 truncate"
-                  />
-                </>
-              ) : null}
-              {createdAtShort ? (
-                <>
-                  <span className="mx-1.5 text-border" aria-hidden>
-                    ·
-                  </span>
-                  <span className="inline-flex items-center gap-1 tabular-nums">
-                    <CalendarDays
-                      className="h-3 w-3 shrink-0 opacity-70"
-                      aria-hidden
-                    />
-                    {createdAtShort}
-                  </span>
-                </>
-              ) : null}
-              {normalizedMessagesCount > 0 ? (
-                <>
-                  <span className="mx-1.5 text-border" aria-hidden>
-                    ·
-                  </span>
-                  <span
-                    className="tabular-nums"
-                    aria-label={t('messageCount', {
-                      count: normalizedMessagesCount,
-                    })}
-                  >
-                    {normalizedMessagesCount}
-                  </span>
-                </>
-              ) : null}
-            </p>
+            {/* Priority stays on the left accent bar only — avoid duplicate
+                status channel. Signal type is omitted: it repeated on every
+                card without changing what anyone does next. */}
+            {metaParts.length > 0 ? (
+              <p className="flex min-w-0 items-center text-1 text-muted-foreground">
+                {metaParts.map((part, index) => (
+                  <React.Fragment key={part.key}>
+                    {index > 0 ? (
+                      <span className="mx-1.5 shrink-0 text-border" aria-hidden>
+                        ·
+                      </span>
+                    ) : null}
+                    {part.node}
+                  </React.Fragment>
+                ))}
+              </p>
+            ) : null}
           </div>
 
           {tags?.length > 0 ? (
