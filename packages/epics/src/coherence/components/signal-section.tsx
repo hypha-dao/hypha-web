@@ -287,6 +287,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <SignalSwimlaneView
               signals={visibleSignals}
               workflow={resolvedWorkflow}
+              spaceSlug={spaceSlug}
               onSignalClick={onSignalClick}
               activeSignalSlug={activeSignalSlug}
               readOnly={!canUpdateTasks}

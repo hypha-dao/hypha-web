@@ -6,6 +6,9 @@ import { usePersonById } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
+/** Avatars shown before the rest collapse into a `+n` counter. */
+const DEFAULT_MAX_VISIBLE_ASSIGNEES = 3;
+
 function useAssigneeLabel(
   personId: number,
   unknownLabel: string,
@@ -47,6 +50,10 @@ export function resolveSignalPersonIds({
  * - `meta` (default): name only — sits in the person slot under the title.
  * - `full`: avatar + name for denser surfaces that still want a face.
  *
+ * A single assignee reads as a name; teams collapse to an avatar row capped at
+ * `maxVisible` plus a `+n` counter, so cards stay legible however many people
+ * are on a signal.
+ *
  * Pass `fallbackPersonId` (usually the creator) so cards always have a name
  * when no assignee was stored.
  */
@@ -55,40 +62,98 @@ export function SignalAssignee({
   fallbackPersonId,
   className,
   variant = 'meta',
+  maxVisible = DEFAULT_MAX_VISIBLE_ASSIGNEES,
 }: {
   assigneeIds?: number[] | null;
   /** Shown when `assigneeIds` is empty — typically the signal creator. */
   fallbackPersonId?: number | null;
   className?: string;
   variant?: 'meta' | 'full';
+  maxVisible?: number;
 }) {
   const t = useTranslations('CoherenceTab');
   const ids = resolveSignalPersonIds({ assigneeIds, fallbackPersonId });
-  const [primaryId, ...extraIds] = ids;
+  const [primaryId] = ids;
   if (primaryId == null) return null;
 
+  const title = t('signalAssignee');
+  const unknownLabel = t('signalAssigneeUnknown');
+
+  if (ids.length === 1) {
+    return (
+      <SignalAssigneeSingle
+        personId={primaryId}
+        variant={variant}
+        className={className}
+        title={title}
+        unknownLabel={unknownLabel}
+      />
+    );
+  }
+
+  const visibleIds = ids.slice(0, Math.max(1, maxVisible));
+  const overflowCount = ids.length - visibleIds.length;
+
   return (
-    <SignalAssigneePrimary
-      personId={primaryId}
-      extraCount={extraIds.length}
-      variant={variant}
-      className={className}
-      title={t('signalAssignee')}
-      unknownLabel={t('signalAssigneeUnknown')}
-    />
+    <span
+      className={cn(
+        'inline-flex min-w-0 items-center gap-1 align-middle',
+        className,
+      )}
+      title={t('signalAssigneeCount', { count: ids.length })}
+    >
+      <span className="inline-flex shrink-0 items-center -space-x-1">
+        {visibleIds.map((personId) => (
+          <SignalAssigneeAvatar
+            key={personId}
+            personId={personId}
+            variant={variant}
+            unknownLabel={unknownLabel}
+          />
+        ))}
+      </span>
+      {overflowCount > 0 ? (
+        <span className="shrink-0 tabular-nums">+{overflowCount}</span>
+      ) : null}
+    </span>
   );
 }
 
-function SignalAssigneePrimary({
+function SignalAssigneeAvatar({
   personId,
-  extraCount,
+  variant,
+  unknownLabel,
+}: {
+  personId: number;
+  variant: 'meta' | 'full';
+  unknownLabel: string;
+}) {
+  const { label, avatarUrl } = useAssigneeLabel(personId, unknownLabel);
+
+  return (
+    <span title={label} className="inline-flex">
+      <PersonAvatar
+        size="sm"
+        shape="circle"
+        avatarSrc={avatarUrl}
+        userName={label}
+        className={cn(
+          'shrink-0 ring-1 ring-background',
+          variant === 'full' ? 'h-5 w-5' : 'h-4 w-4',
+        )}
+      />
+    </span>
+  );
+}
+
+function SignalAssigneeSingle({
+  personId,
   variant,
   className,
   title,
   unknownLabel,
 }: {
   personId: number;
-  extraCount: number;
   variant: 'meta' | 'full';
   className?: string;
   title: string;
@@ -112,9 +177,6 @@ function SignalAssigneePrimary({
           className="shrink-0"
         />
         <span className="truncate">{label}</span>
-        {extraCount > 0 ? (
-          <span className="shrink-0 tabular-nums">+{extraCount}</span>
-        ) : null}
       </span>
     );
   }
@@ -125,9 +187,6 @@ function SignalAssigneePrimary({
       title={title}
     >
       <span className="truncate">{label}</span>
-      {extraCount > 0 ? (
-        <span className="ml-0.5 shrink-0 tabular-nums">+{extraCount}</span>
-      ) : null}
     </span>
   );
 }
