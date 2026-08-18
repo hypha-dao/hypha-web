@@ -19,15 +19,8 @@ import {
   Card,
   CardContent,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Skeleton,
 } from '@hypha-platform/ui';
-import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import React from 'react';
@@ -37,6 +30,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
+import { SignalDescriptionButton } from './signal-description-dialog';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import {
@@ -81,7 +75,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
-  const tCommon = useTranslations('Common');
   const router = useRouter();
   const params = useParams<{ lang: string; id: string; tab?: string }>();
   const { space: currentSpace } = useSpaceBySlug(params.id ?? '');
@@ -111,9 +104,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const [archiveDialogOpen, setArchiveDialogOpen] = React.useState(false);
   const [isArchiveMutating, setIsArchiveMutating] = React.useState(false);
   const [archiveError, setArchiveError] = React.useState<string | null>(null);
-  const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
-  const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
 
   const hasPersonSlot =
     resolveSignalPersonIds({
@@ -153,32 +143,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         : '',
     [createdAtDate, dateFnsLocale],
   );
-
-  const plainDescription = React.useMemo(
-    () =>
-      stripDescription(
-        stripMarkdown(description, {
-          orderedListMarkers: false,
-          unorderedListMarkers: false,
-        }),
-      ),
-    [description],
-  );
-
-  React.useLayoutEffect(() => {
-    const el = descriptionClampRef.current;
-    if (!el || !plainDescription.trim() || isLoading) {
-      setDescriptionTruncated(false);
-      return;
-    }
-    const measure = () => {
-      setDescriptionTruncated(el.scrollHeight > el.clientHeight + 1);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [plainDescription, isLoading]);
 
   const handleToggleArchive = React.useCallback(async (): Promise<boolean> => {
     if (!slug || isArchiveMutating) return false;
@@ -251,62 +215,69 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   </CardTitle>
                 </Skeleton>
               </div>
-              {canManageSignal && slug ? (
-                <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    size="sm"
-                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    disabled={isLoading}
-                    aria-label={tSignalCard('editMenu')}
-                    title={tSignalCard('editMenu')}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!params.lang || !params.id || !slug) return;
-                      const tab = params.tab ?? 'coherence';
-                      router.push(
-                        `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                      );
-                    }}
-                    onKeyDown={stopCardActivationKey}
-                  >
-                    <Pencil className="h-3.5 w-3.5" aria-hidden />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    colorVariant="neutral"
-                    size="sm"
-                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    disabled={isLoading || isArchiveMutating}
-                    aria-label={
-                      archived
-                        ? t('unarchiveConversation')
-                        : t('archiveConversation')
-                    }
-                    title={
-                      archived
-                        ? t('unarchiveConversation')
-                        : t('archiveConversation')
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setArchiveDialogOpen(true);
-                    }}
-                    onKeyDown={stopCardActivationKey}
-                  >
-                    {archived ? (
-                      <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
-                    ) : (
-                      <Archive className="h-3.5 w-3.5" aria-hidden />
-                    )}
-                  </Button>
-                </div>
-              ) : null}
+              <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+                <SignalDescriptionButton
+                  title={title}
+                  description={description}
+                  size="md"
+                />
+                {canManageSignal && slug ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      colorVariant="neutral"
+                      size="sm"
+                      className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      disabled={isLoading}
+                      aria-label={tSignalCard('editMenu')}
+                      title={tSignalCard('editMenu')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!params.lang || !params.id || !slug) return;
+                        const tab = params.tab ?? 'coherence';
+                        router.push(
+                          `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                        );
+                      }}
+                      onKeyDown={stopCardActivationKey}
+                    >
+                      <Pencil className="h-3.5 w-3.5" aria-hidden />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      colorVariant="neutral"
+                      size="sm"
+                      className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      disabled={isLoading || isArchiveMutating}
+                      aria-label={
+                        archived
+                          ? t('unarchiveConversation')
+                          : t('archiveConversation')
+                      }
+                      title={
+                        archived
+                          ? t('unarchiveConversation')
+                          : t('archiveConversation')
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setArchiveDialogOpen(true);
+                      }}
+                      onKeyDown={stopCardActivationKey}
+                    >
+                      {archived ? (
+                        <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        <Archive className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                    </Button>
+                  </>
+                ) : null}
+              </div>
             </div>
             <p className="truncate text-1 text-muted-foreground">
               <span>{typeLabel}</span>
@@ -355,81 +326,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               ) : null}
             </p>
           </div>
-
-          <Skeleton
-            className="min-w-full"
-            width="100%"
-            height="40px"
-            loading={isLoading}
-          >
-            <div className="flex min-h-[2.5rem] flex-col gap-0.5">
-              <p
-                ref={descriptionClampRef}
-                className="line-clamp-2 text-2 leading-snug text-muted-foreground"
-              >
-                {plainDescription}
-              </p>
-              {descriptionTruncated ? (
-                <button
-                  type="button"
-                  className="w-fit text-left text-1 text-muted-foreground/80 underline-offset-2 opacity-0 transition-opacity duration-150 hover:text-foreground hover:underline group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDetailsOpen(true);
-                  }}
-                  onKeyDown={stopCardActivationKey}
-                >
-                  {tSignalCard('readFullDescription')}
-                </button>
-              ) : null}
-            </div>
-          </Skeleton>
-
-          <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-            <DialogContent
-              className={cn(
-                'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-background-2 p-0 shadow-md sm:max-w-lg',
-                'border-l-[3px] border-l-[var(--space-accent)]',
-              )}
-              style={spaceAccentPortalStyle}
-              onClick={(e) => e.stopPropagation()}
-              onPointerDownOutside={(e) => e.stopPropagation()}
-            >
-              <DialogHeader className="shrink-0 space-y-1.5 border-b border-border/60 px-6 pb-4 pt-6">
-                <DialogTitle className="pr-10 text-balance text-4 font-medium leading-snug tracking-tight">
-                  {title}
-                </DialogTitle>
-                <DialogDescription className="text-1 text-muted-foreground">
-                  {tSignalCard('fullDescriptionDialogSubtitle')}
-                </DialogDescription>
-              </DialogHeader>
-              <div
-                className={cn(
-                  'narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-5',
-                  '[scrollbar-gutter:stable]',
-                )}
-              >
-                <p className="whitespace-pre-wrap text-2 leading-relaxed text-foreground">
-                  {plainDescription}
-                </p>
-              </div>
-              <DialogFooter className="shrink-0 border-t border-border/60 px-6 py-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="w-full sm:w-auto"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDetailsOpen(false);
-                  }}
-                >
-                  {tCommon('close')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           {tags?.length > 0 ? (
             <SignalTagBadges

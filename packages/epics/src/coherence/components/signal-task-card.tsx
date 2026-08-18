@@ -10,9 +10,10 @@ import {
   SignalStatusDefinition,
 } from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
-import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
+import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   PRIORITY_LEFT_ACCENT_BAR_CLASS,
@@ -102,18 +103,6 @@ export function SignalTaskCard({
     tags: signal.tags,
   });
 
-  const plainDescription = React.useMemo(
-    () =>
-      stripDescription(
-        stripMarkdown(signal.description ?? '', {
-          orderedListMarkers: false,
-          unorderedListMarkers: false,
-        }),
-      ),
-    [signal.description],
-  );
-  const hasDescription = plainDescription.trim().length > 0;
-
   const stopCardActivation = (event: React.SyntheticEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -162,19 +151,25 @@ export function SignalTaskCard({
             <p className="line-clamp-2 min-w-0 flex-1 text-3 font-medium leading-snug tracking-tight text-foreground">
               {signal.title}
             </p>
-            {refresh ? (
-              <div
-                className="flex shrink-0 items-center gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-                onClick={stopCardActivation}
-                onKeyDown={stopCardActivation}
-              >
-                <SignalCardActions
-                  signal={signal}
-                  refresh={refresh}
-                  className="shrink-0"
-                />
-              </div>
-            ) : null}
+            <div className="flex shrink-0 items-center gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+              <SignalDescriptionButton
+                title={signal.title}
+                description={signal.description}
+              />
+              {refresh ? (
+                <div
+                  className="flex shrink-0 items-center gap-0"
+                  onClick={stopCardActivation}
+                  onKeyDown={stopCardActivation}
+                >
+                  <SignalCardActions
+                    signal={signal}
+                    refresh={refresh}
+                    className="shrink-0"
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <p className="truncate text-1 text-muted-foreground">
@@ -219,12 +214,6 @@ export function SignalTaskCard({
             ) : null}
           </p>
         </div>
-
-        {hasDescription ? (
-          <p className="line-clamp-2 text-2 leading-snug text-muted-foreground">
-            {plainDescription}
-          </p>
-        ) : null}
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">

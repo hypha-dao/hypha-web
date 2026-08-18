@@ -510,11 +510,11 @@ export const CreateSignalForm = ({
     }
   }, [spaceId, form]);
 
-  const selectedAssigneeId = form.watch('assigneeIds')?.[0] ?? null;
+  const selectedAssigneeIds = form.watch('assigneeIds') ?? [];
   // Keeps the picker readable when the assignee is no longer on the roster
   // (left the space, or is a delegate rather than a member).
   const { person: selectedAssignee } = usePersonById({
-    id: selectedAssigneeId ?? undefined,
+    id: selectedAssigneeIds[0] ?? undefined,
   });
   const assigneeOptions = React.useMemo(() => {
     const byId = new Map<number, Person>();
@@ -523,6 +523,11 @@ export const CreateSignalForm = ({
     }
     for (const extra of [person, selectedAssignee]) {
       if (extra?.id && !byId.has(extra.id)) byId.set(extra.id, extra);
+    }
+    // Anyone already assigned must stay selectable so saving cannot silently
+    // drop them, even when their profile is not on the roster.
+    for (const id of selectedAssigneeIds) {
+      if (!byId.has(id)) byId.set(id, { id } as Person);
     }
     return [...byId.values()].sort((a, b) =>
       [a.name, a.surname]
@@ -536,7 +541,7 @@ export const CreateSignalForm = ({
           },
         ),
     );
-  }, [person, selectedAssignee, spaceMembers.data]);
+  }, [person, selectedAssignee, selectedAssigneeIds, spaceMembers.data]);
 
   const handleResetForm = React.useCallback(() => {
     form.reset(formDefaults);
@@ -1158,25 +1163,21 @@ export const CreateSignalForm = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-foreground">
-                        {t('signalAssignee')}
+                        {t('signalFormAssignees')}
                       </FormLabel>
                       <FormControl>
                         <SpaceMemberSelect
+                          mode="multi"
                           members={assigneeOptions}
-                          value={
-                            field.value?.[0] != null
-                              ? String(field.value[0])
-                              : null
-                          }
-                          onChange={(value) =>
-                            field.onChange(value ? [Number(value)] : [])
+                          value={(field.value ?? []).map(String)}
+                          onChange={(values) =>
+                            field.onChange(values.map(Number))
                           }
                           placeholder={
                             isLoadingSpaceMembers
                               ? t('signalFormAssigneeLoading')
                               : t('signalFormAssigneeUnassigned')
                           }
-                          unassignedLabel={t('signalFormAssigneeUnassigned')}
                           searchPlaceholder={t('signalFormAssigneeSearch')}
                           emptyListMessage={t('signalFormAssigneeEmpty')}
                           unknownLabel={t('signalAssigneeUnknown')}
