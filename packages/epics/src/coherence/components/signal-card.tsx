@@ -230,86 +230,87 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
         <div className="relative flex flex-1 flex-col gap-2.5 px-3.5 pb-3 pt-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex min-w-0 items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <Skeleton
-                  className="min-w-0"
-                  width="100%"
-                  height="20px"
-                  loading={isLoading}
-                >
-                  <CardTitle
-                    className="line-clamp-3 text-2 font-medium leading-snug tracking-tight"
-                    title={title}
+            {/* Floats above the card so the title can use its full width. Each
+                control carries its own backdrop, keeping an empty cluster
+                invisible. */}
+            <div className="absolute right-2 top-2 z-[1] flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+              <SignalDescriptionButton
+                title={title}
+                description={description}
+                size="md"
+                className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+              />
+              {canManageSignal && slug ? (
+                <div className="flex items-center gap-0.5 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    disabled={isLoading}
+                    aria-label={tSignalCard('editMenu')}
+                    title={tSignalCard('editMenu')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!params.lang || !params.id || !slug) return;
+                      const tab = params.tab ?? 'coherence';
+                      router.push(
+                        `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                      );
+                    }}
+                    onKeyDown={stopCardActivationKey}
                   >
-                    {title}
-                  </CardTitle>
-                </Skeleton>
-              </div>
-              <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-                <SignalDescriptionButton
-                  title={title}
-                  description={description}
-                  size="md"
-                />
-                {canManageSignal && slug ? (
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                      disabled={isLoading}
-                      aria-label={tSignalCard('editMenu')}
-                      title={tSignalCard('editMenu')}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!params.lang || !params.id || !slug) return;
-                        const tab = params.tab ?? 'coherence';
-                        router.push(
-                          `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                        );
-                      }}
-                      onKeyDown={stopCardActivationKey}
-                    >
-                      <Pencil className="h-3.5 w-3.5" aria-hidden />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                      disabled={isLoading || isArchiveMutating}
-                      aria-label={
-                        archived
-                          ? t('unarchiveConversation')
-                          : t('archiveConversation')
-                      }
-                      title={
-                        archived
-                          ? t('unarchiveConversation')
-                          : t('archiveConversation')
-                      }
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setArchiveDialogOpen(true);
-                      }}
-                      onKeyDown={stopCardActivationKey}
-                    >
-                      {archived ? (
-                        <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
-                      ) : (
-                        <Archive className="h-3.5 w-3.5" aria-hidden />
-                      )}
-                    </Button>
-                  </>
-                ) : null}
-              </div>
+                    <Pencil className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    disabled={isLoading || isArchiveMutating}
+                    aria-label={
+                      archived
+                        ? t('unarchiveConversation')
+                        : t('archiveConversation')
+                    }
+                    title={
+                      archived
+                        ? t('unarchiveConversation')
+                        : t('archiveConversation')
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setArchiveDialogOpen(true);
+                    }}
+                    onKeyDown={stopCardActivationKey}
+                  >
+                    {archived ? (
+                      <ArchiveRestore className="h-3.5 w-3.5" aria-hidden />
+                    ) : (
+                      <Archive className="h-3.5 w-3.5" aria-hidden />
+                    )}
+                  </Button>
+                </div>
+              ) : null}
             </div>
+
+            <Skeleton
+              className="min-w-0"
+              width="100%"
+              height="20px"
+              loading={isLoading}
+            >
+              <CardTitle
+                className="line-clamp-3 text-2 font-medium leading-snug tracking-tight [@media(hover:none)]:pr-16"
+                title={title}
+              >
+                {title}
+              </CardTitle>
+            </Skeleton>
             {/* Priority stays on the left accent bar only — avoid duplicate
                 status channel. Signal type is omitted: it repeated on every
                 card without changing what anyone does next. */}

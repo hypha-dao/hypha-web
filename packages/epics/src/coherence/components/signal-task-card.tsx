@@ -176,34 +176,37 @@ export function SignalTaskCard({
       />
 
       <div className="relative flex flex-1 flex-col gap-2 pl-3.5 pr-3 py-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex min-w-0 items-start justify-between gap-2">
-            <p
-              className="line-clamp-3 min-w-0 flex-1 text-2 font-medium leading-snug tracking-tight text-foreground"
-              title={signal.title}
+        {/* Floats above the card so the title can use its full width. Each
+            control carries its own backdrop, keeping an empty cluster
+            invisible. */}
+        <div className="absolute right-1.5 top-1.5 z-[1] flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+          <SignalDescriptionButton
+            title={signal.title}
+            description={signal.description}
+            className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+          />
+          {refresh ? (
+            <div
+              className="flex shrink-0 items-center"
+              onClick={stopCardActivation}
+              onKeyDown={stopCardActivation}
             >
-              {signal.title}
-            </p>
-            <div className="flex shrink-0 items-center gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-              <SignalDescriptionButton
-                title={signal.title}
-                description={signal.description}
+              <SignalCardActions
+                signal={signal}
+                refresh={refresh}
+                className="shrink-0 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
               />
-              {refresh ? (
-                <div
-                  className="flex shrink-0 items-center gap-0"
-                  onClick={stopCardActivation}
-                  onKeyDown={stopCardActivation}
-                >
-                  <SignalCardActions
-                    signal={signal}
-                    refresh={refresh}
-                    className="shrink-0"
-                  />
-                </div>
-              ) : null}
             </div>
-          </div>
+          ) : null}
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-1">
+          <p
+            className="line-clamp-3 text-2 font-medium leading-snug tracking-tight text-foreground [@media(hover:none)]:pr-14"
+            title={signal.title}
+          >
+            {signal.title}
+          </p>
 
           {metaParts.length > 0 ? (
             <p className="flex min-w-0 items-center text-1 text-muted-foreground">
