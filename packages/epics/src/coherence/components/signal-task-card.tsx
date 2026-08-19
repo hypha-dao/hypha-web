@@ -10,9 +10,10 @@ import {
   SignalStatusDefinition,
 } from '@hypha-platform/core/client';
 import { Badge } from '@hypha-platform/ui';
-import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
+import { cn } from '@hypha-platform/ui-utils';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
 import { SignalCardActions } from './signal-card-actions';
+import { SignalDescriptionButton } from './signal-description-dialog';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   PRIORITY_LEFT_ACCENT_BAR_CLASS,
@@ -63,16 +64,6 @@ export function SignalTaskCard({
       assigneeIds: signal.assigneeIds,
       fallbackPersonId: signal.creatorId,
     }).length > 0;
-  const typeLabel = t(
-    `types.${signal.type}` as
-      | 'types.Opportunity'
-      | 'types.Risk'
-      | 'types.Tension'
-      | 'types.Insight'
-      | 'types.Trend'
-      | 'types.Proposal',
-  );
-
   const dueDate =
     signal.dueAt instanceof Date
       ? signal.dueAt
@@ -102,22 +93,50 @@ export function SignalTaskCard({
     tags: signal.tags,
   });
 
-  const plainDescription = React.useMemo(
-    () =>
-      stripDescription(
-        stripMarkdown(signal.description ?? '', {
-          orderedListMarkers: false,
-          unorderedListMarkers: false,
-        }),
-      ),
-    [signal.description],
-  );
-  const hasDescription = plainDescription.trim().length > 0;
-
   const stopCardActivation = (event: React.SyntheticEvent) => {
     event.preventDefault();
     event.stopPropagation();
   };
+
+  // Signal type (Opportunity/Risk/…) is deliberately absent: it repeated on
+  // every card without changing what anyone does next.
+  const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
+  if (showStatus && status) {
+    metaParts.push({
+      key: 'status',
+      node: (
+        <span className="inline-flex min-w-0 items-center gap-1">
+          <span
+            className={cn(
+              'h-1.5 w-1.5 shrink-0 rounded-full',
+              statusColorDotClass(status.color),
+            )}
+            aria-hidden
+          />
+          <span className="truncate">{status.name}</span>
+        </span>
+      ),
+    });
+  }
+  if (hasPersonSlot) {
+    metaParts.push({
+      key: 'assignee',
+      node: (
+        <SignalAssignee
+          assigneeIds={signal.assigneeIds}
+          fallbackPersonId={signal.creatorId}
+          variant="meta"
+          className="min-w-0 truncate"
+        />
+      ),
+    });
+  }
+  if (createdAtRelative) {
+    metaParts.push({
+      key: 'created',
+      node: <span className="shrink-0 tabular-nums">{createdAtRelative}</span>,
+    });
+  }
 
   return (
     <div
@@ -157,74 +176,53 @@ export function SignalTaskCard({
       />
 
       <div className="relative flex flex-1 flex-col gap-2 pl-3.5 pr-3 py-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex min-w-0 items-start justify-between gap-2">
-            <p className="line-clamp-2 min-w-0 flex-1 text-3 font-medium leading-snug tracking-tight text-foreground">
-              {signal.title}
-            </p>
-            {refresh ? (
-              <div
-                className="flex shrink-0 items-center gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-                onClick={stopCardActivation}
-                onKeyDown={stopCardActivation}
-              >
-                <SignalCardActions
-                  signal={signal}
-                  refresh={refresh}
-                  className="shrink-0"
-                />
-              </div>
-            ) : null}
-          </div>
-
-          <p className="truncate text-1 text-muted-foreground">
-            <span>{typeLabel}</span>
-            {showStatus && status ? (
-              <>
-                <span className="mx-1.5 text-border" aria-hidden>
-                  ·
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span
-                    className={cn(
-                      'h-1.5 w-1.5 shrink-0 rounded-full',
-                      statusColorDotClass(status.color),
-                    )}
-                    aria-hidden
-                  />
-                  {status.name}
-                </span>
-              </>
-            ) : null}
-            {hasPersonSlot ? (
-              <>
-                <span className="mx-1.5 text-border" aria-hidden>
-                  ·
-                </span>
-                <SignalAssignee
-                  assigneeIds={signal.assigneeIds}
-                  fallbackPersonId={signal.creatorId}
-                  variant="meta"
-                  className="min-w-0 truncate"
-                />
-              </>
-            ) : null}
-            {createdAtRelative ? (
-              <>
-                <span className="mx-1.5 text-border" aria-hidden>
-                  ·
-                </span>
-                <span className="tabular-nums">{createdAtRelative}</span>
-              </>
-            ) : null}
-          </p>
+        {/* Floats above the card so the title can use its full width. Each
+            control carries its own backdrop, keeping an empty cluster
+            invisible. */}
+        <div className="absolute right-1.5 top-1.5 z-[1] flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+          <SignalDescriptionButton
+            title={signal.title}
+            description={signal.description}
+            className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+          />
+          {refresh ? (
+            <div
+              className="flex shrink-0 items-center"
+              onClick={stopCardActivation}
+              onKeyDown={stopCardActivation}
+            >
+              <SignalCardActions
+                signal={signal}
+                refresh={refresh}
+                className="shrink-0 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+              />
+            </div>
+          ) : null}
         </div>
 
-        {hasDescription ? (
-          <p className="line-clamp-2 text-2 leading-snug text-muted-foreground">
-            {plainDescription}
+        <div className="flex min-w-0 flex-col gap-1">
+          <p
+            className="line-clamp-3 text-2 font-medium leading-snug tracking-tight text-foreground [@media(hover:none)]:pr-14"
+            title={signal.title}
+          >
+            {signal.title}
           </p>
-        ) : null}
+
+          {metaParts.length > 0 ? (
+            <p className="flex min-w-0 items-center text-1 text-muted-foreground">
+              {metaParts.map((part, index) => (
+                <React.Fragment key={part.key}>
+                  {index > 0 ? (
+                    <span className="mx-1.5 shrink-0 text-border" aria-hidden>
+                      ·
+                    </span>
+                  ) : null}
+                  {part.node}
+                </React.Fragment>
+              ))}
+            </p>
+          ) : null}
+        </div>
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">

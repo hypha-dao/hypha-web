@@ -9,27 +9,34 @@ export const SIGNAL_GRID_CARD_WRAPPER_CLASS = cn(
   'flex h-full min-h-0 w-full flex-col',
 );
 
-/** Kanban task cards — quiet density; grow when footer content wraps. */
+/** Kanban task cards — quiet density; grow when the title or footer wraps. */
 export const SIGNAL_KANBAN_TASK_CARD_SHELL_CLASS = cn(
-  'flex min-h-[11.5rem] flex-col',
+  'flex min-h-[6.25rem] flex-col',
 );
 
-/** Swimlane task cards — quiet density; grow when footer content wraps. */
+/** Swimlane task cards — quiet density; grow when the title or footer wraps. */
 export const SIGNAL_SWIMLANE_TASK_CARD_SHELL_CLASS = cn(
-  'flex min-h-[10.75rem] flex-col',
+  'flex min-h-[6rem] flex-col',
 );
 
 /** List rows — uniform minimum height within the list view. */
 export const SIGNAL_LIST_ITEM_SHELL_CLASS = cn('min-h-[6rem]');
 
-/** Kanban columns — fixed height so headers stay visible while cards scroll inside. */
+/**
+ * Kanban columns — fixed height so headers stay visible while cards scroll
+ * inside. The viewport offset keeps the column inside the page chrome; the cap
+ * is generous so tall screens show many cards instead of empty column.
+ */
 export const SIGNAL_KANBAN_COLUMN_SHELL_CLASS = cn(
-  'h-[min(calc(100dvh-13rem),42rem)] min-h-[8rem] overflow-hidden',
+  'h-[min(calc(100dvh-13rem),56rem)] min-h-[8rem] overflow-hidden',
 );
 
-/** Swimlane status row — fixed height for horizontal status columns. */
+/**
+ * Swimlane status row — grows with its cards up to a viewport-relative cap, so
+ * a quiet lane stays short while a busy one fills the screen before scrolling.
+ */
 export const SIGNAL_SWIMLANE_STATUS_ROW_CLASS = cn(
-  'h-[min(calc(100dvh-15rem),36rem)] min-h-0 overflow-x-auto overflow-y-hidden',
+  'max-h-[min(calc(100dvh-13rem),46rem)] min-h-[9rem] overflow-x-auto overflow-y-hidden',
 );
 
 /** Status column inside a swimlane row. */
@@ -39,7 +46,7 @@ export const SIGNAL_SWIMLANE_STATUS_COLUMN_CLASS = cn(
 
 /** Scrollable card stack inside a status column (kanban + swimlane). */
 export const SIGNAL_STATUS_CARD_STACK_CLASS = cn(
-  'flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-y-auto p-2.5',
+  'flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-y-auto p-2',
   'touch-pan-y [scrollbar-gutter:stable] [scrollbar-width:thin] narrow-scrollbar',
   /* Keep full card height — scroll the column instead of squashing cards. */
   '[&>*]:shrink-0',

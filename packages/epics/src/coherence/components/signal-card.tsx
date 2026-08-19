@@ -19,15 +19,8 @@ import {
   Card,
   CardContent,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Skeleton,
 } from '@hypha-platform/ui';
-import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import React from 'react';
@@ -37,6 +30,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { resolveSignalPersonIds, SignalAssignee } from './signal-assignee';
+import { SignalDescriptionButton } from './signal-description-dialog';
 import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import {
@@ -60,7 +54,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
   title,
   description,
-  type,
   priority,
   slug,
   createdAt,
@@ -81,7 +74,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
-  const tCommon = useTranslations('Common');
   const router = useRouter();
   const params = useParams<{ lang: string; id: string; tab?: string }>();
   const { space: currentSpace } = useSpaceBySlug(params.id ?? '');
@@ -111,25 +103,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const [archiveDialogOpen, setArchiveDialogOpen] = React.useState(false);
   const [isArchiveMutating, setIsArchiveMutating] = React.useState(false);
   const [archiveError, setArchiveError] = React.useState<string | null>(null);
-  const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
-  const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
 
   const hasPersonSlot =
     resolveSignalPersonIds({
       assigneeIds,
       fallbackPersonId: creatorId,
     }).length > 0;
-  const typeLabel = t(
-    `types.${type}` as
-      | 'types.Opportunity'
-      | 'types.Risk'
-      | 'types.Tension'
-      | 'types.Insight'
-      | 'types.Trend'
-      | 'types.Proposal',
-  );
-
   const priorityMeta = React.useMemo(
     () => COHERENCE_PRIORITY_OPTIONS.find((o) => o.priority === priority),
     [priority],
@@ -153,32 +132,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         : '',
     [createdAtDate, dateFnsLocale],
   );
-
-  const plainDescription = React.useMemo(
-    () =>
-      stripDescription(
-        stripMarkdown(description, {
-          orderedListMarkers: false,
-          unorderedListMarkers: false,
-        }),
-      ),
-    [description],
-  );
-
-  React.useLayoutEffect(() => {
-    const el = descriptionClampRef.current;
-    if (!el || !plainDescription.trim() || isLoading) {
-      setDescriptionTruncated(false);
-      return;
-    }
-    const measure = () => {
-      setDescriptionTruncated(el.scrollHeight > el.clientHeight + 1);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [plainDescription, isLoading]);
 
   const handleToggleArchive = React.useCallback(async (): Promise<boolean> => {
     if (!slug || isArchiveMutating) return false;
@@ -206,6 +159,45 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       setIsArchiveMutating(false);
     }
   }, [archived, slug, isArchiveMutating, refresh, t, updateCoherenceBySlug]);
+
+  const metaParts: Array<{ key: string; node: React.ReactNode }> = [];
+  if (hasPersonSlot) {
+    metaParts.push({
+      key: 'assignee',
+      node: (
+        <SignalAssignee
+          assigneeIds={assigneeIds}
+          fallbackPersonId={creatorId}
+          variant="meta"
+          className="min-w-0 truncate"
+        />
+      ),
+    });
+  }
+  if (createdAtShort) {
+    metaParts.push({
+      key: 'created',
+      node: (
+        <span className="inline-flex shrink-0 items-center gap-1 tabular-nums">
+          <CalendarDays className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+          {createdAtShort}
+        </span>
+      ),
+    });
+  }
+  if (normalizedMessagesCount > 0) {
+    metaParts.push({
+      key: 'messages',
+      node: (
+        <span
+          className="shrink-0 tabular-nums"
+          aria-label={t('messageCount', { count: normalizedMessagesCount })}
+        >
+          {normalizedMessagesCount}
+        </span>
+      ),
+    });
+  }
 
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -238,21 +230,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
         <div className="relative flex flex-1 flex-col gap-2.5 px-3.5 pb-3 pt-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex min-w-0 items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <Skeleton
-                  className="min-w-0"
-                  width="100%"
-                  height="20px"
-                  loading={isLoading}
-                >
-                  <CardTitle className="line-clamp-2 text-3 font-medium leading-snug tracking-tight">
-                    {title}
-                  </CardTitle>
-                </Skeleton>
-              </div>
+            {/* Floats above the card so the title can use its full width. Each
+                control carries its own backdrop, keeping an empty cluster
+                invisible. */}
+            <div className="absolute right-2 top-2 z-[1] flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+              <SignalDescriptionButton
+                title={title}
+                description={description}
+                size="md"
+                className="rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm"
+              />
               {canManageSignal && slug ? (
-                <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+                <div className="flex items-center gap-0.5 rounded-md bg-background-2/90 shadow-sm backdrop-blur-sm">
                   <Button
                     type="button"
                     variant="ghost"
@@ -308,128 +297,38 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 </div>
               ) : null}
             </div>
-            <p className="truncate text-1 text-muted-foreground">
-              <span>{typeLabel}</span>
-              {/* Priority stays on the left accent bar only — avoid duplicate status channel */}
-              {hasPersonSlot ? (
-                <>
-                  <span className="mx-1.5 text-border" aria-hidden>
-                    ·
-                  </span>
-                  <SignalAssignee
-                    assigneeIds={assigneeIds}
-                    fallbackPersonId={creatorId}
-                    variant="meta"
-                    className="min-w-0 truncate"
-                  />
-                </>
-              ) : null}
-              {createdAtShort ? (
-                <>
-                  <span className="mx-1.5 text-border" aria-hidden>
-                    ·
-                  </span>
-                  <span className="inline-flex items-center gap-1 tabular-nums">
-                    <CalendarDays
-                      className="h-3 w-3 shrink-0 opacity-70"
-                      aria-hidden
-                    />
-                    {createdAtShort}
-                  </span>
-                </>
-              ) : null}
-              {normalizedMessagesCount > 0 ? (
-                <>
-                  <span className="mx-1.5 text-border" aria-hidden>
-                    ·
-                  </span>
-                  <span
-                    className="tabular-nums"
-                    aria-label={t('messageCount', {
-                      count: normalizedMessagesCount,
-                    })}
-                  >
-                    {normalizedMessagesCount}
-                  </span>
-                </>
-              ) : null}
-            </p>
-          </div>
 
-          <Skeleton
-            className="min-w-full"
-            width="100%"
-            height="40px"
-            loading={isLoading}
-          >
-            <div className="flex min-h-[2.5rem] flex-col gap-0.5">
-              <p
-                ref={descriptionClampRef}
-                className="line-clamp-2 text-2 leading-snug text-muted-foreground"
-              >
-                {plainDescription}
-              </p>
-              {descriptionTruncated ? (
-                <button
-                  type="button"
-                  className="w-fit text-left text-1 text-muted-foreground/80 underline-offset-2 opacity-0 transition-opacity duration-150 hover:text-foreground hover:underline group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDetailsOpen(true);
-                  }}
-                  onKeyDown={stopCardActivationKey}
-                >
-                  {tSignalCard('readFullDescription')}
-                </button>
-              ) : null}
-            </div>
-          </Skeleton>
-
-          <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-            <DialogContent
-              className={cn(
-                'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-background-2 p-0 shadow-md sm:max-w-lg',
-                'border-l-[3px] border-l-[var(--space-accent)]',
-              )}
-              style={spaceAccentPortalStyle}
-              onClick={(e) => e.stopPropagation()}
-              onPointerDownOutside={(e) => e.stopPropagation()}
+            <Skeleton
+              className="min-w-0"
+              width="100%"
+              height="20px"
+              loading={isLoading}
             >
-              <DialogHeader className="shrink-0 space-y-1.5 border-b border-border/60 px-6 pb-4 pt-6">
-                <DialogTitle className="pr-10 text-balance text-4 font-medium leading-snug tracking-tight">
-                  {title}
-                </DialogTitle>
-                <DialogDescription className="text-1 text-muted-foreground">
-                  {tSignalCard('fullDescriptionDialogSubtitle')}
-                </DialogDescription>
-              </DialogHeader>
-              <div
-                className={cn(
-                  'narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-5',
-                  '[scrollbar-gutter:stable]',
-                )}
+              <CardTitle
+                className="line-clamp-3 text-2 font-medium leading-snug tracking-tight [@media(hover:none)]:pr-16"
+                title={title}
               >
-                <p className="whitespace-pre-wrap text-2 leading-relaxed text-foreground">
-                  {plainDescription}
-                </p>
-              </div>
-              <DialogFooter className="shrink-0 border-t border-border/60 px-6 py-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  colorVariant="neutral"
-                  className="w-full sm:w-auto"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDetailsOpen(false);
-                  }}
-                >
-                  {tCommon('close')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                {title}
+              </CardTitle>
+            </Skeleton>
+            {/* Priority stays on the left accent bar only — avoid duplicate
+                status channel. Signal type is omitted: it repeated on every
+                card without changing what anyone does next. */}
+            {metaParts.length > 0 ? (
+              <p className="flex min-w-0 items-center text-1 text-muted-foreground">
+                {metaParts.map((part, index) => (
+                  <React.Fragment key={part.key}>
+                    {index > 0 ? (
+                      <span className="mx-1.5 shrink-0 text-border" aria-hidden>
+                        ·
+                      </span>
+                    ) : null}
+                    {part.node}
+                  </React.Fragment>
+                ))}
+              </p>
+            ) : null}
+          </div>
 
           {tags?.length > 0 ? (
             <SignalTagBadges
