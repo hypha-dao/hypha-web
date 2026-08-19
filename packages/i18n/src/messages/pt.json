@@ -2508,6 +2508,7 @@
     "markAsRead": "Marcar como lida",
     "callToolbarLabel": "Chamada de voz e vídeo",
     "callJoinStripLine": "Chamada a decorrer — {count, plural, one {1 membro} other {# membros}}",
+    "callRefreshStripLine": "Já estás nesta chamada — reconecta para continuar",
     "callJoinStripTitle": "Chamada a decorrer",
     "callJoinStripMemberCount": "{count, plural, one {1 membro} other {# membros}}",
     "callActiveInAnotherTabTitle": "Chamada ativa noutro separador",

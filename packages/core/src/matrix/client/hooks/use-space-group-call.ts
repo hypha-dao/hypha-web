@@ -593,6 +593,15 @@ export function useSpaceGroupCall(
    */
   const [idleRoomParticipantCount, setIdleRoomParticipantCount] = useState(0);
   const [idleInCallUserIds, setIdleInCallUserIds] = useState<string[]>([]);
+  /**
+   * #2456 D2c: true when *my own* Matrix user already has a (possibly stale) membership in this
+   * room's call — distinct from `idleInCallUserIds`, which excludes the local user by design (it
+   * drives the generic "others are in a call" banner). Distinguishing "my own tab, another
+   * browser tab" (scenario 1, act immediately) from "a different device" (scenario 3, confirm
+   * first) is `isRemoteGroupCallHoldActive()` at click time, not this flag — this flag only
+   * decides whether to show "Refresh call" instead of "Join call" at all.
+   */
+  const [selfStaleCallPresence, setSelfStaleCallPresence] = useState(false);
 
   useEffect(() => {
     latestAuthTokenRef.current = authToken?.trim() || null;
@@ -1689,6 +1698,7 @@ export function useSpaceGroupCall(
 
       setIdleRoomParticipantCount(0);
       setIdleInCallUserIds([]);
+      setSelfStaleCallPresence(false);
 
       joinEpochRef.current += 1;
       const joinEpoch = joinEpochRef.current;
@@ -2031,6 +2041,37 @@ export function useSpaceGroupCall(
       await enterWithKind('video', threadRootEventId);
     },
     [enterWithKind],
+  );
+
+  /**
+   * #2456 D2c/D2e "Refresh call": evicts this user's stale LiveKit participant(s) via the D2a
+   * backend route, then joins normally. Best-effort on the eviction — even if it fails, the
+   * fresh join still gets its own tab-unique identity (see D1), so it won't collide with the
+   * stale one on the SFU; a failed eviction just leaves a harmless leftover tile until it times
+   * out on its own.
+   */
+  const rejoinCall = useCallback(
+    async (kind: 'audio' | 'video', threadRootEventId?: string) => {
+      const targetRoomId = roomId?.trim();
+      const token = authToken?.trim();
+      if (targetRoomId && token) {
+        try {
+          await fetch('/api/matrix/livekit/rejoin', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ roomId: targetRoomId }),
+            signal: AbortSignal.timeout(10_000),
+          });
+        } catch {
+          // Best-effort — see doc comment above.
+        }
+      }
+      await enterWithKind(kind, threadRootEventId);
+    },
+    [roomId, authToken, enterWithKind],
   );
 
   const resetAfterLeave = useCallback(() => {
@@ -2856,6 +2897,7 @@ export function useSpaceGroupCall(
     idleRtcSessionUnsubRef.current = null;
     setIdleRoomParticipantCount(0);
     setIdleInCallUserIds([]);
+    setSelfStaleCallPresence(false);
 
     if (!client || !roomId?.trim()) return;
     if (liveKitRoomRef.current) return;
@@ -2889,6 +2931,9 @@ export function useSpaceGroupCall(
         );
       }
       const p = readParticipantsFromRtcMemberships(session.memberships, myId);
+      const selfMembership = myId
+        ? session.memberships.find((m) => m.sender === myId && !m.isExpired?.())
+        : undefined;
       logCallDebug('idle-room-participants:synced', {
         roomId,
         myId,
@@ -2898,7 +2943,9 @@ export function useSpaceGroupCall(
           expired: m.isExpired(),
         })),
         idleParticipantCount: p.count,
+        selfStalePresence: Boolean(selfMembership),
       });
+      setSelfStaleCallPresence(Boolean(selfMembership));
       if (p.count === 0) {
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);
@@ -3012,9 +3059,11 @@ export function useSpaceGroupCall(
   const showRoomCallInProgressRaw = useMemo(
     () =>
       !inOurSession &&
-      idleRoomParticipantCount > 0 &&
+      /** #2456 D2c/D2e: also surface the (Refresh-call) opportunity when the only "call in
+       * progress" signal is the local user's own stale presence, with nobody else in the room. */
+      (idleRoomParticipantCount > 0 || selfStaleCallPresence) &&
       (callState === 'idle' || callState === 'error'),
-    [callState, inOurSession, idleRoomParticipantCount],
+    [callState, inOurSession, idleRoomParticipantCount, selfStaleCallPresence],
   );
 
   /**
@@ -3088,6 +3137,10 @@ export function useSpaceGroupCall(
     callKind,
     enterAudio,
     enterVideo,
+    /** #2456 D2c/D2e: true when this room's call already has a stale membership for the local
+     * user — drives the "Refresh call" button variant instead of "Join call". */
+    selfStaleCallPresence,
+    rejoinCall,
     leave,
     releaseLocalCallForTabTransfer,
     setMicrophoneMuted,

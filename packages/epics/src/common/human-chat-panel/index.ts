@@ -8,6 +8,7 @@ export { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-po
 export { HumanChatPanelCallRaisedHandsStrip } from './human-chat-panel-call-raised-hands-strip';
 export { HumanChatPanelScreenshareTakeoverDialog } from './human-chat-panel-screenshare-takeover-dialog';
 export { HumanChatPanelCallSwitchConfirmDialog } from './human-chat-panel-call-switch-confirm-dialog';
+export { HumanChatPanelCallRefreshConfirmDialog } from './human-chat-panel-call-refresh-confirm-dialog';
 export {
   CALL_GALLERY_MAX_TILES_PER_PAGE,
   CALL_GALLERY_MIN_PARTICIPANTS,

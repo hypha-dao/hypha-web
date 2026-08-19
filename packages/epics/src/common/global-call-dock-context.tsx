@@ -2,6 +2,7 @@
 
 import React from 'react';
 import {
+  isRemoteGroupCallHoldActive,
   setGroupCallSessionActive,
   useMatrix,
   useSpaceGroupCall,
@@ -23,6 +24,9 @@ type PendingJoin = {
   kind: 'audio' | 'video';
   roomId: string;
   threadRootEventId?: string;
+  /** #2456 D2c/D2e: 'refresh' evicts a stale participant first (see `call.rejoinCall`) instead of
+   * a plain join. Defaults to 'join' behavior wherever unset (existing callers). */
+  mode?: 'join' | 'refresh';
 };
 
 /**
@@ -33,6 +37,7 @@ type PendingJoin = {
  */
 export type PendingRoomSwitchConfirm = {
   kind: 'audio' | 'video';
+  mode?: 'join' | 'refresh';
   fromRoomId: string;
   targetRoomId: string;
   targetSpaceSlug: string | null;
@@ -387,6 +392,7 @@ function useGlobalCallDockValue() {
 
   const enterAudio = call.enterAudio;
   const enterVideo = call.enterVideo;
+  const rejoinCall = call.rejoinCall;
 
   React.useEffect(() => {
     if (!pendingJoin) return;
@@ -401,6 +407,10 @@ function useGlobalCallDockValue() {
     const join = pendingJoin;
     setPendingJoin(null);
     restoreInProgressRef.current = false;
+    if (join.mode === 'refresh') {
+      void rejoinCall(join.kind, join.threadRootEventId);
+      return;
+    }
     if (join.kind === 'audio') {
       void enterAudio(join.threadRootEventId);
       return;
@@ -411,6 +421,7 @@ function useGlobalCallDockValue() {
     activeAuthToken,
     activeRoomId,
     client,
+    rejoinCall,
     enterAudio,
     enterVideo,
     isMatrixSyncLeader,
@@ -598,6 +609,136 @@ function useGlobalCallDockValue() {
     [activeRoomId, boundAuthToken, call],
   );
 
+  /**
+   * #2456 D2c/D2e "Refresh call": same pinned-room guard and rebind/pendingJoin sequencing as
+   * `startAudioForRoom`/`startVideoForRoom` above, but tagged `mode: 'refresh'` so the eventual
+   * join goes through `call.rejoinCall` (evicts the stale participant first) instead of a plain
+   * `enterAudio`/`enterVideo`.
+   */
+  const refreshRoomCall = React.useCallback(
+    async (
+      kind: 'audio' | 'video',
+      roomId: string | null | undefined,
+      spaceSlug?: string | null,
+      threadRootEventId?: string,
+      authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
+    ) => {
+      const targetRoomId = roomId?.trim();
+      if (!targetRoomId) return;
+      const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind,
+          mode: 'refresh',
+          fromRoomId: pinnedCallRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+        });
+        return;
+      }
+      userDismissedCallRef.current = false;
+      clearCallDismissedByUser();
+      callLaunchContextRef.current =
+        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
+          ? launchContext
+          : threadRootEventId?.trim()
+          ? { threadRootEventId: threadRootEventId.trim() }
+          : null;
+      if (activeRoomId !== targetRoomId) {
+        setBoundRoomId(targetRoomId);
+        setBoundSpaceSlug(targetSpaceSlug);
+        setBoundAuthToken(targetAuthToken);
+        setActiveRoomId(targetRoomId);
+        setActiveSpaceSlug(targetSpaceSlug);
+        setActiveAuthToken(targetAuthToken);
+        setPendingJoin({
+          kind,
+          mode: 'refresh',
+          roomId: targetRoomId,
+          threadRootEventId,
+        });
+        return;
+      }
+      await call.rejoinCall(kind, threadRootEventId);
+    },
+    [activeRoomId, boundAuthToken, call],
+  );
+
+  /**
+   * #2456 D2c/D2e entry point for the "Refresh call" button: same browser (another tab already
+   * holds this room's call, per `isRemoteGroupCallHoldActive()`) acts immediately; a different
+   * device shows a confirm dialog first ("Move this call here?").
+   */
+  const [pendingRefreshDeviceConfirm, setPendingRefreshDeviceConfirm] =
+    React.useState<{
+      kind: 'audio' | 'video';
+      roomId: string;
+      spaceSlug: string | null;
+      threadRootEventId?: string;
+      authToken: string | null;
+      launchContext: CallLaunchContext | null;
+    } | null>(null);
+
+  const refreshCall = React.useCallback(
+    (
+      kind: 'audio' | 'video',
+      roomId: string | null | undefined,
+      spaceSlug?: string | null,
+      threadRootEventId?: string,
+      authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
+    ) => {
+      const targetRoomId = roomId?.trim();
+      if (!targetRoomId) return;
+      if (isRemoteGroupCallHoldActive()) {
+        void refreshRoomCall(
+          kind,
+          targetRoomId,
+          spaceSlug,
+          threadRootEventId,
+          authToken,
+          launchContext,
+        );
+        return;
+      }
+      setPendingRefreshDeviceConfirm({
+        kind,
+        roomId: targetRoomId,
+        spaceSlug: spaceSlug?.trim() ?? null,
+        threadRootEventId,
+        authToken: authToken?.trim() || boundAuthToken,
+        launchContext: launchContext ?? null,
+      });
+    },
+    [refreshRoomCall, boundAuthToken],
+  );
+
+  const confirmRefreshDevice = React.useCallback(() => {
+    const pending = pendingRefreshDeviceConfirm;
+    if (!pending) return;
+    setPendingRefreshDeviceConfirm(null);
+    void refreshRoomCall(
+      pending.kind,
+      pending.roomId,
+      pending.spaceSlug,
+      pending.threadRootEventId,
+      pending.authToken,
+      pending.launchContext,
+    );
+  }, [pendingRefreshDeviceConfirm, refreshRoomCall]);
+
+  const cancelRefreshDevice = React.useCallback(() => {
+    setPendingRefreshDeviceConfirm(null);
+  }, []);
+
   const leaveCall = React.useCallback(async () => {
     const dismissedRoomId =
       activeRoomId?.trim() ||
@@ -651,7 +792,16 @@ function useGlobalCallDockValue() {
     }
     const pending = pendingRoomSwitchJoin;
     setPendingRoomSwitchJoin(null);
-    if (pending.kind === 'audio') {
+    if (pending.mode === 'refresh') {
+      void refreshRoomCall(
+        pending.kind,
+        pending.targetRoomId,
+        pending.targetSpaceSlug,
+        pending.threadRootEventId,
+        pending.targetAuthToken,
+        pending.launchContext,
+      );
+    } else if (pending.kind === 'audio') {
       void startAudioForRoom(
         pending.targetRoomId,
         pending.targetSpaceSlug,
@@ -673,6 +823,7 @@ function useGlobalCallDockValue() {
     activeRoomId,
     startAudioForRoom,
     startVideoForRoom,
+    refreshRoomCall,
   ]);
 
   const [isReleasingForTransfer, setIsReleasingForTransfer] =
@@ -713,6 +864,10 @@ function useGlobalCallDockValue() {
     pendingRoomSwitchConfirm,
     confirmRoomSwitch,
     cancelRoomSwitch,
+    refreshCall,
+    pendingRefreshDeviceConfirm,
+    confirmRefreshDevice,
+    cancelRefreshDevice,
     ...call,
     ...callReactions,
     leave: leaveCall,

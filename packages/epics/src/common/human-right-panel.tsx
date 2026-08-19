@@ -1220,6 +1220,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     callKind: spaceCallKind,
     startAudioForRoom,
     startVideoForRoom,
+    refreshCall: refreshSpaceCall,
+    selfStaleCallPresence: spaceCallSelfStalePresence,
     leave: leaveSpaceCall,
     setMicrophoneMuted: setSpaceCallMicMuted,
     setCameraMuted: setSpaceCallCameraMuted,
@@ -1486,6 +1488,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       inSpaceCall,
     ],
   );
+  /**
+   * #2456 D2c/D2e: the join-strip's *own* render gate — unlike `spaceCallShowJoinUi` above
+   * (which also drives the join chime/invitation, deliberately left unwidened: a lone stale
+   * self-presence with nobody else in the room isn't "someone joined," so it shouldn't chime),
+   * this also covers the case where the only "call in progress" signal is the local user's own
+   * stale presence.
+   */
+  const spaceCallShowRefreshUi =
+    spaceCallShowJoinUi ||
+    (showSidebarCallChrome &&
+      spaceCallShowJoinStrip &&
+      spaceCallSelfStalePresence &&
+      !inSpaceCall);
 
   const spaceCallShowJoinChime = spaceCallShowJoinUi;
 
@@ -1577,24 +1592,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'connecting';
 
+  const resolveCallLaunchContext = useCallback(() => {
+    return mode === 'coherence' && coherenceTitle?.trim()
+      ? {
+          signalTitle: coherenceTitle.trim(),
+          signalSlug: coherenceSlug?.trim() || undefined,
+          roomTitle: coherenceTitle.trim(),
+        }
+      : (() => {
+          const roomTitle = resolveCallRecordingRoomTitle(
+            client,
+            roomId,
+            space?.title,
+          );
+          return roomTitle ? { roomTitle } : undefined;
+        })();
+  }, [client, coherenceSlug, coherenceTitle, mode, roomId, space?.title]);
+
   const handleCallAudio = useCallback(() => {
     if (inSpaceCall) return;
     markPendingCallStartNotify();
-    const launchContext =
-      mode === 'coherence' && coherenceTitle?.trim()
-        ? {
-            signalTitle: coherenceTitle.trim(),
-            signalSlug: coherenceSlug?.trim() || undefined,
-            roomTitle: coherenceTitle.trim(),
-          }
-        : (() => {
-            const roomTitle = resolveCallRecordingRoomTitle(
-              client,
-              roomId,
-              space?.title,
-            );
-            return roomTitle ? { roomTitle } : undefined;
-          })();
+    const launchContext = resolveCallLaunchContext();
+    if (spaceCallSelfStalePresence) {
+      refreshSpaceCall(
+        'audio',
+        roomId,
+        spaceSlug ?? null,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startAudioForRoom(
       roomId,
       spaceSlug ?? null,
@@ -1604,36 +1633,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [
     authToken,
-    client,
-    coherenceSlug,
-    coherenceTitle,
-    mode,
+    inSpaceCall,
+    markPendingCallStartNotify,
+    refreshSpaceCall,
+    resolveCallLaunchContext,
     roomId,
-    space?.title,
+    spaceCallSelfStalePresence,
     spaceSlug,
     startAudioForRoom,
-    markPendingCallStartNotify,
-    inSpaceCall,
   ]);
 
   const handleCallVideo = useCallback(() => {
     if (inSpaceCall) return;
     markPendingCallStartNotify();
-    const launchContext =
-      mode === 'coherence' && coherenceTitle?.trim()
-        ? {
-            signalTitle: coherenceTitle.trim(),
-            signalSlug: coherenceSlug?.trim() || undefined,
-            roomTitle: coherenceTitle.trim(),
-          }
-        : (() => {
-            const roomTitle = resolveCallRecordingRoomTitle(
-              client,
-              roomId,
-              space?.title,
-            );
-            return roomTitle ? { roomTitle } : undefined;
-          })();
+    const launchContext = resolveCallLaunchContext();
+    if (spaceCallSelfStalePresence) {
+      refreshSpaceCall(
+        'video',
+        roomId,
+        spaceSlug ?? null,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startVideoForRoom(
       roomId,
       spaceSlug ?? null,
@@ -1643,16 +1667,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [
     authToken,
-    client,
-    coherenceSlug,
-    coherenceTitle,
-    mode,
+    inSpaceCall,
+    markPendingCallStartNotify,
+    refreshSpaceCall,
+    resolveCallLaunchContext,
     roomId,
-    space?.title,
+    spaceCallSelfStalePresence,
     spaceSlug,
     startVideoForRoom,
-    markPendingCallStartNotify,
-    inSpaceCall,
   ]);
 
   /**
@@ -4504,13 +4526,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               ) : null
             }
           />
-          {spaceCallShowJoinUi && (
+          {spaceCallShowRefreshUi && (
             <HumanChatPanelCallJoinStrip
               deviceCount={spaceCallRoomGroupDeviceCount}
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
               captureConsent={spaceCallCaptureConsent}
               roomId={roomId}
+              isRefresh={spaceCallSelfStalePresence}
               onJoinAudio={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
                   void requestSignalTeamAccess();

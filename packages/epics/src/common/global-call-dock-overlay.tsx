@@ -33,6 +33,7 @@ import {
   HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
   HumanChatPanelCallSwitchConfirmDialog,
+  HumanChatPanelCallRefreshConfirmDialog,
   HumanChatPanelScreenshareTakeoverDialog,
   HumanChatPanelCallRaisedHandsStrip,
   readCallFullViewLayoutFromStorage,
@@ -525,6 +526,9 @@ export function GlobalCallDockOverlay({
     pendingRoomSwitchConfirm,
     confirmRoomSwitch,
     cancelRoomSwitch,
+    pendingRefreshDeviceConfirm,
+    confirmRefreshDevice,
+    cancelRefreshDevice,
     callState,
     callKind,
     errorCode,
@@ -1136,7 +1140,22 @@ export function GlobalCallDockOverlay({
     />
   );
 
-  if (!showFloatingDock || !activeRoomId) return callSwitchConfirmDialog;
+  const callRefreshConfirmDialog = (
+    <HumanChatPanelCallRefreshConfirmDialog
+      open={Boolean(pendingRefreshDeviceConfirm)}
+      onConfirm={confirmRefreshDevice}
+      onCancel={cancelRefreshDevice}
+    />
+  );
+
+  if (!showFloatingDock || !activeRoomId) {
+    return (
+      <>
+        {callSwitchConfirmDialog}
+        {callRefreshConfirmDialog}
+      </>
+    );
+  }
 
   const captureUploadFinalizing =
     recordingStatus === 'uploading' &&
@@ -1837,6 +1856,7 @@ export function GlobalCallDockOverlay({
         {screenshareTabAudioPromptDialog}
         {screenshareTakeoverDialog}
         {callSwitchConfirmDialog}
+        {callRefreshConfirmDialog}
         {dockContent}
       </>
     );
@@ -1854,6 +1874,7 @@ export function GlobalCallDockOverlay({
       {screenshareTabAudioPromptDialog}
       {screenshareTakeoverDialog}
       {callSwitchConfirmDialog}
+      {callRefreshConfirmDialog}
       {createPortal(portalContent, portalTarget)}
     </>
   );

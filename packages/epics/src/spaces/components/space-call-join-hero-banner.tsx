@@ -43,6 +43,8 @@ export function SpaceCallJoinHeroBanner({
     captureConsent,
     startAudioForRoom,
     startVideoForRoom,
+    refreshCall,
+    selfStaleCallPresence,
     pinnedCallSpaceSlug,
     activeRoomId,
     leave: leaveSpaceCall,
@@ -91,7 +93,7 @@ export function SpaceCallJoinHeroBanner({
     appliesToThisSpace &&
     roomMatches &&
     showRoomCallInProgress &&
-    roomGroupCallDeviceCount > 0 &&
+    (roomGroupCallDeviceCount > 0 || selfStaleCallPresence) &&
     !inSpaceCall;
 
   /**
@@ -127,6 +129,17 @@ export function SpaceCallJoinHeroBanner({
   }, [spaceTitle]);
 
   const handleJoinAudio = useCallback(() => {
+    if (selfStaleCallPresence) {
+      refreshCall(
+        'audio',
+        canonicalRoomId,
+        slug,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startAudioForRoom(
       canonicalRoomId,
       slug,
@@ -134,9 +147,28 @@ export function SpaceCallJoinHeroBanner({
       authToken,
       launchContext,
     );
-  }, [authToken, canonicalRoomId, launchContext, slug, startAudioForRoom]);
+  }, [
+    authToken,
+    canonicalRoomId,
+    launchContext,
+    refreshCall,
+    selfStaleCallPresence,
+    slug,
+    startAudioForRoom,
+  ]);
 
   const handleJoinVideo = useCallback(() => {
+    if (selfStaleCallPresence) {
+      refreshCall(
+        'video',
+        canonicalRoomId,
+        slug,
+        undefined,
+        authToken,
+        launchContext,
+      );
+      return;
+    }
     void startVideoForRoom(
       canonicalRoomId,
       slug,
@@ -144,7 +176,15 @@ export function SpaceCallJoinHeroBanner({
       authToken,
       launchContext,
     );
-  }, [authToken, canonicalRoomId, launchContext, slug, startVideoForRoom]);
+  }, [
+    authToken,
+    canonicalRoomId,
+    launchContext,
+    refreshCall,
+    selfStaleCallPresence,
+    slug,
+    startVideoForRoom,
+  ]);
 
   /**
    * Same sequencing as the right panel's `handleJoinCurrentRoomCallInstead`
@@ -242,6 +282,7 @@ export function SpaceCallJoinHeroBanner({
       roomId={canonicalRoomId}
       onJoinAudio={handleJoinAudio}
       onJoinVideo={handleJoinVideo}
+      isRefresh={selfStaleCallPresence}
     />
   );
 }

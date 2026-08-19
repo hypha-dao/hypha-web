@@ -2508,6 +2508,7 @@
     "markAsRead": "Marquer comme lu",
     "callToolbarLabel": "Appel vocal et vidéo",
     "callJoinStripLine": "Appel en cours — {count, plural, one {1 membre} other {# membres}}",
+    "callRefreshStripLine": "Vous êtes déjà dans cet appel — reconnectez-vous pour continuer",
     "callJoinStripTitle": "Appel en cours",
     "callJoinStripMemberCount": "{count, plural, one {1 membre} other {# membres}}",
     "callActiveInAnotherTabTitle": "Appel actif dans un autre onglet",
@@ -2526,6 +2527,10 @@
     "callGalleryNextPage": "Page suivante",
     "callJoinWithAudio": "Rejoindre l’appel d’espace (microphone)",
     "callJoinWithVideo": "Rejoindre l’appel d’espace (caméra et micro)",
+    "callRefreshWithAudio": "Se reconnecter avec le microphone (vous êtes déjà dans cet appel ailleurs)",
+    "callRefreshWithVideo": "Se reconnecter avec caméra et micro (vous êtes déjà dans cet appel ailleurs)",
+    "callRefreshWithAudioShort": "Actualiser l'audio",
+    "callRefreshWithVideoShort": "Actualiser l'appel",
     "callJoinWithAudioShort": "Rejoindre (audio)",
     "callJoinWithVideoShort": "Rejoindre (vidéo)",
     "callStartWithAudio": "Démarrer l’audio dans cette session",
@@ -3156,7 +3161,11 @@
     "callSwitchConfirmTitle": "Vous êtes dans un autre appel",
     "callSwitchConfirmBody": "Vous êtes actuellement dans un autre appel. Le quitter et rejoindre celui-ci à la place ?",
     "callSwitchConfirmLeaveAndJoin": "Quitter et rejoindre",
-    "callSwitchConfirmCancel": "Annuler"
+    "callSwitchConfirmCancel": "Annuler",
+    "callRefreshConfirmTitle": "Vous êtes en appel sur un autre appareil",
+    "callRefreshConfirmBody": "Déplacer cet appel ici à la place ?",
+    "callRefreshConfirmMoveHere": "Déplacer ici",
+    "callRefreshConfirmCancel": "Annuler"
   },
   "SpaceLocation": {
     "sectionTitle": "Emplacement sur la carte",

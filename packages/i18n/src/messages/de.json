@@ -3072,6 +3072,7 @@
     "markAsRead": "Als gelesen markieren",
     "callToolbarLabel": "Sprach- und Videoanruf",
     "callJoinStripLine": "Anruf läuft — {count, plural, one {1 Mitglied} other {# Mitglieder}}",
+    "callRefreshStripLine": "Du bist bereits in diesem Anruf — zum Fortfahren neu verbinden",
     "callJoinStripTitle": "Anruf läuft",
     "callJoinStripMemberCount": "{count, plural, one {1 Mitglied} other {# Mitglieder}}",
     "callActiveInAnotherTabTitle": "Anruf in einem anderen Tab aktiv",
@@ -3090,6 +3091,10 @@
     "callGalleryNextPage": "Nächste Seite",
     "callJoinWithAudio": "Am Space-Sprachanruf teilnehmen (Mikrofon)",
     "callJoinWithVideo": "Am Space-Videoanruf teilnehmen (Kamera und Mikrofon)",
+    "callRefreshWithAudio": "Mit Mikrofon neu verbinden (du bist bereits anderswo in diesem Anruf)",
+    "callRefreshWithVideo": "Mit Kamera und Mikrofon neu verbinden (du bist bereits anderswo in diesem Anruf)",
+    "callRefreshWithAudioShort": "Audio aktualisieren",
+    "callRefreshWithVideoShort": "Anruf aktualisieren",
     "callJoinWithAudioShort": "Audio beitreten",
     "callJoinWithVideoShort": "Video beitreten",
     "callStartWithAudio": "Sprachanruf in dieser Sitzung starten",
@@ -3724,7 +3729,11 @@
     "callSwitchConfirmTitle": "Du bist in einem anderen Anruf",
     "callSwitchConfirmBody": "Du bist gerade in einem anderen Anruf. Diesen verlassen und stattdessen hier beitreten?",
     "callSwitchConfirmLeaveAndJoin": "Verlassen & beitreten",
-    "callSwitchConfirmCancel": "Abbrechen"
+    "callSwitchConfirmCancel": "Abbrechen",
+    "callRefreshConfirmTitle": "Du bist mit einem anderen Gerät im Anruf",
+    "callRefreshConfirmBody": "Diesen Anruf stattdessen hierher verschieben?",
+    "callRefreshConfirmMoveHere": "Hierher verschieben",
+    "callRefreshConfirmCancel": "Abbrechen"
   },
   "SpaceLocation": {
     "sectionTitle": "Standort auf der Karte",

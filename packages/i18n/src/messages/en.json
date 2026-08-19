@@ -3076,6 +3076,7 @@
     "markAsRead": "Mark as read",
     "callToolbarLabel": "Voice and video call",
     "callJoinStripLine": "Call in progress — {count, plural, one {1 member} other {# members}}",
+    "callRefreshStripLine": "You're already in this call — reconnect to continue",
     "callJoinStripTitle": "Call in progress",
     "callJoinStripMemberCount": "{count, plural, one {1 member} other {# members}}",
     "callActiveInAnotherTabTitle": "Call active in another tab",
@@ -3095,6 +3096,10 @@
     "callJoinWithAudio": "Join the space call with microphone",
     "callJoinWithVideo": "Join the space call with camera and microphone",
     "callJoinWithAudioShort": "Join audio",
+    "callRefreshWithAudio": "Reconnect with microphone (you're already in this call elsewhere)",
+    "callRefreshWithVideo": "Reconnect with camera and microphone (you're already in this call elsewhere)",
+    "callRefreshWithAudioShort": "Refresh audio",
+    "callRefreshWithVideoShort": "Refresh call",
     "callJoinWithVideoShort": "Join video",
     "callStartWithAudio": "Start voice in this call",
     "callStartWithVideo": "Start video in this call",
@@ -3732,7 +3737,11 @@
     "callSwitchConfirmTitle": "You're on another call",
     "callSwitchConfirmBody": "You're currently in a different call. Leave it and join this one instead?",
     "callSwitchConfirmLeaveAndJoin": "Leave & join",
-    "callSwitchConfirmCancel": "Cancel"
+    "callSwitchConfirmCancel": "Cancel",
+    "callRefreshConfirmTitle": "You're on a call with another device",
+    "callRefreshConfirmBody": "Move this call here instead?",
+    "callRefreshConfirmMoveHere": "Move here",
+    "callRefreshConfirmCancel": "Cancel"
   },
   "SpaceLocation": {
     "sectionTitle": "Location on map",
