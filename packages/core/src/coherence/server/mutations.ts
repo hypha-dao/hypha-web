@@ -65,7 +65,12 @@ export async function assertCanEditCoherence(
   return row;
 }
 
-/** Load coherence row for mutations. Caller must enforce space auth. */
+/**
+ * Load coherence row for mutations. Caller must enforce space auth.
+ * `requesterPersonId: null` on the mutations below is a deliberate signal for a
+ * trusted system path (e.g. ingestion), not "auth skipped" — see the comment
+ * above `updateCoherenceSignalBySlug`.
+ */
 async function getCoherenceRowForTaskPatch(
   { slug }: { slug: string },
   { db }: { db: DatabaseInstance },
