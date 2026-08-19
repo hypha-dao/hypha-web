@@ -25,6 +25,22 @@ type PendingJoin = {
   threadRootEventId?: string;
 };
 
+/**
+ * #2456 D2 scenario 0 (same tab, different room): captured when `startAudioForRoom`/
+ * `startVideoForRoom` is blocked by an in-progress call in a different room, instead of the old
+ * silent no-op. Drives a confirm dialog ("Leave it and join this one?") in
+ * `GlobalCallDockOverlay`; `confirmRoomSwitch()`/`cancelRoomSwitch()` act on it.
+ */
+export type PendingRoomSwitchConfirm = {
+  kind: 'audio' | 'video';
+  fromRoomId: string;
+  targetRoomId: string;
+  targetSpaceSlug: string | null;
+  targetAuthToken: string | null;
+  threadRootEventId?: string;
+  launchContext: CallLaunchContext | null;
+};
+
 const DOCK_MODE_KEY = 'hypha-global-call-dock-mode-v1';
 
 function readDockModeFromStorage(): GlobalCallDockMode {
@@ -132,6 +148,8 @@ function useGlobalCallDockValue() {
   const [pendingJoin, setPendingJoin] = React.useState<PendingJoin | null>(
     null,
   );
+  const [pendingRoomSwitchConfirm, setPendingRoomSwitchConfirm] =
+    React.useState<PendingRoomSwitchConfirm | null>(null);
   const [dockMode, setDockMode] =
     React.useState<GlobalCallDockMode>('thumbnail');
   const [dockModeHydrated, setDockModeHydrated] = React.useState(false);
@@ -482,6 +500,23 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind: 'audio',
+          fromRoomId: pinnedCallRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+        });
+        return;
+      }
       userDismissedCallRef.current = false;
       clearCallDismissedByUser();
       callLaunchContextRef.current =
@@ -490,14 +525,6 @@ function useGlobalCallDockValue() {
           : threadRootEventId?.trim()
           ? { threadRootEventId: threadRootEventId.trim() }
           : null;
-      const targetSpaceSlug = spaceSlug?.trim() ?? null;
-      const targetAuthToken = authToken?.trim() || boundAuthToken;
-      const pinnedCallRoomId =
-        callSessionRoomIdRef.current ??
-        (inSessionRef.current ? activeRoomId : null);
-      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
-        return;
-      }
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
@@ -527,6 +554,23 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind: 'video',
+          fromRoomId: pinnedCallRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+        });
+        return;
+      }
       userDismissedCallRef.current = false;
       clearCallDismissedByUser();
       callLaunchContextRef.current =
@@ -535,14 +579,6 @@ function useGlobalCallDockValue() {
           : threadRootEventId?.trim()
           ? { threadRootEventId: threadRootEventId.trim() }
           : null;
-      const targetSpaceSlug = spaceSlug?.trim() ?? null;
-      const targetAuthToken = authToken?.trim() || boundAuthToken;
-      const pinnedCallRoomId =
-        callSessionRoomIdRef.current ??
-        (inSessionRef.current ? activeRoomId : null);
-      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
-        return;
-      }
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
@@ -579,6 +615,66 @@ function useGlobalCallDockValue() {
     await call.leave();
   }, [activeRoomId, boundRoomId, call]);
 
+  /**
+   * #2456 D2 scenario 0's "Leave & Join" confirm action. `activeRoomId` only clears via the
+   * effect below reacting to `callState === 'idle'`, not synchronously when `leave()`'s promise
+   * resolves — awaiting it and immediately joining would race that (same reasoning as
+   * `space-call-join-hero-banner.tsx`'s `pendingCallSwitch`, which predates this and follows the
+   * identical pattern).
+   */
+  const [pendingRoomSwitchJoin, setPendingRoomSwitchJoin] =
+    React.useState<PendingRoomSwitchConfirm | null>(null);
+
+  const confirmRoomSwitch = React.useCallback(async () => {
+    const pending = pendingRoomSwitchConfirm;
+    if (!pending) return;
+    setPendingRoomSwitchConfirm(null);
+    setPendingRoomSwitchJoin(pending);
+    try {
+      await leaveCall();
+    } catch {
+      setPendingRoomSwitchJoin((prev) => (prev === pending ? null : prev));
+    }
+  }, [pendingRoomSwitchConfirm, leaveCall]);
+
+  const cancelRoomSwitch = React.useCallback(() => {
+    setPendingRoomSwitchConfirm(null);
+  }, []);
+
+  React.useEffect(() => {
+    if (!pendingRoomSwitchJoin) return;
+    if (
+      activeRoomId?.trim() &&
+      activeRoomId.trim() !== pendingRoomSwitchJoin.targetRoomId
+    ) {
+      return;
+    }
+    const pending = pendingRoomSwitchJoin;
+    setPendingRoomSwitchJoin(null);
+    if (pending.kind === 'audio') {
+      void startAudioForRoom(
+        pending.targetRoomId,
+        pending.targetSpaceSlug,
+        pending.threadRootEventId,
+        pending.targetAuthToken,
+        pending.launchContext,
+      );
+    } else {
+      void startVideoForRoom(
+        pending.targetRoomId,
+        pending.targetSpaceSlug,
+        pending.threadRootEventId,
+        pending.targetAuthToken,
+        pending.launchContext,
+      );
+    }
+  }, [
+    pendingRoomSwitchJoin,
+    activeRoomId,
+    startAudioForRoom,
+    startVideoForRoom,
+  ]);
+
   const [isReleasingForTransfer, setIsReleasingForTransfer] =
     React.useState(false);
 
@@ -614,6 +710,9 @@ function useGlobalCallDockValue() {
     showFloatingDock,
     startAudioForRoom,
     startVideoForRoom,
+    pendingRoomSwitchConfirm,
+    confirmRoomSwitch,
+    cancelRoomSwitch,
     ...call,
     ...callReactions,
     leave: leaveCall,

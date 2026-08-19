@@ -3152,7 +3152,11 @@
     "openFloatingWindowLabel": "Ouvrir la fenêtre d'appel flottante",
     "closeFloatingWindowLabel": "Fermer la fenêtre d'appel flottante",
     "signalTeamMembersLoadFailed": "Impossible de charger la liste des membres. Réessayez.",
-    "signalTeamNoChatAccount": "Pas de compte chat"
+    "signalTeamNoChatAccount": "Pas de compte chat",
+    "callSwitchConfirmTitle": "Vous êtes dans un autre appel",
+    "callSwitchConfirmBody": "Vous êtes actuellement dans un autre appel. Le quitter et rejoindre celui-ci à la place ?",
+    "callSwitchConfirmLeaveAndJoin": "Quitter et rejoindre",
+    "callSwitchConfirmCancel": "Annuler"
   },
   "SpaceLocation": {
     "sectionTitle": "Emplacement sur la carte",

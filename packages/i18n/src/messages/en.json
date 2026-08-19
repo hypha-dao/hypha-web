@@ -3728,7 +3728,11 @@
     "openFloatingWindowLabel": "Open floating call window",
     "closeFloatingWindowLabel": "Close floating call window",
     "signalTeamMembersLoadFailed": "Could not load member list. Try again.",
-    "signalTeamNoChatAccount": "No chat account"
+    "signalTeamNoChatAccount": "No chat account",
+    "callSwitchConfirmTitle": "You're on another call",
+    "callSwitchConfirmBody": "You're currently in a different call. Leave it and join this one instead?",
+    "callSwitchConfirmLeaveAndJoin": "Leave & join",
+    "callSwitchConfirmCancel": "Cancel"
   },
   "SpaceLocation": {
     "sectionTitle": "Location on map",

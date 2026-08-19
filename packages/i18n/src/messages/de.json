@@ -3720,7 +3720,11 @@
     "openFloatingWindowLabel": "Schwebendes Anruffenster öffnen",
     "closeFloatingWindowLabel": "Schwebendes Anruffenster schließen",
     "signalTeamMembersLoadFailed": "Mitgliederliste konnte nicht geladen werden. Bitte erneut versuchen.",
-    "signalTeamNoChatAccount": "Kein Chat-Konto"
+    "signalTeamNoChatAccount": "Kein Chat-Konto",
+    "callSwitchConfirmTitle": "Du bist in einem anderen Anruf",
+    "callSwitchConfirmBody": "Du bist gerade in einem anderen Anruf. Diesen verlassen und stattdessen hier beitreten?",
+    "callSwitchConfirmLeaveAndJoin": "Verlassen & beitreten",
+    "callSwitchConfirmCancel": "Abbrechen"
   },
   "SpaceLocation": {
     "sectionTitle": "Standort auf der Karte",
