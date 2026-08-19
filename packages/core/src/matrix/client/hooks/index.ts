@@ -39,6 +39,9 @@ export {
   setGroupCallSessionActive,
   subscribeGroupCallSessionActive,
   isRemoteGroupCallHoldActive,
+  getRemoteGroupCallHoldRoomId,
+  requestRemoteGroupCallLeave,
+  subscribeGroupCallPleaseLeave,
 } from './active-group-call-registry';
 export {
   isCallPairwiseRetry20sEnabled,

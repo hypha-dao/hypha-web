@@ -2,8 +2,11 @@
 
 import React from 'react';
 import {
+  getRemoteGroupCallHoldRoomId,
   isRemoteGroupCallHoldActive,
+  requestRemoteGroupCallLeave,
   setGroupCallSessionActive,
+  subscribeGroupCallPleaseLeave,
   useMatrix,
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
@@ -44,6 +47,11 @@ export type PendingRoomSwitchConfirm = {
   targetAuthToken: string | null;
   threadRootEventId?: string;
   launchContext: CallLaunchContext | null;
+  /** #2456 D2d: the blocking call is in *another tab* of this browser, not this one — on
+   * confirm, broadcast a `please-leave` request instead of calling this tab's own `leave()`,
+   * and join immediately (this tab was never in a session, so there's no local teardown to
+   * wait for). */
+  crossTab?: boolean;
 };
 
 const DOCK_MODE_KEY = 'hypha-global-call-dock-mode-v1';
@@ -528,6 +536,22 @@ function useGlobalCallDockValue() {
         });
         return;
       }
+      /** #2456 D2d: no local session pinning us, but another tab of this browser holds one
+       * in a different room. */
+      const remoteHoldRoomId = getRemoteGroupCallHoldRoomId();
+      if (remoteHoldRoomId && remoteHoldRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind: 'audio',
+          fromRoomId: remoteHoldRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+          crossTab: true,
+        });
+        return;
+      }
       userDismissedCallRef.current = false;
       clearCallDismissedByUser();
       callLaunchContextRef.current =
@@ -579,6 +603,20 @@ function useGlobalCallDockValue() {
           targetAuthToken,
           threadRootEventId,
           launchContext: launchContext ?? null,
+        });
+        return;
+      }
+      const remoteHoldRoomId = getRemoteGroupCallHoldRoomId();
+      if (remoteHoldRoomId && remoteHoldRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind: 'video',
+          fromRoomId: remoteHoldRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+          crossTab: true,
         });
         return;
       }
@@ -641,6 +679,21 @@ function useGlobalCallDockValue() {
           targetAuthToken,
           threadRootEventId,
           launchContext: launchContext ?? null,
+        });
+        return;
+      }
+      const remoteHoldRoomId = getRemoteGroupCallHoldRoomId();
+      if (remoteHoldRoomId && remoteHoldRoomId !== targetRoomId) {
+        setPendingRoomSwitchConfirm({
+          kind,
+          mode: 'refresh',
+          fromRoomId: remoteHoldRoomId,
+          targetRoomId,
+          targetSpaceSlug,
+          targetAuthToken,
+          threadRootEventId,
+          launchContext: launchContext ?? null,
+          crossTab: true,
         });
         return;
       }
@@ -771,6 +824,15 @@ function useGlobalCallDockValue() {
     if (!pending) return;
     setPendingRoomSwitchConfirm(null);
     setPendingRoomSwitchJoin(pending);
+    /** #2456 D2d: the blocking call is in another tab — ask it to leave instead of leaving our
+     * own (nonexistent) session. This tab was never in a call, so there's nothing to await:
+     * the effect below fires as soon as `activeRoomId` already matches the target (which it
+     * typically does immediately, since the room the "Join call" button belongs to is usually
+     * already bound). */
+    if (pending.crossTab) {
+      requestRemoteGroupCallLeave();
+      return;
+    }
     try {
       await leaveCall();
     } catch {
@@ -840,14 +902,26 @@ function useGlobalCallDockValue() {
       call.isCallRecovering);
 
   React.useEffect(() => {
-    setGroupCallSessionActive(holdsMatrixSyncForCall);
-  }, [holdsMatrixSyncForCall]);
+    setGroupCallSessionActive(
+      holdsMatrixSyncForCall,
+      holdsMatrixSyncForCall
+        ? callSessionRoomIdRef.current ?? activeRoomId
+        : null,
+    );
+  }, [holdsMatrixSyncForCall, activeRoomId]);
 
   React.useEffect(() => {
     return () => {
       setGroupCallSessionActive(false);
     };
   }, []);
+
+  /** #2456 D2d: another tab of this browser asked us to leave (cross-tab room switch). */
+  React.useEffect(() => {
+    return subscribeGroupCallPleaseLeave(() => {
+      void leaveCall();
+    });
+  }, [leaveCall]);
 
   return {
     bindRoomContext,
