@@ -203,6 +203,7 @@ export {
   HumanChatPanelCallReactPopover,
 } from './human-chat-panel';
 export { HumanRightPanel } from './human-right-panel';
+export { useIsSpaceContext } from './use-is-space-context';
 export {
   GlobalCallDockProvider,
   useGlobalCallDock,
