@@ -5,6 +5,7 @@ import {
   setLogLevel,
   Track,
   type LocalParticipant,
+  type Participant,
   type RemoteParticipant,
 } from 'livekit-client';
 import { isMatrixCallDebugEnabled } from '../matrix-webrtc-env';
@@ -14,22 +15,25 @@ import {
 } from './matrix-rtc-events';
 
 /**
- * LiveKit identity is minted as the Matrix user id, but some SFU/JWT-service
- * configurations append a trailing `:<device-id>` separator that's empty
- * (e.g. `@user:server.tld:`). That stray colon round-trips fine for
- * LiveKit-to-LiveKit comparisons (they're all self-consistent) but breaks
- * cross-system equality checks against a real Matrix user id (`client.getUserId()`
- * never has one) — notably screenshare-takeover's `target_user_id` matching.
- * Normalize once, here, so every call site gets a clean Matrix user id.
+ * LiveKit identity (post-#2456) is a tab-unique value, not the Matrix user id — it can't be
+ * reversed by string parsing. Each client instead publishes its own Matrix user id via LiveKit
+ * participant metadata right after connecting (see `use-space-group-call.ts`'s join flow), so
+ * cross-system lookups (screenshare-takeover's `target_user_id` matching, roster, speaking
+ * indicator, call-feed attribution) read it from there.
  */
-export function matrixUserIdFromLiveKitIdentity(
-  identity: string | null | undefined,
+export function matrixUserIdFromLiveKitParticipant(
+  participant: Pick<Participant, 'metadata'> | null | undefined,
 ): string | null {
-  const trimmed = identity?.trim();
-  if (!trimmed) return null;
-  let end = trimmed.length;
-  while (end > 0 && trimmed.charAt(end - 1) === ':') end -= 1;
-  return trimmed.slice(0, end) || null;
+  const raw = participant?.metadata;
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { matrixUserId?: unknown };
+    return typeof parsed.matrixUserId === 'string' && parsed.matrixUserId
+      ? parsed.matrixUserId
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export function createLiveKitRoom(): Room {
@@ -51,14 +55,12 @@ export function readParticipantsFromLiveKitRoom(
   excludeUserId?: string | null,
 ): { count: number; inCallUserIds: string[] } {
   const userIdSet = new Set<string>();
-  const localId = matrixUserIdFromLiveKitIdentity(
-    room.localParticipant.identity,
-  );
+  const localId = matrixUserIdFromLiveKitParticipant(room.localParticipant);
   if (localId && localId !== excludeUserId) {
     userIdSet.add(localId);
   }
   for (const participant of room.remoteParticipants.values()) {
-    const id = matrixUserIdFromLiveKitIdentity(participant.identity);
+    const id = matrixUserIdFromLiveKitParticipant(participant);
     if (!id || id === excludeUserId) continue;
     userIdSet.add(id);
   }
@@ -86,7 +88,7 @@ export function getRemoteScreenshareOwnerFromRoom(
   for (const participant of room.remoteParticipants.values()) {
     const pub = participant.getTrackPublication(Track.Source.ScreenShare);
     if (pub?.track && !pub.isMuted) {
-      const userId = matrixUserIdFromLiveKitIdentity(participant.identity);
+      const userId = matrixUserIdFromLiveKitParticipant(participant);
       if (userId) return { userId };
     }
   }
@@ -145,7 +147,7 @@ export function activeSpeakerKeyFromRoom(room: Room | null): string | null {
   if (!room) return null;
   const speakers = room.activeSpeakers;
   if (speakers.length === 0) return null;
-  return matrixUserIdFromLiveKitIdentity(speakers[0]?.identity);
+  return matrixUserIdFromLiveKitParticipant(speakers[0]);
 }
 
 /**

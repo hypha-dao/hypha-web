@@ -93,4 +93,4 @@ export {
   MATRIX_TURN_REFRESH_BEFORE_EXPIRY_MS,
   MATRIX_TURN_REFRESH_FALLBACK_MS,
 } from './matrix-turn-refresh';
-export { matrixUserIdFromLiveKitIdentity } from './livekit-call-helpers';
+export { matrixUserIdFromLiveKitParticipant } from './livekit-call-helpers';

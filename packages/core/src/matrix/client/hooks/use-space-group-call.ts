@@ -98,6 +98,7 @@ import {
   resolveLivekitJwtServiceUrl,
   fetchLivekitConnectCredentials,
 } from './livekit-jwt';
+import { getTabId } from '../matrix-tab-id';
 import {
   activeSpeakerKeyFromRoom,
   attachLiveKitRoomMediaListeners,
@@ -107,7 +108,7 @@ import {
   isLocalScreenshareActiveInRoom,
   isRemoteScreenshareActiveInRoom,
   localPreviewStreamFromRoom,
-  matrixUserIdFromLiveKitIdentity,
+  matrixUserIdFromLiveKitParticipant,
   readParticipantsFromLiveKitRoom,
   readParticipantsFromRtcMemberships,
   syncLocalMuteStateFromRoom,
@@ -715,7 +716,7 @@ export function useSpaceGroupCall(
       }
 
       const focusedStillPresent = speakers.some(
-        (p) => matrixUserIdFromLiveKitIdentity(p.identity) === focusedKey,
+        (p) => matrixUserIdFromLiveKitParticipant(p) === focusedKey,
       );
       activeSpeakerFocusedSilentSinceRef.current = focusedStillPresent
         ? null
@@ -1636,15 +1637,13 @@ export function useSpaceGroupCall(
       const resolveLabel = (userId: string) =>
         matrixRoom?.getMember(userId)?.name || userId;
       const activeSpeakerIdentities = new Set(
-        lkRoom.activeSpeakers.map((p) =>
-          matrixUserIdFromLiveKitIdentity(p.identity),
-        ),
+        lkRoom.activeSpeakers.map((p) => matrixUserIdFromLiveKitParticipant(p)),
       );
       const participants = [
         lkRoom.localParticipant,
         ...Array.from(lkRoom.remoteParticipants.values()),
       ].map((p) => {
-        const identity = matrixUserIdFromLiveKitIdentity(p.identity);
+        const identity = matrixUserIdFromLiveKitParticipant(p);
         return {
           matrixUserId: identity,
           label: identity ? resolveLabel(identity) : null,
@@ -1803,6 +1802,7 @@ export function useSpaceGroupCall(
           client,
           activeRoomId,
           jwtServiceUrl,
+          getTabId(),
         );
         logJoinDebugStep('join-step:livekit-credentials-fetched');
         const lkRoom = createLiveKitRoom();
@@ -1827,6 +1827,16 @@ export function useSpaceGroupCall(
         logJoinDebugStep('join-step:livekit-connect-resolved', {
           remoteParticipantsAtConnect: lkRoom.remoteParticipants.size,
         });
+        // Post-#2456: LiveKit identity is a tab-unique, non-reversible value — publish our
+        // own Matrix user id via participant metadata so other clients (and this one) can
+        // resolve "whose tile is this" without parsing the identity string.
+        // See matrixUserIdFromLiveKitParticipant() in livekit-call-helpers.ts.
+        const localMatrixUserId = client.getUserId();
+        if (localMatrixUserId) {
+          await lkRoom.localParticipant
+            .setMetadata(JSON.stringify({ matrixUserId: localMatrixUserId }))
+            .catch(() => undefined);
+        }
 
         if (joinEpoch !== joinEpochRef.current) {
           await lkRoom.disconnect().catch(() => undefined);

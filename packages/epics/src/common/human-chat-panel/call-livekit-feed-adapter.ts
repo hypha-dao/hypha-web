@@ -10,7 +10,7 @@ import {
   type LocalParticipant,
   type RemoteParticipant,
 } from 'livekit-client';
-import { matrixUserIdFromLiveKitIdentity } from '@hypha-platform/core/client';
+import { matrixUserIdFromLiveKitParticipant } from '@hypha-platform/core/client';
 
 type FeedListener = () => void;
 
@@ -33,8 +33,7 @@ class LiveKitAdaptedCallFeed {
     this.participant = options.participant;
     this.trackSource = options.trackSource;
     this.isLocalFeed = options.isLocal;
-    this.userId =
-      matrixUserIdFromLiveKitIdentity(options.participant.identity) || '';
+    this.userId = matrixUserIdFromLiveKitParticipant(options.participant) || '';
     this.deviceId = options.participant.sid?.trim() || '';
     this.purpose =
       options.trackSource === Track.Source.ScreenShare
