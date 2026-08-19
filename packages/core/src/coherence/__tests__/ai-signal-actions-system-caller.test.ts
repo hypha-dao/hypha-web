@@ -27,15 +27,20 @@ vi.mock('../server/mutations', () => ({
 }));
 
 import { createAiSignalForSpaceBySlug } from '../server/ai-signal-actions';
-import { createSystemAiSignalForSpaceBySlug } from '../server/ai-signal-actions-system';
+import {
+  createSystemAiSignalForSpaceBySlug,
+  relaySystemAiSignalToEcosystemSpace,
+} from '../server/ai-signal-actions-system';
 import { findSelf } from '../../people/server/queries';
 import { checkSpaceAccessForSpace, findSpaceBySlug } from '../../space/server';
+import { getAllOrganizationSpacesForNodeById } from '../../space/server/web3';
 import { createCoherence } from '../server/mutations';
 
 const mockedFindSelf = vi.mocked(findSelf);
 const mockedCheckAccess = vi.mocked(checkSpaceAccessForSpace);
 const mockedFindSpaceBySlug = vi.mocked(findSpaceBySlug);
 const mockedCreateCoherence = vi.mocked(createCoherence);
+const mockedGetEcosystemSpaces = vi.mocked(getAllOrganizationSpacesForNodeById);
 
 const host = {
   id: 1,
@@ -112,6 +117,89 @@ describe('createAiSignalForSpaceBySlug — user-facing path always requires real
       expect(result.error).toBe('authToken is required');
     }
     expect(mockedFindSpaceBySlug).not.toHaveBeenCalled();
+    expect(mockedCreateCoherence).not.toHaveBeenCalled();
+  });
+});
+
+describe('relaySystemAiSignalToEcosystemSpace — ecosystem-root gate', () => {
+  const sourceHost = {
+    id: 10,
+    slug: 'source-space',
+    web3SpaceId: 100,
+  };
+  const targetHost = {
+    id: 20,
+    slug: 'target-space',
+    web3SpaceId: 200,
+  };
+
+  const relayInput = {
+    sourceSpaceSlug: 'source-space',
+    targetSpaceSlug: 'target-space',
+    title: 'Something notable happened',
+    summary: 'A summary long enough to pass validation checks.',
+    recommendedAction: 'Take a look',
+    relevanceRationale: 'It affects both spaces',
+    type: 'Insight' as const,
+    priority: 'medium' as const,
+  };
+
+  beforeEach(() => {
+    mockedFindSpaceBySlug.mockImplementation(
+      async ({ slug }: { slug: string }) =>
+        slug === sourceHost.slug
+          ? (sourceHost as never)
+          : slug === targetHost.slug
+          ? (targetHost as never)
+          : null,
+    );
+  });
+
+  it('relays and writes creatorId: null when source and target share an ecosystem root', async () => {
+    const root = { id: 1, parentId: null };
+    const sharedEcosystem = [
+      root,
+      { id: sourceHost.id, parentId: root.id },
+      { id: targetHost.id, parentId: root.id },
+    ];
+    mockedGetEcosystemSpaces.mockResolvedValue(sharedEcosystem as never);
+
+    const result = await relaySystemAiSignalToEcosystemSpace(relayInput, {
+      db: {} as never,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockedCreateCoherence).toHaveBeenCalledWith(
+      expect.objectContaining({ creatorId: null }),
+      expect.anything(),
+    );
+    if (result.ok) {
+      expect(result.creatorId).toBeNull();
+    }
+  });
+
+  it('returns the ecosystem error and does not create a signal when the target is outside the source ecosystem', async () => {
+    mockedGetEcosystemSpaces.mockImplementation(
+      async ({ id }: { id?: number | null } = {}) =>
+        (id === sourceHost.id
+          ? [
+              { id: 1, parentId: null },
+              { id: sourceHost.id, parentId: 1 },
+            ]
+          : [
+              { id: 2, parentId: null },
+              { id: targetHost.id, parentId: 2 },
+            ]) as never,
+    );
+
+    const result = await relaySystemAiSignalToEcosystemSpace(relayInput, {
+      db: {} as never,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/outside the source ecosystem/);
+    }
     expect(mockedCreateCoherence).not.toHaveBeenCalled();
   });
 });

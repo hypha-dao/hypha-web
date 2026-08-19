@@ -39,17 +39,22 @@ async function withTimeout<T>(
   timeoutMessage: string,
 ): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(new Error(timeoutMessage)),
-    timeoutMs,
-  );
+  let timeoutId!: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort(new Error(timeoutMessage));
+      reject(new Error(timeoutMessage));
+    }, timeoutMs);
+  });
+
+  // Cancellable work (e.g. Matrix fetches) honors `signal` and exits early;
+  // non-cancellable work (e.g. DB queries) keeps running in the background —
+  // this only bounds how long the caller waits, not the underlying operation.
+  const taskPromise = task(controller.signal);
+  taskPromise.catch(() => {});
+
   try {
-    return await task(controller.signal);
-  } catch (error) {
-    if (controller.signal.aborted) {
-      throw new Error(timeoutMessage);
-    }
-    throw error;
+    return await Promise.race([taskPromise, timeoutPromise]);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -128,7 +133,8 @@ export async function runRefreshDiscussions(
   }).map(async () => {
     while (true) {
       const spaceSlug = queue.shift();
-      if (!spaceSlug) return;
+      if (spaceSlug === undefined) return;
+      if (!spaceSlug.trim()) continue;
       try {
         const result = await withTimeout(
           (signal) =>

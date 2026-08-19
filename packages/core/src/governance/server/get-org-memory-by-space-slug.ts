@@ -431,6 +431,10 @@ type MatrixMessagesChunk = {
   end?: string;
 };
 
+// No fallback to the old `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` name: it was never actually
+// configured in any environment, so a fallback would be dead code, not a safety net. Setting
+// `HYPHA_MATRIX_BOT_AS_TOKEN` for the first time is in-scope ops setup for #2420, not a breaking
+// rename of a working value — see docs/operations/space-memory-production-checklist.md.
 function matrixEnvFlags(): Pick<
   MatrixOrgMemoryFetchMeta,
   'homeserver_configured' | 'access_token_configured'
@@ -913,7 +917,9 @@ export async function getOrgMemoryBySpaceSlug(
     /**
      * System-triggered call (signal-orchestrator cron) — skips the Privy-based
      * `checkSpaceAccessForSpace` gate below, since the caller is already authenticated at the
-     * HTTP layer via a fixed shared secret. See `ai-signal-actions.ts`'s same-named flag.
+     * HTTP layer via a fixed shared secret. The matching signal-write path is the separate
+     * `coherence/server/ai-signal-actions-system.ts` module, which is not re-exported from
+     * `@hypha-platform/core/server`.
      */
     system?: boolean;
   },

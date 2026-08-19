@@ -5,9 +5,11 @@ import {
 import { getDb, web3Client } from '../../common/server';
 import { findSelf } from '../../people/server/queries';
 import { checkSpaceAccessForSpace, findSpaceBySlug } from '../../space/server';
-import { getAllOrganizationSpacesForNodeById } from '../../space/server/web3';
 import { DbConfig } from '../../server';
-import { createSignalInSpace } from './ai-signal-actions-internal';
+import {
+  checkEcosystemRelayAllowed,
+  createSignalInSpace,
+} from './ai-signal-actions-internal';
 
 const PAYMENT_CHAIN_ID = 8453 as const;
 
@@ -308,33 +310,9 @@ export async function relayAiSignalToEcosystemSpace(
   if (targetPaymentReason)
     return { ok: false as const, error: targetPaymentReason };
 
-  const ecosystem = await getAllOrganizationSpacesForNodeById({
-    id: source.id,
-  });
-  const targetEcosystem = await getAllOrganizationSpacesForNodeById({
-    id: target.id,
-  });
-
-  const resolveRootId = (
-    spaces: Array<{ id: number; parentId?: number | null }>,
-    fallbackId: number,
-  ): number => {
-    return spaces.find((space) => space.parentId == null)?.id ?? fallbackId;
-  };
-
-  const sourceRootId = resolveRootId(ecosystem, source.id);
-  const targetRootId = resolveRootId(targetEcosystem, target.id);
-  const targetInEcosystem = ecosystem.some((space) => space.id === target.id);
-  const sourceInTargetEcosystem = targetEcosystem.some(
-    (space) => space.id === source.id,
-  );
-  const sameRoot = sourceRootId === targetRootId;
-  if (!targetInEcosystem || !sourceInTargetEcosystem || !sameRoot) {
-    return {
-      ok: false as const,
-      error:
-        'Target space is outside the source ecosystem. Relay is limited to spaces that share the same ecosystem root.',
-    };
+  const ecosystemCheck = await checkEcosystemRelayAllowed({ source, target });
+  if (!ecosystemCheck.ok) {
+    return { ok: false as const, error: ecosystemCheck.error };
   }
 
   const actorId = await resolveSignalActorId(authToken);

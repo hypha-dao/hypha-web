@@ -22,7 +22,10 @@ Set these on the web deployment:
 - `NEXT_PUBLIC_MATRIX_HOMESERVER_URL`
   - Required for Matrix timeline/media fetch and discussion summaries.
 - `HYPHA_MATRIX_BOT_AS_TOKEN`
-  - Recommended bot/service token for unattended summary refresh jobs.
+  - Required for unattended summary refresh jobs (cron/ops requests have no signed-in user
+    session, so this is the only credential path — leaving it unset causes discussion refresh to
+    silently skip Matrix messages rather than error). Verify it is set in every deployed
+    environment before relying on scheduled refresh.
 - `HYPHA_SIGNAL_ORCHESTRATOR_AUTH_TOKEN` or `HYPHA_MCP_AUTH_TOKEN`
   - Service auth used when the orchestrator reads org memory during evaluation.
 

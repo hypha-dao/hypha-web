@@ -28,6 +28,7 @@ export async function GET(request: Request) {
       {
         limit,
         dryRun,
+        system: true,
         requestUrlForSessionMatrix:
           process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
           (process.env.VERCEL_URL?.trim()
@@ -37,11 +38,9 @@ export async function GET(request: Request) {
       { db },
     );
 
-    const status =
-      result.results.some((row) => row.status === 'error') ||
-      result.results.some((row) => row.status === 'discarded')
-        ? 207
-        : 200;
+    const status = result.results.some((row) => row.status === 'error')
+      ? 207
+      : 200;
     return NextResponse.json(result, { status });
   } catch (error) {
     return NextResponse.json(

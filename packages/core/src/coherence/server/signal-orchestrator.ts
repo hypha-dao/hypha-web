@@ -129,6 +129,10 @@ type EnqueueInput = {
 type ProcessBatchInput = {
   limit?: number;
   authToken?: string;
+  // Explicit opt-in to the system identity path (./ai-signal-actions-system). Required
+  // when authToken is absent — callers must say so on purpose rather than have it inferred,
+  // so a caller that forgot to pass a token fails loudly instead of silently writing as system.
+  system?: boolean;
   requestUrlForSessionMatrix?: string;
   dryRun?: boolean;
 };
@@ -450,10 +454,41 @@ export async function enqueueSignalEvaluationFromMemory(
   });
 }
 
+async function discardQueueItem({
+  db,
+  lockId,
+  reason,
+  dryRun,
+}: {
+  db: DbConfig['db'];
+  lockId: number;
+  reason: string;
+  dryRun: boolean;
+}) {
+  if (dryRun) {
+    // A dry run is a preview, not a genuine processing attempt — release the
+    // lock back to 'pending' instead of writing the terminal 'discarded' state.
+    await db
+      .update(signalOrchestratorQueue)
+      .set({
+        state: 'pending',
+        processingStartedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(signalOrchestratorQueue.id, lockId));
+  } else {
+    await db
+      .update(signalOrchestratorQueue)
+      .set({ state: 'discarded', lastError: reason, updatedAt: new Date() })
+      .where(eq(signalOrchestratorQueue.id, lockId));
+  }
+}
+
 export async function processSignalOrchestratorBatch(
   {
     limit = 20,
     authToken,
+    system,
     requestUrlForSessionMatrix,
     dryRun = false,
   }: ProcessBatchInput,
@@ -472,13 +507,17 @@ export async function processSignalOrchestratorBatch(
     .limit(Math.max(1, Math.min(100, limit)));
 
   // No Vercel Cron / ops-secret caller ever supplies a real per-user Privy token — both HTTP
-  // entrypoints authenticate the caller via a fixed shared secret before reaching this function.
-  // `authToken` stays supported as an explicit override (e.g. tests exercising the real-user path).
-  // When absent, signal writes go through `./ai-signal-actions-system` — a separate module not
-  // reachable from user-facing MCP/chat tools — instead of a boolean flag on the shared,
-  // user-facing `createAiSignalForSpaceBySlug` / `relayAiSignalToEcosystemSpace` functions.
+  // entrypoints authenticate the caller via a fixed shared secret before reaching this function
+  // and pass `system: true` explicitly. `authToken` stays supported as an override for tests
+  // exercising the real-user path. When neither is present, fail loudly instead of silently
+  // falling back to the system identity — a caller that forgot its token should error, not escalate.
   const callerAuthToken = authToken?.trim() || undefined;
   const useSystemIdentity = !callerAuthToken;
+  if (useSystemIdentity && !system) {
+    throw new Error(
+      'processSignalOrchestratorBatch requires either authToken or system: true',
+    );
+  }
   const results: Array<{ queue_id: number; status: string; message: string }> =
     [];
 
@@ -505,36 +544,34 @@ export async function processSignalOrchestratorBatch(
 
     try {
       if (lock.attempts > MAX_ATTEMPTS) {
-        await db
-          .update(signalOrchestratorQueue)
-          .set({
-            state: 'discarded',
-            lastError: 'Max attempts exceeded',
-            updatedAt: new Date(),
-          })
-          .where(eq(signalOrchestratorQueue.id, lock.id));
+        await discardQueueItem({
+          db,
+          lockId: lock.id,
+          reason: 'Max attempts exceeded',
+          dryRun,
+        });
         results.push({
           queue_id: lock.id,
           status: 'discarded',
-          message: 'Max attempts exceeded',
+          message: dryRun ? 'Dry run evaluation only' : 'Max attempts exceeded',
         });
         continue;
       }
 
       const host = await findSpaceById({ id: lock.spaceId }, { db });
       if (!host) {
-        await db
-          .update(signalOrchestratorQueue)
-          .set({
-            state: 'discarded',
-            lastError: 'Space no longer exists',
-            updatedAt: new Date(),
-          })
-          .where(eq(signalOrchestratorQueue.id, lock.id));
+        await discardQueueItem({
+          db,
+          lockId: lock.id,
+          reason: 'Space no longer exists',
+          dryRun,
+        });
         results.push({
           queue_id: lock.id,
           status: 'discarded',
-          message: 'Space no longer exists',
+          message: dryRun
+            ? 'Dry run evaluation only'
+            : 'Space no longer exists',
         });
         continue;
       }
@@ -542,18 +579,16 @@ export async function processSignalOrchestratorBatch(
       const payment = await getSpacePaymentEligibility(host.web3SpaceId);
       const paymentReason = toPaymentReason(payment);
       if (paymentReason) {
-        await db
-          .update(signalOrchestratorQueue)
-          .set({
-            state: 'discarded',
-            lastError: paymentReason,
-            updatedAt: new Date(),
-          })
-          .where(eq(signalOrchestratorQueue.id, lock.id));
+        await discardQueueItem({
+          db,
+          lockId: lock.id,
+          reason: paymentReason,
+          dryRun,
+        });
         results.push({
           queue_id: lock.id,
           status: 'discarded',
-          message: paymentReason,
+          message: dryRun ? 'Dry run evaluation only' : paymentReason,
         });
         continue;
       }

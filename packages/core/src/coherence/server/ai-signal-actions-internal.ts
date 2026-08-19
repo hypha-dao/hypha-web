@@ -1,4 +1,5 @@
 import { findSpaceBySlug } from '../../space/server';
+import { getAllOrganizationSpacesForNodeById } from '../../space/server/web3';
 import type { DbConfig } from '../../server';
 import { CreateCoherenceInput } from '../types';
 import { createCoherence } from './mutations';
@@ -9,6 +10,49 @@ import { createCoherence } from './mutations';
  * of its own; every caller (`ai-signal-actions.ts`'s authed path, `ai-signal-actions-system.ts`'s
  * system path) is responsible for verifying the caller may write to `host` *before* calling this.
  */
+
+/**
+ * Shared ecosystem-root gate for both relay paths (`relayAiSignalToEcosystemSpace` and
+ * `relaySystemAiSignalToEcosystemSpace`). This is a security boundary — it decides whether a
+ * signal may be relayed from `source` into `target` — so it must not be duplicated: two copies
+ * can diverge and one can end up relaying signals outside the ecosystem root.
+ */
+export async function checkEcosystemRelayAllowed({
+  source,
+  target,
+}: {
+  source: { id: number };
+  target: { id: number };
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const [ecosystem, targetEcosystem] = await Promise.all([
+    getAllOrganizationSpacesForNodeById({ id: source.id }),
+    getAllOrganizationSpacesForNodeById({ id: target.id }),
+  ]);
+
+  const resolveRootId = (
+    spaces: Array<{ id: number; parentId?: number | null }>,
+    fallbackId: number,
+  ): number => {
+    return spaces.find((space) => space.parentId == null)?.id ?? fallbackId;
+  };
+
+  const sourceRootId = resolveRootId(ecosystem, source.id);
+  const targetRootId = resolveRootId(targetEcosystem, target.id);
+  const targetInEcosystem = ecosystem.some((space) => space.id === target.id);
+  const sourceInTargetEcosystem = targetEcosystem.some(
+    (space) => space.id === source.id,
+  );
+  const sameRoot = sourceRootId === targetRootId;
+
+  if (!targetInEcosystem || !sourceInTargetEcosystem || !sameRoot) {
+    return {
+      ok: false,
+      error:
+        'Target space is outside the source ecosystem. Relay is limited to spaces that share the same ecosystem root.',
+    };
+  }
+  return { ok: true };
+}
 
 const AI_SIGNAL_TAG = 'AI Signal';
 

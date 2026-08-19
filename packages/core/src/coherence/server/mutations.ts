@@ -114,8 +114,8 @@ export const createCoherence = async (
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
   const priority = maybePriority ?? 'medium';
-  // New signals always have an owner: the chosen assignee, or the creator
-  // (system-created signals with no creatorId start unassigned).
+  // Owner resolution: the explicit assignees, else the creator.
+  // System-created signals have no creatorId and start unassigned.
   const assigneeIds = normalizeAssigneeIds(
     inputAssigneeIds?.length
       ? inputAssigneeIds
@@ -189,6 +189,15 @@ export const updateCoherenceBySlug = async (
   return updatedCoherence;
 };
 
+// `requesterPersonId` on this function and on `patchCoherenceTaskBySlug` /
+// `deleteCoherenceBySlug` below is accepted and discarded, not enforced — this predates #2420
+// (widened here from `number` to `number | null` only, to allow the ingestion route's
+// `signal.creatorId`). It's safe because every real caller already runs
+// `assertCoherenceSpacePanelAuth` (UI actions in `actions.ts`) or `authorizeIngestion` +
+// `loadOwnedSignal` (the ingested-signal PATCH route) *before* reaching this function — so the
+// permission check already happened one layer up by the time `requesterPersonId` arrives here.
+// Tracked as pre-existing tech debt (dead/misleading param), not a live gap; out of scope for
+// this ticket.
 export const updateCoherenceSignalBySlug = async (
   {
     slug,
