@@ -140,7 +140,7 @@ function applyCallResumeSnapshot(
 }
 
 function useGlobalCallDockValue() {
-  const { isMatrixSyncLeader, client } = useMatrix();
+  const { client } = useMatrix();
   const [boundRoomId, setBoundRoomId] = React.useState<string | null>(null);
   const [boundSpaceSlug, setBoundSpaceSlug] = React.useState<string | null>(
     null,
@@ -170,11 +170,9 @@ function useGlobalCallDockValue() {
   const restoreTimerRef = React.useRef<number | null>(null);
   const resumeAttemptAtRef = React.useRef<number | null>(null);
   const resumeAttemptKeyRef = React.useRef<string | null>(null);
-  const releasingForTransferRef = React.useRef(false);
   const lastPersistedResumeSignatureRef = React.useRef<string | null>(null);
   /** Blocks resume/pending-join after an explicit hang-up (same tab, same render). */
   const userDismissedCallRef = React.useRef(false);
-  const wasMatrixSyncLeaderRef = React.useRef(isMatrixSyncLeader);
   const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
   /** Room pinned for the active call — survives chat panel room/null transitions. */
   const callSessionRoomIdRef = React.useRef<string | null>(null);
@@ -334,11 +332,13 @@ function useGlobalCallDockValue() {
   }, [call.callState, call.recordingStatus]);
 
   React.useEffect(() => {
-    if (!isMatrixSyncLeader) return;
     if (inSession || pendingJoin) return;
     if (userDismissedCallRef.current) return;
     const snapshot = readCallResumeSnapshot();
     if (!snapshot) return;
+    /** Avoid every tab of this browser auto-resuming the same call simultaneously — skip if
+     * another tab already holds (or is about to hold) this room's call. */
+    if (getRemoteGroupCallHoldRoomId() === snapshot.roomId) return;
     const attemptKey = `${snapshot.roomId}:${snapshot.callKind}:${snapshot.updatedAt}`;
     if (resumeAttemptKeyRef.current === attemptKey) return;
     resumeAttemptKeyRef.current = attemptKey;
@@ -355,37 +355,7 @@ function useGlobalCallDockValue() {
       restoreInProgressRef,
       restoreTimerRef,
     });
-  }, [inSession, isMatrixSyncLeader, pendingJoin]);
-
-  React.useEffect(() => {
-    if (isMatrixSyncLeader && !wasMatrixSyncLeaderRef.current) {
-      resumeAttemptKeyRef.current = null;
-      if (call.callState === 'error' && call.errorCode === 'NO_CLIENT') {
-        call.dismissCallError();
-      }
-    }
-    if (wasMatrixSyncLeaderRef.current && !isMatrixSyncLeader) {
-      resumeAttemptAtRef.current = null;
-      resumeAttemptKeyRef.current = null;
-      restoreInProgressRef.current = false;
-      setPendingJoin(null);
-      if (inSessionRef.current) {
-        setIsReleasingForTransfer(true);
-        releasingForTransferRef.current = true;
-        void call.releaseLocalCallForTabTransfer().finally(() => {
-          releasingForTransferRef.current = false;
-          setIsReleasingForTransfer(false);
-        });
-      }
-    }
-    wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
-  }, [
-    call.dismissCallError,
-    call.callState,
-    call.errorCode,
-    call.releaseLocalCallForTabTransfer,
-    isMatrixSyncLeader,
-  ]);
+  }, [inSession, pendingJoin]);
 
   React.useEffect(() => {
     if (restoreInProgressRef.current) return;
@@ -408,7 +378,7 @@ function useGlobalCallDockValue() {
       setPendingJoin(null);
       return;
     }
-    if (!isMatrixSyncLeader || !client) return;
+    if (!client) return;
     if (activeRoomId !== pendingJoin.roomId) return;
     if (!activeAuthToken) return;
 
@@ -432,7 +402,6 @@ function useGlobalCallDockValue() {
     rejoinCall,
     enterAudio,
     enterVideo,
-    isMatrixSyncLeader,
   ]);
 
   React.useEffect(() => {
@@ -459,7 +428,13 @@ function useGlobalCallDockValue() {
     }
     const callKind = pendingJoin?.kind ?? call.callKind;
     if (!activeRoomId || !callKind) {
-      if (isMatrixSyncLeader && call.callState === 'idle' && !pendingJoin) {
+      /** Only clear the (shared, cross-tab) resume snapshot when no tab of this browser holds
+       * a call — this tab being idle says nothing about another tab's active session. */
+      if (
+        !isRemoteGroupCallHoldActive() &&
+        call.callState === 'idle' &&
+        !pendingJoin
+      ) {
         clearCallResumeSnapshot();
       }
       return;
@@ -497,7 +472,6 @@ function useGlobalCallDockValue() {
     call.callState,
     call.threadContext?.threadRootEventId,
     dockMode,
-    isMatrixSyncLeader,
     pendingJoin,
   ]);
 
@@ -888,18 +862,13 @@ function useGlobalCallDockValue() {
     refreshRoomCall,
   ]);
 
-  const [isReleasingForTransfer, setIsReleasingForTransfer] =
-    React.useState(false);
-
-  const showFloatingDock =
-    isMatrixSyncLeader && (inSession || call.recordingStatus === 'uploading');
+  const showFloatingDock = inSession || call.recordingStatus === 'uploading';
   const holdsMatrixSyncForCall =
-    (isMatrixSyncLeader || isReleasingForTransfer) &&
-    (inSession ||
-      call.recordingStatus === 'uploading' ||
-      pendingJoin != null ||
-      restoreInProgressRef.current ||
-      call.isCallRecovering);
+    inSession ||
+    call.recordingStatus === 'uploading' ||
+    pendingJoin != null ||
+    restoreInProgressRef.current ||
+    call.isCallRecovering;
 
   React.useEffect(() => {
     setGroupCallSessionActive(

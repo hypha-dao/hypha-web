@@ -2150,36 +2150,6 @@ export function useSpaceGroupCall(
     restoreVoiceBeforeLeaveIfNeeded,
   ]);
 
-  /**
-   * Drop local LiveKit/UI when Matrix sync moves to another tab without leaving
-   * the MatrixRTC session — the new leader tab re-enters via resume snapshot.
-   */
-  const releaseLocalCallForTabTransfer = useCallback(async () => {
-    if (callState === 'idle') return;
-    setCallState('disconnecting');
-    abortInFlightJoin(joinEpochRef, isJoiningRef);
-    const lkRoom = liveKitRoomRef.current;
-    if (lkRoom) {
-      await restoreVoiceBeforeLeaveIfNeeded(lkRoom);
-      await stopLiveKitLocalPublishing(lkRoom);
-    } else {
-      setPresenterVoiceBoostActive(false);
-      voicePresetRestoreAfterScreenshareRef.current = null;
-    }
-    runCleanup({ skipGroupCallLeave: true });
-    setCallState('idle');
-    setErrorCode(null);
-    setCallKind(null);
-    setIsScreensharing(false);
-    setScreenshareTakeoverIncoming(null);
-    setScreenshareTakeoverPendingId(null);
-    setScreenshareTakeoverDenied(false);
-    screenshareTakeoverPendingIdRef.current = null;
-    setThreadContext(null);
-    setParticipantCount(0);
-    setTabBackgroundWhileInCall(false);
-  }, [callState, restoreVoiceBeforeLeaveIfNeeded, runCleanup]);
-
   const setMicrophoneMuted = useCallback(
     async (muted: boolean) => {
       const lkRoom = liveKitRoomRef.current;
@@ -3142,7 +3112,6 @@ export function useSpaceGroupCall(
     selfStaleCallPresence,
     rejoinCall,
     leave,
-    releaseLocalCallForTabTransfer,
     setMicrophoneMuted,
     setCameraMuted,
     setScreensharingEnabled,

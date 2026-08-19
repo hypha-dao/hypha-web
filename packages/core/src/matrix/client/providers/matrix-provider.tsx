@@ -49,7 +49,6 @@ import {
   configureMatrixGlobalLogger,
 } from '../matrix-client-logger';
 import { isTransientMatrixNetworkError } from '../matrix-network-errors';
-import { useMatrixTabLeader } from '../hooks/use-matrix-tab-leader';
 
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
 import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
@@ -528,8 +527,7 @@ export interface ChatMember {
 export type MatrixConnectionStatus =
   | 'connected'
   | 'reconnecting'
-  | 'disconnected'
-  | 'follower';
+  | 'disconnected';
 
 export type LoadRoomHistoryResult = {
   /** False when scrollback returned no additional timeline events. */
@@ -541,12 +539,8 @@ interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
   isMatrixAvailable: boolean;
   isAuthenticated: boolean;
-  /** Whether this tab owns the active Matrix `/sync` loop. */
-  isMatrixSyncLeader: boolean;
-  /** True when sync is degraded or this tab is a follower waiting for leadership. */
+  /** Matrix `/sync` connection state — each tab runs its own `/sync` independently (#2456). */
   connectionStatus: MatrixConnectionStatus;
-  /** Take over Matrix sync in this tab (single-tab leader election). */
-  claimMatrixSyncLeadership: () => void;
   /** Soft-restart Matrix sync; falls back to session refresh when no client exists. */
   retryMatrixConnection: () => Promise<void>;
   /** True after an explicit Retry click failed (cleared on success or next retry). */
@@ -599,16 +593,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, []);
 
   const { user } = useAuthentication();
-  const { isSyncLeader, claimSyncLeadership } = useMatrixTabLeader();
   const [client, setClient] = React.useState<MatrixSdk.MatrixClient | null>(
     null,
   );
   const [isMatrixAvailable, setIsMatrixAvailable] = React.useState(false);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [connectionStatus, setConnectionStatus] =
-    React.useState<MatrixConnectionStatus>(() =>
-      isSyncLeader ? 'disconnected' : 'follower',
-    );
+    React.useState<MatrixConnectionStatus>('disconnected');
   const [sessionRefreshFailedDuringCall, setSessionRefreshFailedDuringCall] =
     React.useState(false);
   const [activeMatrixUserId, setActiveMatrixUserId] = React.useState<
@@ -719,7 +710,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const recoverMatrixSync = React.useCallback(async (): Promise<boolean> => {
-    if (!isSyncLeader) return false;
     const existingClient = clientRef.current;
     if (!existingClient) return false;
     if (syncRecoveryPromiseRef.current) {
@@ -754,7 +744,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
     syncRecoveryPromiseRef.current = recovery;
     return recovery;
-  }, [isSyncLeader]);
+  }, []);
 
   const recycleMatrixClient = React.useCallback(() => {
     roomHistoryLoadRef.current.clear();
@@ -771,8 +761,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     setActiveMatrixUserId(null);
     setIsAuthenticated(false);
     setIsMatrixAvailable(false);
-    setConnectionStatus(isSyncLeader ? 'disconnected' : 'follower');
-  }, [isSyncLeader]);
+    setConnectionStatus('disconnected');
+  }, []);
 
   const recoverMatrixSession = React.useCallback(async (): Promise<boolean> => {
     if (sessionRecoveryPromiseRef.current) {
@@ -844,7 +834,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [initializeMatrixClient, refreshMatrixToken]);
 
   const retryMatrixConnection = React.useCallback(async (): Promise<void> => {
-    if (!isSyncLeader) return;
     if (connectionRetryPromiseRef.current) {
       return connectionRetryPromiseRef.current;
     }
@@ -876,7 +865,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       connectionRetryPromiseRef.current = null;
     });
     return connectionRetryPromiseRef.current;
-  }, [isSyncLeader, matrixTokenError, recoverMatrixSession, recoverMatrixSync]);
+  }, [matrixTokenError, recoverMatrixSession, recoverMatrixSync]);
 
   const clearProactiveRefreshTimer = React.useCallback(() => {
     if (proactiveRefreshTimerRef.current == null) return;
@@ -948,25 +937,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [client]);
 
   React.useEffect(() => {
-    if (isSyncLeader) {
-      setConnectionStatus((prev) =>
-        prev === 'follower' ? 'disconnected' : prev,
-      );
-      return;
-    }
-    if (clientRef.current) {
-      recycleMatrixClient();
-    } else {
-      setConnectionStatus('follower');
-    }
-  }, [isSyncLeader, recycleMatrixClient]);
-
-  React.useEffect(() => {
     if (client) {
       //NOTE: already initialized
-      return;
-    }
-    if (!isSyncLeader) {
       return;
     }
     if (isMatrixTokenLoading) {
@@ -982,7 +954,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     initializeMatrixClient(matrixToken);
   }, [
     client,
-    isSyncLeader,
     matrixToken,
     isMatrixTokenLoading,
     matrixTokenError,
@@ -1049,7 +1020,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [client, recoverMatrixSession]);
 
   React.useEffect(() => {
-    if (!client || !isSyncLeader) return;
+    if (!client) return;
 
     const retryIfNeeded = () => {
       if (connectionStatus !== 'disconnected') return;
@@ -1071,7 +1042,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('online', handleOnline);
     };
-  }, [client, connectionStatus, isSyncLeader, recoverMatrixSync]);
+  }, [client, connectionStatus, recoverMatrixSync]);
 
   React.useEffect(() => {
     return () => {
@@ -2258,9 +2229,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     client,
     isMatrixAvailable,
     isAuthenticated,
-    isMatrixSyncLeader: isSyncLeader,
     connectionStatus,
-    claimMatrixSyncLeadership: claimSyncLeadership,
     retryMatrixConnection,
     connectionRetryFailed,
     createRoom,
@@ -2290,9 +2259,7 @@ const noopMatrixContext: MatrixContextType = {
   client: null,
   isMatrixAvailable: false,
   isAuthenticated: false,
-  isMatrixSyncLeader: true,
   connectionStatus: 'connected',
-  claimMatrixSyncLeadership: () => {},
   retryMatrixConnection: async () => {},
   connectionRetryFailed: false,
   createRoom: async () => {

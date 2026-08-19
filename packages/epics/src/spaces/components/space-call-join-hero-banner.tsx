@@ -25,11 +25,8 @@ export function SpaceCallJoinHeroBanner({
   spaceTitle,
 }: SpaceCallJoinHeroBannerProps) {
   const { jwt: authToken } = useJwt();
-  const {
-    isMatrixAvailable,
-    isAuthenticated: isMatrixAuthenticated,
-    isMatrixSyncLeader,
-  } = useMatrix();
+  const { isMatrixAvailable, isAuthenticated: isMatrixAuthenticated } =
+    useMatrix();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuthentication();
   const { userState, isLoading: isUserSpaceStateLoading } = useUserSpaceState({
     spaceSlug,
@@ -63,8 +60,7 @@ export function SpaceCallJoinHeroBanner({
     Boolean(canonicalRoomId) &&
     isMatrixAvailable &&
     isMatrixAuthenticated &&
-    isSpaceMember &&
-    isMatrixSyncLeader;
+    isSpaceMember;
 
   const inSpaceCall =
     callState === 'connected' ||

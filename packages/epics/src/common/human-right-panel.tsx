@@ -122,7 +122,6 @@ import {
 } from './human-chat-panel/use-call-join-chime';
 import { useCallJoinInvitation } from './human-chat-panel/use-call-join-invitation';
 import { HumanChatPanelCallJoinInvitation } from './human-chat-panel/human-chat-panel-call-join-invitation';
-import { useActiveCallInAnotherTab } from './human-chat-panel/use-active-call-in-another-tab';
 import { shouldShowCallScaleWarning } from './human-chat-panel/call-scale-warning';
 import { resolveSignalDeepLinkWithRetry } from './human-chat-panel/resolve-signal-deep-link';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
@@ -991,9 +990,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     isMatrixAvailable,
     isAuthenticated: isMatrixAuthenticated,
-    isMatrixSyncLeader,
     connectionStatus,
-    claimMatrixSyncLeadership,
     retryMatrixConnection,
     connectionRetryFailed,
     refreshSession,
@@ -1133,7 +1130,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
-  const wasMatrixSyncLeaderRef = useRef(isMatrixSyncLeader);
 
   useEffect(() => {
     setMentionDisplayOverride({});
@@ -1142,21 +1138,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setAutoLoadOlderPaused(false);
   }, [roomId]);
 
-  useEffect(() => {
-    const wasLeader = wasMatrixSyncLeaderRef.current;
-    if (wasLeader && !isMatrixSyncLeader) {
-      setHasMoreOlderMessages(false);
-      setLoadingOlderMessages(false);
-      setAutoLoadOlderPaused(false);
-    }
-    if (!wasLeader && isMatrixSyncLeader) {
-      joinedRef.current = null;
-      setHasMoreOlderMessages(false);
-      setLoadingOlderMessages(false);
-      setAutoLoadOlderPaused(false);
-    }
-    wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
-  }, [isMatrixSyncLeader]);
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
@@ -1322,15 +1303,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
-      isSpaceMember &&
-      isMatrixSyncLeader,
-    [
-      roomId,
-      isMatrixAvailable,
-      isMatrixAuthenticated,
       isSpaceMember,
-      isMatrixSyncLeader,
-    ],
+    [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
   );
 
   const inSpaceCall =
@@ -1545,7 +1519,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId,
     showJoinOpportunity: showJoinInvitationOpportunity,
   });
-  const activeCallInAnotherTab = useActiveCallInAnotherTab();
   const showCallScaleWarning = shouldShowCallScaleWarning(
     spaceCallRoomGroupDeviceCount,
   );
@@ -2045,17 +2018,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
-  const isChatFollowerTab = connectionStatus === 'follower';
   const chatComposerLocked =
-    blockSpaceChatForMembership ||
-    !canInteractWithSignalThread ||
-    isChatFollowerTab;
+    blockSpaceChatForMembership || !canInteractWithSignalThread;
   const chatComposerLockedMessage = blockSpaceChatForMembership
     ? tCommon('joinSpaceToUse')
     : !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
-    : isChatFollowerTab
-    ? t('connectionFollowerTitle')
     : undefined;
   const canJoinSignalThreadCall =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
@@ -2066,7 +2034,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!callUiEnabled || !roomId?.trim() || !spaceSlug?.trim() || !authToken) {
       return;
     }
-    if (!isMatrixSyncLeader) return;
 
     const stableRoomId = roomId.trim();
     if (callStartedNotifyRoomRef.current === stableRoomId) return;
@@ -2125,7 +2092,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceTitle,
     currentUserId,
     hasSignalTeamPolicy,
-    isMatrixSyncLeader,
     isSignalThread,
     me?.name,
     me?.nickname,
@@ -2255,12 +2221,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleLoadOlderMessages = useCallback(
     async (source: 'auto' | 'manual' = 'manual') => {
       const targetRoomId = roomId?.trim();
-      if (
-        !targetRoomId ||
-        !isMatrixSyncLeader ||
-        loadingOlderMessages ||
-        !hasMoreOlderMessages
-      ) {
+      if (!targetRoomId || loadingOlderMessages || !hasMoreOlderMessages) {
         return;
       }
       setLoadingOlderMessages(true);
@@ -2294,20 +2255,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setLoadingOlderMessages(false);
       }
     },
-    [
-      hasMoreOlderMessages,
-      isMatrixSyncLeader,
-      loadingOlderMessages,
-      roomId,
-      syncRoomMessages,
-    ],
+    [hasMoreOlderMessages, loadingOlderMessages, roomId, syncRoomMessages],
   );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
   const mentionPickerEnabled =
-    canInteractWithSignalThread &&
-    !isChatFollowerTab &&
-    mentionCandidates.length > 0;
+    canInteractWithSignalThread && mentionCandidates.length > 0;
   const signalTeamRosterMembers = useMemo(
     () =>
       buildSpaceRosterSignalTeamMembers({
@@ -4158,7 +4111,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleSend = useCallback(async () => {
     if (!roomId) return;
-    if (isChatFollowerTab) return;
     if (blockSpaceChatForMembership) {
       setComposerError(tCommon('joinSpaceToUse'));
       return;
@@ -4418,7 +4370,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     input,
     roomId,
-    isChatFollowerTab,
     canInteractWithSignalThread,
     replyDraft,
     editDraft,
@@ -4797,13 +4748,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 )}
                 <HumanChatPanelConnectionBanner
                   connectionStatus={connectionStatus}
-                  isMatrixSyncLeader={isMatrixSyncLeader}
-                  activeCallInAnotherTab={activeCallInAnotherTab}
                   connectionRetryFailed={connectionRetryFailed}
                   onRetry={() => {
                     void retryMatrixConnection();
                   }}
-                  onUseThisTab={claimMatrixSyncLeadership}
                 />
                 {showPanelInteractionPrompt ? (
                   <div className="mt-0 w-full border-b border-border/70 bg-muted/40 px-3 py-2">
@@ -5074,9 +5022,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     hasMoreOlderMessages={hasMoreOlderMessages}
                     loadingOlderMessages={loadingOlderMessages}
                     enableAutoLoadOlderMessages={
-                      isMatrixSyncLeader &&
-                      connectionStatus === 'connected' &&
-                      !autoLoadOlderPaused
+                      connectionStatus === 'connected' && !autoLoadOlderPaused
                     }
                     onLoadOlderMessages={handleLoadOlderMessages}
                   />
