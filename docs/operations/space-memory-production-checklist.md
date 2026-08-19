@@ -26,10 +26,16 @@ Set these on the web deployment:
     session, so this is the only credential path — leaving it unset causes discussion refresh to
     silently skip Matrix messages rather than error). Verify it is set in every deployed
     environment before relying on scheduled refresh.
-- `HYPHA_SIGNAL_ORCHESTRATOR_AUTH_TOKEN` or `HYPHA_MCP_AUTH_TOKEN`
-  - Service auth used when the orchestrator reads org memory during evaluation.
 
 Optional but useful:
+
+- `HYPHA_MCP_AUTH_TOKEN`
+
+  - Auth token for the separate `packages/mcp-server` process (AI/Claude tool integrations), read
+    from that service's own environment — not `apps/web`. Not required for the cron/orchestrator
+    path: `signals-orchestrate` authenticates via `system: true`, which bypasses the auth-token
+    branch entirely. Only needed if you're also running the MCP server and want its org-memory
+    reads to carry real auth.
 
 - `NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true`
   - Explicitly pins Space Memory to enabled (even though default now enables it).
