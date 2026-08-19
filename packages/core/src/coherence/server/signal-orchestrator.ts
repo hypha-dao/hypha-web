@@ -24,13 +24,18 @@ import {
   type SignalPriority,
   type SignalType,
 } from './ai-signal-actions';
+import {
+  createSystemAiSignalForSpaceBySlug,
+  relaySystemAiSignalToEcosystemSpace,
+} from './ai-signal-actions-system';
 
 function parseEnvNumber(
   value: string | undefined,
   fallback: number,
   options?: { int?: boolean; min?: number; max?: number },
 ): number {
-  const raw = Number(value ?? '');
+  const trimmed = value?.trim();
+  const raw = trimmed ? Number(trimmed) : NaN;
   let parsed = Number.isFinite(raw) ? raw : fallback;
   if (options?.int) parsed = Math.trunc(parsed);
   if (typeof options?.min === 'number') parsed = Math.max(options.min, parsed);
@@ -41,6 +46,13 @@ function parseEnvNumber(
 const WINDOW_MINUTES = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES,
   20,
+  { int: true, min: 1, max: 240 },
+);
+// Separate, rarely-touched floor: lowering WINDOW_MINUTES alone (e.g. for local
+// testing) can't push the debounce below this without also changing this var.
+const MIN_WINDOW_MINUTES = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_WINDOW_MINUTES,
+  5,
   { int: true, min: 1, max: 240 },
 );
 const MAX_ATTEMPTS = parseEnvNumber(
@@ -117,6 +129,10 @@ type EnqueueInput = {
 type ProcessBatchInput = {
   limit?: number;
   authToken?: string;
+  // Explicit opt-in to the system identity path (./ai-signal-actions-system). Required
+  // when authToken is absent — callers must say so on purpose rather than have it inferred,
+  // so a caller that forgot to pass a token fails loudly instead of silently writing as system.
+  system?: boolean;
   requestUrlForSessionMatrix?: string;
   dryRun?: boolean;
 };
@@ -380,7 +396,9 @@ export async function enqueueSignalEvaluationFromMemory(
   if (!slug) return { ok: false as const, error: 'spaceSlug is required' };
   const host = await findSpaceBySlug({ slug }, { db });
   if (!host) return { ok: false as const, error: 'Space not found' };
-  const dueAt = new Date(Date.now() + Math.max(5, WINDOW_MINUTES) * 60 * 1000);
+  const dueAt = new Date(
+    Date.now() + Math.max(MIN_WINDOW_MINUTES, WINDOW_MINUTES) * 60 * 1000,
+  );
 
   const payload: Record<string, unknown> = {
     trigger_kind: input.triggerKind,
@@ -436,10 +454,41 @@ export async function enqueueSignalEvaluationFromMemory(
   });
 }
 
+async function discardQueueItem({
+  db,
+  lockId,
+  reason,
+  dryRun,
+}: {
+  db: DbConfig['db'];
+  lockId: number;
+  reason: string;
+  dryRun: boolean;
+}) {
+  if (dryRun) {
+    // A dry run is a preview, not a genuine processing attempt — release the
+    // lock back to 'pending' instead of writing the terminal 'discarded' state.
+    await db
+      .update(signalOrchestratorQueue)
+      .set({
+        state: 'pending',
+        processingStartedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(signalOrchestratorQueue.id, lockId));
+  } else {
+    await db
+      .update(signalOrchestratorQueue)
+      .set({ state: 'discarded', lastError: reason, updatedAt: new Date() })
+      .where(eq(signalOrchestratorQueue.id, lockId));
+  }
+}
+
 export async function processSignalOrchestratorBatch(
   {
     limit = 20,
     authToken,
+    system,
     requestUrlForSessionMatrix,
     dryRun = false,
   }: ProcessBatchInput,
@@ -457,10 +506,18 @@ export async function processSignalOrchestratorBatch(
     .orderBy(signalOrchestratorQueue.dueAt)
     .limit(Math.max(1, Math.min(100, limit)));
 
-  const systemAuthToken =
-    authToken?.trim() ||
-    process.env.HYPHA_SIGNAL_ORCHESTRATOR_AUTH_TOKEN?.trim() ||
-    process.env.HYPHA_MCP_AUTH_TOKEN?.trim();
+  // No Vercel Cron / ops-secret caller ever supplies a real per-user Privy token — both HTTP
+  // entrypoints authenticate the caller via a fixed shared secret before reaching this function
+  // and pass `system: true` explicitly. `authToken` stays supported as an override for tests
+  // exercising the real-user path. When neither is present, fail loudly instead of silently
+  // falling back to the system identity — a caller that forgot its token should error, not escalate.
+  const callerAuthToken = authToken?.trim() || undefined;
+  const useSystemIdentity = !callerAuthToken;
+  if (useSystemIdentity && !system) {
+    throw new Error(
+      'processSignalOrchestratorBatch requires either authToken or system: true',
+    );
+  }
   const results: Array<{ queue_id: number; status: string; message: string }> =
     [];
 
@@ -469,7 +526,10 @@ export async function processSignalOrchestratorBatch(
       .update(signalOrchestratorQueue)
       .set({
         state: 'processing',
-        attempts: row.attempts + 1,
+        // A dry run is a preview, not a genuine processing attempt — don't burn one of
+        // MAX_ATTEMPTS for it, or repeated dry-runs could discard a due item that was
+        // never actually tried for real.
+        attempts: dryRun ? row.attempts : row.attempts + 1,
         processingStartedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -484,36 +544,34 @@ export async function processSignalOrchestratorBatch(
 
     try {
       if (lock.attempts > MAX_ATTEMPTS) {
-        await db
-          .update(signalOrchestratorQueue)
-          .set({
-            state: 'discarded',
-            lastError: 'Max attempts exceeded',
-            updatedAt: new Date(),
-          })
-          .where(eq(signalOrchestratorQueue.id, lock.id));
+        await discardQueueItem({
+          db,
+          lockId: lock.id,
+          reason: 'Max attempts exceeded',
+          dryRun,
+        });
         results.push({
           queue_id: lock.id,
           status: 'discarded',
-          message: 'Max attempts exceeded',
+          message: dryRun ? 'Dry run evaluation only' : 'Max attempts exceeded',
         });
         continue;
       }
 
       const host = await findSpaceById({ id: lock.spaceId }, { db });
       if (!host) {
-        await db
-          .update(signalOrchestratorQueue)
-          .set({
-            state: 'discarded',
-            lastError: 'Space no longer exists',
-            updatedAt: new Date(),
-          })
-          .where(eq(signalOrchestratorQueue.id, lock.id));
+        await discardQueueItem({
+          db,
+          lockId: lock.id,
+          reason: 'Space no longer exists',
+          dryRun,
+        });
         results.push({
           queue_id: lock.id,
           status: 'discarded',
-          message: 'Space no longer exists',
+          message: dryRun
+            ? 'Dry run evaluation only'
+            : 'Space no longer exists',
         });
         continue;
       }
@@ -521,18 +579,16 @@ export async function processSignalOrchestratorBatch(
       const payment = await getSpacePaymentEligibility(host.web3SpaceId);
       const paymentReason = toPaymentReason(payment);
       if (paymentReason) {
-        await db
-          .update(signalOrchestratorQueue)
-          .set({
-            state: 'discarded',
-            lastError: paymentReason,
-            updatedAt: new Date(),
-          })
-          .where(eq(signalOrchestratorQueue.id, lock.id));
+        await discardQueueItem({
+          db,
+          lockId: lock.id,
+          reason: paymentReason,
+          dryRun,
+        });
         results.push({
           queue_id: lock.id,
           status: 'discarded',
-          message: paymentReason,
+          message: dryRun ? 'Dry run evaluation only' : paymentReason,
         });
         continue;
       }
@@ -546,7 +602,11 @@ export async function processSignalOrchestratorBatch(
             requestUrlForSessionMatrix,
             assetView: 'signal',
           },
-          { db, authToken: systemAuthToken },
+          {
+            db,
+            authToken: callerAuthToken,
+            system: useSystemIdentity,
+          },
         ),
         findAllCoherences(
           { db },
@@ -635,18 +695,30 @@ export async function processSignalOrchestratorBatch(
         continue;
       }
 
-      const local = await createAiSignalForSpaceBySlug(
-        {
-          spaceSlug: host.slug,
-          authToken: systemAuthToken,
-          title: candidate.title,
-          description: candidate.description,
-          type: candidate.type,
-          priority: candidate.priority,
-          tags: candidate.tags,
-        },
-        { db },
-      );
+      const local = useSystemIdentity
+        ? await createSystemAiSignalForSpaceBySlug(
+            {
+              spaceSlug: host.slug,
+              title: candidate.title,
+              description: candidate.description,
+              type: candidate.type,
+              priority: candidate.priority,
+              tags: candidate.tags,
+            },
+            { db },
+          )
+        : await createAiSignalForSpaceBySlug(
+            {
+              spaceSlug: host.slug,
+              authToken: callerAuthToken as string,
+              title: candidate.title,
+              description: candidate.description,
+              type: candidate.type,
+              priority: candidate.priority,
+              tags: candidate.tags,
+            },
+            { db },
+          );
       if (!local.ok) {
         await saveDispatch(
           {
@@ -744,23 +816,25 @@ export async function processSignalOrchestratorBatch(
             .sort((a, b) => b.relevance - a.relevance)[0];
 
           if (best && best.relevance >= 52) {
-            const relay = await relayAiSignalToEcosystemSpace(
-              {
-                sourceSpaceSlug: host.slug,
-                targetSpaceSlug: best.slug,
-                authToken: systemAuthToken,
-                title: `${host.title} -> ${best.title}: relevant signal`,
-                summary: `Local signal summary: ${candidate.summary}.`,
-                recommendedAction:
-                  'Review this signal in next coordination cycle and decide if shared workstream alignment is required.',
-                relevanceRationale: `Target overlap relevance score ${best.relevance}/100 from purpose-language alignment and ecosystem adjacency.`,
-                type: candidate.type,
-                priority: candidate.priority,
-                tags: candidate.tags,
-                sourceAssetKeys: extractSourceAssetKeys(lock.payload),
-              },
-              { db },
-            );
+            const relayInput = {
+              sourceSpaceSlug: host.slug,
+              targetSpaceSlug: best.slug,
+              title: `${host.title} -> ${best.title}: relevant signal`,
+              summary: `Local signal summary: ${candidate.summary}.`,
+              recommendedAction:
+                'Review this signal in next coordination cycle and decide if shared workstream alignment is required.',
+              relevanceRationale: `Target overlap relevance score ${best.relevance}/100 from purpose-language alignment and ecosystem adjacency.`,
+              type: candidate.type,
+              priority: candidate.priority,
+              tags: candidate.tags,
+              sourceAssetKeys: extractSourceAssetKeys(lock.payload),
+            };
+            const relay = useSystemIdentity
+              ? await relaySystemAiSignalToEcosystemSpace(relayInput, { db })
+              : await relayAiSignalToEcosystemSpace(
+                  { ...relayInput, authToken: callerAuthToken as string },
+                  { db },
+                );
 
             await saveDispatch(
               {

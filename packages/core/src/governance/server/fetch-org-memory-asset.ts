@@ -191,8 +191,7 @@ async function resolveMatrixAccessToken(
   authToken: string | undefined,
   requestUrlForSessionMatrix: string | undefined,
 ): Promise<{ token: string; usedSession: boolean } | null> {
-  const botToken =
-    process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim() ?? '';
+  const botToken = process.env.HYPHA_MATRIX_BOT_AS_TOKEN?.trim() ?? '';
   if (botToken) return { token: botToken, usedSession: false };
 
   const sessionAuth = authToken?.trim();
@@ -613,7 +612,7 @@ export async function fetchOrgMemoryAsset(
         result: {
           ok: false,
           error:
-            'No Matrix access token (set HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN or use a session with Human Chat Matrix linked)',
+            'No Matrix access token (set HYPHA_MATRIX_BOT_AS_TOKEN or use a session with Human Chat Matrix linked)',
           code: 'matrix_auth',
         },
       };

@@ -9,7 +9,7 @@ import { getLinkByPrivyUserId } from '../../matrix/server/web3/get-link-by-privy
 /**
  * Same Privy verification as `apps/web` `GET /api/matrix/token`, without issuing
  * a new Matrix registration — only reads an existing `matrix_user_links` row.
- * Used when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is unset so org memory can
+ * Used when `HYPHA_MATRIX_BOT_AS_TOKEN` is unset so org memory can
  * still list Human-chat media for the signed-in user (Space Memory + Chat tool),
  * and by the Human Chat send path, which also needs the sender's own MXID to
  * puppet-join them into invite-only rooms (#2428).

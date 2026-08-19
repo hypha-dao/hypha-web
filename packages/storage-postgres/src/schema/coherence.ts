@@ -19,9 +19,7 @@ export const coherences = pgTable(
   'coherences',
   {
     id: serial('id').primaryKey(),
-    creatorId: integer('creator_id')
-      .notNull()
-      .references(() => people.id),
+    creatorId: integer('creator_id').references(() => people.id),
     spaceId: integer('space_id').references(() => spaces.id, {
       onDelete: 'cascade',
     }),
