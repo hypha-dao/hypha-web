@@ -20,7 +20,9 @@ exists to serve. Written for the whole team — no code required.
 > next — because the organization remembers, and the AI keeps that memory active.
 
 Everything below is a way of delivering that sentence to a specific kind of person on a specific
-kind of day.
+kind of day. Both halves of it — _what matters_ and _what to do next_ — resolve differently for a
+contributor, a steward, and an investor; see
+[what each stakeholder opens the app for](#what-each-stakeholder-opens-the-app-for).
 
 ---
 
@@ -124,6 +126,94 @@ They stake attention.
 | Verifier        | their own assurance   | specified claims plus on-chain proof          | none                                     | 6       |
 
 Journeys 1–5 sit inside the organization, 6–7 at the committed edge, 8–9 outside it.
+
+### What each stakeholder opens the app for
+
+The promise at the top of this document — _knows what matters and what to do next_ — means something
+different for each of them. Below is that sentence made specific: the one question each arrives
+with, what answers it, and what they can actually do about it.
+
+Four rules govern all ten:
+
+1. **One question, answered before anything is asked of them.** The landing state is the answer, not
+   a dashboard of everything with the answer somewhere inside it.
+2. **The next action must sit inside their authority.** Showing someone a problem they have no lever
+   for is not transparency, it is anxiety. For Rings 2 and 3, acting means asking, watching,
+   reporting, or disputing — never directing.
+3. **"Nothing needs you" must be sayable.** A surface that can never come up empty will manufacture
+   urgency to fill itself, and then everything on it is noise.
+4. **Outside Ring 1, bad news goes first.** A curated view that only carries good news is discounted
+   to zero within two cycles, and after that the honest reports cannot be heard either.
+
+#### Ring 1 — inside
+
+**Founder — _"Am I still the bottleneck?"_**
+Decisions still routing through them that a mandate could absorb, and people whose track record now
+justifies holding one. The next action is a handoff: create the mandate, name the steward. This is
+the one surface designed to make its own user redundant — the founder role dissolves by being used,
+and progress is measured by how much stops arriving here.
+
+**Contributor — _"What needs me?"_**
+A queue with one item at the top, not a dashboard: work routed to them, plus changes to work they
+already own. They claim, decline, or act on an artifact the AI has already drafted. Declining
+distinguishes _not my thing_ from _no room right now_. When nothing needs them it says so plainly —
+the willingness to show an empty queue is what makes a full one credible.
+
+**Steward — _"What is waiting on me, and is my domain drifting?"_**
+Every item inside their mandate awaiting a call, plus envelope burn measured against the review
+date. They approve, reject, or hold — and **a hold must carry a resumption trigger**, a date or a
+condition, because a hold without one is a silent no that nobody has to own. Repeated rejections of
+similar items are evidence that the routing or the mandate boundary is wrong, not that the steward
+is being difficult.
+
+**Coordinator — _"Is what we believe still true?"_**
+The hygiene queue: assertions no ledger fact supports, contradictions between artifacts, onboarding
+that has stalled. They confirm, retire, or escalate a specific claim. This is the human end of the
+[behavioural-evidence rule](../architecture/organizational-intelligence.md#1-four-layers-of-memory)
+— someone has to adjudicate when the record and the reality diverge.
+
+#### Ring 2 — the committed edge
+
+**Investor or funder — _"Is my capital doing what it was meant to, and should I add, hold, or
+exit?"_**
+Commitments made against commitments kept, burn against plan, and the arguments the organization has
+not yet settled. The actions are the honest ones available to someone without operational authority:
+ask a question that memory answers with evidence, file an observation, **set a standing watch**
+("tell me if runway falls below six months"), or move their position. The watch matters most — it
+converts a periodic-report reader into someone subscribed to the facts they actually care about.
+Credibility here is asymmetric: what earns it is the organization surfacing a problem before the
+investor finds it themselves. Sometimes the honest answer to "should I invest" is _not yet_, and a
+system willing to say that is the only kind worth reading.
+
+**Beneficiary — _"Is this actually helping, and can I say what I need?"_**
+Outcomes in language they recognize, not governance activity — they do not care that proposal 12
+executed. They report whether something helped, or file a need. Those reports are the organization's
+ground truth and feed decision memory. Asking beneficiaries for input and never showing them a
+change that came from it is extractive, so the loop has to close visibly.
+
+**Partner organization — _"Are our joint commitments on track, and what do they need from us?"_**
+Only the shared surface: commitments between the two organizations, never the partner's internals.
+They confirm, dispute, or flag a dependency at risk, then take it to their own members. The failure
+worth designing against is the joint commitment each side assumes the other owns, so unclaimed
+shared commitments surface to both.
+
+#### Ring 3 — outside
+
+**Prospective member — _"Is this real, and is there something here for me?"_**
+The public brief, evidence the organization is actually doing things, and — the important part —
+open work nobody has picked up that matches what they say they can do. Journey 3's unmatched queue
+_is_ the recruitment surface: the capacity gap and the joining funnel are one list read from two
+directions. They express interest against a specific piece of work, so joining arrives with a first
+task attached instead of a generic welcome.
+
+**Builder or integrator — _"Is what my tool contributes being used?"_**
+The acceptance rate of artifacts their app has published: read, acted on, or ignored. They publish,
+and they see what became of it. Integrators leave when their output disappears into a void.
+
+**Verifier or auditor — _"Is this one claim true?"_**
+One claim, its evidence chain, and the on-chain proof. They verify or dispute, and a dispute becomes
+a signal the organization has to answer. They should need no account and no relationship to do it —
+verification that depends on trusting the platform is not verification.
 
 ---
 
