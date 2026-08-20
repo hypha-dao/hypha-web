@@ -74,8 +74,8 @@ fits, never toward the vote. See [Journey 5](#journey-5--the-organization-decide
 Two things to hold before reading the list.
 
 **These are roles, not people.** In a five-person organization, one person is plausibly founder,
-steward, coordinator _and_ beneficiary at once. The taxonomy answers "what does this person need
-right now", not "what is their job title". Someone can move between rings, and most people do.
+steward _and_ beneficiary at once. The taxonomy answers "what does this person need right now", not
+"what is their job title". Someone can move between rings, and most people do.
 
 **What someone stakes should determine their authority over memory.** This is the organizing
 principle. A person who stakes their time and judgment gets to change what the organization
@@ -85,13 +85,17 @@ mapping wrong in either direction is how organizations either capture themselves
 
 ### Ring 1 — Inside: members who hold decision rights
 
-They stake time and judgment. They read memory freely, propose changes to it, and vote.
+They stake time and judgment. They read memory freely and can propose changes to it. **Voting power
+is a grant, not a property of being inside.** The founder decides who holds it when the organization
+is created; a contributor or steward may or may not have it.
 
-- **Founder / initiator** — defines purpose and initial structure. A deliberately temporary role
-  that should dissolve into the others.
-- **Contributor** — does the work and holds a vote. The majority.
-- **Steward** — accountable for a domain; holds a mandate and a budget envelope; approves at Tier 1.
-- **Coordinator** — keeps rhythms, onboarding, and memory hygiene running. Custodian of the corpus.
+- **Founder** — holds high-level strategy: purpose, direction, which domains exist, and whether
+  what the organization believes is still true. Strategy becomes more specific work that passes to
+  stewards. There is no separate coordinator role.
+- **Steward** — accountable for a domain; holds a mandate and a budget envelope; approves the
+  implementations that strategy has become.
+- **Contributor** — does the work the steward has approved. The majority. Votes only if granted
+  voting power.
 
 ### Ring 2 — The committed edge: a formal stake, no operational vote
 
@@ -112,20 +116,111 @@ They stake attention.
 
 ### The mapping
 
-| Stakeholder     | Stakes                | Memory access                                 | Decision rights                          | Journey |
-| --------------- | --------------------- | --------------------------------------------- | ---------------------------------------- | ------- |
-| Founder         | purpose, reputation   | writes the seed corpus                        | all tiers                                | 1       |
-| Contributor     | time, judgment        | reads all; proposes changes                   | votes at Tier 3                          | 2, 3    |
-| Steward         | domain accountability | approves changes in their domain              | approves Tier 1 inside their mandate     | 4       |
-| Coordinator     | the org's coherence   | curates and consolidates                      | routes and schedules; no extra authority | 4, 5    |
-| Investor/funder | capital               | curated view, including unsettled arguments   | consent on reserved matters only         | 6       |
-| Beneficiary     | dependency on outcome | published subset; contributes outcome reports | none; files observations                 | 7       |
-| Partner org     | joint commitments     | artifacts relayed to them                     | decides for itself                       | 8       |
-| Prospective     | attention             | the public brief                              | none                                     | 2       |
-| Builder         | effort, reputation    | writes via app identity; proposes only        | none                                     | 9       |
-| Verifier        | their own assurance   | specified claims plus on-chain proof          | none                                     | 6       |
+| Stakeholder     | Stakes                | Memory access                                 | Decision rights                                                 | Journey |
+| --------------- | --------------------- | --------------------------------------------- | --------------------------------------------------------------- | ------- |
+| Founder         | purpose, reputation   | writes and keeps the strategic corpus         | high-level strategy; memory hygiene; proposes new steward needs | 1, 4    |
+| Steward         | domain accountability | approves changes in their domain              | approves implementations and spends inside their mandate        | 3       |
+| Contributor     | time, judgment        | reads all; proposes changes                   | does the work; votes only if granted voting power               | 2, 3    |
+| Investor/funder | capital               | curated view, including unsettled arguments   | consent on reserved matters only                                | 6       |
+| Beneficiary     | dependency on outcome | published subset; contributes outcome reports | none; consulted when decisions land on them                     | 7       |
+| Partner org     | joint commitments     | artifacts relayed to them                     | decides for itself                                              | 8       |
+| Prospective     | attention             | the public brief                              | none                                                            | 2       |
+| Builder         | effort, reputation    | writes via app identity; proposes only        | none                                                            | 9       |
+| Verifier        | their own assurance   | specified claims plus on-chain proof          | none                                                            | 6       |
 
-Journeys 1–5 sit inside the organization, 6–7 at the committed edge, 8–9 outside it.
+Journeys 1–5 sit inside the organization, 6–7 at the committed edge, 8–9 outside it. The catalog
+below is what "decision rights" actually means.
+
+### What has to be decided, and by whom
+
+The tiers in the [architecture](../architecture/organizational-intelligence.md#8-decision-rights--what-becomes-a-proposal)
+say how much agreement a decision needs. This section says **which decisions exist** and **which
+person or body takes each one**. Four sentences hold the whole catalog:
+
+1. **The founder decides high-level strategy** — at creation and after: purpose, direction, who
+   has voting power, which domains the organization needs, and whether its beliefs still hold. The
+   AI proposes; the founder confirms.
+2. **Strategy becomes more specific work that passes to stewards.** Voting power is the body that
+   can change the constitution or the steward set — add, remove, replace, or resize a mandate —
+   usually on a proposal the founder raises from an observed strategic gap.
+3. **Stewards approve implementations.** An AI ticket is a recommendation. It does not become work
+   until the matching steward approves, rejects, or holds it.
+4. **Contributors do the approved work.** Money inside a mandate is the steward's; money beyond
+   any mandate is a vote.
+
+#### A. Founding — founder confirms, AI proposes
+
+- Purpose, boundaries, and success signals (the seed memory).
+- **Who holds voting power** — all members, a named subset, token holders, or another rule the
+  founder chooses. This is a grant, not a role.
+- Voting method, quorum, and unity.
+- Entry and exit method.
+- The first steward mandates: domain, named person, envelope, review date.
+- The starting [trust-ladder](#the-trust-ladder) rung for the AI.
+
+The founder role does not dissolve. After creation they keep the strategic layer: direction,
+whether beliefs still hold, and which new domains the work is asking for. They do not approve
+tickets or do the work — that is the cascade below.
+
+#### B. Structure — voting power
+
+Tier 3, or Tier 4 when the decision changes how decisions get made.
+
+- Add a steward or create a mandate. Evidence is unmatched work accumulating in a domain, or anyone
+  with voting power proposing. The AI may draft the proposal; the electorate decides.
+- Remove or replace a steward. A steward can resign without a vote; filling the seat is a vote. A
+  steward cannot fire themselves out of accountability.
+- Renew, expand, or shrink an envelope.
+- Change the electorate, the voting method, the purpose, or entry and exit.
+- Issue, mint, or burn tokens; space-to-space membership; activating a space.
+
+#### C. Work tickets — matching steward, before anyone starts
+
+- Approve, reject, or hold. A hold must carry a resumption trigger — a date or a condition —
+  because a hold without one is a silent no that nobody has to own.
+- A steward may set standing rules ("auto-approve tickets of type X under size Y"). That is them
+  using the mandate, not a new decision class, and it is how they avoid becoming a per-ticket
+  bottleneck.
+- **No matching steward:** the ticket stays open, labelled with the capability it needs, and
+  becomes evidence for a "we need this steward" vote. It is not silently dumped on the founder as
+  permanent work.
+- The contributor then claims, declines, or acts. That is a personal decision, not an organizational
+  one.
+
+#### D. Funding
+
+- Spend or commit **inside** an existing envelope → the steward of that mandate (Tier 1).
+- A new allocation, a spend **beyond** every envelope, or an ongoing obligation nobody owns →
+  voting power (Tier 3).
+- Dispose of major assets or dilute holders → voting power **and** investor consent (reserved
+  matter).
+
+This is what "funding is a vote" means without sending every in-mandate reimbursement to the
+electorate — the failure the architecture already named.
+
+#### E. Membership — follows the entry method the founder set
+
+The _method_ is a founding decision. Each _instance_ — this person joins, this person leaves —
+follows that method. Changing the method is a vote. This catalog does not invent a default
+"steward admits members"; the founder chose the gate.
+
+#### F. Memory
+
+- An AI-proposed belief update that changes strategy, purpose, or a cross-cutting assumption → the
+  founder.
+- An AI-proposed belief update inside a domain → the steward of that domain.
+- An assertion with no ledger support, a contradiction between artifacts, or stalled onboarding →
+  the founder confirms, retires, or escalates. This is strategy maintenance, not a separate role.
+
+#### G. Reserved matters and the edge — heard is not authority
+
+- Purpose change, dilution, major-asset disposal → voting power **plus** investor consent.
+- Decisions that land on the people the organization serves → voting power decides; beneficiaries
+  are consulted.
+- Partner commitments → each organization decides for itself.
+- An investor adding, holding, or exiting; a beneficiary reporting an outcome; a prospect
+  expressing interest — individual actions, listed here so they are not mistaken for organizational
+  decisions.
 
 ### What each stakeholder opens the app for
 
@@ -133,7 +228,7 @@ The promise at the top of this document — _knows what matters and what to do n
 different for each of them. Below is that sentence made specific: the one question each arrives
 with, what answers it, and what they can actually do about it.
 
-Four rules govern all ten:
+Four rules govern all nine:
 
 1. **One question, answered before anything is asked of them.** The landing state is the answer, not
    a dashboard of everything with the answer somewhere inside it.
@@ -147,30 +242,26 @@ Four rules govern all ten:
 
 #### Ring 1 — inside
 
-**Founder — _"Am I still the bottleneck?"_**
-Decisions still routing through them that a mandate could absorb, and people whose track record now
-justifies holding one. The next action is a handoff: create the mandate, name the steward. This is
-the one surface designed to make its own user redundant — the founder role dissolves by being used,
-and progress is measured by how much stops arriving here.
+**Founder — _"Is the strategy still right, and is it becoming work?"_**
+Direction, purpose, and the beliefs those rest on — plus work that still has no steward, which is
+a strategic gap rather than a ticket they should do themselves. They confirm, revise, or retire a
+claim, and they pass more specific work to the matching steward. Adding a steward is a vote they
+typically raise, not a mandate they create alone. This is the human end of the
+[behavioural-evidence rule](../architecture/organizational-intelligence.md#1-four-layers-of-memory).
+
+**Steward — _"What implementations are waiting on me, and is my domain drifting?"_**
+Every AI-created ticket inside their mandate that has not yet been green-lit — the specific work
+that strategy has become — plus envelope burn measured against the review date. They approve,
+reject, or hold **before anyone starts the work** — and **a hold must carry a resumption trigger**,
+a date or a condition, because a hold without one is a silent no that nobody has to own. Repeated
+rejections of similar items are evidence that the routing or the mandate boundary is wrong, not
+that the steward is being difficult.
 
 **Contributor — _"What needs me?"_**
-A queue with one item at the top, not a dashboard: work routed to them, plus changes to work they
-already own. They claim, decline, or act on an artifact the AI has already drafted. Declining
-distinguishes _not my thing_ from _no room right now_. When nothing needs them it says so plainly —
-the willingness to show an empty queue is what makes a full one credible.
-
-**Steward — _"What is waiting on me, and is my domain drifting?"_**
-Every item inside their mandate awaiting a call, plus envelope burn measured against the review
-date. They approve, reject, or hold — and **a hold must carry a resumption trigger**, a date or a
-condition, because a hold without one is a silent no that nobody has to own. Repeated rejections of
-similar items are evidence that the routing or the mandate boundary is wrong, not that the steward
-is being difficult.
-
-**Coordinator — _"Is what we believe still true?"_**
-The hygiene queue: assertions no ledger fact supports, contradictions between artifacts, onboarding
-that has stalled. They confirm, retire, or escalate a specific claim. This is the human end of the
-[behavioural-evidence rule](../architecture/organizational-intelligence.md#1-four-layers-of-memory)
-— someone has to adjudicate when the record and the reality diverge.
+A queue with one item at the top, not a dashboard: steward-approved work routed to them, plus
+changes to work they already own. They claim, decline, or act on an artifact the AI has already
+drafted. Declining distinguishes _not my thing_ from _no room right now_. When nothing needs them it
+says so plainly — the willingness to show an empty queue is what makes a full one credible.
 
 #### Ring 2 — the committed edge
 
@@ -227,8 +318,9 @@ theory first.
 2. The AI interviews them — not a form. It asks what the organization is for, who it serves, what
    it will not do, and how they will know it's working. It draws on patterns from comparable
    organizations in the network to ask sharper questions.
-3. It proposes a structure: the space, sensible entry and decision methods, a first set of roles.
-   The founder edits rather than invents.
+3. It proposes a structure the founder edits rather than invents: the space, sensible entry and
+   decision methods, **who holds voting power**, and **a first set of steward mandates** — domain,
+   named person, envelope, review date. The founder confirms each, or changes it.
 4. **The conversation becomes the organization's first memory.** The purpose, the boundaries, and
    the success signals are written as the founding artifacts — not buried in a chat log.
 5. The founder is shown what was recorded and asked to confirm it. This is the first approval.
@@ -276,33 +368,39 @@ next Friday.
 
 Three things happen at three different speeds here, and conflating them is a design error:
 
-|                                                   | Cadence                         | Why                                                |
-| ------------------------------------------------- | ------------------------------- | -------------------------------------------------- |
-| **Detection** — something needs doing             | continuous                      | delay here is pure loss                            |
-| **Routing** — it reaches the right person's queue | continuous                      | work should never sit unrouted waiting for a cycle |
-| **Interruption** — a push, email, or ping         | rate-limited, urgency overrides | the only genuinely scarce resource is attention    |
+|                                                              | Cadence                         | Why                                                  |
+| ------------------------------------------------------------ | ------------------------------- | ---------------------------------------------------- |
+| **Detection** — something needs doing                        | continuous                      | delay here is pure loss                              |
+| **Steward gate** — approve, reject, or hold                  | continuous                      | work should never sit unrouted waiting for a cycle   |
+| **Routing** — an approved ticket reaches a contributor queue | continuous, after approval      | the steward decides whether; the matcher decides who |
+| **Interruption** — a push, email, or ping                    | rate-limited, urgency overrides | the only genuinely scarce resource is attention      |
 
 So the queue is always current; the digest is a **catch-up for people who haven't looked**, not the
 delivery mechanism; and the interrupt is reserved for things that will go wrong if they wait.
 
-1. **The moment a need is detected, the AI routes it.** It identifies who fits, based on stated
-   skills, demonstrated history, and whose mandate the work falls under — then checks that against
-   what that person has said they can take on.
-2. **It proposes rather than assigns.** The work appears in the suggested person's queue with the
-   reasoning visible, and stays claimable by anyone else. In a voluntary organization you cannot
-   allocate work — you can only put it in front of the person most likely to pick it up, and make it
-   easy to say yes.
-3. Each item names a person, states one concrete next action, and shows the evidence behind it.
+1. **The moment a need is detected, the AI creates a ticket and routes it to the matching
+   steward.** Detection is continuous. The ticket is a recommendation, not work.
+2. **The steward green-lights it — approve, reject, or hold — before anyone starts.** A standing
+   rule the steward has already set ("auto-approve tickets of type X under size Y") counts as this
+   step. Until then the ticket does not reach a contributor.
+3. **Once approved, the AI proposes a person rather than assigning one.** It identifies who fits,
+   based on stated skills, demonstrated history, and whose mandate the work falls under — then
+   checks that against what that person has said they can take on. The work appears in the
+   suggested person's queue with the reasoning visible, and stays claimable by anyone else. In a
+   voluntary organization you cannot allocate work — you can only put it in front of the person
+   most likely to pick it up, and make it easy to say yes.
+4. Each item names a person, states one concrete next action, and shows the evidence behind it.
    Anything that can't do all three isn't routed to a human at all.
-4. **When nobody fits, that is information, not a failure.** The AI says so explicitly rather than
-   quietly dropping the work on whoever answers fastest — the most common and most corrosive default
-   in every organization. The item stays open, visible, and labelled with the capability it needs.
-5. **Unmatched work escalates as a capacity signal** to whoever holds that domain, or to the
-   founders if nobody does. Repeated misses aggregate: three unfilled tasks in the same area over a
-   month is not three problems, it is one role that needs filling.
-6. The person acts, defers, declines, or the work stays open. Declining is a first-class action and
+5. **When nobody fits, or no steward exists for the domain, that is information, not a failure.**
+   The AI says so explicitly rather than quietly dropping the work on whoever answers fastest —
+   the most common and most corrosive default in every organization. The item stays open, visible,
+   and labelled with the capability it needs.
+6. **Unmatched work escalates as a capacity signal** to whoever holds that domain, or as evidence
+   for a "we need this steward" vote if nobody does. Repeated misses aggregate: three unfilled
+   tasks in the same area over a month is not three problems, it is one role that needs filling.
+7. The person acts, defers, declines, or the work stays open. Declining is a first-class action and
    is recorded — it is how the matcher learns.
-7. When they act, the AI has already drafted the artifact — the proposal text, the summary, the
+8. When they act, the AI has already drafted the artifact — the proposal text, the summary, the
    update — so acting is editing.
 
 **On matching without ossifying roles.** Matching purely on demonstrated history is the obvious
@@ -353,31 +451,36 @@ escalation, which is the honest read on whether the org has the people it needs.
 
 ---
 
-## Journey 4 — The steward keeps the organization coherent
+## Journey 4 — The founder keeps the strategy alive
 
-**Who:** whoever holds responsibility for the organization staying true to itself.
-**Wants:** to notice drift before it becomes a crisis.
+**Who:** whoever holds high-level strategy — usually the founder, sometimes more than one.
+**Wants:** the organization to keep pointing at the thing it exists to do, without becoming the
+person who does every next task.
 
-1. They see where **stated intent and actual behaviour have diverged** — we said this was the
+1. They see where **stated strategy and actual behaviour have diverged** — we said this was the
    priority, and here is where the attention and money actually went.
 2. They see which beliefs have gone **stale** (nobody has revisited this in a year) or **contested**
    (two parts of the org are acting on incompatible assumptions).
-3. They review memory changes proposed by the AI and by connected apps, and approve, edit, or
-   reject them. This is the main way memory quality is maintained.
-4. They can retire beliefs that no longer hold, with the reason recorded.
+3. They decide the high-level correction — a revised purpose, a new domain, a retired belief —
+   and **pass the more specific work to the matching steward**. They do not approve the
+   implementations; the steward does.
+4. They review memory changes that touch strategy, and approve, edit, or reject them. Domain-level
+   memory stays with the steward.
+5. Unmatched work that has no steward is a strategic signal: this capability does not exist yet.
+   They raise it to the electorate rather than absorbing the tickets themselves.
 
-**What memory does:** this journey is memory _maintenance_ — the gardening that keeps the corpus
-small, current, and trusted.
-**Why it feels intelligent:** the organization can be wrong out loud. Surfacing contradiction is
-more valuable than projecting false consensus.
+**What memory does:** this journey is memory _maintenance_ at the strategic layer — the gardening
+that keeps the corpus small, current, and trusted.
+**Why it feels intelligent:** the organization can be wrong out loud, and strategy turns into work
+without the founder becoming the work.
 **How we know it works:** the memory corpus stays small enough for a person to read in an
-afternoon, and its age profile stays healthy.
+afternoon, and the founder's queue is strategy and gaps — not a dump of every open ticket.
 
 ---
 
 ## Journey 5 — The organization decides, and then learns
 
-**Who:** the membership, at a governance moment.
+**Who:** whoever holds voting power, at a governance moment.
 **Wants:** to decide well, without being asked to approve everything.
 
 The failure mode this journey has to avoid is approval fatigue. If every good idea becomes
@@ -391,15 +494,18 @@ begins with routing, not drafting.
    for the test and the tiers.
 2. **Most things stop here** — done inside an existing mandate and logged, or waved through by the
    one person who holds that envelope, or opened for a short objection window that closes in silence.
-3. **What remains goes to a vote**: commitments of shared resources beyond an existing mandate,
-   changes to the rules, and changes to who counts as a member. The AI drafts it grounded in memory,
-   and states what it is assuming and what would make the proposal wrong.
-4. Members can see what the organization decided before on similar questions, and what happened as
+3. **What remains goes to a vote of the configured electorate** — not "the members" by default.
+   The founder named who holds voting power; that body decides commitments of shared resources
+   beyond an existing mandate, changes to the rules, changes to who counts as a member, and changes
+   to the steward set. The AI drafts it grounded in memory, and states what it is assuming and what
+   would make the proposal wrong.
+4. Voters can see what the organization decided before on similar questions, and what happened as
    a result.
 5. The decision is made by people, on-chain where it matters.
 6. **The outcome is recorded against the decision** — did it do what we expected?
 7. Later, when reality disagrees with the prediction, the AI proposes updating the belief that
-   produced it. A steward approves.
+   produced it. The founder approves if it is strategic; the matching steward approves if it is
+   inside a domain.
 
 **What memory does:** step 1 depends on memory knowing the organization's mandates; step 6 is what
 turns a record into learning. Without step 6 the organization has a filing cabinet, not
