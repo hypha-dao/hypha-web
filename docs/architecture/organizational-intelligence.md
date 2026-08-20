@@ -76,6 +76,31 @@ live at question time. If a number gets written into a memory document, the AI w
 recite a stale figure forever. Artifacts say _"we are over-exposed to a single funding source"_;
 they never say _"we hold 43,000 USDC"_.
 
+A second rule carries equal weight, and it governs where memory draws its authority from:
+
+> **Deliberative artifacts record what the organization believes about itself. Behavioural evidence
+> records what it did. Where the two disagree, the disagreement is the finding.**
+
+Nearly all of L3 is deliberative — charters, stated risks, standing assessments, proposal text. That
+material is indispensable for interpretation, and it is also the organization's self-image. People
+posture in governance forums, and a proposal records intent rather than outcome. An intelligence
+built mainly from it becomes a very sophisticated model of how a space would like to be seen.
+
+The corrective is behavioural, and in this domain it is unusually good. Treasury movements,
+contributor payments actually made, funds deployed against funds promised, votes cast rather than
+opinions voiced — money is the least dishonest signal an organization emits, and in a DAO it is
+public and cryptographically verifiable rather than merely observed. That is L2, which is why L2
+sitting unused is a foundational gap rather than deferred plumbing.
+
+Two consequences for how the system should behave:
+
+- **Anchor interpretation to evidence.** An L3 claim that no ledger fact supports is an opinion.
+  Assertions that go long enough without behavioural corroboration should be surfaced for review,
+  not quietly retained as fact.
+- **Treat the gap as the product.** The distance between what a space committed to and what its
+  ledger shows it did is the most valuable thing this system can show a member — and it is invisible
+  to everyone today precisely because nobody holds both halves at once.
+
 ---
 
 ## 2. How memory is maintained
