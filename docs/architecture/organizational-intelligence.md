@@ -392,6 +392,32 @@ So one vote on "this domain, this owner, this envelope, this review date" retire
 votes. Mandates are the compression mechanism for governance in the same way that L3 artifacts are
 the compression mechanism for memory.
 
+### Where new mandates come from
+
+Mandates should be created from observed need, not asserted need. The mechanism is work routing.
+
+When the system detects that something needs doing, it matches the work to a person using stated
+skills and mandates (L3), plus demonstrated history and current load (L2). Most of the time it finds
+someone. The interesting case is when it does not.
+
+**Unmatched work is a measurement, not a failure.** Left alone, unrouteable work silently lands on
+whoever is most responsive, which hides the shortage and burns out the conscientious. Instead it
+should stay open, labelled with the capability it needs, and **aggregate**. Three unfilled tasks in
+one domain over a month is not three problems; it is one role that does not exist yet.
+
+That aggregate is the evidence base for a Tier 3 proposal to create a mandate — a domain, an owner,
+an envelope, a review date. It is the answer to "how do we know we need to hire?" and it means the
+proposal arrives with a demonstrated pattern attached rather than someone's conviction.
+
+Two constraints on the matcher itself:
+
+- **Propose, do not allocate.** In a voluntary organization work cannot be assigned, only made
+  visible to the person most likely to take it. Suggested owner, reasoning shown, claimable by
+  anyone.
+- **Reserve a minority of routing for stretch matches.** Matching purely on demonstrated history
+  ossifies roles and quietly creates single points of failure. Capabilities held by exactly one
+  person are a risk the system is well placed to notice and surface.
+
 ### What this means for the AI
 
 Routing is a more valuable capability than drafting. For every candidate decision the AI should

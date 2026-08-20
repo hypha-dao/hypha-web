@@ -178,26 +178,62 @@ new members stop asking questions that are already answered in memory.
 
 ---
 
-## Journey 3 — A contributor's week (the core loop)
+## Journey 3 — Work finds the right person (the core loop)
 
 **Who:** an active member with limited attention and a real job.
-**Wants:** to not miss the thing that needed them.
+**Wants:** to be handed the thing that genuinely needs them, when it arises — not to discover it
+next Friday.
 
-1. **Once per period, they receive a digest** — not a notification per event. It says what changed
-   in the organization, what it means, and what needs them specifically.
-2. Each item names _them_, states one concrete next action, and shows the evidence it is based on.
-   Anything that can't do all three doesn't get sent.
-3. They act, defer, or dismiss. Dismissing is a first-class action and it is recorded.
-4. When they act, the AI has already drafted the artifact — the proposal text, the summary, the
+Three things happen at three different speeds here, and conflating them is a design error:
+
+|                                                   | Cadence                         | Why                                                |
+| ------------------------------------------------- | ------------------------------- | -------------------------------------------------- |
+| **Detection** — something needs doing             | continuous                      | delay here is pure loss                            |
+| **Routing** — it reaches the right person's queue | continuous                      | work should never sit unrouted waiting for a cycle |
+| **Interruption** — a push, email, or ping         | rate-limited, urgency overrides | the only genuinely scarce resource is attention    |
+
+So the queue is always current; the digest is a **catch-up for people who haven't looked**, not the
+delivery mechanism; and the interrupt is reserved for things that will go wrong if they wait.
+
+1. **The moment a need is detected, the AI routes it.** It identifies who fits, based on stated
+   skills, demonstrated history, current load, and whose mandate the work falls under.
+2. **It proposes rather than assigns.** The work appears in the suggested person's queue with the
+   reasoning visible, and stays claimable by anyone else. In a voluntary organization you cannot
+   allocate work — you can only put it in front of the person most likely to pick it up, and make it
+   easy to say yes.
+3. Each item names a person, states one concrete next action, and shows the evidence behind it.
+   Anything that can't do all three isn't routed to a human at all.
+4. **When nobody fits, that is information, not a failure.** The AI says so explicitly rather than
+   quietly dropping the work on whoever answers fastest — the most common and most corrosive default
+   in every organization. The item stays open, visible, and labelled with the capability it needs.
+5. **Unmatched work escalates as a capacity signal** to whoever holds that domain, or to the
+   founders if nobody does. Repeated misses aggregate: three unfilled tasks in the same area over a
+   month is not three problems, it is one role that needs filling.
+6. The person acts, defers, declines, or the work stays open. Declining is a first-class action and
+   is recorded — it is how the matcher learns.
+7. When they act, the AI has already drafted the artifact — the proposal text, the summary, the
    update — so acting is editing.
-5. What they dismissed shapes what they are shown next time.
 
-**What memory does:** memory supplies the interpretation ("this matters because of the commitment
-we made in March"); the activity ledger supplies the detection ("this changed").
-**Why it feels intelligent:** it respects attention. The measure of this journey is not how much
-the AI says, but how rarely it is wrong to speak.
-**How we know it works:** the acceptance rate. If fewer than roughly a third of items are acted on,
-the channel is noise and should be turned off rather than tuned.
+**On matching without ossifying roles.** Matching purely on demonstrated history is the obvious
+approach and it slowly calcifies the organization: whoever did the treasury work keeps getting the
+treasury work, nobody else ever learns it, and the org acquires a bus-factor problem it cannot see.
+The matcher needs a deliberate minority of stretch routing — to people who plausibly _could_ do
+this, not only those who already have — and should treat single-person capabilities as a risk worth
+surfacing to the steward.
+
+**What memory does:** memory supplies the interpretation ("this matters because of the commitment we
+made in March") and the profiles and mandates that make matching possible; the activity ledger
+supplies both the detection ("this changed") and the honest picture of who is already loaded.
+**Why it feels intelligent:** work reaches people instead of waiting to be discovered, and the
+organization admits when it is short-handed instead of overloading its most conscientious member.
+**How we know it works:** three numbers. Acceptance rate — below roughly a third and the channel is
+noise. Time from detection to a claimed owner. And the share of work that finds someone without
+escalation, which is the honest read on whether the org has the people it needs.
+
+> Unmatched work accumulating in a domain is the evidence base for a new mandate — which is a Tier 3
+> decision, because it creates an ongoing obligation. This is where "we need a developer and a
+> budget" should come from: an observed pattern of unmet need, not an assertion. See
+> [decision rights](../architecture/organizational-intelligence.md#8-decision-rights--what-becomes-a-proposal).
 
 ---
 
@@ -351,8 +387,8 @@ and without central control.
 2. When their app produces something the organization should _know_ — an assessment, a risk, a
    recommendation — it promotes that as a memory artifact.
 3. Hypha never learns their schema. The shared layer is meaning, not tables.
-4. Their insight now appears in every member's digest and in every AI answer, attributed to their
-   app.
+4. Their insight can now route work, appear in any member's queue, and inform every AI answer —
+   attributed to their app.
 
 **What memory does:** memory is the integration surface. This is what makes the platform
 extensible without becoming a data warehouse.
