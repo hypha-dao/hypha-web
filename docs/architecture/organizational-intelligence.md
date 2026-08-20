@@ -397,8 +397,8 @@ the compression mechanism for memory.
 Mandates should be created from observed need, not asserted need. The mechanism is work routing.
 
 When the system detects that something needs doing, it matches the work to a person using stated
-skills and mandates (L3), plus demonstrated history and current load (L2). Most of the time it finds
-someone. The interesting case is when it does not.
+skills and mandates (L3) plus demonstrated history (L2), then checks the match against that person's
+**declared** capacity. Most of the time it finds someone. The interesting case is when it does not.
 
 **Unmatched work is a measurement, not a failure.** Left alone, unrouteable work silently lands on
 whoever is most responsive, which hides the shortage and burns out the conscientious. Instead it
@@ -409,7 +409,7 @@ That aggregate is the evidence base for a Tier 3 proposal to create a mandate �
 an envelope, a review date. It is the answer to "how do we know we need to hire?" and it means the
 proposal arrives with a demonstrated pattern attached rather than someone's conviction.
 
-Two constraints on the matcher itself:
+Three constraints on the matcher itself:
 
 - **Propose, do not allocate.** In a voluntary organization work cannot be assigned, only made
   visible to the person most likely to take it. Suggested owner, reasoning shown, claimable by
@@ -417,6 +417,12 @@ Two constraints on the matcher itself:
 - **Reserve a minority of routing for stretch matches.** Matching purely on demonstrated history
   ossifies roles and quietly creates single points of failure. Capabilities held by exactly one
   person are a risk the system is well placed to notice and surface.
+- **Capacity is declared, not inferred.** Do not build a load model. Most of what constrains a
+  contributor is off-platform and therefore unmeasurable here, and the tempting proxy — open item
+  count — penalises whoever takes on slow work. Store a coarse, revisable, self-set limit; use it to
+  gate flow rather than to score fit; and let observation surface a discrepancy to the person
+  without ever overriding them. "Everyone who fits is at their self-set limit" is then a first-class
+  capacity signal, and a much more honest one than an inferred number.
 
 ### What this means for the AI
 

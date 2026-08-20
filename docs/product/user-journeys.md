@@ -196,7 +196,8 @@ So the queue is always current; the digest is a **catch-up for people who haven'
 delivery mechanism; and the interrupt is reserved for things that will go wrong if they wait.
 
 1. **The moment a need is detected, the AI routes it.** It identifies who fits, based on stated
-   skills, demonstrated history, current load, and whose mandate the work falls under.
+   skills, demonstrated history, and whose mandate the work falls under — then checks that against
+   what that person has said they can take on.
 2. **It proposes rather than assigns.** The work appears in the suggested person's queue with the
    reasoning visible, and stays claimable by anyone else. In a voluntary organization you cannot
    allocate work — you can only put it in front of the person most likely to pick it up, and make it
@@ -221,9 +222,34 @@ The matcher needs a deliberate minority of stretch routing — to people who pla
 this, not only those who already have — and should treat single-person capabilities as a risk worth
 surfacing to the steward.
 
+**On capacity: the person decides, the system only holds up a mirror.** How much someone can take
+on is theirs to declare, not ours to infer. Most of what determines it — a day job, a sick child,
+the other three things they committed to elsewhere — is invisible to the platform, so any load we
+compute from platform activity is inferred from a sliver of the truth. Worse, the obvious proxy
+(count of open items) punishes exactly the people doing slow, hard work.
+
+So capacity is **declared**, coarse, and revisable: a band or a number of concurrent commitments,
+not hours, because nobody knows their hours and asking invites timesheet thinking. Two consequences
+worth being deliberate about:
+
+- **Capacity gates flow; it does not decide fit.** Match on who is right for the work, then let
+  declared capacity govern how much reaches them. Otherwise an available mediocre fit beats a
+  stretched excellent one. If the best-fit person is full, the work waits, moves to the next
+  candidate, or stays open — it is never force-fed.
+- **Observation informs, it never overrides.** The system may say "this would be your fifth open
+  item and you said three"; it may never refuse on someone's behalf. Self-declaration is not a
+  burnout fix on its own — conscientious people over-commit, and the org must not treat "they said
+  yes" as absolution.
+
+This also sharpens Journey 3's escalation rather than weakening it. "Everyone who fits is at the
+limit they set for themselves" is a far cleaner capacity signal than any inferred-load heuristic,
+because a person stated it. Relatedly, declining should distinguish _not my thing_ from _no room
+right now_: the first is evidence about fit, the second about capacity, and they should not be
+learned from interchangeably.
+
 **What memory does:** memory supplies the interpretation ("this matters because of the commitment we
-made in March") and the profiles and mandates that make matching possible; the activity ledger
-supplies both the detection ("this changed") and the honest picture of who is already loaded.
+made in March") and the profiles, mandates, and declared capacity that make matching possible; the
+activity ledger supplies the detection ("this changed").
 **Why it feels intelligent:** work reaches people instead of waiting to be discovered, and the
 organization admits when it is short-handed instead of overloading its most conscientious member.
 **How we know it works:** three numbers. Acceptance rate — below roughly a third and the channel is
