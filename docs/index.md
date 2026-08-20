@@ -11,6 +11,15 @@ Central index for all project documentation.
 
 ---
 
+## Start here — Intelligent Organization
+
+The product intent and the memory architecture that serves it. Read these two together.
+
+| Document | Description | Status |
+|---|---|---|
+| [User Journeys](./product/user-journeys.md) | Target-state journeys per stakeholder: how we intend people to use Hypha once the intelligent organization works | draft |
+| [Organizational Intelligence — Memory Architecture](./architecture/organizational-intelligence.md) | How memory is maintained and retrieved, how large it can get, how the AI determines relevance, and which decisions need a vote | draft |
+
 ## Plans
 
 Active implementation plans and feature roadmaps.
