@@ -251,43 +251,64 @@ that already sits inside a live pot. That is the steward doing their job. If Sha
 how a pot is being used, they resize or close it at the review date — or sooner, as a structure
 decision — they do not start countersigning.
 
-#### Will this still work at 10,000 members?
+#### How it looks with 10 members, and with 10,000
 
-A **member** is not a Shaper. Ten thousand people doing the work does not mean ten thousand people
-filling pots. Contributors scale; the Shaper set must not. If it grows with membership, every
-mandate becomes a town meeting and the design is dead. The founder names a small first set; adding
-a Shaper stays hard (Tier 4) on purpose.
+Same rules. Different depth. A member is not a Shaper — ten thousand people working does not mean
+ten thousand people filling pots.
 
-At **small scale** — five people, one of them founder, Shaper, and steward — the system has to
-collapse to one object without ceremony: one mandate, pot equals the treasury, review date in a
-few months. The second mandate appears when unmatched work says a second job exists, not because
-the software wants a chart.
+**With 10 members**
 
-At **large scale** a flat list of pots dies. A Shaper body can hold in its head about as many
-top-level mandates as a decent manager can hold reports — call it five to eight. Fifty pots, and
-they are either rubber-stamping reviews or they become the invoice queue we already rejected.
-Transparency dies the same way: a complete ledger that dumps ten thousand payments on a home
-screen is not transparency, it is noise.
+One layer. Three or four Shapers (often the same people as the stewards). Two or three mandates.
 
-So mandates **nest**. Same object, one more rule: a steward may carve a sub-mandate from their own
-pot — this narrower job, this person, this much (not more than remains), this review date — without
-asking the org Shapers. They are Shaper _of that pot_, not of the organization. The org Shapers
-still see five to eight top-level jobs. Two or three levels of nesting covers thousands of people
-(eight times eight times eight is already five hundred work cells). Close or freeze a parent and
-the children freeze with it. The parent steward stays accountable for the whole, including what
-they delegated.
+Example: the treasury is 20,000.
 
-That is one mechanism at both sizes, not a small-org mode and a large-org mode. The pot _is_ the
-coordination layer that hierarchy used to be. What used to travel through status meetings travels
-as burn rate, unmatched work, and review dates.
+- Community — Sam — 8,000 — review in June
+- Product — Lea — 12,000 — review in June
 
-What still requires discipline, and will not be saved by software:
+Sam pays a facilitator from the community pot. Nobody else signs. Lea pays a designer from the
+product pot. The Shapers see two numbers: how much each pot has left. When unmatched tickets pile
+up in "legal" and nobody owns that, the AI drafts a third mandate. Until then there is no third
+pot, and no chart for its own sake.
 
-- Keep the Shaper set small. A 10,000-member org with two hundred Shapers has rebuilt a parliament.
-- Do not let "payment no pot covers" become the overflow drain. If that queue is busy, the tree is
-  wrong — carve a pot, don't countersign.
-- A small Shaper set at that scale is an oligarchy unless the ledger is public, review dates are
-  real, and changing who is a Shaper is possible. Those are the checks. They are not optional.
+If the org is even smaller — one person wearing every hat — there is a single mandate, pot equals
+the treasury, review in a few months.
+
+**With 10,000 members**
+
+Still a handful of Shapers. Still a handful of pots _those Shapers see_. The rest is the same
+object, one level down.
+
+Example: the treasury is 2,000,000. Org Shapers fill five pots, not fifty.
+
+- Product — Lea — 800,000 — review in June
+- Community — Sam — 400,000
+- Operations — Miro — 300,000
+- …two more
+
+Lea does not ask the org Shapers every time product needs a narrower job. She carves from her
+remaining 800,000:
+
+- Mobile — Rafi — 200,000 — review in April
+- Protocol — Noa — 350,000
+
+Rafi pays engineers from the mobile pot. Lea sees burn on mobile and protocol. Org Shapers see
+burn on product. Nobody above Rafi signs his payments. If Lea closes product, mobile and protocol
+freeze.
+
+Two or three levels of that is enough. Eight pots, each split eight ways, each split eight ways
+again, is already room for hundreds of teams. The org Shapers never look at hundreds of pots.
+
+What each person opens:
+
+|                     | 10 members                           | 10,000 members                                                 |
+| ------------------- | ------------------------------------ | -------------------------------------------------------------- |
+| Shaper home         | two pots, a bit of leftover treasury | five top-level pots                                            |
+| Steward home        | their one pot and its tickets        | their pot, any pots they carved, their tickets                 |
+| Contributor home    | the next approved ticket             | the next approved ticket                                       |
+| Anyone, if they ask | every payment                        | every payment — the ledger is complete. The home screen is not |
+
+The thing that must not happen at either size: the Shaper set grows with membership, or people
+start asking Shapers to sign payments a pot already covers.
 
 #### E. Membership — follows the entry method the founder set
 

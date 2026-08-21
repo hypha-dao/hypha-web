@@ -444,14 +444,12 @@ So one vote on "this domain, this owner, this envelope, this review date" retire
 votes. Mandates are the compression mechanism for governance in the same way that L3 artifacts are
 the compression mechanism for memory.
 
-**Mandates nest, or the mechanism only works while the org is small.** A steward may carve a
-sub-mandate from their remaining pot — same four fields — without a Shaper vote. Org Shapers see a
-handful of top-level pots; they cannot usefully review fifty. Two or three levels cover a
-10,000-member org without a second funding system. A parent close freezes children. The parent
-steward stays accountable for the whole. The Shaper set does not grow with membership; if it does,
-every mandate is a town meeting again.
+**Same object at 10 members and at 10,000.** With ten people, Shapers fill two or three pots and
+stewards spend. With ten thousand, Shapers still fill a handful of pots; a steward carves
+sub-mandates from their remaining pot (same four fields, no Shaper vote). Parent close freezes
+children. The Shaper set does not grow with membership.
 
-See [Will this still work at 10,000 members?](../product/user-journeys.md#will-this-still-work-at-10000-members).
+See [How it looks with 10 members, and with 10,000](../product/user-journeys.md#how-it-looks-with-10-members-and-with-10000).
 
 ### Where new mandates come from
 
