@@ -90,10 +90,9 @@ They stake time and judgment. They read memory freely and can propose changes to
 - **Founder** — the person who initially sets up the organization. A one-time role. They name the
   first Shapers, the first steward mandates, and the entry and exit methods, then they are a member
   like anyone else — usually also a Shaper, but "founder" is not an ongoing decision right.
-- **Shaper** — a grant, not an exclusive role. Shapers decide high-level strategy, funding beyond
-  a mandate, and organizational memory. A steward or a contributor can also be a Shaper; being one
-  is what used to get called voting power. Strategy becomes more specific work that passes to
-  stewards.
+- **Shaper** — a grant, not an exclusive role. Shapers decide high-level strategy, who holds a pot
+  of money and how big it is, and organizational memory. A steward or a contributor can also be a
+  Shaper. Strategy becomes more specific work that passes to stewards.
 - **Steward** — accountable for a domain; holds a mandate and a budget envelope; approves the
   implementations that strategy has become.
 - **Contributor** — does the work the steward has approved. The majority. A Shaper only if granted
@@ -121,7 +120,7 @@ They stake attention.
 | Stakeholder     | Stakes                  | Memory access                                 | Decision rights                                                      | Journey |
 | --------------- | ----------------------- | --------------------------------------------- | -------------------------------------------------------------------- | ------- |
 | Founder         | purpose, reputation     | writes the seed corpus                        | sets the organization up once; then only as Shaper and/or other hats | 1       |
-| Shaper          | judgment over the whole | reads all; approves strategic memory          | strategy, funding beyond a mandate, memory, the steward set          | 4, 5    |
+| Shaper          | judgment over the whole | reads all; approves strategic memory          | strategy, fill or change pots, memory, the steward set               | 4, 5    |
 | Steward         | domain accountability   | approves changes in their domain              | approves implementations and spends inside their mandate             | 3       |
 | Contributor     | time, judgment          | reads all; proposes changes                   | does the work; shapes only if also a Shaper                          | 2, 3    |
 | Investor/funder | capital                 | curated view, including unsettled arguments   | consent on reserved matters only                                     | 6       |
@@ -142,14 +141,15 @@ person or body takes each one**. Four sentences hold the whole catalog:
 
 1. **The founder sets the organization up once:** purpose, who the first Shapers are, how votes
    work, entry and exit, and the first steward mandates. The AI proposes; the founder confirms.
-2. **Shapers decide high-level strategy, funding beyond a mandate, and organizational memory.**
-   They are the body that can change the constitution or the steward set. A steward or contributor
-   can hold this grant; the founder usually does after setup, but not because they founded it.
-3. **Stewards approve implementations.** Strategy becomes more specific work that passes to them.
-   An AI ticket is a recommendation. It does not become work until the matching steward approves,
-   rejects, or holds it.
-4. **Contributors do the approved work.** Money inside a mandate is the steward's; money beyond
-   any mandate is a Shaper decision.
+2. **Shapers decide high-level strategy, who holds a pot of money and how big it is, and
+   organizational memory.** They are the body that can change the constitution or the steward set.
+   A steward or contributor can hold this grant; the founder usually does after setup, but not
+   because they founded it.
+3. **Stewards approve implementations and spend from their pot.** Strategy becomes more specific
+   work that passes to them. An AI ticket is a recommendation. It does not become work until the
+   matching steward approves, rejects, or holds it.
+4. **Contributors do the approved work.** Shapers do not sign every payment. They fill a pot once;
+   the steward spends from it in public.
 
 #### A. Founding — founder confirms, AI proposes
 
@@ -191,13 +191,38 @@ Tier 3, or Tier 4 when the decision changes how decisions get made.
 
 #### D. Funding
 
-- Spend or commit **inside** an existing envelope → the steward of that mandate (Tier 1).
-- A new allocation, a spend **beyond** every envelope, or an ongoing obligation nobody owns →
-  Shapers (Tier 3).
-- Dispose of major assets or dilute holders → Shapers **and** investor consent (reserved matter).
+A **mandate** is a job with a pot attached: this domain, this steward, this much money, until this
+review date. **Funding a mandate** is the Shapers filling that pot. It is one decision. After it,
+the steward spends without asking again.
 
-This is what "funding is a Shaper decision" means without sending every in-mandate reimbursement
-to them — the failure the architecture already named.
+That is the whole point. The alternatives fail the aim — minimum bureaucracy, full transparency,
+trust — in opposite directions:
+
+- **Shapers approve every money movement.** Maximum control, and the bureaucracy we are trying to
+  kill. The treasury becomes a queue of invoices. Trust is replaced by surveillance.
+- **Shapers just hand a person a budget, with no domain or review date.** Almost the same idea,
+  but the pot is a slush fund. When the person leaves, the money is unexplained. When they overspend,
+  there is no job to point at. Trust without a scope is how treasuries get drained by conscientious
+  people who thought they were allowed to.
+- **No pot at all, steward spends freely, everything visible.** Transparency without a bound. Someone
+  still has to watch every payment, which is option one with extra steps.
+
+So the pot is not extra process. It is the _minimum_ process that lets Shapers stop looking. Trust
+is granted up to a number, for a job, until a date. Every payment is still on the ledger — full
+transparency — and a Shaper can set a standing watch ("tell me if this pot is 80% gone"). They do
+not sign the payment.
+
+What Shapers decide, and only this:
+
+- Fill, refill, enlarge, shrink, or close a pot (create or change a mandate).
+- A payment that **no pot covers** — there is no steward for this, or this one spend would overflow
+  the pot. That is the only sense in which they "fund beyond a mandate."
+- Dispose of major assets or dilute holders, with investor consent where that is reserved.
+
+What they do not decide: the contractor invoice, the tool subscription, the contributor payment
+that already sits inside a live pot. That is the steward doing their job. If Shapers disagree with
+how a pot is being used, they resize or close it at the review date — or sooner, as a structure
+decision — they do not start countersigning.
 
 #### E. Membership — follows the entry method the founder set
 
@@ -249,8 +274,9 @@ Once those are confirmed, this surface closes. Anything later that looks like st
 question — even if the same person is looking at it.
 
 **Shaper — _"Is the strategy still right, and is it becoming work?"_**
-Direction, purpose, funding beyond any mandate, and the beliefs those rest on — plus work that
-still has no steward, which is a strategic gap rather than a ticket they should do themselves. They
+Direction, purpose, whether each pot is the right size, and the beliefs those rest on — plus work
+that still has no steward, which is a strategic gap rather than a ticket they should do themselves.
+They
 confirm, revise, or retire a claim, and they pass more specific work to the matching steward.
 Adding a steward is a Shaper decision, not a mandate one person creates alone. A steward or
 contributor who is also a Shaper sees this surface as well as their other one. This is the human

@@ -365,7 +365,7 @@ principle from consuming the organization.
 | 0    | Just do it, logged to the ledger                                       | Work inside an existing mandate                             |
 | 1    | One named owner approves                                               | Small, reversible, inside a budget envelope                 |
 | 2    | **Visible for N days; proceeds unless someone objects, with a reason** | Most of what gets over-escalated to votes today             |
-| 3    | Vote                                                                   | Shared resources beyond a mandate; rule changes; membership |
+| 3    | Vote                                                                   | A payment no pot covers; rule changes; membership           |
 | 4    | Supermajority                                                          | How decisions get made; purpose; exit rights                |
 
 **Tier 2 is the one we do not have, and its absence is the actual cause of the overload.** Most
@@ -397,9 +397,9 @@ stakeholders should get the first without the second.** An investor who can file
 normal triage is well served. An investor who can direct operations has quietly become management.
 
 **Shaper is itself a grant**, named by the founder at creation. A steward or a contributor can hold
-it; founding the organization does not keep it forever. It is the body that decides strategy,
-funding beyond a mandate, and organizational memory. The product list of every decision and who
-takes it lives in
+it; founding the organization does not keep it forever. It is the body that decides strategy, who
+holds a pot of money and how big it is, and organizational memory. They do not sign every payment.
+The product list of every decision and who takes it lives in
 [User Journeys — What has to be decided, and by whom](../product/user-journeys.md#what-has-to-be-decided-and-by-whom).
 The same classes, mapped onto this section's tiers:
 
@@ -411,7 +411,8 @@ The same classes, mapped onto this section's tiers:
 | Change who is a Shaper, voting method, purpose, or entry/exit                      | Shapers                                    | 4                  |
 | Green-light a ticket (approve / reject / hold)                                     | Matching steward, before work starts       | 1                  |
 | Spend or commit inside an existing envelope                                        | Steward of that mandate                    | 1                  |
-| New allocation, spend beyond every envelope                                        | Shapers                                    | 3                  |
+| Fill, refill, enlarge, shrink, or close a pot                                      | Shapers                                    | 3                  |
+| A payment no existing pot covers                                                   | Shapers                                    | 3                  |
 | Issue, mint, or burn tokens; space-to-space membership                             | Shapers                                    | 3                  |
 | Admit or remove a member                                                           | Whatever entry/exit method the founder set | follows the method |
 | Memory update that changes strategy or purpose                                     | Shapers                                    | 1                  |
