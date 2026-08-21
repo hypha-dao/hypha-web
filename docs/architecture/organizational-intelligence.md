@@ -399,29 +399,32 @@ normal triage is well served. An investor who can direct operations has quietly 
 **Shaper is itself a grant**, named by the founder at creation. A steward or a contributor can hold
 it; founding the organization does not keep it forever. It is the body that decides strategy, who
 holds a pot of money and how big it is, and organizational memory. They do not sign every payment.
+A pot may name cosigners who must release funds; default is none.
 The product list of every decision and who takes it lives in
 [User Journeys — What has to be decided, and by whom](../product/user-journeys.md#what-has-to-be-decided-and-by-whom).
 The same classes, mapped onto this section's tiers:
 
-| Decision class                                                                     | Who decides                                | Tier               |
-| ---------------------------------------------------------------------------------- | ------------------------------------------ | ------------------ |
-| Constitution at creation (first Shapers, entry/exit, first mandates, trust-ladder) | Founder, AI proposes                       | —                  |
-| High-level strategy (purpose, direction, which domains the org needs)              | Shapers                                    | 1 / 3              |
-| Add, remove, or replace a steward; create or resize a mandate                      | Shapers                                    | 3                  |
-| Change who is a Shaper, voting method, purpose, or entry/exit                      | Shapers                                    | 4                  |
-| Green-light a ticket (approve / reject / hold)                                     | Matching steward, before work starts       | 1                  |
-| Spend or commit inside an existing envelope                                        | Steward of that mandate                    | 1                  |
-| Fill, refill, enlarge, shrink, or close a top-level pot                            | Shapers                                    | 3                  |
-| Carve a sub-mandate from a remaining pot                                           | Steward of the parent pot                  | 1                  |
-| A payment no existing pot covers                                                   | Shapers                                    | 3                  |
-| Issue, mint, or burn tokens; space-to-space membership                             | Shapers                                    | 3                  |
-| Admit or remove a member                                                           | Whatever entry/exit method the founder set | follows the method |
-| Memory update that changes strategy or purpose                                     | Shapers                                    | 1                  |
-| Memory update in a domain                                                          | Steward of that domain                     | 1                  |
-| Memory hygiene (unsupported assertion, contradiction)                              | Shapers                                    | 0 / 1              |
-| Purpose change, dilution, major-asset disposal                                     | Shapers **and** investor consent           | 4 + reserved       |
-| Decision that lands on the people the org serves                                   | Shapers decide; beneficiaries consulted    | 3 + heard          |
-| Claim, decline, or act on approved work; declare capacity                          | The individual                             | —                  |
+| Decision class                                                                     | Who decides                                 | Tier               |
+| ---------------------------------------------------------------------------------- | ------------------------------------------- | ------------------ |
+| Constitution at creation (first Shapers, entry/exit, first mandates, trust-ladder) | Founder, AI proposes                        | —                  |
+| High-level strategy (purpose, direction, which domains the org needs)              | Shapers                                     | 1 / 3              |
+| Add, remove, or replace a steward; create or resize a mandate                      | Shapers                                     | 3                  |
+| Change who is a Shaper, voting method, purpose, or entry/exit                      | Shapers                                     | 4                  |
+| Green-light a ticket (approve / reject / hold)                                     | Matching steward, before work starts        | 1                  |
+| Spend or commit inside an existing envelope                                        | Steward of that mandate                     | 1                  |
+| Fill, refill, enlarge, shrink, or close a top-level pot                            | Shapers                                     | 3                  |
+| Set, change, or clear cosigners on a pot                                           | Shapers, or the parent steward on a sub-pot | 1 / 3              |
+| Release a payment from a pot that names cosigners                                  | Those cosigners                             | 1                  |
+| Carve a sub-mandate from a remaining pot                                           | Steward of the parent pot                   | 1                  |
+| A payment no existing pot covers                                                   | Shapers                                     | 3                  |
+| Issue, mint, or burn tokens; space-to-space membership                             | Shapers                                     | 3                  |
+| Admit or remove a member                                                           | Whatever entry/exit method the founder set  | follows the method |
+| Memory update that changes strategy or purpose                                     | Shapers                                     | 1                  |
+| Memory update in a domain                                                          | Steward of that domain                      | 1                  |
+| Memory hygiene (unsupported assertion, contradiction)                              | Shapers                                     | 0 / 1              |
+| Purpose change, dilution, major-asset disposal                                     | Shapers **and** investor consent            | 4 + reserved       |
+| Decision that lands on the people the org serves                                   | Shapers decide; beneficiaries consulted     | 3 + heard          |
+| Claim, decline, or act on approved work; declare capacity                          | The individual                              | —                  |
 
 ### Mandates, not transactions
 
@@ -446,7 +449,8 @@ the compression mechanism for memory.
 
 **Same object at 10 members and at 10,000.** With ten people, Shapers fill two or three pots and
 stewards spend. With ten thousand, Shapers still fill a handful of pots; a steward carves
-sub-mandates from their remaining pot (same four fields, no Shaper vote). Parent close freezes
+sub-mandates from their remaining pot (same fields, no Shaper vote; they may add a cosigner on
+what they carve). Parent close freezes
 children. The Shaper set does not grow with membership.
 
 See [How it looks with 10 members, and with 10,000](../product/user-journeys.md#how-it-looks-with-10-members-and-with-10000).
@@ -454,7 +458,8 @@ See [How it looks with 10 members, and with 10,000](../product/user-journeys.md#
 ### Where new mandates come from
 
 A mandate is created as **one Shaper decision**, usually on an AI draft: this domain, this steward,
-this pot (which may be zero), this review date. Strategy that is not a job — purpose, who is a
+this pot (which may be zero), this review date, and optionally who must cosign. Strategy that is
+not a job — purpose, who is a
 Shaper, entry rules — stays memory and is not turned into a mandate. If a belief change implies a
 new job, that job is on the same item, not a second vote.
 

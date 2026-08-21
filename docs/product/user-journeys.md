@@ -185,7 +185,8 @@ a Shaper, and entry rules stay strategy. They never need a steward or a pot.
 
 When the job _is_ the decision, Shapers decide it **once**, as one object:
 
-> this domain, this steward, this pot (which may be zero), this review date
+> this domain, this steward, this pot (which may be zero), this review date, and optionally who
+> must cosign to release funds
 
 The AI drafts that object. Shapers approve, amend, or reject it. Attaching funds is a field on the
 same proposal, not a follow-up. A job with no money is still a mandate — someone owns the work. A
@@ -219,8 +220,9 @@ the job it creates. One queue, one decision.
 #### D. Funding
 
 A **mandate** is a job with a pot attached: this domain, this steward, this much money, until this
-review date. **Funding a mandate** is the Shapers filling that pot. It is one decision. After it,
-the steward spends without asking again.
+review date, and **optionally who must cosign to release funds**. **Funding a mandate** is the
+Shapers filling that pot. It is one decision. After it, the default is that the steward spends
+without asking again.
 
 That is the whole point. The alternatives fail the aim — minimum bureaucracy, full transparency,
 trust — in opposite directions:
@@ -236,20 +238,31 @@ trust — in opposite directions:
 
 So the pot is not extra process. It is the _minimum_ process that lets Shapers stop looking. Trust
 is granted up to a number, for a job, until a date. Every payment is still on the ledger — full
-transparency — and a Shaper can set a standing watch ("tell me if this pot is 80% gone"). They do
-not sign the payment.
+transparency — and a Shaper can set a standing watch ("tell me if this pot is 80% gone").
+
+**Cosigners are how concern becomes a check on one pot, not a rule for every pot.** Default is
+none. If Shapers are uneasy — a new steward, a large pot, a sensitive domain — they name who must
+also sign before funds leave that pot. That can be one or more of themselves, the parent steward,
+or another trusted body. The steward still initiates the payment; it does not move until the
+named people release it.
+
+This stays a field on the mandate, set when the pot is created or changed, and removable at review
+when the concern has passed. It is not a standing Shaper queue. If every pot has the org Shapers
+as cosigners, we have rebuilt "approve every movement" under another name. Use it where trust is
+not yet full. Leave it off where it is.
 
 What Shapers decide, and only this:
 
 - Fill, refill, enlarge, shrink, or close a pot (create or change a mandate).
+- Set, change, or clear the cosigners on a pot.
 - A payment that **no pot covers** — there is no steward for this, or this one spend would overflow
   the pot. That is the only sense in which they "fund beyond a mandate."
 - Dispose of major assets or dilute holders, with investor consent where that is reserved.
 
-What they do not decide: the contractor invoice, the tool subscription, the contributor payment
-that already sits inside a live pot. That is the steward doing their job. If Shapers disagree with
-how a pot is being used, they resize or close it at the review date — or sooner, as a structure
-decision — they do not start countersigning.
+What they do not decide by default: the contractor invoice, the tool subscription, the contributor
+payment that already sits inside a live pot with no cosigners. That is the steward doing their job.
+If Shapers disagree with how a pot is being used, they resize it, close it, or add a cosigner —
+they do not start countersigning pots they never marked.
 
 #### How it looks with 10 members, and with 10,000
 
@@ -265,10 +278,10 @@ Example: the treasury is 20,000.
 - Community — Sam — 8,000 — review in June
 - Product — Lea — 12,000 — review in June
 
-Sam pays a facilitator from the community pot. Nobody else signs. Lea pays a designer from the
-product pot. The Shapers see two numbers: how much each pot has left. When unmatched tickets pile
-up in "legal" and nobody owns that, the AI drafts a third mandate. Until then there is no third
-pot, and no chart for its own sake.
+Sam pays a facilitator from the community pot. Nobody else signs — neither pot has a cosigner.
+Lea pays a designer from the product pot. The Shapers see two numbers: how much each pot has left.
+When unmatched tickets pile up in "legal" and nobody owns that, the AI drafts a third mandate.
+Until then there is no third pot, and no chart for its own sake.
 
 If the org is even smaller — one person wearing every hat — there is a single mandate, pot equals
 the treasury, review in a few months.
@@ -280,20 +293,21 @@ object, one level down.
 
 Example: the treasury is 2,000,000. Org Shapers fill five pots, not fifty.
 
-- Product — Lea — 800,000 — review in June
-- Community — Sam — 400,000
-- Operations — Miro — 300,000
+- Product — Lea — 800,000 — review in June — two Shapers cosign (the pot is large, Lea is new)
+- Community — Sam — 400,000 — no cosigner
+- Operations — Miro — 300,000 — no cosigner
 - …two more
 
-Lea does not ask the org Shapers every time product needs a narrower job. She carves from her
-remaining 800,000:
+Lea still does not ask the org Shapers every time product needs a narrower job. She carves from
+her remaining 800,000:
 
 - Mobile — Rafi — 200,000 — review in April
 - Protocol — Noa — 350,000
 
-Rafi pays engineers from the mobile pot. Lea sees burn on mobile and protocol. Org Shapers see
-burn on product. Nobody above Rafi signs his payments. If Lea closes product, mobile and protocol
-freeze.
+Rafi pays engineers from the mobile pot. Lea may put herself as cosigner on that sub-pot; the org
+Shapers do not. She sees burn on mobile and protocol. Org Shapers see burn on product, and they
+still release Lea's own product-level payments until they drop the cosign at review. If Lea
+closes product, mobile and protocol freeze.
 
 Two or three levels of that is enough. Eight pots, each split eight ways, each split eight ways
 again, is already room for hundreds of teams. The org Shapers never look at hundreds of pots.
@@ -307,8 +321,9 @@ What each person opens:
 | Contributor home    | the next approved ticket             | the next approved ticket                                       |
 | Anyone, if they ask | every payment                        | every payment — the ledger is complete. The home screen is not |
 
-The thing that must not happen at either size: the Shaper set grows with membership, or people
-start asking Shapers to sign payments a pot already covers.
+The thing that must not happen at either size: the Shaper set grows with membership, or every pot
+quietly gets the org Shapers as cosigners. Cosign is a mark on a pot you are concerned about, not
+the way money always moves.
 
 #### E. Membership — follows the entry method the founder set
 
