@@ -63,6 +63,7 @@ async function withTimeout<T>(
 export async function runRefreshDiscussions(
   input: RefreshDiscussionsInput = {},
 ): Promise<{ status: number; body: RefreshDiscussionsResult }> {
+  const startedAt = Date.now();
   const limit = input.limit ?? 100;
   const includeArchived = input.includeArchived ?? false;
   const dryRun = input.dryRun ?? false;
@@ -115,6 +116,10 @@ export async function runRefreshDiscussions(
   }
 
   if (dryRun) {
+    console.log('[space-memory.refresh-discussions] dry run complete', {
+      targetCount: targetSlugs.length,
+      durationMs: Date.now() - startedAt,
+    });
     return {
       status: 200,
       body: {
@@ -193,6 +198,21 @@ export async function runRefreshDiscussions(
 
   const success_count = summaries.filter((s) => s.ok).length;
   const failure_count = summaries.length - success_count;
+  const failureReasons = summaries
+    .filter((s) => !s.ok)
+    .reduce<Record<string, number>>((acc, s) => {
+      const reason = s.error ?? 'unknown';
+      acc[reason] = (acc[reason] ?? 0) + 1;
+      return acc;
+    }, {});
+
+  console.log('[space-memory.refresh-discussions] batch complete', {
+    targetCount: targetSlugs.length,
+    successCount: success_count,
+    failureCount: failure_count,
+    failureReasons,
+    durationMs: Date.now() - startedAt,
+  });
 
   return {
     status: failure_count === 0 ? 200 : 207,
