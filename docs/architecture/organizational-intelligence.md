@@ -396,9 +396,10 @@ The useful discipline: **being heard and having authority are separate grants, a
 stakeholders should get the first without the second.** An investor who can file an observation into
 normal triage is well served. An investor who can direct operations has quietly become management.
 
-**Shaper is itself a grant**, named by the founder at creation. A steward or a contributor can hold
-it; founding the organization does not keep it forever. It is the body that decides strategy, who
-holds a pot of money and how big it is, and organizational memory. They do not sign every payment.
+**Shaper is itself a grant.** The founder names the first set. After that, only Shapers decide who
+is a Shaper. A steward or a contributor can hold it if they are added; founding the organization
+does not keep it forever. Shapers decide strategy, pots, and all organizational memory. They do
+not sign every payment.
 A pot may name cosigners who must release funds; default is none.
 The product list of every decision and who takes it lives in
 [User Journeys — What has to be decided, and by whom](../product/user-journeys.md#what-has-to-be-decided-and-by-whom).
@@ -419,8 +420,7 @@ The same classes, mapped onto this section's tiers:
 | A payment no existing pot covers                                                   | Shapers                                     | 3                  |
 | Issue, mint, or burn tokens; space-to-space membership                             | Shapers                                     | 3                  |
 | Admit or remove a member                                                           | Whatever entry/exit method the founder set  | follows the method |
-| Memory update that changes strategy or purpose                                     | Shapers                                     | 1                  |
-| Memory update in a domain                                                          | Steward of that domain                      | 1                  |
+| Memory update (strategy, purpose, or domain)                                       | Shapers                                     | 1                  |
 | Memory hygiene (unsupported assertion, contradiction)                              | Shapers                                     | 0 / 1              |
 | Purpose change, dilution, major-asset disposal                                     | Shapers **and** investor consent            | 4 + reserved       |
 | Decision that lands on the people the org serves                                   | Shapers decide; beneficiaries consulted     | 3 + heard          |

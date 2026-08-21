@@ -77,22 +77,22 @@ Two things to hold before reading the list.
 shaper, steward _and_ beneficiary at once. The taxonomy answers "what does this person need right
 now", not "what is their job title". Someone can move between rings, and most people do.
 
-**What someone stakes should determine their authority over memory.** This is the organizing
-principle. A person who stakes their time and judgment gets to change what the organization
-believes. A person who stakes capital gets to see honestly and to be heard — but not to direct. A
-person who stakes nothing yet gets to read what the organization chooses to publish. Getting this
-mapping wrong in either direction is how organizations either capture themselves or lose trust.
+**Shapers decide memory, and Shapers decide who is a Shaper.** The founder names the first set.
+After that, only Shapers can add or remove Shapers, and only Shapers can change what the
+organization believes. Stake still governs the _view_ — capital gets to see honestly and be heard,
+a person with no stake yet reads what the organization publishes — but it does not grant a write
+to memory. A contributor who is not a Shaper does the work; they do not edit the corpus.
 
 ### Ring 1 — Inside: members who hold decision rights
 
-They stake time and judgment. They read memory freely and can propose changes to it.
+They stake time and judgment. They read memory. Only Shapers change it.
 
 - **Founder** — the person who initially sets up the organization. A one-time role. They name the
   first Shapers, the first steward mandates, and the entry and exit methods, then they are a member
   like anyone else — usually also a Shaper, but "founder" is not an ongoing decision right.
-- **Shaper** — a grant, not an exclusive role. Shapers decide high-level strategy, who holds a pot
-  of money and how big it is, and organizational memory. A steward or a contributor can also be a
-  Shaper. Strategy becomes more specific work that passes to stewards.
+- **Shaper** — a grant, not an exclusive role. Shapers decide high-level strategy, who else is a
+  Shaper, who holds a pot of money and how big it is, and organizational memory. A steward or a
+  contributor can also be a Shaper. Strategy becomes more specific work that passes to stewards.
 - **Steward** — accountable for a domain; holds a mandate and a budget envelope; approves the
   implementations that strategy has become.
 - **Contributor** — does the work the steward has approved. The majority. A Shaper only if granted
@@ -117,18 +117,18 @@ They stake attention.
 
 ### The mapping
 
-| Stakeholder     | Stakes                  | Memory access                                 | Decision rights                                                      | Journey |
-| --------------- | ----------------------- | --------------------------------------------- | -------------------------------------------------------------------- | ------- |
-| Founder         | purpose, reputation     | writes the seed corpus                        | sets the organization up once; then only as Shaper and/or other hats | 1       |
-| Shaper          | judgment over the whole | reads all; approves strategic memory          | strategy, fill or change pots, memory, the steward set               | 4, 5    |
-| Steward         | domain accountability   | approves changes in their domain              | approves implementations and spends inside their mandate             | 3       |
-| Contributor     | time, judgment          | reads all; proposes changes                   | does the work; shapes only if also a Shaper                          | 2, 3    |
-| Investor/funder | capital                 | curated view, including unsettled arguments   | consent on reserved matters only                                     | 6       |
-| Beneficiary     | dependency on outcome   | published subset; contributes outcome reports | none; consulted when decisions land on them                          | 7       |
-| Partner org     | joint commitments       | artifacts relayed to them                     | decides for itself                                                   | 8       |
-| Prospective     | attention               | the public brief                              | none                                                                 | 2       |
-| Builder         | effort, reputation      | writes via app identity; proposes only        | none                                                                 | 9       |
-| Verifier        | their own assurance     | specified claims plus on-chain proof          | none                                                                 | 6       |
+| Stakeholder     | Stakes                  | Memory access                                  | Decision rights                                                      | Journey |
+| --------------- | ----------------------- | ---------------------------------------------- | -------------------------------------------------------------------- | ------- |
+| Founder         | purpose, reputation     | writes the seed corpus                         | sets the organization up once; then only as Shaper and/or other hats | 1       |
+| Shaper          | judgment over the whole | reads all; decides memory                      | strategy, who is a Shaper, pots, memory, the steward set             | 4, 5    |
+| Steward         | domain accountability   | reads all; may suggest, does not decide memory | approves implementations and spends inside their mandate             | 3       |
+| Contributor     | time, judgment          | reads all                                      | does the work; shapes only if also a Shaper                          | 2, 3    |
+| Investor/funder | capital                 | curated view, including unsettled arguments    | consent on reserved matters only                                     | 6       |
+| Beneficiary     | dependency on outcome   | published subset; contributes outcome reports  | none; consulted when decisions land on them                          | 7       |
+| Partner org     | joint commitments       | artifacts relayed to them                      | decides for itself                                                   | 8       |
+| Prospective     | attention               | the public brief                               | none                                                                 | 2       |
+| Builder         | effort, reputation      | writes via app identity; proposes only         | none                                                                 | 9       |
+| Verifier        | their own assurance     | specified claims plus on-chain proof           | none                                                                 | 6       |
 
 Journeys 1–5 sit inside the organization, 6–7 at the committed edge, 8–9 outside it. The catalog
 below is what "decision rights" actually means.
@@ -141,10 +141,10 @@ person or body takes each one**. Four sentences hold the whole catalog:
 
 1. **The founder sets the organization up once:** purpose, who the first Shapers are, how votes
    work, entry and exit, and the first steward mandates. The AI proposes; the founder confirms.
-2. **Shapers decide high-level strategy, who holds a pot of money and how big it is, and
-   organizational memory.** They are the body that can change the constitution or the steward set.
-   A steward or contributor can hold this grant; the founder usually does after setup, but not
-   because they founded it.
+2. **Shapers decide high-level strategy, who is a Shaper, who holds a pot of money and how big it
+   is, and organizational memory.** They are the body that can change the constitution or the
+   steward set. A steward or contributor can hold this grant if the Shapers add them; the founder
+   usually names themselves in the first set, but that is a choice.
 3. **Stewards approve implementations and spend from their pot.** Strategy becomes more specific
    work that passes to them. An AI ticket is a recommendation. It does not become work until the
    matching steward approves, rejects, or holds it.
@@ -336,9 +336,8 @@ follows that method. Changing the method is a vote. This catalog does not invent
 
 #### F. Memory
 
-- An AI-proposed belief update that changes strategy, purpose, or a cross-cutting assumption → the
-  Shapers.
-- An AI-proposed belief update inside a domain → the steward of that domain.
+- Any change to what the organization believes — purpose, strategy, a domain assessment, a
+  retired claim — → the Shapers. The AI or anyone else may draft; only Shapers approve.
 - An assertion with no ledger support, a contradiction between artifacts, or stalled onboarding →
   the Shapers confirm, retire, or escalate.
 
@@ -645,8 +644,8 @@ becoming the person who does every next task.
    pot, review date — so they are not asked twice. They then **pass the more specific work to the
    matching steward**. They do not approve the implementations; the steward does, even when that
    steward is also a Shaper.
-4. They review memory changes that touch strategy, and approve, edit, or reject them. Domain-level
-   memory stays with the steward.
+4. They review memory changes — strategy or domain — and approve, edit, or reject them. A steward
+   may draft; only Shapers write it into the corpus.
 5. Unmatched work that has no steward is the usual evidence for a new mandate. They decide that
    one object rather than absorbing the tickets themselves.
 
@@ -684,8 +683,7 @@ begins with routing, not drafting.
 5. The decision is made by people, on-chain where it matters.
 6. **The outcome is recorded against the decision** — did it do what we expected?
 7. Later, when reality disagrees with the prediction, the AI proposes updating the belief that
-   produced it. The Shapers approve if it is strategic; the matching steward approves if it is
-   inside a domain.
+   produced it. The Shapers approve. A steward may have drafted it; they do not decide memory.
 
 **What memory does:** step 1 depends on memory knowing the organization's mandates; step 6 is what
 turns a record into learning. Without step 6 the organization has a filing cabinet, not
