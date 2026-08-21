@@ -168,13 +168,40 @@ with the Shapers.
 
 Tier 3, or Tier 4 when the decision changes how decisions get made.
 
-- Add a steward or create a mandate. Evidence is unmatched work accumulating in a domain, or any
-  Shaper proposing. The AI may draft the proposal; the Shapers decide.
+- Create, change, or close a mandate — one decision, see below.
 - Remove or replace a steward. A steward can resign without a vote; filling the seat is a Shaper
   decision. A steward cannot fire themselves out of accountability.
-- Renew, expand, or shrink an envelope.
 - Change who is a Shaper, the voting method, the purpose, or entry and exit.
 - Issue, mint, or burn tokens; space-to-space membership; activating a space.
+
+#### How a mandate is created
+
+A mandate is not a strategic essay with money taped on, and strategy is not a second vote that later
+becomes a mandate. Those two designs both add a step.
+
+**Strategy is what we believe. A mandate is a job.** "We exist to regenerate this watershed" is
+memory. "Alex holds community, up to 5,000, until September" is a mandate. Purpose changes, who is
+a Shaper, and entry rules stay strategy. They never need a steward or a pot.
+
+When the job _is_ the decision, Shapers decide it **once**, as one object:
+
+> this domain, this steward, this pot (which may be zero), this review date
+
+The AI drafts that object. Shapers approve, amend, or reject it. Attaching funds is a field on the
+same proposal, not a follow-up. A job with no money is still a mandate — someone owns the work. A
+pot with no job is not a mandate; that is the slush fund we already rejected.
+
+Where the draft comes from, in order of honesty:
+
+1. **Unmatched work** — tickets that had no steward, aggregated. This is the default after
+   founding. Three unfilled tasks in one area is one job that does not exist yet.
+2. **Founding** — the AI proposes the first set; the founder confirms.
+3. **A Shaper proposes** — allowed, and weaker. An assertion without a pattern of unmet need
+   should have to argue harder than a pile of open tickets.
+
+There is not a separate "strategy vote" that later spawns a mandate. If a belief change implies a
+new job, the AI puts the mandate on the same item: here is what we would now believe, and here is
+the job it creates. One queue, one decision.
 
 #### C. Work tickets — matching steward, before anyone starts
 
@@ -497,13 +524,15 @@ becoming the person who does every next task.
    priority, and here is where the attention and money actually went.
 2. They see which beliefs have gone **stale** (nobody has revisited this in a year) or **contested**
    (two parts of the org are acting on incompatible assumptions).
-3. They decide the high-level correction — a revised purpose, a new domain, a retired belief —
-   and **pass the more specific work to the matching steward**. They do not approve the
-   implementations; the steward does, even when that steward is also a Shaper.
-4. They review memory changes that touch strategy or funding, and approve, edit, or reject them.
-   Domain-level memory stays with the steward.
-5. Unmatched work that has no steward is a strategic signal: this capability does not exist yet.
-   They decide whether to create the mandate rather than absorbing the tickets themselves.
+3. They decide the high-level correction. If it is only a belief, they update memory. If it
+   implies a new job, the AI has already drafted the mandate onto the same item — domain, steward,
+   pot, review date — so they are not asked twice. They then **pass the more specific work to the
+   matching steward**. They do not approve the implementations; the steward does, even when that
+   steward is also a Shaper.
+4. They review memory changes that touch strategy, and approve, edit, or reject them. Domain-level
+   memory stays with the steward.
+5. Unmatched work that has no steward is the usual evidence for a new mandate. They decide that
+   one object rather than absorbing the tickets themselves.
 
 **What memory does:** this journey is memory _maintenance_ at the strategic layer — the gardening
 that keeps the corpus small, current, and trusted.

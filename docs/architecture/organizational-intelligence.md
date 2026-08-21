@@ -360,13 +360,13 @@ principle from consuming the organization.
 
 ### The tiers
 
-| Tier | Mechanism                                                              | For                                                         |
-| ---- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 0    | Just do it, logged to the ledger                                       | Work inside an existing mandate                             |
-| 1    | One named owner approves                                               | Small, reversible, inside a budget envelope                 |
-| 2    | **Visible for N days; proceeds unless someone objects, with a reason** | Most of what gets over-escalated to votes today             |
-| 3    | Vote                                                                   | A payment no pot covers; rule changes; membership           |
-| 4    | Supermajority                                                          | How decisions get made; purpose; exit rights                |
+| Tier | Mechanism                                                              | For                                               |
+| ---- | ---------------------------------------------------------------------- | ------------------------------------------------- |
+| 0    | Just do it, logged to the ledger                                       | Work inside an existing mandate                   |
+| 1    | One named owner approves                                               | Small, reversible, inside a budget envelope       |
+| 2    | **Visible for N days; proceeds unless someone objects, with a reason** | Most of what gets over-escalated to votes today   |
+| 3    | Vote                                                                   | A payment no pot covers; rule changes; membership |
+| 4    | Supermajority                                                          | How decisions get made; purpose; exit rights      |
 
 **Tier 2 is the one we do not have, and its absence is the actual cause of the overload.** Most
 organizations offer only two channels — do it quietly, or put it to a vote — and since only the
@@ -444,6 +444,11 @@ votes. Mandates are the compression mechanism for governance in the same way tha
 the compression mechanism for memory.
 
 ### Where new mandates come from
+
+A mandate is created as **one Shaper decision**, usually on an AI draft: this domain, this steward,
+this pot (which may be zero), this review date. Strategy that is not a job — purpose, who is a
+Shaper, entry rules — stays memory and is not turned into a mandate. If a belief change implies a
+new job, that job is on the same item, not a second vote.
 
 Mandates should be created from observed need, not asserted need. The mechanism is work routing.
 
