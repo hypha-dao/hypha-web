@@ -396,29 +396,30 @@ The useful discipline: **being heard and having authority are separate grants, a
 stakeholders should get the first without the second.** An investor who can file an observation into
 normal triage is well served. An investor who can direct operations has quietly become management.
 
-**Voting power is itself a grant**, configured by the founder at creation — all members, a named
-subset, token holders, or another rule. It is not a property of the contributor role. The product
-list of every decision and who takes it lives in
+**Shaper is itself a grant**, named by the founder at creation. A steward or a contributor can hold
+it; founding the organization does not keep it forever. It is the body that decides strategy,
+funding beyond a mandate, and organizational memory. The product list of every decision and who
+takes it lives in
 [User Journeys — What has to be decided, and by whom](../product/user-journeys.md#what-has-to-be-decided-and-by-whom).
 The same classes, mapped onto this section's tiers:
 
-| Decision class                                                                       | Who decides                                   | Tier               |
-| ------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------ |
-| High-level strategy (purpose, direction, which domains the org needs)                | Founder, at creation and after                | 1                  |
-| Constitution at creation (electorate, entry/exit, first mandates, trust-ladder rung) | Founder, AI proposes                          | —                  |
-| Add, remove, or replace a steward; create or resize a mandate                        | Voting power                                  | 3                  |
-| Change electorate, voting method, purpose, or entry/exit                             | Voting power                                  | 4                  |
-| Green-light a ticket (approve / reject / hold)                                       | Matching steward, before work starts          | 1                  |
-| Spend or commit inside an existing envelope                                          | Steward of that mandate                       | 1                  |
-| New allocation, spend beyond every envelope                                          | Voting power                                  | 3                  |
-| Issue, mint, or burn tokens; space-to-space membership                               | Voting power                                  | 3                  |
-| Admit or remove a member                                                             | Whatever entry/exit method the founder set    | follows the method |
-| Memory update that changes strategy or purpose                                       | Founder                                       | 1                  |
-| Memory update in a domain                                                            | Steward of that domain                        | 1                  |
-| Memory hygiene (unsupported assertion, contradiction)                                | Founder                                       | 0 / 1              |
-| Purpose change, dilution, major-asset disposal                                       | Voting power **and** investor consent         | 4 + reserved       |
-| Decision that lands on the people the org serves                                     | Voting power decides; beneficiaries consulted | 3 + heard          |
-| Claim, decline, or act on approved work; declare capacity                            | The individual                                | —                  |
+| Decision class                                                                     | Who decides                                | Tier               |
+| ---------------------------------------------------------------------------------- | ------------------------------------------ | ------------------ |
+| Constitution at creation (first Shapers, entry/exit, first mandates, trust-ladder) | Founder, AI proposes                       | —                  |
+| High-level strategy (purpose, direction, which domains the org needs)              | Shapers                                    | 1 / 3              |
+| Add, remove, or replace a steward; create or resize a mandate                      | Shapers                                    | 3                  |
+| Change who is a Shaper, voting method, purpose, or entry/exit                      | Shapers                                    | 4                  |
+| Green-light a ticket (approve / reject / hold)                                     | Matching steward, before work starts       | 1                  |
+| Spend or commit inside an existing envelope                                        | Steward of that mandate                    | 1                  |
+| New allocation, spend beyond every envelope                                        | Shapers                                    | 3                  |
+| Issue, mint, or burn tokens; space-to-space membership                             | Shapers                                    | 3                  |
+| Admit or remove a member                                                           | Whatever entry/exit method the founder set | follows the method |
+| Memory update that changes strategy or purpose                                     | Shapers                                    | 1                  |
+| Memory update in a domain                                                          | Steward of that domain                     | 1                  |
+| Memory hygiene (unsupported assertion, contradiction)                              | Shapers                                    | 0 / 1              |
+| Purpose change, dilution, major-asset disposal                                     | Shapers **and** investor consent           | 4 + reserved       |
+| Decision that lands on the people the org serves                                   | Shapers decide; beneficiaries consulted    | 3 + heard          |
+| Claim, decline, or act on approved work; declare capacity                          | The individual                             | —                  |
 
 ### Mandates, not transactions
 

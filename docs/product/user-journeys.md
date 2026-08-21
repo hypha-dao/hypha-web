@@ -74,8 +74,8 @@ fits, never toward the vote. See [Journey 5](#journey-5--the-organization-decide
 Two things to hold before reading the list.
 
 **These are roles, not people.** In a five-person organization, one person is plausibly founder,
-steward _and_ beneficiary at once. The taxonomy answers "what does this person need right now", not
-"what is their job title". Someone can move between rings, and most people do.
+shaper, steward _and_ beneficiary at once. The taxonomy answers "what does this person need right
+now", not "what is their job title". Someone can move between rings, and most people do.
 
 **What someone stakes should determine their authority over memory.** This is the organizing
 principle. A person who stakes their time and judgment gets to change what the organization
@@ -85,17 +85,19 @@ mapping wrong in either direction is how organizations either capture themselves
 
 ### Ring 1 — Inside: members who hold decision rights
 
-They stake time and judgment. They read memory freely and can propose changes to it. **Voting power
-is a grant, not a property of being inside.** The founder decides who holds it when the organization
-is created; a contributor or steward may or may not have it.
+They stake time and judgment. They read memory freely and can propose changes to it.
 
-- **Founder** — holds high-level strategy: purpose, direction, which domains exist, and whether
-  what the organization believes is still true. Strategy becomes more specific work that passes to
-  stewards. There is no separate coordinator role.
+- **Founder** — the person who initially sets up the organization. A one-time role. They name the
+  first Shapers, the first steward mandates, and the entry and exit methods, then they are a member
+  like anyone else — usually also a Shaper, but "founder" is not an ongoing decision right.
+- **Shaper** — a grant, not an exclusive role. Shapers decide high-level strategy, funding beyond
+  a mandate, and organizational memory. A steward or a contributor can also be a Shaper; being one
+  is what used to get called voting power. Strategy becomes more specific work that passes to
+  stewards.
 - **Steward** — accountable for a domain; holds a mandate and a budget envelope; approves the
   implementations that strategy has become.
-- **Contributor** — does the work the steward has approved. The majority. Votes only if granted
-  voting power.
+- **Contributor** — does the work the steward has approved. The majority. A Shaper only if granted
+  that hat.
 
 ### Ring 2 — The committed edge: a formal stake, no operational vote
 
@@ -116,17 +118,18 @@ They stake attention.
 
 ### The mapping
 
-| Stakeholder     | Stakes                | Memory access                                 | Decision rights                                                 | Journey |
-| --------------- | --------------------- | --------------------------------------------- | --------------------------------------------------------------- | ------- |
-| Founder         | purpose, reputation   | writes and keeps the strategic corpus         | high-level strategy; memory hygiene; proposes new steward needs | 1, 4    |
-| Steward         | domain accountability | approves changes in their domain              | approves implementations and spends inside their mandate        | 3       |
-| Contributor     | time, judgment        | reads all; proposes changes                   | does the work; votes only if granted voting power               | 2, 3    |
-| Investor/funder | capital               | curated view, including unsettled arguments   | consent on reserved matters only                                | 6       |
-| Beneficiary     | dependency on outcome | published subset; contributes outcome reports | none; consulted when decisions land on them                     | 7       |
-| Partner org     | joint commitments     | artifacts relayed to them                     | decides for itself                                              | 8       |
-| Prospective     | attention             | the public brief                              | none                                                            | 2       |
-| Builder         | effort, reputation    | writes via app identity; proposes only        | none                                                            | 9       |
-| Verifier        | their own assurance   | specified claims plus on-chain proof          | none                                                            | 6       |
+| Stakeholder     | Stakes                  | Memory access                                 | Decision rights                                                      | Journey |
+| --------------- | ----------------------- | --------------------------------------------- | -------------------------------------------------------------------- | ------- |
+| Founder         | purpose, reputation     | writes the seed corpus                        | sets the organization up once; then only as Shaper and/or other hats | 1       |
+| Shaper          | judgment over the whole | reads all; approves strategic memory          | strategy, funding beyond a mandate, memory, the steward set          | 4, 5    |
+| Steward         | domain accountability   | approves changes in their domain              | approves implementations and spends inside their mandate             | 3       |
+| Contributor     | time, judgment          | reads all; proposes changes                   | does the work; shapes only if also a Shaper                          | 2, 3    |
+| Investor/funder | capital                 | curated view, including unsettled arguments   | consent on reserved matters only                                     | 6       |
+| Beneficiary     | dependency on outcome   | published subset; contributes outcome reports | none; consulted when decisions land on them                          | 7       |
+| Partner org     | joint commitments       | artifacts relayed to them                     | decides for itself                                                   | 8       |
+| Prospective     | attention               | the public brief                              | none                                                                 | 2       |
+| Builder         | effort, reputation      | writes via app identity; proposes only        | none                                                                 | 9       |
+| Verifier        | their own assurance     | specified claims plus on-chain proof          | none                                                                 | 6       |
 
 Journeys 1–5 sit inside the organization, 6–7 at the committed edge, 8–9 outside it. The catalog
 below is what "decision rights" actually means.
@@ -137,41 +140,40 @@ The tiers in the [architecture](../architecture/organizational-intelligence.md#8
 say how much agreement a decision needs. This section says **which decisions exist** and **which
 person or body takes each one**. Four sentences hold the whole catalog:
 
-1. **The founder decides high-level strategy** — at creation and after: purpose, direction, who
-   has voting power, which domains the organization needs, and whether its beliefs still hold. The
-   AI proposes; the founder confirms.
-2. **Strategy becomes more specific work that passes to stewards.** Voting power is the body that
-   can change the constitution or the steward set — add, remove, replace, or resize a mandate —
-   usually on a proposal the founder raises from an observed strategic gap.
-3. **Stewards approve implementations.** An AI ticket is a recommendation. It does not become work
-   until the matching steward approves, rejects, or holds it.
+1. **The founder sets the organization up once:** purpose, who the first Shapers are, how votes
+   work, entry and exit, and the first steward mandates. The AI proposes; the founder confirms.
+2. **Shapers decide high-level strategy, funding beyond a mandate, and organizational memory.**
+   They are the body that can change the constitution or the steward set. A steward or contributor
+   can hold this grant; the founder usually does after setup, but not because they founded it.
+3. **Stewards approve implementations.** Strategy becomes more specific work that passes to them.
+   An AI ticket is a recommendation. It does not become work until the matching steward approves,
+   rejects, or holds it.
 4. **Contributors do the approved work.** Money inside a mandate is the steward's; money beyond
-   any mandate is a vote.
+   any mandate is a Shaper decision.
 
 #### A. Founding — founder confirms, AI proposes
 
 - Purpose, boundaries, and success signals (the seed memory).
-- **Who holds voting power** — all members, a named subset, token holders, or another rule the
-  founder chooses. This is a grant, not a role.
+- **Who the first Shapers are** — a named set of people, which may include the founder, some
+  stewards, some contributors, or all of them. This is a grant, not an exclusive role.
 - Voting method, quorum, and unity.
 - Entry and exit method.
 - The first steward mandates: domain, named person, envelope, review date.
 - The starting [trust-ladder](#the-trust-ladder) rung for the AI.
 
-The founder role does not dissolve. After creation they keep the strategic layer: direction,
-whether beliefs still hold, and which new domains the work is asking for. They do not approve
-tickets or do the work — that is the cascade below.
+After this, "founder" is a historical fact, not a queue. Ongoing strategy, funding, and memory sit
+with the Shapers.
 
-#### B. Structure — voting power
+#### B. Structure — Shapers
 
 Tier 3, or Tier 4 when the decision changes how decisions get made.
 
-- Add a steward or create a mandate. Evidence is unmatched work accumulating in a domain, or anyone
-  with voting power proposing. The AI may draft the proposal; the electorate decides.
-- Remove or replace a steward. A steward can resign without a vote; filling the seat is a vote. A
-  steward cannot fire themselves out of accountability.
+- Add a steward or create a mandate. Evidence is unmatched work accumulating in a domain, or any
+  Shaper proposing. The AI may draft the proposal; the Shapers decide.
+- Remove or replace a steward. A steward can resign without a vote; filling the seat is a Shaper
+  decision. A steward cannot fire themselves out of accountability.
 - Renew, expand, or shrink an envelope.
-- Change the electorate, the voting method, the purpose, or entry and exit.
+- Change who is a Shaper, the voting method, the purpose, or entry and exit.
 - Issue, mint, or burn tokens; space-to-space membership; activating a space.
 
 #### C. Work tickets — matching steward, before anyone starts
@@ -182,7 +184,7 @@ Tier 3, or Tier 4 when the decision changes how decisions get made.
   using the mandate, not a new decision class, and it is how they avoid becoming a per-ticket
   bottleneck.
 - **No matching steward:** the ticket stays open, labelled with the capability it needs, and
-  becomes evidence for a "we need this steward" vote. It is not silently dumped on the founder as
+  becomes evidence for a "we need this steward" vote. It is not silently dumped on a Shaper as
   permanent work.
 - The contributor then claims, declines, or acts. That is a personal decision, not an organizational
   one.
@@ -191,12 +193,11 @@ Tier 3, or Tier 4 when the decision changes how decisions get made.
 
 - Spend or commit **inside** an existing envelope → the steward of that mandate (Tier 1).
 - A new allocation, a spend **beyond** every envelope, or an ongoing obligation nobody owns →
-  voting power (Tier 3).
-- Dispose of major assets or dilute holders → voting power **and** investor consent (reserved
-  matter).
+  Shapers (Tier 3).
+- Dispose of major assets or dilute holders → Shapers **and** investor consent (reserved matter).
 
-This is what "funding is a vote" means without sending every in-mandate reimbursement to the
-electorate — the failure the architecture already named.
+This is what "funding is a Shaper decision" means without sending every in-mandate reimbursement
+to them — the failure the architecture already named.
 
 #### E. Membership — follows the entry method the founder set
 
@@ -207,16 +208,16 @@ follows that method. Changing the method is a vote. This catalog does not invent
 #### F. Memory
 
 - An AI-proposed belief update that changes strategy, purpose, or a cross-cutting assumption → the
-  founder.
+  Shapers.
 - An AI-proposed belief update inside a domain → the steward of that domain.
 - An assertion with no ledger support, a contradiction between artifacts, or stalled onboarding →
-  the founder confirms, retires, or escalates. This is strategy maintenance, not a separate role.
+  the Shapers confirm, retire, or escalate.
 
 #### G. Reserved matters and the edge — heard is not authority
 
-- Purpose change, dilution, major-asset disposal → voting power **plus** investor consent.
-- Decisions that land on the people the organization serves → voting power decides; beneficiaries
-  are consulted.
+- Purpose change, dilution, major-asset disposal → Shapers **plus** investor consent.
+- Decisions that land on the people the organization serves → Shapers decide; beneficiaries are
+  consulted.
 - Partner commitments → each organization decides for itself.
 - An investor adding, holding, or exiting; a beneficiary reporting an outcome; a prospect
   expressing interest — individual actions, listed here so they are not mistaken for organizational
@@ -228,7 +229,7 @@ The promise at the top of this document — _knows what matters and what to do n
 different for each of them. Below is that sentence made specific: the one question each arrives
 with, what answers it, and what they can actually do about it.
 
-Four rules govern all nine:
+Four rules govern all ten:
 
 1. **One question, answered before anything is asked of them.** The landing state is the answer, not
    a dashboard of everything with the answer somewhere inside it.
@@ -242,11 +243,18 @@ Four rules govern all nine:
 
 #### Ring 1 — inside
 
-**Founder — _"Is the strategy still right, and is it becoming work?"_**
-Direction, purpose, and the beliefs those rest on — plus work that still has no steward, which is
-a strategic gap rather than a ticket they should do themselves. They confirm, revise, or retire a
-claim, and they pass more specific work to the matching steward. Adding a steward is a vote they
-typically raise, not a mandate they create alone. This is the human end of the
+**Founder — _"Is the organization standing?"_**
+Only while they are setting it up: the seed memory, the first Shapers, the first steward mandates.
+Once those are confirmed, this surface closes. Anything later that looks like strategy is a Shaper
+question — even if the same person is looking at it.
+
+**Shaper — _"Is the strategy still right, and is it becoming work?"_**
+Direction, purpose, funding beyond any mandate, and the beliefs those rest on — plus work that
+still has no steward, which is a strategic gap rather than a ticket they should do themselves. They
+confirm, revise, or retire a claim, and they pass more specific work to the matching steward.
+Adding a steward is a Shaper decision, not a mandate one person creates alone. A steward or
+contributor who is also a Shaper sees this surface as well as their other one. This is the human
+end of the
 [behavioural-evidence rule](../architecture/organizational-intelligence.md#1-four-layers-of-memory).
 
 **Steward — _"What implementations are waiting on me, and is my domain drifting?"_**
@@ -319,8 +327,9 @@ theory first.
    it will not do, and how they will know it's working. It draws on patterns from comparable
    organizations in the network to ask sharper questions.
 3. It proposes a structure the founder edits rather than invents: the space, sensible entry and
-   decision methods, **who holds voting power**, and **a first set of steward mandates** — domain,
-   named person, envelope, review date. The founder confirms each, or changes it.
+   decision methods, **who the first Shapers are**, and **a first set of steward mandates** —
+   domain, named person, envelope, review date. The founder confirms each, or changes it. They
+   usually name themselves as a Shaper; that is a choice, not automatic.
 4. **The conversation becomes the organization's first memory.** The purpose, the boundaries, and
    the success signals are written as the founding artifacts — not buried in a chat log.
 5. The founder is shown what was recorded and asked to confirm it. This is the first approval.
@@ -451,11 +460,12 @@ escalation, which is the honest read on whether the org has the people it needs.
 
 ---
 
-## Journey 4 — The founder keeps the strategy alive
+## Journey 4 — The shapers keep the strategy alive
 
-**Who:** whoever holds high-level strategy — usually the founder, sometimes more than one.
-**Wants:** the organization to keep pointing at the thing it exists to do, without becoming the
-person who does every next task.
+**Who:** whoever holds the Shaper grant — often including the founder, and often including people
+who are also stewards or contributors.
+**Wants:** the organization to keep pointing at the thing it exists to do, without any one of them
+becoming the person who does every next task.
 
 1. They see where **stated strategy and actual behaviour have diverged** — we said this was the
    priority, and here is where the attention and money actually went.
@@ -463,24 +473,24 @@ person who does every next task.
    (two parts of the org are acting on incompatible assumptions).
 3. They decide the high-level correction — a revised purpose, a new domain, a retired belief —
    and **pass the more specific work to the matching steward**. They do not approve the
-   implementations; the steward does.
-4. They review memory changes that touch strategy, and approve, edit, or reject them. Domain-level
-   memory stays with the steward.
+   implementations; the steward does, even when that steward is also a Shaper.
+4. They review memory changes that touch strategy or funding, and approve, edit, or reject them.
+   Domain-level memory stays with the steward.
 5. Unmatched work that has no steward is a strategic signal: this capability does not exist yet.
-   They raise it to the electorate rather than absorbing the tickets themselves.
+   They decide whether to create the mandate rather than absorbing the tickets themselves.
 
 **What memory does:** this journey is memory _maintenance_ at the strategic layer — the gardening
 that keeps the corpus small, current, and trusted.
 **Why it feels intelligent:** the organization can be wrong out loud, and strategy turns into work
-without the founder becoming the work.
+without the Shapers becoming the work.
 **How we know it works:** the memory corpus stays small enough for a person to read in an
-afternoon, and the founder's queue is strategy and gaps — not a dump of every open ticket.
+afternoon, and the Shaper queue is strategy, funding, and gaps — not a dump of every open ticket.
 
 ---
 
 ## Journey 5 — The organization decides, and then learns
 
-**Who:** whoever holds voting power, at a governance moment.
+**Who:** the Shapers, at a governance moment.
 **Wants:** to decide well, without being asked to approve everything.
 
 The failure mode this journey has to avoid is approval fatigue. If every good idea becomes
@@ -494,17 +504,16 @@ begins with routing, not drafting.
    for the test and the tiers.
 2. **Most things stop here** — done inside an existing mandate and logged, or waved through by the
    one person who holds that envelope, or opened for a short objection window that closes in silence.
-3. **What remains goes to a vote of the configured electorate** — not "the members" by default.
-   The founder named who holds voting power; that body decides commitments of shared resources
-   beyond an existing mandate, changes to the rules, changes to who counts as a member, and changes
-   to the steward set. The AI drafts it grounded in memory, and states what it is assuming and what
-   would make the proposal wrong.
-4. Voters can see what the organization decided before on similar questions, and what happened as
+3. **What remains goes to the Shapers** — not "the members" by default. The founder named the
+   first of them; they decide commitments of shared resources beyond an existing mandate, changes
+   to the rules, changes to who counts as a member, and changes to the steward set. The AI drafts
+   it grounded in memory, and states what it is assuming and what would make the proposal wrong.
+4. Shapers can see what the organization decided before on similar questions, and what happened as
    a result.
 5. The decision is made by people, on-chain where it matters.
 6. **The outcome is recorded against the decision** — did it do what we expected?
 7. Later, when reality disagrees with the prediction, the AI proposes updating the belief that
-   produced it. The founder approves if it is strategic; the matching steward approves if it is
+   produced it. The Shapers approve if it is strategic; the matching steward approves if it is
    inside a domain.
 
 **What memory does:** step 1 depends on memory knowing the organization's mandates; step 6 is what
