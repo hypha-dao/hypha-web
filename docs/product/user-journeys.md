@@ -251,6 +251,44 @@ that already sits inside a live pot. That is the steward doing their job. If Sha
 how a pot is being used, they resize or close it at the review date — or sooner, as a structure
 decision — they do not start countersigning.
 
+#### Will this still work at 10,000 members?
+
+A **member** is not a Shaper. Ten thousand people doing the work does not mean ten thousand people
+filling pots. Contributors scale; the Shaper set must not. If it grows with membership, every
+mandate becomes a town meeting and the design is dead. The founder names a small first set; adding
+a Shaper stays hard (Tier 4) on purpose.
+
+At **small scale** — five people, one of them founder, Shaper, and steward — the system has to
+collapse to one object without ceremony: one mandate, pot equals the treasury, review date in a
+few months. The second mandate appears when unmatched work says a second job exists, not because
+the software wants a chart.
+
+At **large scale** a flat list of pots dies. A Shaper body can hold in its head about as many
+top-level mandates as a decent manager can hold reports — call it five to eight. Fifty pots, and
+they are either rubber-stamping reviews or they become the invoice queue we already rejected.
+Transparency dies the same way: a complete ledger that dumps ten thousand payments on a home
+screen is not transparency, it is noise.
+
+So mandates **nest**. Same object, one more rule: a steward may carve a sub-mandate from their own
+pot — this narrower job, this person, this much (not more than remains), this review date — without
+asking the org Shapers. They are Shaper _of that pot_, not of the organization. The org Shapers
+still see five to eight top-level jobs. Two or three levels of nesting covers thousands of people
+(eight times eight times eight is already five hundred work cells). Close or freeze a parent and
+the children freeze with it. The parent steward stays accountable for the whole, including what
+they delegated.
+
+That is one mechanism at both sizes, not a small-org mode and a large-org mode. The pot _is_ the
+coordination layer that hierarchy used to be. What used to travel through status meetings travels
+as burn rate, unmatched work, and review dates.
+
+What still requires discipline, and will not be saved by software:
+
+- Keep the Shaper set small. A 10,000-member org with two hundred Shapers has rebuilt a parliament.
+- Do not let "payment no pot covers" become the overflow drain. If that queue is busy, the tree is
+  wrong — carve a pot, don't countersign.
+- A small Shaper set at that scale is an oligarchy unless the ledger is public, review dates are
+  real, and changing who is a Shaper is possible. Those are the checks. They are not optional.
+
 #### E. Membership — follows the entry method the founder set
 
 The _method_ is a founding decision. Each _instance_ — this person joins, this person leaves —

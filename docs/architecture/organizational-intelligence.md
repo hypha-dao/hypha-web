@@ -411,7 +411,8 @@ The same classes, mapped onto this section's tiers:
 | Change who is a Shaper, voting method, purpose, or entry/exit                      | Shapers                                    | 4                  |
 | Green-light a ticket (approve / reject / hold)                                     | Matching steward, before work starts       | 1                  |
 | Spend or commit inside an existing envelope                                        | Steward of that mandate                    | 1                  |
-| Fill, refill, enlarge, shrink, or close a pot                                      | Shapers                                    | 3                  |
+| Fill, refill, enlarge, shrink, or close a top-level pot                            | Shapers                                    | 3                  |
+| Carve a sub-mandate from a remaining pot                                           | Steward of the parent pot                  | 1                  |
 | A payment no existing pot covers                                                   | Shapers                                    | 3                  |
 | Issue, mint, or burn tokens; space-to-space membership                             | Shapers                                    | 3                  |
 | Admit or remove a member                                                           | Whatever entry/exit method the founder set | follows the method |
@@ -442,6 +443,15 @@ outside the request:
 So one vote on "this domain, this owner, this envelope, this review date" retires dozens of future
 votes. Mandates are the compression mechanism for governance in the same way that L3 artifacts are
 the compression mechanism for memory.
+
+**Mandates nest, or the mechanism only works while the org is small.** A steward may carve a
+sub-mandate from their remaining pot — same four fields — without a Shaper vote. Org Shapers see a
+handful of top-level pots; they cannot usefully review fifty. Two or three levels cover a
+10,000-member org without a second funding system. A parent close freezes children. The parent
+steward stays accountable for the whole. The Shaper set does not grow with membership; if it does,
+every mandate is a town meeting again.
+
+See [Will this still work at 10,000 members?](../product/user-journeys.md#will-this-still-work-at-10000-members).
 
 ### Where new mandates come from
 
