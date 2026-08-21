@@ -197,11 +197,10 @@ pot with no job is not a mandate; that is the slush fund we already rejected.
 
 Where the draft comes from, in order of honesty:
 
-1. **Unmatched work** — tickets that had no steward, aggregated. This is the default after
-   founding. Three unfilled tasks in one area is one job that does not exist yet.
+1. **A ticket with no steward** — the AI must draft the mandate on that first ticket. Further
+   tickets in the same gap attach to the same proposal. This is the default after founding.
 2. **Founding** — the AI proposes the first set; the founder confirms.
-3. **A Shaper proposes** — allowed, and weaker. An assertion without a pattern of unmet need
-   should have to argue harder than a pile of open tickets.
+3. **A Shaper proposes** — allowed, and weaker than a ticket the matcher could not place.
 
 There is not a separate "strategy vote" that later spawns a mandate. If a belief change implies a
 new job, the AI puts the mandate on the same item: here is what we would now believe, and here is
@@ -214,9 +213,10 @@ the job it creates. One queue, one decision.
 - A steward may set standing rules ("auto-approve tickets of type X under size Y"). That is them
   using the mandate, not a new decision class, and it is how they avoid becoming a per-ticket
   bottleneck.
-- **No matching steward:** the ticket stays open, labelled with the capability it needs, and
-  becomes evidence for a "we need this steward" vote. It is not silently dumped on a Shaper as
-  permanent work.
+- **No matching steward:** the AI must file a mandate proposal to the Shapers at once — this
+  domain, this pot, this review date, a steward if it can name one. The ticket stays open and
+  attaches to that proposal. It is not silently dumped on a Shaper as permanent work, and it does
+  not wait to "accumulate."
 - The contributor then claims, declines, or acts. That is a personal decision, not an organizational
   one.
 
@@ -388,11 +388,12 @@ end of the
 
 **Steward — _"What implementations are waiting on me, and is my domain drifting?"_**
 Every AI-created ticket inside their mandate that has not yet been green-lit — the specific work
-that strategy has become — plus envelope burn measured against the review date. They approve,
-reject, or hold **before anyone starts the work** — and **a hold must carry a resumption trigger**,
-a date or a condition, because a hold without one is a silent no that nobody has to own. Repeated
-rejections of similar items are evidence that the routing or the mandate boundary is wrong, not
-that the steward is being difficult.
+that strategy has become, already carrying a recommended contributor — plus envelope burn measured
+against the review date. They approve, reject, or hold **before anyone starts**, and they can
+change the named person. **A hold must carry a resumption trigger**, a date or a condition, because
+a hold without one is a silent no that nobody has to own. Repeated rejections of similar items are
+evidence that the routing or the mandate boundary is wrong, not that the steward is being
+difficult.
 
 **Contributor — _"What needs me?"_**
 A queue with one item at the top, not a dashboard: steward-approved work routed to them, plus
@@ -545,39 +546,37 @@ next Friday.
 
 Three things happen at three different speeds here, and conflating them is a design error:
 
-|                                                              | Cadence                         | Why                                                  |
-| ------------------------------------------------------------ | ------------------------------- | ---------------------------------------------------- |
-| **Detection** — something needs doing                        | continuous                      | delay here is pure loss                              |
-| **Steward gate** — approve, reject, or hold                  | continuous                      | work should never sit unrouted waiting for a cycle   |
-| **Routing** — an approved ticket reaches a contributor queue | continuous, after approval      | the steward decides whether; the matcher decides who |
-| **Interruption** — a push, email, or ping                    | rate-limited, urgency overrides | the only genuinely scarce resource is attention      |
+|                                                              | Cadence                         | Why                                                |
+| ------------------------------------------------------------ | ------------------------------- | -------------------------------------------------- |
+| **Detection** — something needs doing                        | continuous                      | delay here is pure loss                            |
+| **Steward gate** — approve, reject, or hold, and confirm who | continuous                      | work should never sit unrouted waiting for a cycle |
+| **Routing** — an approved ticket reaches the named queue     | continuous, after approval      | the steward confirms whether and who               |
+| **Interruption** — a push, email, or ping                    | rate-limited, urgency overrides | the only genuinely scarce resource is attention    |
 
 So the queue is always current; the digest is a **catch-up for people who haven't looked**, not the
 delivery mechanism; and the interrupt is reserved for things that will go wrong if they wait.
 
-1. **The moment a need is detected, the AI creates a ticket and routes it to the matching
-   steward.** Detection is continuous. The ticket is a recommendation, not work.
-2. **The steward green-lights it — approve, reject, or hold — before anyone starts.** A standing
-   rule the steward has already set ("auto-approve tickets of type X under size Y") counts as this
-   step. Until then the ticket does not reach a contributor.
-3. **Once approved, the AI proposes a person rather than assigning one.** It identifies who fits,
-   based on stated skills, demonstrated history, and whose mandate the work falls under — then
-   checks that against what that person has said they can take on. The work appears in the
-   suggested person's queue with the reasoning visible, and stays claimable by anyone else. In a
-   voluntary organization you cannot allocate work — you can only put it in front of the person
-   most likely to pick it up, and make it easy to say yes.
-4. Each item names a person, states one concrete next action, and shows the evidence behind it.
-   Anything that can't do all three isn't routed to a human at all.
-5. **When nobody fits, or no steward exists for the domain, that is information, not a failure.**
-   The AI says so explicitly rather than quietly dropping the work on whoever answers fastest —
-   the most common and most corrosive default in every organization. The item stays open, visible,
-   and labelled with the capability it needs.
-6. **Unmatched work escalates as a capacity signal** to whoever holds that domain, or as evidence
-   for a "we need this steward" vote if nobody does. Repeated misses aggregate: three unfilled
-   tasks in the same area over a month is not three problems, it is one role that needs filling.
-7. The person acts, defers, declines, or the work stays open. Declining is a first-class action and
-   is recorded — it is how the matcher learns.
-8. When they act, the AI has already drafted the artifact — the proposal text, the summary, the
+1. **The moment a need is detected, the AI creates a ticket with a recommended contributor
+   already on it** — who fits, based on stated skills, demonstrated history, the mandate, and
+   declared capacity — and sends it to the matching steward. Detection is continuous. The ticket
+   is a recommendation, not work. If nobody fits, it says so on the ticket rather than inventing
+   a name.
+2. **The steward green-lights it — approve, reject, or hold — and can change the recommended
+   person before anyone starts.** A standing rule ("auto-approve tickets of type X under size Y")
+   counts as approval of both the work and the named person. Until the steward confirms, the
+   ticket does not reach a contributor queue. In a voluntary organization the named person is
+   still a suggestion: the work stays claimable by anyone else.
+3. Each item names a person (or says nobody fits), states one concrete next action, and shows the
+   evidence behind it. Anything that can't do the last two isn't routed to a human at all.
+4. **If there is no steward for this ticket, the AI must propose a new mandate to the Shapers
+   immediately** — this domain, a steward if it can name one, this pot (which may be zero), this
+   review date. It does not wait for a pile of similar tickets, and it does not dump the work on
+   whoever answers fastest. The ticket stays open, labelled with the capability it needs, and
+   attaches to that proposal. Further tickets in the same gap attach to the same open mandate
+   rather than opening a second vote.
+5. The named person acts, defers, declines, or the work stays open. Declining is a first-class
+   action and is recorded — it is how the matcher learns. The steward can re-route.
+6. When they act, the AI has already drafted the artifact — the proposal text, the summary, the
    update — so acting is editing.
 
 **On matching without ossifying roles.** Matching purely on demonstrated history is the obvious
@@ -621,9 +620,8 @@ organization admits when it is short-handed instead of overloading its most cons
 noise. Time from detection to a claimed owner. And the share of work that finds someone without
 escalation, which is the honest read on whether the org has the people it needs.
 
-> Unmatched work accumulating in a domain is the evidence base for a new mandate — which is a Tier 3
-> decision, because it creates an ongoing obligation. This is where "we need a developer and a
-> budget" should come from: an observed pattern of unmet need, not an assertion. See
+> A ticket with no steward is itself the evidence for a new mandate. The AI drafts that mandate
+> for the Shapers on the first such ticket, not the third. See
 > [decision rights](../architecture/organizational-intelligence.md#8-decision-rights--what-becomes-a-proposal).
 
 ---
@@ -646,8 +644,8 @@ becoming the person who does every next task.
    steward is also a Shaper.
 4. They review memory changes — strategy or domain — and approve, edit, or reject them. A steward
    may draft; only Shapers write it into the corpus.
-5. Unmatched work that has no steward is the usual evidence for a new mandate. They decide that
-   one object rather than absorbing the tickets themselves.
+5. A ticket with no steward arrives as a mandate the AI has already drafted. They decide that
+   object rather than absorbing the tickets themselves.
 
 **What memory does:** this journey is memory _maintenance_ at the strategic layer — the gardening
 that keeps the corpus small, current, and trusted.

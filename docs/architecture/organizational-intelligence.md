@@ -469,14 +469,12 @@ When the system detects that something needs doing, it matches the work to a per
 skills and mandates (L3) plus demonstrated history (L2), then checks the match against that person's
 **declared** capacity. Most of the time it finds someone. The interesting case is when it does not.
 
-**Unmatched work is a measurement, not a failure.** Left alone, unrouteable work silently lands on
-whoever is most responsive, which hides the shortage and burns out the conscientious. Instead it
-should stay open, labelled with the capability it needs, and **aggregate**. Three unfilled tasks in
-one domain over a month is not three problems; it is one role that does not exist yet.
-
-That aggregate is the evidence base for a Tier 3 proposal to create a mandate — a domain, an owner,
-an envelope, a review date. It is the answer to "how do we know we need to hire?" and it means the
-proposal arrives with a demonstrated pattern attached rather than someone's conviction.
+**A ticket with no steward is a measurement, not a failure — and it is enough.** Left alone,
+unrouteable work silently lands on whoever is most responsive, which hides the shortage and burns
+out the conscientious. The AI must draft a mandate for the Shapers on that first ticket: this
+domain, a steward if it can name one, this pot, this review date. Further tickets in the same gap
+attach to the same open proposal; they do not open a second vote, and they do not wait to
+accumulate before the first one is filed.
 
 Three constraints on the matcher itself:
 
