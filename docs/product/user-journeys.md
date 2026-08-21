@@ -153,12 +153,15 @@ person or body takes each one**. Four sentences hold the whole catalog:
 
 #### A. Founding — founder confirms, AI proposes
 
-- Purpose, boundaries, and success signals (the seed memory).
-- **Who the first Shapers are** — a named set of people, which may include the founder, some
-  stewards, some contributors, or all of them. This is a grant, not an exclusive role.
-- Voting method, quorum, and unity.
+The interview that produces these is in [Journey 1](#journey-1--the-founder-starts-an-organization).
+The founder confirms; the AI does not invent a slot they never spoke to.
+
+- Purpose, who it serves, boundaries, and success signals (the seed memory).
+- First strategic objectives for the next 90 days.
+- **Who the first Shapers are** — drafted from "who do you trust to decide," not from job titles.
 - Entry and exit method.
-- The first steward mandates: domain, named person, envelope, review date.
+- The first mandates: one per real near-term job — domain, steward, pot, review date, optional
+  cosigners.
 - The starting [trust-ladder](#the-trust-ladder) rung for the AI.
 
 After this, "founder" is a historical fact, not a queue. Ongoing strategy, funding, and memory sit
@@ -450,22 +453,61 @@ verification that depends on trusting the platform is not verification.
 theory first.
 
 1. They describe what they're trying to do, in their own words, in conversation.
-2. The AI interviews them — not a form. It asks what the organization is for, who it serves, what
-   it will not do, and how they will know it's working. It draws on patterns from comparable
-   organizations in the network to ask sharper questions.
-3. It proposes a structure the founder edits rather than invents: the space, sensible entry and
-   decision methods, **who the first Shapers are**, and **a first set of steward mandates** —
-   domain, named person, envelope, review date. The founder confirms each, or changes it. They
-   usually name themselves as a Shaper; that is a choice, not automatic.
-4. **The conversation becomes the organization's first memory.** The purpose, the boundaries, and
-   the success signals are written as the founding artifacts — not buried in a chat log.
+2. **The AI interviews them — not a form.** It is trying to learn the few things without which it
+   cannot recommend Shapers, objectives, mandates, or stewards. It draws on comparable
+   organizations to ask sharper questions, and it stops when it can draft. The key things:
+
+   **What this is** — so strategy has somewhere to sit.
+
+   - What is this for, in a sentence they would say to a stranger?
+   - Who is it for — who is helped if it works?
+   - What will you not do, even if it would be easy or funded?
+   - In six months, what would you point at and say "this is working"?
+
+   **Who is already here** — so Shapers and stewards are named from reality, not an org chart.
+
+   - Who is already doing work, and what do they actually do?
+   - If you disappeared for a month, who do you trust to decide? Those names are the first
+     Shaper draft.
+   - Who would you not hand the treasury to yet? That is the first cosign signal, not a judgment
+     of character.
+
+   **What must happen next** — so the first mandates are jobs, not departments.
+
+   - What has to get done in the next 90 days?
+   - What is already blocked for lack of a person or of money?
+   - If you could spend tomorrow, on what?
+
+   **Money and the door** — so pots, entry, and capital have a first setting.
+
+   - Is there a treasury yet, roughly how much, and who can move it today?
+   - Any pot that should need a second signature from the start?
+   - How does someone join? Who puts money in, and what do they get to say about it?
+
+3. It proposes a structure the founder edits rather than invents, each piece grounded in an
+   answer above:
+
+   - Seed memory: purpose, who it serves, boundaries, success signals.
+   - First strategic objectives for the next 90 days, written as outcomes, not a slogan.
+   - **Who the first Shapers are** — usually "who you trust to decide," plus themselves if they
+     want that hat. Not automatic.
+   - **First mandates** — one per real job in those 90 days: domain, steward (someone already
+     doing it, or open if nobody is), pot, review date, cosigners only where they were uneasy.
+   - Entry and exit, and the starting [trust-ladder](#the-trust-ladder) rung.
+
+   Empty answers stay empty. It does not invent a legal steward because the form had a slot. An
+   unmatched 90-day job with no name becomes an open mandate — the first recruitment surface.
+
+4. **The conversation becomes the organization's first memory.** Purpose, boundaries, success
+   signals, the first objectives, and the first mandates are written as founding artifacts — not
+   buried in a chat log.
 5. The founder is shown what was recorded and asked to confirm it. This is the first approval.
 
 **What memory does:** this journey _creates_ the seed corpus. Nothing else works well without it.
-**Why it feels intelligent:** the founder never sees an empty form, and the organization can
-already answer "what are we for?" on day one.
+**Why it feels intelligent:** the founder never sees an empty form, and the first recommendations
+are about their next 90 days, not a generic DAO template.
 **How we know it works:** the founding artifacts are still being cited and revised six months
-later, instead of abandoned.
+later, instead of abandoned — and the first mandates still match work that actually happened.
 
 ---
 
