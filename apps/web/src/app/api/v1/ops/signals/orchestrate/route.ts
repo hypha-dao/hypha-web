@@ -63,6 +63,11 @@ export async function POST(request: NextRequest) {
       : 200;
     return NextResponse.json(result, { status });
   } catch (error) {
+    console.error('[ops.signals.orchestrate] batch failed', {
+      limit: parsedPayload.data.limit,
+      dryRun: parsedPayload.data.dry_run,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       {
         error: 'Failed to orchestrate signals',

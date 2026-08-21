@@ -33,6 +33,27 @@ export type RefreshDiscussionsResult = {
 const SUMMARY_CONCURRENCY = 6;
 const SUMMARY_TIMEOUT_MS = 45_000;
 
+// Stable, non-parameterized failure strings returned by createSpaceDiscussionSummary /
+// withTimeout — safe to use as log-aggregation keys as-is. Anything else (DB/network errors,
+// unexpected throws) can carry high-cardinality detail, so it gets bucketed and truncated
+// instead of aggregated verbatim.
+const KNOWN_FAILURE_REASONS = new Set([
+  'Space not found',
+  'Space has no chat room',
+  'No eligible discussion rooms found',
+  'No chat messages available for summary',
+  'Failed to persist summary',
+  'Summary generation timed out',
+]);
+const FAILURE_REASON_MAX_LEN = 60;
+
+function normalizeFailureReason(rawError: string | undefined): string {
+  const reason = rawError?.trim();
+  if (!reason) return 'unknown';
+  if (KNOWN_FAILURE_REASONS.has(reason)) return reason;
+  return `other: ${reason.slice(0, FAILURE_REASON_MAX_LEN)}`;
+}
+
 async function withTimeout<T>(
   task: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,
@@ -63,6 +84,7 @@ async function withTimeout<T>(
 export async function runRefreshDiscussions(
   input: RefreshDiscussionsInput = {},
 ): Promise<{ status: number; body: RefreshDiscussionsResult }> {
+  const startedAt = Date.now();
   const limit = input.limit ?? 100;
   const includeArchived = input.includeArchived ?? false;
   const dryRun = input.dryRun ?? false;
@@ -115,6 +137,10 @@ export async function runRefreshDiscussions(
   }
 
   if (dryRun) {
+    console.log('[space-memory.refresh-discussions] dry run complete', {
+      targetCount: targetSlugs.length,
+      durationMs: Date.now() - startedAt,
+    });
     return {
       status: 200,
       body: {
@@ -193,6 +219,21 @@ export async function runRefreshDiscussions(
 
   const success_count = summaries.filter((s) => s.ok).length;
   const failure_count = summaries.length - success_count;
+  const failureReasons = summaries
+    .filter((s) => !s.ok)
+    .reduce<Record<string, number>>((acc, s) => {
+      const reason = normalizeFailureReason(s.error);
+      acc[reason] = (acc[reason] ?? 0) + 1;
+      return acc;
+    }, {});
+
+  console.log('[space-memory.refresh-discussions] batch complete', {
+    targetCount: targetSlugs.length,
+    successCount: success_count,
+    failureCount: failure_count,
+    failureReasons,
+    durationMs: Date.now() - startedAt,
+  });
 
   return {
     status: failure_count === 0 ? 200 : 207,

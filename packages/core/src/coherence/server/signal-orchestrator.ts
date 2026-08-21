@@ -494,6 +494,7 @@ export async function processSignalOrchestratorBatch(
   }: ProcessBatchInput,
   { db }: DbConfig,
 ) {
+  const startedAt = Date.now();
   const rows = await db
     .select()
     .from(signalOrchestratorQueue)
@@ -874,6 +875,19 @@ export async function processSignalOrchestratorBatch(
       results.push({ queue_id: lock.id, status: 'error', message });
     }
   }
+
+  const statusCounts = results.reduce<Record<string, number>>((acc, r) => {
+    acc[r.status] = (acc[r.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  console.log('[signal-orchestrator] batch complete', {
+    dryRun,
+    system: useSystemIdentity,
+    scanned: rows.length,
+    processed: results.length,
+    ...statusCounts,
+    durationMs: Date.now() - startedAt,
+  });
 
   return {
     ok: true as const,

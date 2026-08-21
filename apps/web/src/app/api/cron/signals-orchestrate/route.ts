@@ -43,6 +43,11 @@ export async function GET(request: Request) {
       : 200;
     return NextResponse.json(result, { status });
   } catch (error) {
+    console.error('[cron.signals-orchestrate] batch failed', {
+      limit,
+      dryRun,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       {
         error: 'Failed to orchestrate signals',
