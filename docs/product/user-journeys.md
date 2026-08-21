@@ -21,7 +21,7 @@ exists to serve. Written for the whole team — no code required.
 
 Everything below is a way of delivering that sentence to a specific kind of person on a specific
 kind of day. Both halves of it — _what matters_ and _what to do next_ — resolve differently for a
-contributor, a steward, and an investor; see
+contributor, a steward, and a Shaper; see
 [what each stakeholder opens the app for](#what-each-stakeholder-opens-the-app-for).
 
 ---
@@ -40,32 +40,6 @@ them, it isn't an intelligent-organization journey — it's just software with a
 3. **Nothing the organization learns is lost.** Every decision, and every recommendation you
    accepted or rejected, leaves a trace that shapes what the AI says next month. The org gets
    sharper with use.
-
----
-
-## The trust ladder
-
-The AI does not arrive with full autonomy. It climbs. Each rung must be earned by demonstrated
-accuracy at the rung below, and we should be able to say out loud which rung we are on for any
-given space.
-
-| Rung         | The AI...                                         | Human role         |
-| ------------ | ------------------------------------------------- | ------------------ |
-| 1. Observe   | records and organizes what happened               | reads              |
-| 2. Brief     | explains what changed and what it means           | reads, corrects    |
-| 3. Recommend | names an owner and a next action, with evidence   | accepts or rejects |
-| 4. Draft     | writes the proposal, memo, or memory update       | edits and approves |
-| 5. Propose   | files it into the real workflow, pending approval | approves           |
-| — Decide     | **never**                                         | always human       |
-
-The last row is a product commitment, not a technical limitation. Money, membership, and
-governance outcomes are decided by people. This is what makes the memory trustworthy enough to be
-worth having.
-
-One nuance about rung 5. Filing something into the workflow includes choosing _which_ workflow —
-whether this needs one owner's nod, a quiet objection window, or a full vote. Routing well is more
-valuable than drafting well, and the AI's bias must always run toward the lightest channel that
-fits, never toward the vote. See [Journey 5](#journey-5--the-organization-decides-and-then-learns).
 
 ---
 
@@ -120,8 +94,8 @@ They stake attention.
 | Stakeholder     | Stakes                  | Memory access                                  | Decision rights                                                      | Journey |
 | --------------- | ----------------------- | ---------------------------------------------- | -------------------------------------------------------------------- | ------- |
 | Founder         | purpose, reputation     | writes the seed corpus                         | sets the organization up once; then only as Shaper and/or other hats | 1       |
-| Shaper          | judgment over the whole | reads all; decides memory                      | strategy, who is a Shaper, pots, memory, the steward set             | 4, 5    |
-| Steward         | domain accountability   | reads all; may suggest, does not decide memory | approves implementations and spends inside their mandate             | 3       |
+| Shaper          | judgment over the whole | reads all; decides memory                      | strategy, who is a Shaper, pots, memory, the steward set             | 5       |
+| Steward         | domain accountability   | reads all; may suggest, does not decide memory | approves implementations and spends inside their mandate             | 4       |
 | Contributor     | time, judgment          | reads all                                      | does the work; shapes only if also a Shaper                          | 2, 3    |
 | Investor/funder | capital                 | curated view, including unsettled arguments    | consent on reserved matters only                                     | 6       |
 | Beneficiary     | dependency on outcome   | published subset; contributes outcome reports  | none; consulted when decisions land on them                          | 7       |
@@ -162,7 +136,7 @@ The founder confirms; the AI does not invent a slot they never spoke to.
 - Entry and exit method.
 - The first mandates: one per real near-term job — domain, steward, pot, review date, optional
   cosigners.
-- The starting [trust-ladder](#the-trust-ladder) rung for the AI.
+- A reminder the AI never decides money, membership, or memory. People do.
 
 After this, "founder" is a historical fact, not a queue. Ongoing strategy, funding, and memory sit
 with the Shapers.
@@ -430,7 +404,7 @@ shared commitments surface to both.
 
 **Prospective member — _"Is this real, and is there something here for me?"_**
 The public brief, evidence the organization is actually doing things, and — the important part —
-open work nobody has picked up that matches what they say they can do. Journey 3's unmatched queue
+open work nobody has picked up that matches what they say they can do. The unmatched queue
 _is_ the recruitment surface: the capacity gap and the joining funnel are one list read from two
 directions. They express interest against a specific piece of work, so joining arrives with a first
 task attached instead of a generic welcome.
@@ -493,7 +467,7 @@ theory first.
      want that hat. Not automatic.
    - **First mandates** — one per real job in those 90 days: domain, steward (someone already
      doing it, or open if nobody is), pot, review date, cosigners only where they were uneasy.
-   - Entry and exit, and the starting [trust-ladder](#the-trust-ladder) rung.
+   - Entry and exit. The AI never decides money, membership, or memory.
 
    Empty answers stay empty. It does not invent a legal steward because the form had a slot. An
    unmatched 90-day job with no name becomes an open mandate — the first recruitment surface.
@@ -538,160 +512,119 @@ new members stop asking questions that are already answered in memory.
 
 ---
 
-## Journey 3 — Work finds the right person (the core loop)
+## Journey 3 — The contributor uses the app
 
-**Who:** an active member with limited attention and a real job.
-**Wants:** to be handed the thing that genuinely needs them, when it arises — not to discover it
-next Friday.
+**Who:** someone who does the work. They may also be a steward or a Shaper; this is the hat they
+wear when they open the app to _do_ something.
+**Wants:** one next thing, already scoped, already allowed, already drafted.
 
-Three things happen at three different speeds here, and conflating them is a design error:
+They open the app. The first thing they see is **What needs me?** — not a dashboard, not a chat.
 
-|                                                              | Cadence                         | Why                                                |
-| ------------------------------------------------------------ | ------------------------------- | -------------------------------------------------- |
-| **Detection** — something needs doing                        | continuous                      | delay here is pure loss                            |
-| **Steward gate** — approve, reject, or hold, and confirm who | continuous                      | work should never sit unrouted waiting for a cycle |
-| **Routing** — an approved ticket reaches the named queue     | continuous, after approval      | the steward confirms whether and who               |
-| **Interruption** — a push, email, or ping                    | rate-limited, urgency overrides | the only genuinely scarce resource is attention    |
+1. **If nothing needs them, it says so.** An empty queue is a successful screen. They can leave.
+   If they have work already in progress, that sits under the empty line: one card per open item,
+   last action, next suggested step.
+2. **If something needs them, one ticket is on top.** A steward has already said this work should
+   happen and that they are the person. The card shows why them, one concrete next action, and the
+   evidence. The AI has drafted the artifact — the update, the proposal text, the summary.
+3. **They claim, decline, or act.**
+   - Claim: the ticket is theirs. They can still walk away later.
+   - Decline: they must pick _not my thing_ or _no room right now_. Those teach the matcher
+     different lessons. They can set or revise how much they can take on — a coarse number of
+     concurrent items, not hours.
+   - Act: they edit the draft, not a blank page. When they are done they mark it done. The steward
+     can see it finished; they do not re-approve the work unless the mandate said so.
+4. **They can ask, in the ticket, what this is for.** The answer cites memory and the mandate, not
+   a guess. They should never have to hunt a chat history to start.
+5. **Work they already own stays visible until it is done or they decline it.** A change to that
+   work (new context, a blocked dependency) surfaces on the same card. It does not become a second
+   queue.
+6. **If they wear another hat, they switch.** Steward tickets and Shaper decisions are other
+   surfaces, not mixed into this queue. Mixing them is how contributors stop trusting "What needs
+   me?"
 
-So the queue is always current; the digest is a **catch-up for people who haven't looked**, not the
-delivery mechanism; and the interrupt is reserved for things that will go wrong if they wait.
+Capacity is theirs to declare. The system may say "this would be your fifth and you said three";
+it may never refuse on their behalf. Matching must not only pick people who have done this before
+— a minority of tickets should be stretch — but that is the steward's call when they confirm the
+name, not something the contributor has to negotiate.
 
-1. **The moment a need is detected, the AI creates a ticket with a recommended contributor
-   already on it** — who fits, based on stated skills, demonstrated history, the mandate, and
-   declared capacity — and sends it to the matching steward. Detection is continuous. The ticket
-   is a recommendation, not work. If nobody fits, it says so on the ticket rather than inventing
-   a name.
-2. **The steward green-lights it — approve, reject, or hold — and can change the recommended
-   person before anyone starts.** A standing rule ("auto-approve tickets of type X under size Y")
-   counts as approval of both the work and the named person. Until the steward confirms, the
-   ticket does not reach a contributor queue. In a voluntary organization the named person is
-   still a suggestion: the work stays claimable by anyone else.
-3. Each item names a person (or says nobody fits), states one concrete next action, and shows the
-   evidence behind it. Anything that can't do the last two isn't routed to a human at all.
-4. **If there is no steward for this ticket, the AI must propose a new mandate to the Shapers
-   immediately** — this domain, a steward if it can name one, this pot (which may be zero), this
-   review date. It does not wait for a pile of similar tickets, and it does not dump the work on
-   whoever answers fastest. The ticket stays open, labelled with the capability it needs, and
-   attaches to that proposal. Further tickets in the same gap attach to the same open mandate
-   rather than opening a second vote.
-5. The named person acts, defers, declines, or the work stays open. Declining is a first-class
-   action and is recorded — it is how the matcher learns. The steward can re-route.
-6. When they act, the AI has already drafted the artifact — the proposal text, the summary, the
-   update — so acting is editing.
-
-**On matching without ossifying roles.** Matching purely on demonstrated history is the obvious
-approach and it slowly calcifies the organization: whoever did the treasury work keeps getting the
-treasury work, nobody else ever learns it, and the org acquires a bus-factor problem it cannot see.
-The matcher needs a deliberate minority of stretch routing — to people who plausibly _could_ do
-this, not only those who already have — and should treat single-person capabilities as a risk worth
-surfacing to the steward.
-
-**On capacity: the person decides, the system only holds up a mirror.** How much someone can take
-on is theirs to declare, not ours to infer. Most of what determines it — a day job, a sick child,
-the other three things they committed to elsewhere — is invisible to the platform, so any load we
-compute from platform activity is inferred from a sliver of the truth. Worse, the obvious proxy
-(count of open items) punishes exactly the people doing slow, hard work.
-
-So capacity is **declared**, coarse, and revisable: a band or a number of concurrent commitments,
-not hours, because nobody knows their hours and asking invites timesheet thinking. Two consequences
-worth being deliberate about:
-
-- **Capacity gates flow; it does not decide fit.** Match on who is right for the work, then let
-  declared capacity govern how much reaches them. Otherwise an available mediocre fit beats a
-  stretched excellent one. If the best-fit person is full, the work waits, moves to the next
-  candidate, or stays open — it is never force-fed.
-- **Observation informs, it never overrides.** The system may say "this would be your fifth open
-  item and you said three"; it may never refuse on someone's behalf. Self-declaration is not a
-  burnout fix on its own — conscientious people over-commit, and the org must not treat "they said
-  yes" as absolution.
-
-This also sharpens Journey 3's escalation rather than weakening it. "Everyone who fits is at the
-limit they set for themselves" is a far cleaner capacity signal than any inferred-load heuristic,
-because a person stated it. Relatedly, declining should distinguish _not my thing_ from _no room
-right now_: the first is evidence about fit, the second about capacity, and they should not be
-learned from interchangeably.
-
-**What memory does:** memory supplies the interpretation ("this matters because of the commitment we
-made in March") and the profiles, mandates, and declared capacity that make matching possible; the
-activity ledger supplies the detection ("this changed").
-**Why it feels intelligent:** work reaches people instead of waiting to be discovered, and the
-organization admits when it is short-handed instead of overloading its most conscientious member.
-**How we know it works:** three numbers. Acceptance rate — below roughly a third and the channel is
-noise. Time from detection to a claimed owner. And the share of work that finds someone without
-escalation, which is the honest read on whether the org has the people it needs.
-
-> A ticket with no steward is itself the evidence for a new mandate. The AI drafts that mandate
-> for the Shapers on the first such ticket, not the third. See
-> [decision rights](../architecture/organizational-intelligence.md#8-decision-rights--what-becomes-a-proposal).
+**What memory does:** it is why the ticket is already written and why "why me" has a citation.
+**Why it feels intelligent:** they open the app, do one thing or leave. They are not a dispatcher.
+**How we know it works:** time from open to first action; share of tickets claimed vs declined;
+empty-queue days that the person trusts rather than assumes are a bug.
 
 ---
 
-## Journey 4 — The shapers keep the strategy alive
+## Journey 4 — The steward uses the app
 
-**Who:** whoever holds the Shaper grant — often including the founder, and often including people
-who are also stewards or contributors.
-**Wants:** the organization to keep pointing at the thing it exists to do, without any one of them
-becoming the person who does every next task.
+**Who:** someone accountable for a domain, with a pot and a review date.
+**Wants:** to say yes or no to work in their patch, and to keep the pot honest — not to become
+the person who does every ticket.
 
-1. They see where **stated strategy and actual behaviour have diverged** — we said this was the
-   priority, and here is where the attention and money actually went.
-2. They see which beliefs have gone **stale** (nobody has revisited this in a year) or **contested**
-   (two parts of the org are acting on incompatible assumptions).
-3. They decide the high-level correction. If it is only a belief, they update memory. If it
-   implies a new job, the AI has already drafted the mandate onto the same item — domain, steward,
-   pot, review date — so they are not asked twice. They then **pass the more specific work to the
-   matching steward**. They do not approve the implementations; the steward does, even when that
-   steward is also a Shaper.
-4. They review memory changes — strategy or domain — and approve, edit, or reject them. A steward
-   may draft; only Shapers write it into the corpus.
-5. A ticket with no steward arrives as a mandate the AI has already drafted. They decide that
-   object rather than absorbing the tickets themselves.
+They open the app. The first thing they see is **What is waiting on me?**
 
-**What memory does:** this journey is memory _maintenance_ at the strategic layer — the gardening
-that keeps the corpus small, current, and trusted.
-**Why it feels intelligent:** the organization can be wrong out loud, and strategy turns into work
-without the Shapers becoming the work.
-**How we know it works:** the memory corpus stays small enough for a person to read in an
-afternoon, and the Shaper queue is strategy, funding, and gaps — not a dump of every open ticket.
+1. **Tickets to green-light.** Each one already has a recommended contributor, a next action, and
+   evidence. They approve, reject, or hold. They can change the person. A hold needs a date or a
+   condition to resume. A standing rule ("auto-approve type X under size Y") covers both the work
+   and the name, so they are not a per-ticket bottleneck.
+2. **Until they confirm, the ticket does not reach a contributor.** After they confirm, it does.
+   They can re-route later if the person declines.
+3. **Their pot.** How much is left, what went out, whether a cosigner is sitting on a payment they
+   started. They pay from the pot; they do not ask Shapers to sign unless this pot named
+   cosigners. If the pot is large they can carve a sub-mandate — narrower job, person, amount,
+   review date — without a Shaper vote.
+4. **Review date.** How the domain is doing against what the mandate said. They do not edit
+   organizational memory here. They can draft a belief ("this risk is overstated") and send it to
+   Shapers.
+5. **What they do not see as their job:** a ticket with no steward. That is already a mandate on
+   the Shaper queue. They are not the overflow.
+
+Matching must not only pick people who have done this before. They should change the name toward
+stretch some of the time, and treat a capability only one person holds as a risk to mention at
+review.
+
+**What memory does:** it tells them why this ticket exists and whether the pot still matches the
+job.
+**Why it feels intelligent:** they are a gate, not a project manager of the whole org.
+**How we know it works:** time from ticket-in to steward call; share of standing-rule approvals;
+holds that actually resume; pot overflow that did not happen.
 
 ---
 
-## Journey 5 — The organization decides, and then learns
+## Journey 5 — The shaper uses the app
 
-**Who:** the Shapers, at a governance moment.
-**Wants:** to decide well, without being asked to approve everything.
+**Who:** whoever holds the Shaper grant. They may also be a steward or contributor; this surface
+is only the decisions that belong to Shapers.
+**Wants:** to keep strategy, money-as-pots, and memory true — without doing the work or signing
+every payment.
 
-The failure mode this journey has to avoid is approval fatigue. If every good idea becomes
-something everyone must vote on, participation collapses and the votes that matter get rubber-
-stamped alongside the ones that don't. **Most decisions must never reach a vote.** So the journey
-begins with routing, not drafting.
+They open the app. The first thing they see is **What needs a Shaper?** If the answer is nothing,
+it says so.
 
-1. **The decision is routed to a tier.** The AI proposes the lowest tier that fits, names the
-   mandate it believes already covers this, and has to argue for escalation rather than default to
-   it. See [decision rights](../architecture/organizational-intelligence.md#8-decision-rights--what-becomes-a-proposal)
-   for the test and the tiers.
-2. **Most things stop here** — done inside an existing mandate and logged, or waved through by the
-   one person who holds that envelope, or opened for a short objection window that closes in silence.
-3. **What remains goes to the Shapers** — not "the members" by default. The founder named the
-   first of them; they decide commitments of shared resources beyond an existing mandate, changes
-   to the rules, changes to who counts as a member, and changes to the steward set. The AI drafts
-   it grounded in memory, and states what it is assuming and what would make the proposal wrong.
-4. Shapers can see what the organization decided before on similar questions, and what happened as
-   a result.
-5. The decision is made by people, on-chain where it matters.
-6. **The outcome is recorded against the decision** — did it do what we expected?
-7. Later, when reality disagrees with the prediction, the AI proposes updating the belief that
-   produced it. The Shapers approve. A steward may have drafted it; they do not decide memory.
+1. **New mandates.** A ticket the AI could not place with a steward is already drafted as a
+   mandate: domain, steward if it can name one, pot, review date, optional cosigners. They
+   approve, amend, or reject. Further tickets in that gap are attached to this item, not a second
+   vote.
+2. **Pots.** The handful of top-level pots they filled: remaining, burn, review dates. They
+   refill, resize, close, or add/clear cosigners. They do not see Rafi's mobile invoices. They
+   release a payment only if they are named as a cosigner on that pot.
+3. **Memory.** Beliefs to confirm, retire, or correct — purpose, strategy, a domain claim the
+   steward drafted, an assertion the ledger does not support. They write the corpus. No one else
+   does.
+4. **Who is a Shaper.** Add or remove. This is rare and hard on purpose.
+5. **When something is actually a decision among Shapers** — a new pot, a purpose change, who is
+   a Shaper — the AI has already drafted it, named what it assumes, and shown what happened last
+   time the org decided something similar. They decide. The outcome is recorded. Later, if
+   reality disagrees, the AI proposes updating the belief; they approve that too.
+6. **They do not green-light tickets and they do not do the work** on this surface, even when the
+   same person is also steward or contributor. Those hats have their own queues.
 
-**What memory does:** step 1 depends on memory knowing the organization's mandates; step 6 is what
-turns a record into learning. Without step 6 the organization has a filing cabinet, not
-intelligence.
-**Why it feels intelligent:** the organization protects its own attention. Being asked to vote
-means something, because it happens rarely and only about things that are genuinely shared.
-**How we know it works:** two numbers. The share of votes that pass near-unanimously with no real
-discussion should be _low_ — a high rate means we are taxing everyone with decisions that belonged
-at a lower tier. And the same argument should stop recurring, with beliefs carrying a visible
-history of revision.
+Most things never reach this screen. Work inside a live mandate is the steward's. A payment
+inside a pot is the steward's. The Shaper queue staying short is the design working.
+
+**What memory does:** it is the thing they maintain, and the thing every other journey reads.
+**Why it feels intelligent:** they steer. They do not operate.
+**How we know it works:** the queue is short; pots get reviewed on their date; the same argument
+does not recur; the corpus still fits in an afternoon.
 
 ---
 

@@ -405,26 +405,26 @@ The product list of every decision and who takes it lives in
 [User Journeys — What has to be decided, and by whom](../product/user-journeys.md#what-has-to-be-decided-and-by-whom).
 The same classes, mapped onto this section's tiers:
 
-| Decision class                                                                     | Who decides                                 | Tier               |
-| ---------------------------------------------------------------------------------- | ------------------------------------------- | ------------------ |
-| Constitution at creation (first Shapers, entry/exit, first mandates, trust-ladder) | Founder, AI proposes                        | —                  |
-| High-level strategy (purpose, direction, which domains the org needs)              | Shapers                                     | 1 / 3              |
-| Add, remove, or replace a steward; create or resize a mandate                      | Shapers                                     | 3                  |
-| Change who is a Shaper, voting method, purpose, or entry/exit                      | Shapers                                     | 4                  |
-| Green-light a ticket (approve / reject / hold)                                     | Matching steward, before work starts        | 1                  |
-| Spend or commit inside an existing envelope                                        | Steward of that mandate                     | 1                  |
-| Fill, refill, enlarge, shrink, or close a top-level pot                            | Shapers                                     | 3                  |
-| Set, change, or clear cosigners on a pot                                           | Shapers, or the parent steward on a sub-pot | 1 / 3              |
-| Release a payment from a pot that names cosigners                                  | Those cosigners                             | 1                  |
-| Carve a sub-mandate from a remaining pot                                           | Steward of the parent pot                   | 1                  |
-| A payment no existing pot covers                                                   | Shapers                                     | 3                  |
-| Issue, mint, or burn tokens; space-to-space membership                             | Shapers                                     | 3                  |
-| Admit or remove a member                                                           | Whatever entry/exit method the founder set  | follows the method |
-| Memory update (strategy, purpose, or domain)                                       | Shapers                                     | 1                  |
-| Memory hygiene (unsupported assertion, contradiction)                              | Shapers                                     | 0 / 1              |
-| Purpose change, dilution, major-asset disposal                                     | Shapers **and** investor consent            | 4 + reserved       |
-| Decision that lands on the people the org serves                                   | Shapers decide; beneficiaries consulted     | 3 + heard          |
-| Claim, decline, or act on approved work; declare capacity                          | The individual                              | —                  |
+| Decision class                                                        | Who decides                                 | Tier               |
+| --------------------------------------------------------------------- | ------------------------------------------- | ------------------ |
+| Constitution at creation (first Shapers, entry/exit, first mandates)  | Founder, AI proposes                        | —                  |
+| High-level strategy (purpose, direction, which domains the org needs) | Shapers                                     | 1 / 3              |
+| Add, remove, or replace a steward; create or resize a mandate         | Shapers                                     | 3                  |
+| Change who is a Shaper, voting method, purpose, or entry/exit         | Shapers                                     | 4                  |
+| Green-light a ticket (approve / reject / hold)                        | Matching steward, before work starts        | 1                  |
+| Spend or commit inside an existing envelope                           | Steward of that mandate                     | 1                  |
+| Fill, refill, enlarge, shrink, or close a top-level pot               | Shapers                                     | 3                  |
+| Set, change, or clear cosigners on a pot                              | Shapers, or the parent steward on a sub-pot | 1 / 3              |
+| Release a payment from a pot that names cosigners                     | Those cosigners                             | 1                  |
+| Carve a sub-mandate from a remaining pot                              | Steward of the parent pot                   | 1                  |
+| A payment no existing pot covers                                      | Shapers                                     | 3                  |
+| Issue, mint, or burn tokens; space-to-space membership                | Shapers                                     | 3                  |
+| Admit or remove a member                                              | Whatever entry/exit method the founder set  | follows the method |
+| Memory update (strategy, purpose, or domain)                          | Shapers                                     | 1                  |
+| Memory hygiene (unsupported assertion, contradiction)                 | Shapers                                     | 0 / 1              |
+| Purpose change, dilution, major-asset disposal                        | Shapers **and** investor consent            | 4 + reserved       |
+| Decision that lands on the people the org serves                      | Shapers decide; beneficiaries consulted     | 3 + heard          |
+| Claim, decline, or act on approved work; declare capacity             | The individual                              | —                  |
 
 ### Mandates, not transactions
 
