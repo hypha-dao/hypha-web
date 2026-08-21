@@ -33,6 +33,27 @@ export type RefreshDiscussionsResult = {
 const SUMMARY_CONCURRENCY = 6;
 const SUMMARY_TIMEOUT_MS = 45_000;
 
+// Stable, non-parameterized failure strings returned by createSpaceDiscussionSummary /
+// withTimeout — safe to use as log-aggregation keys as-is. Anything else (DB/network errors,
+// unexpected throws) can carry high-cardinality detail, so it gets bucketed and truncated
+// instead of aggregated verbatim.
+const KNOWN_FAILURE_REASONS = new Set([
+  'Space not found',
+  'Space has no chat room',
+  'No eligible discussion rooms found',
+  'No chat messages available for summary',
+  'Failed to persist summary',
+  'Summary generation timed out',
+]);
+const FAILURE_REASON_MAX_LEN = 60;
+
+function normalizeFailureReason(rawError: string | undefined): string {
+  const reason = rawError?.trim();
+  if (!reason) return 'unknown';
+  if (KNOWN_FAILURE_REASONS.has(reason)) return reason;
+  return `other: ${reason.slice(0, FAILURE_REASON_MAX_LEN)}`;
+}
+
 async function withTimeout<T>(
   task: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,
@@ -201,7 +222,7 @@ export async function runRefreshDiscussions(
   const failureReasons = summaries
     .filter((s) => !s.ok)
     .reduce<Record<string, number>>((acc, s) => {
-      const reason = s.error ?? 'unknown';
+      const reason = normalizeFailureReason(s.error);
       acc[reason] = (acc[reason] ?? 0) + 1;
       return acc;
     }, {});
