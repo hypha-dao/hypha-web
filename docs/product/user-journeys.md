@@ -10,7 +10,8 @@ tags: [product, journeys, intelligent-org, ai]
 **This document describes the target state**: how we intend people to use Hypha once the
 intelligent organization works, not how the product behaves today. It is the product brief that
 the [Organizational Intelligence architecture](../architecture/organizational-intelligence.md)
-exists to serve. Written for the whole team — no code required.
+exists to serve. Written for the whole team — no code required. For screens and click-paths see
+[User Journeys — UI and flows](./user-journeys-ux.md).
 
 ---
 
@@ -768,6 +769,8 @@ generates governance rather than one that resolves it.
 
 ## Related
 
+- [User Journeys — UI and flows](./user-journeys-ux.md) — how someone joins, becomes a steward or
+  contributor, and what each hat opens
 - [Organizational Intelligence — Architecture](../architecture/organizational-intelligence.md) —
   how memory is maintained, retrieved, and bounded to serve these journeys
 - Space Intelligence & Documentation spec — the memory substrate; arrives with
