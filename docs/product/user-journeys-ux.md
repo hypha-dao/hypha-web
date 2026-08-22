@@ -328,8 +328,8 @@ mandate never appears on their steward home. The switch is how we keep "Nothing 
 
 ## Worked examples
 
-Two runs of the same space. The first is founding through the first piece of work. The second is
-six weeks later, when something has no steward.
+Three runs. A and B are River Commons, start to finish. C is a different space, written only as
+**who is who** and **who sees what** at each moment.
 
 ---
 
@@ -494,6 +494,120 @@ Maya's **What needs a Shaper?** now has **To release: 400 hall deposit, Weekday 
 If Rafi had picked a different member to collect keys, that member would have been invited as a
 **Weekday hall contributor** and seen one card on **What needs me?** — collect keys, draft
 already written. Sam would not see it. Stall contributors would not see it.
+
+---
+
+### Example C — North Workshop, who is who and who sees what
+
+A bike-repair workshop. Five people. Read the cast first; then each moment is only a table of
+screens.
+
+#### Who is who
+
+| Person  | Hats they hold                                         | Home they open first       | They do not see                          |
+| ------- | ------------------------------------------------------ | -------------------------- | ---------------------------------------- |
+| **Ana** | Founder, **Shaper** (not a steward, not a contributor) | **What needs a Shaper?**   | Tickets. Contributor queues.             |
+| **Ben** | **Steward** of Workshop floor                          | **What is waiting on me?** | Shaper mandate cards. Other domains.     |
+| **Cat** | **Contributor** on Workshop floor                      | **What needs me?**         | Green-light buttons. Pots. Memory diffs. |
+| **Dan** | **Member** only                                        | **Your space**             | Any work queue.                          |
+| **Eli** | **Investor** — put in 2,000, no hat                    | **Overview**               | Join as a member, tickets, green-lights. |
+
+One mandate exists: **Workshop floor** — Ben — pot 1,500 — review 1 May — no cosigner.
+
+Ana was offered Workshop floor at founding and **declined** ("I shape, I don't run the floor").
+Ben accepted. Cat was invited by Ben after she joined. Dan joined yesterday. Eli has a link, not
+a membership.
+
+#### Moment 1 — Tuesday morning, nothing new
+
+| Person | Their screen says                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------------------- |
+| Ana    | **What needs a Shaper?** — "Nothing needs a Shaper." Secondary nav: pots (Workshop floor 1,100 left), memory. |
+| Ben    | **What is waiting on me?** — 0 tickets. Pot 1,100 / 1,500.                                                    |
+| Cat    | **What needs me?** — "Nothing needs you." One in-progress: "Label the loaner tools" (started Monday).         |
+| Dan    | **Your space** — purpose, people, one line: "A steward can invite you to work." No queue.                     |
+| Eli    | **Overview** — said / done / pots / changed. Watch: none yet.                                                 |
+
+#### Moment 2 — a broken stand is reported
+
+Someone writes in chat that the repair stand is unsafe. The AI creates a ticket: **Replace the
+repair stand.** Recommended contributor: Cat. Steward: Ben.
+
+| Person | Their screen now                                                                                                          |
+| ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Ana    | **Unchanged.** This ticket has a steward. She gets no card.                                                               |
+| Ben    | **What is waiting on me?** — 1 ticket: Replace the repair stand · recommended Cat · draft: buy stand, 180, from this pot. |
+| Cat    | **Unchanged.** The ticket has not been green-lit. She must not see it yet.                                                |
+| Dan    | **Unchanged.**                                                                                                            |
+| Eli    | **Unchanged.** The payment has not happened.                                                                              |
+
+Ben opens the ticket. He **Approves** Cat (already a contributor — no extra invite).
+
+| Person | Their screen after Ben approves                                                                                                                                |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ana    | Still nothing.                                                                                                                                                 |
+| Ben    | Ticket left the waiting list. Pot still 1,100 (not paid yet).                                                                                                  |
+| Cat    | **What needs me?** — one card on top: Replace the repair stand. Why you: you did the tool labels. Next: order this stand (link in the draft). Approved by Ben. |
+| Dan    | Still **Your space**. He is not in this domain.                                                                                                                |
+| Eli    | Still no payment to show.                                                                                                                                      |
+
+Cat taps **Start**, orders, marks **Done**. Ben pays 180 from the pot. No cosigner, so it just
+moves.
+
+| Person | Their screen after it's done                                                                     |
+| ------ | ------------------------------------------------------------------------------------------------ |
+| Ana    | Still "Nothing needs a Shaper." She can open the ledger if she wants. She is not asked to sign.  |
+| Ben    | Pot 920 / 1,500. Ticket completed.                                                               |
+| Cat    | **What needs me?** — "Nothing needs you."                                                        |
+| Dan    | **Your space.** Still no queue.                                                                  |
+| Eli    | **Overview** — pot Workshop floor now 920. He can set a watch. He cannot approve the next stand. |
+
+#### Moment 3 — Dan is interested; Ben invites him
+
+Dan taps **I'm interested** on an open line on **Your space**: "evening shift needs a second pair
+of hands." He is still only a member.
+
+| Person | Their screen                                                                                             |
+| ------ | -------------------------------------------------------------------------------------------------------- |
+| Ana    | Nothing. Interest is not a Shaper decision.                                                              |
+| Ben    | On that ticket: "Dan (member) said they are interested." Button: **Invite to contribute** — not Approve. |
+| Cat    | Nothing. This is not her ticket.                                                                         |
+| Dan    | **Your space** — "You said you were interested in evening shift." Waiting.                               |
+| Eli    | Nothing.                                                                                                 |
+
+Ben taps **Invite to contribute**. Dan gets **Ben is asking you to contribute on Workshop floor**,
+with the evening-shift ticket underneath.
+
+Dan **Accepts**.
+
+| Person | Their screen                                                                                              |
+| ------ | --------------------------------------------------------------------------------------------------------- |
+| Dan    | **What needs me?** — first time this home exists for him. One card: evening shift, draft already written. |
+| Ben    | Ticket left waiting; Dan is now a contributor _on Workshop floor only_.                                   |
+| Cat    | Still "Nothing needs you." Dan's ticket is not on her list.                                               |
+| Ana    | Still nothing. She did not make Dan a contributor.                                                        |
+| Eli    | Nothing.                                                                                                  |
+
+#### Moment 4 — a thing with no steward
+
+A neighbour asks to borrow the workshop for a kids' Saturday. No mandate covers "lend the space."
+
+| Person | Their screen                                                                                                                          |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Ana    | **What needs a Shaper?** — one card: **Mandate needed: Lending the space.** Attached ticket: kids' Saturday. Suggested steward: open. |
+| Ben    | **Unchanged.** This is not Workshop floor (repairing bikes). It is not dumped on him.                                                 |
+| Cat    | **Unchanged.**                                                                                                                        |
+| Dan    | **Unchanged.**                                                                                                                        |
+| Eli    | **Unchanged.**                                                                                                                        |
+
+Ana offers the mandate to Ben. Ben **Declines** ("that's not the floor"). Card returns to Ana.
+She leaves it **open**. The public brief now shows "Lending the space — needs someone." Dan does
+not become that steward unless she **Offers** and he **Accepts**.
+
+---
+
+That is the whole point of the three homes: Ana never sees Cat's ticket. Cat never sees Ana's
+mandate card. Dan has no queue until Ben invites him. Eli never gets a green-light button.
 
 ---
 
