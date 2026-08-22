@@ -78,6 +78,9 @@ invited onto — not an empty contributor queue. The invite is how they get a qu
 
 **If they quit mid-conversation:** draft space, resume the same thread.
 
+A full run of this conversation, the cards she approves, and what Sam and Lea then see is
+[Example A](#example-a--river-commons-from-a-conversation-to-a-ticket).
+
 ---
 
 ## 2. Someone joins — entry is open
@@ -320,6 +323,177 @@ Sam is a Shaper, the community steward, and a contributor on product.
 
 A community ticket they should green-light never appears on their contributor home. A Shaper
 mandate never appears on their steward home. The switch is how we keep "Nothing needs you" honest.
+
+---
+
+## Worked examples
+
+Two runs of the same space. The first is founding through the first piece of work. The second is
+six weeks later, when something has no steward.
+
+---
+
+### Example A — River Commons, from a conversation to a ticket
+
+Maya is starting a neighborhood food hub. She taps **Create a space**.
+
+#### What she says (the input)
+
+The AI asks; she answers in her words. This is the whole of the founding interview that matters:
+
+| The AI asks                                                | Maya says                                                                                           |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| What is this for?                                          | A place our street can buy food from people we know, not a supermarket.                             |
+| Who is it for?                                             | Neighbours, and the three growers we already buy from.                                              |
+| What will you not do?                                      | We will not run a restaurant. We will not take money that says we have to carry brands.             |
+| What would "working" look like in six months?              | Open two days a week, five growers selling, enough in the pot to pay the hall without a whip-round. |
+| Who is already doing work?                                 | Sam already runs the Saturday stall. I do the money and the hall booking.                           |
+| Who do you trust to decide if you disappeared for a month? | Sam. And me.                                                                                        |
+| Who would you not hand the treasury to yet?                | Sam is great with people. I still want a second pair of eyes on the money.                          |
+| What has to happen in the next 90 days?                    | Keep Saturday going. Find a hall we can use in the week. Write down how we pay growers.             |
+| What is already blocked?                                   | Weekday hall — I have no one for that.                                                              |
+| If you could spend tomorrow, on what?                      | Hall deposit. A simple fridge. Paying Sam something so Saturday is not a gift.                      |
+| Is there a treasury? Who can move it?                      | About 4,200 from a small grant. My account, for now.                                                |
+| Any pot that needs a second signature?                     | The money one, yes.                                                                                 |
+| How does someone join? Who puts money in?                  | Anyone on the street can join. The grant is one-off; neighbours can put in later. They don't vote.  |
+
+She skips nothing important. She does not mention "legal" or "comms".
+
+#### What the review screen shows (she approves or rejects)
+
+**Memory — she writes all four**
+
+- Purpose: a street food hub from people we know, not a supermarket.
+- For: neighbours and the three growers.
+- Will not: restaurant; brand money.
+- Working, six months: two days a week, five growers, hall paid without a whip-round.
+
+**Objectives, 90 days — she writes two, rejects one**
+
+| AI drafted                                       | Maya                                                |
+| ------------------------------------------------ | --------------------------------------------------- |
+| Saturday stall stays open every week             | **Write**                                           |
+| Weekday hall agreed and first mid-week day tried | **Write**                                           |
+| A written rule for how growers are paid          | **Write**                                           |
+| A comms steward and a newsletter                 | **Dismiss** — she never said this. Card disappears. |
+
+**Shapers — she edits**
+
+| AI drafted | Maya                                     |
+| ---------- | ---------------------------------------- |
+| Maya, Sam  | She leaves both. Checks "I am a Shaper". |
+
+**Mandates — she offers two, leaves one open, refuses one**
+
+| AI drafted                                                          | Maya                                       |
+| ------------------------------------------------------------------- | ------------------------------------------ |
+| **Stall** — Sam — pot 1,200 — review 1 June — no cosigner           | **Offer to Sam**                           |
+| **Money and hall** — Maya — pot 3,000 — review 1 June — Sam cosigns | **Offer to myself** — she keeps the cosign |
+| **Weekday hall** — open, no steward — pot 0 — review 1 June         | **Keep open** — no name to offer           |
+| **Legal / contracts** — open — pot 400                              | **Reject** — not a 90-day job. Card gone.  |
+
+**Door:** _Anyone can join._
+
+She taps **Create**.
+
+#### What Sam sees (becoming steward, then the queue)
+
+Sam is not in the space yet. He gets **You are being asked to hold Stall** — pot 1,200, review
+1 June, Shapers Maya and Sam, "you green-light stall work and spend this pot; you do not write
+what the hub believes."
+
+He taps **Accept**. Next open is **What is waiting on me?**
+
+Two tickets the AI already made from the 90-day jobs, sitting under Stall:
+
+1. **Pay Sam for four Saturdays** — recommended: Maya (she holds money). Draft: a payment of 400
+   from the Stall pot, four lines of dates. Why Maya: she moves money today.
+2. **Write the Saturday setup so someone else could run it** — recommended: Sam. Draft: a one-page
+   setup (open, cash box, grower list). Why Sam: he already runs it.
+
+Sam opens ticket 1. He **changes person** off Maya — he does not want her paying herself through
+his pot — and picks _open_ for now. He **Holds** ticket 1 until "Maya has a second signatory on
+the grant account."
+
+He opens ticket 2. Recommended is him. He is the steward, not a contributor on Stall yet. He
+**Approves** and **Invites himself to contribute** (same person, two hats). He accepts the invite
+on the next screen.
+
+#### What is passed to a contributor
+
+Lea joins from the public page (open entry). She is a **member**. **Your space** shows the open
+weekday-hall job and "you can be invited to work."
+
+A week later Sam has a new ticket: **Find two neighbours who can cover a Saturday.** Recommended:
+Lea (she joined, she said she can host). She is only a member, so Sam sees **Invite to contribute**
+not Approve-and-send.
+
+Lea gets **Sam is asking you to contribute on Stall.** The ticket is underneath, draft already
+written: a short message she can send on the street chat, three names as placeholders.
+
+She taps **Accept**. **What needs me?** now has one card:
+
+> Find two neighbours who can cover a Saturday.
+> Why you: you just joined and said you can host.
+> Next: send this message, fill in two names.
+> Approved by Sam.
+
+She taps **Start**, edits the message, marks **Done**. Sam sees the ticket completed. Maya, as
+Shaper, sees nothing — this was inside the Stall pot.
+
+Maya still has **What needs a Shaper?** with one card: **Weekday hall — open, no steward.** No
+tickets have been dumped on her.
+
+---
+
+### Example B — six weeks later, something has no owner
+
+Saturday is running. The weekday hall is still open. A grower asks, in chat, "who signs the hall
+licence?"
+
+The AI creates a ticket: **Sign the weekday hall licence.** No mandate covers "licences." It does
+**not** put this on Sam's stall queue and it does **not** put it on Maya's money queue.
+
+#### What Shapers see
+
+Maya opens **What needs a Shaper?** One new card:
+
+> **Mandate needed: Hall licence / weekday hall**
+> Attached ticket: Sign the weekday hall licence.
+> Draft: domain Weekday hall · steward _open_ · pot 800 (hall deposit, from leftover grant) ·
+> review 1 August · cosigner Maya (she asked for a second pair of eyes on money).
+> Suggested steward: none of the members have done this. Lea said she can host — stretch.
+
+Maya **amends**: steward Lea, pot 600 not 800, keeps herself as cosigner. **Offer to Lea.**
+
+Lea gets **You are being asked to hold Weekday hall.** She **Declines** — "I can host a Saturday,
+I cannot sign a licence." The card returns to Maya with that note. The ticket stays attached.
+
+Maya offers the same mandate, no steward, **Keep open.** The public brief now shows "Weekday hall
+needs someone who can sign a simple licence." A new neighbour, Rafi, requests to join and points
+at that line. Maya accepts the join (she is a Shaper). He is a member.
+
+She offers the mandate to Rafi. He **Accepts.**
+
+#### What the new steward sees
+
+Rafi's **What is waiting on me?**
+
+- Pot: 600 / 600, review 1 August, cosigner Maya.
+- Ticket: **Sign the weekday hall licence** — recommended: Rafi. Draft: the licence, the hall
+  address, the date, a payment of 400 for the deposit.
+
+He **Approves** (himself as contributor — invite + accept in one). He prepares the payment. Status:
+**Waiting for release.**
+
+#### What Maya sees as cosigner, and what a contributor would see
+
+Maya's **What needs a Shaper?** now has **To release: 400 hall deposit, Weekday hall, Rafi.** She
+**Releases.** Money moves.
+
+If Rafi had picked a different member to collect keys, that member would have been invited as a
+**Weekday hall contributor** and seen one card on **What needs me?** — collect keys, draft
+already written. Sam would not see it. Stall contributors would not see it.
 
 ---
 
