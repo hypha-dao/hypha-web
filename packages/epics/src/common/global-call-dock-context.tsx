@@ -483,6 +483,50 @@ function useGlobalCallDockValue() {
     };
   }, []);
 
+  /**
+   * The actual join, once all "are we allowed to do this" guards have already passed — shared by
+   * `startAudioForRoom`/`startVideoForRoom` (fresh calls, guards run just above) and
+   * `firePendingRoomSwitchJoin` (a room switch the user already confirmed). The switch path must
+   * NOT re-run `getRemoteGroupCallHoldRoomId()`: that reflects the *other* tab's last heartbeat,
+   * which still reads as "held" for several real seconds after that tab starts leaving (no
+   * explicit ack — only a `release` broadcast once its own `leave()` fully finishes). Re-checking
+   * it immediately after sending `please-leave` re-triggers the same confirm state instead of
+   * proceeding, silently looping back into "another tab holds a call" instead of actually joining.
+   */
+  const joinRoomAfterGuardsPass = React.useCallback(
+    (
+      kind: 'audio' | 'video',
+      targetRoomId: string,
+      targetSpaceSlug: string | null,
+      threadRootEventId: string | undefined,
+      targetAuthToken: string | null,
+      launchContext: CallLaunchContext | null,
+    ) => {
+      userDismissedCallRef.current = false;
+      clearCallDismissedByUser();
+      callLaunchContextRef.current =
+        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
+          ? launchContext
+          : threadRootEventId?.trim()
+          ? { threadRootEventId: threadRootEventId.trim() }
+          : null;
+      if (activeRoomId !== targetRoomId) {
+        setBoundRoomId(targetRoomId);
+        setBoundSpaceSlug(targetSpaceSlug);
+        setBoundAuthToken(targetAuthToken);
+        setActiveRoomId(targetRoomId);
+        setActiveSpaceSlug(targetSpaceSlug);
+        setActiveAuthToken(targetAuthToken);
+        setPendingJoin({ kind, roomId: targetRoomId, threadRootEventId });
+        return;
+      }
+      void (kind === 'audio'
+        ? call.enterAudio(threadRootEventId)
+        : call.enterVideo(threadRootEventId));
+    },
+    [activeRoomId, call],
+  );
+
   const startAudioForRoom = React.useCallback(
     async (
       roomId: string | null | undefined,
@@ -526,31 +570,16 @@ function useGlobalCallDockValue() {
         });
         return;
       }
-      userDismissedCallRef.current = false;
-      clearCallDismissedByUser();
-      callLaunchContextRef.current =
-        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
-          ? launchContext
-          : threadRootEventId?.trim()
-          ? { threadRootEventId: threadRootEventId.trim() }
-          : null;
-      if (activeRoomId !== targetRoomId) {
-        setBoundRoomId(targetRoomId);
-        setBoundSpaceSlug(targetSpaceSlug);
-        setBoundAuthToken(targetAuthToken);
-        setActiveRoomId(targetRoomId);
-        setActiveSpaceSlug(targetSpaceSlug);
-        setActiveAuthToken(targetAuthToken);
-        setPendingJoin({
-          kind: 'audio',
-          roomId: targetRoomId,
-          threadRootEventId,
-        });
-        return;
-      }
-      await call.enterAudio(threadRootEventId);
+      joinRoomAfterGuardsPass(
+        'audio',
+        targetRoomId,
+        targetSpaceSlug,
+        threadRootEventId,
+        targetAuthToken,
+        launchContext ?? null,
+      );
     },
-    [activeRoomId, boundAuthToken, call],
+    [activeRoomId, boundAuthToken, joinRoomAfterGuardsPass],
   );
 
   const startVideoForRoom = React.useCallback(
@@ -594,31 +623,16 @@ function useGlobalCallDockValue() {
         });
         return;
       }
-      userDismissedCallRef.current = false;
-      clearCallDismissedByUser();
-      callLaunchContextRef.current =
-        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
-          ? launchContext
-          : threadRootEventId?.trim()
-          ? { threadRootEventId: threadRootEventId.trim() }
-          : null;
-      if (activeRoomId !== targetRoomId) {
-        setBoundRoomId(targetRoomId);
-        setBoundSpaceSlug(targetSpaceSlug);
-        setBoundAuthToken(targetAuthToken);
-        setActiveRoomId(targetRoomId);
-        setActiveSpaceSlug(targetSpaceSlug);
-        setActiveAuthToken(targetAuthToken);
-        setPendingJoin({
-          kind: 'video',
-          roomId: targetRoomId,
-          threadRootEventId,
-        });
-        return;
-      }
-      await call.enterVideo(threadRootEventId);
+      joinRoomAfterGuardsPass(
+        'video',
+        targetRoomId,
+        targetSpaceSlug,
+        threadRootEventId,
+        targetAuthToken,
+        launchContext ?? null,
+      );
     },
-    [activeRoomId, boundAuthToken, call],
+    [activeRoomId, boundAuthToken, joinRoomAfterGuardsPass],
   );
 
   /**
@@ -824,55 +838,49 @@ function useGlobalCallDockValue() {
     } catch {
       setPendingRoomSwitchJoin((prev) => (prev === pending ? null : prev));
     }
-  }, [pendingRoomSwitchConfirm, leaveCall]);
+  }, [pendingRoomSwitchConfirm, leaveCall, activeRoomId]);
 
   const cancelRoomSwitch = React.useCallback(() => {
     setPendingRoomSwitchConfirm(null);
   }, []);
 
+  const firePendingRoomSwitchJoin = React.useCallback(
+    (pending: PendingRoomSwitchConfirm) => {
+      setPendingRoomSwitchJoin((prev) => (prev === pending ? null : prev));
+      if (pending.mode === 'refresh') {
+        void refreshRoomCall(
+          pending.kind,
+          pending.targetRoomId,
+          pending.targetSpaceSlug,
+          pending.threadRootEventId,
+          pending.targetAuthToken,
+          pending.launchContext,
+        );
+      } else {
+        /** Deliberately `joinRoomAfterGuardsPass`, not `startAudioForRoom`/`startVideoForRoom` —
+         * see that function's doc comment for why re-running the pin/remote-hold guards here
+         * caused the "sometimes doesn't start" bug. */
+        joinRoomAfterGuardsPass(
+          pending.kind,
+          pending.targetRoomId,
+          pending.targetSpaceSlug,
+          pending.threadRootEventId,
+          pending.targetAuthToken,
+          pending.launchContext,
+        );
+      }
+    },
+    [refreshRoomCall, joinRoomAfterGuardsPass],
+  );
+
   React.useEffect(() => {
     if (!pendingRoomSwitchJoin) return;
-    if (
+    const blocked =
       activeRoomId?.trim() &&
-      activeRoomId.trim() !== pendingRoomSwitchJoin.targetRoomId
-    ) {
-      return;
-    }
-    const pending = pendingRoomSwitchJoin;
-    setPendingRoomSwitchJoin(null);
-    if (pending.mode === 'refresh') {
-      void refreshRoomCall(
-        pending.kind,
-        pending.targetRoomId,
-        pending.targetSpaceSlug,
-        pending.threadRootEventId,
-        pending.targetAuthToken,
-        pending.launchContext,
-      );
-    } else if (pending.kind === 'audio') {
-      void startAudioForRoom(
-        pending.targetRoomId,
-        pending.targetSpaceSlug,
-        pending.threadRootEventId,
-        pending.targetAuthToken,
-        pending.launchContext,
-      );
-    } else {
-      void startVideoForRoom(
-        pending.targetRoomId,
-        pending.targetSpaceSlug,
-        pending.threadRootEventId,
-        pending.targetAuthToken,
-        pending.launchContext,
-      );
-    }
-  }, [
-    pendingRoomSwitchJoin,
-    activeRoomId,
-    startAudioForRoom,
-    startVideoForRoom,
-    refreshRoomCall,
-  ]);
+      activeRoomId.trim() !== pendingRoomSwitchJoin.targetRoomId;
+    if (blocked) return;
+    firePendingRoomSwitchJoin(pendingRoomSwitchJoin);
+  }, [pendingRoomSwitchJoin, activeRoomId, firePendingRoomSwitchJoin]);
 
   const showFloatingDock = inSession || call.recordingStatus === 'uploading';
   const holdsMatrixSyncForCall =
@@ -919,6 +927,10 @@ function useGlobalCallDockValue() {
     pendingRoomSwitchConfirm,
     confirmRoomSwitch,
     cancelRoomSwitch,
+    /** #2456: true from the confirm click until the actual leave-then-join for that switch has
+     * fired — the confirm dialog stays open (busy, buttons disabled) through this window instead
+     * of vanishing the instant you click, with nothing visible happening until the join lands. */
+    isRoomSwitchPending: Boolean(pendingRoomSwitchJoin),
     refreshCall,
     pendingRefreshDeviceConfirm,
     confirmRefreshDevice,

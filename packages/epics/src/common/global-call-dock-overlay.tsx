@@ -526,6 +526,7 @@ export function GlobalCallDockOverlay({
     pendingRoomSwitchConfirm,
     confirmRoomSwitch,
     cancelRoomSwitch,
+    isRoomSwitchPending,
     pendingRefreshDeviceConfirm,
     confirmRefreshDevice,
     cancelRefreshDevice,
@@ -1132,7 +1133,8 @@ export function GlobalCallDockOverlay({
 
   const callSwitchConfirmDialog = (
     <HumanChatPanelCallSwitchConfirmDialog
-      open={Boolean(pendingRoomSwitchConfirm)}
+      open={Boolean(pendingRoomSwitchConfirm) || isRoomSwitchPending}
+      busy={isRoomSwitchPending}
       onConfirm={() => {
         void confirmRoomSwitch();
       }}
