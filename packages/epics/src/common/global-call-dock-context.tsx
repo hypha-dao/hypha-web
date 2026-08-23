@@ -898,7 +898,20 @@ function useGlobalCallDockValue() {
     const blocked =
       activeRoomId?.trim() &&
       activeRoomId.trim() !== pendingRoomSwitchJoin.targetRoomId;
-    if (blocked) return;
+    if (blocked) {
+      /** Last-resort safety net, not the fix for anything: the real reliability fix is
+       * `joinRoomAfterGuardsPass` bypassing the stale remote-hold re-check above. This timer
+       * only exists so the confirm dialog can never get stuck busy forever if `activeRoomId`
+       * genuinely never converges to the target room (an edge case we haven't observed, not a
+       * known failure mode) — it gives up and releases the dialog rather than guessing the join
+       * succeeded, so the user can see nothing happened and retry. */
+      const releaseTimer = window.setTimeout(() => {
+        setPendingRoomSwitchJoin((prev) =>
+          prev === pendingRoomSwitchJoin ? null : prev,
+        );
+      }, 15_000);
+      return () => window.clearTimeout(releaseTimer);
+    }
     firePendingRoomSwitchJoin(pendingRoomSwitchJoin);
   }, [pendingRoomSwitchJoin, activeRoomId, firePendingRoomSwitchJoin]);
 
