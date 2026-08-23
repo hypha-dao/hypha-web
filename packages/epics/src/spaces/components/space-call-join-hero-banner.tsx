@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useJwt, useMatrix } from '@hypha-platform/core/client';
+import {
+  requestRemoteGroupCallLeave,
+  useJwt,
+  useMatrix,
+} from '@hypha-platform/core/client';
 import { HumanChatPanelCallJoinStrip } from '../../common/human-chat-panel/human-chat-panel-call-join-strip';
 import { useCallMembershipRegistry } from '../../common/human-chat-panel/use-call-membership-registry';
 import { useGlobalCallDock } from '../../common/global-call-dock-context';
@@ -279,6 +283,7 @@ export function SpaceCallJoinHeroBanner({
       onJoinAudio={handleJoinAudio}
       onJoinVideo={handleJoinVideo}
       isRefresh={selfStaleCallPresence}
+      onHangupElsewhere={() => requestRemoteGroupCallLeave()}
     />
   );
 }

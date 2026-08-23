@@ -82,7 +82,11 @@ export function HumanChatPanelCallJoinStrip({
           />
         ) : null}
         <HumanChatPanelInCallStatusRow
-          participantCount={deviceCount}
+          /** #2456: `deviceCount` here is others-only (unlike the connected tab's
+           * `participantCount`, which is LiveKit's raw self-inclusive roster count) — add 1 so
+           * both places count the same way ("N members" including yourself) instead of showing
+           * different numbers for the same call depending on which tab you're looking from. */
+          participantCount={deviceCount + 1}
           othersInRoomCallCount={othersInRoomCallCount}
           disabled={disabled}
           busy={busy}
