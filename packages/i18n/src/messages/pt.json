@@ -2523,6 +2523,10 @@
     "callJoinWithVideo": "Entrar na chamada do espaço com câmara e microfone",
     "callJoinWithAudioShort": "Entrar (áudio)",
     "callJoinWithVideoShort": "Entrar (vídeo)",
+    "callRefreshWithAudio": "Reconectar a esta chamada com microfone",
+    "callRefreshWithVideo": "Reconectar a esta chamada com câmara e microfone",
+    "callRefreshWithAudioShort": "Reconectar áudio",
+    "callRefreshWithVideoShort": "Reconectar vídeo",
     "callStartWithAudio": "Iniciar voz nesta sessão",
     "callStartWithVideo": "Iniciar vídeo nesta sessão",
     "callStartWithAudioShort": "Iniciar áudio",
@@ -3153,7 +3157,11 @@
     "callSwitchConfirmTitle": "Você está em outra chamada",
     "callSwitchConfirmBody": "Você está atualmente em outra chamada. Sair dela e entrar nesta em vez disso?",
     "callSwitchConfirmLeaveAndJoin": "Sair e entrar",
-    "callSwitchConfirmCancel": "Cancelar"
+    "callSwitchConfirmCancel": "Cancelar",
+    "callRefreshConfirmTitle": "Você está numa chamada noutro dispositivo",
+    "callRefreshConfirmBody": "Mover esta chamada para aqui?",
+    "callRefreshConfirmMoveHere": "Mover para aqui",
+    "callRefreshConfirmCancel": "Cancelar"
   },
   "SpaceLocation": {
     "sectionTitle": "Localização no mapa",

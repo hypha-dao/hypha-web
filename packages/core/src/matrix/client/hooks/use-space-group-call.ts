@@ -1796,6 +1796,16 @@ export function useSpaceGroupCall(
         }
       }
 
+      /** The eviction fetch above can await up to 10s. If `runCleanup()` fired during that
+       * window (user left, component unmounted), `joinEpochRef` has already moved on — bail out
+       * here instead of continuing to publish a MatrixRTC membership / open a LiveKit connection
+       * for an already-abandoned join. */
+      if (joinEpoch !== joinEpochRef.current) {
+        isJoiningRef.current = false;
+        abortStaleJoinAttempt(setCallState);
+        return;
+      }
+
       let enableCamera = kind === 'video';
       if (kind === 'video') {
         if (await isLocalCameraPermissionDenied()) {

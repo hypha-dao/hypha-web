@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-  getRemoteGroupCallHoldRoomId,
+  getRemoteGroupCallHold,
   isRemoteGroupCallHoldActive,
   requestRemoteGroupCallLeave,
   setGroupCallSessionActive,
@@ -337,8 +337,17 @@ function useGlobalCallDockValue() {
     const snapshot = readCallResumeSnapshot();
     if (!snapshot) return;
     /** Avoid every tab of this browser auto-resuming the same call simultaneously — skip if
-     * another tab already holds (or is about to hold) this room's call. */
-    if (getRemoteGroupCallHoldRoomId() === snapshot.roomId) return;
+     * another tab already holds (or is about to hold) this room's call. A hold with `roomId:
+     * null` means the holder hasn't reported its room yet (mid-`restoreInProgressRef`) — treat
+     * that as ambiguous-but-risky and skip too, rather than risking two tabs auto-resuming the
+     * same call. */
+    const remoteHold = getRemoteGroupCallHold();
+    if (
+      remoteHold &&
+      (remoteHold.roomId === null || remoteHold.roomId === snapshot.roomId)
+    ) {
+      return;
+    }
     const attemptKey = `${snapshot.roomId}:${snapshot.callKind}:${snapshot.updatedAt}`;
     if (resumeAttemptKeyRef.current === attemptKey) return;
     resumeAttemptKeyRef.current = attemptKey;
@@ -487,7 +496,7 @@ function useGlobalCallDockValue() {
    * The actual join, once all "are we allowed to do this" guards have already passed — shared by
    * `startAudioForRoom`/`startVideoForRoom` (fresh calls, guards run just above) and
    * `firePendingRoomSwitchJoin` (a room switch the user already confirmed). The switch path must
-   * NOT re-run `getRemoteGroupCallHoldRoomId()`: that reflects the *other* tab's last heartbeat,
+   * NOT re-run `getRemoteGroupCallHold()`: that reflects the *other* tab's last heartbeat,
    * which still reads as "held" for several real seconds after that tab starts leaving (no
    * explicit ack — only a `release` broadcast once its own `leave()` fully finishes). Re-checking
    * it immediately after sending `please-leave` re-triggers the same confirm state instead of
@@ -556,11 +565,11 @@ function useGlobalCallDockValue() {
       }
       /** #2456 D2d: no local session pinning us, but another tab of this browser holds one
        * in a different room. */
-      const remoteHoldRoomId = getRemoteGroupCallHoldRoomId();
-      if (remoteHoldRoomId && remoteHoldRoomId !== targetRoomId) {
+      const remoteHold = getRemoteGroupCallHold();
+      if (remoteHold && remoteHold.roomId !== targetRoomId) {
         setPendingRoomSwitchConfirm({
           kind: 'audio',
-          fromRoomId: remoteHoldRoomId,
+          fromRoomId: remoteHold.roomId ?? '',
           targetRoomId,
           targetSpaceSlug,
           targetAuthToken,
@@ -609,11 +618,11 @@ function useGlobalCallDockValue() {
         });
         return;
       }
-      const remoteHoldRoomId = getRemoteGroupCallHoldRoomId();
-      if (remoteHoldRoomId && remoteHoldRoomId !== targetRoomId) {
+      const remoteHold = getRemoteGroupCallHold();
+      if (remoteHold && remoteHold.roomId !== targetRoomId) {
         setPendingRoomSwitchConfirm({
           kind: 'video',
-          fromRoomId: remoteHoldRoomId,
+          fromRoomId: remoteHold.roomId ?? '',
           targetRoomId,
           targetSpaceSlug,
           targetAuthToken,
@@ -670,12 +679,12 @@ function useGlobalCallDockValue() {
         });
         return;
       }
-      const remoteHoldRoomId = getRemoteGroupCallHoldRoomId();
-      if (remoteHoldRoomId && remoteHoldRoomId !== targetRoomId) {
+      const remoteHold = getRemoteGroupCallHold();
+      if (remoteHold && remoteHold.roomId !== targetRoomId) {
         setPendingRoomSwitchConfirm({
           kind,
           mode: 'refresh',
-          fromRoomId: remoteHoldRoomId,
+          fromRoomId: remoteHold.roomId ?? '',
           targetRoomId,
           targetSpaceSlug,
           targetAuthToken,
@@ -792,22 +801,28 @@ function useGlobalCallDockValue() {
     setPendingRefreshDeviceConfirm(null);
   }, []);
 
-  const leaveCall = React.useCallback(async () => {
-    const dismissedRoomId =
-      activeRoomId?.trim() ||
-      callSessionRoomIdRef.current?.trim() ||
-      boundRoomId?.trim() ||
-      null;
-    userDismissedCallRef.current = true;
-    markCallDismissedByUser(dismissedRoomId);
-    clearCallResumeSnapshot();
-    resumeAttemptAtRef.current = null;
-    resumeAttemptKeyRef.current = null;
-    lastPersistedResumeSignatureRef.current = null;
-    restoreInProgressRef.current = false;
-    setPendingJoin(null);
-    await call.leave();
-  }, [activeRoomId, boundRoomId, call]);
+  const leaveCall = React.useCallback(
+    async (options?: { markDismissed?: boolean }) => {
+      const markDismissed = options?.markDismissed ?? true;
+      if (markDismissed) {
+        const dismissedRoomId =
+          activeRoomId?.trim() ||
+          callSessionRoomIdRef.current?.trim() ||
+          boundRoomId?.trim() ||
+          null;
+        userDismissedCallRef.current = true;
+        markCallDismissedByUser(dismissedRoomId);
+      }
+      clearCallResumeSnapshot();
+      resumeAttemptAtRef.current = null;
+      resumeAttemptKeyRef.current = null;
+      lastPersistedResumeSignatureRef.current = null;
+      restoreInProgressRef.current = false;
+      setPendingJoin(null);
+      await call.leave();
+    },
+    [activeRoomId, boundRoomId, call],
+  );
 
   /**
    * #2456 D2 scenario 0's "Leave & Join" confirm action. `activeRoomId` only clears via the
@@ -842,6 +857,11 @@ function useGlobalCallDockValue() {
 
   const cancelRoomSwitch = React.useCallback(() => {
     setPendingRoomSwitchConfirm(null);
+    /** Defensive: if a pending switch is somehow still set (e.g. the crossTab path is waiting on
+     * `activeRoomId` to converge and never does), don't leave it dangling — this doesn't
+     * currently fire from the UI since the dialog disables Cancel while `pendingRoomSwitchJoin`
+     * is set, but keeps this callback correct if that changes. */
+    setPendingRoomSwitchJoin(null);
   }, []);
 
   const firePendingRoomSwitchJoin = React.useCallback(
@@ -905,10 +925,13 @@ function useGlobalCallDockValue() {
     };
   }, []);
 
-  /** #2456 D2d: another tab of this browser asked us to leave (cross-tab room switch). */
+  /** #2456 D2d: another tab of this browser asked us to leave (cross-tab room switch). This
+   * tab's user didn't dismiss anything — another tab is taking over the call — so don't mark
+   * dismissal here; doing so would wrongly suppress resume/join affordances for this room in
+   * *this* tab afterward. */
   React.useEffect(() => {
     return subscribeGroupCallPleaseLeave(() => {
-      void leaveCall();
+      void leaveCall({ markDismissed: false });
     });
   }, [leaveCall]);
 

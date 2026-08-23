@@ -29,9 +29,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = (await request.json().catch(() => null)) as {
-    roomId?: string;
+    roomId?: unknown;
   } | null;
-  const roomId = body?.roomId?.trim();
+  const rawRoomId = body?.roomId;
+  const roomId = typeof rawRoomId === 'string' ? rawRoomId.trim() : '';
   if (!roomId) {
     return NextResponse.json({ error: 'roomId is required' }, { status: 400 });
   }

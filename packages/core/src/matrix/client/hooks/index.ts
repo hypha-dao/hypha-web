@@ -39,7 +39,7 @@ export {
   setGroupCallSessionActive,
   subscribeGroupCallSessionActive,
   isRemoteGroupCallHoldActive,
-  getRemoteGroupCallHoldRoomId,
+  getRemoteGroupCallHold,
   requestRemoteGroupCallLeave,
   subscribeGroupCallPleaseLeave,
 } from './active-group-call-registry';

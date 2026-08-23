@@ -135,15 +135,25 @@ export function isRemoteGroupCallHoldActive(now = Date.now()): boolean {
 }
 
 /**
- * #2456 D2d: the room id of a fresh remote hold from *another* tab of this browser, if any —
- * `null` if there's no active remote hold, or the holder didn't report a room. Deliberately
- * excludes this tab's own session (unlike `isRemoteGroupCallHoldActive`, which counts it as
- * "held" for Matrix-client-recycle purposes) — this is specifically for detecting a *different*
- * tab's call to offer the "Leave & Join" cross-tab switch.
+ * #2456 D2d: whether a fresh remote hold from *another* tab of this browser exists, and if so
+ * which room it's for. Deliberately excludes this tab's own session (unlike
+ * `isRemoteGroupCallHoldActive`, which counts it as "held" for Matrix-client-recycle purposes) —
+ * this is specifically for detecting a *different* tab's call to offer the "Leave & Join"
+ * cross-tab switch.
+ *
+ * Returns `null` only when there's no active remote hold at all — distinct from a hold whose
+ * `roomId` is itself `null` (the holder broadcast before its own `activeRoomId` was known yet,
+ * e.g. mid-`restoreInProgressRef`). Callers must check hold *presence* via the return value being
+ * non-null, not by testing `roomId` truthiness, or a hold with an unknown room silently reads as
+ * "no hold" and skips the cross-tab switch confirmation entirely.
  */
-export function getRemoteGroupCallHoldRoomId(now = Date.now()): string | null {
+export function getRemoteGroupCallHold(
+  now = Date.now(),
+): { roomId: string | null } | null {
   for (const [tabId, hold] of remoteCallHolds) {
-    if (now - hold.at <= REMOTE_CALL_HOLD_MAX_AGE_MS) return hold.roomId;
+    if (now - hold.at <= REMOTE_CALL_HOLD_MAX_AGE_MS) {
+      return { roomId: hold.roomId };
+    }
     remoteCallHolds.delete(tabId);
   }
   return null;

@@ -755,6 +755,15 @@ export const ButtonProfile = ({
               onClick={onLogout}
               classNames="text-error-11"
               label={t('logout')}
+              disabled={loggingOut}
+              icon={
+                loggingOut ? (
+                  <Loader2
+                    className="size-4 shrink-0 animate-spin"
+                    aria-hidden
+                  />
+                ) : undefined
+              }
             />
           </div>
 

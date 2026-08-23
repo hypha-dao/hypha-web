@@ -1,5 +1,12 @@
 import { createHash } from 'node:crypto';
-import { RoomServiceClient } from 'livekit-server-sdk';
+import { RoomServiceClient, ServerError } from 'livekit-server-sdk';
+
+/** Twirp `not_found` — the only LiveKit error this route treats as a benign no-op. Every other
+ * failure (auth, permission, transport, upstream) must propagate as `{ ok: false }`, or a stale
+ * participant can be silently left in place and cause another duplicate-identity disconnect. */
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof ServerError && error.code === 'not_found';
+}
 
 /**
  * The legacy `/sfu/get` endpoint (still in use, see D1 in #2456's decisions) always uses this
@@ -105,9 +112,15 @@ export async function evictStaleLivekitParticipants({
   let participants;
   try {
     participants = await client.listParticipants(roomAlias);
-  } catch {
-    // No LiveKit room yet (nobody has joined) is a normal, non-error case for this flow.
-    return { ok: true, evictedCount: 0 };
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      // No LiveKit room yet (nobody has joined) is a normal, non-error case for this flow.
+      return { ok: true, evictedCount: 0 };
+    }
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 
   const staleIdentities = participants
@@ -119,9 +132,16 @@ export async function evictStaleLivekitParticipants({
     try {
       await client.removeParticipant(roomAlias, identity);
       evictedCount += 1;
-    } catch {
-      // Already gone (e.g. disconnected between listParticipants and removeParticipant) —
-      // not a failure worth surfacing to the rejoining client.
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        // Already gone (e.g. disconnected between listParticipants and removeParticipant) —
+        // not a failure worth surfacing to the rejoining client.
+        continue;
+      }
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
