@@ -57,6 +57,7 @@ import {
   looksLikeTechnicalSpaceMemoryName,
   type SignalTeamNotice,
   replacePlainTextMatrixMxidsWithLabels,
+  requestRemoteGroupCallLeave,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -1203,6 +1204,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     startVideoForRoom,
     refreshCall: refreshSpaceCall,
     selfStaleCallPresence: spaceCallSelfStalePresence,
+    selfPresenceChecked: spaceCallSelfPresenceChecked,
     leave: leaveSpaceCall,
     setMicrophoneMuted: setSpaceCallMicMuted,
     setCameraMuted: setSpaceCallCameraMuted,
@@ -1298,6 +1300,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
   ]);
 
+  const inSpaceCall =
+    spaceCallState === 'connected' ||
+    spaceCallState === 'connecting' ||
+    spaceCallState === 'awaiting_media' ||
+    spaceCallState === 'initializing';
+
+  /**
+   * #2456: right after opening/switching to a room, `spaceCallSelfPresenceChecked` is briefly
+   * false while the Matrix room object syncs locally — until then we can't reliably tell whether
+   * this user already holds a live session elsewhere.
+   */
   const callUiEnabled = useMemo(
     () =>
       Boolean(roomId) &&
@@ -1307,11 +1320,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
   );
 
-  const inSpaceCall =
-    spaceCallState === 'connected' ||
-    spaceCallState === 'connecting' ||
-    spaceCallState === 'awaiting_media' ||
-    spaceCallState === 'initializing';
+  /**
+   * #2456: whether it's safe to let the user *start a brand-new* call session from this room —
+   * distinct from `callUiEnabled`, which only gates whether call chrome shows at all. A premature
+   * click before the self-stale-presence check has run could either fail with a misleading "call
+   * server not ready" error, or start a genuine duplicate session. Rather than hiding the whole
+   * sidebar call chrome (banner/join-strip/alerts) while this settles, only the toolbar's
+   * "start a call" buttons wait for it, showing a skeleton in the meantime — see
+   * `showSidebarCallChrome` usage at the toolbar render site below.
+   */
+  const callActionsChecked = inSpaceCall || spaceCallSelfPresenceChecked;
 
   const callAppliesToCurrentChatRoom = useMemo(() => {
     const chatRoomId = roomId?.trim() || null;
@@ -4437,26 +4455,39 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   {showSidebarCallChrome &&
                   !inSpaceCall &&
                   !spaceCallShowJoinStrip ? (
-                    <HumanChatPanelCallToolbar
-                      callState={spaceCallState}
-                      callKind={spaceCallKind}
-                      disabled={!callUiEnabled}
-                      roomCallInProgressToJoin={spaceCallToolbarJoinHint}
-                      onAudio={() => {
-                        if (!canJoinSignalThreadCall && isSignalThread) {
-                          void requestSignalTeamAccess();
-                          return;
-                        }
-                        handleCallAudio();
-                      }}
-                      onVideo={() => {
-                        if (!canJoinSignalThreadCall && isSignalThread) {
-                          void requestSignalTeamAccess();
-                          return;
-                        }
-                        handleCallVideo();
-                      }}
-                    />
+                    callActionsChecked ? (
+                      <HumanChatPanelCallToolbar
+                        callState={spaceCallState}
+                        callKind={spaceCallKind}
+                        disabled={!callUiEnabled}
+                        roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                        onAudio={() => {
+                          if (!canJoinSignalThreadCall && isSignalThread) {
+                            void requestSignalTeamAccess();
+                            return;
+                          }
+                          handleCallAudio();
+                        }}
+                        onVideo={() => {
+                          if (!canJoinSignalThreadCall && isSignalThread) {
+                            void requestSignalTeamAccess();
+                            return;
+                          }
+                          handleCallVideo();
+                        }}
+                      />
+                    ) : (
+                      /** #2456: still confirming this user doesn't already hold a live session
+                       * elsewhere in this room — show a skeleton rather than either hiding the
+                       * toolbar outright or letting a click race ahead of that check. */
+                      <div
+                        className="flex shrink-0 items-center gap-0.5"
+                        aria-hidden
+                      >
+                        <Skeleton className="size-7 rounded-lg" />
+                        <Skeleton className="size-7 rounded-lg" />
+                      </div>
+                    )
                   ) : null}
                   {showAuthedUi && elsewhereCallEntries.length > 0 ? (
                     <HumanChatPanelElsewhereCallIndicator
@@ -4485,6 +4516,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               captureConsent={spaceCallCaptureConsent}
               roomId={roomId}
               isRefresh={spaceCallSelfStalePresence}
+              othersInRoomCallCount={spaceCallOthersInRoom}
+              onHangupElsewhere={() => requestRemoteGroupCallLeave()}
               onJoinAudio={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
                   void requestSignalTeamAccess();
@@ -4622,6 +4655,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 }}
                 captureConsent={spaceCallCaptureConsent}
                 roomId={roomId}
+                onRefresh={() => {
+                  refreshSpaceCall(
+                    spaceCallKind ?? 'video',
+                    roomId,
+                    spaceSlug ?? null,
+                    undefined,
+                    authToken,
+                    resolveCallLaunchContext(),
+                  );
+                }}
                 controlsMode="leave_only"
                 canSendCallReactions={canSendCallReactions}
                 localHandRaised={localHandRaised}

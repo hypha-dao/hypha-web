@@ -15,25 +15,49 @@ import {
 } from './matrix-rtc-events';
 
 /**
- * LiveKit identity (post-#2456) is a tab-unique value, not the Matrix user id — it can't be
- * reversed by string parsing. Each client instead publishes its own Matrix user id via LiveKit
- * participant metadata right after connecting (see `use-space-group-call.ts`'s join flow), so
- * cross-system lookups (screenshare-takeover's `target_user_id` matching, roster, speaking
- * indicator, call-feed attribution) read it from there.
+ * The legacy `lk-jwt-service` `/sfu/get` flow (#2456 D1) issues tokens without the
+ * `canUpdateOwnMetadata` grant, so `LocalParticipant.setMetadata()` always fails
+ * (`SignalRequestError: does not have permission to update own metadata`) — metadata can never
+ * actually be populated this way, making it useless as the primary signal. Identity, however, is
+ * always reliably `${matrixUserId}:${tabId}` (see `fetchLivekitConnectCredentials`'s `device_id`
+ * and `lk-jwt-service`'s legacy identity construction) — a Matrix user id is always `@user:server`
+ * (at least one `:`) and `tabId` is a UUID (never contains `:`), so splitting on the *last* `:`
+ * reliably recovers it without needing any permission at all.
+ */
+export function matrixUserIdFromLiveKitIdentity(
+  identity: string | null | undefined,
+): string | null {
+  if (!identity) return null;
+  const lastColon = identity.lastIndexOf(':');
+  if (lastColon <= 0) return null;
+  const candidate = identity.slice(0, lastColon);
+  return candidate.startsWith('@') && candidate.includes(':')
+    ? candidate
+    : null;
+}
+
+/**
+ * Prefers metadata (works if a future non-legacy token flow grants `canUpdateOwnMetadata`) and
+ * falls back to parsing identity (see `matrixUserIdFromLiveKitIdentity`) — the only signal
+ * actually available under the current legacy token flow. Cross-system lookups
+ * (screenshare-takeover's `target_user_id` matching, roster, speaking indicator, call-feed
+ * attribution) read it from here.
  */
 export function matrixUserIdFromLiveKitParticipant(
-  participant: Pick<Participant, 'metadata'> | null | undefined,
+  participant: Pick<Participant, 'metadata' | 'identity'> | null | undefined,
 ): string | null {
   const raw = participant?.metadata;
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as { matrixUserId?: unknown };
-    return typeof parsed.matrixUserId === 'string' && parsed.matrixUserId
-      ? parsed.matrixUserId
-      : null;
-  } catch {
-    return null;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as { matrixUserId?: unknown };
+      if (typeof parsed.matrixUserId === 'string' && parsed.matrixUserId) {
+        return parsed.matrixUserId;
+      }
+    } catch {
+      // fall through to identity parsing
+    }
   }
+  return matrixUserIdFromLiveKitIdentity(participant?.identity);
 }
 
 export function createLiveKitRoom(): Room {

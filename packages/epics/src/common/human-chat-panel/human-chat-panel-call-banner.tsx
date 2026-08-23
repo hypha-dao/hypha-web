@@ -12,6 +12,7 @@ import {
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
+import { HumanChatPanelInCallStatusRow } from './human-chat-panel-in-call-status-row';
 import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 import {
@@ -102,6 +103,9 @@ type HumanChatPanelCallBannerProps = {
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
   onDismissCallError: () => void;
+  /** #2456: reconnect this tab's own live session with a fresh identity. Only rendered in
+   * `leave_only` mode, next to the hangup button. */
+  onRefresh?: () => void;
   controlsMode?: 'full' | 'leave_only';
   /** Alerts and consent only — omit participant row and toolbar (e.g. floating dock footer). */
   alertsOnly?: boolean;
@@ -200,6 +204,7 @@ export function HumanChatPanelCallBanner({
   tabBackgroundWhileInCall,
   onRetryCall,
   onDismissCallError,
+  onRefresh,
   controlsMode = 'full',
   alertsOnly = false,
   participantRowOnly = false,
@@ -503,7 +508,18 @@ export function HumanChatPanelCallBanner({
           variant="inCall"
         />
       ) : null}
-      {alertsOnly ? null : (
+      {alertsOnly ? null : controlsMode === 'leave_only' ? (
+        /** #2456: shared with `HumanChatPanelCallJoinStrip`'s `isRefresh` mode — same conceptual
+         * "In this call" state, same component, whether this tab holds the session or not. */
+        <HumanChatPanelInCallStatusRow
+          participantCount={participantCount}
+          othersInRoomCallCount={othersInRoomCallCount}
+          disabled={isDisconnecting}
+          busy={isConnectingPhase || isDisconnecting}
+          onLeave={onLeave}
+          onRefresh={onRefresh ?? (() => undefined)}
+        />
+      ) : (
         <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
           <div className="min-w-0 flex-1 basis-0 pr-1 sm:pr-2">
             {callState === 'connected' ? (
@@ -586,6 +602,7 @@ export function HumanChatPanelCallBanner({
                 canRetryRecordingUpload={canRetryRecordingUpload}
                 onRetryRecordingUpload={onRetryRecordingUpload}
                 onLeave={onLeave}
+                onRefresh={onRefresh}
                 variant="inBanner"
                 controlsMode={controlsMode}
                 canSendCallReactions={canSendCallReactions}

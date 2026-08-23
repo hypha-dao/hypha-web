@@ -434,6 +434,11 @@ export function useSpaceGroupCall(
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
     null,
   );
+  /** Read inside the fail-open timer below without adding `errorCode` to that effect's deps —
+   * that effect resets several other states unconditionally on every run, so re-running it on
+   * every error transition (not just NOT_READY) would cause extra flicker. */
+  const errorCodeRef = useRef(errorCode);
+  errorCodeRef.current = errorCode;
   const [threadContext, setThreadContext] = useState<{
     threadRootEventId: string;
   } | null>(null);
@@ -602,6 +607,16 @@ export function useSpaceGroupCall(
    * decides whether to show "Refresh call" instead of "Join call" at all.
    */
   const [selfStaleCallPresence, setSelfStaleCallPresence] = useState(false);
+  /**
+   * #2456: true once the self-stale-presence check below has actually run against a loaded
+   * Matrix room (not just the client/roomId being set). Before this flips true there's a race
+   * window — right after opening/switching to a room — where the room object may not be synced
+   * locally yet, so `selfStaleCallPresence` is still its stale `false` default even if this
+   * user already holds a live session elsewhere. Call UI must stay disabled until this is true,
+   * otherwise a click here can silently start a second, duplicate session instead of routing to
+   * "Refresh call".
+   */
+  const [selfPresenceChecked, setSelfPresenceChecked] = useState(false);
 
   useEffect(() => {
     latestAuthTokenRef.current = authToken?.trim() || null;
@@ -1686,7 +1701,18 @@ export function useSpaceGroupCall(
         return;
       }
       if (isJoiningRef.current) return;
-      if (liveKitRoomRef.current) return;
+      /**
+       * #2456: this tab already holds a live session — this is a self-refresh (the connected
+       * tab's own "Refresh call" button), not a stray duplicate call. Previously this early-
+       * returned unconditionally, silently no-oping the button (no error, no state change,
+       * nothing) since a bare click can't be distinguished from an accidental double-join here.
+       * `runCleanup()` synchronously clears `liveKitRoomRef.current` and kicks off the real
+       * disconnect via `leaveInFlightRef` in the background — which the check right below this
+       * already knows how to wait for; it just never had anything to wait for on this path.
+       */
+      if (liveKitRoomRef.current) {
+        runCleanup();
+      }
 
       if (leaveInFlightRef.current) {
         try {
@@ -1731,6 +1757,43 @@ export function useSpaceGroupCall(
         isJoiningRef.current = false;
         joinStartedAtRef.current = null;
         return;
+      }
+
+      /**
+       * #2456: authoritative, last-moment guard against a duplicate join — independent of
+       * whatever the UI's `selfStaleCallPresence` flag showed seconds earlier (which can be
+       * stale if the Matrix room was still syncing when the check ran; see the "call server not
+       * ready" investigation). Re-check self-membership right now, against the room object we
+       * just confirmed is actually loaded, and best-effort evict any stale self-presence before
+       * proceeding — same eviction `rejoinCall` already does, just also applied here so a plain
+       * "Join/Start call" click can never leave two live sessions for the same account.
+       */
+      {
+        const myId = client.getUserId() ?? null;
+        const rtcSession = getMatrixRtcSession(client, matrixRoom);
+        const selfAlreadyPresent = myId
+          ? rtcSession.memberships.some(
+              (m) => m.sender === myId && !m.isExpired?.(),
+            )
+          : false;
+        if (selfAlreadyPresent) {
+          const token = latestAuthTokenRef.current;
+          if (token) {
+            try {
+              await fetch('/api/matrix/livekit/rejoin', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ roomId: activeRoomId }),
+                signal: AbortSignal.timeout(10_000),
+              });
+            } catch {
+              // Best-effort — see doc comment above.
+            }
+          }
+        }
       }
 
       let enableCamera = kind === 'video';
@@ -2044,34 +2107,20 @@ export function useSpaceGroupCall(
   );
 
   /**
-   * #2456 D2c/D2e "Refresh call": evicts this user's stale LiveKit participant(s) via the D2a
-   * backend route, then joins normally. Best-effort on the eviction — even if it fails, the
-   * fresh join still gets its own tab-unique identity (see D1), so it won't collide with the
-   * stale one on the SFU; a failed eviction just leaves a harmless leftover tile until it times
-   * out on its own.
+   * #2456 D2c/D2e "Refresh call" entry point. Historically did its own eviction fetch here before
+   * calling `enterWithKind` — now redundant (and a real UX bug: it added a whole extra network
+   * round-trip *before* `enterWithKind`'s `setCallState('initializing')` ever ran, so the busy/
+   * disabled UI had a visible gap where clicking Refresh appeared to do nothing). `enterWithKind`
+   * itself now does the same self-membership check + eviction unconditionally — for *any* join,
+   * not just ones that arrived via this "refresh" entry point — so this is just an alias now. Kept
+   * as a separate named function (rather than inlining `enterWithKind` at each call site) only
+   * because `rejoinCall` is part of this hook's public return shape, consumed elsewhere.
    */
   const rejoinCall = useCallback(
     async (kind: 'audio' | 'video', threadRootEventId?: string) => {
-      const targetRoomId = roomId?.trim();
-      const token = authToken?.trim();
-      if (targetRoomId && token) {
-        try {
-          await fetch('/api/matrix/livekit/rejoin', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ roomId: targetRoomId }),
-            signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // Best-effort — see doc comment above.
-        }
-      }
       await enterWithKind(kind, threadRootEventId);
     },
-    [roomId, authToken, enterWithKind],
+    [enterWithKind],
   );
 
   const resetAfterLeave = useCallback(() => {
@@ -2868,14 +2917,23 @@ export function useSpaceGroupCall(
     setIdleRoomParticipantCount(0);
     setIdleInCallUserIds([]);
     setSelfStaleCallPresence(false);
+    setSelfPresenceChecked(false);
 
     if (!client || !roomId?.trim()) return;
-    if (liveKitRoomRef.current) return;
-    if (callState !== 'idle' && callState !== 'error') return;
+    /** Not our concern here — the connected-tab UI doesn't gate on this flag. */
+    if (liveKitRoomRef.current) {
+      setSelfPresenceChecked(true);
+      return;
+    }
+    if (callState !== 'idle' && callState !== 'error') {
+      setSelfPresenceChecked(true);
+      return;
+    }
 
     const myId = client.getUserId() ?? null;
-    const matrixRoom = client.getRoom(roomId);
-    if (!matrixRoom) return;
+    /** `let`, not `const` — reassigned once the room-added event resolves it below. Everything
+     * that reads it (`syncIdleParticipants`) only ever runs after it's confirmed non-null. */
+    let matrixRoom = client.getRoom(roomId);
 
     let watchedSession: MatrixRtcSessionLike | null = null;
 
@@ -2890,6 +2948,7 @@ export function useSpaceGroupCall(
     };
 
     const syncIdleParticipants = () => {
+      if (!matrixRoom) return;
       if (liveKitRoomRef.current) return;
       const session = getMatrixRtcSession(client, matrixRoom);
       if (watchedSession !== session) {
@@ -2916,6 +2975,16 @@ export function useSpaceGroupCall(
         selfStalePresence: Boolean(selfMembership),
       });
       setSelfStaleCallPresence(Boolean(selfMembership));
+      setSelfPresenceChecked(true);
+      /** A lingering NOT_READY error from an earlier premature click (before the room finished
+       * syncing) is just that same sync delay — clear it now that we have a real answer, however
+       * this resolved (immediately, via the room-added event, or via the 20s backstop). Previously
+       * this only happened in the backstop's own timeout callback, so the event-driven path (the
+       * common case) left the stale error sitting next to the now-correct "In this call" status. */
+      if (errorCodeRef.current === 'NOT_READY') {
+        setErrorCode(null);
+        setCallState('idle');
+      }
       if (p.count === 0) {
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);
@@ -2925,10 +2994,44 @@ export function useSpaceGroupCall(
       setIdleInCallUserIds(p.inCallUserIds);
     };
 
-    syncIdleParticipants();
+    let onRoomAdded: ((room: MatrixSdk.Room) => void) | null = null;
+    /** Purely a diagnostic safety net for a genuinely pathological sync — the actual duplicate-
+     * join guard is the authoritative re-check `enterWithKind` does at the real moment of
+     * joining, not this. This only exists so the skeleton doesn't spin forever; it doesn't claim
+     * to know the real answer. */
+    let backstopTimer: ReturnType<typeof setTimeout> | null = null;
+
+    if (matrixRoom) {
+      syncIdleParticipants();
+    } else {
+      onRoomAdded = (room) => {
+        if (room.roomId !== roomId) return;
+        matrixRoom = client.getRoom(roomId);
+        if (!matrixRoom) return;
+        if (onRoomAdded) client.off(ClientEvent.Room, onRoomAdded);
+        if (backstopTimer != null) {
+          clearTimeout(backstopTimer);
+          backstopTimer = null;
+        }
+        syncIdleParticipants();
+      };
+      client.on(ClientEvent.Room, onRoomAdded);
+      backstopTimer = setTimeout(() => {
+        setSelfPresenceChecked(true);
+        /** A lingering NOT_READY error from an earlier premature click is just this same
+         * slow-room-sync symptom — clear it instead of showing it next to now-enabled call
+         * buttons, which read as contradictory ("not ready" + clickable at once). */
+        if (errorCodeRef.current === 'NOT_READY') {
+          setErrorCode(null);
+          setCallState('idle');
+        }
+      }, 20000);
+    }
 
     const unsub = () => {
       unwatchMemberships();
+      if (onRoomAdded) client.off(ClientEvent.Room, onRoomAdded);
+      if (backstopTimer != null) clearTimeout(backstopTimer);
     };
     idleRtcSessionUnsubRef.current = unsub;
     return () => {
@@ -3110,6 +3213,7 @@ export function useSpaceGroupCall(
     /** #2456 D2c/D2e: true when this room's call already has a stale membership for the local
      * user — drives the "Refresh call" button variant instead of "Join call". */
     selfStaleCallPresence,
+    selfPresenceChecked,
     rejoinCall,
     leave,
     setMicrophoneMuted,

@@ -7,7 +7,13 @@ import {
   ResolvePostAuthRedirectPathOrDefault,
   UseMe,
 } from '../hooks/types';
-import { useEffect, useMemo, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 
@@ -136,6 +142,28 @@ export const ConnectedButtonProfile = ({
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
+  /**
+   * #2456: `logout()` doesn't expose completion (its teardown — leaving calls, closing the
+   * Matrix session — can take a moment), so there's no promise to await. `isAuthenticated`
+   * flipping false is the actual completion signal; fall back to clearing the spinner if that
+   * doesn't happen shortly, rather than leaving the button stuck disabled forever on failure.
+   */
+  const [loggingOut, setLoggingOut] = useState(false);
+  const handleLogout = useCallback(() => {
+    setLoggingOut(true);
+    logout();
+  }, [logout]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLoggingOut(false);
+      return;
+    }
+    if (!loggingOut) return;
+    const timer = setTimeout(() => setLoggingOut(false), 10000);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, loggingOut]);
+
   const handleOnDelete = () => {
     console.log('Delete profile');
   };
@@ -146,7 +174,8 @@ export const ConnectedButtonProfile = ({
       person={person}
       isConnected={isAuthenticated}
       onLogin={login}
-      onLogout={logout}
+      onLogout={handleLogout}
+      loggingOut={loggingOut}
       onDelete={handleOnDelete}
       onChangeThemeMode={handleThemeChange}
       resolvedTheme={resolvedTheme}

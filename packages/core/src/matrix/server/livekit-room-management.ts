@@ -25,6 +25,28 @@ export function deriveLegacyLivekitRoomAlias(matrixRoomId: string): string {
     .replace(/=+$/, '');
 }
 
+/**
+ * Duplicated here (not imported) from `matrixUserIdFromLiveKitIdentity` in the client hooks'
+ * `livekit-call-helpers.ts` — that file pulls in `livekit-client`, which has no business in a
+ * server route. Keep the two in sync if the identity format changes.
+ *
+ * The legacy `lk-jwt-service` `/sfu/get` flow issues tokens without the `canUpdateOwnMetadata`
+ * grant, so `setMetadata()` always fails client-side (confirmed via #2456 debugging:
+ * `SignalRequestError: does not have permission to update own metadata`) — every participant's
+ * metadata is permanently empty under this flow, so `parseMatrixUserIdFromMetadata` alone can
+ * never match anything, and eviction always no-ops. Identity is always reliably
+ * `${matrixUserId}:${tabId}` (a Matrix user id always contains `:`, a tabId UUID never does), so
+ * fall back to parsing it whenever metadata comes up empty.
+ */
+function matrixUserIdFromLiveKitIdentity(identity: string): string | null {
+  const lastColon = identity.lastIndexOf(':');
+  if (lastColon <= 0) return null;
+  const candidate = identity.slice(0, lastColon);
+  return candidate.startsWith('@') && candidate.includes(':')
+    ? candidate
+    : null;
+}
+
 function parseMatrixUserIdFromMetadata(
   metadata: string | undefined,
 ): string | null {
@@ -37,6 +59,16 @@ function parseMatrixUserIdFromMetadata(
   } catch {
     return null;
   }
+}
+
+function resolveMatrixUserIdFromParticipant(participant: {
+  identity: string;
+  metadata?: string;
+}): string | null {
+  return (
+    parseMatrixUserIdFromMetadata(participant.metadata) ??
+    matrixUserIdFromLiveKitIdentity(participant.identity)
+  );
 }
 
 function getRoomServiceClient(): RoomServiceClient | null {
@@ -79,7 +111,7 @@ export async function evictStaleLivekitParticipants({
   }
 
   const staleIdentities = participants
-    .filter((p) => parseMatrixUserIdFromMetadata(p.metadata) === matrixUserId)
+    .filter((p) => resolveMatrixUserIdFromParticipant(p) === matrixUserId)
     .map((p) => p.identity);
 
   let evictedCount = 0;

@@ -4,8 +4,9 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import { Button } from '@hypha-platform/ui';
 import type { SpaceGroupCallCaptureConsent } from '@hypha-platform/core/client';
-import { Phone, RefreshCw, Video, X } from 'lucide-react';
+import { Phone, Video, X } from 'lucide-react';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
+import { HumanChatPanelInCallStatusRow } from './human-chat-panel-in-call-status-row';
 
 type HumanChatPanelCallJoinStripProps = {
   deviceCount: number;
@@ -22,9 +23,17 @@ type HumanChatPanelCallJoinStripProps = {
   onDismissDurable?: () => void;
   /** Space hero: accent strip above the banner image. */
   variant?: 'sidebar' | 'hero';
-  /** #2456 D2c/D2e: this user already has a stale presence in this room's call — show
-   * "Refresh call" instead of "Join call" (pulsing badge + different labels/tooltip). */
+  /** #2456 D2c/D2e: this user already has a stale presence in this room's call — render the
+   * same "In this call" status + hangup/refresh row `HumanChatPanelCallBanner` uses (via the
+   * shared `HumanChatPanelInCallStatusRow`), not a distinct "Refresh call" look, so the state
+   * reads identically regardless of which tab shows it. */
   isRefresh?: boolean;
+  /** #2456: participants other than self. Only read when `isRefresh` is set. */
+  othersInRoomCallCount?: number;
+  /** #2456: this tab holds no local session for this call — hanging up means asking whichever
+   * tab does hold it (same browser) to leave, not disconnecting a session this tab doesn't have.
+   * Only rendered when `isRefresh` is set. */
+  onHangupElsewhere?: () => void;
 };
 
 const joinBannerSurfaceClass =
@@ -45,41 +54,65 @@ export function HumanChatPanelCallJoinStrip({
   onDismissDurable,
   variant = 'sidebar',
   isRefresh = false,
+  othersInRoomCallCount = 0,
+  onHangupElsewhere,
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
   const isHero = variant === 'hero';
-  const isJoinOpportunity = deviceCount > 0 || isRefresh;
+
+  if (isRefresh) {
+    /** #2456: same conceptual "In this call" state as the connected `HumanChatPanelCallBanner`
+     * — delegates to the same `HumanChatPanelInCallStatusRow` so the two can't drift apart, only
+     * owning the outer surface (plain row, no accent "opportunity" styling — see
+     * `useProminentJoinBanner` below) and the capture-consent banner. */
+    return (
+      <div
+        className={
+          isHero
+            ? 'mb-2 border-b border-border'
+            : 'border-b border-border bg-muted/30'
+        }
+      >
+        {captureConsent ? (
+          <HumanChatPanelCaptureConsentBanner
+            consent={captureConsent}
+            roomId={roomId}
+            variant="join"
+            className="border-border/60"
+          />
+        ) : null}
+        <HumanChatPanelInCallStatusRow
+          participantCount={deviceCount}
+          othersInRoomCallCount={othersInRoomCallCount}
+          disabled={disabled}
+          busy={busy}
+          onLeave={onHangupElsewhere ?? (() => undefined)}
+          onRefresh={onJoinVideo}
+        />
+      </div>
+    );
+  }
+
+  const isJoinOpportunity = deviceCount > 0;
   const hasDurable = Boolean(durableMessage);
-  const statusLine = isRefresh
-    ? t('callRefreshStripLine')
-    : t('callJoinStripLine', { count: deviceCount });
-  const audioLabel = isRefresh
-    ? t('callRefreshWithAudioShort')
-    : deviceCount > 0
-    ? t('callJoinWithAudioShort')
-    : t('callStartWithAudioShort');
-  const videoLabel = isRefresh
-    ? t('callRefreshWithVideoShort')
-    : deviceCount > 0
-    ? t('callJoinWithVideoShort')
-    : t('callStartWithVideoShort');
-  const audioTitle = isRefresh
-    ? t('callRefreshWithAudio')
-    : deviceCount > 0
-    ? t('callJoinWithAudio')
-    : t('callStartWithAudio');
-  const videoTitle = isRefresh
-    ? t('callRefreshWithVideo')
-    : deviceCount > 0
-    ? t('callJoinWithVideo')
-    : t('callStartWithVideo');
+  const statusLine = t('callJoinStripLine', { count: deviceCount });
+  const audioLabel =
+    deviceCount > 0
+      ? t('callJoinWithAudioShort')
+      : t('callStartWithAudioShort');
+  const videoLabel =
+    deviceCount > 0
+      ? t('callJoinWithVideoShort')
+      : t('callStartWithVideoShort');
+  const audioTitle =
+    deviceCount > 0 ? t('callJoinWithAudio') : t('callStartWithAudio');
+  const videoTitle =
+    deviceCount > 0 ? t('callJoinWithVideo') : t('callStartWithVideo');
   const showAudioButton = deviceCount > 0 || Boolean(onJoinAudio);
   const useProminentJoinBanner = isJoinOpportunity && !hasDurable;
 
-  /** No active room call to join — avoid empty "Call in progress — 0 members" chrome. Refresh
-   * opportunities are exempt: a lone stale self-presence has deviceCount 0 (excludes self) but
-   * still needs to render the "Refresh call" affordance. */
-  if (!hasDurable && !isRefresh && deviceCount <= 0) {
+  /** No active room call to join — avoid empty "Call in progress — 0 members" chrome. */
+  if (!hasDurable && deviceCount <= 0) {
     return null;
   }
 
@@ -108,11 +141,7 @@ export function HumanChatPanelCallJoinStrip({
           title={audioTitle}
           aria-label={audioTitle}
         >
-          {isRefresh ? (
-            <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          ) : (
-            <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          )}
+          <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="truncate">{audioLabel}</span>
         </Button>
       ) : null}
@@ -127,11 +156,7 @@ export function HumanChatPanelCallJoinStrip({
         title={videoTitle}
         aria-label={videoTitle}
       >
-        {isRefresh ? (
-          <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        ) : (
-          <Video className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        )}
+        <Video className="h-3.5 w-3.5 shrink-0" aria-hidden />
         <span className="truncate">{videoLabel}</span>
       </Button>
     </div>
@@ -167,17 +192,10 @@ export function HumanChatPanelCallJoinStrip({
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {useProminentJoinBanner ? (
               <div
-                className={cn(
-                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-9 text-accent-contrast shadow-sm ring-1 ring-accent-9/25',
-                  isRefresh && 'animate-pulse',
-                )}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-9 text-accent-contrast shadow-sm ring-1 ring-accent-9/25"
                 aria-hidden
               >
-                {isRefresh ? (
-                  <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.25} />
-                ) : (
-                  <Phone className="h-3.5 w-3.5" strokeWidth={2.25} />
-                )}
+                <Phone className="h-3.5 w-3.5" strokeWidth={2.25} />
               </div>
             ) : null}
             <p

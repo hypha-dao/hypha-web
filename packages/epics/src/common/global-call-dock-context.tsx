@@ -726,6 +726,18 @@ function useGlobalCallDockValue() {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
       if (isRemoteGroupCallHoldActive()) {
+        /**
+         * #2456: if it's *another* tab of this browser holding the call (not this one
+         * refreshing itself), ask it to actually leave via the same real `leave()` path the
+         * "hangup elsewhere" button already uses — proven reliable, unlike the SFU-side
+         * identity-based eviction `enterWithKind` also attempts, which depends on parsing
+         * LiveKit participant identity/metadata and has been unreliable in practice. This isn't
+         * awaited — #2456 D1's tab-scoped LiveKit identity means a brief overlap while the other
+         * tab's leave completes is harmless, not a silent kick.
+         */
+        if (!inSessionRef.current) {
+          requestRemoteGroupCallLeave();
+        }
         void refreshRoomCall(
           kind,
           targetRoomId,

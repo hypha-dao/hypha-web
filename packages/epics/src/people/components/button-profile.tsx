@@ -23,6 +23,7 @@ import {
   Compass,
   Globe2,
   LayoutGrid,
+  Loader2,
   LogOutIcon,
   Repeat,
   Shield,
@@ -51,6 +52,10 @@ export type ButtonProfileProps = {
   isConnected: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  /** #2456: true while a logout click is in flight (see `ConnectedButtonProfile`) — disables
+   * the logout control and swaps its icon to a spinner instead of leaving it clickable with no
+   * feedback while teardown (leaving calls, closing the Matrix session, etc.) is still running. */
+  loggingOut?: boolean;
   onDelete?: () => void;
   onChangeThemeMode?: () => void;
   profileUrl?: string;
@@ -104,6 +109,7 @@ export const ButtonProfile = ({
   address,
   onLogin,
   onLogout,
+  loggingOut = false,
   onDelete,
   profileUrl,
   onboardingUrl,
@@ -391,13 +397,21 @@ export const ButtonProfile = ({
               <DropdownMenuSeparator className="-mx-0 my-1" />
               <DropdownMenuItem
                 onClick={onLogout}
+                disabled={loggingOut}
                 className={cn(
                   menuItemClass,
                   'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
                 )}
               >
                 <span className="flex-1">{t('logout')}</span>
-                <LogOutIcon className="size-4 shrink-0" aria-hidden />
+                {loggingOut ? (
+                  <Loader2
+                    className="size-4 shrink-0 animate-spin"
+                    aria-hidden
+                  />
+                ) : (
+                  <LogOutIcon className="size-4 shrink-0" aria-hidden />
+                )}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -625,9 +639,14 @@ export const ButtonProfile = ({
                       setProfileMenuOpen(false);
                       onLogout();
                     }}
+                    disabled={loggingOut}
                   >
                     <span className="flex-1">{t('logout')}</span>
-                    <LogOutIcon className="size-4 shrink-0 text-error-11" />
+                    {loggingOut ? (
+                      <Loader2 className="size-4 shrink-0 animate-spin text-error-11" />
+                    ) : (
+                      <LogOutIcon className="size-4 shrink-0 text-error-11" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -928,13 +947,21 @@ export const ButtonProfile = ({
 
                 <DropdownMenuItem
                   onClick={onLogout}
+                  disabled={loggingOut}
                   className={cn(
                     menuItemClass,
                     'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
                   )}
                 >
                   <span className="flex-1">{t('logout')}</span>
-                  <LogOutIcon className="size-4 shrink-0" aria-hidden />
+                  {loggingOut ? (
+                    <Loader2
+                      className="size-4 shrink-0 animate-spin"
+                      aria-hidden
+                    />
+                  ) : (
+                    <LogOutIcon className="size-4 shrink-0" aria-hidden />
+                  )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

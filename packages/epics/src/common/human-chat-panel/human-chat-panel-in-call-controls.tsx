@@ -8,12 +8,14 @@ import {
   Circle,
   Disc,
   FileText,
+  Loader2,
   Mic,
   MicOff,
   MicVocal,
   Music2,
   Pause,
   Play,
+  RefreshCw,
   SlidersHorizontal,
   Square,
   Video,
@@ -87,6 +89,10 @@ type HumanChatPanelInCallControlsProps = {
   canRetryRecordingUpload?: boolean;
   onRetryRecordingUpload?: () => void;
   onLeave: () => void;
+  /** #2456: reconnect this tab's own session with a fresh identity — same "Refresh call"
+   * mechanism used to rejoin from a different tab, now also offered on the tab that already
+   * holds the live session. Only rendered in `leave_only` mode, next to the hangup button. */
+  onRefresh?: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
   /** Compact row alignment for dock/banner usage. */
@@ -138,6 +144,7 @@ export function HumanChatPanelInCallControls({
   canRetryRecordingUpload = false,
   onRetryRecordingUpload,
   onLeave,
+  onRefresh,
   variant = 'inBanner',
   inBannerLayout = 'inline',
   density = 'default',
@@ -169,6 +176,32 @@ export function HumanChatPanelInCallControls({
     'none' | 'recording' | 'transcript'
   >('none');
   const stopConfirmCancelRef = useRef<HTMLButtonElement | null>(null);
+  /**
+   * #2456: visible feedback for the "Refresh call" button — otherwise a click gives no
+   * indication anything happened until the status text quietly updates. `refreshPending` tracks
+   * that *this* click started a reconnect (not some other reason `controlsDisabled` is true);
+   * once it clears, briefly swap to a checkmark before returning to the idle icon.
+   */
+  const [refreshPending, setRefreshPending] = useState(false);
+  const [refreshConfirmed, setRefreshConfirmed] = useState(false);
+  useEffect(() => {
+    if (refreshPending && !controlsDisabled) {
+      setRefreshPending(false);
+      setRefreshConfirmed(true);
+    }
+  }, [refreshPending, controlsDisabled]);
+  /**
+   * Deliberately a separate effect keyed only on `refreshConfirmed` — the previous version armed
+   * this timer inside the effect above, keyed on `refreshPending` too. Setting `refreshPending`
+   * back to `false` in that same effect body triggered an immediate re-run on the next render,
+   * whose cleanup canceled the just-armed timer before it could fire, leaving the checkmark
+   * stuck forever.
+   */
+  useEffect(() => {
+    if (!refreshConfirmed) return;
+    const timer = setTimeout(() => setRefreshConfirmed(false), 1500);
+    return () => clearTimeout(timer);
+  }, [refreshConfirmed]);
   useEffect(() => {
     if (stopConfirmStep !== 'none') {
       stopConfirmCancelRef.current?.focus();
@@ -228,6 +261,12 @@ export function HumanChatPanelInCallControls({
         'inline-flex shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40',
         bannerCircleSize,
       );
+  /** #2456: same round footprint as `leaveBtn`, neutral (not red) — a reconnect action, not a
+   * destructive one. */
+  const refreshBtn = cn(
+    'inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+    bannerCircleSize,
+  );
   const micMutedBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : isCompact
@@ -1270,6 +1309,31 @@ export function HumanChatPanelInCallControls({
                   strokeWidth={lucideStroke}
                 />
               </button>
+              {leaveOnly && onRefresh ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRefreshPending(true);
+                    onRefresh();
+                  }}
+                  disabled={controlsDisabled}
+                  className={cn(refreshBtn, 'disabled:cursor-not-allowed')}
+                  title={t('callRefreshWithVideo')}
+                  aria-label={t('callRefreshWithVideo')}
+                  aria-busy={refreshPending && controlsDisabled}
+                >
+                  {refreshPending && controlsDisabled ? (
+                    <Loader2
+                      className={cn(icon, 'animate-spin')}
+                      strokeWidth={lucideStroke}
+                    />
+                  ) : refreshConfirmed ? (
+                    <Check className={icon} strokeWidth={lucideStroke} />
+                  ) : (
+                    <RefreshCw className={icon} strokeWidth={lucideStroke} />
+                  )}
+                </button>
+              ) : null}
             </div>
           )}
         </div>
