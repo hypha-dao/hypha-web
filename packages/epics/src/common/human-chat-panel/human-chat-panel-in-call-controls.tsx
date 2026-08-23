@@ -176,32 +176,6 @@ export function HumanChatPanelInCallControls({
     'none' | 'recording' | 'transcript'
   >('none');
   const stopConfirmCancelRef = useRef<HTMLButtonElement | null>(null);
-  /**
-   * #2456: visible feedback for the "Refresh call" button — otherwise a click gives no
-   * indication anything happened until the status text quietly updates. `refreshPending` tracks
-   * that *this* click started a reconnect (not some other reason `controlsDisabled` is true);
-   * once it clears, briefly swap to a checkmark before returning to the idle icon.
-   */
-  const [refreshPending, setRefreshPending] = useState(false);
-  const [refreshConfirmed, setRefreshConfirmed] = useState(false);
-  useEffect(() => {
-    if (refreshPending && !controlsDisabled) {
-      setRefreshPending(false);
-      setRefreshConfirmed(true);
-    }
-  }, [refreshPending, controlsDisabled]);
-  /**
-   * Deliberately a separate effect keyed only on `refreshConfirmed` — the previous version armed
-   * this timer inside the effect above, keyed on `refreshPending` too. Setting `refreshPending`
-   * back to `false` in that same effect body triggered an immediate re-run on the next render,
-   * whose cleanup canceled the just-armed timer before it could fire, leaving the checkmark
-   * stuck forever.
-   */
-  useEffect(() => {
-    if (!refreshConfirmed) return;
-    const timer = setTimeout(() => setRefreshConfirmed(false), 1500);
-    return () => clearTimeout(timer);
-  }, [refreshConfirmed]);
   useEffect(() => {
     if (stopConfirmStep !== 'none') {
       stopConfirmCancelRef.current?.focus();
@@ -1312,23 +1286,18 @@ export function HumanChatPanelInCallControls({
               {leaveOnly && onRefresh ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setRefreshPending(true);
-                    onRefresh();
-                  }}
+                  onClick={onRefresh}
                   disabled={controlsDisabled}
                   className={cn(refreshBtn, 'disabled:cursor-not-allowed')}
-                  title={t('callRefreshWithVideo')}
-                  aria-label={t('callRefreshWithVideo')}
-                  aria-busy={refreshPending && controlsDisabled}
+                  title={t('callRefreshWithVideoShort')}
+                  aria-label={t('callRefreshWithVideoShort')}
+                  aria-busy={controlsDisabled}
                 >
-                  {refreshPending && controlsDisabled ? (
+                  {controlsDisabled ? (
                     <Loader2
                       className={cn(icon, 'animate-spin')}
                       strokeWidth={lucideStroke}
                     />
-                  ) : refreshConfirmed ? (
-                    <Check className={icon} strokeWidth={lucideStroke} />
                   ) : (
                     <RefreshCw className={icon} strokeWidth={lucideStroke} />
                   )}
