@@ -65,7 +65,12 @@ export async function assertCanEditCoherence(
   return row;
 }
 
-/** Load coherence row for mutations. Caller must enforce space auth. */
+/**
+ * Load coherence row for mutations. Caller must enforce space auth.
+ * `requesterPersonId: null` on the mutations below is a deliberate signal for a
+ * trusted system path (e.g. ingestion), not "auth skipped" — see the comment
+ * above `updateCoherenceSignalBySlug`.
+ */
 async function getCoherenceRowForTaskPatch(
   { slug }: { slug: string },
   { db }: { db: DatabaseInstance },
@@ -114,9 +119,14 @@ export const createCoherence = async (
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
   const priority = maybePriority ?? 'medium';
-  // New signals always have an owner: the chosen assignee, or the creator.
+  // Owner resolution: the explicit assignees, else the creator.
+  // System-created signals have no creatorId and start unassigned.
   const assigneeIds = normalizeAssigneeIds(
-    inputAssigneeIds?.length ? inputAssigneeIds : [creatorId],
+    inputAssigneeIds?.length
+      ? inputAssigneeIds
+      : creatorId != null
+      ? [creatorId]
+      : [],
   );
 
   let progressStatus = inputProgressStatus;
@@ -184,12 +194,24 @@ export const updateCoherenceBySlug = async (
   return updatedCoherence;
 };
 
+// `requesterPersonId` on this function and on `patchCoherenceTaskBySlug` /
+// `deleteCoherenceBySlug` below is accepted and discarded, not enforced — this predates #2420
+// (widened here from `number` to `number | null` only, to allow the ingestion route's
+// `signal.creatorId`). It's safe because every real caller already runs
+// `assertCoherenceSpacePanelAuth` (UI actions in `actions.ts`) or `authorizeIngestion` +
+// `loadOwnedSignal` (the ingested-signal PATCH route) *before* reaching this function — so the
+// permission check already happened one layer up by the time `requesterPersonId` arrives here.
+// Tracked as pre-existing tech debt (dead/misleading param), not a live gap; out of scope for
+// this ticket.
 export const updateCoherenceSignalBySlug = async (
   {
     slug,
     requesterPersonId: _requesterPersonId,
     ...rest
-  }: { slug: string; requesterPersonId: number } & UpdateCoherenceSignalInput,
+  }: {
+    slug: string;
+    requesterPersonId: number | null;
+  } & UpdateCoherenceSignalInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const {
@@ -261,7 +283,10 @@ export const patchCoherenceTaskBySlug = async (
     slug,
     requesterPersonId: _requesterPersonId,
     ...rest
-  }: { slug: string; requesterPersonId: number } & PatchCoherenceTaskInput,
+  }: {
+    slug: string;
+    requesterPersonId: number | null;
+  } & PatchCoherenceTaskInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });
@@ -318,7 +343,7 @@ export const deleteCoherenceBySlug = async (
   {
     slug,
     requesterPersonId: _requesterPersonId,
-  }: { slug: string; requesterPersonId: number },
+  }: { slug: string; requesterPersonId: number | null },
   { db }: { db: DatabaseInstance },
 ) => {
   const row = await getCoherenceRowForTaskPatch({ slug }, { db });

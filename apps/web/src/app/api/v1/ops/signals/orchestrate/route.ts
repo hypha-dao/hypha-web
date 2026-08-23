@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       {
         limit: parsedPayload.data.limit,
         dryRun: parsedPayload.data.dry_run,
+        system: true,
         requestUrlForSessionMatrix:
           process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
           (process.env.VERCEL_URL?.trim()
@@ -57,13 +58,16 @@ export async function POST(request: NextRequest) {
       { db },
     );
 
-    const status =
-      result.results.some((row) => row.status === 'error') ||
-      result.results.some((row) => row.status === 'discarded')
-        ? 207
-        : 200;
+    const status = result.results.some((row) => row.status === 'error')
+      ? 207
+      : 200;
     return NextResponse.json(result, { status });
   } catch (error) {
+    console.error('[ops.signals.orchestrate] batch failed', {
+      limit: parsedPayload.data.limit,
+      dryRun: parsedPayload.data.dry_run,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       {
         error: 'Failed to orchestrate signals',

@@ -52,7 +52,7 @@ export default async function EditSignalPage({ params }: PageProps) {
         initialValues={{
           title: signal.title,
           description: signal.description,
-          creatorId: signal.creatorId,
+          creatorId: signal.creatorId ?? undefined,
           spaceId: spaceFromDb.id,
           archived: signal.archived,
           type: signalType,

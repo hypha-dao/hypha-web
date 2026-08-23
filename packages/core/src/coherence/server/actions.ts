@@ -167,6 +167,11 @@ export async function patchCoherenceTaskBySlugAction(
       'Could not resolve authenticated user for patch coherence task',
     );
   }
+  await assertCoherenceSpacePanelAuth({
+    slug: validated.slug,
+    authToken,
+    requesterPersonId: self.id,
+  });
   return patchCoherenceTaskBySlug(
     { ...validated, requesterPersonId: self.id },
     { db },

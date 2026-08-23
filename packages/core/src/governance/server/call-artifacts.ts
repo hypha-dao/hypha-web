@@ -239,7 +239,7 @@ async function resolveMatrixAccessToken(
   authToken: string | undefined,
   requestUrlForSessionMatrix: string | undefined,
 ) {
-  const botToken = process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim();
+  const botToken = process.env.HYPHA_MATRIX_BOT_AS_TOKEN?.trim();
   if (botToken) return botToken;
   const sessionAuth = authToken?.trim();
   const sessionReqUrl = requestUrlForSessionMatrix?.trim();

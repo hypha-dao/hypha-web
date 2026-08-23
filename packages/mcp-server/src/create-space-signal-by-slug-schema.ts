@@ -37,7 +37,7 @@ export const createSpaceSignalBySlugOutputSchema = z.union([
     signalId: z.number(),
     signalSlug: z.string(),
     spaceSlug: z.string(),
-    creatorId: z.number(),
+    creatorId: z.number().nullable(),
     navigation: aiSignalNavigationSchema,
   }),
   z.object({
