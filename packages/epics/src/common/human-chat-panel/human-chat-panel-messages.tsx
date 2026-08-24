@@ -535,7 +535,7 @@ export function HumanChatPanelMessages({
         className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
       >
         <div className="flex flex-col gap-2">
-          {messages.length > 0 ? (
+          {messages.length > 0 || hasMoreOlderMessages ? (
             <div
               ref={topSentinelRef}
               className="flex min-h-8 flex-col items-center justify-center gap-1 py-1"

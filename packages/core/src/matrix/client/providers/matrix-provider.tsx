@@ -1828,7 +1828,21 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           if (!scrollbackSucceeded) {
             return { hasMoreOlder: true, addedEvents };
           }
-          const afterCount = room.getLiveTimeline().getEvents().length;
+          let afterCount = room.getLiveTimeline().getEvents().length;
+          // A room joined moments ago can still have an empty live timeline
+          // here — the initial /sync for it may not have landed yet, so
+          // scrollback has no pagination token to work from and silently
+          // no-ops. That looks identical to "genuinely no history," so on
+          // the very first batch only, give /sync one bounded chance to
+          // catch up before concluding there's nothing older. This is a
+          // narrow race guard, not a substitute for the real fix (the panel
+          // no longer hides the load-older affordance just because zero
+          // messages painted yet).
+          if (i === 0 && beforeCount === 0 && afterCount === 0) {
+            await delay(MATRIX_SCROLLBACK_STAGGER_MS);
+            await client.scrollback(room, pageSize).catch(() => undefined);
+            afterCount = room.getLiveTimeline().getEvents().length;
+          }
           if (afterCount <= beforeCount) {
             hasMoreOlder = false;
             break;
